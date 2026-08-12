@@ -213,7 +213,8 @@ Mobile Agent 和已有 Agent 的远端对账都保持可用。
 - `VITE_PORTFOLIO_MARGIN_ACTIVATION_ENABLED=true`:允许从非 PM 模式新激活 Portfolio Margin。关闭时已有
   PM 用户仍可使用当前模式或切回其他模式。
 - `VITE_LIFI_BRIDGE_CREATE_ENABLED=true`:允许通过 LI.FI 创建新的跨链 route。关闭时标准 Hyperliquid
-  Bridge2 入金/出金不受影响。对于已经提交跨链交易的 LI.FI route，客户端会把
+  出金 `withdraw3` 和已广播 Bridge2/LI.FI 记录的追踪不受影响；新 Bridge2 入金已由
+  CCTP-only 政策独立停用，该开关不得重新打开。对于已经提交跨链交易的 LI.FI route，客户端会把
   `updateRouteHook` 返回的 latest route 去除签名、typed data、transaction request 和 calldata 后，
   临时保存在当前标签页的 `sessionStorage`。即使 LI.FI SDK 在广播后把 source process 标为 `FAILED`，
   只要仍有合法 `txHash` 或 `taskId`，客户端也会保留恢复记录；恢复时先把该标识规范成只追踪既有交易
@@ -229,12 +230,24 @@ Mobile Agent 和已有 Agent 的远端对账都保持可用。
 流量并留出在途 route 排空窗口，再发布关闭版本；发布后用同一标签页刷新验证 committed route 的恢复入口，
 并确认新标签页、桌面账户入口和移动账户入口均不再显示新 Bridge 入口。
 
-Circle CCTP 外部钱包入金使用两个互相独立的环境门禁：
+Circle CCTP 新入金使用按钱包路径和环境拆分的四个独立门禁：
 
 - `VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=true`：仅在 Arbitrum Sepolia 筹资 E2E 已验证授权、烧毁事件、Circle attestation/forward 和 HyperCore 到账恢复后开启。
 - `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true`：仅在上述测试网验收通过，并完成小额主网实际到账与恢复演练后开启。
+- `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=true`：仅在邮箱 embedded EOA 精确账户签名、`CctpExtensionV2` 确定性 nonce、Privy Smart Wallet/Paymaster 提交、success/skipped 事件分类、刷新恢复和最终 HyperCore 到账均已通过 Arbitrum Sepolia 筹资 E2E 后开启。
+- `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`：仅在 sponsored 测试网验收通过，并完成白名单邮箱钱包小额主网到账、重试及恢复演练后开启。
 
-两个开关默认都关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。嵌入式/邮箱钱包还需要经验证的 `CctpExtensionV2` relayer，不受这两个外部钱包开关放行。
+四个开关默认都关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。它们是构建期门禁而不是无需部署的远程 kill switch：关闭任意路径后必须重建发布，已加载旧 bundle 的标签页不会立即失效。
+
+新入金政策为 CCTP-only。即使 Hyperliquid `usdcRouting.depositRoute`
+返回 `bridge`，也必须暂停新入金，不得重新打开 Bridge2；已广播的旧 Bridge2 交易仍需保留历史和恢复对账。下线旧通道时先禁止所有新的手动/自动 Bridge2 请求，再等待在途记录排空；不得删除历史查询，也不得一并禁用独立的 legacy withdrawal `withdraw3`。
+
+推荐发布顺序：
+
+1. 四个门禁全部关闭发布，确认 Bridge2 新签名/提交已 fail closed，旧记录仍可恢复。
+2. 仅开启 sponsored testnet，执行已消费 nonce、余额不足、Paymaster 拒绝、RPC 超时、刷新恢复和最终到账用例。
+3. 在新 release 中仅对内部白名单打开 sponsored mainnet，使用小额 USDC 验证。
+4. 对账为零差异且无 skipped-as-success 后再扩大流量；回滚时仅停止新 CCTP 提交，继续追踪已提交交易，绝不回退 Bridge2。
 
 ---
 

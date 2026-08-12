@@ -26,7 +26,7 @@ interface Props {
 	depositRoute: UsdcTransferRoute | null;
 	onRetryRouting: () => void;
 	networkName: string;
-	smartDepositEnabled: boolean;
+	sponsoredCctpEnabled: boolean;
 	cctpFee: string | null;
 	cctpNetAmount: string | null;
 	cctpFeeLoading: boolean;
@@ -52,7 +52,7 @@ export function DepositForm({
 	depositRoute,
 	onRetryRouting,
 	networkName,
-	smartDepositEnabled,
+	sponsoredCctpEnabled,
 	cctpFee,
 	cctpNetAmount,
 	cctpFeeLoading,
@@ -65,9 +65,8 @@ export function DepositForm({
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
-	const depositRoutingReady = bridgeRoutingReady || (cctpRoutingReady && !fundingAddress);
+	const depositRoutingReady = cctpRoutingReady && !fundingAddress;
 	const routingNotice = (() => {
-		if (bridgeRoutingReady) return null;
 		if (routingStatus === "loading") {
 			return (
 				<div className="rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
@@ -75,8 +74,7 @@ export function DepositForm({
 				</div>
 			);
 		}
-		const isCctp = cctpRoutingReady;
-		if (isCctp && !fundingAddress) {
+		if (cctpRoutingReady && !fundingAddress) {
 			return (
 				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>Hyperliquid currently requires a Circle CCTP deposit from Arbitrum.</Trans>
@@ -89,13 +87,13 @@ export function DepositForm({
 				className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 			>
 				<p>
-					{isCctp ? (
-						<Trans>Gas-sponsored CCTP deposits require a configured and verified relayer.</Trans>
+					{bridgeRoutingReady ? (
+						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
 					) : (
 						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
 					)}
 				</p>
-				{!isCctp ? (
+				{!bridgeRoutingReady ? (
 					<Button
 						variant="link"
 						intent="neutral"
@@ -110,10 +108,10 @@ export function DepositForm({
 		);
 	})();
 	const embeddedDepositStatus = (() => {
-		if (!smartDepositEnabled) {
+		if (!sponsoredCctpEnabled) {
 			return {
 				tone: "error" as const,
-				text: <Trans>Smart wallet deposits are not enabled for this network.</Trans>,
+				text: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
 			};
 		}
 		if (balanceStatus === "loading") {
@@ -181,33 +179,38 @@ export function DepositForm({
 				</Button>
 			) : undefined;
 		const fundingAddressState =
-			bridgeRoutingReady && fundingAddress
+			cctpRoutingReady && sponsoredCctpEnabled && fundingAddress
 				? ({ address: fundingAddress, state: "ready" } as const)
 				: routingStatus === "loading"
 					? ({ message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const)
-					: bridgeRoutingReady && fundingAddressPending
+					: cctpRoutingReady && sponsoredCctpEnabled && fundingAddressPending
 						? ({ message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const)
-						: cctpRoutingReady
+						: cctpRoutingReady && !sponsoredCctpEnabled
 							? ({
-									message: <Trans>Gas-sponsored CCTP deposits require a configured and verified relayer.</Trans>,
+									message: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
 									state: "unavailable",
 								} as const)
 							: bridgeRoutingReady
 								? ({
-										message: (
-											<Trans>
-												Your email wallet is unavailable. Sign out and log in again with the same email, then retry.
-											</Trans>
-										),
+										message: <Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>,
 										state: "unavailable",
 									} as const)
-								: ({
-										message: (
-											<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
-										),
-										action: retryRoutingAction,
-										state: "unavailable",
-									} as const);
+								: cctpRoutingReady
+									? ({
+											message: (
+												<Trans>
+													Your email wallet is unavailable. Sign out and log in again with the same email, then retry.
+												</Trans>
+											),
+											state: "unavailable",
+										} as const)
+									: ({
+											message: (
+												<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
+											),
+											action: retryRoutingAction,
+											state: "unavailable",
+										} as const);
 
 		return (
 			<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
@@ -221,7 +224,7 @@ export function DepositForm({
 
 				<FundingAddressCard {...fundingAddressState} />
 
-				{bridgeRoutingReady && fundingAddress ? (
+				{cctpRoutingReady && sponsoredCctpEnabled && fundingAddress ? (
 					<>
 						{embeddedDepositStatus ? (
 							<div
@@ -237,17 +240,23 @@ export function DepositForm({
 							</div>
 						) : null}
 
-						<UnitDepositInfo networkName={networkName} />
+						<UnitDepositInfo
+							networkName={networkName}
+							cctpFee={cctpFee}
+							cctpNetAmount={cctpNetAmount}
+							cctpFeeLoading={cctpFeeLoading}
+						/>
 					</>
 				) : null}
 
-				{bridgeRoutingReady && fundingAddress ? (
+				{cctpRoutingReady && sponsoredCctpEnabled && fundingAddress ? (
 					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
 						<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
 						<Trans>
 							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
 							networks. Minimum deposit is {minimumDeposit}.
-						</Trans>
+						</Trans>{" "}
+						<Trans>After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit.</Trans>
 					</div>
 				) : null}
 
@@ -283,7 +292,6 @@ export function DepositForm({
 			{depositRoutingReady ? (
 				<UnitDepositInfo
 					networkName={networkName}
-					route={depositRoute ?? "bridge"}
 					cctpFee={cctpFee}
 					cctpNetAmount={cctpNetAmount}
 					cctpFeeLoading={cctpFeeLoading}

@@ -8,7 +8,7 @@
 |--------------|----------|--------|----------|------------------|
 | **L1 Actions** | 1337 | "Exchange" | Trading operations | None (API only) |
 | **User-Signed** | 0x66eee (421614) | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
-| **Arbitrum EVM** | 42161 | Standard EIP-712 | Deposits from Arbitrum | Arbitrum network |
+| **Arbitrum EVM** | 42161 | USDC EIP-3009 + contract call | CCTP deposits from Arbitrum | Arbitrum network |
 
 ---
 
@@ -27,8 +27,8 @@
 │  │ Domain: "Exchange"   │  │ Domain: "Hyperliquid │  │ 42161         │  │
 │  │                      │  │ SignTransaction"     │  │               │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
-│  │ • order              │  │ • withdraw3          │  │ • Permit      │  │
-│  │ • cancel             │  │ • usdSend            │  │ • Bridge2     │  │
+│  │ • order              │  │ • withdraw3          │  │ • EIP-3009    │  │
+│  │ • cancel             │  │ • usdSend            │  │ • CCTP        │  │
 │  │ • modify             │  │ • spotSend           │  │   deposit     │  │
 │  │ • updateLeverage     │  │ • approveAgent       │  │               │  │
 │  │ • updateIsolatedMarg │  │ • approveBuilderFee  │  │               │  │
@@ -169,55 +169,31 @@ await client.withdraw3({
 
 ## Signing Type 3: Arbitrum EVM Transactions (Deposits)
 
-Actual on-chain transactions on Arbitrum network. **Requires wallet connected to Arbitrum**.
+Deposits authorize native USDC with EIP-3009 and submit an on-chain CCTP call on Arbitrum. External wallets submit directly; Privy email wallets sign with their exact embedded EOA and use the matching Smart Wallet Paymaster/Bundler for gas-sponsored submission.
 
 ### Characteristics
 
 | Property | Value |
 |----------|-------|
 | Chain ID | 42161 (Arbitrum One) |
-| Contract | Bridge2 (`0x2df1c51e09aecf9cacb7bc98cb1742757f163df7`) |
+| Direct contract | CctpExtension (`0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE`) |
+| Sponsored contract | CctpExtensionV2 (`0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB`) |
 | Token | USDC (`0xaf88d065e77c8cC2239327C5EDb3A432268e5831`) |
-| Signed By | Master wallet via wagmi |
+| Authorization signer | Exact selected master/embedded EOA |
+| Transaction sender | External wallet directly, or Privy Smart Wallet via Paymaster/Bundler |
 | Network | **Arbitrum required** |
 
 ### Deposit Flow
 
-1. **Sign EIP-712 Permit** - Authorize Bridge2 to spend USDC
-2. **Call `batchedDepositWithPermit`** - On-chain transaction on Arbitrum
-3. **Hyperliquid credits** - Funds appear in HyperCore account
+1. **Fetch current routing and Circle fee/allowance** - Require a fresh `depositRoute === "cctp"` and a reviewed fee quote.
+2. **Sign EIP-3009 `ReceiveWithAuthorization`** - The exact USDC owner authorizes the selected CCTP extension.
+3. **Submit the CCTP call** - External wallets call CctpExtension; Privy Smart Wallets call `CctpExtensionV2.batchSponsorDepositForBurn` through the configured Bundler/Paymaster.
+4. **Classify the receipt and track forwarding** - A V2 transaction is successful for the user only when its matching `SponsoredDepositForBurn` event exists; `SponsoredDepositForBurnSkipped` is a failure, even if the outer transaction receipt succeeded.
+5. **Hyperliquid credits** - Continue tracking the source transaction and HyperCore credit after refresh.
 
 ### Code Example (Current Implementation)
 
-```typescript
-// From use-arbitrum-deposit.ts
-const { signTypedData } = useSignTypedData();
-const { writeContract } = useWriteContract();
-
-// Step 1: Sign permit (EIP-712 on Arbitrum)
-signTypedData({
-  domain: {
-    name: "USD Coin",
-    version: "2",
-    chainId: BigInt(ARBITRUM_CHAIN_ID),
-    verifyingContract: CONTRACTS.arbitrum.usdc,
-  },
-  types: PERMIT_TYPES,
-  primaryType: "Permit",
-  message: { owner, spender, value, nonce, deadline },
-}, {
-  onSuccess: (sig) => {
-    // Step 2: Submit deposit transaction
-    writeContract({
-      address: CONTRACTS.arbitrum.bridge2,
-      abi: BRIDGE2_ABI,
-      functionName: "batchedDepositWithPermit",
-      args: [/* deposit params */],
-      chainId: ARBITRUM_CHAIN_ID,
-    });
-  },
-});
-```
+The implementation lives in `apps/terminal/src/lib/hyperliquid/use-deposit.ts`, with pure EIP-3009/CCTP parameter and receipt validation in `apps/terminal/src/lib/trade/cctp-deposit.ts`. It revalidates the owner, route, fee quote, fast-burn allowance, and contract result at the relevant signing and submission boundaries. New Bridge2 deposits are intentionally fail-closed; legacy records remain available only for recovery and reconciliation.
 
 ---
 
@@ -272,7 +248,7 @@ await exchangeClient.withdraw3({
 
 | Category | Methods |
 |----------|---------|
-| **Deposits** | EIP-712 Permit + `Bridge2.batchedDepositWithPermit()` |
+| **Deposits** | USDC EIP-3009 authorization + CctpExtension/CctpExtensionV2 submission |
 
 ---
 
@@ -290,7 +266,9 @@ await exchangeClient.withdraw3({
 | Contract | Address |
 |----------|---------|
 | Native USDC (Arbitrum) | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
-| Bridge2 (Arbitrum) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
+| CctpExtension (Arbitrum) | `0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE` |
+| CctpExtensionV2 (Arbitrum) | `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` |
+| Bridge2 (legacy recovery only) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
 | CoreDepositWallet (HyperEVM) | `0x6b9e773128f453f5c2c60935ee2de2cbc5390a24` |
 | CoreWriter (HyperEVM) | `0x3333333333333333333333333333333333333333` |
 
@@ -303,8 +281,8 @@ await exchangeClient.withdraw3({
 │                                                                          │
 │  ARBITRUM → HYPERCORE (Deposit)                                          │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
-│  │ Arbitrum │───▶│ Bridge2  │───▶│ HyperCore│                           │
-│  │ USDC     │    │ Contract │    │ Balance  │                           │
+│  │ Arbitrum │───▶│ CCTP Ext. │───▶│ HyperCore│                           │
+│  │ USDC     │    │ V1 / V2  │    │ Balance  │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
 │  Signing: Arbitrum EVM (42161)                                           │
 │                                                                          │
@@ -529,7 +507,7 @@ src/lib/hyperliquid/
 │   ├── use-send-asset.ts      # sendAsset (DEX/sub-account transfers)
 │   └── use-staking.ts         # tokenDelegate
 │
-└── bridge/               # Arbitrum EVM (wagmi)
+└── deposits/             # Arbitrum CCTP (viem + Privy Smart Wallet)
     └── use-deposit.ts
 ```
 
@@ -548,7 +526,7 @@ src/lib/hyperliquid/
 | `useUsdClassTransfer` | User-Signed | Admin | **Master** |
 | `useSendAsset` | User-Signed | Admin | **Master** |
 | `useAgentRegistration` | User-Signed | Admin | **Master** |
-| `useDeposit` | Arbitrum EVM | wagmi | **Master** |
+| `useDeposit` | EIP-3009 + Arbitrum EVM | viem / Privy Smart Wallet | **Exact master or embedded EOA** |
 
 ### Key Implementation Details
 
@@ -590,26 +568,16 @@ export function useAdminClient() {
 }
 ```
 
-#### Deposit (wagmi Direct)
-```typescript
-// bridge/use-deposit.ts
-export function useDeposit() {
-  const { chainId } = useConnection();
-  const { signTypedData } = useSignTypedData();
-  const { writeContract } = useWriteContract();
+#### Deposit (CCTP-only)
 
-  const isArbitrum = chainId === ARBITRUM_CHAIN_ID;
-
-  // ... permit signing + contract call
-}
-```
+`useDeposit` requires an explicit CCTP route. The exact owner signs the USDC EIP-3009 authorization; external wallets submit CctpExtension directly, while email-wallet sessions submit CctpExtensionV2 through the already configured Privy Smart Wallet Paymaster/Bundler. Neither path may fall back to Bridge2 when routing, fee, allowance, owner, or receipt validation fails.
 
 ### Migration Checklist
 
 - [ ] Create `signing/` module with agent status hooks
 - [ ] Create `trading/` module with `useTradingClient`
 - [ ] Create `admin/` module with `useAdminClient`
-- [ ] Move `use-arbitrum-deposit.ts` to `bridge/use-deposit.ts`
+- [x] Keep CCTP execution in `lib/hyperliquid/use-deposit.ts` and pure validation in `lib/trade/cctp-deposit.ts`
 - [ ] Update `useExchangeWithdraw3` to use admin client
 - [ ] Update `useExchangeUsdSend` to use admin client
 - [ ] Update `useExchangeSpotSend` to use admin client

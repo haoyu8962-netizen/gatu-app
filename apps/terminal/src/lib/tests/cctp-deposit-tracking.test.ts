@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 
-import type { Address } from "viem";
-import { encodeAbiParameters, encodeEventTopics, encodeFunctionData } from "viem";
+import type { Address, Hex } from "viem";
+import { concatHex, encodeAbiParameters, encodeEventTopics, encodeFunctionData, numberToHex } from "viem";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS, CCTP_FAST_FINALITY_THRESHOLD } from "@/config/cctp-deposit";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
-import { addressToBytes32, CCTP_EXTENSION_ABI, encodeCctpForwardHookData } from "@/lib/trade/cctp-deposit";
+import {
+	addressToBytes32,
+	CCTP_EXTENSION_ABI,
+	CCTP_EXTENSION_V2_ABI,
+	encodeCctpForwardHookData,
+} from "@/lib/trade/cctp-deposit";
 import {
 	ArbitrumCctpSourceReceiptError,
 	assertCctpDepositTrackingStorageWritable,
@@ -17,24 +22,43 @@ import {
 	fetchCircleCctpDepositStatus,
 	getCctpDepositTrackingRecordStorageKey,
 	getCctpDepositTrackingStorageKey,
+	getCctpSponsoredAuthorizationIntentStorageKey,
 	parseArbitrumCctpSourceReceiptResponse,
 	parseArbitrumCctpSourceTransactionResponse,
 	parseCircleCctpMessagesResponse,
 	readCctpDepositTrackingRecords,
+	readCctpSponsoredAuthorizationIntent,
 	removeCctpDepositTrackingRecord,
+	removeCctpSponsoredAuthorizationIntent,
 	saveCctpDepositTrackingRecord,
+	saveCctpSponsoredAuthorizationIntent,
 	subscribeCctpDepositTrackingRecords,
 } from "@/lib/trade/cctp-deposit-tracking";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
-const SOURCE_HASH = `0x${"a".repeat(64)}`;
-const FORWARD_HASH = `0x${"b".repeat(64)}`;
+const SOURCE_HASH = `0x${"a".repeat(64)}` as `0x${string}`;
+const FORWARD_HASH = `0x${"b".repeat(64)}` as `0x${string}`;
+const AUTH_NONCE = `0x${"1".repeat(64)}` as const;
 const NOW_MS = 2_000_000_000_000;
 const TRACKING_RECORD = {
 	amount: "5",
 	env: "Mainnet" as const,
 	owner: OWNER as `0x${string}`,
 	sourceHash: SOURCE_HASH as `0x${string}`,
+	mode: "direct" as const,
+};
+
+const SPONSORED_TRACKING_RECORD = {
+	...TRACKING_RECORD,
+	authNonce: AUTH_NONCE,
+	mode: "sponsored" as const,
+};
+
+const CIRCLE_DIRECT_IDENTITY = {
+	amount: TRACKING_RECORD.amount,
+	env: TRACKING_RECORD.env,
+	mode: TRACKING_RECORD.mode,
+	owner: TRACKING_RECORD.owner,
 };
 
 class MemoryStorage implements Storage {
@@ -104,6 +128,70 @@ describe("Circle CCTP deposit status", () => {
 		).toEqual({ status: "forward-submitted", forwardTxHash: FORWARD_HASH });
 	});
 
+	it("selects only the tracked deposit from a multi-user smart-account batch", () => {
+		const anotherOwner = "0x2222222222222222222222222222222222222222" as const;
+		const anotherForwardHash = `0x${"c".repeat(64)}` as const;
+		expect(
+			parseCircleCctpMessagesResponse(
+				{
+					sourceTxHash: SOURCE_HASH,
+					messages: [
+						{
+							message: createCircleCctpMessage({ mode: "sponsored", owner: anotherOwner }),
+							status: 123,
+							forwardTxHash: anotherForwardHash,
+						},
+						{
+							message: createCircleCctpMessage({ mode: "sponsored" }),
+							status: "complete",
+							forwardTxHash: FORWARD_HASH,
+						},
+					],
+				},
+				SOURCE_HASH,
+				{ ...CIRCLE_DIRECT_IDENTITY, mode: "sponsored" },
+			),
+		).toEqual({ status: "forward-submitted", forwardTxHash: FORWARD_HASH });
+	});
+
+	it("waits for the tracked message and rejects duplicate matching messages", () => {
+		const unrelatedMessage = {
+			message: createCircleCctpMessage({ owner: "0x2222222222222222222222222222222222222222" }),
+			status: "complete",
+			forwardTxHash: FORWARD_HASH,
+		};
+		expect(
+			parseCircleCctpMessagesResponse(
+				{ sourceTxHash: SOURCE_HASH, messages: [unrelatedMessage] },
+				SOURCE_HASH,
+				CIRCLE_DIRECT_IDENTITY,
+			),
+		).toEqual({ status: "waiting" });
+
+		const matchingMessage = {
+			message: createCircleCctpMessage(),
+			status: "complete",
+			forwardTxHash: FORWARD_HASH,
+		};
+		expect(() =>
+			parseCircleCctpMessagesResponse(
+				{ sourceTxHash: SOURCE_HASH, messages: [matchingMessage, matchingMessage] },
+				SOURCE_HASH,
+				CIRCLE_DIRECT_IDENTITY,
+			),
+		).toThrow("multiple messages match");
+	});
+
+	it("requires raw message bytes when selecting a deposit from a batch", () => {
+		expect(() =>
+			parseCircleCctpMessagesResponse(
+				{ sourceTxHash: SOURCE_HASH, messages: [{ status: "complete", forwardTxHash: FORWARD_HASH }] },
+				SOURCE_HASH,
+				CIRCLE_DIRECT_IDENTITY,
+			),
+		).toThrow("message bytes are invalid");
+	});
+
 	it.each([
 		["missing messages", {}],
 		["non-array messages", { messages: {} }],
@@ -136,7 +224,13 @@ describe("Circle CCTP deposit status", () => {
 		const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
 
 		await expect(
-			fetchCircleCctpDepositStatus({ env: "Testnet", sourceHash: SOURCE_HASH, signal: controller.signal, fetchImpl }),
+			fetchCircleCctpDepositStatus({
+				...CIRCLE_DIRECT_IDENTITY,
+				env: "Testnet",
+				sourceHash: SOURCE_HASH,
+				signal: controller.signal,
+				fetchImpl,
+			}),
 		).resolves.toEqual({ status: "waiting" });
 		expect(fetchImpl).toHaveBeenCalledWith(
 			`https://iris-api-sandbox.circle.com/v2/messages/3?transactionHash=${SOURCE_HASH}`,
@@ -147,24 +241,39 @@ describe("Circle CCTP deposit status", () => {
 	it("strictly parses successful requests and surfaces HTTP or JSON failures", async () => {
 		const completedFetch = vi.fn().mockResolvedValue(
 			new Response(
-				JSON.stringify({ sourceTxHash: SOURCE_HASH, messages: [{ status: "complete", forwardTxHash: FORWARD_HASH }] }),
+				JSON.stringify({
+					sourceTxHash: SOURCE_HASH,
+					messages: [{ message: createCircleCctpMessage(), status: "complete", forwardTxHash: FORWARD_HASH }],
+				}),
 				{
 					status: 200,
 				},
 			),
 		);
 		await expect(
-			fetchCircleCctpDepositStatus({ env: "Mainnet", sourceHash: SOURCE_HASH, fetchImpl: completedFetch }),
+			fetchCircleCctpDepositStatus({
+				...CIRCLE_DIRECT_IDENTITY,
+				sourceHash: SOURCE_HASH,
+				fetchImpl: completedFetch,
+			}),
 		).resolves.toEqual({ status: "forward-submitted", forwardTxHash: FORWARD_HASH });
 
 		const failedFetch = vi.fn().mockResolvedValue(new Response(null, { status: 429 }));
 		await expect(
-			fetchCircleCctpDepositStatus({ env: "Mainnet", sourceHash: SOURCE_HASH, fetchImpl: failedFetch }),
+			fetchCircleCctpDepositStatus({
+				...CIRCLE_DIRECT_IDENTITY,
+				sourceHash: SOURCE_HASH,
+				fetchImpl: failedFetch,
+			}),
 		).rejects.toMatchObject({ httpStatus: 429 });
 
 		const invalidJsonFetch = vi.fn().mockResolvedValue(new Response("not-json", { status: 200 }));
 		await expect(
-			fetchCircleCctpDepositStatus({ env: "Mainnet", sourceHash: SOURCE_HASH, fetchImpl: invalidJsonFetch }),
+			fetchCircleCctpDepositStatus({
+				...CIRCLE_DIRECT_IDENTITY,
+				sourceHash: SOURCE_HASH,
+				fetchImpl: invalidJsonFetch,
+			}),
 		).rejects.toThrow("expected JSON");
 	});
 });
@@ -222,6 +331,29 @@ describe("Arbitrum CCTP source receipt recovery", () => {
 		expect(() =>
 			parseArbitrumCctpSourceTransactionResponse(createSourceTransactionPayload(), TRACKING_RECORD),
 		).not.toThrow();
+	});
+
+	it("validates a sponsored receipt by owner, amount, and authorization nonce", () => {
+		expect(
+			parseArbitrumCctpSourceReceiptResponse(
+				createSourceReceiptPayload("0x1", SOURCE_HASH, [createSponsoredDepositLog()]),
+				SPONSORED_TRACKING_RECORD,
+			),
+		).toEqual({ status: "confirmed-success" });
+	});
+
+	it.each([
+		["a skipped authorization", [createSponsoredDepositLog(), createSponsoredDepositSkippedLog()]],
+		["a different authorization nonce", [createSponsoredDepositLog({ authNonce: FORWARD_HASH })]],
+		["a different depositor", [createSponsoredDepositLog({ depositor: CCTP_DEPOSIT_NETWORKS.mainnet.cctpForwarder })]],
+		["a different amount", [createSponsoredDepositLog({ amountRaw: 4_000_000n })]],
+	])("rejects a sponsored receipt with %s", (_name, logs) => {
+		expect(() =>
+			parseArbitrumCctpSourceReceiptResponse(
+				createSourceReceiptPayload("0x1", SOURCE_HASH, logs),
+				SPONSORED_TRACKING_RECORD,
+			),
+		).toThrow(DefinitiveDepositSourceFailureError);
 	});
 
 	it.each([
@@ -321,18 +453,137 @@ describe("CCTP deposit tracking persistence", () => {
 		);
 
 		expect(record).toEqual({
-			version: 1,
+			version: 2,
 			env: "Mainnet",
 			owner: OWNER,
 			sourceHash: SOURCE_HASH,
 			amount: "5.25",
 			createdAt: NOW_MS,
+			mode: "direct",
 			status: "source-submitted",
 		});
 		expect(
 			JSON.parse(storage.getItem(getCctpDepositTrackingRecordStorageKey("Mainnet", OWNER, SOURCE_HASH)) ?? "null"),
 		).toEqual(record);
 		expect(readCctpDepositTrackingRecords("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toEqual([record]);
+	});
+
+	it("persists sponsored recovery identity without the authorization signature", () => {
+		const storage = new MemoryStorage();
+		const record = saveCctpDepositTrackingRecord(
+			{
+				authNonce: AUTH_NONCE,
+				env: "Mainnet",
+				mode: "sponsored",
+				owner: OWNER,
+				sourceHash: SOURCE_HASH,
+				amount: "5",
+			},
+			{ storage, nowMs: NOW_MS },
+		);
+
+		expect(record).toMatchObject({ authNonce: AUTH_NONCE, mode: "sponsored", version: 2 });
+		expect(JSON.stringify(record)).not.toContain("signature");
+	});
+
+	it("persists a minimal unresolved sponsored authorization before submission", () => {
+		const storage = new MemoryStorage();
+		const validBefore = Math.floor(NOW_MS / 1000) + 3_600;
+		const intent = saveCctpSponsoredAuthorizationIntent(
+			{
+				authNonce: AUTH_NONCE,
+				env: "Mainnet",
+				owner: OWNER.toUpperCase().replace("0X", "0x"),
+				amount: "5",
+				validBefore: BigInt(validBefore),
+			},
+			{ storage, nowMs: NOW_MS },
+		);
+
+		expect(intent).toEqual({
+			amount: "5",
+			authNonce: AUTH_NONCE,
+			createdAt: NOW_MS,
+			env: "Mainnet",
+			owner: OWNER,
+			status: "submission-unresolved",
+			validBefore,
+			version: 1,
+		});
+		expect(JSON.stringify(intent)).not.toContain("signature");
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toEqual(intent);
+	});
+
+	it("refuses to overwrite an unexpired sponsored authorization and removes only the matching nonce", () => {
+		const storage = new MemoryStorage();
+		const input = {
+			authNonce: AUTH_NONCE,
+			env: "Mainnet" as const,
+			owner: OWNER,
+			amount: "5",
+			validBefore: Math.floor(NOW_MS / 1000) + 3_600,
+		};
+		saveCctpSponsoredAuthorizationIntent(input, { storage, nowMs: NOW_MS });
+
+		expect(() => saveCctpSponsoredAuthorizationIntent(input, { storage, nowMs: NOW_MS })).toThrow("already exists");
+		expect(() =>
+			removeCctpSponsoredAuthorizationIntent("Mainnet", OWNER, FORWARD_HASH, { storage, nowMs: NOW_MS }),
+		).toThrow("does not match");
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS })).not.toBeNull();
+
+		removeCctpSponsoredAuthorizationIntent("Mainnet", OWNER, AUTH_NONCE, { storage, nowMs: NOW_MS });
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toBeNull();
+	});
+
+	it("removes an expired sponsored authorization and fails closed for invalid or unavailable storage", () => {
+		const storage = new MemoryStorage();
+		const key = getCctpSponsoredAuthorizationIntentStorageKey("Mainnet", OWNER);
+		saveCctpSponsoredAuthorizationIntent(
+			{
+				authNonce: AUTH_NONCE,
+				env: "Mainnet",
+				owner: OWNER,
+				amount: "5",
+				validBefore: Math.floor(NOW_MS / 1000) + 1,
+			},
+			{ storage, nowMs: NOW_MS },
+		);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS + 1_000 })).toBeNull();
+		expect(storage.getItem(key)).toBeNull();
+
+		storage.setItem(key, "not-json");
+		expect(() => readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toThrow(
+			"cannot be trusted",
+		);
+		expect(storage.getItem(key)).toBe("not-json");
+
+		vi.spyOn(storage, "getItem").mockImplementation(() => {
+			throw new Error("storage unavailable");
+		});
+		expect(() => readCctpSponsoredAuthorizationIntent("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toThrow(
+			CctpDepositTrackingPersistenceError,
+		);
+	});
+
+	it("reads legacy version-one records as direct version-two recovery records", () => {
+		const storage = new MemoryStorage();
+		const key = getCctpDepositTrackingRecordStorageKey("Mainnet", OWNER, SOURCE_HASH);
+		storage.setItem(
+			key,
+			JSON.stringify({
+				amount: "5",
+				createdAt: NOW_MS,
+				env: "Mainnet",
+				owner: OWNER,
+				sourceHash: SOURCE_HASH,
+				status: "source-submitted",
+				version: 1,
+			}),
+		);
+
+		expect(readCctpDepositTrackingRecords("Mainnet", OWNER, { storage, nowMs: NOW_MS })).toEqual([
+			expect.objectContaining({ mode: "direct", version: 2 }),
+		]);
 	});
 
 	it("deduplicates source hashes and limits records to the newest bounded set", () => {
@@ -505,6 +756,41 @@ describe("CCTP deposit tracking persistence", () => {
 	});
 });
 
+function createCircleCctpMessage({
+	amountRaw = 5_000_000n,
+	env = "Mainnet",
+	mode = "direct",
+	owner = OWNER,
+}: {
+	amountRaw?: bigint;
+	env?: "Mainnet" | "Testnet";
+	mode?: "direct" | "sponsored";
+	owner?: Address;
+} = {}): Hex {
+	const config = CCTP_DEPOSIT_NETWORKS[env === "Testnet" ? "testnet" : "mainnet"];
+	const messageSender = mode === "sponsored" ? config.cctpExtensionV2 : config.cctpExtension;
+	return concatHex([
+		numberToHex(1, { size: 4 }),
+		numberToHex(config.sourceDomain, { size: 4 }),
+		numberToHex(config.destinationDomain, { size: 4 }),
+		AUTH_NONCE,
+		addressToBytes32(config.cctpExtension),
+		addressToBytes32(config.cctpExtension),
+		addressToBytes32(config.cctpForwarder),
+		numberToHex(CCTP_FAST_FINALITY_THRESHOLD, { size: 4 }),
+		numberToHex(CCTP_FAST_FINALITY_THRESHOLD, { size: 4 }),
+		numberToHex(1, { size: 4 }),
+		addressToBytes32(config.usdc),
+		addressToBytes32(config.cctpForwarder),
+		numberToHex(amountRaw, { size: 32 }),
+		addressToBytes32(messageSender),
+		numberToHex(200_000, { size: 32 }),
+		numberToHex(200_000, { size: 32 }),
+		numberToHex(1, { size: 32 }),
+		encodeCctpForwardHookData(owner),
+	]);
+}
+
 function createBatchDepositLog({
 	address = CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtension,
 	amountRaw = 5_000_000n,
@@ -523,6 +809,55 @@ function createBatchDepositLog({
 			[1n, amountRaw, depositor, addressToBytes32(config.cctpForwarder), config.destinationDomain],
 		),
 		topics: encodeEventTopics({ abi: CCTP_EXTENSION_ABI, eventName: "BatchDepositForBurn" }),
+	};
+}
+
+function createSponsoredDepositLog({
+	address = CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+	amountRaw = 5_000_000n,
+	authNonce = AUTH_NONCE,
+	depositor = OWNER as Address,
+}: {
+	address?: Address;
+	amountRaw?: bigint;
+	authNonce?: `0x${string}`;
+	depositor?: Address;
+} = {}) {
+	return {
+		address,
+		data: encodeAbiParameters(
+			[{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }],
+			[
+				addressToBytes32(CCTP_DEPOSIT_NETWORKS.mainnet.cctpForwarder),
+				CCTP_DEPOSIT_NETWORKS.mainnet.destinationDomain,
+				amountRaw,
+			],
+		),
+		topics: encodeEventTopics({
+			abi: CCTP_EXTENSION_V2_ABI,
+			args: { authNonce, depositor },
+			eventName: "SponsoredDepositForBurn",
+		}),
+	};
+}
+
+function createSponsoredDepositSkippedLog({
+	address = CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+	authNonce = AUTH_NONCE,
+	depositor = OWNER as Address,
+}: {
+	address?: Address;
+	authNonce?: `0x${string}`;
+	depositor?: Address;
+} = {}) {
+	return {
+		address,
+		data: "0x" as const,
+		topics: encodeEventTopics({
+			abi: CCTP_EXTENSION_V2_ABI,
+			args: { authNonce, depositor },
+			eventName: "SponsoredDepositForBurnSkipped",
+		}),
 	};
 }
 

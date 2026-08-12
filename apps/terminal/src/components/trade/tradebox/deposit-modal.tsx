@@ -9,6 +9,7 @@ import {
 	CCTP_MAX_DEPOSIT_USDC,
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
 	isCctpExternalDepositEnabled,
+	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
@@ -125,9 +126,10 @@ export function DepositModal() {
 	const withdrawalRoutingStatus = withdrawalRoutingPreflightFailed ? "error" : usdcRoutingStatus;
 	const routedWithdrawalRoute = getWithdrawalRoute(usdcRoutingQuery.data);
 	const withdrawalRoute = routedWithdrawalRoute ?? "arbitrum-cctp";
-	const selectedDepositRoute = usdcRoutingQuery.data?.depositRoute ?? "bridge";
+	const selectedDepositRoute = usdcRoutingQuery.data?.depositRoute ?? "cctp";
 	const depositRouteReady = depositRoutingStatus === "ready" && !!usdcRoutingQuery.data?.depositRoute;
 	const cctpExternalDepositEnabled = isCctpExternalDepositEnabled(isTestnet);
+	const cctpSponsoredDepositEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 
 	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
@@ -169,6 +171,7 @@ export function DepositModal() {
 		executionAmount: depositExecutionAmount,
 		executionRoute: depositExecutionRoute,
 		cctpRecoveryUnavailable,
+		submissionOutcomeUnknown,
 		walletResponseDelayed,
 		isArbitrum,
 		isSwitching,
@@ -180,7 +183,7 @@ export function DepositModal() {
 		validate: validateDeposit,
 		reset: resetDeposit,
 		networkName: depositNetworkName,
-		smartDepositEnabled,
+		sponsoredCctpEnabled,
 	} = useDeposit({
 		balanceEnabled: open,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
@@ -189,10 +192,25 @@ export function DepositModal() {
 		expectedCctpMaxFeeRaw: cctpDepositFeeQuery.calculation?.maxFeeRaw,
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
+	const embeddedCctpDepositFeeQuery = useCctpDepositFee({
+		amountRaw: maxDepositRaw,
+		enabled:
+			open &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			isEmbeddedDeposit &&
+			sponsoredCctpEnabled &&
+			maxDepositRaw !== undefined &&
+			maxDepositRaw > 0n,
+		isTestnet,
+	});
+	const displayedCctpDepositFeeQuery = isEmbeddedDeposit ? embeddedCctpDepositFeeQuery : cctpDepositFeeQuery;
+	const cctpTrackingOwner = isEmbeddedDeposit ? depositEmbeddedWalletAddress : walletAddress;
 	const cctpDepositTracking = useCctpDepositTracking({
-		enabled: open && !isEmbeddedDeposit && !!walletAddress,
+		enabled: open && !!cctpTrackingOwner,
 		env: isTestnet ? "Testnet" : "Mainnet",
-		owner: walletAddress,
+		owner: cctpTrackingOwner,
+		poll: !isEmbeddedDeposit,
 		sourceHash: depositExecutionRoute === "cctp" ? depositHash : undefined,
 	});
 	const isCurrentCctpDeposit =
@@ -234,11 +252,11 @@ export function DepositModal() {
 			cctpDepositFeeQuery.isError ||
 			!cctpDepositFeeQuery.calculation ||
 			cctpDepositFeeQuery.hasSufficientFastAllowance === false);
-	const cctpDepositFee = cctpDepositFeeQuery.calculation
-		? formatUnits(cctpDepositFeeQuery.calculation.maxFeeRaw, 6)
+	const cctpDepositFee = displayedCctpDepositFeeQuery.calculation
+		? formatUnits(displayedCctpDepositFeeQuery.calculation.maxFeeRaw, 6)
 		: null;
-	const cctpDepositNetAmount = cctpDepositFeeQuery.calculation
-		? formatUnits(cctpDepositFeeQuery.calculation.netAmountRaw, 6)
+	const cctpDepositNetAmount = displayedCctpDepositFeeQuery.calculation
+		? formatUnits(displayedCctpDepositFeeQuery.calculation.netAmountRaw, 6)
 		: null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" && depositAmountRaw !== undefined && depositAmountRaw > CCTP_MAX_DEPOSIT_USDC
@@ -253,18 +271,18 @@ export function DepositModal() {
 		? { valid: false, error: null }
 		: embeddedWalletValidationError
 			? { valid: false, error: embeddedWalletValidationError }
-			: selectedDepositRoute === "cctp" && !isEmbeddedDeposit && !cctpExternalDepositEnabled
+			: selectedDepositRoute === "bridge"
 				? {
 						valid: false,
-						error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+						error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
 					}
-				: isEmbeddedDeposit && selectedDepositRoute === "cctp"
+				: !isEmbeddedDeposit && !cctpExternalDepositEnabled
 					? {
 							valid: false,
-							error: t`Gas-sponsored CCTP deposits require a configured and verified relayer.`,
+							error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
 						}
-					: isEmbeddedDeposit && !smartDepositEnabled
-						? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
+					: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
+						? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
 						: cctpDepositAmountLimitError
 							? { valid: false, error: cctpDepositAmountLimitError }
 							: cctpDepositFeeUnavailable
@@ -479,9 +497,9 @@ export function DepositModal() {
 				? depositHash
 				: undefined;
 		const removableTrackingHash = completedTrackingHash ?? definitivelyFailedTrackingHash;
-		if (removableTrackingHash && walletAddress) {
+		if (removableTrackingHash && cctpTrackingOwner) {
 			try {
-				removeCctpDepositTrackingRecord(isTestnet ? "Testnet" : "Mainnet", walletAddress, removableTrackingHash);
+				removeCctpDepositTrackingRecord(isTestnet ? "Testnet" : "Mainnet", cctpTrackingOwner, removableTrackingHash);
 			} catch {
 				// The source transaction hash remains available in the explorer link.
 			}
@@ -805,7 +823,8 @@ export function DepositModal() {
 
 	if (depositStatus === "error") {
 		const hasSubmittedDeposit = !!depositHash;
-		const depositStatusUnknown = hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError);
+		const depositStatusUnknown =
+			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
 
 		return (
 			<StatusScreen
@@ -828,7 +847,7 @@ export function DepositModal() {
 				txChain={depositTxChain}
 				onClose={handleClose}
 			>
-				{hasSubmittedDeposit ? (
+				{hasSubmittedDeposit || submissionOutcomeUnknown ? (
 					<Button onClick={handleClose} className="w-full">
 						<Trans>Close</Trans>
 					</Button>
@@ -1063,10 +1082,10 @@ export function DepositModal() {
 								depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
 								onRetryRouting={handleDepositRoutingRetry}
 								networkName={depositNetworkName}
-								smartDepositEnabled={smartDepositEnabled}
+								sponsoredCctpEnabled={sponsoredCctpEnabled}
 								cctpFee={cctpDepositFee}
 								cctpNetAmount={cctpDepositNetAmount}
-								cctpFeeLoading={selectedDepositRoute === "cctp" && cctpDepositFeeQuery.isLoading}
+								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}
 								pendingCctpRecovery={
 									!depositHash &&
 									!!cctpDepositTracking.recoveryRecord &&

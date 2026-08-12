@@ -353,8 +353,6 @@ msgid "Add {displayPairName} to favorites"
 msgstr "将 {displayPairName} 加入自选"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 msgstr "向此钱包存入少量 Arbitrum ETH 以支付网络手续费，然后重试。"
 
@@ -411,6 +409,10 @@ msgstr "专业"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
 msgstr "专业委托类型"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
+msgstr "USDC 到账后，您的嵌入式钱包将授权一笔 Gas 代付的 Circle CCTP 充值。"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -513,6 +515,7 @@ msgstr "数量必须大于零且不得超过当前仓位。"
 msgid "Another action for this market is already in progress."
 msgstr "该市场的另一项操作正在进行中。"
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "此账户仍有另一笔 Circle CCTP 存款待处理。请等待其完成后再提交新的存款。"
@@ -652,10 +655,6 @@ msgstr "无法加载资产说明。"
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
-
-#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
-msgstr "由于 Hyperliquid 当前要求使用 CCTP 充值，自动充值已暂停。"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
@@ -798,11 +797,6 @@ msgstr "跨链失败"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
-
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr "Bridge2 充值尚未到账。请先在 Arbiscan 上检查后再重试。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -2961,12 +2955,9 @@ msgstr "Gas（{0}）"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
-msgstr "Gas 代付的 CCTP 充值需要已配置且验证通过的中继器。"
-
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
-msgstr "Gas 代付的 CCTP 充值需要已配置且验证通过的中继器。本次充值未提交。"
+msgid "Gas-sponsored CCTP deposits are not enabled for this network."
+msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -3095,10 +3086,6 @@ msgstr "Hyperliquid 当前要求从 Arbitrum 通过 Circle CCTP 充值。"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "Hyperliquid 当前要求使用 CCTP 充值。本应用已暂停 Bridge 充值。"
-
-#: src/hooks/trade/use-usdc-routing.ts
-msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
-msgstr "Hyperliquid 当前要求使用 CCTP 充值。Bridge 充值暂不可用。"
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -3328,6 +3315,20 @@ msgstr "排行榜"
 msgid "Legacy"
 msgstr "旧版记录"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+msgstr "不再接受旧版 Bridge2 充值。自动充值已暂停。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
+msgstr "不再接受旧版 Bridge2 充值。充值已暂停。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted."
+msgstr "不再接受旧版 Bridge2 充值。本次充值未提交。"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "旧版 DEX"
@@ -3531,6 +3532,7 @@ msgstr "正在加载二维码"
 msgid "Loading recent reward claims…"
 msgstr "正在加载最近的奖励领取记录…"
 
+#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "正在加载推荐信息"
@@ -6368,12 +6370,6 @@ msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再
 #~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
 #~ msgstr ""
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Smart wallet deposits are not enabled for this network."
-msgstr "当前网络未启用智能钱包存款。"
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
@@ -7965,11 +7961,6 @@ msgstr "无法加载当前账户模式。请重新连接钱包后重试。"
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "无法加载当前的 CCTP 提款手续费。"
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Unable to prepare USDC permit"
-msgstr "无法准备 USDC 授权"
-
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
@@ -7986,6 +7977,11 @@ msgstr "无法验证访问权限"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "无法验证可用余额"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to verify the CCTP authorization."
+msgstr "无法验证 CCTP 授权。"
 
 #: src/hooks/trade/use-account-abstraction-guard.ts
 msgid "Unable to verify the current account mode. Request was not submitted."
@@ -8347,7 +8343,6 @@ msgstr "钱包未连接到 {0}。请在钱包中切换网络后重试。"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

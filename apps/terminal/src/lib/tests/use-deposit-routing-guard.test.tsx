@@ -4,18 +4,57 @@ import { getFundsActionLockName } from "@gatu/hl-react/internal/exchange/funds-a
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { encodeAbiParameters, encodeEventTopics, type Hash, type TransactionReceipt } from "viem";
+import {
+	decodeFunctionData,
+	encodeAbiParameters,
+	encodeEventTopics,
+	type Hash,
+	type Hex,
+	type TransactionReceipt,
+} from "viem";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
 import { type UseDepositResult, useDeposit } from "@/lib/hyperliquid/use-deposit";
-import { addressToBytes32, CCTP_EXTENSION_ABI } from "@/lib/trade/cctp-deposit";
-import { saveCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
+import { addressToBytes32, CCTP_EXTENSION_ABI, CCTP_EXTENSION_V2_ABI } from "@/lib/trade/cctp-deposit";
+import {
+	readCctpDepositTrackingRecords,
+	readCctpSponsoredAuthorizationIntent,
+	saveCctpDepositTrackingRecord,
+} from "@/lib/trade/cctp-deposit-tracking";
 
 const WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const PERMIT_SIGNATURE = `0x${"0".repeat(128)}1b` as const;
 const SOURCE_HASH = `0x${"1".repeat(64)}` as Hash;
+
+function createSponsoredCctpReceipt(
+	authNonce: Hex,
+	eventName: "SponsoredDepositForBurn" | "SponsoredDepositForBurnSkipped" = "SponsoredDepositForBurn",
+	isTestnet = false,
+): TransactionReceipt {
+	const config = isTestnet ? CCTP_DEPOSIT_NETWORKS.testnet : CCTP_DEPOSIT_NETWORKS.mainnet;
+	return {
+		status: "success",
+		logs: [
+			{
+				address: config.cctpExtensionV2,
+				topics: encodeEventTopics({
+					abi: CCTP_EXTENSION_V2_ABI,
+					eventName,
+					args: { authNonce, depositor: WALLET_ADDRESS },
+				}),
+				data:
+					eventName === "SponsoredDepositForBurn"
+						? encodeAbiParameters(
+								[{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }],
+								[addressToBytes32(config.cctpForwarder), config.destinationDomain, 5_000_000n],
+							)
+						: "0x",
+			},
+		],
+	} as unknown as TransactionReceipt;
+}
 
 function createSuccessfulCctpReceipt(): TransactionReceipt {
 	const config = CCTP_DEPOSIT_NETWORKS.mainnet;
@@ -77,10 +116,12 @@ const testState = vi.hoisted(() => {
 		},
 		routingError: null as Error | null,
 		routingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
+		sponsoredEnabled: true,
 		smartSendTransaction: vi.fn(),
 		wallet: {
 			address: "0x1111111111111111111111111111111111111111",
 			chainId: "eip155:42161",
+			connectorType: "embedded",
 			getEthereumProvider: async () => ({ request: providerRequest }),
 			switchChain: vi.fn(),
 		},
@@ -125,6 +166,7 @@ vi.mock("@/config/cctp-deposit", async (importOriginal) => {
 	return {
 		...original,
 		isCctpExternalDepositEnabled: () => true,
+		isCctpSponsoredDepositEnabled: () => testState.sponsoredEnabled,
 	};
 });
 
@@ -171,6 +213,9 @@ describe("useDeposit fresh USDC route guard", () => {
 		root = createRoot(container);
 		testState.routingError = null;
 		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.sponsoredEnabled = true;
+		testState.wallet.connectorType = "embedded";
+		testState.wallet.chainId = "eip155:42161";
 		testState.fetchRouting.mockImplementation(async () => {
 			if (testState.routingError) throw testState.routingError;
 			return testState.routingResponse;
@@ -264,22 +309,24 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.walletWriteContract).not.toHaveBeenCalled();
 	});
 
-	it("allows the verified Bridge2 smart-wallet path to reach permit signing and submission", async () => {
+	it("stops the retired Bridge2 smart-wallet path before signing or submission", async () => {
 		await submit("smart");
 
-		expect(testState.fetchRouting).toHaveBeenCalledTimes(3);
-		expect(testState.permitSign).toHaveBeenCalledTimes(1);
-		expect(testState.smartSendTransaction).toHaveBeenCalledTimes(1);
-		expect(testState.walletWriteContract).not.toHaveBeenCalled();
-	});
-
-	it("allows the verified Bridge2 browser-wallet path to reach contract submission", async () => {
-		await submit("wallet");
-
-		expect(testState.fetchRouting).toHaveBeenCalledTimes(2);
-		expect(testState.walletWriteContract).toHaveBeenCalledTimes(1);
+		expect(testState.fetchRouting).toHaveBeenCalledTimes(1);
 		expect(testState.permitSign).not.toHaveBeenCalled();
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Legacy Bridge2 deposits are no longer accepted");
+	});
+
+	it("stops the retired Bridge2 browser-wallet path before signing or submission", async () => {
+		await submit("wallet");
+
+		expect(testState.fetchRouting).toHaveBeenCalledTimes(1);
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Legacy Bridge2 deposits are no longer accepted");
 	});
 
 	it("uses the verified Circle CCTP path for an external wallet and never enters Bridge2", async () => {
@@ -619,13 +666,234 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(capturedDeposit?.error?.message).toContain("Hyperliquid returned an invalid user role");
 	});
 
-	it("keeps embedded CCTP deposits fail-closed until a verified relayer is configured", async () => {
+	it("submits embedded CCTP through the sponsored V2 contract and validates its exact event", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(async ({ data }: { data: Hex }) => {
+			const decoded = decodeFunctionData({ abi: CCTP_EXTENSION_V2_ABI, data });
+			if (decoded.functionName !== "batchSponsorDepositForBurn") throw new Error("Unexpected sponsored function");
+			const authNonce = decoded.args[0][0].authNonce;
+			testState.publicClient.getTransactionReceipt.mockResolvedValue(createSponsoredCctpReceipt(authNonce));
+			return SOURCE_HASH;
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledWith(
+			expect.objectContaining({
+				account: WALLET_ADDRESS,
+				message: expect.objectContaining({
+					from: WALLET_ADDRESS,
+					to: CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+				}),
+			}),
+		);
+		expect(testState.smartSendTransaction).toHaveBeenCalledWith(
+			expect.objectContaining({ to: CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2 }),
+			{ uiOptions: { showWalletUIs: false } },
+		);
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(capturedDeposit).toMatchObject({ status: "success", hash: SOURCE_HASH });
+		const trackingRecord = readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)[0];
+		expect(trackingRecord).toMatchObject({
+			mode: "sponsored",
+			owner: WALLET_ADDRESS,
+			sourceHash: SOURCE_HASH,
+		});
+		expect(trackingRecord.mode === "sponsored" ? trackingRecord.authNonce : null).toBe(
+			decodeFunctionData({
+				abi: CCTP_EXTENSION_V2_ABI,
+				data: testState.smartSendTransaction.mock.calls[0][0].data,
+			}).args[0][0].authNonce.toLowerCase(),
+		);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toBeNull();
+	});
+
+	it("uses the Sepolia V2 contract and Smart Wallet client for sponsored testnet deposits", async () => {
+		testState.isTestnet = true;
+		testState.wallet.chainId = "eip155:421614";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(async ({ data }: { data: Hex }) => {
+			const decoded = decodeFunctionData({ abi: CCTP_EXTENSION_V2_ABI, data });
+			if (decoded.functionName !== "batchSponsorDepositForBurn") throw new Error("Unexpected sponsored function");
+			testState.publicClient.getTransactionReceipt.mockResolvedValue(
+				createSponsoredCctpReceipt(decoded.args[0][0].authNonce, "SponsoredDepositForBurn", true),
+			);
+			return SOURCE_HASH;
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.getClientForChain).toHaveBeenCalledWith({ id: 421614 });
+		expect(testState.smartSendTransaction).toHaveBeenCalledWith(
+			expect.objectContaining({ to: CCTP_DEPOSIT_NETWORKS.testnet.cctpExtensionV2 }),
+			{ uiOptions: { showWalletUIs: false } },
+		);
+		expect(capturedDeposit).toMatchObject({ status: "success", hash: SOURCE_HASH });
+	});
+
+	it("fails closed when sponsored CCTP is disabled", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.sponsoredEnabled = false;
 
 		await submit("smart", "cctp");
 
 		expect(testState.permitSign).not.toHaveBeenCalled();
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("not enabled");
+	});
+
+	it("rejects a same-address external connector for a sponsored embedded deposit", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.wallet.connectorType = "injected";
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Wallet client not ready");
+	});
+
+	it("surfaces a Paymaster rejection without falling back to Bridge2", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(() => {
+			expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).not.toBeNull();
+			return Promise.reject(new Error("Paymaster policy rejected sponsored call"));
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Paymaster policy rejected");
+		expect(capturedDeposit?.submissionOutcomeUnknown).toBe(true);
+		expect(readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)).toHaveLength(0);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toMatchObject({
+			amount: "5",
+			status: "submission-unresolved",
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+		expect(capturedDeposit?.error?.message).toContain("still pending");
+	});
+
+	it("fails closed before signing when unresolved sponsored authorization storage is invalid", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		const key = `gatu:cctp-sponsored-authorization-intent:v1:mainnet:${WALLET_ADDRESS}`;
+		window.localStorage.setItem(key, "not-json");
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("cannot be trusted");
+		expect(window.localStorage.getItem(key)).toBe("not-json");
+	});
+
+	it("does not submit a sponsored authorization when the route changes after signing", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.permitSign.mockImplementation(async () => {
+			testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+			return PERMIT_SIGNATURE;
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+	});
+
+	it("does not submit a sponsored authorization when the Circle fee changes after signing", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		let feeRequestCount = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (String(input).includes("/fastBurn/USDC/allowance")) {
+					return new Response(JSON.stringify({ allowance: 1_000_000 }), { status: 200 });
+				}
+				feeRequestCount += 1;
+				const forwardFee = feeRequestCount === 1 ? 200_000 : 300_000;
+				return new Response(
+					JSON.stringify([
+						{
+							finalityThreshold: 1000,
+							minimumFee: 0,
+							forwardFee: { low: forwardFee, med: forwardFee, high: forwardFee },
+						},
+					]),
+					{ status: 200 },
+				);
+			}),
+		);
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("fees changed");
+	});
+
+	it("treats the V2 skipped event as a definitive source failure", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(async ({ data }: { data: Hex }) => {
+			const decoded = decodeFunctionData({ abi: CCTP_EXTENSION_V2_ABI, data });
+			if (decoded.functionName !== "batchSponsorDepositForBurn") throw new Error("Unexpected sponsored function");
+			const authNonce = decoded.args[0][0].authNonce;
+			testState.publicClient.getTransactionReceipt.mockResolvedValue(
+				createSponsoredCctpReceipt(authNonce, "SponsoredDepositForBurnSkipped"),
+			);
+			return SOURCE_HASH;
+		});
+
+		await submit("smart", "cctp");
+
+		expect(capturedDeposit?.error).toBeInstanceOf(DefinitiveDepositSourceFailureError);
+		expect(capturedDeposit?.error?.message).toContain("skipped");
+		expect(readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)).toHaveLength(0);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toMatchObject({
+			amount: "5",
+			status: "submission-unresolved",
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+		expect(capturedDeposit?.error?.message).toContain("still pending");
+	});
+
+	it("keeps a sponsored authorization tombstone when the AA source transaction reverts", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.smartSendTransaction.mockImplementation(async () => {
+			testState.publicClient.getTransactionReceipt.mockResolvedValue({
+				logs: [],
+				status: "reverted",
+			} as unknown as TransactionReceipt);
+			return SOURCE_HASH;
+		});
+
+		await submit("smart", "cctp");
+
+		expect(capturedDeposit?.error).toBeInstanceOf(DefinitiveDepositSourceFailureError);
+		expect(readCctpDepositTrackingRecords("Mainnet", WALLET_ADDRESS)).toHaveLength(0);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toMatchObject({
+			amount: "5",
+			status: "submission-unresolved",
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
 	});
 });

@@ -1,5 +1,5 @@
-import type { Address, TransactionReceipt } from "viem";
-import { encodeAbiParameters, encodeEventTopics, encodeFunctionData } from "viem";
+import type { Address, Hex, TransactionReceipt } from "viem";
+import { encodeAbiParameters, encodeEventTopics, encodeFunctionData, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -13,10 +13,16 @@ import {
 import {
 	addressToBytes32,
 	assertCctpDepositReceipt,
+	assertCctpSponsoredDepositReceipt,
+	assertCctpSponsoredDepositSourceTransaction,
 	buildCctpDepositContractArgs,
+	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
+	CCTP_EXTENSION_V2_ABI,
 	calculateCctpDepositFee,
 	createCctpDepositParameters,
+	createCctpSponsoredDepositParameters,
+	deriveCctpSponsoredAuthorizationNonce,
 	encodeCctpForwardHookData,
 	fetchCctpDepositFees,
 	fetchCctpFastAllowance,
@@ -79,18 +85,66 @@ function createReceipt({
 	} as TransactionReceipt;
 }
 
+function createSponsoredReceipt({
+	amountRaw = AMOUNT_RAW,
+	authNonce = NONCE,
+	depositor = USER,
+	eventName = "SponsoredDepositForBurn",
+	logAddress = CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+}: {
+	amountRaw?: bigint;
+	authNonce?: Hex;
+	depositor?: Address;
+	eventName?: "SponsoredDepositForBurn" | "SponsoredDepositForBurnSkipped";
+	logAddress?: Address;
+} = {}): TransactionReceipt {
+	return {
+		status: "success",
+		logs: [
+			{
+				address: logAddress,
+				topics: encodeEventTopics({
+					abi: CCTP_EXTENSION_V2_ABI,
+					eventName,
+					args: { authNonce, depositor },
+				}),
+				data:
+					eventName === "SponsoredDepositForBurn"
+						? encodeAbiParameters(
+								[{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }],
+								[
+									addressToBytes32(CCTP_DEPOSIT_NETWORKS.mainnet.cctpForwarder),
+									CCTP_DEPOSIT_NETWORKS.mainnet.destinationDomain,
+									amountRaw,
+								],
+							)
+						: "0x",
+			},
+		],
+	} as TransactionReceipt;
+}
+
 describe("CCTP deposit configuration", () => {
 	it("keeps mainnet and testnet activation independently fail-closed", () => {
 		expect(resolveCctpDepositFeatureFlags({})).toEqual({
 			mainnetExternalWallet: false,
+			mainnetSponsoredWallet: false,
 			testnetExternalWallet: false,
+			testnetSponsoredWallet: false,
 		});
 		expect(
 			resolveCctpDepositFeatureFlags({
 				VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED: "false",
 				VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED: "true",
+				VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED: "true",
+				VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED: "false",
 			}),
-		).toEqual({ mainnetExternalWallet: false, testnetExternalWallet: true });
+		).toEqual({
+			mainnetExternalWallet: false,
+			mainnetSponsoredWallet: true,
+			testnetExternalWallet: true,
+			testnetSponsoredWallet: false,
+		});
 	});
 
 	it("uses Circle native USDC and official HyperCore contracts on both environments", () => {
@@ -100,6 +154,7 @@ describe("CCTP deposit configuration", () => {
 			chainId: 42161,
 			usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
 			cctpExtension: "0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE",
+			cctpExtensionV2: "0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB",
 			cctpForwarder: "0xb21D281DEdb17AE5B501F6AA8256fe38C4e45757",
 			sourceDomain: 3,
 			destinationDomain: 19,
@@ -108,6 +163,7 @@ describe("CCTP deposit configuration", () => {
 			chainId: 421614,
 			usdc: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
 			cctpExtension: "0x8E4e3d0E95C1bEC4F3eC7F69aa48473E0Ab6eB8D",
+			cctpExtensionV2: "0xC1Fec4e5DAf8796A490653359536f9c2a9C158aE",
 			cctpForwarder: "0x02e39ECb8368b41bF68FF99ff351aC9864e5E2a2",
 			sourceDomain: 3,
 			destinationDomain: 19,
@@ -311,6 +367,126 @@ describe("CCTP deposit parameters", () => {
 			user: USER,
 		});
 		expect(buildCctpDepositContractArgs(parameters, signature)[0]).toMatchObject({ v: 27, r: `0x${"11".repeat(32)}` });
+	});
+});
+
+describe("sponsored CCTP deposit parameters", () => {
+	it("derives the official nonce from the depositor, authorization window, and exact deposit tuple", () => {
+		const parameters = createCctpSponsoredDepositParameters({
+			amountRaw: AMOUNT_RAW,
+			config: CCTP_DEPOSIT_NETWORKS.testnet,
+			feeQuote: normalizeCctpDepositFees(createFeePayload()),
+			nowSeconds: 2_000_000_000,
+			user: USER,
+		});
+		const expectedNonce = keccak256(
+			encodeAbiParameters(
+				[
+					{ type: "address" },
+					{ type: "uint256" },
+					{ type: "uint256" },
+					{ type: "uint256" },
+					{
+						type: "tuple",
+						components: [
+							{ name: "amount", type: "uint256" },
+							{ name: "destinationDomain", type: "uint32" },
+							{ name: "mintRecipient", type: "bytes32" },
+							{ name: "destinationCaller", type: "bytes32" },
+							{ name: "maxFee", type: "uint256" },
+							{ name: "minFinalityThreshold", type: "uint32" },
+							{ name: "hookData", type: "bytes" },
+						],
+					},
+				],
+				[USER, AMOUNT_RAW, 1_999_996_400n, 2_000_003_600n, parameters.depositForBurn],
+			),
+		);
+
+		expect(parameters.authorization.authNonce).toBe(expectedNonce);
+		expect(parameters.typedData.message).toEqual({
+			from: USER,
+			to: CCTP_DEPOSIT_NETWORKS.testnet.cctpExtensionV2,
+			value: AMOUNT_RAW,
+			validAfter: 1_999_996_400n,
+			validBefore: 2_000_003_600n,
+			nonce: expectedNonce,
+		});
+		expect(
+			deriveCctpSponsoredAuthorizationNonce({
+				amountRaw: AMOUNT_RAW,
+				depositForBurn: { ...parameters.depositForBurn, maxFee: parameters.depositForBurn.maxFee + 1n },
+				user: USER,
+				validAfter: parameters.authorization.authValidAfter,
+				validBefore: parameters.authorization.authValidBefore,
+			}),
+		).not.toBe(expectedNonce);
+	});
+
+	it("encodes one authorization and one burn for batchSponsorDepositForBurn", async () => {
+		const parameters = createCctpSponsoredDepositParameters({
+			amountRaw: AMOUNT_RAW,
+			config: CCTP_DEPOSIT_NETWORKS.testnet,
+			feeQuote: normalizeCctpDepositFees(createFeePayload()),
+			nowSeconds: 2_000_000_000,
+			user: USER,
+		});
+		const signature = await privateKeyToAccount(`0x${"01".repeat(32)}`).signTypedData(parameters.typedData);
+		const input = encodeFunctionData({
+			abi: CCTP_EXTENSION_V2_ABI,
+			functionName: "batchSponsorDepositForBurn",
+			args: buildCctpSponsoredDepositContractArgs(parameters, signature),
+		});
+
+		expect(() =>
+			assertCctpSponsoredDepositSourceTransaction({
+				amountRaw: AMOUNT_RAW,
+				authNonce: parameters.authorization.authNonce,
+				config: CCTP_DEPOSIT_NETWORKS.testnet,
+				input,
+				to: CCTP_DEPOSIT_NETWORKS.testnet.cctpExtensionV2,
+				user: USER,
+			}),
+		).not.toThrow();
+	});
+});
+
+describe("sponsored CCTP deposit receipt validation", () => {
+	it("requires one matching success event and accepts unrelated batch events", () => {
+		const unrelatedReceipt = createSponsoredReceipt({
+			authNonce: NONCE,
+			depositor: OTHER_USER,
+			eventName: "SponsoredDepositForBurnSkipped",
+		});
+		const receipt = createSponsoredReceipt();
+		receipt.logs.unshift(...unrelatedReceipt.logs);
+
+		expect(() =>
+			assertCctpSponsoredDepositReceipt({
+				amountRaw: AMOUNT_RAW,
+				authNonce: NONCE,
+				config: CCTP_DEPOSIT_NETWORKS.mainnet,
+				receipt,
+				user: USER,
+			}),
+		).not.toThrow();
+	});
+
+	it.each([
+		createSponsoredReceipt({ eventName: "SponsoredDepositForBurnSkipped" }),
+		createSponsoredReceipt({ amountRaw: AMOUNT_RAW + 1n }),
+		createSponsoredReceipt({ depositor: OTHER_USER }),
+		createSponsoredReceipt({ logAddress: OTHER_USER }),
+	])("rejects skipped, mismatched, or spoofed sponsored deposits", (receipt) => {
+		expect(() =>
+			assertCctpSponsoredDepositReceipt({
+				amountRaw: AMOUNT_RAW,
+				authNonce: NONCE,
+				config: CCTP_DEPOSIT_NETWORKS.mainnet,
+				receipt,
+				user: USER,
+			}),
+		).toThrow();
 	});
 });
 

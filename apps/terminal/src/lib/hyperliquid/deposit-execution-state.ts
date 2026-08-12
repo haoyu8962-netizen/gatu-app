@@ -10,6 +10,7 @@ export interface DepositExecutionState {
 	amount: string | null;
 	route: "bridge" | "cctp" | null;
 	cctpRecoveryUnavailable: boolean;
+	submissionOutcomeUnknown: boolean;
 	walletResponseDelayed: boolean;
 }
 
@@ -39,7 +40,7 @@ export function startDepositExecution(
 	executionKey: string,
 	lockKey: string,
 	amount: string,
-	route: "bridge" | "cctp" = "bridge",
+	route: "bridge" | "cctp",
 ): number | null {
 	const current = getDepositExecutionEntry(executionKey);
 	if (current?.inFlight || activeDepositLocks.has(lockKey)) return null;
@@ -53,6 +54,7 @@ export function startDepositExecution(
 			amount,
 			route,
 			cctpRecoveryUnavailable: false,
+			submissionOutcomeUnknown: false,
 			walletResponseDelayed: false,
 		},
 		operationId,
@@ -73,6 +75,7 @@ export function setBlockedDepositExecution(executionKey: string, error: Error): 
 			amount: null,
 			route: null,
 			cctpRecoveryUnavailable: false,
+			submissionOutcomeUnknown: false,
 			walletResponseDelayed: false,
 		},
 		operationId: (current?.operationId ?? 0) + 1,
@@ -129,6 +132,7 @@ function createIdleDepositExecutionState(): DepositExecutionState {
 		amount: null,
 		route: null,
 		cctpRecoveryUnavailable: false,
+		submissionOutcomeUnknown: false,
 		walletResponseDelayed: false,
 	};
 }

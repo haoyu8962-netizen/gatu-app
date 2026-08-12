@@ -2,9 +2,11 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
+import { isCctpSponsoredDepositEnabled } from "@/config/cctp-deposit";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getUsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
+import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -12,12 +14,17 @@ import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/fo
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { runWithExclusiveBrowserLock } from "@/lib/wallet/exclusive-browser-lock";
 import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { useDepositModalOpen } from "@/stores/use-global-modal-store";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 
-const AUTO_BRIDGE_TOAST_ID = "embedded-deposit-auto-bridge";
-const AUTO_BRIDGE_RETRY_DELAY_MS = 30_000;
-const AUTO_BRIDGE_MAX_RETRY_DELAY_MS = 5 * 60_000;
+const AUTO_DEPOSIT_TOAST_ID = "embedded-cctp-auto-deposit";
+const AUTO_DEPOSIT_RETRY_DELAY_MS = 30_000;
+const AUTO_DEPOSIT_MAX_RETRY_DELAY_MS = 5 * 60_000;
 
 export function EmbeddedDepositAutoBridge() {
+	const isTestnet = useIsTestnet();
+	const depositModalOpen = useDepositModalOpen();
+	const sponsoredCctpReleaseEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 	const { user, embeddedWalletAddress } = useWalletSession();
 	const {
 		emailAddress: emailWalletAddress,
@@ -31,13 +38,29 @@ export function EmbeddedDepositAutoBridge() {
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
 	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
-	const usdcRoutingQuery = useUsdcRouting(isEmbeddedDeposit && !!depositEmbeddedWalletAddress);
+	const cctpTrackingEnv = isTestnet ? "Testnet" : "Mainnet";
+	const cctpDepositTracking = useCctpDepositTracking({
+		enabled: isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
+		env: cctpTrackingEnv,
+		owner: depositEmbeddedWalletAddress,
+		removeOnForwardSubmitted: !depositModalOpen,
+	});
+	const usdcRoutingQuery = useUsdcRouting(
+		sponsoredCctpReleaseEnabled && isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
+	);
 	const usdcRoutingStatus = getUsdcRoutingQueryStatus({
 		data: usdcRoutingQuery.data,
 		isError: usdcRoutingQuery.isError,
 		isFetching: usdcRoutingQuery.isFetching,
 	});
-	const autoBridgeRouteAvailable = !usdcRoutingQuery.isError && usdcRoutingQuery.data?.depositRoute === "bridge";
+	const selectedDepositRoute = usdcRoutingQuery.data?.depositRoute ?? "cctp";
+	const autoCctpRouteAvailable = usdcRoutingStatus === "ready" && usdcRoutingQuery.data?.depositRoute === "cctp";
+	const shouldMonitorDepositBalance =
+		isEmbeddedDeposit &&
+		!!depositEmbeddedWalletAddress &&
+		sponsoredCctpReleaseEnabled &&
+		autoCctpRouteAvailable &&
+		!cctpDepositTracking.recoveryRecord;
 	const attemptKeyRef = useRef<string | null>(null);
 	const lastEligibleKeyRef = useRef<string | null>(null);
 	const retryKeyRef = useRef<string | null>(null);
@@ -52,15 +75,15 @@ export function EmbeddedDepositAutoBridge() {
 		maxDepositRaw,
 		status: depositStatus,
 		error: depositError,
-		hash: depositHash,
 		deposit,
 		refreshBalance,
 		reset: resetDeposit,
 		networkName,
-		smartDepositEnabled,
+		sponsoredCctpEnabled,
 	} = useDeposit({
-		balanceEnabled: isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
+		balanceEnabled: shouldMonitorDepositBalance,
 		balancePollIntervalMs: DEPOSIT_BALANCE_REFRESH_MS,
+		depositRoute: selectedDepositRoute,
 		executionScope: "automatic",
 		mode: "smart",
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
@@ -73,7 +96,8 @@ export function EmbeddedDepositAutoBridge() {
 
 	const balanceEligibleKey =
 		isEmbeddedDeposit &&
-		smartDepositEnabled &&
+		sponsoredCctpEnabled &&
+		!cctpDepositTracking.recoveryRecord &&
 		!needsEmbeddedWallet &&
 		!isCreatingEmbeddedWallet &&
 		!embeddedWalletError &&
@@ -82,7 +106,7 @@ export function EmbeddedDepositAutoBridge() {
 		maxDepositRaw >= MIN_DEPOSIT_USDC
 			? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}:${maxDepositRaw.toString()}`
 			: null;
-	const eligibleDepositKey = balanceEligibleKey && autoBridgeRouteAvailable ? balanceEligibleKey : null;
+	const eligibleDepositKey = balanceEligibleKey && autoCctpRouteAvailable ? balanceEligibleKey : null;
 	const depositIdentityKey = depositEmbeddedWalletAddress
 		? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}`
 		: null;
@@ -91,7 +115,7 @@ export function EmbeddedDepositAutoBridge() {
 		return () => {
 			if (retryTimeoutRef.current) window.clearTimeout(retryTimeoutRef.current);
 			activeAttemptAbortRef.current?.abort();
-			if (loadingToastActiveRef.current) toast.dismiss(AUTO_BRIDGE_TOAST_ID);
+			if (loadingToastActiveRef.current) toast.dismiss(AUTO_DEPOSIT_TOAST_ID);
 		};
 	}, []);
 
@@ -101,8 +125,8 @@ export function EmbeddedDepositAutoBridge() {
 
 			retryKeyRef.current = retryKey;
 			const retryDelay = Math.min(
-				AUTO_BRIDGE_RETRY_DELAY_MS * 2 ** Math.min(retryCountRef.current, 3),
-				AUTO_BRIDGE_MAX_RETRY_DELAY_MS,
+				AUTO_DEPOSIT_RETRY_DELAY_MS * 2 ** Math.min(retryCountRef.current, 3),
+				AUTO_DEPOSIT_MAX_RETRY_DELAY_MS,
 			);
 			retryCountRef.current += 1;
 			retryTimeoutRef.current = window.setTimeout(() => {
@@ -167,14 +191,11 @@ export function EmbeddedDepositAutoBridge() {
 				void refreshBalance();
 			}
 
-			if (depositHash) {
-				if (retryTimeoutRef.current) {
-					window.clearTimeout(retryTimeoutRef.current);
-					retryTimeoutRef.current = null;
-				}
-				retryKeyRef.current = null;
-				return;
+			if (retryTimeoutRef.current) {
+				window.clearTimeout(retryTimeoutRef.current);
+				retryTimeoutRef.current = null;
 			}
+			retryKeyRef.current = null;
 
 			if (attemptKeyRef.current !== eligibleDepositKey) {
 				attemptKeyRef.current = null;
@@ -182,7 +203,9 @@ export function EmbeddedDepositAutoBridge() {
 				return;
 			}
 
-			scheduleRetry(eligibleDepositKey);
+			// A rejected smart-account submission can still have reached the bundler.
+			// Keep the failed attempt latched until its balance/identity changes instead
+			// of signing a second EIP-3009 authorization automatically.
 			return;
 		}
 
@@ -194,7 +217,7 @@ export function EmbeddedDepositAutoBridge() {
 		activeAttemptAbortRef.current = abortController;
 		activeAttemptIdentityRef.current = depositIdentityKey;
 		const normalizedWalletAddress = depositEmbeddedWalletAddress.toLowerCase();
-		const lockName = `gatu:embedded-deposit:${networkName}:${normalizedWalletAddress}`;
+		const lockName = `gatu:embedded-cctp-deposit:${networkName}:${normalizedWalletAddress}`;
 
 		void runWithExclusiveBrowserLock({
 			name: lockName,
@@ -230,7 +253,6 @@ export function EmbeddedDepositAutoBridge() {
 		deposit,
 		depositEmbeddedWalletAddress,
 		depositError,
-		depositHash,
 		depositStatus,
 		depositIdentityKey,
 		eligibleDepositKey,
@@ -241,22 +263,19 @@ export function EmbeddedDepositAutoBridge() {
 	]);
 
 	useEffect(() => {
-		if (isEmbeddedDeposit && balanceEligibleKey && usdcRoutingQuery.data?.depositRoute === "cctp") {
-			loadingToastActiveRef.current = false;
-			toast.error(t`Automatic deposits are paused because Hyperliquid currently requires CCTP deposits.`, {
-				id: AUTO_BRIDGE_TOAST_ID,
-			});
-			return;
-		}
-
-		if (isEmbeddedDeposit && balanceEligibleKey && !autoBridgeRouteAvailable) {
+		if (isEmbeddedDeposit && balanceEligibleKey && !autoCctpRouteAvailable) {
 			if (usdcRoutingStatus === "loading") {
 				loadingToastActiveRef.current = true;
-				toast.loading(t`Checking the current Hyperliquid deposit route...`, { id: AUTO_BRIDGE_TOAST_ID });
+				toast.loading(t`Checking the current Hyperliquid deposit route...`, { id: AUTO_DEPOSIT_TOAST_ID });
+			} else if (usdcRoutingStatus === "ready" && usdcRoutingQuery.data?.depositRoute === "bridge") {
+				loadingToastActiveRef.current = false;
+				toast.error(t`Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused.`, {
+					id: AUTO_DEPOSIT_TOAST_ID,
+				});
 			} else {
 				loadingToastActiveRef.current = false;
 				toast.error(t`Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused.`, {
-					id: AUTO_BRIDGE_TOAST_ID,
+					id: AUTO_DEPOSIT_TOAST_ID,
 				});
 			}
 			return;
@@ -264,7 +283,7 @@ export function EmbeddedDepositAutoBridge() {
 
 		if (!isEmbeddedDeposit || depositStatus === "idle") {
 			if (loadingToastActiveRef.current) {
-				toast.dismiss(AUTO_BRIDGE_TOAST_ID);
+				toast.dismiss(AUTO_DEPOSIT_TOAST_ID);
 				loadingToastActiveRef.current = false;
 			}
 			return;
@@ -272,31 +291,31 @@ export function EmbeddedDepositAutoBridge() {
 
 		if (depositStatus === "pending") {
 			loadingToastActiveRef.current = true;
-			toast.loading(t`Preparing automatic USDC deposit...`, { id: AUTO_BRIDGE_TOAST_ID });
+			toast.loading(t`Preparing automatic USDC deposit...`, { id: AUTO_DEPOSIT_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "confirming") {
 			loadingToastActiveRef.current = true;
-			toast.loading(t`Depositing USDC to Hyperliquid...`, { id: AUTO_BRIDGE_TOAST_ID });
+			toast.loading(t`Depositing USDC to Hyperliquid...`, { id: AUTO_DEPOSIT_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "success") {
 			loadingToastActiveRef.current = false;
-			toast.success(t`USDC deposit submitted to Hyperliquid`, { id: AUTO_BRIDGE_TOAST_ID });
+			toast.success(t`USDC deposit submitted to Hyperliquid`, { id: AUTO_DEPOSIT_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "error") {
 			loadingToastActiveRef.current = false;
 			toast.error(depositError ? formatTransferError(depositError) : t`Automatic USDC deposit failed`, {
-				id: AUTO_BRIDGE_TOAST_ID,
+				id: AUTO_DEPOSIT_TOAST_ID,
 			});
 		}
 	}, [
 		balanceEligibleKey,
-		autoBridgeRouteAvailable,
+		autoCctpRouteAvailable,
 		depositError,
 		depositStatus,
 		isEmbeddedDeposit,

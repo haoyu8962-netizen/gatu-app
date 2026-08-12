@@ -11,12 +11,12 @@ describe("deposit execution state", () => {
 	it("preserves the pending state and blocks reset until the operation settles", () => {
 		const executionKey = "mainnet:manual:wallet:0x1";
 		const lockKey = "mainnet:wallet:0x1";
-		const operationId = startDepositExecution(executionKey, lockKey, "12.5");
+		const operationId = startDepositExecution(executionKey, lockKey, "12.5", "cctp");
 		if (operationId === null) throw new Error("Expected execution to start");
 
 		expect(getDepositExecutionState(executionKey).status).toBe("pending");
 		expect(getDepositExecutionState(executionKey).amount).toBe("12.5");
-		expect(getDepositExecutionState(executionKey).route).toBe("bridge");
+		expect(getDepositExecutionState(executionKey).route).toBe("cctp");
 		expect(resetDepositExecution(executionKey)).toBe(false);
 		expect(getDepositExecutionState(executionKey).status).toBe("pending");
 
@@ -30,10 +30,10 @@ describe("deposit execution state", () => {
 		const manualKey = "mainnet:manual:smart:0x2";
 		const automaticKey = "mainnet:automatic:smart:0x2";
 		const lockKey = "mainnet:smart:0x2";
-		const manualOperationId = startDepositExecution(manualKey, lockKey, "20");
+		const manualOperationId = startDepositExecution(manualKey, lockKey, "20", "cctp");
 		if (manualOperationId === null) throw new Error("Expected manual execution to start");
 
-		expect(startDepositExecution(automaticKey, lockKey, "20")).toBeNull();
+		expect(startDepositExecution(automaticKey, lockKey, "20", "cctp")).toBeNull();
 		expect(getDepositExecutionState(automaticKey).status).toBe("idle");
 
 		expect(
@@ -44,12 +44,13 @@ describe("deposit execution state", () => {
 				amount: "20",
 				route: "bridge",
 				cctpRecoveryUnavailable: false,
+				submissionOutcomeUnknown: false,
 				walletResponseDelayed: false,
 			}),
 		).toBe(true);
 		finishDepositExecution(manualKey, lockKey, manualOperationId);
 
-		const automaticOperationId = startDepositExecution(automaticKey, lockKey, "20");
+		const automaticOperationId = startDepositExecution(automaticKey, lockKey, "20", "cctp");
 		expect(automaticOperationId).not.toBeNull();
 		if (automaticOperationId !== null) finishDepositExecution(automaticKey, lockKey, automaticOperationId);
 		resetDepositExecution(manualKey);
@@ -59,7 +60,7 @@ describe("deposit execution state", () => {
 	it("ignores updates from an obsolete operation id", () => {
 		const executionKey = "testnet:manual:wallet:0x3";
 		const lockKey = "testnet:wallet:0x3";
-		const operationId = startDepositExecution(executionKey, lockKey, "5");
+		const operationId = startDepositExecution(executionKey, lockKey, "5", "cctp");
 		if (operationId === null) throw new Error("Expected execution to start");
 
 		expect(
@@ -70,6 +71,7 @@ describe("deposit execution state", () => {
 				amount: "5",
 				route: "bridge",
 				cctpRecoveryUnavailable: false,
+				submissionOutcomeUnknown: false,
 				walletResponseDelayed: false,
 			}),
 		).toBe(false);

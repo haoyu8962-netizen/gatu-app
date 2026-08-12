@@ -3,22 +3,30 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { Address, Hash } from "viem";
-import { encodeAbiParameters, encodeEventTopics, encodeFunctionData } from "viem";
+import type { Address, Hash, Hex } from "viem";
+import { concatHex, encodeAbiParameters, encodeEventTopics, encodeFunctionData, numberToHex } from "viem";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS, CCTP_FAST_FINALITY_THRESHOLD } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
-import { addressToBytes32, CCTP_EXTENSION_ABI, encodeCctpForwardHookData } from "@/lib/trade/cctp-deposit";
+import {
+	addressToBytes32,
+	CCTP_EXTENSION_ABI,
+	CCTP_EXTENSION_V2_ABI,
+	encodeCctpForwardHookData,
+} from "@/lib/trade/cctp-deposit";
 import {
 	ArbitrumCctpSourceReceiptError,
 	getCctpDepositTrackingRecordStorageKey,
+	readCctpSponsoredAuthorizationIntent,
 	saveCctpDepositTrackingRecord,
+	saveCctpSponsoredAuthorizationIntent,
 } from "@/lib/trade/cctp-deposit-tracking";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 const SOURCE_HASH = `0x${"a".repeat(64)}` as Hash;
 const FORWARD_HASH = `0x${"b".repeat(64)}` as Hash;
+const AUTH_NONCE = `0x${"1".repeat(64)}` as Hash;
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -27,6 +35,7 @@ describe("useCctpDepositTracking cross-tab reactivity", () => {
 	let queryClient: QueryClient;
 	let root: Root;
 	let recoveryHash: Hash | null;
+	let removeOnForwardSubmitted: boolean;
 	let trackingData: { status: string } | undefined;
 	let trackingError: Error | null;
 
@@ -37,6 +46,7 @@ describe("useCctpDepositTracking cross-tab reactivity", () => {
 		queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });
 		root = createRoot(container);
 		recoveryHash = null;
+		removeOnForwardSubmitted = false;
 		trackingData = undefined;
 		trackingError = null;
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createSourceReceiptResponse(null)));
@@ -51,7 +61,12 @@ describe("useCctpDepositTracking cross-tab reactivity", () => {
 	});
 
 	function Probe() {
-		const tracking = useCctpDepositTracking({ enabled: true, env: "Mainnet", owner: OWNER });
+		const tracking = useCctpDepositTracking({
+			enabled: true,
+			env: "Mainnet",
+			owner: OWNER,
+			removeOnForwardSubmitted,
+		});
 		recoveryHash = tracking.recoveryRecord?.sourceHash ?? null;
 		trackingData = tracking.data;
 		trackingError = tracking.error;
@@ -152,6 +167,89 @@ describe("useCctpDepositTracking cross-tab reactivity", () => {
 		expect(vi.mocked(fetch).mock.calls[2]?.[0].toString()).toContain("iris-api.circle.com/v2/messages/3");
 	});
 
+	it("removes a completed automatic-deposit record without reopening the deposit modal", async () => {
+		saveRecoveryRecord();
+		removeOnForwardSubmitted = true;
+		vi.mocked(fetch).mockImplementation(createRecoveryFetch());
+
+		act(() => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(Probe)));
+		});
+		await act(async () => {
+			await vi.waitFor(() => expect(recoveryHash).toBeNull());
+		});
+
+		expect(
+			window.localStorage.getItem(getCctpDepositTrackingRecordStorageKey("Mainnet", OWNER, SOURCE_HASH)),
+		).toBeNull();
+		expect(fetch).toHaveBeenCalledTimes(3);
+	});
+
+	it("tracks sponsored receipts without assuming the AA outer transaction sender or target", async () => {
+		saveCctpSponsoredAuthorizationIntent({
+			authNonce: AUTH_NONCE,
+			env: "Mainnet",
+			owner: OWNER,
+			amount: "5",
+			validBefore: Math.floor(Date.now() / 1000) + 3_600,
+		});
+		saveCctpDepositTrackingRecord({
+			authNonce: AUTH_NONCE,
+			env: "Mainnet",
+			mode: "sponsored",
+			owner: OWNER,
+			sourceHash: SOURCE_HASH,
+			amount: "5",
+		});
+		vi.mocked(fetch).mockImplementation(createSponsoredRecoveryFetch());
+
+		act(() => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(Probe)));
+		});
+		await act(async () => {
+			await vi.waitFor(() =>
+				expect(trackingData).toEqual({ status: "forward-submitted", forwardTxHash: FORWARD_HASH }),
+			);
+		});
+
+		expect(fetch).toHaveBeenCalledTimes(2);
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER)).toBeNull();
+		const rpcRequest = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as { method?: string };
+		expect(rpcRequest.method).toBe("eth_getTransactionReceipt");
+	});
+
+	it("retains the sponsored authorization tombstone after a skipped recovery receipt", async () => {
+		saveCctpSponsoredAuthorizationIntent({
+			authNonce: AUTH_NONCE,
+			env: "Mainnet",
+			owner: OWNER,
+			amount: "5",
+			validBefore: Math.floor(Date.now() / 1000) + 3_600,
+		});
+		saveCctpDepositTrackingRecord({
+			authNonce: AUTH_NONCE,
+			env: "Mainnet",
+			mode: "sponsored",
+			owner: OWNER,
+			sourceHash: SOURCE_HASH,
+			amount: "5",
+		});
+		vi.mocked(fetch).mockImplementation(createSponsoredRecoveryFetch([createSponsoredDepositSkippedLog()]));
+
+		act(() => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(Probe)));
+		});
+		await act(async () => {
+			await vi.waitFor(() => expect(trackingError).toBeInstanceOf(DefinitiveDepositSourceFailureError));
+		});
+
+		expect(recoveryHash).toBeNull();
+		expect(readCctpSponsoredAuthorizationIntent("Mainnet", OWNER)).toMatchObject({
+			authNonce: AUTH_NONCE,
+			status: "submission-unresolved",
+		});
+	});
+
 	it.each([
 		["has no official burn event", []],
 		["emits the event from another extension", [createBatchDepositLog({ address: OWNER as Address })]],
@@ -228,6 +326,37 @@ function createBatchDepositLog({
 	};
 }
 
+function createSponsoredDepositLog() {
+	return {
+		address: CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+		data: encodeAbiParameters(
+			[{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }],
+			[
+				addressToBytes32(CCTP_DEPOSIT_NETWORKS.mainnet.cctpForwarder),
+				CCTP_DEPOSIT_NETWORKS.mainnet.destinationDomain,
+				5_000_000n,
+			],
+		),
+		topics: encodeEventTopics({
+			abi: CCTP_EXTENSION_V2_ABI,
+			args: { authNonce: AUTH_NONCE, depositor: OWNER },
+			eventName: "SponsoredDepositForBurn",
+		}),
+	};
+}
+
+function createSponsoredDepositSkippedLog() {
+	return {
+		address: CCTP_DEPOSIT_NETWORKS.mainnet.cctpExtensionV2,
+		data: "0x" as const,
+		topics: encodeEventTopics({
+			abi: CCTP_EXTENSION_V2_ABI,
+			args: { authNonce: AUTH_NONCE, depositor: OWNER },
+			eventName: "SponsoredDepositForBurnSkipped",
+		}),
+	};
+}
+
 function createSourceTransactionPayload(hookOwner: Address = OWNER) {
 	return {
 		jsonrpc: "2.0",
@@ -276,7 +405,7 @@ function createRecoveryFetch({
 			return new Response(
 				JSON.stringify({
 					sourceTxHash: SOURCE_HASH,
-					messages: [{ status: "complete", forwardTxHash: FORWARD_HASH }],
+					messages: [{ message: createCircleCctpMessage(), status: "complete", forwardTxHash: FORWARD_HASH }],
 				}),
 				{ status: 200 },
 			);
@@ -288,4 +417,63 @@ function createRecoveryFetch({
 				: transaction;
 		return new Response(JSON.stringify(payload), { status: 200 });
 	};
+}
+
+function createSponsoredRecoveryFetch(logs = [createSponsoredDepositLog()]) {
+	return async (input: RequestInfo | URL) => {
+		if (!String(input).includes("arb1.arbitrum.io")) {
+			return new Response(
+				JSON.stringify({
+					sourceTxHash: SOURCE_HASH,
+					messages: [
+						{
+							message: createCircleCctpMessage({ mode: "sponsored" }),
+							status: "complete",
+							forwardTxHash: FORWARD_HASH,
+						},
+					],
+				}),
+				{ status: 200 },
+			);
+		}
+		return new Response(
+			JSON.stringify({
+				jsonrpc: "2.0",
+				id: 1,
+				result: { transactionHash: SOURCE_HASH, status: "0x1", logs },
+			}),
+			{ status: 200 },
+		);
+	};
+}
+
+function createCircleCctpMessage({
+	mode = "direct",
+	owner = OWNER,
+}: {
+	mode?: "direct" | "sponsored";
+	owner?: Address;
+} = {}): Hex {
+	const config = CCTP_DEPOSIT_NETWORKS.mainnet;
+	const messageSender = mode === "sponsored" ? config.cctpExtensionV2 : config.cctpExtension;
+	return concatHex([
+		numberToHex(1, { size: 4 }),
+		numberToHex(config.sourceDomain, { size: 4 }),
+		numberToHex(config.destinationDomain, { size: 4 }),
+		AUTH_NONCE,
+		addressToBytes32(config.cctpExtension),
+		addressToBytes32(config.cctpExtension),
+		addressToBytes32(config.cctpForwarder),
+		numberToHex(CCTP_FAST_FINALITY_THRESHOLD, { size: 4 }),
+		numberToHex(CCTP_FAST_FINALITY_THRESHOLD, { size: 4 }),
+		numberToHex(1, { size: 4 }),
+		addressToBytes32(config.usdc),
+		addressToBytes32(config.cctpForwarder),
+		numberToHex(5_000_000, { size: 32 }),
+		addressToBytes32(messageSender),
+		numberToHex(200_000, { size: 32 }),
+		numberToHex(200_000, { size: 32 }),
+		numberToHex(1, { size: 32 }),
+		encodeCctpForwardHookData(owner),
+	]);
 }

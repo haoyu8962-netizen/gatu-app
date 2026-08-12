@@ -9,6 +9,7 @@ import {
 	getCctpDepositTrackingStorageSnapshot,
 	readCctpDepositTrackingRecords,
 	removeCctpDepositTrackingRecord,
+	removeCctpSponsoredAuthorizationIntent,
 	subscribeCctpDepositTrackingRecords,
 } from "@/lib/trade/cctp-deposit-tracking";
 
@@ -23,11 +24,15 @@ export function useCctpDepositTracking({
 	enabled,
 	env,
 	owner,
+	poll = true,
+	removeOnForwardSubmitted = false,
 	sourceHash,
 }: {
 	enabled: boolean;
 	env: CctpDepositEnvironment;
 	owner: string | undefined;
+	poll?: boolean;
+	removeOnForwardSubmitted?: boolean;
 	sourceHash?: Hash;
 }) {
 	const subscribe = useCallback(
@@ -84,27 +89,54 @@ export function useCctpDepositTracking({
 			: null;
 	const trackedSourceHash = activeTrackedSourceHash ?? retainedDefinitiveFailure?.sourceHash;
 	const query = useQuery({
-		queryKey: ["circle", "cctp", "deposit-status", env, trackedSourceHash, recoveryRecord?.amount],
+		queryKey: [
+			"circle",
+			"cctp",
+			"deposit-status",
+			env,
+			trackedSourceHash,
+			recoveryRecord?.amount,
+			recoveryRecord?.mode,
+			recoveryRecord?.authNonce,
+		],
 		queryFn: async ({ signal }) => {
-			if (recoveryRecord) {
-				const sourceReceipt = await fetchArbitrumCctpSourceReceiptStatus({
-					amount: recoveryRecord.amount,
-					env,
-					owner: recoveryRecord.owner,
-					sourceHash: trackedSourceHash ?? "",
-					signal,
-				});
-				if (sourceReceipt.status === "pending") return { status: "waiting" } as const;
+			if (!recoveryRecord) return { status: "waiting" } as const;
+			const sourceReceipt = await fetchArbitrumCctpSourceReceiptStatus({
+				amount: recoveryRecord.amount,
+				env,
+				owner: recoveryRecord.owner,
+				sourceHash: trackedSourceHash ?? "",
+				...(recoveryRecord.mode === "sponsored"
+					? { mode: "sponsored" as const, authNonce: recoveryRecord.authNonce }
+					: { mode: "direct" as const }),
+				signal,
+			});
+			if (sourceReceipt.status === "pending") return { status: "waiting" } as const;
+			if (recoveryRecord.mode === "sponsored") {
+				try {
+					removeCctpSponsoredAuthorizationIntent(env, recoveryRecord.owner, recoveryRecord.authNonce);
+				} catch {
+					// A consumed authorization may safely retain its expiring local tombstone.
+				}
 			}
-			return fetchCircleCctpDepositStatus({ env, sourceHash: trackedSourceHash ?? "", signal });
+			return fetchCircleCctpDepositStatus({
+				amount: recoveryRecord.amount,
+				env,
+				mode: recoveryRecord.mode,
+				owner: recoveryRecord.owner,
+				sourceHash: trackedSourceHash ?? "",
+				signal,
+			});
 		},
-		enabled: enabled && !!owner && !!activeTrackedSourceHash && !retainedDefinitiveFailure,
-		refetchInterval: (state) =>
-			state.state.data?.status === "forward-submitted" || isDefinitiveDepositSourceFailure(state.state.error)
-				? false
-				: CCTP_DEPOSIT_STATUS_POLL_MS,
+		enabled: enabled && poll && !!owner && !!activeTrackedSourceHash && !!recoveryRecord && !retainedDefinitiveFailure,
+		refetchInterval: poll
+			? (state) =>
+					state.state.data?.status === "forward-submitted" || isDefinitiveDepositSourceFailure(state.state.error)
+						? false
+						: CCTP_DEPOSIT_STATUS_POLL_MS
+			: false,
 		refetchIntervalInBackground: false,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: poll,
 		retry: (failureCount, error) => !isDefinitiveDepositSourceFailure(error) && failureCount < 2,
 		staleTime: 0,
 	});
@@ -121,6 +153,17 @@ export function useCctpDepositTracking({
 			removeCctpDepositTrackingRecord(env, owner, trackedSourceHash);
 		} catch {}
 	}, [env, owner, query.error, recoveryRecord?.sourceHash, trackedSourceHash, trackingScope]);
+
+	useEffect(() => {
+		if (!removeOnForwardSubmitted || !owner || !trackedSourceHash || query.data?.status !== "forward-submitted") {
+			return;
+		}
+		try {
+			removeCctpDepositTrackingRecord(env, owner, trackedSourceHash);
+		} catch {
+			// Keep the recovery record when browser storage cannot be updated.
+		}
+	}, [env, owner, query.data?.status, removeOnForwardSubmitted, trackedSourceHash]);
 
 	const definitiveFailure =
 		(isDefinitiveDepositSourceFailure(query.error) ? query.error : null) ?? retainedDefinitiveFailure?.error ?? null;

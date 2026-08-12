@@ -5,13 +5,11 @@ import type { InfoClient } from "@nktkas/hyperliquid";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import {
-	assertFreshBridgeDepositRoute,
 	assertFreshDepositRoute,
 	executeWithFreshWithdrawalRoute,
 	fetchFreshUsdcRouting,
 	getUsdcRoutingQueryOptions,
 	USDC_ROUTING_REFRESH_INTERVAL_MS,
-	UsdcDepositRouteError,
 } from "@/hooks/trade/use-usdc-routing";
 
 const MAINNET: HyperliquidEnv = "Mainnet";
@@ -66,35 +64,33 @@ describe("fresh USDC routing", () => {
 			(match) => match.index,
 		);
 		const amountParsingIndex = depositExecution.indexOf("parseUnits(amount, USDC_DECIMALS)");
-		const permitSigningIndex = depositExecution.indexOf("createBridge2PermitCall");
-		const smartWalletSendIndex = depositExecution.indexOf("smartClient.sendTransaction");
+		const retiredBridgeGuardIndex = depositExecution.indexOf('depositRoute !== "cctp"');
 		const cctpLockIndex = depositExecution.indexOf("runWithFundsActionLock(");
-		const bridgeNonceIndex = depositExecution.indexOf("const transactionNonce", cctpLockIndex);
-		const cctpCriticalSection = depositExecution.slice(cctpLockIndex, bridgeNonceIndex);
+		const cctpCriticalSection = depositExecution.slice(cctpLockIndex);
 		const cctpGuardIndexes = [...cctpCriticalSection.matchAll(/await assertFreshSelectedDepositRoute\(\)/g)].map(
 			(match) => match.index ?? -1,
 		);
 		const pendingDepositCheckIndex = cctpCriticalSection.indexOf("readCctpDepositTrackingRecords");
 		const cctpRoleIndex = cctpCriticalSection.indexOf("getSdkInfoClient(false).userRole");
 		const cctpSigningIndex = cctpCriticalSection.indexOf("ready.walletClient.signTypedData");
-		const cctpSendIndex = cctpCriticalSection.indexOf("ready.walletClient.writeContract");
+		const sponsoredSendIndex = cctpCriticalSection.indexOf("smartClient.sendTransaction");
+		const directSendIndex = cctpCriticalSection.indexOf("ready.walletClient.writeContract");
 		const cctpTrackingSaveIndex = cctpCriticalSection.indexOf("saveCctpDepositTrackingRecord");
-		const bridgeWalletSendIndex = depositExecution.indexOf("ready.walletClient.writeContract", bridgeNonceIndex);
-		const finalGuardIndex = guardIndexes.at(-1) ?? -1;
 
-		expect(guardIndexes[0]).toBeLessThan(amountParsingIndex);
-		expect(guardIndexes[1]).toBeLessThan(permitSigningIndex);
-		expect(guardIndexes[2]).toBeLessThan(smartWalletSendIndex);
-		expect(cctpLockIndex).toBeGreaterThan(smartWalletSendIndex);
-		expect(cctpGuardIndexes).toHaveLength(5);
+		expect(guardIndexes[0]).toBeLessThan(retiredBridgeGuardIndex);
+		expect(retiredBridgeGuardIndex).toBeLessThan(amountParsingIndex);
+		expect(cctpLockIndex).toBeGreaterThan(amountParsingIndex);
+		expect(cctpGuardIndexes.length).toBeGreaterThanOrEqual(4);
 		expect(pendingDepositCheckIndex).toBeGreaterThan(0);
 		expect(pendingDepositCheckIndex).toBeLessThan(cctpRoleIndex);
 		expect(cctpGuardIndexes[0]).toBeLessThan(cctpRoleIndex);
 		expect(cctpGuardIndexes.some((index) => index < cctpSigningIndex)).toBe(true);
-		expect(cctpGuardIndexes.at(-1)).toBeLessThan(cctpSendIndex);
-		expect(cctpTrackingSaveIndex).toBeGreaterThan(cctpSendIndex);
-		expect(finalGuardIndex).toBeGreaterThan(bridgeNonceIndex);
-		expect(finalGuardIndex).toBeLessThan(bridgeWalletSendIndex);
+		expect(cctpGuardIndexes.some((index) => index > cctpSigningIndex && index < sponsoredSendIndex)).toBe(true);
+		expect(cctpGuardIndexes.some((index) => index > sponsoredSendIndex && index < directSendIndex)).toBe(true);
+		expect(cctpTrackingSaveIndex).toBeGreaterThan(sponsoredSendIndex);
+		expect(cctpTrackingSaveIndex).toBeGreaterThan(directSendIndex);
+		expect(depositExecution).not.toContain("createBridge2PermitCall");
+		expect(depositExecution).not.toContain("batchedDepositWithPermit");
 	});
 
 	it("keeps Mainnet and Testnet routing caches isolated", async () => {
@@ -141,12 +137,6 @@ describe("fresh USDC routing", () => {
 		expect(queryClient.getQueryData(infoKey("usdcRouting", undefined, MAINNET))).toBeUndefined();
 	});
 
-	it("allows Bridge2 only after a fresh bridge response", async () => {
-		await expect(
-			assertFreshBridgeDepositRoute(async () => ({ depositRoute: "bridge", withdrawalRoute: "cctp" })),
-		).resolves.toBeUndefined();
-	});
-
 	it("allows CCTP only after a fresh CCTP response and rejects a route flip", async () => {
 		await expect(
 			assertFreshDepositRoute("cctp", async () => ({ depositRoute: "cctp", withdrawalRoute: "cctp" })),
@@ -154,24 +144,6 @@ describe("fresh USDC routing", () => {
 		await expect(
 			assertFreshDepositRoute("cctp", async () => ({ depositRoute: "bridge", withdrawalRoute: "cctp" })),
 		).rejects.toMatchObject({ reason: "changed" });
-	});
-
-	it.each([
-		{ expectedReason: "unavailable", fetchRouting: async () => null },
-		{
-			expectedReason: "unavailable",
-			fetchRouting: async () => {
-				throw new Error("transport failed");
-			},
-		},
-		{
-			expectedReason: "cctp",
-			fetchRouting: async () => ({ depositRoute: "cctp" as const, withdrawalRoute: "cctp" as const }),
-		},
-	])("blocks Bridge2 with $expectedReason when fresh routing is unsafe", async ({ expectedReason, fetchRouting }) => {
-		const error = await assertFreshBridgeDepositRoute(fetchRouting).catch((caught) => caught);
-		expect(error).toBeInstanceOf(UsdcDepositRouteError);
-		expect(error).toMatchObject({ reason: expectedReason });
 	});
 
 	it("executes a withdrawal only when the last route refresh is unchanged", async () => {

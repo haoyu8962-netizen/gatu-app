@@ -8,15 +8,13 @@ import type { WithdrawalRoute } from "@/lib/trade/withdrawal";
 export const USDC_ROUTING_REFRESH_INTERVAL_MS = 30_000;
 
 export class UsdcDepositRouteError extends Error {
-	readonly reason: "cctp" | "changed" | "unavailable";
+	readonly reason: "changed" | "unavailable";
 
-	constructor(reason: "cctp" | "changed" | "unavailable") {
+	constructor(reason: "changed" | "unavailable") {
 		super(
-			reason === "cctp"
-				? t`Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable.`
-				: reason === "changed"
-					? t`The Hyperliquid deposit route changed before signing. Review the updated route and retry.`
-					: t`Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.`,
+			reason === "changed"
+				? t`The Hyperliquid deposit route changed before signing. Review the updated route and retry.`
+				: t`Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.`,
 		);
 		this.name = "UsdcDepositRouteError";
 		this.reason = reason;
@@ -36,9 +34,6 @@ export async function assertFreshDepositRoute(
 	}
 	if (!routing) throw new UsdcDepositRouteError("unavailable");
 	if (routing.depositRoute === expectedRoute) return;
-	if (expectedRoute === "bridge" && routing.depositRoute === "cctp") {
-		throw new UsdcDepositRouteError("cctp");
-	}
 	throw new UsdcDepositRouteError("changed");
 }
 
@@ -86,13 +81,6 @@ export function useFreshUsdcRouting() {
 	);
 }
 
-export async function assertFreshBridgeDepositRoute(
-	fetchFreshRouting: (signal?: AbortSignal) => Promise<UsdcRouting | null>,
-	signal?: AbortSignal,
-) {
-	return assertFreshDepositRoute("bridge", fetchFreshRouting, signal);
-}
-
 export async function executeWithFreshWithdrawalRoute(
 	expectedRoute: WithdrawalRoute,
 	fetchFreshRouting: (signal?: AbortSignal) => Promise<UsdcRouting | null>,
@@ -108,11 +96,6 @@ export async function executeWithFreshWithdrawalRoute(
 	if (freshRoute !== expectedRoute) return "changed";
 	await execute();
 	return "executed";
-}
-
-export function useAssertFreshBridgeDepositRoute() {
-	const fetchFreshRouting = useFreshUsdcRouting();
-	return useCallback(() => assertFreshBridgeDepositRoute(fetchFreshRouting), [fetchFreshRouting]);
 }
 
 export function useAssertFreshDepositRoute(expectedRoute: UsdcRouting["depositRoute"]) {

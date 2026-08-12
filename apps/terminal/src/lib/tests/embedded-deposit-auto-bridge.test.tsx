@@ -12,20 +12,26 @@ const testState = vi.hoisted(() => ({
 	deposit: vi.fn(),
 	depositError: null as Error | null,
 	depositHash: undefined as `0x${string}` | undefined,
+	depositModalOpen: false,
 	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
 	maxDepositRaw: 9_000_000n as bigint | undefined,
 	refreshBalance: vi.fn(),
 	resetDeposit: vi.fn(),
-	routingData: { depositRoute: "bridge", withdrawalRoute: "cctp" } as {
+	routingData: { depositRoute: "cctp", withdrawalRoute: "cctp" } as {
 		depositRoute: "bridge" | "cctp";
 		withdrawalRoute: "bridge" | "cctp";
 	} | null,
 	routingIsError: false,
 	routingIsFetching: false,
+	routingQueryEnabled: undefined as boolean | undefined,
+	sponsoredEnabled: true,
 	toastDismiss: vi.fn(),
 	toastError: vi.fn(),
 	toastLoading: vi.fn(),
 	toastSuccess: vi.fn(),
+	useDepositOptions: null as null | Record<string, unknown>,
+	trackingOptions: null as null | Record<string, unknown>,
+	trackingRecoveryRecord: null as null | { sourceHash: `0x${string}` },
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -57,11 +63,33 @@ vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-usdc-routing", () => ({
-	useUsdcRouting: () => ({
-		data: testState.routingData,
-		isError: testState.routingIsError,
-		isFetching: testState.routingIsFetching,
-	}),
+	useUsdcRouting: (enabled: boolean) => {
+		testState.routingQueryEnabled = enabled;
+		return {
+			data: testState.routingData,
+			isError: testState.routingIsError,
+			isFetching: testState.routingIsFetching,
+		};
+	},
+}));
+
+vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
+	useCctpDepositTracking: (options: Record<string, unknown>) => {
+		testState.trackingOptions = options;
+		return { recoveryRecord: testState.trackingRecoveryRecord };
+	},
+}));
+
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useDepositModalOpen: () => testState.depositModalOpen,
+}));
+
+vi.mock("@/config/cctp-deposit", () => ({
+	isCctpSponsoredDepositEnabled: () => testState.sponsoredEnabled,
+}));
+
+vi.mock("@/stores/use-global-settings-store", () => ({
+	useIsTestnet: () => false,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -77,17 +105,20 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
-	useDeposit: () => ({
-		maxDepositRaw: testState.maxDepositRaw,
-		status: testState.depositStatus,
-		error: testState.depositError,
-		hash: testState.depositHash,
-		deposit: testState.deposit,
-		refreshBalance: testState.refreshBalance,
-		reset: testState.resetDeposit,
-		networkName: "Arbitrum",
-		smartDepositEnabled: true,
-	}),
+	useDeposit: (options: Record<string, unknown>) => {
+		testState.useDepositOptions = options;
+		return {
+			maxDepositRaw: testState.maxDepositRaw,
+			status: testState.depositStatus,
+			error: testState.depositError,
+			hash: testState.depositHash,
+			deposit: testState.deposit,
+			refreshBalance: testState.refreshBalance,
+			reset: testState.resetDeposit,
+			networkName: "Arbitrum",
+			sponsoredCctpEnabled: testState.sponsoredEnabled,
+		};
+	},
 }));
 
 describe("EmbeddedDepositAutoBridge", () => {
@@ -110,11 +141,17 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.toastSuccess.mockReset();
 		testState.depositError = null;
 		testState.depositHash = undefined;
+		testState.depositModalOpen = false;
 		testState.depositStatus = "idle";
 		testState.maxDepositRaw = 9_000_000n;
-		testState.routingData = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.routingData = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.routingIsError = false;
 		testState.routingIsFetching = false;
+		testState.routingQueryEnabled = undefined;
+		testState.sponsoredEnabled = true;
+		testState.useDepositOptions = null;
+		testState.trackingOptions = null;
+		testState.trackingRecoveryRecord = null;
 		Object.defineProperty(navigator, "locks", { configurable: true, value: undefined });
 	});
 
@@ -149,8 +186,8 @@ describe("EmbeddedDepositAutoBridge", () => {
 		{ name: "the route query fails", data: null, isError: true, isFetching: false },
 		{ name: "the route response is unknown", data: null, isError: false, isFetching: false },
 		{
-			name: "CCTP deposits are required",
-			data: { depositRoute: "cctp" as const, withdrawalRoute: "cctp" as const },
+			name: "the retired Bridge2 route is returned",
+			data: { depositRoute: "bridge" as const, withdrawalRoute: "cctp" as const },
 			isError: false,
 			isFetching: false,
 		},
@@ -166,12 +203,91 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
-	it("submits only when the current deposit route is Bridge2", async () => {
+	it("submits only when the current deposit route is CCTP", async () => {
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
 		expect(testState.deposit).toHaveBeenCalledWith("9");
+	});
+
+	it("does not submit when sponsored CCTP is disabled", async () => {
+		testState.sponsoredEnabled = false;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
+		expect(testState.routingQueryEnabled).toBe(false);
+		expect(testState.trackingOptions).toMatchObject({
+			enabled: true,
+			env: "Mainnet",
+			owner: USER_ADDRESS,
+			removeOnForwardSubmitted: true,
+		});
+	});
+
+	it("keeps recovery active while the deposit modal owns the completion screen", async () => {
+		testState.depositModalOpen = true;
+		testState.trackingRecoveryRecord = { sourceHash: HASH };
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
+		expect(testState.trackingOptions).toMatchObject({
+			enabled: true,
+			removeOnForwardSubmitted: false,
+		});
+	});
+
+	it("starts the next automatic deposit only after global recovery tracking completes", async () => {
+		testState.trackingRecoveryRecord = { sourceHash: HASH };
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
+		expect(testState.trackingOptions).toMatchObject({
+			enabled: true,
+			removeOnForwardSubmitted: true,
+		});
+
+		testState.trackingRecoveryRecord = null;
+		testState.maxDepositRaw = 8_000_000n;
+		testState.refreshBalance.mockResolvedValue(8_000_000n);
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+		expect(testState.deposit).toHaveBeenCalledWith("8");
+	});
+
+	it.each([
+		{ name: "the route query is loading", data: null, isError: false, isFetching: true },
+		{
+			name: "the retired Bridge2 route is returned",
+			data: { depositRoute: "bridge" as const, withdrawalRoute: "cctp" as const },
+			isError: false,
+			isFetching: false,
+		},
+	])("does not poll the embedded balance when $name", async ({ data, isError, isFetching }) => {
+		testState.routingData = data;
+		testState.routingIsError = isError;
+		testState.routingIsFetching = isFetching;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
 	});
 
 	it("uses the balance refreshed inside the exclusive section", async () => {
@@ -211,7 +327,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);
 	});
 
-	it("preserves an automatic-deposit retry while a cached bridge route refreshes", async () => {
+	it("does not automatically resubmit after a no-hash sponsored submission error", async () => {
 		await act(async () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
@@ -229,7 +345,8 @@ describe("EmbeddedDepositAutoBridge", () => {
 		});
 		await act(() => vi.advanceTimersByTimeAsync(30_000));
 
-		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+		expect(testState.resetDeposit).not.toHaveBeenCalled();
 	});
 
 	it("serializes automatic deposits across mounted tabs and rechecks the balance", async () => {
@@ -280,7 +397,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.refreshBalance).toHaveBeenCalledTimes(2);
 		expect(testState.toastError).toHaveBeenCalledWith(
 			"Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.",
-			{ id: "embedded-deposit-auto-bridge" },
+			{ id: "embedded-cctp-auto-deposit" },
 		);
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("rpc.zerodev.app");
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
@@ -294,7 +411,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		});
 
 		expect(testState.toastLoading).toHaveBeenCalledWith("Preparing automatic USDC deposit...", {
-			id: "embedded-deposit-auto-bridge",
+			id: "embedded-cctp-auto-deposit",
 		});
 
 		testState.depositStatus = "idle";
@@ -302,7 +419,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
-		expect(testState.toastDismiss).toHaveBeenCalledWith("embedded-deposit-auto-bridge");
+		expect(testState.toastDismiss).toHaveBeenCalledWith("embedded-cctp-auto-deposit");
 	});
 
 	it("keeps a completed deposit toast available for normal auto-dismiss", async () => {
@@ -322,7 +439,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		});
 
 		expect(testState.toastSuccess).toHaveBeenCalledWith("USDC deposit submitted to Hyperliquid", {
-			id: "embedded-deposit-auto-bridge",
+			id: "embedded-cctp-auto-deposit",
 		});
 		expect(testState.toastDismiss).not.toHaveBeenCalled();
 	});

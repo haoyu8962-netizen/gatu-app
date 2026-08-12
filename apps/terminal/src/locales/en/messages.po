@@ -353,8 +353,6 @@ msgid "Add {displayPairName} to favorites"
 msgstr "Add {displayPairName} to favorites"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 msgstr "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 
@@ -411,6 +409,10 @@ msgstr "Advanced"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
 msgstr "Advanced order types"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
+msgstr "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -513,6 +515,7 @@ msgstr "Amount must be greater than zero and no more than the current position."
 msgid "Another action for this market is already in progress."
 msgstr "Another action for this market is already in progress."
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
@@ -652,10 +655,6 @@ msgstr "Asset information could not be loaded."
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr "Assets"
-
-#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
-msgstr "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
@@ -798,11 +797,6 @@ msgstr "Bridge failed"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
-
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr "Bridge2 deposit was not credited. Check Arbiscan before retrying."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -2961,12 +2955,9 @@ msgstr "Gas ({0})"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
-msgstr "Gas-sponsored CCTP deposits require a configured and verified relayer."
-
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
-msgstr "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
+msgid "Gas-sponsored CCTP deposits are not enabled for this network."
+msgstr "Gas-sponsored CCTP deposits are not enabled for this network."
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -3095,10 +3086,6 @@ msgstr "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
-
-#: src/hooks/trade/use-usdc-routing.ts
-msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
-msgstr "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -3328,6 +3315,20 @@ msgstr "Leaderboard"
 msgid "Legacy"
 msgstr "Legacy"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+msgstr "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
+msgstr "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted."
+msgstr "Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted."
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "Legacy DEX"
@@ -3531,6 +3532,7 @@ msgstr "Loading QR code"
 msgid "Loading recent reward claims…"
 msgstr "Loading recent reward claims…"
 
+#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "Loading referrals"
@@ -6368,12 +6370,6 @@ msgstr "Smart wallet deposit state is syncing. Do not submit another deposit whi
 #~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
 #~ msgstr "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Smart wallet deposits are not enabled for this network."
-msgstr "Smart wallet deposits are not enabled for this network."
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
@@ -7965,11 +7961,6 @@ msgstr "Unable to load the current account mode. Reconnect your wallet and try a
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "Unable to load the current CCTP withdrawal fee."
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Unable to prepare USDC permit"
-msgstr "Unable to prepare USDC permit"
-
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
@@ -7986,6 +7977,11 @@ msgstr "Unable to verify access"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "Unable to verify available balance"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to verify the CCTP authorization."
+msgstr "Unable to verify the CCTP authorization."
 
 #: src/hooks/trade/use-account-abstraction-guard.ts
 msgid "Unable to verify the current account mode. Request was not submitted."
@@ -8347,7 +8343,6 @@ msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

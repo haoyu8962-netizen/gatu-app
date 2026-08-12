@@ -4,9 +4,11 @@ import {
 	concatHex,
 	decodeEventLog,
 	decodeFunctionData,
+	encodeAbiParameters,
 	isAddress,
 	isAddressEqual,
 	isHex,
+	keccak256,
 	numberToHex,
 	padHex,
 	size,
@@ -67,6 +69,67 @@ export const CCTP_EXTENSION_ABI = [
 	},
 ] as const;
 
+const CCTP_SPONSORED_AUTHORIZATION_COMPONENTS = [
+	{ name: "from", type: "address" },
+	{ name: "amount", type: "uint256" },
+	{ name: "authValidAfter", type: "uint256" },
+	{ name: "authValidBefore", type: "uint256" },
+	{ name: "authNonce", type: "bytes32" },
+	{ name: "v", type: "uint8" },
+	{ name: "r", type: "bytes32" },
+	{ name: "s", type: "bytes32" },
+] as const;
+
+const CCTP_SPONSORED_DEPOSIT_COMPONENTS = [
+	{ name: "amount", type: "uint256" },
+	{ name: "destinationDomain", type: "uint32" },
+	{ name: "mintRecipient", type: "bytes32" },
+	{ name: "destinationCaller", type: "bytes32" },
+	{ name: "maxFee", type: "uint256" },
+	{ name: "minFinalityThreshold", type: "uint32" },
+	{ name: "hookData", type: "bytes" },
+] as const;
+
+export const CCTP_EXTENSION_V2_ABI = [
+	{
+		type: "function",
+		name: "batchSponsorDepositForBurn",
+		stateMutability: "nonpayable",
+		inputs: [
+			{ name: "_authData", type: "tuple[]", components: CCTP_SPONSORED_AUTHORIZATION_COMPONENTS },
+			{ name: "_depositData", type: "tuple[]", components: CCTP_SPONSORED_DEPOSIT_COMPONENTS },
+		],
+		outputs: [],
+	},
+	{
+		type: "event",
+		name: "SponsoredDepositForBurn",
+		anonymous: false,
+		inputs: [
+			{ name: "authNonce", type: "bytes32", indexed: true },
+			{ name: "depositor", type: "address", indexed: true },
+			{ name: "mintRecipient", type: "bytes32", indexed: false },
+			{ name: "destinationDomain", type: "uint32", indexed: false },
+			{ name: "burnAmount", type: "uint256", indexed: false },
+		],
+	},
+	{
+		type: "event",
+		name: "SponsoredDepositForBurnSkipped",
+		anonymous: false,
+		inputs: [
+			{ name: "authNonce", type: "bytes32", indexed: true },
+			{ name: "depositor", type: "address", indexed: true },
+		],
+	},
+] as const;
+
+const CCTP_SPONSORED_DEPOSIT_FOR_BURN_ABI_PARAMETER = {
+	name: "depositData",
+	type: "tuple",
+	components: CCTP_SPONSORED_DEPOSIT_COMPONENTS,
+} as const;
+
 export interface CctpDepositFeeQuote {
 	finalityThreshold: typeof CCTP_FAST_FINALITY_THRESHOLD;
 	minimumFeeBps: string;
@@ -102,6 +165,19 @@ export interface CctpDepositParameters {
 		hookData: Hex;
 	};
 	typedData: ReturnType<typeof buildCctpReceiveWithAuthorizationTypedData>;
+	fee: CctpDepositFeeCalculation;
+}
+
+export interface CctpSponsoredDepositParameters {
+	authorization: {
+		from: Address;
+		amount: bigint;
+		authValidAfter: bigint;
+		authValidBefore: bigint;
+		authNonce: Hex;
+	};
+	depositForBurn: CctpDepositParameters["depositForBurn"];
+	typedData: ReturnType<typeof buildCctpSponsoredReceiveWithAuthorizationTypedData>;
 	fee: CctpDepositFeeCalculation;
 }
 
@@ -408,6 +484,151 @@ export function createCctpDepositParameters({
 	};
 }
 
+export function deriveCctpSponsoredAuthorizationNonce({
+	amountRaw,
+	depositForBurn,
+	user,
+	validAfter,
+	validBefore,
+}: {
+	amountRaw: bigint;
+	depositForBurn: Omit<CctpDepositParameters["depositForBurn"], "minFinalityThreshold"> & {
+		minFinalityThreshold: number;
+	};
+	user: Address;
+	validAfter: bigint;
+	validBefore: bigint;
+}): Hex {
+	assertAddress(user, "CCTP depositor");
+	if (amountRaw <= 0n) throw new Error("CCTP deposit amount must be positive");
+	if (validAfter < 0n || validBefore <= validAfter) throw new Error("CCTP authorization validity window is invalid");
+
+	return keccak256(
+		encodeAbiParameters(
+			[
+				{ name: "from", type: "address" },
+				{ name: "amount", type: "uint256" },
+				{ name: "validAfter", type: "uint256" },
+				{ name: "validBefore", type: "uint256" },
+				CCTP_SPONSORED_DEPOSIT_FOR_BURN_ABI_PARAMETER,
+			],
+			[user, amountRaw, validAfter, validBefore, depositForBurn],
+		),
+	);
+}
+
+export function buildCctpSponsoredReceiveWithAuthorizationTypedData({
+	amountRaw,
+	authNonce,
+	config,
+	user,
+	validAfter,
+	validBefore,
+}: {
+	amountRaw: bigint;
+	authNonce: Hex;
+	config: CctpDepositConfig;
+	user: Address;
+	validAfter: bigint;
+	validBefore: bigint;
+}) {
+	assertAddress(config.cctpExtensionV2, "CCTP extension V2");
+	assertAddress(user, "CCTP depositor");
+	assertBytes32(authNonce, "CCTP authorization nonce");
+	if (amountRaw <= 0n) throw new Error("CCTP deposit amount must be positive");
+	if (validAfter < 0n || validBefore <= validAfter) throw new Error("CCTP authorization validity window is invalid");
+
+	return {
+		domain: {
+			name: config.usdcAuthorizationName,
+			version: config.usdcAuthorizationVersion,
+			chainId: config.chainId,
+			verifyingContract: config.usdc,
+		},
+		types: {
+			ReceiveWithAuthorization: [
+				{ name: "from", type: "address" },
+				{ name: "to", type: "address" },
+				{ name: "value", type: "uint256" },
+				{ name: "validAfter", type: "uint256" },
+				{ name: "validBefore", type: "uint256" },
+				{ name: "nonce", type: "bytes32" },
+			],
+		},
+		primaryType: "ReceiveWithAuthorization" as const,
+		message: {
+			from: user,
+			to: config.cctpExtensionV2,
+			value: amountRaw,
+			validAfter,
+			validBefore,
+			nonce: authNonce,
+		},
+	} as const;
+}
+
+export function createCctpSponsoredDepositParameters({
+	amountRaw,
+	config,
+	feeQuote,
+	nowSeconds,
+	user,
+}: {
+	amountRaw: bigint;
+	config: CctpDepositConfig;
+	feeQuote: CctpDepositFeeQuote;
+	nowSeconds: number | bigint;
+	user: Address;
+}): CctpSponsoredDepositParameters {
+	if (typeof nowSeconds === "number" && (!Number.isSafeInteger(nowSeconds) || nowSeconds < 0)) {
+		throw new Error("CCTP authorization timestamp is invalid");
+	}
+	const now = typeof nowSeconds === "bigint" ? nowSeconds : BigInt(nowSeconds);
+	const validityWindow = BigInt(CCTP_AUTHORIZATION_WINDOW_SECONDS);
+	if (now < validityWindow) throw new Error("CCTP authorization timestamp is invalid");
+	const authValidAfter = now - validityWindow;
+	const authValidBefore = now + validityWindow;
+	const fee = calculateCctpDepositFee(amountRaw, feeQuote);
+	const forwarder = addressToBytes32(config.cctpForwarder);
+	const depositForBurn = {
+		amount: amountRaw,
+		destinationDomain: config.destinationDomain,
+		mintRecipient: forwarder,
+		destinationCaller: forwarder,
+		maxFee: fee.maxFeeRaw,
+		minFinalityThreshold: CCTP_FAST_FINALITY_THRESHOLD,
+		hookData: encodeCctpForwardHookData(user),
+	} as const;
+	const authNonce = deriveCctpSponsoredAuthorizationNonce({
+		amountRaw,
+		depositForBurn,
+		user,
+		validAfter: authValidAfter,
+		validBefore: authValidBefore,
+	});
+	const typedData = buildCctpSponsoredReceiveWithAuthorizationTypedData({
+		amountRaw,
+		authNonce,
+		config,
+		user,
+		validAfter: authValidAfter,
+		validBefore: authValidBefore,
+	});
+
+	return {
+		authorization: {
+			from: user,
+			amount: amountRaw,
+			authValidAfter,
+			authValidBefore,
+			authNonce,
+		},
+		depositForBurn,
+		typedData,
+		fee,
+	};
+}
+
 export function splitCctpAuthorizationSignature(signature: Hex) {
 	if (!isHex(signature, { strict: true }) || size(signature) !== 65) {
 		throw new Error("CCTP authorization signature must be exactly 65 bytes");
@@ -434,6 +655,21 @@ export function buildCctpDepositContractArgs(parameters: CctpDepositParameters, 
 			s,
 		},
 		parameters.depositForBurn,
+	] as const;
+}
+
+export function buildCctpSponsoredDepositContractArgs(parameters: CctpSponsoredDepositParameters, signature: Hex) {
+	const { r, s, v } = splitCctpAuthorizationSignature(signature);
+	return [
+		[
+			{
+				...parameters.authorization,
+				v,
+				r,
+				s,
+			},
+		],
+		[parameters.depositForBurn],
 	] as const;
 }
 
@@ -473,6 +709,125 @@ export function assertCctpDepositReceipt({
 		event.destinationDomain !== config.destinationDomain
 	) {
 		throw new Error("CCTP deposit receipt does not match the requested HyperCore deposit");
+	}
+}
+
+export function assertCctpSponsoredDepositReceipt({
+	amountRaw,
+	authNonce,
+	config,
+	receipt,
+	user,
+}: {
+	amountRaw: bigint;
+	authNonce: Hex;
+	config: CctpDepositConfig;
+	receipt: TransactionReceipt;
+	user: Address;
+}) {
+	assertAddress(user, "CCTP depositor");
+	assertBytes32(authNonce, "CCTP authorization nonce");
+	if (amountRaw <= 0n) throw new Error("CCTP deposit amount must be positive");
+	if (receipt.status !== "success") throw new Error("Sponsored CCTP deposit transaction reverted on Arbitrum");
+
+	const matchingSuccessEvents: Array<{
+		authNonce: Hex;
+		burnAmount: bigint;
+		depositor: Address;
+		destinationDomain: number;
+		mintRecipient: Hex;
+	}> = [];
+	let hasMatchingSkippedEvent = false;
+	for (const log of receipt.logs) {
+		if (!isAddressEqual(log.address, config.cctpExtensionV2)) continue;
+		try {
+			const event = decodeEventLog({ abi: CCTP_EXTENSION_V2_ABI, data: log.data, topics: log.topics });
+			if (
+				event.args.authNonce.toLowerCase() !== authNonce.toLowerCase() ||
+				!isAddressEqual(event.args.depositor, user)
+			) {
+				continue;
+			}
+			if (event.eventName === "SponsoredDepositForBurnSkipped") {
+				hasMatchingSkippedEvent = true;
+				continue;
+			}
+			matchingSuccessEvents.push(event.args);
+		} catch {}
+	}
+	if (hasMatchingSkippedEvent) throw new Error("Sponsored CCTP deposit was skipped on Arbitrum");
+	if (matchingSuccessEvents.length !== 1) {
+		throw new Error("Sponsored CCTP deposit receipt is missing one unambiguous burn event");
+	}
+
+	const event = matchingSuccessEvents[0];
+	const expectedForwarder = addressToBytes32(config.cctpForwarder);
+	if (
+		event.authNonce.toLowerCase() !== authNonce.toLowerCase() ||
+		!isAddressEqual(event.depositor, user) ||
+		event.mintRecipient.toLowerCase() !== expectedForwarder.toLowerCase() ||
+		event.destinationDomain !== config.destinationDomain ||
+		event.burnAmount !== amountRaw
+	) {
+		throw new Error("Sponsored CCTP deposit receipt does not match the requested HyperCore deposit");
+	}
+}
+
+export function assertCctpSponsoredDepositSourceTransaction({
+	amountRaw,
+	authNonce,
+	config,
+	input,
+	to,
+	user,
+}: {
+	amountRaw: bigint;
+	authNonce: Hex;
+	config: CctpDepositConfig;
+	input: Hex;
+	to: Address;
+	user: Address;
+}) {
+	assertAddress(user, "CCTP depositor");
+	assertAddress(to, "CCTP source transaction recipient");
+	assertBytes32(authNonce, "CCTP authorization nonce");
+	if (amountRaw <= 0n) throw new Error("CCTP deposit amount must be positive");
+	if (!isAddressEqual(to, config.cctpExtensionV2)) {
+		throw new Error("Sponsored CCTP source transaction does not target the official extension V2");
+	}
+
+	const decoded = decodeFunctionData({ abi: CCTP_EXTENSION_V2_ABI, data: input });
+	if (decoded.functionName !== "batchSponsorDepositForBurn") {
+		throw new Error("Sponsored CCTP source transaction does not call the official deposit function");
+	}
+	const [authorizations, deposits] = decoded.args;
+	if (authorizations.length !== 1 || deposits.length !== 1) {
+		throw new Error("Sponsored CCTP source transaction must contain exactly one deposit");
+	}
+	const authorization = authorizations[0];
+	const depositForBurn = deposits[0];
+	const expectedForwarder = addressToBytes32(config.cctpForwarder);
+	const expectedNonce = deriveCctpSponsoredAuthorizationNonce({
+		amountRaw: authorization.amount,
+		depositForBurn,
+		user: authorization.from,
+		validAfter: authorization.authValidAfter,
+		validBefore: authorization.authValidBefore,
+	});
+	if (
+		!isAddressEqual(authorization.from, user) ||
+		authorization.amount !== amountRaw ||
+		authorization.authNonce.toLowerCase() !== authNonce.toLowerCase() ||
+		expectedNonce.toLowerCase() !== authNonce.toLowerCase() ||
+		depositForBurn.amount !== amountRaw ||
+		depositForBurn.destinationDomain !== config.destinationDomain ||
+		depositForBurn.mintRecipient.toLowerCase() !== expectedForwarder.toLowerCase() ||
+		depositForBurn.destinationCaller.toLowerCase() !== expectedForwarder.toLowerCase() ||
+		depositForBurn.maxFee >= amountRaw ||
+		depositForBurn.minFinalityThreshold !== CCTP_FAST_FINALITY_THRESHOLD ||
+		depositForBurn.hookData.toLowerCase() !== encodeCctpForwardHookData(user).toLowerCase()
+	) {
+		throw new Error("Sponsored CCTP source transaction does not match the requested HyperCore deposit");
 	}
 }
 

@@ -349,8 +349,6 @@ msgid "Add {displayPairName} to favorites"
 msgstr "إضافة {displayPairName} إلى المفضلة"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 msgstr "أضف كمية صغيرة من ETH على Arbitrum إلى هذه المحفظة لدفع رسوم الشبكة، ثم أعد المحاولة."
 
@@ -407,6 +405,10 @@ msgstr "متقدم"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
 msgstr "أنواع الأوامر المتقدمة"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
+msgstr "بعد وصول USDC، ستفوّض محفظتك المضمّنة إيداع Circle CCTP مدعومًا برسوم الغاز."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -509,6 +511,7 @@ msgstr "يجب أن يكون المبلغ أكبر من صفر وألا يتجا
 msgid "Another action for this market is already in progress."
 msgstr "هناك إجراء آخر لهذا السوق قيد التنفيذ بالفعل."
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
 msgstr "لا تزال هناك عملية إيداع أخرى عبر Circle CCTP معلّقة لهذا الحساب. انتظر حتى تكتمل قبل إرسال عملية إيداع أخرى."
@@ -648,10 +651,6 @@ msgstr "تعذر تحميل معلومات الأصل."
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
-
-#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
-msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
-msgstr "تم إيقاف الإيداعات التلقائية مؤقتًا لأن Hyperliquid يتطلب حاليًا الإيداع عبر CCTP."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
@@ -794,11 +793,6 @@ msgstr "فشل الجسر"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "قم بتحويل USDC من Arbitrum أو سلاسل أخرى إلى حساب Hyperliquid الخاص بك."
-
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr "لم يُضف إيداع Bridge2 إلى الرصيد. تحقق من Arbiscan قبل إعادة المحاولة."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -2944,12 +2938,9 @@ msgstr "الغاز ({0})"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
-msgstr "تتطلب إيداعات CCTP المدعومة برسوم الغاز مُرحِّلًا مُهيّأً ومتحققًا منه."
-
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
-msgstr "تتطلب إيداعات CCTP المدعومة برسوم الغاز مُرحِّلًا مُهيّأً ومتحققًا منه. لم يتم إرسال هذا الإيداع."
+msgid "Gas-sponsored CCTP deposits are not enabled for this network."
+msgstr "إيداعات CCTP المدعومة برسوم الغاز غير مفعّلة لهذه الشبكة."
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -3078,10 +3069,6 @@ msgstr "يتطلب Hyperliquid حاليًا إيداعًا عبر Circle CCTP م
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "يتطلب Hyperliquid حاليًا الإيداع عبر CCTP. تم إيقاف الإيداعات عبر Bridge مؤقتًا في هذا التطبيق."
-
-#: src/hooks/trade/use-usdc-routing.ts
-msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
-msgstr "يتطلب Hyperliquid حاليًا الإيداع عبر CCTP. إيداعات Bridge غير متاحة."
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -3311,6 +3298,20 @@ msgstr "لوحة المتصدرين"
 msgid "Legacy"
 msgstr "السجل القديم"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused."
+msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إيقاف الإيداعات التلقائية مؤقتًا."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
+msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إيقاف الإيداعات مؤقتًا."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted."
+msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. لم يتم إرسال هذا الإيداع."
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "DEX القديم"
@@ -3514,6 +3515,7 @@ msgstr "جارٍ تحميل رمز QR"
 msgid "Loading recent reward claims…"
 msgstr "جارٍ تحميل المطالبات الحديثة بالمكافآت…"
 
+#: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Loading referrals"
 msgstr "جارٍ تحميل الإحالات"
@@ -6347,12 +6349,6 @@ msgstr "تجري مزامنة حالة إيداع المحفظة الذكية. �
 #~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
 #~ msgstr ""
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Smart wallet deposits are not enabled for this network."
-msgstr "إيداعات المحفظة الذكية غير مفعلة لهذه الشبكة."
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "سولانا سلسلة كتل للعقود الذكية والتطبيقات اللامركزية، مصممة للتنفيذ عالي الإنتاجية."
@@ -7940,11 +7936,6 @@ msgstr "تعذر تحميل وضع الحساب الحالي. أعد توصيل 
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
 
-#: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/hyperliquid/use-deposit.ts
-msgid "Unable to prepare USDC permit"
-msgstr "تعذّر إعداد تصريح USDC"
-
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
@@ -7961,6 +7952,11 @@ msgstr "تعذر التحقق من الوصول"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "تعذر التحقق من الرصيد المتاح"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to verify the CCTP authorization."
+msgstr "تعذّر التحقق من تفويض CCTP."
 
 #: src/hooks/trade/use-account-abstraction-guard.ts
 msgid "Unable to verify the current account mode. Request was not submitted."
@@ -8322,7 +8318,6 @@ msgstr "المحفظة غير متصلة بـ {0}. بدّل الشبكة في م
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

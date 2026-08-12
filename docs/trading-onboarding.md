@@ -14,6 +14,7 @@ loading, or deposit behavior changes.
 - [Bridge2](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/bridge2)
 - [nktkas SDK `usdcRouting`](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/usdcRouting.ts)
 - [Circle: Transfer USDC from Arbitrum to HyperCore](https://developers.circle.com/cctp/howtos/transfer-usdc-from-arbitrum-to-hypercore)
+- [Circle: Transfer USDC with CctpExtensionV2](https://developers.circle.com/cctp/howtos/transfer-usdc-from-arbitrum-to-hypercore-with-cctp-extension-v2)
 - [Circle: CCTP-enabled HyperCore transfers](https://developers.circle.com/cctp/concepts/cctp-on-hypercore)
 - [Circle: USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)
 - [Privy React setup](https://docs.privy.io/basics/react/setup)
@@ -45,14 +46,16 @@ The terminal must preserve this ordering:
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
    both snapshots definitively establish that the account is empty. Enabling
    a deposit also requires a successful, runtime-validated `usdcRouting`
-   response for the active environment. Bridge2 may run only when
-   `depositRoute` is `bridge`. When it is `cctp`, a connected external wallet
-   may use Circle's self-submitted `CctpExtension` flow after dynamic fee and
-   Fast Transfer allowance checks only when that environment's fail-closed
-   release flag is enabled after funded end-to-end review. Embedded/email
-   wallets remain fail-closed until a production relayer for
-   `CctpExtensionV2` is configured and verified.
-   Loading, failed, or malformed routing data never permits either protocol.
+   response for the active environment. New deposits are CCTP-only: an exact,
+   fresh `depositRoute === "cctp"` is required. A `bridge` response pauses
+   deposits and must not reactivate retired manual or automatic Bridge2
+   submission. A connected external wallet may use Circle's self-submitted
+   `CctpExtension` flow after dynamic fee and Fast Transfer allowance checks.
+   An email wallet may sign for `CctpExtensionV2`, with the configured Privy
+   Smart Wallet and Arbitrum paymaster/bundler sponsoring submission. Each path
+   and environment requires its independent fail-closed release flag after
+   funded end-to-end review. Loading, failed, or malformed routing data never
+   permits submission.
 8. **Approve the builder fee when needed for an action.** Do not add this
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
@@ -131,11 +134,16 @@ an explicit security reset.
   be fetched again immediately before a signature or submission.
 - A route change between review and submission aborts the action and requires
   renewed review. A routing error never falls back to another protocol.
-- The manual and automatic Bridge2 paths share the same hard route guard.
-  External CCTP deposits use route-specific Circle native USDC, EIP-3009,
+- The manual and automatic Bridge2 paths are retired for new deposits. Keep
+  existing history/recovery and independent `withdraw3` withdrawal behavior,
+  but a `bridge` route never permits a new Bridge2 signature or submission.
+- External CCTP deposits use route-specific Circle native USDC, EIP-3009,
   current fees and allowance, the official forwarder hook, strict receipt
-  validation, and source-hash recovery. Embedded CCTP deposits require a
-  separately operated relayer and remain unavailable without one.
+  validation, and source-hash recovery. Sponsored email deposits additionally
+  use `CctpExtensionV2`, a deterministic deposit-bound `authNonce`, and the
+  Privy Smart Wallet/paymaster submission path. Recovery validates the exact
+  V2 event by owner, amount, and nonce; it does not infer the owner from the
+  account-abstraction outer transaction.
 - Account-mode changes and mode-dependent funds actions acquire one Web Lock
   scoped by Hyperliquid environment and owner. The lock is held until the SDK
   request settles. Lock acquisition times out after ten seconds; an acquired
@@ -184,11 +192,14 @@ At minimum, changes to this flow must cover:
   both mainnet and testnet query scopes;
 - a route change immediately before deposit or withdrawal aborting without a
   signature or submission and requiring renewed review;
-- manual and automatic Bridge2 paths remaining blocked unless a fresh route is
-  exactly `bridge`, with no CCTP-to-Bridge2 or withdrawal fallback;
+- manual and automatic Bridge2 paths remaining blocked for new deposits in
+  every routing state, with no CCTP-to-Bridge2 fallback, while existing
+  Bridge2 recovery and independent `withdraw3` withdrawals remain available;
 - external CCTP fee/allowance changes, testnet mainnet-state and 1,000-USDC
-  gates, receipt mismatch, recovery after refresh, and embedded-relayer
-  unavailability;
+  gates, receipt mismatch, and recovery after refresh;
+- sponsored CCTP exact-wallet activation, deterministic nonce binding,
+  environment gates, paymaster failure, success/skipped event discrimination,
+  account-abstraction outer transaction shape, and refresh recovery;
 - same-owner funds actions serializing across tabs until the first SDK promise
   settles, with unavailable Web Locks and bounded acquisition waits failing
   closed;

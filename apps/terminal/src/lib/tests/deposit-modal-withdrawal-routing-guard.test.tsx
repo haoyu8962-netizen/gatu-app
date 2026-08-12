@@ -12,11 +12,14 @@ import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-s
 const testState = vi.hoisted(() => ({
 	accountGuard: vi.fn(),
 	activeTab: "deposit" as "deposit" | "withdraw",
+	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
 	deposit: vi.fn(),
 	depositError: null as Error | null,
 	depositExecutionRoute: null as "bridge" | "cctp" | null,
 	depositHash: undefined as `0x${string}` | undefined,
 	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
+	emailAddress: null as string | null,
+	submissionOutcomeUnknown: false,
 	exchangeSignal: undefined as AbortSignal | undefined,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeMutations: new Map<string, ReturnType<typeof vi.fn>>(),
@@ -94,8 +97,21 @@ vi.mock("@/hooks/trade/use-cctp-withdrawal-fee", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
-	useCctpDepositFee: () => ({ calculation: null, isError: false, isLoading: false }),
+	useCctpDepositFee: (options: { amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }) => {
+		testState.cctpDepositFeeCalls.push(options);
+		return {
+			calculation: { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n },
+			hasSufficientFastAllowance: true,
+			isError: false,
+			isLoading: false,
+		};
+	},
 }));
+
+vi.mock("@/config/cctp-deposit", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/config/cctp-deposit")>();
+	return { ...original, isCctpExternalDepositEnabled: () => true };
+});
 
 vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
 	useCctpDepositTracking: () => ({ data: undefined, isError: false, recoveryRecord: null }),
@@ -121,13 +137,13 @@ vi.mock("@/hooks/use-mobile", () => ({
 
 vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
 	useEmailEmbeddedWallet: () => ({
-		emailAddress: null,
-		embeddedWalletAddress: null,
+		emailAddress: testState.emailAddress,
+		embeddedWalletAddress: testState.emailAddress ? "0x1111111111111111111111111111111111111111" : null,
 		embeddedWalletError: null,
 		ensureEmailEmbeddedWallet: vi.fn(),
 		isCreatingEmbeddedWallet: false,
 		needsEmbeddedWallet: false,
-		shouldUseEmbeddedWallet: false,
+		shouldUseEmbeddedWallet: testState.emailAddress !== null,
 	}),
 }));
 
@@ -138,9 +154,9 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		walletsReady: true,
 	}),
 	useWalletSession: () => ({
-		embeddedWalletAddress: null,
+		embeddedWalletAddress: testState.emailAddress ? "0x1111111111111111111111111111111111111111" : null,
 		hasWalletAccess: true,
-		user: null,
+		user: testState.emailAddress ? {} : null,
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
 }));
@@ -221,7 +237,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		maxDepositRaw: 10_000_000n,
 		networkName: "Arbitrum",
 		reset: vi.fn(),
-		smartDepositEnabled: true,
+		sponsoredCctpEnabled: true,
 		status: testState.depositStatus,
 		switchError: null,
 		switchToArbitrum: vi.fn(),
@@ -230,6 +246,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		walletProviderStatus: "idle",
 		walletResponseDelayed: false,
 		cctpRecoveryUnavailable: false,
+		submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
 	}),
 }));
 
@@ -242,8 +259,8 @@ vi.mock("@/lib/lifi/bridge-execution-state", () => ({
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
-	getPrivyEmailAddress: () => null,
-	shouldUsePrivyEmbeddedWallet: () => false,
+	getPrivyEmailAddress: () => testState.emailAddress,
+	shouldUsePrivyEmbeddedWallet: () => testState.emailAddress !== null,
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -356,6 +373,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.depositExecutionRoute = null;
 		testState.depositHash = undefined;
 		testState.depositStatus = "idle";
+		testState.emailAddress = null;
+		testState.cctpDepositFeeCalls.length = 0;
+		testState.submissionOutcomeUnknown = false;
 		testState.preTransferFresh = {
 			fee: "0",
 			isSanctioned: false,
@@ -530,6 +550,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	it("surfaces a final deposit-route request failure instead of leaving a ready button silently active", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.freshRoutingError = new Error("transport failed");
 		await rerender();
 
@@ -544,6 +565,22 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-status")).toBe(
 			"ready",
 		);
+	});
+
+	it("queries the shared Circle fee cache for the embedded wallet's current sponsored deposit amount", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.cctpDepositFeeCalls.length = 0;
+
+		await rerender();
+
+		expect(testState.cctpDepositFeeCalls).toContainEqual({
+			amountRaw: 10_000_000n,
+			enabled: true,
+			isTestnet: false,
+		});
 	});
 
 	it("surfaces a final withdrawal-route request failure without entering either mutation", async () => {
@@ -593,5 +630,21 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await rerender();
 
 		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit status unknown");
+	});
+
+	it("does not offer a retry when a sponsored submission may have reached the bundler without returning a hash", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositHash = undefined;
+		testState.depositExecutionRoute = "cctp";
+		testState.depositError = new Error("Bundler response was interrupted");
+		testState.submissionOutcomeUnknown = true;
+
+		await rerender();
+
+		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit status unknown");
+		expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Retry")).toBe(
+			false,
+		);
 	});
 });

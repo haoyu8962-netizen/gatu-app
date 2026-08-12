@@ -134,8 +134,9 @@ implementation.
 - Smart Wallet sponsorship is a Privy/paymaster concern and must be configured
   per chain. UI must not claim sponsorship is available unless the chain is
   configured and the transaction path uses the smart wallet client.
-- Bridge2 deposits must follow the Hyperliquid Bridge2 path and the correct
-  chain/USDC contract for the active environment.
+- Bridge2 is retired for new deposits. Preserve read-only history and recovery
+  for already-broadcast Bridge2 transactions, but never request a new Bridge2
+  signature or submission.
 - Hyperliquid SDK `usdcRouting` is the sole runtime source for deposit and
   withdrawal protocol selection. Validate the response as unknown data and
   accept only exact `bridge` or `cctp` values for both fields.
@@ -146,9 +147,10 @@ implementation.
   or submitting a transaction. If the route changed after the user reviewed
   the action, abort and require renewed review; never silently switch protocol
   or fall back after an error.
-- Both manual and automatic Bridge2 execution paths require a fresh
-  `depositRoute === "bridge"` hard guard at the execution boundary. They must
-  never run as a compatibility fallback for a reported `cctp` route.
+- Both manual and automatic Bridge2 execution paths fail closed. A runtime
+  `depositRoute === "bridge"` response pauses new deposits; it is not permission
+  to re-enable the retired path and must never become a fallback after a CCTP
+  error.
 - An external wallet may use the self-submitted Circle `CctpExtension` flow
   only for a fresh `depositRoute === "cctp"`: use the route-specific native
   USDC contract, current fee and Fast Transfer allowance, EIP-3009
@@ -158,15 +160,40 @@ implementation.
 - Keep external CCTP disabled by default and gated independently for mainnet
   and testnet until funded end-to-end evidence for that environment is
   reviewed. A route value alone is not a release authorization.
-- Embedded/email CCTP deposits remain unavailable until an independently
-  operated `CctpExtensionV2` relayer and production sponsorship policy have
-  passed funded testnet and mainnet end-to-end verification. Do not treat the
-  existing browser smart-wallet client as a verified relayer.
-- Persist the source transaction hash for CCTP recovery. A confirmed source
-  revert or invalid burn event is a terminal failure and must remove that
-  recovery item; an RPC timeout or unknown receipt must preserve it. A Circle
-  `forwardTxHash` proves forwarding was submitted, not that HyperCore credit is
-  complete.
+- Embedded/email CCTP uses the exact embedded EOA for the EIP-3009 signature and
+  `CctpExtensionV2` for the burn. The configured Privy Smart Wallet plus
+  Arbitrum paymaster/bundler submits and sponsors the transaction. Gate this
+  path independently per environment, require funded testnet and small-value
+  mainnet evidence, and never infer readiness from Privy authentication or an
+  unrelated sponsored transaction.
+- The V2 authorization nonce must bind owner, amount, validity window, and full
+  deposit data. Verify the receipt per `owner + amount + authNonce`; a matching
+  `SponsoredDepositForBurnSkipped` is a definitive failure even if the outer
+  transaction succeeded. Do not validate the embedded owner from an
+  account-abstraction outer transaction's sender or target.
+- Persist the source transaction hash for CCTP recovery. Sponsored records also
+  persist mode and `authNonce`, never the authorization signature. A confirmed
+  source revert, invalid burn event, or matching skipped event is terminal and
+  must remove that recovery item; an RPC timeout or unknown receipt must
+  preserve it. A Circle `forwardTxHash` proves forwarding was submitted, not
+  that HyperCore credit is complete.
+- A Privy Bundler may include multiple users in one outer transaction. Match
+  Circle's raw V2 message to the tracked environment, native USDC, direct or
+  sponsored Extension, amount, Forwarder, and owner hook before accepting its
+  forwarding hash. Ignore unrelated messages; zero or multiple exact matches
+  must remain fail closed.
+- Keep embedded-wallet recovery tracking mounted outside the deposit modal.
+  Remove the local source record when Circle returns a `forwardTxHash` so a
+  completed automatic deposit cannot block the next balance arrival; reuse the
+  same TanStack Query key when the modal is open to avoid duplicate polling.
+- Before a sponsored Smart Wallet broadcast, persist a minimal authorization
+  intent (`env`, exact owner, amount, `authNonce`, expiry) without its signature
+  or calldata. If the Bundler outcome is unknown and no source hash is returned,
+  block another signature across modal close and reload until the authorization
+  expires. Returning a Bundler hash is insufficient: remove the intent only
+  after the exact sponsored success event proves the EIP-3009 authorization
+  was consumed. Source reverts and skipped entries retain the tombstone until
+  expiry.
 - Map `withdrawalRoute === "cctp"` to `sendToEvmWithData` and `bridge` to
   `withdraw3`. The user does not independently override the protocol-selected
   withdrawal route.
@@ -196,13 +223,15 @@ implementation.
 
 - Route normalization rejects missing, malformed, and unknown values.
 - Mainnet and testnet routing state cannot cross-contaminate each other.
-- Manual and automatic Bridge2 deposits remain blocked during loading/error
-  states and for `cctp`; Bridge2 may execute only after a fresh `bridge`
-  result. External CCTP may execute only after a fresh `cctp` result, while
-  embedded CCTP remains blocked without the verified relayer.
+- Manual and automatic Bridge2 deposits remain blocked for every routing state.
+  External and sponsored CCTP may execute only after a fresh `cctp` result and
+  their independent environment gate. A fresh `bridge` result pauses deposits
+  instead of enabling Bridge2.
 - CCTP tests cover fee/allowance changes, official addresses and domains,
-  testnet recipient eligibility, Agent-address rejection, amount caps, receipt
-  mismatch, refresh recovery, and terminal source failure cleanup.
+  testnet recipient eligibility, Agent-address rejection, amount caps, direct
+  and sponsored receipt mismatch, matching skipped events, AA outer-transaction
+  independence, version-one recovery migration, refresh recovery, and terminal
+  source failure cleanup.
 - Withdrawals use only the protocol-selected route. A pre-submit route change
   aborts before signing and requires the user to review the updated fees and
   action.

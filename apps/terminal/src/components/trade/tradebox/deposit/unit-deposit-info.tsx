@@ -8,19 +8,12 @@ const ARBITRUM_NETWORK = NETWORKS[0];
 
 interface Props {
 	networkName: string;
-	route?: "bridge" | "cctp";
 	cctpFee?: string | null;
 	cctpNetAmount?: string | null;
 	cctpFeeLoading?: boolean;
 }
 
-export function UnitDepositInfo({
-	networkName,
-	route = "bridge",
-	cctpFee,
-	cctpNetAmount,
-	cctpFeeLoading = false,
-}: Props) {
+export function UnitDepositInfo({ networkName, cctpFee, cctpNetAmount, cctpFeeLoading = false }: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 
 	return (
@@ -53,24 +46,20 @@ export function UnitDepositInfo({
 				value={ARBITRUM_NETWORK.estimatedDepositTime}
 				valueClassName="font-semibold text-market-close-fg"
 			/>
-			{route === "cctp" ? (
-				<>
-					<InfoRow
-						className="border-t border-dashed border-market-close-stroke-card p-0 pt-2"
-						labelClassName="text-market-close-muted"
-						label={<Trans>Maximum CCTP fee</Trans>}
-						value={cctpFeeLoading ? <Trans>Checking...</Trans> : cctpFee ? `${cctpFee} USDC` : "—"}
-						valueClassName="font-semibold tabular-nums text-market-close-fg"
-					/>
-					<InfoRow
-						className="p-0"
-						labelClassName="text-market-close-muted"
-						label={<Trans>Estimated net credit</Trans>}
-						value={cctpNetAmount ? `${cctpNetAmount} USDC` : "—"}
-						valueClassName="font-semibold tabular-nums text-market-close-fg"
-					/>
-				</>
-			) : null}
+			<InfoRow
+				className="border-t border-dashed border-market-close-stroke-card p-0 pt-2"
+				labelClassName="text-market-close-muted"
+				label={<Trans>Maximum CCTP fee</Trans>}
+				value={cctpFeeLoading ? <Trans>Checking...</Trans> : cctpFee ? `${cctpFee} USDC` : "—"}
+				valueClassName="font-semibold tabular-nums text-market-close-fg"
+			/>
+			<InfoRow
+				className="p-0"
+				labelClassName="text-market-close-muted"
+				label={<Trans>Estimated net credit</Trans>}
+				value={cctpNetAmount ? `${cctpNetAmount} USDC` : "—"}
+				valueClassName="font-semibold tabular-nums text-market-close-fg"
+			/>
 		</div>
 	);
 }

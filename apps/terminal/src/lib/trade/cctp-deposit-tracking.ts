@@ -1,14 +1,20 @@
 import type { Hash, TransactionReceipt } from "viem";
-import { isAddress, isHex } from "viem";
+import { isAddress, isHex, numberToHex, size, sliceHex } from "viem";
 import { getCctpDepositConfig } from "@/config/cctp-deposit";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
-import { assertCctpDepositReceipt, assertCctpDepositSourceTransaction } from "@/lib/trade/cctp-deposit";
+import {
+	addressToBytes32,
+	assertCctpDepositReceipt,
+	assertCctpDepositSourceTransaction,
+	assertCctpSponsoredDepositReceipt,
+	encodeCctpForwardHookData,
+} from "@/lib/trade/cctp-deposit";
 
 export type CctpDepositEnvironment = "Mainnet" | "Testnet";
 
 export type CctpDepositForwardingStatus = { status: "waiting" } | { status: "forward-submitted"; forwardTxHash: Hash };
 
-export interface CctpDepositTrackingRecord {
+interface CctpDepositTrackingRecordBase {
 	version: typeof CCTP_DEPOSIT_TRACKING_VERSION;
 	env: CctpDepositEnvironment;
 	owner: `0x${string}`;
@@ -18,7 +24,10 @@ export interface CctpDepositTrackingRecord {
 	status: "source-submitted";
 }
 
-export interface SaveCctpDepositTrackingRecordInput {
+export type CctpDepositTrackingRecord = CctpDepositTrackingRecordBase &
+	({ mode: "direct"; authNonce?: never } | { mode: "sponsored"; authNonce: Hash });
+
+interface SaveCctpDepositTrackingRecordInputBase {
 	env: CctpDepositEnvironment;
 	owner: string;
 	sourceHash: string;
@@ -26,13 +35,42 @@ export interface SaveCctpDepositTrackingRecordInput {
 	createdAt?: number;
 }
 
+export type SaveCctpDepositTrackingRecordInput = SaveCctpDepositTrackingRecordInputBase &
+	({ mode?: "direct"; authNonce?: never } | { mode: "sponsored"; authNonce: string });
+
 export interface CctpDepositTrackingStorageOptions {
 	storage?: Storage;
 	nowMs?: number;
 }
 
-export interface FetchCircleCctpDepositStatusInput {
+export interface CctpSponsoredAuthorizationIntent {
+	version: typeof CCTP_SPONSORED_AUTHORIZATION_INTENT_VERSION;
 	env: CctpDepositEnvironment;
+	owner: `0x${string}`;
+	authNonce: Hash;
+	amount: string;
+	validBefore: number;
+	createdAt: number;
+	status: "submission-unresolved";
+}
+
+export interface SaveCctpSponsoredAuthorizationIntentInput {
+	env: CctpDepositEnvironment;
+	owner: string;
+	authNonce: string;
+	amount: string;
+	validBefore: bigint | number;
+	createdAt?: number;
+}
+
+export interface CircleCctpDepositMessageIdentity {
+	env: CctpDepositEnvironment;
+	owner: string;
+	amount: string;
+	mode: "direct" | "sponsored";
+}
+
+export interface FetchCircleCctpDepositStatusInput extends CircleCctpDepositMessageIdentity {
 	sourceHash: string;
 	signal?: AbortSignal;
 	fetchImpl?: typeof fetch;
@@ -43,6 +81,20 @@ export interface FetchArbitrumCctpSourceReceiptStatusInput {
 	sourceHash: string;
 	owner: string;
 	amount: string;
+	mode?: "direct";
+	authNonce?: never;
+	signal?: AbortSignal;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}
+
+export interface FetchArbitrumSponsoredCctpSourceReceiptStatusInput {
+	env: CctpDepositEnvironment;
+	sourceHash: string;
+	owner: string;
+	amount: string;
+	mode: "sponsored";
+	authNonce: string;
 	signal?: AbortSignal;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
@@ -50,12 +102,21 @@ export interface FetchArbitrumCctpSourceReceiptStatusInput {
 
 export type ArbitrumCctpSourceReceiptStatus = { status: "pending" } | { status: "confirmed-success" };
 
-export const CCTP_DEPOSIT_TRACKING_VERSION = 1;
+export const CCTP_DEPOSIT_TRACKING_VERSION = 2;
 export const CCTP_DEPOSIT_TRACKING_MAX_RECORDS = 20;
 export const CCTP_DEPOSIT_TRACKING_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const CCTP_DEPOSIT_TRACKING_STORAGE_PREFIX = "gatu:cctp-deposit-tracking:v1";
+export const CCTP_SPONSORED_AUTHORIZATION_INTENT_VERSION = 1;
+export const CCTP_SPONSORED_AUTHORIZATION_INTENT_STORAGE_PREFIX = "gatu:cctp-sponsored-authorization-intent:v1";
 
 const ARBITRUM_CCTP_SOURCE_DOMAIN = 3;
+const CCTP_V2_MESSAGE_VERSION = 1;
+const CCTP_V2_HEADER_BYTES = 148;
+const CCTP_V2_BURN_TOKEN_OFFSET = CCTP_V2_HEADER_BYTES + 4;
+const CCTP_V2_BURN_MINT_RECIPIENT_OFFSET = CCTP_V2_HEADER_BYTES + 36;
+const CCTP_V2_BURN_AMOUNT_OFFSET = CCTP_V2_HEADER_BYTES + 68;
+const CCTP_V2_BURN_MESSAGE_SENDER_OFFSET = CCTP_V2_HEADER_BYTES + 100;
+const CCTP_V2_BURN_HOOK_DATA_OFFSET = CCTP_V2_HEADER_BYTES + 228;
 const CCTP_DEPOSIT_TRACKING_CHANGE_EVENT = "gatu:cctp-deposit-tracking-change";
 const CCTP_DEPOSIT_TRACKING_PROBE_PREFIX = "gatu:cctp-deposit-tracking-probe:v1";
 const CCTP_SOURCE_RECEIPT_TIMEOUT_MS = 10_000;
@@ -66,7 +127,29 @@ const CIRCLE_CCTP_API_ORIGINS = {
 	Mainnet: "https://iris-api.circle.com",
 	Testnet: "https://iris-api-sandbox.circle.com",
 } as const;
-const TRACKING_RECORD_KEYS = ["amount", "createdAt", "env", "owner", "sourceHash", "status", "version"];
+const LEGACY_TRACKING_RECORD_KEYS = ["amount", "createdAt", "env", "owner", "sourceHash", "status", "version"];
+const DIRECT_TRACKING_RECORD_KEYS = ["amount", "createdAt", "env", "mode", "owner", "sourceHash", "status", "version"];
+const SPONSORED_TRACKING_RECORD_KEYS = [
+	"amount",
+	"authNonce",
+	"createdAt",
+	"env",
+	"mode",
+	"owner",
+	"sourceHash",
+	"status",
+	"version",
+];
+const SPONSORED_AUTHORIZATION_INTENT_KEYS = [
+	"amount",
+	"authNonce",
+	"createdAt",
+	"env",
+	"owner",
+	"status",
+	"validBefore",
+	"version",
+];
 
 export class CircleCctpDepositTrackingError extends Error {
 	readonly httpStatus?: number;
@@ -97,12 +180,17 @@ export async function fetchArbitrumCctpSourceReceiptStatus({
 	sourceHash,
 	owner,
 	amount,
+	mode = "direct",
+	authNonce,
 	signal,
 	fetchImpl = fetch,
 	timeoutMs = CCTP_SOURCE_RECEIPT_TIMEOUT_MS,
-}: FetchArbitrumCctpSourceReceiptStatusInput): Promise<ArbitrumCctpSourceReceiptStatus> {
+}:
+	| FetchArbitrumCctpSourceReceiptStatusInput
+	| FetchArbitrumSponsoredCctpSourceReceiptStatusInput): Promise<ArbitrumCctpSourceReceiptStatus> {
 	const normalizedSourceHash = normalizeHash(sourceHash, "CCTP source transaction hash");
 	const normalizedOwner = normalizeOwner(owner);
+	const normalizedAuthNonce = mode === "sponsored" ? normalizeHash(authNonce, "CCTP authorization nonce") : undefined;
 	if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
 		throw new ArbitrumCctpSourceReceiptError("Arbitrum CCTP source receipt timeout is invalid.");
 	}
@@ -132,11 +220,14 @@ export async function fetchArbitrumCctpSourceReceiptStatus({
 		});
 		const receiptStatus = parseArbitrumCctpSourceReceiptResponse(receiptResponse, {
 			amount,
+			authNonce: normalizedAuthNonce,
 			env,
+			mode,
 			owner: normalizedOwner,
 			sourceHash: normalizedSourceHash,
 		});
 		if (receiptStatus.status === "pending") return receiptStatus;
+		if (mode === "sponsored") return receiptStatus;
 
 		const transactionResponse = await fetchArbitrumJsonRpc({
 			fetchImpl,
@@ -174,7 +265,7 @@ export async function fetchArbitrumCctpSourceReceiptStatus({
 
 export function parseArbitrumCctpSourceReceiptResponse(
 	value: unknown,
-	record: Pick<CctpDepositTrackingRecord, "amount" | "env" | "owner" | "sourceHash">,
+	record: Pick<CctpDepositTrackingRecord, "amount" | "authNonce" | "env" | "mode" | "owner" | "sourceHash">,
 ): ArbitrumCctpSourceReceiptStatus {
 	const normalizedExpectedSourceHash = normalizeHash(record.sourceHash, "Expected CCTP source transaction hash");
 	if (!isRecord(value) || value.jsonrpc !== "2.0" || value.id !== 1 || !("result" in value)) {
@@ -212,12 +303,18 @@ export function parseArbitrumCctpSourceReceiptResponse(
 		logs: normalizeRpcReceiptLogs(value.result.logs),
 	} as TransactionReceipt;
 	try {
-		assertCctpDepositReceipt({
+		const commonInput = {
 			amountRaw: parseCctpTrackingAmountRaw(record.amount),
 			config: getCctpDepositConfig(record.env === "Testnet"),
 			receipt,
 			user: normalizeOwner(record.owner),
-		});
+		};
+		if (record.mode === "sponsored") {
+			if (!record.authNonce) throw new Error("Sponsored CCTP tracking record is missing its authorization nonce");
+			assertCctpSponsoredDepositReceipt({ ...commonInput, authNonce: record.authNonce });
+		} else {
+			assertCctpDepositReceipt(commonInput);
+		}
 	} catch (cause) {
 		throw createSourceReceiptMismatchError(cause);
 	}
@@ -346,6 +443,7 @@ export function buildCircleCctpMessagesUrl(env: CctpDepositEnvironment, sourceHa
 export function parseCircleCctpMessagesResponse(
 	value: unknown,
 	expectedSourceHash?: string,
+	expectedDeposit?: CircleCctpDepositMessageIdentity,
 ): CctpDepositForwardingStatus {
 	if (!isRecord(value) || !Array.isArray(value.messages)) {
 		throw new CircleCctpDepositTrackingError("Circle CCTP response is malformed: messages must be an array.");
@@ -361,8 +459,28 @@ export function parseCircleCctpMessagesResponse(
 		);
 	}
 
+	let messages = value.messages;
+	if (expectedDeposit) {
+		const matchingMessages = messages.filter((message) => {
+			if (!isRecord(message)) {
+				throw new CircleCctpDepositTrackingError("Circle CCTP response is malformed: every message must be an object.");
+			}
+			if (typeof message.message !== "string" || !isHex(message.message, { strict: true })) {
+				throw new CircleCctpDepositTrackingError("Circle CCTP response is malformed: message bytes are invalid.");
+			}
+			return matchesCircleCctpDepositMessage(message.message, expectedDeposit);
+		});
+		if (matchingMessages.length === 0) return { status: "waiting" };
+		if (matchingMessages.length > 1) {
+			throw new CircleCctpDepositTrackingError(
+				"Circle CCTP response is ambiguous: multiple messages match the tracked deposit.",
+			);
+		}
+		messages = matchingMessages;
+	}
+
 	const forwardTxHashes = new Set<Hash>();
-	for (const message of value.messages) {
+	for (const message of messages) {
 		if (!isRecord(message)) {
 			throw new CircleCctpDepositTrackingError("Circle CCTP response is malformed: every message must be an object.");
 		}
@@ -386,8 +504,41 @@ export function parseCircleCctpMessagesResponse(
 	return forwardTxHash ? { status: "forward-submitted", forwardTxHash } : { status: "waiting" };
 }
 
+function matchesCircleCctpDepositMessage(message: `0x${string}`, identity: CircleCctpDepositMessageIdentity): boolean {
+	const config = getCctpDepositConfig(identity.env === "Testnet");
+	const owner = normalizeOwner(identity.owner);
+	const amountRaw = parseCctpTrackingAmountRaw(identity.amount);
+	const expectedHookData = encodeCctpForwardHookData(owner);
+	if (size(message) !== CCTP_V2_BURN_HOOK_DATA_OFFSET + size(expectedHookData)) return false;
+
+	const expectedForwarder = addressToBytes32(config.cctpForwarder).toLowerCase();
+	const expectedMessageSender = addressToBytes32(
+		identity.mode === "sponsored" ? config.cctpExtensionV2 : config.cctpExtension,
+	).toLowerCase();
+	return (
+		sliceHex(message, 0, 4).toLowerCase() === numberToHex(CCTP_V2_MESSAGE_VERSION, { size: 4 }).toLowerCase() &&
+		sliceHex(message, 4, 8).toLowerCase() === numberToHex(config.sourceDomain, { size: 4 }).toLowerCase() &&
+		sliceHex(message, 8, 12).toLowerCase() === numberToHex(config.destinationDomain, { size: 4 }).toLowerCase() &&
+		sliceHex(message, 108, 140).toLowerCase() === expectedForwarder &&
+		sliceHex(message, CCTP_V2_HEADER_BYTES, CCTP_V2_HEADER_BYTES + 4).toLowerCase() ===
+			numberToHex(CCTP_V2_MESSAGE_VERSION, { size: 4 }).toLowerCase() &&
+		sliceHex(message, CCTP_V2_BURN_TOKEN_OFFSET, CCTP_V2_BURN_MINT_RECIPIENT_OFFSET).toLowerCase() ===
+			addressToBytes32(config.usdc).toLowerCase() &&
+		sliceHex(message, CCTP_V2_BURN_MINT_RECIPIENT_OFFSET, CCTP_V2_BURN_AMOUNT_OFFSET).toLowerCase() ===
+			expectedForwarder &&
+		sliceHex(message, CCTP_V2_BURN_AMOUNT_OFFSET, CCTP_V2_BURN_MESSAGE_SENDER_OFFSET).toLowerCase() ===
+			numberToHex(amountRaw, { size: 32 }).toLowerCase() &&
+		sliceHex(message, CCTP_V2_BURN_MESSAGE_SENDER_OFFSET, CCTP_V2_BURN_MESSAGE_SENDER_OFFSET + 32).toLowerCase() ===
+			expectedMessageSender &&
+		sliceHex(message, CCTP_V2_BURN_HOOK_DATA_OFFSET).toLowerCase() === expectedHookData.toLowerCase()
+	);
+}
+
 export async function fetchCircleCctpDepositStatus({
+	amount,
 	env,
+	mode,
+	owner,
 	sourceHash,
 	signal,
 	fetchImpl = fetch,
@@ -418,7 +569,7 @@ export async function fetchCircleCctpDepositStatus({
 	} catch (cause) {
 		throw new CircleCctpDepositTrackingError("Circle CCTP response is malformed: expected JSON.", { cause });
 	}
-	return parseCircleCctpMessagesResponse(value, normalizedSourceHash);
+	return parseCircleCctpMessagesResponse(value, normalizedSourceHash, { amount, env, mode, owner });
 }
 
 export function getCctpDepositTrackingStorageKey(env: CctpDepositEnvironment, owner: string): string {
@@ -431,6 +582,99 @@ export function getCctpDepositTrackingRecordStorageKey(
 	sourceHash: string,
 ): string {
 	return `${getCctpDepositTrackingStorageKey(env, owner)}:${normalizeHash(sourceHash, "CCTP source transaction hash")}`;
+}
+
+export function getCctpSponsoredAuthorizationIntentStorageKey(env: CctpDepositEnvironment, owner: string): string {
+	return `${CCTP_SPONSORED_AUTHORIZATION_INTENT_STORAGE_PREFIX}:${env.toLowerCase()}:${normalizeOwner(owner)}`;
+}
+
+export function readCctpSponsoredAuthorizationIntent(
+	env: CctpDepositEnvironment,
+	owner: string,
+	options: CctpDepositTrackingStorageOptions = {},
+): CctpSponsoredAuthorizationIntent | null {
+	const nowMs = getNowMs(options.nowMs);
+	const storage = getStorage(options.storage);
+	const normalizedOwner = normalizeOwner(owner);
+	const key = getCctpSponsoredAuthorizationIntentStorageKey(env, normalizedOwner);
+	let serialized: string | null;
+	try {
+		serialized = storage.getItem(key);
+	} catch (cause) {
+		throw new CctpDepositTrackingPersistenceError("CCTP sponsored authorization storage is unavailable.", {
+			cause,
+		});
+	}
+	if (serialized === null) return null;
+
+	let intent: CctpSponsoredAuthorizationIntent;
+	try {
+		intent = normalizeSponsoredAuthorizationIntent(JSON.parse(serialized), env, normalizedOwner, nowMs);
+	} catch (cause) {
+		throw new CctpDepositTrackingPersistenceError(
+			"Stored CCTP sponsored authorization data is invalid and cannot be trusted.",
+			{ cause },
+		);
+	}
+	if (intent.validBefore > Math.floor(nowMs / 1000)) return intent;
+
+	removeTrackingRecordStorageKey(storage, key);
+	return null;
+}
+
+export function saveCctpSponsoredAuthorizationIntent(
+	input: SaveCctpSponsoredAuthorizationIntentInput,
+	options: CctpDepositTrackingStorageOptions = {},
+): CctpSponsoredAuthorizationIntent {
+	const nowMs = getNowMs(options.nowMs);
+	const storage = getStorage(options.storage);
+	const owner = normalizeOwner(input.owner);
+	if (readCctpSponsoredAuthorizationIntent(input.env, owner, { storage, nowMs })) {
+		throw new CctpDepositTrackingPersistenceError(
+			"An unresolved CCTP sponsored authorization already exists for this account.",
+		);
+	}
+	const validBefore = normalizeAuthorizationValidBefore(input.validBefore);
+	if (validBefore <= Math.floor(nowMs / 1000)) {
+		throw new CctpDepositTrackingPersistenceError("CCTP sponsored authorization is already expired.");
+	}
+	const intent = normalizeSponsoredAuthorizationIntent(
+		{
+			amount: input.amount,
+			authNonce: normalizeHash(input.authNonce, "CCTP authorization nonce"),
+			createdAt: input.createdAt ?? nowMs,
+			env: input.env,
+			owner,
+			status: "submission-unresolved",
+			validBefore,
+			version: CCTP_SPONSORED_AUTHORIZATION_INTENT_VERSION,
+		},
+		input.env,
+		owner,
+		nowMs,
+	);
+	writeSponsoredAuthorizationIntent(storage, getCctpSponsoredAuthorizationIntentStorageKey(input.env, owner), intent);
+	return intent;
+}
+
+export function removeCctpSponsoredAuthorizationIntent(
+	env: CctpDepositEnvironment,
+	owner: string,
+	authNonce: string,
+	options: CctpDepositTrackingStorageOptions = {},
+): void {
+	const nowMs = getNowMs(options.nowMs);
+	const storage = getStorage(options.storage);
+	const normalizedOwner = normalizeOwner(owner);
+	const normalizedAuthNonce = normalizeHash(authNonce, "CCTP authorization nonce");
+	const intent = readCctpSponsoredAuthorizationIntent(env, normalizedOwner, { storage, nowMs });
+	if (intent === null) return;
+	if (intent.authNonce !== normalizedAuthNonce) {
+		throw new CctpDepositTrackingPersistenceError(
+			"CCTP sponsored authorization does not match the unresolved submission.",
+		);
+	}
+	removeTrackingRecordStorageKey(storage, getCctpSponsoredAuthorizationIntentStorageKey(env, normalizedOwner));
 }
 
 export function getCctpDepositTrackingStorageSnapshot(env: CctpDepositEnvironment, owner: string): string {
@@ -558,6 +802,9 @@ export function saveCctpDepositTrackingRecord(
 			sourceHash: normalizeHash(input.sourceHash, "CCTP source transaction hash"),
 			amount: input.amount,
 			createdAt: input.createdAt ?? nowMs,
+			...(input.mode === "sponsored"
+				? { mode: "sponsored", authNonce: normalizeHash(input.authNonce, "CCTP authorization nonce") }
+				: { mode: "direct" }),
 			status: "source-submitted",
 		},
 		input.env,
@@ -597,10 +844,27 @@ function normalizeTrackingRecord(
 ): CctpDepositTrackingRecord {
 	if (!isRecord(value)) throw new Error("Expected a CCTP deposit tracking record");
 	const keys = Object.keys(value).sort();
-	if (keys.length !== TRACKING_RECORD_KEYS.length || !keys.every((key, index) => key === TRACKING_RECORD_KEYS[index])) {
-		throw new Error("Unexpected CCTP deposit tracking fields");
+	const isLegacyDirect =
+		value.version === 1 &&
+		keys.length === LEGACY_TRACKING_RECORD_KEYS.length &&
+		keys.every((key, index) => key === LEGACY_TRACKING_RECORD_KEYS[index]);
+	let mode: "direct" | "sponsored";
+	if (isLegacyDirect) {
+		mode = "direct";
+	} else if (value.mode === "direct" || value.mode === "sponsored") {
+		mode = value.mode;
+	} else {
+		throw new Error("Unexpected or unsupported CCTP tracking fields");
 	}
-	if (value.version !== CCTP_DEPOSIT_TRACKING_VERSION) throw new Error("Unsupported CCTP tracking version");
+	const expectedKeys = mode === "sponsored" ? SPONSORED_TRACKING_RECORD_KEYS : DIRECT_TRACKING_RECORD_KEYS;
+	if (
+		!isLegacyDirect &&
+		(value.version !== CCTP_DEPOSIT_TRACKING_VERSION ||
+			keys.length !== expectedKeys.length ||
+			!keys.every((key, index) => key === expectedKeys[index]))
+	) {
+		throw new Error("Unexpected or unsupported CCTP tracking fields");
+	}
 	if (value.env !== env) throw new Error("CCTP tracking environment mismatch");
 	if (value.owner !== owner) throw new Error("CCTP tracking owner mismatch");
 	if (value.status !== "source-submitted") throw new Error("Invalid CCTP tracking status");
@@ -615,7 +879,7 @@ function normalizeTrackingRecord(
 	}
 	const sourceHash = normalizeHash(value.sourceHash, "Stored CCTP source transaction hash");
 	if (sourceHash !== value.sourceHash) throw new Error("Stored CCTP source transaction hash must be normalized");
-	return {
+	const commonRecord = {
 		version: CCTP_DEPOSIT_TRACKING_VERSION,
 		env,
 		owner,
@@ -623,7 +887,83 @@ function normalizeTrackingRecord(
 		amount: value.amount,
 		createdAt: value.createdAt,
 		status: "source-submitted",
+	} as const;
+	if (mode === "direct") return { ...commonRecord, mode };
+	const authNonce = normalizeHash(value.authNonce, "Stored CCTP authorization nonce");
+	if (authNonce !== value.authNonce) throw new Error("Stored CCTP authorization nonce must be normalized");
+	return { ...commonRecord, mode, authNonce };
+}
+
+function normalizeSponsoredAuthorizationIntent(
+	value: unknown,
+	env: CctpDepositEnvironment,
+	owner: `0x${string}`,
+	nowMs: number,
+): CctpSponsoredAuthorizationIntent {
+	if (!isRecord(value)) throw new Error("Expected a CCTP sponsored authorization intent");
+	const keys = Object.keys(value).sort();
+	if (
+		value.version !== CCTP_SPONSORED_AUTHORIZATION_INTENT_VERSION ||
+		keys.length !== SPONSORED_AUTHORIZATION_INTENT_KEYS.length ||
+		!keys.every((key, index) => key === SPONSORED_AUTHORIZATION_INTENT_KEYS[index])
+	) {
+		throw new Error("Unexpected or unsupported CCTP sponsored authorization fields");
+	}
+	if (value.env !== env) throw new Error("CCTP sponsored authorization environment mismatch");
+	if (value.owner !== owner) throw new Error("CCTP sponsored authorization owner mismatch");
+	if (value.status !== "submission-unresolved") throw new Error("Invalid CCTP sponsored authorization status");
+	if (!isPositiveDecimal(value.amount)) throw new Error("Invalid CCTP sponsored authorization amount");
+	if (
+		typeof value.createdAt !== "number" ||
+		!Number.isSafeInteger(value.createdAt) ||
+		value.createdAt <= 0 ||
+		value.createdAt > nowMs + MAX_FUTURE_CLOCK_SKEW_MS
+	) {
+		throw new Error("Invalid CCTP sponsored authorization timestamp");
+	}
+	const validBefore = normalizeAuthorizationValidBefore(value.validBefore);
+	const authNonce = normalizeHash(value.authNonce, "Stored CCTP authorization nonce");
+	if (authNonce !== value.authNonce) throw new Error("Stored CCTP authorization nonce must be normalized");
+	return {
+		version: CCTP_SPONSORED_AUTHORIZATION_INTENT_VERSION,
+		env,
+		owner,
+		authNonce,
+		amount: value.amount,
+		validBefore,
+		createdAt: value.createdAt,
+		status: "submission-unresolved",
 	};
+}
+
+function normalizeAuthorizationValidBefore(value: unknown): number {
+	if (typeof value === "bigint") {
+		if (value <= 0n || value > BigInt(Number.MAX_SAFE_INTEGER)) {
+			throw new Error("Invalid CCTP sponsored authorization expiry");
+		}
+		return Number(value);
+	}
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+		throw new Error("Invalid CCTP sponsored authorization expiry");
+	}
+	return value;
+}
+
+function writeSponsoredAuthorizationIntent(
+	storage: Storage,
+	key: string,
+	intent: CctpSponsoredAuthorizationIntent,
+): void {
+	try {
+		const serialized = JSON.stringify(intent);
+		storage.setItem(key, serialized);
+		if (storage.getItem(key) !== serialized) throw new Error("CCTP sponsored authorization readback failed");
+	} catch (cause) {
+		throw new CctpDepositTrackingPersistenceError("Unable to persist CCTP sponsored authorization data.", {
+			cause,
+		});
+	}
+	notifyTrackingChange(key);
 }
 
 function writeTrackingRecord(storage: Storage, key: string, record: CctpDepositTrackingRecord): void {

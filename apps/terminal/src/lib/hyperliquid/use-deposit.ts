@@ -15,17 +15,7 @@ import type {
 	Transport,
 	WalletClient,
 } from "viem";
-import {
-	bytesToHex,
-	createWalletClient,
-	custom,
-	decodeEventLog,
-	encodeFunctionData,
-	erc20Abi,
-	formatUnits,
-	isAddress,
-	parseUnits,
-} from "viem";
+import { bytesToHex, createWalletClient, custom, encodeFunctionData, formatUnits, isAddress, parseUnits } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { useChainId, usePublicClient } from "wagmi";
 import {
@@ -33,8 +23,9 @@ import {
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
 	getCctpDepositConfig,
 	isCctpExternalDepositEnabled,
+	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
-import { BRIDGE2_ABI, DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
@@ -58,9 +49,14 @@ import {
 } from "@/lib/hyperliquid/deposit-source-error";
 import {
 	assertCctpDepositReceipt,
+	assertCctpSponsoredDepositReceipt,
 	buildCctpDepositContractArgs,
+	buildCctpSponsoredDepositContractArgs,
 	CCTP_EXTENSION_ABI,
+	CCTP_EXTENSION_V2_ABI,
+	calculateCctpDepositFee,
 	createCctpDepositParameters,
+	createCctpSponsoredDepositParameters,
 	fetchCctpDepositFees,
 	fetchCctpFastAllowance,
 	getHyperCoreRecipientState,
@@ -68,10 +64,13 @@ import {
 import {
 	assertCctpDepositTrackingStorageWritable,
 	readCctpDepositTrackingRecords,
+	readCctpSponsoredAuthorizationIntent,
 	removeCctpDepositTrackingRecord,
+	removeCctpSponsoredAuthorizationIntent,
 	saveCctpDepositTrackingRecord,
+	saveCctpSponsoredAuthorizationIntent,
 } from "@/lib/trade/cctp-deposit-tracking";
-import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
+import { hasSameWalletAddress, isPrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 export type DepositStatus = "idle" | "pending" | "confirming" | "success" | "error";
@@ -96,7 +95,7 @@ export interface UseDepositResult {
 	walletProviderStatus: WalletProviderStatus;
 	walletProviderError: Error | null;
 	networkName: string;
-	smartDepositEnabled: boolean;
+	sponsoredCctpEnabled: boolean;
 	depositRoute: DepositRoute;
 	balance: string;
 	balanceRaw: bigint | undefined;
@@ -110,6 +109,7 @@ export interface UseDepositResult {
 	executionAmount: string | null;
 	executionRoute: DepositRoute | null;
 	cctpRecoveryUnavailable: boolean;
+	submissionOutcomeUnknown: boolean;
 	walletResponseDelayed: boolean;
 	deposit: (amount: string) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
@@ -123,7 +123,7 @@ interface UseDepositOptions {
 	mode?: DepositMode;
 	executionScope?: DepositExecutionScope;
 	walletAddress?: `0x${string}`;
-	depositRoute?: DepositRoute;
+	depositRoute: DepositRoute;
 	expectedCctpMaxFeeRaw?: bigint;
 }
 
@@ -176,24 +176,12 @@ interface ProviderRpcErrorLike {
 }
 
 const BALANCE_OF_SELECTOR = "0x70a08231";
-const PERMIT_DEADLINE_SECONDS = 20 * 60;
 const GAS_BUFFER_NUMERATOR = 12n;
 const GAS_BUFFER_DENOMINATOR = 10n;
 const DEPOSIT_CHAINS = {
 	mainnet: arbitrum,
 	testnet: arbitrumSepolia,
 } as const;
-const USDC_PERMIT_ABI = [
-	...erc20Abi,
-	{
-		type: "function",
-		name: "nonces",
-		stateMutability: "view",
-		inputs: [{ name: "owner", type: "address" }],
-		outputs: [{ name: "", type: "uint256" }],
-	},
-] as const;
-
 function createAuthorizationNonce(): Hex {
 	if (!globalThis.crypto?.getRandomValues)
 		throw new Error(t`Secure randomness is unavailable. Deposit was not submitted.`);
@@ -251,13 +239,6 @@ function toError(error: unknown): Error {
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
 }
 
-function toBigInt(value: unknown): bigint {
-	if (typeof value === "bigint") return value;
-	if (typeof value === "number" && Number.isSafeInteger(value)) return BigInt(value);
-	if (typeof value === "string") return BigInt(value);
-	throw new Error(t`Unable to prepare USDC permit`);
-}
-
 function getProviderRpcError(error: unknown): ProviderRpcErrorLike {
 	if (error && typeof error === "object") return error as ProviderRpcErrorLike;
 	return {};
@@ -282,12 +263,6 @@ function isUnknownChainError(error: unknown) {
 
 function isNetworkRequestError(error: unknown) {
 	return /http request failed|failed to fetch|fetch failed|network error/i.test(toError(error).message);
-}
-
-function isInsufficientGasError(error: unknown) {
-	return /insufficient funds|not enough.*gas|gas required exceeds allowance|exceeds.*balance|prefund/i.test(
-		toError(error).message,
-	);
 }
 
 function isRevertedReceipt(receipt: RpcTransactionReceiptLike) {
@@ -373,9 +348,12 @@ function getWalletChainId(wallet: ConnectedWallet): number | null {
 function selectDepositWallet(
 	wallets: ConnectedWallet[],
 	address: `0x${string}` | undefined,
+	requireEmbedded: boolean,
 ): ConnectedWallet | undefined {
 	if (!address) return undefined;
-	return wallets.find((wallet) => hasSameWalletAddress(wallet.address, address));
+	return wallets.find(
+		(wallet) => hasSameWalletAddress(wallet.address, address) && (!requireEmbedded || isPrivyEmbeddedWallet(wallet)),
+	);
 }
 
 async function getDepositProvider(wallet: ConnectedWallet): Promise<Eip1193Provider> {
@@ -513,35 +491,6 @@ async function getDepositProviderForChain(wallet: ConnectedWallet, config: Depos
 	return nextProvider;
 }
 
-async function assertWalletCanPayDepositGas(
-	context: ReadyDepositContext,
-	config: DepositNetworkConfig,
-	amountRaw: bigint,
-) {
-	try {
-		const [gas, gasPrice, balance] = await Promise.all([
-			context.publicClient.estimateContractGas({
-				account: context.address,
-				address: config.usdc,
-				abi: erc20Abi,
-				functionName: "transfer",
-				args: [config.bridge2, amountRaw],
-			}),
-			context.publicClient.getGasPrice(),
-			context.publicClient.getBalance({ address: context.address }),
-		]);
-		const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
-		if (balance < bufferedGas * gasPrice) {
-			throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
-		}
-	} catch (error) {
-		if (isInsufficientGasError(error)) {
-			throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
-		}
-		throw error;
-	}
-}
-
 export function waitForWalletTransactionHash<T>(
 	promise: Promise<T>,
 	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
@@ -611,140 +560,6 @@ async function getReadyPermitSignerContext({
 	});
 
 	return { address, provider, publicClient, walletClient: walletClient as ReadyWalletClient };
-}
-
-function splitPermitSignature(signature: Hex) {
-	const normalized = signature.slice(2);
-	if (normalized.length !== 130) throw new Error(t`Unable to prepare USDC permit`);
-	let v = Number.parseInt(normalized.slice(128, 130), 16);
-	if (v < 27) v += 27;
-
-	return {
-		r: BigInt(`0x${normalized.slice(0, 64)}`),
-		s: BigInt(`0x${normalized.slice(64, 128)}`),
-		v,
-	};
-}
-
-async function createBridge2PermitCall({
-	amountRaw,
-	config,
-	context,
-}: {
-	amountRaw: bigint;
-	config: DepositNetworkConfig;
-	context: ReadyDepositContext;
-}): Promise<Hex> {
-	const nonce = toBigInt(
-		await context.publicClient.readContract({
-			address: config.usdc,
-			abi: USDC_PERMIT_ABI,
-			functionName: "nonces",
-			args: [context.address],
-		}),
-	);
-	const deadline = BigInt(Math.floor(Date.now() / 1000) + PERMIT_DEADLINE_SECONDS);
-	const permitSignature = await context.walletClient.signTypedData({
-		account: context.address,
-		domain: {
-			name: config.usdcPermitName,
-			version: config.usdcPermitVersion,
-			chainId: config.chainId,
-			verifyingContract: config.usdc,
-		},
-		types: {
-			Permit: [
-				{ name: "owner", type: "address" },
-				{ name: "spender", type: "address" },
-				{ name: "value", type: "uint256" },
-				{ name: "nonce", type: "uint256" },
-				{ name: "deadline", type: "uint256" },
-			],
-		},
-		primaryType: "Permit",
-		message: {
-			owner: context.address,
-			spender: config.bridge2,
-			value: amountRaw,
-			nonce,
-			deadline,
-		},
-	});
-
-	return encodeFunctionData({
-		abi: BRIDGE2_ABI,
-		functionName: "batchedDepositWithPermit",
-		args: [
-			[
-				{
-					user: context.address,
-					usd: amountRaw,
-					deadline,
-					signature: splitPermitSignature(permitSignature),
-				},
-			],
-		],
-	});
-}
-
-export function assertSmartBridge2DepositReceipt({
-	amountRaw,
-	config,
-	receipt,
-	user,
-}: {
-	amountRaw: bigint;
-	config: DepositNetworkConfig;
-	receipt: TransactionReceipt;
-	user: `0x${string}`;
-}) {
-	let hasMatchingTransfer = false;
-	let hasMatchingFailedPermit = false;
-
-	for (const log of receipt.logs) {
-		if (hasSameWalletAddress(log.address, config.bridge2)) {
-			try {
-				const event = decodeEventLog({
-					abi: BRIDGE2_ABI,
-					data: log.data,
-					topics: log.topics,
-				});
-
-				if (event.eventName === "FailedPermitDeposit") {
-					const args = event.args as { user?: string; usd?: bigint | number | string };
-					if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
-						hasMatchingFailedPermit = true;
-					}
-				}
-			} catch {}
-		}
-
-		if (hasSameWalletAddress(log.address, config.usdc)) {
-			try {
-				const event = decodeEventLog({
-					abi: erc20Abi,
-					data: log.data,
-					topics: log.topics,
-				});
-
-				if (event.eventName === "Transfer") {
-					const args = event.args as { from?: string; to?: string; value?: bigint | number | string };
-					if (
-						hasSameWalletAddress(args.from, user) &&
-						hasSameWalletAddress(args.to, config.bridge2) &&
-						args.value !== undefined &&
-						toBigInt(args.value) === amountRaw
-					) {
-						hasMatchingTransfer = true;
-					}
-				}
-			} catch {}
-		}
-	}
-
-	if (hasMatchingFailedPermit) throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
-	if (hasMatchingTransfer) return;
-	throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
 }
 
 async function getProviderTransactionReceipt(provider: Eip1193Provider | undefined, hash: Hash) {
@@ -1087,9 +902,9 @@ export function useDeposit({
 	mode = "wallet",
 	executionScope = "manual",
 	walletAddress: walletAddressOverride,
-	depositRoute = "bridge",
+	depositRoute,
 	expectedCctpMaxFeeRaw,
-}: UseDepositOptions = {}): UseDepositResult {
+}: UseDepositOptions): UseDepositResult {
 	const network = getDepositNetwork(useIsTestnet());
 	const bridgeDepositConfig = getDepositConfig(network);
 	const cctpDepositConfig = getCctpDepositConfig(network === "testnet");
@@ -1099,7 +914,10 @@ export function useDeposit({
 	const walletAddress = walletAddressOverride ?? sessionWalletAddress;
 	const { wallets } = useWallets();
 	const { getClientForChain } = useSmartWallets();
-	const depositWallet = useMemo(() => selectDepositWallet(wallets, walletAddress), [wallets, walletAddress]);
+	const depositWallet = useMemo(
+		() => selectDepositWallet(wallets, walletAddress, mode === "smart"),
+		[mode, wallets, walletAddress],
+	);
 	const chain = useDepositChain(depositWallet, walletAddress, depositConfig, mode === "wallet");
 	const {
 		balanceRaw,
@@ -1121,7 +939,10 @@ export function useDeposit({
 	const deposit = useCallback(
 		async (amount: string) => {
 			let cctpTrackingRecord: { env: "Mainnet" | "Testnet"; owner: `0x${string}`; sourceHash: Hash } | undefined;
+			let cctpAuthorizationNonce: Hex | undefined;
+			let sponsoredAuthorizationValidBefore: bigint | undefined;
 			let cctpRecoveryUnavailable = false;
+			let sponsoredSubmissionStarted = false;
 			const operationId = startDepositExecution(executionKey, executionLockKey, amount, depositRoute);
 			if (operationId === null) {
 				setBlockedDepositExecution(
@@ -1135,211 +956,210 @@ export function useDeposit({
 
 			try {
 				await assertFreshSelectedDepositRoute();
+				if (depositRoute !== "cctp") {
+					throw new Error(t`Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.`);
+				}
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
-				let hash: Hash;
-				let provider: Eip1193Provider | undefined;
-				let smartDepositUser: `0x${string}` | undefined;
 				const markWalletResponseDelayed = () => {
 					updateDepositExecutionState(executionKey, operationId, (previous) =>
 						previous.status === "pending" ? { ...previous, walletResponseDelayed: true } : previous,
 					);
 				};
 
+				const ready =
+					mode === "smart"
+						? await getReadyPermitSignerContext({
+								address: walletAddress,
+								chain: depositChain,
+								publicClient,
+								wallet: depositWallet,
+							})
+						: await getReadyWalletDepositContext({
+								address: walletAddress,
+								chain: depositChain,
+								config: depositConfig,
+								publicClient,
+								wallet: depositWallet,
+							});
 				if (mode === "smart") {
-					if (depositRoute === "cctp") {
+					if (!isCctpSponsoredDepositEnabled(network === "testnet")) {
+						throw new Error(t`Gas-sponsored CCTP deposits are not enabled for this network.`);
+					}
+				} else if (!isCctpExternalDepositEnabled(network === "testnet")) {
+					throw new Error(t`CCTP deposits are awaiting funded end-to-end verification for this network.`);
+				}
+				if (!isAddress(ready.address)) throw new Error(t`Wallet not connected`);
+				const provider = mode === "wallet" ? ready.provider : undefined;
+				const cctpDepositUser = ready.address;
+				const cctpTrackingEnv = network === "testnet" ? "Testnet" : "Mainnet";
+				const hash = await runWithFundsActionLock(cctpTrackingEnv, ready.address, async () => {
+					if (amountRaw > CCTP_MAX_DEPOSIT_USDC) {
+						throw new Error(t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
+					}
+					if (network === "testnet" && amountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC) {
+						throw new Error(t`Circle testnet deposits are limited to 1,000 USDC per transfer.`);
+					}
+					if (readCctpDepositTrackingRecords(cctpTrackingEnv, ready.address).length > 0) {
 						throw new Error(
-							t`Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted.`,
+							t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
 						);
 					}
-					if (!bridgeDepositConfig.smartDepositEnabled) {
-						throw new Error(t`Smart wallet deposits are not enabled for this network.`);
+					if (mode === "smart" && readCctpSponsoredAuthorizationIntent(cctpTrackingEnv, ready.address)) {
+						throw new Error(
+							t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+						);
 					}
-
-					const ready = await getReadyPermitSignerContext({
-						address: walletAddress,
-						chain: depositChain,
-						publicClient,
-						wallet: depositWallet,
-					});
-					smartDepositUser = ready.address;
+					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
 					await assertFreshSelectedDepositRoute();
-					const data = await createBridge2PermitCall({
-						amountRaw,
-						config: bridgeDepositConfig,
-						context: ready,
-					});
-					const smartClient = await getClientForChain({ id: bridgeDepositConfig.chainId });
-					if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+					const mainnetRoleRequest = getSdkInfoClient(false).userRole({ user: ready.address });
+					const recipientRoles =
+						network === "testnet"
+							? await Promise.all([mainnetRoleRequest, getSdkInfoClient(true).userRole({ user: ready.address })])
+							: [await mainnetRoleRequest];
+					const mainnetRecipientState = getHyperCoreRecipientState(recipientRoles[0]);
+					const destinationRecipientState =
+						network === "testnet" ? getHyperCoreRecipientState(recipientRoles[1]) : mainnetRecipientState;
+					if (mainnetRecipientState === "agent" || destinationRecipientState === "agent") {
+						throw new Error(
+							t`Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead.`,
+						);
+					}
+					if (network === "testnet" && mainnetRecipientState === "missing") {
+						throw new Error(t`Circle testnet deposits require this address to already exist on Hyperliquid mainnet.`);
+					}
+					const [feeQuote, fastAllowanceRaw] = await Promise.all([
+						fetchCctpDepositFees(cctpDepositConfig),
+						fetchCctpFastAllowance(cctpDepositConfig),
+					]);
+					if (fastAllowanceRaw < amountRaw) {
+						throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+					}
+					const parameters =
+						mode === "smart"
+							? createCctpSponsoredDepositParameters({
+									amountRaw,
+									config: cctpDepositConfig,
+									feeQuote,
+									nowSeconds: Math.floor(Date.now() / 1000),
+									user: ready.address as Address,
+								})
+							: createCctpDepositParameters({
+									amountRaw,
+									config: cctpDepositConfig,
+									feeQuote,
+									nonce: createAuthorizationNonce(),
+									nowSeconds: Math.floor(Date.now() / 1000),
+									user: ready.address as Address,
+								});
+					if (
+						executionScope === "manual" &&
+						(expectedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== expectedCctpMaxFeeRaw)
+					) {
+						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+					}
 					await assertFreshSelectedDepositRoute();
-
-					hash = (await waitForWalletTransactionHash(
-						smartClient.sendTransaction(
-							{
-								to: bridgeDepositConfig.bridge2,
-								data,
-								value: 0n,
-							},
-							{ uiOptions: { showWalletUIs: false } },
-						),
-						DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
-						markWalletResponseDelayed,
-					)) as Hash;
-				} else {
-					const ready = await getReadyWalletDepositContext({
-						address: walletAddress,
-						chain: depositChain,
-						config: depositConfig,
-						publicClient,
-						wallet: depositWallet,
+					const authorizationSignature = await ready.walletClient.signTypedData({
+						account: ready.address,
+						...parameters.typedData,
 					});
-					provider = ready.provider;
-					if (depositRoute === "cctp") {
-						const cctpTrackingEnv = network === "testnet" ? "Testnet" : "Mainnet";
-						hash = await runWithFundsActionLock(cctpTrackingEnv, ready.address, async () => {
-							if (!isCctpExternalDepositEnabled(network === "testnet")) {
-								throw new Error(t`CCTP deposits are awaiting funded end-to-end verification for this network.`);
-							}
-							if (!isAddress(ready.address)) throw new Error(t`Wallet not connected`);
-							if (amountRaw > CCTP_MAX_DEPOSIT_USDC) {
-								throw new Error(t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
-							}
-							if (network === "testnet" && amountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC) {
-								throw new Error(t`Circle testnet deposits are limited to 1,000 USDC per transfer.`);
-							}
-							if (readCctpDepositTrackingRecords(cctpTrackingEnv, ready.address).length > 0) {
-								throw new Error(
-									t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
-								);
-							}
-							assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
-							await assertFreshSelectedDepositRoute();
-							const mainnetRoleRequest = getSdkInfoClient(false).userRole({ user: ready.address });
-							const recipientRoles =
-								network === "testnet"
-									? await Promise.all([mainnetRoleRequest, getSdkInfoClient(true).userRole({ user: ready.address })])
-									: [await mainnetRoleRequest];
-							const mainnetRecipientState = getHyperCoreRecipientState(recipientRoles[0]);
-							const destinationRecipientState =
-								network === "testnet" ? getHyperCoreRecipientState(recipientRoles[1]) : mainnetRecipientState;
-							if (mainnetRecipientState === "agent" || destinationRecipientState === "agent") {
-								throw new Error(
-									t`Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead.`,
-								);
-							}
-							if (network === "testnet" && mainnetRecipientState === "missing") {
-								throw new Error(
-									t`Circle testnet deposits require this address to already exist on Hyperliquid mainnet.`,
-								);
-							}
-							const [feeQuote, fastAllowanceRaw] = await Promise.all([
-								fetchCctpDepositFees(cctpDepositConfig),
-								fetchCctpFastAllowance(cctpDepositConfig),
-							]);
-							if (fastAllowanceRaw < amountRaw) {
-								throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
-							}
-							const parameters = createCctpDepositParameters({
-								amountRaw,
-								config: cctpDepositConfig,
-								feeQuote,
-								nonce: createAuthorizationNonce(),
-								nowSeconds: Math.floor(Date.now() / 1000),
-								user: ready.address as Address,
-							});
-							if (expectedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== expectedCctpMaxFeeRaw) {
-								throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
-							}
-							await assertFreshSelectedDepositRoute();
-							const authorizationSignature = await ready.walletClient.signTypedData({
+					await assertFreshSelectedDepositRoute();
+					const [freshFeeQuote, freshFastAllowanceRaw] = await Promise.all([
+						fetchCctpDepositFees(cctpDepositConfig),
+						fetchCctpFastAllowance(cctpDepositConfig),
+					]);
+					if (freshFastAllowanceRaw < amountRaw) {
+						throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+					}
+					if (calculateCctpDepositFee(amountRaw, freshFeeQuote).maxFeeRaw !== parameters.depositForBurn.maxFee) {
+						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+					}
+					await assertFreshSelectedDepositRoute();
+					let sourceHash: Hash;
+					if (mode === "smart") {
+						const sponsoredParameters = parameters as ReturnType<typeof createCctpSponsoredDepositParameters>;
+						cctpAuthorizationNonce = sponsoredParameters.authorization.authNonce;
+						sponsoredAuthorizationValidBefore = sponsoredParameters.authorization.authValidBefore;
+						const data = encodeFunctionData({
+							abi: CCTP_EXTENSION_V2_ABI,
+							functionName: "batchSponsorDepositForBurn",
+							args: buildCctpSponsoredDepositContractArgs(sponsoredParameters, authorizationSignature),
+						});
+						const smartClient = await getClientForChain({ id: cctpDepositConfig.chainId });
+						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+						await assertFreshSelectedDepositRoute();
+						saveCctpSponsoredAuthorizationIntent({
+							env: cctpTrackingEnv,
+							owner: ready.address,
+							authNonce: cctpAuthorizationNonce,
+							amount: formatUnits(amountRaw, USDC_DECIMALS),
+							validBefore: sponsoredAuthorizationValidBefore,
+						});
+						sponsoredSubmissionStarted = true;
+						sourceHash = (await waitForWalletTransactionHash(
+							smartClient.sendTransaction(
+								{ to: cctpDepositConfig.cctpExtensionV2, data, value: 0n },
+								{ uiOptions: { showWalletUIs: false } },
+							),
+							DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+							markWalletResponseDelayed,
+						)) as Hash;
+					} else {
+						const directParameters = parameters as ReturnType<typeof createCctpDepositParameters>;
+						const contractArgs = buildCctpDepositContractArgs(directParameters, authorizationSignature);
+						const gas = await ready.publicClient.estimateContractGas({
+							account: ready.address,
+							address: cctpDepositConfig.cctpExtension,
+							abi: CCTP_EXTENSION_ABI,
+							functionName: "batchDepositForBurnWithAuth",
+							args: contractArgs,
+						});
+						const [gasPrice, gasBalance] = await Promise.all([
+							ready.publicClient.getGasPrice(),
+							ready.publicClient.getBalance({ address: ready.address }),
+						]);
+						const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
+						if (gasBalance < bufferedGas * gasPrice) {
+							throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
+						}
+						await assertFreshSelectedDepositRoute();
+						sourceHash = await waitForWalletTransactionHash(
+							ready.walletClient.writeContract({
 								account: ready.address,
-								...parameters.typedData,
-							});
-							await assertFreshSelectedDepositRoute();
-							const [freshFeeQuote, freshFastAllowanceRaw] = await Promise.all([
-								fetchCctpDepositFees(cctpDepositConfig),
-								fetchCctpFastAllowance(cctpDepositConfig),
-							]);
-							if (freshFastAllowanceRaw < amountRaw) {
-								throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
-							}
-							const freshParameters = createCctpDepositParameters({
-								amountRaw,
-								config: cctpDepositConfig,
-								feeQuote: freshFeeQuote,
-								nonce: parameters.authorization.authNonce,
-								nowSeconds: parameters.authorization.authValidAfter + BigInt(60 * 60),
-								user: ready.address as Address,
-							});
-							if (freshParameters.depositForBurn.maxFee !== parameters.depositForBurn.maxFee) {
-								throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
-							}
-							await assertFreshSelectedDepositRoute();
-							const contractArgs = buildCctpDepositContractArgs(parameters, authorizationSignature);
-							const gas = await ready.publicClient.estimateContractGas({
-								account: ready.address,
+								chain: depositChain,
 								address: cctpDepositConfig.cctpExtension,
 								abi: CCTP_EXTENSION_ABI,
 								functionName: "batchDepositForBurnWithAuth",
 								args: contractArgs,
-							});
-							const [gasPrice, gasBalance] = await Promise.all([
-								ready.publicClient.getGasPrice(),
-								ready.publicClient.getBalance({ address: ready.address }),
-							]);
-							const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
-							if (gasBalance < bufferedGas * gasPrice) {
-								throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
-							}
-							await assertFreshSelectedDepositRoute();
-							const sourceHash = await waitForWalletTransactionHash(
-								ready.walletClient.writeContract({
-									account: ready.address,
-									chain: depositChain,
-									address: cctpDepositConfig.cctpExtension,
-									abi: CCTP_EXTENSION_ABI,
-									functionName: "batchDepositForBurnWithAuth",
-									args: contractArgs,
-								}),
-								DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
-								markWalletResponseDelayed,
-							);
-							cctpTrackingRecord = {
-								env: cctpTrackingEnv,
-								owner: ready.address,
-								sourceHash,
-							};
-							try {
-								saveCctpDepositTrackingRecord({
-									...cctpTrackingRecord,
-									amount: formatUnits(amountRaw, USDC_DECIMALS),
-								});
-							} catch {
-								cctpRecoveryUnavailable = true;
-							}
-							return sourceHash;
-						});
-					} else {
-						const transactionNonce = await ready.publicClient.getTransactionCount({
-							address: ready.address,
-							blockTag: "pending",
-						});
-						await assertWalletCanPayDepositGas(ready, bridgeDepositConfig, amountRaw);
-						await assertFreshSelectedDepositRoute();
-						hash = await waitForWalletTransactionHash(
-							ready.walletClient.writeContract({
-								account: ready.address,
-								chain: depositChain,
-								address: bridgeDepositConfig.usdc,
-								abi: erc20Abi,
-								functionName: "transfer",
-								args: [bridgeDepositConfig.bridge2, amountRaw],
-								nonce: transactionNonce,
 							}),
 							DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 							markWalletResponseDelayed,
 						);
 					}
-				}
+					cctpTrackingRecord = { env: cctpTrackingEnv, owner: ready.address, sourceHash };
+					try {
+						const trackingAmount = formatUnits(amountRaw, USDC_DECIMALS);
+						if (mode === "smart") {
+							if (!cctpAuthorizationNonce || !sponsoredAuthorizationValidBefore) {
+								throw new Error(t`Unable to verify the CCTP authorization.`);
+							}
+							saveCctpDepositTrackingRecord({
+								...cctpTrackingRecord,
+								amount: trackingAmount,
+								mode: "sponsored",
+								authNonce: cctpAuthorizationNonce,
+							});
+						} else {
+							saveCctpDepositTrackingRecord({
+								...cctpTrackingRecord,
+								amount: trackingAmount,
+								mode: "direct",
+							});
+						}
+					} catch {
+						cctpRecoveryUnavailable = true;
+					}
+					return sourceHash;
+				});
 
 				if (
 					!updateDepositExecutionState(executionKey, operationId, {
@@ -1349,6 +1169,7 @@ export function useDeposit({
 						amount,
 						route: depositRoute,
 						cctpRecoveryUnavailable,
+						submissionOutcomeUnknown: false,
 						walletResponseDelayed: false,
 					})
 				) {
@@ -1359,22 +1180,32 @@ export function useDeposit({
 
 				if (!isCurrentDepositExecution(executionKey, operationId)) return;
 				const receipt = await waitForConfirmedReceipt(publicClient, hash, { provider });
+				if (!cctpDepositUser || !isAddress(cctpDepositUser)) throw new Error(t`Wallet not connected`);
 				if (mode === "smart") {
-					if (!smartDepositUser) throw new Error(t`Wallet not connected`);
-					assertSmartBridge2DepositReceipt({
-						amountRaw,
-						config: bridgeDepositConfig,
-						receipt,
-						user: smartDepositUser,
-					});
-				} else if (depositRoute === "cctp") {
-					if (!walletAddress || !isAddress(walletAddress)) throw new Error(t`Wallet not connected`);
+					if (!cctpAuthorizationNonce) throw new Error(t`Unable to verify the CCTP authorization.`);
+					try {
+						assertCctpSponsoredDepositReceipt({
+							amountRaw,
+							authNonce: cctpAuthorizationNonce,
+							config: cctpDepositConfig,
+							receipt,
+							user: cctpDepositUser,
+						});
+						try {
+							removeCctpSponsoredAuthorizationIntent(cctpTrackingEnv, cctpDepositUser, cctpAuthorizationNonce);
+						} catch {
+							// The authorization is already consumed. Leave an expiring tombstone if local storage cannot be updated.
+						}
+					} catch (cause) {
+						throw new DefinitiveDepositSourceFailureError("source-receipt-mismatch", toError(cause).message, { cause });
+					}
+				} else {
 					try {
 						assertCctpDepositReceipt({
 							amountRaw,
 							config: cctpDepositConfig,
 							receipt,
-							user: walletAddress,
+							user: cctpDepositUser,
 						});
 					} catch (cause) {
 						throw new DefinitiveDepositSourceFailureError("source-receipt-mismatch", toError(cause).message, { cause });
@@ -1389,6 +1220,7 @@ export function useDeposit({
 						hash,
 						amount,
 						route: depositRoute,
+						submissionOutcomeUnknown: false,
 						walletResponseDelayed: false,
 					}))
 				) {
@@ -1411,6 +1243,7 @@ export function useDeposit({
 					...previous,
 					status: "error",
 					error: toError(error),
+					submissionOutcomeUnknown: sponsoredSubmissionStarted && !previous.hash,
 					walletResponseDelayed: false,
 				}));
 			} finally {
@@ -1419,7 +1252,6 @@ export function useDeposit({
 		},
 		[
 			assertFreshSelectedDepositRoute,
-			bridgeDepositConfig,
 			cctpDepositConfig,
 			depositChain,
 			depositConfig,
@@ -1427,6 +1259,7 @@ export function useDeposit({
 			depositWallet,
 			executionKey,
 			executionLockKey,
+			executionScope,
 			getClientForChain,
 			expectedCctpMaxFeeRaw,
 			mode,
@@ -1444,7 +1277,7 @@ export function useDeposit({
 	return {
 		...chain,
 		networkName: depositConfig.displayName,
-		smartDepositEnabled: depositRoute === "bridge" && bridgeDepositConfig.smartDepositEnabled,
+		sponsoredCctpEnabled: depositRoute === "cctp" && isCctpSponsoredDepositEnabled(network === "testnet"),
 		depositRoute,
 		balance,
 		balanceRaw,
@@ -1458,6 +1291,7 @@ export function useDeposit({
 		executionAmount: state.amount,
 		executionRoute: state.route,
 		cctpRecoveryUnavailable: state.cctpRecoveryUnavailable,
+		submissionOutcomeUnknown: state.submissionOutcomeUnknown,
 		walletResponseDelayed: state.walletResponseDelayed,
 		deposit,
 		refreshBalance: refetch,

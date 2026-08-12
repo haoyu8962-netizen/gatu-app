@@ -13,10 +13,21 @@ vi.mock("@/components/trade/tradebox/deposit/asset-select", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
-	FundingAddressCard: ({ action, address, state }: { action?: ReactNode; address?: string; state: string }) =>
+	FundingAddressCard: ({
+		action,
+		address,
+		message,
+		state,
+	}: {
+		action?: ReactNode;
+		address?: string;
+		message?: ReactNode;
+		state: string;
+	}) =>
 		createElement(
 			"div",
 			{ "data-address": address, "data-address-state": state, "data-testid": "funding-address" },
+			message,
 			action,
 		),
 }));
@@ -26,7 +37,21 @@ vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
-	UnitDepositInfo: () => createElement("div", { "data-testid": "deposit-instructions" }),
+	UnitDepositInfo: ({
+		cctpFee,
+		cctpFeeLoading,
+		cctpNetAmount,
+	}: {
+		cctpFee?: string | null;
+		cctpFeeLoading?: boolean;
+		cctpNetAmount?: string | null;
+	}) =>
+		createElement("div", {
+			"data-cctp-fee": cctpFee,
+			"data-cctp-fee-loading": cctpFeeLoading,
+			"data-cctp-net": cctpNetAmount,
+			"data-testid": "deposit-instructions",
+		}),
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/amount-input", () => ({
@@ -51,7 +76,7 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		depositRoute,
 		onRetryRouting: vi.fn(),
 		networkName: "Arbitrum",
-		smartDepositEnabled: true,
+		sponsoredCctpEnabled: true,
 		cctpFee: null,
 		cctpNetAmount: null,
 		cctpFeeLoading: false,
@@ -78,14 +103,21 @@ describe("DepositForm routing gate", () => {
 		container.remove();
 	});
 
-	it("shows the embedded funding address only for a verified Bridge2 route", async () => {
+	it("shows the embedded funding address only for a verified sponsored CCTP route", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			cctpFee: "0.2",
+			cctpNetAmount: "8.8",
+		};
 		await act(async () => {
-			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, createProps("ready", "bridge"))));
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
 		expect(container.querySelector('[data-testid="funding-address"]')).not.toBeNull();
 		expect(container.querySelector('[data-address-state="ready"]')?.getAttribute("data-address")).toBe(FUNDING_ADDRESS);
-		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		const instructions = container.querySelector('[data-testid="deposit-instructions"]');
+		expect(instructions?.getAttribute("data-cctp-fee")).toBe("0.2");
+		expect(instructions?.getAttribute("data-cctp-net")).toBe("8.8");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
@@ -96,7 +128,7 @@ describe("DepositForm routing gate", () => {
 		{ expectedState: "loading", status: "loading" as const, route: null },
 		{ expectedState: "unavailable", status: "error" as const, route: null },
 		{ expectedState: "unavailable", status: "unknown" as const, route: null },
-		{ expectedState: "unavailable", status: "ready" as const, route: "cctp" as const },
+		{ expectedState: "unavailable", status: "ready" as const, route: "bridge" as const },
 	])("never exposes the funding address for $status/$route", async ({ expectedState, route, status }) => {
 		const props = createProps(status, route);
 		await act(async () => {
@@ -117,7 +149,7 @@ describe("DepositForm routing gate", () => {
 
 	it("keeps the funding address placeholder stable while the embedded wallet is created", async () => {
 		const props = {
-			...createProps("ready", "bridge"),
+			...createProps("ready", "cctp"),
 			fundingAddress: undefined,
 			fundingAddressPending: true,
 		};
@@ -128,6 +160,18 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+	});
+
+	it("does not expose the funding address when sponsored CCTP is disabled", async () => {
+		const props = { ...createProps("ready", "cctp"), sponsoredCctpEnabled: false };
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.textContent).toContain("Gas-sponsored CCTP deposits are not enabled");
 	});
 
 	it.each(["bridge", "cctp"] as const)("preserves the external-wallet amount flow for %s", async (route) => {
