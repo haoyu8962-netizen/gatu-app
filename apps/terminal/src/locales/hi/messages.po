@@ -50,6 +50,11 @@ msgstr "{1} में से {0} क्लोज़ ऑर्डर स्वी
 msgid "{0} of {1} orders were accepted. Review open orders before retrying."
 msgstr "{1} में से {0} ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
 
+#. placeholder {0}: code.length
+#: src/components/referrals/referral-action-modal.tsx
+msgid "{0}/20 characters"
+msgstr "{0}/20 वर्ण"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} से {targetDirectionLabel}"
@@ -106,6 +111,10 @@ msgstr "$SPCXD, Dinari के dShares™ इंफ्रास्ट्रक्
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
 msgstr "1 वर्ष"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "1–20 characters"
+msgstr "1–20 वर्ण"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "14 Day Volume"
@@ -184,6 +193,10 @@ msgstr "जब मार्क मूल्य पोज़िशन के ल�
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "पिछले CCTP जमा को अभी भी ट्रैक किया जा रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "A referral code can only be applied once and cannot be changed from this page."
+msgstr "रेफ़रल कोड केवल एक बार लागू किया जा सकता है और इस पेज से बदला नहीं जा सकता।"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "रिवर्स ऑर्डर के लिए ट्रेड से पहले का विश्वसनीय लिक्विडेशन मूल्य उपलब्ध नहीं है। निष्पादन के बाद बनने वाली पोज़िशन जाँचें।"
@@ -191,6 +204,10 @@ msgstr "रिवर्स ऑर्डर के लिए ट्रेड स�
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
 msgstr "इनमें से एक बाज़ार के लिए TWAP सक्रिय है।"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "A valid code may unlock the active referral fee discount."
+msgstr "मान्य कोड सक्रिय रेफ़रल फ़ीस छूट को अनलॉक कर सकता है।"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
@@ -310,6 +327,10 @@ msgstr "DEX सक्रिय करें"
 #~ msgid "Active Positions"
 #~ msgstr "सक्रिय पोजीशन"
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Active referral discount"
+msgstr "सक्रिय रेफ़रल छूट"
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Active TWAP orders"
 msgstr "सक्रिय TWAP ऑर्डर"
@@ -425,6 +446,10 @@ msgstr "सभी क्रॉस पोज़िशन समान क्र�
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "All currently available referral rewards are claimed to your Spot balance."
+msgstr "वर्तमान में उपलब्ध सभी रेफ़रल पुरस्कार आपके Spot बैलेंस में प्राप्त किए जाएंगे।"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -683,6 +708,7 @@ msgstr "औसत मूल्य"
 msgid "Avg Price"
 msgstr "औसत मूल्य"
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -808,6 +834,14 @@ msgstr "बिल्डर फ़ीस"
 #~ msgid "Builder must have at least 100 USDC in perps account value"
 #~ msgstr ""
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Builder rewards are shown below"
+msgstr "बिल्डर पुरस्कार नीचे दिखाए गए हैं"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
+msgstr "Builder के कुल आंकड़े संचयी एट्रिब्यूशन हैं और उन्हें दावा योग्य रिवॉर्ड में नहीं जोड़ा जाता।"
+
 #: src/config/nav.tsx
 #~ msgid "Builders"
 #~ msgstr ""
@@ -862,6 +896,7 @@ msgstr "कैमरा एक्सेस विफल रहा। कैम�
 msgid "Camera preview for desktop wallet QR"
 msgstr "डेस्कटॉप वॉलेट QR के लिए कैमरा प्रीव्यू"
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1024,6 +1059,24 @@ msgstr "Circle testnet जमा के लिए यह पता Hyperliquid m
 msgid "Circulating supply"
 msgstr "परिसंचारी आपूर्ति"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Claim all"
+msgstr "सभी प्राप्त करें"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Claim all available rewards"
+msgstr "सभी उपलब्ध पुरस्कार प्राप्त करें"
+
+#: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Claim rewards"
+msgstr "पुरस्कार प्राप्त करें"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Claimed and unclaimed"
+msgstr "प्राप्त और अप्राप्त"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "इस एसेट के बारे में अधिक जानने के लिए क्लिक करें।"
@@ -1044,6 +1097,7 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "क्लिपबोर्ड पेस्ट ब्लॉक हो गया। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1203,6 +1257,22 @@ msgstr "इस डायलॉग को बंद करने से ऑर्
 msgid "Closing..."
 msgstr "बंद हो रहा है..."
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Code copied"
+msgstr "कोड कॉपी हो गया"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Code to apply"
+msgstr "लागू किया जाने वाला कोड"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Code to create"
+msgstr "बनाया जाने वाला कोड"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Codes support 1–20 characters. Availability is confirmed by Hyperliquid when submitted."
+msgstr "कोड में 1–20 वर्ण हो सकते हैं। सबमिट करने पर Hyperliquid इसकी उपलब्धता की पुष्टि करता है।"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Collapse {displayName} position details"
@@ -1250,6 +1320,10 @@ msgstr "बाज़ार विवरण समेटें"
 msgid "Commodities"
 msgstr "कमोडिटीज़"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Complete the protocol stages, then share your official Hyperliquid referral link."
+msgstr "प्रोटोकॉल के चरण पूरे करें, फिर अपना आधिकारिक Hyperliquid रेफ़रल लिंक साझा करें।"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "completed"
 #~ msgstr "पूर्ण"
@@ -1267,6 +1341,7 @@ msgstr "राशि कॉन्फ़िगर करें"
 msgid "Configured TP/SL amount"
 msgstr "कॉन्फ़िगर की गई TP/SL राशि"
 
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1326,6 +1401,10 @@ msgstr "ट्रिगर मूल्य परिवर्तन की प�
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Confirmed by Hyperliquid"
+msgstr "Hyperliquid द्वारा पुष्ट"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
@@ -1401,9 +1480,13 @@ msgstr "मोबाइल एक्सेस रीसेट करने स�
 #~ msgid "Connect to verify"
 #~ msgstr "सत्यापित करने के लिए कनेक्ट करें"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Connect wallet"
-#~ msgstr "वॉलेट कनेक्ट करें"
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Connect to view referrals"
+msgstr "रेफ़रल देखने के लिए कनेक्ट करें"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Connect wallet"
+msgstr "वॉलेट कनेक्ट करें"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1608,6 +1691,14 @@ msgstr "लिंक कॉपी करें"
 #~ msgid "Copy phone link"
 #~ msgstr "फ़ोन लिंक कॉपी करें"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Copy referral code"
+msgstr "रेफ़रल कोड कॉपी करें"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Copy referral link"
+msgstr "रेफ़रल लिंक कॉपी करें"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Copy token address"
@@ -1658,6 +1749,14 @@ msgstr "QR रेंडर नहीं हो सका। नई कुंज�
 msgid "Could not verify current mobile access."
 msgstr "वर्तमान मोबाइल एक्सेस सत्यापित नहीं हो सका।"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Create a code after Hyperliquid confirms your eligibility. It cannot be changed from this page later."
+msgstr "Hyperliquid द्वारा पात्रता की पुष्टि के बाद कोड बनाएं। इसे बाद में इस पेज से बदला नहीं जा सकता।"
+
+#: src/components/referrals/referral-action-modal.tsx
+#~ msgid "Create a code to invite traders after Hyperliquid confirms your eligibility."
+#~ msgstr "Hyperliquid द्वारा पात्रता की पुष्टि के बाद ट्रेडरों को आमंत्रित करने के लिए कोड बनाएं।"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Create a desktop trading key and transfer it only through a QR code."
 msgstr "डेस्कटॉप ट्रेडिंग कुंजी बनाएं और उसे केवल QR कोड के माध्यम से ट्रांसफ़र करें।"
@@ -1666,6 +1765,11 @@ msgstr "डेस्कटॉप ट्रेडिंग कुंजी बन
 msgid "Create a TWAP order from Advanced order settings to execute it in smaller batches."
 msgstr "छोटे-छोटे बैचों में निष्पादन के लिए उन्नत ऑर्डर सेटिंग्स से TWAP ऑर्डर बनाएं।"
 
+#: src/components/referrals/referral-code-card.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Create code"
+msgstr "कोड बनाएं"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Create phone access"
 msgstr "फ़ोन एक्सेस बनाएं"
@@ -1673,6 +1777,11 @@ msgstr "फ़ोन एक्सेस बनाएं"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Create phone link"
 #~ msgstr "फ़ोन लिंक बनाएं"
+
+#: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-code-card.tsx
+msgid "Create referral code"
+msgstr "रेफ़रल कोड बनाएं"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Create secure phone access for trading from this account."
@@ -1765,6 +1874,10 @@ msgstr "CSV निर्यात हो गया।"
 #~ msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
 #~ msgstr ""
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Cumulative builder"
+msgstr "संचयी Builder"
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Cumulative funding"
@@ -1773,6 +1886,11 @@ msgstr "CSV निर्यात हो गया।"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "यह पोज़िशन खुलने के बाद से भुगतान की गई या प्राप्त हुई संचयी फंडिंग।"
+
+#. placeholder {0}: formatNumber(data.cumVlm)
+#: src/components/referrals/referral-code-card.tsx
+msgid "Cumulative volume: {0}"
+msgstr "संचयी वॉल्यूम: {0}"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-market-filter.tsx
@@ -2112,6 +2230,10 @@ msgstr "अर्न"
 msgid "Earn Balance"
 msgstr "अर्न बैलेंस"
 
+#: src/components/referrals/referral-legacy-history.tsx
+msgid "Earned"
+msgstr "अर्जित"
+
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2199,6 +2321,11 @@ msgstr "मान्य TP/SL ऑर्डर कॉन्फ़िगरेश�
 msgid "Enter a valid trigger price using the market's price precision."
 msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
 
+#: src/components/referrals/referral-code-card.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Enter code"
+msgstr "कोड दर्ज करें"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-limit-close-submit.ts
@@ -2211,6 +2338,10 @@ msgstr "लिमिट प्राइस दर्ज करें"
 #: src/lib/errors/format.ts
 msgid "Enter price range"
 msgstr "कीमत सीमा दर्ज करें"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Enter referral code"
+msgstr "रेफ़रल कोड दर्ज करें"
 
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
@@ -2849,6 +2980,10 @@ msgstr "GTC (रद्द होने तक मान्य)"
 #~ msgid "H"
 #~ msgstr "H"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Have a referral code?"
+msgstr "क्या आपके पास रेफ़रल कोड है?"
+
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "छोटे छिपाएं"
@@ -2916,6 +3051,10 @@ msgstr "घंटे"
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "लॉन्ग द्वारा शॉर्ट को चुकाई जाने वाली प्रति घंटे की दर (यदि नकारात्मक हो, तो शॉर्ट लॉन्ग को भुगतान करते हैं)। फंडिंग से कोई अतिरिक्त शुल्क नहीं जुड़ा है; यह कीमत को स्पॉट कीमत की ओर ले जाने के लिए उपयोगकर्ताओं के बीच पीयर-टू-पीयर ट्रांसफर है। विवरण के लिए दस्तावेज़ देखें।"
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "How Hyperliquid referrals work"
+msgstr "Hyperliquid रेफ़रल कैसे काम करते हैं"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "HYPE is the native token of Hyperliquid."
 msgstr "HYPE, Hyperliquid का मूल टोकन है।"
@@ -2940,6 +3079,10 @@ msgstr "Hyperliquid को फ़िलहाल Arbitrum से Circle CCTP ज
 msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
 msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। Bridge जमा उपलब्ध नहीं हैं।"
 
+#: src/lib/errors/format.ts
+msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
+msgstr "Hyperliquid अभी इस खाते को रेफ़रल कोड बनाने के लिए पात्र नहीं दिखाता है।"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
@@ -2953,6 +3096,14 @@ msgstr "Hyperliquid पोर्टफोलियो मार्जिन क�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 msgstr "Hyperliquid के अनुसार यह ट्रेडिंग कुंजी प्रतिस्थापित, परिवर्तित या समाप्त हो चुकी है।"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
+msgstr "Hyperliquid पर दावा करने से पहले पात्र रिवॉर्ड $1 से अधिक होने चाहिए। अंतिम पात्रता की पुष्टि प्रोटोकॉल करता है।"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
+msgstr "आवश्यक वॉल्यूम की पुष्टि होने पर Hyperliquid कोड बनाना अनलॉक कर देगा।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
@@ -3054,6 +3205,14 @@ msgstr "गंतव्य पता अमान्य है"
 #~ msgid "Invalid Ethereum address"
 #~ msgstr ""
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Invite traders"
+msgstr "ट्रेडरों को आमंत्रित करें"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Invite traders, review fee benefits, and claim rewards reported by Hyperliquid."
+msgstr "ट्रेडरों को आमंत्रित करें, फ़ीस लाभ देखें और Hyperliquid द्वारा बताए गए पुरस्कार प्राप्त करें।"
+
 #: src/config/tooltips.ts
 msgid "IOC (Immediate Or Cancel)"
 msgstr "IOC (Immediate Or Cancel)"
@@ -3077,6 +3236,10 @@ msgstr "आइसोलेटेड मार्जिन अपडेट हो
 #~ msgid "Isolated mode activation is temporarily unavailable."
 #~ msgstr ""
 
+#: src/components/referrals/referred-traders.tsx
+msgid "Joined"
+msgstr "शामिल होने का समय"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
 msgstr "4 सेकंड तक दबाए रखें। रद्द करने के लिए छोड़ें, बाहर जाएँ, फ़ोकस हटाएँ या Escape दबाएँ।"
@@ -3092,6 +3255,10 @@ msgstr "इस विंडो को खुला रखें और अपन
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep this window open until Hyperliquid finishes checking the wallet action."
 msgstr "जब तक Hyperliquid वॉलेट कार्रवाई की जांच पूरी न कर ले, यह विंडो खुली रखें।"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Keep this window open while Hyperliquid processes the request."
+msgstr "Hyperliquid द्वारा अनुरोध संसाधित किए जाने तक यह विंडो खुली रखें।"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "L1"
@@ -3139,6 +3306,10 @@ msgstr "लीडरबोर्ड"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "लीगेसी DEX"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Legacy reward history"
+msgstr "पुराना पुरस्कार इतिहास"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -3211,6 +3382,10 @@ msgstr "लिमिट प्राइस"
 msgid "Limit Sell"
 msgstr "लिमिट बिक्री"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Link copied"
+msgstr "लिंक कॉपी हो गया"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
 #~ msgstr ""
@@ -3250,6 +3425,10 @@ msgstr "लिक्विडेट हो गया"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "लिक्विडेशन मूल्य"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Live account fee benefit"
+msgstr "खाते का मौजूदा फ़ीस लाभ"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3322,6 +3501,14 @@ msgstr "पोजीशन लोड हो रहे हैं..."
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Loading QR code"
 msgstr "QR कोड लोड हो रहा है"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Loading recent reward claims…"
+msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड लोड हो रहे हैं…"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Loading referrals"
+msgstr "रेफ़रल लोड हो रहे हैं"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -3912,9 +4099,9 @@ msgstr "नई पोर्टफोलियो मार्जिन सक्
 #~ msgid "New to wallets?"
 #~ msgstr ""
 
-#: src/components/ui/pagination.tsx
-#~ msgid "Next"
-#~ msgstr "अगला"
+#: src/components/referrals/referred-traders.tsx
+msgid "Next"
+msgstr "अगला"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -4013,6 +4200,10 @@ msgstr "कोई फंडिंग भुगतान नहीं मिल�
 msgid "No funding payments match this direction."
 msgstr "इस दिशा से मेल खाने वाला कोई फंडिंग भुगतान नहीं है।"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "No legacy reward history."
+msgstr "कोई पुराना पुरस्कार इतिहास नहीं है।"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
@@ -4073,15 +4264,27 @@ msgstr "इन फ़िल्टरों से मेल खाने वा�
 msgid "No positions match the selected filters."
 msgstr "चुने गए फ़िल्टर से कोई पोज़िशन मेल नहीं खाती।"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "No recent reward claims."
+msgstr "हाल में कोई पुरस्कार प्राप्त नहीं किया गया।"
+
 #: src/components/trade/orderbook/trades-panel.tsx
 msgid "No recent trades."
 msgstr "कोई हालिया ट्रेड नहीं।"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "No referred traders yet."
+msgstr "अभी तक कोई रेफ़र किया गया ट्रेडर नहीं है।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "एक्सचेंज से कोई जवाब नहीं"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "No reward assets are currently reported for this account."
+msgstr "इस खाते के लिए अभी कोई पुरस्कार एसेट रिपोर्ट नहीं किया गया है।"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "No route available. Try a different amount or asset."
@@ -4154,6 +4357,10 @@ msgstr "नंबर फ़ॉर्मेट"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Number of Orders"
 msgstr "ऑर्डर की संख्या"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Official referral link"
+msgstr "आधिकारिक रेफ़रल लिंक"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Offline"
@@ -4231,6 +4438,10 @@ msgstr "ओपन लॉन्ग"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Open navigation"
 msgstr "नेविगेशन खोलें"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Open official link"
+msgstr "आधिकारिक लिंक खोलें"
 
 #: src/config/trade.ts
 msgid "Open Orders"
@@ -4477,6 +4688,10 @@ msgstr "मालिक खाता"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
 #~ msgstr ""
+
+#: src/components/referrals/referred-traders.tsx
+msgid "Page {visiblePage} of {totalPages}"
+msgstr "{totalPages} में से पेज {visiblePage}"
 
 #: src/components/pages/not-found-page.tsx
 msgid "Page not found"
@@ -4870,9 +5085,9 @@ msgstr "आपका कोट तैयार किया जा रहा ह
 msgid "Press and hold for 4 seconds"
 msgstr "4 सेकंड तक दबाकर रखें"
 
-#: src/components/ui/pagination.tsx
-#~ msgid "Previous"
-#~ msgstr "पिछला"
+#: src/components/referrals/referred-traders.tsx
+msgid "Previous"
+msgstr "पिछला"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5011,6 +5226,10 @@ msgstr "कोट रीफ़्रेश नहीं हो सका। प�
 msgid "Quote updated. Review the new amount before confirming."
 msgstr "कोट अपडेट हो गया है। पुष्टि करने से पहले नई राशि की समीक्षा करें।"
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Quote-asset rewards are shown separately and are never added together as USD."
+msgstr "कोट-एसेट पुरस्कार अलग-अलग दिखाए जाते हैं और उन्हें कभी भी USD में जोड़कर नहीं दिखाया जाता।"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Randomize timing"
 msgstr "टाइमिंग को रैंडमाइज़ करें"
@@ -5027,6 +5246,10 @@ msgstr "यादृच्छिक"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "दर"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Read official referral rules"
+msgstr "आधिकारिक रेफ़रल नियम पढ़ें"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Ready"
@@ -5058,6 +5281,14 @@ msgstr "वास्तविक PNL"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "हाल का इतिहास सुरक्षित प्रदर्शन सीमा से अधिक है। बड़ी रेंज प्राप्त करने के लिए CSV निर्यात करें।"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Recent reward claims"
+msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Recent reward claims could not be verified."
+msgstr "हाल के पुरस्कार प्राप्ति रिकॉर्ड सत्यापित नहीं किए जा सके।"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
@@ -5135,14 +5366,105 @@ msgstr "मौजूदा बाज़ार मूल्य पर यह प�
 #~ msgid "Reduce-only orders only"
 #~ msgstr ""
 
+#: src/lib/errors/format.ts
+msgid "Referral access could not be verified for this account. Refresh access status before retrying."
+msgstr "इस खाते के लिए रेफ़रल एक्सेस सत्यापित नहीं किया जा सका। दोबारा प्रयास करने से पहले एक्सेस स्थिति रीफ़्रेश करें।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Referral access is still being verified."
+msgstr "रेफ़रल एक्सेस अभी सत्यापित किया जा रहा है।"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Referral activation progress"
+msgstr "रेफ़रल सक्रियण प्रगति"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Referral activity"
+msgstr "रेफ़रल गतिविधि"
+
+#: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-code-card.tsx
+msgid "Referral code"
+msgstr "रेफ़रल कोड"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Referral code applied"
+msgstr "रेफ़रल कोड लागू हो गया"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Referral code created"
+msgstr "रेफ़रल कोड बन गया"
+
+#: src/components/referrals/referral-code-card.tsx
+#: src/lib/errors/format.ts
+msgid "Referral codes cannot be applied after cumulative volume exceeds $10,000."
+msgstr "संचयी वॉल्यूम $10,000 से अधिक होने के बाद रेफ़रल कोड लागू नहीं किए जा सकते।"
+
+#: src/lib/errors/format.ts
+msgid "Referral codes must be between 1 and 20 characters."
+msgstr "रेफ़रल कोड 1 से 20 वर्णों के बीच होना चाहिए।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Referral data unavailable"
+msgstr "रेफ़रल डेटा उपलब्ध नहीं है"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Referral discounts do not apply to vaults or subaccounts."
+msgstr "रेफ़रल छूट वॉल्ट या सब-अकाउंट पर लागू नहीं होती।"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Referral request could not be completed."
+msgstr "रेफ़रल अनुरोध पूरा नहीं किया जा सका।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account."
+msgstr "रेफ़रल चरण, पुरस्कार, छूट और प्राप्ति इतिहास आपके Hyperliquid खाते से संबंधित हैं।"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Referral summary"
+msgstr "रेफ़रल सारांश"
+
+#: src/components/referrals/referral-legacy-history.tsx
+msgid "Referral volume"
+msgstr "रेफ़रल वॉल्यूम"
+
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Referrals"
-msgstr ""
+msgstr "रेफ़रल"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Referrals & rewards"
+msgstr "रेफ़रल और पुरस्कार"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Referred traders"
+msgstr "रेफ़र किए गए ट्रेडर"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Referred traders currently receive a 4% fee discount on their first $25M of volume."
+msgstr "रेफ़र किए गए ट्रेडरों को अभी उनके पहले $25M वॉल्यूम पर 4% फ़ीस छूट मिलती है।"
+
+#: src/components/referrals/referred-traders.tsx
+msgid "Referred traders pages"
+msgstr "रेफ़र किए गए ट्रेडरों के पेज"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
+msgstr "पहले $1B वॉल्यूम पर, रेफ़रर अभी ट्रेडर की छूट लागू होने के बाद उसकी फ़ीस का 10% कमाते हैं।"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "कोट रीफ़्रेश करें"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Refresh referral data before submitting another signed request."
+msgstr "कोई दूसरा हस्ताक्षरित अनुरोध सबमिट करने से पहले रेफ़रल डेटा रीफ़्रेश करें।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Refreshing referral data…"
+msgstr "रेफ़रल डेटा रीफ़्रेश हो रहा है…"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
@@ -5219,6 +5541,10 @@ msgstr "वर्तमान मोबाइल एजेंट को एक �
 #~ msgid "Replaces the current phone key. The old phone must link again."
 #~ msgstr "वर्तमान फ़ोन की को बदल देता है। पुराने फ़ोन को फिर से लिंक करना होगा।"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Request not confirmed"
+msgstr "अनुरोध की पुष्टि नहीं हुई"
+
 #: src/lib/errors/format.ts
 #: src/lib/lifi/use-bridge.ts
 msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
@@ -5256,6 +5582,8 @@ msgid "Resume tracking"
 msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/referrals/referral-activity.tsx
+#: src/components/referrals/referral-dashboard.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -5316,6 +5644,10 @@ msgstr "रिवर्स मात्रा (2× पोज़िशन)"
 msgid "Reversing..."
 msgstr "रिवर्स हो रहा है..."
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Review"
+msgstr "समीक्षा करें"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review again"
 msgstr "फिर से समीक्षा करें"
@@ -5352,9 +5684,30 @@ msgstr "निरस्तीकरण सबमिट किया गया, �
 msgid "Revoke mobile access"
 msgstr "मोबाइल एक्सेस निरस्त करें"
 
+#: src/components/referrals/referred-traders.tsx
+msgid "Reward assets"
+msgstr "पुरस्कार एसेट"
+
+#: src/components/referrals/referred-traders.tsx
+msgid "Rewards"
+msgstr "पुरस्कार"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Rewards accrue in all supported quote assets and are claimed to Spot balances."
+msgstr "पुरस्कार सभी समर्थित कोट एसेट में जमा होते हैं और Spot बैलेंस में प्राप्त किए जाते हैं।"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Rewards by asset"
+msgstr "एसेट के अनुसार पुरस्कार"
+
 #: src/config/account-ledger.ts
 msgid "Rewards Claim"
 msgstr "पुरस्कार प्राप्त करें"
+
+#: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-claim-history.tsx
+msgid "Rewards claimed"
+msgstr "पुरस्कार प्राप्त हो गए"
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -5507,6 +5860,10 @@ msgstr "बाज़ार खोजें..."
 #~ msgid "Secure & Private"
 #~ msgstr ""
 
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Secure connection established. Continue with the referral action."
+msgstr "सुरक्षित कनेक्शन स्थापित हो गया। रेफ़रल कार्रवाई जारी रखें।"
+
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
 msgstr "सुरक्षित डिस्कनेक्ट विफल रहा क्योंकि सक्रिय ट्रेडिंग खाता सत्यापित नहीं किया जा सका। कृपया फिर से प्रयास करें।"
@@ -5617,6 +5974,7 @@ msgstr "स्वैप करने के लिए टोकन चुने�
 msgid "selected"
 msgstr "चयनित"
 
+#: src/lib/errors/format.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5747,6 +6105,10 @@ msgstr "TP/SL सेट करें"
 msgid "Settings"
 msgstr "सेटिंग्स"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Share"
+msgstr "साझा करें"
+
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Share image saved"
 msgstr "साझा छवि सहेजी गई"
@@ -5849,6 +6211,10 @@ msgstr "ROE प्रतिशत दिखाएँ"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Values in USD"
 #~ msgstr "USD में मान दिखाएं"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
+msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Side"
@@ -6001,7 +6367,6 @@ msgstr "कुछ गलत हो गया"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "जल्द ही"
@@ -6128,6 +6493,10 @@ msgstr "स्थिति"
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
 msgstr "कनेक्टेड रहें"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Step {currentStep} of 3"
+msgstr "3 में से चरण {currentStep}"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Stocks"
@@ -6519,6 +6888,10 @@ msgstr "स्वीकृति की दोबारा जाँच नह�
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "स्वीकृति परिणाम की पुष्टि नहीं हुई है। कुछ और करने से पहले रीड-ओनली सत्यापन फिर से करें।"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
+msgstr "स्वीकृत Hyperliquid Agent इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने-आप दोबारा प्रयास कभी नहीं किया जाता।"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
@@ -6618,6 +6991,10 @@ msgstr "ऑर्डर की पुष्टि अभी जारी है�
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "लाइव डेटा से ऑर्डर अपडेट की पुष्टि नहीं हुई। फिर से प्रयास करने से पहले रीफ़्रेश करें; रद्दीकरण अभी भी उपलब्ध है।"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
+msgstr "पेज Hyperliquid से रीफ़्रेश हो रहा है। हाल के बदलाव दिखने में थोड़ा समय लग सकता है।"
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
@@ -6651,10 +7028,22 @@ msgstr "QR इसी डिवाइस पर रहता है और कभ
 msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 msgstr "Hyperliquid द्वारा पुष्टि किए जाने से पहले प्रतिस्थापन की समय-सीमा समाप्त हो गई। नए निरसन की समीक्षा करें और उस पर हस्ताक्षर करें।"
 
+#: src/lib/errors/format.ts
+msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
+msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "The response could not be verified. No referral action is available until fresh data loads."
+msgstr "जवाब सत्यापित नहीं किया जा सका। नया डेटा लोड होने तक कोई रेफ़रल कार्रवाई उपलब्ध नहीं है।"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The saved desktop QR was invalid. Scan a fresh QR."
 msgstr "सहेजा गया डेस्कटॉप QR अमान्य था। नया QR स्कैन करें।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "The secure Hyperliquid connection could not be verified. Try again."
+msgstr "सुरक्षित Hyperliquid कनेक्शन सत्यापित नहीं किया जा सका। दोबारा प्रयास करें।"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -6703,9 +7092,21 @@ msgstr "इस ऑर्डर दिशा के लिए ट्रिगर 
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
 msgstr "वॉलेट सत्र बंद नहीं किया जा सका, लेकिन स्थानीय ट्रेडिंग कुंजी हटा दी गई। वॉलेट डिस्कनेक्ट करने का फिर से प्रयास करें।"
 
+#: src/lib/errors/format.ts
+msgid "There are no eligible rewards available to claim."
+msgstr "प्राप्त करने के लिए कोई पात्र पुरस्कार उपलब्ध नहीं है।"
+
+#: src/lib/errors/format.ts
+msgid "This account already has a referral code and cannot apply another one."
+msgstr "इस खाते पर पहले से रेफ़रल कोड लागू है और दूसरा कोड लागू नहीं किया जा सकता।"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "इस खाते को अभी Hyperliquid पर ट्रेडिंग कार्रवाई करने की अनुमति नहीं है।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "This account is not currently permitted to use Hyperliquid referrals."
+msgstr "इस खाते को अभी Hyperliquid रेफ़रल इस्तेमाल करने की अनुमति नहीं है।"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This action cannot be undone after execution."
@@ -6804,6 +7205,10 @@ msgstr "यह मान्य gatu डेस्कटॉप वॉलेट QR 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is not a WalletConnect QR code."
 #~ msgstr ""
+
+#: src/components/referrals/referral-activity.tsx
+msgid "This is the legacy earned-reward history. Current claims are shown in the previous tab."
+msgstr "यह पुराना अर्जित-पुरस्कार इतिहास है। मौजूदा प्राप्ति रिकॉर्ड पिछले टैब में दिखाए गए हैं।"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -6965,6 +7370,7 @@ msgstr "इससे कोई भी वर्तमान मोबाइल �
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/referrals/referral-legacy-history.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7068,6 +7474,10 @@ msgstr "कुल संपत्ति"
 #~ msgid "Total balance"
 #~ msgstr "कुल बैलेंस"
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Total claimable"
+msgstr "कुल प्राप्त करने योग्य"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "कुल इक्विटी"
@@ -7097,6 +7507,10 @@ msgstr "कुल समय"
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Total Value"
 #~ msgstr ""
+
+#: src/components/referrals/referral-legacy-history.tsx
+msgid "Total volume"
+msgstr "कुल वॉल्यूम"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "TP"
@@ -7145,6 +7559,7 @@ msgstr "TP/SL साइज़ दायरा"
 msgid "Track on LI.FI Explorer"
 msgstr "LI.FI Explorer पर ट्रैक करें"
 
+#: src/components/referrals/referral-code-card.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7163,6 +7578,10 @@ msgstr "ट्रेड"
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Trade on Hyperliquid"
+msgstr "Hyperliquid पर ट्रेड करें"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Trade Value"
@@ -7172,6 +7591,19 @@ msgstr "ट्रेड मूल्य"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Trade via {0} spot market"
 msgstr "{0} Spot मार्केट के माध्यम से ट्रेड करें"
+
+#: src/components/referrals/referred-traders.tsx
+msgid "Trader"
+msgstr "ट्रेडर"
+
+#: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
+msgid "Trader fee benefit"
+msgstr "ट्रेडर का फ़ीस लाभ"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Traders referred"
+msgstr "रेफ़र किए गए ट्रेडर"
 
 #: src/components/trade/positions/history-tab.tsx
 #~ msgid "trades"
@@ -7253,6 +7685,10 @@ msgstr "ट्रेडिंग कुंजी"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
 msgstr "ट्रेडिंग की स्वीकृत हुई"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Trading volume progress"
+msgstr "ट्रेडिंग वॉल्यूम प्रगति"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
 #~ msgid "TradingView"
@@ -7558,6 +7994,10 @@ msgstr "निकासी पात्रता सत्यापित नह
 msgid "Unavailable"
 msgstr "अनुपलब्ध"
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Unclaimed"
+msgstr "दावा नहीं किया गया"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
 msgstr "अपुष्ट"
@@ -7658,6 +8098,10 @@ msgstr "USDC"
 msgid "USDC Amount"
 msgstr "USDC राशि"
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "USDC claimable"
+msgstr "दावा योग्य USDC"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
 msgstr "USDC जमा Hyperliquid को भेज दिया गया"
@@ -7665,6 +8109,14 @@ msgstr "USDC जमा Hyperliquid को भेज दिया गया"
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "USDC received. Depositing to Hyperliquid..."
 #~ msgstr "USDC मिल गया। Hyperliquid में जमा किया जा रहा है..."
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "USDC rewards"
+msgstr "USDC रिवॉर्ड"
+
+#: src/components/referrals/referred-traders.tsx
+msgid "USDC volume"
+msgstr "USDC वॉल्यूम"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "USDC will be sent to this Arbitrum address."
@@ -7690,6 +8142,10 @@ msgstr "मध्य मूल्य का उपयोग करें"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use phone link"
 #~ msgstr "फ़ोन लिंक का उपयोग करें"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Use referral code {code} when joining Hyperliquid."
+msgstr "Hyperliquid से जुड़ते समय रेफ़रल कोड {code} का उपयोग करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Using"
@@ -7761,6 +8217,7 @@ msgid "VOL"
 msgstr "वॉल्यूम"
 
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/referrals/referred-traders.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "वॉल्यूम"
@@ -7776,6 +8233,10 @@ msgstr "वॉल्यूम"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
 msgstr "ऑन-चेन पुष्टि की प्रतीक्षा है"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Waiting for confirmation"
+msgstr "पुष्टि की प्रतीक्षा है"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 msgid "Waiting for confirmation..."
@@ -7815,6 +8276,7 @@ msgstr "वॉलेट क्लाइंट तैयार नहीं ह�
 
 #: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/format.ts
+#: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -7853,6 +8315,10 @@ msgstr "वॉलेट {0} से कनेक्ट नहीं है। अ
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
+
+#: src/lib/errors/format.ts
+msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
+msgstr "रेफ़रल अनुरोध की पुष्टि से पहले वॉलेट या नेटवर्क बदल गया। कार्रवाई फिर से खोलें और मौजूदा खाते की समीक्षा करें।"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -7993,6 +8459,10 @@ msgstr "हाँ"
 msgid "You are accessing our products and services from a restricted jurisdiction. We do not allow access from certain jurisdictions including locations subject to sanctions restrictions and other jurisdictions where our services are ineligible for use. For more information, see our <0>Terms of Use</0>. If you think this is an error, try refreshing the page or <1>opening a support ticket</1>."
 msgstr "आप किसी प्रतिबंधित क्षेत्राधिकार से हमारे उत्पादों और सेवाओं तक पहुँच रहे हैं। हम कुछ क्षेत्राधिकारों से पहुँच की अनुमति नहीं देते, जिनमें प्रतिबंधों के अधीन स्थान और अन्य क्षेत्राधिकार शामिल हैं जहाँ हमारी सेवाएँ उपयोग के लिए अयोग्य हैं। अधिक जानकारी के लिए, हमारी <0>उपयोग की शर्तें</0> देखें। यदि आपको लगता है कि यह एक त्रुटि है, तो पृष्ठ को रीफ़्रेश करने या <1>सहायता टिकट खोलने</1> का प्रयास करें।"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "You are eligible to create a referral code."
+msgstr "आप रेफ़रल कोड बनाने के लिए पात्र हैं।"
+
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"
 msgstr "आप Testnet पर हैं"
@@ -8030,6 +8500,10 @@ msgstr "आपको लगभग प्राप्त होगा"
 msgid "You're offline"
 msgstr "आप ऑफ़लाइन हैं"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Your account was referred by"
+msgstr "आपके खाते को रेफ़र किया"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
 #~ msgstr ""
@@ -8054,6 +8528,15 @@ msgstr "आपके फंड सफलतापूर्वक जमा ह�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
 msgstr "आपका मास्टर वॉलेट एक ट्रेडिंग कुंजी स्वीकृत करता है। यह कुंजी धनराशि नहीं निकाल सकती।"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Your referral"
+msgstr "आपका रेफ़रल"
+
+#: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
+msgid "Your rewards"
+msgstr "आपके पुरस्कार"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

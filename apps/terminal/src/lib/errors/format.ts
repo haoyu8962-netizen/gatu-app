@@ -6,6 +6,48 @@ const SMART_WALLET_NONCE_CONFLICT_PATTERN = /\bAA25\b(?: invalid account nonce)?
 
 const ERROR_PATTERNS = [
 	{
+		pattern: /referral request was submitted but its final status could not be confirmed/i,
+		message: () =>
+			t`The request was submitted, but its final status is still updating. Check referral data and claim history before retrying.`,
+	},
+	{
+		pattern: /wallet or network changed before the referral request could be confirmed/i,
+		message: () =>
+			t`Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account.`,
+	},
+	{
+		pattern: /referral codes must be between 1 and 20 characters/i,
+		message: () => t`Referral codes must be between 1 and 20 characters.`,
+	},
+	{
+		pattern: /this account already has a referral code/i,
+		message: () => t`This account already has a referral code and cannot apply another one.`,
+	},
+	{
+		pattern: /referral codes cannot be applied after cumulative volume exceeds \$10,000/i,
+		message: () => t`Referral codes cannot be applied after cumulative volume exceeds $10,000.`,
+	},
+	{
+		pattern: /not currently eligible to create a referral code/i,
+		message: () => t`Hyperliquid does not currently show this account as eligible to create a referral code.`,
+	},
+	{
+		pattern: /there are no eligible rewards available to claim/i,
+		message: () => t`There are no eligible rewards available to claim.`,
+	},
+	{
+		pattern: /referral access could not be verified for this account/i,
+		message: () => t`Referral access could not be verified for this account. Refresh access status before retrying.`,
+	},
+	{
+		pattern: /connect the selected owner wallet before continuing/i,
+		message: () => t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
+	},
+	{
+		pattern: /the active wallet does not match this hyperliquid account/i,
+		message: () => t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`,
+	},
+	{
 		pattern: /another funds operation is still in progress/i,
 		message: () => t`Another funds operation is still in progress for this account. Try again after it finishes.`,
 	},

@@ -25,6 +25,10 @@ const ACCOUNT_LEDGER_LIST_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready";
 
+export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) {
+	return ["hl", "recent-history", "userNonFundingLedgerUpdates", env, user.toLowerCase()] as const;
+}
+
 interface AccountLedgerResult {
 	error: unknown;
 	isConnected: boolean;
@@ -66,7 +70,7 @@ export function useAccountLedger(): AccountLedgerResult {
 	const ledgerQuery = useQuery({
 		enabled,
 		queryFn: ({ signal }) => fetchRecentAccountLedgerUpdates(info, user, signal),
-		queryKey: ["hl", "recent-history", "userNonFundingLedgerUpdates", env, user.toLowerCase()],
+		queryKey: accountLedgerQueryKey(env, user),
 		refetchOnReconnect: true,
 		refetchOnWindowFocus: false,
 		retry: false,

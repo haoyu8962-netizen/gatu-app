@@ -70,6 +70,7 @@ export {
 	type ISubscriptionTransport,
 	infoKey,
 	infoKeys,
+	infoPersistedKey,
 	infoQueryOptions,
 	initializeClients,
 	isAgentRegistrationEpochCurrent,

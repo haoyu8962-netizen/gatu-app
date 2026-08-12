@@ -20,6 +20,7 @@ import { LegalStatusMessage } from "./legal-status-message";
 interface Props {
 	state: Exclude<LegalGateState, "inactive" | "checking" | "accepted">;
 	acceptanceError: Error | null;
+	blockedDescription?: ReactNode;
 	onAccept: () => Promise<unknown>;
 	onRetryStatus: () => Promise<unknown>;
 	onResetAcceptance: () => void;
@@ -34,7 +35,14 @@ const CHECKBOX_ROW_CLASS =
 const ACTION_BUTTON_CLASS =
 	"h-[46px] !rounded-[10px] px-3 py-0 text-sm !shadow-none active:not-data-disabled:!scale-100";
 
-export function LegalAcceptanceModal({ state, acceptanceError, onAccept, onRetryStatus, onResetAcceptance }: Props) {
+export function LegalAcceptanceModal({
+	state,
+	acceptanceError,
+	blockedDescription,
+	onAccept,
+	onRetryStatus,
+	onResetAcceptance,
+}: Props) {
 	const isMobile = useIsMobile();
 	const { disconnectWallet, isDisconnecting } = useDisconnectWallet();
 	const [acceptedPolicies, setAcceptedPolicies] = useState(false);
@@ -62,7 +70,11 @@ export function LegalAcceptanceModal({ state, acceptanceError, onAccept, onRetry
 		content = (
 			<LegalStatusMessage
 				title={<Trans>Access restricted</Trans>}
-				description={<Trans>This account is not currently permitted to perform trading actions on Hyperliquid.</Trans>}
+				description={
+					blockedDescription ?? (
+						<Trans>This account is not currently permitted to perform trading actions on Hyperliquid.</Trans>
+					)
+				}
 				actionLabel={<Trans>Disconnect</Trans>}
 				actionDisabled={isDisconnecting}
 				onAction={handleDecline}

@@ -68,6 +68,14 @@ describe("exchange registry", () => {
 		expect(getExchangeMethodConfig("activateOutcomeDeployer").client).toBe("trading");
 	});
 
+	it("routes referral actions through the Agent client without a builder payload", () => {
+		for (const method of ["claimRewards", "registerReferrer", "setReferrer"] as const) {
+			const config = getExchangeMethodConfig(method);
+			expect(config.client).toBe("trading");
+			expect(config.injectBuilder).toBe(false);
+		}
+	});
+
 	it("only injects builder config for order", () => {
 		for (const method of EXCHANGE_METHODS) {
 			const config = getExchangeMethodConfig(method);

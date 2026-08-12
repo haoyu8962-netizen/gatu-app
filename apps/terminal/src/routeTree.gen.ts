@@ -21,6 +21,7 @@ import { Route as MobileAgentSyncTicketRouteImport } from './routes/mobile-agent
 import { Route as PerpRouteImport } from './routes/perp'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as SpotRouteImport } from './routes/spot'
 import { Route as SupportRouteImport } from './routes/support'
@@ -92,6 +93,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReferralsRoute = ReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/referrals'
     | '/risk'
     | '/spot'
     | '/support'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/referrals'
     | '/risk'
     | '/spot'
     | '/support'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/referrals'
     | '/risk'
     | '/spot'
     | '/support'
@@ -300,6 +312,7 @@ export interface RootRouteChildren {
   PerpRoute: typeof PerpRoute
   PortfolioRoute: typeof PortfolioRoute
   PrivacyRoute: typeof PrivacyRoute
+  ReferralsRoute: typeof ReferralsRoute
   RiskRoute: typeof RiskRoute
   SpotRoute: typeof SpotRoute
   SupportRoute: typeof SupportRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/referrals': {
+      id: '/referrals'
+      path: '/referrals'
+      fullPath: '/referrals'
+      preLoaderRoute: typeof ReferralsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/risk': {
@@ -507,6 +527,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerpRoute: PerpRoute,
   PortfolioRoute: PortfolioRoute,
   PrivacyRoute: PrivacyRoute,
+  ReferralsRoute: ReferralsRoute,
   RiskRoute: RiskRoute,
   SpotRoute: SpotRoute,
   SupportRoute: SupportRoute,

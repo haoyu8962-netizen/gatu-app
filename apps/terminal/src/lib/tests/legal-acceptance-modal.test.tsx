@@ -302,6 +302,26 @@ describe("LegalAcceptanceModal", () => {
 		expect(findButton(container, "Confirm in wallet").disabled).toBe(true);
 	});
 
+	it("supports a capability-specific blocked description", async () => {
+		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+
+		act(() => {
+			root.render(
+				createElement(LegalAcceptanceModal, {
+					state: "blocked",
+					acceptanceError: null,
+					blockedDescription: "Referral access is unavailable for this account.",
+					onAccept,
+					onRetryStatus,
+					onResetAcceptance,
+				}),
+			);
+		});
+
+		expect(container.textContent).toContain("Referral access is unavailable for this account.");
+		expect(container.textContent).not.toContain("perform trading actions");
+	});
+
 	it("resets the failed acceptance before retrying legal status", async () => {
 		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
 

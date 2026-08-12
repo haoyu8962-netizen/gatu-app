@@ -1,0 +1,280 @@
+// @vitest-environment jsdom
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ReferralActionStatusUnknownError, useReferralActions } from "@/hooks/trade/use-referral-actions";
+import type { ReferralData } from "@/lib/trade/referral";
+
+const OWNER = "0x1111111111111111111111111111111111111111" as const;
+const OTHER_OWNER = "0x2222222222222222222222222222222222222222" as const;
+
+const testState = vi.hoisted(() => ({
+	claimRewards: vi.fn(),
+	clientKey: "0x1111111111111111111111111111111111111111" as string,
+	env: "Mainnet" as "Mainnet" | "Testnet",
+	executionGuards: {} as Record<string, (() => void) | undefined>,
+	legalRefetch: vi.fn(),
+	registerReferrer: vi.fn(),
+	setReferrer: vi.fn(),
+	walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
+}));
+
+vi.mock("@/lib/hyperliquid", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/hyperliquid")>();
+	return {
+		...original,
+		useExchange: (method: string, options?: { executionGuard?: () => void }) => {
+			testState.executionGuards[method] = options?.executionGuard;
+			return {
+				isPending: false,
+				mutateAsync:
+					method === "setReferrer"
+						? testState.setReferrer
+						: method === "registerReferrer"
+							? testState.registerReferrer
+							: testState.claimRewards,
+			};
+		},
+		useHyperliquid: () => ({ clientKey: testState.clientKey, env: testState.env }),
+		useLegalStatus: () => ({ refetch: testState.legalRefetch }),
+	};
+});
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ hasWalletAccess: true, walletAddress: testState.walletAddress }),
+}));
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+	return { promise, resolve };
+}
+
+function createReferralData(overrides: Partial<ReferralData> = {}): ReferralData {
+	return {
+		builderRewards: "0",
+		claimedRewards: "0",
+		cumVlm: "10000",
+		referredBy: null,
+		referrerState: { stage: "needToCreateCode" },
+		rewardHistory: [],
+		tokenToState: [
+			[
+				0,
+				{
+					builderRewards: "0",
+					claimedRewards: "0",
+					cumVlm: "10000",
+					unclaimedRewards: "1.01",
+				},
+			],
+		],
+		unclaimedRewards: "1.01",
+		...overrides,
+	};
+}
+
+function createHttpRequestError(status?: number): Error {
+	const error = new Error("Request failed");
+	error.name = "HttpRequestError";
+	if (status !== undefined) Object.assign(error, { response: { status } });
+	return error;
+}
+
+let hookValue: ReturnType<typeof useReferralActions> | null = null;
+let hookInput: Parameters<typeof useReferralActions>[0];
+
+function Probe() {
+	hookValue = useReferralActions(hookInput);
+	return null;
+}
+
+describe("useReferralActions", () => {
+	let container: HTMLDivElement;
+	let queryClient: QueryClient;
+	let root: Root;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		testState.clientKey = OWNER;
+		testState.env = "Mainnet";
+		testState.executionGuards = {};
+		testState.walletAddress = OWNER;
+		testState.claimRewards.mockResolvedValue({ status: "ok" });
+		testState.registerReferrer.mockResolvedValue({ status: "ok" });
+		testState.setReferrer.mockResolvedValue({ status: "ok" });
+		testState.legalRefetch.mockResolvedValue({
+			data: { acceptedTerms: true, canUseReferrals: true, userAllowed: true },
+			error: null,
+		});
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
+		root = createRoot(container);
+		hookValue = null;
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		vi.useRealTimers();
+		queryClient.clear();
+		container.remove();
+	});
+
+	function renderHook(refetchReferral: () => Promise<ReferralData>) {
+		hookInput = { refetchReferral, refreshAfterAction: vi.fn().mockResolvedValue(undefined) };
+		renderProbe();
+		if (!hookValue) throw new Error("Referral action hook was not captured");
+		return hookValue;
+	}
+
+	function renderProbe() {
+		act(() =>
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<Probe />
+				</QueryClientProvider>,
+			),
+		);
+	}
+
+	it("sets a referral code only after fresh legal and referral checks", async () => {
+		const before = createReferralData();
+		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		const refetchReferral = vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after);
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+		});
+
+		expect(testState.setReferrer).toHaveBeenCalledExactlyOnceWith({ code: "GATU" });
+		expect(testState.registerReferrer).not.toHaveBeenCalled();
+		expect(testState.claimRewards).not.toHaveBeenCalled();
+		expect(testState.legalRefetch).toHaveBeenCalledOnce();
+		expect(refetchReferral).toHaveBeenCalledTimes(2);
+		expect(testState.executionGuards.setReferrer).toBeTypeOf("function");
+	});
+
+	it("creates a code through the Agent action without a builder authorization flow", async () => {
+		const before = createReferralData();
+		const after = createReferralData({
+			referrerState: { stage: "ready", data: { code: "MYCODE", nReferrals: 0, referralStates: [] } },
+		});
+		const hook = renderHook(vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after));
+
+		await act(async () => {
+			await expect(hook.submit("create", "MYCODE")).resolves.toBeUndefined();
+		});
+
+		expect(testState.registerReferrer).toHaveBeenCalledExactlyOnceWith({ code: "MYCODE" });
+	});
+
+	it("claims all rewards with no request parameters and reconciles changed token state", async () => {
+		const before = createReferralData();
+		const beforeTokenState = before.tokenToState[0]?.[1];
+		if (!beforeTokenState) throw new Error("Expected a referral reward token state");
+		const after = createReferralData({
+			claimedRewards: "1.01",
+			tokenToState: [[0, { ...beforeTokenState, claimedRewards: "1.01", unclaimedRewards: "0" }]],
+			unclaimedRewards: "0",
+		});
+		const hook = renderHook(vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after));
+
+		await act(async () => {
+			await expect(hook.submit("claim")).resolves.toBeUndefined();
+		});
+
+		expect(testState.claimRewards).toHaveBeenCalledExactlyOnceWith(undefined);
+	});
+
+	it("fails closed before any SDK action when referral access is unknown", async () => {
+		testState.legalRefetch.mockResolvedValue({ data: undefined, error: new Error("offline") });
+		const refetchReferral = vi.fn();
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("claim")).rejects.toThrow("Referral access could not be verified");
+		});
+
+		expect(refetchReferral).not.toHaveBeenCalled();
+		expect(testState.claimRewards).not.toHaveBeenCalled();
+	});
+
+	it("fails closed if the owner changes while fresh referral data is loading", async () => {
+		const referral = deferred<ReferralData>();
+		testState.legalRefetch.mockResolvedValue({
+			data: { acceptedTerms: true, canUseReferrals: true, userAllowed: true },
+			error: null,
+		});
+		const hook = renderHook(() => referral.promise);
+		const submission = hook.submit("apply", "GATU");
+		const rejection = expect(submission).rejects.toThrow("Wallet or network changed");
+
+		await vi.waitFor(() => expect(testState.legalRefetch).toHaveBeenCalledOnce());
+		await act(async () => {
+			testState.clientKey = OTHER_OWNER;
+			testState.walletAddress = OTHER_OWNER;
+			renderProbe();
+		});
+		expect(hookValue?.identity.clientKey).toBe(OTHER_OWNER);
+		await act(async () => {
+			referral.resolve(createReferralData());
+			await Promise.resolve();
+		});
+
+		await rejection;
+		expect(testState.setReferrer).not.toHaveBeenCalled();
+	});
+
+	it("reconciles an ambiguous transport error before reporting success", async () => {
+		const before = createReferralData();
+		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		testState.setReferrer.mockRejectedValue(createHttpRequestError());
+		const refetchReferral = vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after);
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+		});
+
+		expect(testState.setReferrer).toHaveBeenCalledOnce();
+		expect(refetchReferral).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not reconcile or retry a deterministic protocol rejection", async () => {
+		const before = createReferralData();
+		const rejection = createHttpRequestError(400);
+		testState.registerReferrer.mockRejectedValue(rejection);
+		const refetchReferral = vi.fn().mockResolvedValue(before);
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("create", "MYCODE")).rejects.toBe(rejection);
+		});
+
+		expect(testState.registerReferrer).toHaveBeenCalledOnce();
+		expect(refetchReferral).toHaveBeenCalledOnce();
+	});
+
+	it("reports an unknown final state instead of replaying a signed action", async () => {
+		vi.useFakeTimers();
+		const before = createReferralData();
+		const refetchReferral = vi.fn().mockResolvedValue(before);
+		const hook = renderHook(refetchReferral);
+
+		const submission = hook.submit("create", "MYCODE");
+		const rejection = expect(submission).rejects.toBeInstanceOf(ReferralActionStatusUnknownError);
+		await act(async () => {
+			await vi.runAllTimersAsync();
+		});
+
+		await rejection;
+		expect(testState.registerReferrer).toHaveBeenCalledOnce();
+		expect(refetchReferral).toHaveBeenCalledTimes(7);
+	});
+});

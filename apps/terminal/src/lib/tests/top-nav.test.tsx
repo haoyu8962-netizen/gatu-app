@@ -178,6 +178,7 @@ describe("TopNav", () => {
 		["/trade/HYPE", "Trade"],
 		["/perp/BTC", "Trade"],
 		["/portfolio", "Portfolio"],
+		["/referrals", "Referrals"],
 		["/docs", "Docs"],
 		["/risk", "Risk Disclosure"],
 		["/portfolio/history", null],
@@ -227,17 +228,18 @@ describe("TopNav", () => {
 			"Earn — Soon",
 			"Vaults — Soon",
 			"Staking — Soon",
-			"Referrals — Soon",
+			"Referrals",
 			"Leaderboard — Soon",
 		]);
 
-		for (const label of ["Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]) {
+		for (const label of ["Earn", "Vaults", "Staking", "Leaderboard"]) {
 			const button = primaryEntries.find((item) => item.textContent?.startsWith(label));
 			expect(button).toBeInstanceOf(HTMLButtonElement);
 			expect((button as HTMLButtonElement).disabled).toBe(true);
 			expect(button?.title).toBe("Soon");
 			expect(findLink(label)).toBeUndefined();
 		}
+		expect(findLink("Referrals")?.dataset.to).toBe("/referrals");
 	});
 
 	it("adds future More entries with disabled semantics and no navigation side effects", () => {
@@ -256,37 +258,27 @@ describe("TopNav", () => {
 	it("moves lower-priority entries into More for each compact wallet state", () => {
 		renderNav();
 
-		function compactMenuItems() {
+		function compactMenuLabels() {
 			return [
 				...(container
 					.querySelector('[data-layout="compact"]')
 					?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
-			];
+			].map((item) => item.textContent?.trim());
 		}
 
-		expect(
-			compactMenuItems()
-				.slice(0, 6)
-				.map((item) => item.textContent?.trim()),
-		).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API & Subaccounts"]);
-		expect(
-			compactMenuItems()
-				.slice(0, 4)
-				.every((item) => item.disabled),
-		).toBe(true);
+		expect(compactMenuLabels().slice(0, 6)).toEqual([
+			"Vaults",
+			"Staking",
+			"Referrals",
+			"Leaderboard",
+			"Statistics",
+			"API & Subaccounts",
+		]);
+		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
 
 		testState.hasWalletAccess = false;
 		renderNav();
-		expect(
-			compactMenuItems()
-				.slice(0, 4)
-				.map((item) => item.textContent?.trim()),
-		).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
-		expect(
-			compactMenuItems()
-				.slice(0, 4)
-				.every((item) => item.disabled),
-		).toBe(true);
+		expect(compactMenuLabels().slice(0, 4)).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {

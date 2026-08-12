@@ -91,6 +91,14 @@ export function MobileNavDrawer() {
 								<Trans>Portfolio</Trans>
 							</Link>
 							<Link
+								to="/referrals"
+								onClick={close}
+								aria-current={pathname === "/referrals" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/referrals")}
+							>
+								<Trans>Referrals</Trans>
+							</Link>
+							<Link
 								to="/docs"
 								onClick={close}
 								aria-current={pathname === "/docs" ? "page" : undefined}

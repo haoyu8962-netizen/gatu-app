@@ -109,13 +109,16 @@ describe("cross-tab funds action lock", () => {
 		});
 	});
 
-	it("locks only account-mode changes and mode-dependent funds methods", () => {
+	it("locks account-scoped financial configuration and funds methods", () => {
 		for (const method of [
 			"agentEnableDexAbstraction",
 			"agentSendAsset",
 			"agentSetAbstraction",
+			"claimRewards",
+			"registerReferrer",
 			"sendAsset",
 			"sendToEvmWithData",
+			"setReferrer",
 			"spotSend",
 			"usdClassTransfer",
 			"usdSend",

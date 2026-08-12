@@ -9,8 +9,11 @@ const FUNDS_ACTION_METHODS: ReadonlySet<ExchangeMethod> = new Set([
 	"agentEnableDexAbstraction",
 	"agentSendAsset",
 	"agentSetAbstraction",
+	"claimRewards",
+	"registerReferrer",
 	"sendAsset",
 	"sendToEvmWithData",
+	"setReferrer",
 	"spotSend",
 	"usdClassTransfer",
 	"usdSend",
@@ -46,7 +49,7 @@ export function getFundsActionLockName(env: HyperliquidEnv, owner: string): stri
 }
 
 /**
- * Serializes account-mode changes and mode-dependent funds actions across tabs.
+ * Serializes account-scoped financial configuration and funds actions across tabs.
  *
  * The timeout applies only while waiting to acquire the lock. Once acquired,
  * the lock remains held until the SDK promise settles, so the acquisition
