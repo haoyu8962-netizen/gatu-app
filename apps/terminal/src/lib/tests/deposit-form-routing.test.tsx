@@ -2,7 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act, createElement } from "react";
+import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
@@ -13,7 +13,12 @@ vi.mock("@/components/trade/tradebox/deposit/asset-select", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
-	FundingAddressCard: () => createElement("div", { "data-testid": "funding-address" }),
+	FundingAddressCard: ({ action, address, state }: { action?: ReactNode; address?: string; state: string }) =>
+		createElement(
+			"div",
+			{ "data-address": address, "data-address-state": state, "data-testid": "funding-address" },
+			action,
+		),
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
@@ -51,6 +56,8 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		cctpNetAmount: null,
 		cctpFeeLoading: false,
 		pendingCctpRecovery: false,
+		usesFundingAddressFlow: true,
+		fundingAddressPending: false,
 		fundingAddress: FUNDING_ADDRESS,
 		onDone: vi.fn(),
 	};
@@ -77,6 +84,7 @@ describe("DepositForm routing gate", () => {
 		});
 
 		expect(container.querySelector('[data-testid="funding-address"]')).not.toBeNull();
+		expect(container.querySelector('[data-address-state="ready"]')?.getAttribute("data-address")).toBe(FUNDING_ADDRESS);
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
@@ -85,16 +93,55 @@ describe("DepositForm routing gate", () => {
 	});
 
 	it.each([
-		{ status: "loading" as const, route: null },
-		{ status: "error" as const, route: null },
-		{ status: "unknown" as const, route: null },
-		{ status: "ready" as const, route: "cctp" as const },
-	])("hides all funding instructions for $status/$route", async ({ route, status }) => {
+		{ expectedState: "loading", status: "loading" as const, route: null },
+		{ expectedState: "unavailable", status: "error" as const, route: null },
+		{ expectedState: "unavailable", status: "unknown" as const, route: null },
+		{ expectedState: "unavailable", status: "ready" as const, route: "cctp" as const },
+	])("never exposes the funding address for $status/$route", async ({ expectedState, route, status }) => {
+		const props = createProps(status, route);
 		await act(async () => {
-			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, createProps(status, route))));
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const fundingAddress = container.querySelector('[data-testid="funding-address"]');
+		expect(fundingAddress?.getAttribute("data-address-state")).toBe(expectedState);
+		expect(fundingAddress?.hasAttribute("data-address")).toBe(false);
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		if (status === "error" || status === "unknown") {
+			const retryButton = container.querySelector<HTMLButtonElement>("button");
+			expect(retryButton?.textContent).toBe("Retry");
+			act(() => retryButton?.click());
+			expect(props.onRetryRouting).toHaveBeenCalledOnce();
+		}
+	});
+
+	it("keeps the funding address placeholder stable while the embedded wallet is created", async () => {
+		const props = {
+			...createProps("ready", "bridge"),
+			fundingAddress: undefined,
+			fundingAddressPending: true,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+	});
+
+	it.each(["bridge", "cctp"] as const)("preserves the external-wallet amount flow for %s", async (route) => {
+		const props = {
+			...createProps("ready", route),
+			usesFundingAddressFlow: false,
+			fundingAddress: undefined,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
 		expect(container.querySelector('[data-testid="funding-address"]')).toBeNull();
-		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
 	});
 });

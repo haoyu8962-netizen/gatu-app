@@ -64,7 +64,10 @@ describe("WithdrawForm UI", () => {
 		const form = container.firstElementChild as HTMLElement;
 		expect(form.className).toContain("font-market-close");
 		expect(form.querySelector("h3")?.textContent).toBe("Withdraw USDC");
-		expect(form.querySelector('[aria-hidden="true"]')?.className).toContain("size-10");
+		const assetIcon = form.querySelector<HTMLImageElement>('img[src="/coins/USDC.svg"]');
+		expect(assetIcon).not.toBeNull();
+		expect(assetIcon?.alt).toBe("");
+		expect(assetIcon?.parentElement?.className).toContain("size-10");
 
 		const comboboxes = Array.from(form.querySelectorAll<HTMLButtonElement>('[role="combobox"]'));
 		expect(comboboxes).toHaveLength(2);

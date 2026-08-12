@@ -1070,6 +1070,8 @@ export function DepositModal() {
 									!!cctpDepositTracking.recoveryRecord &&
 									cctpDepositTracking.data?.status !== "forward-submitted"
 								}
+								usesFundingAddressFlow={isEmbeddedDeposit}
+								fundingAddressPending={isEmbeddedDeposit && !embeddedWalletError && !depositEmbeddedWalletAddress}
 								fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
 								onDone={handleClose}
 							/>

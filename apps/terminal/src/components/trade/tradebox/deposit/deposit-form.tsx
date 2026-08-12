@@ -31,6 +31,8 @@ interface Props {
 	cctpNetAmount: string | null;
 	cctpFeeLoading: boolean;
 	pendingCctpRecovery: boolean;
+	usesFundingAddressFlow: boolean;
+	fundingAddressPending: boolean;
 	fundingAddress?: `0x${string}`;
 	onDone?: () => void;
 }
@@ -55,6 +57,8 @@ export function DepositForm({
 	cctpNetAmount,
 	cctpFeeLoading,
 	pendingCctpRecovery,
+	usesFundingAddressFlow,
+	fundingAddressPending,
 	fundingAddress,
 	onDone,
 }: Props) {
@@ -152,7 +156,7 @@ export function DepositForm({
 					·
 				</span>
 				<NetworkSelect
-					label={fundingAddress ? t`Funding chain` : t`Network`}
+					label={usesFundingAddressFlow ? t`Funding chain` : t`Network`}
 					value="arbitrum"
 					onChange={() => {}}
 					disabled
@@ -163,7 +167,48 @@ export function DepositForm({
 		</div>
 	);
 
-	if (fundingAddress) {
+	if (usesFundingAddressFlow) {
+		const retryRoutingAction =
+			routingStatus === "error" || routingStatus === "unknown" ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={onRetryRouting}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const fundingAddressState =
+			bridgeRoutingReady && fundingAddress
+				? ({ address: fundingAddress, state: "ready" } as const)
+				: routingStatus === "loading"
+					? ({ message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const)
+					: bridgeRoutingReady && fundingAddressPending
+						? ({ message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const)
+						: cctpRoutingReady
+							? ({
+									message: <Trans>Gas-sponsored CCTP deposits require a configured and verified relayer.</Trans>,
+									state: "unavailable",
+								} as const)
+							: bridgeRoutingReady
+								? ({
+										message: (
+											<Trans>
+												Your email wallet is unavailable. Sign out and log in again with the same email, then retry.
+											</Trans>
+										),
+										state: "unavailable",
+									} as const)
+								: ({
+										message: (
+											<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
+										),
+										action: retryRoutingAction,
+										state: "unavailable",
+									} as const);
+
 		return (
 			<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
 				<div className="pt-0.5 text-center">
@@ -174,12 +219,10 @@ export function DepositForm({
 
 				{transferSelectors}
 
-				{routingNotice}
+				<FundingAddressCard {...fundingAddressState} />
 
-				{bridgeRoutingReady ? (
+				{bridgeRoutingReady && fundingAddress ? (
 					<>
-						<FundingAddressCard address={fundingAddress} />
-
 						{embeddedDepositStatus ? (
 							<div
 								className={
@@ -198,7 +241,7 @@ export function DepositForm({
 					</>
 				) : null}
 
-				{bridgeRoutingReady ? (
+				{bridgeRoutingReady && fundingAddress ? (
 					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
 						<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
 						<Trans>

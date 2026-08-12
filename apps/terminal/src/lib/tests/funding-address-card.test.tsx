@@ -38,7 +38,7 @@ describe("FundingAddressCard", () => {
 		await act(async () => {
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<FundingAddressCard address={address} />
+					<FundingAddressCard address={address} state="ready" />
 				</I18nProvider>,
 			);
 		});
@@ -55,5 +55,23 @@ describe("FundingAddressCard", () => {
 		const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy deposit address"]');
 		expect(copyButton?.className).toContain("min-h-11");
 		expect(copyButton?.textContent).toBe("Copy Address");
+	});
+
+	it.each(["loading", "unavailable"] as const)("does not expose an address while the card is %s", async (state) => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<FundingAddressCard message="Address unavailable" state={state} />
+				</I18nProvider>,
+			);
+		});
+
+		expect(mocks.toCanvas).not.toHaveBeenCalled();
+		expect(container.querySelector("canvas")).toBeNull();
+		expect(container.querySelector("button")).toBeNull();
+		const stateContainer = container.querySelector(`[data-address-state="${state}"]`);
+		expect(stateContainer).not.toBeNull();
+		const statusRole = state === "loading" ? "status" : "alert";
+		expect(stateContainer?.querySelector(`[role="${statusRole}"]`)?.className).toContain("size-[140px]");
 	});
 });

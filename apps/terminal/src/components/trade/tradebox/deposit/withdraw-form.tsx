@@ -6,6 +6,7 @@ import { useId } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { USDC_TRANSFER_DECIMALS } from "@/config/app";
+import { USDC_ICON_URL } from "@/config/bridge";
 import { NETWORKS } from "@/config/networks";
 import type { UsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { cn } from "@/lib/cn";
@@ -128,11 +129,8 @@ export function WithdrawForm({
 	return (
 		<div className="flex flex-1 flex-col gap-3.5 font-market-close">
 			<div className="flex flex-col items-center gap-2 text-center">
-				<div
-					className="grid size-10 place-items-center rounded-full bg-market-close-control text-sm font-bold text-market-close-on-control"
-					aria-hidden="true"
-				>
-					$
+				<div className="grid size-10 place-items-center rounded-full bg-market-close-control" aria-hidden="true">
+					<img src={USDC_ICON_URL} alt="" className="size-8 rounded-full" />
 				</div>
 				<div className="space-y-0.5">
 					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
