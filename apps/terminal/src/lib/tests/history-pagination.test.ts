@@ -92,6 +92,29 @@ describe("history pagination", () => {
 		expect(result.items.at(-1)?.id).toBe("event-1200");
 	});
 
+	it("preserves matching history outside the latest display window", async () => {
+		const events = Array.from({ length: 600 }, (_, index) => ({
+			id: `event-${index + 1}`,
+			preserve: index === 9,
+			time: index + 1,
+		}));
+		const controller = new AbortController();
+		const result = await fetchTimeRangeHistory({
+			endTime: 600,
+			fetchPage: async (startTime) => events.filter((event) => event.time >= startTime).slice(0, 500),
+			getKey: (event) => event.id,
+			getTime: (event) => event.time,
+			retainItemsMatching: (event) => event.preserve,
+			retainLatestItems: 200,
+			signal: controller.signal,
+		});
+
+		expect(result.truncated).toBe(false);
+		expect(result.items).toHaveLength(201);
+		expect(result.items.at(0)?.id).toBe("event-10");
+		expect(result.items.at(1)?.id).toBe("event-401");
+	});
+
 	it("retries 429 responses and respects the abortable retry path", async () => {
 		const controller = new AbortController();
 		const request = vi

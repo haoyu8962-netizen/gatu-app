@@ -204,11 +204,28 @@ export function getDisplayedReferralDiscountPercent(data: ReferralData, discount
 	return getReferralDiscountPercent(discount);
 }
 
+export function getReferralCumulativeVolume(data: ReferralData): string {
+	if (data.tokenToState.length === 0) return data.cumVlm;
+	return data.tokenToState.reduce((total, [, state]) => total.plus(state.cumVlm), new Big(0)).toString();
+}
+
 export function getReferralActivationProgress(data: ReferralData): number | null {
 	if (data.referrerState.stage !== "needToTrade") return null;
-	const required = Big(data.referrerState.data.required);
-	if (required.lte(0)) return 100;
-	return Math.max(0, Math.min(100, Number(Big(data.cumVlm).div(required).times(100).toFixed(2))));
+	const completed = Big(getReferralCumulativeVolume(data));
+	const remaining = Big(data.referrerState.data.required);
+	const target = completed.plus(remaining);
+	if (remaining.lte(0) || target.lte(0)) return 100;
+	return Math.max(0, Math.min(100, Number(completed.div(target).times(100).toFixed(2))));
+}
+
+export function getReferralActivationTargetVolume(data: ReferralData): string | null {
+	if (data.referrerState.stage !== "needToTrade") return null;
+	return Big(getReferralCumulativeVolume(data)).plus(data.referrerState.data.required).toString();
+}
+
+export function getOfficialReferralUrl(code: string, env: "Mainnet" | "Testnet"): string {
+	const host = env === "Testnet" ? "https://app.hyperliquid-testnet.xyz" : "https://app.hyperliquid.xyz";
+	return `${host}/join/${encodeURIComponent(code)}`;
 }
 
 export function isValidReferralCode(code: string): boolean {
@@ -217,8 +234,7 @@ export function isValidReferralCode(code: string): boolean {
 
 export function canApplyReferralCode(data: ReferralData): boolean {
 	if (data.referredBy !== null) return false;
-	const cumulativeVolume = data.tokenToState.reduce((total, [, state]) => total.plus(state.cumVlm), new Big(0));
-	return cumulativeVolume.lte(10_000);
+	return Big(getReferralCumulativeVolume(data)).lte(10_000);
 }
 
 export function isReferralMutationReconciled(

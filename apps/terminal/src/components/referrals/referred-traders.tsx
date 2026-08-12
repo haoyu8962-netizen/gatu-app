@@ -109,56 +109,53 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 				<MobileProgressiveList items={traders}>
 					{(visibleTraders) =>
 						visibleTraders.map((trader) => (
-							<article key={trader.user} className="space-y-3 px-4 py-4">
+							<article key={trader.user} className="px-4 py-3">
 								<div className="flex items-start justify-between gap-3">
 									<div>
-										<p className="text-sm font-semibold text-fg">{shortenAddress(trader.user, 6, 4)}</p>
-										<p className="mt-0.5 text-2xs text-fg-muted">{formatDateTime(trader.timeJoined)}</p>
+										<p className="text-xs font-medium text-fg">{shortenAddress(trader.user, 6, 4)}</p>
+										<p className="mt-0.5 text-2xs tabular-nums text-fg-muted">
+											{formatDateTime(trader.timeJoined)} · <Trans>Volume</Trans> {formatUSD(trader.cumVlm)}
+										</p>
 									</div>
-									<p className="text-sm font-semibold tabular-nums text-fg">{formatUSD(trader.cumVlm)}</p>
+									<p className="text-xs font-semibold tabular-nums text-success">
+										+{formatUSD(trader.cumFeesRewardedToReferrer)}
+									</p>
 								</div>
-								<div className="grid grid-cols-2 gap-3 rounded-10 bg-fill-weak p-3">
-									<div>
-										<p className="text-2xs text-fg-muted">
-											<Trans>Trader fee benefit</Trans>
-										</p>
-										<p className="mt-1 text-xs font-medium tabular-nums text-fg">
-											{formatUSD(trader.cumRewardedFeesSinceReferred)}
-										</p>
-									</div>
-									<div>
-										<p className="text-2xs text-fg-muted">
-											<Trans>Your rewards</Trans>
-										</p>
-										<p className="mt-1 text-xs font-medium tabular-nums text-fg">
-											{formatUSD(trader.cumFeesRewardedToReferrer)}
-										</p>
-									</div>
+								<div className="mt-2 flex items-center justify-between gap-3 text-2xs">
+									<span className="text-fg-muted">
+										<Trans>Trader fee benefit</Trans>
+									</span>
+									<span className="tabular-nums text-fg">{formatUSD(trader.cumRewardedFeesSinceReferred)}</span>
 								</div>
 								{trader.tokenToState.length ? (
-									<div className="space-y-2 rounded-10 border border-stroke-weak p-3">
-										{trader.tokenToState.map(([tokenId, state]) => {
-											const metadata = tokenMetadata?.get(tokenId);
-											const tokenName = metadata?.name ?? `Token #${tokenId}`;
-											return (
-												<div key={tokenId} className="flex items-center justify-between gap-3 text-2xs">
-													<span className="font-medium text-fg">{tokenName}</span>
-													<span className="text-right tabular-nums text-fg-muted">
-														<Trans>Volume</Trans>{" "}
-														{formatToken(state.cumVlm, {
-															symbol: tokenName,
-															maximumFractionDigits: metadata?.weiDecimals ?? 8,
-														})}
-														· <Trans>Rewards</Trans>{" "}
-														{formatToken(state.cumFeesRewardedToReferrer, {
-															symbol: tokenName,
-															maximumFractionDigits: metadata?.weiDecimals ?? 8,
-														})}
-													</span>
-												</div>
-											);
-										})}
-									</div>
+									<details className="mt-2 rounded-8 bg-fill-weak px-2.5 py-2">
+										<summary className="cursor-pointer text-2xs font-medium text-fg-muted">
+											<Trans>Reward assets</Trans>
+										</summary>
+										<div className="mt-2 space-y-2">
+											{trader.tokenToState.map(([tokenId, state]) => {
+												const metadata = tokenMetadata?.get(tokenId);
+												const tokenName = metadata?.name ?? `Token #${tokenId}`;
+												return (
+													<div key={tokenId} className="flex items-center justify-between gap-3 text-2xs">
+														<span className="font-medium text-fg">{tokenName}</span>
+														<span className="text-right tabular-nums text-fg-muted">
+															<Trans>Volume</Trans>{" "}
+															{formatToken(state.cumVlm, {
+																symbol: tokenName,
+																maximumFractionDigits: metadata?.weiDecimals ?? 8,
+															})}
+															· <Trans>Rewards</Trans>{" "}
+															{formatToken(state.cumFeesRewardedToReferrer, {
+																symbol: tokenName,
+																maximumFractionDigits: metadata?.weiDecimals ?? 8,
+															})}
+														</span>
+													</div>
+												);
+											})}
+										</div>
+									</details>
 								) : null}
 							</article>
 						))

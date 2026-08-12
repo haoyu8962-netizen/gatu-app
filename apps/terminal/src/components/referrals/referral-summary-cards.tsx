@@ -1,5 +1,4 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CoinsIcon, PercentIcon, UserPlusIcon, WalletIcon } from "@phosphor-icons/react";
 import { formatNumber, formatToken } from "@/lib/format";
 import type { ReferralData } from "@/lib/trade/referral";
 
@@ -15,61 +14,39 @@ export function ReferralSummaryCards({ data, discountPercent, usdcRewardsEarned 
 
 	return (
 		<section className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4" aria-label={t`Referral summary`}>
-			<article className="rounded-12 bg-surface p-4 min-[1001px]:p-5">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-xs text-fg-muted">
-						<Trans>Traders referred</Trans>
-					</p>
-					<UserPlusIcon className="size-4 text-brand" />
-				</div>
-				<p className="mt-3 text-2xl font-semibold tabular-nums text-fg">{formatNumber(referrals)}</p>
-				<p className="mt-1 text-2xs text-fg-muted">
-					<Trans>Confirmed by Hyperliquid</Trans>
+			<article className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:px-3.5 min-[1001px]:py-3">
+				<p className="text-2xs text-fg-muted min-[1001px]:text-xs">
+					<Trans>Traders referred</Trans>
+				</p>
+				<p className="mt-1.5 text-lg font-semibold leading-none tabular-nums text-fg min-[1001px]:text-xl">
+					{formatNumber(referrals)}
 				</p>
 			</article>
 
-			<article className="rounded-12 bg-surface p-4 min-[1001px]:p-5">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-xs text-fg-muted">
-						<Trans>USDC rewards</Trans>
-					</p>
-					<CoinsIcon className="size-4 text-brand" />
-				</div>
-				<p className="mt-3 text-xl font-semibold tabular-nums text-fg min-[1001px]:text-2xl">
+			<article className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:px-3.5 min-[1001px]:py-3">
+				<p className="text-2xs text-fg-muted min-[1001px]:text-xs">
+					<Trans>USDC rewards</Trans>
+				</p>
+				<p className="mt-1.5 text-base font-semibold leading-none tabular-nums text-fg min-[1001px]:text-xl">
 					{formatToken(usdcRewardsEarned, { decimals: 2, symbol: "USDC" })}
 				</p>
-				<p className="mt-1 text-2xs text-fg-muted">
-					<Trans>Claimed and unclaimed</Trans>
-				</p>
 			</article>
 
-			<article className="rounded-12 bg-surface p-4 min-[1001px]:p-5">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-xs text-fg-muted">
-						<Trans>USDC claimable</Trans>
-					</p>
-					<WalletIcon className="size-4 text-brand" />
-				</div>
-				<p className="mt-3 text-xl font-semibold tabular-nums text-fg min-[1001px]:text-2xl">
+			<article className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:px-3.5 min-[1001px]:py-3">
+				<p className="text-2xs text-fg-muted min-[1001px]:text-xs">
+					<Trans>USDC claimable</Trans>
+				</p>
+				<p className="mt-1.5 text-base font-semibold leading-none tabular-nums text-brand min-[1001px]:text-xl">
 					{formatToken(data.unclaimedRewards, { decimals: 2, symbol: "USDC" })}
 				</p>
-				<p className="mt-1 text-2xs text-fg-muted">
-					<Trans>Builder rewards are shown below</Trans>
-				</p>
 			</article>
 
-			<article className="rounded-12 bg-surface p-4 min-[1001px]:p-5">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-xs text-fg-muted">
-						<Trans>Active referral discount</Trans>
-					</p>
-					<PercentIcon className="size-4 text-brand" />
-				</div>
-				<p className="mt-3 text-2xl font-semibold tabular-nums text-fg">
-					{discountPercent === null ? "—" : `${formatNumber(discountPercent, { decimals: 2 })}%`}
+			<article className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:px-3.5 min-[1001px]:py-3">
+				<p className="text-2xs text-fg-muted min-[1001px]:text-xs">
+					<Trans>Active referral discount</Trans>
 				</p>
-				<p className="mt-1 text-2xs text-fg-muted">
-					<Trans>Live account fee benefit</Trans>
+				<p className="mt-1.5 text-lg font-semibold leading-none tabular-nums text-fg min-[1001px]:text-xl">
+					{discountPercent === null ? "—" : `${formatNumber(discountPercent, { decimals: 2 })}%`}
 				</p>
 			</article>
 		</section>

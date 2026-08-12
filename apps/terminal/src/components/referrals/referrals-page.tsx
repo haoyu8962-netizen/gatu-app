@@ -35,7 +35,7 @@ export function ReferralsPage() {
 					</>
 				)}
 
-				<main className="mx-auto w-full max-w-[1440px] px-4 py-6 min-[1001px]:px-8 min-[1001px]:py-8 min-[1200px]:px-16">
+				<main className="mx-auto w-full max-w-[1440px] px-4 py-5 min-[1001px]:px-10 min-[1001px]:py-6">
 					<ReferralDashboard />
 				</main>
 

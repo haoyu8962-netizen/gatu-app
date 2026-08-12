@@ -835,8 +835,8 @@ msgstr "Frais de builder"
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Builder rewards are shown below"
-msgstr "Les récompenses de Builder sont affichées ci-dessous"
+#~ msgid "Builder rewards are shown below"
+#~ msgstr "Les récompenses de Builder sont affichées ci-dessous"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
@@ -1074,8 +1074,12 @@ msgid "Claim rewards"
 msgstr "Réclamer les récompenses"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Claimed and unclaimed"
-msgstr "Réclamées et non réclamées"
+#~ msgid "Claimed and unclaimed"
+#~ msgstr "Réclamées et non réclamées"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Claims"
+msgstr "Retraits"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
@@ -1403,8 +1407,8 @@ msgstr "Confirmer la modification du prix de déclenchement"
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Confirmed by Hyperliquid"
-msgstr "Confirmé par Hyperliquid"
+#~ msgid "Confirmed by Hyperliquid"
+#~ msgstr "Confirmé par Hyperliquid"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
@@ -1887,7 +1891,7 @@ msgstr "Builder cumulé"
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "Financement cumulé payé ou reçu depuis l'ouverture de cette position."
 
-#. placeholder {0}: formatNumber(data.cumVlm)
+#. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
 msgstr "Volume cumulé : {0}"
@@ -3303,6 +3307,10 @@ msgstr "Classement"
 #~ msgid "Learn more"
 #~ msgstr ""
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Legacy"
+msgstr "Historique"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "DEX hérité"
@@ -3427,8 +3435,8 @@ msgid "Liquidation Price"
 msgstr "Prix de liquidation"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Live account fee benefit"
-msgstr "Avantage actuel sur les frais du compte"
+#~ msgid "Live account fee benefit"
+#~ msgstr "Avantage actuel sur les frais du compte"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -5685,6 +5693,7 @@ msgid "Revoke mobile access"
 msgstr "Révoquer l'accès mobile"
 
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 msgid "Reward assets"
 msgstr "Actifs de récompense"
 
@@ -7601,6 +7610,10 @@ msgstr "Trader"
 msgid "Trader fee benefit"
 msgstr "Avantage du trader sur les frais"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Traders"
+msgstr "Traders"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Traders referred"
 msgstr "Traders parrainés"
@@ -7686,6 +7699,7 @@ msgstr "Clé de trading"
 msgid "Trading key approved"
 msgstr "Clé de trading approuvée"
 
+#: src/components/referrals/referral-code-card.tsx
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trading volume progress"
 msgstr "Progression du volume de trading"
@@ -8218,6 +8232,7 @@ msgstr "VOL"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "Volume"
@@ -8533,7 +8548,6 @@ msgstr "Votre portefeuille principal approuve une clé de trading. Cette clé ne
 msgid "Your referral"
 msgstr "Votre parrainage"
 
-#: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Your rewards"
 msgstr "Vos récompenses"

@@ -839,8 +839,8 @@ msgstr "构建者费用"
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Builder rewards are shown below"
-msgstr "Builder 奖励显示在下方"
+#~ msgid "Builder rewards are shown below"
+#~ msgstr "Builder 奖励显示在下方"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
@@ -1082,8 +1082,12 @@ msgid "Claim rewards"
 msgstr "领取奖励"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Claimed and unclaimed"
-msgstr "已领取与未领取"
+#~ msgid "Claimed and unclaimed"
+#~ msgstr "已领取与未领取"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Claims"
+msgstr "领取"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
@@ -1416,8 +1420,8 @@ msgstr "确认修改触发价格"
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Confirmed by Hyperliquid"
-msgstr "由 Hyperliquid 确认"
+#~ msgid "Confirmed by Hyperliquid"
+#~ msgstr "由 Hyperliquid 确认"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
@@ -1900,7 +1904,7 @@ msgstr "累计 Builder"
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "自该仓位开仓以来累计支付或收取的资金费。"
 
-#. placeholder {0}: formatNumber(data.cumVlm)
+#. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
 msgstr "累计成交量：{0}"
@@ -3320,6 +3324,10 @@ msgstr "排行榜"
 #~ msgid "Learn more"
 #~ msgstr ""
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Legacy"
+msgstr "旧版记录"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "旧版 DEX"
@@ -3444,8 +3452,8 @@ msgid "Liquidation Price"
 msgstr "强平价格"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Live account fee benefit"
-msgstr "账户当前手续费优惠"
+#~ msgid "Live account fee benefit"
+#~ msgstr "账户当前手续费优惠"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -5706,6 +5714,7 @@ msgid "Revoke mobile access"
 msgstr "撤销移动访问权限"
 
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 msgid "Reward assets"
 msgstr "奖励资产"
 
@@ -7626,6 +7635,10 @@ msgstr "交易者"
 msgid "Trader fee benefit"
 msgstr "交易者手续费优惠"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Traders"
+msgstr "交易者"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Traders referred"
 msgstr "已推荐交易者"
@@ -7711,6 +7724,7 @@ msgstr "交易密钥"
 msgid "Trading key approved"
 msgstr "交易密钥已授权"
 
+#: src/components/referrals/referral-code-card.tsx
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trading volume progress"
 msgstr "成交量进度"
@@ -8243,6 +8257,7 @@ msgstr "成交量"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "成交量"
@@ -8558,7 +8573,6 @@ msgstr "您的主钱包将授权一个交易密钥。该密钥无法提取资金
 msgid "Your referral"
 msgstr "您的推荐信息"
 
-#: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Your rewards"
 msgstr "您的奖励"

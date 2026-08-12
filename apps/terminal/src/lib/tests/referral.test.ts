@@ -3,7 +3,10 @@ import {
 	buildReferralRewardRows,
 	canApplyReferralCode,
 	getDisplayedReferralDiscountPercent,
+	getOfficialReferralUrl,
 	getReferralActivationProgress,
+	getReferralActivationTargetVolume,
+	getReferralCumulativeVolume,
 	getReferralDiscountPercent,
 	getUsdcRewardsEarned,
 	hasClaimableReferralRewards,
@@ -271,10 +274,48 @@ describe("referral display derivations", () => {
 		const response = {
 			...createReadyReferralResponse(),
 			cumVlm: "2500",
+			tokenToState: [
+				[0, { ...createReadyReferralResponse().tokenToState[0][1], cumVlm: "2500" }],
+			] as ReferralData["tokenToState"],
 			referrerState: { stage: "needToTrade" as const, data: { required: "10000" } },
 		};
-		expect(getReferralActivationProgress(response)).toBe(25);
-		expect(getReferralActivationProgress({ ...response, cumVlm: "20000" })).toBe(100);
+		expect(getReferralActivationProgress(response)).toBe(20);
+		expect(getReferralActivationTargetVolume(response)).toBe("12500");
+		expect(
+			getReferralActivationProgress({
+				...response,
+				cumVlm: "10000",
+				referrerState: { stage: "needToTrade", data: { required: "0" } },
+			}),
+		).toBe(100);
+		expect(
+			getReferralActivationProgress({
+				...response,
+				cumVlm: "9990",
+				tokenToState: [[0, { ...response.tokenToState[0][1], cumVlm: "9990" }]],
+				referrerState: { stage: "needToTrade", data: { required: "10" } },
+			}),
+		).toBe(99.9);
+	});
+
+	it("uses all quote-asset volume for referral activation", () => {
+		const response = {
+			...createReadyReferralResponse(),
+			cumVlm: "1000",
+			tokenToState: [
+				[0, { ...createReadyReferralResponse().tokenToState[0][1], cumVlm: "1000" }],
+				[1, { ...createReadyReferralResponse().tokenToState[0][1], cumVlm: "2000" }],
+			] as ReferralData["tokenToState"],
+			referrerState: { stage: "needToTrade" as const, data: { required: "7000" } },
+		};
+		expect(getReferralCumulativeVolume(response)).toBe("3000");
+		expect(getReferralActivationTargetVolume(response)).toBe("10000");
+		expect(getReferralActivationProgress(response)).toBe(30);
+	});
+
+	it("builds environment-specific official referral links", () => {
+		expect(getOfficialReferralUrl("GATU code", "Mainnet")).toBe("https://app.hyperliquid.xyz/join/GATU%20code");
+		expect(getOfficialReferralUrl("GATU code", "Testnet")).toBe("https://app.hyperliquid-testnet.xyz/join/GATU%20code");
 	});
 
 	it("validates only the SDK code length contract", () => {

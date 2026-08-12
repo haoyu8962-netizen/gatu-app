@@ -90,8 +90,8 @@ export function useReferrals(): ReferralsResult {
 	const tokenMetadataByName = new Map(
 		Array.from(tokenMetadata?.values() ?? []).map((token) => [token.name, token] as const),
 	);
-	const claimHistory = accountLedger.rows
-		.filter((row) => row.action === "rewardsClaim" && row.amount !== null)
+	const claimHistory = accountLedger.rewardClaimRows
+		.filter((row) => row.amount !== null)
 		.map((row) => ({
 			amount: row.amount ?? "0",
 			hash: row.hash,

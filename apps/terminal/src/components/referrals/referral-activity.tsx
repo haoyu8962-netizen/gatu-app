@@ -27,17 +27,35 @@ export function ReferralActivity({
 	const referredTraders = data.referrerState.stage === "ready" ? data.referrerState.data.referralStates : [];
 
 	return (
-		<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label={t`Referral activity`}>
+		<section
+			className="overflow-hidden rounded-12 border border-stroke-weak bg-surface"
+			aria-label={t`Referral activity`}
+		>
 			<Tabs defaultValue="traders">
-				<TabsList className="w-full overflow-x-auto px-4 pt-2 min-[1001px]:px-6">
-					<TabsTrigger value="traders" className="whitespace-nowrap">
-						<Trans>Referred traders</Trans>
+				<TabsList className="w-full overflow-x-auto px-4 pt-1 min-[1001px]:px-5">
+					<TabsTrigger value="traders" className="whitespace-nowrap max-[1000px]:px-2">
+						<span className="min-[1001px]:hidden">
+							<Trans>Traders</Trans>
+						</span>
+						<span className="max-[1000px]:hidden">
+							<Trans>Referred traders</Trans>
+						</span>
 					</TabsTrigger>
-					<TabsTrigger value="claims" className="whitespace-nowrap">
-						<Trans>Recent reward claims</Trans>
+					<TabsTrigger value="claims" className="whitespace-nowrap max-[1000px]:px-2">
+						<span className="min-[1001px]:hidden">
+							<Trans>Claims</Trans>
+						</span>
+						<span className="max-[1000px]:hidden">
+							<Trans>Recent reward claims</Trans>
+						</span>
 					</TabsTrigger>
-					<TabsTrigger value="legacy" className="whitespace-nowrap">
-						<Trans>Legacy reward history</Trans>
+					<TabsTrigger value="legacy" className="whitespace-nowrap max-[1000px]:px-2">
+						<span className="min-[1001px]:hidden">
+							<Trans>Legacy</Trans>
+						</span>
+						<span className="max-[1000px]:hidden">
+							<Trans>Legacy reward history</Trans>
+						</span>
 					</TabsTrigger>
 				</TabsList>
 

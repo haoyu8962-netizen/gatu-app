@@ -48,6 +48,11 @@ interface FetchTimeRangeHistoryOptions<T> {
 	 * `maxItems`, this does not stop pagination or mark the result truncated.
 	 */
 	retainLatestItems?: number;
+	/**
+	 * Keeps matching items in addition to the latest bounded display rows. The
+	 * requested time range and `maxPages` still bound the retained match set.
+	 */
+	retainItemsMatching?: (item: T) => boolean;
 	signal: AbortSignal;
 	startTime?: number;
 }
@@ -128,6 +133,7 @@ export async function fetchTimeRangeHistory<T>(
 		maxItems = Number.POSITIVE_INFINITY,
 		maxPages = DEFAULT_MAX_PAGES,
 		retainLatestItems = Number.POSITIVE_INFINITY,
+		retainItemsMatching,
 		signal,
 		startTime: initialStartTime = 0,
 	} = options;
@@ -165,7 +171,7 @@ export async function fetchTimeRangeHistory<T>(
 			};
 		}
 
-		retainLatestHistoryItems(itemsByKey, retainLatestItems, getKey, getTime);
+		retainLatestHistoryItems(itemsByKey, retainLatestItems, getKey, getTime, retainItemsMatching);
 
 		// A repeated inclusive page with no new identities cannot advance. If it is a
 		// full page, report truncation because more events may share that timestamp.
@@ -188,9 +194,16 @@ function retainLatestHistoryItems<T>(
 	retainLatestItems: number,
 	getKey: (item: T) => string,
 	getTime: (item: T) => number,
+	retainItemsMatching?: (item: T) => boolean,
 ): void {
 	if (!Number.isFinite(retainLatestItems) || itemsByKey.size <= retainLatestItems) return;
-	const retainedItems = sortHistory(itemsByKey.values(), getTime).slice(-retainLatestItems);
+	const sortedItems = sortHistory(itemsByKey.values(), getTime);
+	const retainedItems = sortedItems.slice(-retainLatestItems);
+	if (retainItemsMatching) {
+		for (const item of sortedItems) {
+			if (retainItemsMatching(item)) retainedItems.push(item);
+		}
+	}
 	itemsByKey.clear();
 	for (const item of retainedItems) itemsByKey.set(getKey(item), item);
 }

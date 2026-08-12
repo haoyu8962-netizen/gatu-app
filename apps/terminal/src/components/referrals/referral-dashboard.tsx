@@ -72,17 +72,12 @@ export function ReferralDashboard() {
 	const actionIdentityKey = getActionIdentityKey(referralActions.identity);
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
 	const header = (
-		<div className="mb-6 flex flex-wrap items-start justify-between gap-4 min-[1001px]:mb-8">
+		<div className="flex flex-wrap items-start justify-between gap-3">
 			<div>
-				<div className="flex items-center gap-2">
-					<span className="grid size-9 place-items-center rounded-10 bg-brand text-white">
-						<GiftIcon className="size-5" />
-					</span>
-					<h1 className="text-2xl font-normal tracking-tight text-fg">
-						<Trans>Referrals & rewards</Trans>
-					</h1>
-				</div>
-				<p className="mt-2 max-w-2xl text-sm leading-5 text-fg-muted">
+				<h1 className="text-lg font-semibold tracking-tight text-fg min-[1001px]:text-xl">
+					<Trans>Referrals & rewards</Trans>
+				</h1>
+				<p className="mt-1 max-w-2xl text-xs leading-5 text-fg-muted">
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
 			</div>
@@ -125,7 +120,7 @@ export function ReferralDashboard() {
 	if (referrals.status === "idle") {
 		return (
 			<>
-				{header}
+				<div className="mb-4">{header}</div>
 				<section className="rounded-12 bg-surface px-5 py-16 text-center">
 					<GiftIcon className="mx-auto size-10 text-brand" />
 					<h2 className="mt-4 text-lg font-semibold text-fg">
@@ -145,7 +140,7 @@ export function ReferralDashboard() {
 	if (referrals.status === "loading") {
 		return (
 			<>
-				{header}
+				<div className="mb-4">{header}</div>
 				<output aria-live="polite" aria-label={t`Loading referrals`} className="block space-y-2">
 					<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
 						{[0, 1, 2, 3].map((item) => (
@@ -164,7 +159,7 @@ export function ReferralDashboard() {
 	if (referrals.status === "error" || !referrals.data || !referrals.usdcRewardsEarned) {
 		return (
 			<>
-				{header}
+				<div className="mb-4">{header}</div>
 				<section className="rounded-12 bg-surface px-5 py-14 text-center">
 					<WarningCircleIcon className="mx-auto size-10 text-error" weight="fill" />
 					<h2 className="mt-4 text-lg font-semibold text-fg">
@@ -190,37 +185,50 @@ export function ReferralDashboard() {
 	const data = referrals.data;
 	return (
 		<>
-			{header}
-			{referrals.isRefreshing ? (
-				<output aria-live="polite" className="mb-2 flex items-center gap-1.5 text-2xs text-fg-muted">
-					<SpinnerGapIcon className="size-3 animate-spin" />
-					<Trans>Refreshing referral data…</Trans>
-				</output>
-			) : null}
-			<ReferralSummaryCards
-				data={data}
-				discountPercent={referrals.discountPercent}
-				usdcRewardsEarned={referrals.usdcRewardsEarned}
-			/>
-			<div className="mt-2 grid items-start gap-2 min-[1001px]:grid-cols-2">
-				<ReferralCodeCard
-					data={data}
-					onApplyCode={() => void requestAction("apply")}
-					onCreateCode={() => void requestAction("create")}
-				/>
-				<ReferralRewardsCard
-					claimDisabled={actionBusy || !referrals.hasClaimableRewards}
-					onClaim={() => void requestAction("claim")}
-					rewards={referrals.rewardRows}
-				/>
-			</div>
-			<ReferralActivity
-				claimHistory={referrals.claimHistory}
-				claimHistoryStatus={referrals.claimHistoryStatus}
-				data={data}
-				onRetryClaimHistory={referrals.retryClaimHistory}
-				tokenMetadata={referrals.tokenMetadata}
-			/>
+			<section className="overflow-hidden rounded-14 bg-surface shadow-sm">
+				<div className="px-4 pt-4 pb-3 min-[1001px]:px-5">{header}</div>
+				{referrals.isRefreshing ? (
+					<output
+						aria-live="polite"
+						className="flex items-center gap-1.5 px-4 pb-2 text-2xs text-fg-muted min-[1001px]:px-5"
+					>
+						<SpinnerGapIcon className="size-3 animate-spin" />
+						<Trans>Refreshing referral data…</Trans>
+					</output>
+				) : null}
+				<div className="px-4 pb-3 min-[1001px]:px-5">
+					<ReferralSummaryCards
+						data={data}
+						discountPercent={referrals.discountPercent}
+						usdcRewardsEarned={referrals.usdcRewardsEarned}
+					/>
+				</div>
+				<div className="grid items-start gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5">
+					<div className="order-1">
+						<ReferralCodeCard
+							data={data}
+							onApplyCode={() => void requestAction("apply")}
+							onCreateCode={() => void requestAction("create")}
+						/>
+					</div>
+					<div className="order-3 min-[1001px]:order-2">
+						<ReferralRewardsCard
+							claimDisabled={actionBusy || !referrals.hasClaimableRewards}
+							onClaim={() => void requestAction("claim")}
+							rewards={referrals.rewardRows}
+						/>
+					</div>
+					<div className="order-2 min-[1001px]:order-3 min-[1001px]:col-span-2">
+						<ReferralActivity
+							claimHistory={referrals.claimHistory}
+							claimHistoryStatus={referrals.claimHistoryStatus}
+							data={data}
+							onRetryClaimHistory={referrals.retryClaimHistory}
+							tokenMetadata={referrals.tokenMetadata}
+						/>
+					</div>
+				</div>
+			</section>
 
 			{referrals.hasClaimableRewards ? (
 				<div className="sticky bottom-0 z-20 -mx-4 mt-2 border-t border-stroke-weak bg-portfolio-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">

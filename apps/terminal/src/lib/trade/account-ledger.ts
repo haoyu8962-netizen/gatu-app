@@ -114,6 +114,10 @@ export function isValidAccountLedgerUpdate(item: unknown): item is AccountLedger
 	return typeof item.delta.type === "string" && item.delta.type.length > 0;
 }
 
+export function isAccountLedgerRewardsClaimUpdate(update: AccountLedgerUpdate): boolean {
+	return isRecord(update.delta) && update.delta.type === "rewardsClaim";
+}
+
 export function mergeAccountLedgerUpdates(
 	...sources: ReadonlyArray<readonly AccountLedgerUpdate[] | undefined>
 ): AccountLedgerUpdate[] {

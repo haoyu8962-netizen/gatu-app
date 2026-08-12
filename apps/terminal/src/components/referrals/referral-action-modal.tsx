@@ -64,7 +64,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 			showClose={!isMobile && !isSubmitting}
 			showHandle={isMobile && !isSubmitting}
 			layer="blocking"
-			className="max-h-[calc(100dvh-1rem)] rounded-t-20 min-[1001px]:max-w-[30rem] min-[1001px]:rounded-16"
+			className="max-h-[calc(100dvh-1rem)] rounded-t-20 min-[1001px]:max-w-[25rem] min-[1001px]:rounded-16"
 		>
 			<ModalHeader divider={false} className="px-5 pt-6 pb-2 min-[1001px]:px-6">
 				<ModalTitle>{title}</ModalTitle>

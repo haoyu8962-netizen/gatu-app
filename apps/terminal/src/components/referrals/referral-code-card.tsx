@@ -1,16 +1,17 @@
-import { Badge, Button, ButtonIcon } from "@gatu/ui";
+import { Button, ButtonIcon } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowSquareOutIcon,
-	CheckIcon,
-	CopyIcon,
-	LinkSimpleIcon,
-	ShareNetworkIcon,
-	TicketIcon,
-} from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
-import { canApplyReferralCode, getReferralActivationProgress, type ReferralData } from "@/lib/trade/referral";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import {
+	canApplyReferralCode,
+	getOfficialReferralUrl,
+	getReferralActivationProgress,
+	getReferralActivationTargetVolume,
+	getReferralCumulativeVolume,
+	type ReferralData,
+} from "@/lib/trade/referral";
 
 interface Props {
 	data: ReferralData;
@@ -18,18 +19,17 @@ interface Props {
 	onCreateCode: () => void;
 }
 
-function getOfficialReferralUrl(code: string): string {
-	return `https://app.hyperliquid.xyz/join/${encodeURIComponent(code)}`;
-}
-
 export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 	const { t } = useLingui();
+	const { env } = useHyperliquid();
 	const codeCopy = useCopyToClipboard();
 	const linkCopy = useCopyToClipboard();
 	const readyState = data.referrerState.stage === "ready" ? data.referrerState : null;
 	const code = readyState?.data.code ?? null;
-	const referralUrl = code ? getOfficialReferralUrl(code) : null;
+	const referralUrl = code ? getOfficialReferralUrl(code, env) : null;
 	const activationProgress = getReferralActivationProgress(data);
+	const activationTarget = getReferralActivationTargetVolume(data);
+	const cumulativeVolume = getReferralCumulativeVolume(data);
 	const canApplyCode = canApplyReferralCode(data);
 	const currentStep =
 		data.referrerState.stage === "needToTrade" ? 1 : data.referrerState.stage === "needToCreateCode" ? 2 : 3;
@@ -53,95 +53,100 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 	}
 
 	return (
-		<article className="rounded-12 bg-surface p-4 min-[1001px]:p-6">
+		<article className="rounded-12 border border-stroke-weak bg-surface p-3 min-[1001px]:p-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<div className="flex items-center gap-2">
-						<span className="grid size-8 place-items-center rounded-8 bg-brand-soft text-brand">
-							<TicketIcon className="size-4" />
-						</span>
-						<h2 className="text-base font-semibold text-fg">
-							<Trans>Your referral</Trans>
-						</h2>
-					</div>
-					<p className="mt-2 text-xs leading-5 text-fg-muted">
+					<h2 className="text-sm font-semibold text-fg">
+						<Trans>Your referral</Trans>
+					</h2>
+					<p className="mt-1 text-2xs leading-4 text-fg-muted max-[1000px]:hidden">
 						<Trans>Complete the protocol stages, then share your official Hyperliquid referral link.</Trans>
 					</p>
 				</div>
-				<Badge tone={currentStep === 3 ? "success" : "brand"} size="xs">
+				<span className="rounded-full border border-stroke-brand-weak bg-brand-soft px-2 py-0.5 text-2xs font-semibold text-brand">
 					<Trans>Step {currentStep} of 3</Trans>
-				</Badge>
+				</span>
 			</div>
 
-			<ol className="mt-5 grid grid-cols-3 gap-2" aria-label={t`Referral activation progress`}>
+			<ol className="mt-3 grid grid-cols-3 gap-1.5" aria-label={t`Referral activation progress`}>
 				{[t`Trade`, t`Create code`, t`Invite traders`].map((label, index) => {
 					const step = index + 1;
 					const complete = step < currentStep;
 					const active = step === currentStep;
 					return (
-						<li key={label} className="min-w-0">
-							<div className="flex items-center">
-								<span
-									className={
-										complete
-											? "grid size-6 shrink-0 place-items-center rounded-full bg-brand text-white"
-											: active
-												? "grid size-6 shrink-0 place-items-center rounded-full border-2 border-brand text-xs font-semibold text-brand"
-												: "grid size-6 shrink-0 place-items-center rounded-full border border-stroke-strong text-xs text-fg-muted"
-									}
-								>
-									{complete ? <CheckIcon className="size-3.5" weight="bold" /> : step}
-								</span>
-								{step < 3 ? <span className="mx-1 h-px flex-1 bg-stroke-weak" /> : null}
-							</div>
-							<p className="mt-1.5 truncate text-2xs text-fg-muted">{label}</p>
+						<li
+							key={label}
+							className={
+								active
+									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-8 border border-stroke-brand-weak bg-brand-soft px-2 py-2"
+									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-8 border border-stroke-weak px-2 py-2"
+							}
+						>
+							<span
+								className={
+									complete
+										? "grid size-4 shrink-0 place-items-center rounded-full bg-success text-white"
+										: active
+											? "grid size-4 shrink-0 place-items-center rounded-full bg-brand text-[10px] font-semibold text-white"
+											: "grid size-4 shrink-0 place-items-center rounded-full border border-stroke-strong text-[10px] text-fg-muted"
+								}
+							>
+								{complete ? <CheckIcon className="size-2.5" weight="bold" /> : step}
+							</span>
+							<p className="min-w-0 flex-1 truncate text-2xs font-medium text-fg-muted">{label}</p>
 						</li>
 					);
 				})}
 			</ol>
 
 			{data.referrerState.stage === "needToTrade" ? (
-				<div className="mt-5 rounded-12 border border-stroke-weak bg-fill-weak p-4">
+				<div className="mt-3 rounded-10 bg-warning-soft px-3 py-2.5">
 					<div className="flex items-center justify-between gap-3 text-xs">
 						<span className="text-fg-muted">
 							<Trans>Trading volume progress</Trans>
 						</span>
 						<span className="font-semibold tabular-nums text-fg">
-							{formatUSD(data.cumVlm, { compact: true })} /{" "}
-							{formatUSD(data.referrerState.data.required, { compact: true })}
+							{formatUSD(cumulativeVolume, { compact: true })} / {formatUSD(activationTarget ?? "0", { compact: true })}
 						</span>
 					</div>
-					<div className="mt-3 h-2 overflow-hidden rounded-full bg-fill">
+					<div
+						role="progressbar"
+						aria-label={t`Trading volume progress`}
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={activationProgress ?? 0}
+						className="mt-2 h-1.5 overflow-hidden rounded-full bg-fill"
+					>
 						<div className="h-full rounded-full bg-brand" style={{ width: `${activationProgress ?? 0}%` }} />
 					</div>
-					<p className="mt-2 text-2xs leading-4 text-fg-muted">
+					<p className="mt-1.5 text-2xs leading-4 text-fg-muted">
 						<Trans>Hyperliquid will unlock code creation when the required volume is confirmed.</Trans>
 					</p>
 				</div>
 			) : null}
 
 			{data.referrerState.stage === "needToCreateCode" ? (
-				<div className="mt-5 rounded-12 border border-stroke-brand-weak bg-brand-soft p-4">
-					<p className="text-sm font-semibold text-fg">
+				<div className="mt-3 rounded-10 border border-stroke-brand-weak bg-brand-soft p-3">
+					<p className="text-xs font-semibold text-fg">
 						<Trans>You are eligible to create a referral code.</Trans>
 					</p>
-					<p className="mt-1 text-xs text-fg-muted">
+					<p className="mt-1 text-2xs leading-4 text-fg-muted">
 						<Trans>Codes support 1–20 characters. Availability is confirmed by Hyperliquid when submitted.</Trans>
 					</p>
-					<Button className="mt-4 w-full min-[1001px]:w-auto" onClick={onCreateCode}>
+					<Button size="sm" className="mt-3 w-full min-[1001px]:w-auto" onClick={onCreateCode}>
 						<Trans>Create referral code</Trans>
 					</Button>
 				</div>
 			) : null}
 
 			{code && referralUrl ? (
-				<div className="mt-5 space-y-3">
+				<div className="mt-3 space-y-2.5">
 					<div>
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							<Trans>Referral code</Trans>
 						</p>
-						<div className="mt-1.5 flex items-center gap-2 rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5">
-							<span className="min-w-0 flex-1 truncate text-base font-semibold text-fg">{code}</span>
+						<div className="mt-1 flex items-center gap-2 rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5">
+							<span className="min-w-0 flex-1 truncate text-lg font-semibold tracking-wider text-fg">{code}</span>
 							<ButtonIcon
 								variant="ghost"
 								intent="neutral"
@@ -157,7 +162,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							<Trans>Official referral link</Trans>
 						</p>
-						<div className="mt-1.5 flex items-center gap-2 rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5">
+						<div className="mt-1 flex items-center gap-2 rounded-10 border border-stroke-weak px-3 py-2.5">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
 							<span className="min-w-0 flex-1 truncate text-xs text-fg">{referralUrl}</span>
 							<ButtonIcon
@@ -194,7 +199,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 				</div>
 			) : null}
 
-			<div className="mt-5 border-t border-stroke-weak pt-4">
+			<div className="mt-3 border-t border-stroke-weak pt-3">
 				{data.referredBy ? (
 					<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
 						<span className="text-fg-muted">
@@ -226,7 +231,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 			</div>
 
 			<p className="sr-only">
-				<Trans>Cumulative volume: {formatNumber(data.cumVlm)}</Trans>
+				<Trans>Cumulative volume: {formatNumber(cumulativeVolume)}</Trans>
 			</p>
 		</article>
 	);

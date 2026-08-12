@@ -8,6 +8,7 @@ import {
 	type AccountLedgerUpdate,
 	buildAccountLedgerRows,
 	getAccountLedgerUpdateKey,
+	isAccountLedgerRewardsClaimUpdate,
 	isValidAccountLedgerUpdate,
 	mergeAccountLedgerUpdates,
 } from "@/lib/trade/account-ledger";
@@ -32,6 +33,7 @@ export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) 
 interface AccountLedgerResult {
 	error: unknown;
 	isConnected: boolean;
+	rewardClaimRows: AccountLedgerRow[];
 	retry: () => void;
 	rows: AccountLedgerRow[];
 	status: AccountLedgerStatus;
@@ -55,6 +57,7 @@ export async function fetchRecentAccountLedgerUpdates(
 		getKey: getAccountLedgerUpdateKey,
 		getTime: (update) => update.time,
 		retainLatestItems: MAX_HISTORY_ROWS,
+		retainItemsMatching: isAccountLedgerRewardsClaimUpdate,
 		signal,
 		startTime,
 		validateItem: isValidAccountLedgerUpdate,
@@ -90,7 +93,9 @@ export function useAccountLedger(): AccountLedgerResult {
 		restUpdates,
 		hasMalformedRealtime || !Array.isArray(realtimeUpdates) ? undefined : realtimeUpdates,
 	);
-	const rows = buildAccountLedgerRows(updates, user).slice(0, MAX_HISTORY_ROWS);
+	const allRows = buildAccountLedgerRows(updates, user);
+	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
+	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
 
 	let status: AccountLedgerStatus = "loading";
 	if (!enabled) {
@@ -109,6 +114,7 @@ export function useAccountLedger(): AccountLedgerResult {
 				? (ledgerQuery.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
 				: undefined,
 		isConnected,
+		rewardClaimRows,
 		retry: () => void ledgerQuery.refetch(),
 		rows,
 		status,

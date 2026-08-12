@@ -835,8 +835,8 @@ msgstr "बिल्डर फ़ीस"
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Builder rewards are shown below"
-msgstr "बिल्डर पुरस्कार नीचे दिखाए गए हैं"
+#~ msgid "Builder rewards are shown below"
+#~ msgstr "बिल्डर पुरस्कार नीचे दिखाए गए हैं"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
@@ -1074,8 +1074,12 @@ msgid "Claim rewards"
 msgstr "पुरस्कार प्राप्त करें"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Claimed and unclaimed"
-msgstr "प्राप्त और अप्राप्त"
+#~ msgid "Claimed and unclaimed"
+#~ msgstr "प्राप्त और अप्राप्त"
+
+#: src/components/referrals/referral-activity.tsx
+msgid "Claims"
+msgstr "दावे"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
@@ -1403,8 +1407,8 @@ msgstr "ट्रिगर मूल्य परिवर्तन की प�
 #~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Confirmed by Hyperliquid"
-msgstr "Hyperliquid द्वारा पुष्ट"
+#~ msgid "Confirmed by Hyperliquid"
+#~ msgstr "Hyperliquid द्वारा पुष्ट"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
@@ -1887,7 +1891,7 @@ msgstr "संचयी Builder"
 msgid "Cumulative funding paid or received since this position was opened."
 msgstr "यह पोज़िशन खुलने के बाद से भुगतान की गई या प्राप्त हुई संचयी फंडिंग।"
 
-#. placeholder {0}: formatNumber(data.cumVlm)
+#. placeholder {0}: formatNumber(cumulativeVolume)
 #: src/components/referrals/referral-code-card.tsx
 msgid "Cumulative volume: {0}"
 msgstr "संचयी वॉल्यूम: {0}"
@@ -3303,6 +3307,10 @@ msgstr "लीडरबोर्ड"
 #~ msgid "Learn more"
 #~ msgstr ""
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Legacy"
+msgstr "पुराना रिकॉर्ड"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy DEX"
 msgstr "लीगेसी DEX"
@@ -3427,8 +3435,8 @@ msgid "Liquidation Price"
 msgstr "लिक्विडेशन मूल्य"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "Live account fee benefit"
-msgstr "खाते का मौजूदा फ़ीस लाभ"
+#~ msgid "Live account fee benefit"
+#~ msgstr "खाते का मौजूदा फ़ीस लाभ"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -5685,6 +5693,7 @@ msgid "Revoke mobile access"
 msgstr "मोबाइल एक्सेस निरस्त करें"
 
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 msgid "Reward assets"
 msgstr "पुरस्कार एसेट"
 
@@ -7601,6 +7610,10 @@ msgstr "ट्रेडर"
 msgid "Trader fee benefit"
 msgstr "ट्रेडर का फ़ीस लाभ"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Traders"
+msgstr "ट्रेडर्स"
+
 #: src/components/referrals/referral-summary-cards.tsx
 msgid "Traders referred"
 msgstr "रेफ़र किए गए ट्रेडर"
@@ -7686,6 +7699,7 @@ msgstr "ट्रेडिंग कुंजी"
 msgid "Trading key approved"
 msgstr "ट्रेडिंग की स्वीकृत हुई"
 
+#: src/components/referrals/referral-code-card.tsx
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trading volume progress"
 msgstr "ट्रेडिंग वॉल्यूम प्रगति"
@@ -8218,6 +8232,7 @@ msgstr "वॉल्यूम"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/referrals/referred-traders.tsx
+#: src/components/referrals/referred-traders.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "वॉल्यूम"
@@ -8533,7 +8548,6 @@ msgstr "आपका मास्टर वॉलेट एक ट्रेड�
 msgid "Your referral"
 msgstr "आपका रेफ़रल"
 
-#: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Your rewards"
 msgstr "आपके पुरस्कार"
