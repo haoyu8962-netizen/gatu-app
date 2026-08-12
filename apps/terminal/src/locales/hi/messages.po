@@ -599,6 +599,7 @@ msgstr "बिक्री"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "संपत्ति"
@@ -635,7 +636,6 @@ msgstr "USDC का स्वचालित जमा विफल रहा"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -1553,6 +1553,7 @@ msgstr "कॉन्ट्रैक्ट"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "कॉपी हो गया"
 
@@ -1574,6 +1575,7 @@ msgstr "ऐसा लिंक कॉपी करें जो {0} मार्
 #~ msgstr "पता कॉपी करें"
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "पता कॉपी करें"
 
@@ -1915,6 +1917,7 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "जमा लेनदेन सबमिट हो गया, लेकिन Arbitrum पर पुष्टि नहीं हुई। आपके वॉलेट का nonce नेटवर्क से सिंक नहीं हो सकता है। वॉलेट में लंबित गतिविधि साफ करें या nonce डेटा रीसेट करें, फिर दोबारा प्रयास करें।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "Arbitrum से USDC जमा करें"
 
@@ -1962,6 +1965,7 @@ msgid "Destination"
 msgstr "गंतव्य"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "गंतव्य पता"
@@ -2027,6 +2031,7 @@ msgid "Dismiss"
 msgstr "खारिज करें"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "डिस्प्ले"
 
@@ -3083,6 +3088,7 @@ msgstr "जब तक Hyperliquid वॉलेट कार्रवाई क�
 #~ msgid "L2"
 #~ msgstr "L2"
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "भाषा"
@@ -3652,6 +3658,7 @@ msgstr "मास्टर वॉलेट"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Max"
 msgstr "अधिकतम"
 
@@ -3714,6 +3721,7 @@ msgstr "न्यूनतम ऑर्डर ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "न्यूनतम ऑर्डर $10"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "न्यूनतम"
@@ -3802,6 +3810,7 @@ msgstr "ऑर्डर संशोधित करें"
 msgid "Modifying..."
 msgstr "संशोधित किया जा रहा है..."
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5703,6 +5712,7 @@ msgstr "TP/SL सेट करें"
 #~ msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -7959,6 +7969,7 @@ msgstr "आपको प्राप्त होगा"
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "आप भेजते हैं"
 

@@ -599,6 +599,7 @@ msgstr "Vente"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "Actif"
@@ -635,7 +636,6 @@ msgstr "Échec du dépôt automatique d'USDC"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -1553,6 +1553,7 @@ msgstr "Contrat"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "Copié"
 
@@ -1574,6 +1575,7 @@ msgstr "Copier un lien qui ouvre le marché {0}"
 #~ msgstr "Copier l'adresse"
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "Copier l'adresse"
 
@@ -1915,6 +1917,7 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "La transaction de dépôt a été soumise, mais n'a pas été confirmée sur Arbitrum. Le nonce de votre portefeuille peut être désynchronisé du réseau. Effacez l'activité en attente ou réinitialisez les données de nonce dans votre portefeuille, puis réessayez."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "Déposer des USDC depuis Arbitrum"
 
@@ -1962,6 +1965,7 @@ msgid "Destination"
 msgstr "Destination"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "Adresse de destination"
@@ -2027,6 +2031,7 @@ msgid "Dismiss"
 msgstr "Fermer"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "Affichage"
 
@@ -3083,6 +3088,7 @@ msgstr "Gardez cette fenêtre ouverte jusqu'à ce qu'Hyperliquid ait fini de vé
 #~ msgid "L2"
 #~ msgstr "L2"
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "Langue"
@@ -3652,6 +3658,7 @@ msgstr "Portefeuille principal"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -3714,6 +3721,7 @@ msgstr "Ordre min. ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "Ordre min. 10 $"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "Minimum"
@@ -3802,6 +3810,7 @@ msgstr "Modifier l’ordre"
 msgid "Modifying..."
 msgstr "Modification..."
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5703,6 +5712,7 @@ msgstr "Définir TP/SL"
 #~ msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -7959,6 +7969,7 @@ msgstr "Vous recevez"
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "Vous envoyez"
 

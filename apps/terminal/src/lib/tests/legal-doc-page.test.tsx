@@ -69,7 +69,7 @@ describe("LegalDocPage", () => {
 		expect(container.querySelector('[data-testid="FooterBar"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="GlobalModals"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="mobile-header"]')).toBeNull();
-		expect(container.querySelector('[aria-hidden="true"]')?.classList).toContain("h-11");
+		expect(container.querySelector('[aria-hidden="true"]')?.classList).toContain("h-14");
 		expect(container.querySelector('[data-testid="document-content"]')?.textContent).toBe("Legal document");
 	});
 
@@ -77,7 +77,7 @@ describe("LegalDocPage", () => {
 		testState.isTestnet = true;
 		renderPage();
 
-		expect(container.querySelector('[aria-hidden="true"]')?.classList).toContain("h-[4.75rem]");
+		expect(container.querySelector('[aria-hidden="true"]')?.classList).toContain("h-[5.5rem]");
 	});
 
 	it("uses the mobile header without mounting the desktop footer", () => {

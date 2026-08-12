@@ -599,6 +599,7 @@ msgstr "بيع"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "الأصل"
@@ -635,7 +636,6 @@ msgstr "فشل الإيداع التلقائي لـ USDC"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -1553,6 +1553,7 @@ msgstr "العقد"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "تم النسخ"
 
@@ -1574,6 +1575,7 @@ msgstr "نسخ رابط يفتح سوق {0}"
 #~ msgstr "نسخ العنوان"
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "نسخ العنوان"
 
@@ -1915,6 +1917,7 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "تم إرسال معاملة الإيداع لكنها لم تُؤكَّد على Arbitrum. قد يكون رقم nonce في محفظتك غير متزامن مع الشبكة. امسح النشاط المعلّق أو أعد ضبط بيانات nonce في المحفظة، ثم أعد المحاولة."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "إيداع USDC من Arbitrum"
 
@@ -1962,6 +1965,7 @@ msgid "Destination"
 msgstr "الوجهة"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "عنوان الوجهة"
@@ -2027,6 +2031,7 @@ msgid "Dismiss"
 msgstr "تجاهل"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "العرض"
 
@@ -3083,6 +3088,7 @@ msgstr "أبقِ هذه النافذة مفتوحة حتى ينتهي Hyperliqui
 #~ msgid "L2"
 #~ msgstr "L2"
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "اللغة"
@@ -3652,6 +3658,7 @@ msgstr "المحفظة الرئيسية"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Max"
 msgstr "الأقصى"
 
@@ -3714,6 +3721,7 @@ msgstr "أدنى أمر ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "الحد الأدنى $10"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "الحد الأدنى"
@@ -3802,6 +3810,7 @@ msgstr "تعديل الطلب"
 msgid "Modifying..."
 msgstr "جارٍ التعديل..."
 
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5703,6 +5712,7 @@ msgstr "تعيين TP/SL"
 #~ msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/desktop-utilities-menu.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -7959,6 +7969,7 @@ msgstr "أنت تستلم"
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "أنت ترسل"
 
