@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as ApiWalletRouteImport } from './routes/api-wallet'
 import { Route as BuildMetaDotjsonRouteImport } from './routes/build-meta[.]json'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletRoute = ApiWalletRouteImport.update({
+  id: '/api-wallet',
+  path: '/api-wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildMetaDotjsonRoute = BuildMetaDotjsonRouteImport.update({
@@ -164,6 +170,7 @@ const TradeBaseQuoteRoute = TradeBaseQuoteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/client-error-report': typeof ClientErrorReportRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/api-wallet': typeof ApiWalletRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/client-error-report': typeof ClientErrorReportRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/api-wallet'
     | '/build-meta.json'
     | '/builders-perp'
     | '/client-error-report'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/api-wallet'
     | '/build-meta.json'
     | '/client-error-report'
     | '/cookies'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/api-wallet'
     | '/build-meta.json'
     | '/builders-perp'
     | '/client-error-report'
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  ApiWalletRoute: typeof ApiWalletRoute
   BuildMetaDotjsonRoute: typeof BuildMetaDotjsonRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
   ClientErrorReportRoute: typeof ClientErrorReportRoute
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api-wallet': {
+      id: '/api-wallet'
+      path: '/api-wallet'
+      fullPath: '/api-wallet'
+      preLoaderRoute: typeof ApiWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/build-meta.json': {
@@ -557,6 +577,7 @@ const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  ApiWalletRoute: ApiWalletRoute,
   BuildMetaDotjsonRoute: BuildMetaDotjsonRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
   ClientErrorReportRoute: ClientErrorReportRoute,

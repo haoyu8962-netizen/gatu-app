@@ -26,6 +26,11 @@ msgstr "{0, plural, other {# 笔委托}}"
 msgid "{0, plural, one {# trade} other {# trades}}"
 msgstr "{0, plural, other {# 笔成交}}"
 
+#. placeholder {0}: agents.length
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "{0} authorized"
+msgstr "已授权 {0} 个"
+
 #. placeholder {0}: reference.coin
 #: src/components/trade/components/market-asset-info.tsx
 msgid "{0} is listed as a native Hyperliquid perpetual market."
@@ -58,6 +63,11 @@ msgstr "{0}/20 个字符"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} 转为 {targetDirectionLabel}"
+
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "{days} days"
+msgstr "{days} 天"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
@@ -169,6 +179,10 @@ msgstr "30 天"
 msgid "30D"
 msgstr "30 天"
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "5 days left"
+msgstr "剩余 5 天"
+
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
 msgstr "7 天"
@@ -231,6 +245,10 @@ msgstr "请先接受这些市场的 HIP-3 部署者免责声明再交易。"
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Access disabled"
+msgstr "访问已停用"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
 msgstr "访问受限"
@@ -241,6 +259,10 @@ msgstr "访问受限"
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "账户"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Account / API Wallet"
+msgstr "账户 / API 钱包"
 
 #: src/config/account-ledger.ts
 msgid "Account Activation Fee"
@@ -299,10 +321,15 @@ msgstr "账户价值变化"
 #~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
 #~ msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Account-level agent approval"
+msgstr "账户级 Agent 授权"
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
@@ -323,9 +350,9 @@ msgstr "激活 DEX"
 #~ msgid "active"
 #~ msgstr "活跃"
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Active"
-#~ msgstr "活跃"
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Active"
+msgstr "有效"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #~ msgid "Active Positions"
@@ -380,6 +407,10 @@ msgstr "添加 TP/SL"
 msgid "Adding margin lowers effective leverage and moves the liquidation price farther away."
 msgstr "增加保证金会降低实际杠杆，并使强平价格远离当前价格。"
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Address copied"
+msgstr "地址已复制"
+
 #: src/components/trade/positions/position-row.tsx
 #~ msgid "Adjust isolated margin"
 #~ msgstr "调整逐仓保证金"
@@ -409,6 +440,10 @@ msgstr "专业"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
 msgstr "专业委托类型"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "After removal"
+msgstr "移除后"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
@@ -510,10 +545,18 @@ msgstr "金额过低，当前桥接路由均不可用。"
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "数量必须大于零且不得超过当前仓位。"
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
+msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提现在内的仅限主钱包操作仍需由主钱包执行。"
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "该市场的另一项操作正在进行中。"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Another API wallet with this exact name appeared while removal was being verified."
+msgstr "验证移除结果时，出现了另一个同名的 API 钱包。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -573,12 +616,58 @@ msgstr "任何扫描或截取此二维码的人都能使用该交易密钥进行
 #~ msgstr "API"
 
 #: src/components/trade/header/top-nav.tsx
-msgid "API & Subaccounts"
-msgstr ""
+#~ msgid "API & Subaccounts"
+#~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-view.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "API Wallet"
+msgstr "API 钱包"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet action progress"
+msgstr "API 钱包操作进度"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "API wallet address"
+msgstr "API 钱包地址"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet authorized"
+msgstr "API 钱包已授权"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "API wallet data changed before signing. Close this request and review the refreshed list."
+msgstr "签名前 API 钱包数据已发生变化。请关闭本次请求并查看刷新后的列表。"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "API wallet list is temporarily unavailable"
+msgstr "API 钱包列表暂时不可用"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet removed"
+msgstr "API 钱包已移除"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "API wallets, also called agents, can sign delegated actions for your Hyperliquid account. Information requests still use the account's public address."
+msgstr "API 钱包也称 Agent，可为你的 Hyperliquid 账户签署委托操作。查询信息时仍使用账户的公开地址。"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Approval"
+msgstr "授权"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Approval and removal require the matching master wallet."
+msgstr "授权和移除都需要匹配的主钱包。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approval verification pending"
@@ -655,6 +744,15 @@ msgstr "无法加载资产说明。"
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Authorize API wallet"
+msgstr "授权 API 钱包"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Authorized API wallets"
+msgstr "已授权的 API 钱包"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
@@ -894,6 +992,7 @@ msgstr "无法访问相机。请允许相机权限后重试，或使用系统相
 msgid "Camera preview for desktop wallet QR"
 msgstr "桌面钱包二维码的相机预览"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
@@ -1000,6 +1099,10 @@ msgstr "图表历史数据请求超时"
 msgid "Checking account..."
 msgstr "正在检查账户…"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Checking fresh API wallet data…"
+msgstr "正在检查最新的 API 钱包数据…"
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
@@ -1104,6 +1207,8 @@ msgstr "点击提交 · 成交后不可撤销"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -1155,6 +1260,10 @@ msgstr "一键全平摘要"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Close and reopen this dialog after the position data refreshes."
 msgstr "持仓数据刷新后，请关闭并重新打开此弹窗。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Close API wallet action"
+msgstr "关闭 API 钱包操作"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close close-all confirmation"
@@ -1385,6 +1494,10 @@ msgstr "在钱包中确认"
 msgid "Confirm order size change"
 msgstr "确认修改委托数量"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Confirm removal"
+msgstr "确认移除"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Confirm Reverse"
 #~ msgstr "确认反向"
@@ -1400,6 +1513,10 @@ msgstr "仅在所选主钱包中确认授权。"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Confirm the gas-free request in your selected wallet."
 msgstr "请在所选钱包中确认免 Gas 请求。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Confirm the request in the matching master wallet. Nothing changes before you approve it."
+msgstr "请在匹配的主钱包中确认请求。在你批准前不会发生任何更改。"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1492,10 +1609,15 @@ msgstr "重置移动访问权限前，请先连接所选主钱包。"
 #~ msgid "Connect to verify"
 #~ msgstr "连接以验证"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Connect to view authorized API wallets"
+msgstr "连接钱包以查看已授权的 API 钱包"
+
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Connect to view referrals"
 msgstr "连接钱包以查看推荐信息"
 
+#: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Connect wallet"
 msgstr "连接钱包"
@@ -1653,6 +1775,7 @@ msgstr "继续"
 msgid "Contract"
 msgstr "合约"
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -1669,14 +1792,18 @@ msgstr "已复制到剪贴板"
 msgid "Copied!"
 msgstr "已复制！"
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Copy"
+msgstr "复制"
+
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy a link that opens the {0} market"
 msgstr "复制打开 {0} 市场的链接"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#~ msgid "Copy address"
-#~ msgstr "复制地址"
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Copy address"
+msgstr "复制地址"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
@@ -1916,6 +2043,10 @@ msgstr "当前"
 msgid "Current Margin"
 msgstr "当前保证金"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Current validity"
+msgstr "当前有效期"
+
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom SL percentage"
 #~ msgstr ""
@@ -2152,6 +2283,10 @@ msgstr "方向"
 msgid "Discard"
 msgstr "丢弃"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Discard local key"
+msgstr "丢弃本地私钥"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2213,12 +2348,29 @@ msgstr "文档"
 msgid "Don't show this confirmation again"
 msgstr "以后不再提示"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "完成"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download credential"
+msgstr "下载凭据"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download the credential before confirming."
+msgstr "请先下载凭据，再进行确认。"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download the credential now and move it to secure storage. Gatu cannot recover it after this window is closed."
+msgstr "请立即下载凭据，并将其转移到安全位置。关闭此窗口后，Gatu 无法恢复该凭据。"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Downloaded"
+msgstr "已下载"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "Duration (Minutes)"
@@ -2529,6 +2681,10 @@ msgstr "展开市场详情"
 #~ msgid "Expand order details"
 #~ msgstr "展开委托详情"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expired"
+msgstr "已过期"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Expires {expiresAtLabel}"
 #~ msgstr "{expiresAtLabel} 到期"
@@ -2536,6 +2692,14 @@ msgstr "展开市场详情"
 #: src/routes/mobile-agent-sync.tsx
 msgid "Expires {expiresAtLabel}."
 msgstr "{expiresAtLabel} 到期。"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expires today"
+msgstr "今日到期"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expiring"
+msgstr "即将到期"
 
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
@@ -2861,6 +3025,10 @@ msgstr "按保证金模式筛选持仓：{marginLabel}"
 msgid "Filter positions by market: {ariaValue}"
 msgstr "按市场筛选持仓：{ariaValue}"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Finish"
+msgstr "完成"
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "切换划转方向"
@@ -2868,6 +3036,10 @@ msgstr "切换划转方向"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货和永续交易完全统一，符合条件的抵押资产（如 HYPE 和 BTC）可直接用作永续抵押品，无需转换为结算资产。"
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "For example: grid-bot"
+msgstr "例如：grid-bot"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
@@ -2886,6 +3058,15 @@ msgstr "正在转发充值"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "频率"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Fresh API wallet data could not be verified before signing."
+msgstr "签名前无法验证最新的 API 钱包数据。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Fresh extraAgents data is being checked before the result is accepted."
+msgstr "正在检查最新的 extraAgents 数据，确认后才会接受操作结果。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
@@ -2968,6 +3149,22 @@ msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
 msgid "Gatu invitation link"
 msgstr "Gatu 邀请链接"
 
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate"
+msgstr "生成"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Generate a local key pair, then authorize its public address to get started."
+msgstr "生成本地密钥对，然后授权其公开地址即可开始使用。"
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate a new local key pair"
+msgstr "生成新的本地密钥对"
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate creates a new key pair only in this browser. The private key is shown after the approval is verified, and it cannot be displayed again after you finish."
+msgstr "“生成”只会在此浏览器中创建新的密钥对。授权通过验证后，私钥仅显示一次；完成操作后将无法再次查看。"
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "创世分配"
@@ -3000,6 +3197,10 @@ msgstr "GTC（撤销前有效）"
 #: src/components/referrals/referral-code-card.tsx
 msgid "Have a referral code?"
 msgstr "有推荐码？"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Hide"
+msgstr "隐藏"
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
@@ -3076,6 +3277,11 @@ msgstr "Hyperliquid 推荐机制"
 msgid "HYPE is the native token of Hyperliquid."
 msgstr "HYPE 是 Hyperliquid 的原生代币。"
 
+#: src/components/api-wallet/api-wallet-view.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Hyperliquid account"
+msgstr "Hyperliquid 账户"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Hyperliquid approval could not be checked. Check your connection and retry."
 msgstr "无法检查 Hyperliquid 授权。请检查网络连接后重试。"
@@ -3105,6 +3311,10 @@ msgstr "Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
 msgstr "Hyperliquid 将投资组合保证金标记为 pre-alpha 阶段，建议使用持有资金低于 $1,000 的新账户或子账户进行测试。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Hyperliquid rejected the request"
+msgstr "Hyperliquid 已拒绝请求"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -3113,6 +3323,10 @@ msgstr "Hyperliquid 显示此交易密钥已被替换、更改或已过期。"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
 msgstr "Hyperliquid 要求符合条件的奖励超过 1 美元后才能领取。最终资格由协议确认。"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Hyperliquid testnet account"
+msgstr "Hyperliquid 测试网账户"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
@@ -3125,6 +3339,10 @@ msgstr "我已阅读并同意 Gatu 的<0>使用条款</0>、<1>隐私政策</1>�
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
 msgstr "我已阅读并理解本免责声明，并接受与第三方部署的无需许可市场交互所涉及的风险。"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "I have saved the private key in a secure location"
+msgstr "我已将私钥保存到安全位置"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
@@ -3493,6 +3711,10 @@ msgstr "加载中"
 msgid "Loading asset information..."
 msgstr "正在加载资产说明..."
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Loading authorized API wallets"
+msgstr "正在加载已授权的 API 钱包"
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "正在加载所有链上的余额…"
@@ -3596,6 +3818,10 @@ msgstr "加载钱包中..."
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "加载中..."
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Loading…"
+msgstr "加载中…"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Log in with Email"
@@ -4030,6 +4256,10 @@ msgstr "移动端二维码导入不可用，且无法清除其临时副本。请
 msgid "Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it."
 msgstr "暂时无法显示移动端二维码。如果不再需要此密钥，请将其撤销。"
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "Mock account"
+msgstr "模拟账户"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
@@ -4089,9 +4319,20 @@ msgstr "在合约账户与现货账户之间划转 USDC。"
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Name"
+msgstr "名称"
+
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "导航"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
+msgstr "在最新的 extraAgents 数据中，原名称和旧公开地址均已不存在。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4168,6 +4409,10 @@ msgstr "无活跃仓位。"
 msgid "No active TWAP orders."
 msgstr "没有进行中的 TWAP 委托。"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "No API wallets authorized"
+msgstr "尚未授权任何 API 钱包"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "No approved mobile Agent remains."
 msgstr "已无获批的移动交易密钥。"
@@ -4218,6 +4463,10 @@ msgstr "尚未加载桌面二维码。请返回终端扫描器，或使用系统
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop wallet QR was found."
 msgstr "未找到桌面钱包二维码。"
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "No expiry reported"
+msgstr "未报告到期时间"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4377,6 +4626,12 @@ msgstr "未找到 TWAP 历史记录。"
 msgid "Not connected"
 msgstr "未连接"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Not reported"
+msgstr "未报告"
+
 #: src/config/ui-text.ts
 #~ msgid "Notifications"
 #~ msgstr "通知"
@@ -4428,6 +4683,14 @@ msgstr "一次性账户激活费"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
 msgstr "请只扫描此终端在桌面端显示的二维码。"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Only the matching master wallet can approve or remove API wallets. Switch wallets to continue."
+msgstr "只有匹配的主钱包才能授权或移除 API 钱包。请切换钱包后继续。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
+msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确认授权成功后，私钥将显示一次，供你下载并安全保存。"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
@@ -5197,11 +5460,24 @@ msgstr "优先 Gas 拍卖费"
 msgid "Privacy Policy"
 msgstr "隐私政策"
 
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Private key — shown once"
+msgstr "私钥 — 仅显示一次"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Private key hidden"
+msgstr "私钥已隐藏"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Private-key handling"
+msgstr "私钥处理"
+
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Processing"
 msgstr "处理中"
@@ -5215,10 +5491,18 @@ msgstr "处理中"
 msgid "Processing..."
 msgstr "处理中…"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Processing…"
+msgstr "处理中…"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Profit"
 msgstr "盈利"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Programs using this exact API wallet lose access after removal is verified."
+msgstr "移除结果验证通过后，使用此 API 钱包的程序将失去访问权限。"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Progress"
@@ -5286,6 +5570,10 @@ msgstr "费率"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
 msgstr "阅读官方推荐规则"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Read the official agent wallet documentation"
+msgstr "阅读官方 Agent 钱包文档"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Ready"
@@ -5502,6 +5790,10 @@ msgstr "提交另一个已签名请求前，请先刷新推荐数据。"
 msgid "Refreshing referral data…"
 msgstr "正在刷新推荐数据…"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Refreshing…"
+msgstr "刷新中…"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
 #~ msgstr ""
@@ -5529,6 +5821,8 @@ msgstr "剩余时间"
 msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
 msgstr "远程访问权限已撤销，但此浏览器未能完全清除本地移动访问状态。再次在此使用移动访问功能前，请清除此网站的数据。"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Remove"
 msgstr "移除"
@@ -5545,6 +5839,10 @@ msgstr "将 {displayName} 从收藏中移除"
 msgid "Remove {displayPairName} from favorites"
 msgstr "将 {displayPairName} 从收藏中移除"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Remove API wallet"
+msgstr "移除 API 钱包"
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
 #~ msgstr "从收藏中移除"
@@ -5560,6 +5858,10 @@ msgstr "移除保证金"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
 msgstr "移除保证金会增加强平风险。超出保证金要求的金额将被 Hyperliquid 拒绝。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Removing this approval immediately stops programs using this exact API wallet. Restoring access requires a new approval."
+msgstr "移除此授权会立即停止使用这个 API 钱包的程序。若要恢复访问权限，需要重新授权。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Rendering QR"
@@ -5613,10 +5915,15 @@ msgstr "重置倒计时"
 msgid "Restore"
 msgstr "恢复"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Result not yet confirmed"
+msgstr "结果尚未确认"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Resume tracking"
 msgstr "继续跟踪"
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -5655,6 +5962,10 @@ msgstr "重试验证"
 msgid "Return on equity (ROE)"
 msgstr "收益率（ROE）"
 
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Reveal"
+msgstr "显示"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Reverse"
 msgstr "反向"
@@ -5680,6 +5991,7 @@ msgstr "反向数量（仓位的 2 倍）"
 msgid "Reversing..."
 msgstr "正在反向..."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Review"
 msgstr "核对"
@@ -5691,6 +6003,10 @@ msgstr "重新检查"
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "检查并导入桌面端已授权的交易密钥。无需手机钱包。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Review fresh API wallet data before creating another signed request."
+msgstr "在创建新的签名请求前，请先查看最新的 API 钱包数据。"
 
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -5704,6 +6020,10 @@ msgstr "检查手机访问权限"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access with the selected master wallet before approving it."
 msgstr "授权前，请使用所选主钱包检查手机访问权限。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Review request"
+msgstr "查看请求"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review revoke"
@@ -6265,9 +6585,21 @@ msgstr "显示最近 30 天返回的奖励领取记录，其中可能包含推�
 #~ msgid "Sidebar"
 #~ msgstr "侧边栏"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Sign"
+msgstr "签名"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Sign and authorize"
+msgstr "签名并授权"
+
 #: src/lib/trade/use-button-content.ts
 msgid "Sign in wallet..."
 msgstr "在钱包中签名..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signature rejected"
+msgstr "签名已拒绝"
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Signer not ready"
@@ -6408,6 +6740,10 @@ msgstr "出错了"
 msgid "Soon"
 msgstr "即将推出"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Sort API wallets by name"
+msgstr "按名称排序 API 钱包"
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Sort by {0}"
 #~ msgstr "按 {0} 排序"
@@ -6518,6 +6854,7 @@ msgstr "正在启动相机…"
 msgid "Statistics"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -6602,6 +6939,10 @@ msgstr "止损触发价须低于标记价"
 msgid "Sub-account Transfer"
 msgstr "子账户转账"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Submit"
+msgstr "提交"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Submitted limit and trigger orders will appear here."
@@ -6610,6 +6951,10 @@ msgstr "已提交的限价单与触发单将显示在这里"
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr "正在提交平仓委托..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Submitting to Hyperliquid"
+msgstr "正在提交至 Hyperliquid"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -6916,6 +7261,14 @@ msgstr "测试网预览；市场链接已禁用"
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "账户激活费用在签名前已变化。请检查更新后的费用并重试。"
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "The active wallet is not this account's master wallet"
+msgstr "当前钱包不是此账户的主钱包"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "The API wallet request was rejected."
+msgstr "API 钱包请求已被拒绝。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 msgstr "无法重新检查授权。在只读验证成功前，二维码将保持隐藏。"
@@ -6954,6 +7307,10 @@ msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "无法确认撤单响应。请刷新当前委托后再试。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The exact name and public address are now present in fresh extraAgents data."
+msgstr "最新的 extraAgents 数据中已出现完全匹配的名称和公开地址。"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "The exchange did not accept every order."
 msgstr "交易所未接受全部订单。"
@@ -6979,6 +7336,10 @@ msgstr "交易所未返回最终订单状态。重试前请检查当前委托和
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委托。"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
+msgstr "extraAgents 请求失败。现有 API 钱包仍可正常使用，但在验证到最新数据前，管理功能将保持禁用。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
@@ -6995,6 +7356,10 @@ msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "保证金更新可能已生效。请刷新持仓数据后再试。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The matching master wallet signs this account-level agent approval."
+msgstr "匹配的主钱包将签署此账户级 Agent 授权。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -7044,6 +7409,10 @@ msgstr "上一次委托修改仍未确认。重试前请刷新当前委托。"
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "上一个钱包已断开，但其本地交易密钥未能移除。重新连接前请先清除本站点数据。"
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
+msgstr "私钥在此浏览器中创建，绝不会上传或由 Gatu 存储。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
 msgstr "私钥在此桌面设备上创建，并嵌入二维码中。"
@@ -7088,6 +7457,14 @@ msgstr "无法验证安全的 Hyperliquid 连接。请重试。"
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The signed request has been submitted. Keep this window open."
+msgstr "签名请求已提交。请保持此窗口打开。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The signed request may have succeeded, but reconciliation timed out. Do not submit it again; verify against fresh extraAgents data. Closing before verification discards the local key."
+msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；请根据最新的 extraAgents 数据进行验证。在验证完成前关闭窗口会丢弃本地私钥。"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -7120,6 +7497,10 @@ msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trigger price is invalid for this order direction."
 msgstr "该触发价格不符合此委托方向。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
+msgstr "钱包未完成签名，因此请求尚未提交。你可以查看详情后重试。"
 
 #: src/hooks/wallet/use-wallet-session.ts
 #~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
@@ -7179,6 +7560,10 @@ msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "一键全平预览已过期。请关闭并重新打开以检查当前数值。"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "This confirmation is required before finishing."
+msgstr "完成操作前必须确认此项。"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
@@ -7404,6 +7789,10 @@ msgstr "这会用一个不可访问的密钥替换当前任何移动交易密钥
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This will revoke {0} current mobile trading key. Existing phones will stop trading."
 #~ msgstr "这将撤销当前的 {0} 个移动交易密钥。现有手机将无法继续交易。"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "This window stays locked until the request reaches a verifiable result."
+msgstr "在请求得到可验证的结果前，此窗口将保持锁定。"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
@@ -8035,6 +8424,7 @@ msgstr "无法验证提款资格。"
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."
 msgstr "无法验证提现资格。请求未提交。"
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -8052,6 +8442,10 @@ msgstr "未确认"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Underlying asset"
 msgstr "标的资产"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Understand the approval boundary"
+msgstr "了解授权边界"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
@@ -8198,6 +8592,11 @@ msgstr "加入 Hyperliquid 时使用推荐码 {code}。"
 #~ msgid "Using"
 #~ msgstr "使用中"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Valid until"
+msgstr "有效期至"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Validating positions..."
 msgstr "正在校验持仓..."
@@ -8206,6 +8605,12 @@ msgstr "正在校验持仓..."
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Validating..."
 msgstr "验证中..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Validity"
+msgstr "有效期"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
@@ -8237,10 +8642,26 @@ msgstr "金库提款"
 msgid "Vaults"
 msgstr "金库"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verification reference"
+msgstr "验证参考"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verify"
+msgstr "验证"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verify again"
+msgstr "再次验证"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Verifying approval..."
 msgstr "正在验证授权…"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verifying the result"
+msgstr "正在验证结果"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
@@ -8305,6 +8726,10 @@ msgstr "等待订单簿..."
 #: src/components/trade/orderbook/trades-panel.tsx
 #~ msgid "Waiting for trades..."
 #~ msgstr "等待成交记录..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Waiting for wallet signature"
+msgstr "等待钱包签名"
 
 #. placeholder {0}: shortenAddress(address)
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx

@@ -120,6 +120,56 @@
   :root {
     color-scheme: light;
 
+    /* API wallet page — handoff semantics mapped to project tokens. */
+    --api-wallet-frame-max: 90rem;
+    --api-wallet-content-max: 85rem;
+    --api-wallet-description-max: 48.75rem;
+    --api-wallet-page-min-height: 43.75rem;
+    --api-wallet-page-radius: 0.875rem;
+    --api-wallet-modal-title-font-size: 1.0625rem;
+    --api-wallet-modal-title-line-height: 1.5rem;
+    --api-wallet-form-columns: 21.25rem minmax(0, 1fr) 12.5rem 9.375rem;
+    --api-wallet-row-min-height: 2.875rem;
+    --api-wallet-table-head-height: 1.75rem;
+    --api-wallet-modal-width: 26.25rem;
+    --api-wallet-modal-viewport-gap: 1rem;
+    --api-wallet-modal-radius: 1rem;
+    --api-wallet-sheet-radius: 1.125rem;
+    --api-wallet-card-radius: 0.75rem;
+    --api-wallet-control-radius: 0.625rem;
+    --api-wallet-control-height: 2.5rem;
+    --api-wallet-mobile-control-height: 3rem;
+    --api-wallet-state-icon-size: 2.75rem;
+    --api-wallet-mobile-state-icon-size: 2.5rem;
+    --api-wallet-progress-ring-size: 3.75rem;
+    --api-wallet-mobile-progress-ring-size: 3.5rem;
+    --api-wallet-progress-ring-stroke: 0.1875rem;
+    --api-wallet-step-dot-size: 1rem;
+    --api-wallet-skeleton-line-height: 0.6875rem;
+    --api-wallet-secret-tracking: 0.18em;
+    --api-wallet-col-name: 18%;
+    --api-wallet-col-address: 34%;
+    --api-wallet-col-status: 16%;
+    --api-wallet-col-expiry: 20%;
+    --api-wallet-col-action: 12%;
+    --api-wallet-fg: var(--market-close-text-strong);
+    --api-wallet-muted: var(--market-close-text-muted);
+    --api-wallet-subtle: var(--market-close-text-subtle);
+    --api-wallet-stroke-card: var(--market-close-stroke-card);
+    --api-wallet-stroke-input: var(--market-close-stroke-input);
+    --api-wallet-stroke-control: var(--market-close-stroke-control);
+    --api-wallet-surface-card: var(--market-close-surface-card);
+    --api-wallet-surface-hover: var(--market-close-surface-hover);
+    --api-wallet-control: var(--market-close-control-active);
+    --api-wallet-on-control: var(--market-close-control-active-text);
+    --api-wallet-danger: var(--market-close-danger);
+    --api-wallet-danger-on: var(--market-close-danger-text);
+    --api-wallet-success: var(--market-close-success);
+    --api-wallet-warning: var(--market-close-warning);
+    --api-wallet-disabled: var(--text-disabled);
+    --api-wallet-page-shadow: var(--shadow-raised);
+    --api-wallet-modal-shadow: var(--shadow-overlay);
+
     /* Background */
     --bg-base: #ffffff;
     --bg-raised: #ffffff;
@@ -460,6 +510,25 @@
   --color-portfolio-canvas: var(--bg-portfolio-canvas);
   --color-inverse-surface: var(--bg-inverse);
 
+  /* API wallet page */
+  --color-api-wallet-fg: var(--api-wallet-fg);
+  --color-api-wallet-muted: var(--api-wallet-muted);
+  --color-api-wallet-subtle: var(--api-wallet-subtle);
+  --color-api-wallet-stroke-card: var(--api-wallet-stroke-card);
+  --color-api-wallet-stroke-input: var(--api-wallet-stroke-input);
+  --color-api-wallet-stroke-control: var(--api-wallet-stroke-control);
+  --color-api-wallet-card: var(--api-wallet-surface-card);
+  --color-api-wallet-hover: var(--api-wallet-surface-hover);
+  --color-api-wallet-control: var(--api-wallet-control);
+  --color-api-wallet-on-control: var(--api-wallet-on-control);
+  --color-api-wallet-danger: var(--api-wallet-danger);
+  --color-api-wallet-danger-on: var(--api-wallet-danger-on);
+  --color-api-wallet-success: var(--api-wallet-success);
+  --color-api-wallet-warning: var(--api-wallet-warning);
+  --color-api-wallet-disabled: var(--api-wallet-disabled);
+  --shadow-api-wallet-page: var(--api-wallet-page-shadow);
+  --shadow-api-wallet-modal: var(--api-wallet-modal-shadow);
+
   /* Foregrounds */
   --color-fg: var(--text-strong);
   --color-fg-muted: var(--text-weak);
@@ -703,6 +772,26 @@
 }
 
 @layer components {
+  .api-wallet-col-name {
+    width: var(--api-wallet-col-name);
+  }
+
+  .api-wallet-col-address {
+    width: var(--api-wallet-col-address);
+  }
+
+  .api-wallet-col-status {
+    width: var(--api-wallet-col-status);
+  }
+
+  .api-wallet-col-expiry {
+    width: var(--api-wallet-col-expiry);
+  }
+
+  .api-wallet-col-action {
+    width: var(--api-wallet-col-action);
+  }
+
   .active\:scale-98:active { transform: scale(0.98); }
   .active\:scale-95:active { transform: scale(0.95); }
 

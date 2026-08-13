@@ -26,6 +26,11 @@ msgstr "{0, plural, one {# orden} other {# órdenes}}"
 msgid "{0, plural, one {# trade} other {# trades}}"
 msgstr "{0, plural, one {# operación} other {# operaciones}}"
 
+#. placeholder {0}: agents.length
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "{0} authorized"
+msgstr ""
+
 #. placeholder {0}: reference.coin
 #: src/components/trade/components/market-asset-info.tsx
 msgid "{0} is listed as a native Hyperliquid perpetual market."
@@ -58,6 +63,11 @@ msgstr "{0}/20 caracteres"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} a {targetDirectionLabel}"
+
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "{days} days"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
@@ -165,6 +175,10 @@ msgstr "30 días"
 msgid "30D"
 msgstr "30 d"
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "5 days left"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
 msgstr "7 días"
@@ -227,6 +241,10 @@ msgstr "Acepta el descargo de responsabilidad del deployer HIP-3 antes de operar
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "Acepta el descargo de responsabilidad del deployer HIP-3 antes de operar en este mercado."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Access disabled"
+msgstr ""
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
 msgstr "Acceso restringido"
@@ -237,6 +255,10 @@ msgstr "Acceso restringido"
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Cuenta"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Account / API Wallet"
+msgstr ""
 
 #: src/config/account-ledger.ts
 msgid "Account Activation Fee"
@@ -295,10 +317,15 @@ msgstr "Cambio en el valor de la cuenta"
 #~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
 #~ msgstr "El valor de la cuenta debe ser inferior a 25 M$ para usar el margen de cartera mientras está en beta."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Account-level agent approval"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
@@ -319,9 +346,9 @@ msgstr "Activar DEX"
 #~ msgid "active"
 #~ msgstr "activo"
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Active"
-#~ msgstr "Activo"
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Active"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #~ msgid "Active Positions"
@@ -376,6 +403,10 @@ msgstr "Añadir TP/SL"
 msgid "Adding margin lowers effective leverage and moves the liquidation price farther away."
 msgstr "Añadir margen reduce el apalancamiento efectivo y aleja el precio de liquidación."
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Address copied"
+msgstr ""
+
 #: src/components/trade/positions/position-row.tsx
 #~ msgid "Adjust isolated margin"
 #~ msgstr "Ajustar margen aislado"
@@ -405,6 +436,10 @@ msgstr "Avanzado"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
 msgstr "Tipos de orden avanzados"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "After removal"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
@@ -506,10 +541,18 @@ msgstr "El importe es demasiado bajo para las rutas de puente disponibles."
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "La cantidad debe ser mayor que cero y no superar la posición actual."
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "Ya hay otra acción en curso para este mercado."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Another API wallet with this exact name appeared while removal was being verified."
+msgstr ""
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -569,12 +612,58 @@ msgstr "Cualquiera que escanee o capture el QR puede operar como este Agente."
 #~ msgstr "API"
 
 #: src/components/trade/header/top-nav.tsx
-msgid "API & Subaccounts"
+#~ msgid "API & Subaccounts"
+#~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-view.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "API Wallet"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet action progress"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "API wallet address"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet authorized"
+msgstr ""
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "API wallet data changed before signing. Close this request and review the refreshed list."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "API wallet list is temporarily unavailable"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "API wallet removed"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "API wallets, also called agents, can sign delegated actions for your Hyperliquid account. Information requests still use the account's public address."
 msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Approval"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Approval and removal require the matching master wallet."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approval verification pending"
@@ -651,6 +740,15 @@ msgstr "No se pudo cargar la información del activo."
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Authorize API wallet"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Authorized API wallets"
+msgstr ""
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
@@ -890,6 +988,7 @@ msgstr "Error al acceder a la cámara. Permite el acceso a la cámara y vuelve a
 msgid "Camera preview for desktop wallet QR"
 msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
@@ -996,6 +1095,10 @@ msgstr "Se agotó el tiempo de espera de la solicitud del historial del gráfico
 msgid "Checking account..."
 msgstr "Comprobando la cuenta..."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Checking fresh API wallet data…"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
@@ -1096,6 +1199,8 @@ msgstr "Haz clic para enviar · Las operaciones ejecutadas no se pueden revertir
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "Se bloqueó pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -1142,6 +1247,10 @@ msgstr "Resumen de cierre de todas las posiciones"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Close and reopen this dialog after the position data refreshes."
 msgstr "Cierra y vuelve a abrir este cuadro de diálogo cuando se actualicen los datos de la posición."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Close API wallet action"
+msgstr ""
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close close-all confirmation"
@@ -1372,6 +1481,10 @@ msgstr "Confirmar en el monedero"
 msgid "Confirm order size change"
 msgstr "Confirmar el cambio de tamaño de la orden"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Confirm removal"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Confirm Reverse"
 #~ msgstr "Confirmar inversión"
@@ -1387,6 +1500,10 @@ msgstr "Confirma la aprobación solo en el monedero maestro seleccionado."
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Confirm the gas-free request in your selected wallet."
 msgstr "Confirma la solicitud sin gas en la billetera seleccionada."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Confirm the request in the matching master wallet. Nothing changes before you approve it."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1479,10 +1596,15 @@ msgstr "Conecta el monedero maestro seleccionado antes de restablecer el acceso 
 #~ msgid "Connect to verify"
 #~ msgstr "Conecta para verificar"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Connect to view authorized API wallets"
+msgstr ""
+
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Connect to view referrals"
 msgstr "Conéctate para ver los referidos"
 
+#: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Connect wallet"
 msgstr "Conectar monedero"
@@ -1640,6 +1762,7 @@ msgstr "Continuar"
 msgid "Contract"
 msgstr "Contrato"
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -1656,14 +1779,18 @@ msgstr "Copiado al portapapeles"
 msgid "Copied!"
 msgstr "¡Copiado!"
 
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Copy"
+msgstr ""
+
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy a link that opens the {0} market"
 msgstr "Copiar un enlace que abre el mercado {0}"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#~ msgid "Copy address"
-#~ msgstr "Copiar dirección"
+#: src/components/api-wallet/api-wallet-copy-button.tsx
+msgid "Copy address"
+msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
@@ -1903,6 +2030,10 @@ msgstr "Actual"
 msgid "Current Margin"
 msgstr "Margen actual"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Current validity"
+msgstr ""
+
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom SL percentage"
 #~ msgstr ""
@@ -2139,6 +2270,10 @@ msgstr "Dirección"
 msgid "Discard"
 msgstr "Descartar"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Discard local key"
+msgstr ""
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2200,12 +2335,29 @@ msgstr "Documentación"
 msgid "Don't show this confirmation again"
 msgstr "No volver a mostrar esta confirmación"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Hecho"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download credential"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download the credential before confirming."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Download the credential now and move it to secure storage. Gatu cannot recover it after this window is closed."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Downloaded"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "Duration (Minutes)"
@@ -2516,6 +2668,10 @@ msgstr "Expandir detalles del mercado"
 #~ msgid "Expand order details"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expired"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Expires {expiresAtLabel}"
 #~ msgstr "Caduca {expiresAtLabel}"
@@ -2523,6 +2679,14 @@ msgstr "Expandir detalles del mercado"
 #: src/routes/mobile-agent-sync.tsx
 msgid "Expires {expiresAtLabel}."
 msgstr "Caduca {expiresAtLabel}."
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expires today"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Expiring"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
@@ -2848,6 +3012,10 @@ msgstr "Filtrar posiciones por modo de margen: {marginLabel}"
 msgid "Filter positions by market: {ariaValue}"
 msgstr "Filtrar posiciones por mercado: {ariaValue}"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Finish"
+msgstr ""
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "Invertir la dirección de la transferencia"
@@ -2855,6 +3023,10 @@ msgstr "Invertir la dirección de la transferencia"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "Para usuarios avanzados que buscan mayor flexibilidad y eficiencia de capital. El trading spot y de perpetuos está totalmente unificado, y los activos de garantía elegibles como HYPE y BTC pueden usarse directamente como garantía de perpetuos sin convertirlos al activo de liquidación."
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "For example: grid-bot"
+msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
@@ -2873,6 +3045,15 @@ msgstr "Reenviando el depósito"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "Frecuencia"
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Fresh API wallet data could not be verified before signing."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Fresh extraAgents data is being checked before the result is accepted."
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "From"
@@ -2951,6 +3132,22 @@ msgstr "Los depósitos CCTP con gas patrocinado no están habilitados para esta 
 msgid "Gatu invitation link"
 msgstr "Enlace de invitación de Gatu"
 
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Generate a local key pair, then authorize its public address to get started."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate a new local key pair"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Generate creates a new key pair only in this browser. The private key is shown after the approval is verified, and it cannot be displayed again after you finish."
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "Distribución inicial"
@@ -2983,6 +3180,10 @@ msgstr "GTC (Good Til Cancel)"
 #: src/components/referrals/referral-code-card.tsx
 msgid "Have a referral code?"
 msgstr "¿Tienes un código de referido?"
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Hide"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
@@ -3059,6 +3260,11 @@ msgstr "Cómo funcionan los referidos de Hyperliquid"
 msgid "HYPE is the native token of Hyperliquid."
 msgstr "HYPE es el token nativo de Hyperliquid."
 
+#: src/components/api-wallet/api-wallet-view.tsx
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Hyperliquid account"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Hyperliquid approval could not be checked. Check your connection and retry."
 msgstr "No se pudo comprobar la aprobación de Hyperliquid. Verifica tu conexión e inténtalo de nuevo."
@@ -3088,6 +3294,10 @@ msgstr "Hyperliquid no permite pausar órdenes TWAP activas."
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
 msgstr "Hyperliquid clasifica el margen de cartera como pre-alpha y recomienda probarlo con cuentas nuevas o subcuentas con menos de $1,000."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Hyperliquid rejected the request"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -3096,6 +3306,10 @@ msgstr "Hyperliquid informa que esta clave de trading fue reemplazada, modificad
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
 msgstr "Hyperliquid exige más de $1 en recompensas elegibles antes de reclamarlas. El protocolo confirma la elegibilidad final."
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "Hyperliquid testnet account"
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
@@ -3108,6 +3322,10 @@ msgstr "He leído y acepto los <0>Términos de uso</0> de Gatu, la <1>Política 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
 msgstr "He leído y comprendido este aviso legal y acepto los riesgos de interactuar con mercados sin permisos implementados por terceros."
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "I have saved the private key in a secure location"
+msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
@@ -3476,6 +3694,10 @@ msgstr "Cargando"
 msgid "Loading asset information..."
 msgstr "Cargando información del activo..."
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Loading authorized API wallets"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "Cargando saldos en todas las redes..."
@@ -3579,6 +3801,10 @@ msgstr "Cargando billetera..."
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "Cargando..."
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Loading…"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Log in with Email"
@@ -4009,6 +4235,10 @@ msgstr "La importación del QR móvil no está disponible y no se pudo borrar su
 msgid "Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it."
 msgstr "Mostrar el QR móvil no está disponible temporalmente. Revoca esta clave si ya no la necesitas."
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "Mock account"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
@@ -4068,9 +4298,20 @@ msgstr "Mueve USDC entre tus cuentas Perp y Spot."
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Name"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "Navegación"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4147,6 +4388,10 @@ msgstr "Sin posiciones activas."
 msgid "No active TWAP orders."
 msgstr "No hay órdenes TWAP activas."
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "No API wallets authorized"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "No approved mobile Agent remains."
 msgstr "No queda ningún Agent móvil aprobado."
@@ -4197,6 +4442,10 @@ msgstr "No hay ningún QR de escritorio cargado. Vuelve al escáner del terminal
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop wallet QR was found."
 msgstr "No se encontró ningún QR de billetera de escritorio."
+
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "No expiry reported"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4356,6 +4605,12 @@ msgstr "No se encontró historial de TWAP."
 msgid "Not connected"
 msgstr "No conectado"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Not reported"
+msgstr ""
+
 #: src/config/ui-text.ts
 #~ msgid "Notifications"
 #~ msgstr "Notificaciones"
@@ -4407,6 +4662,14 @@ msgstr "Tarifa única de activación de la cuenta"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
 msgstr "Escanea solo un QR mostrado por este terminal en tu escritorio."
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Only the matching master wallet can approve or remove API wallets. Switch wallets to continue."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
@@ -5176,11 +5439,24 @@ msgstr "Comisión de subasta de gas prioritaria"
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
 
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Private key — shown once"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Private key hidden"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Private-key handling"
+msgstr ""
+
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
 #~ msgstr ""
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Processing"
 msgstr "Procesando"
@@ -5194,10 +5470,18 @@ msgstr "Procesando"
 msgid "Processing..."
 msgstr "Procesando..."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Processing…"
+msgstr ""
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Profit"
 msgstr "Ganancia"
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Programs using this exact API wallet lose access after removal is verified."
+msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Progress"
@@ -5265,6 +5549,10 @@ msgstr "Tasa"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
 msgstr "Leer las reglas oficiales de referidos"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Read the official agent wallet documentation"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Ready"
@@ -5481,6 +5769,10 @@ msgstr "Actualiza los datos de referidos antes de enviar otra solicitud firmada.
 msgid "Refreshing referral data…"
 msgstr "Actualizando los datos de referidos…"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Refreshing…"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
 #~ msgstr ""
@@ -5508,6 +5800,8 @@ msgstr "Tiempo restante"
 msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
 msgstr "El acceso remoto está revocado, pero este navegador no pudo borrar por completo su estado móvil local. Borra los datos de este sitio antes de volver a usar el acceso móvil aquí."
 
+#: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Remove"
 msgstr "Retirar"
@@ -5524,6 +5818,10 @@ msgstr "Quitar {displayName} de favoritos"
 msgid "Remove {displayPairName} from favorites"
 msgstr "Eliminar {displayPairName} de favoritos"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Remove API wallet"
+msgstr ""
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
 #~ msgstr "Quitar de favoritos"
@@ -5539,6 +5837,10 @@ msgstr "Retirar margen"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
 msgstr "Retirar margen aumenta el riesgo de liquidación. Hyperliquid rechazará los importes que incumplan los requisitos de margen."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Removing this approval immediately stops programs using this exact API wallet. Restoring access requires a new approval."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Rendering QR"
@@ -5592,10 +5894,15 @@ msgstr "Se restablece en"
 msgid "Restore"
 msgstr "Restaurar"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Result not yet confirmed"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Resume tracking"
 msgstr "Reanudar seguimiento"
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -5634,6 +5941,10 @@ msgstr "Reintentar verificación"
 msgid "Return on equity (ROE)"
 msgstr "Retorno sobre el capital (ROE)"
 
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "Reveal"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Reverse"
 msgstr "Invertir"
@@ -5659,6 +5970,7 @@ msgstr "Cantidad a invertir (2× la posición)"
 msgid "Reversing..."
 msgstr "Invirtiendo..."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 msgid "Review"
 msgstr "Revisar"
@@ -5670,6 +5982,10 @@ msgstr "Revisar de nuevo"
 #: src/routes/mobile-agent-sync.tsx
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "Revisa e importa la clave de trading aprobada en el escritorio. No se requiere una billetera en el teléfono."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Review fresh API wallet data before creating another signed request."
+msgstr ""
 
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -5683,6 +5999,10 @@ msgstr "Revisar acceso del teléfono"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access with the selected master wallet before approving it."
 msgstr "Revisa el acceso del teléfono con la billetera principal seleccionada antes de aprobarlo."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Review request"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review revoke"
@@ -6244,9 +6564,21 @@ msgstr "Muestra las reclamaciones de recompensas registradas en los últimos 30 
 #~ msgid "Sidebar"
 #~ msgstr "Barra lateral"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Sign"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Sign and authorize"
+msgstr ""
+
 #: src/lib/trade/use-button-content.ts
 msgid "Sign in wallet..."
 msgstr "Firma en la wallet..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Signature rejected"
+msgstr ""
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Signer not ready"
@@ -6387,6 +6719,10 @@ msgstr "Algo salió mal"
 msgid "Soon"
 msgstr "Pronto"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Sort API wallets by name"
+msgstr ""
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Sort by {0}"
 #~ msgstr "Ordenar por {0}"
@@ -6497,6 +6833,7 @@ msgstr "Iniciando cámara..."
 msgid "Statistics"
 msgstr ""
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -6581,6 +6918,10 @@ msgstr "El disparador stop debe estar por debajo del precio de marca"
 msgid "Sub-account Transfer"
 msgstr "Transferencia de subcuenta"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Submit"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Submitted limit and trigger orders will appear here."
@@ -6589,6 +6930,10 @@ msgstr "Las órdenes límite y de activación enviadas aparecerán aquí."
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr "Enviando órdenes de cierre..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Submitting to Hyperliquid"
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -6895,6 +7240,14 @@ msgstr "Vista previa de testnet; enlace del mercado deshabilitado"
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "La comisión de activación de la cuenta cambió antes de la firma. Revisa la comisión actualizada e inténtalo de nuevo."
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "The active wallet is not this account's master wallet"
+msgstr ""
+
+#: src/components/api-wallet/use-api-wallet-controller.ts
+msgid "The API wallet request was rejected."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 msgstr "No se pudo volver a comprobar la aprobación. El QR permanece oculto hasta que la verificación de solo lectura tenga éxito."
@@ -6933,6 +7286,10 @@ msgstr "La transacción de Arbitrum se ha enviado, pero no se pudo verificar su 
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "No se pudo confirmar la respuesta de cancelación. Actualiza las órdenes abiertas antes de volver a intentarlo."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The exact name and public address are now present in fresh extraAgents data."
+msgstr ""
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "The exchange did not accept every order."
 msgstr "El exchange no aceptó todas las órdenes."
@@ -6958,6 +7315,10 @@ msgstr "El exchange no devolvió el estado final de la orden. Revisa las órdene
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "El exchange no devolvió el estado final del TWAP. Revisa las órdenes TWAP activas antes de volver a intentarlo."
 
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "La clave generada permanece solo en esta pestaña. No apruebes otra clave ni recargues la página."
@@ -6974,6 +7335,10 @@ msgstr "La ruta de retiro de Hyperliquid cambió. Revisa la ruta y la comisión 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "Es posible que la actualización del margen se haya aplicado. Actualiza los datos de la posición antes de volver a intentarlo."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The matching master wallet signs this account-level agent approval."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -7023,6 +7388,10 @@ msgstr "La modificación anterior de la orden aún no está confirmada. Actualiz
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "El monedero anterior se desconectó, pero no se pudo eliminar su clave de trading local. Borra los datos de este sitio antes de volver a conectarlo."
 
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
 msgstr "La clave privada se crea en este escritorio y se incrusta en el código QR."
@@ -7067,6 +7436,14 @@ msgstr "No se pudo verificar la conexión segura de Hyperliquid. Vuelve a intent
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "El mercado seleccionado cambió. Vuelve a abrir el cuadro de margen antes de ajustarlo."
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The signed request has been submitted. Keep this window open."
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The signed request may have succeeded, but reconciliation timed out. Do not submit it again; verify against fresh extraAgents data. Closing before verification discards the local key."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -7099,6 +7476,10 @@ msgstr "La cuenta de trading o la red cambió. Vuelve a abrir el editor e intén
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trigger price is invalid for this order direction."
 msgstr "El precio de activación no es válido para la dirección de esta orden."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
+msgstr ""
 
 #: src/hooks/wallet/use-wallet-session.ts
 #~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
@@ -7158,6 +7539,10 @@ msgstr "Este navegador no puede coordinar de forma segura las operaciones de fon
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "Esta vista previa de cerrar todo caducó. Ciérrala y vuelve a abrirla para revisar los valores actuales."
+
+#: src/components/api-wallet/api-wallet-credential-box.tsx
+msgid "This confirmation is required before finishing."
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
@@ -7379,6 +7764,10 @@ msgstr "Esto reemplazará cualquier clave de trading móvil actual con una clave
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "This will revoke {0} current mobile trading key. Existing phones will stop trading."
 #~ msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "This window stays locked until the request reaches a verifiable result."
+msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
@@ -8010,6 +8399,7 @@ msgstr "No se pudo verificar si el retiro está permitido."
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."
 msgstr "No se pudo verificar la elegibilidad para el retiro. La solicitud no se ha enviado."
 
+#: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -8027,6 +8417,10 @@ msgstr "sin confirmar"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Underlying asset"
 msgstr "Activo subyacente"
+
+#: src/components/api-wallet/api-wallet-view.tsx
+msgid "Understand the approval boundary"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
@@ -8173,6 +8567,11 @@ msgstr "Usa el código de referido {code} al unirte a Hyperliquid."
 #~ msgid "Using"
 #~ msgstr "Usando"
 
+#: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/api-wallet/api-wallet-list.tsx
+msgid "Valid until"
+msgstr ""
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Validating positions..."
 msgstr "Validando posiciones..."
@@ -8181,6 +8580,12 @@ msgstr "Validando posiciones..."
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Validating..."
 msgstr "Validando..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+#: src/components/api-wallet/api-wallet-form.tsx
+msgid "Validity"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
@@ -8212,10 +8617,26 @@ msgstr "Retiro de la bóveda"
 msgid "Vaults"
 msgstr "Bóvedas"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verification reference"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verify"
+msgstr ""
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verify again"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Verifying approval..."
 msgstr "Verificando aprobación..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Verifying the result"
+msgstr ""
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
@@ -8280,6 +8701,10 @@ msgstr "Esperando libro de órdenes..."
 #: src/components/trade/orderbook/trades-panel.tsx
 #~ msgid "Waiting for trades..."
 #~ msgstr "Esperando operaciones..."
+
+#: src/components/api-wallet/api-wallet-action-modal.tsx
+msgid "Waiting for wallet signature"
+msgstr ""
 
 #. placeholder {0}: shortenAddress(address)
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx

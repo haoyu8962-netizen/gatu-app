@@ -179,6 +179,7 @@ describe("TopNav", () => {
 		["/perp/BTC", "Trade"],
 		["/portfolio", "Portfolio"],
 		["/referrals", "Referrals"],
+		["/api-wallet", "API Wallet"],
 		["/docs", null],
 		["/support", null],
 		["/terms", null],
@@ -237,7 +238,7 @@ describe("TopNav", () => {
 		expect(findLink("Referrals")?.dataset.to).toBe("/referrals");
 	});
 
-	it("adds future More entries with disabled semantics and no navigation side effects", () => {
+	it("keeps future More entries disabled while linking to API Wallet", () => {
 		renderNav();
 		const wideMenuItems = [
 			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
@@ -245,9 +246,14 @@ describe("TopNav", () => {
 		];
 		const futureItems = wideMenuItems.filter((item) => item.disabled);
 
-		expect(futureItems.map((item) => item.textContent?.trim())).toEqual(["Statistics", "API & Subaccounts"]);
+		expect(futureItems.map((item) => item.textContent?.trim())).toEqual(["Statistics"]);
 		for (const item of futureItems) act(() => item.click());
 		expect(testState.navigate).not.toHaveBeenCalled();
+
+		const apiWalletItem = wideMenuItems.find((item) => item.textContent?.trim() === "API Wallet");
+		expect(apiWalletItem?.disabled).toBe(false);
+		act(() => apiWalletItem?.click());
+		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/api-wallet" });
 	});
 
 	it("moves lower-priority entries into More for each compact wallet state", () => {
@@ -261,14 +267,7 @@ describe("TopNav", () => {
 			].map((item) => item.textContent?.trim());
 		}
 
-		expect(compactMenuLabels()).toEqual([
-			"Vaults",
-			"Staking",
-			"Referrals",
-			"Leaderboard",
-			"Statistics",
-			"API & Subaccounts",
-		]);
+		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
 		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
 		const compactReferralsItem = [
 			...(container
@@ -280,7 +279,7 @@ describe("TopNav", () => {
 
 		testState.hasWalletAccess = false;
 		renderNav();
-		expect(compactMenuLabels()).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
+		expect(compactMenuLabels()).toEqual(["Staking", "Referrals", "Statistics", "API Wallet"]);
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {

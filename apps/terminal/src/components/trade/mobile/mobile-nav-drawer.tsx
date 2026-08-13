@@ -98,6 +98,14 @@ export function MobileNavDrawer() {
 								<Trans>Referrals</Trans>
 							</Link>
 							<Link
+								to="/api-wallet"
+								onClick={close}
+								aria-current={pathname === "/api-wallet" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/api-wallet")}
+							>
+								<Trans>API Wallet</Trans>
+							</Link>
+							<Link
 								to="/docs"
 								onClick={close}
 								aria-current={pathname === "/docs" ? "page" : undefined}
