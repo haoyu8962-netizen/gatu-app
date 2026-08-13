@@ -2191,7 +2191,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "لا ترسل طلب إبطال آخر. أعد محاولة التحقق بوضع القراءة فقط."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "المستندات"
@@ -5167,7 +5166,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "رسوم مزاد أولوية الغاز"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
@@ -5722,7 +5720,6 @@ msgid "Rewards claimed"
 msgstr "تمت المطالبة بالمكافآت"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "الإفصاح عن المخاطر"
@@ -6601,7 +6598,6 @@ msgid "Supply"
 msgstr "إيداع للإقراض"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "الدعم"
@@ -6860,7 +6856,6 @@ msgid "Terminating..."
 msgstr "جارٍ الإنهاء..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "الشروط"

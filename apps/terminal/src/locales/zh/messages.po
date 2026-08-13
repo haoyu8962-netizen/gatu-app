@@ -2204,7 +2204,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "请勿再次提交撤销。请重试只读验证。"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "文档"
@@ -5188,7 +5187,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "优先 Gas 拍卖费"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -5743,7 +5741,6 @@ msgid "Rewards claimed"
 msgstr "奖励已领取"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "风险披露"
@@ -6622,7 +6619,6 @@ msgid "Supply"
 msgstr "存入借贷"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "支持"
@@ -6881,7 +6877,6 @@ msgid "Terminating..."
 msgstr "终止中..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "条款"

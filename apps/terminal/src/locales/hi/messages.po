@@ -2191,7 +2191,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "दूसरा निरस्तीकरण सबमिट न करें। रीड-ओनली सत्यापन दोबारा प्रयास करें।"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "दस्तावेज़"
@@ -5167,7 +5166,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "प्रायोरिटी गैस ऑक्शन शुल्क"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "गोपनीयता नीति"
@@ -5722,7 +5720,6 @@ msgid "Rewards claimed"
 msgstr "पुरस्कार प्राप्त हो गए"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "जोखिम प्रकटीकरण"
@@ -6601,7 +6598,6 @@ msgid "Supply"
 msgstr "सप्लाई"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "सहायता"
@@ -6860,7 +6856,6 @@ msgid "Terminating..."
 msgstr "समाप्त किया जा रहा है..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "शर्तें"

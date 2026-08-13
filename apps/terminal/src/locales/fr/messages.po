@@ -2191,7 +2191,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "N'envoyez pas une autre révocation. Réessayez la vérification en lecture seule."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "Documentation"
@@ -5167,7 +5166,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "Frais d'enchère de gas prioritaire"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "Politique de confidentialité"
@@ -5722,7 +5720,6 @@ msgid "Rewards claimed"
 msgstr "Récompenses réclamées"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "Avertissement sur les risques"
@@ -6601,7 +6598,6 @@ msgid "Supply"
 msgstr "Fournir"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "Support"
@@ -6860,7 +6856,6 @@ msgid "Terminating..."
 msgstr "Terminaison en cours..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "Conditions"

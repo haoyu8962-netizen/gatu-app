@@ -2204,7 +2204,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "Do not submit another revocation. Retry the read-only verification."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "Docs"
@@ -5188,7 +5187,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "Priority Gas Auction Fee"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
@@ -5743,7 +5741,6 @@ msgid "Rewards claimed"
 msgstr "Rewards claimed"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "Risk Disclosure"
@@ -6622,7 +6619,6 @@ msgid "Supply"
 msgstr "Supply"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "Support"
@@ -6881,7 +6877,6 @@ msgid "Terminating..."
 msgstr "Terminating..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "Terms"

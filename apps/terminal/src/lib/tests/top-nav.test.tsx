@@ -179,8 +179,11 @@ describe("TopNav", () => {
 		["/perp/BTC", "Trade"],
 		["/portfolio", "Portfolio"],
 		["/referrals", "Referrals"],
-		["/docs", "Docs"],
-		["/risk", "Risk Disclosure"],
+		["/docs", null],
+		["/support", null],
+		["/terms", null],
+		["/privacy", null],
+		["/risk", null],
 		["/portfolio/history", null],
 		["/trader", null],
 	] as const)("derives the current destination from the real route %s", (pathname, currentLabel) => {
@@ -196,25 +199,17 @@ describe("TopNav", () => {
 		expect(currentDestinations).toEqual(currentLabel === null ? [] : [currentLabel]);
 	});
 
-	it("keeps the More menu wired to every existing destination", () => {
+	it("omits documentation, support, and legal destinations from desktop More menus", () => {
 		renderNav();
-		const destinations = [
-			["Docs", "/docs"],
-			["Support", "/support"],
-			["Terms", "/terms"],
-			["Privacy Policy", "/privacy"],
-			["Risk Disclosure", "/risk"],
-		] as const;
-		const wideMenu = container.querySelector<HTMLElement>('[data-layout="wide"]');
-		const menuItems = [...(wideMenu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])].filter(
-			(item) => !item.disabled,
-		);
+		const removedLabels = ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"];
 
-		expect(menuItems.map((item) => item.textContent?.trim())).toEqual(destinations.map(([label]) => label));
-		for (const [label, to] of destinations) {
-			act(() => menuItems.find((item) => item.textContent?.trim() === label)?.click());
-			expect(testState.navigate).toHaveBeenLastCalledWith({ to });
+		for (const menu of container.querySelectorAll<HTMLElement>('[data-testid="more-dropdown"]')) {
+			const labels = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].map((item) =>
+				item.textContent?.trim(),
+			);
+			for (const label of removedLabels) expect(labels).not.toContain(label);
 		}
+		expect(testState.navigate).not.toHaveBeenCalled();
 	});
 
 	it("includes all seven designed primary entries without inventing unavailable routes", () => {
@@ -266,7 +261,7 @@ describe("TopNav", () => {
 			].map((item) => item.textContent?.trim());
 		}
 
-		expect(compactMenuLabels().slice(0, 6)).toEqual([
+		expect(compactMenuLabels()).toEqual([
 			"Vaults",
 			"Staking",
 			"Referrals",
@@ -275,10 +270,17 @@ describe("TopNav", () => {
 			"API & Subaccounts",
 		]);
 		expect(findLink("Referrals")?.className).toContain("max-[1181px]:hidden");
+		const compactReferralsItem = [
+			...(container
+				.querySelector('[data-layout="compact"]')
+				?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
+		].find((item) => item.textContent?.trim() === "Referrals");
+		act(() => compactReferralsItem?.click());
+		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/referrals" });
 
 		testState.hasWalletAccess = false;
 		renderNav();
-		expect(compactMenuLabels().slice(0, 4)).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
+		expect(compactMenuLabels()).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {
