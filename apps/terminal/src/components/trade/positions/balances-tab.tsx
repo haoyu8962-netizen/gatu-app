@@ -26,7 +26,6 @@ import { AssetDisplay } from "../components/asset-display";
 import {
 	balancesTableActionClass,
 	balancesTableCellClass,
-	balancesTableGroupCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
 	balancesToolbarClass,
@@ -116,6 +115,10 @@ export function BalancesTab() {
 		if (!hideSmallBalances) return spotBalanceRows;
 		return filterBalanceRowsByUsdValue(spotBalanceRows, SMALL_BALANCE_THRESHOLD_USD);
 	}, [hideSmallBalances, spotBalanceRows]);
+	const filteredBalances = useMemo(
+		() => [...filteredPerpBalances, ...filteredSpotBalances],
+		[filteredPerpBalances, filteredSpotBalances],
+	);
 
 	function handleTransferClick(row: BalanceRow) {
 		if (row.asset !== DEFAULT_QUOTE_TOKEN) return;
@@ -145,17 +148,24 @@ export function BalancesTab() {
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-market-close-fg")}>
-					<AssetDisplay
-						coin={row.asset}
-						iconClassName="size-6"
-						nameClassName="text-[13px] font-bold text-market-close-fg"
-					/>
-				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
-					{formatToken(row.available, decimals)}
+					<div className="flex min-w-0 items-center gap-2">
+						<AssetDisplay
+							coin={row.asset}
+							iconClassName="size-6"
+							nameClassName="text-[13px] font-bold text-market-close-fg"
+						/>
+						{internalTransfersEnabled ? (
+							<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
+								{row.type === "perp" ? t`Trading` : t`Spot`}
+							</span>
+						) : null}
+					</div>
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatToken(row.total, decimals)}
+				</TableCell>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
+					{formatToken(row.available, decimals)}
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatUSD(row.usdValue, { compact: true })}
@@ -290,10 +300,10 @@ export function BalancesTab() {
 										{t`Asset`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
-										{t`Available`}
+										{t`Total`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
-										{t`Total`}
+										{t`Available`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
 										{t`USD Value`}
@@ -303,28 +313,7 @@ export function BalancesTab() {
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{filteredPerpBalances.length > 0 && (
-									<>
-										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell colSpan={5} className={balancesTableGroupCellClass}>
-												{t`Perpetuals`}
-											</TableCell>
-										</TableRow>
-										{filteredPerpBalances.map(renderBalanceRow)}
-									</>
-								)}
-								{filteredSpotBalances.length > 0 && (
-									<>
-										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell colSpan={5} className={balancesTableGroupCellClass}>
-												{t`Spot`}
-											</TableCell>
-										</TableRow>
-										{filteredSpotBalances.map(renderBalanceRow)}
-									</>
-								)}
-							</TableBody>
+							<TableBody className={positionsPanelTableBodyClass}>{filteredBalances.map(renderBalanceRow)}</TableBody>
 						</Table>
 					</ScrollArea>
 				)}

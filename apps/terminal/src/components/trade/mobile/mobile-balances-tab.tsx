@@ -123,9 +123,11 @@ export function MobileBalancesTab() {
 										iconClassName="size-[26px]"
 										nameClassName="truncate text-[13px] font-bold text-market-close-fg"
 									/>
-									<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
-										{row.type === "perp" ? t`Perps` : t`Spot`}
-									</span>
+									{internalTransfersEnabled ? (
+										<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
+											{row.type === "perp" ? t`Trading` : t`Spot`}
+										</span>
+									) : null}
 								</div>
 								<div className="ml-auto flex min-w-0 items-center gap-2.5">
 									<div className="min-w-0 text-right">

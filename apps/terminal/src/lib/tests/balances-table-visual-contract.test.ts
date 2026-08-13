@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import {
 	balancesTableActionClass,
 	balancesTableCellClass,
-	balancesTableGroupCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
 	balancesToolbarClass,
@@ -26,7 +25,7 @@ const MOBILE_BALANCES_TAB_SOURCE = readFileSync(
 );
 
 describe("balances table visual contract", () => {
-	it("matches the latest desktop summary, header, group, and row rhythm", () => {
+	it("matches the latest desktop summary, header, and row rhythm", () => {
 		expect(balancesToolbarClass).toContain("h-[58px]");
 		expect(balancesToolbarClass).toContain("bg-market-close-card");
 		expect(balancesTableHeaderClass).toContain("bg-modal");
@@ -36,18 +35,20 @@ describe("balances table visual contract", () => {
 		expect(balancesTableHeadClass).toContain("normal-case");
 		expect(balancesTableCellClass).toContain("h-12");
 		expect(balancesTableCellClass).toContain("text-[13px]");
-		expect(balancesTableGroupCellClass).toContain("bg-market-close-card/40");
-		expect(balancesTableGroupCellClass).toContain("text-market-close-subtle");
-		expect(balancesTableGroupCellClass).not.toMatch(/text-(brand|warning)|bg-(brand|warning)/);
 	});
 
-	it("uses the five-column handoff hierarchy while preserving real funds actions", () => {
+	it("uses a flat total-first asset hierarchy while preserving real funds actions", () => {
 		expect(BALANCES_TAB_SOURCE).toContain("min-w-[52rem]");
 		expect(balancesTableActionClass).toContain("rounded-[7px]");
 		expect(balancesTableActionClass).toContain("border-market-close-stroke-input");
 		expect(balancesTableActionClass).toContain("duration-[120ms]");
 		expect(BALANCES_TAB_SOURCE).not.toContain("{t`PNL`}");
-		expect(BALANCES_TAB_SOURCE).toContain("colSpan={5}");
+		expect(BALANCES_TAB_SOURCE).not.toContain("balancesTableGroupCellClass");
+		expect(BALANCES_TAB_SOURCE).not.toContain("{t`Perpetuals`}");
+		expect(BALANCES_TAB_SOURCE).not.toContain("t`Perps`");
+		expect(BALANCES_TAB_SOURCE).toContain("internalTransfersEnabled ? (");
+		expect(BALANCES_TAB_SOURCE).toContain('row.type === "perp" ? t`Trading` : t`Spot`');
+		expect(BALANCES_TAB_SOURCE.indexOf("{t`Total`}")).toBeLessThan(BALANCES_TAB_SOURCE.indexOf("{t`Available`}"));
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleTransferClick\(row\)\}/g)).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => openSwapModal\(row\.asset\)\}/g)).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleSendClick\(row\)\}/g)).toHaveLength(1);
@@ -60,6 +61,8 @@ describe("balances table visual contract", () => {
 		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("min-h-11");
 		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain("grid grid-cols-2 divide-x");
 		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("isQuoteBalanceSharedWithPerps");
+		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain("t`Perps`");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain('row.type === "perp" ? t`Trading` : t`Spot`');
 	});
 
 	it("keeps the positions toolbar dense and removes inherited tab-panel padding", () => {
