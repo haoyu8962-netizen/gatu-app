@@ -52,7 +52,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 		);
 	}
 
-	if (status === "error") {
+	if (status === "error" || status === "unavailable") {
 		return (
 			<div className={cn("flex flex-1 min-h-0 flex-col", className)}>
 				<div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-error">

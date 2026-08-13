@@ -9,6 +9,8 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	exportCsv: vi.fn(async () => undefined),
+	retry: vi.fn(),
+	status: "ready" as "ready" | "unavailable",
 }));
 
 vi.mock("boneyard-js/react", () => ({
@@ -24,9 +26,9 @@ vi.mock("@/hooks/trade/use-account-ledger", () => ({
 	useAccountLedger: () => ({
 		error: null,
 		isConnected: true,
-		retry: vi.fn(),
+		retry: mocks.retry,
 		rows: [],
-		status: "ready",
+		status: mocks.status,
 	}),
 }));
 
@@ -54,6 +56,8 @@ describe("account ledger export availability", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		mocks.exportCsv.mockClear();
+		mocks.retry.mockClear();
+		mocks.status = "ready";
 	});
 
 	afterEach(() => {
@@ -81,5 +85,21 @@ describe("account ledger export availability", () => {
 		expect(button?.disabled).toBe(false);
 		act(() => button?.click());
 		expect(mocks.exportCsv).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		["desktop", () => <AccountTransfersTab />],
+		["mobile", () => <MobileAccountTransfersTab scrollMode="page" />],
+	] as const)("shows a retryable unavailable state on %s", (_surface, renderSurface) => {
+		mocks.status = "unavailable";
+		act(() => root.render(renderSurface()));
+
+		expect(container.textContent).toContain("Failed to load deposits and withdrawals.");
+		expect(container.textContent).not.toContain("No deposits or withdrawals found.");
+		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Retry",
+		);
+		act(() => retry?.click());
+		expect(mocks.retry).toHaveBeenCalledOnce();
 	});
 });

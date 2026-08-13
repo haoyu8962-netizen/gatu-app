@@ -24,6 +24,7 @@ export interface UseMarketsInfoOptions {
 	updateInterval?: number;
 	subscriptionKeepAliveMs?: number;
 	alwaysSubscribeAll?: boolean;
+	subscriptionsEnabled?: boolean;
 }
 
 interface MarketsInfoResult {
@@ -114,13 +115,20 @@ function getDexCtxs(allDexsCtxs: AllDexsAssetCtxs | undefined, dexName: string) 
 }
 
 export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
-	const { updateInterval = 5000, subscriptionKeepAliveMs = 10_000, alwaysSubscribeAll = false } = options;
+	const {
+		updateInterval = 5000,
+		subscriptionKeepAliveMs = 10_000,
+		alwaysSubscribeAll = false,
+		subscriptionsEnabled = true,
+	} = options;
 	const { scope } = useExchangeScope();
 
 	const needsPerp = alwaysSubscribeAll || scope === "all" || scope === "perp" || scope === "builders-perp";
 	const needsSpot = alwaysSubscribeAll || scope === "all" || scope === "spot";
-	const perpSubscriptionEnabled = useSubscriptionWarmWindow(needsPerp, subscriptionKeepAliveMs);
-	const spotSubscriptionEnabled = useSubscriptionWarmWindow(needsSpot, subscriptionKeepAliveMs);
+	const warmPerpSubscriptionEnabled = useSubscriptionWarmWindow(needsPerp, subscriptionKeepAliveMs);
+	const warmSpotSubscriptionEnabled = useSubscriptionWarmWindow(needsSpot, subscriptionKeepAliveMs);
+	const perpSubscriptionEnabled = subscriptionsEnabled && warmPerpSubscriptionEnabled;
+	const spotSubscriptionEnabled = subscriptionsEnabled && warmSpotSubscriptionEnabled;
 
 	const markets = useMarkets();
 	const { data: allDexsCtxsEvent } = useSubscription("allDexsAssetCtxs", undefined, {

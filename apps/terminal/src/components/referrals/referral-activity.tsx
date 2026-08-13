@@ -1,5 +1,6 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef } from "react";
 import type { AccountLedgerStatus } from "@/hooks/trade/use-account-ledger";
 import type { ReferralClaimHistoryRow } from "@/hooks/trade/use-referrals";
 import type { ReferralData, ReferralTokenMetadata } from "@/lib/trade/referral";
@@ -12,6 +13,7 @@ interface Props {
 	claimHistory: ReferralClaimHistoryRow[];
 	claimHistoryStatus: AccountLedgerStatus;
 	data: ReferralData;
+	onClaimHistoryRequested: () => void;
 	onRetryClaimHistory: () => void;
 	tokenMetadata: ReadonlyMap<number, ReferralTokenMetadata> | null;
 }
@@ -20,15 +22,22 @@ export function ReferralActivity({
 	claimHistory,
 	claimHistoryStatus,
 	data,
+	onClaimHistoryRequested,
 	onRetryClaimHistory,
 	tokenMetadata,
 }: Props) {
 	const { t } = useLingui();
+	const hasRequestedClaimHistory = useRef(false);
 	const referredTraders = data.referrerState.stage === "ready" ? data.referrerState.data.referralStates : [];
+	const handleActivityChange = (value: string) => {
+		if (value !== "claims" || hasRequestedClaimHistory.current) return;
+		hasRequestedClaimHistory.current = true;
+		onClaimHistoryRequested();
+	};
 
 	return (
 		<section className="overflow-hidden border-y border-stroke-weak bg-surface" aria-label={t`Referral activity`}>
-			<Tabs defaultValue="traders">
+			<Tabs defaultValue="traders" onValueChange={handleActivityChange}>
 				<TabsList className="w-full gap-3 overflow-x-auto px-4 min-[1001px]:gap-[18px] min-[1001px]:px-5">
 					<TabsTrigger
 						value="traders"
@@ -82,7 +91,7 @@ export function ReferralActivity({
 						<output aria-live="polite" className="block px-4 py-12 text-center text-xs text-fg-muted">
 							<Trans>Loading recent reward claims…</Trans>
 						</output>
-					) : claimHistoryStatus === "error" ? (
+					) : claimHistoryStatus === "error" || claimHistoryStatus === "unavailable" ? (
 						<div role="alert" className="px-4 py-10 text-center">
 							<p className="text-xs text-fg-muted">
 								<Trans>Recent reward claims could not be verified.</Trans>

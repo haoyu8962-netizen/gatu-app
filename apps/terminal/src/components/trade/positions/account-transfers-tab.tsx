@@ -40,7 +40,7 @@ export function AccountTransfersTab() {
 		if (status === "loading" || status === "idle") {
 			return <Placeholder>{t`Loading deposits and withdrawals...`}</Placeholder>;
 		}
-		if (status === "error") {
+		if (status === "error" || status === "unavailable") {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load deposits and withdrawals.`}</span>

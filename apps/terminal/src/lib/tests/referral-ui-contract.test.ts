@@ -25,6 +25,10 @@ describe("referral 18C and 18D visual contract", () => {
 		expect(dashboard).toContain("aria-busy={busy || undefined}");
 		expect(dashboard).toContain("min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)]");
 		expect(dashboard).toContain("min-[1001px]:gap-4");
+		expect(dashboard).toContain("} else if (!readyData) {");
+		expect(dashboard).toContain(
+			"The response could not be verified. No referral action is available until fresh data loads.",
+		);
 	});
 
 	it("keeps the mobile hierarchy summary, referral, traders, then reward details", () => {

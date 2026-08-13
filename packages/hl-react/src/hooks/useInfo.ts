@@ -11,9 +11,34 @@ function callInfoMethod<M extends InfoMethod>(
 	method: M,
 	params: InfoParams<M>,
 	signal: AbortSignal,
+	requestTimeoutMs?: number,
 ): Promise<InfoResponse<M>> {
 	const fn = info[method] as (...args: unknown[]) => Promise<InfoResponse<M>>;
-	return params !== undefined ? fn.call(info, params, signal) : fn.call(info, signal);
+	if (requestTimeoutMs === undefined) {
+		return params !== undefined ? fn.call(info, params, signal) : fn.call(info, signal);
+	}
+
+	const controller = new AbortController();
+	const abortRequest = () => controller.abort(signal.reason);
+	if (signal.aborted) abortRequest();
+	else signal.addEventListener("abort", abortRequest, { once: true });
+
+	const timeoutId = setTimeout(
+		() => controller.abort(new DOMException("Info request timed out", "TimeoutError")),
+		requestTimeoutMs,
+	);
+	const cleanup = () => {
+		clearTimeout(timeoutId);
+		signal.removeEventListener("abort", abortRequest);
+	};
+
+	try {
+		const request = params !== undefined ? fn.call(info, params, controller.signal) : fn.call(info, controller.signal);
+		return request.finally(cleanup);
+	} catch (error) {
+		cleanup();
+		return Promise.reject(error);
+	}
 }
 
 export const PERSISTED_QUERY_PREFIX = "persisted" as const;
@@ -25,6 +50,8 @@ export type UseInfoOptions<TResponse, TData> = QueryParameter<TResponse, TData> 
 	 * The provider must also retain TanStack Query's default dehydration predicate.
 	 */
 	persist?: boolean;
+	/** Cancels an individual SDK request after this many milliseconds. */
+	requestTimeoutMs?: number;
 };
 
 export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
@@ -34,9 +61,10 @@ export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
 ): UseQueryResult<TData, HyperliquidQueryError> {
 	const { env, info } = useHyperliquid();
 
-	const { persist, ...queryOptions } = options;
+	const { persist, requestTimeoutMs, ...queryOptions } = options;
 	const queryKey = persist ? infoPersistedKey(method, params, env) : infoKey(method, params, env);
-	const queryFn = ({ signal }: { signal: AbortSignal }) => callInfoMethod(info, method, params, signal);
+	const queryFn = ({ signal }: { signal: AbortSignal }) =>
+		callInfoMethod(info, method, params, signal, requestTimeoutMs);
 
 	const hasUser = params != null && typeof params === "object" && "user" in params;
 	const userPresent = hasUser ? Boolean((params as { user?: string }).user) : true;

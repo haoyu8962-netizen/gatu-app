@@ -54,7 +54,8 @@ function ReferralSurface({
 export function ReferralDashboard({ initialReferralCode }: Props) {
 	const { t } = useLingui();
 	const titleId = useId();
-	const referrals = useReferrals();
+	const [claimHistoryEnabled, setClaimHistoryEnabled] = useState(false);
+	const referrals = useReferrals({ claimHistoryEnabled });
 	const referralActions = useReferralActions(referrals);
 	const legalGate = useReferralLegalGate();
 	const agentStatus = useAgentStatus();
@@ -273,6 +274,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 							claimHistory={referrals.claimHistory}
 							claimHistoryStatus={referrals.claimHistoryStatus}
 							data={readyData}
+							onClaimHistoryRequested={() => setClaimHistoryEnabled(true)}
 							onRetryClaimHistory={referrals.retryClaimHistory}
 							tokenMetadata={referrals.tokenMetadata}
 						/>

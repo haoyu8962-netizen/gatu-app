@@ -43,9 +43,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let hookValue: ReturnType<typeof useAccountLedger> | null = null;
+let ledgerEnabled = true;
 
 function Probe() {
-	hookValue = useAccountLedger();
+	hookValue = useAccountLedger({ enabled: ledgerEnabled });
 	return null;
 }
 
@@ -69,6 +70,7 @@ describe("useAccountLedger", () => {
 		root = createRoot(container);
 		queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });
 		hookValue = null;
+		ledgerEnabled = true;
 		mocks.address = ADDRESS_A;
 		mocks.env = "Mainnet";
 		mocks.isConnected = true;
@@ -313,6 +315,33 @@ describe("useAccountLedger", () => {
 			"userNonFundingLedgerUpdates",
 			expect.objectContaining({ user: expect.any(String) }),
 			{ enabled: false },
+		);
+	});
+
+	it("does not load the 30-day snapshot until its consumer enables it", async () => {
+		ledgerEnabled = false;
+
+		renderHook();
+
+		expect(hookValue?.status).toBe("idle");
+		expect(mocks.userNonFundingLedgerUpdates).not.toHaveBeenCalled();
+		expect(mocks.useSubscription).toHaveBeenLastCalledWith(
+			"userNonFundingLedgerUpdates",
+			{ user: ADDRESS_A },
+			{ enabled: false },
+		);
+		hookValue?.retry();
+		expect(mocks.userNonFundingLedgerUpdates).not.toHaveBeenCalled();
+
+		ledgerEnabled = true;
+		renderHook();
+		await waitUntilReady();
+
+		expect(mocks.userNonFundingLedgerUpdates).toHaveBeenCalledOnce();
+		expect(mocks.useSubscription).toHaveBeenLastCalledWith(
+			"userNonFundingLedgerUpdates",
+			{ user: ADDRESS_A },
+			{ enabled: true },
 		);
 	});
 });

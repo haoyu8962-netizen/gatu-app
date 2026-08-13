@@ -24,7 +24,7 @@ const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ACCOUNT_LEDGER_STALE_TIME_MS = 30_000;
 const ACCOUNT_LEDGER_LIST_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
-export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready";
+export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready" | "unavailable";
 
 export function accountLedgerQueryKey(env: "Mainnet" | "Testnet", user: string) {
 	return ["hl", "recent-history", "userNonFundingLedgerUpdates", env, user.toLowerCase()] as const;
@@ -37,6 +37,10 @@ interface AccountLedgerResult {
 	retry: () => void;
 	rows: AccountLedgerRow[];
 	status: AccountLedgerStatus;
+}
+
+interface AccountLedgerOptions {
+	enabled?: boolean;
 }
 
 export async function fetchRecentAccountLedgerUpdates(
@@ -65,10 +69,10 @@ export async function fetchRecentAccountLedgerUpdates(
 	return requireCompleteHistorySnapshot(result);
 }
 
-export function useAccountLedger(): AccountLedgerResult {
+export function useAccountLedger({ enabled: requestedEnabled = true }: AccountLedgerOptions = {}): AccountLedgerResult {
 	const { address, isConnected } = useWalletSession();
 	const { env, info } = useHyperliquid();
-	const enabled = isConnected && !!address;
+	const enabled = requestedEnabled && isConnected && !!address;
 	const user = address ?? EMPTY_ADDRESS;
 	const ledgerQuery = useQuery({
 		enabled,
@@ -97,7 +101,7 @@ export function useAccountLedger(): AccountLedgerResult {
 	const rows = allRows.slice(0, MAX_HISTORY_ROWS);
 	const rewardClaimRows = allRows.filter((row) => row.action === "rewardsClaim").slice(0, MAX_HISTORY_ROWS);
 
-	let status: AccountLedgerStatus = "loading";
+	let status: AccountLedgerStatus = "unavailable";
 	if (!enabled) {
 		status = "idle";
 	} else if (hasIncompleteRestSnapshot || hasMalformedRealtime) {
@@ -106,6 +110,8 @@ export function useAccountLedger(): AccountLedgerResult {
 		status = "ready";
 	} else if (ledgerQuery.isError) {
 		status = "error";
+	} else if (ledgerQuery.fetchStatus === "fetching") {
+		status = "loading";
 	}
 
 	return {
@@ -115,7 +121,9 @@ export function useAccountLedger(): AccountLedgerResult {
 				: undefined,
 		isConnected,
 		rewardClaimRows,
-		retry: () => void ledgerQuery.refetch(),
+		retry: () => {
+			if (enabled) void ledgerQuery.refetch();
+		},
 		rows,
 		status,
 	};

@@ -1,0 +1,80 @@
+// @vitest-environment jsdom
+
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useMarketsInfoInternal } from "@/lib/hyperliquid/hooks/useMarketsInfo";
+
+const mocks = vi.hoisted(() => ({
+	useSubscription: vi.fn(),
+}));
+
+vi.mock("@gatu/hl-react", () => ({
+	useSubscription: (...args: unknown[]) => {
+		mocks.useSubscription(...args);
+		return { data: undefined };
+	},
+}));
+
+vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
+	useMarkets: () => ({ builderPerp: [], error: null, isLoading: false, perp: [], spot: [] }),
+}));
+
+vi.mock("@/providers/exchange-scope", () => ({
+	useExchangeScope: () => ({ scope: "all" }),
+}));
+
+vi.mock("@/stores/use-market-store", () => ({
+	useSelectedMarket: () => "BTC",
+}));
+
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+function Probe({ subscriptionsEnabled }: { subscriptionsEnabled: boolean }) {
+	useMarketsInfoInternal({
+		alwaysSubscribeAll: true,
+		subscriptionKeepAliveMs: 10_000,
+		subscriptionsEnabled,
+	});
+	return null;
+}
+
+describe("useMarketsInfoInternal subscription gate", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+		mocks.useSubscription.mockReset();
+		sessionStorage.clear();
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	function renderProbe(subscriptionsEnabled: boolean) {
+		act(() => root.render(<Probe subscriptionsEnabled={subscriptionsEnabled} />));
+	}
+
+	function expectLatestSubscriptionState(enabled: boolean) {
+		expect(mocks.useSubscription).toHaveBeenCalledWith("allDexsAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
+		expect(mocks.useSubscription).toHaveBeenCalledWith("spotAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
+	}
+
+	it("stops both market feeds immediately when the route-level gate closes", () => {
+		renderProbe(false);
+		expectLatestSubscriptionState(false);
+
+		mocks.useSubscription.mockClear();
+		renderProbe(true);
+		expectLatestSubscriptionState(true);
+
+		mocks.useSubscription.mockClear();
+		renderProbe(false);
+		expectLatestSubscriptionState(false);
+	});
+});

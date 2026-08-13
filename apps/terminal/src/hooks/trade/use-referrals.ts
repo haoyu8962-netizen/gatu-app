@@ -15,9 +15,11 @@ import {
 } from "@/lib/trade/referral";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
+const REFERRAL_REQUEST_TIMEOUT_MS = 4_000;
 const REFERRAL_STALE_TIME_MS = 30_000;
+const SUPPORTING_DATA_STALE_TIME_MS = 30 * 60_000;
 
-export type ReferralQueryStatus = "idle" | "loading" | "ready" | "error";
+export type ReferralQueryStatus = "idle" | "loading" | "ready" | "error" | "unavailable";
 
 export interface ReferralClaimHistoryRow {
 	amount: string;
@@ -47,7 +49,11 @@ export interface ReferralsResult {
 	usdcRewardsEarned: string | null;
 }
 
-export function useReferrals(): ReferralsResult {
+interface UseReferralsOptions {
+	claimHistoryEnabled?: boolean;
+}
+
+export function useReferrals({ claimHistoryEnabled = false }: UseReferralsOptions = {}): ReferralsResult {
 	const { address, isConnected } = useWalletSession();
 	const user = address ?? EMPTY_ADDRESS;
 	const referralQuery = useInfo(
@@ -55,34 +61,38 @@ export function useReferrals(): ReferralsResult {
 		{ user },
 		{
 			enabled: isConnected,
+			requestTimeoutMs: REFERRAL_REQUEST_TIMEOUT_MS,
 			select: normalizeReferralResponse,
 			staleTime: REFERRAL_STALE_TIME_MS,
-			retry: 1,
+			retry: false,
 		},
 	);
 	const userFeesQuery = useInfo(
 		"userFees",
 		{ user },
 		{
-			enabled: isConnected,
+			enabled: isConnected && Boolean(referralQuery.data),
+			persist: true,
 			select: normalizeActiveReferralDiscount,
-			staleTime: REFERRAL_STALE_TIME_MS,
+			staleTime: SUPPORTING_DATA_STALE_TIME_MS,
 			retry: 1,
 		},
 	);
 	const spotMetaQuery = useInfo("spotMeta", undefined, {
-		enabled: isConnected,
+		enabled: isConnected && Boolean(referralQuery.data),
+		persist: true,
 		select: normalizeReferralTokenMetadata,
-		staleTime: 5 * 60_000,
+		staleTime: SUPPORTING_DATA_STALE_TIME_MS,
 		retry: 1,
 	});
-	const accountLedger = useAccountLedger();
+	const accountLedger = useAccountLedger({ enabled: claimHistoryEnabled });
 
 	const malformedReferral = referralQuery.isSuccess && referralQuery.data === null;
-	let status: ReferralQueryStatus = "loading";
+	let status: ReferralQueryStatus = "unavailable";
 	if (!isConnected) status = "idle";
-	else if (referralQuery.isError || malformedReferral) status = "error";
 	else if (referralQuery.data) status = "ready";
+	else if (referralQuery.isError || malformedReferral) status = "error";
+	else if (referralQuery.fetchStatus === "fetching") status = "loading";
 
 	const data = referralQuery.data ?? null;
 	const tokenMetadata = spotMetaQuery.data ?? null;
@@ -120,7 +130,7 @@ export function useReferrals(): ReferralsResult {
 		discountPercent: data ? getDisplayedReferralDiscountPercent(data, userFeesQuery.data ?? null) : null,
 		error: referralQuery.error ?? (malformedReferral ? new Error("Referral response was invalid") : null),
 		hasClaimableRewards: data ? hasClaimableReferralRewards(data) : false,
-		isRefreshing: referralQuery.isFetching,
+		isRefreshing: Boolean(data) && referralQuery.fetchStatus === "fetching",
 		refetchReferral,
 		refreshAfterAction,
 		retry: () => void referralQuery.refetch(),
