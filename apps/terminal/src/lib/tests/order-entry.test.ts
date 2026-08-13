@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	getAssetAvailabilityStatus,
+	getDirectionalAvailableToTrade,
 	getOrderAvailabilityFlags,
 	getOrderAvailabilityStatus,
 	getStreamAvailabilityStatus,
@@ -254,6 +255,16 @@ describe("active asset availability readiness", () => {
 
 	it("keeps coin identity matching case-sensitive", () => {
 		expect(getAssetAvailabilityStatus({ ...baseInput, coin: "XYZ:MU" })).toBe("loading");
+	});
+
+	it("preserves the exact directional available-to-trade amount", () => {
+		const availableToTrade = ["800.000000000000000001", "700.125"] as const;
+
+		expect(getDirectionalAvailableToTrade(availableToTrade, "buy")).toBe("800.000000000000000001");
+		expect(getDirectionalAvailableToTrade(availableToTrade, "sell")).toBe("700.125");
+		expect(getDirectionalAvailableToTrade(["invalid", "-1"], "buy")).toBeNull();
+		expect(getDirectionalAvailableToTrade(["invalid", "-1"], "sell")).toBeNull();
+		expect(getDirectionalAvailableToTrade(undefined, "buy")).toBeNull();
 	});
 });
 

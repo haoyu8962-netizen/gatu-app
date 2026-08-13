@@ -1,20 +1,12 @@
-import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
-import {
-	type BalanceRow,
-	filterBalanceRowsByUsdValue,
-	getPerpBalanceRows,
-	getSpotBalanceRows,
-	isQuoteBalanceSharedWithPerps,
-} from "@/domain/trade/balances";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -48,7 +40,6 @@ interface Props {
 
 export function BalancesTab({ toolbarTarget }: Props) {
 	useNumberFormatRevision();
-	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();
@@ -72,28 +63,16 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	});
 
 	const {
-		perpSummary,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		withdrawable,
-		isLoading,
+		accountModeReady,
+		balances,
 		hasError,
-	} = useDefaultDexBalances();
-	const mids = useSpotTokenUsdPrices(isConnected);
-	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-
-	const perpBalances = useMemo(
-		() =>
-			getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
-		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable],
-	);
-	const spotBalanceRows = useMemo(
-		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
-		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
-	);
-	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
-	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
+		internalTransfersEnabled,
+		isConnected,
+		isLoading,
+		perpFundsActionsEnabled,
+		perpBalances,
+		spotBalanceRows,
+	} = useBalanceRows();
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -129,10 +108,14 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	function renderBalanceRow(row: BalanceRow) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
-		const hasAvailableBalance = isTradingToolbarBalancePositive(row.available);
-		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
-		const canSwap = accountModeReady && row.type === "spot" && hasAvailableBalance;
-		const canWithdraw = accountModeReady && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
+		const displayAvailable = getBalanceRowDisplayAvailable(row);
+		const hasTransferableBalance = isTradingToolbarBalancePositive(row.transferable);
+		const fundsActionsEnabled = row.type === "spot" || perpFundsActionsEnabled;
+		const canTransfer =
+			fundsActionsEnabled && internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
+		const canSwap = accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
+		const canWithdraw =
+			fundsActionsEnabled && accountModeReady && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
@@ -154,7 +137,15 @@ export function BalancesTab({ toolbarTarget }: Props) {
 					{formatToken(row.total, decimals)}
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
-					{formatToken(row.available, decimals)}
+					{row.tradeAvailable !== undefined ? (
+						<Tooltip content={t`Balance available to trade`} side="top">
+							<span className="cursor-default border-b border-dashed border-market-close-stroke-control">
+								{displayAvailable === null ? "—" : formatToken(displayAvailable, decimals)}
+							</span>
+						</Tooltip>
+					) : (
+						formatToken(displayAvailable, decimals)
+					)}
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatUSD(row.usdValue, { compact: true })}
@@ -183,7 +174,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 								{t`Swap`}
 							</Button>
 						)}
-						{accountModeReady && hasAvailableBalance && (
+						{fundsActionsEnabled && accountModeReady && hasTransferableBalance && (
 							<Button
 								variant="outline"
 								intent="neutral"

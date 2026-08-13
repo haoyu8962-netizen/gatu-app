@@ -6,19 +6,12 @@ import {
 	canRemoveIsolatedMargin as getCanRemoveIsolatedMargin,
 	getPerpMarginConstraint,
 } from "@/domain/trade/isolated-margin";
-import { type AssetAvailabilityStatus, getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import {
-	type ExchangeParams,
-	getMarketCapabilities,
-	useExchange,
-	useSelectedMarketInfo,
-	useSubscription,
-	useUserPositions,
-} from "@/lib/hyperliquid";
+import type { AssetAvailabilityStatus } from "@/domain/trade/order/availability";
+import { type ExchangeParams, getMarketCapabilities, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { getMarginModeFromLeverage, type MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, useMarginMode } from "@/stores/use-global-settings-store";
+import { useActiveAssetData } from "./use-active-asset-data";
 
 type OperationType = "leverage" | "mode" | null;
 
@@ -118,8 +111,7 @@ function leverageUpdateInProgressError(): Error {
 }
 
 export function useAssetLeverage(): UseAssetLeverageReturn {
-	const { address, isConnected } = useWalletSession();
-	const { data: market } = useSelectedMarketInfo();
+	const { data: currentActiveAssetData, isConnected, market, status: subscriptionStatus } = useActiveAssetData();
 
 	const storedMarginMode = useMarginMode();
 	const { setMarginMode: setStoredMarginMode } = useGlobalSettingsActions();
@@ -133,27 +125,6 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const maxLeverage = market?.kind === "spot" ? 1 : (market?.maxLeverage ?? DEFAULT_MAX_LEVERAGE);
 	const baseToken = market ? market.name : undefined;
 	const assetId = market?.assetId;
-
-	const {
-		data: activeAssetData,
-		status: subscriptionStatus,
-		isStale,
-	} = useSubscription(
-		"activeAssetData",
-		{ coin: baseToken ?? "", user: address ?? "" },
-		{ enabled: isConnected && !!address && !!baseToken && isPerpMarket },
-	);
-	const normalizedStatus = getAssetAvailabilityStatus({
-		isConnected,
-		isPerpMarket,
-		coin: baseToken,
-		user: address,
-		data: activeAssetData,
-		subscriptionStatus,
-		isStale,
-	});
-	const currentActiveAssetData =
-		normalizedStatus === "success" || normalizedStatus === "stale" ? activeAssetData : undefined;
 
 	const userPositions = useUserPositions();
 
@@ -175,11 +146,11 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		return storedMarginMode;
 	}
 	const marginMode = computeMarginMode();
-	const activeAssetStateReady = !isConnected || normalizedStatus === "success";
+	const activeAssetStateReady = !isConnected || subscriptionStatus === "success";
 	const marginModeStateReady =
 		isOnlyIsolated ||
 		!isConnected ||
-		(normalizedStatus === "success" && currentActiveAssetData?.leverage !== undefined);
+		(subscriptionStatus === "success" && currentActiveAssetData?.leverage !== undefined);
 
 	const positionDex = market ? getPositionDex(market) : undefined;
 	const hasPosition = baseToken ? userPositions.getPosition(baseToken, positionDex) !== null : false;
@@ -410,7 +381,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		availableToTrade,
 		isUpdating,
 		updateError,
-		subscriptionStatus: normalizedStatus,
+		subscriptionStatus,
 		marginMode,
 		hasPosition,
 		positionStateReady,

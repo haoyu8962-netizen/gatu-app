@@ -1,13 +1,11 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
-import { getPerpBalanceRows, getSpotBalanceRows, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -20,7 +18,6 @@ type TransferDirection = "toSpot" | "toPerp";
 export function MobileBalancesTab() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const { open: openDepositModal } = useDepositModalActions();
 	const [transferState, setTransferState] = useState<{
@@ -28,24 +25,14 @@ export function MobileBalancesTab() {
 		direction: TransferDirection;
 	}>({ open: false, direction: "toSpot" });
 	const {
-		perpSummary,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		withdrawable,
-		isLoading,
+		accountModeReady,
+		balances,
 		hasError,
-	} = useDefaultDexBalances();
-	const mids = useSpotTokenUsdPrices(isConnected);
-	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const balances = useMemo(
-		() => [
-			...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
-			...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
-		],
-		[accountAbstraction, mids, perpSummary, spotAvailableAfterMaintenance, spotBalances, withdrawable],
-	);
-	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
+		internalTransfersEnabled,
+		isConnected,
+		isLoading,
+		perpFundsActionsEnabled,
+	} = useBalanceRows();
 
 	function handleTransfer(rowType: "perp" | "spot") {
 		setTransferState({
@@ -72,10 +59,12 @@ export function MobileBalancesTab() {
 				<div className="flex min-h-0 flex-col">
 					{balances.map((row) => {
 						const decimals = row.type === "perp" ? 2 : (getToken(row.asset)?.szDecimals ?? 2);
+						const displayAvailable = getBalanceRowDisplayAvailable(row);
 						const canTransfer =
+							(row.type === "spot" || perpFundsActionsEnabled) &&
 							internalTransfersEnabled &&
 							row.asset === DEFAULT_QUOTE_TOKEN &&
-							isTradingToolbarBalancePositive(row.available);
+							isTradingToolbarBalancePositive(row.transferable);
 
 						return (
 							<article
@@ -100,7 +89,7 @@ export function MobileBalancesTab() {
 											{formatUSD(row.usdValue, { compact: true })}
 										</div>
 										<div className="truncate text-[10px] text-market-close-subtle tabular-nums">
-											{t`Available`} {formatToken(row.available, decimals)}
+											{t`Available`} {displayAvailable === null ? "—" : formatToken(displayAvailable, decimals)}
 										</div>
 									</div>
 									{canTransfer ? (

@@ -1,3 +1,6 @@
+import { toBig } from "@/lib/trade/numbers";
+import type { Side } from "@/lib/trade/types";
+
 export type AssetAvailabilityStatus = "idle" | "loading" | "success" | "stale" | "error";
 
 type SubscriptionStatus = "idle" | "subscribing" | "active" | "error";
@@ -36,6 +39,15 @@ export interface OrderAvailabilityFlags {
 	isStale: boolean;
 	hasError: boolean;
 	isBlocked: boolean;
+}
+
+export function getDirectionalAvailableToTrade(
+	availableToTrade: readonly [string, string] | null | undefined,
+	side: Side,
+): string | null {
+	const value = availableToTrade?.[side === "buy" ? 0 : 1];
+	const amount = toBig(value);
+	return amount?.gte(0) ? (value ?? null) : null;
 }
 
 export function getStreamAvailabilityStatus({

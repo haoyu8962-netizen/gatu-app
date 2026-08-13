@@ -40,6 +40,8 @@ export interface BalanceRow {
 	asset: string;
 	type: "perp" | "spot";
 	available: string;
+	transferable: string;
+	tradeAvailable?: string | null;
 	inOrder: string;
 	total: string;
 	usdValue: string;
@@ -50,6 +52,13 @@ export interface PerpSummary {
 	accountValue?: string | number | null;
 	totalMarginUsed?: string | number | null;
 	totalNtlPos?: string | number | null;
+}
+
+export interface PerpBalanceRowOptions {
+	marginSummary?: MarginSummary | null;
+	quoteToken?: string;
+	tokenUsdPrices?: TokenUsdPrices;
+	tradeAvailable?: string | null;
 }
 
 export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin: string): SpotBalance | null {
@@ -505,28 +514,38 @@ export function getPerpBalanceRows(
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance | null | undefined,
 	accountAbstraction: AccountAbstraction | null,
 	withdrawable?: string | number | null,
+	options?: PerpBalanceRowOptions,
 ): BalanceRow[] {
 	if (!isSupportedAccountAbstraction(accountAbstraction)) return [];
+	const quoteToken = options?.quoteToken ?? DEFAULT_QUOTE_TOKEN;
+	const tradeAvailable = options?.tradeAvailable;
+	const hasTradeCapacity = toBig(tradeAvailable)?.gt(0) ?? false;
 	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) {
-		const quoteBalance = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+		const quoteBalance = getSpotBalance(spotBalances, quoteToken);
 		const quoteTotal = toBig(quoteBalance?.total);
-		if (quoteBalance && quoteTotal?.gt(0)) {
+		if ((quoteBalance && quoteTotal?.gt(0)) || hasTradeCapacity) {
 			return [
 				{
-					asset: DEFAULT_QUOTE_TOKEN,
+					asset: quoteToken,
 					type: "perp",
 					available: getSpotAvailableValue(quoteBalance, spotAvailableAfterMaintenance),
-					inOrder: quoteBalance.hold ?? "0",
-					total: quoteBalance.total ?? "0",
-					usdValue: quoteBalance.total ?? "0",
-					entryNtl: quoteBalance.entryNtl ?? "0",
+					transferable: getSpotTransferableValue(quoteBalance),
+					tradeAvailable,
+					inOrder: quoteBalance?.hold ?? "0",
+					total: quoteBalance?.total ?? "0",
+					usdValue: quoteBalance ? getSpotUsdValue(quoteBalance, options?.tokenUsdPrices) : "0",
+					entryNtl: quoteBalance?.entryNtl ?? "0",
 				},
 			];
 		}
+		return [];
 	}
 
-	const perpAccountValue = toBig(perpSummary?.accountValue);
-	if (!perpAccountValue?.gt(0)) return [];
+	const total =
+		options?.marginSummary?.accountValue ?? perpSummary?.accountValue ?? options?.marginSummary?.totalRawUsd ?? "0";
+	const totalValue = toBig(total);
+	if ((!totalValue || totalValue.eq(0)) && !hasTradeCapacity) return [];
+	const perpAccountValue = toSafeBig(perpSummary?.accountValue);
 
 	// The API's withdrawable already accounts for margin held by open orders, which
 	// totalMarginUsed (position margin only) does not. Transfers are additionally floored
@@ -546,13 +565,15 @@ export function getPerpBalanceRows(
 
 	return [
 		{
-			asset: DEFAULT_QUOTE_TOKEN,
+			asset: quoteToken,
 			type: "perp",
 			available,
+			transferable: available,
+			tradeAvailable,
 			inOrder,
-			total: perpSummary?.accountValue?.toString() ?? "0",
-			usdValue: perpSummary?.accountValue?.toString() ?? "0",
-			entryNtl: perpSummary?.accountValue?.toString() ?? "0",
+			total: total.toString(),
+			usdValue: total.toString(),
+			entryNtl: total.toString(),
 		},
 	];
 }
@@ -562,13 +583,14 @@ export function getSpotBalanceRows(
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance | null | undefined,
 	accountAbstraction: AccountAbstraction | null,
 	tokenUsdPrices?: TokenUsdPrices,
+	sharedQuoteToken = DEFAULT_QUOTE_TOKEN,
 ): BalanceRow[] {
 	if (!isSupportedAccountAbstraction(accountAbstraction)) return [];
 	const rows: BalanceRow[] = [];
 	const shouldHideSharedQuote = isQuoteBalanceSharedWithPerps(accountAbstraction);
 
 	for (const balance of spotBalances ?? []) {
-		if (shouldHideSharedQuote && balance.coin === DEFAULT_QUOTE_TOKEN) continue;
+		if (shouldHideSharedQuote && balance.coin === sharedQuoteToken) continue;
 
 		const total = toBig(balance.total);
 		if (!total || total.eq(0)) continue;
@@ -577,6 +599,7 @@ export function getSpotBalanceRows(
 			asset: balance.coin,
 			type: "spot",
 			available: getSpotAvailableValue(balance, spotAvailableAfterMaintenance),
+			transferable: getSpotTransferableValue(balance),
 			inOrder: balance.hold ?? "0",
 			total: balance.total ?? "0",
 			usdValue: getSpotUsdValue(balance, tokenUsdPrices),
@@ -586,6 +609,10 @@ export function getSpotBalanceRows(
 
 	rows.sort((a, b) => toSafeBig(b.usdValue).cmp(toSafeBig(a.usdValue)));
 	return rows;
+}
+
+export function getBalanceRowDisplayAvailable(row: BalanceRow): string | null {
+	return row.tradeAvailable === undefined ? row.available : row.tradeAvailable;
 }
 
 export function getBalanceRows(

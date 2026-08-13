@@ -4,6 +4,7 @@ import {
 	getAccountBalanceSummary,
 	getAccountEquityValue,
 	getAvailableFromTotals,
+	getBalanceRowDisplayAvailable,
 	getPerpBalanceRows,
 	getPerpRiskSummaryValue,
 	getSpotAvailable,
@@ -133,6 +134,81 @@ describe("trade balances", () => {
 				total: "8105.34686269",
 			}),
 		]);
+		expect(spotRows).toEqual([]);
+	});
+
+	it("shows selected-market trade capacity without treating it as transferable funds", () => {
+		const fullyHeld: SpotBalance = {
+			coin: "USDC",
+			token: 0,
+			total: "15.332055",
+			hold: "15.332055",
+			entryNtl: "0",
+		};
+		const [row] = getPerpBalanceRows(
+			{ accountValue: "15.332055", totalMarginUsed: "14.083869" },
+			[fullyHeld],
+			[[0, "1.248186"]],
+			"unifiedAccount",
+			"0",
+			{ tradeAvailable: "800.000000000000000001" },
+		);
+
+		expect(row).toMatchObject({
+			asset: "USDC",
+			total: "15.332055",
+			available: "1.248186",
+			transferable: "0",
+			tradeAvailable: "800.000000000000000001",
+		});
+		if (!row) throw new Error("Expected a shared collateral row");
+		expect(getBalanceRowDisplayAvailable(row)).toBe("800.000000000000000001");
+	});
+
+	it("uses the selected standard DEX total account value while keeping withdrawal capacity separate", () => {
+		const [row] = getPerpBalanceRows(
+			{ accountValue: "13104.510288", totalMarginUsed: "4" },
+			undefined,
+			undefined,
+			"disabled",
+			"3",
+			{
+				marginSummary: {
+					accountValue: "13109.482328",
+					totalMarginUsed: "4",
+					totalNtlPos: "100.02765",
+					totalRawUsd: "13009.454678",
+				},
+				tradeAvailable: "700.125",
+			},
+		);
+
+		expect(row).toMatchObject({
+			total: "13109.482328",
+			available: "3",
+			transferable: "3",
+			tradeAvailable: "700.125",
+		});
+		if (!row) throw new Error("Expected a standard perp balance row");
+		expect(getBalanceRowDisplayAvailable(row)).toBe("700.125");
+	});
+
+	it("uses the selected HIP-3 collateral token without duplicating its shared Spot row", () => {
+		const hypeCollateral: SpotBalance = {
+			coin: "HYPE",
+			token: 150,
+			total: "9.5",
+			hold: "1.5",
+			entryNtl: "0",
+		};
+		const perpRows = getPerpBalanceRows(null, [hypeCollateral], [[150, "7.25"]], "portfolioMargin", "0", {
+			quoteToken: "HYPE",
+			tokenUsdPrices: { HYPE: "30" },
+			tradeAvailable: "80",
+		});
+		const spotRows = getSpotBalanceRows([hypeCollateral], [[150, "7.25"]], "portfolioMargin", undefined, "HYPE");
+
+		expect(perpRows[0]).toMatchObject({ asset: "HYPE", total: "9.5", usdValue: "285", tradeAvailable: "80" });
 		expect(spotRows).toEqual([]);
 	});
 

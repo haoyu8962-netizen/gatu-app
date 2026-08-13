@@ -105,6 +105,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 				asset: b.coin,
 				type: "spot" as const,
 				available: getSpotTransferableValue(b),
+				transferable: getSpotTransferableValue(b),
 				inOrder: b.hold,
 				total: b.total,
 				usdValue: b.coin === DEFAULT_QUOTE_TOKEN ? b.total : b.entryNtl,

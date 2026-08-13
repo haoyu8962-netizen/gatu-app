@@ -51,6 +51,10 @@ describe("balances table visual contract", () => {
 		expect(BALANCES_TAB_SOURCE).not.toContain("t`Perps`");
 		expect(BALANCES_TAB_SOURCE).toContain("internalTransfersEnabled ? (");
 		expect(BALANCES_TAB_SOURCE).toContain('row.type === "perp" ? t`Trading` : t`Spot`');
+		expect(BALANCES_TAB_SOURCE).toContain("getBalanceRowDisplayAvailable(row)");
+		expect(BALANCES_TAB_SOURCE).toContain("row.transferable");
+		expect(BALANCES_TAB_SOURCE).toContain('row.type === "spot" || perpFundsActionsEnabled');
+		expect(BALANCES_TAB_SOURCE).toContain("Balance available to trade");
 		expect(BALANCES_TAB_SOURCE.indexOf("{t`Total`}")).toBeLessThan(BALANCES_TAB_SOURCE.indexOf("{t`Available`}"));
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleTransferClick\(row\)\}/g)).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => openSwapModal\(row\.asset\)\}/g)).toHaveLength(1);
@@ -63,7 +67,10 @@ describe("balances table visual contract", () => {
 		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("size-[26px]");
 		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("min-h-11");
 		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain("grid grid-cols-2 divide-x");
-		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("isQuoteBalanceSharedWithPerps");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("useBalanceRows()");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("getBalanceRowDisplayAvailable(row)");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("row.transferable");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain('row.type === "spot" || perpFundsActionsEnabled');
 		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain("t`Perps`");
 		expect(MOBILE_BALANCES_TAB_SOURCE).toContain('row.type === "perp" ? t`Trading` : t`Spot`');
 	});
