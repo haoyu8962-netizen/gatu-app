@@ -114,6 +114,8 @@ describe("cross-tab funds action lock", () => {
 			"agentEnableDexAbstraction",
 			"agentSendAsset",
 			"agentSetAbstraction",
+			"cDeposit",
+			"cWithdraw",
 			"claimRewards",
 			"registerReferrer",
 			"sendAsset",
@@ -125,12 +127,14 @@ describe("cross-tab funds action lock", () => {
 			"userDexAbstraction",
 			"userSetAbstraction",
 			"userPortfolioMargin",
+			"tokenDelegate",
+			"vaultTransfer",
 			"withdraw3",
 		] as const) {
 			expect(requiresFundsActionLock(method)).toBe(true);
 		}
 
-		for (const method of ["order", "cancel", "batchModify", "twapOrder", "twapCancel"] as const) {
+		for (const method of ["order", "cancel", "batchModify", "twapOrder", "twapCancel", "linkStakingUser"] as const) {
 			expect(requiresFundsActionLock(method)).toBe(false);
 		}
 	});

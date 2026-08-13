@@ -9,10 +9,18 @@ describe("isTradeRoutePath", () => {
 		},
 	);
 
-	it.each(["/docs", "/terms", "/privacy", "/support", "/trader", "/spotlight"])(
-		"does not match the non-trading route %s",
-		(pathname) => {
-			expect(isTradeRoutePath(pathname)).toBe(false);
-		},
-	);
+	it.each([
+		"/docs",
+		"/terms",
+		"/privacy",
+		"/support",
+		"/trader",
+		"/spotlight",
+		"/vaults",
+		"/vaults/0x123",
+		"/staking",
+		"/leaderboard",
+	])("does not match the non-trading route %s", (pathname) => {
+		expect(isTradeRoutePath(pathname)).toBe(false);
+	});
 });

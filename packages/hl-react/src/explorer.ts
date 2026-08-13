@@ -9,3 +9,7 @@ export function getExplorerTxUrl(hash: string, isTestnet = false): string {
 export function getExplorerTokenUrl(tokenId: string, isTestnet = false): string {
 	return `${getExplorerBaseUrl(isTestnet)}/token/${tokenId}`;
 }
+
+export function getExplorerAddressUrl(address: string, isTestnet = false): string {
+	return `${getExplorerBaseUrl(isTestnet)}/address/${address}`;
+}

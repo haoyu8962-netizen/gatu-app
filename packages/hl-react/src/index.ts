@@ -53,7 +53,7 @@ export {
 	isPortfolioMarginActivation,
 	usePortfolioMarginActivationPolicy,
 } from "./exchange-policy";
-export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
+export { getExplorerAddressUrl, getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
 export {
@@ -72,6 +72,13 @@ export {
 	type UseInfoOptions,
 	useInfo,
 } from "./hooks/useInfo";
+export {
+	publicStatsDataKeys,
+	type UsePublicLeaderboardOptions,
+	type UsePublicVaultsOptions,
+	usePublicLeaderboard,
+	usePublicVaults,
+} from "./hooks/usePublicStatsData";
 export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
@@ -101,6 +108,24 @@ export type {
 } from "./markets/types";
 export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provider";
 export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
+export {
+	clearPublicStatsDataCacheForTests,
+	fetchPublicLeaderboard,
+	fetchPublicVaults,
+	getPublicStatsDataUrl,
+	normalizePublicLeaderboard,
+	normalizePublicVaults,
+	PUBLIC_STATS_DATA_LIMITS,
+	type PublicLeaderboardPerformance,
+	type PublicLeaderboardRow,
+	PublicStatsDataError,
+	type PublicStatsDataErrorCode,
+	type PublicStatsDataset,
+	type PublicStatsWindow,
+	type PublicStatsWindowMap,
+	type PublicVaultRelationship,
+	type PublicVaultRow,
+} from "./public-stats-data";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
 export {
 	type AgentRegistrationCleanupResult,

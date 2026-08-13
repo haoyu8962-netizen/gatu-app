@@ -53,6 +53,7 @@ describe("@hypeterminal/hl-react package exports", () => {
 			"./hooks/useApiStatus": "./src/hooks/useApiStatus.ts",
 			"./hooks/useClients": "./src/hooks/useClients.ts",
 			"./hooks/useExchange": "./src/hooks/useExchange.ts",
+			"./hooks/usePublicStatsData": "./src/hooks/usePublicStatsData.ts",
 			"./hooks/useTradingGuard": "./src/hooks/useTradingGuard.ts",
 			"./hooks/useTransport": "./src/hooks/useTransport.ts",
 		});

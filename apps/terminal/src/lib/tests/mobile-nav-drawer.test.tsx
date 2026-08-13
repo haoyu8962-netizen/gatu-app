@@ -130,13 +130,29 @@ describe("MobileNavDrawer", () => {
 		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
 
 		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
-		expect(links.map((link) => link.textContent?.trim())).toEqual(["Trade", "Portfolio", "Referrals", "API Wallet"]);
-		expect(links.map((link) => link.dataset.to)).toEqual(["/trade/HYPE", "/portfolio", "/referrals", "/api-wallet"]);
+		expect(links.map((link) => link.textContent?.trim())).toEqual([
+			"Trade",
+			"Portfolio",
+			"Vaults",
+			"Staking",
+			"Referrals",
+			"Leaderboard",
+			"API Wallet",
+		]);
+		expect(links.map((link) => link.dataset.to)).toEqual([
+			"/trade/HYPE",
+			"/portfolio",
+			"/vaults",
+			"/staking",
+			"/referrals",
+			"/leaderboard",
+			"/api-wallet",
+		]);
 
 		const upcomingItems = [
 			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
 		];
-		expect(upcomingItems.map(itemLabel)).toEqual(["Earn", "Vaults", "Staking", "Leaderboard", "Statistics"]);
+		expect(upcomingItems.map(itemLabel)).toEqual(["Earn", "Statistics"]);
 		for (const item of upcomingItems) {
 			expect(item.disabled).toBe(true);
 			expect(item.textContent).toContain("Soon");

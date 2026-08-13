@@ -21,6 +21,10 @@ import "@/bones/registry";
 import appCss from "../styles.css?url";
 
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
+const FundsActionRecoveryHost = createLazyComponent(
+	() => import("@/components/funds-action/funds-action-recovery-host"),
+	"FundsActionRecoveryHost",
+);
 const DOCUMENT_ROUTE_PATHS = new Set(["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"]);
 
 interface MyRouterContext {
@@ -58,6 +62,9 @@ function RootComponent() {
 				<ExchangeScopeProvider>
 					<MarketsInfoProvider>
 						<Outlet />
+						<Suspense fallback={null}>
+							<FundsActionRecoveryHost />
+						</Suspense>
 						<Suspense fallback={null}>
 							<Toaster />
 						</Suspense>

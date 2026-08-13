@@ -170,6 +170,28 @@
     --api-wallet-page-shadow: var(--shadow-raised);
     --api-wallet-modal-shadow: var(--shadow-overlay);
 
+    /* Vaults, staking, and leaderboard redesign semantics. */
+    --earn-frame-max: 90rem;
+    --earn-content-max: 85rem;
+    --earn-page-min-height: 35rem;
+    --earn-page-radius: 0.875rem;
+    --earn-search-max: 21.25rem;
+    --earn-rank-column: 4.375rem;
+    --earn-trader-column: 15.625rem;
+    --earn-mobile-sort-width: 10rem;
+    --earn-rows-select-width: 5rem;
+    --earn-state-copy-max: 25rem;
+    --earn-frame-wide-max: 100rem;
+    --staking-frame-max: 90rem;
+    --staking-validator-table-min: 60.4375rem;
+    --staking-rewards-table-min: 40rem;
+    --staking-history-table-min: 44rem;
+    --vault-detail-sidebar-min: 18rem;
+    --funds-action-toast-offset: 2.5rem;
+    --funds-action-toast-max: 2rem;
+    --funds-action-value-max: 65%;
+    --funds-action-modal-inset: 1rem;
+
     /* Background */
     --bg-base: #ffffff;
     --bg-raised: #ffffff;

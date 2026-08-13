@@ -180,6 +180,10 @@ describe("TopNav", () => {
 		["/portfolio", "Portfolio"],
 		["/referrals", "Referrals"],
 		["/api-wallet", "API Wallet"],
+		["/vaults", "Vaults"],
+		["/vaults/0x123", "Vaults"],
+		["/staking", "Staking"],
+		["/leaderboard", "Leaderboard"],
 		["/docs", null],
 		["/support", null],
 		["/terms", null],
@@ -213,7 +217,7 @@ describe("TopNav", () => {
 		expect(testState.navigate).not.toHaveBeenCalled();
 	});
 
-	it("includes all seven designed primary entries without inventing unavailable routes", () => {
+	it("links the approved primary routes and keeps Earn unavailable", () => {
 		renderNav();
 		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
 		const primaryEntries = [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
@@ -222,19 +226,19 @@ describe("TopNav", () => {
 			"Trade",
 			"Portfolio",
 			"Earn — Soon",
-			"Vaults — Soon",
-			"Staking — Soon",
+			"Vaults",
+			"Staking",
 			"Referrals",
-			"Leaderboard — Soon",
+			"Leaderboard",
 		]);
 
-		for (const label of ["Earn", "Vaults", "Staking", "Leaderboard"]) {
-			const button = primaryEntries.find((item) => item.textContent?.startsWith(label));
-			expect(button).toBeInstanceOf(HTMLButtonElement);
-			expect((button as HTMLButtonElement).disabled).toBe(true);
-			expect(button?.title).toBe("Soon");
-			expect(findLink(label)).toBeUndefined();
-		}
+		const earnButton = primaryEntries.find((item) => item.textContent?.startsWith("Earn"));
+		expect(earnButton).toBeInstanceOf(HTMLButtonElement);
+		expect((earnButton as HTMLButtonElement).disabled).toBe(true);
+		expect(earnButton?.title).toBe("Soon");
+		expect(findLink("Vaults")?.dataset.to).toBe("/vaults");
+		expect(findLink("Staking")?.dataset.to).toBe("/staking");
+		expect(findLink("Leaderboard")?.dataset.to).toBe("/leaderboard");
 		expect(findLink("Referrals")?.dataset.to).toBe("/referrals");
 	});
 
@@ -279,7 +283,7 @@ describe("TopNav", () => {
 
 		testState.hasWalletAccess = false;
 		renderNav();
-		expect(compactMenuLabels()).toEqual(["Staking", "Referrals", "Statistics", "API Wallet"]);
+		expect(compactMenuLabels()).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API Wallet"]);
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {

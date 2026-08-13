@@ -9,6 +9,8 @@ const FUNDS_ACTION_METHODS: ReadonlySet<ExchangeMethod> = new Set([
 	"agentEnableDexAbstraction",
 	"agentSendAsset",
 	"agentSetAbstraction",
+	"cDeposit",
+	"cWithdraw",
 	"claimRewards",
 	"registerReferrer",
 	"sendAsset",
@@ -20,6 +22,8 @@ const FUNDS_ACTION_METHODS: ReadonlySet<ExchangeMethod> = new Set([
 	"userDexAbstraction",
 	"userSetAbstraction",
 	"userPortfolioMargin",
+	"tokenDelegate",
+	"vaultTransfer",
 	"withdraw3",
 ]);
 

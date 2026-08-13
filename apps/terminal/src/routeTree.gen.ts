@@ -17,6 +17,7 @@ import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
 import { Route as MobileAgentSyncTicketRouteImport } from './routes/mobile-agent-sync-ticket'
 import { Route as PerpRouteImport } from './routes/perp'
@@ -25,15 +26,19 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as SpotRouteImport } from './routes/spot'
+import { Route as StakingRouteImport } from './routes/staking'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TradeRouteImport } from './routes/trade'
+import { Route as VaultsRouteImport } from './routes/vaults'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
 import { Route as JoinSplatRouteImport } from './routes/join.$'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as TradeIndexRouteImport } from './routes/trade.index'
 import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
+import { Route as VaultsIndexRouteImport } from './routes/vaults.index'
+import { Route as VaultsVaultAddressRouteImport } from './routes/vaults.$vaultAddress'
 import { Route as TradeBaseQuoteRouteImport } from './routes/trade.$base.$quote'
 
 const IndexRoute = IndexRouteImport.update({
@@ -76,6 +81,11 @@ const DocsRoute = DocsRouteImport.update({
   path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
   id: '/mobile-agent-sync',
   path: '/mobile-agent-sync',
@@ -116,6 +126,11 @@ const SpotRoute = SpotRouteImport.update({
   path: '/spot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StakingRoute = StakingRouteImport.update({
+  id: '/staking',
+  path: '/staking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -129,6 +144,11 @@ const TermsRoute = TermsRouteImport.update({
 const TradeRoute = TradeRouteImport.update({
   id: '/trade',
   path: '/trade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VaultsRoute = VaultsRouteImport.update({
+  id: '/vaults',
+  path: '/vaults',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildersPerpIndexRoute = BuildersPerpIndexRouteImport.update({
@@ -161,6 +181,16 @@ const TradeSymbolRoute = TradeSymbolRouteImport.update({
   path: '/$symbol',
   getParentRoute: () => TradeRoute,
 } as any)
+const VaultsIndexRoute = VaultsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VaultsRoute,
+} as any)
+const VaultsVaultAddressRoute = VaultsVaultAddressRouteImport.update({
+  id: '/$vaultAddress',
+  path: '/$vaultAddress',
+  getParentRoute: () => VaultsRoute,
+} as any)
 const TradeBaseQuoteRoute = TradeBaseQuoteRouteImport.update({
   id: '/$base/$quote',
   path: '/$base/$quote',
@@ -176,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
@@ -184,15 +215,19 @@ export interface FileRoutesByFullPath {
   '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
+  '/staking': typeof StakingRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
+  '/vaults': typeof VaultsRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
+  '/vaults/': typeof VaultsIndexRoute
   '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRoutesByTo {
@@ -203,6 +238,7 @@ export interface FileRoutesByTo {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
@@ -211,14 +247,17 @@ export interface FileRoutesByTo {
   '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
+  '/staking': typeof StakingRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp': typeof BuildersPerpIndexRoute
   '/trade': typeof TradeIndexRoute
+  '/vaults': typeof VaultsIndexRoute
   '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRoutesById {
@@ -231,6 +270,7 @@ export interface FileRoutesById {
   '/client-error-report': typeof ClientErrorReportRoute
   '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
@@ -239,15 +279,19 @@ export interface FileRoutesById {
   '/referrals': typeof ReferralsRoute
   '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
+  '/staking': typeof StakingRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
+  '/vaults': typeof VaultsRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
+  '/vaults/': typeof VaultsIndexRoute
   '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRouteTypes {
@@ -261,6 +305,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/leaderboard'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
     | '/perp'
@@ -269,15 +314,19 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/risk'
     | '/spot'
+    | '/staking'
     | '/support'
     | '/terms'
     | '/trade'
+    | '/vaults'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/vaults/$vaultAddress'
     | '/builders-perp/'
     | '/trade/'
+    | '/vaults/'
     | '/trade/$base/$quote'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -288,6 +337,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/leaderboard'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
     | '/perp'
@@ -296,14 +346,17 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/risk'
     | '/spot'
+    | '/staking'
     | '/support'
     | '/terms'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/vaults/$vaultAddress'
     | '/builders-perp'
     | '/trade'
+    | '/vaults'
     | '/trade/$base/$quote'
   id:
     | '__root__'
@@ -315,6 +368,7 @@ export interface FileRouteTypes {
     | '/client-error-report'
     | '/cookies'
     | '/docs'
+    | '/leaderboard'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
     | '/perp'
@@ -323,15 +377,19 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/risk'
     | '/spot'
+    | '/staking'
     | '/support'
     | '/terms'
     | '/trade'
+    | '/vaults'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/vaults/$vaultAddress'
     | '/builders-perp/'
     | '/trade/'
+    | '/vaults/'
     | '/trade/$base/$quote'
   fileRoutesById: FileRoutesById
 }
@@ -344,6 +402,7 @@ export interface RootRouteChildren {
   ClientErrorReportRoute: typeof ClientErrorReportRoute
   CookiesRoute: typeof CookiesRoute
   DocsRoute: typeof DocsRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   MobileAgentSyncTicketRoute: typeof MobileAgentSyncTicketRoute
   PerpRoute: typeof PerpRoute
@@ -352,9 +411,11 @@ export interface RootRouteChildren {
   ReferralsRoute: typeof ReferralsRoute
   RiskRoute: typeof RiskRoute
   SpotRoute: typeof SpotRoute
+  StakingRoute: typeof StakingRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   TradeRoute: typeof TradeRouteWithChildren
+  VaultsRoute: typeof VaultsRouteWithChildren
   JoinSplatRoute: typeof JoinSplatRoute
   JoinCodeRoute: typeof JoinCodeRoute
 }
@@ -417,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mobile-agent-sync': {
       id: '/mobile-agent-sync'
       path: '/mobile-agent-sync'
@@ -473,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SpotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/staking': {
+      id: '/staking'
+      path: '/staking'
+      fullPath: '/staking'
+      preLoaderRoute: typeof StakingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/support': {
       id: '/support'
       path: '/support'
@@ -492,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/trade'
       fullPath: '/trade'
       preLoaderRoute: typeof TradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vaults': {
+      id: '/vaults'
+      path: '/vaults'
+      fullPath: '/vaults'
+      preLoaderRoute: typeof VaultsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builders-perp/': {
@@ -536,6 +618,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TradeSymbolRouteImport
       parentRoute: typeof TradeRoute
     }
+    '/vaults/': {
+      id: '/vaults/'
+      path: '/'
+      fullPath: '/vaults/'
+      preLoaderRoute: typeof VaultsIndexRouteImport
+      parentRoute: typeof VaultsRoute
+    }
+    '/vaults/$vaultAddress': {
+      id: '/vaults/$vaultAddress'
+      path: '/$vaultAddress'
+      fullPath: '/vaults/$vaultAddress'
+      preLoaderRoute: typeof VaultsVaultAddressRouteImport
+      parentRoute: typeof VaultsRoute
+    }
     '/trade/$base/$quote': {
       id: '/trade/$base/$quote'
       path: '/$base/$quote'
@@ -574,6 +670,19 @@ const TradeRouteChildren: TradeRouteChildren = {
 
 const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
 
+interface VaultsRouteChildren {
+  VaultsVaultAddressRoute: typeof VaultsVaultAddressRoute
+  VaultsIndexRoute: typeof VaultsIndexRoute
+}
+
+const VaultsRouteChildren: VaultsRouteChildren = {
+  VaultsVaultAddressRoute: VaultsVaultAddressRoute,
+  VaultsIndexRoute: VaultsIndexRoute,
+}
+
+const VaultsRouteWithChildren =
+  VaultsRoute._addFileChildren(VaultsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -583,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientErrorReportRoute: ClientErrorReportRoute,
   CookiesRoute: CookiesRoute,
   DocsRoute: DocsRoute,
+  LeaderboardRoute: LeaderboardRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   MobileAgentSyncTicketRoute: MobileAgentSyncTicketRoute,
   PerpRoute: PerpRoute,
@@ -591,9 +701,11 @@ const rootRouteChildren: RootRouteChildren = {
   ReferralsRoute: ReferralsRoute,
   RiskRoute: RiskRoute,
   SpotRoute: SpotRoute,
+  StakingRoute: StakingRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   TradeRoute: TradeRouteWithChildren,
+  VaultsRoute: VaultsRouteWithChildren,
   JoinSplatRoute: JoinSplatRoute,
   JoinCodeRoute: JoinCodeRoute,
 }

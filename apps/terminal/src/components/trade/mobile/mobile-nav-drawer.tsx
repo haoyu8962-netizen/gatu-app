@@ -21,6 +21,7 @@ export function MobileNavDrawer() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const tradeHomePath = useTradeHomePath();
 	const tradeActive = isTradeRoutePath(pathname);
+	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
 	const soonLabel = t`Soon`;
 
 	function getNavLinkClass(active: boolean): string {
@@ -91,8 +92,22 @@ export function MobileNavDrawer() {
 								<Trans>Portfolio</Trans>
 							</Link>
 							<UpcomingMobileNavItem label={t`Earn`} soonLabel={soonLabel} />
-							<UpcomingMobileNavItem label={t`Vaults`} soonLabel={soonLabel} />
-							<UpcomingMobileNavItem label={t`Staking`} soonLabel={soonLabel} />
+							<Link
+								to="/vaults"
+								onClick={close}
+								aria-current={vaultsActive ? "page" : undefined}
+								className={getNavLinkClass(vaultsActive)}
+							>
+								<Trans>Vaults</Trans>
+							</Link>
+							<Link
+								to="/staking"
+								onClick={close}
+								aria-current={pathname === "/staking" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/staking")}
+							>
+								<Trans>Staking</Trans>
+							</Link>
 							<Link
 								to="/referrals"
 								onClick={close}
@@ -101,7 +116,14 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Referrals</Trans>
 							</Link>
-							<UpcomingMobileNavItem label={t`Leaderboard`} soonLabel={soonLabel} />
+							<Link
+								to="/leaderboard"
+								onClick={close}
+								aria-current={pathname === "/leaderboard" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/leaderboard")}
+							>
+								<Trans>Leaderboard</Trans>
+							</Link>
 						</nav>
 						<nav className="flex flex-col p-2 pt-0" aria-label={t`More`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">

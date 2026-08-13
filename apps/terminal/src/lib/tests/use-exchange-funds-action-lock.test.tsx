@@ -16,13 +16,15 @@ const clients = vi.hoisted(() => {
 	const response = { status: "ok", response: { type: "default" } } as const;
 	const firstWithdraw = vi.fn(async () => response);
 	const secondWithdraw = vi.fn(async () => response);
+	const tokenDelegate = vi.fn(async () => response);
 	return {
-		first: { withdraw3: firstWithdraw },
+		first: { tokenDelegate, withdraw3: firstWithdraw },
 		firstWithdraw,
 		hookCallCount: 0,
 		response,
 		second: { withdraw3: secondWithdraw },
 		secondWithdraw,
+		tokenDelegate,
 	};
 });
 
@@ -32,7 +34,8 @@ const providerState = vi.hoisted(() => ({
 
 vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 	useHyperliquidClients: () => {
-		const user = clients.hookCallCount % 2 === 0 ? clients.first : clients.second;
+		const hookIndex = clients.hookCallCount % 3;
+		const user = hookIndex === 1 ? clients.second : clients.first;
 		clients.hookCallCount += 1;
 		return {
 			agentPublicKey: undefined,
@@ -58,6 +61,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 interface CapturedMutations {
 	first: (params: ExchangeParams<"withdraw3">) => Promise<unknown>;
 	second: (params: ExchangeParams<"withdraw3">) => Promise<unknown>;
+	tokenDelegate: (params: ExchangeParams<"tokenDelegate">) => Promise<unknown>;
 }
 
 interface PendingLockRequest<T = unknown> {
@@ -195,9 +199,11 @@ describe("useExchange funds action lock integration", () => {
 	function Probe() {
 		const first = useExchange("withdraw3", { retry: 3, retryDelay: 0 });
 		const second = useExchange("withdraw3", { retry: 3, retryDelay: 0 });
+		const tokenDelegate = useExchange("tokenDelegate", { retry: 3, retryDelay: 0 });
 		capturedMutations = {
 			first: first.mutateAsync,
 			second: second.mutateAsync,
+			tokenDelegate: tokenDelegate.mutateAsync,
 		};
 		return null;
 	}
@@ -265,6 +271,33 @@ describe("useExchange funds action lock integration", () => {
 		expect(lockCapabilityReads).toBe(1);
 		expect(clients.firstWithdraw).not.toHaveBeenCalled();
 		expect(clients.secondWithdraw).not.toHaveBeenCalled();
+		expect(queryClient.getMutationCache().getAll()).toHaveLength(1);
+		expect(queryClient.getMutationCache().getAll()[0]?.state.failureCount).toBe(1);
+	});
+
+	it("does not retry a newly guarded staking funds action", async () => {
+		let lockCapabilityReads = 0;
+		Object.defineProperty(window.navigator, "locks", {
+			configurable: true,
+			get: () => {
+				lockCapabilityReads += 1;
+				return undefined;
+			},
+		});
+		const mutations = renderProbe();
+
+		await act(async () => {
+			await expect(
+				mutations.tokenDelegate({
+					validator: OWNER,
+					wei: 100_000_000,
+					isUndelegate: false,
+				}),
+			).rejects.toThrow("Secure cross-tab funds coordination requires Web Locks support.");
+		});
+
+		expect(lockCapabilityReads).toBe(1);
+		expect(clients.tokenDelegate).not.toHaveBeenCalled();
 		expect(queryClient.getMutationCache().getAll()).toHaveLength(1);
 		expect(queryClient.getMutationCache().getAll()[0]?.state.failureCount).toBe(1);
 	});

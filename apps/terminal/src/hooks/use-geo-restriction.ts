@@ -8,7 +8,7 @@ function getDevOverride(): string | null {
 
 export function useGeoRestriction() {
 	const override = getDevOverride();
-	const { data, isLoading } = useQuery({
+	const { data, isError, isLoading, refetch } = useQuery({
 		queryKey: ["geo", override],
 		queryFn: () => getGeo({ data: { override } }),
 		staleTime: Number.POSITIVE_INFINITY,
@@ -21,5 +21,8 @@ export function useGeoRestriction() {
 		country: data?.country ?? null,
 		proxy: data?.proxy ?? false,
 		isResolving: isLoading,
+		isError,
+		isResolved: data !== undefined && !isError,
+		retry: refetch,
 	};
 }
