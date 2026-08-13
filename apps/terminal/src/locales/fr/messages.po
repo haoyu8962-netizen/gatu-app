@@ -60,6 +60,10 @@ msgstr "{0} ordres sur {1} ont été acceptés. Vérifiez les ordres ouverts ava
 msgid "{0}/20 characters"
 msgstr "{0}/20 caractères"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "{age} days"
+msgstr ""
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} vers {targetDirectionLabel}"
@@ -73,6 +77,14 @@ msgstr ""
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} history"
+msgstr ""
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} trend"
+msgstr ""
+
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
 msgstr "{orderCount, plural, one {Cette action annulera l'ordre ouvert, y compris les ordres stop de protection. Votre position pourrait ne plus être protégée.} other {Cette action annulera les # ordres ouverts, y compris les ordres stop de protection. Vos positions ne seront plus protégées.}}"
@@ -80,6 +92,18 @@ msgstr "{orderCount, plural, one {Cette action annulera l'ordre ouvert, y compri
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "{p}%"
 msgstr "{p}%"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} PNL"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} ROI"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} Volume"
+msgstr ""
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {# position} other {# positions}}"
@@ -130,11 +154,15 @@ msgstr "1–20 caractères"
 msgid "14 Day Volume"
 msgstr "Volume sur 14 jours"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "24h"
-#~ msgstr "24h"
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "24h"
+msgstr "24h"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
 msgid "24H"
 msgstr "24 h"
 
@@ -171,7 +199,12 @@ msgstr "Volume sur 24 h"
 msgid "30 days"
 msgstr "30 jours"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "30D"
 msgstr "30 j"
 
@@ -183,7 +216,12 @@ msgstr ""
 msgid "7 days"
 msgstr "7 jours"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 j"
 
@@ -198,6 +236,14 @@ msgstr "Une confirmation est affichée avant chaque clôture au marché."
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "A crypto wallet lets you store and manage your digital assets securely."
 #~ msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "A funds operation is awaiting verification"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
@@ -215,6 +261,10 @@ msgstr "Un code de parrainage ne peut être appliqué qu’une seule fois et ne 
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "Aucun prix de liquidation fiable n'est disponible avant l'exécution d'un ordre d'inversion. Vérifiez la position résultante après l'exécution."
 
+#: src/components/staking/staking-view.tsx
+msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
+msgstr ""
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
 msgstr "Un TWAP est actif sur l'un de ces marchés."
@@ -226,6 +276,10 @@ msgstr "Un code valide peut débloquer la réduction active sur les frais de par
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
 #~ msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "About this Vault"
+msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #~ msgid "Accept"
@@ -272,6 +326,10 @@ msgstr "Activité du compte"
 msgid "Account and wallet"
 msgstr "Compte et portefeuille"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Account data unavailable"
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Account Equity"
 msgstr "Capitaux propres du compte"
@@ -298,12 +356,28 @@ msgstr "Le mode de compte a changé avant l’envoi de la requête. Vérifiez le
 msgid "Account mode updated"
 msgstr "Mode de compte mis à jour"
 
+#: src/components/staking/staking-view.tsx
+msgid "Account staking data unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Account staking status"
+msgstr ""
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "Type de compte"
 
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Account value"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Account Value"
 msgstr "Valeur du compte"
@@ -317,6 +391,10 @@ msgstr "Variation de la valeur du compte"
 #~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
 #~ msgstr "La valeur du compte doit être inférieure à 25 M$ pour utiliser la marge de portefeuille pendant la bêta."
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Account Vault data could not be verified"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
 msgstr ""
@@ -326,11 +404,17 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
 msgstr "Action"
 
+#: src/components/staking/staking-view.tsx
+msgid "Action history is scoped to the verified owner."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -347,6 +431,8 @@ msgstr "Activer le DEX"
 #~ msgstr "actif"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Active"
 msgstr ""
 
@@ -445,6 +531,11 @@ msgstr ""
 msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
 msgstr "Après réception de l’USDC, votre portefeuille intégré autorisera un dépôt Circle CCTP avec frais de gaz sponsorisés."
 
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Age"
+msgstr ""
+
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
 #~ msgstr ""
@@ -469,6 +560,7 @@ msgstr "AI"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-market-filter.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "All"
 msgstr "Tout"
 
@@ -518,20 +610,44 @@ msgstr "Tous les types"
 #~ msgid "All Types"
 #~ msgstr ""
 
+#: src/components/staking/staking-view.tsx
+msgid "All validators"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "All Vaults"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "All-time"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "All-time PNL"
+msgstr ""
+
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO (Add Liquidity Only)"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Amount"
 msgstr "Montant"
 
-#: src/components/trade/positions/transfer-dialog.tsx
-#~ msgid "Amount (USDC)"
-#~ msgstr ""
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Amount (USDC)"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
@@ -540,6 +656,10 @@ msgstr "Le montant est trop faible pour les routes de bridge disponibles."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "Le montant doit être supérieur à zéro et ne pas dépasser la position actuelle."
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "An account is excluded only when both its account value is below $100K and its all-time volume is below $10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
@@ -677,6 +797,10 @@ msgstr "Vérification de l'approbation en attente"
 msgid "Approve a mobile trading key"
 msgstr "Approuver une clé de trading mobile"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Approve in wallet"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve in wallet..."
 msgstr "Approuver dans le portefeuille..."
@@ -688,6 +812,16 @@ msgstr "Approuver la clé de trading mobile"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approving a new mobile key replaces the previous mobile key."
 msgstr "L'approbation d'une nouvelle clé mobile remplace la clé mobile précédente."
+
+#: src/components/staking/staking-view.tsx
+msgid "Approximate: the SDK parses the raw total as a JavaScript number."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "APR"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Arbitrum (CCTP)"
@@ -701,6 +835,10 @@ msgstr "Arbitrum (ancien pont)"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
 msgstr "Le passage au réseau Arbitrum a été refusé."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "As-needed position close"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -741,19 +879,37 @@ msgstr "Impossible de charger les informations sur l'actif."
 #~ msgid "Assets"
 #~ msgstr ""
 
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Authorization rejected"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Authorize"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "Authorize API wallet"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Authorize in master wallet"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Authorized API wallets"
 msgstr ""
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Authorizing request"
+msgstr ""
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "Échec du dépôt automatique d'USDC"
 
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
@@ -772,13 +928,29 @@ msgstr "Disponible"
 msgid "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
 msgstr "Les {balance} USDC disponibles sont inférieurs au dépôt minimum. Envoyez au moins {minimumDeposit}."
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Available amount is not verified"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Available for delegation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Available funds are in Spot"
 msgstr "Fonds disponibles en Spot"
 
+#: src/components/staking/staking-view.tsx
+msgid "Available in Spot"
+msgstr ""
+
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Available order book liquidity can only fill part of this swap."
 msgstr "La liquidité disponible dans le carnet d’ordres ne permet d’exécuter qu’une partie de cet échange."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Available staking HYPE can be delegated, but it cannot be traded until a separate transfer back to Spot completes."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -806,6 +978,8 @@ msgid "Avg Price"
 msgstr "Prix moy."
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -813,6 +987,7 @@ msgstr "Prix moy."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "Retour"
 
@@ -823,6 +998,10 @@ msgstr "De nouveau en ligne"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Back to asset selection"
 #~ msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Back to Vaults"
+msgstr ""
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -839,6 +1018,10 @@ msgstr "Solde disponible pour trader"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Soldes"
+
+#: src/components/staking/staking-view.tsx
+msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -991,6 +1174,7 @@ msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1002,6 +1186,7 @@ msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -1083,6 +1268,14 @@ msgstr "Le transfert CCTP vers Arbitrum se termine généralement sous {0}."
 msgid "Change leverage"
 msgstr "Modifier le levier"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Change to ascending order"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Change to descending order"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Graphique"
@@ -1090,6 +1283,10 @@ msgstr "Graphique"
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "La requête d’historique du graphique a expiré"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Check the wallet address or display name, or the account may not meet the current criteria."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
@@ -1113,6 +1310,10 @@ msgstr "Vérification de la route de retrait actuelle d’Hyperliquid…"
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "Vérification..."
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Child"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1179,6 +1380,18 @@ msgstr "Réclamer les récompenses"
 msgid "Claims"
 msgstr "Retraits"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Classification unavailable"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Clear record"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Clearing this record does not cancel the on-chain operation. Verify account history independently before submitting the same action again."
+msgstr ""
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "Cliquez pour en savoir plus sur cet actif."
@@ -1202,6 +1415,8 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1213,6 +1428,7 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Close"
 msgstr "Fermer"
 
@@ -1285,6 +1501,10 @@ msgstr "Ordres de fermeture rejetés"
 msgid "Close orders submitted. Confirming exchange status; do not retry."
 msgstr "Ordres de fermeture envoyés. Confirmation du statut par la plateforme ; ne réessayez pas."
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Close pending operation details"
+msgstr ""
+
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "Close percentage"
 msgstr "Pourcentage de fermeture"
@@ -1350,10 +1570,22 @@ msgstr "La taille de fermeture doit être un nombre décimal"
 msgid "Close size must be greater than zero"
 msgstr "La taille de fermeture doit être supérieure à zéro"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Close staking action"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Closed"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Closed PNL"
 msgstr "PnL clôturé"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Closing cost"
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1424,9 +1656,18 @@ msgstr "Réduire les détails du marché"
 #~ msgid "Coming soon"
 #~ msgstr "Bientôt disponible"
 
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Commission"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Commodities"
 msgstr "Matières premières"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Compare public account performance across the time window you choose."
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Complete the protocol stages, then share your official Hyperliquid referral link."
@@ -1460,12 +1701,17 @@ msgstr "Montant TP/SL configuré"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "Confirmer"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirm Bridge"
 #~ msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Confirm clear record"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Confirm Close"
@@ -1496,6 +1742,10 @@ msgstr "Confirmez la révocation dans le portefeuille"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm the approval only in the selected master wallet."
 msgstr "Confirmez l'approbation uniquement dans le portefeuille principal sélectionné."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Confirm the exact public operation in your master wallet."
+msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Confirm the gas-free request in your selected wallet."
@@ -1568,6 +1818,14 @@ msgstr "Connectez un portefeuille sur ce téléphone, ou scannez une clé de tra
 msgid "Connect an account with browser storage available to manage this preference."
 msgstr "Connectez un compte disposant du stockage du navigateur pour gérer cette préférence."
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Connect or restore the verified owner account to use account-specific Vault filters."
+msgstr ""
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Connect the exact owner wallet before continuing."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect the same owner wallet used on desktop before importing phone access."
 #~ msgstr "Connectez le même portefeuille propriétaire utilisé sur ordinateur avant d'importer l'accès mobile."
@@ -1604,8 +1862,17 @@ msgstr ""
 msgid "Connect to view referrals"
 msgstr "Connectez-vous pour voir les parrainages"
 
+#: src/components/staking/staking-view.tsx
+msgid "Connect to view rewards"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Connect to view staking actions"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/referrals/referral-dashboard.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Connect wallet"
 msgstr "Connecter le portefeuille"
 
@@ -1630,6 +1897,10 @@ msgstr "Connectez votre portefeuille pour afficher le portefeuille"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "Connectez le portefeuille pour voir les positions"
+
+#: src/components/staking/staking-view.tsx
+msgid "Connect your master wallet"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Connect your wallet before linking a mobile device."
@@ -1757,6 +2028,14 @@ msgstr "La connexion n’a pas pu être établie."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "Continuer"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Continue securely"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Continuing hands this verified public operation to the shared funds-action flow. This page never signs or assembles an exchange request."
+msgstr ""
 
 #: src/components/trade/market-overview.tsx
 msgid "Contract"
@@ -2030,6 +2309,10 @@ msgstr "Actuel"
 msgid "Current Margin"
 msgstr "Marge actuelle"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Current PNL"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr ""
@@ -2054,6 +2337,14 @@ msgstr ""
 #~ msgid "Dark"
 #~ msgstr ""
 
+#: src/components/vaults/vaults-list.tsx
+msgid "days"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Days following"
+msgstr ""
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Decline"
 msgstr "Refuser"
@@ -2074,6 +2365,36 @@ msgstr "Defi"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Delegate"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Delegate HYPE"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the seven-day queue."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegated"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegated to {validator}"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Delegates available staking HYPE to the selected validator."
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Delegation"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
 msgstr "Enchère de gas de déploiement"
@@ -2082,6 +2403,7 @@ msgstr "Enchère de gas de déploiement"
 msgid "Deployer"
 msgstr "Déployeur"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2100,6 +2422,7 @@ msgstr "Déployeur"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -2161,6 +2484,10 @@ msgstr "Dépôt envoyé"
 msgid "Deposit successful"
 msgstr "Dépôt réussi"
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Deposit to Vault"
+msgstr ""
+
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
@@ -2180,9 +2507,25 @@ msgstr "La transaction de dépôt a été soumise, mais n'a pas été confirmée
 msgid "Deposit USDC from Arbitrum"
 msgstr "Déposer des USDC depuis Arbitrum"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Deposited"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+msgstr ""
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
 msgstr "Dépôt de l'USDC vers Hyperliquid..."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Depositor"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Deposits"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/config/account-ledger.ts
@@ -2241,6 +2584,7 @@ msgstr "Adresse de destination"
 #~ msgid "Direct mode: Sign each order with wallet"
 #~ msgstr ""
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -2322,9 +2666,25 @@ msgstr "Distance au prix mark {markDistanceLabel}"
 msgid "Do not photograph, copy, share, or screen-record the QR code."
 msgstr "Ne photographiez pas, ne copiez pas, ne partagez pas et n'enregistrez pas le code QR."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Do not submit again while Hyperliquid history is checked."
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Do not submit again. Verify this operation against the public ledger first."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "N'envoyez pas une autre révocation. Réessayez la vérification en lecture seule."
+
+#: src/components/staking/staking-view.tsx
+msgid "Do not submit another staking funds operation. The shared recovery panel will keep checking Hyperliquid history."
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Do not submit this operation again."
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Docs"
@@ -2335,6 +2695,8 @@ msgid "Don't show this confirmation again"
 msgstr "Ne plus afficher cette confirmation"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2445,6 +2807,10 @@ msgstr "Prix de fin"
 msgid "Enter a different value before confirming."
 msgstr "Saisissez une valeur différente avant de confirmer."
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Enter a positive amount exactly representable in micro-USDC. Hyperliquid applies any Vault-specific limits on the server."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive amount with up to 6 decimal places."
 msgstr "Saisissez un montant positif comportant jusqu'à 6 décimales."
@@ -2534,6 +2900,7 @@ msgstr "Prix d'entrée"
 msgid "Environment"
 msgstr "Environnement"
 
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Capitaux propres"
@@ -2561,6 +2928,15 @@ msgstr "Frais est."
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Establish Connection"
 msgstr "Établir la connexion"
+
+#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#: src/components/staking/staking-view.tsx
+msgid "Estimated APR {0}"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Estimated APR unavailable"
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -2686,6 +3062,10 @@ msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expiring"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
 msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
@@ -3012,6 +3392,14 @@ msgstr "Filtrer les positions par mode de marge : {marginLabel}"
 msgid "Filter positions by market: {ariaValue}"
 msgstr "Filtrer les positions par marché : {ariaValue}"
 
+#: src/components/staking/staking-view.tsx
+msgid "Filter validators"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Final amount"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
 msgstr ""
@@ -3019,6 +3407,11 @@ msgstr ""
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "Inverser le sens du transfert"
+
+#. placeholder {0}: follower.daysFollowing
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Following {0} days"
+msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
@@ -3099,9 +3492,17 @@ msgstr "Historique du funding"
 msgid "Funding shown"
 msgstr "Financement affiché"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Funds action progress"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "Les fonds sont sur le compte Spot"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Funds operation verified from Hyperliquid history."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "FX"
@@ -3213,6 +3614,10 @@ msgstr "Dépôt de liquidateur HIP-3"
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
 msgstr "Retrait de liquidateur HIP-3"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Historical APR does not predict future performance; the displayed APR can change."
+msgstr ""
 
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "History"
@@ -3356,6 +3761,11 @@ msgstr "Important : cette adresse ne peut recevoir que des USDC natifs sur Arbit
 #~ msgid "In Use"
 #~ msgstr "En cours d'utilisation"
 
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Inactive"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Indices"
 msgstr "Indices"
@@ -3450,6 +3860,15 @@ msgstr "Marge isolée mise à jour"
 #~ msgid "Isolated mode activation is temporarily unavailable."
 #~ msgstr ""
 
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Jailed"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Jailed validators produce no blocks or rewards"
+msgstr ""
+
 #: src/components/referrals/referred-traders.tsx
 msgid "Joined"
 msgstr "Inscription"
@@ -3507,11 +3926,37 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Leader"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Leader commission"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "Classement"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Leaderboard is temporarily unavailable"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Leaderboard period"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Leading"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Learn more"
@@ -3633,6 +4078,11 @@ msgstr "Associer un portefeuille de bureau"
 msgid "Link mobile device"
 msgstr "Associer un appareil mobile"
 
+#. placeholder {0}: shortenAddress(link.stakingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "Linked staking account: {0}."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Liq"
 #~ msgstr "Liq."
@@ -3715,6 +4165,10 @@ msgstr "Chargement des dépôts et retraits..."
 msgid "Loading funding history..."
 msgstr "Chargement de l'historique de financement..."
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Loading leaderboard"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Loading markets..."
 msgstr "Chargement des marchés..."
@@ -3748,6 +4202,14 @@ msgstr "Chargement des réclamations récentes de récompenses…"
 msgid "Loading referrals"
 msgstr "Chargement des parrainages"
 
+#: src/components/staking/staking-view.tsx
+msgid "Loading staking account"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Loading staking table"
+msgstr ""
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Loading the latest position..."
@@ -3774,6 +4236,14 @@ msgstr "Chargement de l’historique TWAP..."
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Loading TWAP orders..."
 msgstr "Chargement des ordres TWAP..."
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Loading Vault details"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Loading Vaults"
+msgstr ""
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Loading wallet..."
@@ -3804,6 +4274,15 @@ msgstr "Chargement..."
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Loading…"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Lock period progress"
+msgstr ""
+
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#: src/components/staking/staking-view.tsx
+msgid "Locked until {0}"
 msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
@@ -4089,6 +4568,10 @@ msgstr "marchés"
 msgid "Markets"
 msgstr "Marchés"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Markets / Leaderboard"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Master"
 #~ msgstr ""
@@ -4097,6 +4580,15 @@ msgstr "Marchés"
 msgid "Master wallet"
 msgstr "Portefeuille principal"
 
+#: src/components/staking/staking-view.tsx
+msgid "Master wallet required"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Master wallet verified"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4145,6 +4637,15 @@ msgstr "Effet de levier maximal"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum supply"
 msgstr "Offre maximale"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Maximum withdrawable"
+msgstr ""
+
+#. placeholder {0}: formatVaultUsd(availableAmount)
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Maximum withdrawable: {0}"
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Meme"
@@ -4292,6 +4793,14 @@ msgstr "Plus d’infos"
 msgid "More position actions"
 msgstr "Plus d'actions sur la position"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Move Spot HYPE to staking"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Move staking HYPE to Spot"
+msgstr ""
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "Transférez des USDC entre vos comptes Perp et Spot."
@@ -4320,6 +4829,7 @@ msgstr ""
 msgid "Net received"
 msgstr "Net reçu"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -4332,6 +4842,11 @@ msgstr "Réseau"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #~ msgid "Network fee"
 #~ msgstr "Frais de réseau"
+
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Network stake"
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "New"
@@ -4361,6 +4876,10 @@ msgstr "L'activation d'une nouvelle marge de portefeuille est temporairement ind
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
 msgstr "Suivant"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Next page"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -4428,6 +4947,10 @@ msgstr "Aucun solde trouvé. Déposez des fonds pour commencer à trader."
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No depositors were returned."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "No deposits or withdrawals found."
@@ -4437,6 +4960,10 @@ msgstr "Aucun dépôt ou retrait trouvé."
 msgid "No description has been provided for this market."
 msgstr "Aucune description n'a été fournie pour ce marché."
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No description was provided by the Vault."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera."
 msgstr "Aucun QR d'ordinateur n'est chargé. Revenez au scanner du terminal ou scannez un nouveau QR avec l'appareil photo du système."
@@ -4444,6 +4971,10 @@ msgstr "Aucun QR d'ordinateur n'est chargé. Revenez au scanner du terminal ou s
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop wallet QR was found."
 msgstr "Aucun QR du portefeuille sur ordinateur n'a été trouvé."
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "No eligible leaderboard accounts"
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
@@ -4481,6 +5012,10 @@ msgstr "Aucune liquidité n’était disponible dans la limite de glissement de 
 #~ msgid "No liquidity was available within the 1% slippage limit."
 #~ msgstr ""
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No lock timestamp was returned"
+msgstr ""
+
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
 msgstr "Pas de prix mark"
@@ -4494,6 +5029,14 @@ msgstr "Pas de marché"
 msgid "No markets found."
 msgstr "Aucun marché trouvé."
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "No matching trader"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No matching Vaults"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "No mobile link found."
 #~ msgstr "Aucun lien mobile trouvé."
@@ -4502,6 +5045,10 @@ msgstr "Aucun marché trouvé."
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "Aucun ordre ouvert."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "No operation was submitted."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -4525,6 +5072,10 @@ msgstr "Aucun ordre ne correspond aux filtres sélectionnés."
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No orders match these filters."
 msgstr "Aucun ordre ne correspond à ces filtres."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "No performance history"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -4553,9 +5104,29 @@ msgstr "Aucune réponse de l'exchange"
 msgid "No reward assets are currently reported for this account."
 msgstr "Aucun actif de récompense n’est actuellement signalé pour ce compte."
 
+#: src/components/staking/staking-view.tsx
+msgid "No reward records were returned for this account."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "No route available. Try a different amount or asset."
 msgstr "Aucune route disponible. Essayez un autre montant ou actif."
+
+#: src/components/staking/staking-view.tsx
+msgid "No separate staking account is linked."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking action records were returned for this account."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking actions"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking rewards"
+msgstr ""
 
 #: src/components/trade/components/token-selector-dropdown.tsx
 #~ msgid "No tokens available"
@@ -4595,6 +5166,22 @@ msgstr "Aucun historique TWAP trouvé."
 #~ msgid "No user address"
 #~ msgstr ""
 
+#: src/components/staking/staking-view.tsx
+msgid "No validator matches the selected status filter."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "No validators found"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No Vaults in this filter"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No Vaults were returned"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "No wallet connected"
 #~ msgstr "Aucun wallet connecté"
@@ -4602,6 +5189,10 @@ msgstr "Aucun historique TWAP trouvé."
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
 #~ msgstr "Aucun portefeuille trouvé"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "No withdrawal queue"
+msgstr ""
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Not connected"
@@ -4631,9 +5222,26 @@ msgstr "Format des nombres"
 msgid "Number of Orders"
 msgstr "Nombre d'ordres"
 
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Official"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official and User filters stay unavailable until a reviewed exact-address policy is configured. No classification is inferred from relationship or ownership fields."
+msgstr ""
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Official referral link"
 msgstr "Lien de parrainage officiel"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official Vaults"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Offline"
@@ -4650,6 +5258,10 @@ msgstr "OI"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "Sur iPhone ou iPad, ouvrez le menu Partager, choisissez Sur l’écran d’accueil, puis lancez gatu depuis l’écran d’accueil."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "One-day validator lock"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4673,6 +5285,10 @@ msgstr ""
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr ""
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
+msgstr ""
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
 #~ msgstr ""
@@ -4683,6 +5299,7 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
@@ -4746,6 +5363,11 @@ msgstr "Les ordres ouverts ont changé. Rouvrez la confirmation et réessayez."
 #~ msgid "Open positions count"
 #~ msgstr ""
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Open related page"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4795,6 +5417,14 @@ msgstr "Ouvrir le jeton dans l’explorateur"
 #: src/hooks/trade/use-tracked-twap-order.ts
 #~ msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
 #~ msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Operation in progress"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Operation verified"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -4958,6 +5588,11 @@ msgstr "Autre mise à jour du registre"
 msgid "Overview"
 msgstr "Aperçu"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Owner"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
 msgstr "Compte propriétaire"
@@ -5047,6 +5682,39 @@ msgstr "Paiement"
 msgid "pending"
 msgstr "en attente"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Pending funds operation"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Pending operation needs verification"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Pending Spot transfer"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Pending transfer to Spot"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Performance"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Performance period"
+msgstr ""
+
+#. placeholder {0}: shortenAddress(link.stakingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "Permanent link requested for {0}."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Permanent staking link"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "perp"
 #~ msgstr "perp"
@@ -5060,12 +5728,11 @@ msgid "Perp"
 msgstr "Perp"
 
 #: src/components/trade/positions/balances-tab.tsx
-msgid "Perpetuals"
-msgstr "Perpetuals"
+#~ msgid "Perpetuals"
+#~ msgstr "Perpetuals"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "Perpétuels"
@@ -5184,12 +5851,15 @@ msgstr "Placé"
 #~ msgid "Please wait while Privy creates your embedded wallet."
 #~ msgstr "Veuillez patienter pendant que Privy crée votre portefeuille intégré."
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "PNL"
 msgstr "PNL"
 
@@ -5370,6 +6040,10 @@ msgstr "Appuyez et maintenez pendant 4 secondes"
 msgid "Previous"
 msgstr "Précédent"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Previous page"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5488,10 +6162,18 @@ msgstr ""
 #~ msgid "Progress"
 #~ msgstr "Progression"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Proportional position close"
+msgstr ""
+
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Protection price"
 msgstr "Prix de protection"
+
+#: src/components/staking/staking-view.tsx
+msgid "Public validator data remains visible. Account balances and actions require a verified owner."
+msgstr ""
 
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -5539,6 +6221,14 @@ msgstr "Aléatoiriser le timing"
 msgid "Randomized"
 msgstr "Aléatoire"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Rank"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Ranked by"
+msgstr ""
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -5550,6 +6240,10 @@ msgstr "Taux"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
 msgstr "Lire les règles officielles du parrainage"
+
+#: src/components/staking/staking-view.tsx
+msgid "Read only"
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Read the official agent wallet documentation"
@@ -5613,6 +6307,14 @@ msgstr "Paramètre de compte recommandé. Chaque actif de garantie possède un s
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX."
 msgstr "Recommandé uniquement aux traders automatisés. Chaque DEX possède un solde séparé, et la marge croisée s'applique séparément dans chaque DEX."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Reconciling from Hyperliquid"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Reconnect master wallet"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
@@ -5758,6 +6460,11 @@ msgstr "Pages des traders parrainés"
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "Les parrains gagnent actuellement 10 % des frais générés par les traders parrainés, après la réduction accordée au trader, sur les premiers $1B de volume."
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Refresh"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "Actualiser le devis"
@@ -5770,7 +6477,12 @@ msgstr "Actualisez les données de parrainage avant d’envoyer une autre demand
 msgid "Refreshing referral data…"
 msgstr "Actualisation des données de parrainage…"
 
+#: src/components/staking/staking-view.tsx
+msgid "Refreshing staking data…"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 msgid "Refreshing…"
 msgstr ""
 
@@ -5863,10 +6575,18 @@ msgstr "Remplace l'Agent mobile actuel par une clé temporaire inaccessible."
 msgid "Request not confirmed"
 msgstr "Demande non confirmée"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Request rejected"
+msgstr ""
+
 #: src/lib/errors/format.ts
 #: src/lib/lifi/use-bridge.ts
 msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
 msgstr "Le statut de la demande n’a pas pu être confirmé. Vérifiez les soldes et l’historique des transferts avant de réessayer."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Request submitted"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"
@@ -5899,6 +6619,10 @@ msgstr "Restaurer"
 msgid "Result not yet confirmed"
 msgstr ""
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Result not yet known"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Resume tracking"
 msgstr "Reprendre le suivi"
@@ -5907,6 +6631,8 @@ msgstr "Reprendre le suivi"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -5923,6 +6649,8 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "Réessayer"
 
@@ -5941,6 +6669,15 @@ msgstr "Réessayer la vérification"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Return on equity (ROE)"
 msgstr "Rendement des capitaux propres (ROE)"
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Returned depositors"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Returns delegated HYPE immediately to your available staking balance."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 msgid "Reveal"
@@ -5972,11 +6709,17 @@ msgid "Reversing..."
 msgstr "Inversion..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Review"
 msgstr "Vérifier"
 
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Review again"
 msgstr "Examiner à nouveau"
 
@@ -5992,6 +6735,10 @@ msgstr ""
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Review invitation"
 msgstr "Examiner l’invitation"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Review only"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
@@ -6017,6 +6764,10 @@ msgstr "Avant de négocier, consultez les informations disponibles sur le déplo
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Avant de négocier, consultez la <0>documentation</0> du déployeur et nos <1>Conditions d’utilisation</1>."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Review the public fields and try again."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Revocation was submitted but is not yet confirmed."
 msgstr "La révocation a été soumise mais n'est pas encore confirmée."
@@ -6025,10 +6776,26 @@ msgstr "La révocation a été soumise mais n'est pas encore confirmée."
 msgid "Revoke mobile access"
 msgstr "Révoquer l'accès mobile"
 
+#: src/components/staking/staking-view.tsx
+msgid "Reward"
+msgstr ""
+
 #: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Reward assets"
 msgstr "Actifs de récompense"
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward history is scoped to the verified owner."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward history unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward source"
+msgstr ""
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Rewards"
@@ -6051,6 +6818,10 @@ msgstr "Réclamer les récompenses"
 msgid "Rewards claimed"
 msgstr "Récompenses réclamées"
 
+#: src/components/staking/staking-view.tsx
+msgid "Rewards compound automatically"
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Risk Disclosure"
 msgstr "Avertissement sur les risques"
@@ -6063,9 +6834,17 @@ msgstr "Risque/Rendement"
 msgid "RO"
 msgstr "RO"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "ROI"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Role"
 msgstr "Rôle"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Rows per page"
+msgstr ""
 
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6183,9 +6962,25 @@ msgstr "Scannez le QR affiché par Associer un appareil mobile sur votre ordinat
 #~ msgid "Scan WalletConnect QR"
 #~ msgstr ""
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "SDK method"
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Search"
 #~ msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Search by vault, address, or leader"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Search by wallet address or display name"
+msgstr ""
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Search leaderboard"
+msgstr ""
 
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
@@ -6195,6 +6990,10 @@ msgstr "Rechercher des marchés"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets..."
 msgstr "Rechercher des marchés..."
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Search vaults"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Secure & Private"
@@ -6322,6 +7121,10 @@ msgstr "sélectionné"
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "Le portefeuille sélectionné ne correspond pas au compte connecté. Reconnectez votre portefeuille puis réessayez."
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Selected-period PNL"
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "vente"
@@ -6408,6 +7211,11 @@ msgstr "Séparé"
 msgid "Separate Accounts"
 msgstr "Comptes séparés"
 
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Server unlock time: {0}"
+msgstr ""
+
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "Définir"
@@ -6444,6 +7252,10 @@ msgstr "Définir TP/SL"
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "Paramètres"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Seven-day queue"
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Share"
@@ -6584,6 +7396,14 @@ msgstr ""
 msgid "Signer not ready"
 msgstr "Signataire non prêt"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Signing account"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Signing ready"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
@@ -6712,9 +7532,6 @@ msgid "Something went wrong"
 msgstr "Une erreur s'est produite"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "Bientôt"
@@ -6735,6 +7552,10 @@ msgstr ""
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "Trier par {sortLabel}"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Sort leaderboard"
+msgstr ""
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -6784,6 +7605,14 @@ msgstr "Fonds propres du compte spot"
 msgid "Spot Dust Conversion"
 msgstr "Conversion des soldes spot résiduels"
 
+#: src/components/staking/staking-view.tsx
+msgid "Spot to staking"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Spot to staking available"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
 #~ msgstr ""
@@ -6800,12 +7629,61 @@ msgstr "Écart"
 msgid "Stake"
 msgstr "Staker"
 
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "Staking"
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking action history unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking actions"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Staking balance only"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Staking deposit"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking details"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking overview"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards accrue every minute, are distributed daily, and are automatically redelegated. There is no separate staking reward collection action."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot · finalized"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot · initiated"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Staking withdrawal"
+msgstr ""
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Start and end must differ"
@@ -6824,10 +7702,18 @@ msgstr "Prix de départ"
 #~ msgid "Start Price (USDC)"
 #~ msgstr ""
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Started"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "Démarrage de la caméra..."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Starts the seven-day transfer queue from staking balance to Spot."
+msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -6835,6 +7721,7 @@ msgid "Statistics"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -6843,6 +7730,10 @@ msgstr ""
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Status"
 msgstr "Statut"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Status not confirmed"
+msgstr ""
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
@@ -6921,6 +7812,10 @@ msgstr "Transfert de sous-compte"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Submit"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Submitted"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -7184,6 +8079,10 @@ msgstr "Taker"
 msgid "Taking longer than expected"
 msgstr "Cela prend plus de temps que prévu"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Target"
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Target leverage"
 msgstr "Levier cible"
@@ -7243,6 +8142,14 @@ msgstr "Les frais d’activation du compte ont changé avant la signature. Véri
 msgid "The active wallet is not this account's master wallet"
 msgstr ""
 
+#: src/components/staking/staking-view.tsx
+msgid "The address already has five pending withdrawals."
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "The address is invalid or Hyperliquid returned no Vault details for it."
+msgstr ""
+
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
 msgstr ""
@@ -7255,6 +8162,10 @@ msgstr "L'approbation n'a pas pu être revérifiée. Le QR reste masqué tant qu
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "Le résultat de l'approbation n'est pas confirmé. Réessayez la vérification en lecture seule avant toute autre action."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
@@ -7284,6 +8195,10 @@ msgstr "La transaction Arbitrum a été soumise, mais son statut final n’a pas
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "La réponse d'annulation n'a pas pu être confirmée. Actualisez les ordres ouverts avant de réessayer."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -7322,6 +8237,10 @@ msgstr ""
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "La clé générée reste uniquement dans cet onglet. N'approuvez pas une autre clé et ne rechargez pas la page."
 
+#: src/components/staking/staking-view.tsx
+msgid "The history response could not be verified."
+msgstr ""
+
 #: src/hooks/trade/use-usdc-routing.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
 msgstr "La route de dépôt Hyperliquid a changé avant la signature. Vérifiez la route actualisée et réessayez."
@@ -7330,6 +8249,10 @@ msgstr "La route de dépôt Hyperliquid a changé avant la signature. Vérifiez 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "La route de retrait d’Hyperliquid a changé. Vérifiez la nouvelle route et les frais actualisés, puis soumettez à nouveau."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "The leader receives the commission shown above from profits."
+msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
@@ -7343,6 +8266,10 @@ msgstr ""
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The modified order is no longer open."
 msgstr "L'ordre modifié n'est plus ouvert."
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "The network-matched public dataset could not be verified. Your account and trading are unaffected."
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "The one-time QR could not be verified. Check your connection and retry."
@@ -7371,6 +8298,10 @@ msgstr "L'ordre est toujours en cours de confirmation."
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "La mise à jour de l'ordre n'a pas été confirmée par les données en direct. Actualisez avant de réessayer ; l'annulation reste disponible."
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
+msgstr ""
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
 msgstr "La page actualise les données depuis Hyperliquid. Les modifications récentes peuvent mettre un moment à apparaître."
@@ -7387,6 +8318,10 @@ msgstr "La modification d'ordre précédente n'est toujours pas confirmée. Actu
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "Le portefeuille précédent s'est déconnecté, mais sa clé de trading locale n'a pas pu être supprimée. Effacez les données de ce site avant de le reconnecter."
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "The prior request may have reached Hyperliquid. Do not submit it again. Open the related page to continue read-only reconciliation."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
 msgstr ""
@@ -7394,6 +8329,10 @@ msgstr ""
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
 msgstr "La clé privée est créée sur cet ordinateur et intégrée au code QR."
+
+#: src/components/vaults/vaults-list.tsx
+msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR expired before it could be displayed. Create a new key."
@@ -7420,6 +8359,18 @@ msgstr "La demande a été envoyée, mais son statut final est toujours en cours
 msgid "The response could not be verified. No referral action is available until fresh data loads."
 msgstr "La réponse n’a pas pu être vérifiée. Aucune action de parrainage n’est disponible tant que de nouvelles données n’ont pas été chargées."
 
+#: src/components/staking/staking-view.tsx
+msgid "The response could not be verified. No validator action is available."
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "The reward response could not be verified."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The saved desktop QR was invalid. Scan a fresh QR."
@@ -7429,11 +8380,19 @@ msgstr "Le QR de bureau enregistré était invalide. Scannez un nouveau QR."
 msgid "The secure Hyperliquid connection could not be verified. Try again."
 msgstr "La connexion sécurisée à Hyperliquid n’a pas pu être vérifiée. Réessayez."
 
+#: src/components/vaults/vaults-list.tsx
+msgid "The selected Hyperliquid environment returned a definitive empty Vault list."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "Le marché sélectionné a changé. Rouvrez la fenêtre de marge avant de l’ajuster."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The signed {action} request is dispatched once and will not be retried automatically."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The signed request has been submitted. Keep this window open."
@@ -7475,6 +8434,14 @@ msgstr "Le compte de trading ou le réseau a changé. Rouvrez l'éditeur et rée
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trigger price is invalid for this order direction."
 msgstr "Le prix de déclenchement est invalide pour cette direction d'ordre."
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "The verified dataset did not contain an eligible account for this network."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
@@ -7580,6 +8547,14 @@ msgstr "Cet appareil n'a pas pu conserver le QR en toute sécurité. Vérifiez l
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
 msgstr "Cette signature sans frais de gas crée un portefeuille API dédié aux transactions rapides. Il ne peut pas retirer de fonds."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This interface may return at most a subset of all depositors."
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "This is a definitive empty result for the selected filter."
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
@@ -7739,6 +8714,11 @@ msgstr "Cet actif au comptant est activé indépendamment par Unit, un fournisse
 msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "Ce marché au comptant échange {0} contre {1} sur Hyperliquid."
 
+#. placeholder {0}: shortenAddress(link.tradingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "This staking account controls trading account {0}."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This strict isolated market does not allow margin to be removed from an open position."
@@ -7747,6 +8727,10 @@ msgstr "Ce marché à isolation stricte ne permet pas de retirer de la marge d'u
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "Cette clé de trading n'est pas le Mobile Agent actuellement approuvé. Créez un nouveau QR de bureau."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "This Vault uses proportional position closing on withdrawal."
+msgstr ""
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 #~ msgid "This will cancel all {orderCount} open orders, including protective stop orders. Your positions will no longer be protected."
@@ -7775,6 +8759,8 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/referrals/referral-legacy-history.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7913,6 +8899,10 @@ msgstr "Durée totale"
 #~ msgid "Total Value"
 #~ msgstr ""
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Total value locked"
+msgstr ""
+
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Total volume"
 msgstr "Volume total"
@@ -7997,6 +8987,7 @@ msgstr "Valeur de la transaction"
 msgid "Trade via {0} spot market"
 msgstr "Trader via le marché Spot {0}"
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Trader"
 msgstr "Trader"
@@ -8026,6 +9017,8 @@ msgid "Trades"
 msgstr "Transactions"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
 msgid "Trading"
 msgstr "Trading"
 
@@ -8108,6 +9101,7 @@ msgstr "Progression du volume de trading"
 msgid "Traditional Finance"
 msgstr "Finance traditionnelle"
 
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Transaction"
@@ -8164,6 +9158,14 @@ msgstr "Transfert en cours..."
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "Les transferts entre Spot et Perps ne sont pas disponibles en mode compte unifié."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Transfers HYPE from your Spot balance to your available staking balance."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Trending"
 #~ msgstr "Tendances"
@@ -8209,18 +9211,27 @@ msgstr "La taille de l'ordre à déclenchement dépasse celle de la position"
 msgid "Triggered"
 msgstr "Déclenché"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#~ msgid "Try again"
-#~ msgstr "Réessayer"
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Try again"
+msgstr "Réessayer"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Try Again"
 msgstr "Réessayer"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Try another vault name, address, or leader address."
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Try the PWA."
 msgstr "Essayez la PWA."
+
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "TVL"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8402,6 +9413,7 @@ msgstr "Impossible de vérifier l’admissibilité au retrait. La demande n’a 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "Indisponible"
 
@@ -8409,9 +9421,34 @@ msgstr "Indisponible"
 msgid "Unclaimed"
 msgstr "Non réclamé"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Unclassified Vaults"
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
 msgstr "non confirmé"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Undelegate"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Undelegate HYPE"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Undelegated from {validator}"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Undelegating returns HYPE to the available staking balance. It does not move HYPE to Spot."
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Undelegation"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Underlying asset"
@@ -8448,6 +9485,10 @@ msgstr "Symbole inconnu : {0}"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "Symbole inconnu : {symbolName}"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Unlock eligibility uses the server-returned lock timestamp, not a universal fixed lock."
+msgstr ""
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unlock your wallet and try again."
@@ -8493,6 +9534,10 @@ msgstr "Échec de la mise à jour"
 msgid "Updated"
 msgstr "Mis à jour"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Updated {updatedLabel}"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
 msgstr "Mise à jour en direct"
@@ -8500,6 +9545,10 @@ msgstr "Mise à jour en direct"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Updating..."
 msgstr "Mise à jour..."
+
+#: src/components/staking/staking-view.tsx
+msgid "Uptime"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
@@ -8562,6 +9611,15 @@ msgstr "Utiliser le prix médian"
 msgid "Use referral code {code} when joining Hyperliquid."
 msgstr "Utilisez le code de parrainage {code} lors de votre inscription sur Hyperliquid."
 
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "User"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "User Vaults"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Using"
 #~ msgstr "Utilise"
@@ -8580,6 +9638,27 @@ msgstr "Validation des positions..."
 msgid "Validating..."
 msgstr "Validation..."
 
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Validator"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator commission"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator data unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance period"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -8590,6 +9669,19 @@ msgstr ""
 #~ msgid "Value"
 #~ msgstr "Valeur"
 
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault chart metric"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault chart period"
+msgstr ""
+
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Vault Close"
 msgstr "Clôture d'une position du coffre"
@@ -8598,13 +9690,61 @@ msgstr "Clôture d'une position du coffre"
 msgid "Vault Commission"
 msgstr "Commission du coffre"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault data is unavailable"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Vault deposit"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Vault Deposit"
 msgstr "Dépôt dans le coffre"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault details are unavailable"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
 msgstr "Distribution du coffre"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault filters"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault lock status"
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault not found"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault performance"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Vault request failed"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault risk"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Vault transfer confirmed"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault value"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Vault withdrawal"
+msgstr ""
 
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
@@ -8613,6 +9753,8 @@ msgstr "Retrait du coffre"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Vaults"
 msgstr "Coffres"
 
@@ -8620,18 +9762,37 @@ msgstr "Coffres"
 msgid "Verification reference"
 msgstr ""
 
+#. placeholder {0}: formatVaultUsd(availableAmount)
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Verified wallet balance: {0}"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verify"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Verify again"
+msgstr ""
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Verify the pending funds operation before starting another one."
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Verifying"
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Verifying approval..."
 msgstr "Vérification de l'approbation..."
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Verifying from history"
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -8658,6 +9819,7 @@ msgstr "Voir sur l'explorateur"
 msgid "VOL"
 msgstr "VOL"
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
@@ -8822,6 +9984,7 @@ msgstr "arrivera dans {0}"
 #~ msgid "will arrive in ~5 min"
 #~ msgstr ""
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -8831,6 +9994,7 @@ msgstr "arrivera dans {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Retirer"
@@ -8839,6 +10003,10 @@ msgstr "Retirer"
 msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "Retirer"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Withdraw from Vault"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
@@ -8857,6 +10025,10 @@ msgstr "Retirable"
 msgid "Withdrawal"
 msgstr "Retrait"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal can cancel orders, close positions, incur slippage, and return less than requested."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
@@ -8866,6 +10038,18 @@ msgstr "Échec du retrait"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "Frais de retrait"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal locked"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Withdrawal may cancel orders, close positions, incur slippage, and return less than requested."
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal policy"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal route"
@@ -8878,6 +10062,10 @@ msgstr "État du retrait inconnu"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
 msgstr "Retrait soumis"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal unlocked"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/domain/trade/pre-transfer-check.ts
@@ -8917,6 +10105,14 @@ msgstr "Vous êtes sur le Testnet"
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "Vous consultez des marchés déployés de manière indépendante et sans autorisation par un tiers sur Hyperliquid. Ces marchés sont présentés en fonction de l’activité onchain et ne sont ni examinés, ni vérifiés, ni approuvés."
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "You can lose all deposited principal. Vault returns are not guaranteed."
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "You can lose all principal, and historical APR does not predict future returns."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 #~ msgstr ""
@@ -8954,6 +10150,10 @@ msgstr "Vous êtes hors ligne"
 msgid "Your account was referred by"
 msgstr "Votre compte a été parrainé par"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Your all-time PNL"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
 #~ msgstr ""
@@ -8965,6 +10165,16 @@ msgstr "Votre transfert via le bridge est toujours en cours. Vos fonds sont en s
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "Votre position actuellement ouverte sur ce marché"
+
+#: src/components/staking/staking-view.tsx
+msgid "Your delegated stake"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Your deposit"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
@@ -8987,9 +10197,17 @@ msgstr "Votre parrainage"
 msgid "Your rewards"
 msgstr "Vos récompenses"
 
+#: src/components/staking/staking-view.tsx
+msgid "Your stake"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"
 msgstr "Votre transaction est en cours de traitement"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."

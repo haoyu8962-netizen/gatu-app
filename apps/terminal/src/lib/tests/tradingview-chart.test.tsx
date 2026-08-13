@@ -69,6 +69,7 @@ type MockWidget = {
 	onChartReady: ReturnType<typeof vi.fn>;
 	remove: ReturnType<typeof vi.fn>;
 	resetData: ReturnType<typeof vi.fn>;
+	save: ReturnType<typeof vi.fn>;
 	setSymbol: ReturnType<typeof vi.fn>;
 };
 
@@ -98,6 +99,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 	let currentSymbol = (options as { symbol?: string }).symbol ?? "BTC";
 	const symbolChanged = createMockSubscription();
 	const resetData = vi.fn();
+	let currentInterval = (options as { interval?: string }).interval ?? "60";
 
 	return {
 		__setActiveSymbol: (symbol: string) => {
@@ -110,6 +112,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 		activeChart: vi.fn(() => ({
 			onSymbolChanged: vi.fn(() => symbolChanged),
 			resetData,
+			resolution: vi.fn(() => currentInterval),
 			symbol: vi.fn(() => currentSymbol),
 		})),
 		applyOverrides: vi.fn(),
@@ -124,8 +127,14 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 		}),
 		remove: vi.fn(),
 		resetData,
+		save: vi.fn((callback: (state: object) => void) =>
+			callback({
+				charts: [{ panes: [{ sources: [{ state: { interval: currentInterval, symbol: currentSymbol } }] }] }],
+			}),
+		),
 		setSymbol: vi.fn((symbol: string, _interval: string, callback: () => void) => {
 			currentSymbol = symbol;
+			currentInterval = _interval;
 			callback();
 		}),
 	};
@@ -605,7 +614,7 @@ describe("TradingViewChart", () => {
 		expect(widget?.remove).not.toHaveBeenCalled();
 		expect(widget?.setSymbol).not.toHaveBeenCalled();
 		expect(widget?.changeTheme).toHaveBeenCalledTimes(1);
-		expect(widget?.changeTheme).toHaveBeenCalledWith("light");
+		expect(widget?.changeTheme).toHaveBeenCalledWith("light", { disableUndo: true });
 		expect(widget?.applyOverrides).toHaveBeenCalledTimes(1);
 	});
 
@@ -647,7 +656,7 @@ describe("TradingViewChart", () => {
 
 		expect(widget?.applyOverrides).not.toHaveBeenCalled();
 		expect(widget?.changeTheme).toHaveBeenCalledTimes(2);
-		expect(widget?.changeTheme).toHaveBeenLastCalledWith("dark");
+		expect(widget?.changeTheme).toHaveBeenLastCalledWith("dark", { disableUndo: true });
 
 		await act(async () => {
 			widget?.__setTheme(pendingThemeSwitches[1]?.theme ?? "dark");
@@ -677,19 +686,27 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(widget?.changeTheme).toHaveBeenCalledTimes(2);
-		expect(widget?.changeTheme).toHaveBeenNthCalledWith(1, "light");
-		expect(widget?.changeTheme).toHaveBeenNthCalledWith(2, "light");
+		expect(widget?.changeTheme).toHaveBeenNthCalledWith(1, "light", { disableUndo: true });
+		expect(widget?.changeTheme).toHaveBeenNthCalledWith(2, "light", { disableUndo: true });
 		expect(widget?.applyOverrides).toHaveBeenCalledOnce();
 		expect(widget?.__getTheme()).toBe("light");
 	});
 
-	it("stops retrying after two rejected theme switches", async () => {
+	it("rebuilds the widget after two rejected theme switches", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
 
 		const widget = widgets[0];
+		const savedState = { charts: [{ panes: [{ studies: ["Moving Average"], drawings: ["trend"] }] }] };
+		widget?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		widget?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
 		widget?.changeTheme.mockRejectedValue(new Error("theme failed"));
 
 		act(() => {
@@ -699,7 +716,182 @@ describe("TradingViewChart", () => {
 
 		expect(widget?.changeTheme).toHaveBeenCalledTimes(2);
 		expect(widget?.applyOverrides).not.toHaveBeenCalled();
-		expect(widget?.__getTheme()).toBe("dark");
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(testState.datafeedDestroys[0]).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.__getTheme()).toBe("light");
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ interval: "1D", saved_data: savedState, symbol: "BTC", theme: "light" }),
+		);
+	});
+
+	it("rebuilds a widget when a theme switch never settles and ignores its late completion", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let resolveTheme: (() => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveTheme = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(5_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.__getTheme()).toBe("light");
+
+		await act(async () => {
+			widget?.__setTheme("light");
+			resolveTheme?.();
+			await Promise.resolve();
+		});
+
+		expect(widget?.applyOverrides).not.toHaveBeenCalled();
+		expect(widgets[1]?.remove).not.toHaveBeenCalled();
+		expect(widgets[1]?.applyOverrides).toHaveBeenCalledOnce();
+	});
+
+	it("counts the theme timeout only while the page is visible and online", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		widget?.changeTheme.mockImplementation(() => new Promise<void>(() => {}));
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(1_000);
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(60_000);
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(1_000);
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+			window.dispatchEvent(new Event("offline"));
+			vi.advanceTimersByTime(60_000);
+			await Promise.resolve();
+		});
+
+		expect(widget?.remove).not.toHaveBeenCalled();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+			window.dispatchEvent(new Event("online"));
+			vi.advanceTimersByTime(2_999);
+			await Promise.resolve();
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			vi.advanceTimersByTime(1);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.__getTheme()).toBe("light");
+	});
+
+	it("does not restore a theme-recovery snapshot into a newly selected market", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let finishSave: ((state: object) => void) | undefined;
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+		widget?.changeTheme.mockRejectedValue(new Error("theme failed"));
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "light" }));
+		});
+		await act(async () => {
+			finishSave?.({ charts: ["BTC layout"] });
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ symbol: "ETH", theme: "light" }));
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+	});
+
+	it("rebuilds after synchronous theme API failures", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		widget?.changeTheme.mockImplementation(() => {
+			throw new Error("theme failed synchronously");
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.changeTheme).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.__getTheme()).toBe("light");
+	});
+
+	it("rebuilds after synchronous theme inspection failures", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		widget?.getTheme.mockClear().mockImplementation(() => {
+			throw new Error("theme inspection failed");
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.getTheme).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.__getTheme()).toBe("light");
 	});
 
 	it("keeps an initialized inactive widget aligned with the latest theme", async () => {
@@ -715,7 +907,7 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(widget?.changeTheme).toHaveBeenCalledOnce();
-		expect(widget?.changeTheme).toHaveBeenCalledWith("light");
+		expect(widget?.changeTheme).toHaveBeenCalledWith("light", { disableUndo: true });
 
 		act(() => {
 			root.render(createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "light" }));
@@ -783,6 +975,405 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
 		expect(testState.datafeedDestroys[0]).toHaveBeenCalledOnce();
 		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh" }));
+	});
+
+	it("preserves the current chart layout and interval when the locale changes", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		const savedState = { charts: [{ panes: [{ studies: ["Moving Average"], drawings: ["trend"] }] }] };
+		widget?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		widget?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.save).toHaveBeenCalledWith(expect.any(Function), { includeDrawings: true });
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ interval: "1D", locale: "zh", saved_data: savedState, symbol: "BTC" }),
+		);
+	});
+
+	it("does not restore the previous market layout when market and locale change in one commit", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		const savedState = { charts: ["BTC layout"] };
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh", symbol: "ETH" }));
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+	});
+
+	it("keeps the restored user interval across inactive and active transitions", async () => {
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "dark", locale: "en" }),
+			);
+		});
+		await flushChartEffects();
+		widgets[0]?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }),
+			);
+		});
+		await flushChartEffects();
+		const rebuiltWidget = widgets[1];
+		expect(rebuiltWidget?.setSymbol).toHaveBeenLastCalledWith("BTC", "1D", expect.any(Function));
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { active: false, symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }),
+			);
+		});
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }),
+			);
+		});
+		await flushChartEffects();
+
+		expect(rebuiltWidget?.setSymbol).toHaveBeenCalledTimes(1);
+		expect(rebuiltWidget?.setSymbol).not.toHaveBeenCalledWith("BTC", "60", expect.any(Function));
+	});
+
+	it("still applies an explicit interval prop change after restoring user state", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		widgets[0]?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		const rebuiltWidget = widgets[1];
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "240", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		expect(rebuiltWidget?.setSymbol).toHaveBeenLastCalledWith("BTC", "240", expect.any(Function));
+	});
+
+	it("prefers a new interval prop over a captured interval before widget construction", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		widgets[0]?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		let finishLoading: (() => void) | undefined;
+		vi.mocked(loadTradingViewScript).mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finishLoading = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "240", theme: "dark", locale: "zh" }));
+		});
+		await act(async () => {
+			finishLoading?.();
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ interval: "240", locale: "zh" }));
+		expect(widgets[1]?.setSymbol).toHaveBeenLastCalledWith("BTC", "240", expect.any(Function));
+	});
+
+	it("rebuilds without saved data if locale state capture times out", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		widgets[0]?.save.mockImplementation(() => {});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			vi.advanceTimersByTime(2_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+	});
+
+	it("counts the locale state-save timeout only while visible and online", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		widgets[0]?.save.mockImplementation(() => {});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(500);
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(60_000);
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(500);
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+			window.dispatchEvent(new Event("offline"));
+			vi.advanceTimersByTime(60_000);
+			await Promise.resolve();
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+			window.dispatchEvent(new Event("online"));
+			vi.advanceTimersByTime(999);
+			await Promise.resolve();
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		await act(async () => {
+			vi.advanceTimersByTime(1);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not restore a saved locale layout into a newly selected market", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await act(async () => {
+			finishSave?.({ charts: ["BTC layout"] });
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh", symbol: "ETH" }));
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+	});
+
+	it("revalidates a captured locale snapshot if the market changes before widget construction", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		let finishLoading: (() => void) | undefined;
+		vi.mocked(loadTradingViewScript).mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finishLoading = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await act(async () => {
+			finishLoading?.();
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh", symbol: "ETH" }));
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+	});
+
+	it("coalesces rapid locale changes into one rebuild for the latest locale", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "fr" }));
+		});
+		await act(async () => {
+			finishSave?.({ charts: ["layout"] });
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgets[0]?.save).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ locale: "fr", saved_data: { charts: ["layout"] } }),
+		);
+	});
+
+	it("ignores a late locale state callback after unmount", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		act(() => root.render(createElement("div")));
+		await act(async () => {
+			finishSave?.({ charts: ["late layout"] });
+			await Promise.resolve();
+		});
+
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+	});
+
+	it("lets a locale rebuild supersede a pending theme switch", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let resolveTheme: (() => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveTheme = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ locale: "zh", theme: "light" }));
+
+		await act(async () => {
+			widget?.__setTheme("light");
+			resolveTheme?.();
+			await Promise.resolve();
+		});
+
+		expect(widget?.applyOverrides).not.toHaveBeenCalled();
+		expect(widgets[1]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("ignores a pending theme switch after unmount", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let resolveTheme: (() => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveTheme = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement("div"));
+		});
+
+		await act(async () => {
+			widget?.__setTheme("light");
+			resolveTheme?.();
+			await Promise.resolve();
+		});
+
+		expect(widget?.remove).toHaveBeenCalledOnce();
+		expect(widget?.applyOverrides).not.toHaveBeenCalled();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
 	});
 
 	it("uses a same-origin theme-aware static stylesheet instead of a blob URL", async () => {

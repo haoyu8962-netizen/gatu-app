@@ -30,6 +30,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Test TradingView integration
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/chart-*.test.ts
+          src/lib/tests/chart-*.test.tsx
+          src/lib/tests/load-tradingview.test.ts
+          src/lib/tests/mobile-chart-view.test.tsx
+          src/lib/tests/tradingview-*.test.ts
+          src/lib/tests/tradingview-*.test.tsx
+
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build
         env:

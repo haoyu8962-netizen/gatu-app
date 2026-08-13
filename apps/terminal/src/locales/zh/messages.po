@@ -36,10 +36,6 @@ msgstr "已授权 {0} 个"
 msgid "{0} is listed as a native Hyperliquid perpetual market."
 msgstr "{0} 已作为 Hyperliquid 原生永续市场上线。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "{0} more wallets"
-#~ msgstr ""
-
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -60,6 +56,10 @@ msgstr "{0}/{1} 笔订单已被接受。重试前请检查当前委托。"
 msgid "{0}/20 characters"
 msgstr "{0}/20 个字符"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "{age} days"
+msgstr "{age} 天"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} 转为 {targetDirectionLabel}"
@@ -69,9 +69,13 @@ msgstr "{currentDirectionLabel} 转为 {targetDirectionLabel}"
 msgid "{days} days"
 msgstr "{days} 天"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "{formatted} USDC deposited to Hyperliquid"
-#~ msgstr ""
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} history"
+msgstr "{label} 历史"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} trend"
+msgstr "{label} 趋势"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -80,6 +84,18 @@ msgstr "{orderCount, plural, other {将取消全部 # 个当前委托，包括�
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "{p}%"
 msgstr "{p}%"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} PNL"
+msgstr "{periodLabel} PNL"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} ROI"
+msgstr "{periodLabel} ROI"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "{periodLabel} Volume"
+msgstr "{periodLabel} 交易量"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {# position} other {# positions}}"
@@ -134,11 +150,15 @@ msgstr "1–20 个字符"
 msgid "14 Day Volume"
 msgstr "14 日交易量"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "24h"
-#~ msgstr "24h"
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "24h"
+msgstr "24h"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
 msgid "24H"
 msgstr "24 小时"
 
@@ -156,10 +176,6 @@ msgstr "24小时变化"
 #~ msgid "24h Price"
 #~ msgstr "24小时价格"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#~ msgid "24h vol"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
@@ -175,7 +191,12 @@ msgstr "24小时成交量"
 msgid "30 days"
 msgstr "30 天"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "30D"
 msgstr "30 天"
 
@@ -187,7 +208,12 @@ msgstr "剩余 5 天"
 msgid "7 days"
 msgstr "7 天"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "7D"
 msgstr "7 天"
 
@@ -199,9 +225,13 @@ msgstr "8小时资金费率"
 msgid "A confirmation is shown before each market close."
 msgstr "每次市价平仓前都会显示确认。"
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "A crypto wallet lets you store and manage your digital assets securely."
-#~ msgstr ""
+#: src/components/staking/staking-view.tsx
+msgid "A funds operation is awaiting verification"
+msgstr "有一笔资金操作正在等待验证"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "A new delegation is locked to this validator for one day. Rewards are distributed daily and automatically redelegated."
+msgstr "新委托将锁定在此验证者下 1 天。奖励每日分发并自动复投。"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
@@ -219,6 +249,10 @@ msgstr "推荐码只能绑定一次，且无法在此页面更改。"
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "反向委托无法提供可靠的交易前预估强平价。成交后请检查新仓位。"
 
+#: src/components/staking/staking-view.tsx
+msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
+msgstr "质押关联无法解除。质押账户将获得交易账户资金的完全控制权，因此本页面不提供关联操作。"
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
 msgstr "其中一个市场存在正在执行的 TWAP 委托。"
@@ -227,9 +261,9 @@ msgstr "其中一个市场存在正在执行的 TWAP 委托。"
 msgid "A valid code may unlock the active referral fee discount."
 msgstr "有效的推荐码可能会启用当前推荐手续费折扣。"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "About Builder Codes"
-#~ msgstr ""
+#: src/components/vaults/vault-detail-view.tsx
+msgid "About this Vault"
+msgstr "关于此金库"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #~ msgid "Accept"
@@ -276,6 +310,10 @@ msgstr "账户活动"
 msgid "Account and wallet"
 msgstr "账户与钱包"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Account data unavailable"
+msgstr "账户数据不可用"
+
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Account Equity"
 msgstr "账户权益"
@@ -302,12 +340,28 @@ msgstr "提交请求前账户模式已更改。请核对余额后重试。"
 msgid "Account mode updated"
 msgstr "账户模式已更新"
 
+#: src/components/staking/staking-view.tsx
+msgid "Account staking data unavailable"
+msgstr "账户质押数据不可用"
+
+#: src/components/staking/staking-view.tsx
+msgid "Account staking status"
+msgstr "账户质押状态"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "账户类型"
 
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Account value"
+msgstr "账户价值"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Account Value"
 msgstr "账户价值"
@@ -321,20 +375,26 @@ msgstr "账户价值变化"
 #~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
 #~ msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Account Vault data could not be verified"
+msgstr "无法验证账户金库数据"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Account-level agent approval"
 msgstr "账户级 Agent 授权"
 
-#: src/components/trade/header/user-menu.tsx
-#~ msgid "Accounts"
-#~ msgstr ""
-
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Action"
 msgstr "操作"
 
+#: src/components/staking/staking-view.tsx
+msgid "Action history is scoped to the verified owner."
+msgstr "操作历史仅显示已验证所有者的数据。"
+
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -351,6 +411,8 @@ msgstr "激活 DEX"
 #~ msgstr "活跃"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Active"
 msgstr "有效"
 
@@ -449,17 +511,10 @@ msgstr "移除后"
 msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
 msgstr "USDC 到账后，您的嵌入式钱包将授权一笔 Gas 代付的 Circle CCTP 充值。"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Agent"
-#~ msgstr ""
-
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Agent mode: Orders signed automatically (fast)"
-#~ msgstr ""
-
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Agent verification failed"
-#~ msgstr ""
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Age"
+msgstr "运行时间"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead."
@@ -473,6 +528,7 @@ msgstr "AI"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-market-filter.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "All"
 msgstr "全部"
 
@@ -483,10 +539,6 @@ msgstr "所有平仓委托均已成交"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发生强制平仓，您的全仓保证金余额及剩余未平仓仓位都可能被没收。"
-
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
-#~ msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "All currently available referral rewards are claimed to your Spot balance."
@@ -522,20 +574,44 @@ msgstr "全部类型"
 #~ msgid "All Types"
 #~ msgstr "全部类型"
 
+#: src/components/staking/staking-view.tsx
+msgid "All validators"
+msgstr "所有验证者"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "All Vaults"
+msgstr "所有金库"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "All-time"
+msgstr "全部时间"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "All-time PNL"
+msgstr "全部时间 PNL"
+
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO（仅添加流动性）"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Amount"
 msgstr "数量"
 
-#: src/components/trade/positions/transfer-dialog.tsx
-#~ msgid "Amount (USDC)"
-#~ msgstr ""
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Amount (USDC)"
+msgstr "金额（USDC）"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Amount is too low for the available bridge routes."
@@ -544,6 +620,10 @@ msgstr "金额过低，当前桥接路由均不可用。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "数量必须大于零且不得超过当前仓位。"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "An account is excluded only when both its account value is below $100K and its all-time volume is below $10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset."
+msgstr "仅当账户价值低于 10 万美元且全部时间交易量低于 1,000 万美元时，该账户才会被排除。ROI 使用当前官方应用数据源报告的值。金库账户依据与网络匹配的金库数据集排除。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
@@ -615,10 +695,6 @@ msgstr "任何扫描或截取此二维码的人都能使用该交易密钥进行
 #~ msgid "API"
 #~ msgstr "API"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "API & Subaccounts"
-#~ msgstr ""
-
 #: src/components/api-wallet/api-wallet-view.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -657,10 +733,6 @@ msgstr "API 钱包已移除"
 msgid "API wallets, also called agents, can sign delegated actions for your Hyperliquid account. Information requests still use the account's public address."
 msgstr "API 钱包也称 Agent，可为你的 Hyperliquid 账户签署委托操作。查询信息时仍使用账户的公开地址。"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Appearance"
-#~ msgstr ""
-
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Approval"
 msgstr "授权"
@@ -673,13 +745,13 @@ msgstr "授权和移除都需要匹配的主钱包。"
 msgid "Approval verification pending"
 msgstr "等待验证授权"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Approve a builder to charge fees on orders placed on your behalf. Builder codes allow DeFi applications to receive a portion of trading fees."
-#~ msgstr ""
-
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve a mobile trading key"
 msgstr "授权移动交易密钥"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Approve in wallet"
+msgstr "在钱包中批准"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve in wallet..."
@@ -693,6 +765,16 @@ msgstr "授权移动交易密钥"
 msgid "Approving a new mobile key replaces the previous mobile key."
 msgstr "授权新的移动交易密钥将替换旧密钥。"
 
+#: src/components/staking/staking-view.tsx
+msgid "Approximate: the SDK parses the raw total as a JavaScript number."
+msgstr "近似值：SDK 会将原始总量解析为 JavaScript number。"
+
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "APR"
+msgstr "APR"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Arbitrum (CCTP)"
 msgstr "Arbitrum（CCTP）"
@@ -705,6 +787,10 @@ msgstr "Arbitrum（传统桥）"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
 msgstr "已拒绝切换到 Arbitrum 网络。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "As-needed position close"
+msgstr "按需平仓"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -741,23 +827,37 @@ msgstr "无法加载资产说明。"
 #~ msgid "Asset information supplied through Hyperliquid market metadata."
 #~ msgstr "通过 Hyperliquid 市场元数据提供的资产说明。"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Assets"
-#~ msgstr ""
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Authorization rejected"
+msgstr "授权已拒绝"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Authorize"
+msgstr "授权"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "Authorize API wallet"
 msgstr "授权 API 钱包"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Authorize in master wallet"
+msgstr "在主钱包中授权"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Authorized API wallets"
 msgstr "已授权的 API 钱包"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Authorizing request"
+msgstr "正在授权请求"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC 自动存款失败"
 
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
@@ -776,25 +876,34 @@ msgstr "可用"
 msgid "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
 msgstr "可用 {balance} USDC 低于最低存款金额。请至少发送 {minimumDeposit}。"
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Available amount is not verified"
+msgstr "可用金额未经验证"
+
+#: src/components/staking/staking-view.tsx
+msgid "Available for delegation"
+msgstr "可用于委托"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Available funds are in Spot"
 msgstr "可用资金在现货账户"
+
+#: src/components/staking/staking-view.tsx
+msgid "Available in Spot"
+msgstr "Spot 可用"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Available order book liquidity can only fill part of this swap."
 msgstr "当前订单簿流动性只能成交此兑换的一部分。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Available staking HYPE can be delegated, but it cannot be traded until a separate transfer back to Spot completes."
+msgstr "质押账户中的可用 HYPE 可以委托，但需另行转回 Spot 并完成后才能交易。"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Available to close"
 msgstr "可平数量"
-
-#: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "Available:"
-#~ msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Average Fill Price"
@@ -810,6 +919,8 @@ msgid "Avg Price"
 msgstr "均价"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
@@ -817,6 +928,7 @@ msgstr "均价"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Back"
 msgstr "返回"
 
@@ -824,9 +936,9 @@ msgstr "返回"
 msgid "Back online"
 msgstr "已恢复在线"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Back to asset selection"
-#~ msgstr ""
+#: src/components/vaults/vaults-page.tsx
+msgid "Back to Vaults"
+msgstr "返回金库列表"
 
 #: src/config/ui-text.ts
 msgid "Balance"
@@ -836,13 +948,13 @@ msgstr "余额"
 msgid "Balance available to trade"
 msgstr "可用于交易的余额"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "Balance:"
-#~ msgstr ""
-
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
+
+#: src/components/staking/staking-view.tsx
+msgid "Balances remain unknown and every staking action is disabled until fresh data is verified."
+msgstr "在验证最新数据前，余额保持未知，所有质押操作均被禁用。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -876,10 +988,6 @@ msgstr "借入"
 msgid "Bridge"
 msgstr "跨链"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Bridge complete"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Bridge creation is temporarily unavailable"
 msgstr "暂时无法创建跨链桥交易"
@@ -888,47 +996,15 @@ msgstr "暂时无法创建跨链桥交易"
 msgid "Bridge failed"
 msgstr "跨链失败"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Bridge to Hyperliquid"
-#~ msgstr ""
-
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
-
-#: src/lib/hyperliquid/use-deposit.ts
-#~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
-#~ msgstr ""
-
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Bridging in progress"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Builder Address"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Builder code registered successfully!"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 msgid "Builder Fee"
 msgstr "构建者费用"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Builder Fee Approval"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Builder must have at least 100 USDC in perps account value"
-#~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Builder rewards are shown below"
@@ -937,10 +1013,6 @@ msgstr "构建者费用"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
 msgstr "Builder 总额是累计归因值，不会加入可领取奖励。"
-
-#: src/config/nav.tsx
-#~ msgid "Builders"
-#~ msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "buy"
@@ -976,18 +1048,6 @@ msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "无法访问相机。请允许相机权限后重试，或使用系统相机扫描二维码。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Camera access is not available in this browser."
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Camera is on. Looking for a WalletConnect QR code."
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Camera permission was denied."
-#~ msgstr ""
-
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera preview for desktop wallet QR"
 msgstr "桌面钱包二维码的相机预览"
@@ -995,6 +1055,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1006,6 +1067,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -1087,6 +1149,14 @@ msgstr "CCTP 转发到 Arbitrum 通常会在 {0} 内完成。"
 msgid "Change leverage"
 msgstr "调整杠杆"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Change to ascending order"
+msgstr "切换为升序"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Change to descending order"
+msgstr "切换为降序"
+
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "图表"
@@ -1094,6 +1164,10 @@ msgstr "图表"
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "图表历史数据请求超时"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Check the wallet address or display name, or the account may not meet the current criteria."
+msgstr "请检查钱包地址或显示名称；该账户也可能不符合当前条件。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
@@ -1117,6 +1191,10 @@ msgstr "正在检查 Hyperliquid 当前的提现路由..."
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "检查中..."
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Child"
+msgstr "子金库"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Choose how much of this position to close with a reduce-only market order."
@@ -1187,6 +1265,18 @@ msgstr "领取奖励"
 msgid "Claims"
 msgstr "领取"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Classification unavailable"
+msgstr "分类不可用"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Clear record"
+msgstr "清除记录"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Clearing this record does not cancel the on-chain operation. Verify account history independently before submitting the same action again."
+msgstr "清除此记录不会取消链上操作。再次提交相同操作前，请自行核对账户历史。"
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "点击了解更多关于此资产的信息。"
@@ -1210,6 +1300,8 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1221,6 +1313,7 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -1298,6 +1391,10 @@ msgstr "平仓委托已被拒绝"
 msgid "Close orders submitted. Confirming exchange status; do not retry."
 msgstr "平仓委托已提交，正在确认交易所状态，请勿重试。"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Close pending operation details"
+msgstr "关闭待处理操作详情"
+
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "Close percentage"
 msgstr "平仓比例"
@@ -1363,10 +1460,22 @@ msgstr "平仓数量必须为十进制数"
 msgid "Close size must be greater than zero"
 msgstr "平仓数量必须大于零"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Close staking action"
+msgstr "关闭质押操作"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Closed"
+msgstr "已关闭"
+
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Closed PNL"
 msgstr "已平仓盈亏"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Closing cost"
+msgstr "平仓成本"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1429,7 +1538,6 @@ msgid "Collapse market details"
 msgstr "收起市场详情"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #~ msgid "Collapse order details"
 #~ msgstr "收起委托详情"
 
@@ -1437,9 +1545,18 @@ msgstr "收起市场详情"
 #~ msgid "Coming soon"
 #~ msgstr "即将推出"
 
+#: src/components/staking/staking-view.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Commission"
+msgstr "佣金"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Commodities"
 msgstr "大宗商品"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Compare public account performance across the time window you choose."
+msgstr "比较公开账户在所选时间范围内的表现。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Complete the protocol stages, then share your official Hyperliquid referral link."
@@ -1473,12 +1590,13 @@ msgstr "止盈止损数量"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Confirm"
 msgstr "确认"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Confirm Bridge"
-#~ msgstr ""
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Confirm clear record"
+msgstr "确认清除记录"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Confirm Close"
@@ -1510,6 +1628,10 @@ msgstr "在钱包中确认撤销"
 msgid "Confirm the approval only in the selected master wallet."
 msgstr "仅在所选主钱包中确认授权。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Confirm the exact public operation in your master wallet."
+msgstr "请在主钱包中确认这项明确显示的公开操作。"
+
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Confirm the gas-free request in your selected wallet."
 msgstr "请在所选钱包中确认免 Gas 请求。"
@@ -1526,10 +1648,6 @@ msgstr "在钱包中确认交易"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm trigger price change"
 msgstr "确认修改触发价格"
-
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Confirmation screen coming in next slice"
-#~ msgstr ""
 
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Confirmed by Hyperliquid"
@@ -1581,6 +1699,14 @@ msgstr "在此手机上连接钱包，或扫描桌面端已授权的交易密钥
 msgid "Connect an account with browser storage available to manage this preference."
 msgstr "请连接账户并确保浏览器存储可用，以管理此偏好。"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Connect or restore the verified owner account to use account-specific Vault filters."
+msgstr "连接或恢复已验证的所有者账户，以使用账户专属的金库筛选条件。"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Connect the exact owner wallet before continuing."
+msgstr "继续前，请连接完全匹配的所有者钱包。"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect the same owner wallet used on desktop before importing phone access."
 #~ msgstr "导入手机访问权限前，请连接与桌面端相同的所有者钱包。"
@@ -1617,8 +1743,17 @@ msgstr "连接钱包以查看已授权的 API 钱包"
 msgid "Connect to view referrals"
 msgstr "连接钱包以查看推荐信息"
 
+#: src/components/staking/staking-view.tsx
+msgid "Connect to view rewards"
+msgstr "连接后查看奖励"
+
+#: src/components/staking/staking-view.tsx
+msgid "Connect to view staking actions"
+msgstr "连接后查看质押操作"
+
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/referrals/referral-dashboard.tsx
+#: src/components/staking/staking-view.tsx
 msgid "Connect wallet"
 msgstr "连接钱包"
 
@@ -1644,6 +1779,10 @@ msgstr "连接钱包以查看投资组合"
 msgid "Connect wallet to view positions"
 msgstr "连接钱包查看持仓"
 
+#: src/components/staking/staking-view.tsx
+msgid "Connect your master wallet"
+msgstr "连接主钱包"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Connect your wallet before linking a mobile device."
 #~ msgstr "关联移动设备前请先连接钱包。"
@@ -1660,17 +1799,9 @@ msgstr "连接钱包以跨链转移资金"
 msgid "Connect your wallet to manage funds"
 msgstr "连接钱包以管理资金"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Connect your wallet to register a builder code"
-#~ msgstr ""
-
 #: src/components/trade/positions/send-modal.tsx
 msgid "Connect your wallet to send funds."
 msgstr "连接钱包以发送资金。"
-
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Connect your wallet to start trading on Hyperliquid"
-#~ msgstr ""
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Connect your wallet to transfer funds."
@@ -1746,17 +1877,9 @@ msgstr "连接钱包以查看账户、仓位并开始交易。"
 msgid "Connected"
 msgstr "已连接"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Connected: {0}...{1}"
-#~ msgstr ""
-
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connecting"
 msgstr "连接中"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Connecting desktop wallet"
-#~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1770,6 +1893,14 @@ msgstr "无法建立连接。"
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "继续"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Continue securely"
+msgstr "安全继续"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Continuing hands this verified public operation to the shared funds-action flow. This page never signs or assembles an exchange request."
+msgstr "继续后，这项已验证的公开操作将交由共享资金操作流程处理。本页面不会签名，也不会组装交易所请求。"
 
 #: src/components/trade/market-overview.tsx
 msgid "Contract"
@@ -1866,11 +1997,6 @@ msgstr "无法导入手机访问权限。请重试或在桌面端创建新二维
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not link mobile device."
 #~ msgstr "无法关联移动设备。"
-
-#: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Could not open the camera."
-#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not render QR"
@@ -2043,29 +2169,25 @@ msgstr "当前"
 msgid "Current Margin"
 msgstr "当前保证金"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Current PNL"
+msgstr "当前 PNL"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
 msgstr "当前有效期"
-
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "Custom SL percentage"
-#~ msgstr ""
-
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "Custom TP percentage"
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Custom wallet address"
-#~ msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Customize your trading experience."
 #~ msgstr "自定义您的交易体验。"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Dark"
-#~ msgstr ""
+#: src/components/vaults/vaults-list.tsx
+msgid "days"
+msgstr "天"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Days following"
+msgstr "跟随天数"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Decline"
@@ -2087,6 +2209,36 @@ msgstr "Defi"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Delegate"
+msgstr "委托"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Delegate HYPE"
+msgstr "委托 HYPE"
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the seven-day queue."
+msgstr "将 HYPE 委托给验证者，以支持共识并赚取奖励。解除委托后，HYPE 会返回质押可用余额；只有另行转至 Spot 才会启动 7 天队列。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegated"
+msgstr "已委托"
+
+#: src/components/staking/staking-view.tsx
+msgid "Delegated to {validator}"
+msgstr "已委托给 {validator}"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Delegates available staking HYPE to the selected validator."
+msgstr "将质押账户中的可用 HYPE 委托给所选验证者。"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Delegation"
+msgstr "委托"
+
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
 msgstr "部署 Gas 拍卖"
@@ -2095,6 +2247,7 @@ msgstr "部署 Gas 拍卖"
 msgid "Deployer"
 msgstr "部署者"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2113,6 +2266,7 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -2134,10 +2288,6 @@ msgstr "充值地址"
 msgid "Deposit address QR code"
 msgstr "充值地址二维码"
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Deposit address unavailable"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Deposit amount"
 msgstr "金额"
@@ -2149,10 +2299,6 @@ msgstr "金额"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "充值失败"
-
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Deposit from any chain to your Hyperliquid account"
-#~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit Funds"
@@ -2174,6 +2320,10 @@ msgstr "存款已提交"
 msgid "Deposit successful"
 msgstr "充值成功"
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Deposit to Vault"
+msgstr "存入金库"
+
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
@@ -2193,9 +2343,25 @@ msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonc
 msgid "Deposit USDC from Arbitrum"
 msgstr "从 Arbitrum 存入 USDC"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Deposited"
+msgstr "已存入"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Deposited and Leading filters fail closed until both account snapshots are available."
+msgstr "在两个账户快照均可用前，“已存入”和“管理中”筛选会保持关闭。"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Depositing USDC to Hyperliquid..."
 msgstr "正在将 USDC 存入 Hyperliquid..."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Depositor"
+msgstr "存款人"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Deposits"
+msgstr "存款"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/config/account-ledger.ts
@@ -2223,10 +2389,6 @@ msgstr "桌面布局"
 msgid "Desktop QR loaded"
 msgstr "桌面二维码已加载"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Desktop wallet QR scanner"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2246,14 +2408,7 @@ msgstr "目标地址"
 #~ msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
 #~ msgstr "已检测到 {balance} USDC，正在自动存入 Hyperliquid..."
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Direct"
-#~ msgstr ""
-
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Direct mode: Sign each order with wallet"
-#~ msgstr ""
-
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -2335,9 +2490,25 @@ msgstr "距标记价 {markDistanceLabel}"
 msgid "Do not photograph, copy, share, or screen-record the QR code."
 msgstr "请勿拍照、复制、分享或录屏保存此二维码。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Do not submit again while Hyperliquid history is checked."
+msgstr "检查 Hyperliquid 历史期间，请勿再次提交。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Do not submit again. Verify this operation against the public ledger first."
+msgstr "请勿再次提交。请先对照公开账本验证此操作。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "请勿再次提交撤销。请重试只读验证。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Do not submit another staking funds operation. The shared recovery panel will keep checking Hyperliquid history."
+msgstr "请勿提交另一笔质押资金操作。共享恢复面板会继续检查 Hyperliquid 历史。"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Do not submit this operation again."
+msgstr "请勿再次提交此操作。"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Docs"
@@ -2348,6 +2519,8 @@ msgid "Don't show this confirmation again"
 msgstr "以后不再提示"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2370,10 +2543,6 @@ msgstr "请立即下载凭据，并将其转移到安全位置。关闭此窗口
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 msgid "Downloaded"
 msgstr "已下载"
-
-#: src/components/trade/tradebox/trade-form-twap.tsx
-#~ msgid "Duration (Minutes)"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
@@ -2440,23 +2609,19 @@ msgstr "关联手机前，请先在此桌面端启用交易并批准 Builder 费
 msgid "Enabling"
 msgstr "启用中"
 
-#: src/components/trade/order-entry/margin-mode-dialog.tsx
-#~ msgid "Enabling..."
-#~ msgstr ""
-
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "End Price"
 msgstr "结束价格"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#~ msgid "End Price (USDC)"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Enter a different value before confirming."
 msgstr "请输入不同的值后再确认。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Enter a positive amount exactly representable in micro-USDC. Hyperliquid applies any Vault-specific limits on the server."
+msgstr "请输入可用 micro-USDC 精确表示的正数金额。Hyperliquid 会在服务端应用该金库的特定限制。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive amount with up to 6 decimal places."
@@ -2547,6 +2712,7 @@ msgstr "开仓价格"
 msgid "Environment"
 msgstr "环境"
 
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "净值"
@@ -2557,23 +2723,23 @@ msgstr "净值"
 msgid "Est. Fee"
 msgstr "预估费用"
 
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "Est. P&L"
-#~ msgstr ""
-
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "限价预估盈亏"
-
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Est. time"
-#~ msgstr ""
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Establish Connection"
 msgstr "建立连接"
+
+#. placeholder {0}: formatStakingRatio(props.weightedApr)
+#: src/components/staking/staking-view.tsx
+msgid "Estimated APR {0}"
+msgstr "预计 APR {0}"
+
+#: src/components/staking/staking-view.tsx
+msgid "Estimated APR unavailable"
+msgstr "预计 APR 不可用"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -2701,6 +2867,10 @@ msgstr "今日到期"
 msgid "Expiring"
 msgstr "即将到期"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+msgstr "探索传统 HyperCore 金库。存款会按份额承担各金库的收益与亏损，并可能损失全部本金。"
+
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -2761,10 +2931,6 @@ msgstr "切换语言失败"
 msgid "Failed to close position"
 msgstr "平仓失败"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Failed to connect with custom address"
-#~ msgstr ""
-
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Failed to copy"
 msgstr "复制失败"
@@ -2794,10 +2960,6 @@ msgstr "导出委托历史失败。"
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export trade history."
 msgstr "导出成交历史失败。"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Failed to link desktop wallet"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -2898,10 +3060,6 @@ msgstr "修改委托失败。"
 msgid "Failed to place limit close order"
 msgstr "限价平仓委托下单失败"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Failed to register builder code"
-#~ msgstr ""
-
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/hooks/trade/use-position-reverse-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
@@ -2916,10 +3074,6 @@ msgstr "保存分享图片失败"
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Failed to submit close orders"
 msgstr "提交平仓委托失败"
-
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Failed to switch margin mode"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Failed to update account mode"
@@ -2951,14 +3105,6 @@ msgstr "收藏夹"
 msgid "Fee"
 msgstr "手续费"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Fee Limits:"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Fee rate must be between 0.001% and 1%"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Fees"
@@ -2972,17 +3118,9 @@ msgstr "手续费（吃单 / 挂单）"
 msgid "Fees are higher than the bridge amount."
 msgstr "桥接费用高于桥接金额。"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Fetching quote..."
-#~ msgstr ""
-
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Fill History"
 msgstr "填充历史"
-
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#~ msgid "Fill limit price with mark price {0}"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -3025,6 +3163,14 @@ msgstr "按保证金模式筛选持仓：{marginLabel}"
 msgid "Filter positions by market: {ariaValue}"
 msgstr "按市场筛选持仓：{ariaValue}"
 
+#: src/components/staking/staking-view.tsx
+msgid "Filter validators"
+msgstr "筛选验证者"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Final amount"
+msgstr "最终金额"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Finish"
 msgstr "完成"
@@ -3033,6 +3179,11 @@ msgstr "完成"
 msgid "Flip transfer direction"
 msgstr "切换划转方向"
 
+#. placeholder {0}: follower.daysFollowing
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Following {0} days"
+msgstr "已跟随 {0} 天"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货和永续交易完全统一，符合条件的抵押资产（如 HYPE 和 BTC）可直接用作永续抵押品，无需转换为结算资产。"
@@ -3040,10 +3191,6 @@ msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "For example: grid-bot"
 msgstr "例如：grid-bot"
-
-#: src/components/trade/components/global-settings-modal.tsx
-#~ msgid "Format for numbers and dates"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3075,10 +3222,6 @@ msgstr "从"
 #: src/components/trade/components/market-asset-info.tsx
 #~ msgid "Full name"
 #~ msgstr "全名"
-
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "Full Position"
-#~ msgstr ""
 
 #: src/config/trade.ts
 #~ msgid "Funding"
@@ -3112,9 +3255,17 @@ msgstr "资金费率历史"
 msgid "Funding shown"
 msgstr "当前显示资金费"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Funds action progress"
+msgstr "资金操作进度"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Funds operation verified from Hyperliquid history."
+msgstr "已通过 Hyperliquid 历史验证资金操作。"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Future Market clicks will immediately close the full position for this account and network."
@@ -3230,6 +3381,10 @@ msgstr "HIP-3 清算人存入"
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
 msgstr "HIP-3 清算人提取"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Historical APR does not predict future performance; the displayed APR can change."
+msgstr "历史 APR 不代表未来表现；所显示的 APR 可能变化。"
 
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "History"
@@ -3373,13 +3528,14 @@ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发
 #~ msgid "In Use"
 #~ msgstr "使用中"
 
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Inactive"
+msgstr "未激活"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Indices"
 msgstr "指数"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Install a wallet extension to continue"
-#~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Install app"
@@ -3401,10 +3557,6 @@ msgid "Insufficient {0} balance"
 msgstr "{0} 余额不足"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#~ msgid "Insufficient {fromTokenDisplay} balance"
-#~ msgstr ""
-
-#: src/components/trade/components/spot-swap-modal.tsx
 msgid "Insufficient <0/> balance"
 msgstr "<0/> 余额不足"
 
@@ -3414,10 +3566,6 @@ msgstr "<0/> 余额不足"
 #: src/lib/trade/withdrawal.ts
 msgid "Insufficient balance"
 msgstr "余额不足"
-
-#: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "Insufficient balance (includes ${WITHDRAWAL_FEE_USD} fee)"
-#~ msgstr ""
 
 #: src/lib/errors/format.ts
 msgid "Insufficient funds for gas"
@@ -3431,10 +3579,6 @@ msgstr "金额无效"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "目的地址无效"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Invalid Ethereum address"
-#~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -3462,10 +3606,14 @@ msgstr "逐仓"
 msgid "Isolated margin updated"
 msgstr "逐仓保证金已更新"
 
-#: src/hooks/trade/use-asset-leverage.ts
-#: src/hooks/trade/use-asset-leverage.ts
-#~ msgid "Isolated mode activation is temporarily unavailable."
-#~ msgstr ""
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Jailed"
+msgstr "已处罚"
+
+#: src/components/staking/staking-view.tsx
+msgid "Jailed validators produce no blocks or rewards"
+msgstr "受罚验证者不会出块，也不会产生奖励"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Joined"
@@ -3524,15 +3672,37 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Leader"
+msgstr "管理者"
+
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Leader commission"
+msgstr "管理者佣金"
+
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "排行榜"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Learn more"
-#~ msgstr ""
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Leaderboard is temporarily unavailable"
+msgstr "排行榜暂时不可用"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Leaderboard period"
+msgstr "排行榜周期"
+
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Leading"
+msgstr "管理中"
 
 #: src/components/referrals/referral-activity.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3572,10 +3742,6 @@ msgstr "杠杆"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "该市场的杠杆固定为 {currentLeverage}×。"
-
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Light"
-#~ msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit"
@@ -3620,10 +3786,6 @@ msgstr "限价执行"
 msgid "Limit Price"
 msgstr "限价"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Limit Price (USDC)"
-#~ msgstr ""
-
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "限价只减仓"
@@ -3637,10 +3799,6 @@ msgid "Link copied"
 msgstr "链接已复制"
 
 #: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Link desktop wallet"
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Link Desktop Wallet"
 msgstr "关联桌面钱包"
@@ -3649,6 +3807,11 @@ msgstr "关联桌面钱包"
 #: src/components/trade/header/user-menu.tsx
 msgid "Link mobile device"
 msgstr "关联移动设备"
+
+#. placeholder {0}: shortenAddress(link.stakingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "Linked staking account: {0}."
+msgstr "已关联质押账户：{0}。"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Liq"
@@ -3732,6 +3895,10 @@ msgstr "正在加载存款和提款记录..."
 msgid "Loading funding history..."
 msgstr "加载资金费用历史中..."
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Loading leaderboard"
+msgstr "正在加载排行榜"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Loading markets..."
 msgstr "加载市场中..."
@@ -3765,6 +3932,14 @@ msgstr "正在加载最近的奖励领取记录…"
 msgid "Loading referrals"
 msgstr "正在加载推荐信息"
 
+#: src/components/staking/staking-view.tsx
+msgid "Loading staking account"
+msgstr "正在加载质押账户"
+
+#: src/components/staking/staking-view.tsx
+msgid "Loading staking table"
+msgstr "正在加载质押表格"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Loading the latest position..."
@@ -3791,6 +3966,14 @@ msgstr "正在加载 TWAP 历史..."
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Loading TWAP orders..."
 msgstr "加载 TWAP 订单中..."
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Loading Vault details"
+msgstr "正在加载金库详情"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Loading Vaults"
+msgstr "正在加载金库"
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Loading wallet..."
@@ -3823,6 +4006,15 @@ msgstr "加载中..."
 msgid "Loading…"
 msgstr "加载中…"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Lock period progress"
+msgstr "锁定期进度"
+
+#. placeholder {0}: formatDateTime(validator.lockedUntilTimestamp)
+#: src/components/staking/staking-view.tsx
+msgid "Locked until {0}"
+msgstr "锁定至 {0}"
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Log in with Email"
 msgstr "使用邮箱登录"
@@ -3841,16 +4033,8 @@ msgid "Long"
 msgstr "多"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Long {0} position"
-#~ msgstr ""
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long position"
 msgstr "多头仓位"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Looking for a WalletConnect QR code"
-#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Looking for the desktop wallet QR..."
@@ -3864,10 +4048,6 @@ msgstr "亏损"
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Low balance"
 msgstr "余额偏低"
-
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Low Balance"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #~ msgid "M"
@@ -3896,20 +4076,12 @@ msgid "Manage TP/SL"
 msgstr "管理 TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Manage TP/SL for {0} {1} position"
-#~ msgstr ""
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Manage TP/SL for {0} long position"
 #~ msgstr "管理 {0} 多头仓位的 TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Manage TP/SL for {0} short position"
 #~ msgstr "管理 {0} 空头仓位的 TP/SL"
-
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
-#~ msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Manual"
@@ -3925,10 +4097,6 @@ msgstr "保证金"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #~ msgid "Margin · Iso"
 #~ msgstr "保证金 · 逐仓"
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-#~ msgid "Margin & account"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #~ msgid "Margin & leverage"
@@ -3947,10 +4115,6 @@ msgstr "保证金与账户风险一览"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Margin mode"
 msgstr "保证金模式"
-
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#~ msgid "Margin Mode"
-#~ msgstr ""
 
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
@@ -4000,13 +4164,6 @@ msgstr "标记价格不可用。请等待行情更新后重试。"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
 msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和触发止盈/止损订单。预言机价格：用于资金费用支付的参考价格。详情请参阅 HIP-3 部署者的文档。"
-
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#~ msgid "Mark:"
-#~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -4106,14 +4263,23 @@ msgstr "个市场"
 msgid "Markets"
 msgstr "市场"
 
-#: src/components/trade/header/user-menu.tsx
-#~ msgid "Master"
-#~ msgstr ""
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Markets / Leaderboard"
+msgstr "市场 / 排行榜"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Master wallet"
 msgstr "主钱包"
 
+#: src/components/staking/staking-view.tsx
+msgid "Master wallet required"
+msgstr "需要主钱包"
+
+#: src/components/staking/staking-view.tsx
+msgid "Master wallet verified"
+msgstr "主钱包已验证"
+
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4123,25 +4289,9 @@ msgstr "主钱包"
 msgid "Max"
 msgstr "最大"
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "MAX"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
-#~ msgstr ""
-
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
 msgstr "最大回撤"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Max Fee Rate (%)"
-#~ msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Max Slippage"
@@ -4159,13 +4309,18 @@ msgstr "CCTP 最高费用"
 msgid "Maximum leverage"
 msgstr "最大杠杆"
 
-#: src/components/trade/components/global-settings-modal.tsx
-#~ msgid "Maximum slippage tolerance for market orders"
-#~ msgstr ""
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum supply"
 msgstr "最大供应量"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Maximum withdrawable"
+msgstr "最大可提取金额"
+
+#. placeholder {0}: formatVaultUsd(availableAmount)
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Maximum withdrawable: {0}"
+msgstr "最大可提取金额：{0}"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Meme"
@@ -4260,10 +4415,6 @@ msgstr "暂时无法显示移动端二维码。如果不再需要此密钥，请
 msgid "Mock account"
 msgstr "模拟账户"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Mock Wallet (Testing)"
-#~ msgstr ""
-
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Mode"
 #~ msgstr "模式"
@@ -4313,13 +4464,17 @@ msgstr "更多信息"
 msgid "More position actions"
 msgstr "更多仓位操作"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Move Spot HYPE to staking"
+msgstr "将 Spot HYPE 转入质押"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Move staking HYPE to Spot"
+msgstr "将质押 HYPE 转入 Spot"
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "在合约账户与现货账户之间划转 USDC。"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Must be signed by main wallet (not agent/API wallet)"
-#~ msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-action-modal.tsx
@@ -4341,6 +4496,7 @@ msgstr "在最新的 extraAgents 数据中，原名称和旧公开地址均已�
 msgid "Net received"
 msgstr "实际到账"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -4354,11 +4510,15 @@ msgstr "网络"
 #~ msgid "Network fee"
 #~ msgstr "网络费用"
 
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Network stake"
+msgstr "全网质押量"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "New"
 #~ msgstr "新上线"
 
-#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "NEW"
 #~ msgstr "新"
@@ -4375,12 +4535,12 @@ msgstr "暂时无法进行新的移动设备配对"
 msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
 msgstr "暂时无法新开通投资组合保证金。已开通的投资组合保证金账户不受影响，并可随时切换至其他模式。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "New to wallets?"
-#~ msgstr ""
-
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
+msgstr "下一页"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Next page"
 msgstr "下一页"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -4445,9 +4605,9 @@ msgstr "未找到余额"
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "No camera was found on this device."
-#~ msgstr ""
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No depositors were returned."
+msgstr "未返回任何存款人。"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -4458,6 +4618,10 @@ msgstr "未找到存款或提款记录。"
 msgid "No description has been provided for this market."
 msgstr "该市场尚未提供说明。"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No description was provided by the Vault."
+msgstr "该金库未提供说明。"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera."
 msgstr "尚未加载桌面二维码。请返回终端扫描器，或使用系统相机扫描新二维码。"
@@ -4465,6 +4629,10 @@ msgstr "尚未加载桌面二维码。请返回终端扫描器，或使用系统
 #: src/routes/mobile-agent-sync.tsx
 msgid "No desktop wallet QR was found."
 msgstr "未找到桌面钱包二维码。"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "No eligible leaderboard accounts"
+msgstr "没有符合条件的排行榜账户"
 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "No expiry reported"
@@ -4498,9 +4666,12 @@ msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% sl
 msgstr "{DEFAULT_SWAP_SLIPPAGE_PERCENT}% 滑点范围内没有可用流动性。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/components/spot-swap-modal.tsx
 #~ msgid "No liquidity was available within the 1% slippage limit."
 #~ msgstr "1% 滑点范围内没有可用流动性。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No lock timestamp was returned"
+msgstr "未返回锁定时间戳"
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -4515,6 +4686,14 @@ msgstr "无市场"
 msgid "No markets found."
 msgstr "未找到市场。"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "No matching trader"
+msgstr "没有匹配的交易者"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No matching Vaults"
+msgstr "没有匹配的金库"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "No mobile link found."
 #~ msgstr "未找到移动端链接。"
@@ -4523,6 +4702,10 @@ msgstr "未找到市场。"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "暂无当前委托"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "No operation was submitted."
+msgstr "未提交任何操作。"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -4546,6 +4729,10 @@ msgstr "没有符合所选筛选条件的委托。"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No orders match these filters."
 msgstr "没有符合筛选条件的委托。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "No performance history"
+msgstr "暂无表现历史"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -4574,25 +4761,33 @@ msgstr "交易所无响应"
 msgid "No reward assets are currently reported for this account."
 msgstr "Hyperliquid 当前未返回此账户的奖励资产。"
 
+#: src/components/staking/staking-view.tsx
+msgid "No reward records were returned for this account."
+msgstr "未返回此账户的奖励记录。"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "No route available. Try a different amount or asset."
 msgstr "暂无可用路径。请尝试其他金额或资产。"
 
-#: src/components/trade/components/token-selector-dropdown.tsx
-#~ msgid "No tokens available"
-#~ msgstr ""
+#: src/components/staking/staking-view.tsx
+msgid "No separate staking account is linked."
+msgstr "未关联独立的质押账户。"
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking action records were returned for this account."
+msgstr "未返回此账户的质押操作记录。"
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking actions"
+msgstr "暂无质押操作"
+
+#: src/components/staking/staking-view.tsx
+msgid "No staking rewards"
+msgstr "暂无质押奖励"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "No tokens with value found across supported chains"
 msgstr "在支持的链上未找到有价值的代币"
-
-#: src/components/trade/order-entry/swap-asset-modal.tsx
-#~ msgid "No trading pair available for {fromToken}/{toToken}"
-#~ msgstr ""
-
-#: src/components/trade/components/spot-swap-modal.tsx
-#~ msgid "No trading pair available for {fromTokenDisplay}/{toTokenDisplay}"
-#~ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "No trading pair available for <0/>/<1/>"
@@ -4612,9 +4807,21 @@ msgstr "未找到 TWAP 历史记录。"
 #~ msgid "No TWAP orders found."
 #~ msgstr "未找到 TWAP 订单。"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "No user address"
-#~ msgstr ""
+#: src/components/staking/staking-view.tsx
+msgid "No validator matches the selected status filter."
+msgstr "没有验证者符合所选状态筛选条件。"
+
+#: src/components/staking/staking-view.tsx
+msgid "No validators found"
+msgstr "未找到验证者"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No Vaults in this filter"
+msgstr "此筛选条件下没有金库"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "No Vaults were returned"
+msgstr "未返回任何金库"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "No wallet connected"
@@ -4623,6 +4830,10 @@ msgstr "未找到 TWAP 历史记录。"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
 #~ msgstr "未找到钱包"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "No withdrawal queue"
+msgstr "没有提取队列"
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Not connected"
@@ -4642,19 +4853,32 @@ msgstr "未报告"
 msgid "Number format"
 msgstr "数字格式"
 
-#: src/components/trade/components/global-settings-modal.tsx
-#~ msgid "Number Format"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Number of Orders"
 msgstr "委托数量"
 
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Official"
+msgstr "官方"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+msgstr "在提供经过审核的精确地址策略前，官方和用户分类不可用。各行会保持未分类，而不会进行猜测。"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official and User filters stay unavailable until a reviewed exact-address policy is configured. No classification is inferred from relationship or ownership fields."
+msgstr "在配置经过审核的精确地址策略前，官方和用户筛选保持不可用。不会根据关联或所有权字段推断分类。"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Official referral link"
 msgstr "官方推荐链接"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Official Vaults"
+msgstr "官方金库"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Offline"
@@ -4664,18 +4888,13 @@ msgstr "离线"
 msgid "OI"
 msgstr "持仓量"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "on"
-#~ msgstr ""
-
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "在 iPhone 或 iPad 上，打开“分享”菜单，选择“添加到主屏幕”，然后从主屏幕启动 gatu。"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-#~ msgid "One-time account activation"
-#~ msgstr ""
+#: src/components/staking/staking-action-modal.tsx
+msgid "One-day validator lock"
+msgstr "1 天验证者锁定期"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4694,9 +4913,9 @@ msgstr "只有匹配的主钱包才能授权或移除 API 钱包。请切换钱�
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确认授权成功后，私钥将显示一次，供你下载并安全保存。"
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Only you control your funds. No email or password required."
-#~ msgstr ""
+#: src/components/staking/staking-action-modal.tsx
+msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
+msgstr "只有此转账会启动 7 天队列。Hyperliquid 每个地址最多允许 5 笔待处理提取。"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "open"
@@ -4704,6 +4923,7 @@ msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确�
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
@@ -4712,10 +4932,6 @@ msgstr "未成交"
 #: src/lib/errors/definitions/trigger.ts
 msgid "Open a position before placing a trigger order"
 msgstr "请先开仓，再提交触发订单"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Open a WalletConnect wallet or copy the pairing link."
-#~ msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Open command menu"
@@ -4763,9 +4979,10 @@ msgstr "当前委托正在刷新。请等待实时数据后重试。"
 msgid "Open orders changed. Reopen the confirmation and try again."
 msgstr "当前委托已发生变化。请重新打开确认弹窗后再试。"
 
-#: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Open positions count"
-#~ msgstr ""
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Open related page"
+msgstr "打开相关页面"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -4779,10 +4996,6 @@ msgid "Open terminal"
 msgstr "打开终端"
 
 #: src/routes/mobile-agent-sync.tsx
-#~ msgid "Open the phone link and connect the same wallet you use on desktop to import."
-#~ msgstr ""
-
-#: src/routes/mobile-agent-sync.tsx
 #~ msgid "Open the phone link, then enter the pairing code shown on desktop."
 #~ msgstr "打开手机链接，然后输入桌面端显示的配对码。"
 
@@ -4791,39 +5004,17 @@ msgstr "打开终端"
 msgid "Open token in explorer"
 msgstr "在浏览器中打开代币"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Open wallet"
-#~ msgstr ""
+#: src/components/staking/staking-action-modal.tsx
+msgid "Operation in progress"
+msgstr "操作进行中"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Opening camera..."
-#~ msgstr ""
-
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
-#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Enable Reduce Only to close or reduce an existing position."
-#~ msgstr ""
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced or closed."
-#~ msgstr ""
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
-#~ msgstr ""
-
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
-#~ msgstr ""
+#: src/components/staking/staking-action-modal.tsx
+msgid "Operation verified"
+msgstr "操作已验证"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
 msgstr "或"
-
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#~ msgid "Oracle"
-#~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -4971,13 +5162,14 @@ msgstr "其他"
 msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Other Options"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Overview"
 msgstr "概览"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Owner"
+msgstr "所有者"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
@@ -4986,10 +5178,6 @@ msgstr "所有者账户"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Owner wallet"
 #~ msgstr "所有者钱包"
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "P&L"
-#~ msgstr ""
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Page {visiblePage} of {totalPages}"
@@ -5009,7 +5197,6 @@ msgstr "更改后页面将重新加载"
 #~ msgstr "分页"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Pairing code"
 #~ msgstr "配对码"
@@ -5042,11 +5229,6 @@ msgstr "部分成功 — 重新打开后可重试"
 #~ msgid "Paste the full phone link from desktop."
 #~ msgstr "粘贴桌面端的完整手机链接。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Paste WalletConnect URI"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Pause"
@@ -5068,6 +5250,39 @@ msgstr "支付"
 msgid "pending"
 msgstr "待处理"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Pending funds operation"
+msgstr "待验证资金操作"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Pending operation needs verification"
+msgstr "待处理操作需要验证"
+
+#: src/components/staking/staking-view.tsx
+msgid "Pending Spot transfer"
+msgstr "待处理 Spot 转账"
+
+#: src/components/staking/staking-view.tsx
+msgid "Pending transfer to Spot"
+msgstr "待转入 Spot"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Performance"
+msgstr "表现"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Performance period"
+msgstr "表现周期"
+
+#. placeholder {0}: shortenAddress(link.stakingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "Permanent link requested for {0}."
+msgstr "已请求永久关联至 {0}。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Permanent staking link"
+msgstr "永久质押关联"
+
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "perp"
 #~ msgstr "永续"
@@ -5081,12 +5296,11 @@ msgid "Perp"
 msgstr "永续"
 
 #: src/components/trade/positions/balances-tab.tsx
-msgid "Perpetuals"
-msgstr "永续合约"
+#~ msgid "Perpetuals"
+#~ msgstr "永续合约"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "永续合约"
@@ -5126,10 +5340,6 @@ msgstr "合约盈亏"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Perps Withdrawable"
 #~ msgstr "永续可提"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Perps: Max 0.1% (10 basis points)"
-#~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone access could not be activated or fully removed from this device. Clear this site's data before retrying."
@@ -5193,24 +5403,22 @@ msgid "Placed"
 msgstr "已提交"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #~ msgid "Platform"
 #~ msgstr "平台"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Please enter an address"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Please wait while Privy creates your embedded wallet."
 #~ msgstr "请稍候，Privy 正在创建你的内嵌钱包。"
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "PNL"
 msgstr "盈亏"
 
@@ -5226,10 +5434,6 @@ msgstr "盈亏（ROE %）"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "PNL share card for {0}"
 msgstr "{0} 的盈亏分享卡"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
-#~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Popular"
@@ -5289,11 +5493,6 @@ msgstr "持仓操作"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Position closed"
-#~ msgstr ""
-
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Position closed — {coin}"
 #~ msgstr "仓位已平 — {coin}"
 
@@ -5304,10 +5503,6 @@ msgstr "仓位数据暂不可用。请等待账户连接恢复后再更改保证
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position margin"
 msgstr "仓位保证金"
-
-#: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Position reversed"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -5391,6 +5586,10 @@ msgstr "按住 4 秒"
 msgid "Previous"
 msgstr "上一页"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Previous page"
+msgstr "上一页"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -5421,10 +5620,6 @@ msgstr "上一页"
 #: src/config/ui-text.ts
 msgid "Price"
 msgstr "价格"
-
-#: src/components/trade/market-overview.tsx
-#~ msgid "PRICE"
-#~ msgstr ""
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Price above {price}"
@@ -5473,11 +5668,6 @@ msgstr "私钥已隐藏"
 msgid "Private-key handling"
 msgstr "私钥处理"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Pro"
-#~ msgstr ""
-
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Processing"
@@ -5509,10 +5699,18 @@ msgstr "移除结果验证通过后，使用此 API 钱包的程序将失去访�
 #~ msgid "Progress"
 #~ msgstr "进度"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Proportional position close"
+msgstr "按比例平仓"
+
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Protection price"
 msgstr "保护价"
+
+#: src/components/staking/staking-view.tsx
+msgid "Public validator data remains visible. Account balances and actions require a verified owner."
+msgstr "公开验证者数据仍然可见。账户余额和操作需要经过验证的所有者。"
 
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -5522,10 +5720,6 @@ msgstr "链接到 {0} 市场的二维码"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "QR reveal progress"
 msgstr "二维码显示进度"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "QR scanning is not available in this browser."
-#~ msgstr ""
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "QR unavailable"
@@ -5560,6 +5754,14 @@ msgstr "随机化时间"
 msgid "Randomized"
 msgstr "随机化"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Rank"
+msgstr "排名"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Ranked by"
+msgstr "排序依据"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -5571,6 +5773,10 @@ msgstr "费率"
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Read official referral rules"
 msgstr "阅读官方推荐规则"
+
+#: src/components/staking/staking-view.tsx
+msgid "Read only"
+msgstr "只读"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "Read the official agent wallet documentation"
@@ -5595,10 +5801,6 @@ msgstr "TWAP 实时更新暂不可用。正在显示最近加载的数据。"
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
 msgstr "已实现盈亏"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Recent"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -5635,9 +5837,13 @@ msgstr "推荐的账户设置。每种抵押资产仅有一个余额。永续合
 msgid "Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX."
 msgstr "仅建议自动化交易者使用。每个 DEX 都有独立余额，全仓保证金也分别在各 DEX 内生效。"
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Reconnect or refresh after your embedded wallet is ready."
-#~ msgstr ""
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Reconciling from Hyperliquid"
+msgstr "正在通过 Hyperliquid 核对"
+
+#: src/components/staking/staking-view.tsx
+msgid "Reconnect master wallet"
+msgstr "重新连接主钱包"
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Reconnect the bridge wallet"
@@ -5667,10 +5873,6 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
 msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum 交易哈希。"
 
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "Reduce"
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -5685,11 +5887,6 @@ msgstr "只减仓"
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
 msgstr "以当前市场价格减仓，成交后不可撤销。"
-
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
-#~ msgid "Reduce-only orders only"
-#~ msgstr ""
 
 #: src/lib/errors/format.ts
 msgid "Referral access could not be verified for this account. Refresh access status before retrying."
@@ -5779,6 +5976,11 @@ msgstr "已推荐交易者分页"
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "在被推荐交易者前 $1B 成交量内，推荐人目前可获得交易者折扣后手续费的 10%。"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Refresh"
+msgstr "刷新"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "刷新报价"
@@ -5791,18 +5993,14 @@ msgstr "提交另一个已签名请求前，请先刷新推荐数据。"
 msgid "Refreshing referral data…"
 msgstr "正在刷新推荐数据…"
 
+#: src/components/staking/staking-view.tsx
+msgid "Refreshing staking data…"
+msgstr "正在刷新质押数据…"
+
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/leaderboard/leaderboard-view.tsx
 msgid "Refreshing…"
 msgstr "刷新中…"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "Register Another"
-#~ msgstr ""
-
-#: src/components/pages/builder-page.tsx
-#: src/components/pages/builder-page.tsx
-#~ msgid "Register Builder Code"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -5853,10 +6051,6 @@ msgid "Remove Margin"
 msgstr "移除保证金"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#~ msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
-#~ msgstr ""
-
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
 msgstr "移除保证金会增加强平风险。超出保证金要求的金额将被 Hyperliquid 拒绝。"
 
@@ -5884,14 +6078,18 @@ msgstr "使用一个临时且不可访问的密钥替换当前移动交易密钥
 msgid "Request not confirmed"
 msgstr "请求尚未确认"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Request rejected"
+msgstr "请求已拒绝"
+
 #: src/lib/errors/format.ts
 #: src/lib/lifi/use-bridge.ts
 msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
 msgstr "无法确认请求状态。重试前请检查余额和转账历史。"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Requirements:"
-#~ msgstr ""
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Request submitted"
+msgstr "请求已提交"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/language-switcher.tsx
@@ -5920,6 +6118,10 @@ msgstr "恢复"
 msgid "Result not yet confirmed"
 msgstr "结果尚未确认"
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Result not yet known"
+msgstr "结果暂时未知"
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Resume tracking"
 msgstr "继续跟踪"
@@ -5928,6 +6130,8 @@ msgstr "继续跟踪"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -5944,6 +6148,8 @@ msgstr "继续跟踪"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "重试"
 
@@ -5962,6 +6168,15 @@ msgstr "重试验证"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Return on equity (ROE)"
 msgstr "收益率（ROE）"
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Returned depositors"
+msgstr "返回的存款人"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Returns delegated HYPE immediately to your available staking balance."
+msgstr "立即将已委托的 HYPE 退回您的质押可用余额。"
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
 msgid "Reveal"
@@ -5993,11 +6208,17 @@ msgid "Reversing..."
 msgstr "正在反向..."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Review"
 msgstr "核对"
 
+#: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Review again"
 msgstr "重新检查"
 
@@ -6013,6 +6234,10 @@ msgstr "在创建新的签名请求前，请先查看最新的 API 钱包数据�
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Review invitation"
 msgstr "检查邀请"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Review only"
+msgstr "仅查看"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
@@ -6038,6 +6263,10 @@ msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条�
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条款</1>。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Review the public fields and try again."
+msgstr "请检查公开字段后重试。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Revocation was submitted but is not yet confirmed."
 msgstr "撤销请求已提交，但尚未确认。"
@@ -6046,10 +6275,26 @@ msgstr "撤销请求已提交，但尚未确认。"
 msgid "Revoke mobile access"
 msgstr "撤销移动访问权限"
 
+#: src/components/staking/staking-view.tsx
+msgid "Reward"
+msgstr "奖励"
+
 #: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Reward assets"
 msgstr "奖励资产"
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward history is scoped to the verified owner."
+msgstr "奖励历史仅显示已验证所有者的数据。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward history unavailable"
+msgstr "奖励历史不可用"
+
+#: src/components/staking/staking-view.tsx
+msgid "Reward source"
+msgstr "奖励来源"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Rewards"
@@ -6072,6 +6317,10 @@ msgstr "领取奖励"
 msgid "Rewards claimed"
 msgstr "奖励已领取"
 
+#: src/components/staking/staking-view.tsx
+msgid "Rewards compound automatically"
+msgstr "奖励自动复投"
+
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Risk Disclosure"
 msgstr "风险披露"
@@ -6084,9 +6333,17 @@ msgstr "风险/收益"
 msgid "RO"
 msgstr "RO"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "ROI"
+msgstr "ROI"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Role"
 msgstr "角色"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Rows per page"
+msgstr "每页行数"
 
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6134,7 +6391,6 @@ msgid "Save image"
 msgstr "保存图片"
 
 #: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
 #~ msgid "Saved phone link was invalid. Paste the link again."
 #~ msgstr "已保存的手机链接无效。请重新粘贴链接。"
 
@@ -6167,19 +6423,6 @@ msgstr "分段订单价格必须对应不同的价格档位"
 msgid "Scale size is too small for the selected number of orders"
 msgstr "分段订单总数量不足以分配到所选订单数量"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan a QR code from a desktop wallet."
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan a WalletConnect QR code."
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan desktop wallet QR"
-#~ msgstr ""
-
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Scan on your phone"
 msgstr "用手机扫描"
@@ -6192,21 +6435,21 @@ msgstr "请仅使用您的手机扫描。任何截取此二维码的人都能使
 msgid "Scan the QR shown by Link Mobile Device on your desktop."
 msgstr "扫描桌面端“关联移动设备”显示的二维码。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan this QR with your desktop wallet."
-#~ msgstr ""
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "SDK method"
+msgstr "SDK method"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan this QR with your mobile wallet."
-#~ msgstr ""
+#: src/components/vaults/vaults-list.tsx
+msgid "Search by vault, address, or leader"
+msgstr "按金库、地址或管理者搜索"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Scan WalletConnect QR"
-#~ msgstr ""
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Search by wallet address or display name"
+msgstr "按钱包地址或显示名称搜索"
 
-#: src/components/trade/footer/footer-bar.tsx
-#~ msgid "Search"
-#~ msgstr ""
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Search leaderboard"
+msgstr "搜索排行榜"
 
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets"
@@ -6217,9 +6460,9 @@ msgstr "搜索市场"
 msgid "Search markets..."
 msgstr "搜索市场..."
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Secure & Private"
-#~ msgstr ""
+#: src/components/vaults/vaults-list.tsx
+msgid "Search vaults"
+msgstr "搜索金库"
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "Secure connection established. Continue with the referral action."
@@ -6237,10 +6480,6 @@ msgstr "安全断开失败：无法移除本地交易密钥。请重试。"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
 msgstr "安全断开失败：无法清除本地交易会话。请重试。"
-
-#: src/hooks/wallet/use-wallet-session.ts
-#~ msgid "Secure disconnect failed because the wallet session could not be closed. Please retry."
-#~ msgstr ""
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
@@ -6281,10 +6520,6 @@ msgstr "请先选择受支持的账户模式以查看余额。"
 msgid "Select all orders"
 msgstr "选择所有订单"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Select asset to bridge"
-#~ msgstr ""
-
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Select both items to continue."
 msgstr "请先勾选以上两项。"
@@ -6292,10 +6527,6 @@ msgstr "请先勾选以上两项。"
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
 msgstr "选择收藏市场"
-
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#~ msgid "Select how margin is allocated for your positions"
-#~ msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Select leverage"
@@ -6318,10 +6549,6 @@ msgstr "选择订单"
 #~ msgid "Select order book aggregation"
 #~ msgstr "选择订单簿聚合"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Select signing mode"
-#~ msgstr ""
-
 #: src/components/trade/chart/token-selector.tsx
 #: src/components/trade/chart/token-selector.tsx
 msgid "Select token"
@@ -6342,6 +6569,10 @@ msgstr "已选择"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重试。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Selected-period PNL"
+msgstr "所选周期 PNL"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
@@ -6397,10 +6628,6 @@ msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "向 Hyperliquid L1 上的另一账户发送代币。"
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Send USDC on Arbitrum One to this address."
-#~ msgstr ""
-
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Send USDC on Arbitrum One to this address. It will be deposited to Hyperliquid automatically."
 #~ msgstr "请在 Arbitrum One 上向此地址发送 USDC。到账后会自动存入 Hyperliquid。"
 
@@ -6429,6 +6656,11 @@ msgstr "分离"
 msgid "Separate Accounts"
 msgstr "分账户"
 
+#. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Server unlock time: {0}"
+msgstr "服务端解锁时间：{0}"
+
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "设置"
@@ -6437,25 +6669,13 @@ msgstr "设置"
 #~ msgid "Set {p}%"
 #~ msgstr "设置 {p}%"
 
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "Set SL to {p}%"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 msgid "Set to {p}%"
 msgstr "设为{p}%"
 
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "Set TP to {p}%"
-#~ msgstr ""
-
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Set TP/SL"
 msgstr "设置止盈止损"
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Set TP/SL for {0}"
-#~ msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/desktop-utilities-menu.tsx
@@ -6465,6 +6685,10 @@ msgstr "设置止盈止损"
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "设置"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Seven-day queue"
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Share"
@@ -6498,16 +6722,8 @@ msgid "Short"
 msgstr "空"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Short {0} position"
-#~ msgstr ""
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
 msgstr "空头仓位"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Show a QR code for a desktop wallet to scan."
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Show asks only"
@@ -6522,28 +6738,12 @@ msgid "Show both sides"
 msgstr "显示买卖盘"
 
 #: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Show Executions"
-#~ msgstr ""
-
-#: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions on Chart"
 #~ msgstr "在图表上显示成交"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Show fewer wallets"
-#~ msgstr ""
-
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Show Orders"
-#~ msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Orders on Chart"
 #~ msgstr "在图表上显示订单"
-
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Show Positions"
-#~ msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Positions on Chart"
@@ -6565,10 +6765,6 @@ msgstr "显示 ROE 百分比"
 #~ msgid "Show Scanlines"
 #~ msgstr "显示扫描线"
 
-#: src/components/trade/components/global-settings-modal.tsx
-#~ msgid "Show Values in Quote Asset"
-#~ msgstr ""
-
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Values in USD"
 #~ msgstr "以美元显示数值"
@@ -6576,10 +6772,6 @@ msgstr "显示 ROE 百分比"
 #: src/components/referrals/referral-activity.tsx
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "显示最近 30 天返回的奖励领取记录，其中可能包含推荐奖励和 Builder 奖励。"
-
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Side"
-#~ msgstr ""
 
 #: src/components/ui/sidebar.tsx
 #~ msgid "Sidebar"
@@ -6604,6 +6796,14 @@ msgstr "签名已拒绝"
 #: src/lib/errors/definitions/connection.ts
 msgid "Signer not ready"
 msgstr "签名器未就绪"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Signing account"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Signing ready"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -6662,10 +6862,6 @@ msgstr "每笔子订单数量"
 msgid "Size precision must be a non-negative integer"
 msgstr "数量精度必须为非负整数"
 
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "SL"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
@@ -6680,10 +6876,6 @@ msgstr "止损价须低于开仓价"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "止损价"
-
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "SL trigger price"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -6708,11 +6900,6 @@ msgstr "智能钱包客户端尚未就绪"
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再次提交入金。"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/lib/hyperliquid/use-deposit.ts
-#~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
-#~ msgstr ""
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
@@ -6732,9 +6919,6 @@ msgstr "部分订单已被接受。重试前请检查当前委托。"
 msgid "Something went wrong"
 msgstr "出错了"
 
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
@@ -6756,6 +6940,10 @@ msgstr "按名称排序 API 钱包"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "按{sortLabel}排序"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Sort leaderboard"
+msgstr ""
 
 #. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector-content.tsx
@@ -6805,9 +6993,13 @@ msgstr "现货账户权益"
 msgid "Spot Dust Conversion"
 msgstr "现货零头转换"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Spot: Max 1% (100 basis points)"
-#~ msgstr ""
+#: src/components/staking/staking-view.tsx
+msgid "Spot to staking"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Spot to staking available"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6821,12 +7013,61 @@ msgstr "价差"
 msgid "Stake"
 msgstr "质押"
 
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "质押"
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking action history unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking actions"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Staking balance only"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Staking deposit"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking details"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking overview"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards accrue every minute, are distributed daily, and are automatically redelegated. There is no separate staking reward collection action."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot · finalized"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking to Spot · initiated"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Staking withdrawal"
+msgstr ""
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Start and end must differ"
@@ -6841,14 +7082,18 @@ msgstr "启动相机"
 msgid "Start Price"
 msgstr "起始价"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#~ msgid "Start Price (USDC)"
-#~ msgstr ""
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Started"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "正在启动相机…"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Starts the seven-day transfer queue from staking balance to Spot."
+msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -6856,6 +7101,7 @@ msgid "Statistics"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -6864,6 +7110,10 @@ msgstr ""
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Status"
 msgstr "状态"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Status not confirmed"
+msgstr ""
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Stay Connected"
@@ -6944,6 +7194,10 @@ msgstr "子账户转账"
 msgid "Submit"
 msgstr "提交"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Submitted"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Submitted limit and trigger orders will appear here."
@@ -7008,10 +7262,6 @@ msgstr "兑换已提交"
 msgid "Swapping..."
 msgstr "兑换中..."
 
-#: src/components/trade/components/global-settings-modal.tsx
-#~ msgid "Switch between mainnet and testnet. Page will reload."
-#~ msgstr ""
-
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Switch to {0}"
 #~ msgstr "切换到 {0}"
@@ -7045,14 +7295,6 @@ msgstr "切换到 {0} 市场，{sideLabel}委托"
 #: src/components/trade/positions/orders-history-tab.tsx
 #~ msgid "Switch to {0} market, short order"
 #~ msgstr "切换至{0}市场，做空下单"
-
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "Switch to {displayCoin} market"
-#~ msgstr ""
-
-#: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Switch to {displayName} market"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -7135,14 +7377,6 @@ msgstr "切换中..."
 #~ msgid "Sync ID"
 #~ msgstr "同步 ID"
 
-#: src/lib/trade/order-types.ts
-#~ msgid "Take Limit"
-#~ msgstr ""
-
-#: src/lib/trade/order-types.ts
-#~ msgid "Take Market"
-#~ msgstr ""
-
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
@@ -7205,6 +7439,10 @@ msgstr "吃单方"
 msgid "Taking longer than expected"
 msgstr "耗时比预期更长"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Target"
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Target leverage"
 msgstr "目标杠杆"
@@ -7264,6 +7502,14 @@ msgstr "账户激活费用在签名前已变化。请检查更新后的费用并
 msgid "The active wallet is not this account's master wallet"
 msgstr "当前钱包不是此账户的主钱包"
 
+#: src/components/staking/staking-view.tsx
+msgid "The address already has five pending withdrawals."
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "The address is invalid or Hyperliquid returned no Vault details for it."
+msgstr ""
+
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "The API wallet request was rejected."
 msgstr "API 钱包请求已被拒绝。"
@@ -7276,6 +7522,10 @@ msgstr "无法重新检查授权。在只读验证成功前，二维码将保持
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操作。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
 msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
@@ -7297,14 +7547,14 @@ msgstr "Arbitrum 交易已提交，但暂时无法获取 Circle 状态。返回�
 msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
 msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请检查该交易。"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
-#~ msgstr ""
-
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "无法确认撤单响应。请刷新当前委托后再试。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -7343,6 +7593,10 @@ msgstr "extraAgents 请求失败。现有 API 钱包仍可正常使用，但在�
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
 
+#: src/components/staking/staking-view.tsx
+msgid "The history response could not be verified."
+msgstr ""
+
 #: src/hooks/trade/use-usdc-routing.ts
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
 msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路由并重试。"
@@ -7351,6 +7605,10 @@ msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用，然后再次提交。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "The leader receives the commission shown above from profits."
+msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
@@ -7364,6 +7622,10 @@ msgstr "匹配的主钱包将签署此账户级 Agent 授权。"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The modified order is no longer open."
 msgstr "修改后的委托已不在当前委托中。"
+
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "The network-matched public dataset could not be verified. Your account and trading are unaffected."
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "The one-time QR could not be verified. Check your connection and retry."
@@ -7392,6 +7654,10 @@ msgstr "订单仍在确认中。"
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "实时数据尚未确认委托更新。重试前请刷新；仍可取消该委托。"
 
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The page is matching a new Vault ledger event and refreshed account state. It will not sign again."
+msgstr ""
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
 msgstr "页面正在从 Hyperliquid 刷新。最新变更可能需要片刻才会显示。"
@@ -7408,6 +7674,10 @@ msgstr "上一次委托修改仍未确认。重试前请刷新当前委托。"
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "上一个钱包已断开，但其本地交易密钥未能移除。重新连接前请先清除本站点数据。"
 
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "The prior request may have reached Hyperliquid. Do not submit it again. Open the related page to continue read-only reconciliation."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The private key is created in this browser and is never uploaded or stored by Gatu."
 msgstr "私钥在此浏览器中创建，绝不会上传或由 Gatu 存储。"
@@ -7415,6 +7685,10 @@ msgstr "私钥在此浏览器中创建，绝不会上传或由 Gatu 存储。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
 msgstr "私钥在此桌面设备上创建，并嵌入二维码中。"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "The public Vault feed could not be verified. No cached or cross-network rows are shown in its place."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "The QR expired before it could be displayed. Create a new key."
@@ -7441,6 +7715,18 @@ msgstr "请求已提交，但最终状态仍在更新。重试前请检查推荐
 msgid "The response could not be verified. No referral action is available until fresh data loads."
 msgstr "无法验证响应。在加载最新数据前，所有推荐操作均不可用。"
 
+#: src/components/staking/staking-view.tsx
+msgid "The response could not be verified. No validator action is available."
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "The response was missing, malformed, or could not be verified. No placeholder financial data is shown."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "The reward response could not be verified."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "The saved desktop QR was invalid. Scan a fresh QR."
@@ -7450,11 +7736,19 @@ msgstr "已保存的桌面二维码无效。请扫描新二维码。"
 msgid "The secure Hyperliquid connection could not be verified. Try again."
 msgstr "无法验证安全的 Hyperliquid 连接。请重试。"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "The selected Hyperliquid environment returned a definitive empty Vault list."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "The signed {action} request is dispatched once and will not be retried automatically."
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The signed request has been submitted. Keep this window open."
@@ -7497,13 +7791,17 @@ msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 msgid "The trigger price is invalid for this order direction."
 msgstr "该触发价格不符合此委托方向。"
 
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "The verified dataset did not contain an eligible account for this network."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "The verified owner data is read-only in this session. An Agent/API wallet is never used as the staking owner or signer."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The wallet did not sign, so no request was submitted. You can review the details and try again."
 msgstr "钱包未完成签名，因此请求尚未提交。你可以查看详情后重试。"
-
-#: src/hooks/wallet/use-wallet-session.ts
-#~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
-#~ msgstr ""
 
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
@@ -7528,10 +7826,6 @@ msgstr "此账户当前无权使用 Hyperliquid 推荐功能。"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This action cannot be undone after execution."
 msgstr "成交后此操作无法撤销。"
-
-#: src/components/pages/builder-page.tsx
-#~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
-#~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -7602,9 +7896,13 @@ msgstr "此设备无法安全保存二维码。请检查浏览器存储后重新
 msgid "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
 msgstr "此免 Gas 签名会创建一个用于快速交易的专用 API 钱包。该钱包无法提取资金。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
-#~ msgstr ""
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This interface may return at most a subset of all depositors."
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "This is a definitive empty result for the selected filter."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead."
@@ -7618,14 +7916,6 @@ msgstr "这不是有效的 gatu 桌面钱包二维码。"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This is not a valid gatu mobile link."
 #~ msgstr "这不是有效的 gatu 手机链接。"
-
-#: src/routes/mobile-agent-sync.tsx
-#~ msgid "This is not a valid HypeTerminal mobile link."
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "This is not a WalletConnect QR code."
-#~ msgstr ""
 
 #: src/components/referrals/referral-activity.tsx
 msgid "This is the legacy earned-reward history. Current claims are shown in the previous tab."
@@ -7649,8 +7939,6 @@ msgstr "该逐仓仓位已不再持有。"
 msgid "This market only supports isolated margin mode."
 msgstr "该市场仅支持逐仓保证金模式。"
 
-#: src/routes/mobile-agent-sync.tsx
-#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This mobile link expired."
 #~ msgstr "此手机链接已过期。"
@@ -7764,6 +8052,11 @@ msgstr "该现货资产由第三方提供商 Unit 独立启用。"
 msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "该现货市场在 Hyperliquid 上交易 {0}/{1}。"
 
+#. placeholder {0}: shortenAddress(link.tradingUser, 6, 6)
+#: src/components/staking/staking-view.tsx
+msgid "This staking account controls trading account {0}."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This strict isolated market does not allow margin to be removed from an open position."
@@ -7772,6 +8065,10 @@ msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "此交易密钥不是当前获批的移动交易密钥。请创建新的桌面二维码。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "This Vault uses proportional position closing on withdrawal."
+msgstr ""
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 #~ msgid "This will cancel all {orderCount} open orders, including protective stop orders. Your positions will no longer be protected."
@@ -7800,6 +8097,8 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/referrals/referral-legacy-history.tsx
+#: src/components/staking/staking-view.tsx
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -7825,10 +8124,6 @@ msgstr "时间"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Time / Total"
 #~ msgstr "时间 / 总计"
-
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#~ msgid "Time in Force"
-#~ msgstr ""
 
 #: src/config/tooltips.ts
 msgid "Time In Force"
@@ -7859,8 +8154,6 @@ msgstr "切换显示单位"
 msgid "Toggle profit and loss unit"
 msgstr "切换盈亏单位"
 
-#: src/components/ui/sidebar.tsx
-#: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
 #~ msgid "Toggle Sidebar"
 #~ msgstr "切换侧边栏"
@@ -7934,17 +8227,13 @@ msgstr "总供应量"
 msgid "Total time"
 msgstr "总时长"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Total Value"
-#~ msgstr ""
+#: src/components/vaults/vaults-list.tsx
+msgid "Total value locked"
+msgstr ""
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Total volume"
 msgstr "总成交量"
-
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "TP"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -7960,10 +8249,6 @@ msgstr "止盈价须低于开仓价"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "止盈价"
-
-#: src/components/trade/order-entry/tp-sl-section.tsx
-#~ msgid "TP trigger price"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -8000,10 +8285,6 @@ msgstr "在 LI.FI Explorer 上追踪"
 msgid "Trade"
 msgstr "交易"
 
-#: src/components/trade/positions/history-tab.tsx
-#~ msgid "Trade ClockCounterClockwise"
-#~ msgstr ""
-
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "成交历史"
@@ -8022,6 +8303,7 @@ msgstr "成交价值"
 msgid "Trade via {0} spot market"
 msgstr "通过{0}现货市场交易"
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/referrals/referred-traders.tsx
 msgid "Trader"
 msgstr "交易者"
@@ -8051,6 +8333,8 @@ msgid "Trades"
 msgstr "成交"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
 msgid "Trading"
 msgstr "交易中"
 
@@ -8133,6 +8417,7 @@ msgstr "成交量进度"
 msgid "Traditional Finance"
 msgstr "传统金融"
 
+#: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Transaction"
@@ -8189,6 +8474,14 @@ msgstr "划转中..."
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Transfers HYPE from your Spot balance to your available staking balance."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Trending"
 #~ msgstr "热门"
@@ -8220,10 +8513,6 @@ msgstr "触发订单必须减少当前仓位"
 msgid "Trigger Price"
 msgstr "触发价"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#~ msgid "Trigger Price (USDC)"
-#~ msgstr ""
-
 #: src/lib/errors/definitions/trigger.ts
 msgid "Trigger size exceeds position size"
 msgstr "触发订单数量超过当前仓位数量"
@@ -8234,18 +8523,27 @@ msgstr "触发订单数量超过当前仓位数量"
 msgid "Triggered"
 msgstr "已触发"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#~ msgid "Try again"
-#~ msgstr "重试"
+#: src/components/leaderboard/leaderboard-view.tsx
+msgid "Try again"
+msgstr "重试"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Try Again"
 msgstr "重试"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Try another vault name, address, or leader address."
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Try the PWA."
 msgstr "试用 PWA。"
+
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "TVL"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8337,7 +8635,6 @@ msgstr "类型"
 #~ msgstr "无法取消订单。"
 
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Unable to close position."
 #~ msgstr "无法平仓。"
 
@@ -8427,6 +8724,7 @@ msgstr "无法验证提现资格。请求未提交。"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "不可用"
 
@@ -8434,9 +8732,34 @@ msgstr "不可用"
 msgid "Unclaimed"
 msgstr "未领取"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Unclassified Vaults"
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
 msgstr "未确认"
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Undelegate"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Undelegate HYPE"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Undelegated from {validator}"
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Undelegating returns HYPE to the available staking balance. It does not move HYPE to Spot."
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Undelegation"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Underlying asset"
@@ -8473,6 +8796,10 @@ msgstr "未知交易标的：{0}"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "未知交易对: {symbolName}"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Unlock eligibility uses the server-returned lock timestamp, not a universal fixed lock."
+msgstr ""
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unlock your wallet and try again."
@@ -8518,6 +8845,10 @@ msgstr "更新失败"
 msgid "Updated"
 msgstr "已更新"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Updated {updatedLabel}"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
 msgstr "实时更新"
@@ -8525,6 +8856,10 @@ msgstr "实时更新"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Updating..."
 msgstr "正在更新..."
+
+#: src/components/staking/staking-view.tsx
+msgid "Uptime"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
@@ -8587,6 +8922,15 @@ msgstr "使用中间价"
 msgid "Use referral code {code} when joining Hyperliquid."
 msgstr "加入 Hyperliquid 时使用推荐码 {code}。"
 
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "User"
+msgstr ""
+
+#: src/components/vaults/vaults-list.tsx
+msgid "User Vaults"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Using"
 #~ msgstr "使用中"
@@ -8605,6 +8949,27 @@ msgstr "正在校验持仓..."
 msgid "Validating..."
 msgstr "验证中..."
 
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/staking/staking-view.tsx
+msgid "Validator"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator commission"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator data unavailable"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance"
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance period"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -8615,6 +8980,19 @@ msgstr "有效期"
 #~ msgid "Value"
 #~ msgstr "价值"
 
+#: src/components/vaults/vault-action-modal.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault chart metric"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault chart period"
+msgstr ""
+
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Vault Close"
 msgstr "金库平仓"
@@ -8623,13 +9001,61 @@ msgstr "金库平仓"
 msgid "Vault Commission"
 msgstr "金库佣金"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault data is unavailable"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Vault deposit"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Vault Deposit"
 msgstr "金库存款"
 
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault details are unavailable"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Vault Distribution"
 msgstr "金库分配"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault filters"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault lock status"
+msgstr ""
+
+#: src/components/vaults/vaults-page.tsx
+msgid "Vault not found"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault performance"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Vault request failed"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault risk"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Vault transfer confirmed"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault value"
+msgstr ""
+
+#: src/components/funds-action/funds-action-recovery-host.tsx
+msgid "Vault withdrawal"
+msgstr ""
 
 #: src/config/account-ledger.ts
 msgid "Vault Withdrawal"
@@ -8638,6 +9064,8 @@ msgstr "金库提款"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 msgid "Vaults"
 msgstr "金库"
 
@@ -8645,18 +9073,37 @@ msgstr "金库"
 msgid "Verification reference"
 msgstr "验证参考"
 
+#. placeholder {0}: formatVaultUsd(availableAmount)
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Verified wallet balance: {0}"
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verify"
 msgstr "验证"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
+#: src/components/staking/staking-action-modal.tsx
+#: src/components/vaults/vault-action-modal.tsx
 msgid "Verify again"
 msgstr "再次验证"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "Verify the pending funds operation before starting another one."
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Verifying"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Verifying approval..."
 msgstr "正在验证授权…"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Verifying from history"
+msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -8683,16 +9130,13 @@ msgstr "在区块浏览器中查看"
 msgid "VOL"
 msgstr "成交量"
 
+#: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/referrals/referred-traders.tsx
 #: src/components/referrals/referred-traders.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "成交量"
-
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "waiting"
-#~ msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Waiting for at least 5 USDC to arrive."
@@ -8800,14 +9244,6 @@ msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum �
 #~ msgid "Wallet USDC"
 #~ msgstr "钱包 USDC"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "WalletConnect pairing ready"
-#~ msgstr ""
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "WalletConnect QR code"
-#~ msgstr ""
-
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "无法验证此钱包的法律状态。请检查网络连接后重试。"
@@ -8826,10 +9262,6 @@ msgstr "网站"
 msgid "Welcome Bonus"
 msgstr "欢迎奖励"
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "What is a wallet?"
-#~ msgstr ""
-
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Whole position"
 msgstr "全部仓位"
@@ -8839,14 +9271,7 @@ msgstr "全部仓位"
 msgid "will arrive in {0}"
 msgstr "将在{0}后到账"
 
-#: src/components/trade/order-entry/deposit-modal.tsx
-#~ msgid "will arrive in ~3 min"
-#~ msgstr ""
-
-#: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "will arrive in ~5 min"
-#~ msgstr ""
-
+#: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -8856,6 +9281,7 @@ msgstr "将在{0}后到账"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "提款"
@@ -8864,6 +9290,10 @@ msgstr "提款"
 msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "提取"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Withdraw from Vault"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
@@ -8882,6 +9312,10 @@ msgstr "可提"
 msgid "Withdrawal"
 msgstr "提款"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal can cancel orders, close positions, incur slippage, and return less than requested."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
@@ -8891,6 +9325,18 @@ msgstr "提现失败"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal fee"
 msgstr "提款手续费"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal locked"
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Withdrawal may cancel orders, close positions, incur slippage, and return less than requested."
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal policy"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal route"
@@ -8904,6 +9350,10 @@ msgstr "无法确认提款状态"
 msgid "Withdrawal submitted"
 msgstr "提现已提交"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal unlocked"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/domain/trade/pre-transfer-check.ts
 msgid "Withdrawals are unavailable for this address."
@@ -8912,10 +9362,6 @@ msgstr "此地址暂不支持提款。"
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Wrong network"
 #~ msgstr "网络错误"
-
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Wrong QR type"
-#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -8942,9 +9388,13 @@ msgstr "您当前处于测试网"
 msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
 msgstr "您当前查看的是由第三方在 Hyperliquid 上独立、无需许可部署的市场。这些市场基于链上活动展示，未经审查、验证或批准。"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
-#~ msgstr ""
+#: src/components/vaults/vault-detail-view.tsx
+msgid "You can lose all deposited principal. Vault returns are not guaranteed."
+msgstr ""
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "You can lose all principal, and historical APR does not predict future returns."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "You can still verify and revoke existing mobile access below."
@@ -8979,9 +9429,9 @@ msgstr "您已离线"
 msgid "Your account was referred by"
 msgstr "您的账户推荐人"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
-#~ msgstr ""
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Your all-time PNL"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your bridge is still processing. Funds are safe."
@@ -8990,6 +9440,16 @@ msgstr "您的跨链转账仍在处理中。资金安全。"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "您在此市场的当前持仓"
+
+#: src/components/staking/staking-view.tsx
+msgid "Your delegated stake"
+msgstr ""
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Your deposit"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
@@ -9012,9 +9472,17 @@ msgstr "您的推荐信息"
 msgid "Your rewards"
 msgstr "您的奖励"
 
+#: src/components/staking/staking-view.tsx
+msgid "Your stake"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"
 msgstr "您的交易正在处理中"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Your Vault balance could not be verified. Account values and withdrawal remain unavailable."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."

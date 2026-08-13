@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import {
@@ -43,6 +43,20 @@ const CHART_READY_TIMEOUT_MS = 15_000;
 const CHART_READY_MAX_AUTO_RETRIES = 1;
 const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
 const SYMBOL_SWITCH_MAX_RETRIES = 1;
+const THEME_SWITCH_TIMEOUT_MS = 5_000;
+const LOCALE_STATE_SAVE_TIMEOUT_MS = 2_000;
+
+function cloneChartState(state: object): object | null {
+	try {
+		return structuredClone(state);
+	} catch {
+		try {
+			return JSON.parse(JSON.stringify(state)) as object;
+		} catch {
+			return null;
+		}
+	}
+}
 
 function getTradingViewOverlayPalette(): TradingViewOverlayPalette {
 	const colors = getChartColors();
@@ -91,7 +105,10 @@ export function TradingViewChart({
 	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
+	const intervalPropRef = useRef(interval);
 	const targetThemeRef = useRef(theme);
+	const targetLocaleRef = useRef(locale);
+	const committedLocaleRef = useRef(locale);
 	const activeRef = useRef(active);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
@@ -104,13 +121,42 @@ export function TradingViewChart({
 	const cancelSymbolSwitchRef = useRef<() => void>(() => {});
 	const pauseReadyWatchdogRef = useRef<() => void>(() => {});
 	const resumeReadyWatchdogRef = useRef<() => void>(() => {});
+	const pauseThemeWatchdogRef = useRef<() => void>(() => {});
+	const resumeThemeWatchdogRef = useRef<() => void>(() => {});
+	const pauseStateSaveWatchdogRef = useRef<() => void>(() => {});
+	const resumeStateSaveWatchdogRef = useRef<() => void>(() => {});
 	const themeSwitchInFlightWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const themeSwitchRetryTargetRef = useRef<"light" | "dark" | null>(null);
+	const themeSwitchSequenceRef = useRef(0);
+	const themeSwitchWatchdogRef = useRef<{
+		widget: IChartingLibraryWidget;
+		sequence: number;
+		remainingMs: number;
+		startedAt: number;
+		timeout: ReturnType<typeof setTimeout> | null;
+	} | null>(null);
+	const themeRecoveryWidgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const appliedLocaleRef = useRef<LanguageCode | null>(null);
+	const stateSaveSequenceRef = useRef(0);
+	const stateSaveRef = useRef<{
+		widget: IChartingLibraryWidget;
+		sequence: number;
+		sourceSymbol: string | undefined;
+		localeRebuild: boolean;
+		themeRebuild: boolean;
+		remainingMs: number;
+		startedAt: number;
+		timeout: ReturnType<typeof setTimeout> | null;
+	} | null>(null);
+	const pendingChartStateRef = useRef<object | null>(null);
+	const pendingChartStateSymbolRef = useRef<string | null>(null);
+	const pendingChartIntervalRef = useRef<string | null>(null);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const overlayLinesRef = useRef(overlayLines);
 	const overlayControllerRef = useRef<TradingViewOverlayController | null>(null);
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
+	const requestLocaleSwitchRef = useRef<() => void>(() => {});
 	const requestDataResetRef = useRef<() => void>(() => {});
 	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
@@ -118,8 +164,6 @@ export function TradingViewChart({
 	const [retryNonce, setRetryNonce] = useState(0);
 	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
 	targetSymbolRef.current = widgetSymbol;
-	targetIntervalRef.current = interval;
-	targetThemeRef.current = theme;
 	activeRef.current = active;
 	overlayLinesRef.current = overlayLines;
 	if (market) {
@@ -278,27 +322,123 @@ export function TradingViewChart({
 		tryApplySymbol();
 	};
 
+	const clearThemeSwitchWatchdog = (widget?: IChartingLibraryWidget, sequence?: number) => {
+		const watchdog = themeSwitchWatchdogRef.current;
+		if (!watchdog) return;
+		if (widget && watchdog.widget !== widget) return;
+		if (sequence !== undefined && watchdog.sequence !== sequence) return;
+		if (watchdog.timeout) clearTimeout(watchdog.timeout);
+		themeSwitchWatchdogRef.current = null;
+	};
+
+	const shouldPauseThemeWatchdog = () => document.visibilityState === "hidden" || !navigator.onLine;
+
+	const armThemeSwitchWatchdog = () => {
+		const watchdog = themeSwitchWatchdogRef.current;
+		if (!watchdog || watchdog.timeout || shouldPauseThemeWatchdog()) return;
+		if (watchdog.remainingMs <= 0) {
+			rebuildThemeWidget(watchdog.widget, watchdog.sequence);
+			return;
+		}
+		watchdog.startedAt = Date.now();
+		watchdog.timeout = setTimeout(() => {
+			watchdog.timeout = null;
+			watchdog.remainingMs = 0;
+			rebuildThemeWidget(watchdog.widget, watchdog.sequence);
+		}, watchdog.remainingMs);
+	};
+
+	const pauseThemeSwitchWatchdog = () => {
+		const watchdog = themeSwitchWatchdogRef.current;
+		if (!watchdog?.timeout) return;
+		clearTimeout(watchdog.timeout);
+		watchdog.timeout = null;
+		watchdog.remainingMs = Math.max(0, watchdog.remainingMs - (Date.now() - watchdog.startedAt));
+	};
+
+	const rebuildThemeWidget = (widget: IChartingLibraryWidget, sequence?: number) => {
+		if (widgetRef.current !== widget || themeRecoveryWidgetRef.current === widget) return;
+		if (sequence !== undefined && themeSwitchSequenceRef.current !== sequence) return;
+		themeRecoveryWidgetRef.current = widget;
+		themeSwitchSequenceRef.current += 1;
+		clearThemeSwitchWatchdog(widget);
+		requestStatePreservingRebuild(widget, "theme");
+	};
+
+	const retryOrRebuildTheme = (widget: IChartingLibraryWidget, nextTheme: "light" | "dark") => {
+		if (widgetRef.current !== widget || themeRecoveryWidgetRef.current === widget) return;
+		const targetTheme = targetThemeRef.current;
+		if (targetTheme !== nextTheme) {
+			themeSwitchRetryTargetRef.current = null;
+			applyThemeRef.current(targetTheme);
+			return;
+		}
+		if (themeSwitchRetryTargetRef.current === nextTheme) {
+			rebuildThemeWidget(widget);
+			return;
+		}
+		themeSwitchRetryTargetRef.current = nextTheme;
+		applyThemeRef.current(nextTheme);
+	};
+
 	applyThemeRef.current = (nextTheme) => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
+		if (themeRecoveryWidgetRef.current === widget) return;
 		if (themeSwitchInFlightWidgetRef.current === widget) return;
 
-		if (widget.getTheme() === nextTheme) {
-			themeSwitchRetryTargetRef.current = null;
-			if (appliedThemeRef.current !== nextTheme) {
-				widget.applyOverrides(buildChartOverrides());
+		let currentTheme: "light" | "dark";
+		try {
+			currentTheme = widget.getTheme();
+		} catch {
+			retryOrRebuildTheme(widget, nextTheme);
+			return;
+		}
+
+		if (currentTheme === nextTheme) {
+			try {
+				if (appliedThemeRef.current !== nextTheme) {
+					widget.applyOverrides(buildChartOverrides());
+				}
+			} catch {
+				retryOrRebuildTheme(widget, nextTheme);
+				return;
 			}
+			themeSwitchRetryTargetRef.current = null;
 			appliedThemeRef.current = nextTheme;
 			syncOverlaysRef.current();
 			return;
 		}
 
+		const sequence = themeSwitchSequenceRef.current + 1;
+		themeSwitchSequenceRef.current = sequence;
 		themeSwitchInFlightWidgetRef.current = widget;
+		themeSwitchWatchdogRef.current = {
+			widget,
+			sequence,
+			remainingMs: THEME_SWITCH_TIMEOUT_MS,
+			startedAt: 0,
+			timeout: null,
+		};
+		armThemeSwitchWatchdog();
 		let themeSwitchFailed = false;
-		void widget
-			.changeTheme(nextTheme)
+		let themeSwitch: Promise<void>;
+		try {
+			themeSwitch = widget.changeTheme(nextTheme, { disableUndo: true });
+		} catch {
+			clearThemeSwitchWatchdog(widget, sequence);
+			if (themeSwitchInFlightWidgetRef.current === widget) {
+				themeSwitchInFlightWidgetRef.current = null;
+			}
+			retryOrRebuildTheme(widget, nextTheme);
+			return;
+		}
+
+		void themeSwitch
 			.then(() => {
 				if (widgetRef.current !== widget) return;
+				if (themeSwitchSequenceRef.current !== sequence) return;
+				if (themeRecoveryWidgetRef.current === widget) return;
 				if (targetThemeRef.current !== nextTheme) return;
 				widget.applyOverrides(buildChartOverrides());
 				appliedThemeRef.current = nextTheme;
@@ -312,17 +452,137 @@ export function TradingViewChart({
 				if (themeSwitchInFlightWidgetRef.current === widget) {
 					themeSwitchInFlightWidgetRef.current = null;
 				}
+				clearThemeSwitchWatchdog(widget, sequence);
+				if (themeSwitchSequenceRef.current !== sequence) return;
 				if (widgetRef.current !== widget) return;
+				if (themeRecoveryWidgetRef.current === widget) return;
 				const targetTheme = targetThemeRef.current;
 				if (targetTheme !== nextTheme) {
 					themeSwitchRetryTargetRef.current = null;
 					applyThemeRef.current(targetTheme);
 					return;
 				}
-				if (!themeSwitchFailed || themeSwitchRetryTargetRef.current === nextTheme) return;
-				themeSwitchRetryTargetRef.current = nextTheme;
-				applyThemeRef.current(nextTheme);
+				if (!themeSwitchFailed) return;
+				retryOrRebuildTheme(widget, nextTheme);
 			});
+	};
+
+	const clearStateSave = (widget?: IChartingLibraryWidget, sequence?: number) => {
+		const request = stateSaveRef.current;
+		if (!request) return;
+		if (widget && request.widget !== widget) return;
+		if (sequence !== undefined && request.sequence !== sequence) return;
+		if (request.timeout) clearTimeout(request.timeout);
+		stateSaveRef.current = null;
+	};
+
+	const captureCurrentInterval = (widget: IChartingLibraryWidget) => {
+		try {
+			const resolution = widget.activeChart().resolution();
+			return resolution || targetIntervalRef.current;
+		} catch {}
+		return targetIntervalRef.current;
+	};
+
+	const shouldPauseStateSaveWatchdog = () => document.visibilityState === "hidden" || !navigator.onLine;
+
+	function finishStatePreservingRebuild(widget: IChartingLibraryWidget, sequence: number, state?: object) {
+		const request = stateSaveRef.current;
+		if (!request || request.widget !== widget || request.sequence !== sequence) return;
+		const shouldRebuild =
+			request.themeRebuild || (request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
+		const sourceMatchesTarget =
+			request.sourceSymbol !== undefined && isChartSymbolApplied(request.sourceSymbol, targetSymbolRef.current);
+		clearStateSave(widget, sequence);
+		if (widgetRef.current !== widget || !shouldRebuild) {
+			if (themeRecoveryWidgetRef.current === widget) themeRecoveryWidgetRef.current = null;
+			return;
+		}
+		const currentInterval = captureCurrentInterval(widget);
+		pendingChartStateRef.current = state && sourceMatchesTarget ? cloneChartState(state) : null;
+		pendingChartStateSymbolRef.current = pendingChartStateRef.current ? (request.sourceSymbol ?? null) : null;
+		pendingChartIntervalRef.current = currentInterval;
+		themeRecoveryWidgetRef.current = widget;
+		themeSwitchSequenceRef.current += 1;
+		clearThemeSwitchWatchdog(widget);
+		setRetryNonce((value) => value + 1);
+	}
+
+	const armStateSaveWatchdog = () => {
+		const request = stateSaveRef.current;
+		if (!request || request.timeout || shouldPauseStateSaveWatchdog()) return;
+		if (request.remainingMs <= 0) {
+			finishStatePreservingRebuild(request.widget, request.sequence);
+			return;
+		}
+		request.startedAt = Date.now();
+		request.timeout = setTimeout(() => {
+			request.timeout = null;
+			request.remainingMs = 0;
+			finishStatePreservingRebuild(request.widget, request.sequence);
+		}, request.remainingMs);
+	};
+
+	const pauseStateSaveWatchdog = () => {
+		const request = stateSaveRef.current;
+		if (!request?.timeout) return;
+		clearTimeout(request.timeout);
+		request.timeout = null;
+		request.remainingMs = Math.max(0, request.remainingMs - (Date.now() - request.startedAt));
+	};
+
+	function requestStatePreservingRebuild(widget: IChartingLibraryWidget, reason: "locale" | "theme") {
+		if (widgetRef.current !== widget) return;
+		const pendingRequest = stateSaveRef.current;
+		if (pendingRequest?.widget === widget) {
+			if (reason === "locale") pendingRequest.localeRebuild = true;
+			if (reason === "theme") pendingRequest.themeRebuild = true;
+			return;
+		}
+
+		clearStateSave();
+		const sequence = stateSaveSequenceRef.current + 1;
+		stateSaveSequenceRef.current = sequence;
+		const request = {
+			widget,
+			sequence,
+			sourceSymbol: getActiveChartSymbol(widget),
+			localeRebuild: reason === "locale",
+			themeRebuild: reason === "theme",
+			remainingMs: LOCALE_STATE_SAVE_TIMEOUT_MS,
+			startedAt: 0,
+			timeout: null,
+		};
+		stateSaveRef.current = request;
+		armStateSaveWatchdog();
+
+		try {
+			widget.save((state) => finishStatePreservingRebuild(widget, sequence, state), { includeDrawings: true });
+		} catch {
+			finishStatePreservingRebuild(widget, sequence);
+		}
+	}
+
+	requestLocaleSwitchRef.current = () => {
+		const targetLocale = targetLocaleRef.current;
+		if (targetLocale === appliedLocaleRef.current) {
+			const request = stateSaveRef.current;
+			if (request) {
+				request.localeRebuild = false;
+				if (!request.themeRebuild) clearStateSave(request.widget, request.sequence);
+			}
+			return;
+		}
+
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current) {
+			stateSaveSequenceRef.current += 1;
+			clearStateSave();
+			setRetryNonce((value) => value + 1);
+			return;
+		}
+
+		requestStatePreservingRebuild(widget, "locale");
 	};
 
 	requestDataResetRef.current = () => {
@@ -408,9 +668,13 @@ export function TradingViewChart({
 		const removeWidget = () => {
 			clearReadyWatchdog();
 			clearPendingSymbolSwitch();
+			stateSaveSequenceRef.current += 1;
+			clearStateSave();
 			overlayControllerRef.current?.clear();
 			const widget = widgetRef.current;
 			const datafeed = datafeedRef.current;
+			themeSwitchSequenceRef.current += 1;
+			clearThemeSwitchWatchdog(widget ?? undefined);
 			widgetRef.current = null;
 			datafeedRef.current = null;
 			try {
@@ -425,7 +689,11 @@ export function TradingViewChart({
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
 			appliedThemeRef.current = null;
+			appliedLocaleRef.current = null;
 			themeSwitchRetryTargetRef.current = null;
+			if (themeRecoveryWidgetRef.current === widget) {
+				themeRecoveryWidgetRef.current = null;
+			}
 			if (themeSwitchInFlightWidgetRef.current === widget) {
 				themeSwitchInFlightWidgetRef.current = null;
 			}
@@ -501,13 +769,27 @@ export function TradingViewChart({
 		};
 		pauseReadyWatchdogRef.current = pauseReadyWatchdog;
 		resumeReadyWatchdogRef.current = resumeReadyWatchdog;
+		pauseThemeWatchdogRef.current = pauseThemeSwitchWatchdog;
+		resumeThemeWatchdogRef.current = armThemeSwitchWatchdog;
+		pauseStateSaveWatchdogRef.current = pauseStateSaveWatchdog;
+		resumeStateSaveWatchdogRef.current = armStateSaveWatchdog;
 
 		const handlePageLifecycleChange = () => {
 			if (shouldPauseReadyWatchdog()) {
 				pauseReadyWatchdog();
-				return;
+			} else {
+				resumeReadyWatchdog();
 			}
-			resumeReadyWatchdog();
+			if (shouldPauseThemeWatchdog()) {
+				pauseThemeWatchdogRef.current();
+			} else {
+				resumeThemeWatchdogRef.current();
+			}
+			if (shouldPauseStateSaveWatchdog()) {
+				pauseStateSaveWatchdogRef.current();
+			} else {
+				resumeStateSaveWatchdogRef.current();
+			}
 		};
 
 		document.addEventListener("visibilitychange", handlePageLifecycleChange);
@@ -530,10 +812,19 @@ export function TradingViewChart({
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
 				const initialTheme = targetThemeRef.current;
+				const initialLocale = targetLocaleRef.current;
 				const customCssUrl = getChartCssUrl(initialTheme);
 
 				const initialSymbol = targetSymbolRef.current;
-				const initialInterval = targetIntervalRef.current;
+				const restoredInterval = pendingChartIntervalRef.current;
+				const initialInterval = restoredInterval ?? targetIntervalRef.current;
+				if (restoredInterval) targetIntervalRef.current = restoredInterval;
+				const savedChartState =
+					pendingChartStateRef.current &&
+					pendingChartStateSymbolRef.current !== null &&
+					isChartSymbolApplied(pendingChartStateSymbolRef.current, initialSymbol)
+						? pendingChartStateRef.current
+						: null;
 				setInitError(null);
 
 				const datafeed = createDatafeed({
@@ -550,7 +841,7 @@ export function TradingViewChart({
 					datafeed,
 					symbol: initialSymbol,
 					interval: initialInterval as ResolutionString,
-					locale,
+					locale: initialLocale,
 					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
 					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
 					theme: initialTheme,
@@ -567,11 +858,13 @@ export function TradingViewChart({
 					favorites: {
 						intervals: CHART_FAVORITE_INTERVALS,
 					},
+					...(savedChartState ? { saved_data: savedChartState } : {}),
 				});
 				widgetRef.current = widget;
-				appliedSymbolRef.current = initialSymbol;
-				appliedIntervalRef.current = initialInterval;
-				appliedThemeRef.current = initialTheme;
+				appliedSymbolRef.current = savedChartState ? null : initialSymbol;
+				appliedIntervalRef.current = savedChartState ? null : initialInterval;
+				appliedThemeRef.current = savedChartState ? null : initialTheme;
+				appliedLocaleRef.current = initialLocale;
 
 				const watchdog = {
 					widget,
@@ -587,6 +880,9 @@ export function TradingViewChart({
 					if (disposed || widgetRef.current !== widget) return;
 					clearReadyWatchdog();
 					chartReadyRef.current = true;
+					pendingChartStateRef.current = null;
+					pendingChartStateSymbolRef.current = null;
+					pendingChartIntervalRef.current = null;
 					setIsInitializing(false);
 					setInitError(null);
 					if (pendingDataResetRef.current) requestDataResetRef.current();
@@ -606,6 +902,10 @@ export function TradingViewChart({
 			disposed = true;
 			pauseReadyWatchdogRef.current = () => {};
 			resumeReadyWatchdogRef.current = () => {};
+			pauseThemeWatchdogRef.current = () => {};
+			resumeThemeWatchdogRef.current = () => {};
+			pauseStateSaveWatchdogRef.current = () => {};
+			resumeStateSaveWatchdogRef.current = () => {};
 			deferredInitializationFailure = undefined;
 			document.removeEventListener("visibilitychange", handlePageLifecycleChange);
 			window.removeEventListener("online", handlePageLifecycleChange);
@@ -614,11 +914,18 @@ export function TradingViewChart({
 			clearReadyWatchdog();
 			removeWidget();
 		};
-	}, [retryNonce, locale]);
+	}, [retryNonce]);
+
+	useLayoutEffect(() => {
+		if (intervalPropRef.current === interval) return;
+		intervalPropRef.current = interval;
+		targetIntervalRef.current = interval;
+		pendingChartIntervalRef.current = null;
+		applySymbolRef.current();
+	}, [interval]);
 
 	useEffect(() => {
 		targetSymbolRef.current = widgetSymbol;
-		targetIntervalRef.current = interval;
 		if (!active) {
 			pauseReadyWatchdogRef.current();
 			// A cancelled in-flight setSymbol may still land inside the hidden iframe, so the
@@ -635,16 +942,23 @@ export function TradingViewChart({
 		applyThemeRef.current(targetThemeRef.current);
 		applySymbolRef.current();
 		syncOverlaysRef.current();
-	}, [widgetSymbol, interval, active]);
+	}, [widgetSymbol, active]);
 
 	useEffect(() => {
 		syncOverlaysRef.current();
 	});
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		targetThemeRef.current = theme;
 		applyThemeRef.current(theme);
 	}, [theme]);
+
+	useLayoutEffect(() => {
+		targetLocaleRef.current = locale;
+		if (committedLocaleRef.current === locale) return;
+		committedLocaleRef.current = locale;
+		requestLocaleSwitchRef.current();
+	}, [locale]);
 
 	return (
 		<div
