@@ -35,7 +35,12 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={actionPending}>
-			<ModalPopup size="sm" showClose={!actionPending}>
+			<ModalPopup
+				size="sm"
+				showClose={!actionPending}
+				overlayClassName="bg-trading-panel-scrim"
+				className="font-market-close"
+			>
 				<LeverageModalContent
 					key={marketIdentity ?? "market"}
 					{...contentProps}
@@ -74,6 +79,7 @@ function LeverageModalContent({
 	} = useAutoCloseSuccess(() => onOpenChange(false), MARGIN_MODE_SUCCESS_DURATION_MS);
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
 	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
+	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
 	const mountedRef = useRef(false);
 
@@ -89,6 +95,7 @@ function LeverageModalContent({
 		resetAutoClose();
 		setDragLeverage(null);
 		setSubmittedLeverage(null);
+		setLeverageInputValid(true);
 	}, [open, resetAutoClose]);
 
 	const committedLeverage = pendingLeverage ?? currentLeverage;
@@ -101,10 +108,10 @@ function LeverageModalContent({
 	}
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || isUpdating || applyInFlightRef.current) return;
+		if (!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || applyInFlightRef.current) return;
 		applyInFlightRef.current = true;
 		onSubmissionLockChange(true);
-		const leverageToSubmit = displayLeverage;
+		const leverageToSubmit = committedLeverage;
 		setSubmittedLeverage(leverageToSubmit);
 		try {
 			await onApply(leverageToSubmit);
@@ -138,6 +145,7 @@ function LeverageModalContent({
 					disabled={isUpdating || !open}
 					onChange={handleLeverageChange}
 					onDraftChange={setDragLeverage}
+					onInputValidityChange={setLeverageInputValid}
 					variant="modal"
 				/>
 				{updateError && (
@@ -162,7 +170,7 @@ function LeverageModalContent({
 				)}
 				<TradingActionButton
 					onClick={handleConfirm}
-					disabled={!isDirty || isUpdating}
+					disabled={!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating}
 					containerClassName="flex-1"
 					className="gap-1.5 min-h-10 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
 				>

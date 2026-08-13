@@ -9,8 +9,24 @@ import {
 	calculateTargetPriceFromPnl,
 	calculateTpPrice,
 	calculateTpPriceFromRoe,
+	getTpSlCollateralSymbol,
 	validatePositionSlPrice,
 } from "@/lib/trade/tpsl";
+
+describe("pre-entry TP/SL collateral metadata", () => {
+	it("uses USDC for protocol perps and the actual builder collateral symbol", () => {
+		expect(getTpSlCollateralSymbol({ kind: "perp" })).toBe("USDC");
+		expect(getTpSlCollateralSymbol({ kind: "builderPerp", quoteToken: { name: "USDH", displayName: "USDH" } })).toBe(
+			"USDH",
+		);
+	});
+
+	it("fails closed when builder collateral metadata is absent", () => {
+		expect(getTpSlCollateralSymbol({ kind: "builderPerp" })).toBeNull();
+		expect(getTpSlCollateralSymbol({ kind: "builderPerp", quoteToken: { name: "  " } })).toBeNull();
+		expect(getTpSlCollateralSymbol(undefined)).toBeNull();
+	});
+});
 
 describe("position TP/SL ROE pricing", () => {
 	it("converts long-position ROE targets into leveraged price moves", () => {

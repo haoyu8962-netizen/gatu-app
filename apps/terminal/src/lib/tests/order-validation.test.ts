@@ -149,3 +149,21 @@ describe("reduce-only trigger validation", () => {
 		expect(result.errors.map((error) => error.code)).toContain("TRG_007");
 	});
 });
+
+describe("attached TP/SL precision validation", () => {
+	it("rejects a TP that only differs before protocol price normalization", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				assetId: 0,
+				szDecimals: 0,
+				price: 12_345,
+				tpSlEnabled: true,
+				canUseTpSl: true,
+				tpPriceNum: 12_345.12345,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).toContain("TPSL_002");
+		expect(result.canSubmit).toBe(false);
+	});
+});

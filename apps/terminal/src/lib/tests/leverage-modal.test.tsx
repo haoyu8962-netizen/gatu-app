@@ -13,6 +13,8 @@ const modalHarness = vi.hoisted(() => ({
 	editorProps: null as Record<string, unknown> | null,
 	keepMounted: false,
 	modalOpenChange: undefined as ((open: boolean, eventDetails?: { cancel: () => void }) => void) | undefined,
+	popupClassName: "",
+	popupOverlayClassName: "",
 	popupRenders: 0,
 	showClose: true,
 }));
@@ -39,8 +41,20 @@ vi.mock("@gatu/ui", () => ({
 		createElement("div", props, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-	ModalPopup: ({ children, showClose }: { children: ReactNode; showClose?: boolean }) => {
+	ModalPopup: ({
+		children,
+		className,
+		overlayClassName,
+		showClose,
+	}: {
+		children: ReactNode;
+		className?: string;
+		overlayClassName?: string;
+		showClose?: boolean;
+	}) => {
 		modalHarness.popupRenders += 1;
+		modalHarness.popupClassName = className ?? "";
+		modalHarness.popupOverlayClassName = overlayClassName ?? "";
 		modalHarness.showClose = showClose ?? true;
 		return createElement("section", null, children);
 	},
@@ -97,6 +111,8 @@ describe("LeverageModal", () => {
 		modalHarness.autoCloseTriggers = 0;
 		modalHarness.disablePointerDismissal = false;
 		modalHarness.modalOpenChange = undefined;
+		modalHarness.popupClassName = "";
+		modalHarness.popupOverlayClassName = "";
 		modalHarness.popupRenders = 0;
 		modalHarness.showClose = true;
 	});
@@ -155,6 +171,47 @@ describe("LeverageModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onApply).toHaveBeenCalledTimes(1);
+		expect(onApply).toHaveBeenCalledWith(6);
+	});
+
+	it("uses the trading scrim and market-close typography on the popup only", () => {
+		renderModal();
+
+		expect(modalHarness.popupOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.popupClassName).toContain("font-market-close");
+	});
+
+	it("blocks confirmation while the editor contains invalid text", async () => {
+		renderModal(6);
+		const onInputValidityChange = modalHarness.editorProps?.onInputValidityChange as
+			| ((isValid: boolean) => void)
+			| undefined;
+
+		act(() => onInputValidityChange?.(false));
+		const confirm = getButton(container, "Confirm");
+		expect(confirm.disabled).toBe(true);
+		await act(async () => confirm.click());
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => onInputValidityChange?.(true));
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+	});
+
+	it("never enables submission for a transient slider display", async () => {
+		renderModal(6);
+		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
+		act(() => onDraftChange?.(8));
+		expect(container.querySelector("h2")?.textContent).toContain("8x");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => onDraftChange?.(null));
+		expect(container.querySelector("h2")?.textContent).toContain("6x");
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		await act(async () => getButton(container, "Confirm").click());
+
 		expect(onApply).toHaveBeenCalledWith(6);
 	});
 

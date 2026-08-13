@@ -48,6 +48,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
@@ -717,9 +718,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 					{tpSlEnabled && canUseTpSl && (
 						<TradeFormTpSl
-							referencePrice={markPx}
+							assetId={market?.assetId ?? null}
+							marketId={market?.name ?? null}
+							referencePrice={price}
 							size={sizeValue}
 							szDecimals={szDecimals}
+							quoteSymbol={getTpSlCollateralSymbol(market)}
 							leverage={leverage}
 							disabled={isFormDisabled}
 							mobileTouchSafe

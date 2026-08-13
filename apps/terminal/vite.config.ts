@@ -63,6 +63,9 @@ const config = defineConfig({
   build: {
     minify: 'terser',
     sourcemap: isAnalyze,
+    terserOptions: {
+      compress: { passes: 2 },
+    },
   },
   environments: {
     client: {

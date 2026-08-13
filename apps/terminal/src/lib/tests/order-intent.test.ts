@@ -242,6 +242,36 @@ describe("attached TP/SL order planning", () => {
 			},
 		]);
 	});
+
+	it("rejects a trigger that resolves to the same protocol tick as the entry", () => {
+		const plan = buildOrderPlan(
+			entry({
+				price: 12_345,
+				limitPriceInput: "12345",
+				szDecimals: 0,
+				tpSlEnabled: true,
+				tpPriceNum: 12_345.12345,
+			}),
+		);
+
+		expect(plan.orders).toEqual([]);
+		expect(plan.errors).toContain("TP must be above entry");
+	});
+
+	it("submits the exact normalized trigger price shown by the linked return input", () => {
+		const plan = buildOrderPlan(
+			entry({
+				price: 0.012345678,
+				limitPriceInput: "0.012345678",
+				szDecimals: 0,
+				tpSlEnabled: true,
+				tpPriceNum: 0.012347,
+			}),
+		);
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.orders[1]?.t).toEqual({ trigger: { isMarket: true, triggerPx: "0.012347", tpsl: "tp" } });
+	});
 });
 
 describe("position TP/SL order planning", () => {

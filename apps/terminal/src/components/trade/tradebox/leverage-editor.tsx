@@ -1,7 +1,7 @@
 import { useDirection } from "@base-ui/react/direction-provider";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
@@ -29,7 +29,15 @@ interface LeverageEditorProps {
 	disabled: boolean;
 	onChange: (value: number) => void;
 	onDraftChange?: (value: number | null) => void;
+	onInputValidityChange?: (isValid: boolean) => void;
 	variant?: LeverageEditorVariant;
+}
+
+export function parseLeverageInput(text: string, max: number): number | null {
+	if (!/^[1-9]\d*$/.test(text)) return null;
+	const parsed = Number(text);
+	if (!Number.isSafeInteger(parsed) || parsed > max) return null;
+	return parsed;
 }
 
 export function LeverageEditor({
@@ -39,6 +47,7 @@ export function LeverageEditor({
 	disabled,
 	onChange,
 	onDraftChange,
+	onInputValidityChange,
 	variant = "sheet",
 }: LeverageEditorProps) {
 	const direction = useDirection();
@@ -48,8 +57,10 @@ export function LeverageEditor({
 	const controlInsetClassName = isSheet ? "mx-3" : "mx-2.5";
 
 	useEffect(() => {
-		if (disabled) setDraftText(null);
-	}, [disabled]);
+		if (!disabled || draftText === null) return;
+		setDraftText(null);
+		onInputValidityChange?.(true);
+	}, [disabled, draftText, onInputValidityChange]);
 
 	function getPhysicalStopFraction(stop: number): number {
 		const fraction = getLeverageStopFraction(stop, max);
@@ -57,31 +68,49 @@ export function LeverageEditor({
 	}
 
 	function handlePick(next: number) {
-		setDraftText(null);
+		clearTextDraft();
 		onDraftChange?.(null);
 		onChange(next);
 	}
 
 	function handleSliderDrag(next: number) {
+		clearTextDraft();
 		if (!onDraftChange) {
 			onChange(next);
 			return;
 		}
-		setDraftText(null);
 		onDraftChange(next);
 	}
 
 	function handleSliderCancel() {
-		setDraftText(null);
+		clearTextDraft();
 		onDraftChange?.(null);
 	}
 
 	function handleInputChange(text: string) {
 		setDraftText(text);
-		const parsed = Number.parseInt(text, 10);
-		if (!Number.isFinite(parsed)) return;
 		onDraftChange?.(null);
-		onChange(Math.min(max, Math.max(1, parsed)));
+		const parsed = parseLeverageInput(text, max);
+		onInputValidityChange?.(parsed !== null);
+		if (parsed !== null) onChange(parsed);
+	}
+
+	function clearTextDraft() {
+		if (draftText === null) return;
+		setDraftText(null);
+		onInputValidityChange?.(true);
+	}
+
+	function restoreCanonicalValue() {
+		clearTextDraft();
+	}
+
+	function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+		if (event.key !== "Escape" && event.key !== "Enter") return;
+		event.preventDefault();
+		event.stopPropagation();
+		if (event.key === "Enter" && draftText !== null && parseLeverageInput(draftText, max) === null) return;
+		restoreCanonicalValue();
 	}
 
 	return (
@@ -112,24 +141,21 @@ export function LeverageEditor({
 					}))}
 				/>
 			</div>
-			<div className="relative -mt-1 h-5 text-2xs tabular-nums">
+			<div
+				dir="ltr"
+				className="grid h-11 items-center text-2xs tabular-nums"
+				style={{ gridTemplateColumns: `repeat(${stops.length}, minmax(44px, 1fr))` }}
+			>
 				{stops.map((stop, index) => {
-					const isFirst = index === 0;
-					const isLast = index === stops.length - 1;
-					const isLeftEdge = direction === "rtl" ? isLast : isFirst;
-					const isRightEdge = direction === "rtl" ? isFirst : isLast;
 					return (
 						<button
 							key={stop}
 							type="button"
 							disabled={disabled}
 							onClick={() => handlePick(stop)}
-							style={isFirst || isLast ? undefined : { left: `${getPhysicalStopFraction(stop)}%` }}
+							style={{ gridColumn: direction === "rtl" ? stops.length - index : index + 1 }}
 							className={cn(
-								"absolute top-0 cursor-pointer whitespace-nowrap px-1 py-1 -my-1 disabled:cursor-not-allowed",
-								isLeftEdge && "left-0 -ml-1",
-								isRightEdge && "right-0 -mr-1",
-								!isFirst && !isLast && "-translate-x-1/2",
+								"grid size-11 cursor-pointer place-items-center justify-self-center whitespace-nowrap p-0 disabled:cursor-not-allowed",
 								value === stop
 									? "font-bold text-trading-panel-fg"
 									: "text-trading-panel-subtle hover:text-trading-panel-fg",
@@ -149,7 +175,9 @@ export function LeverageEditor({
 					mobileSafe={isSheet}
 					value={draftText ?? String(value)}
 					onChange={(e) => handleInputChange(e.target.value)}
-					onBlur={() => setDraftText(null)}
+					onBlur={restoreCanonicalValue}
+					onKeyDown={handleInputKeyDown}
+					aria-invalid={draftText !== null && parseLeverageInput(draftText, max) === null}
 					className="h-9 min-w-0 flex-1 bg-transparent px-0 text-base font-semibold tabular-nums text-trading-panel-fg"
 					disabled={disabled}
 				/>

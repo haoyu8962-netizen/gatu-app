@@ -1,4 +1,4 @@
-import { Tooltip } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useId } from "react";
@@ -26,6 +26,7 @@ import {
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getAvailableTifOptions, getTifOptionLabel } from "@/lib/trade/tif";
+import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import {
@@ -50,8 +51,10 @@ import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
 interface Props {
 	price: number;
 	positionSize: number;
+	swapTargetToken: string | null;
 	onSizeModeToggle: () => void;
 	onSizePercentApply: (pct: number) => void;
+	onSwapClick: () => void;
 }
 
 const inputFrameClass = cn(tradingInputFrameClass, "px-2.5");
@@ -96,7 +99,14 @@ function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled
 	);
 }
 
-export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizePercentApply }: Props) {
+export function TradeFormFields({
+	price,
+	positionSize,
+	swapTargetToken,
+	onSizeModeToggle,
+	onSizePercentApply,
+	onSwapClick,
+}: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
@@ -220,6 +230,18 @@ export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizeP
 								</Tooltip>
 							) : null}
 						</span>
+						{isConnected && !isAvailabilityBlocked && swapTargetToken ? (
+							<Button
+								variant="link"
+								intent="brand"
+								size="xxs"
+								onClick={onSwapClick}
+								aria-label={`${t`Swap`} ${swapTargetToken}`}
+								className="min-h-6 shrink-0 px-0 shadow-none"
+							>
+								{t`Swap`}
+							</Button>
+						) : null}
 					</div>
 					{!isSpotMarket && positionSize !== 0 ? (
 						<div className="inline-flex min-w-0 shrink-0 items-baseline gap-x-1.5">
@@ -404,9 +426,12 @@ export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizeP
 
 					{capabilities.hasTpSl && canUseTpSl && tpSlEnabled && (
 						<TradeFormTpSl
+							assetId={market?.assetId ?? null}
+							marketId={market?.name ?? null}
 							referencePrice={price}
 							size={sizeValue}
 							szDecimals={szDecimals}
+							quoteSymbol={getTpSlCollateralSymbol(market)}
 							leverage={leverage}
 							disabled={isFormDisabled}
 						/>

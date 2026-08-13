@@ -1,16 +1,24 @@
 import { t } from "@lingui/core/macro";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import { isPositive } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
 import type { Side } from "@/lib/trade/types";
 import { createValidator, type Validator } from "../types";
 
 export interface TpSlContext {
+	assetId: number | null;
+	szDecimals: number;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
 	price: number;
 	side: Side;
+}
+
+function normalizePrice(ctx: TpSlContext, value: number): string | number {
+	if (ctx.assetId === null) return value;
+	return formatPriceForOrder(value, { assetId: ctx.assetId, szDecimals: ctx.szDecimals });
 }
 
 export const enterTpSlPriceValidator: Validator<TpSlContext> = createValidator({
@@ -37,7 +45,7 @@ export const tpPriceValidator: Validator<TpSlContext> = createValidator({
 		if (!ctx.tpSlEnabled || !ctx.canUseTpSl) return true;
 		const hasTp = isPositive(ctx.tpPriceNum);
 		if (!hasTp) return true;
-		return validateTpPrice(ctx.price, ctx.tpPriceNum, ctx.side);
+		return validateTpPrice(normalizePrice(ctx, ctx.price), normalizePrice(ctx, ctx.tpPriceNum ?? 0), ctx.side);
 	},
 });
 
@@ -51,7 +59,7 @@ export const slPriceValidator: Validator<TpSlContext> = createValidator({
 		if (!ctx.tpSlEnabled || !ctx.canUseTpSl) return true;
 		const hasSl = isPositive(ctx.slPriceNum);
 		if (!hasSl) return true;
-		return validateSlPrice(ctx.price, ctx.slPriceNum, ctx.side);
+		return validateSlPrice(normalizePrice(ctx, ctx.price), normalizePrice(ctx, ctx.slPriceNum ?? 0), ctx.side);
 	},
 });
 

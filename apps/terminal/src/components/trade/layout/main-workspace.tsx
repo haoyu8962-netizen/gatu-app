@@ -1,13 +1,12 @@
-import { type Dispatch, type SetStateAction, Suspense, useEffect, useRef, useState } from "react";
-import { Responsive, type ResponsiveLayouts, useContainerWidth } from "react-grid-layout";
+import { Suspense, useState } from "react";
+import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
 	DESKTOP_GRID_COLS,
 	DESKTOP_GRID_GAP_PX,
 	DESKTOP_GRID_ROW_HEIGHT_PX,
-	type DesktopGridBreakpoint,
+	getDesktopGridBreakpoint,
 	readDesktopGridLayouts,
-	syncGridItemContentHeight,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
@@ -20,6 +19,7 @@ import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
+import { useGridContentHeight } from "./use-grid-content-height";
 
 const AccountPanel = createLazyComponent(() => import("../tradebox/account-panel"), "AccountPanel");
 const ChartPanel = createLazyComponent(() => import("../chart/chart-panel"), "ChartPanel");
@@ -28,29 +28,6 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
-
-function useGridContentHeight(
-	mounted: boolean,
-	itemId: string,
-	setLayouts: Dispatch<SetStateAction<ResponsiveLayouts<DesktopGridBreakpoint>>>,
-) {
-	const contentRef = useRef<HTMLDivElement | null>(null);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: ref target only exists after the grid mounts
-	useEffect(() => {
-		const node = contentRef.current;
-		if (!node) return;
-		const observer = new ResizeObserver(() => {
-			const contentHeight = node.offsetHeight;
-			if (contentHeight === 0) return;
-			setLayouts((prev) => syncGridItemContentHeight(prev, itemId, contentHeight));
-		});
-		observer.observe(node);
-		return () => observer.disconnect();
-	}, [mounted]);
-
-	return contentRef;
-}
 const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
 const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker" />;
 const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker" />;
@@ -59,8 +36,9 @@ const chartPanelFallback = <div className="h-full w-full bg-background" />;
 export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
-	const tradeContentRef = useGridContentHeight(mounted, "tradingInterface", setLayouts);
-	const accountContentRef = useGridContentHeight(mounted, "accountInfo", setLayouts);
+	const activeBreakpoint = getDesktopGridBreakpoint(width);
+	const tradeContentRef = useGridContentHeight(mounted, activeBreakpoint, "tradingInterface", setLayouts);
+	const accountContentRef = useGridContentHeight(mounted, activeBreakpoint, "accountInfo", setLayouts);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
@@ -85,9 +63,9 @@ export function MainWorkspace() {
 					containerPadding={gridSpacing}
 					dragConfig={{ enabled: false }}
 					resizeConfig={{ enabled: true }}
-					onLayoutChange={(_, nextLayouts) => {
-						setLayouts(nextLayouts);
-						writeDesktopGridLayouts(nextLayouts);
+					onLayoutChange={(_, allLayouts) => {
+						setLayouts(allLayouts);
+						writeDesktopGridLayouts(allLayouts);
 					}}
 				>
 					<div
@@ -112,7 +90,7 @@ export function MainWorkspace() {
 								<SpotMarketSocialLinks socials={spotSocials} />
 							</div>
 						) : null}
-						<div className="ml-6 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						<div className="ml-6 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							<MarketOverview />
 						</div>
 					</div>

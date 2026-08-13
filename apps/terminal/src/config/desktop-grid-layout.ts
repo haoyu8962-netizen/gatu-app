@@ -1,4 +1,4 @@
-import type { Layout, ResponsiveLayouts } from "react-grid-layout";
+import { getBreakpointFromWidth, type Layout, type ResponsiveLayouts } from "react-grid-layout";
 
 export const DESKTOP_GRID_BREAKPOINTS = {
 	lg: 1420,
@@ -25,6 +25,10 @@ const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
 const GRID_GEOMETRY_EPSILON = 1e-9;
 
 export type DesktopGridBreakpoint = keyof typeof DESKTOP_GRID_BREAKPOINTS;
+
+export function getDesktopGridBreakpoint(containerWidthPx: number): DesktopGridBreakpoint {
+	return getBreakpointFromWidth(DESKTOP_GRID_BREAKPOINTS, containerWidthPx);
+}
 
 export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 	lg: [
@@ -150,25 +154,32 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 
 export function syncGridItemContentHeight(
 	layouts: ResponsiveLayouts<DesktopGridBreakpoint>,
+	breakpoint: DesktopGridBreakpoint,
 	itemId: string,
 	contentHeightPx: number,
 ): ResponsiveLayouts<DesktopGridBreakpoint> {
+	if (!Number.isFinite(contentHeightPx) || contentHeightPx <= 0) return layouts;
+
+	const activeLayout = layouts[breakpoint];
+	if (!activeLayout) return layouts;
+
 	const rowUnit = DESKTOP_GRID_ROW_HEIGHT_PX + DESKTOP_GRID_GAP_PX;
 	const rows = Math.ceil(((contentHeightPx + DESKTOP_GRID_GAP_PX) / rowUnit) * 100) / 100;
 	let changed = false;
 
-	const next = Object.fromEntries(
-		Object.entries(layouts).map(([breakpoint, items]) => [
-			breakpoint,
-			items.map((item) => {
-				if (item.i !== itemId || Math.abs(item.h - rows) < 0.03) return item;
-				changed = true;
-				return { ...item, h: rows };
-			}),
-		]),
-	) as ResponsiveLayouts<DesktopGridBreakpoint>;
+	const nextActiveLayout = activeLayout.map((item) => {
+		if (item.i !== itemId) return item;
 
-	return changed ? next : layouts;
+		const minHeight = item.minH ?? 0;
+		const maxHeight = item.maxH ?? Number.POSITIVE_INFINITY;
+		const constrainedRows = Math.min(maxHeight, Math.max(minHeight, rows));
+		if (Math.abs(item.h - constrainedRows) < 0.03) return item;
+
+		changed = true;
+		return { ...item, h: constrainedRows };
+	});
+
+	return changed ? { ...layouts, [breakpoint]: nextActiveLayout } : layouts;
 }
 
 export function readDesktopGridLayouts(): ResponsiveLayouts<DesktopGridBreakpoint> {

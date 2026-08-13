@@ -833,12 +833,28 @@
     display: none;
   }
 
-  @container trade-panel (max-width: 18.75rem) {
+  .trade-account-value-compact {
+    display: none;
+  }
+
+  @container trade-panel (max-width: 22.25rem) {
+    .trade-control-button {
+      padding-inline: 0.3125rem;
+    }
+
     .trade-card-label-full {
       display: none;
     }
 
     .trade-card-label-compact {
+      display: block;
+    }
+
+    .trade-account-value-full {
+      display: none;
+    }
+
+    .trade-account-value-compact {
       display: block;
     }
   }

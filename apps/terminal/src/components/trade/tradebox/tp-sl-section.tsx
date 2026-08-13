@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
@@ -31,6 +32,8 @@ interface Props {
 	slPrice: string;
 	onTpPriceChange: (value: string) => void;
 	onSlPriceChange: (value: string) => void;
+	onTpPriceBlur?: () => void;
+	onSlPriceBlur?: () => void;
 	tpError?: string | null;
 	slError?: string | null;
 	disabled?: boolean;
@@ -41,7 +44,7 @@ interface Props {
 	triggerValidationPrice?: string | number | null;
 	mobileTouchSafe?: boolean;
 	preserveFinancialPrecision?: boolean;
-	quoteSymbol?: string;
+	quoteSymbol?: string | null;
 	linkedReturnInputs?: {
 		unitLabel: string;
 		onUnitToggle: () => void;
@@ -56,6 +59,7 @@ interface LinkedReturnInput {
 	value: string;
 	unitLabel?: string;
 	onUnitToggle?: () => void;
+	unitToggleDisabled?: boolean;
 	disabled?: boolean;
 	onBlur?: () => void;
 	onChange: (value: string) => void;
@@ -70,6 +74,8 @@ export function TpSlSection({
 	slPrice,
 	onTpPriceChange,
 	onSlPriceChange,
+	onTpPriceBlur,
+	onSlPriceBlur,
 	tpError,
 	slError,
 	disabled,
@@ -84,10 +90,12 @@ export function TpSlSection({
 	linkedReturnInputs,
 }: Props) {
 	useNumberFormatRevision();
+	const normalizedQuoteSymbol = quoteSymbol?.trim() || null;
 	function formatPnlValue(value: string | number): string {
-		return quoteSymbol === DEFAULT_QUOTE_TOKEN
+		if (!normalizedQuoteSymbol) return "";
+		return normalizedQuoteSymbol === DEFAULT_QUOTE_TOKEN
 			? formatUSD(value, { signDisplay: "exceptZero" })
-			: formatQuoteAmount(value, quoteSymbol, { decimals: 2, signDisplay: "exceptZero" });
+			: formatQuoteAmount(value, normalizedQuoteSymbol, { decimals: 2, signDisplay: "exceptZero" });
 	}
 
 	const tpPriceNum = toNumber(tpPrice);
@@ -97,20 +105,24 @@ export function TpSlSection({
 	const exactTpReady = toBig(tpPrice)?.gt(0) ?? false;
 	const exactSlReady = toBig(slPrice)?.gt(0) ?? false;
 
-	const tpPnl = preserveFinancialPrecision
-		? exactTpReady && exactReferenceReady && exactSizeReady
-			? calculateEstimatedPnlExact({ referencePrice, side, size }, tpPrice)
-			: null
-		: isPositive(tpPriceNum) && isPositive(referencePrice) && isPositive(size)
-			? calculateEstimatedPnl({ referencePrice, side, size }, tpPriceNum)
-			: null;
-	const slPnl = preserveFinancialPrecision
-		? exactSlReady && exactReferenceReady && exactSizeReady
-			? calculateEstimatedPnlExact({ referencePrice, side, size }, slPrice)
-			: null
-		: isPositive(slPriceNum) && isPositive(referencePrice) && isPositive(size)
-			? calculateEstimatedPnl({ referencePrice, side, size }, slPriceNum)
-			: null;
+	const tpPnl = normalizedQuoteSymbol
+		? preserveFinancialPrecision
+			? exactTpReady && exactReferenceReady && exactSizeReady
+				? calculateEstimatedPnlExact({ referencePrice, side, size }, tpPrice)
+				: null
+			: isPositive(tpPriceNum) && isPositive(referencePrice) && isPositive(size)
+				? calculateEstimatedPnl({ referencePrice, side, size }, tpPriceNum)
+				: null
+		: null;
+	const slPnl = normalizedQuoteSymbol
+		? preserveFinancialPrecision
+			? exactSlReady && exactReferenceReady && exactSizeReady
+				? calculateEstimatedPnlExact({ referencePrice, side, size }, slPrice)
+				: null
+			: isPositive(slPriceNum) && isPositive(referencePrice) && isPositive(size)
+				? calculateEstimatedPnl({ referencePrice, side, size }, slPriceNum)
+				: null
+		: null;
 	const riskRewardRatio = preserveFinancialPrecision
 		? calculateRiskRewardRatioExact(tpPnl, slPnl)
 		: getRiskRewardRatio(typeof tpPnl === "number" ? tpPnl : null, typeof slPnl === "number" ? slPnl : null);
@@ -171,6 +183,7 @@ export function TpSlSection({
 					pricePlaceholder={t`TP Price`}
 					priceValue={tpPrice}
 					onPriceChange={onTpPriceChange}
+					onPriceBlur={onTpPriceBlur}
 					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "tp")}
 					error={tpError}
 					pnl={tpPnl}
@@ -184,6 +197,7 @@ export function TpSlSection({
 					pricePlaceholder={t`SL Price`}
 					priceValue={slPrice}
 					onPriceChange={onSlPriceChange}
+					onPriceBlur={onSlPriceBlur}
 					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "sl")}
 					error={slError}
 					pnl={slPnl}
@@ -329,7 +343,7 @@ export function TpSlSection({
 }
 
 const framedFrameClass =
-	"flex h-8 min-w-0 items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-2.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
+	"flex h-8 min-w-0 items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-1.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
 const framedInputClass =
 	"h-7 min-w-0 flex-1 bg-transparent px-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
 
@@ -351,6 +365,7 @@ interface FramedTpSlRowProps {
 	pricePlaceholder: string;
 	priceValue: string;
 	onPriceChange: (value: string) => void;
+	onPriceBlur?: () => void;
 	returnInput?: LinkedReturnInput;
 	error?: string | null;
 	pnl: string | number | null;
@@ -365,6 +380,7 @@ function FramedTpSlRow({
 	pricePlaceholder,
 	priceValue,
 	onPriceChange,
+	onPriceBlur,
 	returnInput,
 	error,
 	pnl,
@@ -373,7 +389,10 @@ function FramedTpSlRow({
 	disabled,
 	mobileSafe,
 }: FramedTpSlRowProps) {
+	const inputId = useId();
+	const errorId = `${inputId}-error`;
 	const returnDisabled = disabled || returnInput?.disabled;
+	const unitToggleDisabled = returnDisabled || returnInput?.unitToggleDisabled;
 
 	return (
 		<div className="min-w-0 space-y-1.5">
@@ -382,39 +401,57 @@ function FramedTpSlRow({
 					className={cn(
 						framedFrameClass,
 						"min-w-[7rem] flex-[1.2]",
+						mobileSafe && "max-[1000px]:h-11",
 						!!error && "border-trading-panel-error focus-within:border-trading-panel-error",
 						disabled && "opacity-50",
 					)}
 				>
 					<NumberInput
+						id={inputId}
 						aria-label={priceAriaLabel}
+						aria-describedby={error ? errorId : undefined}
+						aria-invalid={Boolean(error)}
 						placeholder={pricePlaceholder}
 						mobileSafe={mobileSafe}
 						value={priceValue}
 						onChange={(e) => onPriceChange(e.target.value)}
-						className={framedInputClass}
+						onBlur={onPriceBlur}
+						className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
 						disabled={disabled}
 					/>
 				</div>
 				{returnInput && (
-					<div className={cn(framedFrameClass, "min-w-[6rem] flex-1", returnDisabled && "opacity-50")}>
+					<div
+						className={cn(
+							framedFrameClass,
+							"min-w-[6rem] flex-1",
+							mobileSafe && "max-[1000px]:h-11",
+							returnDisabled && "opacity-50",
+						)}
+					>
 						<NumberInput
 							aria-label={returnInput.ariaLabel}
+							aria-describedby={error ? errorId : undefined}
+							aria-invalid={Boolean(error)}
 							placeholder={returnInput.placeholder}
 							mobileSafe={mobileSafe}
 							value={returnInput.value}
 							onChange={(e) => returnInput.onChange(e.target.value)}
 							onBlur={returnInput.onBlur}
-							className={framedInputClass}
+							className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
 							disabled={returnDisabled}
 						/>
 						{returnInput.onUnitToggle && (
 							<button
 								type="button"
 								onClick={returnInput.onUnitToggle}
-								disabled={returnDisabled}
-								aria-label={t`Switch unit`}
-								className="ml-1 inline-flex shrink-0 cursor-pointer items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
+								disabled={unitToggleDisabled}
+								aria-label={t`Toggle profit and loss unit`}
+								aria-pressed={returnInput.unitLabel === "%"}
+								className={cn(
+									"ml-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
+									mobileSafe && "max-[1000px]:min-h-11 max-[1000px]:min-w-11",
+								)}
 							>
 								{returnInput.unitLabel}
 								<CaretDownIcon className="size-2.5 text-trading-panel-subtle" />
@@ -423,7 +460,11 @@ function FramedTpSlRow({
 					</div>
 				)}
 			</div>
-			{error && <p className="text-2xs text-trading-panel-error">{error}</p>}
+			{error && (
+				<p id={errorId} role="alert" className="text-2xs text-trading-panel-error">
+					{error}
+				</p>
+			)}
 			{!error && pnl !== null && (
 				<p className="text-2xs tabular-nums text-trading-panel-muted">
 					{t`Estimated PnL after trigger`}{" "}

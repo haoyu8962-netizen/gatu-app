@@ -1,7 +1,7 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
 	type SelectableAccountAbstraction,
 	toSelectableAccountAbstraction,
@@ -19,6 +19,7 @@ export interface AccountModeFormProps {
 	onConnect?: () => void;
 	onClose: () => void;
 	onApply: (mode: SelectableAccountAbstraction) => Promise<void>;
+	onSubmissionLockChange?: (locked: boolean) => void;
 }
 
 interface Props extends Omit<AccountModeFormProps, "onClose"> {
@@ -34,9 +35,25 @@ interface AccountModeOption {
 }
 
 export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
+	const [submissionLocked, setSubmissionLocked] = useState(false);
+	const actionPending = !!formProps.isUpdating || submissionLocked;
+
+	function handleOpenChange(nextOpen: boolean, eventDetails?: { cancel: () => void }) {
+		if (!nextOpen && actionPending) {
+			eventDetails?.cancel();
+			return;
+		}
+		onOpenChange(nextOpen);
+	}
+
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm" className="max-h-[min(90dvh,42rem)]">
+		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={actionPending}>
+			<ModalPopup
+				size="sm"
+				showClose={!actionPending}
+				overlayClassName="bg-trading-panel-scrim"
+				className="max-h-[min(90dvh,42rem)] font-market-close"
+			>
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Account type</Trans>
@@ -45,7 +62,9 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 				<AccountModeForm
 					key={`${open}:${formProps.currentMode ?? "unavailable"}`}
 					{...formProps}
-					onClose={() => onOpenChange(false)}
+					isUpdating={actionPending}
+					onClose={() => handleOpenChange(false)}
+					onSubmissionLockChange={setSubmissionLocked}
 				/>
 			</ModalPopup>
 		</Modal>
@@ -62,12 +81,22 @@ export function AccountModeForm({
 	onConnect,
 	onClose,
 	onApply,
+	onSubmissionLockChange,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const applyInFlightRef = useRef(false);
+	const mountedRef = useRef(false);
+
+	useLayoutEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 	const accountModeOptions: AccountModeOption[] = [
 		{
 			id: "unifiedAccount",
@@ -111,6 +140,7 @@ export function AccountModeForm({
 	);
 
 	async function handleApply() {
+		if (applyInFlightRef.current) return;
 		if (!canChange) {
 			onClose();
 			onConnect?.();
@@ -118,12 +148,20 @@ export function AccountModeForm({
 		}
 		if (!selectedMode || !isDirty || isBusy || isModeUnavailable) return;
 
+		applyInFlightRef.current = true;
+		onSubmissionLockChange?.(true);
 		setSubmitError(null);
 		try {
 			await onApply(selectedMode);
-			onClose();
+			applyInFlightRef.current = false;
+			onSubmissionLockChange?.(false);
+			if (mountedRef.current) onClose();
 		} catch (error) {
-			setSubmitError(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+			applyInFlightRef.current = false;
+			onSubmissionLockChange?.(false);
+			if (mountedRef.current) {
+				setSubmitError(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+			}
 		}
 	}
 

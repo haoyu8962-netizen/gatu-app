@@ -7,8 +7,10 @@ import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	adaptiveClassName: "",
 	adaptiveModalRenders: 0,
 	adaptiveOpenChange: undefined as ((open: boolean) => void) | undefined,
+	adaptiveOverlayClassName: "",
 	autoCloseResets: 0,
 	autoCloseTriggers: 0,
 	dismissible: true,
@@ -16,6 +18,8 @@ const modalHarness = vi.hoisted(() => ({
 	leverageSliderProps: null as Record<string, unknown> | null,
 	modalDisablePointerDismissal: false,
 	modalOpenChange: undefined as ((open: boolean, eventDetails?: { cancel: () => void }) => void) | undefined,
+	popupClassName: "",
+	popupOverlayClassName: "",
 	popupShowClose: true,
 	presentation: "modal" as "modal" | "drawer",
 	tabChange: undefined as ((value: string) => void) | undefined,
@@ -26,19 +30,25 @@ const modalHarness = vi.hoisted(() => ({
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
+		className,
 		dismissible,
 		onOpenChange,
 		open,
+		overlayClassName,
 		presentation,
 	}: {
 		children: ReactNode;
+		className?: string;
 		dismissible: boolean;
 		onOpenChange: (open: boolean) => void;
 		open: boolean;
+		overlayClassName?: string;
 		presentation: "modal" | "drawer";
 	}) => {
+		modalHarness.adaptiveClassName = className ?? "";
 		modalHarness.adaptiveModalRenders += 1;
 		modalHarness.adaptiveOpenChange = onOpenChange;
+		modalHarness.adaptiveOverlayClassName = overlayClassName ?? "";
 		modalHarness.dismissible = dismissible;
 		modalHarness.presentation = presentation;
 		return open || modalHarness.keepAdaptiveMounted
@@ -76,8 +86,10 @@ vi.mock("@gatu/ui", () => ({
 		showClose?: boolean;
 		[key: string]: unknown;
 	}) => {
+		modalHarness.popupClassName = typeof props.className === "string" ? props.className : "";
+		modalHarness.popupOverlayClassName = typeof props.overlayClassName === "string" ? props.overlayClassName : "";
 		modalHarness.popupShowClose = showClose ?? true;
-		return createElement("section", props, children);
+		return createElement("section", { className: props.className as string | undefined }, children);
 	},
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 	Tabs: ({
@@ -161,14 +173,18 @@ describe("MarginModeModal", () => {
 	let onApply: ReturnType<typeof vi.fn<(mode: "cross" | "isolated", leverage: number) => Promise<void>>>;
 
 	beforeEach(() => {
+		modalHarness.adaptiveClassName = "";
 		modalHarness.adaptiveModalRenders = 0;
 		modalHarness.adaptiveOpenChange = undefined;
+		modalHarness.adaptiveOverlayClassName = "";
 		modalHarness.autoCloseResets = 0;
 		modalHarness.autoCloseTriggers = 0;
 		modalHarness.keepAdaptiveMounted = false;
 		modalHarness.leverageSliderProps = null;
 		modalHarness.modalDisablePointerDismissal = false;
 		modalHarness.modalOpenChange = undefined;
+		modalHarness.popupClassName = "";
+		modalHarness.popupOverlayClassName = "";
 		modalHarness.popupShowClose = true;
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -225,6 +241,45 @@ describe("MarginModeModal", () => {
 			getButton(container, "Confirm").click();
 		});
 		expect(onApply).toHaveBeenCalledWith("isolated", 7);
+	});
+
+	it("uses the trading scrim and market-close typography for desktop and mobile content", () => {
+		renderModal();
+
+		expect(modalHarness.popupOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.popupClassName).toContain("font-market-close");
+
+		renderModal({ presentation: "drawer" });
+
+		expect(modalHarness.adaptiveOverlayClassName).toBe("bg-trading-panel-scrim");
+		expect(modalHarness.adaptiveClassName).toContain("font-market-close");
+	});
+
+	it("does not clamp or submit an out-of-range leverage text draft", async () => {
+		const onPendingLeverageChange = vi.fn();
+		renderModal({ pendingLeverage: 7, onPendingLeverageChange });
+		const input = container.querySelector('input[aria-label="Leverage"]');
+		if (!(input instanceof HTMLInputElement)) throw new Error("Leverage input not found");
+		const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+
+		act(() => {
+			valueSetter?.call(input, "21");
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+
+		expect(input.value).toBe("21");
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(onPendingLeverageChange).not.toHaveBeenCalled();
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" })));
+		expect(input.value).toBe("21");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		expect(input.value).toBe("7");
+		expect(getButton(container, "Confirm").disabled).toBe(false);
 	});
 
 	it("describes append-only margin for strictIsolated markets", () => {
@@ -462,6 +517,7 @@ describe("MarginModeModal", () => {
 
 		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage13x");
 		expect(modalHarness.adaptiveModalRenders).toBe(initialDrawerRenders);
+		expect(getButton(container, "Confirm").disabled).toBe(true);
 		expect(onPendingLeverageChange).not.toHaveBeenCalled();
 		expect(onApply).not.toHaveBeenCalled();
 

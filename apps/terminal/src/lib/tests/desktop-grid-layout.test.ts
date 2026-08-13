@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { verticalCompactor } from "react-grid-layout";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	DEFAULT_DESKTOP_GRID_LAYOUTS,
@@ -8,8 +9,10 @@ import {
 	DESKTOP_GRID_GAP_PX,
 	DESKTOP_GRID_ROW_HEIGHT_PX,
 	DESKTOP_GRID_STORAGE_KEY,
+	getDesktopGridBreakpoint,
 	readDesktopGridLayouts,
 	resetDesktopGridLayouts,
+	syncGridItemContentHeight,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
@@ -25,6 +28,39 @@ describe("desktop grid layout", () => {
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
 		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v8");
+	});
+
+	it("keeps 1420px in md and switches to lg only above the breakpoint", () => {
+		expect(getDesktopGridBreakpoint(1000)).toBe("md");
+		expect(getDesktopGridBreakpoint(1420)).toBe("md");
+		expect(getDesktopGridBreakpoint(1420.01)).toBe("lg");
+	});
+
+	it("syncs content height only into the active breakpoint", () => {
+		const layouts = cloneDefaultLayouts();
+		const originalLg = layouts.lg;
+		const originalMd = layouts.md;
+		const originalMdChart = originalMd?.find((item) => item.i === "chart");
+
+		const next = syncGridItemContentHeight(layouts, "md", "tradingInterface", 850);
+
+		expect(next).not.toBe(layouts);
+		expect(next.lg).toBe(originalLg);
+		expect(next.md).not.toBe(originalMd);
+		expect(next.md?.find((item) => item.i === "chart")).toBe(originalMdChart);
+		expect(next.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
+		expect(next.lg?.find((item) => item.i === "tradingInterface")?.h).toBe(20.4);
+	});
+
+	it("clamps observed heights to the active item's minH and maxH", () => {
+		const layouts = cloneDefaultLayouts();
+		const belowMinimum = syncGridItemContentHeight(layouts, "md", "tradingInterface", 1);
+		const aboveMaximum = syncGridItemContentHeight(layouts, "lg", "favoriteCoins", 10_000);
+
+		expect(belowMinimum.md?.find((item) => item.i === "tradingInterface")?.h).toBe(5);
+		expect(aboveMaximum.lg?.find((item) => item.i === "favoriteCoins")?.h).toBe(2);
+		expect(syncGridItemContentHeight(layouts, "lg", "missing", 850)).toBe(layouts);
+		expect(syncGridItemContentHeight(layouts, "lg", "tradingInterface", Number.NaN)).toBe(layouts);
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {
@@ -179,4 +215,50 @@ describe("desktop grid layout", () => {
 		const restoredTrading = readDesktopGridLayouts().md?.find((item) => item.i === "tradingInterface");
 		expect(restoredTrading).toMatchObject({ x: 10, w: 4 });
 	});
+
+	it("round-trips the compacted active layout without losing user geometry", () => {
+		const layouts = cloneDefaultLayouts();
+		layouts.md = layouts.md?.map((item) => (item.i === "accountTable" ? { ...item, h: 14 } : item));
+
+		const observed = syncGridItemContentHeight(layouts, "md", "tradingInterface", 850);
+		writeDesktopGridLayouts(observed);
+		expect(readDesktopGridLayouts().md?.find((item) => item.i === "tradingInterface")?.h).toBe(20.6);
+
+		const compacted = {
+			...observed,
+			md: verticalCompactor.compact(observed.md ?? [], DESKTOP_GRID_COLS.md),
+		};
+		writeDesktopGridLayouts(compacted);
+
+		const restored = readDesktopGridLayouts().md;
+		expect(restored?.find((item) => item.i === "tradingInterface")).toMatchObject({ y: 0, h: 25.85 });
+		expect(restored?.find((item) => item.i === "marketData")?.y).toBe(25.85);
+		expect(restored?.find((item) => item.i === "accountTable")?.h).toBe(14);
+		expect(restored?.find((item) => item.i === "accountInfo")?.y).toBe(44.25);
+	});
+
+	it("preserves inactive breakpoint user geometry through active compaction and persistence", () => {
+		const layouts = cloneDefaultLayouts();
+		layouts.md = layouts.md?.map((item) => (item.i === "accountTable" ? { ...item, h: 14 } : item));
+		const originalMd = layouts.md;
+
+		const observed = syncGridItemContentHeight(layouts, "lg", "tradingInterface", 850);
+		expect(observed.md).toBe(originalMd);
+
+		writeDesktopGridLayouts({
+			...observed,
+			lg: verticalCompactor.compact(observed.lg ?? [], DESKTOP_GRID_COLS.lg),
+		});
+
+		const restoredMd = readDesktopGridLayouts().md;
+		expect(restoredMd?.find((item) => item.i === "accountTable")?.h).toBe(14);
+		expect(restoredMd?.find((item) => item.i === "tradingInterface")?.h).toBe(20.6);
+	});
 });
+
+function cloneDefaultLayouts() {
+	return {
+		lg: DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.map((item) => ({ ...item })),
+		md: DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => ({ ...item })),
+	};
+}

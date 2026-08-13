@@ -22,6 +22,10 @@ const MAIN_WORKSPACE_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/main-workspace.tsx"),
 	"utf8",
 );
+const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/layout/use-grid-content-height.ts"),
+	"utf8",
+);
 
 describe("responsive panel layout contract", () => {
 	it("adapts order book columns and trade controls to their own container width", () => {
@@ -41,15 +45,21 @@ describe("responsive panel layout contract", () => {
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
 		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container");
+		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex flex-col bg-surface font-market-close");
 		expect(TERMINAL_STYLES).toContain("container-name: trade-panel");
 		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trade-compact-label");
+		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 22.25rem)");
+		expect(TERMINAL_STYLES).toMatch(
+			/@container trade-panel \(max-width: 22\.25rem\)[\s\S]*?\.trade-control-button\s*{\s*padding-inline:\s*0\.3125rem;/,
+		);
+		expect(TERMINAL_STYLES).toContain(".trade-account-value-compact");
 	});
 
 	it("keeps order book and recent trades in one mutually exclusive tab panel", () => {
 		expect(ORDERBOOK_PANEL_SOURCE.match(/<TradesPanel/g)).toHaveLength(1);
-		expect(ORDERBOOK_PANEL_SOURCE).toContain('<TabsContent value="book"');
-		expect(ORDERBOOK_PANEL_SOURCE).toContain('<TabsContent value="trades" keepMounted');
+		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="book"/);
+		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="trades"\s+keepMounted/);
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel />");
 		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("<TradesPanel key=");
 		expect(TRADE_ROW_SOURCE).toContain('"grid h-6 items-center tabular-nums');
@@ -72,14 +82,29 @@ describe("responsive panel layout contract", () => {
 
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<Responsive");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("layouts={layouts}");
-		expect(MAIN_WORKSPACE_SOURCE).toContain('useGridContentHeight(mounted, "tradingInterface", setLayouts)');
-		expect(MAIN_WORKSPACE_SOURCE).toContain('useGridContentHeight(mounted, "accountInfo", setLayouts)');
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain('useGridContentHeight(mounted, "accountTable", setLayouts)');
+		expect(MAIN_WORKSPACE_SOURCE).toContain(
+			'useGridContentHeight(mounted, activeBreakpoint, "tradingInterface", setLayouts)',
+		);
+		expect(MAIN_WORKSPACE_SOURCE).toContain(
+			'useGridContentHeight(mounted, activeBreakpoint, "accountInfo", setLayouts)',
+		);
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain(
+			'useGridContentHeight(mounted, activeBreakpoint, "accountTable", setLayouts)',
+		);
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<PositionsPanel />");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("margin={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("containerPadding={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain('data-panel-id="accountInfo"');
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useIsMobile");
+	});
+
+	it("observes border-box height with cleanup and persists RGL's compacted layouts", () => {
+		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height");
+		expect(GRID_CONTENT_HEIGHT_SOURCE).not.toContain("offsetHeight");
+		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("return () => observer.disconnect()");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("onLayoutChange={(_, allLayouts) =>");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("setLayouts(allLayouts)");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("writeDesktopGridLayouts(allLayouts)");
 	});
 
 	it("reveals the dedicated grid container surface through desktop panel gutters", () => {

@@ -153,6 +153,8 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 				assetId,
 				szDecimals,
 				isBuy: !isBuy,
+				entryIsBuy: isBuy,
+				entryReferencePrice: price,
 				formattedSize,
 				triggerPrice: tpPriceNum,
 				tpsl: "tp",
@@ -163,6 +165,8 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 				assetId,
 				szDecimals,
 				isBuy: !isBuy,
+				entryIsBuy: isBuy,
+				entryReferencePrice: price,
 				formattedSize,
 				triggerPrice: slPriceNum,
 				tpsl: "sl",
@@ -372,6 +376,8 @@ interface TpSlOrderParams {
 	assetId: number;
 	szDecimals: number;
 	isBuy: boolean;
+	entryIsBuy: boolean;
+	entryReferencePrice: number;
 	formattedSize: string;
 	triggerPrice: number;
 	tpsl: "tp" | "sl";
@@ -379,8 +385,27 @@ interface TpSlOrderParams {
 
 function buildTpSlOrder(orders: ExchangeOrder[], params: TpSlOrderParams): void {
 	const triggerPx = formatPriceForOrder(params.triggerPrice, params);
+	const entryPx = formatPriceForOrder(params.entryReferencePrice, params);
+	const normalizedTriggerPrice = toBig(triggerPx);
+	const normalizedEntryPrice = toBig(entryPx);
+	if (!normalizedTriggerPrice?.gt(0)) throw new Error("Trigger price is below market precision");
+	if (!normalizedEntryPrice?.gt(0)) throw new Error("Entry price is below market precision");
+	const directionValid =
+		params.tpsl === "tp"
+			? params.entryIsBuy
+				? normalizedTriggerPrice.gt(normalizedEntryPrice)
+				: normalizedTriggerPrice.lt(normalizedEntryPrice)
+			: params.entryIsBuy
+				? normalizedTriggerPrice.lt(normalizedEntryPrice)
+				: normalizedTriggerPrice.gt(normalizedEntryPrice);
+	if (!directionValid) {
+		if (params.tpsl === "tp") {
+			throw new Error(params.entryIsBuy ? "TP must be above entry" : "TP must be below entry");
+		}
+		throw new Error(params.entryIsBuy ? "SL must be below entry" : "SL must be above entry");
+	}
 	const orderPx = formatPriceForOrder(
-		getTriggerMarketExecutionPrice(params.isBuy ? "buy" : "sell", params.triggerPrice),
+		getTriggerMarketExecutionPrice(params.isBuy ? "buy" : "sell", normalizedTriggerPrice.toNumber()),
 		params,
 	);
 	orders.push({

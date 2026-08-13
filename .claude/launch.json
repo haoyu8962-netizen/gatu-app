@@ -28,7 +28,15 @@
     {
       "name": "design-handoff",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3020", "--directory", "/Users/zhixing/Downloads/design_handoff_trading_toolbar 3"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "3020",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "designs"
+      ],
       "port": 3020
     }
   ]

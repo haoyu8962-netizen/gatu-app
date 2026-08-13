@@ -158,6 +158,45 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(onUnitToggle).toHaveBeenCalledOnce();
 	});
 
+	it("keeps framed mobile inputs and unit controls touch-safe and associates errors", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					framed: true,
+					linkedReturnInputs: {
+						onUnitToggle: vi.fn(),
+						sl: { ariaLabel: "Stop loss return", onChange: vi.fn(), placeholder: "Loss", value: "" },
+						tp: { ariaLabel: "Take profit return", onChange: vi.fn(), placeholder: "Profit", value: "" },
+						unitLabel: "%",
+					},
+					mobileTouchSafe: true,
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					referencePrice: 100,
+					side: "buy",
+					size: 1,
+					slPrice: "",
+					tpError: "Invalid take profit",
+					tpPrice: "100",
+				}),
+			);
+		});
+
+		const priceInput = container.querySelector<HTMLInputElement>('input[aria-label="Take Profit"]');
+		const returnInput = container.querySelector<HTMLInputElement>('input[aria-label="Take profit return"]');
+		const toggles = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]');
+		expect(priceInput?.className).toContain("max-[1000px]:h-11");
+		expect(returnInput?.className).toContain("max-[1000px]:h-11");
+		expect(priceInput?.getAttribute("aria-invalid")).toBe("true");
+		expect(returnInput?.getAttribute("aria-describedby")).toBe(priceInput?.getAttribute("aria-describedby"));
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");
+		expect(toggles).toHaveLength(2);
+		for (const toggle of toggles) {
+			expect(toggle.className).toContain("max-[1000px]:min-h-11");
+			expect(toggle.className).toContain("max-[1000px]:min-w-11");
+		}
+	});
+
 	it("formats TP/SL PnL with the verified non-default quote token", () => {
 		act(() => {
 			root.render(

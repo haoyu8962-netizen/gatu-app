@@ -4,8 +4,10 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
+import { getBuilderPerpSwapTargetToken } from "@/domain/trade/collateral-acquisition";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import {
@@ -19,7 +21,13 @@ import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useAgentStatus, useSelectedMarketInfo, useTradingAuthorization, useUserPositions } from "@/lib/hyperliquid";
+import {
+	useAgentStatus,
+	useMarketsInfo,
+	useSelectedMarketInfo,
+	useTradingAuthorization,
+	useUserPositions,
+} from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -41,6 +49,7 @@ import {
 	useDepositModalActions,
 	useEstablishConnectionModalActions,
 	useSettingsDialogActions,
+	useSwapModalActions,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
@@ -88,6 +97,7 @@ export function TradePanel() {
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
+	const { spotMarkets, isLoading: isMarketCatalogLoading, error: marketCatalogError } = useMarketsInfo();
 
 	const userPositions = useUserPositions();
 
@@ -167,6 +177,10 @@ export function TradePanel() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const { open: openSwapModal } = useSwapModalActions();
+
+	const swapTargetToken =
+		isMarketCatalogLoading || marketCatalogError ? null : getBuilderPerpSwapTargetToken(market, spotMarkets);
 
 	useEffect(() => {
 		if (selectedPrice === null) return;
@@ -452,7 +466,7 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="trade-panel-container flex flex-col bg-surface">
+		<div className="trade-panel-container flex flex-col bg-surface font-market-close">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
 				onOpenChange={handleMarginModalOpenChange}
@@ -517,8 +531,12 @@ export function TradePanel() {
 				<TradeFormFields
 					price={price}
 					positionSize={positionSize}
+					swapTargetToken={swapTargetToken}
 					onSizeModeToggle={handleSizeModeToggle}
 					onSizePercentApply={handleSizePercentApply}
+					onSwapClick={() => {
+						if (swapTargetToken) openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken);
+					}}
 				/>
 
 				<div className="flex flex-col gap-4 pt-5 pb-1">

@@ -73,6 +73,58 @@ describe("AccountModeModal", () => {
 		expect(applyButton?.disabled).toBe(true);
 	});
 
+	it("uses the trading scrim and market-close typography without changing the shared modal", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={() => {}} currentMode="disabled" canChange onApply={vi.fn()} />
+				</I18nProvider>,
+			),
+		);
+
+		const popup = document.body.querySelector<HTMLElement>('[role="dialog"]');
+		expect(popup?.className).toContain("font-market-close");
+		expect(document.body.querySelector(".bg-trading-panel-scrim")).not.toBeNull();
+	});
+
+	it("allows only one account-mode mutation and blocks dismissal until it settles", async () => {
+		let resolveApply: (() => void) | undefined;
+		const onApply = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveApply = resolve;
+				}),
+		);
+		const onOpenChange = vi.fn();
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={onOpenChange} currentMode="disabled" canChange onApply={onApply} />
+				</I18nProvider>,
+			),
+		);
+
+		const unifiedOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Unified account"),
+		);
+		act(() => unifiedOption?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Confirm",
+		);
+		act(() => {
+			confirmButton?.click();
+			confirmButton?.click();
+		});
+
+		expect(onApply).toHaveBeenCalledTimes(1);
+		act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+		expect(onOpenChange).not.toHaveBeenCalled();
+
+		await act(async () => resolveApply?.());
+		expect(onOpenChange).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
 	it("requires an explicit supported selection for the protocol default", async () => {
 		const onApply = vi.fn().mockResolvedValue(undefined);
 		act(() =>

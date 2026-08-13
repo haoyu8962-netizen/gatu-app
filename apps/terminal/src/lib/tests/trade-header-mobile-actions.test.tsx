@@ -25,7 +25,7 @@ describe("TradeHeader mobile margin actions", () => {
 	});
 
 	function renderHeader(callbacks: {
-		accountMode?: "disabled" | "unifiedAccount" | "portfolioMargin" | "default";
+		accountMode?: "disabled" | "unifiedAccount" | "portfolioMargin" | "default" | null;
 		isLeveraged?: boolean;
 		layout?: "desktop" | "mobile";
 		marketKind?: "perp" | "spot";
@@ -60,6 +60,8 @@ describe("TradeHeader mobile margin actions", () => {
 		const onLeverageClick = vi.fn();
 		const onMarginLeverageClick = vi.fn();
 		renderHeader({ onMarginModeClick, onLeverageClick, onMarginLeverageClick });
+		expect(container.querySelector(".grid")?.className).toContain("minmax(2.75rem,0.8fr)");
+		expect(container.querySelector(".grid")?.className).toContain("minmax(4.125rem,1fr)");
 		expect(getButton(container, "Cross").className).toContain("after:h-11");
 		expect(getButton(container, "10x").className).toContain("after:h-11");
 
@@ -93,8 +95,16 @@ describe("TradeHeader mobile margin actions", () => {
 			onAccountModeClick,
 		});
 
-		act(() => getButton(container, "Select mode").click());
+		act(() => getButton(container, "Account").click());
 		expect(onAccountModeClick).toHaveBeenCalledOnce();
+	});
+
+	it("uses the compact account fallback on narrow mobile controls", () => {
+		renderHeader({ accountMode: null });
+
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		expect(accountModeButton?.textContent).toContain("Account");
+		expect(accountModeButton?.textContent).not.toContain("Unavailable");
 	});
 
 	it("keeps account mode reachable on desktop spot markets", () => {
@@ -111,6 +121,20 @@ describe("TradeHeader mobile margin actions", () => {
 		if (!accountModeButton) throw new Error("Expected desktop account mode button");
 		act(() => accountModeButton.click());
 		expect(onAccountModeClick).toHaveBeenCalledOnce();
+	});
+
+	it("provides a short account value for narrow desktop panels without losing the full label", () => {
+		renderHeader({
+			accountMode: "default",
+			layout: "desktop",
+		});
+
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		if (!accountModeButton) throw new Error("Expected desktop account mode button");
+
+		expect(accountModeButton.title).toBe("Select mode");
+		expect(accountModeButton.querySelector(".trade-account-value-full")?.textContent).toBe("Select mode");
+		expect(accountModeButton.querySelector(".trade-account-value-compact")?.textContent).toBe("Account");
 	});
 });
 

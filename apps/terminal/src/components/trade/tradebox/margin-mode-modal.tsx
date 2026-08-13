@@ -225,7 +225,7 @@ function MarginModeModalComponent({
 				showHandle={!dismissBlocked}
 				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
 				overlayClassName="bg-trading-panel-scrim"
-				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card"
+				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card font-market-close"
 			>
 				{mobileView === "leverage" ? (
 					<MobileLeverageDrawerContent
@@ -284,6 +284,7 @@ function MarginModeModalComponent({
 											{...accountModeForm}
 											isUpdating={dismissBlocked}
 											onClose={() => handleOpenChange(false)}
+											onSubmissionLockChange={setSubmissionLocked}
 											mobileLayout
 										/>
 									) : null}
@@ -309,7 +310,12 @@ function MarginModeModalComponent({
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={dismissBlocked}>
-			<ModalPopup size="sm" showClose={!dismissBlocked}>
+			<ModalPopup
+				size="sm"
+				showClose={!dismissBlocked}
+				overlayClassName="bg-trading-panel-scrim"
+				className="font-market-close"
+			>
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Margin mode</Trans>
@@ -381,6 +387,7 @@ function MarginModeForm({
 }: FormProps) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
 	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
+	const [leverageInputValid, setLeverageInputValid] = useState(true);
 	const applyInFlightRef = useRef(false);
 	const mountedRef = useRef(false);
 	const {
@@ -400,6 +407,7 @@ function MarginModeForm({
 		if (sessionOpen) return;
 		resetAutoClose();
 		setSubmittedLeverage(null);
+		setLeverageInputValid(true);
 		onLeverageDraftChange?.(null);
 	}, [onLeverageDraftChange, resetAutoClose, sessionOpen]);
 
@@ -416,11 +424,22 @@ function MarginModeForm({
 	const modeDirty = showMarginControls && selectedMode !== currentMode;
 	const leverageDirty = showLeverageControls && pendingLeverage !== null && pendingLeverage !== currentLeverage;
 	const isDirty = modeDirty || leverageDirty;
+	const leverageInputInvalid = showLeverageControls && !leverageInputValid;
+	const hasLeverageDraft = showLeverageControls && leverageDraft !== null;
 	const cannotSwitch = hasPosition && selectedMode === "isolated" && currentMode === "cross";
 	const positionStateUnavailable = !positionStateReady && selectedMode === "isolated" && currentMode === "cross";
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || isUpdating || cannotSwitch || positionStateUnavailable || applyInFlightRef.current) return;
+		if (
+			!isDirty ||
+			hasLeverageDraft ||
+			leverageInputInvalid ||
+			isUpdating ||
+			cannotSwitch ||
+			positionStateUnavailable ||
+			applyInFlightRef.current
+		)
+			return;
 		applyInFlightRef.current = true;
 		onSubmissionLockChange?.(true);
 		const mode = showMarginControls ? selectedMode : currentMode;
@@ -484,6 +503,7 @@ function MarginModeForm({
 						disabled={isUpdating}
 						onChange={handleLeverageChange}
 						onDraftChange={onLeverageDraftChange}
+						onInputValidityChange={setLeverageInputValid}
 						variant={mobileLayout ? "sheet" : "modal"}
 					/>
 				)}
@@ -558,7 +578,14 @@ function MarginModeForm({
 				) : (
 					<TradingActionButton
 						onClick={handleConfirm}
-						disabled={!isDirty || isUpdating || cannotSwitch || positionStateUnavailable}
+						disabled={
+							!isDirty ||
+							hasLeverageDraft ||
+							leverageInputInvalid ||
+							isUpdating ||
+							cannotSwitch ||
+							positionStateUnavailable
+						}
 						containerClassName={cn(mobileLayout && "w-full flex-1")}
 						className="gap-1.5 min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
 					>

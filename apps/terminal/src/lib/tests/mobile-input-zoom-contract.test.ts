@@ -42,7 +42,7 @@ describe("mobile input zoom contract", () => {
 		expect(MOBILE_TRADE_VIEW).not.toContain("<NumberInput");
 		expect(MOBILE_TRADE_VIEW).not.toContain("<PriceInput");
 		expect(MOBILE_TRADE_VIEW).toContain("disabled={isFormDisabled || maxSize <= 0}");
-		expect(countMobileSafeInputs(TP_SL_SECTION)).toBe(10);
+		expect(countMobileSafeInputs(TP_SL_SECTION)).toBe(15);
 	});
 
 	it("covers the responsive spot swap amount input", () => {

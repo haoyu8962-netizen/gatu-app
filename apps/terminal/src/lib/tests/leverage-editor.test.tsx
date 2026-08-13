@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { act, createElement } from "react";
+import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LeverageEditor } from "@/components/trade/tradebox/leverage-editor";
+import { LeverageEditor, parseLeverageInput } from "@/components/trade/tradebox/leverage-editor";
 import { createI18nRoot } from "./harness/react";
 
 const sliderHarness = vi.hoisted(() => ({
@@ -39,6 +39,7 @@ describe("LeverageEditor", () => {
 		onChange: (value: number) => void,
 		onDraftChange: (value: number | null) => void,
 		variant: "sheet" | "modal" = "sheet",
+		onInputValidityChange?: (isValid: boolean) => void,
 	) {
 		act(() => {
 			root.render(
@@ -48,10 +49,23 @@ describe("LeverageEditor", () => {
 					disabled={false}
 					onChange={onChange}
 					onDraftChange={onDraftChange}
+					onInputValidityChange={onInputValidityChange}
 					variant={variant}
 				/>,
 			);
 		});
+	}
+
+	function getInput(): HTMLInputElement {
+		const input = container.querySelector('input[aria-label="Leverage"]');
+		if (!(input instanceof HTMLInputElement)) throw new Error("Leverage input not found");
+		return input;
+	}
+
+	function changeInput(input: HTMLInputElement, value: string) {
+		const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+		valueSetter?.call(input, value);
+		input.dispatchEvent(new Event("input", { bubbles: true }));
 	}
 
 	it("keeps drag values in the modal draft and commits once on pointer release", () => {
@@ -127,6 +141,124 @@ describe("LeverageEditor", () => {
 		expect(container.textContent).not.toContain("High leverage significantly increases liquidation risk");
 	});
 
+	it("accepts only canonical decimal integers within the market maximum", () => {
+		expect(parseLeverageInput("1", 20)).toBe(1);
+		expect(parseLeverageInput("20", 20)).toBe(20);
+		for (const invalid of ["", "0", "01", "1.5", "1e1", "-1", "+1", " 1", "21", "999999999999999999999"]) {
+			expect(parseLeverageInput(invalid, 20)).toBeNull();
+		}
+	});
+
+	it("keeps invalid text as a non-submittable draft and restores the canonical value on blur", () => {
+		const onChange = vi.fn();
+		const onDraftChange = vi.fn();
+		const onInputValidityChange = vi.fn();
+		renderEditor(onChange, onDraftChange, "sheet", onInputValidityChange);
+		const input = getInput();
+
+		act(() => changeInput(input, ""));
+
+		expect(input.value).toBe("");
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(onInputValidityChange).toHaveBeenLastCalledWith(false);
+		expect(onDraftChange).toHaveBeenLastCalledWith(null);
+		expect(onChange).not.toHaveBeenCalled();
+
+		act(() => input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+
+		expect(input.value).toBe("5");
+		expect(input.getAttribute("aria-invalid")).toBe("false");
+		expect(onInputValidityChange).toHaveBeenLastCalledWith(true);
+	});
+
+	it("restores the canonical value on Escape without committing an invalid draft", () => {
+		const onChange = vi.fn();
+		const onInputValidityChange = vi.fn();
+		renderEditor(onChange, vi.fn(), "sheet", onInputValidityChange);
+		const input = getInput();
+
+		act(() => changeInput(input, "21"));
+		expect(input.value).toBe("21");
+		expect(onChange).not.toHaveBeenCalled();
+
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" })));
+
+		expect(input.value).toBe("5");
+		expect(onInputValidityChange).toHaveBeenLastCalledWith(true);
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it("commits a valid text value without clamping it to a different displayed value", () => {
+		const onChange = vi.fn();
+		const onInputValidityChange = vi.fn();
+		renderEditor(onChange, vi.fn(), "sheet", onInputValidityChange);
+		const input = getInput();
+
+		act(() => changeInput(input, "12"));
+
+		expect(input.value).toBe("12");
+		expect(onChange).toHaveBeenCalledWith(12);
+		expect(onInputValidityChange).toHaveBeenLastCalledWith(true);
+	});
+
+	it("ends a valid text edit on Enter without changing the committed pending value", () => {
+		const onChange = vi.fn();
+		function ControlledEditor() {
+			const [value, setValue] = useState(5);
+			return (
+				<LeverageEditor
+					value={value}
+					max={20}
+					disabled={false}
+					onChange={(next) => {
+						onChange(next);
+						setValue(next);
+					}}
+					onDraftChange={vi.fn()}
+				/>
+			);
+		}
+		act(() => root.render(<ControlledEditor />));
+		const input = getInput();
+
+		act(() => changeInput(input, "12"));
+		expect(input.value).toBe("12");
+
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" })));
+
+		expect(input.value).toBe("12");
+		expect(input.getAttribute("aria-invalid")).toBe("false");
+		expect(onChange).toHaveBeenCalledTimes(1);
+		expect(onChange).toHaveBeenCalledWith(12);
+	});
+
+	it("keeps an invalid Enter draft visible and non-committing", () => {
+		const onChange = vi.fn();
+		const onInputValidityChange = vi.fn();
+		renderEditor(onChange, vi.fn(), "sheet", onInputValidityChange);
+		const input = getInput();
+
+		act(() => changeInput(input, "21"));
+		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" })));
+
+		expect(input.value).toBe("21");
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(onInputValidityChange).toHaveBeenLastCalledWith(false);
+		expect(onChange).not.toHaveBeenCalled();
+	});
+
+	it("gives every quick leverage action a non-overlapping 44px grid cell", () => {
+		renderEditor(vi.fn(), vi.fn());
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(buttons).toHaveLength(5);
+		for (const [index, button] of buttons.entries()) {
+			expect(button.className).toContain("size-11");
+			expect(button.style.gridColumn).toBe(String(index + 1));
+		}
+		expect(buttons[0]?.parentElement?.getAttribute("style")).toContain("minmax(44px, 1fr)");
+	});
+
 	it("mirrors tick labels and positions in RTL", () => {
 		act(() => {
 			root.render(
@@ -140,8 +272,8 @@ describe("LeverageEditor", () => {
 		const minimum = buttons.find((button) => button.textContent === "1x");
 		const maximum = buttons.find((button) => button.textContent === "20x");
 		const quarter = buttons.find((button) => button.textContent === "6x");
-		expect(minimum?.className).toContain("right-0");
-		expect(maximum?.className).toContain("left-0");
-		expect(Number.parseFloat(quarter?.style.left ?? "0")).toBeGreaterThan(70);
+		expect(minimum?.style.gridColumn).toBe("5");
+		expect(maximum?.style.gridColumn).toBe("1");
+		expect(quarter?.style.gridColumn).toBe("4");
 	});
 });

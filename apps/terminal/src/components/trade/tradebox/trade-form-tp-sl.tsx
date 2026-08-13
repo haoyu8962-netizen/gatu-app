@@ -1,7 +1,9 @@
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
-import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
+import { isPositive, toBig } from "@/lib/trade/numbers";
 import {
 	calculateEstimatedPnlExact,
 	calculateRoeMagnitudeFromPriceExact,
@@ -15,44 +17,90 @@ import { useOrderEntryActions, useOrderSide, useSlPrice, useTpPrice } from "@/st
 import { TpSlSection } from "./tp-sl-section";
 
 interface Props {
+	assetId: number | null;
+	marketId: string | null;
 	referencePrice: number;
 	size: number;
 	szDecimals: number;
 	disabled: boolean;
+	quoteSymbol: string | null;
 	leverage?: number;
 	mobileTouchSafe?: boolean;
 }
 
-type ReturnUnit = "$" | "%";
+type ReturnUnit = "roe" | "collateral";
 type TpSlKind = "tp" | "sl";
+interface ReturnDraft {
+	contextKey: string;
+	value: string;
+}
 
-export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leverage, mobileTouchSafe }: Props) {
+export function TradeFormTpSl({
+	assetId,
+	marketId,
+	referencePrice,
+	size,
+	szDecimals,
+	disabled,
+	quoteSymbol,
+	leverage,
+	mobileTouchSafe,
+}: Props) {
 	const { t } = useLingui();
 	const side = useOrderSide();
 	const tpPriceInput = useTpPrice();
 	const slPriceInput = useSlPrice();
 	const { setTpPrice, setSlPrice } = useOrderEntryActions();
 
-	const [tpUnit, setTpUnit] = useState<ReturnUnit>("%");
-	const [slUnit, setSlUnit] = useState<ReturnUnit>("%");
-	const [tpReturnDraft, setTpReturnDraft] = useState<string | null>(null);
-	const [slReturnDraft, setSlReturnDraft] = useState<string | null>(null);
+	const [tpUnit, setTpUnit] = useState<ReturnUnit>("roe");
+	const [slUnit, setSlUnit] = useState<ReturnUnit>("roe");
+	const [tpReturnDraft, setTpReturnDraft] = useState<ReturnDraft | null>(null);
+	const [slReturnDraft, setSlReturnDraft] = useState<ReturnDraft | null>(null);
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals);
+	const normalizedReferencePrice = normalizePrice(referencePrice);
+	const returnContextKey = [
+		marketId ?? "",
+		side,
+		normalizedReferencePrice ?? "",
+		size,
+		leverage ?? "",
+		quoteSymbol ?? "",
+	].join("|");
+
+	function normalizePrice(value: string | number | null): string | null {
+		if (assetId === null) return null;
+		const parsed = toBig(value);
+		if (!parsed?.gt(0)) return null;
+		const normalized = formatPriceForOrder(parsed, { assetId, szDecimals });
+		return toBig(normalized)?.gt(0) ? normalized : null;
+	}
 
 	function getUnit(kind: TpSlKind): ReturnUnit {
 		return kind === "tp" ? tpUnit : slUnit;
 	}
 
+	function getUnitLabel(kind: TpSlKind): string {
+		if (getUnit(kind) === "roe") return "%";
+		return quoteSymbol === DEFAULT_QUOTE_TOKEN ? "$" : (quoteSymbol ?? "");
+	}
+
+	function getCurrentDraft(kind: TpSlKind): string | null {
+		const draft = kind === "tp" ? tpReturnDraft : slReturnDraft;
+		return draft?.contextKey === returnContextKey ? draft.value : null;
+	}
+
 	function canLinkReturn(kind: TpSlKind): boolean {
-		if (!isPositive(referencePrice)) return false;
-		if (getUnit(kind) === "%") return isPositive(leverage);
-		return isPositive(size);
+		if (normalizedReferencePrice === null) return false;
+		if (getUnit(kind) === "roe") return isPositive(leverage);
+		return quoteSymbol !== null && isPositive(size);
 	}
 
 	function isDirectionValid(kind: TpSlKind, price: string): boolean {
-		if (kind === "tp") return validateTpPrice(referencePrice, price, side);
-		return validateSlPrice(referencePrice, price, side);
+		const normalizedPrice = normalizePrice(price);
+		if (normalizedReferencePrice === null || normalizedPrice === null) return false;
+		if (kind === "tp") return validateTpPrice(normalizedReferencePrice, normalizedPrice, side);
+		return validateSlPrice(normalizedReferencePrice, normalizedPrice, side);
 	}
 
 	function formatReturnMagnitude(value: string | number | null, fractionDigits: number): string {
@@ -61,40 +109,54 @@ export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leve
 	}
 
 	function getReturnValue(kind: TpSlKind): string {
-		const draft = kind === "tp" ? tpReturnDraft : slReturnDraft;
+		const draft = getCurrentDraft(kind);
 		if (draft !== null) return draft;
 		const price = kind === "tp" ? tpPriceInput : slPriceInput;
-		if (!isPositive(toNumber(price)) || !isDirectionValid(kind, price)) return "";
-		if (getUnit(kind) === "%") {
-			return formatReturnMagnitude(calculateRoeMagnitudeFromPriceExact(referencePrice, price, side, kind, leverage), 1);
+		const normalizedPrice = normalizePrice(price);
+		if (normalizedReferencePrice === null || normalizedPrice === null || !isDirectionValid(kind, price)) return "";
+		if (getUnit(kind) === "roe") {
+			return formatReturnMagnitude(
+				calculateRoeMagnitudeFromPriceExact(normalizedReferencePrice, normalizedPrice, side, kind, leverage),
+				1,
+			);
 		}
-		return formatReturnMagnitude(calculateEstimatedPnlExact({ referencePrice, side, size }, price), 2);
+		return formatReturnMagnitude(
+			calculateEstimatedPnlExact({ referencePrice: normalizedReferencePrice, side, size }, normalizedPrice),
+			2,
+		);
 	}
 
-	function priceFromReturn(kind: TpSlKind, magnitude: number): string | null {
+	function priceFromReturn(kind: TpSlKind, magnitude: string): string | null {
+		if (normalizedReferencePrice === null) return null;
 		let target: string | null;
-		if (getUnit(kind) === "%") {
+		if (getUnit(kind) === "roe") {
 			const fromRoe = kind === "tp" ? calculateTpPriceFromRoe : calculateSlPriceFromRoe;
-			target = fromRoe(referencePrice, side, magnitude, leverage, priceDecimals);
+			target = fromRoe(normalizedReferencePrice, side, magnitude, leverage, priceDecimals);
 		} else {
-			target = calculateTargetPriceFromPnl(referencePrice, side, size, magnitude, kind, priceDecimals);
+			target = calculateTargetPriceFromPnl(normalizedReferencePrice, side, size, magnitude, kind, priceDecimals);
 		}
-		if (target !== null && toBig(target)?.eq(toBig(referencePrice) ?? 0)) return null;
-		return target;
+		const normalizedTarget = normalizePrice(target);
+		if (normalizedTarget === null || toBig(normalizedTarget)?.eq(normalizedReferencePrice)) return null;
+		if (kind === "tp" && !validateTpPrice(normalizedReferencePrice, normalizedTarget, side)) return null;
+		if (kind === "sl" && !validateSlPrice(normalizedReferencePrice, normalizedTarget, side)) return null;
+		return toBig(target)?.eq(normalizedTarget) ? target : normalizedTarget;
 	}
 
 	function handleReturnChange(kind: TpSlKind, value: string) {
-		if (!/^\d*\.?\d*$/.test(value)) return;
 		const setDraft = kind === "tp" ? setTpReturnDraft : setSlReturnDraft;
 		const setPrice = kind === "tp" ? setTpPrice : setSlPrice;
-		setDraft(value);
-		const magnitude = Number.parseFloat(value);
-		if (!Number.isFinite(magnitude) || magnitude <= 0) {
+		setDraft({ contextKey: returnContextKey, value });
+		if (!/^\d*\.?\d*$/.test(value)) {
 			setPrice("");
 			return;
 		}
-		const target = priceFromReturn(kind, magnitude);
-		if (target !== null) setPrice(target);
+		const magnitude = toBig(value);
+		if (!magnitude || magnitude.lte(0)) {
+			setPrice("");
+			return;
+		}
+		const target = priceFromReturn(kind, magnitude.toString());
+		setPrice(target ?? "");
 	}
 
 	function handleReturnBlur(kind: TpSlKind) {
@@ -103,11 +165,12 @@ export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leve
 	}
 
 	function handleUnitToggle(kind: TpSlKind) {
+		if (getUnit(kind) === "roe" && quoteSymbol === null) return;
 		if (kind === "tp") {
-			setTpUnit((current) => (current === "%" ? "$" : "%"));
+			setTpUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setTpReturnDraft(null);
 		} else {
-			setSlUnit((current) => (current === "%" ? "$" : "%"));
+			setSlUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setSlReturnDraft(null);
 		}
 	}
@@ -122,17 +185,25 @@ export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leve
 		setSlPrice(value);
 	}
 
+	function normalizeStoredPrice(kind: TpSlKind) {
+		const value = kind === "tp" ? tpPriceInput : slPriceInput;
+		const normalized = normalizePrice(value);
+		if (normalized === null || toBig(normalized)?.eq(value)) return;
+		if (kind === "tp") setTpPrice(normalized);
+		else setSlPrice(normalized);
+	}
+
 	function getTpError(): string | null {
-		const tpPriceNum = toNumber(tpPriceInput);
-		if (!isPositive(tpPriceNum) || !isPositive(referencePrice)) return null;
-		if (validateTpPrice(referencePrice, tpPriceNum, side)) return null;
+		const normalizedTpPrice = normalizePrice(tpPriceInput);
+		if (normalizedTpPrice === null || normalizedReferencePrice === null) return null;
+		if (validateTpPrice(normalizedReferencePrice, normalizedTpPrice, side)) return null;
 		return side === "buy" ? t`TP must be above entry` : t`TP must be below entry`;
 	}
 
 	function getSlError(): string | null {
-		const slPriceNum = toNumber(slPriceInput);
-		if (!isPositive(slPriceNum) || !isPositive(referencePrice)) return null;
-		if (validateSlPrice(referencePrice, slPriceNum, side)) return null;
+		const normalizedSlPrice = normalizePrice(slPriceInput);
+		if (normalizedSlPrice === null || normalizedReferencePrice === null) return null;
+		if (validateSlPrice(normalizedReferencePrice, normalizedSlPrice, side)) return null;
 		return side === "buy" ? t`SL must be below entry` : t`SL must be above entry`;
 	}
 
@@ -140,26 +211,30 @@ export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leve
 		<TpSlSection
 			framed
 			side={side}
-			referencePrice={referencePrice}
+			referencePrice={normalizedReferencePrice ?? 0}
 			size={size}
 			szDecimals={szDecimals}
 			tpPrice={tpPriceInput}
 			slPrice={slPriceInput}
 			onTpPriceChange={handleTpPriceChange}
 			onSlPriceChange={handleSlPriceChange}
+			onTpPriceBlur={() => normalizeStoredPrice("tp")}
+			onSlPriceBlur={() => normalizeStoredPrice("sl")}
 			tpError={getTpError()}
 			slError={getSlError()}
 			disabled={disabled}
 			mobileTouchSafe={mobileTouchSafe}
+			quoteSymbol={quoteSymbol}
 			linkedReturnInputs={{
-				unitLabel: tpUnit,
+				unitLabel: getUnitLabel("tp"),
 				onUnitToggle: () => handleUnitToggle("tp"),
 				tp: {
 					ariaLabel: t`Take profit return`,
 					placeholder: t`Profit`,
 					value: getReturnValue("tp"),
-					unitLabel: tpUnit,
+					unitLabel: getUnitLabel("tp"),
 					onUnitToggle: () => handleUnitToggle("tp"),
+					unitToggleDisabled: quoteSymbol === null,
 					disabled: disabled || !canLinkReturn("tp"),
 					onBlur: () => handleReturnBlur("tp"),
 					onChange: (value) => handleReturnChange("tp", value),
@@ -168,8 +243,9 @@ export function TradeFormTpSl({ referencePrice, size, szDecimals, disabled, leve
 					ariaLabel: t`Stop loss return`,
 					placeholder: t`Loss`,
 					value: getReturnValue("sl"),
-					unitLabel: slUnit,
+					unitLabel: getUnitLabel("sl"),
 					onUnitToggle: () => handleUnitToggle("sl"),
+					unitToggleDisabled: quoteSymbol === null,
 					disabled: disabled || !canLinkReturn("sl"),
 					onBlur: () => handleReturnBlur("sl"),
 					onChange: (value) => handleReturnChange("sl", value),

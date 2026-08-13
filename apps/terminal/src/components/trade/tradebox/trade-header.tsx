@@ -99,7 +99,12 @@ export function TradeHeader({
 							: accountMode === "dexAbstraction"
 								? t`Legacy DEX`
 								: t`Unavailable`;
-	const compactAccountModeLabel = accountMode === null ? t`Account` : accountModeLabel;
+	const compactAccountModeLabel =
+		accountMode === "dexAbstraction"
+			? t`Legacy`
+			: accountMode === "default" || accountMode == null
+				? t`Account`
+				: accountModeLabel;
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
 	const controlButtonClass = cn(
@@ -124,7 +129,7 @@ export function TradeHeader({
 					className={cn(
 						"grid min-w-0 overflow-hidden bg-surface",
 						isLeveraged
-							? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)]"
+							? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(2.75rem,0.8fr)_minmax(4.125rem,1fr)]"
 							: "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
 					)}
 				>
@@ -178,7 +183,7 @@ export function TradeHeader({
 						{(isAccountModeLoading || isAccountModeUpdating) && (
 							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
 						)}
-						<span className="truncate">{accountModeLabel}</span>
+						<span className="truncate">{compactAccountModeLabel}</span>
 						<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 					</button>
 				</div>
@@ -239,8 +244,8 @@ export function TradeHeader({
 						{(isAccountModeLoading || isAccountModeUpdating) && (
 							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
 						)}
-						<span className="trade-full-label min-w-0 truncate">{accountModeLabel}</span>
-						<span className="trade-compact-label min-w-0 truncate">{compactAccountModeLabel}</span>
+						<span className="trade-account-value-full min-w-0 truncate">{accountModeLabel}</span>
+						<span className="trade-account-value-compact min-w-0 truncate">{compactAccountModeLabel}</span>
 						<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
 					</span>
 				</button>

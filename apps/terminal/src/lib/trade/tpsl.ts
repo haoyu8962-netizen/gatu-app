@@ -1,5 +1,21 @@
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { type Numeric, toBig, toSafeBig } from "./numbers";
 import type { Side } from "./types";
+
+interface TpSlCollateralMarket {
+	kind: "perp" | "spot" | "builderPerp";
+	quoteToken?: {
+		displayName?: string | null;
+		name?: string | null;
+	} | null;
+}
+
+export function getTpSlCollateralSymbol(market: TpSlCollateralMarket | null | undefined): string | null {
+	if (!market || market.kind === "spot") return null;
+	if (market.kind === "perp") return DEFAULT_QUOTE_TOKEN;
+	const quoteSymbol = market.quoteToken?.displayName?.trim() || market.quoteToken?.name?.trim();
+	return quoteSymbol || null;
+}
 
 export function calculateTpPrice(
 	referencePrice: Numeric,

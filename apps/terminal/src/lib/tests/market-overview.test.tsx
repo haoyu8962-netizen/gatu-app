@@ -1,11 +1,71 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarketOverview } from "@/components/trade/market-overview";
+
+const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const MAIN_WORKSPACE_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/layout/main-workspace.tsx"),
+	"utf8",
+);
+const MARKET_STAT_WIDTHS = {
+	price: 48,
+	oracle: 48,
+	change24h: 100,
+	volume24h: 100,
+	openInterest: 100,
+	funding: 104,
+	marketCap: 110,
+	contract: 112,
+} as const;
+type MarketStatId = keyof typeof MARKET_STAT_WIDTHS;
+
+let marketOverviewWidth = 616;
+const resizeObservers: ResizeObserverMock[] = [];
+
+class ResizeObserverMock {
+	readonly callback: ResizeObserverCallback;
+
+	constructor(callback: ResizeObserverCallback) {
+		this.callback = callback;
+		resizeObservers.push(this);
+	}
+
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+
+	emit() {
+		this.callback([], this as unknown as ResizeObserver);
+	}
+}
+
+function createRect(width: number): DOMRect {
+	return {
+		bottom: 34,
+		height: 34,
+		left: 0,
+		right: width,
+		top: 0,
+		width,
+		x: 0,
+		y: 0,
+		toJSON: () => ({}),
+	};
+}
+
+function getVisibleStatIds(container: HTMLElement): MarketStatId[] {
+	return Array.from(container.querySelectorAll<HTMLElement>("[data-market-stat]"))
+		.filter((node) => node.getAttribute("aria-hidden") !== "true")
+		.map((node) => node.dataset.marketStat as MarketStatId);
+}
 
 const mocks = vi.hoisted(() => ({
 	midPx: undefined as string | undefined,
@@ -65,6 +125,14 @@ describe("MarketOverview", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		marketOverviewWidth = 616;
+		resizeObservers.length = 0;
+		vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+			if (this.hasAttribute("data-market-overview")) return createRect(marketOverviewWidth);
+			const statId = this.dataset.marketStat as MarketStatId | undefined;
+			return createRect(statId ? MARKET_STAT_WIDTHS[statId] : 0);
+		});
 		mocks.midPx = undefined;
 		mocks.perpCtxEvent = undefined;
 		mocks.selectedMarket = {
@@ -88,6 +156,77 @@ describe("MarketOverview", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	it("lets the MarketOverview container claim the toolbar's remaining width", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toMatch(
+			/className="ml-6 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain/,
+		);
+	});
+
+	it.each([
+		{
+			viewportWidth: 1440,
+			containerWidth: 616,
+			gapPx: 24,
+			visible: ["price", "oracle", "change24h", "volume24h", "funding"],
+		},
+		{
+			viewportWidth: 1200,
+			containerWidth: 573,
+			gapPx: 16,
+			visible: ["price", "oracle", "change24h", "volume24h", "funding"],
+		},
+		{
+			viewportWidth: 1001,
+			containerWidth: 431,
+			gapPx: 12,
+			visible: ["price", "oracle", "change24h", "funding"],
+		},
+	] as const)(
+		"keeps only whole metrics at a $viewportWidth px viewport ($containerWidth px overview)",
+		({ containerWidth, gapPx, visible }) => {
+			marketOverviewWidth = containerWidth;
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<MarketOverview />
+					</I18nProvider>,
+				),
+			);
+
+			expect(getVisibleStatIds(container)).toEqual(visible);
+			const row = container.querySelector<HTMLElement>("[data-market-overview-row]");
+			expect(row?.style.columnGap).toBe(`${gapPx}px`);
+
+			const occupiedWidth = visible.reduce((sum, id) => sum + MARKET_STAT_WIDTHS[id], 0) + (visible.length - 1) * gapPx;
+			expect(occupiedWidth).toBeLessThanOrEqual(containerWidth);
+
+			for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
+				const isVisible = (visible as readonly MarketStatId[]).includes(node.dataset.marketStat as MarketStatId);
+				expect(node.getAttribute("aria-hidden")).toBe(isVisible ? null : "true");
+				expect(node.hasAttribute("inert")).toBe(!isVisible);
+				expect(node.classList.contains("absolute")).toBe(!isVisible);
+				expect(node.classList.contains("invisible")).toBe(!isVisible);
+			}
+		},
+	);
+
+	it("recomputes whole-stat visibility when the actual container resizes", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "volume24h", "funding"]);
+
+		marketOverviewWidth = 431;
+		act(() => resizeObservers.at(-1)?.emit());
+
+		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
 	});
 
 	it("uses the selected market snapshot while realtime subscriptions warm up", () => {
