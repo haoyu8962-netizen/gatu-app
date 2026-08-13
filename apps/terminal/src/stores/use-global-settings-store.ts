@@ -15,7 +15,7 @@ import {
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 } from "@/config/trade";
-import { getNetwork, type Network, persistNetwork, subscribeNetworkStorage } from "@/lib/network";
+import { getNetwork, type Network, subscribeNetworkStorage, switchNetwork } from "@/lib/network";
 import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -99,8 +99,8 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setMobileActiveTab: (tab) => set({ mobileActiveTab: tab }),
 				setTheme: (theme) => set({ theme }),
 				setNetwork: (network) => {
-					persistNetwork(network);
-					if (get().network === network) return;
+					const result = switchNetwork(network);
+					if (result !== "persisted") return;
 					set({ network });
 					if (typeof window !== "undefined") window.location.reload();
 				},

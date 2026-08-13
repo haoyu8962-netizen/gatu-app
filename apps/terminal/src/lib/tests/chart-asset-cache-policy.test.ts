@@ -11,6 +11,8 @@ const viteConfig = readFileSync(resolve(TERMINAL_ROOT, "vite.config.ts"), "utf8"
 const serviceWorker = readFileSync(resolve(TERMINAL_ROOT, "public/sw.js"), "utf8");
 const caddyfile = readFileSync(resolve(REPOSITORY_ROOT, "deploy/Caddyfile"), "utf8");
 const deployScript = readFileSync(resolve(REPOSITORY_ROOT, "deploy/deploy.sh"), "utf8");
+const systemdUnit = readFileSync(resolve(REPOSITORY_ROOT, "deploy/gatu.service"), "utf8");
+const referralUriGuard = readFileSync(resolve(REPOSITORY_ROOT, "deploy/referral-uri-guard.cjs"), "utf8");
 const rootRoute = readFileSync(resolve(TERMINAL_ROOT, "src/routes/__root.tsx"), "utf8");
 
 interface ServiceWorkerHarnessOptions {
@@ -75,17 +77,62 @@ describe("TradingView asset cache policy", () => {
 
 	it("checks the final Caddy responses during deployment", () => {
 		expect(deployScript).toContain("verify_caddy_config");
+		expect(deployScript).toContain('cmp -s "$source_unit" "$installed_unit"');
 		expect(deployScript).not.toMatch(/^\s*sudo \/usr\/bin\/install/m);
 		expect(deployScript).toContain("verify_single_header_value");
 		expect(deployScript).toContain('node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root"');
 		expect(deployScript).toContain('fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH"');
 		expect(deployScript).toContain("verify_missing_chart_asset");
 		expect(deployScript).toContain("edge_health_check");
-		expect(deployScript).toMatch(/GATU_PUBLIC_BASE_URL="\$\{GATU_PUBLIC_BASE_URL:-https:\/\/app\.gatu\.ai\}"/);
+		expect(deployScript).toMatch(
+			/GATU_MAINNET_PUBLIC_BASE_URL="\$\{GATU_MAINNET_PUBLIC_BASE_URL:-https:\/\/app\.gatu\.ai\}"/,
+		);
+		expect(deployScript).toMatch(
+			/GATU_TESTNET_PUBLIC_BASE_URL="\$\{GATU_TESTNET_PUBLIC_BASE_URL:-https:\/\/testnet\.gatu\.ai\}"/,
+		);
+		expect(deployScript).toContain("verify_release_parity");
+		expect(deployScript).toContain("verify_referral_deep_link");
+		expect(deployScript).toContain("verify_malformed_referral_deep_link");
+		expect(deployScript).toContain("curl_with_deadline --path-as-is -sS");
+		expect(deployScript).toContain('REFERRAL_RELEASE_CAPABILITY="referral-join-v1"');
+		expect(deployScript).toContain('rollback_require_referral_join="false"');
+		expect(deployScript).toContain(
+			'health_check "$PORT" "$rollback_expected_commit" "$rollback_expected_release" false "$rollback_require_referral_join"',
+		);
+		expect(deployScript).toContain("verify_exact_http_status");
+		expect(deployScript).toContain('REFERRAL_ROUTE_MARKER=\'<meta name="gatu-route" content="referral-join"\'');
+		expect(deployScript).toContain("verify_sitewide_noindex");
+		expect(deployScript).toContain(`cp deploy/referral-uri-guard.cjs "\${release_tmp}/referral-uri-guard.cjs"`);
+		expect(systemdUnit).toContain(
+			"ExecStart=/usr/bin/node --require=/opt/gatu/shared/referral-uri-guard.cjs server/index.mjs",
+		);
+		expect(systemdUnit).not.toContain("NODE_OPTIONS");
+		expect(deployScript).toContain("install_referral_uri_guard");
+		expect(deployScript).toMatch(/installed_guard="\$\{SHARED\}\/referral-uri-guard\.cjs"/);
+		expect(deployScript).toContain('node --check "$source_guard"');
+		expect(deployScript).toMatch(
+			/health_check\(\)[\s\S]*?verify_referral_deep_link[\s\S]*?verify_malformed_referral_deep_link/,
+		);
+		expect(referralUriGuard).toContain('pathname !== "/join" && !pathname.startsWith("/join/")');
+		expect(referralUriGuard).toContain("decodeURI(pathname)");
 		expect(deployScript).toContain('curl --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS"');
 		expect(deployScript).toMatch(
-			/rollback_to_release[\s\S]*?edge_health_check "\$GATU_PUBLIC_BASE_URL" "\$rollback_expected_commit" "\$rollback_expected_release"/,
+			/rollback_to_release[\s\S]*?edge_health_check "\$GATU_MAINNET_PUBLIC_BASE_URL" "\$rollback_expected_commit" "\$rollback_expected_release"[\s\S]*?edge_health_check "\$GATU_TESTNET_PUBLIC_BASE_URL" "\$rollback_expected_commit" "\$rollback_expected_release" true/,
 		);
+	});
+
+	it("protects referral deep links and the testnet origin", () => {
+		expect(caddyfile).toContain("app.gatu.ai, testnet.gatu.ai");
+		expect(caddyfile).toContain("@referral_join path /join /join/*");
+		expect(caddyfile).toContain('>Cache-Control "no-store"');
+		expect(caddyfile).toContain('>Referrer-Policy "no-referrer"');
+		expect(caddyfile).toContain('>X-Robots-Tag "noindex, nofollow"');
+		expect(caddyfile).toContain("@testnet host testnet.gatu.ai");
+		expect(viteConfig).toMatch(
+			/const referralJoinHeaders = \{[\s\S]*?'cache-control': 'no-store'[\s\S]*?'referrer-policy': 'no-referrer'[\s\S]*?'x-robots-tag': 'noindex, nofollow'/,
+		);
+		expect(viteConfig).toMatch(/'\/join': \{[\s\S]*?headers: referralJoinHeaders/);
+		expect(viteConfig).toMatch(/'\/join\/\*\*': \{[\s\S]*?headers: referralJoinHeaders/);
 	});
 
 	it("deletes only retired managed caches when v8 activates", async () => {

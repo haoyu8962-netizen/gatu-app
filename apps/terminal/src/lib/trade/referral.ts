@@ -1,6 +1,7 @@
 import type { ReferralResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
 import { z } from "zod";
+import { getPublicOrigin } from "@/config/public-origins";
 
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const UNSIGNED_DECIMAL_PATTERN = /^[0-9]+(?:\.[0-9]+)?$/;
@@ -226,6 +227,11 @@ export function getReferralActivationTargetVolume(data: ReferralData): string | 
 export function getOfficialReferralUrl(code: string, env: "Mainnet" | "Testnet"): string {
 	const host = env === "Testnet" ? "https://app.hyperliquid-testnet.xyz" : "https://app.hyperliquid.xyz";
 	return `${host}/join/${encodeURIComponent(code)}`;
+}
+
+export function getGatuReferralUrl(code: string, env: "Mainnet" | "Testnet"): string {
+	const origin = getPublicOrigin(env === "Testnet" ? "testnet" : "mainnet");
+	return `${origin}/join/${encodeURIComponent(code)}`;
 }
 
 export function isValidReferralCode(code: string): boolean {

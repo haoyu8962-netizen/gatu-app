@@ -19,7 +19,12 @@ import { ReferralSummaryCards } from "./referral-summary-cards";
 
 interface ActiveAction {
 	action: ReferralAction;
+	code?: string;
 	identityKey: string;
+}
+
+interface Props {
+	initialReferralCode?: string;
 }
 
 function getActionIdentityKey(identity: { clientKey: string; env: string; walletAddress: string | undefined }): string {
@@ -46,7 +51,7 @@ function ReferralSurface({
 	);
 }
 
-export function ReferralDashboard() {
+export function ReferralDashboard({ initialReferralCode }: Props) {
 	const { t } = useLingui();
 	const titleId = useId();
 	const referrals = useReferrals();
@@ -60,7 +65,7 @@ export function ReferralDashboard() {
 	const [legalModalOpen, setLegalModalOpen] = useState(false);
 	const [isPreparingAction, setIsPreparingAction] = useState(false);
 
-	async function requestAction(action: ReferralAction) {
+	async function requestAction(action: ReferralAction, code?: string) {
 		if (!hasWalletAccess) {
 			await reconnectWallet();
 			return;
@@ -81,7 +86,7 @@ export function ReferralDashboard() {
 				setConnectionModalOpen(true);
 				return;
 			}
-			setActiveAction({ action, identityKey: getActionIdentityKey(referralActions.identity) });
+			setActiveAction({ action, code, identityKey: getActionIdentityKey(referralActions.identity) });
 		} catch {
 			toast.error(t`The secure Hyperliquid connection could not be verified. Try again.`);
 		} finally {
@@ -94,6 +99,7 @@ export function ReferralDashboard() {
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
 	const readyData =
 		referrals.status === "ready" && referrals.data && referrals.usdcRewardsEarned ? referrals.data : null;
+	const invitationCanBeApplied = Boolean(readyData && initialReferralCode && canApplyReferralCode(readyData));
 	const header = (
 		<div className="flex flex-wrap items-start justify-between gap-3">
 			<div>
@@ -106,10 +112,27 @@ export function ReferralDashboard() {
 				<p className="mt-1 max-w-2xl text-xs leading-4 text-fg-muted">
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
+				{initialReferralCode ? (
+					<p className="mt-2 rounded-[10px] border border-stroke-brand-weak bg-brand-soft px-3 py-2 text-xs text-fg">
+						<Trans>You were invited with referral code {initialReferralCode}. Review it before applying.</Trans>
+					</p>
+				) : null}
 			</div>
 			{readyData ? (
 				<div className="hidden flex-wrap gap-2 min-[1001px]:flex">
-					{canApplyReferralCode(readyData) ? (
+					{invitationCanBeApplied ? (
+						<Button
+							variant="outline"
+							intent="brand"
+							size="sm"
+							className="rounded-[10px] text-2sm"
+							disabled={actionBusy}
+							onClick={() => void requestAction("apply", initialReferralCode)}
+						>
+							<Trans>Review invitation</Trans>
+						</Button>
+					) : null}
+					{canApplyReferralCode(readyData) && !initialReferralCode ? (
 						<Button
 							variant="outline"
 							intent="neutral"
@@ -234,7 +257,7 @@ export function ReferralDashboard() {
 					<div className="order-1">
 						<ReferralCodeCard
 							data={readyData}
-							onApplyCode={() => void requestAction("apply")}
+							onApplyCode={() => void requestAction("apply", initialReferralCode)}
 							onCreateCode={() => void requestAction("create")}
 						/>
 					</div>
@@ -266,23 +289,29 @@ export function ReferralDashboard() {
 				{content}
 			</ReferralSurface>
 
-			{readyData && referrals.hasClaimableRewards ? (
+			{readyData && (invitationCanBeApplied || referrals.hasClaimableRewards) ? (
 				<div className="sticky bottom-0 z-20 mt-2 border-t border-stroke-weak bg-portfolio-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">
 					<Button
 						className="w-full rounded-[12px] text-sm font-bold"
 						disabled={actionBusy}
-						onClick={() => void requestAction("claim")}
+						onClick={() =>
+							void requestAction(
+								invitationCanBeApplied ? "apply" : "claim",
+								invitationCanBeApplied ? initialReferralCode : undefined,
+							)
+						}
 					>
-						<Trans>Claim all available rewards</Trans>
+						{invitationCanBeApplied ? <Trans>Review invitation</Trans> : <Trans>Claim all available rewards</Trans>}
 					</Button>
 				</div>
 			) : null}
 
 			{readyData && visibleAction ? (
 				<ReferralActionModal
-					key={`${visibleAction}:${actionIdentityKey}`}
+					key={`${visibleAction}:${activeAction?.code ?? "manual"}:${actionIdentityKey}`}
 					action={visibleAction}
 					claimableRewards={referrals.claimableRewardRows}
+					initialCode={activeAction?.code}
 					onClose={() => setActiveAction(null)}
 					onSubmit={referralActions.submit}
 				/>

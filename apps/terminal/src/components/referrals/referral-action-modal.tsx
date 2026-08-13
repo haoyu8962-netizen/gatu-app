@@ -23,19 +23,23 @@ type Step = "error" | "form" | "review" | "submitting" | "success";
 interface Props {
 	action: ReferralAction;
 	claimableRewards: ReferralRewardRow[];
+	initialCode?: string;
 	onClose: () => void;
 	onSubmit: (action: ReferralAction, code?: string) => Promise<void>;
 }
 
-export function ReferralActionModal({ action, claimableRewards, onClose, onSubmit }: Props) {
+export function ReferralActionModal({ action, claimableRewards, initialCode, onClose, onSubmit }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
-	const [code, setCode] = useState("");
+	const isReferralCodeLocked = action === "apply" && initialCode !== undefined;
+	const lockedReferralCode = isReferralCodeLocked ? initialCode : undefined;
+	const [code, setCode] = useState(initialCode ?? "");
 	const [error, setError] = useState<string | null>(null);
-	const [step, setStep] = useState<Step>(action === "claim" ? "review" : "form");
+	const [step, setStep] = useState<Step>(action === "claim" || initialCode !== undefined ? "review" : "form");
 	const isSubmitting = step === "submitting";
-	const codeValid = code.length >= 1 && code.length <= 20;
+	const submittedCode = lockedReferralCode ?? code;
+	const codeValid = submittedCode.length >= 1 && submittedCode.length <= 20;
 	const title =
 		action === "apply" ? t`Enter referral code` : action === "create" ? t`Create referral code` : t`Claim rewards`;
 
@@ -48,7 +52,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 		setError(null);
 		setStep("submitting");
 		try {
-			await onSubmit(action, action === "claim" ? undefined : code);
+			await onSubmit(action, action === "claim" ? undefined : submittedCode);
 			setStep("success");
 		} catch (submitError) {
 			setError(formatExchangeActionError(submitError, t`Referral request could not be completed.`));
@@ -121,7 +125,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 								<p className="text-xs text-fg-muted">
 									{action === "apply" ? <Trans>Code to apply</Trans> : <Trans>Code to create</Trans>}
 								</p>
-								<p className="mt-1 break-all text-lg font-semibold text-fg">{code}</p>
+								<p className="mt-1 break-all text-lg font-semibold text-fg">{submittedCode}</p>
 							</div>
 						)}
 						<p className="flex items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
@@ -195,9 +199,9 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 							variant="outline"
 							intent="neutral"
 							className="flex-1 rounded-[10px]"
-							onClick={() => (action === "claim" ? close() : setStep("form"))}
+							onClick={() => (action === "claim" || isReferralCodeLocked ? close() : setStep("form"))}
 						>
-							<Trans>Back</Trans>
+							{action === "claim" || isReferralCodeLocked ? <Trans>Cancel</Trans> : <Trans>Back</Trans>}
 						</Button>
 						<Button className="flex-1 rounded-[10px]" onClick={() => void submit()}>
 							{action === "claim" ? <Trans>Claim all</Trans> : <Trans>Confirm</Trans>}

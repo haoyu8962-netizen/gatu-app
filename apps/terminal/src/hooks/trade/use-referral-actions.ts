@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { accountLedgerQueryKey } from "@/hooks/trade/use-account-ledger";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import { getReferralActionGeo, type ReferralActionGeoDecision } from "@/lib/geo/get-referral-action-geo";
 import { infoKey, infoPersistedKey, useExchange, useHyperliquid, useLegalStatus } from "@/lib/hyperliquid";
 import type { ReferralData } from "@/lib/trade/referral";
 import {
@@ -77,6 +78,24 @@ function assertIdentityUnchanged(startIdentity: ReferralActionIdentity, currentI
 	}
 }
 
+function getDevGeoOverride(): string | null {
+	if (!import.meta.env.DEV || typeof window === "undefined") return null;
+	return new URLSearchParams(window.location.search).get("geo");
+}
+
+function assertGeoAllowed(
+	decision: ReferralActionGeoDecision,
+): asserts decision is Extract<ReferralActionGeoDecision, { status: "allowed" }> {
+	if (decision.status === "blocked") throw new Error("Referral actions are not available in this location");
+	if (decision.status === "unavailable") {
+		throw new Error("Referral location eligibility could not be verified");
+	}
+}
+
+interface ReferralGeoLease {
+	deadline: number;
+}
+
 export function useReferralActions({ refetchReferral, refreshAfterAction }: Input): Result {
 	const queryClient = useQueryClient();
 	const { env, clientKey } = useHyperliquid();
@@ -84,12 +103,28 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 	const legalStatus = useLegalStatus();
 	const identity: ReferralActionIdentity = { clientKey, env, walletAddress };
 	const identityRef = useRef(identity);
+	const mountedRef = useRef(true);
 	const pendingIdentityRef = useRef<ReferralActionIdentity | null>(null);
+	const geoLeaseRef = useRef<ReferralGeoLease | null>(null);
 	identityRef.current = identity;
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+	const assertRequestActive = (startIdentity: ReferralActionIdentity) => {
+		if (!mountedRef.current) throw new Error("Referral request is no longer active");
+		assertIdentityUnchanged(startIdentity, identityRef.current);
+	};
 	const executionGuard = () => {
 		const pendingIdentity = pendingIdentityRef.current;
 		if (!pendingIdentity) throw new Error("Referral request is no longer active");
-		assertIdentityUnchanged(pendingIdentity, identityRef.current);
+		assertRequestActive(pendingIdentity);
+		const geoLease = geoLeaseRef.current;
+		if (!geoLease || performance.now() >= geoLease.deadline) {
+			throw new Error("Referral location eligibility expired before the request could be signed");
+		}
 	};
 	const setReferrer = useExchange("setReferrer", { executionGuard });
 	const registerReferrer = useExchange("registerReferrer", { executionGuard });
@@ -100,7 +135,9 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 		const startIdentity = identity;
 		if (pendingIdentityRef.current) throw new Error("Another referral request is already in progress");
 		pendingIdentityRef.current = startIdentity;
+		geoLeaseRef.current = null;
 		try {
+			assertRequestActive(startIdentity);
 			if (!hasWalletAccess || !walletAddress || clientKey === "disconnected") {
 				throw new Error("Connect the selected owner wallet before continuing");
 			}
@@ -109,15 +146,20 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 			}
 
 			const legal = await legalStatus.refetch();
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+			assertRequestActive(startIdentity);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canUseReferrals) {
 				throw new Error("Referral access could not be verified for this account");
 			}
 
 			const before = await refetchReferral();
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+			assertRequestActive(startIdentity);
 			assertActionAvailable(action, before, code);
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+
+			const geoRequestStartedAt = performance.now();
+			const geoDecision = await getReferralActionGeo({ data: { override: getDevGeoOverride() } });
+			assertRequestActive(startIdentity);
+			assertGeoAllowed(geoDecision);
+			geoLeaseRef.current = { deadline: geoRequestStartedAt + geoDecision.ttlMs };
 
 			let mutationError: unknown;
 			try {
@@ -135,14 +177,14 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 
 			let reconciled = false;
 			for (let attempt = 0; attempt < 6; attempt += 1) {
-				assertIdentityUnchanged(startIdentity, identityRef.current);
+				assertRequestActive(startIdentity);
 				let after: ReferralData | null = null;
 				try {
 					after = await refetchReferral();
 				} catch {
 					after = null;
 				}
-				assertIdentityUnchanged(startIdentity, identityRef.current);
+				assertRequestActive(startIdentity);
 				if (after && isReferralMutationReconciled(action, before, after, code)) {
 					reconciled = true;
 					break;
@@ -153,7 +195,7 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 			if (!reconciled) {
 				throw new ReferralActionStatusUnknownError(mutationError);
 			}
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+			assertRequestActive(startIdentity);
 
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: infoKey("referral", { user: clientKey }, env), exact: true }),
@@ -166,10 +208,11 @@ export function useReferralActions({ refetchReferral, refreshAfterAction }: Inpu
 			if (action === "claim") {
 				await queryClient.invalidateQueries({ queryKey: accountLedgerQueryKey(env, clientKey), exact: true });
 			}
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+			assertRequestActive(startIdentity);
 			await refreshAfterAction(action === "claim");
-			assertIdentityUnchanged(startIdentity, identityRef.current);
+			assertRequestActive(startIdentity);
 		} finally {
+			geoLeaseRef.current = null;
 			if (pendingIdentityRef.current === startIdentity) pendingIdentityRef.current = null;
 		}
 	}

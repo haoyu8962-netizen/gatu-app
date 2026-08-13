@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
-import { defineConfig, type PluginOption } from 'vite'
+import { defineConfig, type Plugin, type PluginOption } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { lingui } from '@lingui/vite-plugin'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -33,6 +33,39 @@ function resolveBuildSha() {
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
+const referralJoinHeaders = {
+  ...securityHeaders,
+  'cache-control': 'no-store',
+  'referrer-policy': 'no-referrer',
+  'x-robots-tag': 'noindex, nofollow',
+}
+
+function createReferralJoinDevRequestGuard(): Plugin {
+  return {
+    name: 'gatu-referral-join-dev-request-guard',
+    enforce: 'pre',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const pathname = request.url?.split(/[?#]/, 1)[0] ?? ''
+        if (pathname !== '/join' && !pathname.startsWith('/join/')) {
+          next()
+          return
+        }
+        try {
+          decodeURI(pathname)
+          next()
+        } catch {
+          response.statusCode = 404
+          response.setHeader('cache-control', 'no-store')
+          response.setHeader('content-type', 'text/plain; charset=utf-8')
+          response.setHeader('referrer-policy', 'no-referrer')
+          response.setHeader('x-robots-tag', 'noindex, nofollow')
+          response.end('Not Found')
+        }
+      })
+    },
+  }
+}
 
 function createManualChunks(id: string) {
   if (id.includes('node_modules')) {
@@ -79,6 +112,7 @@ const config = defineConfig({
     },
   },
   plugins: [
+    createReferralJoinDevRequestGuard(),
     nitro({
       compressPublicAssets: true,
       publicAssets: [
@@ -107,6 +141,12 @@ const config = defineConfig({
         },
         '/build-meta.json': {
           headers: { ...securityHeaders, 'cache-control': 'no-store' },
+        },
+        '/join': {
+          headers: referralJoinHeaders,
+        },
+        '/join/**': {
+          headers: referralJoinHeaders,
         },
         '/mobile-agent-sync': {
           headers: {

@@ -15,10 +15,27 @@ const testState = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111" as string,
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	executionGuards: {} as Record<string, (() => void) | undefined>,
+	geoDecision: {
+		checkedAt: 0,
+		country: "GB",
+		status: "allowed",
+		ttlMs: 60_000,
+	} as
+		| { checkedAt: number; country: string; status: "allowed"; ttlMs: number }
+		| { checkedAt: number; country: string; reason: "jurisdiction" | "proxy"; status: "blocked" }
+		| {
+				checkedAt: number;
+				reason: "invalid_response" | "missing_config" | "missing_ip" | "provider_error";
+				status: "unavailable";
+		  },
 	legalRefetch: vi.fn(),
 	registerReferrer: vi.fn(),
 	setReferrer: vi.fn(),
 	walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
+}));
+
+vi.mock("@/lib/geo/get-referral-action-geo", () => ({
+	getReferralActionGeo: vi.fn(async () => testState.geoDecision),
 }));
 
 vi.mock("@/lib/hyperliquid", async (importOriginal) => {
@@ -27,14 +44,18 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => {
 		...original,
 		useExchange: (method: string, options?: { executionGuard?: () => void }) => {
 			testState.executionGuards[method] = options?.executionGuard;
+			const mutation =
+				method === "setReferrer"
+					? testState.setReferrer
+					: method === "registerReferrer"
+						? testState.registerReferrer
+						: testState.claimRewards;
 			return {
 				isPending: false,
-				mutateAsync:
-					method === "setReferrer"
-						? testState.setReferrer
-						: method === "registerReferrer"
-							? testState.registerReferrer
-							: testState.claimRewards,
+				mutateAsync: async (input: unknown) => {
+					options?.executionGuard?.();
+					return mutation(input);
+				},
 			};
 		},
 		useHyperliquid: () => ({ clientKey: testState.clientKey, env: testState.env }),
@@ -103,6 +124,12 @@ describe("useReferralActions", () => {
 		testState.clientKey = OWNER;
 		testState.env = "Mainnet";
 		testState.executionGuards = {};
+		testState.geoDecision = {
+			checkedAt: Date.now(),
+			country: "GB",
+			status: "allowed",
+			ttlMs: 60_000,
+		};
 		testState.walletAddress = OWNER;
 		testState.claimRewards.mockResolvedValue({ status: "ok" });
 		testState.registerReferrer.mockResolvedValue({ status: "ok" });
@@ -205,6 +232,52 @@ describe("useReferralActions", () => {
 		expect(testState.claimRewards).not.toHaveBeenCalled();
 	});
 
+	it("fails closed when referral location eligibility is unavailable", async () => {
+		testState.geoDecision = { checkedAt: Date.now(), reason: "provider_error", status: "unavailable" };
+		const refetchReferral = vi.fn().mockResolvedValue(createReferralData());
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("apply", "GATU")).rejects.toThrow("Referral location eligibility could not be verified");
+		});
+
+		expect(refetchReferral).toHaveBeenCalledOnce();
+		expect(testState.setReferrer).not.toHaveBeenCalled();
+	});
+
+	it("fails closed at the SDK boundary when the referral geo lease has expired", async () => {
+		testState.geoDecision = {
+			checkedAt: Date.now(),
+			country: "GB",
+			status: "allowed",
+			ttlMs: 0,
+		};
+		const refetchReferral = vi.fn().mockResolvedValue(createReferralData());
+		const hook = renderHook(refetchReferral);
+
+		await act(async () => {
+			await expect(hook.submit("apply", "GATU")).rejects.toThrow(
+				"Referral location eligibility expired before the request could be signed",
+			);
+		});
+
+		expect(testState.setReferrer).not.toHaveBeenCalled();
+	});
+
+	it("uses a monotonic local lease when the wall clock is skewed", async () => {
+		const wallClock = vi.spyOn(Date, "now").mockReturnValue(Number.MAX_SAFE_INTEGER);
+		const before = createReferralData();
+		const after = createReferralData({ referredBy: { code: "GATU", referrer: OWNER } });
+		const hook = renderHook(vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after));
+
+		await act(async () => {
+			await expect(hook.submit("apply", "GATU")).resolves.toBeUndefined();
+		});
+
+		expect(testState.setReferrer).toHaveBeenCalledOnce();
+		wallClock.mockRestore();
+	});
+
 	it("fails closed if the owner changes while fresh referral data is loading", async () => {
 		const referral = deferred<ReferralData>();
 		testState.legalRefetch.mockResolvedValue({
@@ -222,6 +295,23 @@ describe("useReferralActions", () => {
 			renderProbe();
 		});
 		expect(hookValue?.identity.clientKey).toBe(OTHER_OWNER);
+		await act(async () => {
+			referral.resolve(createReferralData());
+			await Promise.resolve();
+		});
+
+		await rejection;
+		expect(testState.setReferrer).not.toHaveBeenCalled();
+	});
+
+	it("fails closed if the referral route unmounts before signing", async () => {
+		const referral = deferred<ReferralData>();
+		const hook = renderHook(() => referral.promise);
+		const submission = hook.submit("apply", "GATU");
+		const rejection = expect(submission).rejects.toThrow("Referral request is no longer active");
+
+		await vi.waitFor(() => expect(testState.legalRefetch).toHaveBeenCalledOnce());
+		act(() => root.render(<QueryClientProvider client={queryClient}>{null}</QueryClientProvider>));
 		await act(async () => {
 			referral.resolve(createReferralData());
 			await Promise.resolve();

@@ -7,12 +7,14 @@ import { useHyperliquid } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	canApplyReferralCode,
+	getGatuReferralUrl,
 	getOfficialReferralUrl,
 	getReferralActivationProgress,
 	getReferralActivationTargetVolume,
 	getReferralCumulativeVolume,
 	type ReferralData,
 } from "@/lib/trade/referral";
+import { isSafeReferralJoinCode } from "@/lib/trade/referral-join";
 
 interface Props {
 	data: ReferralData;
@@ -28,7 +30,13 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 	const linkCopy = useCopyToClipboard();
 	const readyState = data.referrerState.stage === "ready" ? data.referrerState : null;
 	const code = readyState?.data.code ?? null;
-	const referralUrl = code ? getOfficialReferralUrl(code, env) : null;
+	const officialReferralUrl = code ? getOfficialReferralUrl(code, env) : null;
+	const usesGatuInvitationLink = code ? isSafeReferralJoinCode(code) : false;
+	const referralUrl = code
+		? usesGatuInvitationLink
+			? getGatuReferralUrl(code, env)
+			: getOfficialReferralUrl(code, env)
+		: null;
 	const activationProgress = getReferralActivationProgress(data);
 	const activationTarget = getReferralActivationTargetVolume(data);
 	const cumulativeVolume = getReferralCumulativeVolume(data);
@@ -162,7 +170,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 					</div>
 					<div>
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
-							<Trans>Official referral link</Trans>
+							{usesGatuInvitationLink ? <Trans>Gatu invitation link</Trans> : <Trans>Official referral link</Trans>}
 						</p>
 						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-[10px] border border-stroke-weak px-3 py-2">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
@@ -189,16 +197,18 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						>
 							<Trans>Share</Trans>
 						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="sm"
-							className="rounded-[10px]"
-							iconLeft={<ArrowSquareOutIcon />}
-							onClick={() => window.open(referralUrl, "_blank", "noopener,noreferrer")}
-						>
-							<Trans>Open official link</Trans>
-						</Button>
+						{usesGatuInvitationLink ? (
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="sm"
+								className="rounded-[10px]"
+								iconLeft={<ArrowSquareOutIcon />}
+								onClick={() => officialReferralUrl && window.open(officialReferralUrl, "_blank", "noopener,noreferrer")}
+							>
+								<Trans>Open official link</Trans>
+							</Button>
+						) : null}
 					</div>
 				</div>
 			) : null}

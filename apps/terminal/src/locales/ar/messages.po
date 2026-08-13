@@ -891,6 +891,7 @@ msgid "Camera preview for desktop wallet QR"
 msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح المكتب"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2946,6 +2947,10 @@ msgstr "إيداعات CCTP المدعومة برسوم الغاز غير مفع
 #~ msgid "Gas:"
 #~ msgstr "الغاز:"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Gatu invitation link"
+msgstr "رابط دعوة Gatu"
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "توزيع التكوين"
@@ -3295,6 +3300,7 @@ msgstr "لوحة المتصدرين"
 #~ msgstr ""
 
 #: src/components/referrals/referral-activity.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy"
 msgstr "السجل القديم"
 
@@ -5665,6 +5671,11 @@ msgstr "المراجعة مرة أخرى"
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "راجع مفتاح التداول المعتمد من سطح المكتب واستورده. لا حاجة إلى محفظة على الهاتف."
 
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Review invitation"
+msgstr "مراجعة الدعوة"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
 msgstr "مراجعة وصول الهاتف"
@@ -6605,6 +6616,8 @@ msgstr "الدعم"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
 msgstr "مبادلة"
 
@@ -6741,8 +6754,8 @@ msgid "Switch to Mainnet"
 msgstr "التبديل إلى Mainnet"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-msgid "Switch unit"
-msgstr "تبديل الوحدة"
+#~ msgid "Switch unit"
+#~ msgstr "تبديل الوحدة"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7429,6 +7442,7 @@ msgid "Toggle display units"
 msgstr "تبديل وحدات العرض"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Toggle profit and loss unit"
 msgstr "تبديل وحدة الأرباح والخسائر"
 
@@ -8499,6 +8513,10 @@ msgstr "أنت تستلم"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "أنت ترسل"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "You were invited with referral code {initialReferralCode}. Review it before applying."
+msgstr "تمت دعوتك باستخدام رمز الإحالة {initialReferralCode}. راجعه قبل تطبيقه."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"

@@ -1,19 +1,36 @@
-# 部署:单台 EC2 + Caddy
+# 部署:单台 EC2 + Caddy 双域名
 
 gatu 是 TanStack Start + Nitro 的 **SSR 应用**,必须有常驻 Node 进程运行
 `apps/terminal/.output/server/index.mjs`(`node-server` preset 产物,自包含)。
 本目录提供一台 EC2 上的完整部署:
 
 ```
-Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai)
+Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai)
          → 反代 127.0.0.1:3000
-         → systemd gatu.service → node /opt/gatu/current/server/index.mjs
+         → systemd gatu.service → shared referral URI guard → node /opt/gatu/current/server/index.mjs
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
 > 服务端负责首屏 SSR、`getGeo`(IPdata 查询)、脱敏客户端错误接收，以及移动配对 QR 的
 > 60 秒一次性消费登记。移动配对登记只保存随机 `syncId`、随机设备 ID 和过期时间，
 > 不接收或保存 Agent 私钥、QR 密钥、钱包地址。
+
+`app.gatu.ai` 和 `testnet.gatu.ai` 共用同一 Caddy 站点、Node upstream 和 immutable release。
+部署脚本分别检查两个公网 origin，并比对 `/build-meta.json` 中的 commit/release。
+`testnet.gatu.ai` 全站由 Caddy 下发 `X-Robots-Tag: noindex, nofollow`。两个 origin 的
+`/join` 和 `/join/**` 在 Nitro 与 Caddy 双层设为 `Cache-Control: no-store`、
+`Referrer-Policy: no-referrer` 和 `X-Robots-Tag: noindex, nofollow`。
+
+### Privy 与双 origin Agent 隔离
+
+- Privy Dashboard 的 Allowed origins 必须同时精确包含 `https://app.gatu.ai` 和
+  `https://testnet.gatu.ai`，不要使用泛域名代替。
+- 两个域名是不同 browser origin，`localStorage` / `sessionStorage` / Privy 会话不共享。
+  Agent 记录还按 `env + owner` 命名。不得在域名之间复制 Agent 私钥、存储项或钱包会话；
+  每个 origin 都要独立完成精确 owner/environment 校验。
+- 共用 Node upstream 不会合并浏览器 Agent 状态，Caddy 也不会改写 Hyperliquid 网络。
+  开放流量前必须分别确认 `app.gatu.ai` 使用 Mainnet、`testnet.gatu.ai` 使用 Testnet；
+  host/environment 不一致时必须 fail closed，不得继续 Agent 注册或资金操作。
 
 移动配对的一次性消费依赖当前拓扑中的**单个常驻 Node 进程**完成原子判定。进程重启会让
 尚未消费的 QR 安全失效，用户需要重新生成；不会降级为允许导入。若未来扩成多进程、多实例
@@ -40,13 +57,15 @@ IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端
 ## ⚠️ 两类环境变量(最容易踩坑)
 
 - **构建期** `VITE_*`:被 Vite **打进客户端 bundle**(公开)。在 build 的机器上就要设好,改值要**重新 build**。放 `/opt/gatu/shared/.env.local`。
-- **运行期** `IPDATA_API_KEY` / `PORT` / `HOST`:node 进程 `process.env` 读取,服务端私有。放 `/opt/gatu/shared/.env.runtime`,由 systemd 注入。
+- **运行期** `IPDATA_API_KEY` / `PORT` / `HOST` / `GATU_*_PUBLIC_BASE_URL`:node 进程和部署健康检查读取。
+  放 `/opt/gatu/shared/.env.runtime`,由 systemd 注入；两个 public base URL 不是密钥。
 
 ---
 
 ## 0. 前置
 
-- DNS:`app.gatu.ai` 的 A 记录指向 EC2 的 Elastic IP。
+- DNS:`app.gatu.ai` 和 `testnet.gatu.ai` 的 A 记录（使用 IPv6 时还包括 AAAA）
+  均指向同一 EC2 公网地址。
 - 一个 GitHub **只读 Deploy Key**(仓库私有,见第 4 步)。
 
 ## 1. 开 EC2
@@ -118,8 +137,8 @@ sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 # 编辑这两个文件填入真实值：
 #   .env.local   → VITE_PRIVY_APP_ID；移动配对放量时再把对应 gate 设为精确的 "true"
 #   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
-#                  非 app.gatu.ai 部署时，所部署分支还必须同步修改 deploy/Caddyfile
-#                  的站点地址，并设 GATU_PUBLIC_BASE_URL=https://<终端域名>
+#                  GATU_MAINNET_PUBLIC_BASE_URL / GATU_TESTNET_PUBLIC_BASE_URL 保持为
+#                  对应的两个 exact public origin；修改域名时同步修改 deploy/Caddyfile
 sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```
@@ -150,7 +169,7 @@ sudo systemctl enable gatu          # 开机自启（先不 start，等首次 de
 sudo /usr/bin/caddy validate --config /opt/gatu/repo/deploy/Caddyfile --adapter caddyfile
 sudo /usr/bin/install -m 0644 /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo mkdir -p /var/log/caddy && sudo chown caddy:caddy /var/log/caddy
-sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 的证书
+sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 与 testnet.gatu.ai 的证书
 ```
 
 ## 9. 首次部署
@@ -162,7 +181,7 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 脚本会:同步代码 → 验证仓库与已安装 `Caddyfile` 完全一致 → 注入 `.env.local` → `pnpm install` → 构建 → 复制 `.output` 到
 `/opt/gatu/releases/<timestamp>-<commit>` → 合并上一版 `public/assets` 中的 hashed chunks →
 原子切换 `/opt/gatu/current` → `systemctl restart gatu` → Node 直连和 Caddy 公网入口双重健康检查。
-末行打印 `OK — gatu serving on 127.0.0.1:3000 and https://app.gatu.ai (commit …)` 即成功。
+末行打印两个公网 origin、同一 commit/release 与本机 Node 健康检查均通过后才算成功。
 
 构建时脚本会注入完整 Git commit 和 release ID。产物根目录的 `/build-meta.json` 会公开
 `version`、`commit`、`release`、`builtAt`;健康检查会核对它们与本次部署完全一致,避免服务
@@ -181,6 +200,9 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 
 ```bash
 curl -I https://app.gatu.ai          # 期望 200，且证书有效
+curl -I https://testnet.gatu.ai      # 期望 200，且全站 noindex
+curl -I https://app.gatu.ai/join/gatuappweb3
+curl -I https://testnet.gatu.ai/join/gatuappweb3
 curl -fsS https://app.gatu.ai/build-meta.json # 期望 commit/release 与部署日志一致
 asset="$(curl -fsS https://app.gatu.ai/builders-perp | grep -o '/assets/[^"]*\.js' | head -1)"
 curl -I "https://app.gatu.ai${asset}" # 期望 200 且 content-type 为 JavaScript
@@ -276,7 +298,8 @@ sudo systemctl restart gatu
 > 所以刚发布后旧客户端仍能拉到上一版动态 chunk。只有 `restart` 那几秒短暂中断。
 > `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 实际引用的入口 JS、`trade-terminal-page-*.js`,
 > 以及交易页动态引用的 `mobile-terminal-*.js`;任何一个 hashed asset 返回 HTML/500/非 JavaScript
-> 都会失败并尝试回滚到上一个 release。它还会在 Node 直连和 `GATU_PUBLIC_BASE_URL`
+> 都会失败并尝试回滚到上一个 release。它还会在 Node 直连、`GATU_MAINNET_PUBLIC_BASE_URL`
+> 和 `GATU_TESTNET_PUBLIC_BASE_URL`
 > 指向的 Caddy 最终入口核对 TradingView 入口、`sameorigin.html`、入口引用的初始 JS/CSS bundles、
 > MIME、唯一的重验证 Cache-Control，以及缺失 bundle 必须返回非 HTML 的 404。最后读取
 > `/build-meta.json`,确认线上 commit 与 release 就是刚发布的版本；自动回滚后也会精确
@@ -306,6 +329,10 @@ sudo -u gatu mkdir -p /opt/gatu/releases
 sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh test-pr102
 ```
 
+`deploy.sh` 会在第一次重启前把 Referral URI guard 原子安装到
+`/opt/gatu/shared/referral-uri-guard.cjs`。更新并 `daemon-reload` 该 unit 后，不要在首次新版部署前单独重启
+`gatu`；共享 guard 使随后回滚到尚未携带 `/join` 路由的旧 release 也能正常启动。
+
 `deploy.sh` 会拒绝继续运行旧 `WorkingDirectory`,避免再次原地覆盖运行中的 `.output`。
 
 ---
@@ -314,7 +341,9 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh test-pr102
 
 ### CloudFront(CDN,可选)
 Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一层 CloudFront:
-源站指向 `app.gatu.ai`,转发 `Host` 头,仅对 `/assets/*` 走长缓存。当前 Charting Library v28
+两个 distribution 分别指向 `app.gatu.ai` 与 `testnet.gatu.ai`，转发原始 `Host` 头，仅对
+`/assets/*` 走长缓存。`/join/**` 必须 bypass cache 并保留 no-store/no-referrer/noindex。
+当前 Charting Library v28
 在 iPad WebKit 热缓存下可能无法完成初始化,因此 `/charting_library/*` 和
 `/tradingview-theme.css` 必须每次重新验证,其余 SSR 路径不缓存(或极短 TTL)。
 
@@ -371,7 +400,8 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 - [ ] PM 激活和 LI.FI 新 bridge 两个独立 rollout 已决策；未批准的 gate 保持为空
 - [ ] 若关闭 LI.FI 新 bridge，已停止启用版本的流量、盘点在途 route，并验证同标签页刷新恢复和双端新入口隐藏
 - [ ] `.env.runtime`:`IPDATA_API_KEY` 已填(并已**轮换**掉聊天里泄漏过的旧 key)
-- [ ] Privy Dashboard:把 `app.gatu.ai` 加入 Allowed origins
+- [ ] Privy Dashboard:把 `https://app.gatu.ai` 与 `https://testnet.gatu.ai` 都加入 Allowed origins
 - [ ] Builder 地址已充值 ≥100 USDC(否则 builder fee 下单会失败)
-- [ ] DNS `app.gatu.ai` → Elastic IP,HTTPS 证书已签发
-- [ ] `journalctl -u gatu` 无报错,`curl -I https://app.gatu.ai` 返回 200
+- [ ] DNS `app.gatu.ai`、`testnet.gatu.ai` → Elastic IP,两张 HTTPS 证书已签发
+- [ ] `journalctl -u gatu` 无报错,两个域名及两个 `/join/gatuappweb3` 直达均返回 200
+- [ ] 主域始终解析为 Mainnet、Testnet 域始终解析为 Testnet，旧 localStorage 无法覆盖

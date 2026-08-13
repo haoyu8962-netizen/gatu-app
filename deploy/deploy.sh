@@ -18,6 +18,12 @@ SOCIAL_IMAGE_PATH="/gatu-terminal-og-v1.png"
 CHART_LIBRARY_PATH="/charting_library"
 CHART_THEME_PATH="/tradingview-theme.css"
 CHART_CACHE_POLICY="public, max-age=0, must-revalidate"
+REFERRAL_DEEP_LINK_PATH="/join/__gatu_healthcheck__"
+REFERRAL_CACHE_POLICY="no-store"
+REFERRAL_REFERRER_POLICY="no-referrer"
+REFERRAL_ROUTE_MARKER='<meta name="gatu-route" content="referral-join"'
+REFERRAL_RELEASE_CAPABILITY="referral-join-v1"
+NOINDEX_POLICY="noindex, nofollow"
 CURL_CONNECT_TIMEOUT_SECONDS=5
 CURL_MAX_TIME_SECONDS=15
 
@@ -73,15 +79,28 @@ verify_caddy_config() {
 }
 
 verify_systemd_unit() {
-	local workdir
-	workdir="$(systemctl show gatu --property=WorkingDirectory --value 2>/dev/null || true)"
-	if [ -n "$workdir" ] && [ "$workdir" != "$CURRENT" ]; then
-		echo "ERROR: installed gatu.service uses WorkingDirectory=${workdir}, expected ${CURRENT}." >&2
+	local source_unit="${REPO}/deploy/gatu.service"
+	local installed_unit="/etc/systemd/system/gatu.service"
+
+	if ! cmp -s "$source_unit" "$installed_unit"; then
+		echo "ERROR: installed gatu.service does not match ${source_unit}." >&2
 		echo "Install the updated unit first:" >&2
-		echo "  sudo cp ${REPO}/deploy/gatu.service /etc/systemd/system/gatu.service" >&2
+		echo "  sudo install -m 0644 ${source_unit} ${installed_unit}" >&2
 		echo "  sudo systemctl daemon-reload" >&2
 		exit 1
 	fi
+}
+
+install_referral_uri_guard() {
+	local source_guard="${REPO}/deploy/referral-uri-guard.cjs"
+	local installed_guard="${SHARED}/referral-uri-guard.cjs"
+	local temporary_guard="${SHARED}/.referral-uri-guard.cjs.tmp.$$"
+
+	node --check "$source_guard"
+	mkdir -p "$SHARED"
+	cp "$source_guard" "$temporary_guard"
+	chmod 0644 "$temporary_guard"
+	mv -f "$temporary_guard" "$installed_guard"
 }
 
 publish_release() {
@@ -110,12 +129,14 @@ publish_release() {
 	rm -rf "$release_tmp"
 	mkdir -p "$release_tmp"
 	cp -a apps/terminal/.output/. "$release_tmp"/
+	cp deploy/referral-uri-guard.cjs "${release_tmp}/referral-uri-guard.cjs"
 	if [ -n "$previous_release" ] && [ -d "${previous_release}/public/assets" ] && [ -d "${release_tmp}/public/assets" ]; then
 		echo "Carry forward previous hashed assets from ${previous_release}" >&2
 		find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp -n {} "${release_tmp}/public/assets/" \;
 	fi
 	printf '%s\n' "$release_commit" > "${release_tmp}/.gatu-release-commit"
 	printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
+	printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > "${release_tmp}/.gatu-release-capabilities"
 	mv "$release_tmp" "$release_dir"
 
 	ln -sfn "$release_dir" "$current_tmp"
@@ -152,6 +173,52 @@ if (expectedRelease && metadata.release !== expectedRelease) {
 NODE
 }
 
+verify_release_parity() {
+	local first_base_url="$1"
+	local second_base_url="$2"
+	local expected_commit="$3"
+	local expected_release="$4"
+	local tmpdir first_metadata second_metadata
+	tmpdir="$(mktemp -d)"
+	first_metadata="${tmpdir}/first.json"
+	second_metadata="${tmpdir}/second.json"
+
+	if ! fetch_typed_asset "$first_base_url" "/build-meta.json" "$tmpdir" "application/json" "Build metadata"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	cp "${tmpdir}/body" "$first_metadata"
+	if ! fetch_typed_asset "$second_base_url" "/build-meta.json" "$tmpdir" "application/json" "Build metadata"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	cp "${tmpdir}/body" "$second_metadata"
+
+	if ! node - "$first_metadata" "$second_metadata" "$expected_commit" "$expected_release" <<'NODE'
+const fs = require("node:fs");
+const [firstFile, secondFile, expectedCommit, expectedRelease] = process.argv.slice(2);
+const first = JSON.parse(fs.readFileSync(firstFile, "utf8"));
+const second = JSON.parse(fs.readFileSync(secondFile, "utf8"));
+
+for (const field of ["commit", "release"]) {
+	if (first[field] !== second[field]) {
+		throw new Error(`Public origins disagree on ${field}: ${first[field]} !== ${second[field]}`);
+	}
+}
+if (first.commit !== expectedCommit || first.release !== expectedRelease) {
+	throw new Error(
+		`Public origins serve ${first.commit}/${first.release}, expected ${expectedCommit}/${expectedRelease}`,
+	);
+}
+NODE
+	then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	rm -rf "$tmpdir"
+}
+
 load_release_identity() {
 	local release_dir="$1"
 	local release_commit_file="${release_dir}/.gatu-release-commit"
@@ -160,6 +227,7 @@ load_release_identity() {
 
 	rollback_expected_commit=""
 	rollback_expected_release=""
+	rollback_require_referral_join="false"
 	if [ -z "$release_dir" ] || [ ! -d "$release_dir" ]; then
 		return 1
 	fi
@@ -172,6 +240,9 @@ load_release_identity() {
 			rollback_expected_commit=""
 			rollback_expected_release=""
 			return 1
+		fi
+		if grep -Fxq "$REFERRAL_RELEASE_CAPABILITY" "${release_dir}/.gatu-release-capabilities" 2>/dev/null; then
+			rollback_require_referral_join="true"
 		fi
 		return 0
 	fi
@@ -246,6 +317,26 @@ if (values.length !== 1 || values[0].toLowerCase() !== expectedValue.toLowerCase
 NODE
 }
 
+verify_exact_http_status() {
+	local headers="$1"
+	local expected_status="$2"
+	local asset_label="$3"
+
+	node - "$headers" "$expected_status" "$asset_label" <<'NODE'
+const fs = require("node:fs");
+const [file, expectedStatus, assetLabel] = process.argv.slice(2);
+const statuses = fs
+	.readFileSync(file, "utf8")
+	.split(/\r?\n/)
+	.map((line) => /^HTTP\/\S+\s+(\d{3})\b/i.exec(line)?.[1])
+	.filter(Boolean);
+
+if (statuses.length === 0 || statuses.at(-1) !== expectedStatus) {
+	throw new Error(`${assetLabel} must return HTTP ${expectedStatus}; received ${JSON.stringify(statuses)}`);
+}
+NODE
+}
+
 fetch_revalidated_asset() {
 	local base_url="$1"
 	local path="$2"
@@ -257,6 +348,58 @@ fetch_revalidated_asset() {
 		return 1
 	fi
 	verify_single_header_value "${tmpdir}/headers" "cache-control" "$CHART_CACHE_POLICY" "$asset_label"
+}
+
+verify_referral_deep_link() {
+	local base_url="$1"
+	local tmpdir="$2"
+	local html_file="${tmpdir}/referral-deep-link.html"
+	local entry_asset
+
+	if ! fetch_typed_asset "$base_url" "$REFERRAL_DEEP_LINK_PATH" "$tmpdir" "text/html" "Referral deep link"; then
+		return 1
+	fi
+	verify_exact_http_status "${tmpdir}/headers" "200" "Referral deep link" || return 1
+	verify_single_header_value "${tmpdir}/headers" "cache-control" "$REFERRAL_CACHE_POLICY" "Referral deep link" || return 1
+	verify_single_header_value "${tmpdir}/headers" "referrer-policy" "$REFERRAL_REFERRER_POLICY" "Referral deep link" || return 1
+	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Referral deep link" || return 1
+	cp "${tmpdir}/body" "$html_file"
+	if ! grep -aFq "$REFERRAL_ROUTE_MARKER" "$html_file"; then
+		echo "ERROR: referral deep link did not render the referral route marker." >&2
+		return 1
+	fi
+	entry_asset="$(extract_first_js_asset "$html_file" || true)"
+	if [ -z "$entry_asset" ]; then
+		echo "ERROR: referral deep link did not reference a client JavaScript asset." >&2
+		return 1
+	fi
+	fetch_js_asset "$base_url" "$entry_asset" "$tmpdir"
+}
+
+verify_malformed_referral_deep_link() {
+	local base_url="$1"
+	local tmpdir="$2"
+	local malformed_path="/join/%"
+	local status
+
+	status="$(curl_with_deadline --path-as-is -sS -D "${tmpdir}/headers" -o "${tmpdir}/body" -w '%{http_code}' "${base_url}${malformed_path}")" || true
+	if [ "$status" != "404" ]; then
+		echo "ERROR: malformed referral deep link must return 404, received ${status:-request failure}." >&2
+		return 1
+	fi
+	verify_single_header_value "${tmpdir}/headers" "cache-control" "$REFERRAL_CACHE_POLICY" "Malformed referral deep link" || return 1
+	verify_single_header_value "${tmpdir}/headers" "referrer-policy" "$REFERRAL_REFERRER_POLICY" "Malformed referral deep link" || return 1
+	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Malformed referral deep link"
+}
+
+verify_sitewide_noindex() {
+	local base_url="$1"
+	local tmpdir="$2"
+
+	if ! fetch_typed_asset "$base_url" "/builders-perp" "$tmpdir" "text/html" "Testnet application page"; then
+		return 1
+	fi
+	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Testnet application page"
 }
 
 extract_asset() {
@@ -403,6 +546,7 @@ health_check() {
 	local expected_commit="${2:-}"
 	local expected_release="${3:-}"
 	local require_chart_delivery="${4:-true}"
+	local require_referral_join="${5:-true}"
 	local base_url="http://127.0.0.1:${port}"
 	local tmpdir html_file trade_file entry_asset trade_asset
 	tmpdir="$(mktemp -d)"
@@ -421,7 +565,9 @@ health_check() {
 					fi
 					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir" &&
 						fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image" &&
-						verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release"; then
+						verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release" &&
+							{ [ "$require_referral_join" != "true" ] || verify_referral_deep_link "$base_url" "$tmpdir"; } &&
+							{ [ "$require_referral_join" != "true" ] || verify_malformed_referral_deep_link "$base_url" "$tmpdir"; }; then
 						if [ "$require_chart_delivery" = "true" ] && ! verify_chart_delivery "$base_url" "$tmpdir"; then
 							rm -rf "$tmpdir"
 							return 1
@@ -444,12 +590,17 @@ edge_health_check() {
 	local base_url="$1"
 	local expected_commit="$2"
 	local expected_release="$3"
+	local require_sitewide_noindex="${4:-false}"
+	local require_referral_join="${5:-true}"
 	local tmpdir
 
 	for _ in $(seq 1 30); do
 		tmpdir="$(mktemp -d)"
 		if verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release" &&
-			verify_chart_delivery "$base_url" "$tmpdir"; then
+			verify_chart_delivery "$base_url" "$tmpdir" &&
+			{ [ "$require_referral_join" != "true" ] || verify_referral_deep_link "$base_url" "$tmpdir"; } &&
+			{ [ "$require_referral_join" != "true" ] || verify_malformed_referral_deep_link "$base_url" "$tmpdir"; } &&
+			{ [ "$require_sitewide_noindex" != "true" ] || verify_sitewide_noindex "$base_url" "$tmpdir"; }; then
 			rm -rf "$tmpdir"
 			return 0
 		fi
@@ -478,6 +629,7 @@ git reset --hard "origin/${BRANCH}"
 
 echo "==> [2/8] Verify package manager and systemd unit"
 ensure_pnpm
+install_referral_uri_guard
 verify_systemd_unit
 verify_caddy_config
 
@@ -499,6 +651,7 @@ echo "==> [6/8] Publish immutable release"
 previous_release="$(readlink -f "$CURRENT" 2>/dev/null || true)"
 rollback_expected_commit=""
 rollback_expected_release=""
+rollback_require_referral_join="false"
 load_release_identity "$previous_release" || true
 new_release="$(publish_release "$previous_release" "$release_name" "$build_commit")"
 echo "Published ${new_release}"
@@ -513,19 +666,30 @@ fi
 echo "==> [8/8] Health check"
 set -a; . "$SHARED/.env.runtime" 2>/dev/null || true; set +a
 PORT="${PORT:-3000}"
-GATU_PUBLIC_BASE_URL="${GATU_PUBLIC_BASE_URL:-https://app.gatu.ai}"
+GATU_MAINNET_PUBLIC_BASE_URL="${GATU_MAINNET_PUBLIC_BASE_URL:-https://app.gatu.ai}"
+GATU_TESTNET_PUBLIC_BASE_URL="${GATU_TESTNET_PUBLIC_BASE_URL:-https://testnet.gatu.ai}"
+GATU_MAINNET_PUBLIC_BASE_URL="${GATU_MAINNET_PUBLIC_BASE_URL%/}"
+GATU_TESTNET_PUBLIC_BASE_URL="${GATU_TESTNET_PUBLIC_BASE_URL%/}"
+if [ "$GATU_MAINNET_PUBLIC_BASE_URL" = "$GATU_TESTNET_PUBLIC_BASE_URL" ]; then
+	echo "ERROR: mainnet and testnet public base URLs must be distinct." >&2
+	exit 1
+fi
 if health_check "$PORT" "$build_commit" "$release_name" &&
-	edge_health_check "$GATU_PUBLIC_BASE_URL" "$build_commit" "$release_name"; then
+	edge_health_check "$GATU_MAINNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" &&
+	edge_health_check "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" true &&
+	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name"; then
 	cleanup_old_releases
-	echo "OK — gatu serving on 127.0.0.1:${PORT} and ${GATU_PUBLIC_BASE_URL} (commit $(git rev-parse --short HEAD), release $(basename "$new_release"))"
+	echo "OK — gatu serving release $(basename "$new_release") on 127.0.0.1:${PORT}, ${GATU_MAINNET_PUBLIC_BASE_URL}, and ${GATU_TESTNET_PUBLIC_BASE_URL} (commit $(git rev-parse --short HEAD))"
 	exit 0
 fi
 
 echo "HEALTH CHECK FAILED — attempting rollback." >&2
 if [ -n "$rollback_expected_release" ] &&
 	rollback_to_release "$previous_release" &&
-	health_check "$PORT" "$rollback_expected_commit" "$rollback_expected_release" false &&
-	edge_health_check "$GATU_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release"; then
+	health_check "$PORT" "$rollback_expected_commit" "$rollback_expected_release" false "$rollback_require_referral_join" &&
+	edge_health_check "$GATU_MAINNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release" false "$rollback_require_referral_join" &&
+	edge_health_check "$GATU_TESTNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release" true "$rollback_require_referral_join" &&
+	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release"; then
 	echo "ROLLBACK OK — restored $(basename "$previous_release"). Inspect: journalctl -u gatu -n 100" >&2
 	exit 1
 fi

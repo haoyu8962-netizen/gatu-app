@@ -3,6 +3,7 @@ import {
 	buildReferralRewardRows,
 	canApplyReferralCode,
 	getDisplayedReferralDiscountPercent,
+	getGatuReferralUrl,
 	getOfficialReferralUrl,
 	getReferralActivationProgress,
 	getReferralActivationTargetVolume,
@@ -316,6 +317,11 @@ describe("referral display derivations", () => {
 	it("builds environment-specific official referral links", () => {
 		expect(getOfficialReferralUrl("GATU code", "Mainnet")).toBe("https://app.hyperliquid.xyz/join/GATU%20code");
 		expect(getOfficialReferralUrl("GATU code", "Testnet")).toBe("https://app.hyperliquid-testnet.xyz/join/GATU%20code");
+	});
+
+	it("builds environment-specific Gatu invitation links from canonical origins", () => {
+		expect(getGatuReferralUrl("GATU code", "Mainnet")).toBe("https://app.gatu.ai/join/GATU%20code");
+		expect(getGatuReferralUrl("GATU code", "Testnet")).toBe("https://testnet.gatu.ai/join/GATU%20code");
 	});
 
 	it("validates only the SDK code length contract", () => {

@@ -895,6 +895,7 @@ msgid "Camera preview for desktop wallet QR"
 msgstr "桌面钱包二维码的相机预览"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2963,6 +2964,10 @@ msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
 #~ msgid "Gas:"
 #~ msgstr "Gas:"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Gatu invitation link"
+msgstr "Gatu 邀请链接"
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "创世分配"
@@ -3312,6 +3317,7 @@ msgstr "排行榜"
 #~ msgstr ""
 
 #: src/components/referrals/referral-activity.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy"
 msgstr "旧版记录"
 
@@ -5686,6 +5692,11 @@ msgstr "重新检查"
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "检查并导入桌面端已授权的交易密钥。无需手机钱包。"
 
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Review invitation"
+msgstr "检查邀请"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
 msgstr "检查手机访问权限"
@@ -6626,6 +6637,8 @@ msgstr "支持"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
 msgstr "兑换"
 
@@ -6762,8 +6775,8 @@ msgid "Switch to Mainnet"
 msgstr "切换至主网"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-msgid "Switch unit"
-msgstr "切换单位"
+#~ msgid "Switch unit"
+#~ msgstr "切换单位"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7454,6 +7467,7 @@ msgid "Toggle display units"
 msgstr "切换显示单位"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Toggle profit and loss unit"
 msgstr "切换盈亏单位"
 
@@ -8524,6 +8538,10 @@ msgstr "您将收到"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "您将发送"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "You were invited with referral code {initialReferralCode}. Review it before applying."
+msgstr "您通过推荐码 {initialReferralCode} 收到了邀请。应用前请先检查。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"

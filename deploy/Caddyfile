@@ -1,14 +1,27 @@
-# /etc/caddy/Caddyfile — gatu single-host reverse proxy + automatic HTTPS.
+# /etc/caddy/Caddyfile — gatu dual-origin reverse proxy + automatic HTTPS.
 #
-# Caddy obtains and renews a Let's Encrypt certificate for this domain
+# Caddy obtains and renews Let's Encrypt certificates for both domains
 # automatically. Requirements:
-#   - DNS A record  app.gatu.ai → this host's public IP
+#   - DNS A/AAAA records for app.gatu.ai and testnet.gatu.ai → this host
 #   - inbound ports 80 and 443 open in the security group
 #
-# Replace the domain below if you serve on a different hostname.
+# Both origins intentionally share one application upstream and immutable release.
 
-app.gatu.ai {
+app.gatu.ai, testnet.gatu.ai {
 	encode zstd gzip
+
+	# Referral landing paths may contain user-controlled codes. Never cache them,
+	# leak them through Referer, or let search engines index them.
+	@referral_join path /join /join/*
+	header @referral_join {
+		>Cache-Control "no-store"
+		>Referrer-Policy "no-referrer"
+		>X-Robots-Tag "noindex, nofollow"
+	}
+
+	# The testnet origin is operational infrastructure, not a search result.
+	@testnet host testnet.gatu.ai
+	header @testnet >X-Robots-Tag "noindex, nofollow"
 
 	# The application build assets are content-hashed and safe to cache indefinitely.
 	@immutable path /assets/*
@@ -44,7 +57,6 @@ app.gatu.ai {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
 	}
 

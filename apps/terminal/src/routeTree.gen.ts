@@ -29,6 +29,8 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
+import { Route as JoinSplatRouteImport } from './routes/join.$'
+import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as TradeIndexRouteImport } from './routes/trade.index'
 import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
 import { Route as TradeBaseQuoteRouteImport } from './routes/trade.$base.$quote'
@@ -133,6 +135,16 @@ const BuildersPerpDexRoute = BuildersPerpDexRouteImport.update({
   path: '/$dex',
   getParentRoute: () => BuildersPerpRoute,
 } as any)
+const JoinSplatRoute = JoinSplatRouteImport.update({
+  id: '/join/$',
+  path: '/join/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinCodeRoute = JoinCodeRouteImport.update({
+  id: '/join/$code',
+  path: '/join/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradeIndexRoute = TradeIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -169,6 +181,8 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/join/$': typeof JoinSplatRoute
+  '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
@@ -192,6 +206,8 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/join/$': typeof JoinSplatRoute
+  '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp': typeof BuildersPerpIndexRoute
   '/trade': typeof TradeIndexRoute
@@ -218,6 +234,8 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/join/$': typeof JoinSplatRoute
+  '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
@@ -245,6 +263,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/builders-perp/$dex'
+    | '/join/$'
+    | '/join/$code'
     | '/trade/$symbol'
     | '/builders-perp/'
     | '/trade/'
@@ -268,6 +288,8 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/builders-perp/$dex'
+    | '/join/$'
+    | '/join/$code'
     | '/trade/$symbol'
     | '/builders-perp'
     | '/trade'
@@ -293,6 +315,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/builders-perp/$dex'
+    | '/join/$'
+    | '/join/$code'
     | '/trade/$symbol'
     | '/builders-perp/'
     | '/trade/'
@@ -318,6 +342,8 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   TradeRoute: typeof TradeRouteWithChildren
+  JoinSplatRoute: typeof JoinSplatRoute
+  JoinCodeRoute: typeof JoinCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -462,6 +488,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuildersPerpDexRouteImport
       parentRoute: typeof BuildersPerpRoute
     }
+    '/join/$': {
+      id: '/join/$'
+      path: '/join/$'
+      fullPath: '/join/$'
+      preLoaderRoute: typeof JoinSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/$code': {
+      id: '/join/$code'
+      path: '/join/$code'
+      fullPath: '/join/$code'
+      preLoaderRoute: typeof JoinCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trade/': {
       id: '/trade/'
       path: '/'
@@ -533,6 +573,8 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   TradeRoute: TradeRouteWithChildren,
+  JoinSplatRoute: JoinSplatRoute,
+  JoinCodeRoute: JoinCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

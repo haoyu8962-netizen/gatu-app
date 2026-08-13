@@ -9,6 +9,10 @@ function readReferralComponent(file: string): string {
 	return readFileSync(resolve(TEST_DIR, "../..", `components/referrals/${file}`), "utf8");
 }
 
+function readTerminalSource(file: string): string {
+	return readFileSync(resolve(TEST_DIR, "../..", file), "utf8");
+}
+
 describe("referral 18C and 18D visual contract", () => {
 	it("keeps every data state inside one compact responsive surface", () => {
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
@@ -77,5 +81,25 @@ describe("referral 18C and 18D visual contract", () => {
 		expect(actionModal).toContain("min-[1001px]:rounded-[16px]");
 		expect(actionModal).toContain('handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-fill/30"');
 		expect(actionModal).toContain("dismissible={!isSubmitting}");
+	});
+
+	it("remounts referral state when a deep-linked code changes", () => {
+		const page = readReferralComponent("referrals-page.tsx");
+		const dashboard = readReferralComponent("referral-dashboard.tsx");
+		const actionModal = readTerminalSource("components/referrals/referral-action-modal.tsx");
+		const joinRoute = readTerminalSource("routes/join.$code.tsx");
+		const joinFallback = readTerminalSource("routes/join.$.tsx");
+		const viteConfig = readTerminalSource("../vite.config.ts");
+
+		expect(page).toContain('key={initialReferralCode ?? "referrals"}');
+		expect(dashboard).toContain('requestAction("apply", initialReferralCode)');
+		expect(actionModal).toContain('const isReferralCodeLocked = action === "apply" && initialCode !== undefined;');
+		expect(joinRoute).toContain("remountDeps: ({ params }) => ({ code: params.code })");
+		expect(joinRoute).toContain("if (!isSafeReferralJoinCode(params.code)) throw notFound()");
+		expect(joinRoute).toContain('{ name: "gatu-route", content: "referral-join" }');
+		expect(joinRoute).not.toContain("ssr: false");
+		expect(joinFallback).toContain("throw notFound()");
+		expect(viteConfig).toContain("name: 'gatu-referral-join-dev-request-guard'");
+		expect(viteConfig).toContain("decodeURI(pathname)");
 	});
 });

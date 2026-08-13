@@ -891,6 +891,7 @@ msgid "Camera preview for desktop wallet QR"
 msgstr "डेस्कटॉप वॉलेट QR के लिए कैमरा प्रीव्यू"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2946,6 +2947,10 @@ msgstr "इस नेटवर्क के लिए गैस-प्राय�
 #~ msgid "Gas:"
 #~ msgstr "गैस:"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Gatu invitation link"
+msgstr "Gatu आमंत्रण लिंक"
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "जेनेसिस वितरण"
@@ -3295,6 +3300,7 @@ msgstr "लीडरबोर्ड"
 #~ msgstr ""
 
 #: src/components/referrals/referral-activity.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy"
 msgstr "पुराना रिकॉर्ड"
 
@@ -5665,6 +5671,11 @@ msgstr "फिर से समीक्षा करें"
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "डेस्कटॉप से स्वीकृत ट्रेडिंग कुंजी की समीक्षा करें और आयात करें। फ़ोन वॉलेट की आवश्यकता नहीं है।"
 
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Review invitation"
+msgstr "आमंत्रण की समीक्षा करें"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
 msgstr "फ़ोन एक्सेस की समीक्षा करें"
@@ -6605,6 +6616,8 @@ msgstr "सहायता"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
 msgstr "स्वैप"
 
@@ -6741,8 +6754,8 @@ msgid "Switch to Mainnet"
 msgstr "Mainnet पर स्विच करें"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-msgid "Switch unit"
-msgstr "इकाई बदलें"
+#~ msgid "Switch unit"
+#~ msgstr "इकाई बदलें"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7429,6 +7442,7 @@ msgid "Toggle display units"
 msgstr "प्रदर्शन इकाइयाँ बदलें"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Toggle profit and loss unit"
 msgstr "लाभ और हानि इकाई बदलें"
 
@@ -8499,6 +8513,10 @@ msgstr "आपको प्राप्त होगा"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "आप भेजते हैं"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "You were invited with referral code {initialReferralCode}. Review it before applying."
+msgstr "आपको रेफ़रल कोड {initialReferralCode} के साथ आमंत्रित किया गया है। इसे लागू करने से पहले समीक्षा करें।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"

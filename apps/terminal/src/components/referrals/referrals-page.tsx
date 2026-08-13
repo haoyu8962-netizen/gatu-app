@@ -12,7 +12,11 @@ import { ReferralDashboard } from "./referral-dashboard";
 const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
 const GlobalModals = createLazyComponent(() => import("../trade/components/global-modals"), "GlobalModals");
 
-export function ReferralsPage() {
+interface Props {
+	initialReferralCode?: string;
+}
+
+export function ReferralsPage({ initialReferralCode }: Props) {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 
@@ -36,7 +40,7 @@ export function ReferralsPage() {
 				)}
 
 				<main className="mx-auto w-full max-w-[1440px] py-5 min-[1001px]:px-10 min-[1001px]:py-6">
-					<ReferralDashboard />
+					<ReferralDashboard key={initialReferralCode ?? "referrals"} initialReferralCode={initialReferralCode} />
 				</main>
 
 				{!isMobile ? (

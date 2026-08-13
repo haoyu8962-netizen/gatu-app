@@ -891,6 +891,7 @@ msgid "Camera preview for desktop wallet QR"
 msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/referrals/referral-action-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2946,6 +2947,10 @@ msgstr "Les dépôts CCTP avec frais de gaz sponsorisés ne sont pas activés po
 #~ msgid "Gas:"
 #~ msgstr "Gas :"
 
+#: src/components/referrals/referral-code-card.tsx
+msgid "Gatu invitation link"
+msgstr "Lien d’invitation Gatu"
+
 #: src/config/account-ledger.ts
 msgid "Genesis Distribution"
 msgstr "Distribution initiale"
@@ -3295,6 +3300,7 @@ msgstr "Classement"
 #~ msgstr ""
 
 #: src/components/referrals/referral-activity.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Legacy"
 msgstr "Historique"
 
@@ -5665,6 +5671,11 @@ msgstr "Examiner à nouveau"
 msgid "Review and import the desktop-approved trading key. No phone wallet is required."
 msgstr "Examinez et importez la clé de trading approuvée sur ordinateur. Aucun portefeuille sur téléphone n'est requis."
 
+#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-dashboard.tsx
+msgid "Review invitation"
+msgstr "Examiner l’invitation"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review phone access"
 msgstr "Examiner l'accès téléphone"
@@ -6605,6 +6616,8 @@ msgstr "Support"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
 msgstr "Échanger"
 
@@ -6741,8 +6754,8 @@ msgid "Switch to Mainnet"
 msgstr "Passer sur le Mainnet"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-msgid "Switch unit"
-msgstr "Changer d'unité"
+#~ msgid "Switch unit"
+#~ msgstr "Changer d'unité"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7429,6 +7442,7 @@ msgid "Toggle display units"
 msgstr "Changer les unités d'affichage"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Toggle profit and loss unit"
 msgstr "Changer l'unité des profits et pertes"
 
@@ -8499,6 +8513,10 @@ msgstr "Vous recevez"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "You send"
 msgstr "Vous envoyez"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "You were invited with referral code {initialReferralCode}. Review it before applying."
+msgstr "Vous avez été invité avec le code de parrainage {initialReferralCode}. Examinez-le avant de l’appliquer."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
