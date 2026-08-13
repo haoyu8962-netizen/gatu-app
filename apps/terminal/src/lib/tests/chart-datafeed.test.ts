@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDatafeed } from "@/components/trade/chart/datafeed";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { getChartMarketKeys, getChartMarketLookupKey, getChartSymbolInfo } from "@/lib/chart/market-symbol";
+import { resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore } from "@/lib/chart/store";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { Bar, LibrarySymbolInfo, ResolutionString } from "@/types/charting_library";
@@ -45,7 +46,7 @@ function getMarketSymbolResolver(market: UnifiedMarketInfo) {
 describe("TradingView datafeed", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		infoClient.candleSnapshot.mockReset();
+		infoClient.candleSnapshot.mockReset().mockResolvedValue([]);
 		infoClient.allMids.mockResolvedValue({});
 		infoClient.meta.mockResolvedValue({ universe: [] });
 		subscriptionClient.unsubscribe.mockResolvedValue(undefined);
@@ -284,11 +285,10 @@ describe("TradingView datafeed", () => {
 	});
 
 	it("returns older bars when the requested range is empty but older candles exist", async () => {
-		const dayMs = 24 * 60 * 60 * 1000;
-		const olderBarTime = Date.UTC(2026, 4, 25, 14);
-		const previousBarTime = Date.UTC(2026, 4, 26, 14);
 		const recentFromSeconds = Date.UTC(2026, 5, 27) / 1000;
 		const recentToSeconds = Date.UTC(2026, 5, 28) / 1000;
+		const olderBarTime = recentFromSeconds * 1_000 - 2 * 60 * 60 * 1_000;
+		const previousBarTime = recentFromSeconds * 1_000 - 60 * 60 * 1_000;
 		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([
 			{
 				T: olderBarTime + 3_599_999,
@@ -353,7 +353,7 @@ describe("TradingView datafeed", () => {
 			expect.objectContaining({
 				coin: "@235",
 				interval: "1h",
-				startTime: recentFromSeconds * 1000 - 180 * dayMs,
+				startTime: 0,
 				endTime: recentFromSeconds * 1000,
 			}),
 			expect.any(AbortSignal),
@@ -364,7 +364,7 @@ describe("TradingView datafeed", () => {
 		vi.useRealTimers();
 	});
 
-	it("backfills a partial first response, deduplicates by time, and keeps the latest countBack bars", async () => {
+	it("backfills a partial non-initial response, deduplicates by time, and keeps the latest countBack bars", async () => {
 		const dayMs = 24 * 60 * 60 * 1000;
 		const nowMs = Date.UTC(2026, 5, 28);
 		const fromMs = nowMs - dayMs;
@@ -462,7 +462,7 @@ describe("TradingView datafeed", () => {
 			datafeed.getBars(
 				symbol,
 				"60" as ResolutionString,
-				{ countBack: 4, firstDataRequest: true, from: fromMs / 1_000, to: nowMs / 1_000 },
+				{ countBack: 4, firstDataRequest: false, from: fromMs / 1_000, to: nowMs / 1_000 },
 				(bars) => resolve(bars),
 				reject,
 			);
@@ -473,7 +473,7 @@ describe("TradingView datafeed", () => {
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
 		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
 			2,
-			expect.objectContaining({ startTime: fromMs - 180 * dayMs, endTime: fromMs }),
+			expect.objectContaining({ startTime: fromMs - 100 * 60 * 60 * 1_000, endTime: fromMs }),
 			expect.any(AbortSignal),
 		);
 		expect(bars.map((bar) => bar.time)).toEqual([duplicateTime, previousTime, currentTimeA, currentTimeB]);
@@ -526,10 +526,10 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
-	it("does not backfill old historical gaps with unrelated earlier bars", async () => {
+	it("proves exhaustion before setting noData on a non-initial historical request", async () => {
 		const oldFromSeconds = Date.UTC(2026, 4, 1) / 1000;
 		const oldToSeconds = Date.UTC(2026, 4, 2) / 1000;
-		infoClient.candleSnapshot.mockResolvedValueOnce([]);
+		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
@@ -544,7 +544,7 @@ describe("TradingView datafeed", () => {
 			datafeed.getBars(
 				symbol,
 				"60" as ResolutionString,
-				{ countBack: 100, firstDataRequest: true, from: oldFromSeconds, to: oldToSeconds },
+				{ countBack: 100, firstDataRequest: false, from: oldFromSeconds, to: oldToSeconds },
 				(bars, meta) => resolve({ bars, meta }),
 				reject,
 			);
@@ -552,7 +552,15 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 		const result = await resultPromise;
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				startTime: 0,
+				endTime: oldFromSeconds * 1_000,
+			}),
+			expect.any(AbortSignal),
+		);
 		expect(result.bars).toEqual([]);
 		expect(result.meta).toEqual({ noData: true });
 
@@ -799,20 +807,80 @@ describe("TradingView datafeed", () => {
 		expect(onResult).toHaveBeenCalledWith([]);
 	});
 
-	it("returns configuration and server time asynchronously", async () => {
+	it("does not advertise server time when only the browser clock is available", async () => {
 		const datafeed = createDatafeed();
 		const onReady = vi.fn();
-		const onServerTime = vi.fn();
 		vi.useFakeTimers();
 
 		datafeed.onReady(onReady);
-		datafeed.getServerTime?.(onServerTime);
 
 		expect(onReady).not.toHaveBeenCalled();
-		expect(onServerTime).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(0);
-		expect(onReady).toHaveBeenCalledTimes(1);
-		expect(onServerTime).toHaveBeenCalledTimes(1);
+		expect(onReady).toHaveBeenCalledWith(expect.objectContaining({ supports_time: false }));
+		expect(datafeed.getServerTime).toBeUndefined();
+	});
+
+	it("declares direct minute and daily bars while delegating calendar weekly and monthly bars", async () => {
+		const dailyTime = Date.UTC(2026, 7, 10);
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: dailyTime + 86_399_999,
+				c: "40",
+				h: "42",
+				i: "1d",
+				l: "38",
+				n: 1,
+				o: "39",
+				s: "HYPE",
+				t: dailyTime,
+				v: "10",
+			},
+		]);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "HYPE" ? { name: "HYPE-USDC", ticker: "HYPE", description: "HYPE-USDC", pricescale: 100 } : undefined,
+		});
+
+		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
+
+		expect(symbol).toEqual(
+			expect.objectContaining({
+				has_intraday: true,
+				intraday_multipliers: ["1", "3", "5", "15", "30", "60", "120", "240", "480", "720"],
+				has_daily: true,
+				daily_multipliers: ["1"],
+				has_weekly_and_monthly: false,
+			}),
+		);
+		expect(resolutionToInterval("1D" as ResolutionString)).toBe("1d");
+		expect(resolutionToInterval("1W" as ResolutionString)).toBeUndefined();
+		expect(resolutionToInterval("1M" as ResolutionString)).toBeUndefined();
+
+		await new Promise<void>((resolve, reject) => {
+			datafeed.getBars(
+				symbol,
+				"1D" as ResolutionString,
+				{ countBack: 1, firstDataRequest: true, from: dailyTime / 1_000, to: dailyTime / 1_000 + 86_400 },
+				() => resolve(),
+				reject,
+			);
+		});
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({ coin: "HYPE", interval: "1d" }),
+			expect.any(AbortSignal),
+		);
+
+		vi.useFakeTimers();
+		datafeed.subscribeBars(symbol, "1D" as ResolutionString, vi.fn(), "daily-listener", vi.fn());
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(subscriptionClient.candle).toHaveBeenCalledWith(
+			{ coin: "HYPE", interval: "1d" },
+			expect.any(Function),
+			expect.objectContaining({ onError: expect.any(Function) }),
+		);
+		datafeed.unsubscribeBars("daily-listener");
+		await vi.advanceTimersByTimeAsync(5_000);
 	});
 
 	it("invalidates realtime caches before requesting a TradingView data reset", async () => {
@@ -839,7 +907,7 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(5_000);
 	});
 
-	it("performs at most one fallback request when the first range is empty", async () => {
+	it("uses one exhaustive fallback when the first range is empty", async () => {
 		const nowMs = Date.UTC(2026, 7, 11, 12);
 		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 		const datafeed = createDatafeed({
@@ -866,6 +934,80 @@ describe("TradingView datafeed", () => {
 		expect(onResult).toHaveBeenCalledWith([], { noData: true });
 		expect(onError).not.toHaveBeenCalled();
 		datafeed.destroy();
+	});
+
+	it("sets noData only after an empty fallback reaches the start of history", async () => {
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "EMPTY"
+					? { name: "EMPTY-USDC", ticker: "EMPTY", description: "EMPTY-USDC", pricescale: 100 }
+					: undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "EMPTY");
+		vi.useFakeTimers();
+		const onResult = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"1" as ResolutionString,
+			{ countBack: 1, firstDataRequest: false, from: 30, to: 60 },
+			onResult,
+			vi.fn(),
+		);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({ startTime: 0, endTime: 30_000 }),
+			expect.any(AbortSignal),
+		);
+		expect(onResult).toHaveBeenCalledWith([], { noData: true });
+	});
+
+	it("caps a countBack fallback at Hyperliquid's 5,000-candle history limit", async () => {
+		const nowMs = Date.UTC(2026, 7, 11, 12);
+		const mainBarTime = nowMs - 30_000;
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: mainBarTime + 59_999,
+				c: "20",
+				h: "20",
+				i: "1m",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "LIMIT",
+				t: mainBarTime,
+				v: "1",
+			},
+		]);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "LIMIT"
+					? { name: "LIMIT-USDC", ticker: "LIMIT", description: "LIMIT-USDC", pricescale: 100 }
+					: undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "LIMIT");
+		vi.useFakeTimers({ now: nowMs });
+
+		datafeed.getBars(
+			symbol,
+			"1" as ResolutionString,
+			{ countBack: 10_000, firstDataRequest: true, from: nowMs / 1_000 - 60, to: nowMs / 1_000 + 60 },
+			vi.fn(),
+			vi.fn(),
+		);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				startTime: nowMs - 60_000 - 4_999 * 60_000,
+				endTime: nowMs - 60_000,
+			}),
+			expect.any(AbortSignal),
+		);
 	});
 
 	it("isolates historical cache bars from TradingView callback mutation", async () => {

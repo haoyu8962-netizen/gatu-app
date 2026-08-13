@@ -79,9 +79,10 @@ IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端
 ## 2. 安装运行环境
 
 ```bash
-# Node 22 LTS
+# Node 22.15+ LTS
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs git
+sudo apt-get install -y nodejs git zstd
+node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 15)) process.exit(1)'
 
 # pnpm（锁精确版本，匹配 packageManager 与 lockfile）
 sudo corepack enable

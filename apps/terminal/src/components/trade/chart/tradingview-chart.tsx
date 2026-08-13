@@ -21,7 +21,7 @@ import {
 import { TradingViewOverlayController, type TradingViewOverlayPalette } from "@/lib/chart/tradingview-overlays";
 import { cn } from "@/lib/cn";
 import { subscribeWsReconnect, type UnifiedMarketInfo } from "@/lib/hyperliquid";
-import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
+import type { IChartingLibraryWidget, LanguageCode, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
 	CHART_DISABLED_FEATURES,
@@ -68,6 +68,7 @@ interface Props {
 	market?: UnifiedMarketInfo;
 	interval?: string;
 	theme?: "light" | "dark";
+	locale?: LanguageCode;
 	yAxisInside?: boolean;
 }
 
@@ -77,6 +78,7 @@ export function TradingViewChart({
 	market,
 	interval = DEFAULT_CHART_INTERVAL,
 	theme = DEFAULT_CHART_THEME,
+	locale = CHART_LOCALE,
 	yAxisInside = false,
 }: Props) {
 	const widgetSymbol = market ? getChartApiSymbol(market) : symbol;
@@ -102,7 +104,8 @@ export function TradingViewChart({
 	const cancelSymbolSwitchRef = useRef<() => void>(() => {});
 	const pauseReadyWatchdogRef = useRef<() => void>(() => {});
 	const resumeReadyWatchdogRef = useRef<() => void>(() => {});
-	const themeSwitchSequenceRef = useRef(0);
+	const themeSwitchInFlightWidgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const themeSwitchRetryTargetRef = useRef<"light" | "dark" | null>(null);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const overlayLinesRef = useRef(overlayLines);
 	const overlayControllerRef = useRef<TradingViewOverlayController | null>(null);
@@ -278,23 +281,48 @@ export function TradingViewChart({
 	applyThemeRef.current = (nextTheme) => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
+		if (themeSwitchInFlightWidgetRef.current === widget) return;
 
-		const sequence = themeSwitchSequenceRef.current + 1;
-		themeSwitchSequenceRef.current = sequence;
-		if (appliedThemeRef.current === nextTheme && widget.getTheme() === nextTheme) {
+		if (widget.getTheme() === nextTheme) {
+			themeSwitchRetryTargetRef.current = null;
+			if (appliedThemeRef.current !== nextTheme) {
+				widget.applyOverrides(buildChartOverrides());
+			}
+			appliedThemeRef.current = nextTheme;
 			syncOverlaysRef.current();
 			return;
 		}
 
+		themeSwitchInFlightWidgetRef.current = widget;
+		let themeSwitchFailed = false;
 		void widget
 			.changeTheme(nextTheme)
 			.then(() => {
-				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
-				appliedThemeRef.current = nextTheme;
+				if (widgetRef.current !== widget) return;
+				if (targetThemeRef.current !== nextTheme) return;
 				widget.applyOverrides(buildChartOverrides());
+				appliedThemeRef.current = nextTheme;
+				themeSwitchRetryTargetRef.current = null;
 				syncOverlaysRef.current();
 			})
-			.catch(() => undefined);
+			.catch(() => {
+				themeSwitchFailed = true;
+			})
+			.finally(() => {
+				if (themeSwitchInFlightWidgetRef.current === widget) {
+					themeSwitchInFlightWidgetRef.current = null;
+				}
+				if (widgetRef.current !== widget) return;
+				const targetTheme = targetThemeRef.current;
+				if (targetTheme !== nextTheme) {
+					themeSwitchRetryTargetRef.current = null;
+					applyThemeRef.current(targetTheme);
+					return;
+				}
+				if (!themeSwitchFailed || themeSwitchRetryTargetRef.current === nextTheme) return;
+				themeSwitchRetryTargetRef.current = nextTheme;
+				applyThemeRef.current(nextTheme);
+			});
 	};
 
 	requestDataResetRef.current = () => {
@@ -397,7 +425,10 @@ export function TradingViewChart({
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
 			appliedThemeRef.current = null;
-			themeSwitchSequenceRef.current += 1;
+			themeSwitchRetryTargetRef.current = null;
+			if (themeSwitchInFlightWidgetRef.current === widget) {
+				themeSwitchInFlightWidgetRef.current = null;
+			}
 		};
 
 		const handleFinalFailure = (reason: string) => {
@@ -519,7 +550,7 @@ export function TradingViewChart({
 					datafeed,
 					symbol: initialSymbol,
 					interval: initialInterval as ResolutionString,
-					locale: CHART_LOCALE,
+					locale,
 					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
 					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
 					theme: initialTheme,
@@ -583,7 +614,7 @@ export function TradingViewChart({
 			clearReadyWatchdog();
 			removeWidget();
 		};
-	}, [retryNonce]);
+	}, [retryNonce, locale]);
 
 	useEffect(() => {
 		targetSymbolRef.current = widgetSymbol;
@@ -601,6 +632,7 @@ export function TradingViewChart({
 			return;
 		}
 		resumeReadyWatchdogRef.current();
+		applyThemeRef.current(targetThemeRef.current);
 		applySymbolRef.current();
 		syncOverlaysRef.current();
 	}, [widgetSymbol, interval, active]);

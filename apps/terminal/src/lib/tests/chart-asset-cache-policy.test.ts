@@ -80,7 +80,9 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain('cmp -s "$source_unit" "$installed_unit"');
 		expect(deployScript).not.toMatch(/^\s*sudo \/usr\/bin\/install/m);
 		expect(deployScript).toContain("verify_single_header_value");
-		expect(deployScript).toContain('node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root"');
+		expect(deployScript).toContain(
+			'node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root" "$CHART_LIBRARY_MANIFEST_PATH"',
+		);
 		expect(deployScript).toContain('fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH"');
 		expect(deployScript).toContain("verify_missing_chart_asset");
 		expect(deployScript).toContain("edge_health_check");

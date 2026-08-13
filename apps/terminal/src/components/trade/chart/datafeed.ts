@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
-import { type CandleInterval, resolutionToInterval } from "@/lib/chart/resolution";
+import { type CandleInterval, resolutionToBarMs, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import {
 	coinFromSymbolName,
@@ -24,7 +24,6 @@ import type {
 	ResolutionString,
 	ResolveCallback,
 	SearchSymbolsCallback,
-	ServerTimeCallback,
 	SubscribeBarsCallback,
 } from "@/types/charting_library";
 import {
@@ -59,23 +58,9 @@ async function getMeta(): Promise<MetaResponse> {
 
 const allMidsCache = new Map<string, { value: AllMidsResponse; fetchedAt: number }>();
 const allMidsPromise = new Map<string, Promise<AllMidsResponse>>();
-const DAY_MS = 24 * 60 * 60 * 1000;
-const HISTORY_FALLBACK_MAX_REQUEST_AGE_MS = 7 * DAY_MS;
-const HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL: Partial<Record<CandleInterval, number>> = {
-	"1m": 14 * DAY_MS,
-	"3m": 30 * DAY_MS,
-	"5m": 45 * DAY_MS,
-	"15m": 90 * DAY_MS,
-	"30m": 120 * DAY_MS,
-	"1h": 180 * DAY_MS,
-	"2h": 365 * DAY_MS,
-	"4h": 365 * DAY_MS,
-	"8h": 365 * DAY_MS,
-	"12h": 365 * DAY_MS,
-	"1d": 730 * DAY_MS,
-	"1w": 730 * DAY_MS,
-	"1M": 730 * DAY_MS,
-};
+const HYPERLIQUID_MAX_CANDLES = 5_000;
+const HISTORY_BACKFILL_MIN_BUCKETS = 100;
+const HISTORY_BACKFILL_WINDOW_MULTIPLIER = 2;
 
 type ActiveHistoryRequest = {
 	controller: AbortController;
@@ -86,6 +71,11 @@ type ActiveHistoryRequest = {
 type HistoryRequestContext = {
 	activeRequests: Set<ActiveHistoryRequest>;
 	isDestroyed: () => boolean;
+};
+
+type PreviousBarsResult = {
+	bars: Bar[];
+	noData: boolean;
 };
 
 function createHistoryTimeoutError(): Error {
@@ -213,13 +203,31 @@ async function fetchPreviousBars(
 	coin: string,
 	interval: CandleInterval,
 	beforeMs: number,
-	timeoutMs: number,
+	barMs: number,
+	currentBarCount: number,
+	countBack: number,
+	deadlineMs: number,
 	requestContext: HistoryRequestContext,
-) {
-	const lookbackMs = HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL[interval] ?? 180 * DAY_MS;
-	const fromMs = Math.max(0, beforeMs - lookbackMs);
-	if (fromMs >= beforeMs) return [];
-	return fetchBars(coin, interval, fromMs, beforeMs, requestContext, timeoutMs);
+): Promise<PreviousBarsResult> {
+	if (currentBarCount === 0) {
+		if (beforeMs <= 0) return { bars: [], noData: true };
+		const bars = await fetchBars(coin, interval, 0, beforeMs, requestContext, deadlineMs - Date.now());
+		return { bars, noData: bars.length === 0 };
+	}
+
+	const remainingApiCapacity = Math.max(0, HYPERLIQUID_MAX_CANDLES - currentBarCount);
+	const missingBarCount = Math.max(0, countBack - currentBarCount);
+	const requestedBucketCount = Math.min(
+		remainingApiCapacity,
+		Math.max(HISTORY_BACKFILL_MIN_BUCKETS, missingBarCount * HISTORY_BACKFILL_WINDOW_MULTIPLIER),
+	);
+	if (requestedBucketCount === 0 || beforeMs <= 0) {
+		return { bars: [], noData: false };
+	}
+
+	const fromMs = Math.max(0, beforeMs - requestedBucketCount * barMs);
+	const bars = await fetchBars(coin, interval, fromMs, beforeMs, requestContext, deadlineMs - Date.now());
+	return { bars, noData: false };
 }
 
 function mergeBarsToCountBack(previousBars: Bar[], currentBars: Bar[], countBack: number): Bar[] {
@@ -232,20 +240,16 @@ function mergeBarsToCountBack(previousBars: Bar[], currentBars: Bar[], countBack
 	return bars.length > limit ? bars.slice(-limit) : bars;
 }
 
-function shouldFetchPreviousBars(periodParams: PeriodParams, toMs: number, currentBarCount: number) {
+function shouldFetchPreviousBars(periodParams: PeriodParams, currentBarCount: number) {
 	const countBack = Math.max(1, Math.floor(periodParams.countBack) || 1);
-	return (
-		periodParams.firstDataRequest &&
-		currentBarCount < countBack &&
-		Date.now() - toMs <= HISTORY_FALLBACK_MAX_REQUEST_AGE_MS
-	);
+	return currentBarCount < countBack;
 }
 
 const configuration: DatafeedConfiguration = {
 	exchanges: [{ value: EXCHANGE, name: EXCHANGE, desc: EXCHANGE }],
 	supported_resolutions: SUPPORTED_RESOLUTIONS,
 	supports_marks: false,
-	supports_time: true,
+	supports_time: false,
 	supports_timescale_marks: false,
 };
 
@@ -405,6 +409,10 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					pricescale,
 					minmov: CHART_DATAFEED_CONFIG.MIN_MOVEMENT,
 					has_intraday: true,
+					intraday_multipliers: ["1", "3", "5", "15", "30", "60", "120", "240", "480", "720"],
+					has_daily: true,
+					daily_multipliers: ["1"],
+					has_weekly_and_monthly: false,
 					supported_resolutions: SUPPORTED_RESOLUTIONS,
 					volume_precision: CHART_DATAFEED_CONFIG.VOLUME_PRECISION,
 					data_status: CHART_DATAFEED_CONFIG.DATA_STATUS,
@@ -427,7 +435,8 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			if (destroyed) return;
 			void (async () => {
 				const interval = resolutionToInterval(resolution);
-				if (!interval) {
+				const barMs = resolutionToBarMs(resolution);
+				if (!interval || !barMs) {
 					resolveAsync(() => onError(t`Unsupported resolution: ${String(resolution)}`));
 					return;
 				}
@@ -441,7 +450,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
 				if (toMs <= fromMs) {
-					resolveAsync(() => onResult([], { noData: true }));
+					resolveAsync(() => onResult([], { noData: false }));
 					return;
 				}
 
@@ -450,16 +459,21 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				if (destroyed) return;
 				const key = cacheKey(symbolInfo, resolution);
 				let resultBars = bars;
-				if (shouldFetchPreviousBars(periodParams, toMs, bars.length)) {
+				let noData = false;
+				if (shouldFetchPreviousBars(periodParams, bars.length)) {
 					try {
-						const previousBars = await fetchPreviousBars(
+						const previous = await fetchPreviousBars(
 							coin,
 							interval,
 							fromMs,
-							historyDeadline - Date.now(),
+							barMs,
+							bars.length,
+							Math.max(1, Math.floor(periodParams.countBack) || 1),
+							historyDeadline,
 							historyRequestContext,
 						);
-						resultBars = mergeBarsToCountBack(previousBars, bars, periodParams.countBack);
+						noData = previous.noData;
+						resultBars = mergeBarsToCountBack(previous.bars, bars, periodParams.countBack);
 					} catch (error) {
 						if (bars.length === 0) throw error;
 					}
@@ -468,7 +482,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 				const lastBar = resultBars.at(-1);
 				if (!lastBar) {
-					resolveAsync(() => onResult([], { noData: true }));
+					resolveAsync(() => onResult([], { noData }));
 					return;
 				}
 
@@ -531,10 +545,6 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
 				realtimeSubscriptions.delete(listenerGuid);
 			}
-		},
-
-		getServerTime: (callback: ServerTimeCallback) => {
-			resolveAsync(() => callback(Math.floor(Date.now() / 1000)));
 		},
 	};
 

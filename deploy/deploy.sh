@@ -17,6 +17,7 @@ BRANCH="${1:-main}"
 SOCIAL_IMAGE_PATH="/gatu-terminal-og-v1.png"
 CHART_LIBRARY_PATH="/charting_library"
 CHART_THEME_PATH="/tradingview-theme.css"
+CHART_LIBRARY_MANIFEST_PATH="${REPO}/deploy/manifests/tradingview-charting-library.json"
 CHART_CACHE_POLICY="public, max-age=0, must-revalidate"
 REFERRAL_DEEP_LINK_PATH="/join/__gatu_healthcheck__"
 REFERRAL_CACHE_POLICY="no-store"
@@ -449,7 +450,7 @@ verify_chart_build_output() {
 	local source_public_root="$1"
 	local output_public_root="$2"
 
-	node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root"
+	node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root" "$CHART_LIBRARY_MANIFEST_PATH"
 }
 
 verify_missing_chart_asset() {

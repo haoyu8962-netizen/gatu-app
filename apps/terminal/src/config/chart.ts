@@ -1,5 +1,11 @@
-import type { ChartingLibraryFeatureset, ResolutionString, TimeFrameItem } from "@/types/charting_library";
+import type {
+	ChartingLibraryFeatureset,
+	LanguageCode,
+	ResolutionString,
+	TimeFrameItem,
+} from "@/types/charting_library";
 import { DEFAULT_QUOTE_TOKEN } from "./app";
+import { isValidLocale, type LocaleCode } from "./i18n";
 
 export const CHART_LIBRARY_PATH = "/charting_library/";
 
@@ -37,7 +43,20 @@ export const CHART_SUPPORTED_RESOLUTIONS = [
 	"1M",
 ] as unknown as ResolutionString[];
 
-export const CHART_LOCALE = "en";
+export const CHART_LOCALE = "en" satisfies LanguageCode;
+
+const chartLocaleByAppLocale: Record<LocaleCode, LanguageCode> = {
+	en: "en",
+	zh: "zh",
+	hi: "en",
+	es: "es",
+	fr: "fr",
+	ar: "ar",
+};
+
+export function resolveChartLocale(locale: string): LanguageCode {
+	return isValidLocale(locale) ? chartLocaleByAppLocale[locale] : CHART_LOCALE;
+}
 export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
 
 export const CHART_ENABLED_FEATURES = [

@@ -1,6 +1,8 @@
 import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef } from "react";
+import { resolveChartLocale } from "@/config/chart";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -15,6 +17,7 @@ interface Props {
 
 export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
+	const { i18n } = useLingui();
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const lastSelectedMarketRef = useRef(selectedMarket);
@@ -25,6 +28,7 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 	}, [selectedMarket]);
 	const chartMarket = selectedMarket ?? lastSelectedMarketRef.current;
 	const chartTheme = theme === "dark" ? "dark" : "light";
+	const chartLocale = resolveChartLocale(i18n.locale);
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
@@ -37,6 +41,7 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 							symbol={chartMarket.name}
 							market={chartMarket}
 							theme={chartTheme}
+							locale={chartLocale}
 							yAxisInside={yAxisInside}
 						/>
 					</Suspense>

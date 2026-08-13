@@ -137,7 +137,9 @@ function MarketsDataView({
 					aria-hidden={topView !== "chart"}
 					className={cn(
 						"absolute inset-0 flex min-h-0 flex-col",
-						topView === "chart" ? "z-10 opacity-100 pointer-events-auto" : "z-0 opacity-0 pointer-events-none",
+						topView === "chart"
+							? "z-10 visible opacity-100 pointer-events-auto"
+							: "z-0 invisible opacity-0 pointer-events-none",
 					)}
 				>
 					<MobileChartView active={active && topView === "chart"} />

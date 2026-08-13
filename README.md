@@ -55,7 +55,7 @@ hypeterminal/
 
 ## Quick start
 
-Prereqs: **Node 22.12+**, **pnpm 10.21+**.
+Prereqs: **Node 22.15+**, **pnpm 10.21+**.
 
 ```bash
 git clone https://github.com/your-org/hypeterminal.git
