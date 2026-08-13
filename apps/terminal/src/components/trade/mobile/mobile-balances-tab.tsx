@@ -3,7 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import { getTradingToolbarBalanceSummary, isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
+import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { getPerpBalanceRows, getSpotBalanceRows, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
@@ -28,13 +28,11 @@ export function MobileBalancesTab() {
 		direction: TransferDirection;
 	}>({ open: false, direction: "toSpot" });
 	const {
-		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
-		isSpotStateStale,
 		isLoading,
 		hasError,
 	} = useDefaultDexBalances();
@@ -46,18 +44,6 @@ export function MobileBalancesTab() {
 			...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
 		],
 		[accountAbstraction, mids, perpSummary, spotAvailableAfterMaintenance, spotBalances, withdrawable],
-	);
-	const summary = useMemo(
-		() =>
-			getTradingToolbarBalanceSummary({
-				accountAbstraction,
-				marginSummary,
-				perpSummary,
-				spotBalances,
-				tokenUsdPrices: mids,
-				withdrawable,
-			}),
-		[accountAbstraction, marginSummary, mids, perpSummary, spotBalances, withdrawable],
 	);
 	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
 
@@ -76,27 +62,6 @@ export function MobileBalancesTab() {
 	}
 	return (
 		<div className="flex min-h-0 flex-col font-market-close">
-			<dl
-				data-testid="mobile-balances-summary-bar"
-				className="flex shrink-0 items-center justify-between gap-5 border-b border-market-close-stroke-card bg-market-close-card px-3.5 py-3"
-			>
-				<div className="flex min-w-0 flex-col gap-px">
-					<dt className="text-[10px] leading-[14px] text-market-close-subtle">{t`Total assets`}</dt>
-					<dd className="m-0 inline-flex items-center gap-1 text-sm leading-[19px] font-bold text-market-close-fg tabular-nums">
-						{isSpotStateStale ? (
-							<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
-						) : null}
-						{formatUSD(summary.totalAssets, { compact: false })}
-					</dd>
-				</div>
-				<div className="flex min-w-0 flex-col items-end gap-px text-right">
-					<dt className="text-[10px] leading-[14px] text-market-close-subtle">{t`Withdrawable`}</dt>
-					<dd className="m-0 text-sm leading-[19px] font-semibold text-market-close-fg tabular-nums">
-						{formatUSD(summary.withdrawable, { compact: false })}
-					</dd>
-				</div>
-			</dl>
-
 			{balances.length === 0 ? (
 				<MobileBalancesState
 					label={t`No balances found. Deposit funds to start trading.`}

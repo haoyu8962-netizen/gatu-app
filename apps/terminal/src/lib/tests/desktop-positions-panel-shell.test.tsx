@@ -195,7 +195,16 @@ describe("desktop positions panel shell", () => {
 		expect(Array.from(actions?.querySelectorAll("button") ?? [], (button) => button.textContent)).not.toContain(
 			"Withdraw",
 		);
-		if (activeTab !== "positions") expect(actions?.className).not.toContain("pl-3");
+		if (activeTab !== "balances" && activeTab !== "positions") expect(actions?.className).not.toContain("pl-3");
+	});
+
+	it("mounts the balance settings in the tab header", () => {
+		testState.activeTab = "balances";
+		render();
+
+		const actions = container.querySelector<HTMLElement>('[data-testid="positions-header-actions"]');
+		expect(actions?.className).toContain("pl-3");
+		expect(actions?.querySelector('[data-testid="BalancesTab-header-actions"]')).not.toBeNull();
 	});
 
 	it("keeps funds actions on the account transfers tab", () => {

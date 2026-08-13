@@ -1,6 +1,3 @@
-export const balancesToolbarClass =
-	"flex h-[58px] shrink-0 items-center justify-end gap-3 border-b border-market-close-stroke-card bg-market-close-card px-5";
-
 export const balancesTableHeaderClass = "bg-modal [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0";
 
 export const balancesTableHeadClass =

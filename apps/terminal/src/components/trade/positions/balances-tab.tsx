@@ -1,11 +1,10 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
-import { getTradingToolbarBalanceSummary, isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
+import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
@@ -28,8 +27,8 @@ import {
 	balancesTableCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
-	balancesToolbarClass,
 } from "./balances-table-styles";
+import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -43,7 +42,11 @@ import { TransferModal } from "./transfer-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
 
-export function BalancesTab() {
+interface Props {
+	toolbarTarget?: HTMLElement | null;
+}
+
+export function BalancesTab({ toolbarTarget }: Props) {
 	useNumberFormatRevision();
 	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
@@ -69,13 +72,11 @@ export function BalancesTab() {
 	});
 
 	const {
-		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
-		isSpotStateStale,
 		isLoading,
 		hasError,
 	} = useDefaultDexBalances();
@@ -93,18 +94,6 @@ export function BalancesTab() {
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
 	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
-	const summary = useMemo(
-		() =>
-			getTradingToolbarBalanceSummary({
-				accountAbstraction,
-				marginSummary,
-				perpSummary,
-				spotBalances,
-				tokenUsdPrices: mids,
-				withdrawable,
-			}),
-		[accountAbstraction, marginSummary, mids, perpSummary, spotBalances, withdrawable],
-	);
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -254,31 +243,7 @@ export function BalancesTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div
-				data-testid="balances-summary-bar"
-				className={cn(balancesToolbarClass, "justify-between gap-6 font-market-close")}
-			>
-				<dl className="flex min-w-0 items-center gap-7">
-					<div className="flex min-w-[7rem] flex-col gap-[3px]">
-						<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Total assets`}</dt>
-						<dd className="m-0 inline-flex items-center gap-1 text-sm leading-[17px] font-bold text-market-close-fg tabular-nums">
-							{isSpotStateStale && isConnected && !isLoading && !hasError ? (
-								<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
-							) : null}
-							{formatUSD(isConnected && accountModeReady && !isLoading && !hasError ? summary.totalAssets : null, {
-								compact: false,
-							})}
-						</dd>
-					</div>
-					<div className="flex min-w-[7rem] flex-col gap-[3px]">
-						<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Withdrawable`}</dt>
-						<dd className="m-0 text-sm leading-[17px] font-semibold text-market-close-fg tabular-nums">
-							{formatUSD(isConnected && accountModeReady && !isLoading && !hasError ? summary.withdrawable : null, {
-								compact: false,
-							})}
-						</dd>
-					</div>
-				</dl>
+			<DesktopTabToolbarPortal target={toolbarTarget}>
 				<Checkbox
 					size="xs"
 					checked={hideSmallBalances}
@@ -289,7 +254,7 @@ export function BalancesTab() {
 					indicatorClassName="text-market-close-on-control [&>svg]:size-2.5"
 					labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal normal-case tracking-normal text-market-close-muted"
 				/>
-			</div>
+			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">

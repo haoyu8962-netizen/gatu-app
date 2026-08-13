@@ -7,7 +7,6 @@ import {
 	balancesTableCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
-	balancesToolbarClass,
 } from "@/components/trade/positions/balances-table-styles";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
@@ -25,9 +24,7 @@ const MOBILE_BALANCES_TAB_SOURCE = readFileSync(
 );
 
 describe("balances table visual contract", () => {
-	it("matches the latest desktop summary, header, and row rhythm", () => {
-		expect(balancesToolbarClass).toContain("h-[58px]");
-		expect(balancesToolbarClass).toContain("bg-market-close-card");
+	it("matches the latest desktop header and row rhythm without a redundant summary", () => {
 		expect(balancesTableHeaderClass).toContain("bg-modal");
 		expect(balancesTableHeadClass).toContain("h-[33px]");
 		expect(balancesTableHeadClass).toContain("text-[11px]");
@@ -35,6 +32,12 @@ describe("balances table visual contract", () => {
 		expect(balancesTableHeadClass).toContain("normal-case");
 		expect(balancesTableCellClass).toContain("h-12");
 		expect(balancesTableCellClass).toContain("text-[13px]");
+		expect(BALANCES_TAB_SOURCE).not.toContain('data-testid="balances-summary-bar"');
+		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain('data-testid="mobile-balances-summary-bar"');
+		expect(BALANCES_TAB_SOURCE).toContain("DesktopTabToolbarPortal");
+		expect(POSITIONS_PANEL_SOURCE).toContain(
+			'<BalancesTab toolbarTarget={activeTab === "balances" ? toolbarTarget : null} />',
+		);
 	});
 
 	it("uses a flat total-first asset hierarchy while preserving real funds actions", () => {

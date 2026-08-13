@@ -38,7 +38,7 @@ import { PositionFilterToolbar } from "./position-filter-toolbar";
 import type { PositionMarketOption } from "./position-market-filter";
 
 const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
-const CONTEXTUAL_TOOLBAR_TABS = new Set(["orders", "funding", "orders-history"]);
+const CONTEXTUAL_TOOLBAR_TABS = new Set(["balances", "orders", "funding", "orders-history"]);
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
 const AccountTransfersTab = createLazyComponent(() => import("./account-transfers-tab"), "AccountTransfersTab");
@@ -333,7 +333,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 				</div>
 				<TabsContent value="balances" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<BalancesTab />
+						<BalancesTab toolbarTarget={activeTab === "balances" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="positions" className={tabContentClass}>
