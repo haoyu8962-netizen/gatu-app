@@ -104,24 +104,47 @@ describe("MobileNavDrawer", () => {
 		container.remove();
 	});
 
-	it("adds API Wallet after Referrals and marks its route active", () => {
+	it("matches the desktop menu order and keeps available destinations functional", () => {
 		act(() => root.render(<MobileNavDrawer />));
 		const openButton = container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]');
 		act(() => openButton?.click());
 
-		const navigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
-		const links = [...(navigation?.querySelectorAll<HTMLAnchorElement>("a") ?? [])];
-		expect(links.map((link) => link.textContent?.trim())).toEqual([
+		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
+		const moreNavigation = container.querySelector<HTMLElement>('nav[aria-label="More"]');
+		const primaryItems = [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
+		const moreItems = [...(moreNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
+		const itemLabel = (item: HTMLElement) =>
+			item instanceof HTMLButtonElement && item.disabled
+				? item.querySelector("span")?.textContent?.trim()
+				: item.textContent?.trim();
+
+		expect(primaryItems.map(itemLabel)).toEqual([
 			"Trade",
 			"Portfolio",
+			"Earn",
+			"Vaults",
+			"Staking",
 			"Referrals",
-			"API Wallet",
-			"Docs",
-			"Support",
-			"Terms",
-			"Privacy Policy",
-			"Risk Disclosure",
+			"Leaderboard",
 		]);
+		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
+
+		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
+		expect(links.map((link) => link.textContent?.trim())).toEqual(["Trade", "Portfolio", "Referrals", "API Wallet"]);
+		expect(links.map((link) => link.dataset.to)).toEqual(["/trade/HYPE", "/portfolio", "/referrals", "/api-wallet"]);
+
+		const upcomingItems = [
+			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
+		];
+		expect(upcomingItems.map(itemLabel)).toEqual(["Earn", "Vaults", "Staking", "Leaderboard", "Statistics"]);
+		for (const item of upcomingItems) {
+			expect(item.disabled).toBe(true);
+			expect(item.textContent).toContain("Soon");
+		}
+
+		const drawerText = container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent;
+		for (const removedLabel of ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"])
+			expect(drawerText).not.toContain(removedLabel);
 
 		const apiWalletLink = links.find((link) => link.textContent?.trim() === "API Wallet");
 		expect(apiWalletLink?.dataset.to).toBe("/api-wallet");

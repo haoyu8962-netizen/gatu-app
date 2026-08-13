@@ -2327,7 +2327,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "No envíes otra revocación. Reintenta la verificación de solo lectura."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "Documentación"
 
@@ -2372,6 +2371,7 @@ msgid "Each position uses only its allocated margin. If the margin ratio reaches
 msgstr "Cada posición utiliza únicamente el margen que tiene asignado. Si la ratio de margen alcanza el 100 %, la posición se liquida. Se puede añadir margen, pero no retirarlo mientras la posición esté abierta."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "Rendimiento"
@@ -3509,7 +3509,7 @@ msgstr "Layer 2"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "Clasificación"
 
@@ -4263,6 +4263,8 @@ msgstr "Modificando..."
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "More"
 msgstr "Más"
 
@@ -5171,8 +5173,8 @@ msgstr "Colocada"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-msgid "Platform"
-msgstr "Plataforma"
+#~ msgid "Platform"
+#~ msgstr "Plataforma"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
@@ -5435,7 +5437,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "Comisión de subasta de gas prioritaria"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
 
@@ -6051,7 +6052,6 @@ msgid "Rewards claimed"
 msgstr "Recompensas reclamadas"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "Divulgación de riesgos"
 
@@ -6802,8 +6802,8 @@ msgstr "Hacer staking"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
-#: src/config/nav.tsx
 msgid "Staking"
 msgstr "Staking"
 
@@ -6830,6 +6830,7 @@ msgid "Starting camera..."
 msgstr "Iniciando cámara..."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Statistics"
 msgstr ""
 
@@ -6954,7 +6955,6 @@ msgid "Supply"
 msgstr "Suministrar"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "Soporte"
 
@@ -7214,7 +7214,6 @@ msgid "Terminating..."
 msgstr "Terminando..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "Términos"
 
@@ -8613,7 +8612,7 @@ msgstr "Retiro de la bóveda"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Vaults"
 msgstr "Bóvedas"
 

@@ -2340,7 +2340,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "请勿再次提交撤销。请重试只读验证。"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "文档"
 
@@ -2385,6 +2384,7 @@ msgid "Each position uses only its allocated margin. If the margin ratio reaches
 msgstr "每个仓位仅使用分配给它的保证金。如果保证金率达到 100%，仓位将被强平。可以追加保证金，但在仓位未平仓时无法移除保证金。"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "收益"
@@ -3526,7 +3526,7 @@ msgstr "Layer 2"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "排行榜"
 
@@ -4284,6 +4284,8 @@ msgstr "正在修改..."
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "More"
 msgstr "更多"
 
@@ -5192,8 +5194,8 @@ msgstr "已提交"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-msgid "Platform"
-msgstr "平台"
+#~ msgid "Platform"
+#~ msgstr "平台"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
@@ -5456,7 +5458,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "优先 Gas 拍卖费"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "隐私政策"
 
@@ -6072,7 +6073,6 @@ msgid "Rewards claimed"
 msgstr "奖励已领取"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "风险披露"
 
@@ -6823,8 +6823,8 @@ msgstr "质押"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
-#: src/config/nav.tsx
 msgid "Staking"
 msgstr "质押"
 
@@ -6851,6 +6851,7 @@ msgid "Starting camera..."
 msgstr "正在启动相机…"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Statistics"
 msgstr ""
 
@@ -6975,7 +6976,6 @@ msgid "Supply"
 msgstr "存入借贷"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "支持"
 
@@ -7235,7 +7235,6 @@ msgid "Terminating..."
 msgstr "终止中..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "条款"
 
@@ -8638,7 +8637,7 @@ msgstr "金库提款"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Vaults"
 msgstr "金库"
 

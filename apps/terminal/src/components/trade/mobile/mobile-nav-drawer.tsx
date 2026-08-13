@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { isTradeRoutePath, STATIC_NAV_ITEMS } from "@/config/nav";
+import { isTradeRoutePath } from "@/config/nav";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -21,6 +21,7 @@ export function MobileNavDrawer() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const tradeHomePath = useTradeHomePath();
 	const tradeActive = isTradeRoutePath(pathname);
+	const soonLabel = t`Soon`;
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
@@ -89,6 +90,9 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Portfolio</Trans>
 							</Link>
+							<UpcomingMobileNavItem label={t`Earn`} soonLabel={soonLabel} />
+							<UpcomingMobileNavItem label={t`Vaults`} soonLabel={soonLabel} />
+							<UpcomingMobileNavItem label={t`Staking`} soonLabel={soonLabel} />
 							<Link
 								to="/referrals"
 								onClick={close}
@@ -97,6 +101,13 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Referrals</Trans>
 							</Link>
+							<UpcomingMobileNavItem label={t`Leaderboard`} soonLabel={soonLabel} />
+						</nav>
+						<nav className="flex flex-col p-2 pt-0" aria-label={t`More`}>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+								<Trans>More</Trans>
+							</p>
+							<UpcomingMobileNavItem label={t`Statistics`} soonLabel={soonLabel} />
 							<Link
 								to="/api-wallet"
 								onClick={close}
@@ -105,62 +116,6 @@ export function MobileNavDrawer() {
 							>
 								<Trans>API Wallet</Trans>
 							</Link>
-							<Link
-								to="/docs"
-								onClick={close}
-								aria-current={pathname === "/docs" ? "page" : undefined}
-								className={getNavLinkClass(pathname === "/docs")}
-							>
-								<Trans>Docs</Trans>
-							</Link>
-							<Link
-								to="/support"
-								onClick={close}
-								aria-current={pathname === "/support" ? "page" : undefined}
-								className={getNavLinkClass(pathname === "/support")}
-							>
-								<Trans>Support</Trans>
-							</Link>
-							<Link
-								to="/terms"
-								onClick={close}
-								aria-current={pathname === "/terms" ? "page" : undefined}
-								className={getNavLinkClass(pathname === "/terms")}
-							>
-								<Trans>Terms</Trans>
-							</Link>
-							<Link
-								to="/privacy"
-								onClick={close}
-								aria-current={pathname === "/privacy" ? "page" : undefined}
-								className={getNavLinkClass(pathname === "/privacy")}
-							>
-								<Trans>Privacy Policy</Trans>
-							</Link>
-							<Link
-								to="/risk"
-								onClick={close}
-								aria-current={pathname === "/risk" ? "page" : undefined}
-								className={getNavLinkClass(pathname === "/risk")}
-							>
-								<Trans>Risk Disclosure</Trans>
-							</Link>
-						</nav>
-						<nav className="flex flex-col p-2 pt-0" aria-label={t`Platform`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>Platform</Trans>
-							</p>
-							{STATIC_NAV_ITEMS.map((item) => (
-								<div
-									key={item.key}
-									className="flex items-center justify-between px-3 py-2.5 rounded-xs text-sm text-fg-disabled"
-								>
-									<span>{item.label}</span>
-									<Badge tone="neutral" size="xxs" className="text-fg-disabled">
-										<Trans>Soon</Trans>
-									</Badge>
-								</div>
-							))}
 						</nav>
 					</div>
 
@@ -199,5 +154,25 @@ export function MobileNavDrawer() {
 				</DrawerContent>
 			</Drawer>
 		</>
+	);
+}
+
+interface UpcomingMobileNavItemProps {
+	label: string;
+	soonLabel: string;
+}
+
+function UpcomingMobileNavItem({ label, soonLabel }: UpcomingMobileNavItemProps) {
+	return (
+		<button
+			type="button"
+			disabled
+			className="flex cursor-default items-center justify-between rounded-8 px-3 py-2.5 text-left text-sm text-fg-disabled"
+		>
+			<span>{label}</span>
+			<Badge tone="neutral" size="xxs" className="text-fg-disabled">
+				{soonLabel}
+			</Badge>
+		</button>
 	);
 }

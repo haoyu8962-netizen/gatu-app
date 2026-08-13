@@ -2327,7 +2327,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "N'envoyez pas une autre révocation. Réessayez la vérification en lecture seule."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "Documentation"
 
@@ -2372,6 +2371,7 @@ msgid "Each position uses only its allocated margin. If the margin ratio reaches
 msgstr "Chaque position utilise uniquement la marge qui lui est allouée. Si le ratio de marge atteint 100 %, la position est liquidée. De la marge peut être ajoutée, mais elle ne peut pas être retirée tant que la position est ouverte."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "Rendement"
@@ -3509,7 +3509,7 @@ msgstr "Layer 2"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "Classement"
 
@@ -4263,6 +4263,8 @@ msgstr "Modification..."
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "More"
 msgstr "Plus"
 
@@ -5171,8 +5173,8 @@ msgstr "Placé"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-msgid "Platform"
-msgstr "Plateforme"
+#~ msgid "Platform"
+#~ msgstr "Plateforme"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
@@ -5435,7 +5437,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "Frais d'enchère de gas prioritaire"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "Politique de confidentialité"
 
@@ -6051,7 +6052,6 @@ msgid "Rewards claimed"
 msgstr "Récompenses réclamées"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "Avertissement sur les risques"
 
@@ -6802,8 +6802,8 @@ msgstr "Staker"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
-#: src/config/nav.tsx
 msgid "Staking"
 msgstr "Staking"
 
@@ -6830,6 +6830,7 @@ msgid "Starting camera..."
 msgstr "Démarrage de la caméra..."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Statistics"
 msgstr ""
 
@@ -6954,7 +6955,6 @@ msgid "Supply"
 msgstr "Fournir"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "Support"
 
@@ -7214,7 +7214,6 @@ msgid "Terminating..."
 msgstr "Terminaison en cours..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "Conditions"
 
@@ -8613,7 +8612,7 @@ msgstr "Retrait du coffre"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Vaults"
 msgstr "Coffres"
 

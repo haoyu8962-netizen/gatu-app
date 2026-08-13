@@ -1,9 +1,7 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import type { Icon } from "@phosphor-icons/react";
 import { ChartBarIcon, CurrencyCircleDollarIcon, TrendUpIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
 
 export type MobileTab = "markets" | "trade" | "account";
 
@@ -26,14 +24,3 @@ export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
 	{ id: "trade", label: msg`Trade`, icon: TrendUpIcon },
 	{ id: "account", label: msg`Account`, icon: CurrencyCircleDollarIcon },
 ];
-
-export interface StaticNavItem {
-	key: string;
-	label: ReactNode;
-}
-
-export const STATIC_NAV_ITEMS: readonly StaticNavItem[] = [
-	{ key: "vaults", label: <Trans>Vaults</Trans> },
-	{ key: "staking", label: <Trans>Staking</Trans> },
-	{ key: "leaderboard", label: <Trans>Leaderboard</Trans> },
-] as const;

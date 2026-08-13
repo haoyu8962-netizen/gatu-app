@@ -2327,7 +2327,6 @@ msgid "Do not submit another revocation. Retry the read-only verification."
 msgstr "لا ترسل طلب إبطال آخر. أعد محاولة التحقق بوضع القراءة فقط."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "المستندات"
 
@@ -2372,6 +2371,7 @@ msgid "Each position uses only its allocated margin. If the margin ratio reaches
 msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا وصلت نسبة الهامش إلى 100٪، تتم تصفية المركز. يمكن إضافة الهامش، ولكن لا يمكن سحبه ما دام المركز مفتوحًا."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "العوائد"
@@ -3509,7 +3509,7 @@ msgstr "Layer 2"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "لوحة المتصدرين"
 
@@ -4263,6 +4263,8 @@ msgstr "جارٍ التعديل..."
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "More"
 msgstr "المزيد"
 
@@ -5171,8 +5173,8 @@ msgstr "تم الوضع"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-msgid "Platform"
-msgstr "المنصة"
+#~ msgid "Platform"
+#~ msgstr "المنصة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
@@ -5435,7 +5437,6 @@ msgid "Priority Gas Auction Fee"
 msgstr "رسوم مزاد أولوية الغاز"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
 
@@ -6051,7 +6052,6 @@ msgid "Rewards claimed"
 msgstr "تمت المطالبة بالمكافآت"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Risk Disclosure"
 msgstr "الإفصاح عن المخاطر"
 
@@ -6802,8 +6802,8 @@ msgstr "رهن"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/account-ledger.ts
-#: src/config/nav.tsx
 msgid "Staking"
 msgstr "التخزين"
 
@@ -6830,6 +6830,7 @@ msgid "Starting camera..."
 msgstr "جارٍ تشغيل الكاميرا..."
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Statistics"
 msgstr ""
 
@@ -6954,7 +6955,6 @@ msgid "Supply"
 msgstr "إيداع للإقراض"
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "الدعم"
 
@@ -7214,7 +7214,6 @@ msgid "Terminating..."
 msgstr "جارٍ الإنهاء..."
 
 #: src/components/trade/footer/footer-bar.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "الشروط"
 
@@ -8613,7 +8612,7 @@ msgstr "سحب من الخزنة"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/config/nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Vaults"
 msgstr "الخزائن"
 
