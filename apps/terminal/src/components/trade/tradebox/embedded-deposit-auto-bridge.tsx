@@ -116,6 +116,15 @@ export function EmbeddedDepositAutoBridge() {
 			if (retryTimeoutRef.current) window.clearTimeout(retryTimeoutRef.current);
 			activeAttemptAbortRef.current?.abort();
 			if (loadingToastActiveRef.current) toast.dismiss(AUTO_DEPOSIT_TOAST_ID);
+			attemptKeyRef.current = null;
+			lastEligibleKeyRef.current = null;
+			retryKeyRef.current = null;
+			retryCountRef.current = 0;
+			retryTimeoutRef.current = null;
+			activeAttemptAbortRef.current = null;
+			activeAttemptIdentityRef.current = null;
+			reconciledErrorRef.current = null;
+			loadingToastActiveRef.current = false;
 		};
 	}, []);
 

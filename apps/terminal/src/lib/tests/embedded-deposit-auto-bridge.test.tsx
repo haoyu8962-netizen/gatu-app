@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, createElement, Fragment } from "react";
+import { act, createElement, Fragment, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
@@ -208,6 +208,16 @@ describe("EmbeddedDepositAutoBridge", () => {
 			root.render(createElement(EmbeddedDepositAutoBridge));
 		});
 
+		expect(testState.deposit).toHaveBeenCalledWith("9");
+	});
+
+	it("releases an aborted development attempt before the StrictMode effect replay", async () => {
+		await act(async () => {
+			root.render(createElement(StrictMode, null, createElement(EmbeddedDepositAutoBridge)));
+		});
+
+		expect(testState.refreshBalance).toHaveBeenCalledTimes(2);
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
 		expect(testState.deposit).toHaveBeenCalledWith("9");
 	});
 
