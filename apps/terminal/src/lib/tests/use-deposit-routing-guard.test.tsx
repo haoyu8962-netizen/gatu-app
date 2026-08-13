@@ -238,7 +238,11 @@ describe("useDeposit fresh USDC route guard", () => {
 			signTypedData: testState.permitSign,
 			writeContract: testState.walletWriteContract,
 		});
-		testState.getClientForChain.mockResolvedValue({ sendTransaction: testState.smartSendTransaction });
+		testState.getClientForChain.mockImplementation(async ({ id }: { id: number }) => ({
+			chain: { id },
+			paymaster: {},
+			sendTransaction: testState.smartSendTransaction,
+		}));
 	});
 
 	afterEach(() => {
@@ -736,6 +740,52 @@ describe("useDeposit fresh USDC route guard", () => {
 	it("fails closed when sponsored CCTP is disabled", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.sponsoredEnabled = false;
+
+		await submit("smart", "cctp");
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("not enabled");
+	});
+
+	it("fails closed before signing when the Smart Wallet client is on the wrong chain", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.getClientForChain.mockResolvedValue({
+			chain: { id: 421614 },
+			paymaster: {},
+			sendTransaction: testState.smartSendTransaction,
+		});
+
+		await submit("smart", "cctp");
+
+		expect(testState.getClientForChain).toHaveBeenCalledWith({ id: 42161 });
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Smart wallet client not ready");
+	});
+
+	it("fails closed before signing when the target-chain Smart Wallet client is unavailable", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.getClientForChain.mockResolvedValue(undefined);
+
+		await submit("smart", "cctp");
+
+		expect(testState.getClientForChain).toHaveBeenCalledWith({ id: 42161 });
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Smart wallet client not ready");
+	});
+
+	it("fails closed before signing when Smart Wallet gas sponsorship is not configured", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+		testState.getClientForChain.mockResolvedValue({
+			chain: { id: 42161 },
+			paymaster: undefined,
+			sendTransaction: testState.smartSendTransaction,
+		});
 
 		await submit("smart", "cctp");
 

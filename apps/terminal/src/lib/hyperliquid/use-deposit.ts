@@ -303,6 +303,13 @@ function parseChainId(chainId: unknown): number | null {
 	return Number.isFinite(parsed) ? parsed : null;
 }
 
+function getClientChainId(client: unknown): number | null {
+	if (!client || typeof client !== "object" || !("chain" in client)) return null;
+	const { chain } = client;
+	if (!chain || typeof chain !== "object" || !("id" in chain)) return null;
+	return typeof chain.id === "number" && Number.isFinite(chain.id) ? chain.id : null;
+}
+
 function encodeBalanceOf(address: `0x${string}`): `0x${string}` {
 	return `${BALANCE_OF_SELECTOR}${address.slice(2).padStart(64, "0")}` as `0x${string}`;
 }
@@ -1057,6 +1064,16 @@ export function useDeposit({
 					) {
 						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
 					}
+					const smartClient = mode === "smart" ? await getClientForChain({ id: cctpDepositConfig.chainId }) : undefined;
+					if (mode === "smart") {
+						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+						if (getClientChainId(smartClient) !== cctpDepositConfig.chainId) {
+							throw new Error(t`Smart wallet client not ready`);
+						}
+						if (!smartClient.paymaster) {
+							throw new Error(t`Gas-sponsored CCTP deposits are not enabled for this network.`);
+						}
+					}
 					await assertFreshSelectedDepositRoute();
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
@@ -1084,7 +1101,6 @@ export function useDeposit({
 							functionName: "batchSponsorDepositForBurn",
 							args: buildCctpSponsoredDepositContractArgs(sponsoredParameters, authorizationSignature),
 						});
-						const smartClient = await getClientForChain({ id: cctpDepositConfig.chainId });
 						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
 						await assertFreshSelectedDepositRoute();
 						saveCctpSponsoredAuthorizationIntent({

@@ -2939,6 +2939,7 @@ msgstr "الغاز ({0})"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
 msgstr "إيداعات CCTP المدعومة برسوم الغاز غير مفعّلة لهذه الشبكة."
 
@@ -6335,6 +6336,8 @@ msgstr "الانزلاق"
 msgid "Slippage tolerance"
 msgstr "حدّ تحمّل الانزلاق السعري"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
 msgstr "عميل المحفظة الذكية غير جاهز"

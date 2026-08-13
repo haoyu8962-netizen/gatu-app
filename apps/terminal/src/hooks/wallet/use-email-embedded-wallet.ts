@@ -85,8 +85,8 @@ export function useEmailEmbeddedWallet() {
 		embeddedWalletAddress,
 		shouldUseEmbeddedWallet,
 		needsEmbeddedWallet,
-		isCreatingEmbeddedWallet,
-		embeddedWalletError,
+		isCreatingEmbeddedWallet: embeddedWalletAddress ? false : isCreatingEmbeddedWallet,
+		embeddedWalletError: embeddedWalletAddress ? null : embeddedWalletError,
 		ensureEmailEmbeddedWallet,
 	};
 }

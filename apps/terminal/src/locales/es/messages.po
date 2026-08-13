@@ -2939,6 +2939,7 @@ msgstr "Gas ({0})"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
 msgstr "Los depósitos CCTP con gas patrocinado no están habilitados para esta red."
 
@@ -6335,6 +6336,8 @@ msgstr "Deslizamiento"
 msgid "Slippage tolerance"
 msgstr "Tolerancia de slippage"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
 msgstr "El cliente de monedero inteligente no está listo"

@@ -2956,6 +2956,7 @@ msgstr "Gas（{0}）"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Gas-sponsored CCTP deposits are not enabled for this network."
 msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
 
@@ -6356,6 +6357,8 @@ msgstr "滑点"
 msgid "Slippage tolerance"
 msgstr "滑点容忍度"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
 msgstr "智能钱包客户端尚未就绪"
