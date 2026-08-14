@@ -5,6 +5,7 @@ import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileNavDrawer } from "@/components/trade/mobile/mobile-nav-drawer";
+import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -137,6 +138,7 @@ describe("MobileNavDrawer", () => {
 			"Staking",
 			"Referrals",
 			"Leaderboard",
+			"Statistics",
 			"API Wallet",
 		]);
 		expect(links.map((link) => link.dataset.to)).toEqual([
@@ -146,13 +148,18 @@ describe("MobileNavDrawer", () => {
 			"/staking",
 			"/referrals",
 			"/leaderboard",
+			undefined,
 			"/api-wallet",
 		]);
+		const statisticsLink = links.find((link) => link.textContent?.trim() === "Statistics");
+		expect(statisticsLink?.href).toBe(HYPERSCREENER_URL);
+		expect(statisticsLink?.target).toBe("_blank");
+		expect(statisticsLink?.rel).toBe("noopener noreferrer");
 
 		const upcomingItems = [
 			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
 		];
-		expect(upcomingItems.map(itemLabel)).toEqual(["Earn", "Statistics"]);
+		expect(upcomingItems.map(itemLabel)).toEqual(["Earn"]);
 		for (const item of upcomingItems) {
 			expect(item.disabled).toBe(true);
 			expect(item.textContent).toContain("Soon");

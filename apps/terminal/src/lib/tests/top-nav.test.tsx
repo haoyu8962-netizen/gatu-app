@@ -5,6 +5,7 @@ import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TopNav } from "@/components/trade/header/top-nav";
+import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -38,7 +39,15 @@ vi.mock("@gatu/ui", () => ({
 		triggerAriaLabel,
 	}: {
 		className?: string;
-		items?: Array<{ active?: boolean; disabled?: boolean; label: string; onSelect?: () => void }>;
+		items?: Array<{
+			active?: boolean;
+			disabled?: boolean;
+			href?: string;
+			label: string;
+			onSelect?: () => void;
+			rel?: string;
+			target?: string;
+		}>;
 		trigger?: ReactNode;
 		triggerAriaLabel?: string;
 	}) =>
@@ -53,18 +62,32 @@ vi.mock("@gatu/ui", () => ({
 				"div",
 				{ role: "menu" },
 				items.map((item) =>
-					createElement(
-						"button",
-						{
-							"aria-current": item.active ? "true" : undefined,
-							disabled: item.disabled,
-							key: item.label,
-							onClick: item.onSelect,
-							role: "menuitem",
-							type: "button",
-						},
-						item.label,
-					),
+					item.href
+						? createElement(
+								"a",
+								{
+									"aria-current": item.active ? "true" : undefined,
+									href: item.href,
+									key: item.label,
+									onClick: item.onSelect,
+									rel: item.rel,
+									role: "menuitem",
+									target: item.target,
+								},
+								item.label,
+							)
+						: createElement(
+								"button",
+								{
+									"aria-current": item.active ? "true" : undefined,
+									disabled: item.disabled,
+									key: item.label,
+									onClick: item.onSelect,
+									role: "menuitem",
+									type: "button",
+								},
+								item.label,
+							),
 				),
 			),
 		),
@@ -242,19 +265,27 @@ describe("TopNav", () => {
 		expect(findLink("Referrals")?.dataset.to).toBe("/referrals");
 	});
 
-	it("keeps future More entries disabled while linking to API Wallet", () => {
+	it("links Statistics externally while keeping API Wallet on the app router", () => {
 		renderNav();
-		const wideMenuItems = [
-			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
-				[]),
-		];
-		const futureItems = wideMenuItems.filter((item) => item.disabled);
-
-		expect(futureItems.map((item) => item.textContent?.trim())).toEqual(["Statistics"]);
-		for (const item of futureItems) act(() => item.click());
+		for (const layout of ["wide", "compact"]) {
+			const statisticsItem = [...container.querySelectorAll<HTMLAnchorElement>(`[data-layout="${layout}"] a`)].find(
+				(item) => item.textContent?.trim() === "Statistics",
+			);
+			expect(statisticsItem?.href).toBe(HYPERSCREENER_URL);
+			expect(statisticsItem?.target).toBe("_blank");
+			expect(statisticsItem?.rel).toBe("noopener noreferrer");
+			statisticsItem?.addEventListener("click", (event) => event.preventDefault(), { once: true });
+			act(() => statisticsItem?.click());
+		}
 		expect(testState.navigate).not.toHaveBeenCalled();
 
-		const apiWalletItem = wideMenuItems.find((item) => item.textContent?.trim() === "API Wallet");
+		const wideMenuItems = [
+			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+		];
+		const apiWalletItem = wideMenuItems.find(
+			(item): item is HTMLButtonElement =>
+				item instanceof HTMLButtonElement && item.textContent?.trim() === "API Wallet",
+		);
 		expect(apiWalletItem?.disabled).toBe(false);
 		act(() => apiWalletItem?.click());
 		expect(testState.navigate).toHaveBeenLastCalledWith({ to: "/api-wallet" });
@@ -265,9 +296,8 @@ describe("TopNav", () => {
 
 		function compactMenuLabels() {
 			return [
-				...(container
-					.querySelector('[data-layout="compact"]')
-					?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
+				...(container.querySelector('[data-layout="compact"]')?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
+					[]),
 			].map((item) => item.textContent?.trim());
 		}
 

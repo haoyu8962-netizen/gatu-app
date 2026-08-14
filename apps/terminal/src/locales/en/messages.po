@@ -68,6 +68,10 @@ msgstr "{age} days"
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} to {targetDirectionLabel}"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "{currentPage} of {totalPages}"
+msgstr "{currentPage} of {totalPages}"
+
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "{days} days"
@@ -1033,6 +1037,7 @@ msgstr "Back to Vaults"
 msgid "Balance"
 msgstr "Balance"
 
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Balance available to trade"
 msgstr "Balance available to trade"
@@ -3123,8 +3128,12 @@ msgid "Expiring"
 msgstr "Expiring"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
-msgstr "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+msgid "Explore HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+msgstr "Explore HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+
+#: src/components/vaults/vaults-list.tsx
+#~ msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+#~ msgstr "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
 
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
@@ -3396,6 +3405,10 @@ msgstr "Fees (Taker / Maker)"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Fees are higher than the bridge amount."
 msgstr "Fees are higher than the bridge amount."
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Fetched {fetchedLabel}"
+msgstr "Fetched {fetchedLabel}"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -3755,6 +3768,10 @@ msgstr "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
+msgstr "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -4964,6 +4981,10 @@ msgstr "Next"
 msgid "Next page"
 msgstr "Next page"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Next Vault page"
+msgstr "Next Vault page"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -5311,8 +5332,8 @@ msgid "Official"
 msgstr "Official"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
-msgstr "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+#~ msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+#~ msgstr "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Official and User filters stay unavailable until a reviewed exact-address policy is configured. No classification is inferred from relationship or ownership fields."
@@ -6140,6 +6161,10 @@ msgstr "Previous"
 msgid "Previous page"
 msgstr "Previous page"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Previous Vault page"
+msgstr "Previous Vault page"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6749,6 +6774,10 @@ msgstr "Resume tracking"
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "Retry"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Retry account data"
+msgstr "Retry account data"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Retry read-only verification"
@@ -9167,6 +9196,8 @@ msgid "Trades"
 msgstr "Trades"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
 msgid "Trading"
 msgstr "Trading"
 
@@ -9574,8 +9605,8 @@ msgid "Unclaimed"
 msgstr "Unclaimed"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Unclassified Vaults"
-msgstr "Unclassified Vaults"
+#~ msgid "Unclassified Vaults"
+#~ msgstr "Unclassified Vaults"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
@@ -9688,8 +9719,8 @@ msgid "Updated"
 msgstr "Updated"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Updated {updatedLabel}"
-msgstr "Updated {updatedLabel}"
+#~ msgid "Updated {updatedLabel}"
+#~ msgstr "Updated {updatedLabel}"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
@@ -9875,6 +9906,10 @@ msgstr "Vault lock status"
 msgid "Vault not found"
 msgstr "Vault not found"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault pagination"
+msgstr "Vault pagination"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault performance"
 msgstr "Vault performance"
@@ -9907,6 +9942,7 @@ msgstr "Vault Withdrawal"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Vaults"
 msgstr "Vaults"
@@ -10327,13 +10363,19 @@ msgstr "Your delegated stake"
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
-msgid "Your deposit"
-msgstr "Your deposit"
+#~ msgid "Your deposit"
+#~ msgstr "Your deposit"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Your equity"
+msgstr "Your equity"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."

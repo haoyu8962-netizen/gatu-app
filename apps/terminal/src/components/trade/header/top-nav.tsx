@@ -4,7 +4,7 @@ import { DownloadSimpleIcon, SlidersHorizontalIcon } from "@phosphor-icons/react
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
-import { isTradeRoutePath } from "@/config/nav";
+import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -37,7 +37,12 @@ export function TopNav() {
 	const stakingActive = pathname === "/staking";
 	const leaderboardActive = pathname === "/leaderboard";
 	const moreItems = [
-		{ label: t`Statistics`, disabled: true },
+		{
+			label: t`Statistics`,
+			href: HYPERSCREENER_URL,
+			target: "_blank" as const,
+			rel: "noopener noreferrer",
+		},
 		{
 			label: t`API Wallet`,
 			active: apiWalletActive,

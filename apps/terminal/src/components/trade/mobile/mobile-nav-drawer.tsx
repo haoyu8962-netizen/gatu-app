@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { isTradeRoutePath } from "@/config/nav";
+import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -129,7 +129,15 @@ export function MobileNavDrawer() {
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>More</Trans>
 							</p>
-							<UpcomingMobileNavItem label={t`Statistics`} soonLabel={soonLabel} />
+							<a
+								href={HYPERSCREENER_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								onClick={close}
+								className={getNavLinkClass(false)}
+							>
+								<Trans>Statistics</Trans>
+							</a>
 							<Link
 								to="/api-wallet"
 								onClick={close}

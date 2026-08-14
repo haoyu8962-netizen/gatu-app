@@ -64,6 +64,10 @@ msgstr "{age} 天"
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} 转为 {targetDirectionLabel}"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "{currentPage} of {totalPages}"
+msgstr "第 {currentPage} 页，共 {totalPages} 页"
+
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "{days} days"
@@ -966,6 +970,7 @@ msgstr "返回金库列表"
 msgid "Balance"
 msgstr "余额"
 
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Balance available to trade"
 msgstr "可用于交易的余额"
@@ -2913,8 +2918,12 @@ msgid "Expiring"
 msgstr "即将到期"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
-msgstr "探索传统 HyperCore 金库。存款会按份额承担各金库的收益与亏损，并可能损失全部本金。"
+msgid "Explore HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+msgstr "探索 HyperCore 金库。存款会按份额承担各金库的收益与亏损，并可能损失全部本金。"
+
+#: src/components/vaults/vaults-list.tsx
+#~ msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+#~ msgstr "探索传统 HyperCore 金库。存款会按份额承担各金库的收益与亏损，并可能损失全部本金。"
 
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
@@ -3162,6 +3171,10 @@ msgstr "手续费（吃单 / 挂单）"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Fees are higher than the bridge amount."
 msgstr "桥接费用高于桥接金额。"
+
+#: src/components/vaults/vaults-list.tsx
+msgid "Fetched {fetchedLabel}"
+msgstr "获取时间：{fetchedLabel}"
 
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Fill History"
@@ -3505,6 +3518,10 @@ msgstr "Hyperliquid 当前要求从 Arbitrum 通过 Circle CCTP 充值。"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "Hyperliquid 当前要求使用 CCTP 充值。本应用已暂停 Bridge 充值。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
+msgstr "Hyperliquid 文档说明：最近一次存入 HLP 后锁定 4 天，用户金库存款锁定 1 天。本次存款仍以服务器返回的时间戳为准。"
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -4605,6 +4622,10 @@ msgstr "下一页"
 msgid "Next page"
 msgstr "下一页"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Next Vault page"
+msgstr "下一页金库"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -4927,8 +4948,8 @@ msgid "Official"
 msgstr "官方"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
-msgstr "在提供经过审核的精确地址策略前，官方和用户分类不可用。各行会保持未分类，而不会进行猜测。"
+#~ msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+#~ msgstr "在提供经过审核的精确地址策略前，官方和用户分类不可用。各行会保持未分类，而不会进行猜测。"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Official and User filters stay unavailable until a reviewed exact-address policy is configured. No classification is inferred from relationship or ownership fields."
@@ -5665,6 +5686,10 @@ msgstr "上一页"
 msgid "Previous page"
 msgstr "上一页"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Previous Vault page"
+msgstr "上一页金库"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6227,6 +6252,10 @@ msgstr "继续跟踪"
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "重试"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Retry account data"
+msgstr "重试账户数据"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Retry read-only verification"
@@ -8458,6 +8487,8 @@ msgid "Trades"
 msgstr "成交"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
 msgid "Trading"
 msgstr "交易中"
 
@@ -8860,8 +8891,8 @@ msgid "Unclaimed"
 msgstr "未领取"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Unclassified Vaults"
-msgstr "未分类金库"
+#~ msgid "Unclassified Vaults"
+#~ msgstr "未分类金库"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
@@ -8974,8 +9005,8 @@ msgid "Updated"
 msgstr "已更新"
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Updated {updatedLabel}"
-msgstr "更新于 {updatedLabel}"
+#~ msgid "Updated {updatedLabel}"
+#~ msgstr "更新于 {updatedLabel}"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
@@ -9161,6 +9192,10 @@ msgstr "金库锁定状态"
 msgid "Vault not found"
 msgstr "未找到金库"
 
+#: src/components/vaults/vaults-list.tsx
+msgid "Vault pagination"
+msgstr "金库分页"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault performance"
 msgstr "金库表现"
@@ -9193,6 +9228,7 @@ msgstr "金库提款"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Vaults"
 msgstr "金库"
@@ -9577,13 +9613,19 @@ msgstr "您的已委托质押"
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
-msgid "Your deposit"
-msgstr "您的存款"
+#~ msgid "Your deposit"
+#~ msgstr "您的存款"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
+
+#: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vaults-list.tsx
+#: src/components/vaults/vaults-list.tsx
+msgid "Your equity"
+msgstr "您的权益"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."

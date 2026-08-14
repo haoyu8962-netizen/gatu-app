@@ -90,6 +90,9 @@ interface DropdownItem {
 	danger?: boolean;
 	active?: boolean;
 	onSelect?: () => void;
+	href?: string;
+	target?: React.HTMLAttributeAnchorTarget;
+	rel?: string;
 }
 
 interface DropdownGroup {
@@ -171,17 +174,36 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 				item.active && !item.danger && "font-semibold text-fg",
 			);
 
-		const renderItem = (item: DropdownItem, index: number) => (
-			<Menu.Item
-				key={index}
-				disabled={item.disabled}
-				onClick={item.onSelect}
-				aria-current={item.active ? "true" : undefined}
-				className={getItemClassName(item)}
-			>
-				{getItemContent(item)}
-			</Menu.Item>
-		);
+		const renderItem = (item: DropdownItem, index: number) => {
+			if (item.href && !item.disabled) {
+				return (
+					<Menu.LinkItem
+						key={index}
+						href={item.href}
+						target={item.target}
+						rel={item.rel}
+						closeOnClick
+						onClick={item.onSelect}
+						aria-current={item.active ? "true" : undefined}
+						className={getItemClassName(item)}
+					>
+						{getItemContent(item)}
+					</Menu.LinkItem>
+				);
+			}
+
+			return (
+				<Menu.Item
+					key={index}
+					disabled={item.disabled}
+					onClick={item.onSelect}
+					aria-current={item.active ? "true" : undefined}
+					className={getItemClassName(item)}
+				>
+					{getItemContent(item)}
+				</Menu.Item>
+			);
+		};
 
 		const renderRadioItem = (item: DropdownItem, index: number) => (
 			<Menu.RadioItem

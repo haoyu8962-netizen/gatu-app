@@ -5,6 +5,8 @@ import { ChartBarIcon, CurrencyCircleDollarIcon, TrendUpIcon } from "@phosphor-i
 
 export type MobileTab = "markets" | "trade" | "account";
 
+export const HYPERSCREENER_URL = "https://hyperscreener.asxn.xyz/home";
+
 const TRADE_ROUTE_PREFIXES = ["/trade", "/perp", "/spot", "/builders-perp"] as const;
 
 export function isTradeRoutePath(pathname: string): boolean {
