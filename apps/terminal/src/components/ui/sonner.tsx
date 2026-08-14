@@ -16,6 +16,7 @@ function Toaster(props: ToasterProps) {
 			className="toaster group"
 			position="bottom-right"
 			mobileOffset={{ bottom: MOBILE_TOAST_BOTTOM_OFFSET }}
+			richColors
 			duration={TOAST_DEFAULT_DURATION_MS}
 			icons={{
 				success: <CheckCircleIcon className="size-4" />,
@@ -39,6 +40,12 @@ function Toaster(props: ToasterProps) {
 					"--error-bg": "var(--bg-overlay)",
 					"--error-text": "var(--text-error)",
 					"--error-border": "var(--text-error)",
+					"--warning-bg": "var(--bg-overlay)",
+					"--warning-text": "var(--text-warning)",
+					"--warning-border": "var(--text-warning)",
+					"--info-bg": "var(--bg-overlay)",
+					"--info-text": "var(--text-info)",
+					"--info-border": "var(--text-info)",
 					"--width": TOAST_WIDTH,
 				} as React.CSSProperties
 			}
