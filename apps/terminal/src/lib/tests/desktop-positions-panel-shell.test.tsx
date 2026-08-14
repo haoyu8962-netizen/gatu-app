@@ -147,13 +147,15 @@ describe("desktop positions panel shell", () => {
 			expect(tab.className).toContain("text-[13px]");
 			expect(tab.className).toContain("px-3");
 			expect(tab.className).toContain("duration-[120ms]");
-			expect(tab.className).toContain("data-active:font-bold");
+			expect(tab.className).toContain("font-medium");
+			expect(tab.className).not.toContain("data-active:font-bold");
 		}
 
 		const indicator = Array.from(tabList?.children ?? []).find((element) =>
 			element.className.includes("bg-market-close-fg"),
 		) as HTMLElement | undefined;
 		expect(indicator?.className).toContain("h-0.5");
+		expect(indicator?.className).toContain("transition-[left]");
 		expect(indicator?.className).toContain("duration-[120ms]");
 		expect(indicator?.className).toContain("ease-linear");
 
@@ -181,6 +183,51 @@ describe("desktop positions panel shell", () => {
 			expect(filter?.className).toContain("h-[27px]");
 			expect(filter?.className).toContain("rounded-[7px]");
 			expect(filter?.className).toContain("border-market-close-stroke-card");
+		}
+	});
+
+	it("reveals the selected tab without changing the page scroll axis", () => {
+		testState.activeTab = "orders-history";
+		const scrollByDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollBy");
+		const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+		const scrollBy = vi.fn();
+		const scrollIntoView = vi.fn();
+		Object.defineProperty(HTMLElement.prototype, "scrollBy", { configurable: true, value: scrollBy });
+		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
+		const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+		getBoundingClientRect.mockImplementation(function (this: HTMLElement) {
+			if (this.dataset.testid === "positions-tabs-scroll") {
+				return { bottom: 45, height: 45, left: 0, right: 320, top: 0, width: 320, x: 0, y: 0, toJSON() {} };
+			}
+			if (this.dataset.positionsTab === "orders-history") {
+				return {
+					bottom: 45,
+					height: 45,
+					left: 360,
+					right: 460,
+					top: 0,
+					width: 100,
+					x: 360,
+					y: 0,
+					toJSON() {},
+				};
+			}
+			return { bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0, toJSON() {} };
+		});
+
+		try {
+			render();
+			expect(scrollBy).toHaveBeenCalledWith({ behavior: "auto", left: 140, top: 0 });
+			expect(scrollIntoView).not.toHaveBeenCalled();
+		} finally {
+			getBoundingClientRect.mockRestore();
+			if (scrollByDescriptor) Object.defineProperty(HTMLElement.prototype, "scrollBy", scrollByDescriptor);
+			else Reflect.deleteProperty(HTMLElement.prototype, "scrollBy");
+			if (scrollIntoViewDescriptor) {
+				Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scrollIntoViewDescriptor);
+			} else {
+				Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+			}
 		}
 	});
 

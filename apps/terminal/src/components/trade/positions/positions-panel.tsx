@@ -220,16 +220,35 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const hasHeaderActions = showsFundsActions || showsPositionToolbar || CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
 
 	useEffect(() => {
+		const scroller = tabScrollRef.current;
+		if (!scroller) return;
+		const scrollContainer: HTMLDivElement = scroller;
+
 		function revealActiveTab() {
-			const activeTabElement = tabScrollRef.current?.querySelector<HTMLElement>(`[data-positions-tab="${activeTab}"]`);
-			activeTabElement?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+			const activeTabElement = scrollContainer.querySelector<HTMLElement>(`[data-positions-tab="${activeTab}"]`);
+			if (!activeTabElement) return;
+
+			const scrollerRect = scrollContainer.getBoundingClientRect();
+			const activeTabRect = activeTabElement.getBoundingClientRect();
+			let horizontalDelta = 0;
+			if (activeTabRect.left < scrollerRect.left) horizontalDelta = activeTabRect.left - scrollerRect.left;
+			else if (activeTabRect.right > scrollerRect.right) horizontalDelta = activeTabRect.right - scrollerRect.right;
+			if (horizontalDelta === 0) return;
+
+			if (typeof scrollContainer.scrollBy === "function") {
+				scrollContainer.scrollBy({ behavior: "auto", left: horizontalDelta, top: 0 });
+			} else {
+				scrollContainer.scrollLeft += horizontalDelta;
+			}
 		}
 
 		revealActiveTab();
-		if (!toolbarTarget || typeof ResizeObserver === "undefined") return;
+		if (typeof ResizeObserver === "undefined") return;
 
 		const observer = new ResizeObserver(revealActiveTab);
-		observer.observe(toolbarTarget);
+		observer.observe(scrollContainer);
+		if (toolbarTarget) observer.observe(toolbarTarget);
+		for (const tab of scrollContainer.querySelectorAll<HTMLElement>("[data-positions-tab]")) observer.observe(tab);
 		return () => observer.disconnect();
 	}, [activeTab, toolbarTarget]);
 
@@ -269,11 +288,12 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 				>
 					<div
 						ref={tabScrollRef}
+						data-testid="positions-tabs-scroll"
 						className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					>
 						<TabsList
 							className="h-full min-w-max gap-0.5 border-b-0"
-							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
+							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
 						>
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
@@ -283,7 +303,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										key={tab.value}
 										value={tab.value}
 										data-positions-tab={tab.value}
-										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:font-bold data-active:text-market-close-fg"
+										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
 										{typeof count === "number" ? <span className="tabular-nums">({count})</span> : null}
