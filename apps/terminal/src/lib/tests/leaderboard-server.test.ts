@@ -176,6 +176,9 @@ describe("leaderboard API server", () => {
 		await vi.waitFor(async () => {
 			const freshResponse = await handler(request());
 			expect((await freshResponse.json()).stale).toBe(false);
+			expect(freshResponse.headers.get("last-modified")).not.toBe(lastModified);
+			const staleTimestampValidator = await handler(request({ "if-modified-since": lastModified }));
+			expect(staleTimestampValidator.status).toBe(200);
 		});
 	});
 

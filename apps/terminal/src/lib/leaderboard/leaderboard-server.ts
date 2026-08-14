@@ -160,7 +160,7 @@ export function createLeaderboardApiHandler(
 			end: result.end,
 		};
 		try {
-			return await successResponse(request, body);
+			return await successResponse(request, body, snapshotResult.snapshot.checkedAt);
 		} catch {
 			return errorResponse("temporarily_unavailable", 503, { "retry-after": "30" });
 		}
@@ -447,13 +447,17 @@ function matchesLeaderboardQuery(row: PublicLeaderboardRow, query: string): bool
 	);
 }
 
-async function successResponse(request: Request, body: LeaderboardApiSuccessResponse): Promise<Response> {
+async function successResponse(
+	request: Request,
+	body: LeaderboardApiSuccessResponse,
+	verifiedAt: number,
+): Promise<Response> {
 	const serialized = JSON.stringify(body);
 	if (new TextEncoder().encode(serialized).byteLength > LEADERBOARD_API_CACHE_POLICY.maximumResponseBytes) {
 		return errorResponse("temporarily_unavailable", 503, { "retry-after": "30" });
 	}
 	const etag = await createEntityTag(serialized);
-	const lastModified = new Date(body.generatedAt).toUTCString();
+	const lastModified = new Date(verifiedAt).toUTCString();
 	const headers = new Headers({
 		"cache-control": body.stale
 			? "public, max-age=0, s-maxage=30, stale-if-error=1800"
@@ -464,7 +468,7 @@ async function successResponse(request: Request, body: LeaderboardApiSuccessResp
 		vary: "Accept-Encoding",
 	});
 	if (body.stale) headers.set("warning", '110 - "Response is stale"');
-	if (isNotModified(request.headers, etag, body.generatedAt, body.stale)) {
+	if (isNotModified(request.headers, etag, verifiedAt, body.stale)) {
 		headers.delete("content-type");
 		return new Response(null, { status: 304, headers });
 	}
