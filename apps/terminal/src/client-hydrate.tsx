@@ -1,13 +1,17 @@
 import { invalidateAllExchangeRequestIdentities } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { StartClient } from "@tanstack/react-start/client";
 import { StrictMode, startTransition } from "react";
-import { hydrateRoot } from "react-dom/client";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";
 import { reportClientError } from "./lib/error-reporting/client";
 import { armMobileSyncDraftExpiryCleanup } from "./lib/mobile-sync/draft-storage";
 
+let root: Root | undefined;
+let rootFatalFallbackScheduled = false;
+
 armMobileSyncDraftExpiryCleanup();
 startTransition(() => {
-	hydrateRoot(
+	root = hydrateRoot(
 		document,
 		<StrictMode>
 			<StartClient />
@@ -20,12 +24,30 @@ startTransition(() => {
 				});
 			},
 			onUncaughtError: (error, info) => {
-				invalidateAllExchangeRequestIdentities();
-				reportClientError(error, {
-					kind: "react_uncaught",
-					componentStack: info.componentStack,
-				});
+				handleRootFatalError(error, info.componentStack);
 			},
 		},
 	);
 });
+
+function handleRootFatalError(error: unknown, componentStack: string | undefined): void {
+	if (rootFatalFallbackScheduled) return;
+	rootFatalFallbackScheduled = true;
+
+	try {
+		invalidateAllExchangeRequestIdentities();
+	} catch {}
+	try {
+		reportClientError(error, {
+			kind: "react_uncaught",
+			componentStack,
+		});
+	} catch {}
+
+	queueMicrotask(() => {
+		try {
+			root?.unmount();
+		} catch {}
+		renderBootstrapErrorPage();
+	});
+}

@@ -108,6 +108,7 @@ describe("mobile Agent pre-bootstrap fragment scrub", () => {
 		const staticImports = clientSource.match(/^import\s+(?!\()[^\n]+$/gm) ?? [];
 
 		expect(staticImports).toEqual([
+			'import { renderBootstrapErrorPage } from "./lib/bootstrap-error-page";',
 			'import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";',
 		]);
 		expect(clientSource.indexOf('import("./lib/error-reporting/client")')).toBeLessThan(
