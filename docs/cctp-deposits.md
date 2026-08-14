@@ -32,7 +32,10 @@ Activation remains independently fail-closed for path and environment:
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`
 
 None defaults to enabled. The sponsored flag does not enable the external path
-or the other environment.
+or the other environment. These flags authorize a release to expose a path;
+they are not themselves user consent to move funds. In particular, enabling
+the sponsored mainnet flag must not make the application-wide recovery host
+sign or broadcast a deposit.
 
 The implementation uses:
 
@@ -64,18 +67,68 @@ owner and authorization signer; the outer Arbitrum transaction sender may be a
 Smart Wallet or account-abstraction entry point and must not be treated as the
 depositor identity.
 
-The sponsored path remains disabled in a release until funded Arbitrum Sepolia
-and small-value mainnet evidence covers exact-wallet activation, authorization
-binding, paymaster submission, the exact success event, matching skipped-event
-rejection, Circle attestation, forwarding, refresh recovery, and final
-HyperCore credit. A successful unrelated sponsored transaction is not release
-evidence for CCTP.
+The sponsored path remains disabled in a public release until funded Arbitrum
+Sepolia and a controlled, non-public production-candidate mainnet run cover
+exact-wallet activation, authorization binding, paymaster submission, the exact
+success event, matching skipped-event rejection, Circle attestation,
+forwarding, refresh recovery, and final HyperCore credit. A successful
+unrelated sponsored transaction is not release evidence for CCTP. The current
+build flag has no user or wallet allowlist: enabling it in a public bundle makes
+the explicitly confirmed mainnet path available to every eligible email-wallet
+user.
 
 Sending USDC to the displayed embedded-wallet address does not by itself
-authorize a CCTP deposit. After funds arrive, the exact embedded EOA must still
-sign the amount- and destination-bound EIP-3009 authorization. The application
-must not silently pull the balance or retain the authorization signature in
-browser storage.
+authorize a mainnet CCTP deposit. After funds arrive, the modal reviews the
+complete available native-USDC balance and current Circle fee. The user must
+explicitly select the amount-labelled `Deposit … USDC` action before the exact embedded EOA
+signs the amount- and destination-bound EIP-3009 authorization. Immediately
+before signing and broadcasting, the funds-action critical section reads the
+balance again and requires it to equal the reviewed balance exactly; a change
+aborts the attempt and requires a new review. Mainnet recovery remains mounted
+outside the modal, but it must never initiate a new signature or broadcast.
+The execution boundary independently rejects every automatic mainnet sponsored
+scope, a missing balance or fee review, and any amount that differs from the
+reviewed complete balance; the modal guard is not the only enforcement point.
+
+The funded testnet workflow intentionally retains automatic forwarding so it
+can exercise background, reload, and cross-tab recovery. Testnet automation
+rechecks the balance inside the exclusive browser lock and submits that full
+refreshed balance. This testnet behavior is not release authorization for a
+mainnet background deposit.
+
+The application never stores an EIP-3009 authorization signature in browser
+storage.
+
+## Paymaster Production Policy
+
+The ZeroDev project used by the sponsored mainnet path must not sponsor every
+transaction. Before any mainnet candidate, disable `Sponsor all transactions`
+and restrict the Arbitrum One Contract Policy to the mainnet `CctpExtensionV2`
+proxy `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
+`batchSponsorDepositForBurn` selector `0x300fb2a3`. Contract policy is defense
+in depth for gas sponsorship; it does not limit the amount of USDC covered by
+an EIP-3009 authorization and does not replace the explicit mainnet user action
+above.
+
+Project and contract request, per-transaction gas, aggregate gas, and gas-price
+limits must be sized from observed production and canary traffic rather than
+copied from testnet. Reaching a ZeroDev sponsorship or account limit makes the
+UserOperation fail. It must never fall back to an unrelated contract or to a
+browser-managed email wallet paying gas. Capacity exhaustion therefore needs
+monitoring and alerting with enough headroom for wallet deployment, estimation,
+Bundler, and Paymaster request patterns.
+
+After those policies and production-sized limits are active, run the smallest
+mainnet E2E in an access-controlled production-candidate environment using the
+same commit and Sponsored-only bundle intended for release. If traffic cannot
+be isolated, add a real runtime allowlist or equivalent access control first;
+do not describe the global build flag as a canary allowlist.
+
+A rejected sponsored submission without a source hash remains an unknown
+outcome. The unresolved authorization intent stays fail-closed until recovery
+proves the source result or the authorization expires; operators must not
+clear it merely because a Paymaster policy appears to have rejected the
+request.
 
 ## Recovery Semantics
 
@@ -133,5 +186,7 @@ rather than reverting to the retired path.
 - [Circle: Transfer with CctpExtensionV2](https://developers.circle.com/cctp/howtos/transfer-usdc-from-arbitrum-to-hypercore-with-cctp-extension-v2)
 - [Circle: CctpExtensionV2 interface](https://developers.circle.com/cctp/references/cctp-extension-v2-contract-interface)
 - [Circle: Get messages and attestations](https://developers.circle.com/api-reference/cctp/all/get-messages-v2)
+- [ZeroDev: Gas policies](https://docs.zerodev.app/api-and-toolings/infrastructure/gas-policies)
+- [ZeroDev: Sponsoring gas](https://docs.zerodev.app/smart-accounts/sponsor-gas/evm)
 - [Hyperliquid: Nonces and API wallets](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets)
 - [nktkas SDK: `usdcRouting`](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/usdcRouting.ts)

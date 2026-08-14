@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CCTP_DEPOSIT_NETWORKS } from "@/config/cctp-deposit";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
-import { type UseDepositResult, useDeposit } from "@/lib/hyperliquid/use-deposit";
+import { type DepositReview, type UseDepositResult, useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { addressToBytes32, CCTP_EXTENSION_ABI, CCTP_EXTENSION_V2_ABI } from "@/lib/trade/cctp-deposit";
 import {
 	readCctpDepositTrackingRecords,
@@ -73,10 +73,17 @@ function createSuccessfulCctpReceipt(): TransactionReceipt {
 	} as unknown as TransactionReceipt;
 }
 
-function stubSuccessfulCctpCapacity() {
+function stubSuccessfulCctpCapacity(balanceRaw = 5_000_000n, balanceBeforeSubmissionRaw = balanceRaw) {
+	let balanceRequestCount = 0;
 	vi.stubGlobal(
 		"fetch",
-		vi.fn(async (input: RequestInfo | URL) => {
+		vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { method?: string }) : null;
+			if (body?.method === "eth_call") {
+				const currentBalanceRaw = balanceRequestCount === 0 ? balanceRaw : balanceBeforeSubmissionRaw;
+				balanceRequestCount += 1;
+				return new Response(JSON.stringify({ result: `0x${currentBalanceRaw.toString(16)}` }), { status: 200 });
+			}
 			if (String(input).includes("/fastBurn/USDC/allowance")) {
 				return new Response(JSON.stringify({ allowance: 1_000_000 }), { status: 200 });
 			}
@@ -258,10 +265,18 @@ describe("useDeposit fresh USDC route guard", () => {
 		vi.unstubAllGlobals();
 	});
 
-	function Probe({ mode, route = "bridge" }: { mode: "smart" | "wallet"; route?: "bridge" | "cctp" }) {
+	function Probe({
+		executionScope = "manual",
+		mode,
+		route = "bridge",
+	}: {
+		executionScope?: "automatic" | "manual";
+		mode: "smart" | "wallet";
+		route?: "bridge" | "cctp";
+	}) {
 		capturedDeposit = useDeposit({
 			balanceEnabled: false,
-			executionScope: "manual",
+			executionScope,
 			mode,
 			depositRoute: route,
 			expectedCctpMaxFeeRaw: route === "cctp" ? 200_000n : undefined,
@@ -270,18 +285,37 @@ describe("useDeposit fresh USDC route guard", () => {
 		return null;
 	}
 
-	function renderMode(mode: "smart" | "wallet", route: "bridge" | "cctp" = "bridge") {
+	function renderMode(
+		mode: "smart" | "wallet",
+		route: "bridge" | "cctp" = "bridge",
+		executionScope: "automatic" | "manual" = "manual",
+	) {
 		act(() => {
-			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(Probe, { mode, route })));
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(Probe, { executionScope, mode, route }),
+				),
+			);
 		});
 		if (!capturedDeposit) throw new Error("Deposit hook was not captured");
 		return capturedDeposit;
 	}
 
-	async function submit(mode: "smart" | "wallet", route: "bridge" | "cctp" = "bridge") {
-		const depositHook = renderMode(mode, route);
+	async function submit(
+		mode: "smart" | "wallet",
+		route: "bridge" | "cctp" = "bridge",
+		review?: DepositReview | null,
+		executionScope: "automatic" | "manual" = "manual",
+	) {
+		const depositHook = renderMode(mode, route, executionScope);
+		const submittedReview =
+			review === undefined && mode === "smart" && route === "cctp" && !testState.isTestnet
+				? { expectedBalanceRaw: 5_000_000n, expectedCctpMaxFeeRaw: 200_000n }
+				: (review ?? undefined);
 		await act(async () => {
-			await depositHook.deposit("5");
+			await depositHook.deposit("5", submittedReview);
 		});
 	}
 
@@ -713,6 +747,98 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(readCctpSponsoredAuthorizationIntent("Mainnet", WALLET_ADDRESS)).toBeNull();
 	});
 
+	it("submits a reviewed full-balance sponsored deposit only when the locked balance still matches", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+
+		await submit("smart", "cctp", {
+			expectedBalanceRaw: 5_000_000n,
+			expectedCctpMaxFeeRaw: 200_000n,
+		});
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).toHaveBeenCalledOnce();
+	});
+
+	it("rejects an automatic mainnet sponsored deposit at the execution boundary", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await submit("smart", "cctp", { expectedBalanceRaw: 5_000_000n, expectedCctpMaxFeeRaw: 200_000n }, "automatic");
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("confirmation is required");
+	});
+
+	it.each([
+		{ name: "no review", review: null },
+		{ name: "only a reviewed balance", review: { expectedBalanceRaw: 5_000_000n } },
+		{ name: "only a reviewed fee", review: { expectedCctpMaxFeeRaw: 200_000n } },
+	])("rejects a mainnet sponsored deposit with $name", async ({ review }) => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await submit("smart", "cctp", review);
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("confirmation is required");
+	});
+
+	it("rejects a mainnet sponsored amount that differs from the reviewed full balance", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await submit("smart", "cctp", {
+			expectedBalanceRaw: 6_000_000n,
+			expectedCctpMaxFeeRaw: 200_000n,
+		});
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("requires renewed review when the locked sponsored-wallet balance changed", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(6_000_000n);
+
+		await submit("smart", "cctp", {
+			expectedBalanceRaw: 5_000_000n,
+			expectedCctpMaxFeeRaw: 200_000n,
+		});
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("does not broadcast when the reviewed balance changes after authorization signing", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity(5_000_000n, 6_000_000n);
+
+		await submit("smart", "cctp", {
+			expectedBalanceRaw: 5_000_000n,
+			expectedCctpMaxFeeRaw: 200_000n,
+		});
+
+		expect(testState.permitSign).toHaveBeenCalledOnce();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("amount is not verified");
+	});
+
+	it("uses the call-time reviewed CCTP fee instead of the hook fallback", async () => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		stubSuccessfulCctpCapacity();
+
+		await submit("smart", "cctp", {
+			expectedBalanceRaw: 5_000_000n,
+			expectedCctpMaxFeeRaw: 300_000n,
+		});
+
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("fees changed");
+	});
+
 	it("uses the Sepolia V2 contract and Smart Wallet client for sponsored testnet deposits", async () => {
 		testState.isTestnet = true;
 		testState.wallet.chainId = "eip155:421614";
@@ -865,7 +991,11 @@ describe("useDeposit fresh USDC route guard", () => {
 		let feeRequestCount = 0;
 		vi.stubGlobal(
 			"fetch",
-			vi.fn(async (input: RequestInfo | URL) => {
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+				const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { method?: string }) : null;
+				if (body?.method === "eth_call") {
+					return new Response(JSON.stringify({ result: "0x4c4b40" }), { status: 200 });
+				}
 				if (String(input).includes("/fastBurn/USDC/allowance")) {
 					return new Response(JSON.stringify({ allowance: 1_000_000 }), { status: 200 });
 				}

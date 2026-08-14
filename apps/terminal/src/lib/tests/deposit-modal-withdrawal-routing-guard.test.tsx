@@ -104,13 +104,28 @@ vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 			hasSufficientFastAllowance: true,
 			isError: false,
 			isLoading: false,
+			refetch: vi.fn().mockResolvedValue({
+				data: {
+					fastAllowanceRaw: 100_000_000n,
+					feeQuote: {
+						finalityThreshold: 1000,
+						forwardFeeRaw: { high: 200_001n, low: 199_999n, med: 200_000n },
+						minimumFeeBps: "0",
+					},
+				},
+				isError: false,
+			}),
 		};
 	},
 }));
 
 vi.mock("@/config/cctp-deposit", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/config/cctp-deposit")>();
-	return { ...original, isCctpExternalDepositEnabled: () => true };
+	return {
+		...original,
+		isCctpExternalDepositEnabled: () => true,
+		isCctpSponsoredDepositEnabled: () => true,
+	};
 });
 
 vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
@@ -282,16 +297,26 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 	DepositForm: ({
 		onRetryRouting,
 		onSubmit,
+		requiresExplicitFundingDeposit,
 		routingStatus,
+		usesFundingAddressFlow,
 	}: {
 		onRetryRouting: () => void;
 		onSubmit: () => void;
+		requiresExplicitFundingDeposit?: boolean;
 		routingStatus: string;
+		usesFundingAddressFlow: boolean;
 	}) =>
 		createElement(
 			"div",
 			{ "data-testid": "deposit-routing-status", "data-status": routingStatus },
-			createElement("button", { onClick: onSubmit, type: "button" }, "Submit deposit"),
+			!usesFundingAddressFlow || requiresExplicitFundingDeposit
+				? createElement(
+						"button",
+						{ onClick: onSubmit, type: "button" },
+						requiresExplicitFundingDeposit ? "Deposit 10 USDC" : "Submit deposit",
+					)
+				: null,
 			createElement("button", { onClick: onRetryRouting, type: "button" }, "Retry deposit route"),
 		),
 }));
@@ -580,6 +605,25 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			amountRaw: 10_000_000n,
 			enabled: true,
 			isTestnet: false,
+		});
+	});
+
+	it("submits a mainnet sponsored deposit only after the user explicitly confirms the reviewed full balance", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.freshRoutingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+
+		await rerender();
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+		await act(async () => getButton("Deposit 10 USDC").click());
+
+		expect(testState.deposit).toHaveBeenCalledOnce();
+		expect(testState.deposit).toHaveBeenCalledWith("10", {
+			expectedBalanceRaw: 10_000_000n,
+			expectedCctpMaxFeeRaw: 200_000n,
 		});
 	});
 

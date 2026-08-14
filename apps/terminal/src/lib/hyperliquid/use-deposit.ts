@@ -87,6 +87,11 @@ interface ValidationResult {
 	error: string | null;
 }
 
+export interface DepositReview {
+	expectedBalanceRaw?: bigint;
+	expectedCctpMaxFeeRaw?: bigint;
+}
+
 export interface UseDepositResult {
 	isArbitrum: boolean;
 	switchToArbitrum: () => void;
@@ -111,7 +116,7 @@ export interface UseDepositResult {
 	cctpRecoveryUnavailable: boolean;
 	submissionOutcomeUnknown: boolean;
 	walletResponseDelayed: boolean;
-	deposit: (amount: string) => Promise<void>;
+	deposit: (amount: string, review?: DepositReview) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
 	validate: (amount: string) => ValidationResult;
 	reset: () => void;
@@ -944,7 +949,7 @@ export function useDeposit({
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
 	const deposit = useCallback(
-		async (amount: string) => {
+		async (amount: string, review?: DepositReview) => {
 			let cctpTrackingRecord: { env: "Mainnet" | "Testnet"; owner: `0x${string}`; sourceHash: Hash } | undefined;
 			let cctpAuthorizationNonce: Hex | undefined;
 			let sponsoredAuthorizationValidBefore: bigint | undefined;
@@ -967,6 +972,18 @@ export function useDeposit({
 					throw new Error(t`Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.`);
 				}
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
+				if (network === "mainnet" && mode === "smart") {
+					if (
+						executionScope !== "manual" ||
+						review?.expectedBalanceRaw === undefined ||
+						review.expectedCctpMaxFeeRaw === undefined
+					) {
+						throw new Error(t`This confirmation is required before finishing.`);
+					}
+					if (amountRaw !== review.expectedBalanceRaw) {
+						throw new Error(t`Available amount is not verified`);
+					}
+				}
 				const markWalletResponseDelayed = () => {
 					updateDepositExecutionState(executionKey, operationId, (previous) =>
 						previous.status === "pending" ? { ...previous, walletResponseDelayed: true } : previous,
@@ -1017,6 +1034,13 @@ export function useDeposit({
 						);
 					}
 					assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
+					async function assertReviewedBalanceUnchanged() {
+						if (review?.expectedBalanceRaw === undefined) return;
+						const freshBalanceRaw = await readDepositUsdcBalance(depositConfig, ready.address);
+						if (amountRaw !== review.expectedBalanceRaw || freshBalanceRaw !== review.expectedBalanceRaw) {
+							throw new Error(t`Available amount is not verified`);
+						}
+					}
 					await assertFreshSelectedDepositRoute();
 					const mainnetRoleRequest = getSdkInfoClient(false).userRole({ user: ready.address });
 					const recipientRoles =
@@ -1058,9 +1082,10 @@ export function useDeposit({
 									nowSeconds: Math.floor(Date.now() / 1000),
 									user: ready.address as Address,
 								});
+					const reviewedCctpMaxFeeRaw = review?.expectedCctpMaxFeeRaw ?? expectedCctpMaxFeeRaw;
 					if (
 						executionScope === "manual" &&
-						(expectedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== expectedCctpMaxFeeRaw)
+						(reviewedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== reviewedCctpMaxFeeRaw)
 					) {
 						throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
 					}
@@ -1074,6 +1099,7 @@ export function useDeposit({
 							throw new Error(t`Gas-sponsored CCTP deposits are not enabled for this network.`);
 						}
 					}
+					await assertReviewedBalanceUnchanged();
 					await assertFreshSelectedDepositRoute();
 					const authorizationSignature = await ready.walletClient.signTypedData({
 						account: ready.address,
@@ -1103,6 +1129,7 @@ export function useDeposit({
 						});
 						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
 						await assertFreshSelectedDepositRoute();
+						await assertReviewedBalanceUnchanged();
 						saveCctpSponsoredAuthorizationIntent({
 							env: cctpTrackingEnv,
 							owner: ready.address,

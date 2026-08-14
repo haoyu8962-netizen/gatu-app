@@ -238,7 +238,9 @@ export function DepositModal() {
 	const showSpotFundsNotice =
 		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
-	const baseDepositValidation = validateDeposit(depositAmount);
+	const reviewedDepositAmount = isEmbeddedDeposit ? maxDepositAmount : depositAmount;
+	const reviewedDepositAmountRaw = isEmbeddedDeposit ? maxDepositRaw : depositAmountRaw;
+	const baseDepositValidation = validateDeposit(reviewedDepositAmount);
 	const embeddedWalletValidationError =
 		isEmbeddedDeposit && embeddedWalletError
 			? formatTransferError(normalizeError(embeddedWalletError))
@@ -247,11 +249,11 @@ export function DepositModal() {
 				: null;
 	const cctpDepositFeeUnavailable =
 		selectedDepositRoute === "cctp" &&
-		!isEmbeddedDeposit &&
-		(cctpDepositFeeQuery.isLoading ||
-			cctpDepositFeeQuery.isError ||
-			!cctpDepositFeeQuery.calculation ||
-			cctpDepositFeeQuery.hasSufficientFastAllowance === false);
+		(!isEmbeddedDeposit || !isTestnet) &&
+		(displayedCctpDepositFeeQuery.isLoading ||
+			displayedCctpDepositFeeQuery.isError ||
+			!displayedCctpDepositFeeQuery.calculation ||
+			displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false);
 	const cctpDepositFee = displayedCctpDepositFeeQuery.calculation
 		? formatUnits(displayedCctpDepositFeeQuery.calculation.maxFeeRaw, 6)
 		: null;
@@ -259,12 +261,14 @@ export function DepositModal() {
 		? formatUnits(displayedCctpDepositFeeQuery.calculation.netAmountRaw, 6)
 		: null;
 	const cctpDepositAmountLimitError =
-		selectedDepositRoute === "cctp" && depositAmountRaw !== undefined && depositAmountRaw > CCTP_MAX_DEPOSIT_USDC
+		selectedDepositRoute === "cctp" &&
+		reviewedDepositAmountRaw !== undefined &&
+		reviewedDepositAmountRaw > CCTP_MAX_DEPOSIT_USDC
 			? t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`
 			: selectedDepositRoute === "cctp" &&
 					isTestnet &&
-					depositAmountRaw !== undefined &&
-					depositAmountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC
+					reviewedDepositAmountRaw !== undefined &&
+					reviewedDepositAmountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC
 				? t`Circle testnet deposits are limited to 1,000 USDC per transfer.`
 				: null;
 	const depositValidation = !depositRouteReady
@@ -288,9 +292,9 @@ export function DepositModal() {
 							: cctpDepositFeeUnavailable
 								? {
 										valid: false,
-										error: cctpDepositFeeQuery.isError
+										error: displayedCctpDepositFeeQuery.isError
 											? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-											: cctpDepositFeeQuery.hasSufficientFastAllowance === false
+											: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
 												? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
 												: null,
 									}
@@ -553,25 +557,28 @@ export function DepositModal() {
 			setDepositRoutingPreflightFailed(false);
 			if (freshRouting.depositRoute !== selectedDepositRoute) return;
 			if (selectedDepositRoute === "cctp") {
-				const reviewedCalculation = cctpDepositFeeQuery.calculation;
-				if (!reviewedCalculation || depositAmountRaw === undefined) return;
-				const freshFeeResult = await cctpDepositFeeQuery.refetch();
+				const reviewedCalculation = displayedCctpDepositFeeQuery.calculation;
+				if (!reviewedCalculation || reviewedDepositAmountRaw === undefined) return;
+				const freshFeeResult = await displayedCctpDepositFeeQuery.refetch();
 				if (depositPreflightIdRef.current !== preflightId) return;
 				if (!freshFeeResult.data || freshFeeResult.isError) {
 					setDepositCctpPreflightError(t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`);
 					return;
 				}
-				if (freshFeeResult.data.fastAllowanceRaw < depositAmountRaw) {
+				if (freshFeeResult.data.fastAllowanceRaw < reviewedDepositAmountRaw) {
 					setDepositCctpPreflightError(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
 					return;
 				}
-				const freshCalculation = calculateCctpDepositFee(depositAmountRaw, freshFeeResult.data.feeQuote);
+				const freshCalculation = calculateCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
 				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
 					setDepositCctpPreflightError(t`Circle fees changed. Review the updated fee, then submit again.`);
 					return;
 				}
 			}
-			await deposit(depositAmount);
+			await deposit(reviewedDepositAmount, {
+				expectedBalanceRaw: isEmbeddedDeposit ? reviewedDepositAmountRaw : undefined,
+				expectedCctpMaxFeeRaw: displayedCctpDepositFeeQuery.calculation?.maxFeeRaw,
+			});
 		} catch {
 			if (depositPreflightIdRef.current === preflightId) setDepositRoutingPreflightFailed(true);
 			return;
@@ -1083,6 +1090,7 @@ export function DepositModal() {
 								onRetryRouting={handleDepositRoutingRetry}
 								networkName={depositNetworkName}
 								sponsoredCctpEnabled={sponsoredCctpEnabled}
+								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
 								cctpNetAmount={cctpDepositNetAmount}
 								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}

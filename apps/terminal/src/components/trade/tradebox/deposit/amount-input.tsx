@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ArrowLineDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 
@@ -85,10 +85,7 @@ export function AmountInput({
 						<Trans>Processing...</Trans>
 					</>
 				) : (
-					<>
-						<ArrowLineDownIcon className="size-4" />
-						<Trans>Deposit</Trans>
-					</>
+					<Trans>Deposit</Trans>
 				)}
 			</Button>
 		</div>

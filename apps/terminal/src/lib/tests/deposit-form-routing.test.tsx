@@ -77,6 +77,7 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		onRetryRouting: vi.fn(),
 		networkName: "Arbitrum",
 		sponsoredCctpEnabled: true,
+		requiresExplicitFundingDeposit: false,
 		cctpFee: null,
 		cctpNetAmount: null,
 		cctpFeeLoading: false,
@@ -122,6 +123,91 @@ describe("DepositForm routing gate", () => {
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 5 USDC");
+	});
+
+	it("keeps testnet funding automatic without rendering the mainnet confirmation action", async () => {
+		const props = createProps("ready", "cctp");
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(
+			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 9 USDC")),
+		).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("requires an explicit enabled action for a mainnet full-balance sponsored deposit", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const submitButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(submitButton?.disabled).toBe(false);
+		act(() => submitButton?.click());
+		expect(props.onSubmit).toHaveBeenCalledOnce();
+	});
+
+	it.each([
+		{
+			name: "validation is not ready",
+			overrides: {},
+		},
+		{
+			name: "the balance is loading",
+			overrides: { balanceStatus: "loading" as const, validation: { valid: true, error: null } },
+		},
+		{
+			name: "the balance failed to load",
+			overrides: {
+				balanceError: new Error("balance unavailable"),
+				balanceStatus: "error" as const,
+				validation: { valid: true, error: null },
+			},
+		},
+		{
+			name: "the Circle fee is loading",
+			overrides: { cctpFeeLoading: true, validation: { valid: true, error: null } },
+		},
+		{
+			name: "a deposit is being submitted",
+			overrides: { isPending: true, validation: { valid: true, error: null } },
+		},
+		{
+			name: "an earlier deposit is still being recovered",
+			overrides: { pendingCctpRecovery: true, validation: { valid: true, error: null } },
+		},
+	])("keeps the mainnet confirmation action visible but disabled while $name", async ({ overrides }) => {
+		const props = {
+			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			...overrides,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const submitButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(submitButton).toBeDefined();
+		expect(submitButton?.disabled).toBe(true);
+		expect(submitButton?.getAttribute("aria-busy")).toBe(String(props.isPending));
+		if (props.balanceStatus === "error") {
+			expect(container.querySelector('[role="alert"]')?.textContent).toContain("balance unavailable");
+		}
+		act(() => submitButton?.click());
+		expect(props.onSubmit).not.toHaveBeenCalled();
 	});
 
 	it.each([

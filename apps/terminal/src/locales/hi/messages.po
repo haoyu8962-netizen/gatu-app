@@ -535,10 +535,6 @@ msgstr "उन्नत ऑर्डर प्रकार"
 msgid "After removal"
 msgstr ""
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
-msgstr "USDC आने के बाद आपका एम्बेडेड वॉलेट गैस-प्रायोजित Circle CCTP जमा को अधिकृत करेगा।"
-
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -876,7 +872,6 @@ msgstr "बिक्री"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "संपत्ति"
 
@@ -955,6 +950,8 @@ msgid "Available {balance} USDC is below the minimum deposit. Send at least {min
 msgstr "उपलब्ध {balance} USDC न्यूनतम जमा से कम है। कम से कम {minimumDeposit} भेजें।"
 
 #: src/components/vaults/vault-action-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Available amount is not verified"
 msgstr ""
 
@@ -2470,6 +2467,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3011,7 +3009,6 @@ msgid "Estimated PnL after trigger"
 msgstr "ट्रिगर के बाद अनुमानित PnL"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Estimated time"
 msgstr "अनुमानित समय"
@@ -4742,7 +4739,6 @@ msgid "Min order $10"
 msgstr "न्यूनतम ऑर्डर $10"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "न्यूनतम"
 
@@ -4908,7 +4904,6 @@ msgstr "शुद्ध प्राप्त"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -5953,6 +5948,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -8661,6 +8657,7 @@ msgid "This close-all preview expired. Close and reopen it to review current val
 msgstr "इस क्लोज़-ऑल पूर्वावलोकन की समय-सीमा समाप्त हो गई। वर्तमान मान देखने के लिए इसे बंद करके दोबारा खोलें।"
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "This confirmation is required before finishing."
 msgstr ""
 

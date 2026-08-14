@@ -14,6 +14,7 @@ const testState = vi.hoisted(() => ({
 	depositHash: undefined as `0x${string}` | undefined,
 	depositModalOpen: false,
 	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
+	isTestnet: true,
 	maxDepositRaw: 9_000_000n as bigint | undefined,
 	refreshBalance: vi.fn(),
 	resetDeposit: vi.fn(),
@@ -89,7 +90,7 @@ vi.mock("@/config/cctp-deposit", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
-	useIsTestnet: () => false,
+	useIsTestnet: () => testState.isTestnet,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -143,6 +144,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.depositHash = undefined;
 		testState.depositModalOpen = false;
 		testState.depositStatus = "idle";
+		testState.isTestnet = true;
 		testState.maxDepositRaw = 9_000_000n;
 		testState.routingData = { depositRoute: "cctp", withdrawalRoute: "cctp" };
 		testState.routingIsError = false;
@@ -211,6 +213,24 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).toHaveBeenCalledWith("9");
 	});
 
+	it("never initiates a mainnet deposit from the application-wide recovery host", async () => {
+		testState.isTestnet = false;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.routingQueryEnabled).toBe(false);
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
+		expect(testState.refreshBalance).not.toHaveBeenCalled();
+		expect(testState.deposit).not.toHaveBeenCalled();
+		expect(testState.trackingOptions).toMatchObject({
+			enabled: true,
+			env: "Mainnet",
+			owner: USER_ADDRESS,
+		});
+	});
+
 	it("releases an aborted development attempt before the StrictMode effect replay", async () => {
 		await act(async () => {
 			root.render(createElement(StrictMode, null, createElement(EmbeddedDepositAutoBridge)));
@@ -233,7 +253,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.routingQueryEnabled).toBe(false);
 		expect(testState.trackingOptions).toMatchObject({
 			enabled: true,
-			env: "Mainnet",
+			env: "Testnet",
 			owner: USER_ADDRESS,
 			removeOnForwardSubmitted: true,
 		});

@@ -25,6 +25,7 @@ export function EmbeddedDepositAutoBridge() {
 	const isTestnet = useIsTestnet();
 	const depositModalOpen = useDepositModalOpen();
 	const sponsoredCctpReleaseEnabled = isCctpSponsoredDepositEnabled(isTestnet);
+	const automaticDepositEnabled = isTestnet && sponsoredCctpReleaseEnabled;
 	const { user, embeddedWalletAddress } = useWalletSession();
 	const {
 		emailAddress: emailWalletAddress,
@@ -46,7 +47,7 @@ export function EmbeddedDepositAutoBridge() {
 		removeOnForwardSubmitted: !depositModalOpen,
 	});
 	const usdcRoutingQuery = useUsdcRouting(
-		sponsoredCctpReleaseEnabled && isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
+		automaticDepositEnabled && isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
 	);
 	const usdcRoutingStatus = getUsdcRoutingQueryStatus({
 		data: usdcRoutingQuery.data,
@@ -58,7 +59,7 @@ export function EmbeddedDepositAutoBridge() {
 	const shouldMonitorDepositBalance =
 		isEmbeddedDeposit &&
 		!!depositEmbeddedWalletAddress &&
-		sponsoredCctpReleaseEnabled &&
+		automaticDepositEnabled &&
 		autoCctpRouteAvailable &&
 		!cctpDepositTracking.recoveryRecord;
 	const attemptKeyRef = useRef<string | null>(null);
@@ -96,6 +97,7 @@ export function EmbeddedDepositAutoBridge() {
 
 	const balanceEligibleKey =
 		isEmbeddedDeposit &&
+		automaticDepositEnabled &&
 		sponsoredCctpEnabled &&
 		!cctpDepositTracking.recoveryRecord &&
 		!needsEmbeddedWallet &&

@@ -166,6 +166,39 @@ implementation.
   path independently per environment, require funded testnet and small-value
   mainnet evidence, and never infer readiness from Privy authentication or an
   unrelated sponsored transaction.
+- Enabling sponsored mainnet makes the deposit path available; it is not user
+  consent to move funds. The application-wide embedded-wallet host may track
+  mainnet recovery but must never initiate a mainnet signature or broadcast.
+  A mainnet email-wallet deposit requires the user to click the amount-labelled
+  `Deposit … USDC` action in the open deposit modal after reviewing the complete
+  available native-USDC balance and current Circle fee. Enforce this again at
+  the execution boundary: reject automatic mainnet sponsored scope, missing
+  balance or fee review, and any submitted amount that differs from the exact
+  reviewed balance.
+- At the mainnet sponsored execution boundary, re-read the native-USDC balance
+  inside the owner-scoped funds-action lock and require it to equal the balance
+  the user reviewed. Revalidate the reviewed fee at the same boundary. Any
+  balance or fee change aborts before signature or broadcast and requires a
+  new review. Testnet may retain the independently gated automatic full-balance
+  flow for funded E2E and recovery testing; it is not evidence of mainnet user
+  confirmation.
+- ZeroDev mainnet sponsorship must use a narrow Arbitrum One contract policy
+  for the official `CctpExtensionV2` proxy
+  `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` and
+  `batchSponsorDepositForBurn` selector `0x300fb2a3`; do not use `Sponsor all
+  transactions`.
+  Request, per-transaction gas, aggregate gas, and gas-price limits constrain
+  sponsored infrastructure spend, not USDC value. Size them from measured
+  production traffic with monitored headroom instead of copying testnet
+  limits. Limit exhaustion must fail the UserOperation without falling back to
+  another contract or to user-paid gas.
+- The sponsored mainnet build flag is global and has no wallet or user
+  allowlist. After ZeroDev is narrowed and production capacity limits are set,
+  complete a small-value mainnet E2E in a controlled, non-public
+  production-candidate environment using the release commit and bundle. If
+  traffic cannot be isolated, add a real runtime allowlist or equivalent access
+  control before calling the run a canary. A public Sponsored-only bundle makes
+  the explicitly confirmed path available to every eligible email-wallet user.
 - The V2 authorization nonce must bind owner, amount, validity window, and full
   deposit data. Verify the receipt per `owner + amount + authNonce`; a matching
   `SponsoredDepositForBurnSkipped` is a definitive failure even if the outer
@@ -232,6 +265,11 @@ implementation.
   and sponsored receipt mismatch, matching skipped events, AA outer-transaction
   independence, version-one recovery migration, refresh recovery, and terminal
   source failure cleanup.
+- Sponsored tests prove that the testnet root host retains its automatic
+  full-balance behavior while the mainnet root host never refreshes for a new
+  deposit, signs, or broadcasts. Mainnet modal tests require the explicit
+  amount-labelled `Deposit … USDC` action and pass the exact reviewed balance and
+  fee to the execution boundary; balance or fee drift fails closed.
 - Withdrawals use only the protocol-selected route. A pre-submit route change
   aborts before signing and requires the user to review the updated fees and
   action.

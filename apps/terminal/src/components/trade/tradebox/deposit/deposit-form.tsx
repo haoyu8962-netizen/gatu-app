@@ -1,7 +1,6 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
@@ -27,6 +26,7 @@ interface Props {
 	onRetryRouting: () => void;
 	networkName: string;
 	sponsoredCctpEnabled: boolean;
+	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
 	cctpNetAmount: string | null;
 	cctpFeeLoading: boolean;
@@ -53,6 +53,7 @@ export function DepositForm({
 	onRetryRouting,
 	networkName,
 	sponsoredCctpEnabled,
+	requiresExplicitFundingDeposit,
 	cctpFee,
 	cctpNetAmount,
 	cctpFeeLoading,
@@ -66,6 +67,15 @@ export function DepositForm({
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
 	const depositRoutingReady = cctpRoutingReady && !fundingAddress;
+	const explicitFundingDepositReady =
+		requiresExplicitFundingDeposit && cctpRoutingReady && sponsoredCctpEnabled && !!fundingAddress;
+	const explicitFundingDepositDisabled =
+		!validation.valid ||
+		isPending ||
+		balanceStatus === "loading" ||
+		balanceStatus === "error" ||
+		cctpFeeLoading ||
+		pendingCctpRecovery;
 	const routingNotice = (() => {
 		if (routingStatus === "loading") {
 			return (
@@ -134,6 +144,12 @@ export function DepositForm({
 						Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
 					</Trans>
 				),
+			};
+		}
+		if (validation.error) {
+			return {
+				tone: "error" as const,
+				text: validation.error,
 			};
 		}
 		return null;
@@ -228,6 +244,7 @@ export function DepositForm({
 					<>
 						{embeddedDepositStatus ? (
 							<div
+								role={embeddedDepositStatus.tone === "error" ? "alert" : "status"}
 								className={
 									embeddedDepositStatus.tone === "error"
 										? "rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
@@ -240,24 +257,30 @@ export function DepositForm({
 							</div>
 						) : null}
 
-						<UnitDepositInfo
-							networkName={networkName}
-							cctpFee={cctpFee}
-							cctpNetAmount={cctpNetAmount}
-							cctpFeeLoading={cctpFeeLoading}
-						/>
+						<UnitDepositInfo cctpFee={cctpFee} cctpNetAmount={cctpNetAmount} cctpFeeLoading={cctpFeeLoading} />
 					</>
 				) : null}
 
 				{cctpRoutingReady && sponsoredCctpEnabled && fundingAddress ? (
 					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
-						<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
 						<Trans>
 							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
 							networks. Minimum deposit is {minimumDeposit}.
-						</Trans>{" "}
-						<Trans>After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit.</Trans>
+						</Trans>
 					</div>
+				) : null}
+
+				{explicitFundingDepositReady ? (
+					<Button
+						variant="filled"
+						intent="neutral"
+						onClick={onSubmit}
+						disabled={explicitFundingDepositDisabled}
+						aria-busy={isPending}
+						className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90 data-disabled:bg-market-close-stroke-control data-disabled:text-market-close-on-control"
+					>
+						<Trans>Deposit</Trans> <span className="tabular-nums">{balance} USDC</span>
+					</Button>
 				) : null}
 
 				<Button
@@ -290,12 +313,7 @@ export function DepositForm({
 			) : null}
 
 			{depositRoutingReady ? (
-				<UnitDepositInfo
-					networkName={networkName}
-					cctpFee={cctpFee}
-					cctpNetAmount={cctpNetAmount}
-					cctpFeeLoading={cctpFeeLoading}
-				/>
+				<UnitDepositInfo cctpFee={cctpFee} cctpNetAmount={cctpNetAmount} cctpFeeLoading={cctpFeeLoading} />
 			) : null}
 
 			<AmountInput

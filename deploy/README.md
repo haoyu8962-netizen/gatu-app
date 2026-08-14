@@ -145,8 +145,22 @@ sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```
 
-当前生产 CCTP rollout 为仅开放邮箱 Smart Wallet Sponsored 主网入金，外部钱包主网入金保持关闭。
-在主机的共享配置中设置：
+当前生产 CCTP 目标配置为邮箱 Smart Wallet Sponsored-only，外部钱包主网入金保持关闭。
+这不是白名单或分组开关：一旦发布，所有符合条件的邮箱钱包用户都会看到主网入金入口，但必须在弹窗内
+显式确认全部可用 USDC 与 Circle 费用后才会签名和广播。
+
+修改主机开关前必须先完成以下生产门禁：
+
+1. ZeroDev 的 Arbitrum One 策略关闭 `Sponsor all transactions`。
+2. Contract Policy 只允许 Circle 主网 `CctpExtensionV2`
+   `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` 的 `batchSponsorDepositForBurn`，selector 为
+   `0x300fb2a3`。
+3. 按生产容量设置请求次数、单笔 Gas、累计 Gas 和 Gas Price 限额，并配置监控和预警；不得直接照搬测试网限额。
+4. 在不对普通用户开放的受控 production-candidate 环境中，使用同一 commit 和相同 Sponsored-only
+   bundle 完成一次小额主网 E2E，核对 source receipt、唯一 success event、Circle forward、HyperCore
+   到账、刷新恢复与零重复提交。若无法隔离流量，不得把全量开关宣称为“白名单 canary”；应先增加真正的运行时白名单或流量隔离。
+
+全部门禁验收后，再在主机的共享配置中设置：
 
 ```dotenv
 # /opt/gatu/shared/.env.local
@@ -289,9 +303,9 @@ Circle CCTP 新入金使用按钱包路径和环境拆分的四个独立门禁�
 - `VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=true`：仅在 Arbitrum Sepolia 筹资 E2E 已验证授权、烧毁事件、Circle attestation/forward 和 HyperCore 到账恢复后开启。
 - `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true`：仅在上述测试网验收通过，并完成小额主网实际到账与恢复演练后开启。
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=true`：仅在邮箱 embedded EOA 精确账户签名、`CctpExtensionV2` 确定性 nonce、Privy Smart Wallet/Paymaster 提交、success/skipped 事件分类、刷新恢复和最终 HyperCore 到账均已通过 Arbitrum Sepolia 筹资 E2E 后开启。
-- `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`：仅在 sponsored 测试网验收通过，并完成白名单邮箱钱包小额主网到账、重试及恢复演练后开启。
+- `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`：仅在 sponsored 测试网验收通过、ZeroDev 主网策略按上述合约/方法收紧并设好生产容量限额，且受控 production-candidate 小额主网到账、重试及恢复演练完成后开启。
 
-四个开关默认都关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。它们是构建期门禁而不是无需部署的远程 kill switch：关闭任意路径后必须重建发布，已加载旧 bundle 的标签页不会立即失效。
+四个开关的源码默认值都是关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。它们是构建期全量门禁，不是用户白名单或无需部署的远程 kill switch：关闭任意路径后必须重建发布，已加载旧 bundle 的标签页不会立即失效。
 
 新入金政策为 CCTP-only。即使 Hyperliquid `usdcRouting.depositRoute`
 返回 `bridge`，也必须暂停新入金，不得重新打开 Bridge2；已广播的旧 Bridge2 交易仍需保留历史和恢复对账。下线旧通道时先禁止所有新的手动/自动 Bridge2 请求，再等待在途记录排空；不得删除历史查询，也不得一并禁用独立的 legacy withdrawal `withdraw3`。
@@ -300,8 +314,8 @@ Circle CCTP 新入金使用按钱包路径和环境拆分的四个独立门禁�
 
 1. 四个门禁全部关闭发布，确认 Bridge2 新签名/提交已 fail closed，旧记录仍可恢复。
 2. 仅开启 sponsored testnet，执行已消费 nonce、余额不足、Paymaster 拒绝、RPC 超时、刷新恢复和最终到账用例。
-3. 在新 release 中仅对内部白名单打开 sponsored mainnet，使用小额 USDC 验证。
-4. 对账为零差异且无 skipped-as-success 后再扩大流量；回滚时仅停止新 CCTP 提交，继续追踪已提交交易，绝不回退 Bridge2。
+3. 先收紧 ZeroDev 主网 Contract Policy 并设定生产容量限额，再在受控、非公开的 production-candidate 环境中使用小额 USDC 完成主网 E2E。当前代码没有内部白名单，不得把全量开关当作白名单 canary。
+4. 对账为零差异且无 skipped-as-success 后再发布 Sponsored-only 生产 bundle；该 bundle 对所有符合条件的邮箱钱包用户可见，每次主网提交都要求用户显式确认。回滚时仅停止新 CCTP 提交，继续追踪已提交交易，绝不回退 Bridge2。
 
 ---
 
@@ -428,6 +442,8 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
 - [ ] 主网 CCTP 当前 rollout 为 Sponsored-only：Sponsored gate 为 `true`、External gate 留空，且 `.env.runtime` 的 `GATU_CCTP_MAINNET_RELEASE_MODE=sponsored-only`
+- [ ] ZeroDev Arbitrum One 已关闭 Sponsor All，Contract Policy 只允许 `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` / `batchSponsorDepositForBurn` (`0x300fb2a3`)，并已设定经过容量评估的 Request、单笔/累计 Gas 与 Gas Price 限额、监控和预警
+- [ ] 受控 production-candidate 小额主网 E2E 已完成；已确认当前代码无用户白名单，Sponsored-only 生产 bundle 会对全部符合条件的邮箱钱包用户开放显式确认入金
 - [ ] `node deploy/validate-production-env.mjs /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime apps/terminal` 通过
 - [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
 - [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 登记已迁移到共享原子 TTL 存储

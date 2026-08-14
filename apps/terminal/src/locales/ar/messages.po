@@ -535,10 +535,6 @@ msgstr "أنواع الأوامر المتقدمة"
 msgid "After removal"
 msgstr ""
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit."
-msgstr "بعد وصول USDC، ستفوّض محفظتك المضمّنة إيداع Circle CCTP مدعومًا برسوم الغاز."
-
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -876,7 +872,6 @@ msgstr "بيع"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "الأصل"
 
@@ -955,6 +950,8 @@ msgid "Available {balance} USDC is below the minimum deposit. Send at least {min
 msgstr "الرصيد المتاح {balance} USDC أقل من الحد الأدنى للإيداع. أرسل {minimumDeposit} على الأقل."
 
 #: src/components/vaults/vault-action-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Available amount is not verified"
 msgstr ""
 
@@ -2470,6 +2467,7 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
@@ -3011,7 +3009,6 @@ msgid "Estimated PnL after trigger"
 msgstr "الأرباح والخسائر المتوقعة بعد التفعيل"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Estimated time"
 msgstr "الوقت المقدّر"
@@ -4742,7 +4739,6 @@ msgid "Min order $10"
 msgstr "الحد الأدنى $10"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "الحد الأدنى"
 
@@ -4908,7 +4904,6 @@ msgstr "الصافي المستلم"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -5953,6 +5948,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -8661,6 +8657,7 @@ msgid "This close-all preview expired. Close and reopen it to review current val
 msgstr "انتهت صلاحية معاينة إغلاق الكل هذه. أغلقها وأعد فتحها لمراجعة القيم الحالية."
 
 #: src/components/api-wallet/api-wallet-credential-box.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "This confirmation is required before finishing."
 msgstr ""
 

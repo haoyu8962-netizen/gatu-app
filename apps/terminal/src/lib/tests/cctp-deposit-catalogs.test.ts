@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 const cctpMessages = [
 	"Gas-sponsored CCTP deposits are not enabled for this network.",
-	"After USDC arrives, your embedded wallet will authorize a gas-sponsored Circle CCTP deposit.",
 	"Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}.",
 	"Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused.",
 	"Legacy Bridge2 deposits are no longer accepted. Deposits are paused.",
