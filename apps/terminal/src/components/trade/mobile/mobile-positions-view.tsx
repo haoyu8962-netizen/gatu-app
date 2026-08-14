@@ -208,6 +208,7 @@ export function MobilePositionsView({
 		if (typeof ResizeObserver === "undefined") return;
 
 		const resizeObserver = new ResizeObserver(keepSelectedTabVisible);
+		resizeObserver.observe(scrollContainer);
 		for (const tab of scrollContainer.querySelectorAll<HTMLElement>("[data-mobile-account-tab]")) {
 			resizeObserver.observe(tab);
 		}
@@ -265,7 +266,7 @@ export function MobilePositionsView({
 					>
 						<TabsList
 							className="h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
-							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
+							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
 						>
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
@@ -276,7 +277,7 @@ export function MobilePositionsView({
 										key={tab.value}
 										value={tab.value}
 										data-mobile-account-tab={tab.value}
-										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:font-bold data-active:text-market-close-fg"
+										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
 										{loading ? (

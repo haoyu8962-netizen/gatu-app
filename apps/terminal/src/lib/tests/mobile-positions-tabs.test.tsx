@@ -185,6 +185,7 @@ describe("MobilePositionsView tabs", () => {
 			Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 		}
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 		vi.useRealTimers();
 	});
 
@@ -254,7 +255,14 @@ describe("MobilePositionsView tabs", () => {
 		expect(scroller?.className).toContain("overflow-x-auto");
 		expect(scroller?.className).toContain("[scrollbar-width:none]");
 		expect(scroller?.className).toContain("[&::-webkit-scrollbar]:hidden");
-		expect(scroller?.querySelector('[role="tablist"]')?.className).toContain("h-[47px]");
+		const tabList = scroller?.querySelector<HTMLElement>('[role="tablist"]');
+		expect(tabList?.className).toContain("h-[47px]");
+		const indicator = Array.from(tabList?.children ?? []).find((element) =>
+			element.className.includes("bg-market-close-fg"),
+		) as HTMLElement | undefined;
+		expect(indicator?.className).toContain("transition-[left]");
+		expect(indicator?.className).not.toContain("transition-[left,width]");
+		expect(indicator?.className).toContain("duration-[120ms]");
 
 		const fade = container.querySelector<HTMLElement>('[data-testid="mobile-account-tabs-fade"]');
 		expect(fade?.className).toContain("w-7");
@@ -271,8 +279,30 @@ describe("MobilePositionsView tabs", () => {
 		expect(tabs).toHaveLength(7);
 		for (const tab of tabs) {
 			expect(tab.className).toContain("min-h-11");
+			expect(tab.className).toContain("font-medium");
+			expect(tab.className).not.toContain("data-active:font-bold");
 			expect(tab.className).toContain("text-market-close-subtle");
 			expect(tab.className).toContain("data-active:text-market-close-fg");
+		}
+	});
+
+	it("rechecks the selected tab when the horizontal viewport changes", () => {
+		const observe = vi.fn();
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe = observe;
+				disconnect = vi.fn();
+				unobserve = vi.fn();
+			},
+		);
+		render();
+
+		const scroller = container.querySelector<HTMLElement>('[data-testid="mobile-account-tabs-scroll"]');
+		expect(scroller).not.toBeNull();
+		expect(observe).toHaveBeenCalledWith(scroller);
+		for (const tab of container.querySelectorAll<HTMLElement>("[data-mobile-account-tab]")) {
+			expect(observe).toHaveBeenCalledWith(tab);
 		}
 	});
 
