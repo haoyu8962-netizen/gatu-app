@@ -6,10 +6,11 @@ import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle }
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "./use-account-balances";
+import { type AccountAbstraction, isSupportedAccountAbstraction, useDefaultDexBalances } from "./use-account-balances";
 import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
+	accountAbstraction: AccountAbstraction;
 	isConnected: boolean;
 	isAvailabilityLoading: boolean;
 	isAvailabilityBlocked: boolean;
@@ -145,6 +146,7 @@ export function useOrderEntryData({
 	}
 
 	return {
+		accountAbstraction,
 		isConnected,
 		isAvailabilityLoading,
 		isAvailabilityBlocked,

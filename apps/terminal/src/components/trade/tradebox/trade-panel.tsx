@@ -104,7 +104,6 @@ export function TradePanel() {
 	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
-	const accountModeControl = useAccountAbstractionControl();
 	const { tradeRestricted } = useGeoRestriction();
 
 	const slippageBps = useMarketOrderSlippageBps();
@@ -115,6 +114,7 @@ export function TradePanel() {
 	const sizeInput = useOrderSize();
 
 	const {
+		accountAbstraction,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -144,6 +144,7 @@ export function TradePanel() {
 		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const selectedPrice = useSelectedPrice();

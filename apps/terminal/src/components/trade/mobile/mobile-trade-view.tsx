@@ -116,8 +116,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
-	const accountModeControl = useAccountAbstractionControl();
-
 	const canApprove = !!walletClient && !!address;
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
@@ -163,6 +161,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 
 	const {
+		accountAbstraction,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -195,6 +194,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	useEffect(() => {
 		if (selectedPrice === null) return;

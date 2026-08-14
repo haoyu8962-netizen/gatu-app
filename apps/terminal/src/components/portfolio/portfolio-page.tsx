@@ -43,7 +43,7 @@ export function PortfolioPage() {
 	const { reconnectWallet } = useReconnectWallet();
 	const { tradeRestricted } = useGeoRestriction();
 	const { accountAbstraction } = useDefaultDexBalances();
-	const accountModeControl = useAccountAbstractionControl();
+	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 	const [accountModeModalOpen, setAccountModeModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();

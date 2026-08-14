@@ -5,9 +5,18 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
+type TestAccountAbstraction =
+	| "default"
+	| "disabled"
+	| "unifiedAccount"
+	| "portfolioMargin"
+	| "dexAbstraction"
+	| "unknown"
+	| null;
 
 const testState = vi.hoisted(() => ({
-	accountAbstraction: "unifiedAccount" as "default" | "disabled" | "unifiedAccount" | "portfolioMargin" | null,
+	resolvedAccountAbstraction: "unifiedAccount" as TestAccountAbstraction,
+	restAccountAbstraction: "unifiedAccount" as TestAccountAbstraction,
 	address: "0x1111111111111111111111111111111111111111" as string | undefined,
 	hasWalletAccess: true,
 	isAccountAbstractionLoading: false,
@@ -40,7 +49,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 	isSupportedAccountAbstraction: (value: unknown) =>
 		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useUserAbstraction: () => ({
-		data: testState.accountAbstraction,
+		data: testState.restAccountAbstraction,
 		isLoading: testState.isAccountAbstractionLoading,
 	}),
 }));
@@ -53,7 +62,7 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 	let control: ReturnType<typeof useAccountAbstractionControl> | undefined;
 
 	function Probe() {
-		control = useAccountAbstractionControl();
+		control = useAccountAbstractionControl(testState.resolvedAccountAbstraction);
 		return null;
 	}
 
@@ -62,7 +71,8 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		control = undefined;
-		testState.accountAbstraction = "unifiedAccount";
+		testState.resolvedAccountAbstraction = "unifiedAccount";
+		testState.restAccountAbstraction = "unifiedAccount";
 		testState.address = USER_ADDRESS;
 		testState.hasWalletAccess = true;
 		testState.isAccountAbstractionLoading = false;
@@ -91,18 +101,21 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 	});
 
 	it("preserves the protocol default until the user explicitly selects a supported mode", async () => {
-		testState.accountAbstraction = "default";
+		testState.resolvedAccountAbstraction = "default";
+		testState.restAccountAbstraction = "default";
 		await act(async () => {
 			root.render(<Probe />);
 		});
 
 		expect(control?.accountAbstraction).toBe("default");
+		expect(testState.mutateAsync).not.toHaveBeenCalled();
 	});
 
 	it("does not report a disabled account query as loading", async () => {
 		testState.address = undefined;
 		testState.hasWalletAccess = false;
-		testState.accountAbstraction = null;
+		testState.resolvedAccountAbstraction = null;
+		testState.restAccountAbstraction = null;
 		await act(async () => {
 			root.render(<Probe />);
 		});
@@ -111,7 +124,8 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 	});
 
 	it("allows an existing portfolio margin account to switch away", async () => {
-		testState.accountAbstraction = "portfolioMargin";
+		testState.resolvedAccountAbstraction = "portfolioMargin";
+		testState.restAccountAbstraction = "portfolioMargin";
 		await act(async () => {
 			root.render(<Probe />);
 		});
@@ -129,5 +143,34 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 			queryKey: ["hl", "info", "userAbstraction", { user: USER_ADDRESS }, "Mainnet"],
 			exact: true,
 		});
+	});
+
+	it("uses the resolved REST and webData3 state instead of short-circuiting on stale REST data", async () => {
+		testState.resolvedAccountAbstraction = "unknown";
+		testState.restAccountAbstraction = "disabled";
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		expect(control?.accountAbstraction).toBe("unknown");
+		await act(async () => {
+			await control?.setAccountAbstraction("disabled");
+		});
+
+		expect(testState.mutateAsync).toHaveBeenCalledWith({
+			user: USER_ADDRESS,
+			abstraction: "disabled",
+		});
+	});
+
+	it("does not sign when the resolved mode already matches the explicit selection", async () => {
+		testState.resolvedAccountAbstraction = "disabled";
+		testState.restAccountAbstraction = "unifiedAccount";
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		await expect(control?.setAccountAbstraction("disabled")).resolves.toBe(false);
+		expect(testState.mutateAsync).not.toHaveBeenCalled();
 	});
 });

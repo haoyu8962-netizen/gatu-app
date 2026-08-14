@@ -60,18 +60,12 @@ function normalizeDex(dex: string | null | undefined): string {
 }
 
 export function normalizeAccountAbstraction(value: unknown): AccountAbstraction {
-	if (value && typeof value === "object") {
-		if (!("abstraction" in value)) return "unknown";
-		const abstraction = (value as { abstraction?: unknown }).abstraction;
-		return abstraction === undefined ? "unknown" : normalizeAccountAbstraction(abstraction);
-	}
-
-	if (value === "unifiedAccount" || value === "u") return "unifiedAccount";
-	if (value === "portfolioMargin" || value === "p") return "portfolioMargin";
-	if (value === "disabled" || value === "i") return "disabled";
+	if (value === "unifiedAccount") return "unifiedAccount";
+	if (value === "portfolioMargin") return "portfolioMargin";
+	if (value === "disabled") return "disabled";
 	if (value === "default") return "default";
 	if (value === "dexAbstraction") return "dexAbstraction";
-	return value === undefined || value === null ? null : "unknown";
+	return value === undefined ? null : "unknown";
 }
 
 export function resolveAccountAbstraction(infoValue: unknown, webDataValue: unknown): AccountAbstraction {

@@ -26,19 +26,16 @@ export function assertPortfolioMarginActivationAllowed(
 	}
 }
 
-export function useAccountAbstractionControl() {
+export function useAccountAbstractionControl(resolvedAccountAbstraction: AccountAbstraction) {
 	const queryClient = useQueryClient();
 	const { env } = useHyperliquid();
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
-	const { data: accountAbstraction, isLoading: isAccountAbstractionLoading } = useUserAbstraction(
-		address,
-		hasWalletAccess,
-	);
+	const { isLoading: isAccountAbstractionLoading } = useUserAbstraction(address, hasWalletAccess);
 	const { mutateAsync: setAbstraction, isPending } = useExchange("userSetAbstraction");
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
-	const currentAccountAbstraction = accountAbstraction ?? null;
+	const currentAccountAbstraction = resolvedAccountAbstraction;
 	const selectableAccountAbstraction = toSelectableAccountAbstraction(currentAccountAbstraction);
 
 	const setAccountAbstraction = useCallback(

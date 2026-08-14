@@ -55,24 +55,27 @@ describe("user abstraction query", () => {
 		);
 	});
 
-	it("preserves protocol modes and normalizes legacy response values", () => {
+	it("accepts only the five official userAbstraction response values", () => {
 		expect(normalizeAccountAbstraction("default")).toBe("default");
 		expect(normalizeAccountAbstraction("disabled")).toBe("disabled");
 		expect(normalizeAccountAbstraction("unifiedAccount")).toBe("unifiedAccount");
 		expect(normalizeAccountAbstraction("portfolioMargin")).toBe("portfolioMargin");
 		expect(normalizeAccountAbstraction("dexAbstraction")).toBe("dexAbstraction");
-		expect(normalizeAccountAbstraction({ abstraction: "u" })).toBe("unifiedAccount");
-		expect(normalizeAccountAbstraction("p")).toBe("portfolioMargin");
-		expect(normalizeAccountAbstraction("i")).toBe("disabled");
+		expect(normalizeAccountAbstraction({ abstraction: "unifiedAccount" })).toBe("unknown");
+		expect(normalizeAccountAbstraction("u")).toBe("unknown");
+		expect(normalizeAccountAbstraction("p")).toBe("unknown");
+		expect(normalizeAccountAbstraction("i")).toBe("unknown");
 		expect(normalizeAccountAbstraction("unexpected")).toBe("unknown");
-		expect(normalizeAccountAbstraction(null)).toBeNull();
+		expect(normalizeAccountAbstraction(null)).toBe("unknown");
+		expect(normalizeAccountAbstraction(undefined)).toBeNull();
 	});
 
 	it("fails closed when REST and webData3 disagree and otherwise uses the available source", () => {
 		expect(resolveAccountAbstraction("default", "unifiedAccount")).toBe("unknown");
 		expect(resolveAccountAbstraction("disabled", "unifiedAccount")).toBe("unknown");
 		expect(resolveAccountAbstraction("unifiedAccount", "unifiedAccount")).toBe("unifiedAccount");
-		expect(resolveAccountAbstraction(null, "unifiedAccount")).toBe("unifiedAccount");
+		expect(resolveAccountAbstraction(undefined, "unifiedAccount")).toBe("unifiedAccount");
+		expect(resolveAccountAbstraction(null, "unifiedAccount")).toBe("unknown");
 		expect(resolveAccountAbstraction("unexpected", "disabled")).toBe("unknown");
 		expect(resolveAccountAbstraction(undefined, undefined)).toBeNull();
 	});
