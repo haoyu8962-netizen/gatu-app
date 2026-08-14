@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
+import { TradingViewOverlayController } from "@/lib/chart/tradingview-overlays";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 const testState = vi.hoisted(() => ({
@@ -36,7 +37,7 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 	buildChartOverrides: () => ({}),
 	colorToHex: (color: string) => color,
 	colorToRgba: (color: string, alpha: number) => `${color}:${alpha}`,
-	getChartColors: () => ({ green: "green", red: "red" }),
+	getChartColors: () => ({ green: "green", red: "red", textSecondary: "secondary" }),
 	getChartCssUrl: vi.fn(() => "/tradingview-theme.css"),
 	getLoadingScreenColors: () => ({}),
 	getToolbarBgColor: () => "#000",
@@ -208,6 +209,70 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("rebuilds the widget instead of switching symbols when an old overlay cannot be removed", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const failedClear = vi.spyOn(TradingViewOverlayController.prototype, "clear").mockReturnValueOnce(false);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(failedClear).toHaveBeenCalled();
+		expect(widgets[0]?.setSymbol).not.toHaveBeenCalled();
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.setSymbol).not.toHaveBeenCalled();
+	});
+
+	it("rebuilds the widget when a normal overlay sync cannot remove stale account data", async () => {
+		let shouldFailClosed = true;
+		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (shouldFailClosed) {
+				shouldFailClosed = false;
+				return false;
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(sync).toHaveBeenCalled();
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+	});
+
+	it("automatically retries a failed overlay creation without waiting for another render", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(1_000);
+		let mayRecover = false;
+		const sync = vi
+			.spyOn(TradingViewOverlayController.prototype, "sync")
+			.mockImplementation(() => (mayRecover ? null : 2_000));
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const callsBeforeRetry = sync.mock.calls.length;
+		expect(callsBeforeRetry).toBeGreaterThan(0);
+
+		mayRecover = true;
+		await act(async () => {
+			vi.advanceTimersByTime(1_000);
+			await Promise.resolve();
+		});
+
+		expect(sync.mock.calls.length).toBeGreaterThan(callsBeforeRetry);
+		expect(widgetConstructor).toHaveBeenCalledOnce();
 	});
 
 	it("destroys the datafeed even when widget removal throws", async () => {

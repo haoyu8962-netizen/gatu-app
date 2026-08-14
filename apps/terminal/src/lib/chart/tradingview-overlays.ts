@@ -1,3 +1,4 @@
+import { formatPercent, formatQuoteAmount } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
@@ -7,6 +8,8 @@ export interface TradingViewOverlayLabels {
 	limitBuy: string;
 	limitSell: string;
 	long: string;
+	pnl: string;
+	roe: string;
 	short: string;
 }
 
@@ -15,20 +18,23 @@ export interface TradingViewOverlayLine {
 	kind: "order" | "position" | "liquidation";
 	price: number;
 	label: string;
+	tone?: -1 | 0 | 1;
 	side: "buy" | "sell";
 }
 
 export interface TradingViewOverlayPalette {
-	buy: { lineColor: string; textColor: string };
-	sell: { lineColor: string; textColor: string };
-	liquidation: { lineColor: string; textColor: string };
+	buy: { line: string; text: string };
+	sell: { line: string; text: string };
+	liquidation: { line: string; text: string };
+	neutral: { text: string };
 }
 
-export type TradingViewOverlayChart = Pick<IChartWidgetApi, "createShape" | "removeEntity">;
+export type TradingViewOverlayChart = Pick<IChartWidgetApi, "createShape" | "getShapeById" | "removeEntity">;
 
 interface BuildParams {
 	coin: string;
 	positionDex: string | null;
+	quoteSymbol: string;
 	orders: readonly OpenOrder[];
 	positions: readonly Position[];
 	labels: TradingViewOverlayLabels;
@@ -36,12 +42,33 @@ interface BuildParams {
 
 interface OverlayEntry {
 	id: EntityId;
-	fingerprint: string;
+	price: number;
+	style: string;
 }
 
-const DASHED_LINE_STYLE = 2;
+interface CreationRetry {
+	attempt: number;
+	at: number;
+}
 
-export function buildTradingViewOverlayLines({ coin, positionDex, orders, positions, labels }: BuildParams) {
+type ShapeOverrides<T extends object, TPrefix extends string> = Partial<{
+	[TKey in keyof T as TKey extends `${TPrefix}${infer TShortKey}` ? TShortKey : never]: T[TKey];
+}>;
+
+type HorzlineShapeOverrides = ShapeOverrides<HorzlineLineToolOverrides, "linetoolhorzline.">;
+
+const DASHED_LINE_STYLE = 2;
+const CREATION_RETRY_BASE_MS = 1_000;
+const CREATION_RETRY_MAX_MS = 30_000;
+
+export function buildTradingViewOverlayLines({
+	coin,
+	positionDex,
+	quoteSymbol,
+	orders,
+	positions,
+	labels,
+}: BuildParams) {
 	const lines: TradingViewOverlayLine[] = [];
 
 	for (const order of orders) {
@@ -72,11 +99,13 @@ export function buildTradingViewOverlayLines({ coin, positionDex, orders, positi
 
 	const side = size.gt(0) ? "buy" : "sell";
 	const positionKey = `${position.dex}:${position.coin}`;
+	const pnl = toBig(position.unrealizedPnl);
 	lines.push({
 		key: `position:${positionKey}`,
 		kind: "position",
 		price: entryPrice,
-		label: side === "buy" ? labels.long : labels.short,
+		label: buildPositionLabel(side === "buy" ? labels.long : labels.short, position, size, pnl, quoteSymbol, labels),
+		tone: !pnl || pnl.eq(0) ? 0 : pnl.gt(0) ? 1 : -1,
 		side,
 	});
 
@@ -98,42 +127,85 @@ export class TradingViewOverlayController {
 	private chart: TradingViewOverlayChart | null = null;
 	private symbol: string | null = null;
 	private readonly entries = new Map<string, OverlayEntry>();
+	private readonly creationRetries = new Map<string, CreationRetry>();
 
 	sync(
 		chart: TradingViewOverlayChart,
 		symbol: string,
 		lines: readonly TradingViewOverlayLine[],
 		palette: TradingViewOverlayPalette,
-	) {
+	): false | number | null {
 		if (this.chart !== chart || this.symbol !== symbol) {
-			this.clear();
+			if (!this.clear()) return false;
 			this.chart = chart;
 			this.symbol = symbol;
 		}
 
 		const desiredKeys = new Set(lines.map((line) => line.key));
+		for (const key of this.creationRetries.keys()) {
+			if (!desiredKeys.has(key)) this.creationRetries.delete(key);
+		}
 		for (const [key, entry] of this.entries) {
 			if (desiredKeys.has(key)) continue;
-			this.removeEntry(entry);
-			this.entries.delete(key);
+			if (this.removeEntry(entry)) this.entries.delete(key);
+			else return false;
 		}
 
 		for (const line of lines) {
-			const colors = line.kind === "liquidation" ? palette.liquidation : palette[line.side];
-			const fingerprint = [line.price, line.label, colors.lineColor, colors.textColor].join(":");
+			const colors = resolveOverlayColors(line, palette);
+			const style = [line.label, colors.line, colors.text].join(":");
 			const existing = this.entries.get(line.key);
-			if (existing?.fingerprint === fingerprint) continue;
-			if (existing) this.removeEntry(existing);
+			if (existing?.price === line.price) {
+				if (existing.style === style) continue;
+				if (this.updateLine(chart, existing, line, colors)) {
+					existing.style = style;
+					continue;
+				}
+				if (!this.removeEntry(existing)) {
+					return false;
+				}
+				this.entries.delete(line.key);
+			} else if (existing) {
+				if (!this.removeEntry(existing)) {
+					return false;
+				}
+				this.entries.delete(line.key);
+			}
 
+			const retry = this.creationRetries.get(line.key);
+			if (retry && Date.now() < retry.at) continue;
 			const id = this.createLine(chart, line, colors);
-			if (id) this.entries.set(line.key, { id, fingerprint });
-			else this.entries.delete(line.key);
+			if (id) {
+				this.creationRetries.delete(line.key);
+				this.entries.set(line.key, { id, price: line.price, style });
+			} else {
+				this.entries.delete(line.key);
+				this.deferCreationRetry(line.key, retry?.attempt ?? 0);
+			}
 		}
+
+		let retryAt: number | null = null;
+		for (const retry of this.creationRetries.values()) {
+			retryAt = retryAt === null ? retry.at : Math.min(retryAt, retry.at);
+		}
+		return retryAt;
 	}
 
-	clear() {
-		for (const entry of this.entries.values()) this.removeEntry(entry);
+	clear(): boolean {
+		for (const [key, entry] of this.entries) {
+			if (this.removeEntry(entry)) this.entries.delete(key);
+		}
+		if (this.entries.size > 0) return false;
+		this.creationRetries.clear();
+		this.chart = null;
+		this.symbol = null;
+		return true;
+	}
+
+	dispose() {
+		this.clear();
 		this.entries.clear();
+		this.creationRetries.clear();
 		this.chart = null;
 		this.symbol = null;
 	}
@@ -141,10 +213,21 @@ export class TradingViewOverlayController {
 	private createLine(
 		chart: TradingViewOverlayChart,
 		line: TradingViewOverlayLine,
-		colors: TradingViewOverlayPalette["buy"],
+		colors: ResolvedOverlayColors,
 	): EntityId | null {
+		const overrides = {
+			fontsize: 10,
+			horzLabelsAlign: "right",
+			linecolor: colors.line,
+			linestyle: DASHED_LINE_STYLE,
+			linewidth: 1,
+			showLabel: true,
+			showPrice: true,
+			textcolor: colors.text,
+		} satisfies HorzlineShapeOverrides;
+
 		try {
-			return chart.createShape<HorzlineLineToolOverrides>(
+			return chart.createShape<HorzlineShapeOverrides>(
 				{ time: Math.floor(Date.now() / 1000), price: line.price },
 				{
 					shape: "horizontal_line",
@@ -155,19 +238,7 @@ export class TradingViewOverlayController {
 					disableUndo: true,
 					showInObjectsTree: false,
 					zOrder: "bottom",
-					overrides: {
-						"linetoolhorzline.bold": false,
-						"linetoolhorzline.fontsize": 10,
-						"linetoolhorzline.horzLabelsAlign": "right",
-						"linetoolhorzline.italic": false,
-						"linetoolhorzline.linecolor": colors.lineColor,
-						"linetoolhorzline.linestyle": DASHED_LINE_STYLE,
-						"linetoolhorzline.linewidth": 1,
-						"linetoolhorzline.showLabel": true,
-						"linetoolhorzline.showPrice": true,
-						"linetoolhorzline.textcolor": colors.textColor,
-						"linetoolhorzline.vertLabelsAlign": "middle",
-					},
+					overrides,
 				},
 			);
 		} catch {
@@ -175,11 +246,80 @@ export class TradingViewOverlayController {
 		}
 	}
 
-	private removeEntry(entry: OverlayEntry) {
+	private updateLine(
+		chart: TradingViewOverlayChart,
+		entry: OverlayEntry,
+		line: TradingViewOverlayLine,
+		colors: ResolvedOverlayColors,
+	): boolean {
+		try {
+			chart.getShapeById(entry.id).setProperties(
+				{
+					linecolor: colors.line,
+					text: line.label,
+					textcolor: colors.text,
+				},
+				false,
+			);
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	private removeEntry(entry: OverlayEntry): boolean {
 		try {
 			this.chart?.removeEntity(entry.id, { disableUndo: true });
-		} catch {}
+			return true;
+		} catch {
+			return false;
+		}
 	}
+
+	private deferCreationRetry(key: string, previousAttempt: number) {
+		const attempt = previousAttempt + 1;
+		const delayMs = Math.min(CREATION_RETRY_BASE_MS * 2 ** Math.min(attempt - 1, 5), CREATION_RETRY_MAX_MS);
+		this.creationRetries.set(key, { attempt, at: Date.now() + delayMs });
+	}
+}
+
+function buildPositionLabel(
+	direction: string,
+	position: Position,
+	size: NonNullable<ReturnType<typeof toBig>>,
+	pnl: ReturnType<typeof toBig>,
+	quoteSymbol: string,
+	labels: TradingViewOverlayLabels,
+): string {
+	const roe = toBig(position.returnOnEquity);
+	const performance = pnl
+		? `${labels.pnl} ${formatQuoteAmount(pnl.toString(), quoteSymbol, {
+				decimals: 2,
+				signDisplay: "exceptZero",
+			})}${roe ? ` (${formatPercent(roe.toString(), 1)})` : ""}`
+		: roe
+			? `${labels.roe} ${formatPercent(roe.toString(), 1)}`
+			: "";
+	return performance
+		? `${direction} · ${performance} · ${size.abs().toString()}`
+		: `${direction} · ${size.abs().toString()}`;
+}
+
+interface ResolvedOverlayColors {
+	line: string;
+	text: string;
+}
+
+function resolveOverlayColors(line: TradingViewOverlayLine, palette: TradingViewOverlayPalette): ResolvedOverlayColors {
+	const lineColors = line.kind === "liquidation" ? palette.liquidation : palette[line.side];
+	if (line.kind !== "position") return lineColors;
+
+	if (line.tone === 1) return { line: lineColors.line, text: palette.buy.text };
+	if (line.tone === -1) return { line: lineColors.line, text: palette.sell.text };
+	return {
+		line: lineColors.line,
+		text: palette.neutral.text,
+	};
 }
 
 function isPositionForMarket(position: Position, coin: string, dex: string): boolean {

@@ -57,6 +57,22 @@ describe("WebSocket transport monitor", () => {
 		unsubscribe();
 	});
 
+	it("notifies disconnect immediately and deduplicates close plus error until the socket reopens", () => {
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket);
+		const disconnect = vi.fn();
+		const unsubscribe = monitor.subscribeDisconnect(disconnect);
+
+		socket.dispatchEvent(new Event("close"));
+		socket.dispatchEvent(new Event("error"));
+		expect(disconnect).toHaveBeenCalledOnce();
+
+		socket.open();
+		socket.dispatchEvent(new Event("error"));
+		expect(disconnect).toHaveBeenCalledTimes(2);
+		unsubscribe();
+	});
+
 	it("does not treat the first successful connection as a reconnect", () => {
 		const socket = new FakeSocket(0);
 		const monitor = createMonitor(socket);

@@ -27,6 +27,7 @@ export interface WsTransportMonitorOptions {
 
 export interface WsTransportMonitor {
 	subscribeReconnect(listener: (generation: number) => void): () => void;
+	subscribeDisconnect(listener: () => void): () => void;
 	requestReconnect(): void;
 }
 
@@ -35,6 +36,7 @@ export function createWsTransportMonitor(
 	options: WsTransportMonitorOptions = {},
 ): WsTransportMonitor {
 	const listeners = new Set<(generation: number) => void>();
+	const disconnectListeners = new Set<() => void>();
 	const inactivityThresholdMs = options.inactivityThresholdMs ?? WS_RELIABILITY_LIMITS.transport.inactivityThresholdMs;
 	const checkIntervalMs = options.checkIntervalMs ?? WS_RELIABILITY_LIMITS.transport.checkIntervalMs;
 	const readVisibility = options.getVisibilityState ?? getVisibilityState;
@@ -57,12 +59,18 @@ export function createWsTransportMonitor(
 	const requestReconnect = () => {
 		if (!attached || reconnectRequested || socket.readyState !== SOCKET_OPEN) return;
 		reconnectRequested = true;
-		disconnectedAfterOpen = hasOpened;
 		try {
 			socket.reconnect();
+			markDisconnected();
 		} catch {
 			reconnectRequested = false;
 		}
+	};
+
+	const markDisconnected = () => {
+		if (!hasOpened || disconnectedAfterOpen) return;
+		disconnectedAfterOpen = true;
+		for (const listener of [...disconnectListeners]) listener();
 	};
 
 	const handleOpen: EventListener = () => {
@@ -80,7 +88,7 @@ export function createWsTransportMonitor(
 	};
 
 	const handleDisconnect: EventListener = () => {
-		if (hasOpened) disconnectedAfterOpen = true;
+		markDisconnected();
 	};
 
 	const handleMessage: EventListener = () => {
@@ -157,7 +165,15 @@ export function createWsTransportMonitor(
 			attach();
 			return () => {
 				listeners.delete(listener);
-				if (listeners.size === 0) detach();
+				if (listeners.size === 0 && disconnectListeners.size === 0) detach();
+			};
+		},
+		subscribeDisconnect: (listener) => {
+			disconnectListeners.add(listener);
+			attach();
+			return () => {
+				disconnectListeners.delete(listener);
+				if (listeners.size === 0 && disconnectListeners.size === 0) detach();
 			};
 		},
 		requestReconnect,

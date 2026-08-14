@@ -104,6 +104,17 @@ function shouldDiscardRetainedDataOnError(key: string): boolean {
 	return method === "l2Book" || method === "bbo";
 }
 
+function shouldAwaitFreshSnapshotAfterError(key: string): boolean {
+	const method = getSubscriptionMethodForKey(key);
+	return method === "allDexsClearinghouseState" || method === "openOrders";
+}
+
+function safelyTriggerReconnect(triggerReconnect: (() => void) | undefined): void {
+	try {
+		triggerReconnect?.();
+	} catch {}
+}
+
 export type ChaosState = {
 	messageFrozenUntil: number;
 	reconnectDropCount: number;
@@ -152,6 +163,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	let staleRecoveryEvaluationQueued = false;
 	let detachVisibility: (() => void) | undefined;
 	let detachNetwork: (() => void) | undefined;
+	let detachDisconnect: (() => void) | undefined;
 	let wasHidden = false;
 	let wasOffline = false;
 	const MAX_RECOVERY_EVENTS = 64;
@@ -195,7 +207,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 			if (staleKeys.length > 1) {
 				recordRecoveryEvent("multiple-streams-stale", "reconnect", staleKeys);
-				state.config.triggerReconnect?.();
+				safelyTriggerReconnect(state.config.triggerReconnect);
 				return;
 			}
 
@@ -222,9 +234,33 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		visibilityBuffer.clear();
 	}
 
-	function attachSingletons(triggerReconnect: (() => void) | undefined, store: StoreApi<HyperliquidStoreState>) {
+	function markRetainedAccountSnapshotsStale(
+		store: StoreApi<HyperliquidStoreState>,
+		shouldMark: (key: string) => boolean = () => true,
+	) {
+		const currentSubscriptions = store.getState().subscriptions;
+		let nextSubscriptions = currentSubscriptions;
+
+		for (const [key, entry] of Object.entries(currentSubscriptions)) {
+			if (!shouldAwaitFreshSnapshotAfterError(key) || entry.data === undefined || !shouldMark(key)) continue;
+			visibilityBuffer.delete(key);
+			if (entry.isStale) continue;
+			if (nextSubscriptions === currentSubscriptions) nextSubscriptions = { ...currentSubscriptions };
+			nextSubscriptions[key] = { ...entry, isStale: true };
+		}
+
+		if (nextSubscriptions !== currentSubscriptions) {
+			store.setState({ subscriptions: nextSubscriptions, ...deriveWsState(nextSubscriptions) });
+		}
+	}
+
+	function attachSingletons(
+		triggerReconnect: (() => void) | undefined,
+		subscribeDisconnect: HyperliquidConfig["subscribeDisconnect"],
+		store: StoreApi<HyperliquidStoreState>,
+	) {
 		if (singletonsAttached) return;
-		if (!triggerReconnect) return;
+		if (!triggerReconnect && !subscribeDisconnect) return;
 		singletonsAttached = true;
 
 		detachVisibility = subscribeVisibility((state) => {
@@ -232,6 +268,15 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				wasHidden = true;
 			} else if (wasHidden) {
 				wasHidden = false;
+				const resumedAtMs = Date.now();
+				markRetainedAccountSnapshotsStale(store, (key) => {
+					const runtime = subscriptionRuntime.get(key);
+					return (
+						runtime?.lastMessageAt !== undefined &&
+						runtime.stalenessThresholdMs !== undefined &&
+						resumedAtMs - runtime.lastMessageAt >= runtime.stalenessThresholdMs
+					);
+				});
 				flushVisibilityBuffer(store);
 			}
 		});
@@ -239,11 +284,20 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		detachNetwork = subscribeNetworkStatus((state) => {
 			if (state === "offline") {
 				wasOffline = true;
+				markRetainedAccountSnapshotsStale(store);
 			} else if (wasOffline) {
 				wasOffline = false;
-				recordRecoveryEvent("network-resume", "reconnect", []);
-				triggerReconnect();
+				markRetainedAccountSnapshotsStale(store);
+				if (triggerReconnect) {
+					recordRecoveryEvent("network-resume", "reconnect", []);
+					safelyTriggerReconnect(triggerReconnect);
+				}
 			}
+		});
+		wasOffline = getNetworkState() === "offline";
+		if (wasOffline) markRetainedAccountSnapshotsStale(store);
+		detachDisconnect = subscribeDisconnect?.(() => {
+			markRetainedAccountSnapshotsStale(store);
 		});
 	}
 
@@ -254,9 +308,28 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		detachVisibility = undefined;
 		detachNetwork?.();
 		detachNetwork = undefined;
+		detachDisconnect?.();
+		detachDisconnect = undefined;
 		wasHidden = false;
 		wasOffline = false;
 		visibilityBuffer.clear();
+	}
+
+	function setSubscriptionFailure(key: string, error: unknown) {
+		const discardData = shouldDiscardRetainedDataOnError(key);
+		const awaitFresh = shouldAwaitFreshSnapshotAfterError(key);
+		if (discardData || awaitFresh) visibilityBuffer.delete(key);
+		store.setState((state) => {
+			const current = state.subscriptions[key];
+			if (!current) return state;
+			return setSubscriptionEntry(state, key, {
+				...current,
+				data: discardData ? undefined : current.data,
+				status: "error",
+				error,
+				isStale: awaitFresh || current.isStale,
+			});
+		});
 	}
 
 	const store = createStore<HyperliquidStoreState>((set, get) => ({
@@ -275,7 +348,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						"Visibility-buffered values will never be flushed because no reconnect can happen on resume.",
 				);
 			}
-			attachSingletons(get().config.triggerReconnect, store);
+			attachSingletons(get().config.triggerReconnect, get().config.subscribeDisconnect, store);
 
 			let runtime = subscriptionRuntime.get(key);
 			const isNewRuntime = runtime === undefined;
@@ -424,15 +497,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 				if (chaos.reconnectDropCount > 0) {
 					chaos.reconnectDropCount--;
-					set((state) => {
-						const current = state.subscriptions[key];
-						if (!current) return state;
-						return setSubscriptionEntry(state, key, {
-							...current,
-							status: "error",
-							error: new Error("Chaos: reconnect dropped"),
-						});
-					});
+					setSubscriptionFailure(key, new Error("Chaos: reconnect dropped"));
 					scheduleReconnect();
 					return;
 				}
@@ -445,20 +510,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					if (!runtime || !activeSubscription || runtime.subscription !== activeSubscription) return;
 					runtime.subscription = undefined;
 
-					const reason = error ?? new Error("Subscription failed");
-					const discardRetainedData = shouldDiscardRetainedDataOnError(key);
-					if (discardRetainedData) visibilityBuffer.delete(key);
-					set((state) => {
-						const current = state.subscriptions[key];
-						if (!current) return state;
-						const nextEntry: SubscriptionEntry = {
-							...current,
-							data: discardRetainedData ? undefined : current.data,
-							status: "error",
-							error: reason,
-						};
-						return setSubscriptionEntry(state, key, nextEntry);
-					});
+					setSubscriptionFailure(key, error ?? new Error("Subscription failed"));
 
 					scheduleReconnect();
 				};
@@ -513,19 +565,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						runtime.promise = undefined;
 						runtime.subscription = undefined;
 
-						const discardRetainedData = shouldDiscardRetainedDataOnError(key);
-						if (discardRetainedData) visibilityBuffer.delete(key);
-						set((state) => {
-							const current = state.subscriptions[key];
-							if (!current) return state;
-							const nextEntry: SubscriptionEntry = {
-								...current,
-								data: discardRetainedData ? undefined : current.data,
-								status: "error",
-								error,
-							};
-							return setSubscriptionEntry(state, key, nextEntry);
-						});
+						setSubscriptionFailure(key, error);
 
 						scheduleReconnect();
 						return undefined;
@@ -643,19 +683,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			});
 		},
 		setSubscriptionError: (key, error) => {
-			const discardRetainedData = shouldDiscardRetainedDataOnError(key);
-			if (discardRetainedData) visibilityBuffer.delete(key);
-			set((state) => {
-				const current = state.subscriptions[key];
-				if (!current) return state;
-				const nextEntry: SubscriptionEntry = {
-					...current,
-					data: discardRetainedData ? undefined : current.data,
-					error,
-					status: "error",
-				};
-				return setSubscriptionEntry(state, key, nextEntry);
-			});
+			setSubscriptionFailure(key, error);
 		},
 	}));
 

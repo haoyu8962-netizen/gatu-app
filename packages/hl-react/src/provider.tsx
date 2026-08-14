@@ -9,6 +9,7 @@ import {
 	getSubscriptionClient,
 	getWsTransport,
 	initializeClients,
+	subscribeWsDisconnect,
 } from "./clients";
 import { createHyperliquidConfig } from "./create-config";
 import { ProviderNotFoundError } from "./errors";
@@ -107,6 +108,7 @@ export function HyperliquidProvider({
 				wsTransport: getWsTransport(isTestnet),
 				ssr: false,
 				triggerReconnect: createWsReconnectTrigger(isTestnet),
+				subscribeDisconnect: (listener) => subscribeWsDisconnect(isTestnet, listener),
 			}),
 		);
 		setDebugStore(storeRef.current);

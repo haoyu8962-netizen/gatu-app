@@ -153,6 +153,49 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
+	it.each(["allDexsClearinghouseState", "openOrders"])(
+		"keeps retained %s snapshots stale until the reconnect delivers fresh data",
+		async (method) => {
+			const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+			let reportError: ((error: unknown) => void) | undefined;
+			const subscribe = vi.fn(async (options?: { onError?: (error: unknown) => void }) => {
+				reportError = options?.onError;
+				return { unsubscribe: vi.fn(async () => {}) };
+			});
+			const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
+			const retainedSnapshot = { sequence: 1 };
+
+			store.getState().acquireSubscription(key, subscribe);
+			await vi.advanceTimersByTimeAsync(0);
+			store.getState().setSubscriptionData(key, retainedSnapshot);
+			reportError?.(new Error("socket failed"));
+
+			expect(store.getState().subscriptions[key]).toMatchObject({
+				data: retainedSnapshot,
+				isStale: true,
+				status: "error",
+			});
+
+			await vi.advanceTimersByTimeAsync(1_000);
+			expect(subscribe).toHaveBeenCalledTimes(2);
+			expect(store.getState().subscriptions[key]).toMatchObject({
+				data: retainedSnapshot,
+				isStale: true,
+				status: "active",
+			});
+
+			const freshSnapshot = { sequence: 2 };
+			store.getState().setSubscriptionData(key, freshSnapshot);
+			expect(store.getState().subscriptions[key]).toMatchObject({
+				data: freshSnapshot,
+				isStale: false,
+				status: "active",
+			});
+
+			store.getState().releaseSubscription(key);
+		},
+	);
+
 	it.each(["l2Book", "bbo"])("drops hidden buffered %s data when the confirmed subscription fails", async (method) => {
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
 		let reportError: ((error: unknown) => void) | undefined;

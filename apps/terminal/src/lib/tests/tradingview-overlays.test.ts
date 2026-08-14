@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	buildTradingViewOverlayLines,
 	type TradingViewOverlayChart,
@@ -13,19 +13,25 @@ const labels = {
 	limitBuy: "Limit Buy",
 	limitSell: "Limit Sell",
 	long: "Long",
+	pnl: "PNL",
+	roe: "ROE",
 	short: "Short",
 };
 
 const palette: TradingViewOverlayPalette = {
-	buy: { lineColor: "buy-line", textColor: "buy-text" },
-	sell: { lineColor: "sell-line", textColor: "sell-text" },
-	liquidation: { lineColor: "liq-line", textColor: "liq-text" },
+	buy: { line: "buy-line", text: "buy-text" },
+	sell: { line: "sell-line", text: "sell-text" },
+	liquidation: { line: "liq-line", text: "liq-text" },
+	neutral: { text: "neutral-text" },
 };
+
+afterEach(() => vi.useRealTimers());
 
 function createOrder(overrides: Partial<OpenOrder>): OpenOrder {
 	return {
 		coin: "BTC",
 		oid: 1,
+		children: [],
 		isTrigger: false,
 		limitPx: "100",
 		triggerPx: "0",
@@ -42,6 +48,8 @@ function createPosition(overrides: Partial<Position>): Position {
 		szi: "1",
 		entryPx: "100",
 		liquidationPx: "50",
+		returnOnEquity: "0.125",
+		unrealizedPnl: "12.5",
 		...overrides,
 	} as Position;
 }
@@ -51,19 +59,35 @@ describe("buildTradingViewOverlayLines", () => {
 		const lines = buildTradingViewOverlayLines({
 			coin: "BTC",
 			positionDex: "",
+			quoteSymbol: "USDC",
 			orders: [
 				createOrder({ oid: 1, side: "B", limitPx: "101" }),
 				createOrder({ oid: 2, side: "A", isTrigger: true, triggerPx: "95", orderType: "Stop Market" }),
 				createOrder({ oid: 3, coin: "ETH", limitPx: "200" }),
 			],
-			positions: [createPosition({ szi: "-2", entryPx: "99", liquidationPx: "140" })],
+			positions: [
+				createPosition({
+					szi: "-2",
+					entryPx: "99",
+					liquidationPx: "140",
+					unrealizedPnl: "-1.25",
+					returnOnEquity: "-0.1234",
+				}),
+			],
 			labels,
 		});
 
 		expect(lines).toEqual([
 			{ key: "order:BTC:1", kind: "order", price: 101, label: "Limit Buy", side: "buy" },
 			{ key: "order:BTC:2", kind: "order", price: 95, label: "SL", side: "sell" },
-			{ key: "position::BTC", kind: "position", price: 99, label: "Short", side: "sell" },
+			{
+				key: "position::BTC",
+				kind: "position",
+				price: 99,
+				label: "Short · PNL -1.25 USDC (-12.3%) · 2",
+				tone: -1,
+				side: "sell",
+			},
 			{ key: "liquidation::BTC", kind: "liquidation", price: 140, label: "Liq.", side: "sell" },
 		]);
 	});
@@ -72,6 +96,7 @@ describe("buildTradingViewOverlayLines", () => {
 		const lines = buildTradingViewOverlayLines({
 			coin: "xyz:GOLD",
 			positionDex: "xyz",
+			quoteSymbol: "USDE",
 			orders: [],
 			positions: [
 				createPosition({ dex: "cash", coin: "GOLD", entryPx: "2000" }),
@@ -80,13 +105,58 @@ describe("buildTradingViewOverlayLines", () => {
 			labels,
 		});
 
-		expect(lines).toEqual([{ key: "position:xyz:GOLD", kind: "position", price: 2100, label: "Long", side: "buy" }]);
+		expect(lines).toEqual([
+			{
+				key: "position:xyz:GOLD",
+				kind: "position",
+				price: 2100,
+				label: "Long · PNL +12.50 USDE (+12.5%) · 1",
+				tone: 1,
+				side: "buy",
+			},
+		]);
+	});
+
+	it("does not expose dormant bracket children as active TP/SL orders", () => {
+		const takeProfit = createOrder({
+			oid: 2,
+			side: "A",
+			isTrigger: true,
+			triggerPx: "120",
+			orderType: "Take Profit Market",
+		});
+		const parent = createOrder({ oid: 1, limitPx: "100", children: [takeProfit] });
+
+		const lines = buildTradingViewOverlayLines({
+			coin: "BTC",
+			positionDex: null,
+			quoteSymbol: "USDC",
+			orders: [parent],
+			positions: [],
+			labels,
+		});
+
+		expect(lines).toEqual([{ key: "order:BTC:1", kind: "order", price: 100, label: "Limit Buy", side: "buy" }]);
+	});
+
+	it("keeps quantity and any valid performance value when position metrics are partially unavailable", () => {
+		const lines = buildTradingViewOverlayLines({
+			coin: "BTC",
+			positionDex: "",
+			quoteSymbol: "USDC",
+			orders: [],
+			positions: [createPosition({ szi: "-0.004300", unrealizedPnl: "invalid", returnOnEquity: "0.015" })],
+			labels: { ...labels, roe: "Return" },
+		});
+
+		expect(lines[0]).toMatchObject({ label: "Short · Return +1.5% · 0.0043", tone: 0 });
 	});
 
 	it("does not create position lines for spot markets", () => {
 		const lines = buildTradingViewOverlayLines({
 			coin: "@107",
 			positionDex: null,
+			quoteSymbol: "USDC",
 			orders: [],
 			positions: [createPosition({ coin: "@107" })],
 			labels,
@@ -101,7 +171,7 @@ describe("TradingViewOverlayController", () => {
 		let nextId = 0;
 		const createShape = vi.fn(() => `shape-${++nextId}`);
 		const removeEntity = vi.fn();
-		const chart = { createShape, removeEntity } as unknown as TradingViewOverlayChart;
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity } as unknown as TradingViewOverlayChart;
 		const controller = new TradingViewOverlayController();
 		const line: TradingViewOverlayLine = {
 			key: "order:BTC:1",
@@ -129,14 +199,23 @@ describe("TradingViewOverlayController", () => {
 	});
 
 	it("creates locked, non-persistent horizontal lines", () => {
-		const createShape = vi.fn(() => "shape-1");
-		const chart = { createShape, removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const createShape = vi.fn((_point: unknown, _options: { overrides?: Record<string, unknown> }) => "shape-1");
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
 		const controller = new TradingViewOverlayController();
 
 		controller.sync(
 			chart,
 			"BTC",
-			[{ key: "position::BTC", kind: "position", price: 100, label: "Long", side: "buy" }],
+			[
+				{
+					key: "position::BTC",
+					kind: "position",
+					price: 100,
+					label: "Long",
+					tone: 1,
+					side: "buy",
+				},
+			],
 			palette,
 		);
 
@@ -152,5 +231,215 @@ describe("TradingViewOverlayController", () => {
 				showInObjectsTree: false,
 			}),
 		);
+
+		const options = createShape.mock.calls[0]?.[1];
+		expect(options?.overrides).toEqual({
+			fontsize: 10,
+			horzLabelsAlign: "right",
+			linecolor: "buy-line",
+			linestyle: 2,
+			linewidth: 1,
+			showLabel: true,
+			showPrice: true,
+			textcolor: "buy-text",
+		});
+		expect(options?.overrides).not.toHaveProperty("linetoolhorzline.linecolor");
+	});
+
+	it("updates PNL text and tone in place without replacing the position entity", () => {
+		const setProperties = vi.fn();
+		const createShape = vi.fn((_point: unknown, _options: { overrides?: Record<string, unknown> }) => "shape-1");
+		const getShapeById = vi.fn(() => ({ setProperties }));
+		const removeEntity = vi.fn();
+		const chart = { createShape, getShapeById, removeEntity } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const profitableShort: TradingViewOverlayLine = {
+			key: "position::BTC",
+			kind: "position",
+			price: 100,
+			label: "Short · PNL +1.00 USDC (+1.0%) · 1",
+			tone: 1,
+			side: "sell",
+		};
+
+		controller.sync(chart, "BTC", [profitableShort], palette);
+		const createOptions = createShape.mock.calls[0]?.[1];
+		expect(createOptions?.overrides).toMatchObject({ linecolor: "sell-line", textcolor: "buy-text" });
+
+		const losingShort = {
+			...profitableShort,
+			label: "Short · PNL -2.00 USDC (-2.0%) · 1",
+			tone: -1 as const,
+		};
+		controller.sync(chart, "BTC", [losingShort], palette);
+		controller.sync(chart, "BTC", [losingShort], palette);
+
+		expect(createShape).toHaveBeenCalledOnce();
+		expect(removeEntity).not.toHaveBeenCalled();
+		expect(getShapeById).toHaveBeenCalledWith("shape-1");
+		expect(setProperties).toHaveBeenCalledOnce();
+		expect(setProperties).toHaveBeenCalledWith(
+			{
+				linecolor: "sell-line",
+				text: losingShort.label,
+				textcolor: "sell-text",
+			},
+			false,
+		);
+	});
+
+	it("uses neutral label color for zero or invalid position PNL", () => {
+		const createShape = vi.fn((_point: unknown, _options: { overrides?: Record<string, unknown> }) => "shape-1");
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+
+		controller.sync(
+			chart,
+			"BTC",
+			[
+				{
+					key: "position::BTC",
+					kind: "position",
+					price: 100,
+					label: "Long · PNL 0.00 USDC (0.0%) · 1",
+					tone: 0,
+					side: "buy",
+				},
+			],
+			palette,
+		);
+
+		expect(createShape.mock.calls[0]?.[1]?.overrides).toMatchObject({
+			linecolor: "buy-line",
+			textcolor: "neutral-text",
+		});
+	});
+
+	it("removes stale presentation after an in-place update failure and retries creation with backoff", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(1_000);
+		let createAttempt = 0;
+		const createShape = vi.fn(() => {
+			createAttempt += 1;
+			if (createAttempt === 1) return "shape-1";
+			if (createAttempt === 2) return null;
+			return "shape-2";
+		});
+		const setProperties = vi.fn(() => {
+			throw new Error("shape update failed");
+		});
+		const removeEntity = vi.fn();
+		const chart = {
+			createShape,
+			getShapeById: vi.fn(() => ({ setProperties })),
+			removeEntity,
+		} as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const initial: TradingViewOverlayLine = {
+			key: "position::BTC",
+			kind: "position",
+			price: 100,
+			label: "Long · PNL +1.00 USDC (+1.0%) · 1",
+			tone: 1,
+			side: "buy",
+		};
+		const updated = { ...initial, label: "Long · PNL +2.00 USDC (+2.0%) · 1" };
+
+		controller.sync(chart, "BTC", [initial], palette);
+		controller.sync(chart, "BTC", [updated], palette);
+
+		expect(setProperties).toHaveBeenCalledOnce();
+		expect(removeEntity).toHaveBeenCalledWith("shape-1", { disableUndo: true });
+		expect(createShape).toHaveBeenCalledTimes(2);
+
+		vi.advanceTimersByTime(1_000);
+		controller.sync(chart, "BTC", [updated], palette);
+
+		expect(createShape).toHaveBeenCalledTimes(3);
+	});
+
+	it("bounds repeated create failures while preserving an eventual retry", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(1_000);
+		const createShape = vi.fn(() => null);
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "order:BTC:1",
+			kind: "order",
+			price: 100,
+			label: "Limit Buy",
+			side: "buy",
+		};
+
+		const firstResult = controller.sync(chart, "BTC", [line], palette);
+		const deferredResult = controller.sync(chart, "BTC", [line], palette);
+		expect(createShape).toHaveBeenCalledOnce();
+		expect(firstResult).toBe(2_000);
+		expect(deferredResult).toEqual(firstResult);
+
+		vi.advanceTimersByTime(1_000);
+		const secondResult = controller.sync(chart, "BTC", [line], palette);
+		expect(createShape).toHaveBeenCalledTimes(2);
+		expect(secondResult).toBe(4_000);
+	});
+
+	it("retains failed removals and retries them before replacing an overlay", () => {
+		let nextId = 0;
+		const createShape = vi.fn(() => `shape-${++nextId}`);
+		const removeEntity = vi.fn().mockImplementationOnce(() => {
+			throw new Error("temporary remove failure");
+		});
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "position::BTC",
+			kind: "position",
+			price: 100,
+			label: "Long · PNL +1.00 USDC (+1.0%) · 1",
+			side: "buy",
+		};
+
+		controller.sync(chart, "BTC", [line], palette);
+		const failedResult = controller.sync(chart, "BTC", [{ ...line, price: 101 }], palette);
+
+		expect(removeEntity).toHaveBeenCalledTimes(1);
+		expect(createShape).toHaveBeenCalledOnce();
+		expect(failedResult).toBe(false);
+
+		const recoveredResult = controller.sync(chart, "BTC", [{ ...line, price: 101 }], palette);
+
+		expect(removeEntity).toHaveBeenCalledTimes(2);
+		expect(createShape).toHaveBeenCalledTimes(2);
+		expect(recoveredResult).toBeNull();
+	});
+
+	it("force-disposes failed entries so a rebuilt widget can render fresh overlays", () => {
+		const firstChart = {
+			createShape: vi.fn(() => "shape-1"),
+			removeEntity: vi.fn(() => {
+				throw new Error("destroyed chart");
+			}),
+			getShapeById: vi.fn(),
+		} as unknown as TradingViewOverlayChart;
+		const secondChart = {
+			createShape: vi.fn(() => "shape-2"),
+			getShapeById: vi.fn(),
+			removeEntity: vi.fn(),
+		} as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "position::BTC",
+			kind: "position",
+			price: 100,
+			label: "Long · 1",
+			side: "buy",
+		};
+
+		controller.sync(firstChart, "BTC", [line], palette);
+		controller.dispose();
+		controller.sync(secondChart, "BTC", [line], palette);
+
+		expect(secondChart.createShape).toHaveBeenCalledOnce();
 	});
 });

@@ -62,16 +62,19 @@ function getTradingViewOverlayPalette(): TradingViewOverlayPalette {
 	const colors = getChartColors();
 	return {
 		buy: {
-			lineColor: colorToRgba(colors.green, 0.45),
-			textColor: colorToHex(colors.green),
+			line: colorToRgba(colors.green, 0.45),
+			text: colorToHex(colors.green),
 		},
 		sell: {
-			lineColor: colorToRgba(colors.red, 0.45),
-			textColor: colorToHex(colors.red),
+			line: colorToRgba(colors.red, 0.45),
+			text: colorToHex(colors.red),
 		},
 		liquidation: {
-			lineColor: colorToRgba(colors.red, 0.55),
-			textColor: colorToHex(colors.red),
+			line: colorToRgba(colors.red, 0.55),
+			text: colorToHex(colors.red),
+		},
+		neutral: {
+			text: colorToHex(colors.textSecondary),
 		},
 	};
 }
@@ -154,6 +157,10 @@ export function TradingViewChart({
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const overlayLinesRef = useRef(overlayLines);
 	const overlayControllerRef = useRef<TradingViewOverlayController | null>(null);
+	const overlayRetryRef = useRef<{
+		at: number;
+		timeout: ReturnType<typeof setTimeout>;
+	} | null>(null);
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestLocaleSwitchRef = useRef<() => void>(() => {});
@@ -222,6 +229,36 @@ export function TradingViewChart({
 		}
 	};
 
+	const clearOverlayRetry = () => {
+		const retry = overlayRetryRef.current;
+		if (!retry) return;
+		clearTimeout(retry.timeout);
+		overlayRetryRef.current = null;
+	};
+
+	const rebuildOverlayWidget = (widget: IChartingLibraryWidget) => {
+		if (widgetRef.current !== widget || !chartReadyRef.current) return;
+		chartReadyRef.current = false;
+		clearOverlayRetry();
+		setIsInitializing(true);
+		setInitError(null);
+		setRetryNonce((value) => value + 1);
+	};
+
+	const scheduleOverlayRetry = (widget: IChartingLibraryWidget, attemptAtMs: number) => {
+		const pending = overlayRetryRef.current;
+		if (pending && pending.at <= attemptAtMs) return;
+		clearOverlayRetry();
+		const timeout = setTimeout(
+			() => {
+				if (overlayRetryRef.current?.timeout === timeout) overlayRetryRef.current = null;
+				if (widgetRef.current === widget) syncOverlaysRef.current();
+			},
+			Math.max(0, attemptAtMs - Date.now()),
+		);
+		overlayRetryRef.current = { at: attemptAtMs, timeout };
+	};
+
 	syncOverlaysRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current || !activeRef.current || pendingSymbolRef.current) return;
@@ -229,13 +266,22 @@ export function TradingViewChart({
 		if (!isChartSymbolApplied(getActiveChartSymbol(widget), nextSymbol)) return;
 
 		try {
-			overlayControllerRef.current?.sync(
+			const retryAt = overlayControllerRef.current?.sync(
 				widget.activeChart(),
 				nextSymbol,
 				overlayLinesRef.current,
 				getTradingViewOverlayPalette(),
 			);
-		} catch {}
+			if (retryAt === undefined) return;
+			if (retryAt === false) {
+				rebuildOverlayWidget(widget);
+				return;
+			}
+			if (retryAt !== null) scheduleOverlayRetry(widget, retryAt);
+			else clearOverlayRetry();
+		} catch {
+			rebuildOverlayWidget(widget);
+		}
 	};
 
 	applySymbolRef.current = () => {
@@ -256,7 +302,11 @@ export function TradingViewChart({
 		}
 
 		clearPendingSymbolSwitch();
-		overlayControllerRef.current?.clear();
+		const overlayController = overlayControllerRef.current;
+		if (overlayController && !overlayController.clear()) {
+			rebuildOverlayWidget(widget);
+			return;
+		}
 		pendingSymbolRef.current = nextSymbol;
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
@@ -670,8 +720,9 @@ export function TradingViewChart({
 			clearPendingSymbolSwitch();
 			stateSaveSequenceRef.current += 1;
 			clearStateSave();
-			overlayControllerRef.current?.clear();
+			overlayControllerRef.current?.dispose();
 			const widget = widgetRef.current;
+			clearOverlayRetry();
 			const datafeed = datafeedRef.current;
 			themeSwitchSequenceRef.current += 1;
 			clearThemeSwitchWatchdog(widget ?? undefined);

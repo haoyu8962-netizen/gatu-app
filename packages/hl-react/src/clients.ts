@@ -79,6 +79,10 @@ export function subscribeWsReconnect(isTestnet: boolean, listener: (generation: 
 	return getWsTransportMonitor(isTestnet)?.subscribeReconnect(listener) ?? (() => {});
 }
 
+export function subscribeWsDisconnect(isTestnet: boolean, listener: () => void): () => void {
+	return getWsTransportMonitor(isTestnet)?.subscribeDisconnect(listener) ?? (() => {});
+}
+
 export function getInfoClient(isTestnet: boolean): InfoClient {
 	return getOrCreate(`info:${isTestnet}`, () => new InfoClient({ transport: getHttpTransport(isTestnet) }));
 }

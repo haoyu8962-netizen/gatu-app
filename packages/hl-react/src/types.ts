@@ -60,4 +60,5 @@ export type HyperliquidConfig = {
 	wallet?: AbstractWallet;
 	ssr?: boolean;
 	triggerReconnect?: () => void;
+	subscribeDisconnect?: (listener: () => void) => () => void;
 };
