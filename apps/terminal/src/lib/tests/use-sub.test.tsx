@@ -88,6 +88,130 @@ describe("useSub hook surface", () => {
 		expect(runtime.has(key)).toBe(false);
 	});
 
+	it.each([
+		{ method: "bbo", throttleMs: 16 },
+		{ method: "allMids", throttleMs: undefined },
+	])("ignores a delayed old $method listener after same-key reacquisition", async ({ method, throttleMs }) => {
+		const params = method === "allMids" ? { dex: "" } : { coin: "ETH" };
+		const key = JSON.stringify(["hl", "subscription", method, params]);
+		const listeners: Array<(data: { sequence: number }) => void> = [];
+		let captured: { data: { sequence: number } | undefined; status: string } = {
+			data: undefined,
+			status: "idle",
+		};
+		const subscribe = vi.fn(async (listener: (data: { sequence: number }) => void) => {
+			listeners.push(listener);
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+
+		function Consumer() {
+			const result = useSub(key, subscribe, { throttleMs });
+			captured = { data: result.data, status: result.status };
+			return null;
+		}
+
+		act(() => {
+			root.render(<Wrapper>{createElement(Consumer, { key: "old" })}</Wrapper>);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => {
+			root.render(<Wrapper>{createElement(Consumer, { key: "current" })}</Wrapper>);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(listeners).toHaveLength(2);
+		expect(captured).toEqual({ data: undefined, status: "active" });
+
+		act(() => listeners[0]?.({ sequence: 1 }));
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toEqual({ data: undefined, status: "active" });
+
+		act(() => listeners[1]?.({ sequence: 2 }));
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toEqual({ data: { sequence: 2 }, status: "active" });
+	});
+
+	it("keeps a shared throttled runtime live when its acquiring consumer unmounts", async () => {
+		const key = JSON.stringify(["hl", "subscription", "bbo", { coin: "ETH" }]);
+		const listeners: Array<(data: { sequence: number }) => void> = [];
+		const unsubscribe = vi.fn(async () => {});
+		const captured: Record<string, { sequence: number } | undefined> = {};
+		const subscribe = vi.fn(async (listener: (data: { sequence: number }) => void) => {
+			listeners.push(listener);
+			return { unsubscribe };
+		});
+
+		function Consumer({ consumer }: { consumer: string }) {
+			captured[consumer] = useSub<{ sequence: number }>(key, subscribe, { throttleMs: 16 }).data;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<Wrapper>
+					<Consumer key="owner" consumer="owner" />
+					<Consumer key="shared" consumer="shared" />
+				</Wrapper>,
+			);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+		expect(listeners).toHaveLength(1);
+
+		act(() => {
+			root.render(
+				<Wrapper>
+					<Consumer key="shared" consumer="shared" />
+				</Wrapper>,
+			);
+		});
+		expect(unsubscribe).not.toHaveBeenCalled();
+		expect(getStoreInternals(store).subscriptionRuntime.get(key)?.refCount).toBe(1);
+
+		act(() => listeners[0]?.({ sequence: 1 }));
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured.shared).toEqual({ sequence: 1 });
+	});
+
+	it("drops queued throttled data instead of flushing it during cleanup", async () => {
+		vi.setSystemTime(1_000);
+		const key = JSON.stringify(["hl", "subscription", "bbo", { coin: "ETH" }]);
+		const listeners: Array<(data: { sequence: number }) => void> = [];
+		const setSubscriptionData = vi.spyOn(store.getState(), "setSubscriptionData");
+
+		function Consumer() {
+			useSub<{ sequence: number }>(
+				key,
+				async (listener) => {
+					listeners.push(listener);
+					return { unsubscribe: vi.fn(async () => {}) };
+				},
+				{ throttleMs: 16 },
+			);
+			return null;
+		}
+
+		act(() => {
+			root.render(<Wrapper>{createElement(Consumer)}</Wrapper>);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => listeners[0]?.({ sequence: 1 }));
+		expect(setSubscriptionData).toHaveBeenCalledTimes(1);
+		setSubscriptionData.mockClear();
+
+		act(() => listeners[0]?.({ sequence: 2 }));
+		expect(setSubscriptionData).not.toHaveBeenCalled();
+
+		act(() => {
+			root.render(<Wrapper>{null}</Wrapper>);
+		});
+		expect(setSubscriptionData).not.toHaveBeenCalled();
+
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(setSubscriptionData).not.toHaveBeenCalled();
+	});
+
 	it("exposes isStale that flips with store state", async () => {
 		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		const { subscribe } = createFakeSubscription();

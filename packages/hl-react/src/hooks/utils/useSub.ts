@@ -11,6 +11,7 @@ import {
 	shouldDropOversizedPayloadForSubscriptionKey,
 } from "../../internal/websocket/reliability";
 import { useHyperliquidStoreApi } from "../../provider";
+import { getStoreInternals } from "../../store";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../../types";
 
 export function useSub<TData>(
@@ -31,6 +32,7 @@ export function useSub<TData>(
 	useEffect(() => {
 		if (!enabled) return;
 		const state = store.getState();
+		const subscriptionRuntime = getStoreInternals(store).subscriptionRuntime;
 		let droppedPayloads = 0;
 		let lastWarningAt = 0;
 		let payloadErrorActive = false;
@@ -61,39 +63,45 @@ export function useSub<TData>(
 		};
 
 		if (throttleMs) {
-			const updater = createThrottledUpdater<TData>((data) => state.setSubscriptionData(key, data), throttleMs);
 			const method = getSubscriptionMethodForKey(key);
 			const shouldDiscardQueuedDataOnError = method === "l2Book" || method === "bbo";
 			let subscriptionGeneration = 0;
+			const updater = createThrottledUpdater<{ data: TData; isCurrent: () => boolean }>(({ data, isCurrent }) => {
+				if (!isCurrent()) return;
+				state.setSubscriptionData(key, data);
+			}, throttleMs);
 
 			state.acquireSubscription(
 				key,
 				(failureOptions) => {
-					const generation = shouldDiscardQueuedDataOnError ? ++subscriptionGeneration : 0;
+					const expectedRuntime = subscriptionRuntime.get(key);
+					const generation = ++subscriptionGeneration;
+					const isCurrentGeneration = () =>
+						expectedRuntime !== undefined &&
+						subscriptionRuntime.get(key) === expectedRuntime &&
+						generation === subscriptionGeneration;
 					const invalidateGeneration = () => {
-						if (!shouldDiscardQueuedDataOnError || generation !== subscriptionGeneration) return;
+						if (!isCurrentGeneration()) return;
 						subscriptionGeneration += 1;
-						updater.destroy();
+						if (shouldDiscardQueuedDataOnError) updater.destroy();
 					};
-					const guardedFailureOptions = shouldDiscardQueuedDataOnError
-						? {
-								...failureOptions,
-								onError: (error: unknown) => {
-									invalidateGeneration();
-									failureOptions?.onError?.(error);
-								},
-							}
-						: failureOptions;
+					const guardedFailureOptions = {
+						...failureOptions,
+						onError: (error: unknown) => {
+							if (!isCurrentGeneration()) return;
+							invalidateGeneration();
+							failureOptions?.onError?.(error);
+						},
+					};
 					const promise = subscribeRef.current((data) => {
-						if (shouldDiscardQueuedDataOnError && generation !== subscriptionGeneration) return;
+						if (!isCurrentGeneration()) return;
 						if (shouldDropPayload(data)) {
 							if (shouldDiscardQueuedDataOnError) updater.destroy();
 							return;
 						}
-						updater.add(data);
+						updater.add({ data, isCurrent: isCurrentGeneration });
 					}, guardedFailureOptions);
 
-					if (!shouldDiscardQueuedDataOnError) return promise;
 					return promise.catch((error) => {
 						invalidateGeneration();
 						throw error;
@@ -103,19 +111,40 @@ export function useSub<TData>(
 				pauseWhenHidden,
 			);
 			return () => {
-				updater.flush();
 				updater.destroy();
 				store.getState().releaseSubscription(key);
 			};
 		}
 
+		let subscriptionGeneration = 0;
 		state.acquireSubscription(
 			key,
-			(failureOptions) =>
-				subscribeRef.current((data) => {
-					if (shouldDropPayload(data)) return;
-					state.setSubscriptionData(key, data);
-				}, failureOptions),
+			(failureOptions) => {
+				const expectedRuntime = subscriptionRuntime.get(key);
+				const generation = ++subscriptionGeneration;
+				const isCurrentGeneration = () =>
+					expectedRuntime !== undefined &&
+					subscriptionRuntime.get(key) === expectedRuntime &&
+					generation === subscriptionGeneration;
+				const guardedFailureOptions = {
+					...failureOptions,
+					onError: (error: unknown) => {
+						if (!isCurrentGeneration()) return;
+						subscriptionGeneration += 1;
+						failureOptions?.onError?.(error);
+					},
+				};
+				return subscribeRef
+					.current((data) => {
+						if (!isCurrentGeneration()) return;
+						if (shouldDropPayload(data)) return;
+						state.setSubscriptionData(key, data);
+					}, guardedFailureOptions)
+					.catch((error) => {
+						if (isCurrentGeneration()) subscriptionGeneration += 1;
+						throw error;
+					});
+			},
 			stalenessThresholdMs,
 			pauseWhenHidden,
 		);
