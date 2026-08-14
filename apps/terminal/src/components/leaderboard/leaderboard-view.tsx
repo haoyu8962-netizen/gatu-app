@@ -129,10 +129,10 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 				<InfoIcon className="mt-0.5 size-4 shrink-0" />
 				<p>
 					<Trans>
-						An account is excluded only when both its account value is below $100K and its all-time volume is below
-						$10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using
-						the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this
-						ranking does not claim exact parity with Hyperliquid's official leaderboard.
+						An account is excluded only when both its account value is below $100,000 and its all-time volume is below
+						$10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded
+						using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available,
+						so this ranking does not claim exact parity with Hyperliquid's official leaderboard.
 					</Trans>
 				</p>
 			</div>
@@ -225,10 +225,10 @@ function DesktopLeaderboard(props: CommonLeaderboardProps) {
 							<TableCell size="dense">
 								<TraderLink href={row.href} address={row.address} displayName={row.displayName} />
 							</TableCell>
-							<NumericCell>{formatUSD(row.accountValue, { compact: true })}</NumericCell>
-							<NumericCell tone={row.pnlTone}>{formatUSD(row.pnl, { compact: true })}</NumericCell>
+							<NumericCell>{formatUSD(row.accountValue, { compact: false })}</NumericCell>
+							<NumericCell tone={row.pnlTone}>{formatUSD(row.pnl, { compact: false })}</NumericCell>
 							<NumericCell tone={row.roiTone}>{formatPercent(row.roi)}</NumericCell>
-							<NumericCell>{formatUSD(row.volume, { compact: true })}</NumericCell>
+							<NumericCell>{formatUSD(row.volume, { compact: false })}</NumericCell>
 						</TableRow>
 					))}
 				</TableBody>
@@ -334,10 +334,13 @@ function MobileLeaderboard(props: CommonLeaderboardProps) {
 							<TraderLink href={row.href} address={row.address} displayName={row.displayName} />
 							<Rank rank={row.rank} />
 						</div>
-						<MobileMetric label={<Trans>Account Value</Trans>} value={formatUSD(row.accountValue, { compact: true })} />
-						<MobileMetric label={props.pnlLabel} value={formatUSD(row.pnl, { compact: true })} tone={row.pnlTone} />
+						<MobileMetric
+							label={<Trans>Account Value</Trans>}
+							value={formatUSD(row.accountValue, { compact: false })}
+						/>
+						<MobileMetric label={props.pnlLabel} value={formatUSD(row.pnl, { compact: false })} tone={row.pnlTone} />
 						<MobileMetric label={props.roiLabel} value={formatPercent(row.roi)} tone={row.roiTone} />
-						<MobileMetric label={props.volumeLabel} value={formatUSD(row.volume, { compact: true })} />
+						<MobileMetric label={props.volumeLabel} value={formatUSD(row.volume, { compact: false })} />
 					</article>
 				))}
 			</div>

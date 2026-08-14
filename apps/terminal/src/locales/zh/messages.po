@@ -627,12 +627,16 @@ msgid "Amount must be greater than zero and no more than the current position."
 msgstr "数量必须大于零且不得超过当前仓位。"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+msgid "An account is excluded only when both its account value is below $100,000 and its all-time volume is below $10,000,000. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
+msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,000 时，该账户才会被排除。ROI 使用当前官方应用数据源返回的值。金库账户通过网络匹配的金库数据集排除。由于尚无经审核的协议与国库地址策略，本排行榜不声称与 Hyperliquid 官方排行榜完全一致。"
+
+#: src/components/leaderboard/leaderboard-view.tsx
 #~ msgid "An account is excluded only when both its account value is below $100K and its all-time volume is below $10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset."
 #~ msgstr "仅当账户价值低于 10 万美元且全部时间交易量低于 1,000 万美元时，该账户才会被排除。ROI 使用当前官方应用数据源报告的值。金库账户依据与网络匹配的金库数据集排除。"
 
 #: src/components/leaderboard/leaderboard-view.tsx
-msgid "An account is excluded only when both its account value is below $100K and its all-time volume is below $10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
-msgstr "仅当账户价值低于 10 万美元且历史总交易量低于 1000 万美元时，该账户才会被排除。ROI 使用当前官方应用数据源返回的值。金库账户通过网络匹配的金库数据集排除。由于尚无经审核的协议与国库地址策略，本排行榜不声称与 Hyperliquid 官方排行榜完全一致。"
+#~ msgid "An account is excluded only when both its account value is below $100K and its all-time volume is below $10M. ROI is the value reported by the current official-app data source. Vault accounts are excluded using the network-matched vault dataset. A reviewed protocol and treasury address policy is not available, so this ranking does not claim exact parity with Hyperliquid's official leaderboard."
+#~ msgstr "仅当账户价值低于 10 万美元且历史总交易量低于 1000 万美元时，该账户才会被排除。ROI 使用当前官方应用数据源返回的值。金库账户通过网络匹配的金库数据集排除。由于尚无经审核的协议与国库地址策略，本排行榜不声称与 Hyperliquid 官方排行榜完全一致。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."

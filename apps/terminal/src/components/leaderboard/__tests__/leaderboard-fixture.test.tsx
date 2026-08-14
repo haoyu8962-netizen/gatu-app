@@ -6,13 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { LeaderboardFixture, type LeaderboardFixtureState, resolveLeaderboardFixture } from "../leaderboard-fixture";
 
-vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
+const mocks = vi.hoisted(() => ({ isMobile: false }));
+
+vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => mocks.isMobile }));
 
 describe("LeaderboardFixture", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.isMobile = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -50,6 +53,21 @@ describe("LeaderboardFixture", () => {
 		});
 
 		expect(new Set(snapshots).size).toBe(periodButtons.length);
+	});
+
+	it.each([
+		["desktop", false],
+		["mobile", true],
+	] as const)("renders complete monetary amounts without compact suffixes on %s", (_surface, isMobile) => {
+		mocks.isMobile = isMobile;
+		render("normal");
+
+		expect(container.textContent).toContain("$2,450,000.00");
+		expect(container.textContent).toContain("$185,000.00");
+		expect(container.textContent).toContain("$18,000,000.00");
+		expect(container.textContent).toContain("$100,000");
+		expect(container.textContent).toContain("$10,000,000");
+		expect(container.textContent).not.toMatch(/\$[\d.,]+[KMB]\b/);
 	});
 
 	function render(fixture: LeaderboardFixtureState) {
