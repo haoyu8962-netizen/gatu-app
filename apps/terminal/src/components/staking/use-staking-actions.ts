@@ -199,7 +199,6 @@ export function buildStakingRecoverySubmission(reference: FundsActionReference):
 		reference.method !== "tokenDelegate" ||
 		(reference.direction !== "delegate" && reference.direction !== "undelegate") ||
 		!isAddress(reference.target) ||
-		reference.target !== reference.target.toLowerCase() ||
 		reference.target.toLowerCase() === zeroAddress
 	) {
 		return null;
@@ -208,7 +207,7 @@ export function buildStakingRecoverySubmission(reference: FundsActionReference):
 		request: {
 			kind: reference.direction,
 			maxAmount: amount.amount,
-			validator: reference.target as `0x${string}`,
+			validator: reference.target.toLowerCase() as `0x${string}`,
 		},
 		amount: amount.amount,
 		wei: amount.wei,
@@ -556,7 +555,12 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 				// A failed read never proves that the signed operation failed.
 			}
 			if (attempt < RECONCILIATION_ATTEMPTS - 1) {
-				await waitForReconciliation(lease.abortController.signal);
+				try {
+					await waitForReconciliation(lease.abortController.signal);
+				} catch {
+					// Rejection only signals an abort, and the lease is already stale.
+					return;
+				}
 			}
 		}
 		if (!executionIsCurrent(lease)) return;
@@ -748,7 +752,7 @@ function createReference(
 		env: lease.identity.env,
 		owner,
 		method: request.kind === "delegate" || request.kind === "undelegate" ? "tokenDelegate" : request.kind,
-		target: request.validator ?? "staking",
+		target: request.validator?.toLowerCase() ?? "staking",
 		direction: request.kind === "cDeposit" ? "deposit" : request.kind === "cWithdraw" ? "withdraw" : request.kind,
 		displayAmount: lease.submission.amount,
 		atomicAmount: String(lease.submission.wei),

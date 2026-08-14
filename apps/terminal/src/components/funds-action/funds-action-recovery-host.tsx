@@ -10,6 +10,7 @@ import {
 	clearCorruptFundsActionMarkerStorageSafely,
 	type FundsActionReference,
 	removeFundsActionMarkerSafely,
+	resolveFundsActionRecoveryOwner,
 	useFundsActionMarkerStorageStatus,
 	useFundsActionMarkers,
 } from "./funds-action-marker";
@@ -28,8 +29,7 @@ export function FundsActionRecoveryHost() {
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const [confirmClearMarkerId, setConfirmClearMarkerId] = useState<string | null>(null);
 	const walletOwner = clientKey === "disconnected" ? undefined : clientKey;
-	const owner =
-		sessionMode === "agent-only" ? (activeAgentOwner?.env === env ? activeAgentOwner.address : undefined) : walletOwner;
+	const owner = resolveFundsActionRecoveryOwner({ sessionMode, env, activeAgentOwner, fallbackOwner: walletOwner });
 	const marker = owner
 		? markers.find((candidate) => candidate.env === env && candidate.owner.toLowerCase() === owner.toLowerCase())
 		: undefined;

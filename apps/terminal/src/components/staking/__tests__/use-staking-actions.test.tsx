@@ -226,6 +226,22 @@ describe("staking marker recovery validation", () => {
 		});
 	});
 
+	it("rebuilds a checksummed persisted validator target as its lowercase canonical form", () => {
+		expect(
+			buildStakingRecoverySubmission(
+				stakingReference({
+					method: "tokenDelegate",
+					direction: "delegate",
+					target: "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
+				}),
+			),
+		).toEqual({
+			request: { kind: "delegate", maxAmount: "2", validator: "0xab5801a7d398351b8be11c439e05c5b3259aec9b" },
+			amount: "2",
+			wei: 200_000_000,
+		});
+	});
+
 	it("fails closed for mismatched asset, decimals, direction, target, amount, safe wei, or baselines", () => {
 		const base = stakingReference();
 		const { historyBaseline: _historyBaseline, stateBaseline: _stateBaseline, ...legacy } = base;
@@ -240,6 +256,7 @@ describe("staking marker recovery validation", () => {
 			{ ...base, displayAmount: "90071992.54740992", atomicAmount: "9007199254740992" },
 			{ ...base, method: "tokenDelegate", direction: "deposit", target: VALIDATOR },
 			{ ...base, method: "tokenDelegate", direction: "delegate", target: "not-an-address" },
+			{ ...base, method: "tokenDelegate", direction: "delegate", target: "0xaB5801a7D398351b8bE11C439e05C5B3259aeC9B" },
 			legacy,
 			{ ...base, stateBaseline: { kind: "vault", vaultEquity: "1", withdrawable: "1" } },
 		];
@@ -566,6 +583,65 @@ describe("useStakingActions orchestration", () => {
 		});
 		expect(mocks.methods.cDeposit).toHaveBeenCalledTimes(1);
 		expect(current().active?.state).toEqual({ stage: "done", result: "success" });
+	});
+
+	it("rehydrates a tokenDelegate marker written by the real submit path after a remount", async () => {
+		vi.useFakeTimers();
+		const checksummedValidator = "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B" as const;
+		mocks.preflight.validators = [{ ...validator(), validator: checksummedValidator }];
+		mocks.history = [];
+		act(() =>
+			current().review({
+				request: { kind: "delegate", maxAmount: "10", validator: checksummedValidator },
+				amount: "2",
+				wei: 200_000_000,
+			}),
+		);
+		let submission!: Promise<void>;
+		act(() => {
+			submission = current().submit();
+		});
+		await act(async () => {
+			await vi.runAllTimersAsync();
+			await submission;
+		});
+		expect(mocks.methods.tokenDelegate).toHaveBeenCalledExactlyOnceWith({
+			validator: checksummedValidator,
+			wei: 200_000_000,
+			isUndelegate: false,
+		});
+		expect(current().active?.state).toEqual({ stage: "done", result: "unknown" });
+		const persisted = findPendingFundsAction("Mainnet", OWNER);
+		expect(persisted).toMatchObject({
+			method: "tokenDelegate",
+			target: checksummedValidator.toLowerCase(),
+			direction: "delegate",
+			displayAmount: "2",
+			atomicAmount: "200000000",
+		});
+
+		vi.useRealTimers();
+		act(() => root.unmount());
+		controller = null;
+		const react = await import("react-dom/client");
+		root = react.createRoot(container);
+		await act(async () => {
+			root.render(<Probe />);
+			await Promise.resolve();
+		});
+
+		expect(current().active).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			recoveredFromMarker: true,
+			reference: persisted,
+			submission: {
+				request: { kind: "delegate", maxAmount: "2", validator: checksummedValidator.toLowerCase() },
+				amount: "2",
+				wei: 200_000_000,
+			},
+		});
+		expect(current().hasPendingMarker).toBe(true);
+		expect(mocks.methods.tokenDelegate).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not let an old unknown session verify or clear a replacement marker", async () => {

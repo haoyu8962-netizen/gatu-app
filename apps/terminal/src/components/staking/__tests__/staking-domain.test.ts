@@ -203,6 +203,8 @@ describe("staking domain", () => {
 		expect(validateHypeActionAmount("3", "2")).toEqual({ valid: false, reason: "maximum" });
 		expect(validateHypeActionAmount("90071992.54740991")).toMatchObject({ valid: true, wei: Number.MAX_SAFE_INTEGER });
 		expect(validateHypeActionAmount("90071992.54740992")).toEqual({ valid: false, reason: "unsafe" });
+		expect(validateHypeActionAmount("0.0000001")).toEqual({ valid: true, amount: "0.0000001", wei: 10 });
+		expect(validateHypeActionAmount("0.00000001")).toEqual({ valid: true, amount: "0.00000001", wei: 1 });
 		expect(createStakingActionSubmission({ kind: "cWithdraw", maxAmount: "2" }, "1.00000000")).toEqual({
 			request: { kind: "cWithdraw", maxAmount: "2" },
 			amount: "1",

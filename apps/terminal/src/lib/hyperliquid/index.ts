@@ -111,6 +111,7 @@ export {
 	removeAgentFromStorage,
 	removeAgentFromStorageAndVerify,
 	restoreAgentRegistrationSession,
+	type SessionMode,
 	type SubEvent,
 	type SubMethod,
 	type SubParams,

@@ -318,7 +318,7 @@ export function validateHypeActionAmount(input: string, maximum?: string): HypeA
 	if (!scaled.round(0, Big.roundDown).eq(scaled)) return { valid: false, reason: "format" };
 	const wei = Number(scaled.toString());
 	if (!Number.isSafeInteger(wei) || wei <= 0) return { valid: false, reason: "unsafe" };
-	return { valid: true, amount: amount.toString(), wei };
+	return { valid: true, amount: amount.toFixed(), wei };
 }
 
 export function createStakingActionSubmission(
@@ -445,8 +445,10 @@ function isUnsignedDecimal(value: unknown): value is string {
 	}
 }
 
+// toFixed() keeps small values in plain decimal notation; toString() would emit
+// exponential forms like "1e-7" that downstream marker validation rejects.
 function normalizeDecimal(value: string): string {
-	return Big(value).toString();
+	return Big(value).toFixed();
 }
 
 function isNonNegativeSafeInteger(value: unknown): value is number {

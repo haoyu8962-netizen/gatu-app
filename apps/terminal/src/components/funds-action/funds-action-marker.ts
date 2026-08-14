@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { isAddress, zeroAddress } from "viem";
-import type { HyperliquidEnv } from "@/lib/hyperliquid";
+import type { HyperliquidEnv, SessionMode } from "@/lib/hyperliquid";
 
 export const FUNDS_ACTION_MARKER_STORAGE_KEY = "gatu.funds_action.pending.v1";
 export const FUNDS_ACTION_MARKER_LOCK_NAME = "gatu_funds_action_marker_storage_v1";
@@ -276,6 +276,17 @@ function subscribeMarkers(listener: () => void): () => void {
 			storageListenerAttached = false;
 		}
 	};
+}
+
+export function resolveFundsActionRecoveryOwner<T extends string>(input: {
+	sessionMode: SessionMode;
+	env: HyperliquidEnv;
+	activeAgentOwner: { env: HyperliquidEnv; address: `0x${string}` } | null;
+	fallbackOwner: T | undefined;
+}): T | `0x${string}` | undefined {
+	if (input.sessionMode !== "agent-only") return input.fallbackOwner;
+	if (input.activeAgentOwner?.env !== input.env) return undefined;
+	return input.activeAgentOwner.address;
 }
 
 export function createFundsActionReference(input: CreateFundsActionReferenceInput): FundsActionReference {

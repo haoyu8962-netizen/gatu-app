@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createFundsActionReference } from "@/components/funds-action/funds-action-marker";
 import {
 	createFundsActionHistoryBaseline,
+	FUNDS_ACTION_HISTORY_LOOKBACK_MS,
+	getFundsActionHistoryStartTime,
 	reconcileStakingFundsAction,
 	reconcileVaultFundsAction,
 	verifyStakingReconciliationState,
@@ -125,6 +127,41 @@ describe("funds action reconciliation", () => {
 				{ time: 1002, hash: SECOND_HASH, delta: { cDeposit: { amount: "2.50" } } },
 			]),
 		).toBeNull();
+		expect(
+			reconcileVaultFundsAction(vaultReference("withdraw"), [
+				{ time: 1001, hash: HASH, delta: { type: "vaultWithdraw", vault: TARGET, user: OWNER, requestedUsd: "12.5" } },
+				{
+					time: 1002,
+					hash: SECOND_HASH,
+					delta: { type: "vaultWithdraw", vault: TARGET, user: OWNER, requestedUsd: "12.50" },
+				},
+			]),
+		).toBeNull();
+		expect(
+			reconcileStakingFundsAction(stakingReference("cWithdraw", "withdraw"), [
+				{ time: 1001, hash: HASH, delta: { withdrawal: { amount: "2.5", phase: "initiated" } } },
+				{ time: 1002, hash: SECOND_HASH, delta: { withdrawal: { amount: "2.50", phase: "initiated" } } },
+			]),
+		).toBeNull();
+		expect(
+			reconcileStakingFundsAction(stakingReference("tokenDelegate", "delegate"), [
+				{ time: 1001, hash: HASH, delta: { delegate: { validator: TARGET, amount: "2.5", isUndelegate: false } } },
+				{
+					time: 1002,
+					hash: SECOND_HASH,
+					delta: {
+						delegate: { validator: TARGET.toUpperCase().replace("0X", "0x"), amount: "2.50", isUndelegate: false },
+					},
+				},
+			]),
+		).toBeNull();
+	});
+
+	it("anchors history reads two days before the marker start and clamps at zero", () => {
+		expect(FUNDS_ACTION_HISTORY_LOOKBACK_MS).toBe(172_800_000);
+		expect(getFundsActionHistoryStartTime(1_700_000_000_000)).toBe(1_700_000_000_000 - 172_800_000);
+		expect(getFundsActionHistoryStartTime(172_800_000)).toBe(0);
+		expect(getFundsActionHistoryStartTime(1_000)).toBe(0);
 	});
 
 	it("matches staking deposit, withdrawal initiation, delegation, and undelegation exactly", () => {
