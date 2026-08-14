@@ -682,21 +682,19 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return;
 		}
 		if (unconfirmedExecutionRef.current) {
-			setModifyValidationError(
-				t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`,
-			);
+			toast.info(t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`);
 			return;
 		}
 
 		const market = getMarketBinding(order.coin);
 		if (!market) {
-			setModifyValidationError(getModifyBlockMessage("invalid-market-binding"));
+			toast.info(getModifyBlockMessage("invalid-market-binding"));
 			return;
 		}
 
 		const result = createOpenOrderModifyTarget({ owner: clientKey, env, field, market, order });
 		if (result.status === "blocked") {
-			setModifyValidationError(getModifyBlockMessage(result.reason));
+			toast.info(getModifyBlockMessage(result.reason));
 			return;
 		}
 
