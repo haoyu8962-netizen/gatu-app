@@ -4097,6 +4097,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "लिमिट"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "लिमिट खरीद"
 
@@ -5947,7 +5948,6 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx

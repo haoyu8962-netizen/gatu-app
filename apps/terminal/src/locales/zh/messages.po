@@ -3835,6 +3835,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "限价"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "限价买入"
 
@@ -5506,7 +5507,6 @@ msgstr "用于视觉检查的占位金库数据。"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
