@@ -68,10 +68,6 @@ msgstr ""
 msgid "{currentDirectionLabel} to {targetDirectionLabel}"
 msgstr "{currentDirectionLabel} से {targetDirectionLabel}"
 
-#: src/components/vaults/vaults-list.tsx
-msgid "{currentPage} of {totalPages}"
-msgstr ""
-
 #: src/components/api-wallet/api-wallet-form.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "{days} days"
@@ -1033,7 +1029,6 @@ msgstr ""
 msgid "Balance"
 msgstr "शेष"
 
-#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Balance available to trade"
 msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
@@ -3115,12 +3110,8 @@ msgid "Expiring"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
-msgid "Explore HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
+msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
 msgstr ""
-
-#: src/components/vaults/vaults-list.tsx
-#~ msgid "Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal."
-#~ msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
@@ -3392,10 +3383,6 @@ msgstr "शुल्क (टेकर / मेकर)"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Fees are higher than the bridge amount."
 msgstr "शुल्क ब्रिज राशि से अधिक है।"
-
-#: src/components/vaults/vaults-list.tsx
-msgid "Fetched {fetchedLabel}"
-msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -3751,10 +3738,6 @@ msgstr "Hyperliquid को फ़िलहाल Arbitrum से Circle CCTP ज
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
 #~ msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। इस ऐप में Bridge जमा रोक दिए गए हैं।"
-
-#: src/components/vaults/vault-action-modal.tsx
-msgid "Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults. The returned server timestamp remains authoritative for this deposit."
-msgstr ""
 
 #: src/lib/errors/format.ts
 msgid "Hyperliquid does not currently show this account as eligible to create a referral code."
@@ -4960,10 +4943,6 @@ msgstr "अगला"
 msgid "Next page"
 msgstr ""
 
-#: src/components/vaults/vaults-list.tsx
-msgid "Next Vault page"
-msgstr ""
-
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
@@ -5311,8 +5290,8 @@ msgid "Official"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
-#~ msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
-#~ msgstr ""
+msgid "Official and User classification is unavailable until an exact reviewed address policy is supplied. Rows remain unclassified instead of being guessed."
+msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Official and User filters stay unavailable until a reviewed exact-address policy is configured. No classification is inferred from relationship or ownership fields."
@@ -6140,10 +6119,6 @@ msgstr "पिछला"
 msgid "Previous page"
 msgstr ""
 
-#: src/components/vaults/vaults-list.tsx
-msgid "Previous Vault page"
-msgstr ""
-
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6753,10 +6728,6 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/vaults/vaults-page.tsx
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
-
-#: src/components/vaults/vault-detail-view.tsx
-msgid "Retry account data"
-msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Retry read-only verification"
@@ -9171,8 +9142,6 @@ msgid "Trades"
 msgstr "ट्रेड्स"
 
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/positions/balances-tab.tsx
 msgid "Trading"
 msgstr "ट्रेडिंग"
 
@@ -9580,8 +9549,8 @@ msgid "Unclaimed"
 msgstr "दावा नहीं किया गया"
 
 #: src/components/vaults/vaults-list.tsx
-#~ msgid "Unclassified Vaults"
-#~ msgstr ""
+msgid "Unclassified Vaults"
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "unconfirmed"
@@ -9694,8 +9663,8 @@ msgid "Updated"
 msgstr "अपडेट किया गया"
 
 #: src/components/vaults/vaults-list.tsx
-#~ msgid "Updated {updatedLabel}"
-#~ msgstr ""
+msgid "Updated {updatedLabel}"
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
@@ -9881,10 +9850,6 @@ msgstr ""
 msgid "Vault not found"
 msgstr ""
 
-#: src/components/vaults/vaults-list.tsx
-msgid "Vault pagination"
-msgstr ""
-
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Vault performance"
 msgstr ""
@@ -9917,7 +9882,6 @@ msgstr "वॉल्ट निकासी"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/vaults/vault-detail-view.tsx
-#: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Vaults"
 msgstr "वॉल्ट"
@@ -10338,19 +10302,13 @@ msgstr ""
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
-#~ msgid "Your deposit"
-#~ msgstr ""
+msgid "Your deposit"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"
-
-#: src/components/vaults/vault-detail-view.tsx
-#: src/components/vaults/vaults-list.tsx
-#: src/components/vaults/vaults-list.tsx
-msgid "Your equity"
-msgstr ""
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."
