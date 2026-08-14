@@ -2,14 +2,19 @@ import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup,
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowsDownUpIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
-import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
+import { getSpotAvailable, getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfAnyResponseError } from "@/domain/trade/orders";
+import {
+	assertSpotSwapExecutionAllowed,
+	type SpotSwapExecutionState,
+	SWAP_ORDERBOOK_MAX_AGE_MS,
+} from "@/domain/trade/spot-swap-execution-guard";
 import {
 	buildSwapQuote,
 	DEFAULT_SWAP_SLIPPAGE_BPS,
@@ -26,7 +31,7 @@ import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { type ExchangeParams, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
@@ -43,7 +48,6 @@ import { TokenSelectorDropdown } from "./token-selector-dropdown";
 import { TradingActionButton } from "./trading-action-button";
 
 const DEFAULT_SWAP_SLIPPAGE_PERCENT = DEFAULT_SWAP_SLIPPAGE_BPS / 100;
-
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
 	const initialFromToken = useSwapModalFromToken() ?? DEFAULT_QUOTE_TOKEN;
@@ -73,10 +77,18 @@ interface Props {
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	useNumberFormatRevision();
 	const { spotMarkets } = useMarketsInfo();
-	const { accountAbstraction, spotBalances } = useDefaultDexBalances();
+	const {
+		accountAbstraction,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		spotStateStatus,
+		spotStateReceivedAt,
+		isDataStale,
+		hasError: hasBalanceError,
+	} = useDefaultDexBalances();
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const accountDataReady = accountModeReady && spotStateStatus === "success" && !isDataStale && !hasBalanceError;
 	const { builderConfig } = useHyperliquid();
-	const { submitOrder, isPending: isSubmitting } = useTrackedOrder();
 	const { takerRate } = useFeeRates("spot");
 	const isStablecoinSwap = mode === "stablecoin";
 
@@ -101,15 +113,24 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 	const getTokenBalance = useCallback(
 		(token: string) => {
-			if (!accountModeReady) return 0;
+			if (!accountDataReady) return 0;
 			const balance = getSpotBalance(spotBalances, token);
-			return getAvailableFromTotals(balance?.total, balance?.hold);
+			return getSpotAvailable(balance, spotAvailableAfterMaintenance);
 		},
-		[accountModeReady, spotBalances],
+		[accountDataReady, spotAvailableAfterMaintenance, spotBalances],
+	);
+	const getTokenBalanceExact = useCallback(
+		(token: string) => {
+			if (!accountDataReady) return "0";
+			const balance = getSpotBalance(spotBalances, token);
+			return getSpotAvailableValue(balance, spotAvailableAfterMaintenance);
+		},
+		[accountDataReady, spotAvailableAfterMaintenance, spotBalances],
 	);
 
 	const fromBalance = getTokenBalance(fromToken);
 	const toBalance = getTokenBalance(toToken);
+	const fromBalanceExact = getTokenBalanceExact(fromToken);
 
 	const spotMarket = useMemo(() => {
 		if (!fromToken || !toToken) return null;
@@ -118,18 +139,27 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 	const szDecimals = spotMarket?.szDecimals ?? 2;
 	const isBuying = spotMarket ? getSwapSide(fromToken, spotMarket) : false;
-	const { data: orderbook, status: orderbookStatus } = useSubscription(
-		"l2Book",
-		{ coin: spotMarket?.name ?? "" },
-		{ enabled: Boolean(spotMarket?.name) },
-	);
+	const {
+		data: orderbook,
+		status: orderbookStatus,
+		isStale: orderbookIsStale,
+		lastMessageAt: orderbookReceivedAt,
+	} = useSubscription("l2Book", { coin: spotMarket?.name ?? "" }, { enabled: Boolean(spotMarket?.name) });
+	const orderbookAge = orderbookReceivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - orderbookReceivedAt;
+	const hasLiveOrderbook =
+		orderbookStatus === "active" &&
+		!orderbookIsStale &&
+		orderbook?.coin === spotMarket?.name &&
+		orderbookAge >= 0 &&
+		orderbookAge <= SWAP_ORDERBOOK_MAX_AGE_MS;
+	const liveOrderbook = hasLiveOrderbook ? orderbook : undefined;
 	const quote = useMemo(
 		() =>
 			buildSwapQuote({
 				amount,
 				isBuying,
-				bids: orderbook?.levels[0],
-				asks: orderbook?.levels[1],
+				bids: liveOrderbook?.levels[0],
+				asks: liveOrderbook?.levels[1],
 				referencePrice: spotMarket?.markPx,
 				szDecimals,
 				slippageBps: DEFAULT_SWAP_SLIPPAGE_BPS,
@@ -141,13 +171,64 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			amount,
 			builderConfig?.f,
 			isBuying,
-			orderbook?.levels,
+			liveOrderbook?.levels,
 			spotMarket?.markPx,
 			spotMarket?.isStablePair,
 			szDecimals,
 			takerRate,
 		],
 	);
+	const expectedOrder = useMemo(() => {
+		if (!spotMarket || !quote) return undefined;
+		return {
+			a: spotMarket.assetId,
+			b: isBuying,
+			p: formatPriceForOrder(quote.limitPrice, { assetId: spotMarket.assetId, szDecimals }),
+			s: formatSizeForOrder(quote.orderSize, szDecimals),
+			r: false,
+			t: { limit: { tif: "FrontendMarket" as const } },
+		};
+	}, [isBuying, quote, spotMarket, szDecimals]);
+	const requiredInput = quote?.maxInput ?? amount;
+	const executionStateRef = useRef<SpotSwapExecutionState>({
+		active: true,
+		accountDataReady,
+		assetId: spotMarket?.assetId,
+		marketName: spotMarket?.name,
+		bookCoin: orderbook?.coin,
+		bookStatus: orderbookStatus,
+		bookIsStale: orderbookIsStale,
+		bookReceivedAt: orderbookReceivedAt,
+		balanceReceivedAt: spotStateReceivedAt,
+		currentBalance: fromBalanceExact,
+		requiredInput,
+		expectedOrder,
+	});
+	executionStateRef.current = {
+		active: true,
+		accountDataReady,
+		assetId: spotMarket?.assetId,
+		marketName: spotMarket?.name,
+		bookCoin: orderbook?.coin,
+		bookStatus: orderbookStatus,
+		bookIsStale: orderbookIsStale,
+		bookReceivedAt: orderbookReceivedAt,
+		balanceReceivedAt: spotStateReceivedAt,
+		currentBalance: fromBalanceExact,
+		requiredInput,
+		expectedOrder,
+	};
+	useEffect(() => {
+		executionStateRef.current.active = true;
+		return () => {
+			executionStateRef.current.active = false;
+		};
+	}, []);
+	const executionGuard = useCallback(
+		(params: ExchangeParams<"order">) => assertSpotSwapExecutionAllowed(params, executionStateRef.current),
+		[],
+	);
+	const { submitOrder, isPending: isSubmitting } = useTrackedOrder({ executionGuard });
 	const hasPositiveAmount = toBig(amount)?.gt(0) ?? false;
 	const estimatedReceive = quote?.estimatedReceive ?? "0";
 	const fromTokenInfo =
@@ -200,22 +281,13 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	);
 
 	const handleSubmit = useCallback(async () => {
-		if (!accountModeReady || !spotMarket || !quote || isSubmitting) return;
+		if (!accountDataReady || !spotMarket || !quote || !expectedOrder || isSubmitting) return;
 
 		setError(null);
 
-		const order = {
-			a: spotMarket.assetId,
-			b: isBuying,
-			p: formatPriceForOrder(quote.limitPrice, { assetId: spotMarket.assetId, szDecimals }),
-			s: formatSizeForOrder(quote.orderSize, szDecimals),
-			r: false,
-			t: { limit: { tif: "FrontendMarket" as const } },
-		};
-
 		try {
 			const submission = await submitOrder(
-				{ orders: [order], grouping: "na" },
+				{ orders: [expectedOrder], grouping: "na" },
 				{ riskContext: { marketKind: "spot" } },
 			);
 			if (submission.state === "blocked") {
@@ -236,26 +308,25 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				: rawMessage;
 			setError(message);
 		}
-	}, [accountModeReady, spotMarket, quote, isSubmitting, isBuying, szDecimals, submitOrder, triggerAutoClose]);
+	}, [accountDataReady, spotMarket, quote, expectedOrder, isSubmitting, submitOrder, triggerAutoClose]);
 
-	const requiredInput = quote?.maxInput ?? amount;
 	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;
 	const noPairAvailable = fromToken && toToken && !spotMarket;
 	const orderbookLoading =
 		hasPositiveAmount && Boolean(spotMarket) && orderbookStatus !== "error" && !orderbook && !showSuccess;
 	const orderbookFailed = hasPositiveAmount && Boolean(spotMarket) && orderbookStatus === "error" && !showSuccess;
-	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(orderbook) && !quote;
+	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(liveOrderbook) && !quote;
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
 	const partialFill = Boolean(quote?.isPartial);
 	const canSubmit =
-		accountModeReady &&
+		accountDataReady &&
 		hasPositiveAmount &&
 		!insufficientBalance &&
 		!belowMinimumNotional &&
 		!showSuccess &&
 		Boolean(spotMarket) &&
 		Boolean(quote);
-	const isDisabled = !accountModeReady || isSubmitting || showSuccess;
+	const isDisabled = !accountDataReady || isSubmitting || showSuccess;
 
 	return (
 		<Modal open onOpenChange={handleOpenChange}>
@@ -282,6 +353,14 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
 							<p className="text-xs text-warning">
 								<Trans>Select a supported account mode before using balances or moving funds.</Trans>
+							</p>
+						</div>
+					) : null}
+					{accountModeReady && !accountDataReady ? (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs text-warning">
+								<Trans>Balance data is stale. Actions are temporarily unavailable.</Trans>
 							</p>
 						</div>
 					) : null}

@@ -10,9 +10,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/hl-react", () => ({
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
-		return { data: undefined };
+		return { data: undefined, status: "idle", error: null, isStale: false, lastMessageAt: undefined };
 	},
 }));
 
@@ -63,6 +64,10 @@ describe("useMarketsInfoInternal subscription gate", () => {
 	function expectLatestSubscriptionState(enabled: boolean) {
 		expect(mocks.useSubscription).toHaveBeenCalledWith("allDexsAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
 		expect(mocks.useSubscription).toHaveBeenCalledWith("spotAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
+		expect(mocks.useSubscription).toHaveBeenCalledWith("fastAssetCtxs", undefined, {
+			enabled,
+			maxStaleMs: 10_000,
+		});
 	}
 
 	it("stops both market feeds immediately when the route-level gate closes", () => {

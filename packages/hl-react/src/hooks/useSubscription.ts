@@ -3,7 +3,12 @@ import { useRef } from "react";
 import { RingBuffer } from "../internal/circular-buffer/ring-buffer";
 import { useHyperliquid } from "../provider";
 import { serializeKey, subscriptionKeys } from "../query/keys";
-import { getAccumulateConfig, getDefaultThrottle, shouldAcceptSubscriptionEvent } from "../registries/subscription";
+import {
+	createSubscriptionEventAccumulator,
+	getAccumulateConfig,
+	getDefaultThrottle,
+	shouldAcceptSubscriptionEvent,
+} from "../registries/subscription";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import type { SubEvent, SubMethod, SubParams } from "../types/clients";
 import { useSub } from "./utils/useSub";
@@ -38,6 +43,7 @@ export function useSubscription<M extends SubMethod>(
 		(listener: (data: SubEvent<M>) => void, failureOptions?: SubscribeFailureOptions) => {
 			const fn = (subscription as SubscriptionClient)[method] as (...args: unknown[]) => Promise<ISubscription>;
 			const acceptEvent = (event: SubEvent<M>) => shouldAcceptSubscriptionEvent(method, params, event);
+			const eventAccumulator = createSubscriptionEventAccumulator(method);
 
 			if (accConfig) {
 				const wrappedListener = (event: SubEvent<M>) => {
@@ -56,7 +62,8 @@ export function useSubscription<M extends SubMethod>(
 			}
 
 			const filteredListener = (event: SubEvent<M>) => {
-				if (acceptEvent(event)) listener(event);
+				if (!acceptEvent(event)) return;
+				listener(eventAccumulator?.add(event) ?? event);
 			};
 			return params !== undefined
 				? fn.call(subscription, params, filteredListener, failureOptions)

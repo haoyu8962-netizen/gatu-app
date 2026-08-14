@@ -1,7 +1,13 @@
 import { useLingui } from "@lingui/react/macro";
 import type { SideLabels } from "@/config/ui-text";
-import { getOrderAvailabilityFlags, getOrderAvailabilityStatus } from "@/domain/trade/order/availability";
+import { getSpotAvailableValue, getSpotBalance } from "@/domain/trade/balances";
+import {
+	type AssetAvailabilityStatus,
+	getOrderAvailabilityFlags,
+	getOrderAvailabilityStatus,
+} from "@/domain/trade/order/availability";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
+import type { EntryOrderExecutionAvailability } from "@/domain/trade/order/entry-execution-guard";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
@@ -12,6 +18,10 @@ import { useAssetLeverage } from "./use-asset-leverage";
 interface OrderEntryData extends OrderEntryDerived {
 	accountAbstraction: AccountAbstraction;
 	isConnected: boolean;
+	availabilityStatus: AssetAvailabilityStatus;
+	availabilityReceivedAt: number | undefined;
+	availabilityMaxAgeMs: number;
+	executionAvailability: EntryOrderExecutionAvailability;
 	isAvailabilityLoading: boolean;
 	isAvailabilityBlocked: boolean;
 	isAvailabilityStale: boolean;
@@ -63,6 +73,7 @@ export function useOrderEntryData({
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		spotStateStatus,
+		spotStateReceivedAt,
 	} = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
@@ -72,6 +83,7 @@ export function useOrderEntryData({
 		setPendingLeverage,
 		resetPending: resetPendingLeverage,
 		maxTradeSzs,
+		maxTradeSzsRaw,
 		availableToTrade,
 		marginMode,
 		hasPosition,
@@ -84,6 +96,7 @@ export function useOrderEntryData({
 		allowsCrossMargin,
 		allowsIsolatedMarginRemoval,
 		subscriptionStatus,
+		subscriptionReceivedAt,
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
@@ -100,6 +113,26 @@ export function useOrderEntryData({
 				? "loading"
 				: "error"
 			: streamAvailabilityStatus;
+	const availabilityReceivedAt = isSpotMarket ? spotStateReceivedAt : subscriptionReceivedAt;
+	const availabilityMaxAgeMs = isSpotMarket ? 60_000 : 20_000;
+	const baseSpotBalance = getSpotBalance(
+		spotBalances,
+		market?.kind === "spot" ? (market.tokensInfo[0]?.name ?? "") : "",
+	);
+	const quoteSpotBalance = getSpotBalance(
+		spotBalances,
+		market?.kind === "spot" ? (market.tokensInfo[1]?.name ?? "") : "",
+	);
+	const executionAvailability: EntryOrderExecutionAvailability = isSpotMarket
+		? {
+				kind: "spot",
+				baseAvailable: getSpotAvailableValue(baseSpotBalance, spotAvailableAfterMaintenance),
+				quoteAvailable: getSpotAvailableValue(quoteSpotBalance, spotAvailableAfterMaintenance),
+			}
+		: {
+				kind: "perp",
+				maxBaseBySide: { buy: maxTradeSzsRaw?.[0], sell: maxTradeSzsRaw?.[1] },
+			};
 	const {
 		isLoading: isAvailabilityLoading,
 		isStale: isAvailabilityStale,
@@ -148,6 +181,10 @@ export function useOrderEntryData({
 	return {
 		accountAbstraction,
 		isConnected,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		executionAvailability,
 		isAvailabilityLoading,
 		isAvailabilityBlocked,
 		isAvailabilityStale,

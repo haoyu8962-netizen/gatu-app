@@ -48,6 +48,7 @@ const testState = vi.hoisted(() => ({
 	positionLoading: false,
 	positionError: false,
 	positionStale: false,
+	positionReceivedAt: Date.now(),
 	isMobile: false,
 	pendingMethods: new Set<string>(),
 	updateMargin: vi.fn(),
@@ -223,6 +224,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		hasError: testState.positionError,
 		isLoading: testState.positionLoading,
 		isStale: testState.positionStale,
+		receivedAt: testState.positionReceivedAt,
 	}),
 }));
 
@@ -330,6 +332,7 @@ describe("PositionIsolatedMarginModal", () => {
 		testState.positionLoading = false;
 		testState.positionError = false;
 		testState.positionStale = false;
+		testState.positionReceivedAt = Date.now();
 		testState.clientKey = "0x1111111111111111111111111111111111111111";
 		testState.walletAddress = "0x1111111111111111111111111111111111111111";
 		testState.env = "Mainnet";

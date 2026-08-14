@@ -30,6 +30,7 @@ export interface UserPositions {
 	isLoading: boolean;
 	hasError: boolean;
 	isStale: boolean;
+	receivedAt: number | undefined;
 }
 
 function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined): Position[] {
@@ -88,6 +89,7 @@ const EMPTY: UserPositions = {
 	isLoading: false,
 	hasError: false,
 	isStale: false,
+	receivedAt: undefined,
 };
 
 export function useUserPositions(): UserPositions {
@@ -97,7 +99,7 @@ export function useUserPositions(): UserPositions {
 
 	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
 	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
-	const { data, status, isStale } = useSubscription(
+	const { data, status, isStale, lastMessageAt } = useSubscription(
 		"allDexsClearinghouseState",
 		{ user: address ?? "" },
 		{ enabled, refreshKey: ledgerRefreshKey },
@@ -117,6 +119,7 @@ export function useUserPositions(): UserPositions {
 		isLoading,
 		hasError,
 		isStale,
+		receivedAt: lastMessageAt,
 
 		getPosition(coin: string, dex?: string) {
 			if (dex !== undefined) {

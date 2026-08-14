@@ -45,8 +45,10 @@ const mocks = vi.hoisted(() => ({
 	positionLoading: false,
 	positionError: false,
 	positionStale: false,
+	positionReceivedAt: Date.now(),
 	twapStatus: "active" as "active" | "connecting" | "error" | "idle",
 	twapStale: false,
+	twapReceivedAt: Date.now(),
 	activeTwapCoins: [] as string[],
 	livePosition: null as LivePosition | null,
 	restPositionSize: "2.500",
@@ -141,6 +143,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useSubscription: () => ({
 		status: mocks.twapStatus,
 		isStale: mocks.twapStale,
+		lastMessageAt: mocks.twapReceivedAt,
 		data:
 			mocks.twapStatus === "active"
 				? {
@@ -155,6 +158,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		isLoading: mocks.positionLoading,
 		hasError: mocks.positionError,
 		isStale: mocks.positionStale,
+		receivedAt: mocks.positionReceivedAt,
 		getPosition: (coin: string, dex: string) =>
 			mocks.livePosition?.coin === coin && mocks.livePosition.dex === dex ? mocks.livePosition : undefined,
 	}),
@@ -207,6 +211,32 @@ function createConfirmedResponse(totalSize = "5") {
 	};
 }
 
+function createAccountState() {
+	return {
+		assetPositions: [
+			{
+				position: {
+					coin: COIN,
+					szi: mocks.restPositionSize,
+					leverage: { type: mocks.restMarginMode, value: 10 },
+				},
+			},
+		],
+	};
+}
+
+function createMarketState() {
+	const universe = Array.from({ length: mocks.freshCtxIndex + 1 }, (_, index) => ({
+		name: index === mocks.freshCtxIndex ? COIN : `OTHER-${index}`,
+		szDecimals: 3,
+	}));
+	const contexts = universe.map((_, index) => ({
+		markPx: index === mocks.freshCtxIndex ? mocks.restMarkPx : "1",
+		midPx: index === mocks.freshCtxIndex ? mocks.restMidPx : null,
+	}));
+	return [{ universe }, contexts] as const;
+}
+
 function currentHook(): ReturnType<typeof usePositionReverseSubmit> {
 	if (!hookValue) throw new Error("Expected reverse submit hook");
 	return hookValue;
@@ -233,8 +263,10 @@ describe("usePositionReverseSubmit", () => {
 		mocks.positionLoading = false;
 		mocks.positionError = false;
 		mocks.positionStale = false;
+		mocks.positionReceivedAt = Date.now();
 		mocks.twapStatus = "active";
 		mocks.twapStale = false;
+		mocks.twapReceivedAt = Date.now();
 		mocks.activeTwapCoins = [];
 		mocks.livePosition = createLivePosition();
 		mocks.restPositionSize = "2.500";
@@ -255,28 +287,8 @@ describe("usePositionReverseSubmit", () => {
 		mocks.hip3Accepted = true;
 		mocks.betweenExecutionGuards = null;
 		mocks.executionGuard = undefined;
-		mocks.clearinghouseState.mockReset().mockImplementation(async () => ({
-			assetPositions: [
-				{
-					position: {
-						coin: COIN,
-						szi: mocks.restPositionSize,
-						leverage: { type: mocks.restMarginMode, value: 10 },
-					},
-				},
-			],
-		}));
-		mocks.metaAndAssetCtxs.mockReset().mockImplementation(async () => {
-			const universe = Array.from({ length: mocks.freshCtxIndex + 1 }, (_, index) => ({
-				name: index === mocks.freshCtxIndex ? COIN : `OTHER-${index}`,
-				szDecimals: 3,
-			}));
-			const contexts = universe.map((_, index) => ({
-				markPx: index === mocks.freshCtxIndex ? mocks.restMarkPx : "1",
-				midPx: index === mocks.freshCtxIndex ? mocks.restMidPx : null,
-			}));
-			return [{ universe }, contexts];
-		});
+		mocks.clearinghouseState.mockReset().mockImplementation(async () => createAccountState());
+		mocks.metaAndAssetCtxs.mockReset().mockImplementation(async () => createMarketState());
 		mocks.executeOrder.mockReset().mockResolvedValue(createConfirmedResponse());
 		mocks.mutateOrder.mockReset().mockImplementation(async (params: OrderParams) => {
 			mocks.guardCalls += 1;
@@ -294,6 +306,7 @@ describe("usePositionReverseSubmit", () => {
 	});
 
 	afterEach(() => {
+		vi.restoreAllMocks();
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
@@ -343,6 +356,72 @@ describe("usePositionReverseSubmit", () => {
 		expect(submitted.orders[0]?.p).toBe("109.45");
 	});
 
+	it("rejects a reverse when the position snapshot expires while the market snapshot is pending", async () => {
+		let resolveMarket: ((value: ReturnType<typeof createMarketState>) => void) | undefined;
+		mocks.metaAndAssetCtxs.mockImplementationOnce(
+			() =>
+				new Promise<ReturnType<typeof createMarketState>>((resolve) => {
+					resolveMarket = resolve;
+				}),
+		);
+		const monotonicNow = vi.spyOn(performance, "now").mockReturnValue(1_000);
+
+		let pending: ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]> | undefined;
+		await act(async () => {
+			pending = currentHook().submit();
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+		monotonicNow.mockReturnValue(11_001);
+		if (!pending) throw new Error("Expected pending reverse submission");
+		let caught: unknown;
+		await act(async () => {
+			resolveMarket?.(createMarketState());
+			try {
+				await pending;
+			} catch (cause) {
+				caught = cause;
+			}
+		});
+		expect(caught).toBeInstanceOf(Error);
+		expect((caught as Error).message).toContain("Trading data changed");
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+	});
+
+	it("rejects a reverse when the market snapshot expires while the position snapshot is pending", async () => {
+		let resolveAccount: ((value: ReturnType<typeof createAccountState>) => void) | undefined;
+		mocks.clearinghouseState.mockImplementationOnce(
+			() =>
+				new Promise<ReturnType<typeof createAccountState>>((resolve) => {
+					resolveAccount = resolve;
+				}),
+		);
+		const monotonicNow = vi.spyOn(performance, "now").mockReturnValue(1_000);
+
+		let pending: ReturnType<ReturnType<typeof usePositionReverseSubmit>["submit"]> | undefined;
+		await act(async () => {
+			pending = currentHook().submit();
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+		expect(mocks.metaAndAssetCtxs).toHaveBeenCalledOnce();
+		monotonicNow.mockReturnValue(11_001);
+		if (!pending) throw new Error("Expected pending reverse submission");
+		let caught: unknown;
+		await act(async () => {
+			resolveAccount?.(createAccountState());
+			try {
+				await pending;
+			} catch (cause) {
+				caught = cause;
+			}
+		});
+		expect(caught).toBeInstanceOf(Error);
+		expect((caught as Error).message).toContain("Trading data changed");
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+	});
+
 	it("blocks an active TWAP before the REST refresh", async () => {
 		mocks.activeTwapCoins = [COIN];
 		act(() => root.render(createElement(Probe)));
@@ -353,6 +432,43 @@ describe("usePositionReverseSubmit", () => {
 			}),
 		).rejects.toThrow("Another order for this market is still being confirmed.");
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the retained live position receipt has expired before the watchdog runs", async () => {
+		mocks.positionReceivedAt = Date.now() - 60_001;
+		act(() => root.render(createElement(Probe)));
+
+		await expect(
+			act(async () => {
+				await currentHook().submit();
+			}),
+		).rejects.toThrow("Failed to load positions");
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the retained TWAP receipt has expired before the watchdog runs", async () => {
+		mocks.twapReceivedAt = Date.now() - 60_001;
+		act(() => root.render(createElement(Probe)));
+
+		await expect(
+			act(async () => {
+				await currentHook().submit();
+			}),
+		).rejects.toThrow("Trading data changed");
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+	});
+
+	it("accepts live position and TWAP receipts at the exact freshness boundary", async () => {
+		const now = Date.now();
+		vi.spyOn(Date, "now").mockReturnValue(now);
+		mocks.positionReceivedAt = now - 60_000;
+		mocks.twapReceivedAt = now - 60_000;
+		act(() => root.render(createElement(Probe)));
+
+		await act(async () => {
+			await currentHook().submit();
+		});
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
 	});
 
 	it("blocks a persisted pending TWAP before the REST refresh", async () => {

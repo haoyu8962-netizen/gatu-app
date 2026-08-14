@@ -69,8 +69,10 @@ function getVisibleStatIds(container: HTMLElement): MarketStatId[] {
 
 const mocks = vi.hoisted(() => ({
 	midPx: undefined as string | undefined,
+	receivedAt: Date.now(),
 	perpCtxEvent: undefined as
 		| {
+				coin: string;
 				ctx: {
 					markPx: string;
 					prevDayPx: string;
@@ -91,6 +93,8 @@ const mocks = vi.hoisted(() => ({
 		dayNtlVlm: "22228099.94",
 		openInterest: "1685179.8",
 		funding: "0.000006",
+		markPriceStatus: "success",
+		markPriceReceivedAt: Date.now(),
 	} as Record<string, unknown>,
 }));
 
@@ -110,12 +114,17 @@ vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTokenUrl: (address: string) => `/explorer/token/${address}`,
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
-	getSpotMarketApiCoin: () => "",
+	getSpotMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	useSelectedMarketInfo: () => ({ data: mocks.selectedMarket }),
-	useSubscription: (method: string) => ({
-		data: method === "activeAssetCtx" ? mocks.perpCtxEvent : undefined,
-		status: "idle",
-	}),
+	useSubscription: (method: string) => {
+		const data = method === "activeAssetCtx" ? mocks.perpCtxEvent : undefined;
+		return {
+			data,
+			status: data ? "active" : "idle",
+			isStale: false,
+			lastMessageAt: data ? mocks.receivedAt : undefined,
+		};
+	},
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -134,6 +143,7 @@ describe("MarketOverview", () => {
 			return createRect(statId ? MARKET_STAT_WIDTHS[statId] : 0);
 		});
 		mocks.midPx = undefined;
+		mocks.receivedAt = Date.now();
 		mocks.perpCtxEvent = undefined;
 		mocks.selectedMarket = {
 			kind: "builderPerp",
@@ -145,6 +155,8 @@ describe("MarketOverview", () => {
 			dayNtlVlm: "22228099.94",
 			openInterest: "1685179.8",
 			funding: "0.000006",
+			markPriceStatus: "success",
+			markPriceReceivedAt: mocks.receivedAt,
 		};
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
@@ -250,6 +262,7 @@ describe("MarketOverview", () => {
 
 	it("uses realtime context after the subscription becomes available", () => {
 		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
 			ctx: {
 				markPx: "80",
 				prevDayPx: "64",
@@ -396,6 +409,8 @@ describe("MarketOverview", () => {
 			dayNtlVlm: "12345.67",
 			circulatingSupply: "1000",
 			szDecimals: 2,
+			markPriceStatus: "success",
+			markPriceReceivedAt: mocks.receivedAt,
 			tokensInfo: [
 				{ name: "TOKEN", displayName: "TOKEN" },
 				{ name: "USDH", displayName: "USDH" },

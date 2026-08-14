@@ -59,6 +59,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPriceState: () => ({ prices: mocks.tokenUsdPrices, status: "success" }),
 	useSpotTokenUsdPrices: () => mocks.tokenUsdPrices,
 }));
 

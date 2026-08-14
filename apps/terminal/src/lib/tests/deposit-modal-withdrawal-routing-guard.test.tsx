@@ -62,6 +62,8 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
+	getSpotBalance: () => null,
+	getSpotTransferableValue: () => "0",
 	getAccountBalanceSummary: () => ({
 		hasSpotFundsWhenPerpWithdrawableZero: false,
 		isAvailable: true,
@@ -82,7 +84,13 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		perpSummary: null,
 		spotAvailableAfterMaintenance: null,
 		spotBalances: [],
-		withdrawable: "0",
+		withdrawable: "10",
+		spotStateStatus: "success",
+		perpStateStatus: "success",
+		spotStateReceivedAt: Date.now(),
+		perpStateReceivedAt: Date.now(),
+		isDataStale: false,
+		hasError: false,
 	}),
 }));
 
@@ -569,7 +577,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.freshRoutingError = error;
 		testState.freshRoutingResponse = response;
 
-		await expect(getGuard("withdraw3")({}, new AbortController().signal)).rejects.toThrow("Unable to verify");
+		await expect(getGuard("withdraw3")({ amount: "1" }, new AbortController().signal)).rejects.toThrow(
+			"Unable to verify",
+		);
 	});
 
 	it("surfaces a final deposit-route request failure instead of leaving a ready button silently active", async () => {

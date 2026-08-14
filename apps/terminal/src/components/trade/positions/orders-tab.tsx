@@ -24,6 +24,7 @@ import {
 	createCancelAllConfirmationSnapshot,
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
 import {
 	buildOpenOrderModifyPlan,
@@ -287,12 +288,19 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		if (markets.isLoading || markets.error) return null;
 		const market = markets.getMarket(coin);
 		if (!market) return null;
+		const marketInfo = getMarketInfo(coin);
 		return {
 			coin,
 			assetId: market.assetId,
 			szDecimals: market.szDecimals,
 			kind: market.kind,
-			markPx: getMarketInfo(coin)?.markPx,
+			markPx: isLiveMarkPriceReady(
+				marketInfo?.markPriceStatus ?? "loading",
+				marketInfo?.markPx,
+				marketInfo?.markPriceReceivedAt,
+			)
+				? marketInfo?.markPx
+				: undefined,
 		};
 	}
 
@@ -1010,7 +1018,15 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 												displayName={market?.shortName ?? order.coin.split(":").pop() ?? order.coin}
 												szDecimals={markets.getSzDecimals(order.coin)}
 												marketType={market?.kind === "spot" ? "spot" : "perp"}
-												markPx={marketInfo?.markPx ?? ""}
+												markPx={
+													isLiveMarkPriceReady(
+														marketInfo?.markPriceStatus ?? "loading",
+														marketInfo?.markPx,
+														marketInfo?.markPriceReceivedAt,
+													)
+														? (marketInfo?.markPx ?? "")
+														: ""
+												}
 												quoteSymbol={quoteSymbol}
 												isSelected={validSelectedIds.has(order.oid)}
 												isCancelling={cancellingOids.has(order.oid)}

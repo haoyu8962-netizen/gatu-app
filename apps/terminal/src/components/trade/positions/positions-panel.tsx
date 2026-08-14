@@ -25,7 +25,7 @@ import {
 	useDefaultDexBalances,
 	useSelectedDexBalances,
 } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
+import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -92,7 +92,8 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		hasSpotStateSnapshot,
 		hasError: balancesError,
 	} = defaultBalances;
-	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
+	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
+	const tokenUsdPrices = tokenUsdPriceState.prices;
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(selectedBalances.accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
 	const accountEquity = getAccountEquityValue({
@@ -138,9 +139,23 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		isConnected &&
 		accountModeReady &&
 		!summaryBalances.hasError &&
+		!summaryBalances.isDataStale &&
+		summaryBalances.perpStateStatus === "success" &&
 		summaryBalances.hasAllDexsSnapshot &&
-		(!usesSharedQuoteBalance || summaryBalances.hasSpotStateSnapshot);
-	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
+		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success") &&
+		(!usesSharedQuoteBalance ||
+			(summaryBalances.spotStateStatus === "success" && summaryBalances.hasSpotStateSnapshot));
+	const fundsActionsReady =
+		accountModeReady &&
+		!selectedBalances.hasError &&
+		selectedBalances.perpStateStatus === "success" &&
+		selectedBalances.spotStateStatus === "success";
+	const {
+		positions,
+		isLoading: positionsLoading,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const {
 		data: ordersEvent,
@@ -204,7 +219,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 
 	const positionsCount = getReadyItemCount({
 		isConnected,
-		isReady: hasAllDexsSnapshot && !positionsLoading && !positionsError,
+		isReady: hasAllDexsSnapshot && !positionsLoading && !positionsError && !positionsStale,
 		count: positions.length,
 	});
 
@@ -253,7 +268,16 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	}, [activeTab, toolbarTarget]);
 
 	const balancesCount = useMemo(() => {
-		if (!isConnected || balancesError || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
+		if (
+			!isConnected ||
+			balancesError ||
+			defaultBalances.isDataStale ||
+			defaultBalances.perpStateStatus !== "success" ||
+			defaultBalances.spotStateStatus !== "success" ||
+			!hasAllDexsSnapshot ||
+			!hasSpotStateSnapshot
+		)
+			return null;
 		let count = 0;
 		const perpAccountValue = toNumberOrZero(perpSummary?.accountValue);
 		if (perpAccountValue > 0) count++;
@@ -263,7 +287,17 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 			}
 		}
 		return count;
-	}, [balancesError, hasAllDexsSnapshot, hasSpotStateSnapshot, isConnected, perpSummary?.accountValue, spotBalances]);
+	}, [
+		balancesError,
+		defaultBalances.isDataStale,
+		defaultBalances.perpStateStatus,
+		defaultBalances.spotStateStatus,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		isConnected,
+		perpSummary?.accountValue,
+		spotBalances,
+	]);
 
 	function getTabCount(tabValue: string): number | null {
 		if (tabValue === "balances") return balancesCount;
@@ -332,7 +366,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 									variant="outline"
 									intent="neutral"
 									size="xxs"
-									disabled={!accountModeReady}
+									disabled={!fundsActionsReady}
 									onClick={() => openDepositModal("withdraw")}
 									className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 								>

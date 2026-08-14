@@ -49,7 +49,7 @@ describe("balances table visual contract", () => {
 		expect(BALANCES_TAB_SOURCE).not.toContain("balancesTableGroupCellClass");
 		expect(BALANCES_TAB_SOURCE).not.toContain("{t`Perpetuals`}");
 		expect(BALANCES_TAB_SOURCE).not.toContain("t`Perps`");
-		expect(BALANCES_TAB_SOURCE).toContain("internalTransfersEnabled ? (");
+		expect(BALANCES_TAB_SOURCE).toContain("showBalanceAccountType ? (");
 		expect(BALANCES_TAB_SOURCE).toContain('row.type === "perp" ? t`Trading` : t`Spot`');
 		expect(BALANCES_TAB_SOURCE).toContain("getBalanceRowDisplayAvailable(row)");
 		expect(BALANCES_TAB_SOURCE).toContain("row.transferable");

@@ -97,7 +97,7 @@ export function getOrderAvailabilityFlags(
 	isConnected: boolean,
 	status: AssetAvailabilityStatus,
 ): OrderAvailabilityFlags {
-	const hasUsableSnapshot = status === "success" || status === "stale";
+	const hasUsableSnapshot = status === "success";
 
 	return {
 		isLoading: status === "loading",

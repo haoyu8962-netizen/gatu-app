@@ -34,8 +34,14 @@ const balanceSnapshot = {
 	hasAllDexsSnapshot: true,
 	hasError: false,
 	hasSpotStateSnapshot: true,
+	isDataStale: false,
 	isLoading: false,
+	isPerpStateStale: false,
 	isSpotStateStale: false,
+	perpStateStatus: "success",
+	perpStateReceivedAt: Date.now(),
+	spotStateStatus: "success",
+	spotStateReceivedAt: Date.now(),
 	marginSummary: {
 		accountValue: "115.75",
 		totalMarginUsed: "170.25",
@@ -56,7 +62,10 @@ const balanceSnapshot = {
 
 const testState = {
 	accountAbstraction: "unifiedAccount",
+	isDataStale: false,
+	perpStateStatus: "success",
 	snapshotsReady: true,
+	spotStateStatus: "success",
 };
 
 const bridgeState = vi.hoisted(() => ({
@@ -76,16 +85,27 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		accountAbstraction: testState.accountAbstraction,
 		hasAllDexsSnapshot: testState.snapshotsReady,
 		hasSpotStateSnapshot: testState.snapshotsReady,
+		isDataStale: testState.isDataStale,
+		isPerpStateStale: testState.perpStateStatus === "stale",
+		isSpotStateStale: testState.spotStateStatus === "stale",
+		perpStateStatus: testState.perpStateStatus,
+		spotStateStatus: testState.spotStateStatus,
 	}),
 	useSelectedDexBalances: () => ({
 		...balanceSnapshot,
 		accountAbstraction: testState.accountAbstraction,
 		hasAllDexsSnapshot: testState.snapshotsReady,
 		hasSpotStateSnapshot: testState.snapshotsReady,
+		isDataStale: testState.isDataStale,
+		isPerpStateStale: testState.perpStateStatus === "stale",
+		isSpotStateStale: testState.spotStateStatus === "stale",
+		perpStateStatus: testState.perpStateStatus,
+		spotStateStatus: testState.spotStateStatus,
 	}),
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPriceState: () => ({ prices: {}, status: "success" }),
 	useSpotTokenUsdPrices: () => undefined,
 }));
 
@@ -130,7 +150,10 @@ describe("mobile account view", () => {
 
 	beforeEach(() => {
 		testState.accountAbstraction = "unifiedAccount";
+		testState.isDataStale = false;
+		testState.perpStateStatus = "success";
 		testState.snapshotsReady = true;
+		testState.spotStateStatus = "success";
 		bridgeState.hasExistingExecution = false;
 		modalActions.openDeposit.mockReset();
 		modalActions.openTransfer.mockReset();
@@ -197,6 +220,27 @@ describe("mobile account view", () => {
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("—");
 		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("—");
 		expect(getMetricRowText(container, "Account Margin Ratio")).not.toContain("0.00%");
+	});
+
+	it("keeps stale balances visible but hides risk metrics and disables funds actions", () => {
+		testState.isDataStale = true;
+		testState.perpStateStatus = "stale";
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+
+		expect(container.textContent).toContain("Balance data is stale. Actions are temporarily unavailable.");
+		expect(getMetricRowText(container, "Portfolio Value")).toContain("—");
+		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("—");
+		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
+		if (!actions) throw new Error("Missing mobile account actions");
+		const buttons = Array.from(actions.querySelectorAll("button"));
+		expect(buttons.find((button) => button.textContent === "Perps / Spot")?.disabled).toBe(true);
+		expect(buttons.find((button) => button.textContent === "Withdraw")?.disabled).toBe(true);
 	});
 
 	it("hides the mobile bridge entry while creation is gated and restores it for an existing execution", () => {

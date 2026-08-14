@@ -18,7 +18,7 @@ describe("order submission wiring", () => {
 			(path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"),
 		);
 		const placementMatches = sourceFiles
-			.filter((path) => readFileSync(path, "utf8").includes('useExchange("twapOrder")'))
+			.filter((path) => /useExchange\(\s*["']twapOrder["']\s*,/.test(readFileSync(path, "utf8")))
 			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""));
 		const cancellationMatches = sourceFiles
 			.filter((path) => readFileSync(path, "utf8").includes('useExchange("twapCancel")'))
@@ -26,6 +26,15 @@ describe("order submission wiring", () => {
 
 		expect(placementMatches).toEqual(["hooks/trade/use-tracked-twap-order.ts"]);
 		expect(cancellationMatches).toEqual(["hooks/trade/use-twap-cancel.ts"]);
+		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-tracked-twap-order.ts"), "utf8")).toContain(
+			'useExchange("twapOrder", { executionGuard: options.executionGuard })',
+		);
+		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8")).toMatch(
+			/useTrackedTwapOrder\(\{\s*executionGuard: options\.twapExecutionGuard,/,
+		);
+		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8")).toContain(
+			"useOrderSubmit({ executionGuard, twapExecutionGuard })",
+		);
 	});
 
 	it("keeps desktop and mobile TWAP views wired to shared subscription and cancellation boundaries", () => {

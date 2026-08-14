@@ -136,7 +136,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => mocks.marketSzDecimals,
 		isLoading: false,
 	}),
-	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: "160" }) }),
+	useMarketsInfo: () => ({
+		getMarketInfo: () => ({
+			markPx: "160",
+			markPriceStatus: "success",
+			markPriceReceivedAt: Date.now(),
+		}),
+	}),
 	useSubscription: () => ({
 		data: mocks.openOrdersEvent ?? { orders: mocks.orders },
 		error: null,

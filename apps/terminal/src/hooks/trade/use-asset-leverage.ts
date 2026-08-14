@@ -14,6 +14,14 @@ import { useGlobalSettingsActions, useMarginMode } from "@/stores/use-global-set
 import { useActiveAssetData } from "./use-active-asset-data";
 
 type OperationType = "leverage" | "mode" | null;
+type LeverageExecutionIntent = {
+	kind: "leverage" | "mode" | "modeAndLeverage";
+	mode: MarginMode;
+	leverage: number;
+};
+
+const ACTIVE_ASSET_DATA_MAX_AGE_MS = 20_000;
+const USER_POSITION_MAX_AGE_MS = 60_000;
 
 interface LeverageExecutionState {
 	assetId: number | undefined;
@@ -22,10 +30,14 @@ interface LeverageExecutionState {
 	isOnlyIsolated: boolean;
 	allowsCrossMargin: boolean;
 	activeAssetStateReady: boolean;
+	activeAssetReceivedAt: number | undefined;
 	marginMode: MarginMode;
 	marginModeStateReady: boolean;
 	positionStateReady: boolean;
+	positionReceivedAt: number | undefined;
 	hasPosition: boolean;
+	currentLeverage: number;
+	intent: LeverageExecutionIntent | null;
 }
 
 function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">, state: LeverageExecutionState): void {
@@ -55,6 +67,18 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 		throw new Error("Invalid margin mode");
 	}
 
+	if (state.intent !== null) {
+		if (params.isCross !== (state.intent.mode === "cross") || params.leverage !== state.intent.leverage) {
+			throw new Error("Leverage request no longer matches the confirmed settings");
+		}
+		if (state.intent.kind === "leverage" && state.marginMode !== state.intent.mode) {
+			throw new Error("Margin mode changed before leverage update");
+		}
+		if (state.intent.kind === "mode" && state.currentLeverage !== state.intent.leverage) {
+			throw new Error("Leverage changed before margin mode update");
+		}
+	}
+
 	if (params.isCross && (state.isOnlyIsolated || !state.allowsCrossMargin)) {
 		throw new Error("This market only supports isolated margin mode");
 	}
@@ -66,9 +90,18 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 	if (!state.activeAssetStateReady) {
 		throw new Error("Active asset data is unavailable");
 	}
+	const activeAssetAge =
+		state.activeAssetReceivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - state.activeAssetReceivedAt;
+	if (activeAssetAge < 0 || activeAssetAge > ACTIVE_ASSET_DATA_MAX_AGE_MS) {
+		throw new Error("Active asset data is unavailable");
+	}
 
 	if (!params.isCross && state.marginMode === "cross") {
-		if (!state.positionStateReady) throw new Error("Position data is unavailable");
+		const positionAge =
+			state.positionReceivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - state.positionReceivedAt;
+		if (!state.positionStateReady || positionAge < 0 || positionAge > USER_POSITION_MAX_AGE_MS) {
+			throw new Error("Position data is unavailable");
+		}
 		if (state.hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
 	}
 }
@@ -83,13 +116,16 @@ interface UseAssetLeverageReturn {
 	setPendingLeverage: (value: number) => void;
 	confirmLeverage: () => Promise<void>;
 	resetPending: () => void;
-	/** Max trade sizes in base token: [long, short] */
+	/** Max trade sizes in base token: [buy, sell]. */
 	maxTradeSzs: [number, number] | null;
-	/** Available to trade in quote token: [long, short] */
+	/** Exact protocol max trade sizes in base token: [buy, sell]. */
+	maxTradeSzsRaw: [string, string] | null;
+	/** Available to trade in quote token: [buy, sell]. */
 	availableToTrade: [number, number] | null;
 	isUpdating: boolean;
 	updateError: Error | null;
 	subscriptionStatus: AssetAvailabilityStatus;
+	subscriptionReceivedAt: number | undefined;
 	marginMode: MarginMode;
 	hasPosition: boolean;
 	positionStateReady: boolean;
@@ -111,7 +147,13 @@ function leverageUpdateInProgressError(): Error {
 }
 
 export function useAssetLeverage(): UseAssetLeverageReturn {
-	const { data: currentActiveAssetData, isConnected, market, status: subscriptionStatus } = useActiveAssetData();
+	const {
+		data: currentActiveAssetData,
+		isConnected,
+		market,
+		receivedAt: subscriptionReceivedAt,
+		status: subscriptionStatus,
+	} = useActiveAssetData();
 
 	const storedMarginMode = useMarginMode();
 	const { setMarginMode: setStoredMarginMode } = useGlobalSettingsActions();
@@ -129,6 +171,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const userPositions = useUserPositions();
 
 	const operationTypeRef = useRef<OperationType>(null);
+	const executionIntentRef = useRef<LeverageExecutionIntent | null>(null);
 	const requestInFlightRef = useRef(false);
 	const [pendingLeverage, setPendingLeverageState] = useState<number | null>(null);
 	const [disconnectedLeverage, setDisconnectedLeverage] = useState<number | null>(null);
@@ -174,10 +217,14 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		isOnlyIsolated,
 		allowsCrossMargin,
 		activeAssetStateReady,
+		activeAssetReceivedAt: subscriptionReceivedAt,
 		marginMode,
 		marginModeStateReady,
 		positionStateReady,
+		positionReceivedAt: userPositions.receivedAt,
 		hasPosition,
+		currentLeverage,
+		intent: executionIntentRef.current,
 	});
 	// Update during render so a queued mutation cannot observe the previous render's market or position state.
 	leverageExecutionStateRef.current = {
@@ -187,10 +234,14 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		isOnlyIsolated,
 		allowsCrossMargin,
 		activeAssetStateReady,
+		activeAssetReceivedAt: subscriptionReceivedAt,
 		marginMode,
 		marginModeStateReady,
 		positionStateReady,
+		positionReceivedAt: userPositions.receivedAt,
 		hasPosition,
+		currentLeverage,
+		intent: executionIntentRef.current,
 	};
 
 	const {
@@ -199,7 +250,11 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		error,
 		reset: resetMutation,
 	} = useExchange("updateLeverage", {
-		executionGuard: (params) => assertLeverageExecutionAllowed(params, leverageExecutionStateRef.current),
+		executionGuard: (params) =>
+			assertLeverageExecutionAllowed(params, {
+				...leverageExecutionStateRef.current,
+				intent: executionIntentRef.current,
+			}),
 	});
 
 	const displayLeverage = pendingLeverage ?? currentLeverage;
@@ -209,6 +264,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	useEffect(() => {
 		setPendingLeverageState(null);
 		operationTypeRef.current = null;
+		executionIntentRef.current = null;
 		resetMutation();
 	}, [baseToken, resetMutation]);
 
@@ -234,6 +290,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		if (requestInFlightRef.current) return;
 		setPendingLeverageState(null);
 		operationTypeRef.current = null;
+		executionIntentRef.current = null;
 		resetMutation();
 	}, [resetMutation]);
 
@@ -244,6 +301,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 		operationTypeRef.current = "leverage";
+		executionIntentRef.current = { kind: "leverage", mode: marginMode, leverage: pendingLeverage };
 		requestInFlightRef.current = true;
 		try {
 			await updateLeverage({
@@ -277,6 +335,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 
 		operationTypeRef.current = "mode";
+		executionIntentRef.current = { kind: "mode", mode, leverage: currentLeverage };
 		requestInFlightRef.current = true;
 		try {
 			await updateLeverage({
@@ -298,6 +357,12 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 			const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
+			const modeChanged = mode !== marginMode;
+			const leverageChanged = clamped !== currentLeverage;
+			if (!modeChanged && !leverageChanged) {
+				setPendingLeverageState(null);
+				return;
+			}
 
 			if (isOnlyIsolated && mode === "cross") {
 				throw new Error("This market only supports isolated margin mode");
@@ -315,7 +380,9 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
 			}
 
-			operationTypeRef.current = "mode";
+			const intentKind = modeChanged ? (leverageChanged ? "modeAndLeverage" : "mode") : "leverage";
+			operationTypeRef.current = intentKind === "leverage" ? "leverage" : "mode";
+			executionIntentRef.current = { kind: intentKind, mode, leverage: clamped };
 			requestInFlightRef.current = true;
 			try {
 				await updateLeverage({
@@ -332,6 +399,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		},
 		[
 			assetId,
+			currentLeverage,
 			hasPosition,
 			isConnected,
 			isOnlyIsolated,
@@ -347,18 +415,21 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	function computeMaxTradeSzs(): [number, number] | null {
 		const raw = currentActiveAssetData?.maxTradeSzs;
 		if (!raw) return null;
-		const long = toNumber(raw[0]);
-		const short = toNumber(raw[1]);
-		return long !== null && short !== null ? [long, short] : null;
+		const buy = toNumber(raw[0]);
+		const sell = toNumber(raw[1]);
+		return buy !== null && sell !== null ? [buy, sell] : null;
 	}
 	const maxTradeSzs = computeMaxTradeSzs();
+	const rawMaxTradeSzs = currentActiveAssetData?.maxTradeSzs;
+	const maxTradeSzsRaw: [string, string] | null =
+		maxTradeSzs && rawMaxTradeSzs ? [String(rawMaxTradeSzs[0]), String(rawMaxTradeSzs[1])] : null;
 
 	function computeAvailableToTrade(): [number, number] | null {
 		const raw = currentActiveAssetData?.availableToTrade;
 		if (!raw) return null;
-		const long = toNumber(raw[0]);
-		const short = toNumber(raw[1]);
-		return long !== null && short !== null ? [long, short] : null;
+		const buy = toNumber(raw[0]);
+		const sell = toNumber(raw[1]);
+		return buy !== null && sell !== null ? [buy, sell] : null;
 	}
 	const availableToTrade = computeAvailableToTrade();
 
@@ -378,10 +449,12 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		confirmLeverage,
 		resetPending,
 		maxTradeSzs,
+		maxTradeSzsRaw,
 		availableToTrade,
 		isUpdating,
 		updateError,
 		subscriptionStatus,
+		subscriptionReceivedAt,
 		marginMode,
 		hasPosition,
 		positionStateReady,

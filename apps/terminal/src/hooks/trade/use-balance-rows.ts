@@ -15,14 +15,17 @@ import { useActiveAssetData } from "./use-active-asset-data";
 import { useSpotTokenUsdPrices } from "./use-spot-token-usd-prices";
 
 interface BalanceRowsState {
+	accountDataReady: boolean;
 	accountModeReady: boolean;
 	balances: BalanceRow[];
 	hasError: boolean;
 	internalTransfersEnabled: boolean;
 	isConnected: boolean;
+	isDataStale: boolean;
 	isLoading: boolean;
 	perpFundsActionsEnabled: boolean;
 	perpBalances: BalanceRow[];
+	showBalanceAccountType: boolean;
 	spotBalanceRows: BalanceRow[];
 }
 
@@ -38,6 +41,9 @@ export function useBalanceRows(): BalanceRowsState {
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
+		spotStateStatus,
+		perpStateStatus,
+		isDataStale,
 		isLoading,
 		hasError,
 	} = useSelectedDexBalances();
@@ -47,10 +53,11 @@ export function useBalanceRows(): BalanceRowsState {
 	const perpQuoteToken = isPerpMarket ? getMarketQuoteToken(market) : DEFAULT_QUOTE_TOKEN;
 	const tradeAvailable = isSpotMarket
 		? undefined
-		: isPerpMarket && (activeAssetStatus === "success" || activeAssetStatus === "stale")
+		: isPerpMarket && activeAssetStatus === "success"
 			? getDirectionalAvailableToTrade(activeAssetData?.availableToTrade, side)
 			: null;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const accountDataReady = perpStateStatus === "success" && spotStateStatus === "success" && !hasError;
 	const quoteBalanceShared = isQuoteBalanceSharedWithPerps(accountAbstraction);
 
 	const perpBalances = useMemo(
@@ -80,14 +87,17 @@ export function useBalanceRows(): BalanceRowsState {
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
 
 	return {
+		accountDataReady,
 		accountModeReady,
 		balances,
 		hasError,
-		internalTransfersEnabled: accountModeReady && !quoteBalanceShared,
+		internalTransfersEnabled: accountDataReady && accountModeReady && !quoteBalanceShared,
 		isConnected,
+		isDataStale,
 		isLoading,
-		perpFundsActionsEnabled: accountModeReady && (quoteBalanceShared || dex === ""),
+		perpFundsActionsEnabled: accountDataReady && accountModeReady && (quoteBalanceShared || dex === ""),
 		perpBalances,
+		showBalanceAccountType: accountModeReady && !quoteBalanceShared,
 		spotBalanceRows,
 	};
 }

@@ -123,20 +123,23 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
 	const totalUnrealizedPnl = getTotalPositionUnrealizedPnl(positions);
-	const summaryUnrealizedPnl = accountSummary?.unrealizedPnl ?? totalUnrealizedPnl;
-	const accountRisk = getToolbarAccountRiskPresentation(accountSummary?.maintenanceMarginRatio ?? null);
+	const summaryUnrealizedPnl = positionsStale ? null : (accountSummary?.unrealizedPnl ?? totalUnrealizedPnl);
+	const accountRisk = getToolbarAccountRiskPresentation(
+		positionsStale ? null : (accountSummary?.maintenanceMarginRatio ?? null),
+	);
 	const closeAllResolution = resolvePositionCloseAllSnapshot({
 		owner: address,
 		env,
 		candidates: positions.map((position) => {
 			const market = markets.getMarket(position.coin);
+			const marketInfo = getMarketInfo(position.coin);
 			return {
 				coin: position.coin,
 				dex: position.dex,
 				assetId: market?.assetId,
 				szDecimals: market?.szDecimals,
 				signedPositionSize: position.szi,
-				markPx: getMarketInfo(position.coin)?.markPx,
+				markPx: marketInfo?.markPx,
 				positionValue: position.positionValue,
 				unrealizedPnl: position.unrealizedPnl,
 				marginMode: position.leverage.type,
@@ -144,8 +147,17 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 			};
 		}),
 	});
+	const allPositionMarksFresh = positions.every(
+		(position) => getMarketInfo(position.coin)?.markPriceStatus === "success",
+	);
 	const closeAllDataReady =
-		isConnected && !positionsLoading && !positionsError && !positionsStale && !markets.isLoading && !markets.error;
+		isConnected &&
+		!positionsLoading &&
+		!positionsError &&
+		!positionsStale &&
+		!markets.isLoading &&
+		!markets.error &&
+		allPositionMarksFresh;
 	const closeAllPreview = closeAllDataReady ? closeAllResolution.snapshot : null;
 	const closeAllIssues: readonly PositionCloseAllSnapshotIssue[] = closeAllResolution.issues;
 	const visibleCloseAllSnapshot =
@@ -403,6 +415,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 								{filteredPositions.map((p, i) => {
 									const assetId = markets.getAssetId(p.coin);
 									const isMarketClosePending = positionMarketClose.pendingAssetId === assetId;
+									const marketInfo = getMarketInfo(p.coin);
 									return (
 										<PositionRow
 											key={`${p.dex}:${p.coin}`}
@@ -410,7 +423,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 											env={env}
 											isDataStale={positionsStale}
 											markets={markets}
-											markPx={getMarketInfo(p.coin)?.markPx}
+											markPx={marketInfo?.markPx}
+											markPriceStatus={marketInfo?.markPriceStatus ?? "loading"}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 											isRowClosing={isMarketClosePending}
 											isEven={i % 2 === 1}

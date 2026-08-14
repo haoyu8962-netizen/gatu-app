@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { createValidator, type Validator } from "../types";
 
 interface HasMarket {
@@ -14,7 +15,12 @@ interface HasMarkPrice {
 	orderType: string;
 }
 
-export type MarketContext = HasMarket & HasAssetIndex & HasMarkPrice;
+interface HasLiveMarkPrice {
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
+}
+
+export type MarketContext = HasMarket & HasAssetIndex & HasMarkPrice & HasLiveMarkPrice;
 
 export const noMarketValidator: Validator<HasMarket> = createValidator({
 	id: "no-market",
@@ -43,8 +49,18 @@ export const noMarkPriceValidator: Validator<HasMarkPrice> = createValidator({
 	validate: (ctx) => ctx.orderType !== "market" || ctx.markPx > 0,
 });
 
+export const liveMarkPriceValidator: Validator<HasLiveMarkPrice> = createValidator({
+	id: "live-mark-price-unavailable",
+	code: "MKT_004",
+	category: "market",
+	priority: 42,
+	getMessage: () => t`Mark price is unavailable. Wait for market data and try again.`,
+	validate: (ctx) => !ctx.requiresLiveMarkPrice || ctx.markPriceStatus === "success",
+});
+
 export const marketValidators: Validator<MarketContext>[] = [
 	noMarketValidator,
 	marketNotReadyValidator,
+	liveMarkPriceValidator,
 	noMarkPriceValidator,
 ];

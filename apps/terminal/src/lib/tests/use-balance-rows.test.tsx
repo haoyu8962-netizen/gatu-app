@@ -13,13 +13,18 @@ const mocks = vi.hoisted(() => ({
 	activeAssetStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
 	accountAbstraction: "unifiedAccount" as string | null,
 	dex: "xyz",
+	hasError: false,
 	isConnected: true,
+	isDataStale: false,
+	isLoading: false,
 	market: {
 		kind: "builderPerp" as const,
 		name: "xyz:GOOGL",
 		quoteToken: { name: "USDC" },
 	} as { kind: "builderPerp"; name: string; quoteToken: { name: string } } | { kind: "spot"; name: string } | undefined,
 	side: "buy" as "buy" | "sell",
+	spotStateStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
+	perpStateStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -49,8 +54,11 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		spotAvailableAfterMaintenance: [[0, "1.248186"]],
 		accountAbstraction: mocks.accountAbstraction,
 		withdrawable: "0",
-		isLoading: false,
-		hasError: false,
+		spotStateStatus: mocks.spotStateStatus,
+		perpStateStatus: mocks.perpStateStatus,
+		isDataStale: mocks.isDataStale,
+		isLoading: mocks.isLoading,
+		hasError: mocks.hasError,
 	}),
 }));
 
@@ -80,9 +88,14 @@ describe("useBalanceRows", () => {
 		mocks.activeAssetStatus = "success";
 		mocks.accountAbstraction = "unifiedAccount";
 		mocks.dex = "xyz";
+		mocks.hasError = false;
 		mocks.isConnected = true;
+		mocks.isDataStale = false;
+		mocks.isLoading = false;
 		mocks.market = { kind: "builderPerp", name: "xyz:GOOGL", quoteToken: { name: "USDC" } };
 		mocks.side = "buy";
+		mocks.spotStateStatus = "success";
+		mocks.perpStateStatus = "success";
 	});
 
 	afterEach(() => {
@@ -145,5 +158,22 @@ describe("useBalanceRows", () => {
 		});
 		expect(result.perpFundsActionsEnabled).toBe(false);
 		expect(result.internalTransfersEnabled).toBe(true);
+	});
+
+	it.each([
+		["stale", false, false],
+		["loading", true, false],
+		["error", false, true],
+	] as const)("fails closed for %s account data while preserving cached rows", (status, isLoading, hasError) => {
+		mocks.perpStateStatus = status;
+		mocks.isDataStale = status === "stale";
+		mocks.isLoading = isLoading;
+		mocks.hasError = hasError;
+		const result = renderHook();
+
+		expect(result.perpBalances).toHaveLength(1);
+		expect(result.accountDataReady).toBe(false);
+		expect(result.internalTransfersEnabled).toBe(false);
+		expect(result.perpFundsActionsEnabled).toBe(false);
 	});
 });

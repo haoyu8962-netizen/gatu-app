@@ -63,14 +63,17 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	});
 
 	const {
+		accountDataReady,
 		accountModeReady,
 		balances,
 		hasError,
 		internalTransfersEnabled,
 		isConnected,
+		isDataStale,
 		isLoading,
 		perpFundsActionsEnabled,
 		perpBalances,
+		showBalanceAccountType,
 		spotBalanceRows,
 	} = useBalanceRows();
 
@@ -113,9 +116,14 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		const fundsActionsEnabled = row.type === "spot" || perpFundsActionsEnabled;
 		const canTransfer =
 			fundsActionsEnabled && internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
-		const canSwap = accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
+		const canSwap =
+			accountDataReady && accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
 		const canWithdraw =
-			fundsActionsEnabled && accountModeReady && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
+			accountDataReady &&
+			fundsActionsEnabled &&
+			accountModeReady &&
+			row.asset === DEFAULT_QUOTE_TOKEN &&
+			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
@@ -126,7 +134,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 							iconClassName="size-6"
 							nameClassName="text-[13px] font-bold text-market-close-fg"
 						/>
-						{internalTransfersEnabled ? (
+						{showBalanceAccountType ? (
 							<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
 								{row.type === "perp" ? t`Trading` : t`Spot`}
 							</span>
@@ -174,7 +182,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 								{t`Swap`}
 							</Button>
 						)}
-						{fundsActionsEnabled && accountModeReady && hasTransferableBalance && (
+						{accountDataReady && fundsActionsEnabled && accountModeReady && hasTransferableBalance && (
 							<Button
 								variant="outline"
 								intent="neutral"
@@ -248,30 +256,37 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
-					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[52rem] w-full">
-							<TableHeader className={balancesTableHeaderClass}>
-								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
-										{t`Asset`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
-										{t`Total`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
-										{t`Available`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
-										{t`USD Value`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[18%] text-right")}>
-										{t`Actions`}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>{filteredBalances.map(renderBalanceRow)}</TableBody>
-						</Table>
-					</ScrollArea>
+					<div className="flex h-full min-h-0 flex-col">
+						{isDataStale ? (
+							<output className="shrink-0 border-b border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+								{t`Balance data is stale. Actions are temporarily unavailable.`}
+							</output>
+						) : null}
+						<ScrollArea className="min-h-0 flex-1">
+							<Table className="table-fixed min-w-[52rem] w-full">
+								<TableHeader className={balancesTableHeaderClass}>
+									<TableRow className={positionsPanelTableHeaderRowClass}>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
+											{t`Asset`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`Total`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`Available`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`USD Value`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[18%] text-right")}>
+											{t`Actions`}
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody className={positionsPanelTableBodyClass}>{filteredBalances.map(renderBalanceRow)}</TableBody>
+							</Table>
+						</ScrollArea>
+					</div>
 				)}
 			</div>
 

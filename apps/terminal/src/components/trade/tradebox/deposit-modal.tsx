@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import {
 	CCTP_MAX_DEPOSIT_USDC,
 	CCTP_TESTNET_MAX_DEPOSIT_USDC,
@@ -14,7 +15,8 @@ import {
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
-import { getAccountBalanceSummary } from "@/domain/trade/balances";
+import { getAccountBalanceSummary, getSpotBalance, getSpotTransferableValue } from "@/domain/trade/balances";
+import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
 	getCanonicalSpotSystemAddress,
@@ -225,7 +227,15 @@ export function DepositModal() {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		withdrawable: perpWithdrawable,
+		spotStateStatus,
+		perpStateStatus,
+		isDataStale: isBalanceDataStale,
+		hasError: hasBalanceError,
 	} = defaultBalances;
+	const withdrawalBalanceReady =
+		spotStateStatus === "success" && perpStateStatus === "success" && !isBalanceDataStale && !hasBalanceError;
+	const withdrawalBalanceReadyRef = useRef(withdrawalBalanceReady);
+	withdrawalBalanceReadyRef.current = withdrawalBalanceReady;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -234,7 +244,24 @@ export function DepositModal() {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
-	const withdrawable = String(accountSummary.withdrawable);
+	const withdrawable = withdrawalBalanceReady ? String(accountSummary.withdrawable) : "0";
+	const exactWithdrawable = withdrawalBalanceReady
+		? accountSummary.usesSpotStateForPerps
+			? getSpotTransferableValue(getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN))
+			: String(perpWithdrawable)
+		: "0";
+	const withdrawalBalanceExecutionRef = useRef({
+		available: exactWithdrawable,
+		receivedAt: accountSummary.usesSpotStateForPerps
+			? defaultBalances.spotStateReceivedAt
+			: defaultBalances.perpStateReceivedAt,
+	});
+	withdrawalBalanceExecutionRef.current = {
+		available: exactWithdrawable,
+		receivedAt: accountSummary.usesSpotStateForPerps
+			? defaultBalances.spotStateReceivedAt
+			: defaultBalances.perpStateReceivedAt,
+	};
 	const showSpotFundsNotice =
 		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
@@ -313,6 +340,7 @@ export function DepositModal() {
 		open &&
 		visibleTab === "withdraw" &&
 		canUseFundsActions &&
+		withdrawalBalanceReady &&
 		accountSummary.isAvailable &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute;
@@ -345,10 +373,10 @@ export function DepositModal() {
 		isTestnet,
 	});
 	const cctpWithdrawal = useExchange("sendToEvmWithData", {
-		preExecutionGuard: (_params, signal) => assertFreshWithdrawalExecution("arbitrum-cctp", signal),
+		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-cctp", params.amount, signal),
 	});
 	const legacyWithdrawal = useExchange("withdraw3", {
-		preExecutionGuard: (_params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", signal),
+		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", params.amount, signal),
 	});
 	const isWithdrawPending = isWithdrawalPreflighting || cctpWithdrawal.isPending || legacyWithdrawal.isPending;
 	const isWithdrawSuccess = cctpWithdrawal.isSuccess || legacyWithdrawal.isSuccess;
@@ -386,7 +414,9 @@ export function DepositModal() {
 			(spotMetaQuery.isFetching || preTransferCheckQuery.isFetching || cctpFeeQuery.isFetching));
 	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
 	let withdrawalPrerequisiteError: string | null = null;
-	if (!accountSummary.isAvailable) {
+	if (!withdrawalBalanceReady) {
+		withdrawalPrerequisiteError = t`Balance data is unavailable. Try again after the connection recovers.`;
+	} else if (!accountSummary.isAvailable) {
 		withdrawalPrerequisiteError = t`Select a supported account mode before moving funds.`;
 	} else if (
 		withdrawalRoutingStatus === "ready" &&
@@ -410,6 +440,7 @@ export function DepositModal() {
 		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
 	}
 	const withdrawalPrerequisitesReady =
+		withdrawalBalanceReady &&
 		accountSummary.isAvailable &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute &&
@@ -487,10 +518,20 @@ export function DepositModal() {
 		assertPreTransferCheckMatchesReview(review.fee, current);
 	}
 
-	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, signal: AbortSignal) {
+	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, amount: unknown, signal: AbortSignal) {
+		const assertCurrentBalance = () => {
+			if (!withdrawalBalanceReadyRef.current) {
+				throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+			}
+			const balance = withdrawalBalanceExecutionRef.current;
+			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
+		};
+		assertCurrentBalance();
 		const guards = [assertFreshWithdrawalRoute(expectedRoute, signal), assertAccountAbstraction(signal)];
 		if (expectedRoute === "arbitrum-cctp") guards.push(assertFreshCctpPreTransferCheck(signal));
 		await Promise.all(guards);
+		signal.throwIfAborted();
+		assertCurrentBalance();
 	}
 
 	function handleClose() {

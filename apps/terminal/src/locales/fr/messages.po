@@ -1035,6 +1035,32 @@ msgstr "Solde"
 msgid "Balance available to trade"
 msgstr "Solde disponible pour trader"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Balance data is stale."
+msgstr "Les données de solde sont obsolètes."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Balance data is stale. Actions are temporarily unavailable."
+msgstr "Les données de solde sont obsolètes. Les actions sont temporairement indisponibles."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Balance data is unavailable. Try again after the connection recovers."
+msgstr "Les données de solde sont indisponibles. Réessayez une fois la connexion rétablie."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Balance:"
 #~ msgstr ""
@@ -2233,7 +2259,6 @@ msgstr "Créer un code de parrainage"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "Créez un accès mobile sécurisé pour trader depuis ce compte."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create TWAP"
 msgstr "Créer un TWAP"
@@ -4198,6 +4223,7 @@ msgstr "Les données de position en temps réel sont obsolètes. Attendez le ré
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "Les données de position en temps réel sont indisponibles. Attendez le rétablissement de la connexion du compte avant d'ajuster la marge."
 
@@ -4326,10 +4352,12 @@ msgstr "Chargement du portefeuille..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4528,7 +4556,11 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Le prix Mark est dérivé des prix oracle et sert à calculer le PnL non réalisé et la liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "Le prix Mark est indisponible. Attendez les données de marché et réessayez."
 
@@ -9209,6 +9241,7 @@ msgstr "Les données de trading ont changé avant que la modification de l'ordre
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts

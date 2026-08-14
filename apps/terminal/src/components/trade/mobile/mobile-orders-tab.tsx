@@ -12,6 +12,7 @@ import {
 	createCancelAllConfirmationSnapshot,
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
 import {
 	getOpenOrderModifyCapabilities,
@@ -244,12 +245,19 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		if (markets.isLoading || markets.error) return null;
 		const market = markets.getMarket(coin);
 		if (!market) return null;
+		const marketInfo = getMarketInfo(coin);
 		return {
 			coin,
 			assetId: market.assetId,
 			szDecimals: market.szDecimals,
 			kind: market.kind,
-			markPx: getMarketInfo(coin)?.markPx,
+			markPx: isLiveMarkPriceReady(
+				marketInfo?.markPriceStatus ?? "loading",
+				marketInfo?.markPx,
+				marketInfo?.markPriceReceivedAt,
+			)
+				? marketInfo?.markPx
+				: undefined,
 		};
 	}
 
@@ -938,7 +946,16 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 								szDecimals={market?.szDecimals ?? markets.getSzDecimals(order.coin)}
 								marketType={market?.kind === "spot" ? "spot" : "perp"}
 								marketLabel={market?.shortName ?? order.coin}
-								markPx={getMarketInfo(order.coin)?.markPx ?? ""}
+								markPx={(() => {
+									const marketInfo = getMarketInfo(order.coin);
+									return isLiveMarkPriceReady(
+										marketInfo?.markPriceStatus ?? "loading",
+										marketInfo?.markPx,
+										marketInfo?.markPriceReceivedAt,
+									)
+										? (marketInfo?.markPx ?? "")
+										: "";
+								})()}
 								expanded={expandedOrderKeys.has(orderKey)}
 								isCancelling={cancellingOids.has(order.oid)}
 								actionsDisabled={isModifyBusy || pendingScopes.size > 0}

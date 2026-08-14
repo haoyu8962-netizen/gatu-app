@@ -17,7 +17,7 @@ import {
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
+import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
@@ -51,7 +51,8 @@ export function PortfolioOverview() {
 	const reserveStatesQuery = useInfo("allBorrowLendReserveStates", undefined, queryOptions);
 	const balances = useDefaultDexBalances();
 	const markets = useMarkets();
-	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
+	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
+	const tokenUsdPrices = tokenUsdPriceState.prices;
 
 	const accountSummary = useMemo(
 		() =>
@@ -106,6 +107,8 @@ export function PortfolioOverview() {
 	const hasResolvedBalanceSources =
 		isConnected &&
 		accountModeReady &&
+		!balances.isDataStale &&
+		tokenUsdPriceState.status === "success" &&
 		balances.hasSpotStateSnapshot &&
 		(accountSummary.usesSpotStateForPerps || (balances.hasAllDexsSnapshot && perpAccountEquity !== null));
 	const currentEquitySourcesAvailable =

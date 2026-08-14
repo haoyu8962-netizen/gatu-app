@@ -1,13 +1,19 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
 import { getBuilderPerpSwapTargetToken } from "@/domain/trade/collateral-acquisition";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import {
+	assertEntryOrderExecutionAllowed,
+	assertEntryTwapExecutionAllowed,
+	type EntryOrderExecutionState,
+} from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import {
@@ -103,18 +109,23 @@ export function TradePanel() {
 
 	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
-	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
 	const { tradeRestricted } = useGeoRestriction();
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const side = useOrderSide();
 	const markPx = toNumberOrZero(market?.markPx);
+	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
+	const markPriceStatus = market?.markPriceStatus ?? "loading";
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
 
 	const {
 		accountAbstraction,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		executionAvailability,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -144,7 +155,55 @@ export function TradePanel() {
 		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
+		active: true,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	});
+	orderExecutionStateRef.current = {
+		active: true,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	};
+	const executionGuard = useCallback(
+		(params: Parameters<typeof assertEntryOrderExecutionAllowed>[0]) =>
+			assertEntryOrderExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const twapExecutionGuard = useCallback(
+		(params: Parameters<typeof assertEntryTwapExecutionAllowed>[0]) =>
+			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit({ executionGuard, twapExecutionGuard });
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
+
+	useEffect(() => {
+		orderExecutionStateRef.current.active = true;
+		return () => {
+			orderExecutionStateRef.current.active = false;
+		};
+	}, []);
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const selectedPrice = useSelectedPrice();
@@ -165,6 +224,7 @@ export function TradePanel() {
 	const stopOrder = isStopOrderType(orderType);
 	const takeProfitOrder = isTakeProfitOrderType(orderType);
 	const triggerOrder = isTriggerOrderType(orderType);
+	const requiresLiveMarkPrice = orderType === "market" || triggerOrder;
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
@@ -212,7 +272,7 @@ export function TradePanel() {
 
 	const price = getOrderPrice(
 		orderType,
-		markPx,
+		executionReferencePx,
 		limitPriceInput,
 		triggerPriceInput,
 		scaleStartPriceInput,
@@ -240,6 +300,8 @@ export function TradePanel() {
 		availableBalance,
 		hasMarket: !!market,
 		hasAssetIndex: typeof market?.assetId === "number",
+		markPriceStatus,
+		requiresLiveMarkPrice,
 		needsAgentApproval,
 		isReadyToTrade,
 		price,
@@ -358,6 +420,12 @@ export function TradePanel() {
 		if (isAvailabilityBlocked) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
+		if (
+			requiresLiveMarkPrice &&
+			!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt)
+		) {
+			return;
+		}
 
 		await submitOrder({
 			market: {
@@ -371,7 +439,7 @@ export function TradePanel() {
 			orderType,
 			sizeValue,
 			price,
-			markPx,
+			executionReferencePx,
 			marginMode,
 			slippageBps,
 			reduceOnly,

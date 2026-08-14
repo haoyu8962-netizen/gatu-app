@@ -66,10 +66,13 @@ export function useSub<TData>(
 			const method = getSubscriptionMethodForKey(key);
 			const shouldDiscardQueuedDataOnError = method === "l2Book" || method === "bbo";
 			let subscriptionGeneration = 0;
-			const updater = createThrottledUpdater<{ data: TData; isCurrent: () => boolean }>(({ data, isCurrent }) => {
-				if (!isCurrent()) return;
-				state.setSubscriptionData(key, data);
-			}, throttleMs);
+			const updater = createThrottledUpdater<{ data: TData; isCurrent: () => boolean; receivedAt: number }>(
+				({ data, isCurrent, receivedAt }) => {
+					if (!isCurrent()) return;
+					state.setSubscriptionData(key, data, receivedAt);
+				},
+				throttleMs,
+			);
 
 			state.acquireSubscription(
 				key,
@@ -95,11 +98,12 @@ export function useSub<TData>(
 					};
 					const promise = subscribeRef.current((data) => {
 						if (!isCurrentGeneration()) return;
+						const receivedAt = Date.now();
 						if (shouldDropPayload(data)) {
 							if (shouldDiscardQueuedDataOnError) updater.destroy();
 							return;
 						}
-						updater.add({ data, isCurrent: isCurrentGeneration });
+						updater.add({ data, isCurrent: isCurrentGeneration, receivedAt });
 					}, guardedFailureOptions);
 
 					return promise.catch((error) => {
@@ -143,8 +147,9 @@ export function useSub<TData>(
 				return subscribeRef
 					.current((data) => {
 						if (!isCurrentGeneration()) return;
+						const receivedAt = Date.now();
 						if (shouldDropPayload(data)) return;
-						state.setSubscriptionData(key, data);
+						state.setSubscriptionData(key, data, receivedAt);
 					}, guardedFailureOptions)
 					.catch((error) => {
 						if (isCurrentGeneration()) subscriptionGeneration += 1;
@@ -172,6 +177,7 @@ export function useSub<TData>(
 			status: "idle",
 			error: undefined,
 			isStale: false,
+			lastMessageAt: undefined,
 			unsubscribe: async () => store.getState().releaseSubscription(key),
 		};
 	}
@@ -181,6 +187,7 @@ export function useSub<TData>(
 		status: entry?.status ?? "idle",
 		error: entry?.error,
 		isStale: entry?.isStale ?? false,
+		lastMessageAt: entry?.lastMessageAt,
 		unsubscribe: async () => store.getState().releaseSubscription(key),
 	};
 }

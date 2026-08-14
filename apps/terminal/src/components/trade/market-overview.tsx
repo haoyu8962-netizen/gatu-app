@@ -10,6 +10,7 @@ import {
 	getMarketCapUsd,
 	getOiUsd,
 } from "@/domain/market";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -184,22 +185,46 @@ export function MarketOverview() {
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
 	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
 
-	const { data: perpCtxEvent } = useSubscription(
-		"activeAssetCtx",
-		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
-	);
-	const { data: spotCtxEvent } = useSubscription(
-		"activeSpotAssetCtx",
-		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
-	);
+	const {
+		data: perpCtxEvent,
+		status: perpCtxStatus,
+		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
+	} = useSubscription("activeAssetCtx", { coin: perpCoin }, { enabled: !!perpCoin && !isSpot });
+	const {
+		data: spotCtxEvent,
+		status: spotCtxStatus,
+		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
+	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: !!spotCoin && isSpot });
 
-	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
-	const perpCtx = perpCtxEvent?.ctx;
+	const hasFreshPerpCtx =
+		perpCtxEvent?.coin === perpCoin &&
+		isLiveMarkPriceReady(
+			perpCtxStatus === "active" && !perpCtxIsStale ? "success" : perpCtxStatus === "error" ? "error" : "loading",
+			perpCtxEvent?.ctx.markPx,
+			perpCtxReceivedAt,
+		);
+	const hasFreshSpotCtx =
+		spotCtxEvent?.coin === spotCoin &&
+		isLiveMarkPriceReady(
+			spotCtxStatus === "active" && !spotCtxIsStale ? "success" : spotCtxStatus === "error" ? "error" : "loading",
+			spotCtxEvent?.ctx.markPx,
+			spotCtxReceivedAt,
+		);
+	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
+	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
+	const liveCtx = isSpot ? spotCtx : perpCtx;
+	const selectedLiveMark = isLiveMarkPriceReady(
+		selectedMarketInfo?.markPriceStatus ?? "loading",
+		selectedMarketInfo?.markPx,
+		selectedMarketInfo?.markPriceReceivedAt,
+	)
+		? selectedMarketInfo?.markPx
+		: undefined;
 
-	const perpMarkPx = perpCtx?.markPx ?? selectedMarketInfo?.markPx;
-	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedMarketInfo?.markPx) : perpMarkPx;
+	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
+	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedLiveMark) : perpMarkPx;
 	const dayNtlVlm = liveCtx?.dayNtlVlm ?? selectedMarketInfo?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx ?? selectedMarketInfo?.oraclePx;
 	const openInterest = perpCtx?.openInterest ?? selectedMarketInfo?.openInterest;
@@ -213,9 +238,9 @@ export function MarketOverview() {
 	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
-	const spotPrice = isSpot ? (spotCtxEvent?.ctx?.markPx ?? selectedMarketInfo?.markPx ?? midPx) : undefined;
+	const spotPrice = isSpot ? (liveCtx?.markPx ?? selectedLiveMark ?? midPx) : undefined;
 	const spotCirculatingSupply = isSpot
-		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
+		? (spotCtx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
 		: null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 	const marketType = isSpot ? "spot" : "perp";

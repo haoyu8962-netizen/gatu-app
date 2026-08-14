@@ -315,7 +315,7 @@ describe("order availability routing", () => {
 		expect(getOrderAvailabilityStatus({ ...baseInput, isConnected: false, marketKind: undefined })).toBe("idle");
 	});
 
-	it("allows matching stale data but blocks unavailable connected states", () => {
+	it("fails closed for stale or unavailable connected trading state", () => {
 		expect(getOrderAvailabilityFlags(true, "success")).toEqual({
 			isLoading: false,
 			isStale: false,
@@ -323,7 +323,7 @@ describe("order availability routing", () => {
 			isBlocked: false,
 		});
 		expect(getOrderAvailabilityFlags(true, "loading")).toMatchObject({ isLoading: true, isBlocked: true });
-		expect(getOrderAvailabilityFlags(true, "stale")).toMatchObject({ isStale: true, isBlocked: false });
+		expect(getOrderAvailabilityFlags(true, "stale")).toMatchObject({ isStale: true, isBlocked: true });
 		expect(getOrderAvailabilityFlags(true, "error")).toMatchObject({ hasError: true, isBlocked: true });
 		expect(getOrderAvailabilityFlags(true, "idle")).toMatchObject({ isBlocked: true });
 		expect(getOrderAvailabilityFlags(false, "idle")).toMatchObject({ isBlocked: false });

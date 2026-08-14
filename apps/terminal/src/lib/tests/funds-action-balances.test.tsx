@@ -30,6 +30,12 @@ const testState = vi.hoisted(() => ({
 			},
 		],
 		withdrawable: "40",
+		spotStateStatus: "success",
+		perpStateStatus: "success",
+		spotStateReceivedAt: Date.now(),
+		perpStateReceivedAt: Date.now(),
+		isDataStale: false,
+		hasError: false,
 	},
 	exchangeMutations: {
 		sendAsset: vi.fn(),
@@ -164,6 +170,11 @@ describe("funds action balance wiring", () => {
 
 	beforeEach(() => {
 		testState.balances.accountAbstraction = "disabled";
+		testState.balances.withdrawable = "40";
+		testState.balances.spotBalances[0].hold = "3140.833333";
+		testState.balances.spotBalances[0].total = "8105.34686269";
+		testState.balances.spotStateReceivedAt = Date.now();
+		testState.balances.perpStateReceivedAt = Date.now();
 		testState.exchangeGuards.clear();
 		testState.assertAccountAbstraction.mockReset();
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
@@ -265,14 +276,35 @@ describe("funds action balance wiring", () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		const signal = new AbortController().signal;
 
-		await testState.exchangeGuards.get("sendAsset")?.({}, signal);
-		await testState.exchangeGuards.get("spotSend")?.({}, signal);
+		await testState.exchangeGuards.get("sendAsset")?.({ amount: "1", sourceDex: "spot", token: "USDC:0" }, signal);
+		await testState.exchangeGuards.get("spotSend")?.({ amount: "1", token: "USDC:0" }, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenCalledTimes(2);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(1, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(2, signal);
 
 		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
-		await testState.exchangeGuards.get("usdClassTransfer")?.({}, signal);
+		await testState.exchangeGuards.get("usdClassTransfer")?.({ amount: "1", toPerp: false }, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(3, signal);
+	});
+
+	it("rechecks the exact balance after an async account preflight", async () => {
+		let releasePreflight!: () => void;
+		const preflight = new Promise<void>((resolve) => {
+			releasePreflight = resolve;
+		});
+		testState.assertAccountAbstraction.mockReturnValueOnce(preflight);
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const signal = new AbortController().signal;
+		const guardPromise = testState.exchangeGuards.get("sendAsset")?.(
+			{ amount: "1", sourceDex: "spot", token: "USDC:0" },
+			signal,
+		);
+		await vi.waitFor(() => expect(testState.assertAccountAbstraction).toHaveBeenCalledOnce());
+
+		testState.balances.spotBalances[0].hold = "8104.84686269";
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		releasePreflight();
+
+		await expect(guardPromise).rejects.toThrow("Balance changed before submission");
 	});
 });

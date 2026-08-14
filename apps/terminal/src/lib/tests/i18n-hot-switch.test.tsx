@@ -66,6 +66,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPriceState: () => ({ prices: undefined, status: "success" }),
 	useSpotTokenUsdPrices: () => undefined,
 }));
 
@@ -97,6 +98,12 @@ const balanceSnapshot = {
 	spotAvailableAfterMaintenance: 0,
 	spotBalances: [],
 	withdrawable: "100",
+	hasError: false,
+	isDataStale: false,
+	perpStateStatus: "success",
+	perpStateReceivedAt: Date.now(),
+	spotStateStatus: "success",
+	spotStateReceivedAt: Date.now(),
 };
 
 const bridgeEntryState = vi.hoisted(() => ({

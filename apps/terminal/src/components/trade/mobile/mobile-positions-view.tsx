@@ -75,9 +75,15 @@ export function MobilePositionsView({
 		hasAllDexsSnapshot,
 		hasSpotStateSnapshot,
 		hasError: balancesError,
+		isDataStale: balancesStale,
 		isLoading: balancesLoading,
 	} = useDefaultDexBalances();
-	const { positions, isLoading: isLoadingState, hasError: positionsError } = useUserPositions();
+	const {
+		positions,
+		isLoading: isLoadingState,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
 	const isPageScroll = scrollMode === "page";
 
 	const {
@@ -151,7 +157,7 @@ export function MobilePositionsView({
 
 	const positionsCount = getReadyItemCount({
 		isConnected,
-		isReady: hasAllDexsSnapshot && !isLoadingState && !positionsError,
+		isReady: hasAllDexsSnapshot && !isLoadingState && !positionsError && !positionsStale,
 		count: positions.reduce((count, entry) => {
 			const size = toBig(entry.szi);
 			return size && !size.eq(0) ? count + 1 : count;
@@ -168,14 +174,22 @@ export function MobilePositionsView({
 		count: twapStatesEvent?.states?.length ?? 0,
 	});
 	const balancesCount = useMemo(() => {
-		if (!isConnected || balancesError || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
+		if (!isConnected || balancesError || balancesStale || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
 		let count = 0;
 		if (toBig(perpSummary?.accountValue)?.gt(0)) count++;
 		for (const balance of spotBalances) {
 			if (toBig(balance.total)?.gt(0)) count++;
 		}
 		return count;
-	}, [balancesError, hasAllDexsSnapshot, hasSpotStateSnapshot, isConnected, perpSummary?.accountValue, spotBalances]);
+	}, [
+		balancesError,
+		balancesStale,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		isConnected,
+		perpSummary?.accountValue,
+		spotBalances,
+	]);
 
 	useEffect(() => {
 		const scroller = tabScrollRef.current;

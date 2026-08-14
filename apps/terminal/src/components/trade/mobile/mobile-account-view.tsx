@@ -3,7 +3,6 @@ import { useLingui } from "@lingui/react/macro";
 import {
 	ArrowsLeftRightIcon,
 	DownloadSimpleIcon,
-	SpinnerGapIcon,
 	UploadSimpleIcon,
 	WalletIcon,
 	WarningCircleIcon,
@@ -30,7 +29,7 @@ import {
 	useDefaultDexBalances,
 	useSelectedDexBalances,
 } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
+import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -66,10 +65,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		spotAvailableAfterMaintenance,
 		withdrawable,
 		isSpotStateStale,
+		isDataStale,
 		isLoading,
 		hasError,
 	} = summaryBalances;
-	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
+	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
+	const tokenUsdPrices = tokenUsdPriceState.prices;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -120,8 +121,17 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		isConnected &&
 		accountModeReady &&
 		!summaryBalances.hasError &&
+		!summaryBalances.isDataStale &&
+		summaryBalances.perpStateStatus === "success" &&
 		summaryBalances.hasAllDexsSnapshot &&
-		(!usesSharedQuoteBalance || summaryBalances.hasSpotStateSnapshot);
+		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success") &&
+		(!usesSharedQuoteBalance ||
+			(summaryBalances.spotStateStatus === "success" && summaryBalances.hasSpotStateSnapshot));
+	const fundsActionsReady =
+		accountModeReady &&
+		!selectedBalances.hasError &&
+		selectedBalances.perpStateStatus === "success" &&
+		selectedBalances.spotStateStatus === "success";
 	const accountRisk = getToolbarAccountRiskPresentation(accountSummaryReady ? maintenanceMarginRatio : null);
 	const crossLeverage = accountSummaryReady
 		? getToolbarAccountLeverage({
@@ -152,14 +162,17 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					? t`Separate Accounts`
 					: t`Select mode`;
 	const showSpotFundsNotice =
+		accountSummaryReady &&
 		!accountSummary.usesSpotStateForPerps &&
 		selectedBalances.dex === "" &&
 		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 	const internalTransferDisabledReason = !accountModeReady
 		? t`Select a supported account mode before moving funds.`
-		: usesSharedQuoteBalance
-			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-			: null;
+		: !fundsActionsReady
+			? t`Balance data is unavailable. Try again after the connection recovers.`
+			: usesSharedQuoteBalance
+				? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+				: null;
 
 	if (!isConnected) {
 		return (
@@ -203,6 +216,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<span>{t`Failed to load balances.`}</span>
 					</div>
 				) : null}
+				{isDataStale && !hasError ? (
+					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+						<WarningCircleIcon className="size-4 shrink-0" />
+						<span>{t`Balance data is stale. Actions are temporarily unavailable.`}</span>
+					</output>
+				) : null}
 
 				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId}>
 					<div className="mb-4 flex items-start justify-between gap-3">
@@ -217,7 +236,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								{accountModeLabel}
 							</Badge>
 							{isSpotStateStale && !hasError ? (
-								<SpinnerGapIcon className="size-3.5 animate-spin text-warning" aria-label={t`Loading...`} />
+								<WarningCircleIcon className="size-3.5 text-warning" aria-label={t`Balance data is stale.`} />
 							) : null}
 						</div>
 					</div>
@@ -328,7 +347,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									variant="outline"
 									intent="neutral"
 									size="md"
-									disabled={!accountModeReady}
+									disabled={!fundsActionsReady}
 									onClick={() => openDepositModal("withdraw")}
 									iconLeft={<UploadSimpleIcon className="size-4" />}
 									className="min-h-11"

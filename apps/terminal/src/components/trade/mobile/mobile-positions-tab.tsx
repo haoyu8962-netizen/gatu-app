@@ -359,6 +359,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 							const isMarketClosePending = positionMarketClose.pendingAssetId === assetId;
 							const isRowClosing = isMarketClosePending;
 							const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
+							const marketInfo = getMarketInfo(p.coin);
 							return (
 								<MobilePositionCard
 									key={positionKey}
@@ -366,7 +367,8 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 									env={env}
 									isDataStale={positionsStale}
 									markets={markets}
-									markPx={getMarketInfo(p.coin)?.markPx}
+									markPx={marketInfo?.markPx}
+									markPriceStatus={marketInfo?.markPriceStatus ?? "loading"}
 									tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 									isRowClosing={isRowClosing}
 									expanded={expandedPositionKeys.has(positionKey)}

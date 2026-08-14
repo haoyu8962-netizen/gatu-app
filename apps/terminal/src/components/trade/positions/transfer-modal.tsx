@@ -1,7 +1,7 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
@@ -9,8 +9,10 @@ import {
 	getAccountBalanceSummary,
 	getSpotBalance,
 	getSpotTransferable,
+	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
+import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -51,11 +53,42 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const [error, setError] = useState<string | null>(null);
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
-	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable } =
-		useDefaultDexBalances();
+	const {
+		marginSummary,
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isDataStale,
+		hasError: hasBalanceError,
+	} = useDefaultDexBalances();
+	const accountDataReady =
+		spotStateStatus === "success" && perpStateStatus === "success" && !isDataStale && !hasBalanceError;
+	const accountDataReadyRef = useRef(accountDataReady);
+	accountDataReadyRef.current = accountDataReady;
+	const availableBalanceRef = useRef({ value: "0", receivedAt: undefined as number | undefined, direction });
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer", {
-		preExecutionGuard: (_params, signal) => assertAccountAbstraction(signal),
+		preExecutionGuard: async (params, signal) => {
+			const assertCurrentBalance = () => {
+				if (!accountDataReadyRef.current)
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				const current = availableBalanceRef.current;
+				if (params.toPerp !== (current.direction === "toPerp")) {
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				}
+				assertFreshFundsAmount(params.amount, current.value, current.receivedAt);
+			};
+			assertCurrentBalance();
+			await assertAccountAbstraction(signal);
+			signal.throwIfAborted();
+			assertCurrentBalance();
+		},
 	});
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
@@ -70,14 +103,28 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const internalTransfersDisabledReason = !accountModeReady
 		? t`Select a supported account mode before moving funds.`
-		: isQuoteBalanceSharedWithPerps(accountAbstraction)
-			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-			: null;
-	const availableBalanceValue = accountModeReady
-		? direction === "toSpot"
-			? accountSummary.withdrawable
-			: getSpotTransferable(spotUsdcBal)
-		: 0;
+		: !accountDataReady
+			? t`Balance data is unavailable. Try again after the connection recovers.`
+			: isQuoteBalanceSharedWithPerps(accountAbstraction)
+				? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+				: null;
+	const availableBalanceValue =
+		accountModeReady && accountDataReady
+			? direction === "toSpot"
+				? accountSummary.withdrawable
+				: getSpotTransferable(spotUsdcBal)
+			: 0;
+	const availableBalanceExact =
+		accountModeReady && accountDataReady
+			? direction === "toSpot"
+				? String(withdrawable)
+				: getSpotTransferableValue(spotUsdcBal)
+			: "0";
+	availableBalanceRef.current = {
+		value: availableBalanceExact,
+		receivedAt: direction === "toSpot" ? perpStateReceivedAt : spotStateReceivedAt,
+		direction,
+	};
 
 	const isValidAmount =
 		!internalTransfersDisabledReason &&
@@ -89,13 +136,13 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
-		if (internalTransfersDisabledReason || isPending) return;
+		if (internalTransfersDisabledReason || !accountDataReady || isPending) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || isPending || !walletAddress || internalTransfersDisabledReason) return;
+		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabledReason) return;
 
 		setError(null);
 		try {
@@ -112,6 +159,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	}
 
 	function handleMaxClick() {
+		if (!accountDataReady) return;
 		setAmount(floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS));
 	}
 
@@ -137,7 +185,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</div>
 					)}
 
-					{accountModeReady ? (
+					{accountModeReady && accountDataReady ? (
 						<>
 							<div className="flex items-center justify-center gap-3 py-2">
 								<div className="flex flex-col items-center">

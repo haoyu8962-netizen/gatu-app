@@ -3,6 +3,7 @@ import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError, resolveOrderBatchResponse } from "@/domain/trade/order-tracking";
 import {
@@ -48,6 +49,7 @@ export type PositionCloseAllSubmitOutcome =
 
 interface FreshCloseTarget extends PositionCloseAllTarget {
 	referencePx: string;
+	priceReceivedAt: number;
 }
 
 interface ExecutionContext {
@@ -133,6 +135,9 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 
 		assertLiveSnapshotReady(currentSnapshot, live);
 		assertFreshTargetsMatchLive(execution.freshTargets, live);
+		if (execution.freshTargets.some((target) => !isLiveExecutionPriceReceiptFresh(target.priceReceivedAt))) {
+			throw tradingDataChangedError();
+		}
 		assertOrdersMatchExecution(params, execution);
 	}
 
@@ -471,10 +476,11 @@ async function fetchFreshCloseTargets(
 
 	const results = await Promise.all(
 		Array.from(targetsByDex, async ([dex, targets]) => {
-			const [accountState, marketData] = await Promise.all([
+			const [accountState, marketSnapshot] = await Promise.all([
 				info.clearinghouseState({ user: snapshot.owner as `0x${string}`, dex }),
-				info.metaAndAssetCtxs({ dex }),
+				info.metaAndAssetCtxs({ dex }).then((data) => ({ data, priceReceivedAt: performance.now() })),
 			]);
+			const marketData = marketSnapshot.data;
 			const [meta, assetContexts] = marketData;
 			const expectedCoins = new Set(targets.map((target) => target.coin));
 			const freshPositionCoins = accountState.assetPositions
@@ -513,7 +519,12 @@ async function fetchFreshCloseTargets(
 					throw tradingDataChangedError();
 				}
 
-				return { ...target, signedPositionSize: position.szi, referencePx };
+				return {
+					...target,
+					signedPositionSize: position.szi,
+					referencePx,
+					priceReceivedAt: marketSnapshot.priceReceivedAt,
+				};
 			});
 		}),
 	);

@@ -8,6 +8,7 @@ interface ActiveAssetDataState {
 	data: ActiveAssetDataWsEvent | undefined;
 	isConnected: boolean;
 	market: UnifiedMarketInfo | undefined;
+	receivedAt: number | undefined;
 	status: AssetAvailabilityStatus;
 }
 
@@ -20,6 +21,7 @@ export function useActiveAssetData(): ActiveAssetDataState {
 		data,
 		status: subscriptionStatus,
 		isStale,
+		lastMessageAt,
 	} = useSubscription(
 		"activeAssetData",
 		{ coin: coin ?? "", user: address ?? "" },
@@ -39,6 +41,7 @@ export function useActiveAssetData(): ActiveAssetDataState {
 		data: status === "success" || status === "stale" ? data : undefined,
 		isConnected,
 		market,
+		receivedAt: lastMessageAt,
 		status,
 	};
 }

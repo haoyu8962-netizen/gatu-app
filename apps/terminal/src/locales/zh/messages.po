@@ -972,6 +972,32 @@ msgstr "余额"
 msgid "Balance available to trade"
 msgstr "可用于交易的余额"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Balance data is stale."
+msgstr "余额数据已过期。"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Balance data is stale. Actions are temporarily unavailable."
+msgstr "余额数据已过期，相关操作暂时不可用。"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Balance data is unavailable. Try again after the connection recovers."
+msgstr "余额数据不可用。请等待连接恢复后重试。"
+
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -2093,7 +2119,6 @@ msgstr "创建推荐码"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "为通过此账户进行交易创建安全的手机访问权限。"
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create TWAP"
 msgstr "创建 TWAP"
@@ -3928,6 +3953,7 @@ msgstr "实时仓位数据不是最新状态。请等待账户连接恢复。"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "无法获取实时仓位数据。请等待账户连接恢复后再调整保证金。"
 
@@ -4056,10 +4082,12 @@ msgstr "加载钱包中..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4230,7 +4258,11 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "标记价格由预言机价格推导，用于计算未实现盈亏和强平。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "标记价格不可用。请等待行情更新后重试。"
 
@@ -8525,6 +8557,7 @@ msgstr "委托修改提交前交易数据已变化。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts

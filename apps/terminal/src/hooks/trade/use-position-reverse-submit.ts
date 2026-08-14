@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { buildPositionReverseOrder, type PositionReverseOrderError } from "@/domain/trade/position-reverse";
 import { type TrackedOrderResult, useTrackedOrder } from "@/hooks/trade/use-tracked-order";
@@ -47,6 +48,8 @@ interface FreshReverseSnapshot {
 	signedPositionSize: string;
 	referencePx: string;
 	marginMode: "cross" | "isolated";
+	priceReceivedAt: number;
+	positionReceivedAt: number;
 }
 
 interface ExecutionContext {
@@ -58,6 +61,8 @@ interface ExecutionContext {
 	marginMode: "cross" | "isolated";
 	expectedOrder: ExchangeOrder;
 	grouping: "na";
+	priceReceivedAt: number;
+	positionReceivedAt: number;
 }
 
 interface LiveContext {
@@ -68,9 +73,12 @@ interface LiveContext {
 	activeTwaps: {
 		status: SubscriptionStatus;
 		isStale: boolean;
+		lastMessageAt: number | undefined;
 		data: SubEvent<"twapStates"> | undefined;
 	};
 }
+
+const USER_STATE_MAX_AGE_MS = 60_000;
 
 /**
  * Fail-closed submission boundary for reversing a perpetual position.
@@ -141,6 +149,12 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		}
 
 		assertLivePositionMatches(currentTarget, live, execution);
+		if (
+			!isLiveExecutionPriceReceiptFresh(execution.priceReceivedAt) ||
+			!isLiveExecutionPriceReceiptFresh(execution.positionReceivedAt)
+		) {
+			throw tradingDataChangedError();
+		}
 		assertOrderMatchesExecution(params, execution);
 	}
 
@@ -202,6 +216,8 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 						marginMode: fresh.marginMode,
 						expectedOrder: order,
 						grouping: plan.grouping,
+						priceReceivedAt: fresh.priceReceivedAt,
+						positionReceivedAt: fresh.positionReceivedAt,
 					};
 					assertLifecycleActive(lifecycleEpoch);
 					setPhase("submitting");
@@ -305,7 +321,15 @@ function assertLivePositionReady(target: PositionReverseTarget, live: LiveContex
 	if (market.kind === "builderPerp" && !hasAcceptedHip3Disclaimer()) {
 		throw new Error(t`Accept the HIP-3 deployer disclaimer before trading this market.`);
 	}
-	if (live.userPositions.isLoading || live.userPositions.hasError || live.userPositions.isStale) {
+	const positionAge =
+		live.userPositions.receivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - live.userPositions.receivedAt;
+	if (
+		live.userPositions.isLoading ||
+		live.userPositions.hasError ||
+		live.userPositions.isStale ||
+		positionAge < 0 ||
+		positionAge > USER_STATE_MAX_AGE_MS
+	) {
 		throw new Error(t`Failed to load positions.`);
 	}
 	assertNoActiveTwap(target, live);
@@ -322,7 +346,17 @@ function assertLivePositionReady(target: PositionReverseTarget, live: LiveContex
 }
 
 function assertNoActiveTwap(target: PositionReverseTarget, live: LiveContext): void {
-	if (live.activeTwaps.status !== "active" || live.activeTwaps.isStale || live.activeTwaps.data === undefined) {
+	const twapAge =
+		live.activeTwaps.lastMessageAt === undefined
+			? Number.POSITIVE_INFINITY
+			: Date.now() - live.activeTwaps.lastMessageAt;
+	if (
+		live.activeTwaps.status !== "active" ||
+		live.activeTwaps.isStale ||
+		live.activeTwaps.data === undefined ||
+		twapAge < 0 ||
+		twapAge > USER_STATE_MAX_AGE_MS
+	) {
 		throw tradingDataChangedError();
 	}
 	if (live.activeTwaps.data.states.some(([, state]) => state.coin === target.coin)) {
@@ -398,10 +432,14 @@ async function fetchFreshReverseSnapshot(
 	expectedMarket: UnifiedMarket | undefined,
 	info: ReturnType<typeof useHyperliquid>["info"],
 ): Promise<FreshReverseSnapshot> {
-	const [accountState, marketData] = await Promise.all([
-		info.clearinghouseState({ user: target.owner as `0x${string}`, dex: target.dex }),
-		info.metaAndAssetCtxs({ dex: target.dex }),
+	const [accountSnapshot, marketSnapshot] = await Promise.all([
+		info
+			.clearinghouseState({ user: target.owner as `0x${string}`, dex: target.dex })
+			.then((data) => ({ data, positionReceivedAt: performance.now() })),
+		info.metaAndAssetCtxs({ dex: target.dex }).then((data) => ({ data, priceReceivedAt: performance.now() })),
 	]);
+	const accountState = accountSnapshot.data;
+	const marketData = marketSnapshot.data;
 	const [meta, assetContexts] = marketData;
 	const marketIndex = meta.universe.findIndex((asset) => asset.name === target.coin);
 	const metadata = meta.universe[marketIndex];
@@ -428,6 +466,8 @@ async function fetchFreshReverseSnapshot(
 		signedPositionSize: position.szi,
 		referencePx: String(referencePx),
 		marginMode: position.leverage.type,
+		priceReceivedAt: marketSnapshot.priceReceivedAt,
+		positionReceivedAt: accountSnapshot.positionReceivedAt,
 	};
 }
 

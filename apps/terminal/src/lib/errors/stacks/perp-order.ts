@@ -1,10 +1,16 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { noBalanceValidator } from "../definitions/balance";
 import {
 	signerNotReadyValidator,
 	walletLoadingValidator,
 	walletNotConnectedValidator,
 } from "../definitions/connection";
-import { marketNotReadyValidator, noMarketValidator, noMarkPriceValidator } from "../definitions/market";
+import {
+	liveMarkPriceValidator,
+	marketNotReadyValidator,
+	noMarketValidator,
+	noMarkPriceValidator,
+} from "../definitions/market";
 import {
 	enterLimitPriceValidator,
 	enterSizeValidator,
@@ -44,6 +50,8 @@ export interface PerpOrderContext extends OrderInputContext, TpSlContext, Trigge
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 	orderType: string;
 }
 
@@ -61,6 +69,7 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
+	liveMarkPriceValidator,
 	noMarkPriceValidator,
 	enterLimitPriceValidator,
 	enterTriggerPriceValidator,

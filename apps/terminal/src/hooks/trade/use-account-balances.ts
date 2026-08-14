@@ -42,7 +42,12 @@ export interface AccountBalances {
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
 	spotStateStatus: AssetAvailabilityStatus;
+	perpStateStatus: AssetAvailabilityStatus;
+	spotStateReceivedAt: number | undefined;
+	perpStateReceivedAt: number | undefined;
+	isPerpStateStale: boolean;
 	isSpotStateStale: boolean;
+	isDataStale: boolean;
 	isLoading: boolean;
 	hasError: boolean;
 }
@@ -101,7 +106,12 @@ export interface AllDexsAccountState {
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	accountAbstraction: AccountAbstraction;
 	spotStateStatus: AssetAvailabilityStatus;
+	perpStateStatus: AssetAvailabilityStatus;
+	spotStateReceivedAt: number | undefined;
+	perpStateReceivedAt: number | undefined;
+	isPerpStateStale: boolean;
 	isSpotStateStale: boolean;
+	isDataStale: boolean;
 	isLoading: boolean;
 	hasError: boolean;
 }
@@ -122,15 +132,17 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 
 	const accountAbstraction = resolveAccountAbstraction(infoAccountAbstraction, webData3Event?.userState.abstraction);
 	const accountRefreshKey = [ledgerRefreshKey, accountAbstraction].filter(Boolean).join(":") || undefined;
-	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
-		"allDexsClearinghouseState",
-		{ user: address ?? "" },
-		{ enabled, refreshKey: accountRefreshKey },
-	);
+	const {
+		data: clearinghouseEvent,
+		status: perpStatus,
+		isStale: isPerpStateStale,
+		lastMessageAt: perpStateReceivedAt,
+	} = useSubscription("allDexsClearinghouseState", { user: address ?? "" }, { enabled, refreshKey: accountRefreshKey });
 	const {
 		data: spotEvent,
 		status: spotStatus,
 		isStale: isSpotStateStale,
+		lastMessageAt: spotStateReceivedAt,
 	} = useSubscription(
 		"spotState",
 		{ user: address ?? "0x0" },
@@ -155,7 +167,12 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 			accountAbstraction: null,
 			spotStateStatus: "idle",
+			perpStateStatus: "idle",
+			spotStateReceivedAt: undefined,
+			perpStateReceivedAt: undefined,
+			isPerpStateStale: false,
 			isSpotStateStale: false,
+			isDataStale: false,
 			isLoading: false,
 			hasError: false,
 		};
@@ -172,13 +189,18 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		subscriptionStatus: spotStatus,
 		isStale: isSpotStateStale,
 	});
+	const perpStateStatus = getStreamAvailabilityStatus({
+		isConnected: enabled,
+		hasData: clearinghouseEvent !== undefined,
+		subscriptionStatus: perpStatus,
+		isStale: isPerpStateStale,
+	});
 	const isSpotStateLoading = spotStateStatus === "loading";
-	const isLoading =
-		perpStatus === "subscribing" || perpStatus === "idle" || accountAbstractionLoading || isSpotStateLoading;
+	const isLoading = perpStateStatus === "loading" || accountAbstractionLoading || isSpotStateLoading;
 	const hasAccountAbstractionError =
 		accountAbstractionStatus === "error" &&
 		!isSupportedAccountAbstraction(normalizeAccountAbstraction(webData3Event?.userState.abstraction));
-	const hasError = perpStatus === "error" || spotStateStatus === "error" || hasAccountAbstractionError;
+	const hasError = perpStateStatus === "error" || spotStateStatus === "error" || hasAccountAbstractionError;
 
 	return {
 		clearinghouseStates,
@@ -188,7 +210,12 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isPerpStateStale: perpStateStatus === "stale",
 		isSpotStateStale: spotStateStatus === "stale",
+		isDataStale: perpStateStatus === "stale" || spotStateStatus === "stale",
 		isLoading,
 		hasError,
 	};
@@ -203,7 +230,12 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isPerpStateStale,
 		isSpotStateStale,
+		isDataStale,
 		isLoading,
 		hasError,
 	} = useAllDexsAccountState();
@@ -239,7 +271,12 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isPerpStateStale,
 		isSpotStateStale,
+		isDataStale,
 		isLoading: enabled && !dexState ? isLoading || infoDexStatus === "pending" : isLoading,
 		hasError: hasError || (!dexState && infoDexStatus === "error"),
 	};

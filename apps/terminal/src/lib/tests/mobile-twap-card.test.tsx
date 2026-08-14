@@ -245,17 +245,17 @@ describe("MobileTwapTab card", () => {
 		);
 	});
 
-	it("opens the existing TWAP order form from the empty state", () => {
+	it("keeps mobile TWAP creation unavailable from the empty state", () => {
 		mocks.hasActiveOrder = false;
 		render();
 
 		const createButton = Array.from(container.querySelectorAll("button")).find(
 			(button) => button.textContent === "Create TWAP",
 		);
-		expect(createButton?.className).toContain("min-h-11");
-		act(() => createButton?.click());
-		expect(mocks.setOrderType).toHaveBeenCalledWith("twap");
-		expect(mocks.setActiveTab).toHaveBeenCalledWith("trade");
+		expect(container.textContent).toContain("No active TWAP orders.");
+		expect(createButton).toBeUndefined();
+		expect(mocks.setOrderType).not.toHaveBeenCalled();
+		expect(mocks.setActiveTab).not.toHaveBeenCalled();
 	});
 
 	it("renders touch-sized history tabs and the parent and fill history cards", () => {

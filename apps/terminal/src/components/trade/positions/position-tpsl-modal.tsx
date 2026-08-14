@@ -7,6 +7,7 @@ import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	buildPositionTpSlUpdatePlan,
 	hasPositionTpSlTriggerMutation,
@@ -109,8 +110,10 @@ interface PositionTpSlLiveExecutionContext {
 	env: "Mainnet" | "Testnet";
 	walletOwner: string | null;
 	markPx: string | null;
+	markCoin: string | undefined;
 	markStatus: "idle" | "subscribing" | "active" | "error";
 	markIsStale: boolean;
+	markReceivedAt: number | undefined;
 	hasMarkSnapshot: boolean;
 	markets: ReturnType<typeof useMarkets>;
 	userPositions: ReturnType<typeof useUserPositions>;
@@ -254,12 +257,18 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 		data: liveAssetCtx,
 		status: markStatus,
 		isStale: markIsStale,
+		lastMessageAt: markReceivedAt,
 	} = useSubscription("activeAssetCtx", { coin: position.coin }, { enabled: open });
 	const activeMarkPx = liveAssetCtx?.ctx?.markPx ?? null;
 	const displayMarkPx = activeMarkPx ?? marketMarkPx ?? null;
-	const hasMarkSnapshot = liveAssetCtx !== undefined;
+	const hasMarkSnapshot = liveAssetCtx?.coin === position.coin;
 	const markSnapshotReady =
-		markStatus === "active" && !markIsStale && hasMarkSnapshot && Boolean(toBig(activeMarkPx)?.gt(0));
+		hasMarkSnapshot &&
+		isLiveMarkPriceReady(
+			markStatus === "error" ? "error" : markStatus === "active" && !markIsStale ? "success" : "loading",
+			activeMarkPx ?? undefined,
+			markReceivedAt,
+		);
 	const {
 		data: openOrdersEvent,
 		status: openOrdersStatus,
@@ -278,8 +287,10 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 		env,
 		walletOwner,
 		markPx: activeMarkPx,
+		markCoin: liveAssetCtx?.coin,
 		markStatus,
 		markIsStale,
+		markReceivedAt,
 		hasMarkSnapshot,
 		markets,
 		userPositions,
@@ -293,8 +304,10 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 		env,
 		walletOwner,
 		markPx: activeMarkPx,
+		markCoin: liveAssetCtx?.coin,
 		markStatus,
 		markIsStale,
+		markReceivedAt,
 		hasMarkSnapshot,
 		markets,
 		userPositions,
@@ -616,7 +629,19 @@ function PositionTpSlForm({
 	function assertOrdersMatchPosition(orders: readonly ExchangeParams<"order">["orders"][number][]): void {
 		const live = assertLiveExecutionContext();
 		const execution = executionStateRef.current;
-		if (execution.markStatus !== "active" || execution.markIsStale || !execution.hasMarkSnapshot) {
+		if (
+			!execution.hasMarkSnapshot ||
+			execution.markCoin !== position.coin ||
+			!isLiveMarkPriceReady(
+				execution.markStatus === "error"
+					? "error"
+					: execution.markStatus === "active" && !execution.markIsStale
+						? "success"
+						: "loading",
+				execution.markPx ?? undefined,
+				execution.markReceivedAt,
+			)
+		) {
 			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
 		}
 		const liveMarkPrice = toBig(execution.markPx);

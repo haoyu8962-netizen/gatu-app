@@ -74,6 +74,8 @@ interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+const POSITION_SNAPSHOT_MAX_AGE_MS = 60_000;
+
 function isConfirmedDefaultExchangeResponse(response: unknown): boolean {
 	if (typeof response !== "object" || response === null) return false;
 	const result = response as { response?: unknown; status?: unknown };
@@ -139,6 +141,15 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 		}
 
 		if (current.userPositions.isLoading || current.userPositions.hasError || current.userPositions.isStale) {
+			throw new Error(
+				t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
+			);
+		}
+		const positionSnapshotAge =
+			current.userPositions.receivedAt === undefined
+				? Number.POSITIVE_INFINITY
+				: Date.now() - current.userPositions.receivedAt;
+		if (positionSnapshotAge < 0 || positionSnapshotAge > POSITION_SNAPSHOT_MAX_AGE_MS) {
 			throw new Error(
 				t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
 			);

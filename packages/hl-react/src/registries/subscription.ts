@@ -1,11 +1,12 @@
 import type {
+	FastAssetCtxsWsEvent,
 	HistoricalOrdersResponse,
 	TradesWsEvent,
 	TwapHistoryResponse,
 	UserTwapSliceFillsResponse,
 } from "@nktkas/hyperliquid";
 import type { RingBufferOptions } from "../internal/circular-buffer/ring-buffer";
-import type { SubMethod } from "../types/clients";
+import type { SubEvent, SubMethod } from "../types/clients";
 import { shouldReplaceHistoricalOrder } from "./historical-orders";
 
 type RawTrade = TradesWsEvent[number];
@@ -29,9 +30,61 @@ interface AccumulateConfig<TEvent = unknown, TItem = unknown> {
 	buffer: RingBufferOptions<TItem>;
 }
 
+export interface SubscriptionEventAccumulator<TEvent> {
+	add: (event: TEvent) => TEvent;
+}
+
+type FastAssetCtxPriceField = "markPx" | "midPx";
+
+const fastAssetCtxFieldReceivedAt = new WeakMap<
+	object,
+	ReadonlyMap<string, Readonly<Partial<Record<FastAssetCtxPriceField, number>>>>
+>();
+
 function defineAccumulator<TEvent, TItem>(config: AccumulateConfig<TEvent, TItem>): AccumulateConfig {
 	return config as AccumulateConfig;
 }
+
+function createFastAssetCtxsAccumulator(): SubscriptionEventAccumulator<FastAssetCtxsWsEvent> {
+	let accumulated = new Map<string, FastAssetCtxsWsEvent[string]>();
+	let fieldTimestamps = new Map<string, Readonly<Partial<Record<FastAssetCtxPriceField, number>>>>();
+
+	return {
+		add: (event) => {
+			const receivedAt = Date.now();
+			const next = new Map(accumulated);
+			const nextFieldTimestamps = new Map(fieldTimestamps);
+			for (const [coin, update] of Object.entries(event)) {
+				next.set(coin, { ...next.get(coin), ...update });
+				const currentTimestamps = nextFieldTimestamps.get(coin);
+				nextFieldTimestamps.set(coin, {
+					...(currentTimestamps ?? {}),
+					...(Object.hasOwn(update, "markPx") ? { markPx: receivedAt } : null),
+					...(Object.hasOwn(update, "midPx") ? { midPx: receivedAt } : null),
+				});
+			}
+			accumulated = next;
+			fieldTimestamps = nextFieldTimestamps;
+			const snapshot = Object.fromEntries(next);
+			fastAssetCtxFieldReceivedAt.set(snapshot, nextFieldTimestamps);
+			return snapshot;
+		},
+	};
+}
+
+export function getFastAssetCtxFieldReceivedAt(
+	snapshot: FastAssetCtxsWsEvent | undefined,
+	coin: string,
+	field: FastAssetCtxPriceField,
+): number | undefined {
+	if (!snapshot) return undefined;
+	const receivedAt = fastAssetCtxFieldReceivedAt.get(snapshot)?.get(coin)?.[field];
+	return receivedAt;
+}
+
+const EVENT_ACCUMULATORS: Partial<Record<SubMethod, () => SubscriptionEventAccumulator<unknown>>> = {
+	fastAssetCtxs: createFastAssetCtxsAccumulator as () => SubscriptionEventAccumulator<unknown>,
+};
 
 const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 	trades: defineAccumulator<unknown[], RawTrade>({
@@ -124,6 +177,13 @@ const DEFAULT_THROTTLE: Partial<Record<SubMethod, number>> = {
 
 export function getAccumulateConfig(method: SubMethod): AccumulateConfig | null {
 	return ACCUMULATING_SUBS[method] ?? null;
+}
+
+export function createSubscriptionEventAccumulator<M extends SubMethod>(
+	method: M,
+): SubscriptionEventAccumulator<SubEvent<M>> | null {
+	const create = EVENT_ACCUMULATORS[method];
+	return create ? (create() as SubscriptionEventAccumulator<SubEvent<M>>) : null;
 }
 
 export function getDefaultThrottle(method: SubMethod): number | undefined {

@@ -1,13 +1,18 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { get24hChange, getPositionDex } from "@/domain/market";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import {
+	assertEntryOrderExecutionAllowed,
+	type EntryOrderExecutionState,
+} from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
@@ -42,10 +47,12 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
+	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
 	isTakerOrderType,
 	isTriggerOrderType,
+	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
@@ -129,6 +136,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
+	const isUnsupportedMobileAlgoOrder = isTwapOrderType(orderType) || isScaleOrderType(orderType);
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
@@ -152,17 +160,22 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { tradeRestricted } = useGeoRestriction();
 
-	const { submitOrder, isPending: isSubmitting } = useTrackedOrder();
-
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
+	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrderType(orderType);
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
+	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
+	const markPriceStatus = market?.markPriceStatus ?? "loading";
 	const { midPx } = useOrderbookMidPrice(active && (usesLimitPrice || usesTriggerPrice) ? market?.name : undefined);
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 
 	const {
 		accountAbstraction,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		executionAvailability,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -195,7 +208,54 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		switchModeError,
 		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
+		active,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	});
+	orderExecutionStateRef.current = {
+		active,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	};
+	const executionGuard = useCallback(
+		(params: Parameters<typeof assertEntryOrderExecutionAllowed>[0]) =>
+			assertEntryOrderExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const { submitOrder, isPending: isSubmitting } = useTrackedOrder({ executionGuard });
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
+
+	useEffect(() => {
+		orderExecutionStateRef.current.active = active;
+		return () => {
+			orderExecutionStateRef.current.active = false;
+		};
+	}, [active]);
+
+	useEffect(() => {
+		if (active && isUnsupportedMobileAlgoOrder) setOrderType("market");
+	}, [active, isUnsupportedMobileAlgoOrder, setOrderType]);
 
 	useEffect(() => {
 		if (selectedPrice === null) return;
@@ -207,10 +267,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setOrderType("limit");
 		setLimitPriceInput(price);
 	}, [market?.name, selectedPrice, setOrderType]);
-	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
+	const price = isMarketExecution ? executionReferencePx : toNumberOrZero(limitPriceInput);
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
-	const validatedPositionSize = userPositions.isLoading || userPositions.hasError ? null : positionSize;
+	const validatedPositionSize =
+		userPositions.isLoading || userPositions.hasError || userPositions.isStale ? null : positionSize;
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const feeRate = isMarketExecution ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
@@ -230,6 +291,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availableBalance,
 		hasMarket: !!market,
 		hasAssetIndex: typeof market?.assetId === "number",
+		markPriceStatus,
+		requiresLiveMarkPrice,
 		needsAgentApproval: !isTradingAuthorized,
 		isReadyToTrade: isTradingAuthorized,
 		price,
@@ -378,10 +441,17 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	async function handleSubmit() {
 		if (tradeRestricted) return;
+		if (isUnsupportedMobileAlgoOrder) return;
 		if (!isConnected || !address) return;
 		if (isAvailabilityBlocked) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
+		if (
+			requiresLiveMarkPrice &&
+			!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt)
+		) {
+			return;
+		}
 
 		const orderSzDecimals = market.szDecimals ?? 0;
 		const plan = buildOrderPlan({
@@ -391,7 +461,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			orderType,
 			sizeValue,
 			szDecimals: orderSzDecimals,
-			markPx,
+			markPx: executionReferencePx,
 			price,
 			slippageBps,
 			reduceOnly,

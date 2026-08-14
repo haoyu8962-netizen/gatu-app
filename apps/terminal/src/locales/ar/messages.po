@@ -1035,6 +1035,32 @@ msgstr "الرصيد"
 msgid "Balance available to trade"
 msgstr "الرصيد المتاح للتداول"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Balance data is stale."
+msgstr "بيانات الرصيد قديمة."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Balance data is stale. Actions are temporarily unavailable."
+msgstr "بيانات الرصيد قديمة. الإجراءات غير متاحة مؤقتًا."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Balance data is unavailable. Try again after the connection recovers."
+msgstr "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Balance:"
 #~ msgstr ""
@@ -2233,7 +2259,6 @@ msgstr "إنشاء رمز إحالة"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "أنشئ وصولاً آمنًا للهاتف للتداول من هذا الحساب."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create TWAP"
 msgstr "إنشاء TWAP"
@@ -4198,6 +4223,7 @@ msgstr "بيانات المركز المباشرة قديمة. انتظر حتى
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "بيانات المركز المباشرة غير متاحة. انتظر استعادة اتصال الحساب قبل تعديل الهامش."
 
@@ -4326,10 +4352,12 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4528,7 +4556,11 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "يُشتق سعر العلامة من أسعار الأوراكل ويُستخدم لحساب الأرباح والخسائر غير المحققة والتصفية."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "سعر العلامة غير متاح. انتظر بيانات السوق وحاول مرة أخرى."
 
@@ -9209,6 +9241,7 @@ msgstr "تغيّرت بيانات التداول قبل التمكن من إرس
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts

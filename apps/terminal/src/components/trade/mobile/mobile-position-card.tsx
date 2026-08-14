@@ -1,9 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
+import { PencilIcon, ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { getPositionFundingPayment, isLiquidationPriceNear } from "@/domain/trade/position-toolbar";
 import { cn } from "@/lib/cn";
 import {
@@ -38,6 +39,7 @@ interface Props {
 	isDataStale: boolean;
 	markets: Markets;
 	markPx: string | undefined;
+	markPriceStatus: MarkPriceStatus;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
 	expanded?: boolean;
@@ -91,6 +93,7 @@ export function MobilePositionCard({
 	isDataStale,
 	markets,
 	markPx: markPxRaw,
+	markPriceStatus,
 	tpSlInfo,
 	isRowClosing,
 	expanded,
@@ -121,11 +124,15 @@ export function MobilePositionCard({
 	const szDecimals = market?.szDecimals ?? 4;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
 	const markPxValue = toBig(markPxRaw);
-	const liqIsNear = isLiquidationPriceNear({
-		markPx: markPxRaw,
-		liquidationPx: p.liquidationPx,
-		proximity: LIQ_WARNING_PROXIMITY,
-	});
+	const hasFreshMark = markPriceStatus === "success";
+	const liqIsNear =
+		!isDataStale &&
+		hasFreshMark &&
+		isLiquidationPriceNear({
+			markPx: markPxRaw,
+			liquidationPx: p.liquidationPx,
+			proximity: LIQ_WARNING_PROXIMITY,
+		});
 
 	const fundingAmount = getPositionFundingPayment(p.cumFunding.sinceOpen);
 	const fundingValue = formatUSD(fundingAmount, {
@@ -134,19 +141,20 @@ export function MobilePositionCard({
 		signDisplay: "exceptZero",
 	});
 	const fundingClass =
-		fundingAmount === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(fundingAmount);
+		isDataStale || fundingAmount === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(fundingAmount);
 
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
 		!isDataStale &&
+		hasFreshMark &&
 		(sizeValue?.abs().gt(0) ?? false) &&
 		(toBig(p.entryPx)?.gt(0) ?? false) &&
 		(markPxValue?.gt(0) ?? false) &&
 		toBig(p.unrealizedPnl) !== null &&
 		toBig(p.returnOnEquity) !== null;
-	const pnlClass = getMarketCloseValueColorClass(p.unrealizedPnl);
+	const pnlClass = isDataStale ? "text-market-close-subtle" : getMarketCloseValueColorClass(p.unrealizedPnl);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
@@ -157,6 +165,19 @@ export function MobilePositionCard({
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
 	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
+	const markPriceDisplay = (
+		<span className="inline-flex items-center gap-1">
+			{formatPrice(markPxRaw, { szDecimals, style: "decimal" })}
+			{markPriceStatus === "loading" || markPriceStatus === "idle" ? (
+				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+			) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
+				<WarningCircleIcon
+					className="size-3 shrink-0 text-warning"
+					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
+				/>
+			) : null}
+		</span>
+	);
 
 	function buildReverseRef(): PositionReverseRef | null {
 		if (!canReverse || typeof assetId !== "number") return null;
@@ -372,7 +393,7 @@ export function MobilePositionCard({
 							valueTitle={fundingValue}
 						/>
 						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
-						<PositionMetric label={t`Mark Price`} value={formatPrice(markPxRaw, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Mark Price`} value={markPriceDisplay} />
 						<PositionMetric
 							label={t`Liquidation Price`}
 							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}

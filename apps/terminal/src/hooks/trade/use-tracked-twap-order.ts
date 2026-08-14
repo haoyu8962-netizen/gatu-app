@@ -41,8 +41,12 @@ export type TrackedTwapResult =
 	| { state: "reconciling"; submissionId: string }
 	| { state: "blocked"; reason: "pending" | "stateUnavailable" };
 
-export function useTrackedTwapOrder() {
-	const mutation = useExchange("twapOrder");
+interface UseTrackedTwapOrderOptions {
+	executionGuard?: ExchangeExecutionGuard<"twapOrder">;
+}
+
+export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
+	const mutation = useExchange("twapOrder", { executionGuard: options.executionGuard });
 	const { clientKey, env } = useHyperliquid();
 	const coordinatingRef = useRef(false);
 	const [isCoordinating, setIsCoordinating] = useState(false);
@@ -228,3 +232,5 @@ function createTwapIntent(params: ExchangeParams<"twapOrder">, coin: string): Tw
 					},
 	};
 }
+
+import type { ExchangeExecutionGuard } from "@gatu/hl-react";

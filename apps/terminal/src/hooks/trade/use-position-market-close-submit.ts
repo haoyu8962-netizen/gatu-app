@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
+import { isLiveExecutionPriceReceiptFresh } from "@/domain/trade/market-price";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
@@ -49,6 +50,7 @@ interface FreshCloseSnapshot {
 	signedPositionSize: string;
 	referencePx: string;
 	marginMode: "cross" | "isolated";
+	priceReceivedAt: number;
 }
 
 interface ExecutionContext {
@@ -60,6 +62,7 @@ interface ExecutionContext {
 	marginMode: "cross" | "isolated";
 	expectedOrder: ExchangeOrder;
 	grouping: "na" | "normalTpsl" | "positionTpsl";
+	priceReceivedAt: number;
 }
 
 interface LiveContext {
@@ -109,6 +112,9 @@ export function usePositionMarketCloseSubmit() {
 		}
 
 		assertLivePositionMatches(currentSession, live, execution);
+		if (!isLiveExecutionPriceReceiptFresh(execution.priceReceivedAt)) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
 		assertOrderMatchesExecution(params, execution);
 	}
 
@@ -209,6 +215,7 @@ export function usePositionMarketCloseSubmit() {
 						marginMode: fresh.marginMode,
 						expectedOrder: order,
 						grouping: plan.grouping,
+						priceReceivedAt: fresh.priceReceivedAt,
 					};
 					actions.updatePhase(input.sessionId, "submitting");
 
@@ -420,10 +427,11 @@ async function fetchFreshCloseSnapshot(
 	expectedMarket: UnifiedMarket | undefined,
 	info: ReturnType<typeof useHyperliquid>["info"],
 ): Promise<FreshCloseSnapshot> {
-	const [accountState, marketData] = await Promise.all([
+	const [accountState, marketSnapshot] = await Promise.all([
 		info.clearinghouseState({ user: session.owner as `0x${string}`, dex: session.position.dex }),
-		info.metaAndAssetCtxs({ dex: session.position.dex }),
+		info.metaAndAssetCtxs({ dex: session.position.dex }).then((data) => ({ data, priceReceivedAt: performance.now() })),
 	]);
+	const marketData = marketSnapshot.data;
 	const [meta, assetContexts] = marketData;
 	const marketIndex = meta.universe.findIndex((asset) => asset.name === session.position.coin);
 	const metadata = meta.universe[marketIndex];
@@ -458,6 +466,7 @@ async function fetchFreshCloseSnapshot(
 		signedPositionSize: position.szi,
 		referencePx: String(referencePx),
 		marginMode: position.leverage.type,
+		priceReceivedAt: marketSnapshot.priceReceivedAt,
 	};
 }
 

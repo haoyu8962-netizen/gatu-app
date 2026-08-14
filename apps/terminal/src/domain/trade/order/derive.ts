@@ -21,9 +21,9 @@ export interface OrderEntryInputs {
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
-	/** Max trade sizes in base token: [long, short] */
+	/** Max trade sizes in base token: [buy, sell]. */
 	maxTradeSzs: [number, number] | null;
-	/** Available to trade in quote token: [long, short] */
+	/** Available to trade in quote token: [buy, sell]. */
 	availableToTrade: [number, number] | null;
 }
 

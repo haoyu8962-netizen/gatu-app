@@ -1035,6 +1035,32 @@ msgstr "शेष"
 msgid "Balance available to trade"
 msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Balance data is stale."
+msgstr "शेष राशि का डेटा पुराना है।"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Balance data is stale. Actions are temporarily unavailable."
+msgstr "शेष राशि का डेटा पुराना है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Balance data is unavailable. Try again after the connection recovers."
+msgstr "शेष राशि का डेटा उपलब्ध नहीं है। कनेक्शन बहाल होने के बाद फिर से कोशिश करें।"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Balance:"
 #~ msgstr ""
@@ -2233,7 +2259,6 @@ msgstr "रेफ़रल कोड बनाएं"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "इस खाते से ट्रेडिंग के लिए सुरक्षित फ़ोन एक्सेस बनाएं।"
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Create TWAP"
 msgstr "TWAP बनाएं"
@@ -4198,6 +4223,7 @@ msgstr "लाइव पोज़िशन डेटा पुराना ह�
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "लाइव पोज़िशन डेटा उपलब्ध नहीं है। मार्जिन समायोजित करने से पहले खाते का कनेक्शन बहाल होने की प्रतीक्षा करें।"
 
@@ -4326,10 +4352,12 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4528,7 +4556,11 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "मार्क प्राइस ऑरेकल कीमतों से प्राप्त होता है और अवास्तविक PnL तथा लिक्विडेशन की गणना के लिए उपयोग होता है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "मार्क प्राइस उपलब्ध नहीं है। बाज़ार डेटा की प्रतीक्षा करें और फिर से प्रयास करें।"
 
@@ -9209,6 +9241,7 @@ msgstr "ऑर्डर संशोधन सबमिट होने से �
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts

@@ -20,6 +20,7 @@ export const WS_RELIABILITY_LIMITS = {
 		perMethodMaxBytes: {
 			l2Book: 1024 * 1024,
 			allMids: 512 * 1024,
+			fastAssetCtxs: 512 * 1024,
 			allDexsAssetCtxs: 512 * 1024,
 			assetCtxs: 512 * 1024,
 			trades: 384 * 1024,
@@ -42,9 +43,10 @@ export const WS_RELIABILITY_LIMITS = {
 		perMethodThresholdMs: {
 			l2Book: 15_000,
 			allMids: 20_000,
-			activeAssetCtx: 20_000,
-			activeSpotAssetCtx: 20_000,
+			activeAssetCtx: 10_000,
+			activeSpotAssetCtx: 10_000,
 			activeAssetData: 20_000,
+			fastAssetCtxs: 10_000,
 			allDexsAssetCtxs: 20_000,
 			spotAssetCtxs: 20_000,
 			assetCtxs: 20_000,

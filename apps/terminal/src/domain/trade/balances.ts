@@ -1,4 +1,4 @@
-import type { SpotMarket } from "@gatu/hl-react";
+import type { SpotMarket, UnifiedMarket } from "@gatu/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
@@ -15,7 +15,7 @@ import type { Side } from "@/lib/trade/types";
 
 export type { AccountAbstraction, SpotAvailableAfterMaintenance };
 
-export function getMarketQuoteToken(market: UnifiedMarketInfo | undefined): string {
+export function getMarketQuoteToken(market: UnifiedMarket | undefined): string {
 	if (!market) return DEFAULT_QUOTE_TOKEN;
 
 	if (market.kind === "spot") {
@@ -411,7 +411,7 @@ export function getAvailableFromTotals(
 	return toSafeBig(getAvailableFromTotalsValue(total, hold)).toNumber();
 }
 
-function getAvailableFromTotalsValue(
+export function getAvailableFromTotalsValue(
 	total: string | number | null | undefined,
 	hold: string | number | null | undefined,
 ): string {

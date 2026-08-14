@@ -51,6 +51,7 @@ export type SubscriptionResult<TData> = {
 	status: SubscriptionStatus;
 	error: unknown;
 	isStale: boolean;
+	lastMessageAt: number | undefined;
 	unsubscribe: (() => Promise<void>) | undefined;
 };
 

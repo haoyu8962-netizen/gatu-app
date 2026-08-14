@@ -26,6 +26,11 @@ const accountBalances = {
 	hasAllDexsSnapshot: true,
 	hasSpotStateSnapshot: true,
 	hasError: false,
+	isDataStale: false,
+	perpStateStatus: "success",
+	perpStateReceivedAt: Date.now(),
+	spotStateStatus: "success",
+	spotStateReceivedAt: Date.now(),
 };
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
@@ -36,6 +41,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPriceState: () => ({ prices: {}, status: "success" }),
 	useSpotTokenUsdPrices: () => null,
 }));
 

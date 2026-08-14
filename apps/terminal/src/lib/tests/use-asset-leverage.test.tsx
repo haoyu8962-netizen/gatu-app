@@ -37,7 +37,9 @@ const mocks = vi.hoisted(() => ({
 	positionError: false,
 	positionLoading: false,
 	positionStale: false,
+	positionReceivedAt: Date.now(),
 	activeAssetStale: false,
+	activeAssetReceivedAt: Date.now(),
 	storedMarginMode: "cross" as "cross" | "isolated",
 	getPosition: vi.fn(),
 	resetMutation: vi.fn(),
@@ -77,12 +79,14 @@ vi.mock("@/lib/hyperliquid", () => ({
 		data: mocks.activeAssetData,
 		status: "active",
 		isStale: mocks.activeAssetStale,
+		lastMessageAt: mocks.activeAssetReceivedAt,
 	}),
 	useUserPositions: () => ({
 		getPosition: mocks.getPosition,
 		isLoading: mocks.positionLoading,
 		hasError: mocks.positionError,
 		isStale: mocks.positionStale,
+		receivedAt: mocks.positionReceivedAt,
 	}),
 }));
 
@@ -143,7 +147,9 @@ describe("useAssetLeverage", () => {
 		mocks.positionError = false;
 		mocks.positionLoading = false;
 		mocks.positionStale = false;
+		mocks.positionReceivedAt = Date.now();
 		mocks.activeAssetStale = false;
+		mocks.activeAssetReceivedAt = Date.now();
 		mocks.storedMarginMode = "cross";
 		setActiveAsset("ETH", "cross");
 		mocks.getPosition.mockReset().mockImplementation(() => mocks.position);
@@ -264,6 +270,18 @@ describe("useAssetLeverage", () => {
 		);
 	});
 
+	it("fails closed when active asset data exceeds its exact age before the watchdog runs", () => {
+		mocks.market = builderPerp();
+		setActiveAsset("xyz:SMSN", "isolated");
+		mocks.activeAssetReceivedAt = Date.now() - 20_001;
+		renderHook();
+
+		expect(() => currentExecutionGuard()({ asset: 120_031, isCross: false, leverage: 5 })).toThrow(
+			"Active asset data is unavailable",
+		);
+		expect(mocks.executeLeverage).not.toHaveBeenCalled();
+	});
+
 	it("fails closed when the latest active margin mode is unavailable", () => {
 		renderHook();
 		const executionGuard = currentExecutionGuard();
@@ -297,6 +315,28 @@ describe("useAssetLeverage", () => {
 		expect(() => executionGuard({ asset: 1, isCross: false, leverage: 5 })).toThrow("Position data is unavailable");
 	});
 
+	it("fails closed when position data exceeds its exact age before switching to isolated", async () => {
+		mocks.positionReceivedAt = Date.now() - 60_001;
+		renderHook();
+
+		await act(async () => {
+			await expect(currentHook().switchMarginMode("isolated")).rejects.toThrow("Position data is unavailable");
+			await expect(currentHook().applyMarginAndLeverage("isolated", 5)).rejects.toThrow("Position data is unavailable");
+		});
+		expect(mocks.executeLeverage).not.toHaveBeenCalled();
+	});
+
+	it("accepts position data at the exact age boundary", () => {
+		const now = Date.now();
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		mocks.positionReceivedAt = now - 60_000;
+		renderHook();
+
+		expect(() => currentExecutionGuard()({ asset: 1, isCross: false, leverage: 5 })).not.toThrow();
+		vi.useRealTimers();
+	});
+
 	it("fails closed when active asset data becomes stale while execution is queued", async () => {
 		const queueStarted = createDeferred();
 		const releaseQueue = createDeferred();
@@ -321,6 +361,56 @@ describe("useAssetLeverage", () => {
 
 		await act(async () => {
 			await expect(updatePromise).rejects.toThrow("Active asset data is unavailable");
+		});
+		expect(mocks.executeLeverage).not.toHaveBeenCalled();
+	});
+
+	it("does not let the production apply path switch margin mode for a queued leverage-only update", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		mocks.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		renderHook();
+
+		let updatePromise!: Promise<void>;
+		act(() => {
+			updatePromise = currentHook().applyMarginAndLeverage("cross", 5);
+		});
+		await queueStarted.promise;
+
+		setActiveAsset("ETH", "isolated");
+		renderHook();
+		releaseQueue.resolve();
+
+		await act(async () => {
+			await expect(updatePromise).rejects.toThrow("Margin mode changed before leverage update");
+		});
+		expect(mocks.executeLeverage).not.toHaveBeenCalled();
+	});
+
+	it("does not let a queued mode-only update overwrite newer leverage", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		mocks.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		renderHook();
+
+		let updatePromise!: Promise<void>;
+		act(() => {
+			updatePromise = currentHook().applyMarginAndLeverage("isolated", 10);
+		});
+		await queueStarted.promise;
+
+		setActiveAsset("ETH", "cross", 15);
+		renderHook();
+		releaseQueue.resolve();
+
+		await act(async () => {
+			await expect(updatePromise).rejects.toThrow("Leverage changed before margin mode update");
 		});
 		expect(mocks.executeLeverage).not.toHaveBeenCalled();
 	});

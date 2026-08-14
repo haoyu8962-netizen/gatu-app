@@ -20,6 +20,7 @@ const testState = vi.hoisted(() => ({
 	marketMarkPx: "28000" as string | undefined,
 	markStatus: "active" as "idle" | "subscribing" | "active" | "error",
 	markStale: false,
+	markReceivedAt: Date.now(),
 	openOrdersStatus: "active" as "idle" | "subscribing" | "active" | "error",
 	openOrdersStale: false,
 	hasOpenOrdersSnapshot: true,
@@ -290,9 +291,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 		testState.subscriptions.push({ method, params });
 		if (method === "activeAssetCtx") {
 			return {
-				data: testState.markPx ? { ctx: { markPx: testState.markPx } } : undefined,
+				data: testState.markPx ? { coin: positionRef.coin, ctx: { markPx: testState.markPx } } : undefined,
 				status: testState.markStatus,
 				isStale: testState.markStale,
+				lastMessageAt: testState.markReceivedAt,
 			};
 		}
 		if (method === "openOrders") {
@@ -425,6 +427,7 @@ describe("PositionTpSlModal live data", () => {
 		testState.marketMarkPx = "28000";
 		testState.markStatus = "active";
 		testState.markStale = false;
+		testState.markReceivedAt = Date.now();
 		testState.openOrdersStatus = "active";
 		testState.openOrdersStale = false;
 		testState.hasOpenOrdersSnapshot = true;
@@ -1003,6 +1006,28 @@ describe("PositionTpSlModal live data", () => {
 		act(() => {
 			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
 		});
+
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(() =>
+			testState.executionGuards.order?.({
+				grouping: "positionTpsl",
+				orders: [
+					{
+						a: positionRef.assetId,
+						b: true,
+						p: "30250",
+						r: true,
+						s: "0",
+						t: { trigger: { isMarket: true, tpsl: "tp", triggerPx: "27500" } },
+					},
+				],
+			}),
+		).toThrow("Trading data changed while this dialog was open.");
+	});
+
+	it("fails closed when the exact mark receipt expires before the watchdog marks it stale", () => {
+		testState.markReceivedAt = Date.now() - 10_001;
+		renderModal();
 
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 		expect(() =>

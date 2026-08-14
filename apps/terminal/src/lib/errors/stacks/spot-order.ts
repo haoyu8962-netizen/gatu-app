@@ -1,10 +1,11 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { noBalanceValidator } from "../definitions/balance";
 import {
 	signerNotReadyValidator,
 	walletLoadingValidator,
 	walletNotConnectedValidator,
 } from "../definitions/connection";
-import { marketNotReadyValidator, noMarketValidator } from "../definitions/market";
+import { liveMarkPriceValidator, marketNotReadyValidator, noMarketValidator } from "../definitions/market";
 import {
 	enterPriceRangeValidator,
 	type ScaleContext,
@@ -36,6 +37,8 @@ export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext, 
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 }
 
 export interface SpotOrderValidationResult {
@@ -52,6 +55,7 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
+	liveMarkPriceValidator,
 	spotEnterLimitPriceValidator,
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,

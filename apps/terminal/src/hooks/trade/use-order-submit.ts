@@ -1,3 +1,4 @@
+import type { ExchangeExecutionGuard } from "@gatu/hl-react";
 import { t } from "@lingui/core/macro";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
@@ -27,7 +28,7 @@ export interface OrderSubmitInput {
 	orderType: OrderType;
 	sizeValue: number;
 	price: number;
-	markPx: number;
+	executionReferencePx: number;
 	marginMode: MarginMode;
 	slippageBps: number;
 	reduceOnly: boolean;
@@ -53,6 +54,11 @@ interface UseOrderSubmitResult {
 	isSubmitting: boolean;
 }
 
+interface UseOrderSubmitOptions {
+	executionGuard?: ExchangeExecutionGuard<"order">;
+	twapExecutionGuard?: ExchangeExecutionGuard<"twapOrder">;
+}
+
 type QueueOrderType = "twap" | "scale" | "trigger" | "limit" | "market";
 
 function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
@@ -63,9 +69,11 @@ function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
 	return "market";
 }
 
-export function useOrderSubmit(): UseOrderSubmitResult {
-	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder();
-	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder();
+export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSubmitResult {
+	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder({ executionGuard: options.executionGuard });
+	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder({
+		executionGuard: options.twapExecutionGuard,
+	});
 	const { addOrder, updateOrder } = useOrderQueueActions();
 	const { resetForm } = useOrderEntryActions();
 
@@ -79,7 +87,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 			orderType,
 			sizeValue,
 			price,
-			markPx,
+			executionReferencePx,
 			marginMode,
 			slippageBps,
 			reduceOnly,
@@ -170,7 +178,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 					orderType,
 					sizeValue,
 					szDecimals,
-					markPx,
+					markPx: executionReferencePx,
 					price,
 					slippageBps,
 					reduceOnly,

@@ -30,8 +30,10 @@ export function MobileBalancesTab() {
 		hasError,
 		internalTransfersEnabled,
 		isConnected,
+		isDataStale,
 		isLoading,
 		perpFundsActionsEnabled,
+		showBalanceAccountType,
 	} = useBalanceRows();
 
 	function handleTransfer(rowType: "perp" | "spot") {
@@ -49,6 +51,11 @@ export function MobileBalancesTab() {
 	}
 	return (
 		<div className="flex min-h-0 flex-col font-market-close">
+			{isDataStale ? (
+				<output className="shrink-0 border-b border-stroke-warning-weak bg-warning-soft px-3.5 py-2 text-xs text-warning">
+					{t`Balance data is stale. Actions are temporarily unavailable.`}
+				</output>
+			) : null}
 			{balances.length === 0 ? (
 				<MobileBalancesState
 					label={t`No balances found. Deposit funds to start trading.`}
@@ -77,7 +84,7 @@ export function MobileBalancesTab() {
 										iconClassName="size-[26px]"
 										nameClassName="truncate text-[13px] font-bold text-market-close-fg"
 									/>
-									{internalTransfersEnabled ? (
+									{showBalanceAccountType ? (
 										<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
 											{row.type === "perp" ? t`Trading` : t`Spot`}
 										</span>

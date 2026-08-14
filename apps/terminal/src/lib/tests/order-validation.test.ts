@@ -20,6 +20,8 @@ function spotContext(overrides: Partial<SpotOrderContext> = {}): SpotOrderContex
 		availableBalance: 1_000,
 		hasMarket: true,
 		hasAssetIndex: true,
+		markPriceStatus: "success",
+		requiresLiveMarkPrice: false,
 		usesLimitPrice: false,
 		price: 20,
 		sizeValue: 10,
@@ -50,6 +52,8 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		availableBalance: 1_000,
 		hasMarket: true,
 		hasAssetIndex: true,
+		markPriceStatus: "success",
+		requiresLiveMarkPrice: false,
 		orderType: "limit",
 		usesLimitPrice: true,
 		usesTriggerPrice: false,
@@ -78,6 +82,19 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 }
 
 describe("spot advanced order validation", () => {
+	it("fails closed while the selected-market mark stream is stale", () => {
+		const result = validateSpotOrder(spotContext({ markPriceStatus: "stale", requiresLiveMarkPrice: true }));
+
+		expect(result.errors.map((error) => error.code)).toContain("MKT_004");
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("allows an explicit-price order while the mark stream is stale", () => {
+		const result = validateSpotOrder(spotContext({ markPriceStatus: "stale" }));
+
+		expect(result.errors.map((error) => error.code)).not.toContain("MKT_004");
+	});
+
 	it("requires a complete scale price range", () => {
 		const result = validateSpotOrder(
 			spotContext({
@@ -99,6 +116,13 @@ describe("spot advanced order validation", () => {
 });
 
 describe("reduce-only trigger validation", () => {
+	it("fails closed while the selected-market mark stream is unavailable", () => {
+		const result = validatePerpOrder(perpContext({ markPriceStatus: "error", requiresLiveMarkPrice: true }));
+
+		expect(result.errors.map((error) => error.code)).toContain("MKT_004");
+		expect(result.canSubmit).toBe(false);
+	});
+
 	it("blocks a trigger order when no position exists", () => {
 		const result = validatePerpOrder(
 			perpContext({

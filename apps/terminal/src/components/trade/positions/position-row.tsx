@@ -1,9 +1,10 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ShareIcon } from "@phosphor-icons/react";
+import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { getPositionFundingPayment, isLiquidationPriceNear } from "@/domain/trade/position-toolbar";
 import { getToolbarPositionChangeRatio } from "@/domain/trade/trading-toolbar-metrics";
 import { cn } from "@/lib/cn";
@@ -44,6 +45,7 @@ interface Props {
 	isDataStale: boolean;
 	markets: Markets;
 	markPx: string | undefined;
+	markPriceStatus: MarkPriceStatus;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
 	isEven: boolean;
@@ -63,6 +65,7 @@ export function PositionRow({
 	isDataStale,
 	markets,
 	markPx: markPxRaw,
+	markPriceStatus,
 	tpSlInfo,
 	isRowClosing,
 	isEven,
@@ -90,11 +93,15 @@ export function PositionRow({
 	const quoteSymbol =
 		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
 
-	const liqIsNear = isLiquidationPriceNear({
-		markPx: markPxRaw,
-		liquidationPx: p.liquidationPx,
-		proximity: LIQ_WARNING_PROXIMITY,
-	});
+	const hasFreshMark = markPriceStatus === "success";
+	const liqIsNear =
+		!isDataStale &&
+		hasFreshMark &&
+		isLiquidationPriceNear({
+			markPx: markPxRaw,
+			liquidationPx: p.liquidationPx,
+			proximity: LIQ_WARNING_PROXIMITY,
+		});
 
 	const fundingPayment = getPositionFundingPayment(p.cumFunding.sinceOpen);
 	const canManage = typeof assetId === "number";
@@ -103,14 +110,15 @@ export function PositionRow({
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
 		!isDataStale &&
+		hasFreshMark &&
 		(sizeValue?.abs().gt(0) ?? false) &&
 		(toBig(p.entryPx)?.gt(0) ?? false) &&
 		(markPxValue?.gt(0) ?? false) &&
 		toBig(p.unrealizedPnl) !== null &&
 		toBig(p.returnOnEquity) !== null;
 
-	const pnlClass = getValueColorClass(p.unrealizedPnl);
-	const fundingClass = fundingPayment === null ? "text-fg-muted" : getValueColorClass(fundingPayment);
+	const pnlClass = isDataStale ? "text-market-close-subtle" : getValueColorClass(p.unrealizedPnl);
+	const fundingClass = isDataStale || fundingPayment === null ? "text-fg-muted" : getValueColorClass(fundingPayment);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sideClass = isLong ? "text-market-close-success" : "text-market-close-danger";
 	const directionLabel = isLong ? t`Long` : t`Short`;
@@ -137,6 +145,19 @@ export function PositionRow({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
+	const markStatusIndicator =
+		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
+			<Tooltip content={t`Loading...`} side="top">
+				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+			</Tooltip>
+		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
+			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
+				<WarningCircleIcon
+					className="size-3 shrink-0 text-warning"
+					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
+				/>
+			</Tooltip>
+		) : null;
 
 	function renderTpSlContent() {
 		if (hasTpSl) {
@@ -308,7 +329,10 @@ export function PositionRow({
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
 				<span className="flex flex-col items-end gap-px" title={`${entryPriceDisplay} / ${markPriceDisplay}`}>
 					<span className="text-[13px] text-market-close-fg">{entryPriceDisplay}</span>
-					<span className="text-[11px] leading-[14px] text-market-close-subtle">{markPriceDisplay}</span>
+					<span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-market-close-subtle">
+						{markPriceDisplay}
+						{markStatusIndicator}
+					</span>
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>

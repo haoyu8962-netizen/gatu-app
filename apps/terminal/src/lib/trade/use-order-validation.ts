@@ -1,3 +1,4 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
 import type { FormValidationResult, Side } from "@/lib/trade/types";
@@ -10,6 +11,8 @@ export interface BaseOrderInput {
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 	needsAgentApproval: boolean;
 	isReadyToTrade: boolean;
 	price: number;
