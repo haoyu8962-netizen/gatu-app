@@ -385,4 +385,47 @@ describe("store staleness integration", () => {
 
 		expect(unsubscribe).toHaveBeenCalledTimes(1);
 	});
+
+	it("does not attach a released pending subscription to a same-key runtime", async () => {
+		const store = createHyperliquidStore({ ssr: false });
+		const oldUnsubscribe = vi.fn(async () => {});
+		const currentUnsubscribe = vi.fn(async () => {});
+		let resolveOld: ((subscription: { unsubscribe: () => Promise<void> }) => void) | undefined;
+		let resolveCurrent: ((subscription: { unsubscribe: () => Promise<void> }) => void) | undefined;
+		const oldSubscribe = vi.fn(
+			() =>
+				new Promise<{ unsubscribe: () => Promise<void> }>((resolve) => {
+					resolveOld = resolve;
+				}),
+		);
+		const currentSubscribe = vi.fn(
+			() =>
+				new Promise<{ unsubscribe: () => Promise<void> }>((resolve) => {
+					resolveCurrent = resolve;
+				}),
+		);
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "REACQUIRED" }]);
+
+		store.getState().acquireSubscription(key, oldSubscribe);
+		store.getState().releaseSubscription(key);
+		store.getState().acquireSubscription(key, currentSubscribe);
+
+		resolveOld?.({ unsubscribe: oldUnsubscribe });
+		await vi.advanceTimersByTimeAsync(0);
+
+		const pendingRuntime = getStoreInternals(store).subscriptionRuntime.get(key);
+		expect(oldUnsubscribe).toHaveBeenCalledTimes(1);
+		expect(pendingRuntime?.promise).toBeDefined();
+		expect(pendingRuntime?.subscription).toBeUndefined();
+		expect(store.getState().subscriptions[key]?.status).toBe("subscribing");
+
+		resolveCurrent?.({ unsubscribe: currentUnsubscribe });
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(store.getState().subscriptions[key]?.status).toBe("active");
+		expect(getStoreInternals(store).subscriptionRuntime.get(key)?.subscription).toBeDefined();
+
+		store.getState().releaseSubscription(key);
+		expect(currentUnsubscribe).toHaveBeenCalledTimes(1);
+	});
 });

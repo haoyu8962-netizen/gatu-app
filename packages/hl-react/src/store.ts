@@ -533,6 +533,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				) {
 					return;
 				}
+				const expectedRuntime = runtime;
 
 				if (chaos.reconnectDropCount > 0) {
 					chaos.reconnectDropCount--;
@@ -546,7 +547,9 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				let activeSubscription: ISubscription | undefined;
 				const onSubscriptionError = (error: unknown) => {
 					const runtime = subscriptionRuntime.get(key);
-					if (!runtime || !activeSubscription || runtime.subscription !== activeSubscription) return;
+					if (runtime !== expectedRuntime || !activeSubscription || runtime.subscription !== activeSubscription) {
+						return;
+					}
 					runtime.subscription = undefined;
 
 					setSubscriptionFailure(key, error ?? new Error("Subscription failed"));
@@ -557,7 +560,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				runtime.promise = subscribe({ onError: onSubscriptionError })
 					.then((subscription) => {
 						const runtime = subscriptionRuntime.get(key);
-						if (!runtime) {
+						if (runtime !== expectedRuntime) {
 							void subscription.unsubscribe().catch(() => {});
 							return subscription;
 						}
@@ -597,7 +600,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					})
 					.catch((error) => {
 						const runtime = subscriptionRuntime.get(key);
-						if (!runtime) {
+						if (runtime !== expectedRuntime) {
 							return undefined;
 						}
 
