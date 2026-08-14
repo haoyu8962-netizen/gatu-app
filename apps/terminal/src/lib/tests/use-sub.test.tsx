@@ -133,9 +133,11 @@ describe("useSub hook surface", () => {
 	});
 
 	it("keeps a shared throttled runtime live when its acquiring consumer unmounts", async () => {
+		vi.setSystemTime(1_000);
 		const key = JSON.stringify(["hl", "subscription", "bbo", { coin: "ETH" }]);
 		const listeners: Array<(data: { sequence: number }) => void> = [];
 		const unsubscribe = vi.fn(async () => {});
+		const setSubscriptionData = vi.spyOn(store.getState(), "setSubscriptionData");
 		const captured: Record<string, { sequence: number } | undefined> = {};
 		const subscribe = vi.fn(async (listener: (data: { sequence: number }) => void) => {
 			listeners.push(listener);
@@ -158,6 +160,12 @@ describe("useSub hook surface", () => {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 		expect(listeners).toHaveLength(1);
 
+		act(() => listeners[0]?.({ sequence: 1 }));
+		expect(captured.shared).toEqual({ sequence: 1 });
+
+		act(() => listeners[0]?.({ sequence: 2 }));
+		expect(captured.shared).toEqual({ sequence: 1 });
+
 		act(() => {
 			root.render(
 				<Wrapper>
@@ -168,9 +176,16 @@ describe("useSub hook surface", () => {
 		expect(unsubscribe).not.toHaveBeenCalled();
 		expect(getStoreInternals(store).subscriptionRuntime.get(key)?.refCount).toBe(1);
 
-		act(() => listeners[0]?.({ sequence: 1 }));
 		await act(() => vi.advanceTimersByTimeAsync(16));
-		expect(captured.shared).toEqual({ sequence: 1 });
+		expect(captured.shared).toEqual({ sequence: 2 });
+		expect(setSubscriptionData).toHaveBeenCalledTimes(2);
+
+		act(() => listeners[0]?.({ sequence: 3 }));
+		act(() => {
+			root.render(<Wrapper>{null}</Wrapper>);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(setSubscriptionData).toHaveBeenCalledTimes(2);
 	});
 
 	it("drops queued throttled data instead of flushing it during cleanup", async () => {

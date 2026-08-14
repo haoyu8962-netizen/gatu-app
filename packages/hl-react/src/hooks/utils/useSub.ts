@@ -110,8 +110,14 @@ export function useSub<TData>(
 				stalenessThresholdMs,
 				pauseWhenHidden,
 			);
+			const acquiredRuntime = subscriptionRuntime.get(key);
 			return () => {
-				updater.destroy();
+				const currentRuntime = subscriptionRuntime.get(key);
+				// The first consumer owns the listener/updater for the shared runtime.
+				// Preserve its queue while another consumer still keeps that runtime alive.
+				if (!currentRuntime || currentRuntime !== acquiredRuntime || currentRuntime.refCount <= 1) {
+					updater.destroy();
+				}
 				store.getState().releaseSubscription(key);
 			};
 		}
