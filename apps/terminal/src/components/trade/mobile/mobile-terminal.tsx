@@ -5,6 +5,7 @@ import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
 import { MobileAccountView } from "./mobile-account-view";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { MobileHeader } from "./mobile-header";
+import { MobileMarketBarProvider } from "./mobile-market-bar-provider";
 import { MobileTradeLayout } from "./mobile-trade-layout";
 import { OfflineBanner } from "./offline-banner";
 import { useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
@@ -32,42 +33,44 @@ export function MobileTerminal({ className }: Props) {
 			<MobileHeader />
 			<GeoRestrictionBanner />
 			<OfflineBanner />
-			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-				<div className="relative flex-1 min-h-0 overflow-hidden">
-					<div
-						aria-hidden={activeTab !== "markets"}
-						className={cn(
-							"absolute inset-0 min-h-0 w-full",
-							activeTab === "markets" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
-						)}
-					>
-						<MobileTradeLayout
-							active={activeTab === "markets"}
-							showMarketBar={activeTab === "markets"}
-							showOrderForm={false}
-							disclosureStates={disclosureStates}
-						/>
-					</div>
-					<div
-						aria-hidden={activeTab !== "trade"}
-						className={cn(
-							"absolute inset-0 min-h-0 w-full",
-							activeTab === "trade" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
-						)}
-					>
-						<MobileTradeLayout
-							active={activeTab === "trade"}
-							showMarketBar={activeTab === "trade"}
-							disclosureStates={disclosureStates}
-						/>
-					</div>
-					{activeTab === "account" && (
-						<div className={cn("absolute inset-0 min-h-0 w-full", "visible z-10 opacity-100 pointer-events-auto")}>
-							<MobileAccountView />
+			<MobileMarketBarProvider enabled={activeTab !== "account"}>
+				<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+					<div className="relative flex-1 min-h-0 overflow-hidden">
+						<div
+							aria-hidden={activeTab !== "markets"}
+							className={cn(
+								"absolute inset-0 min-h-0 w-full",
+								activeTab === "markets" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
+							)}
+						>
+							<MobileTradeLayout
+								active={activeTab === "markets"}
+								showMarketBar={activeTab === "markets"}
+								showOrderForm={false}
+								disclosureStates={disclosureStates}
+							/>
 						</div>
-					)}
-				</div>
-			</main>
+						<div
+							aria-hidden={activeTab !== "trade"}
+							className={cn(
+								"absolute inset-0 min-h-0 w-full",
+								activeTab === "trade" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
+							)}
+						>
+							<MobileTradeLayout
+								active={activeTab === "trade"}
+								showMarketBar={activeTab === "trade"}
+								disclosureStates={disclosureStates}
+							/>
+						</div>
+						{activeTab === "account" && (
+							<div className={cn("absolute inset-0 min-h-0 w-full", "visible z-10 opacity-100 pointer-events-auto")}>
+								<MobileAccountView />
+							</div>
+						)}
+					</div>
+				</main>
+			</MobileMarketBarProvider>
 			<MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 		</div>
 	);

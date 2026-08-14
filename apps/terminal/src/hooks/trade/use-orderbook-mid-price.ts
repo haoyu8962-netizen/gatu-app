@@ -10,6 +10,7 @@ interface BboPrices {
 
 interface OrderbookMidPriceResult extends BboPrices {
 	isStale: boolean;
+	snapshot: object | undefined;
 	status: SubscriptionStatus;
 }
 
@@ -44,7 +45,8 @@ export function useOrderbookMidPrice(coin: string | undefined): OrderbookMidPric
 		isStale,
 		status,
 	} = useSubscription("bbo", { coin: coin ?? "" }, { enabled: !!coin, throttleMs: BBO_UI_THROTTLE_MS });
-	const prices = getBboPrices(status === "active" && !isStale && event && event.coin === coin ? event.bbo : undefined);
+	const snapshot = status === "active" && !isStale && event && event.coin === coin ? event : undefined;
+	const prices = getBboPrices(snapshot?.bbo);
 
-	return { ...prices, isStale, status };
+	return { ...prices, isStale, snapshot, status };
 }

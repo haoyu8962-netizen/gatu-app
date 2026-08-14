@@ -77,6 +77,7 @@ describe("useOrderbookMidPrice", () => {
 			bestAsk: "12345678901234567890.13",
 			bestBid: "12345678901234567890.11",
 			midPx: "12345678901234567890.12",
+			snapshot: mocks.result.data,
 			status: "active",
 		});
 	});
@@ -117,7 +118,7 @@ describe("useOrderbookMidPrice", () => {
 
 		act(() => root.render(<Probe coin="BTC" />));
 
-		expect(hookValue).toMatchObject({ bestAsk: undefined, bestBid: undefined, midPx: undefined });
+		expect(hookValue).toMatchObject({ bestAsk: undefined, bestBid: undefined, midPx: undefined, snapshot: undefined });
 	});
 
 	it("rejects retained BBO data while its subscription is recovering", () => {
@@ -133,7 +134,7 @@ describe("useOrderbookMidPrice", () => {
 
 		act(() => root.render(<Probe coin="BTC" />));
 
-		expect(hookValue).toMatchObject({ bestAsk: undefined, bestBid: undefined, midPx: undefined });
+		expect(hookValue).toMatchObject({ bestAsk: undefined, bestBid: undefined, midPx: undefined, snapshot: undefined });
 	});
 
 	it("disables the BBO subscription until a canonical coin is available", () => {

@@ -6,12 +6,15 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileMarketBar } from "@/components/trade/mobile/mobile-market-bar";
+import { MobileMarketBarProvider } from "@/components/trade/mobile/mobile-market-bar-provider";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
 
 const BASE_TOKEN_ID = "0x11111111111111111111111111111111";
 const mocks = vi.hoisted(() => ({
 	copy: vi.fn(),
+	midPx: undefined as string | undefined,
+	midSnapshot: undefined as object | undefined,
 	selectedMarket: {
 		kind: "spot",
 		name: "@999",
@@ -65,7 +68,7 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
-	useOrderbookMidPrice: () => ({ midPx: undefined }),
+	useOrderbookMidPrice: () => ({ midPx: mocks.midPx, snapshot: mocks.midSnapshot }),
 }));
 
 vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
@@ -76,6 +79,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTokenUrl: (address: string) => `/explorer/token/${address}`,
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	getSpotMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
+	subscribeWsReconnect: () => () => {},
+	useHyperliquid: () => ({ env: "Mainnet", isTestnet: false }),
 	useSelectedMarketInfo: () => ({ data: mocks.selectedMarket }),
 	useSubscription: () => ({ data: undefined, status: "idle" }),
 }));
@@ -86,14 +91,20 @@ describe("MobileMarketBar", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
-	function renderExpandedBar() {
+	function renderBar(key = "market-bar") {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<MobileMarketBar />
+					<MobileMarketBarProvider enabled>
+						<MobileMarketBar key={key} />
+					</MobileMarketBarProvider>
 				</I18nProvider>,
 			),
 		);
+	}
+
+	function renderExpandedBar() {
+		renderBar();
 
 		const expandButton = container.querySelector<HTMLButtonElement>('button[aria-label="Expand market details"]');
 		expect(expandButton).not.toBeNull();
@@ -103,6 +114,8 @@ describe("MobileMarketBar", () => {
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.copy.mockReset();
+		mocks.midPx = undefined;
+		mocks.midSnapshot = undefined;
 		Object.assign(mocks.selectedMarket, {
 			kind: "spot",
 			name: "@999",
@@ -229,5 +242,37 @@ describe("MobileMarketBar", () => {
 
 		expect(container.textContent).toContain(`FUNDING/Resets in${FALLBACK_VALUE_PLACEHOLDER}`);
 		expect(container.textContent).not.toMatch(/FUNDING\/Resets in—\d{2}:/);
+	});
+
+	it("keeps the mid price stable without replaying a flash when the tab bar remounts", () => {
+		Object.assign(mocks.selectedMarket, {
+			kind: "perp",
+			name: "BTC",
+			pairName: "BTC-USDC",
+			markPx: "100.0",
+			prevDayPx: "99.0",
+			szDecimals: 5,
+		});
+		mocks.midPx = "100.5";
+		mocks.midSnapshot = { revision: 0 };
+
+		renderBar("markets");
+		let price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
+		expect(price?.title).toBe("100.5");
+		expect(price?.classList.contains("use-color-change")).toBe(false);
+
+		renderBar("trade");
+		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
+		expect(price?.title).toBe("100.5");
+		expect(price?.classList.contains("use-color-change")).toBe(false);
+		expect(price?.dataset.direction).toBeUndefined();
+
+		mocks.midPx = "101.0";
+		mocks.midSnapshot = { revision: 1 };
+		renderBar("trade");
+		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
+		expect(price?.title).toBe("101.0");
+		expect(price?.classList.contains("use-color-change")).toBe(true);
+		expect(price?.dataset.direction).toBe("up");
 	});
 });

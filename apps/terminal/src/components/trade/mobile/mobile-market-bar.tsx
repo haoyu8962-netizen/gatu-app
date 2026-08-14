@@ -6,7 +6,6 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import {
@@ -18,34 +17,19 @@ import {
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
-import {
-	getExplorerTokenUrl,
-	getMarketApiCoin,
-	getSpotMarketApiCoin,
-	type SpotMarketInfo,
-	type SubParams,
-	type UnifiedMarketInfo,
-	useSelectedMarketInfo,
-	useSubscription,
-} from "@/lib/hyperliquid";
+import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
-
-type PriceDirection = "up" | "down";
+import { useMobileMarketBarSnapshot } from "./mobile-market-bar-provider";
 
 const HOUR_MS = 3_600_000;
 const TOOLTIP_WIDTH_PX = 320;
 const TOOLTIP_VIEWPORT_PADDING_PX = 16;
 const TOOLTIP_SIDE_OFFSET_PX = 4;
 const TOOLTIP_ESTIMATED_HEIGHT_PX = 144;
-
-interface PriceFlashState {
-	sequence: number;
-	direction: PriceDirection | null;
-}
 
 interface Props {
 	className?: string;
@@ -64,69 +48,35 @@ interface TooltipPosition {
 	width: number;
 }
 
-type AllMidsParams = SubParams<"allMids">;
-
 export function MobileMarketBar({ className }: Props) {
 	useNumberFormatRevision();
-	const { data: market } = useSelectedMarketInfo();
+	const {
+		market,
+		displayPrice,
+		priceFlash,
+		prevDayPx,
+		marketMarkPx,
+		oraclePx,
+		dayNtlVlm,
+		openInterest,
+		funding,
+		spotMarkPx,
+		spotCirculatingSupply,
+	} = useMobileMarketBarSnapshot();
 	const navigateToMarket = useMarketNavigation();
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+	const initialPriceFlashSequenceRef = useRef(priceFlash.sequence);
+	const visiblePriceDirection =
+		priceFlash.sequence > initialPriceFlashSequenceRef.current ? priceFlash.direction : null;
 
 	function handleMarketChange(name: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(name, nextMarket);
 	}
 
-	const { midPx } = useOrderbookMidPrice(market?.name);
 	const isSpot = market?.kind === "spot";
-	const perpCoin = getMarketApiCoin(market);
-	const spotCoin = getSpotMarketApiCoin(market);
-	const midsCoin = getAllMidsCoin(market);
-	const { data: allMidsEvent } = useSubscription("allMids", getAllMidsParams(market), { enabled: !!midsCoin });
-	const { data: perpCtxEvent } = useSubscription(
-		"activeAssetCtx",
-		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
-	);
-	const { data: spotCtxEvent } = useSubscription(
-		"activeSpotAssetCtx",
-		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
-	);
-
-	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
-	const previousMidPxRef = useRef<number | undefined>(undefined);
-
-	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
-	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
-	const midsPrice = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
-	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
-	const displayPrice = midPx ?? midsPrice ?? liveCtx?.markPx ?? marketMarkPx;
-	const displayPriceNumber = toBig(displayPrice)?.toNumber();
-
-	useEffect(() => {
-		const previous = previousMidPxRef.current;
-		previousMidPxRef.current = displayPriceNumber;
-		if (typeof displayPriceNumber !== "number" || typeof previous !== "number" || displayPriceNumber === previous) {
-			return;
-		}
-		setPriceFlash((state) => ({
-			sequence: state.sequence + 1,
-			direction: displayPriceNumber > previous ? "up" : "down",
-		}));
-	}, [displayPriceNumber]);
-
-	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
 	const priceDecimals = getPriceDecimals(market);
-	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
-	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
-	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
-	const funding = perpCtx?.funding ?? market?.funding;
-	const spotMarkPx = isSpot ? (spotCtxEvent?.ctx?.markPx ?? market?.markPx ?? midPx ?? midsPrice) : undefined;
-	const spotCirculatingSupply = isSpot
-		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(market))
-		: null;
 	const fundingNum = toBig(funding)?.toNumber() ?? null;
 	const shouldRunFundingCountdown = expanded && !isSpot && fundingNum !== null;
 	useEffect(() => {
@@ -177,10 +127,10 @@ export function MobileMarketBar({ className }: Props) {
 							<div className="flex min-w-0 flex-col items-start">
 								<span
 									key={priceFlash.sequence}
-									data-direction={priceFlash.direction ?? undefined}
+									data-direction={visiblePriceDirection ?? undefined}
 									className={cn(
 										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5",
-										priceFlash.direction && "use-color-change",
+										visiblePriceDirection && "use-color-change",
 									)}
 									title={priceText}
 								>
@@ -485,11 +435,6 @@ function createMarketDetailTooltip(id: string, content: ReactNode, position: Too
 	);
 }
 
-function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
-	if (market?.kind !== "spot") return null;
-	return (market as SpotMarketInfo).circulatingSupply;
-}
-
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
 	if (market?.kind !== "spot") return null;
 	const baseToken = market.tokensInfo[0];
@@ -497,15 +442,6 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	const tokenId = (baseToken as { tokenId?: string }).tokenId;
 	if (!tokenId?.startsWith("0x")) return null;
 	return tokenId;
-}
-
-function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
-	return getMarketApiCoin(market);
-}
-
-function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
-	if (market?.kind !== "builderPerp") return undefined;
-	return { dex: market.dex };
 }
 
 function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {

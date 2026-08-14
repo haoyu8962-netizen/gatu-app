@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MobilePositionsDisclosureStates } from "@/components/trade/mobile/use-mobile-disclosure-set";
@@ -49,6 +49,10 @@ vi.mock("@/components/trade/mobile/mobile-trade-layout", () => ({
 			</div>
 		);
 	},
+}));
+
+vi.mock("@/components/trade/mobile/mobile-market-bar-provider", () => ({
+	MobileMarketBarProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 vi.mock("@/components/trade/mobile/mobile-account-view", () => ({
