@@ -88,6 +88,7 @@ export function deriveAgentRequirements(
 	builderConfig: BuilderConfig | undefined,
 	nowMs = Date.now(),
 	agentAddressOverride?: Address,
+	expectedAgentName?: string,
 ): AgentRequirements {
 	const hasBuilderConfig = !!builderConfig?.b;
 	const builderFeeKnown = !hasBuilderConfig || builderFeeData !== undefined;
@@ -97,7 +98,8 @@ export function deriveAgentRequirements(
 			? verifyMobileAgent(localAgent, extraAgentsData, nowMs).status === "approved"
 			: null;
 	const agentApproved =
-		mobileAgentApproved ?? isAgentApproved(extraAgentsData, agentAddressOverride ?? localAgent?.publicKey);
+		mobileAgentApproved ??
+		isAgentApproved(extraAgentsData, agentAddressOverride ?? localAgent?.publicKey, expectedAgentName);
 
 	const needsBuilderFee =
 		hasBuilderConfig && builderFeeKnown && !isBuilderFeeApproved(builderFeeData, builderConfig?.f);
@@ -117,7 +119,7 @@ export function deriveAgentRequirements(
 }
 
 export function useAgentStatus(): UseAgentStatusResult {
-	const { env, builderConfig, clientKey } = useHyperliquid();
+	const { env, builderConfig, clientKey, agentName } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 
 	const localAgent = useAgentWalletStorage(env, address);
@@ -160,6 +162,9 @@ export function useAgentStatus(): UseAgentStatusResult {
 		extraAgentsQuery.data,
 		localAgent,
 		builderConfig,
+		Date.now(),
+		undefined,
+		agentName,
 	);
 	const agentVerificationStatus = deriveAgentVerificationStatus(
 		!!address,
@@ -176,7 +181,15 @@ export function useAgentStatus(): UseAgentStatusResult {
 	const isAgentLoading = extraAgentsQuery.isLoading;
 	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
-	const requirements = deriveAgentRequirements(builderFeeQuery.data, verifiedAgentData, localAgent, builderConfig);
+	const requirements = deriveAgentRequirements(
+		builderFeeQuery.data,
+		verifiedAgentData,
+		localAgent,
+		builderConfig,
+		Date.now(),
+		undefined,
+		agentName,
+	);
 
 	async function refetchAgent(agentAddressOverride?: Address): Promise<AgentRequirements> {
 		const agentsResult = await extraAgentsQuery.refetch();
@@ -188,17 +201,34 @@ export function useAgentStatus(): UseAgentStatusResult {
 			builderConfig,
 			Date.now(),
 			agentAddressOverride,
+			agentName,
 		);
 	}
 
 	async function refetchBuilderFee(): Promise<AgentRequirements> {
 		if (!hasBuilderConfig) {
-			return deriveAgentRequirements(undefined, verifiedAgentData, localAgent, builderConfig);
+			return deriveAgentRequirements(
+				undefined,
+				verifiedAgentData,
+				localAgent,
+				builderConfig,
+				Date.now(),
+				undefined,
+				agentName,
+			);
 		}
 
 		const feeResult = await builderFeeQuery.refetch();
 		if (feeResult.error || feeResult.data === undefined) throw new Error("Could not load builder fee status");
-		return deriveAgentRequirements(feeResult.data, verifiedAgentData, localAgent, builderConfig);
+		return deriveAgentRequirements(
+			feeResult.data,
+			verifiedAgentData,
+			localAgent,
+			builderConfig,
+			Date.now(),
+			undefined,
+			agentName,
+		);
 	}
 
 	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {
@@ -220,6 +250,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 			builderConfig,
 			Date.now(),
 			agentAddressOverride,
+			agentName,
 		);
 	}
 

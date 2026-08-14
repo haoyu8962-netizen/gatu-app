@@ -12,11 +12,12 @@ import { toast } from "sonner";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
-import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
+import { RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
+import { TRADING_AGENT_NAME } from "@/config/trading-agent";
 import { config } from "@/config/wagmi";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
@@ -70,7 +71,7 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 				userAddress={address}
 				allowAgentOnlySession={ready && !authenticated}
 				builderConfig={DEFAULT_BUILDER_CONFIG}
-				agentName={APP_NAME}
+				agentName={TRADING_AGENT_NAME}
 				onAgentCleanupFailure={() => {
 					toast.error(
 						t`The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it.`,

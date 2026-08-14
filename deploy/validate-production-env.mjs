@@ -59,6 +59,7 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 	}
 
 	requireExactValue(values, filePath, "VITE_HYPERLIQUID_TESTNET", "");
+	requireExactValue(values, filePath, "VITE_HYPERLIQUID_AGENT_NAME", "gatu");
 	requireExactValue(values, filePath, "VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED", "");
 	requireExactValue(
 		values,

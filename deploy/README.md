@@ -137,7 +137,8 @@ sudo -u gatu cp /opt/gatu/repo/deploy/env.build.example   /opt/gatu/shared/.env.
 sudo -u gatu cp /opt/gatu/repo/deploy/env.runtime.example /opt/gatu/shared/.env.runtime
 sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 # 编辑这两个文件填入真实值：
-#   .env.local   → VITE_PRIVY_APP_ID；移动配对放量时再把对应 gate 设为精确的 "true"
+#   .env.local   → VITE_PRIVY_APP_ID；保留 VITE_HYPERLIQUID_AGENT_NAME=gatu；
+#                  移动配对放量时再把对应 gate 设为精确的 "true"
 #   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
 #                  GATU_MAINNET_PUBLIC_BASE_URL / GATU_TESTNET_PUBLIC_BASE_URL 保持为
 #                  对应的两个 exact public origin；修改域名时同步修改 deploy/Caddyfile
@@ -165,6 +166,7 @@ sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```dotenv
 # /opt/gatu/shared/.env.local
 VITE_HYPERLIQUID_TESTNET=
+VITE_HYPERLIQUID_AGENT_NAME=gatu
 VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=
 VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true
 
@@ -175,6 +177,9 @@ GATU_CCTP_MAINNET_RELEASE_MODE=sponsored-only
 ```
 
 `env.build.example` 仍把所有资金 gate 保持为空，不得把 `true` 提交为模板默认值。
+`VITE_HYPERLIQUID_AGENT_NAME=gatu` 是生产浏览器 Agent 的固定 named slot；本地开发默认使用
+`gatu-dev`。任何连接主网的预览或预发布 bundle 必须配置独立且不超过 16 字符的名称，不能复用
+`gatu`，否则 Hyperliquid 会注销同名生产 Agent。
 `GATU_CCTP_MAINNET_RELEASE_MODE` 是部署确认值，不会进入客户端 bundle：`deploy.sh` 在安装依赖或构建前
 核对它与两个主网 gate。任何重复变量、引号/注释造成的含糊布尔值、开启 External、关闭
 Sponsored 却声明 `sponsored-only`，或非 canonical public origin 都会 fail-fast。紧急停止新 Sponsored 提交时，
@@ -440,7 +445,7 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 
 ## 上线 Checklist
 
-- [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
+- [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填，`VITE_HYPERLIQUID_AGENT_NAME=gatu`，生产 mainnet 的 `VITE_HYPERLIQUID_TESTNET` 留空
 - [ ] 主网 CCTP 当前 rollout 为 Sponsored-only：Sponsored gate 为 `true`、External gate 留空，且 `.env.runtime` 的 `GATU_CCTP_MAINNET_RELEASE_MODE=sponsored-only`
 - [ ] ZeroDev Arbitrum One 已关闭 Sponsor All，Contract Policy 只允许 `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` / `batchSponsorDepositForBurn` (`0x300fb2a3`)，并已设定经过容量评估的 Request、单笔/累计 Gas 与 Gas Price 限额、监控和预警
 - [ ] 受控 production-candidate 小额主网 E2E 已完成；已确认当前代码无用户白名单，Sponsored-only 生产 bundle 会对全部符合条件的邮箱钱包用户开放显式确认入金

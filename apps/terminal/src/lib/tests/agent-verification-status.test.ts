@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 const AGENT = "0x2222222222222222222222222222222222222222" as Address;
 const APPROVED_AGENTS: ExtraAgentsResponse = [{ address: AGENT, name: "HypeTerminal", validUntil: null }];
 
-function requirements(extraAgents: ExtraAgentsResponse | undefined) {
-	return deriveAgentRequirements(undefined, extraAgents, null, undefined, Date.now(), AGENT);
+function requirements(extraAgents: ExtraAgentsResponse | undefined, expectedAgentName?: string) {
+	return deriveAgentRequirements(undefined, extraAgents, null, undefined, Date.now(), AGENT, expectedAgentName);
 }
 
 describe("Agent verification status", () => {
@@ -41,6 +41,17 @@ describe("Agent verification status", () => {
 		expect(deriveAgentVerificationStatus(true, APPROVED_AGENTS, null, false, requirements(APPROVED_AGENTS))).toBe(
 			"ready",
 		);
+	});
+
+	it("requires the deployment Agent name as well as the local public key", () => {
+		expect(requirements(APPROVED_AGENTS, "gatu-dev")).toMatchObject({
+			isAgentReady: false,
+			needsAgent: true,
+		});
+		expect(requirements(APPROVED_AGENTS, "HypeTerminal")).toMatchObject({
+			isAgentReady: true,
+			needsAgent: false,
+		});
 	});
 
 	it("keeps absent owners and absent results unknown", () => {

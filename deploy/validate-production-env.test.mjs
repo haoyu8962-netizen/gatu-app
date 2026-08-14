@@ -16,6 +16,7 @@ function createEnvironmentFiles({
 	testnetExternal = "true",
 	testnetSponsored = "true",
 	testnetBuild = "",
+	agentName = "gatu",
 	mainnetOrigin = "https://app.gatu.ai",
 	testnetOrigin = "https://testnet.gatu.ai",
 	extraBuild = "",
@@ -30,6 +31,7 @@ function createEnvironmentFiles({
 		[
 			"VITE_PRIVY_APP_ID=privy-app-id",
 			`VITE_HYPERLIQUID_TESTNET=${testnetBuild}`,
+			`VITE_HYPERLIQUID_AGENT_NAME=${agentName}`,
 			`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=${mainnetExternal}`,
 			`VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=${testnetExternal}`,
 			`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=${mainnetSponsored}`,
@@ -89,6 +91,12 @@ test("rejects a testnet-default shared production bundle", () => {
 	const result = validate({ testnetBuild: "true" });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /VITE_HYPERLIQUID_TESTNET=<empty>/);
+});
+
+test("rejects an Agent slot that can replace another deployment", () => {
+	const result = validate({ agentName: "gatu-preview" });
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /VITE_HYPERLIQUID_AGENT_NAME=gatu/);
 });
 
 test("rejects duplicate build variables", () => {

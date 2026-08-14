@@ -18,6 +18,7 @@ vi.mock("@gatu/hl-react/provider", () => ({
 		env: "Mainnet",
 		builderConfig: undefined,
 		clientKey: OWNER,
+		agentName: "gatu-dev",
 	}),
 }));
 
@@ -138,7 +139,7 @@ describe("useAgentStatus definitive verification", () => {
 	});
 
 	it("keeps an exact unexpired Agent ready during background verification", () => {
-		testState.data = [{ address: AGENT, name: "HypeTerminal", validUntil: null }];
+		testState.data = [{ address: AGENT, name: "gatu-dev", validUntil: null }];
 		testState.isFetching = true;
 		const probe = renderProbe();
 
@@ -148,5 +149,14 @@ describe("useAgentStatus definitive verification", () => {
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
 		expect(probe?.getAttribute("data-ready")).toBe("true");
 		expect(probe?.getAttribute("data-total-ready")).toBe("true");
+	});
+
+	it("requires the Provider deployment name for the stored Agent", () => {
+		testState.data = [{ address: AGENT, name: "gatu", validUntil: null }];
+		const probe = renderProbe();
+
+		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-needs-agent")).toBe("true");
+		expect(probe?.getAttribute("data-ready")).toBe("false");
 	});
 });

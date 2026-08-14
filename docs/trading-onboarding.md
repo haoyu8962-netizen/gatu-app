@@ -39,7 +39,8 @@ The terminal must preserve this ordering:
    registration is separate from builder-fee approval.
 5. **Verify the new Agent.** Persist the generated Agent key only in the
    selected storage scope, refetch the server-side Agent status, and confirm
-   the freshly generated public address before reporting success.
+   the freshly generated public address and deployment-scoped Agent name
+   before reporting success.
 6. **Classify account funding.** Wait for both the complete all-DEX perpetual
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
@@ -72,7 +73,7 @@ private key. It does not change the owner wallet or Agent permissions.
 | Choice | Agent key storage | Lifetime |
 |---|---|---|
 | Unchecked (default) | `sessionStorage` | Current browser tab/session |
-| Checked | `localStorage` | Across browser restarts until reset/revocation |
+| Checked | `localStorage` | Across restarts of this browser and origin until reset/revocation |
 
 The preference is stored under
 `hyperliquid.persist_trading_connection`. Agent records remain keyed by
@@ -81,6 +82,19 @@ environment and lowercase owner address:
 persistent record for that identity. Invalid higher-priority data fails closed
 instead of falling back to stale data, and reads never cross owners or
 environments.
+
+The persistent choice does not synchronize an Agent private key between
+origins, browser profiles, or devices. The owner Smart Wallet authorizes the
+Agent but cannot reconstruct its locally generated private key. Runtime
+verification must therefore match both the stored public key and the exact
+deployment Agent name returned by `extraAgents`.
+
+Hyperliquid deregisters an existing named Agent when another `approveAgent`
+uses the same name. Production reserves `gatu`; local development defaults to
+`gatu-dev`. A mainnet preview or staging build must set its own stable
+`VITE_HYPERLIQUID_AGENT_NAME` (maximum 16 characters) and must not reuse the
+production slot. Names are finite deployment slots, not random per-session
+identifiers, because an account supports only three named Agents.
 
 Both the onboarding dialog and direct trading-action authorization must honor
 the same preference. A future entry point must not call Agent registration
