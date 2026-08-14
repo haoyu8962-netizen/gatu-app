@@ -5508,6 +5508,7 @@ msgstr "用于视觉检查的占位金库数据。"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -7818,7 +7819,7 @@ msgstr "您查找的页面不存在。"
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "上一次委托修改仍未确认。重试前请刷新当前委托。"
 
-#: src/providers/root.tsx
+#: src/providers/client-root.tsx
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "上一个钱包已断开，但其本地交易密钥未能移除。重新连接前请先清除本站点数据。"
 

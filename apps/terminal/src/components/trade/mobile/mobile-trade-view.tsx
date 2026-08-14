@@ -39,12 +39,13 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isStopOrderType,
 	isTakeProfitOrderType,
 	isTakerOrderType,
+	isTriggerOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
@@ -409,12 +410,23 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		const entryOrder = plan.orders[0];
 		if (!entryOrder) return;
 
+		const tpPriceNum = toNumber(tpPrice);
+		const slPriceNum = toNumber(slPrice);
+		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
+		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
+
 		const orderId = addOrder({
 			market: baseToken,
 			side,
 			size: String(entryOrder.s),
 			price: formatPriceForOrder(price, { assetId: market.assetId, szDecimals: orderSzDecimals }),
-			orderType: isMarketExecution ? "market" : "limit",
+			orderType: getQueueEntryType(isTriggerOrderType(orderType), isMarketExecution),
+			tpPrice: hasTp
+				? formatPriceForOrder(tpPriceNum ?? 0, { assetId: market.assetId, szDecimals: orderSzDecimals })
+				: undefined,
+			slPrice: hasSl
+				? formatPriceForOrder(slPriceNum ?? 0, { assetId: market.assetId, szDecimals: orderSzDecimals })
+				: undefined,
 			status: "pending",
 		});
 
@@ -977,4 +989,9 @@ function getApprovalButtonText(
 	if (isRegistering) return labels.signing;
 	if (isApprovalLoading || !canApprove) return labels.loading;
 	return labels.enableTrading;
+}
+
+function getQueueEntryType(isTriggerEntry: boolean, isMarketExecution: boolean): "trigger" | "market" | "limit" {
+	if (isTriggerEntry) return "trigger";
+	return isMarketExecution ? "market" : "limit";
 }

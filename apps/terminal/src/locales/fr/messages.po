@@ -5949,6 +5949,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -8462,7 +8463,7 @@ msgstr "La page que vous recherchez n'existe pas."
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "La modification d'ordre précédente n'est toujours pas confirmée. Actualisez les ordres ouverts avant de réessayer."
 
-#: src/providers/root.tsx
+#: src/providers/client-root.tsx
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "Le portefeuille précédent s'est déconnecté, mais sa clé de trading locale n'a pas pu être supprimée. Effacez les données de ce site avant de le reconnecter."
 

@@ -5949,6 +5949,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -8462,7 +8463,7 @@ msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह �
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "पिछला ऑर्डर संशोधन अभी भी अपुष्ट है। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
 
-#: src/providers/root.tsx
+#: src/providers/client-root.tsx
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "पिछला वॉलेट डिस्कनेक्ट हो गया, लेकिन उसकी स्थानीय ट्रेडिंग कुंजी हटाई नहीं जा सकी। उसे दोबारा कनेक्ट करने से पहले इस साइट का डेटा साफ़ करें।"
 

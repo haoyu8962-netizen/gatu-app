@@ -5970,6 +5970,7 @@ msgstr "Placeholder Vault data for visual review."
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -8483,7 +8484,7 @@ msgstr "The page you are looking for does not exist."
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 
-#: src/providers/root.tsx
+#: src/providers/client-root.tsx
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 msgstr "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
 
