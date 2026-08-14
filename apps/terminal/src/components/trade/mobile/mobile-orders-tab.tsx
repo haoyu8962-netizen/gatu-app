@@ -1099,7 +1099,7 @@ function MobileOrderCard({
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
 						aria-label={t`Switch to ${marketLabel} market`}
-						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-left text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 					>
 						{marketLabel}
 					</button>
