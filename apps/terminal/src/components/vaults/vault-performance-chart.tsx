@@ -19,7 +19,7 @@ export function VaultPerformanceChart({ snapshot, kind, compact = false }: Vault
 	const history = kind === "accountValue" ? snapshot.accountValueHistory : snapshot.pnlHistory;
 	const latest = getLatestVaultHistoryValue(snapshot, kind);
 	const tone = kind === "pnl" ? getVaultValueTone(latest) : "neutral";
-	const path = createChartPath(history.map((point) => point.value));
+	const path = createChartPath(history);
 	const label = kind === "accountValue" ? t`Account value` : t`PNL`;
 
 	return (
@@ -76,14 +76,19 @@ export function VaultPerformanceChart({ snapshot, kind, compact = false }: Vault
 }
 
 /** Financial inputs remain decimal strings until this chart-rendering boundary. */
-export function createChartPath(values: readonly string[]): string | null {
-	if (values.length < 2) return null;
+export function createChartPath(points: readonly { timestamp: number; value: string }[]): string | null {
+	if (points.length < 2) return null;
 	let parsed: Big[];
 	try {
-		parsed = values.map((value) => Big(value));
+		parsed = points.map((point) => Big(point.value));
 	} catch {
 		return null;
 	}
+	if (points.some((point) => !Number.isSafeInteger(point.timestamp) || point.timestamp < 0)) return null;
+	const startTime = Big(points[0].timestamp);
+	const endTime = Big(points[points.length - 1].timestamp);
+	const timeRange = endTime.minus(startTime);
+	if (timeRange.lte(0)) return null;
 	let minimum = parsed[0];
 	let maximum = parsed[0];
 	for (const value of parsed.slice(1)) {
@@ -91,10 +96,9 @@ export function createChartPath(values: readonly string[]): string | null {
 		if (value.gt(maximum)) maximum = value;
 	}
 	const range = maximum.minus(minimum);
-	const denominator = Big(values.length - 1);
 	return parsed
 		.map((value, index) => {
-			const x = Big(index).times(100).div(denominator).toNumber();
+			const x = Big(points[index].timestamp).minus(startTime).times(100).div(timeRange).toNumber();
 			const normalized = range.eq(0) ? Big("0.5") : value.minus(minimum).div(range);
 			const y = Big(34).minus(normalized.times(32)).toNumber();
 			return `${index === 0 ? "M" : "L"}${roundCoordinate(x)} ${roundCoordinate(y)}`;

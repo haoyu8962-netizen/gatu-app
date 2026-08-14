@@ -28,9 +28,10 @@ import type { ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD, shortenAddress } from "@/lib/format";
+import { LEADERBOARD_API_MAX_QUERY_LENGTH } from "@/lib/leaderboard/leaderboard-api";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { LeaderboardPeriod, LeaderboardSortKey, LeaderboardValueTone } from "./leaderboard-domain";
-import type { LeaderboardController } from "./use-leaderboard-controller";
+import type { LeaderboardController, LeaderboardDataNotice } from "./use-leaderboard-controller";
 
 export type LeaderboardViewProps = LeaderboardController;
 
@@ -47,6 +48,8 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 		<section
 			data-state={props.pageState}
 			data-leaderboard-state={props.pageState}
+			data-refresh-state={props.dataNotice ?? (props.isRefreshing ? "refreshing" : "idle")}
+			aria-busy={props.pageState === "loading" || props.isRefreshing}
 			className={cn(
 				"mx-auto flex min-h-[var(--earn-page-min-height)] w-full max-w-[var(--earn-content-max)] flex-col bg-surface text-fg shadow-raised",
 				!isMobile && "overflow-hidden rounded-[var(--earn-page-radius)]",
@@ -76,7 +79,7 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 						size="xs"
 						variant="outline"
 						intent="neutral"
-						disabled={props.isRefreshing}
+						disabled={props.isRefreshing || props.pageState === "loading" || !props.canRetry}
 						onClick={props.onRetry}
 						iconLeft={
 							<ArrowClockwiseIcon
@@ -93,6 +96,7 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 				<SearchInput
 					size={isMobile ? "lg" : "md"}
 					value={props.query}
+					maxLength={LEADERBOARD_API_MAX_QUERY_LENGTH}
 					onChange={(event) => props.onQueryChange(event.target.value)}
 					onClear={props.onClearQuery}
 					placeholder={t`Search by wallet address or display name`}
@@ -101,10 +105,12 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 				/>
 			</div>
 
+			{props.dataNotice ? <LeaderboardDataNoticeBanner notice={props.dataNotice} /> : null}
+
 			{props.pageState === "loading" ? (
 				<LeaderboardSkeleton isMobile={isMobile} />
-			) : props.pageState === "error" ? (
-				<LeaderboardError onRetry={props.onRetry} />
+			) : props.pageState === "error" || props.pageState === "paused" ? (
+				<LeaderboardError isPaused={props.pageState === "paused"} canRetry={props.canRetry} onRetry={props.onRetry} />
 			) : props.pageState === "empty" || props.pageState === "noResults" ? (
 				<LeaderboardEmpty hasQuery={props.pageState === "noResults"} />
 			) : isMobile ? (
@@ -137,6 +143,27 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 				</p>
 			</div>
 		</section>
+	);
+}
+
+function LeaderboardDataNoticeBanner({ notice }: { notice: Exclude<LeaderboardDataNotice, null> }) {
+	return (
+		<output
+			data-testid="leaderboard-data-notice"
+			className="mx-5 mb-3 flex items-start gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs leading-5 text-fg-muted"
+		>
+			<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-warning" />
+			<div>
+				<p className="font-semibold text-fg">
+					{notice === "paused" ? <Trans>Offline</Trans> : <Trans>Leaderboard is temporarily unavailable</Trans>}
+				</p>
+				<p>
+					<Trans>
+						The network-matched public dataset could not be verified. Your account and trading are unaffected.
+					</Trans>
+				</p>
+			</div>
+		</output>
 	);
 }
 
@@ -422,7 +449,7 @@ function LeaderboardPagination(props: CommonLeaderboardProps) {
 					intent="neutral"
 					size="sm"
 					onClick={props.onPreviousPage}
-					disabled={props.page <= 1}
+					disabled={props.isRefreshing || props.page <= 1}
 					aria-label={t`Previous page`}
 				>
 					<CaretLeftIcon className="size-4" />
@@ -433,7 +460,7 @@ function LeaderboardPagination(props: CommonLeaderboardProps) {
 					intent="neutral"
 					size="sm"
 					onClick={props.onNextPage}
-					disabled={props.page >= props.totalPages}
+					disabled={props.isRefreshing || props.page >= props.totalPages}
 					aria-label={t`Next page`}
 				>
 					<CaretRightIcon className="size-4" />
@@ -459,7 +486,15 @@ function LeaderboardSkeleton({ isMobile }: { isMobile: boolean }) {
 	);
 }
 
-function LeaderboardError({ onRetry }: { onRetry: () => void }) {
+function LeaderboardError({
+	isPaused,
+	canRetry,
+	onRetry,
+}: {
+	isPaused: boolean;
+	canRetry: boolean;
+	onRetry: () => void;
+}) {
 	return (
 		<div role="alert" className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-12 text-center">
 			<span className="grid size-11 place-items-center rounded-full bg-error-soft text-error">
@@ -467,7 +502,7 @@ function LeaderboardError({ onRetry }: { onRetry: () => void }) {
 			</span>
 			<div>
 				<p className="text-sm font-bold text-fg">
-					<Trans>Leaderboard is temporarily unavailable</Trans>
+					{isPaused ? <Trans>Offline</Trans> : <Trans>Leaderboard is temporarily unavailable</Trans>}
 				</p>
 				<p className="mt-1 max-w-[var(--earn-state-copy-max)] text-xs leading-5 text-fg-muted">
 					<Trans>
@@ -475,7 +510,7 @@ function LeaderboardError({ onRetry }: { onRetry: () => void }) {
 					</Trans>
 				</p>
 			</div>
-			<Button type="button" size="md" onClick={onRetry}>
+			<Button type="button" size="md" disabled={!canRetry} onClick={onRetry}>
 				<Trans>Try again</Trans>
 			</Button>
 		</div>

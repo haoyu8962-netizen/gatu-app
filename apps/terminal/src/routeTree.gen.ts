@@ -31,6 +31,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as VaultsRouteImport } from './routes/vaults'
+import { Route as ApiLeaderboardRouteImport } from './routes/api.leaderboard'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
 import { Route as JoinSplatRouteImport } from './routes/join.$'
@@ -151,6 +152,11 @@ const VaultsRoute = VaultsRouteImport.update({
   path: '/vaults',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLeaderboardRoute = ApiLeaderboardRouteImport.update({
+  id: '/api/leaderboard',
+  path: '/api/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuildersPerpIndexRoute = BuildersPerpIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/vaults': typeof VaultsRouteWithChildren
+  '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/staking': typeof StakingRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/trade': typeof TradeRouteWithChildren
   '/vaults': typeof VaultsRouteWithChildren
+  '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/vaults'
+    | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/staking'
     | '/support'
     | '/terms'
+    | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trade'
     | '/vaults'
+    | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/join/$'
     | '/join/$code'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TradeRoute: typeof TradeRouteWithChildren
   VaultsRoute: typeof VaultsRouteWithChildren
+  ApiLeaderboardRoute: typeof ApiLeaderboardRoute
   JoinSplatRoute: typeof JoinSplatRoute
   JoinCodeRoute: typeof JoinCodeRoute
 }
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/leaderboard': {
+      id: '/api/leaderboard'
+      path: '/api/leaderboard'
+      fullPath: '/api/leaderboard'
+      preLoaderRoute: typeof ApiLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/builders-perp/': {
       id: '/builders-perp/'
       path: '/'
@@ -706,6 +726,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TradeRoute: TradeRouteWithChildren,
   VaultsRoute: VaultsRouteWithChildren,
+  ApiLeaderboardRoute: ApiLeaderboardRoute,
   JoinSplatRoute: JoinSplatRoute,
   JoinCodeRoute: JoinCodeRoute,
 }

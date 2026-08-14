@@ -1,6 +1,7 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
@@ -24,6 +25,7 @@ export interface VaultDetailViewProps {
 	owner: VaultOwnerViewState;
 	isTestnet: boolean;
 	isRefreshing?: boolean;
+	onRetryOwner?: () => void;
 	onRequestAction?: (action: VaultRequestedAction) => void;
 }
 
@@ -32,6 +34,7 @@ export function VaultDetailView({
 	owner,
 	isTestnet,
 	isRefreshing = false,
+	onRetryOwner,
 	onRequestAction,
 }: VaultDetailViewProps) {
 	const { t, i18n } = useLingui();
@@ -56,10 +59,10 @@ export function VaultDetailView({
 		>
 			<header className="flex flex-wrap items-start justify-between gap-4 border-b border-stroke-weak px-4 py-4 min-[1001px]:px-5">
 				<div className="min-w-0">
-					<a href="/vaults" className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg">
+					<Link to="/vaults" className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg">
 						<ArrowLeftIcon className="size-3.5" />
 						<Trans>Vaults</Trans>
-					</a>
+					</Link>
 					<h1 className="mt-1 break-words text-xl font-bold text-fg min-[1001px]:text-2xl">{detail.name}</h1>
 					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">{detail.vaultAddress}</p>
 				</div>
@@ -86,7 +89,7 @@ export function VaultDetailView({
 			<div className="grid grid-cols-2 gap-2 px-4 py-3 min-[1001px]:grid-cols-4 min-[1001px]:px-5">
 				<SummaryMetric label={<Trans>Vault value</Trans>} value={formatVaultCompactUsd(totalValue)} />
 				<SummaryMetric label={<Trans>APR</Trans>} value={formatVaultRatio(detail.apr, 2, true)} />
-				<SummaryMetric label={<Trans>Your deposit</Trans>} value={formatVaultUsd(ownerEquity)} />
+				<SummaryMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(ownerEquity)} />
 				<SummaryMetric label={<Trans>Your all-time PNL</Trans>} value={formatVaultUsd(ownerPnl)} tone={ownerPnlTone} />
 			</div>
 
@@ -138,9 +141,14 @@ export function VaultDetailView({
 					className="mx-4 mb-3 flex items-start gap-2 rounded-10 bg-error-soft px-3 py-2.5 text-xs text-error min-[1001px]:mx-5"
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-					<span>
+					<div className="min-w-0 flex-1">
 						<Trans>Your Vault balance could not be verified. Account values and withdrawal remain unavailable.</Trans>
-					</span>
+						{onRetryOwner ? (
+							<Button className="mt-2" size="xs" variant="outline" intent="neutral" onClick={onRetryOwner}>
+								<Trans>Retry account data</Trans>
+							</Button>
+						) : null}
+					</div>
 				</div>
 			) : null}
 

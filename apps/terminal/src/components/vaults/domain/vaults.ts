@@ -165,10 +165,11 @@ export function selectVaultRows({ rows, filter, query, account }: VaultListSelec
 
 	const normalizedQuery = query.trim().toLowerCase();
 	const filtered = rows.filter((row) => {
+		if (row.isClosed) return false;
 		if (filter === "official" || filter === "user") {
 			if (row.classification !== filter) return false;
 		} else if (filter === "deposited") {
-			if (account.status !== "ready" || !account.facts.depositsByAddress.has(normalizeVaultAddress(row.vaultAddress))) {
+			if (account.status !== "ready" || !hasPositiveVaultEquity(account.facts, row.vaultAddress)) {
 				return false;
 			}
 		} else if (filter === "leading") {
@@ -185,12 +186,42 @@ export function selectVaultRows({ rows, filter, query, account }: VaultListSelec
 		);
 	});
 
+	const sorted = filtered
+		.map((row, index) => ({ row, index }))
+		.sort((left, right) => compareVaultDiscoveryRows(left, right, account))
+		.map(({ row }) => row);
+
 	return {
 		status: "ready",
-		rows: filtered,
+		rows: sorted,
 		isSearchNoResults: normalizedQuery.length > 0 && filtered.length === 0,
 		classificationAvailable,
 	};
+}
+
+function compareVaultDiscoveryRows(
+	left: { row: VaultListItem; index: number },
+	right: { row: VaultListItem; index: number },
+	account: VaultAccountFactsState,
+): number {
+	if (account.status === "ready") {
+		const leftDeposited = hasPositiveVaultEquity(account.facts, left.row.vaultAddress);
+		const rightDeposited = hasPositiveVaultEquity(account.facts, right.row.vaultAddress);
+		if (leftDeposited !== rightDeposited) return leftDeposited ? -1 : 1;
+	}
+
+	const leftTvl = toBig(left.row.tvl, false);
+	const rightTvl = toBig(right.row.tvl, false);
+	if (leftTvl && rightTvl) {
+		const tvlOrder = rightTvl.cmp(leftTvl);
+		if (tvlOrder !== 0) return tvlOrder;
+	}
+	return left.index - right.index;
+}
+
+function hasPositiveVaultEquity(facts: VaultAccountFacts, vaultAddress: string): boolean {
+	const equity = facts.depositsByAddress.get(normalizeVaultAddress(vaultAddress));
+	return equity !== undefined && (toBig(equity, false)?.gt(0) ?? false);
 }
 
 export function groupVaultRows(
@@ -222,11 +253,21 @@ export function isLeadingVault(account: VaultAccountFactsState, vaultAddress: st
 export function sumVaultTvl(rows: readonly VaultListItem[]): string | null {
 	let total = Big(0);
 	for (const row of rows) {
+		// Parent Vault TVL already includes its component children. Hyperliquid's
+		// Vaults surface excludes child rows before calculating the aggregate.
+		if (row.relationship === "child") continue;
 		const value = toBig(row.tvl, false);
 		if (!value) return null;
 		total = total.plus(value);
 	}
 	return total.toString();
+}
+
+export function selectVaultDiscoveryRows(rows: readonly VaultListItem[]): readonly VaultListItem[] {
+	// Parent Vault TVL already contains its children. Closed root rows remain in
+	// this aggregate set because Hyperliquid includes them in Total TVL; the
+	// default row selector hides them unless a reviewed Closed toggle is added.
+	return rows.filter((row) => row.relationship !== "child");
 }
 
 export function getVaultAgeDays(createdAt: number, now: number): number | null {

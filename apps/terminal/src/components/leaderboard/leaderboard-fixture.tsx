@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { LEADERBOARD_API_PAGE_SIZES } from "@/lib/leaderboard/leaderboard-api";
 import { deriveLeaderboard, getLeaderboardValueTone, type LeaderboardSourceRow } from "./leaderboard-domain";
 import { LeaderboardView, type LeaderboardViewProps } from "./leaderboard-view";
 
-const FIXTURE_STATES = ["normal", "empty", "no-results", "loading", "error"] as const;
+const FIXTURE_STATES = ["normal", "empty", "no-results", "loading", "paused", "error"] as const;
 export type LeaderboardFixtureState = (typeof FIXTURE_STATES)[number];
 
 const FIXTURE_ROWS: readonly LeaderboardSourceRow[] = Array.from({ length: 14 }, (_, index) => {
@@ -55,7 +56,7 @@ export function LeaderboardFixture({ fixture }: { fixture: LeaderboardFixtureSta
 	const [sortDirection, setSortDirection] = useState<LeaderboardViewProps["sortDirection"]>("descending");
 	const [query, setQuery] = useState(fixture === "no-results" ? "0xmissing" : "");
 	const [page, setPage] = useState(1);
-	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [rowsPerPage, setRowsPerPage] = useState<LeaderboardViewProps["rowsPerPage"]>(10);
 	const sourceRows = fixture === "empty" ? [] : FIXTURE_ROWS;
 	const result = deriveLeaderboard({
 		rows: sourceRows,
@@ -67,7 +68,7 @@ export function LeaderboardFixture({ fixture }: { fixture: LeaderboardFixtureSta
 		rowsPerPage,
 	});
 	const pageState =
-		fixture === "loading" || fixture === "error"
+		fixture === "loading" || fixture === "paused" || fixture === "error"
 			? fixture
 			: result.totalRows === 0
 				? query
@@ -78,6 +79,7 @@ export function LeaderboardFixture({ fixture }: { fixture: LeaderboardFixtureSta
 	return (
 		<LeaderboardView
 			pageState={pageState}
+			dataNotice={null}
 			period={period}
 			sortKey={sortKey}
 			sortDirection={sortDirection}
@@ -95,6 +97,7 @@ export function LeaderboardFixture({ fixture }: { fixture: LeaderboardFixtureSta
 			start={result.start}
 			end={result.end}
 			isRefreshing={false}
+			canRetry={fixture !== "paused"}
 			onPeriodChange={(nextPeriod) => {
 				setPeriod(nextPeriod);
 				setPage(1);
@@ -117,7 +120,9 @@ export function LeaderboardFixture({ fixture }: { fixture: LeaderboardFixtureSta
 				setPage(1);
 			}}
 			onRowsPerPageChange={(value) => {
-				setRowsPerPage(value);
+				const nextRowsPerPage = LEADERBOARD_API_PAGE_SIZES.find((pageSize) => pageSize === value);
+				if (nextRowsPerPage === undefined) return;
+				setRowsPerPage(nextRowsPerPage);
 				setPage(1);
 			}}
 			onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}

@@ -36,6 +36,7 @@ describe("LeaderboardFixture", () => {
 	it.each([
 		["normal", "normal"],
 		["loading", "loading"],
+		["paused", "paused"],
 		["error", "error"],
 		["empty", "empty"],
 		["no-results", "noResults"],

@@ -12,7 +12,7 @@ const budgets = {
 		{ name: "trade-terminal-page", baselineGzipBytes: 100_922, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
-		{ name: "leaderboard", baselineGzipBytes: 9_643, allowedIncreaseBytes: 1_500 },
+		{ name: "leaderboard", baselineGzipBytes: 12_083, allowedIncreaseBytes: 1_500 },
 		{ name: "staking", baselineGzipBytes: 23_131, allowedIncreaseBytes: 2_500 },
 		{ name: "vaults-page", baselineGzipBytes: 27_075, allowedIncreaseBytes: 3_000 },
 	],

@@ -256,28 +256,23 @@ describe("public Hyperliquid stats data", () => {
 		await expect(fetchPublicLeaderboard("Mainnet")).rejects.toMatchObject({ code: "invalid_json" });
 	});
 
-	it("reuses a validated projection after an HTTP 304 conditional response", async () => {
-		const headers = new Headers({ etag: '"leaderboard-v1"', "last-modified": "Wed, 13 Aug 2026 10:00:00 GMT" });
+	it("keeps refetches CORS-simple and leaves HTTP validation to the browser cache", async () => {
 		const fetchMock = vi
 			.fn()
-			.mockResolvedValueOnce({ ok: true, status: 200, headers, json: async () => leaderboardFixture() })
-			.mockResolvedValueOnce({ ok: false, status: 304, headers: new Headers(), json: async () => undefined });
+			.mockResolvedValueOnce({ ok: true, status: 200, headers: new Headers(), json: async () => leaderboardFixture() })
+			.mockResolvedValueOnce({ ok: true, status: 200, headers: new Headers(), json: async () => leaderboardFixture() });
 		vi.stubGlobal("fetch", fetchMock);
 
 		const first = await fetchPublicLeaderboard("Mainnet");
 		const second = await fetchPublicLeaderboard("Mainnet");
 
-		expect(second).toBe(first);
+		expect(second).toEqual(first);
 		expect(fetchMock).toHaveBeenNthCalledWith(2, "https://stats-data.hyperliquid.xyz/Mainnet/leaderboard", {
 			signal: undefined,
-			headers: {
-				"If-Modified-Since": "Wed, 13 Aug 2026 10:00:00 GMT",
-				"If-None-Match": '"leaderboard-v1"',
-			},
 		});
 	});
 
-	it("drops validators and projections when the environment changes", async () => {
+	it("keeps requests isolated by environment without application-managed validators", async () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValueOnce({

@@ -1,6 +1,7 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { type ReactNode, Suspense } from "react";
 import { TopNav } from "@/components/trade/header/top-nav";
 import { MobileHeader } from "@/components/trade/mobile/mobile-header";
@@ -109,6 +110,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 					owner={controller.owner}
 					isTestnet={isTestnet}
 					isRefreshing={controller.isRefreshing}
+					onRetryOwner={controller.onRetry}
 					onRequestAction={
 						onRequestAction ??
 						(vaultAction.canRequestAction ? (action) => void vaultAction.requestAction(action) : undefined)
@@ -239,7 +241,7 @@ function VaultDetailMessage({
 						<Trans>Retry</Trans>
 					</Button>
 				) : null}
-				<Button variant="outline" intent="neutral" onClick={() => window.location.assign("/vaults")}>
+				<Button nativeButton={false} variant="outline" intent="neutral" render={<Link to="/vaults" />}>
 					<Trans>Back to Vaults</Trans>
 				</Button>
 			</div>

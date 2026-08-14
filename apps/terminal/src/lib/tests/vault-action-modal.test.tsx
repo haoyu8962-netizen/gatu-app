@@ -63,6 +63,18 @@ describe("Vault action modal", () => {
 		act(() => verify?.click());
 		expect(onVerifyAgain).toHaveBeenCalledOnce();
 	});
+
+	it("shows exact owner and Vault addresses plus the documented lock context before signing", () => {
+		act(() => root.render(<VaultActionModal {...props({ stage: "review", result: undefined })} />));
+
+		const addressValues = [...container.querySelectorAll("dd")].filter((node) => node.textContent?.startsWith("0x"));
+		expect(addressValues.map((node) => node.textContent)).toEqual([OWNER, VAULT]);
+		expect(
+			addressValues.every((node) => node.className.includes("break-all") && !node.className.includes("truncate")),
+		).toBe(true);
+		expect(container.textContent).toContain("four-day lock after the latest HLP deposit");
+		expect(container.textContent).toContain("one-day lock for user Vaults");
+	});
 });
 
 function props(overrides: Partial<VaultActionModalProps> = {}): VaultActionModalProps {

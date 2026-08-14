@@ -14,6 +14,14 @@ const LEADER = "0x0000000000000000000000000000000000000002" as const;
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+		<a href="/vaults/mock" className={className}>
+			{children}
+		</a>
+	),
+}));
+
 describe("Vault views", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -30,17 +38,13 @@ describe("Vault views", () => {
 		container.remove();
 	});
 
-	it("keeps unreviewed classification explicit and fails the Official filter closed", () => {
+	it("does not expose classification filters without a reviewed address policy", () => {
 		render(
 			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
 		);
-		expect(container.textContent).toContain("Rows remain unclassified instead of being guessed");
 		expect(container.textContent).toContain("Alpha Vault");
-
-		const official = [...container.querySelectorAll("button")].find((button) => button.textContent === "Official");
-		act(() => official?.click());
-		expect(container.textContent).toContain("Classification unavailable");
-		expect(container.textContent).not.toContain("Alpha Vault");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Official")).toBe(false);
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "User")).toBe(false);
 	});
 
 	it("renders distinct loading, feed-error, and definitive-empty states", () => {
@@ -69,6 +73,42 @@ describe("Vault views", () => {
 		expect(text).not.toContain("4 days");
 		const leaderLink = container.querySelector<HTMLAnchorElement>('a[target="_blank"]');
 		expect(leaderLink?.rel).toBe("noopener");
+	});
+
+	it("lets an account-specific detail error retry its authoritative snapshots", () => {
+		const onRetryOwner = vi.fn();
+		render(
+			<VaultDetailView
+				detail={createDetail()}
+				owner={{ status: "error" }}
+				isTestnet={false}
+				onRetryOwner={onRetryOwner}
+			/>,
+		);
+		const retry = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Retry account data",
+		);
+		expect(retry).toBeDefined();
+		act(() => retry?.click());
+		expect(onRetryOwner).toHaveBeenCalledOnce();
+	});
+
+	it("paginates the officially sorted discovery rows with localized navigation labels", () => {
+		const rows = Array.from({ length: 21 }, (_, index) => ({
+			...createListRow(),
+			vaultAddress: `0x${(index + 1).toString(16).padStart(40, "0")}` as `0x${string}`,
+			name: `Vault ${index + 1}`,
+			tvl: String(21 - index),
+		}));
+		render(<VaultsList state="normal" rows={rows} account={{ status: "disconnected" }} onRetry={vi.fn()} />);
+		const pagination = container.querySelector('nav[aria-label="Vault pagination"]');
+		expect(pagination?.textContent).toContain("1 of 2");
+		const next = container.querySelector<HTMLButtonElement>('button[aria-label="Next Vault page"]');
+		expect(next).not.toBeNull();
+		act(() => next?.click());
+		expect(pagination?.textContent).toContain("2 of 2");
+		expect(container.textContent).toContain("Vault 21");
+		expect(container.textContent).not.toContain("Vault 1");
 	});
 
 	function render(element: React.ReactNode) {

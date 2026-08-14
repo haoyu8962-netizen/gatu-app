@@ -108,6 +108,10 @@ interface PaginationProps extends React.HTMLAttributes<HTMLElement>, VariantProp
 	totalItems?: number;
 	itemsPerPage?: number;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
+	navigationLabel?: string;
+	previousPageLabel?: string;
+	nextPageLabel?: string;
+	mobilePageSummary?: React.ReactNode;
 }
 
 const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
@@ -121,6 +125,10 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 			itemsPerPage = 10,
 			variant = "desktop",
 			size: sizeProp,
+			navigationLabel = "Pagination",
+			previousPageLabel = "Previous page",
+			nextPageLabel = "Next page",
+			mobilePageSummary,
 			...props
 		},
 		ref,
@@ -142,7 +150,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 			return (
 				<nav
 					ref={ref}
-					aria-label="Pagination"
+					aria-label={navigationLabel}
 					className={cn("flex items-center justify-center gap-4", className)}
 					{...props}
 				>
@@ -150,19 +158,23 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						onClick={() => handlePageChange(currentPage - 1)}
 						disabled={isFirstPage}
 						data-disabled={isFirstPage ? "" : undefined}
-						aria-label="Previous page"
+						aria-label={previousPageLabel}
 						className={cn(navButtonVariants({ variant: "mobile" }), navBtnH)}
 					>
 						<ArrowLeftIcon size={iconSize} className="shrink-0" />
 					</button>
 					<span className="flex-1 text-center text-xs font-normal text-fg-muted tabular-nums min-w-0">
-						{currentPage} of {totalPages}
+						{mobilePageSummary ?? (
+							<>
+								{currentPage} of {totalPages}
+							</>
+						)}
 					</span>
 					<button
 						onClick={() => handlePageChange(currentPage + 1)}
 						disabled={isLastPage}
 						data-disabled={isLastPage ? "" : undefined}
-						aria-label="Next page"
+						aria-label={nextPageLabel}
 						className={cn(navButtonVariants({ variant: "mobile" }), navBtnH)}
 					>
 						<ArrowRightIcon size={iconSize} className="shrink-0" />
@@ -177,13 +189,18 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 		const endItem = showResultCount ? Math.min(currentPage * itemsPerPage, totalItems!) : 0;
 
 		return (
-			<nav ref={ref} aria-label="Pagination" className={cn("flex items-center justify-between", className)} {...props}>
+			<nav
+				ref={ref}
+				aria-label={navigationLabel}
+				className={cn("flex items-center justify-between", className)}
+				{...props}
+			>
 				<div className="flex items-center gap-2">
 					<button
 						onClick={() => handlePageChange(currentPage - 1)}
 						disabled={isFirstPage}
 						data-disabled={isFirstPage ? "" : undefined}
-						aria-label="Previous page"
+						aria-label={previousPageLabel}
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pr-4")}
 					>
 						<ArrowLeftIcon size={iconSize} className="shrink-0 text-icon" />
@@ -218,7 +235,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						onClick={() => handlePageChange(currentPage + 1)}
 						disabled={isLastPage}
 						data-disabled={isLastPage ? "" : undefined}
-						aria-label="Next page"
+						aria-label={nextPageLabel}
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pl-4")}
 					>
 						Next

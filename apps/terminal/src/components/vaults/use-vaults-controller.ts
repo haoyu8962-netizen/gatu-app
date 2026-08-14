@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useActiveAgentOwner, useHyperliquid, useInfo, usePublicVaults } from "@/lib/hyperliquid";
 import {
@@ -8,6 +8,7 @@ import {
 	isVaultAddress,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
+	selectVaultDiscoveryRows,
 	type VaultAccountFactsState,
 	type VaultDetail,
 	type VaultListItem,
@@ -25,7 +26,7 @@ export interface VaultsController {
 	rows: readonly VaultListItem[];
 	account: VaultAccountFactsState;
 	isRefreshing: boolean;
-	updatedAt: number | null;
+	fetchedAt: number | null;
 	onRetry: () => void;
 }
 
@@ -68,7 +69,10 @@ export function useVaultsController(): VaultsController {
 		},
 	);
 
-	const rows = useMemo(() => publicVaults.data?.map(createVaultListItem) ?? [], [publicVaults.data]);
+	const rows = useMemo(
+		() => selectVaultDiscoveryRows(publicVaults.data?.map(createVaultListItem) ?? []),
+		[publicVaults.data],
+	);
 	const account = deriveAccountFactsState({
 		accountAddress,
 		equitiesData: equities.data,
@@ -81,7 +85,7 @@ export function useVaultsController(): VaultsController {
 	const state: VaultsFeedState = publicVaults.isError
 		? "error"
 		: publicVaults.data
-			? publicVaults.data.length
+			? rows.length
 				? "normal"
 				: "empty"
 			: publicVaults.isLoading || publicVaults.isFetching
@@ -93,7 +97,7 @@ export function useVaultsController(): VaultsController {
 		rows,
 		account,
 		isRefreshing: publicVaults.isFetching && publicVaults.data !== undefined,
-		updatedAt: publicVaults.dataUpdatedAt || null,
+		fetchedAt: publicVaults.dataUpdatedAt || null,
 		onRetry: () => {
 			void publicVaults.refetch();
 			if (accountAddress) {
@@ -134,6 +138,14 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 		? parseVaultDetailsSnapshot(detailQuery.data as unknown)
 		: { status: "notFound" as const };
 	const detail = parsed.status === "valid" ? parsed.detail : null;
+	const parsedEquities =
+		accountAddress && equitiesQuery.data !== undefined ? parseVaultEquitiesSnapshot(equitiesQuery.data) : null;
+	const lockBoundary =
+		detail && parsedEquities?.status === "valid"
+			? (parsedEquities.equities.find((item) => item.vaultAddress.toLowerCase() === detail.vaultAddress.toLowerCase())
+					?.lockedUntilTimestamp ?? detail.followerState?.lockupUntil)
+			: detail?.followerState?.lockupUntil;
+	const now = useNowAtBoundary(lockBoundary);
 	let state: VaultDetailState;
 	if (!validAddress || parsed.status === "notFound") state = "notFound";
 	else if (detailQuery.data === undefined && (detailQuery.isLoading || detailQuery.isFetching)) state = "loading";
@@ -147,13 +159,12 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 		} else if (equitiesQuery.isError) {
 			owner = { status: "error" };
 		} else {
-			const parsedEquities = parseVaultEquitiesSnapshot(equitiesQuery.data);
 			owner =
-				parsedEquities.status === "valid"
+				parsedEquities?.status === "valid"
 					? deriveVaultOwnerView({
 							detail,
 							account: { status: "ready", equities: parsedEquities.equities },
-							now: Date.now(),
+							now,
 						})
 					: { status: "error" };
 		}
@@ -169,6 +180,35 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 		onRetry: () => {
 			void detailQuery.refetch();
 			if (accountAddress) void equitiesQuery.refetch();
+		},
+	};
+}
+
+function useNowAtBoundary(boundary: number | null | undefined): number {
+	const clock = useMemo(() => createBoundaryClock(boundary), [boundary]);
+	return useSyncExternalStore(clock.subscribe, clock.getSnapshot, clock.getSnapshot);
+}
+
+function createBoundaryClock(boundary: number | null | undefined) {
+	let snapshot = Date.now();
+	return {
+		getSnapshot: () => snapshot,
+		subscribe: (onBoundaryReached: () => void) => {
+			if (typeof boundary !== "number" || !Number.isSafeInteger(boundary) || boundary <= snapshot) return () => {};
+			let timeout: ReturnType<typeof setTimeout> | undefined;
+			const checkBoundary = () => {
+				const remaining = boundary - Date.now();
+				if (remaining > 0) {
+					timeout = setTimeout(checkBoundary, Math.min(remaining + 50, 2_147_483_647));
+					return;
+				}
+				snapshot = Date.now();
+				onBoundaryReached();
+			};
+			timeout = setTimeout(checkBoundary, Math.min(boundary - snapshot + 50, 2_147_483_647));
+			return () => {
+				if (timeout !== undefined) clearTimeout(timeout);
+			};
 		},
 	};
 }

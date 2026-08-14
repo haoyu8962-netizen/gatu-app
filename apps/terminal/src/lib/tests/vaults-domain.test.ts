@@ -10,6 +10,7 @@ import {
 	groupVaultRows,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
+	selectVaultDiscoveryRows,
 	selectVaultRows,
 	sumVaultTvl,
 	type VaultAccountFactsState,
@@ -21,6 +22,7 @@ const VAULT_A = "0x0000000000000000000000000000000000000001" as const;
 const VAULT_B = "0x0000000000000000000000000000000000000002" as const;
 const LEADER = "0x0000000000000000000000000000000000000003" as const;
 const USER = "0x0000000000000000000000000000000000000004" as const;
+const VAULT_C = "0x0000000000000000000000000000000000000005" as const;
 const NOW = 1_786_579_200_000;
 
 const EMPTY_ACCOUNT: VaultAccountFactsState = { status: "disconnected" };
@@ -95,6 +97,32 @@ describe("Vault list domain", () => {
 		expect(leading.status === "ready" ? leading.rows.map((row) => row.vaultAddress) : []).toEqual([VAULT_B]);
 	});
 
+	it("orders positive account equity first, then TVL descending, with stable ties", () => {
+		const rows = [
+			createListItem({ vaultAddress: VAULT_A, name: "First equal", tvl: "100", classification: null }),
+			createListItem({ vaultAddress: VAULT_B, name: "Deposited", tvl: "1", classification: null }),
+			createListItem({ vaultAddress: VAULT_C, name: "Second equal", tvl: "100.0", classification: null }),
+		];
+		const facts = createVaultAccountFacts(
+			[
+				{ vaultAddress: VAULT_B, equity: "0.00000001", lockedUntilTimestamp: NOW },
+				{ vaultAddress: VAULT_C, equity: "0", lockedUntilTimestamp: NOW },
+			],
+			[],
+		);
+		expect(facts).not.toBeNull();
+		if (!facts) return;
+		const account = { status: "ready", facts } as const;
+		const all = selectVaultRows({ rows, filter: "all", query: "", account });
+		expect(all.status === "ready" ? all.rows.map((row) => row.name) : []).toEqual([
+			"Deposited",
+			"First equal",
+			"Second equal",
+		]);
+		const deposited = selectVaultRows({ rows, filter: "deposited", query: "", account });
+		expect(deposited.status === "ready" ? deposited.rows.map((row) => row.name) : []).toEqual(["Deposited"]);
+	});
+
 	it("searches name, Vault address, and leader without turning a no-result search into feed empty", () => {
 		const byName = selectVaultRows({ rows: BASE_ROWS, filter: "all", query: "alpha", account: EMPTY_ACCOUNT });
 		const noResult = selectVaultRows({ rows: BASE_ROWS, filter: "all", query: "missing", account: EMPTY_ACCOUNT });
@@ -104,6 +132,18 @@ describe("Vault list domain", () => {
 
 	it("sums and formats financial strings with Big.js beyond JavaScript precision", () => {
 		expect(sumVaultTvl(BASE_ROWS)).toBe("9007199254741000");
+		const child = { ...BASE_ROWS[1], vaultAddress: USER, relationship: "child" as const, tvl: "100" };
+		const closed = { ...BASE_ROWS[1], vaultAddress: VAULT_C, isClosed: true };
+		const openZero = { ...BASE_ROWS[1], tvl: "0" };
+		expect(sumVaultTvl([...BASE_ROWS, child])).toBe("9007199254741000");
+		expect(selectVaultDiscoveryRows([...BASE_ROWS, child, closed, openZero])).toEqual([...BASE_ROWS, closed, openZero]);
+		const visible = selectVaultRows({
+			rows: selectVaultDiscoveryRows([...BASE_ROWS, child, closed, openZero]),
+			filter: "all",
+			query: "",
+			account: EMPTY_ACCOUNT,
+		});
+		expect(visible.status === "ready" ? visible.rows.some((row) => row.isClosed) : true).toBe(false);
 		expect(formatVaultUsd("9007199254740993.01")).toBe("$9,007,199,254,740,993.01");
 		expect(formatVaultCompactUsd("125000000.25")).toBe("$125M");
 		expect(formatVaultRatio("0.098", 1, true)).toBe("+9.8%");

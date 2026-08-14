@@ -6,6 +6,7 @@ import type {
 	VaultOwnerViewState,
 	VaultPortfolioSnapshot,
 } from "./domain/vaults";
+import { selectVaultDiscoveryRows } from "./domain/vaults";
 import { VaultDetailView } from "./vault-detail-view";
 import { VaultsList } from "./vaults-list";
 
@@ -45,11 +46,13 @@ export function VaultsFixture({ fixture }: { fixture: VaultsFixtureState }) {
 	const { t } = useLingui();
 	const rows =
 		fixture === "normal"
-			? createVaultRows({
-					alpha: t`Sample Core Vault`,
-					beta: t`Sample Growth Vault`,
-					gamma: t`Sample Neutral Vault`,
-				})
+			? selectVaultDiscoveryRows(
+					createVaultRows({
+						alpha: t`Sample Core Vault`,
+						beta: t`Sample Growth Vault`,
+						gamma: t`Sample Neutral Vault`,
+					}),
+				)
 			: [];
 
 	return (
@@ -57,7 +60,7 @@ export function VaultsFixture({ fixture }: { fixture: VaultsFixtureState }) {
 			state={fixture}
 			rows={rows}
 			account={fixture === "normal" ? createAccountFacts() : { status: "disconnected" }}
-			updatedAt={fixture === "normal" ? FIXTURE_UPDATED_AT : null}
+			fetchedAt={fixture === "normal" ? FIXTURE_UPDATED_AT : null}
 			onRetry={() => undefined}
 		/>
 	);
@@ -104,7 +107,7 @@ function createVaultRows(names: { alpha: string; beta: string; gamma: string }):
 			apr: "0.112",
 			createdAt: Date.UTC(2025, 8, 3),
 			isClosed: false,
-			relationship: "child",
+			relationship: "normal",
 			pnlByPeriod: {
 				day: ["0", "-8500"],
 				week: ["0", "68000"],

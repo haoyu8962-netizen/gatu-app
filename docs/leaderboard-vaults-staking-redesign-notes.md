@@ -6,12 +6,14 @@ Status: **implemented within the user-approved recommended boundary; final verif
 
 ## Scope and source precedence
 
-This delivery covers only these production routes:
+This delivery covers these four user-facing production routes:
 
 - `/vaults`
 - `/vaults/$vaultAddress`
 - `/staking`
 - `/leaderboard`
+
+Leaderboard data is exposed to the browser through the internal read-only server endpoint `GET /api/leaderboard`. It is not a fifth page route.
 
 The desktop and mobile designs share each route's controller and domain model. `18c` in the combined Staking/Referrals design is the existing Referrals product and is out of scope. The handoff route table mentions `/staking/validators/$validator`, but the package contains no validator-detail screen, field contract, or state specification; the user-approved boundary therefore deliberately omits that route.
 
@@ -20,7 +22,7 @@ Sources are applied in this order:
 1. Hyperliquid's current official developer and product documentation is the hard behavioral constraint.
 2. The delivery-package READMEs define product intent where they do not conflict with official behavior.
 3. The project's pinned `@nktkas/hyperliquid@0.33.3` types and existing `@gatu/hl-react` integration define the callable SDK surface used to realize that intent.
-4. Current production behavior at `app.hyperliquid.xyz` fills the two approved public-list source gaps only through the contained adapter described below. It cannot override documented protocol behavior or the handoff's product intent and is marked undocumented and potentially unstable.
+4. Current production behavior at `app.hyperliquid.xyz` fills the two approved public-list source gaps only through the contained boundaries described below: a browser adapter for Vaults and a same-origin server endpoint for Leaderboard. It cannot override documented protocol behavior or the handoff's product intent and is marked undocumented and potentially unstable.
 5. The `.dc.html` files define visual composition and interaction references only. Their code and fixture values must not enter the project.
 
 `@nktkas/hyperliquid` is the project's pinned community TypeScript SDK, not an official Hyperliquid SDK. Its v0.33.3 tag is nevertheless the exact implementation contract this repository compiles and signs against.
@@ -80,22 +82,23 @@ Every listed page is new; the repository currently has no matching route or page
 
 | Design section / concern | Route | Previous project surface | Delivered implementation | Status |
 | --- | --- | --- | --- | --- |
-| Vault list 16a | `/vaults` | No page/route | `apps/terminal/src/components/vaults/vaults-page.tsx`, `vaults-list.tsx`, `use-vaults-controller.ts`, `domain/vaults.ts`; discover/search plus fail-closed official/user/deposited/leading filters | Delivered |
+| Vault list 16a | `/vaults` | No page/route | `apps/terminal/src/components/vaults/vaults-page.tsx`, `vaults-list.tsx`, `use-vaults-controller.ts`, `domain/vaults.ts`; discover/search plus owner-backed deposited/leading filters; unsupported Official/User controls are omitted | Delivered |
 | Vault mobile list/detail 16b | Same Vault routes | `useIsMobile`, inclusive 1000px layout contract, shared Table/Card/Drawer primitives | Responsive views over the same controller/domain; no separate mobile data source | Delivered |
 | Vault detail 16c | `/vaults/$vaultAddress` | No page/route; portfolio chart is not a reusable public builder | Detail controller/view/chart plus audited deposit/withdraw state machine | Delivered |
 | Staking desktop 18a | `/staking` | No page/route | Overview, balances, validators, aggregate unlock state, rewards/history, and audited actions | Delivered |
 | Staking mobile 18b | `/staking` | `useIsMobile`, Adaptive Modal/Sheet conventions | Responsive views over the desktop controller/domain; validator table scrolls where required | Delivered |
 | Validator detail | Outside the approved boundary | Handoff route table mentions it, but no section/spec exists | Omitted without inventing fields, navigation, or a detail page. | Deliberately not implemented |
-| Leaderboard desktop 22a | `/leaderboard` | No page/route/data adapter | Page/view/controller/domain over the audited, runtime-validated App feed | Delivered with unstable-source disclosure |
-| Leaderboard mobile 22b | `/leaderboard` | Existing responsive hooks/Card/Pagination/Select | Responsive cards/table over the same controller and exact source rows | Delivered |
+| Leaderboard desktop 22a | `/leaderboard` | No page/route/data adapter | Page/view/controller over compact, strictly validated pages from same-origin `GET /api/leaderboard`; the server owns the audited App-feed projection | Delivered with unstable-source disclosure |
+| Leaderboard mobile 22b | `/leaderboard` | Existing responsive hooks/Card/Pagination/Select | Responsive cards/table over the same paged controller; the browser never downloads the full upstream dataset | Delivered |
 | Funds action state | Vault and Staking modals/sheets | API-wallet state is credential-specific and cannot be reused safely; page-local state would be lost on route unmount | Pure shared state module plus app-shell recovery host: `input → review → awaiting → submitted → reconciling → done`; exhaustive tests | Delivered |
-| Read-only public stats | Vault list and Leaderboard | No supported adapter; page-level fetch would bypass integration policy | Typed, runtime-validated, resource-bounded adapter under `packages/hl-react`; exact environment binding and no cross-fallback | Delivered shared integration exception |
+| Read-only Vault stats | Vault list | No supported adapter; page-level fetch would bypass integration policy | Typed, runtime-validated, resource-bounded browser adapter under `packages/hl-react`; exact environment binding and no cross-fallback | Delivered shared integration exception |
+| Read-only Leaderboard stats | Leaderboard | No SDK read method; a browser direct fetch would download the full upstream datasets and rely on unstable cross-origin behavior | Same-origin `GET /api/leaderboard` validates the request, bounds and normalizes environment-matched upstream datasets on the server, then returns at most one compact page | Delivered server integration exception |
 | Documented Info queries | Vault detail and Staking | `packages/hl-react/src/hooks/useInfo.ts` | Reuse the existing generic typed `useInfo` surface; never call `/info` directly in page components | Reuse |
 | Financial writes | Vault and Staking actions | `packages/hl-react/src/hooks/useExchange.ts` and registry | Call only the existing typed exchange hook; no page signing or request assembly | Reuse |
 | Legal/geographic gate | Every write CTA | `useLegalStatus`, terms acceptance, and `useGeoRestriction`; the current geo hook does not expose query failure | Reuse the existing gates and expose a non-breaking geo error signal so these high-stakes pages can fail closed while public reads remain available | Reuse/small safe extension |
 | Cross-tab funds safety | All financial writes | `funds-action-lock.ts` previously omitted the new methods | Added the delivered write methods to the shared funds lock and its `retry: false` path, with integration tests | Delivered shared safety fix |
 | Address explorer link | Leaderboard rows | `packages/hl-react/src/explorer.ts` has transaction/token helpers but no address helper; the app has no internal explorer route | Add a typed `getExplorerAddressUrl` beside the existing helpers and open the official explorer with `target="_blank" rel="noopener"` | Small shared integration extension |
-| Routes | Four delivered routes above | TanStack file routes and generated `routeTree.gen.ts` | Route modules use `ssr: false`, `buildPageHead`, and the generated route tree; Vault list/detail use a proper parent Outlet | Delivered |
+| Routes | Four delivered page routes plus one internal data endpoint | TanStack file routes and generated `routeTree.gen.ts` | Page routes use `ssr: false` and `buildPageHead`; `api.leaderboard.ts` is a GET server handler; Vault list/detail use a proper parent Outlet | Delivered |
 | Navigation | Four delivered routes | Desktop and mobile previously showed disabled Vaults/Staking/Leaderboard placeholders | The three exact placeholders are public links with active state. The compact desktop wallet-visibility gate was intentionally removed. Earn remains disabled; signing CTAs remain gated. | Delivered |
 | i18n | All new copy | Lingui catalogs: en/zh/hi/es/fr/ar | Extract all copy; complete English and Chinese, preserve project fallback convention for other configured locales | Extend |
 | Design tokens | All new UI | `apps/terminal/src/styles.css`, `packages/ui`, Tailwind semantic utilities | Reuse semantic project tokens; add only missing product-semantic entries centrally | Extend only if missing |
@@ -121,6 +124,10 @@ Repository integration surfaces checked during this audit:
 - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
 - `apps/terminal/src/config/nav.tsx`
 - `apps/terminal/src/routeTree.gen.ts`
+- `apps/terminal/src/routes/api.leaderboard.ts`
+- `apps/terminal/src/lib/leaderboard/leaderboard-api.ts`
+- `apps/terminal/src/lib/leaderboard/leaderboard-server.ts`
+- `apps/terminal/src/components/leaderboard/use-leaderboard-data.ts`
 - `apps/terminal/src/lib/tests/top-nav.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-nav-drawer.test.tsx`
 - `apps/terminal/src/lib/tests/nav.test.ts`
@@ -135,20 +142,22 @@ The delivery is a legacy HyperCore Vault follower experience, not a new HyperEVM
 | --- | --- | --- | --- |
 | Vault name/address/leader/created time/TVL | Undocumented App feed `summary.{name,vaultAddress,leader,createTimeMillis,tvl}` | Delivered through the contained public-stats adapter | Runtime-validate and normalize before caching. Never use design fixtures in production. |
 | Full public Vault discovery | Official App `Mainnet/vaults` feed | Pinned `vaultSummaries()` is unsuitable: it documents only Vaults created less than roughly two hours ago and returned `[]` during the audit | Use the approved, contained App-feed adapter with an explicit unstable-source disclosure; never silently substitute a cross-network or fixture fallback. |
+| Default discovery order | Current official App behavior: exclude child rows, hide `isClosed` from the default table, put rows with positive user equity first, then sort TVL descending | No single SDK list method supplies this presentation policy | Apply the visibility/sort policy in the domain layer before pagination, compare decimal strings with Big.js, and keep equal-TVL feed order stable. Open zero-TVL rows remain valid but sort last. |
 | APR | Stats feed `apr: number`, a decimal ratio | `vaultDetails.apr` exists for a single detail, but is not a substitute for list discovery | Format with Big.js. Do not interchange list/detail snapshots silently. |
 | Performance sparkline | Stats feed `pnls: [period, string[]][]` | No documented list equivalent | Select the exact period series; parse/format financial strings outside React. |
 | Period | Feed periods `day/week/month/allTime` | No page adapter yet | Map UI labels 24h/7D/30D/All-time exactly; do not scale one fixture series. |
-| Your deposit | `userVaultEquities({user})[].equity: string` | Existing typed Info method | Query only with the verified owner/master address. Missing/error data is unknown, not zero. |
+| Your equity | `userVaultEquities({user})[].equity: string` | Existing typed Info method | Query only with the verified owner/master address. Missing/error data is unknown, not zero. |
 | Deposited filter | `userVaultEquities({user})[].vaultAddress` | Existing typed Info method | Exact case-insensitive address membership. Disabled/disconnected state cannot be inferred as an empty deposit set. |
 | Leading filter | `leadingVaults({user})[].address` | Pinned SDK method, not clearly documented in GitBook | Runtime-validate and mark as SDK-backed; fail closed on missing data. |
-| Official filter/group | No stable protocol enum; the current App uses internal special-address classification | Missing | Rendered as unavailable under the approved fail-closed boundary. The page does not infer it from `relationship`. |
-| User filter/group | Requires the same reviewed classification policy and child-Vault handling | Missing | Rendered as unavailable with Official. The page never defines User as “everything not deposited/leading”. |
-| Discover grouping | Handoff requires Official / User / I manage | Partially available (`leadingVaults` only) | Delivered as an explicitly reduced grouping: Deposited and Leading use owner-backed facts; Official/User remain unavailable rather than relabeling unknown rows. |
-| Total TVL | Sum of validated list `summary.tvl` strings | No single stable SDK aggregate | Big.js sum outside components. Never add JS numbers. |
+| Official filter/group | No stable protocol enum; the current App uses internal special-address classification | Missing | Omit the unsupported control and badge. The page does not infer Official from `relationship`. |
+| User filter/group | Requires the same reviewed classification policy and child-Vault handling | Missing | Omit the unsupported control. The page never defines User as “everything not deposited/leading”. |
+| Discover grouping | Handoff requires Official / User / I manage | Partially available (`leadingVaults` only) | Delivered as an explicitly reduced grouping: Deposited and Leading use owner-backed facts; unknown public rows remain a neutral Vault group. |
+| Child Vault rows and Total TVL | `summary.relationship` plus validated `summary.tvl` strings | The current official App excludes `relationship.type === "child"` before discovery and aggregation | Exclude child rows and use Big.js to sum root/normal rows, including closed roots in the aggregate even though the default table hides them. Parent and child TVL must not be counted twice. |
 | “Official” badge | No SDK/feed field | Missing | Omitted in this delivery because no reviewed, versioned allowlist exists. |
-| Snapshot age | HTTP metadata/feed receipt time, not a business field | Adapter responsibility | Show data freshness based on local receipt and response metadata; do not present `createTimeMillis` as snapshot time. |
+| User-provided names | Feed `summary.name: string` | No documented moderation or status field exists | Render only as React-escaped text. Do not invent a protocol rule or heuristic blocklist; a product moderation policy would need separate approval. Closed names are not shown in the default list because closed Vaults are hidden by the official default policy. |
+| Snapshot age | Successful local fetch time, not a business field or origin update timestamp | Adapter responsibility | Label it “Fetched”; do not call the React Query receipt time “Updated” and do not present `createTimeMillis` as snapshot freshness. |
 
-The audited Mainnet public Vault feed was approximately 14.2 MB uncompressed and contained roughly 26,460 raw rows at that instant; the Testnet feed contained roughly 1,872 rows. Those figures are observations, not product constants. The adapter keeps only one selected-environment normalized projection in memory, never persists or retains the raw response after validation, removes the prior environment's query on environment change, never uses cross-environment placeholder data, and relies on explicit/manual refresh plus HTTP validators rather than background duplicate downloads. Abort handling, schema validation, an explicit degraded state, and resource-budget tests are mandatory.
+The audited Mainnet public Vault feed was approximately 14.2 MB uncompressed and contained roughly 9,468 raw rows at that instant; the Testnet feed contained roughly 1,872 rows. Those figures are observations, not product constants. The adapter keeps only the selected-environment normalized projection in React Query, never persists or retains the raw response after validation, releases it when the last query unmounts, and never uses cross-environment placeholder data. Refresh uses a plain CORS-safe GET and the browser's native HTTP cache. Application-supplied `If-None-Match` / `If-Modified-Since` headers are forbidden because the current stats CloudFront distribution rejects their browser preflight. Abort handling, schema validation, an explicit degraded state, and resource-budget tests are mandatory.
 
 ### 2.2 Vault detail (16c/16b)
 
@@ -205,14 +214,14 @@ There is no Leaderboard read method in `@nktkas/hyperliquid@0.33.3`, and Hyperli
 | PNL/ROI/Volume | Period strings `pnl`, `roi`, `vlm` | Big.js parsing/formatting. ROI is a ratio and is multiplied by 100 only for display. |
 | ROI definition | Feed-provided `roi`; the current App describes ROI as PNL divided by the greater of 100 and starting account value plus maximum net deposits | Render the feed value. Required starting-balance/deposit inputs are not present in each row, so do not reimplement or “correct” the formula in the page. |
 | Rank | Order after the delivered, explicitly partial eligibility/exclusion policy and selected metric ordering | Derived deterministically with stable tie-breaking; no fixture rank or row count is hardcoded. |
-| Search | Exact/partial address and optional display name | Client derivation over validated rows; explicit no-results state. |
-| Sorting | Current App supports Account Value, PNL, ROI, and Volume | Delivered all four with stable tie-breaking, not only PNL. |
-| Pagination | Current App exposes 5/10/25/50; handoff shows 10/25/50 | Delivered with 5/10/25/50, including the mobile 5-row option. |
+| Search | Exact/partial address and optional display name | Debounce input by 250 ms, then search the server's complete eligible projection before pagination; explicit no-results state. |
+| Sorting | Current App supports Account Value, PNL, ROI, and Volume | Delivered all four on the server with stable address tie-breaking, not only PNL. Global rank is preserved when search narrows the returned rows. |
+| Pagination | Current App exposes 5/10/25/50; handoff shows 10/25/50 | Delivered server-side with 5/10/25/50, including the mobile 5-row option. The browser receives at most 50 rows per response. |
 | Trader link | Official `/explorer/address/$ethAddress` | Add/reuse an integration-layer address URL helper and open the official explorer in a protected new tab. The project has no internal explorer-address route; do not invent a portfolio route. |
 | Eligibility note | Current App excludes a row only when account value is below 100k **and** all-time volume is below 10m | The handoff's “either threshold” wording is wrong. Treat this as current-App policy, not protocol documentation. |
 | Vault/special-account exclusion | Current App also excludes child/special Vault and known protocol/treasury addresses using the Vault feed and internal address sets | Exact parity requires a reviewed exclusion adapter/allowlist. Do not claim official parity if this policy is omitted. |
 
-The audited Mainnet Leaderboard response was approximately 34.5 MB uncompressed and contained roughly 41,739 rows at that instant; the Testnet feed contained roughly 9,468 rows. These are observations, not constants. A page-level direct fetch is rejected. As with Vaults, keep only the selected environment's validated normalized projection, release raw data, remove the old-environment query on switch, never persist the feed, and never use cross-environment placeholder data. The adapter also provides cancellation, stale/error semantics, explicit refresh, conditional validators, streaming resource limits, and DEV-only fixtures. Production failure shows a fail-closed error state rather than demo rows.
+The audited Mainnet Leaderboard response was approximately 34.5 MB uncompressed and contained roughly 41,739 rows at that instant; the Testnet feed contained roughly 9,468 rows. These are observations, not constants. A browser direct fetch is rejected. `GET /api/leaderboard` strictly validates single-value query parameters (`env`, period, sort, direction, query up to 128 code points without controls, bounded page, and page size 5/10/25/50). Its process-local, environment-scoped snapshot cache concurrently loads the matching Leaderboard and Vault feeds under a 15-second deadline, rejects redirects/non-JSON and dishonest size metadata, always stream-enforces dataset byte/row/schema limits, and discards raw JSON after normalization. Server-to-upstream conditional requests are allowed because CORS preflight is not involved. Snapshots are fresh for five minutes, may be served stale for at most another 30 minutes while a single refresh runs, and throttle failed refreshes for 30 seconds; once that window expires, an unsuccessful refresh returns fail-closed 503. The server caches no more than 26 sorted index variants per snapshot and caps each versioned, identity-bound response at 256 KiB. The browser uses a 20-second timeout, strict response identity/schema validation, no retry, bounded query GC, no previous-query placeholder, and one delayed revalidation per stale generation. Production failure never substitutes fixture or cross-network data.
 
 ## 3. Action/SDK/reconciliation mapping
 
@@ -259,10 +268,10 @@ Ledger/history reconciliation accepts exactly one new matching event that was ab
 
 | Page | Required states |
 | --- | --- |
-| Vault list | public normal, loading, feed error, definitive empty, search no-results, and official/user/deposited/leading filter states; disconnected and non-signing owners still see public rows while account-specific filters/values fail closed |
+| Vault list | public normal, loading, feed error, definitive empty, search no-results, and deposited/leading filter states; unsupported Official/User controls are omitted; disconnected and non-signing owners still see public rows while account-specific filters/values fail closed |
 | Vault detail | public normal, loading, not-found, error; disconnected, non-master/non-signing, deposits-disabled, closed, locked withdrawal, and actionable owner states |
 | Staking | public validator normal/loading/error/empty plus account disconnected, account snapshot error, no stake, active stake, pending withdrawal aggregate, and non-signing owner states |
-| Leaderboard | normal, loading, feed error, definitive empty, and search no-results; wallet state does not gate public data |
+| Leaderboard | normal, loading, paused/offline, feed error, definitive empty, and search no-results; already validated data may additionally show stale, refresh-error, or paused notices; wallet state does not gate public data |
 | Every financial action | all six stages and all four results, including legal/geo/Agent gates, identity/environment change, route unmount/recovery, cross-tab pending marker, stale preflight, malformed response, late result, abort, and exact/non-exact reconciliation |
 
 Fixtures may drive acceptance screenshots only behind `import.meta.env.DEV`. They must be runtime-schema-valid, use placeholder addresses and amounts, never contradict the surrounding wallet shell, and never enter production or replace a real error with demo data.
@@ -296,7 +305,7 @@ The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/toke
 | Every Vault locks for four days | HLP uses four days after the latest deposit; a user Vault uses one day | Enforce only returned timestamps; explain the category rule as contextual copy. |
 | Every Vault deposit has a 20 USDC minimum | No follower-side SDK or official-doc rule supports it | Remove it; validate exact positive micro-USDC and surface the server response. |
 | Vault commission is always 10% | `leaderCommission` is returned; protocol Vaults may use 0 | Render the interface value. |
-| “Official/User Vault” is an interface field | No such enum exists | Require exact reviewed address classification or omit the badge/group claim. |
+| “Official/User Vault” is an interface field | No such enum exists | Omit the unsupported controls and badge/group claim until an exact reviewed address policy exists. |
 | Leaderboard uses `volume` and can scale fixture data by period | Feed uses real per-window `vlm` | Map the real period tuple; never transform one window into another. |
 | A trader is excluded when either account value or all-time volume is below its threshold | Current official App excludes only when both are below their thresholds | Delivered the observed AND rule and labels it as current ranking policy, not protocol law. |
 | Only PNL is sortable | Current App sorts Account Value, PNL, ROI, and Volume | Delivered all four sorts with deterministic tie-breaking. |
@@ -307,14 +316,14 @@ The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/toke
 
 The user approved the recommended boundary after this audit. The implementation applies it as follows:
 
-1. **Undocumented public-data adapter accepted with containment.** `@gatu/hl-react` now owns both environment-specific App-feed adapters. Responses are stream-read under dataset byte and row limits, strictly schema-validated, normalized before caching, scoped by environment, and never persisted. Conditional HTTP validators avoid unnecessary full transfers; missing, dishonest, or absent `Content-Length` cannot bypass the streaming byte limit. Production failures remain explicit and never fall back to fixture or cross-network data.
+1. **Undocumented public data accepted with containment.** Vault discovery remains in the environment-specific `@gatu/hl-react` browser adapter: it uses a plain CORS-safe GET/native browser cache without application-supplied conditional headers and stream-enforces byte/row/schema limits. Leaderboard uses same-origin `GET /api/leaderboard`; only the server fetches and normalizes the full environment-matched upstream datasets, may use upstream validators, and returns a bounded page. Both paths fail visibly and never fall back to fixture or another network.
 2. **Shared funds safety accepted.** `vaultTransfer`, `cDeposit`, `cWithdraw`, and `tokenDelegate` use the integration layer's cross-tab lock and `retry:false` behavior. An app-shell recovery host and non-secret operation marker retain ambiguous operations across page navigation and reload. Marker storage uses an atomic global lock; unknown actions can only perform read-only verification.
 3. **Validator detail deferred.** `/staking/validators/$validator` was not added because no screen or field contract exists. Validator rows remain part of `/staking`.
 4. **Staking linking writes deferred.** The page renders verified linking status and the permanent-control warning, but does not call `linkStakingUser`. There is no unlink control.
 5. **Pending withdrawal remains aggregate.** The UI uses returned total/count and exact history, without fabricated queue identifiers, unlock timestamps, or progress bars.
 6. **Scope is limited to the audited routes.** Referrals remains unchanged and section 18c is excluded.
 7. **Leaderboard parity is deliberately partial and disclosed.** The page implements all four periods and sorts, the observed AND threshold, exact feed values, network-matched Vault-address exclusion, and protected explorer links. No reviewed protocol/treasury special-address list exists, so policy `gatu-vault-feed-only-2026-08-14` explicitly does not claim exact parity with Hyperliquid's official ranking.
-8. **Vault classification remains unavailable instead of guessed.** Official/User controls explain the missing reviewed policy and fail closed. Deposited and Leading use verified owner snapshots; public rows remain unclassified.
+8. **Vault classification is omitted instead of guessed.** Official/User controls and badges are absent until a reviewed policy exists. Deposited and Leading use verified owner snapshots; public rows remain unclassified.
 
 ## 8. Final verification and delivery evidence
 
@@ -326,7 +335,7 @@ The `.dc.html` files and their runtimes were used only for visual and interactio
 | --- | --- |
 | Vault and Staking direct `input → done` demos | Replaced by the complete `input → review → awaiting → submitted → reconciling → done` model, including `rejected`, `apiError`, `unknown`, exact reconciliation, close locks, and cross-route/cross-tab recovery. |
 | Vault 20 USDC minimum and universal four-day lock | Removed the unsupported minimum and enforce only the server-returned lock timestamp. Context copy distinguishes HLP's four-day latest-deposit lock from a user Vault's one-day lock. |
-| Vault Official/User grouping and badges | Left visibly unavailable because neither the documented API nor the approved feed supplies a reliable classification. Deposited and Leading remain owner-backed; unknown rows are never guessed into a category. |
+| Vault Official/User grouping and badges | Omitted because neither the documented API nor the approved feed supplies a reliable classification. Deposited and Leading remain owner-backed; unknown rows are never guessed into a category. |
 | Vault withdrawal preview | Does not promise static post-operation shares or requested amount as net received. Review copy covers forced position closure, slippage, commission, and closing cost; final values come from the ledger. |
 | Staking “undelegate to seven-day queue” | Corrected: undelegation returns to Staking available after the delegation lock; only `cWithdraw` initiates the withdrawal queue (seven days on Mainnet, approximately five minutes on Testnet). |
 | Staking per-withdrawal progress rows | Replaced with the authoritative aggregate amount/count and initiated/finalized history because the API exposes no stable queue ID or unlock timestamp. |
@@ -354,6 +363,8 @@ The dimensions are exact:
 
 Each query is a DEV-only deterministic fixture trigger. Production builds ignore these fixtures. To reproduce, run the terminal on port 3006, select the listed locale/theme through the existing app controls, set the viewport, and open the relative URL. Every fixture uses placeholder addresses and synthetic values; no real account, credential, or private key appears in the screenshots.
 
+The original 112-image acceptance baseline predates the added Leaderboard `paused` fixture. Paused/offline, stale, and refresh-error behavior is covered by component/controller tests and live browser QA rather than silently changing the approved screenshot count in this corrective pass.
+
 | Surface/file | Trigger URL | Expected state | Copies across locale/theme/viewport |
 | --- | --- | --- | ---: |
 | `leaderboard-normal.png` | `/leaderboard?fixture=normal` | Validated rows, periods, sorting, pagination, protected address links | 8 |
@@ -361,7 +372,7 @@ Each query is a DEV-only deterministic fixture trigger. Production builds ignore
 | `leaderboard-error.png` | `/leaderboard?fixture=error` | Fail-closed feed error | 8 |
 | `leaderboard-empty.png` | `/leaderboard?fixture=empty` | Definitive empty dataset | 8 |
 | `leaderboard-no-results.png` | `/leaderboard?fixture=no-results` | Search no-results while source rows exist | 8 |
-| `vaults-normal.png` | `/vaults?fixture=normal` | Validated public rows; fail-closed classification; owner-backed Deposited/Leading facts | 8 |
+| `vaults-normal.png` | `/vaults?fixture=normal` | Validated public root rows; positive owner equity first, then TVL descending; child rows omitted and closed rows hidden by default; unsupported classification omitted | 8 |
 | `vaults-loading.png` | `/vaults?fixture=loading` | Loading skeleton | 8 |
 | `vaults-error.png` | `/vaults?fixture=error` | Fail-closed public-feed error | 8 |
 | `vaults-empty.png` | `/vaults?fixture=empty` | Definitive empty dataset | 8 |
@@ -383,6 +394,7 @@ Only the following delivery-owned categories belong to this redesign:
   - `apps/terminal/src/components/staking/**`
   - `apps/terminal/src/components/funds-action/**`
 - Routes and app composition:
+  - `apps/terminal/src/routes/api.leaderboard.ts`
   - `apps/terminal/src/routes/leaderboard.tsx`
   - `apps/terminal/src/routes/vaults.tsx`
   - `apps/terminal/src/routes/vaults.index.tsx`
@@ -390,6 +402,14 @@ Only the following delivery-owned categories belong to this redesign:
   - `apps/terminal/src/routes/staking.tsx`
   - `apps/terminal/src/routes/__root.tsx`
   - `apps/terminal/src/routeTree.gen.ts`
+- Leaderboard server/client data boundary and tests:
+  - `apps/terminal/src/lib/leaderboard/leaderboard-api.ts`
+  - `apps/terminal/src/lib/leaderboard/leaderboard-server.ts`
+  - `apps/terminal/src/components/leaderboard/use-leaderboard-data.ts`
+  - `apps/terminal/src/lib/tests/leaderboard-api.test.ts`
+  - `apps/terminal/src/lib/tests/leaderboard-server.test.ts`
+  - `apps/terminal/src/components/leaderboard/__tests__/use-leaderboard-data.test.ts`
+  - `apps/terminal/src/lib/hyperliquid/market-stats-subscription.ts` and its test (prevents the public route from starting an unrelated market subscription)
 - Navigation:
   - `apps/terminal/src/components/trade/header/top-nav.tsx`
   - `apps/terminal/src/components/trade/mobile/mobile-nav-drawer.tsx`
@@ -417,16 +437,18 @@ No third-party dependency was added.
 
 | Shared file/surface | Why it changed | Existing behavior preserved |
 | --- | --- | --- |
-| `packages/hl-react` public-stats adapter and exports | Centralizes undocumented App-feed access behind environment binding, runtime schemas, streaming limits, HTTP validators, and normalized caching instead of fetching in pages | Existing documented Info/Exchange hooks and cache keys are unchanged. |
+| `packages/hl-react` public-stats adapter and exports | Centralizes Vault feed access behind environment binding, runtime schemas, streaming limits, a plain CORS-safe browser request, and normalized React Query caching; it also exposes the audited URL/normalizer/limit primitives reused by the Leaderboard server | Existing documented Info/Exchange hooks and cache keys are unchanged. |
+| `GET /api/leaderboard` and `lib/leaderboard/**` | Keeps the full undocumented Leaderboard and Vault exclusion feeds on the server, applies environment-scoped bounded normalization/cache/sort/search/pagination, and returns only a compact strictly validated page | The user-facing route remains public and read-only; no wallet or secret reaches this endpoint. |
 | `funds-action-lock.ts` | Adds only `vaultTransfer`, `cDeposit`, `cWithdraw`, and `tokenDelegate` to the existing funds Web Lock and `retry:false` classification | All previously protected methods retain their behavior; linking writes remain disabled. |
 | `explorer.ts` | Adds the missing typed address-URL helper required by Leaderboard rows | Existing transaction/token URL helpers are unchanged. |
 | `use-geo-restriction.ts` | Exposes non-breaking error/resolved/retry signals so financial writes fail closed when geography cannot be established | Existing country/proxy/loading fields and public reads are preserved. |
-| `security-headers.ts` | Allows the reviewed Hyperliquid App public-stats origin in `connect-src`; without it, the strict browser CSP correctly blocked the delivered Vaults and Leaderboard adapters | All existing API, RPC, WebSocket, wallet, analytics, and asset sources remain unchanged. |
+| `security-headers.ts` | Allows the reviewed Hyperliquid App public-stats origin in browser `connect-src` for the Vault feed; Leaderboard upstream traffic is server-side and does not depend on browser CSP | All existing API, RPC, WebSocket, wallet, analytics, and asset sources remain unchanged. |
 | `routes/__root.tsx` | Mounts the lazy funds-action recovery host inside the existing Exchange scope so ambiguous actions survive route changes | Provider ordering and existing route surfaces remain intact. |
 | Navigation and generated route tree | Converts only the Vaults, Staking, and Leaderboard placeholders into real desktop/mobile routes | Earn remains disabled; existing route identities and wallet controls are unchanged. |
 | `styles.css` | Adds product-semantic variables only | Existing token values and shared component styles are unchanged. |
+| `packages/ui/src/pagination.tsx` | Adds optional localized navigation labels and a mobile summary slot for the Vault list | Existing callers retain the same English defaults and interaction behavior. |
 | `lib/markdown.tsx` | Replaces table array-index React keys with stable occurrence keys to satisfy the repository lint gate | Markdown output and styling are unchanged. |
-| `check-client-bundle-budget.mjs` | Records the newly measured total baseline and adds explicit Leaderboard, Staking, and Vaults surface budgets | Existing trade, token-selector, API-wallet, largest-chunk, and allowed-increase checks remain enforced. |
+| `check-client-bundle-budget.mjs` | Refreshes the exact Leaderboard surface baseline for the intentional same-origin client validation/data-state boundary while retaining its 1,500-byte future-growth allowance | The total budget and existing trade, token-selector, API-wallet, staking, Vaults, and largest-chunk checks remain enforced. |
 
 ### 8.5 Regression confirmation
 
@@ -446,7 +468,11 @@ No third-party dependency was added.
 
 The post-implementation audit against pinned `@nktkas/hyperliquid@0.33.3`, current Hyperliquid developer documentation, and live read-only Mainnet/Testnet response shapes produced these corrections:
 
-- Public Leaderboard/Vault feeds are now permitted by the app CSP; schema, environment, streaming-size, and fail-closed controls remain in the integration adapter.
+- Browser CSP permits the reviewed public-stats origin only for the Vault browser adapter. Leaderboard requests are same-origin compact pages; its upstream traffic stays on the server.
+- Vault refresh uses a plain GET. App-managed conditional headers were removed after browser verification showed that the current CloudFront distribution rejects their CORS preflight; native HTTP caching remains available. The Leaderboard server may safely use upstream ETag/Last-Modified validators because server-to-server requests do not perform browser CORS preflight.
+- The Leaderboard boundary now performs server-side environment binding, resource-bounded normalization, eligibility/sort/search/pagination, bounded stale handling, and versioned response identity/schema validation. The browser never retains the full upstream feed and never relabels a previous query as the current period/sort/search/page.
+- Vault discovery and Total TVL exclude child relationships, matching the current official App and preventing parent/child double counting. Closed roots remain in Total TVL but are hidden from the default table. The receipt clock is labelled “Fetched”, not “Updated”.
+- The default list also hides closed Vaults and sorts positive owner equity first, then TVL descending with Big.js, matching the current official App instead of exposing the raw feed order.
 - A disconnected public Vault detail omits the optional `user` parameter instead of passing `undefined`, so the shared Info hook does not incorrectly disable the public request.
 - Staking performs a second fresh account/validator preflight at the SDK execution boundary. Reconciliation still uses the separately persisted pre-dispatch history and state baselines.
 - `cWithdraw` copy is environment-specific: Mainnet uses the documented seven-day period, while current Testnet history and the official node README indicate approximately five minutes. An all-zero finalized-withdrawal hash is treated as a system-finalization sentinel and never linked as a transaction.
@@ -454,6 +480,8 @@ The post-implementation audit against pinned `@nktkas/hyperliquid@0.33.3`, curre
 - Marker storage rejects invalid method/direction/asset/decimal/target combinations, duplicate IDs, and multiple operations for one environment/owner. Corrupt storage remains locked until the explicit two-step destructive clear.
 - Vault non-funding-ledger reads now pass the documented `startTime`. A two-day lookback tolerates client/exchange clock skew, while the persisted hash baseline prevents older same-amount events from proving the new request.
 - Cross-tab destructive confirmation is bound to the exact marker ID, so replacing marker A with marker B resets the two-step confirmation. Multiple exact history candidates remain `unknown` instead of being arbitrarily attributed.
+- Vault action leases bind the normalized route Vault address as well as environment, owner, and action epoch. Switching Vault routes or unmounting during any fresh preflight/marker boundary aborts before the SDK call and cannot reinstall or dispatch the old Vault action.
+- Syntactically invalid Vault-address routes emit `noindex, nofollow`; valid addresses still use the typed canonical route while runtime `null`/malformed details fail closed in the page.
 
 Residual boundary: SDK success responses contain no transaction hash or request nonce that later history exposes. The implementation therefore verifies a unique matching history event plus a directional account-state change, but cannot cryptographically distinguish an otherwise identical operation submitted from another origin. The UI and this document do not claim that stronger attribution.
 
@@ -463,11 +491,11 @@ Residual boundary: SDK success responses contain no transaction hash or request 
 | --- | --- |
 | `pnpm lint` | Passed. The only diagnostic is the pre-existing `apps/terminal/src/lib/lazy.ts` `noExplicitAny` warning; there are no new lint errors. |
 | `pnpm typecheck` | Passed for all three workspace packages. |
-| `pnpm --dir apps/terminal exec vitest run src/lib/tests/funds-action-state.test.ts src/lib/tests/funds-action-reconciliation.test.ts src/lib/tests/funds-action-marker.test.ts src/lib/tests/funds-action-recovery-host.test.tsx src/components/staking/__tests__/use-staking-actions.test.tsx src/components/vaults/__tests__/use-vault-action-controller.test.tsx` | Passed: 6 files, 104 tests. This includes every action stage/result and transition, exact baselines, late/ambiguous outcomes, recovery, and zero blind retries. |
-| Targeted fixture/controller/domain/public-stats Vitest groups | Passed in the recorded runs: one 8-file/57-test group and one 4-file/22-test group. Coverage includes DEV-only fixture gating, page states, sorting/filtering, feed isolation/limits, malformed responses, and Vault classification failure behavior. |
+| `pnpm --dir apps/terminal exec vitest run src/lib/tests/funds-action-state.test.ts src/lib/tests/funds-action-reconciliation.test.ts src/lib/tests/funds-action-marker.test.ts src/lib/tests/funds-action-recovery-host.test.tsx src/components/staking/__tests__/use-staking-actions.test.tsx src/components/vaults/__tests__/use-vault-action-controller.test.tsx` | Passed: 6 files, 114 tests. This includes every action stage/result and transition, exact baselines, late/ambiguous outcomes, route/unmount safety, recovery, and zero blind retries. |
+| Targeted Vault/public-stats/funds-action Vitest group | Passed: 16 files, 172 tests. Coverage includes DEV-only fixture gating, page states, official child/closed/TVL sorting policy, lock expiry, pagination, feed CORS/resource isolation, malformed responses, route/unmount races, and omission of unsupported classification. |
 | `pnpm i18n:extract`, `pnpm i18n:compile`, and `msgfmt --check --check-format` for all six catalogs | Passed. English and Chinese are complete for the new copy; the Chinese catalog has no remaining non-obsolete untranslated message. |
-| `pnpm build` | Passed. Client and server/Nitro builds, static-import cycle check, total bundle budget, and the explicit Leaderboard/Staking/Vaults surface budgets all passed. Final measured client gzip is 2,996,804 bytes; Leaderboard/Staking/Vaults route chunks are 9,638 / 23,907 / 27,709 gzip bytes respectively. |
-| `PATH=/Users/zhixing/.nvm/versions/node/v22.18.0/bin:$PATH pnpm --dir apps/terminal exec vitest run --maxWorkers=1` | Passed: 362 files and 3,285 tests; one intentional soak test skipped. The single-worker run avoids the suite's known `mobile-agent-sync-route` parallel `act()` timing fluctuation while exercising the complete test inventory. |
-| Browser acceptance on `http://localhost:3006` | Passed for the captured desktop/mobile routes: no page errors, no horizontal page overflow, and all 112 screenshot files are present. |
+| `pnpm build` | Passed. Client and server/Nitro builds, static-import cycle check, total bundle budget, and the explicit Leaderboard/Staking/Vaults surface budgets all passed. Final measured client gzip is 3,003,335 bytes (`+9,852` against the retained total baseline); Leaderboard/Staking/Vaults route chunks are 12,083 / 23,914 / 26,453 gzip bytes respectively. The Leaderboard baseline was intentionally refreshed to the exact measured value while retaining its 1,500-byte future allowance. |
+| `pnpm test` | Passed: 366 files and 3,345 tests; one intentional soak test skipped. |
+| Browser acceptance on `http://127.0.0.1:3006` | Passed for the live Vaults and Leaderboard corrective review: both reached validated normal state, had no horizontal page overflow or fresh browser errors, Vaults used the audited child/closed/equity/TVL policy, and Leaderboard rendered full non-abbreviated amounts. All 112 existing screenshot files remain present. |
 
 The commit contains only the files listed in this delivery. Concurrent Balance-surface changes remain unstaged and are not used as evidence for this redesign.

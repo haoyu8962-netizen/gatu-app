@@ -7,7 +7,7 @@ export const Route = createFileRoute("/vaults/")({
 	head: () =>
 		buildPageHead({
 			title: "Vaults",
-			description: "Explore legacy HyperCore Vaults and review verified public performance data.",
+			description: "Explore HyperCore Vaults and review verified public performance data.",
 			path: "/vaults",
 		}),
 	component: VaultsPage,

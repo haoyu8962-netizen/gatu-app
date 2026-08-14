@@ -45,6 +45,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 let controller: ReturnType<typeof useVaultsController> | null = null;
 let detailController: ReturnType<typeof useVaultDetailController> | null = null;
+let detailRenderCount = 0;
 
 function Probe() {
 	controller = useVaultsController();
@@ -52,6 +53,7 @@ function Probe() {
 }
 
 function DetailProbe() {
+	detailRenderCount += 1;
 	detailController = useVaultDetailController(VAULT_ADDRESS);
 	return null;
 }
@@ -67,13 +69,16 @@ describe("useVaultsController", () => {
 		mocks.env = "Mainnet";
 		mocks.infoCalls = [];
 		mocks.wallet = { address: undefined, sessionMode: "disconnected" };
-		mocks.publicVaults = query([publicVault()], { dataUpdatedAt: 1234 });
+		mocks.publicVaults = query([publicVault(), publicVault({ child: true }), publicVault({ closed: true })], {
+			dataUpdatedAt: 1234,
+		});
 		mocks.info = new Map<string, QueryState<unknown>>([
 			["userVaultEquities", query(undefined)],
 			["leadingVaults", query(undefined)],
 		]);
 		controller = null;
 		detailController = null;
+		detailRenderCount = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -86,8 +91,8 @@ describe("useVaultsController", () => {
 
 	it("derives a normal public list without inventing account facts", () => {
 		render();
-		expect(current()).toMatchObject({ state: "normal", updatedAt: 1234, account: { status: "disconnected" } });
-		expect(current().rows).toHaveLength(1);
+		expect(current()).toMatchObject({ state: "normal", fetchedAt: 1234, account: { status: "disconnected" } });
+		expect(current().rows).toHaveLength(2);
 		expect(current().rows[0]).toMatchObject({ name: "Sample Vault", classification: null });
 	});
 
@@ -123,6 +128,29 @@ describe("useVaultsController", () => {
 		});
 	});
 
+	it("recomputes the owner withdrawal gate when the server lock timestamp passes", async () => {
+		const now = Date.now();
+		mocks.wallet = { address: "0x0000000000000000000000000000000000000004", sessionMode: "wallet" };
+		mocks.info = new Map<string, QueryState<unknown>>([
+			["vaultDetails", query({ ...vaultDetail(), maxWithdrawable: 100 })],
+			["userVaultEquities", query([{ vaultAddress: VAULT_ADDRESS, equity: "10", lockedUntilTimestamp: now + 20 }])],
+		]);
+
+		act(() => root.render(<DetailProbe />));
+		const initialRenderCount = detailRenderCount;
+		expect(detailCurrent().owner).toMatchObject({
+			status: "ready",
+			lockedUntil: now + 20,
+			isLocked: true,
+			canWithdraw: false,
+		});
+
+		await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+		expect(Date.now()).toBeGreaterThan(now + 20);
+		expect(detailRenderCount).toBeGreaterThan(initialRenderCount);
+		expect(detailCurrent().owner).toMatchObject({ status: "ready", isLocked: false, canWithdraw: true });
+	});
+
 	function render() {
 		act(() => root.render(<Probe />));
 	}
@@ -150,16 +178,20 @@ function query<T>(data: T | undefined, overrides: Partial<QueryState<T>> = {}): 
 	};
 }
 
-function publicVault() {
+function publicVault({ child = false, closed = false }: { child?: boolean; closed?: boolean } = {}) {
 	return {
-		vaultAddress: "0x0000000000000000000000000000000000000001" as const,
+		vaultAddress: (child
+			? "0x0000000000000000000000000000000000000003"
+			: closed
+				? "0x0000000000000000000000000000000000000004"
+				: "0x0000000000000000000000000000000000000001") as `0x${string}`,
 		leader: "0x0000000000000000000000000000000000000002" as const,
 		name: "Sample Vault",
 		tvl: "1000000",
 		apr: 0.1,
 		createTimeMillis: 1_700_000_000_000,
-		isClosed: false,
-		relationship: { type: "normal" as const },
+		isClosed: closed,
+		relationship: { type: child ? ("child" as const) : ("normal" as const) },
 		pnlHistory: {
 			day: ["0", "1"],
 			week: ["0", "2"],

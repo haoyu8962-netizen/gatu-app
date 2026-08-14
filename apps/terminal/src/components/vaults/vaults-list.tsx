@@ -1,6 +1,7 @@
 import { Button, Pagination, SearchInput, Select } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, CrownIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
@@ -32,11 +33,11 @@ export interface VaultsListProps {
 	rows: readonly VaultListItem[];
 	account: VaultAccountFactsState;
 	isRefreshing?: boolean;
-	updatedAt?: number | null;
+	fetchedAt?: number | null;
 	onRetry: () => void;
 }
 
-export function VaultsList({ state, rows, account, isRefreshing = false, updatedAt = null, onRetry }: VaultsListProps) {
+export function VaultsList({ state, rows, account, isRefreshing = false, fetchedAt = null, onRetry }: VaultsListProps) {
 	const { t, i18n } = useLingui();
 	const [filter, setFilter] = useState<VaultFilter>("all");
 	const [period, setPeriod] = useState<VaultPeriod>("month");
@@ -47,12 +48,13 @@ export function VaultsList({ state, rows, account, isRefreshing = false, updated
 	const selectedRows = selection.status === "ready" ? selection.rows : [];
 	const totalPages = Math.max(1, Math.ceil(selectedRows.length / PAGE_SIZE));
 	const currentPage = Math.min(page, totalPages);
+	const mobilePageSummary = t`${currentPage} of ${totalPages}`;
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
-	const updatedLabel =
-		updatedAt === null
+	const fetchedLabel =
+		fetchedAt === null
 			? null
-			: new Intl.DateTimeFormat(i18n.locale, { hour: "2-digit", minute: "2-digit" }).format(updatedAt);
+			: new Intl.DateTimeFormat(i18n.locale, { hour: "2-digit", minute: "2-digit" }).format(fetchedAt);
 
 	function changeFilter(nextFilter: VaultFilter) {
 		setFilter(nextFilter);
@@ -73,15 +75,14 @@ export function VaultsList({ state, rows, account, isRefreshing = false, updated
 						</h1>
 						<p className="mt-1 max-w-2xl text-xs leading-5 text-fg-muted">
 							<Trans>
-								Explore legacy HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all
-								principal.
+								Explore HyperCore Vaults. Deposits share in each vault's gains and losses and can lose all principal.
 							</Trans>
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						{updatedLabel ? (
+						{fetchedLabel ? (
 							<span className="text-2xs tabular-nums text-fg-muted">
-								<Trans>Updated {updatedLabel}</Trans>
+								<Trans>Fetched {fetchedLabel}</Trans>
 							</span>
 						) : null}
 						<Button
@@ -122,7 +123,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, updated
 
 				<fieldset className="mt-3 flex gap-2 overflow-x-auto pb-1">
 					<legend className="sr-only">{t`Vault filters`}</legend>
-					{(["all", "official", "user", "deposited", "leading"] as const).map((item) => (
+					{(["all", "deposited", "leading"] as const).map((item) => (
 						<Button
 							key={item}
 							variant={filter === item ? "filled" : "outline"}
@@ -172,46 +173,36 @@ export function VaultsList({ state, rows, account, isRefreshing = false, updated
 			) : null}
 
 			{state === "normal" && selection.status === "ready" ? (
-				<>
-					{!selection.classificationAvailable && filter === "all" ? (
-						<output className="mx-4 mt-4 flex items-start gap-2 rounded-10 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning min-[1001px]:mx-5">
-							<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-							<span>
-								<Trans>
-									Official and User classification is unavailable until an exact reviewed address policy is supplied.
-									Rows remain unclassified instead of being guessed.
-								</Trans>
-							</span>
-						</output>
-					) : null}
-
-					{selectedRows.length === 0 ? (
-						<VaultListMessage title={selection.isSearchNoResults ? t`No matching Vaults` : t`No Vaults in this filter`}>
-							{selection.isSearchNoResults ? (
-								<Trans>Try another vault name, address, or leader address.</Trans>
-							) : (
-								<Trans>This is a definitive empty result for the selected filter.</Trans>
-							)}
-						</VaultListMessage>
-					) : (
-						<div className="py-3">
-							{groups.map((group) => (
-								<VaultGroup key={group.id} group={group} period={period} account={account} now={Date.now()} />
-							))}
-							{totalPages > 1 ? (
-								<Pagination
-									className="mx-4 mt-4 min-[1001px]:mx-5"
-									currentPage={currentPage}
-									totalPages={totalPages}
-									totalItems={selectedRows.length}
-									itemsPerPage={PAGE_SIZE}
-									onPageChange={setPage}
-									variant="mobile"
-								/>
-							) : null}
-						</div>
-					)}
-				</>
+				selectedRows.length === 0 ? (
+					<VaultListMessage title={selection.isSearchNoResults ? t`No matching Vaults` : t`No Vaults in this filter`}>
+						{selection.isSearchNoResults ? (
+							<Trans>Try another vault name, address, or leader address.</Trans>
+						) : (
+							<Trans>This is a definitive empty result for the selected filter.</Trans>
+						)}
+					</VaultListMessage>
+				) : (
+					<div className="py-3">
+						{groups.map((group) => (
+							<VaultGroup key={group.id} group={group} period={period} account={account} now={Date.now()} />
+						))}
+						{totalPages > 1 ? (
+							<Pagination
+								className="mx-4 mt-4 min-[1001px]:mx-5"
+								currentPage={currentPage}
+								totalPages={totalPages}
+								totalItems={selectedRows.length}
+								itemsPerPage={PAGE_SIZE}
+								onPageChange={setPage}
+								variant="mobile"
+								navigationLabel={t`Vault pagination`}
+								previousPageLabel={t`Previous Vault page`}
+								nextPageLabel={t`Next Vault page`}
+								mobilePageSummary={mobilePageSummary}
+							/>
+						) : null}
+					</div>
+				)
 			) : null}
 		</section>
 	);
@@ -250,7 +241,7 @@ function VaultGroup({
 								<Trans>TVL</Trans>
 							</th>
 							<th className="px-3 py-2 text-right font-semibold">
-								<Trans>Your deposit</Trans>
+								<Trans>Your equity</Trans>
 							</th>
 							<th className="px-3 py-2 text-right font-semibold">
 								<Trans>Performance</Trans>
@@ -298,8 +289,9 @@ function VaultDesktopRow({
 	return (
 		<tr className="group hover:bg-fill-hover">
 			<td className="px-5 py-2.5">
-				<a
-					href={`/vaults/${row.vaultAddress}`}
+				<Link
+					to="/vaults/$vaultAddress"
+					params={{ vaultAddress: row.vaultAddress }}
 					className="flex min-w-0 items-center gap-2 focus-visible:outline-2 focus-visible:outline-stroke-focus"
 				>
 					<VaultMark name={row.name} />
@@ -311,7 +303,7 @@ function VaultDesktopRow({
 							<VaultBadges row={row} leading={leading} />
 						</div>
 					</div>
-				</a>
+				</Link>
 			</td>
 			<td className="px-3 py-2.5 font-mono text-xs tabular-nums text-fg-muted">{shortenAddress(row.leader)}</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
@@ -350,8 +342,9 @@ function VaultMobileCard({
 		volume: "0",
 	};
 	return (
-		<a
-			href={`/vaults/${row.vaultAddress}`}
+		<Link
+			to="/vaults/$vaultAddress"
+			params={{ vaultAddress: row.vaultAddress }}
 			className="rounded-12 border border-stroke-weak p-3 focus-visible:outline-2 focus-visible:outline-stroke-focus"
 		>
 			<div className="flex min-w-0 items-center gap-2">
@@ -366,7 +359,7 @@ function VaultMobileCard({
 			</div>
 			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
 				<MobileMetric label={<Trans>TVL</Trans>} value={formatVaultCompactUsd(row.tvl)} />
-				<MobileMetric label={<Trans>Your deposit</Trans>} value={formatVaultUsd(deposit)} />
+				<MobileMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(deposit)} />
 				<MobileMetric label={<Trans>Leader</Trans>} value={shortenAddress(row.leader)} mono />
 				<MobileMetric
 					label={<Trans>Age</Trans>}
@@ -377,7 +370,7 @@ function VaultMobileCard({
 			<div className="mt-2 text-brand">
 				<VaultPerformanceChart snapshot={snapshot} kind="pnl" compact />
 			</div>
-		</a>
+		</Link>
 	);
 }
 
@@ -538,7 +531,7 @@ function FilterLabel({ filter }: { filter: VaultFilter }) {
 function GroupLabel({ group }: { group: VaultListGroup["id"] }) {
 	if (group === "official") return <Trans>Official Vaults</Trans>;
 	if (group === "user") return <Trans>User Vaults</Trans>;
-	return <Trans>Unclassified Vaults</Trans>;
+	return <Trans>Vaults</Trans>;
 }
 
 function getVisibleGroups(

@@ -596,6 +596,192 @@ describe("useVaultActionController", () => {
 		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
 	});
 
+	it("stops rendering and signing an active action after routing to a different Vault", async () => {
+		const otherVault = "0x4444444444444444444444444444444444444444" as const;
+		await openAndReview();
+		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
+
+		act(() => root.render(<Probe vaultAddress={otherVault} detail={{ ...DETAIL, vaultAddress: otherVault }} />));
+
+		expect(current().action).toBeNull();
+		await act(async () => current().confirm());
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("discards a late requestAction result when the route changes during eligibility checks", async () => {
+		const legal = deferred<{
+			data: { acceptedTerms: boolean; userAllowed: boolean; canPerformActions: boolean };
+			error: null;
+		}>();
+		mocks.legalRefetch.mockReturnValueOnce(legal.promise);
+		let request!: Promise<void>;
+		act(() => {
+			request = current().requestAction("deposit");
+		});
+		expect(mocks.legalRefetch).toHaveBeenCalledOnce();
+
+		const otherVault = "0x4444444444444444444444444444444444444444" as const;
+		act(() => root.render(<Probe vaultAddress={otherVault} detail={{ ...DETAIL, vaultAddress: otherVault }} />));
+		await act(async () => {
+			legal.resolve({
+				data: { acceptedTerms: true, userAllowed: true, canPerformActions: true },
+				error: null,
+			});
+			await request;
+		});
+
+		expect(current().action).toBeNull();
+		expect(mocks.agentRefetch).not.toHaveBeenCalled();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+		expect(mocks.toastError).not.toHaveBeenCalled();
+	});
+
+	it("cancels confirmation without a marker or SDK call when routing changes during fresh preflight", async () => {
+		const freshDetail = deferred<{ data: unknown; error: null }>();
+		mocks.queries.set("vaultDetails", {
+			data: RAW_DETAIL,
+			refetch: vi.fn().mockReturnValue(freshDetail.promise),
+		});
+		await openAndReview();
+		let confirmation!: Promise<void>;
+		act(() => {
+			confirmation = current().confirm();
+		});
+		expect(mocks.queries.get("vaultDetails")?.refetch).toHaveBeenCalledOnce();
+
+		const otherVault = "0x4444444444444444444444444444444444444444" as const;
+		act(() => root.render(<Probe vaultAddress={otherVault} detail={{ ...DETAIL, vaultAddress: otherVault }} />));
+		await act(async () => {
+			freshDetail.resolve({ data: RAW_DETAIL, error: null });
+			await confirmation;
+		});
+
+		expect(current().action).toBeNull();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("removes a just-acquired marker when routing changes before the SDK boundary", async () => {
+		const markerStored = deferred<void>();
+		const releaseLock = deferred<void>();
+		mocks.locksRequest.mockImplementationOnce(
+			async (_name: string, _options: LockOptions, callback: (lock: object) => unknown) => {
+				const acquired = await callback({});
+				markerStored.resolve();
+				await releaseLock.promise;
+				return acquired;
+			},
+		);
+		await openAndReview();
+		let confirmation!: Promise<void>;
+		act(() => {
+			confirmation = current().confirm();
+		});
+		await act(async () => markerStored.promise);
+		expect(getFundsActionMarkers()).toHaveLength(1);
+
+		const otherVault = "0x4444444444444444444444444444444444444444" as const;
+		act(() => root.render(<Probe vaultAddress={otherVault} detail={{ ...DETAIL, vaultAddress: otherVault }} />));
+		await act(async () => {
+			releaseLock.resolve();
+			await confirmation;
+		});
+
+		expect(current().action).toBeNull();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("cancels confirmation on unmount without signing or reinstalling stale action state", async () => {
+		const freshDetail = deferred<{ data: unknown; error: null }>();
+		mocks.queries.set("vaultDetails", {
+			data: RAW_DETAIL,
+			refetch: vi.fn().mockReturnValue(freshDetail.promise),
+		});
+		await openAndReview();
+		let confirmation!: Promise<void>;
+		act(() => {
+			confirmation = current().confirm();
+		});
+		expect(mocks.queries.get("vaultDetails")?.refetch).toHaveBeenCalledOnce();
+
+		act(() => root.unmount());
+		controller = null;
+		await act(async () => {
+			freshDetail.resolve({ data: RAW_DETAIL, error: null });
+			await confirmation;
+		});
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+		expect(current().action).toBeNull();
+	});
+
+	it("keeps an unknown-result dialog closed after one dismissal while its marker persists", async () => {
+		vi.useFakeTimers();
+		mocks.history.mockResolvedValue([]);
+		await openAndReview();
+
+		let confirmation!: Promise<void>;
+		act(() => {
+			confirmation = current().confirm();
+		});
+		await act(async () => {
+			await vi.runAllTimersAsync();
+			await confirmation;
+		});
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "unknown" } });
+		expect(getFundsActionMarkers()).toHaveLength(1);
+
+		act(() => current().close());
+		expect(current().action).toBeNull();
+		await act(async () => {});
+		expect(current().action).toBeNull();
+		expect(getFundsActionMarkers()).toHaveLength(1);
+
+		act(() => root.unmount());
+		controller = null;
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+		expect(current().action).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			recoveredFromMarker: true,
+		});
+		expect(mocks.exchangeMutate).toHaveBeenCalledOnce();
+	});
+
+	it("rehydrates a never-dismissed unknown dialog after an in-place same-owner session-mode change", async () => {
+		vi.useFakeTimers();
+		mocks.history.mockResolvedValue([]);
+		await openAndReview();
+
+		let confirmation!: Promise<void>;
+		act(() => {
+			confirmation = current().confirm();
+		});
+		await act(async () => {
+			await vi.runAllTimersAsync();
+			await confirmation;
+		});
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "unknown" } });
+
+		mocks.sessionMode = "agent-only";
+		mocks.wallet = { hasWalletAccess: false, walletAddress: undefined };
+		mocks.activeAgentOwner = { env: "Mainnet", address: OWNER };
+		act(() => root.render(<Probe />));
+		await act(async () => {});
+
+		expect(current().action).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			recoveredFromMarker: true,
+		});
+		expect(mocks.exchangeMutate).toHaveBeenCalledOnce();
+	});
+
 	it("clears stale recovered UI when another tab removes its marker", () => {
 		const marker = createPendingVaultMarker();
 		act(() => {

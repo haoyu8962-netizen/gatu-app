@@ -9,6 +9,7 @@ import {
 	findPendingFundsAction,
 	fundsActionReferencesEqual,
 	removeFundsActionMarkerSafely,
+	resolveFundsActionRecoveryOwner,
 	useFundsActionMarkers,
 } from "@/components/funds-action/funds-action-marker";
 import {
@@ -67,6 +68,7 @@ export interface ActiveVaultAction {
 	amount: string;
 	state: FundsActionState;
 	identityKey: string;
+	routeIdentityKey: string;
 	ownerAddress: `0x${string}`;
 	detail: VaultDetail;
 	marker?: FundsActionReference;
@@ -79,10 +81,28 @@ export interface ActiveVaultAction {
 interface VaultExecutionLease {
 	actionId: string;
 	identityKey: string;
+	routeIdentityKey: string;
+	env: FundsActionReference["env"];
+	vaultAddress: `0x${string}`;
 	reference: FundsActionReference;
 	ownerAddress: `0x${string}`;
 	atomicAmount: number;
 	eligibilityDeadline: number;
+	guardPassed: boolean;
+}
+
+interface VaultRouteIdentity {
+	key: string;
+	identityKey: string;
+	env: FundsActionReference["env"];
+	vaultAddress: `0x${string}`;
+	ownerAddress: `0x${string}` | undefined;
+}
+
+interface VaultRequestLease {
+	actionId: string;
+	routeIdentity: VaultRouteIdentity;
+	abortController: AbortController;
 }
 
 export interface VaultActionController {
@@ -127,29 +147,39 @@ export function useVaultActionController({
 	const [activeAction, setActiveAction] = useState<ActiveVaultAction | null>(null);
 	const actionRef = useRef<ActiveVaultAction | null>(null);
 	const mountedRef = useRef(true);
-	const requestPendingRef = useRef(false);
+	const requestLeaseRef = useRef<VaultRequestLease | null>(null);
+	const preflightAbortRef = useRef<AbortController | null>(null);
 	const executionLeaseRef = useRef<VaultExecutionLease | null>(null);
 	const hydratedRecoveryMarkerIdRef = useRef<string | null>(null);
 
 	const exactOwner = getExactMasterOwner(wallet, hyperliquid.clientKey, hyperliquid.sessionMode);
-	const recoveryOwner =
-		hyperliquid.sessionMode === "agent-only"
-			? activeAgentOwner?.env === hyperliquid.env
-				? activeAgentOwner.address
-				: undefined
-			: exactOwner;
+	const recoveryOwner = resolveFundsActionRecoveryOwner({
+		sessionMode: hyperliquid.sessionMode,
+		env: hyperliquid.env,
+		activeAgentOwner,
+		fallbackOwner: exactOwner,
+	});
 	const identityKey = createVaultIdentityKey({
 		env: hyperliquid.env,
 		clientKey: hyperliquid.clientKey,
 		sessionMode: hyperliquid.sessionMode,
 		walletAddress: wallet.walletAddress,
 	});
-	const identityRef = useRef(identityKey);
-	identityRef.current = identityKey;
-	const validVaultAddress = /^0x[a-fA-F0-9]{40}$/.test(vaultAddress) ? (vaultAddress as `0x${string}`) : zeroAddress;
+	const validVaultAddress = normalizeVaultAddress(vaultAddress) ?? zeroAddress;
+	const routeIdentity = createVaultRouteIdentity({
+		identityKey,
+		env: hyperliquid.env,
+		vaultAddress: validVaultAddress,
+		ownerAddress: recoveryOwner,
+	});
+	// This ref is deliberately synchronized during render. A route, owner, or
+	// network render must invalidate an older event-handler continuation before
+	// passive Effect cleanup gets a chance to run.
+	const routeIdentityRef = useRef(routeIdentity);
+	routeIdentityRef.current = routeIdentity;
 	const visibleAction =
-		activeAction?.identityKey === identityKey &&
-		activeAction.detail.vaultAddress.toLowerCase() === validVaultAddress.toLowerCase()
+		activeAction?.routeIdentityKey === routeIdentity.key &&
+		activeAction.detail.vaultAddress.toLowerCase() === validVaultAddress
 			? activeAction
 			: null;
 	const recoveredAction = useMemo(
@@ -161,33 +191,42 @@ export function useVaultActionController({
 				vaultAddress: validVaultAddress,
 				detail,
 				identityKey,
+				routeIdentityKey: routeIdentity.key,
 			}),
-		[detail, fundsActionMarkers, hyperliquid.env, identityKey, recoveryOwner, validVaultAddress],
+		[detail, fundsActionMarkers, hyperliquid.env, identityKey, recoveryOwner, routeIdentity.key, validVaultAddress],
 	);
 
 	useEffect(() => {
 		mountedRef.current = true;
 		return () => {
 			mountedRef.current = false;
+			requestLeaseRef.current?.abortController.abort();
+			requestLeaseRef.current = null;
+			preflightAbortRef.current?.abort();
+			preflightAbortRef.current = null;
+			executionLeaseRef.current = null;
+			actionRef.current = null;
 		};
 	}, []);
 
 	useEffect(() => {
-		const current = actionRef.current;
-		if (
-			!current ||
-			(current.identityKey === identityKey &&
-				current.detail.vaultAddress.toLowerCase() === validVaultAddress.toLowerCase())
-		) {
-			return;
+		const pendingRequest = requestLeaseRef.current;
+		if (pendingRequest && pendingRequest.routeIdentity.key !== routeIdentity.key) {
+			pendingRequest.abortController.abort();
+			requestLeaseRef.current = null;
 		}
+		const current = actionRef.current;
+		if (!current || current.routeIdentityKey === routeIdentity.key) return;
 		// The persisted public marker remains available to the root recovery host,
 		// but a different account, network, or Vault can never continue rendering
 		// or signing in this shell.
+		preflightAbortRef.current?.abort();
+		preflightAbortRef.current = null;
 		executionLeaseRef.current = null;
 		actionRef.current = null;
+		hydratedRecoveryMarkerIdRef.current = null;
 		setActiveAction(null);
-	}, [identityKey, validVaultAddress]);
+	}, [routeIdentity.key]);
 
 	useEffect(() => {
 		const current = activeAction;
@@ -240,15 +279,22 @@ export function useVaultActionController({
 	const vaultTransfer = useExchange("vaultTransfer", {
 		executionGuard: (params) => {
 			const lease = executionLeaseRef.current;
+			const currentRoute = routeIdentityRef.current;
+			const currentAction = actionRef.current;
 			if (
 				!lease ||
-				lease.identityKey !== identityRef.current ||
-				actionRef.current?.id !== lease.actionId ||
+				lease.identityKey !== currentRoute.identityKey ||
+				lease.routeIdentityKey !== currentRoute.key ||
+				lease.env !== currentRoute.env ||
+				lease.vaultAddress !== currentRoute.vaultAddress ||
+				lease.ownerAddress.toLowerCase() !== currentRoute.ownerAddress?.toLowerCase() ||
+				currentAction?.id !== lease.actionId ||
+				currentAction.routeIdentityKey !== lease.routeIdentityKey ||
 				Date.now() >= lease.eligibilityDeadline
 			) {
 				throw new VaultLocalPreDispatchError();
 			}
-			const marker = findPendingFundsAction(hyperliquid.env, lease.ownerAddress);
+			const marker = findPendingFundsAction(lease.env, lease.ownerAddress);
 			if (!marker || !fundsActionReferencesEqual(marker, lease.reference)) {
 				throw new VaultLocalPreDispatchError();
 			}
@@ -259,6 +305,7 @@ export function useVaultActionController({
 			) {
 				throw new VaultLocalPreDispatchError();
 			}
+			lease.guardPassed = true;
 		},
 	});
 
@@ -288,24 +335,36 @@ export function useVaultActionController({
 	}
 
 	async function requestAction(action: VaultFundsAction): Promise<void> {
-		if (!detail || validVaultAddress === zeroAddress || actionRef.current || requestPendingRef.current) return;
-		requestPendingRef.current = true;
-		const startIdentity = identityKey;
-		if (!exactOwner) {
+		const startRoute = routeIdentityRef.current;
+		if (
+			!detail ||
+			startRoute.vaultAddress === zeroAddress ||
+			detail.vaultAddress.toLowerCase() !== startRoute.vaultAddress ||
+			actionRef.current ||
+			requestLeaseRef.current
+		) {
+			return;
+		}
+		const signingOwner = exactOwner;
+		if (!signingOwner || signingOwner.toLowerCase() !== startRoute.ownerAddress?.toLowerCase()) {
 			void reconnectWallet();
 			toast.error(t`Connect the exact owner wallet before continuing.`);
-			requestPendingRef.current = false;
 			return;
 		}
-		if (findPendingFundsAction(hyperliquid.env, exactOwner)) {
+		if (findPendingFundsAction(startRoute.env, signingOwner)) {
 			toast.error(t`Verify the pending funds operation before starting another one.`);
-			requestPendingRef.current = false;
 			return;
 		}
+		const requestLease: VaultRequestLease = {
+			actionId: createActionEpoch(startRoute.identityKey),
+			routeIdentity: startRoute,
+			abortController: new AbortController(),
+		};
+		requestLeaseRef.current = requestLease;
 
 		try {
 			const [legal, geoResult] = await Promise.all([legalStatus.refetch(), geo.retry()]);
-			assertVaultIdentityCurrent(startIdentity, identityRef.current);
+			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canPerformActions) {
 				throw new Error("Vault legal eligibility could not be verified");
 			}
@@ -320,32 +379,35 @@ export function useVaultActionController({
 			}
 
 			let requirements = await agentStatus.refetchAgent();
-			assertVaultIdentityCurrent(startIdentity, identityRef.current);
+			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			if (requirements.needsAgent) {
 				const registeredAgent = await agentRegistration.register({
 					persistConnection: readPersistTradingConnection(),
 				});
-				assertVaultIdentityCurrent(startIdentity, identityRef.current);
+				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 				requirements = await agentStatus.refetchAgent(registeredAgent);
-				assertVaultIdentityCurrent(startIdentity, identityRef.current);
+				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			}
 			if (!requirements.isAgentReady) throw new Error("Approved Agent could not be verified");
 
-			const epoch = createActionEpoch(startIdentity);
+			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			updateAction({
-				id: epoch,
+				id: requestLease.actionId,
 				action,
 				amount: "",
 				state: createFundsActionState(),
-				identityKey: startIdentity,
-				ownerAddress: exactOwner,
+				identityKey: startRoute.identityKey,
+				routeIdentityKey: startRoute.key,
+				ownerAddress: signingOwner,
 				detail,
 				isPreflighting: false,
 			});
 		} catch (error) {
-			toast.error(getVaultActionErrorMessage(error, t));
+			if (!(error instanceof VaultActionContextChangedError)) {
+				toast.error(getVaultActionErrorMessage(error, t));
+			}
 		} finally {
-			requestPendingRef.current = false;
+			if (requestLeaseRef.current === requestLease) requestLeaseRef.current = null;
 		}
 	}
 
@@ -374,21 +436,34 @@ export function useVaultActionController({
 		const current = actionRef.current;
 		if (!current || current.isPreflighting || isFundsActionLocked(current.state)) return;
 		executionLeaseRef.current = null;
+		if (current.marker?.id) hydratedRecoveryMarkerIdRef.current = current.marker.id;
 		updateAction(null);
 	}
 
 	async function confirm(): Promise<void> {
 		const current = actionRef.current;
 		if (!current || current.state.stage !== "review" || current.isPreflighting) return;
+		const startRoute = routeIdentityRef.current;
+		if (!isVaultActionCurrent(current, startRoute, mountedRef.current)) return;
 		const scaledAmount = scaleFundsAmount(current.amount, USDC_ATOMIC_DECIMALS);
 		if (!scaledAmount.valid) return;
+		const preflightAbort = new AbortController();
+		preflightAbortRef.current?.abort();
+		preflightAbortRef.current = preflightAbort;
 		updateAction({ ...current, isPreflighting: true, errorMessage: undefined });
 
 		let marker: FundsActionReference | undefined;
 		let markerAcquired = false;
 		try {
-			assertVaultIdentityCurrent(current.identityKey, identityRef.current);
-			const ownerAddress = getExactMasterOwner(wallet, hyperliquid.clientKey, hyperliquid.sessionMode);
+			assertVaultActionCurrent(
+				current,
+				actionRef.current,
+				startRoute,
+				routeIdentityRef.current,
+				mountedRef.current,
+				preflightAbort.signal,
+			);
+			const ownerAddress = startRoute.ownerAddress;
 			if (!ownerAddress || ownerAddress.toLowerCase() !== current.ownerAddress.toLowerCase()) {
 				throw new Error("The active owner wallet no longer matches this Vault action");
 			}
@@ -407,7 +482,14 @@ export function useVaultActionController({
 						startTime: getFundsActionHistoryStartTime(startedAt),
 					}),
 				]);
-			assertVaultIdentityCurrent(current.identityKey, identityRef.current);
+			assertVaultActionCurrent(
+				current,
+				actionRef.current,
+				startRoute,
+				routeIdentityRef.current,
+				mountedRef.current,
+				preflightAbort.signal,
+			);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canPerformActions) {
 				throw new Error("Vault legal eligibility could not be verified");
 			}
@@ -429,7 +511,7 @@ export function useVaultActionController({
 
 			const preflight = verifyVaultActionPreflight({
 				action: current.action,
-				vaultAddress: validVaultAddress,
+				vaultAddress: startRoute.vaultAddress,
 				ownerAddress,
 				amountAtomic: scaledAmount.atomicAmount,
 				detailSnapshot: freshDetail.data,
@@ -438,9 +520,17 @@ export function useVaultActionController({
 				now: Date.now(),
 			});
 			if (!preflight.valid) throw new VaultActionPreflightError(preflight.error);
+			assertVaultActionCurrent(
+				current,
+				actionRef.current,
+				startRoute,
+				routeIdentityRef.current,
+				mountedRef.current,
+				preflightAbort.signal,
+			);
 			const historyBaseline = createFundsActionHistoryBaseline(freshHistory);
 			const stateBaseline = createVaultStateBaseline(
-				validVaultAddress,
+				startRoute.vaultAddress,
 				freshDetail.data,
 				freshEquities.data,
 				freshClearinghouse.data,
@@ -450,10 +540,10 @@ export function useVaultActionController({
 			}
 
 			marker = createFundsActionReference({
-				env: hyperliquid.env,
+				env: startRoute.env,
 				owner: ownerAddress,
 				method: "vaultTransfer",
-				target: validVaultAddress,
+				target: startRoute.vaultAddress,
 				direction: current.action,
 				displayAmount: scaledAmount.displayAmount,
 				atomicAmount: scaledAmount.atomicAmount,
@@ -464,27 +554,51 @@ export function useVaultActionController({
 				historyBaseline,
 				stateBaseline,
 			});
-			if (!(await acquireFundsActionMarker(marker))) {
+			assertVaultActionCurrent(
+				current,
+				actionRef.current,
+				startRoute,
+				routeIdentityRef.current,
+				mountedRef.current,
+				preflightAbort.signal,
+			);
+			const acquired = await acquireFundsActionMarker(marker);
+			markerAcquired = acquired;
+			assertVaultActionCurrent(
+				current,
+				actionRef.current,
+				startRoute,
+				routeIdentityRef.current,
+				mountedRef.current,
+				preflightAbort.signal,
+			);
+			if (!acquired) {
 				throw new Error("The pending Vault operation could not be stored safely");
 			}
-			markerAcquired = true;
 
 			const awaitingState = transitionFundsAction(current.state, { type: "requestAuthorization" });
 			const awaitingAction = { ...current, state: awaitingState, marker, isPreflighting: false };
 			updateAction(awaitingAction);
-			executionLeaseRef.current = {
+			const executionLease: VaultExecutionLease = {
 				actionId: current.id,
 				identityKey: current.identityKey,
+				routeIdentityKey: current.routeIdentityKey,
+				env: startRoute.env,
+				vaultAddress: startRoute.vaultAddress,
 				reference: marker,
 				ownerAddress,
 				atomicAmount: scaledAmount.atomicNumber,
 				eligibilityDeadline: Date.now() + ELIGIBILITY_LEASE_MS,
+				guardPassed: false,
 			};
+			executionLeaseRef.current = executionLease;
+			if (preflightAbortRef.current === preflightAbort) preflightAbortRef.current = null;
+			assertVaultActionCurrent(current, actionRef.current, startRoute, routeIdentityRef.current, mountedRef.current);
 
 			let mutationError: unknown;
 			try {
 				await vaultTransfer.mutateAsync({
-					vaultAddress: validVaultAddress,
+					vaultAddress: startRoute.vaultAddress,
 					isDeposit: current.action === "deposit",
 					usd: scaledAmount.atomicNumber,
 				});
@@ -494,15 +608,23 @@ export function useVaultActionController({
 			executionLeaseRef.current = null;
 
 			if (mutationError) {
-				await resolveMutationFailure(current.id, marker, mutationError);
+				await resolveMutationFailure(current.id, marker, mutationError, executionLease.guardPassed);
 				return;
 			}
+			if (!isVaultActionEpochCurrent(current, actionRef.current, routeIdentityRef.current, mountedRef.current)) return;
 			await reconcileSubmittedAction(current.id, marker);
 		} catch (error) {
+			if (preflightAbortRef.current === preflightAbort) preflightAbortRef.current = null;
 			executionLeaseRef.current = null;
-			const latest = actionRef.current;
-			if (!latest || latest.id !== current.id) return;
 			if (marker && markerAcquired) await removeFundsActionMarkerSafely(marker.id);
+			const latest = actionRef.current;
+			if (
+				!latest ||
+				latest.id !== current.id ||
+				!isVaultActionCurrent(latest, routeIdentityRef.current, mountedRef.current)
+			) {
+				return;
+			}
 			updateAction({
 				...latest,
 				isPreflighting: false,
@@ -511,12 +633,17 @@ export function useVaultActionController({
 		}
 	}
 
-	async function resolveMutationFailure(actionId: string, marker: FundsActionReference, error: unknown): Promise<void> {
-		const latest = actionRef.current;
-		if (!latest || latest.id !== actionId) return;
-		const failure = classifyVaultMutationFailure(error);
+	async function resolveMutationFailure(
+		actionId: string,
+		marker: FundsActionReference,
+		error: unknown,
+		guardPassed: boolean,
+	): Promise<void> {
+		const failure = guardPassed ? classifyVaultMutationFailure(error) : "deterministic";
 		if (failure === "rejected" || failure === "deterministic") {
 			await removeFundsActionMarkerSafely(marker.id);
+			const latest = actionRef.current;
+			if (!isVaultMarkerActionCurrent(latest, actionId, marker, routeIdentityRef.current, mountedRef.current)) return;
 			const doneState = transitionFundsAction(latest.state, {
 				type: "resolve",
 				result: failure === "rejected" ? "rejected" : "apiError",
@@ -530,6 +657,8 @@ export function useVaultActionController({
 			return;
 		}
 
+		const latest = actionRef.current;
+		if (!isVaultMarkerActionCurrent(latest, actionId, marker, routeIdentityRef.current, mountedRef.current)) return;
 		const submittedState = transitionFundsAction(latest.state, { type: "submissionAccepted" });
 		const reconcilingState = transitionFundsAction(submittedState, { type: "reconcile" });
 		updateAction({ ...latest, state: reconcilingState, isPreflighting: false });
@@ -539,7 +668,7 @@ export function useVaultActionController({
 
 	async function reconcileSubmittedAction(actionId: string, marker: FundsActionReference): Promise<void> {
 		const latest = actionRef.current;
-		if (!latest || latest.id !== actionId) return;
+		if (!isVaultMarkerActionCurrent(latest, actionId, marker, routeIdentityRef.current, mountedRef.current)) return;
 		const submittedState = transitionFundsAction(latest.state, { type: "submissionAccepted" });
 		const submittedAction = { ...latest, state: submittedState, isPreflighting: false };
 		updateAction(submittedAction);
@@ -555,16 +684,22 @@ export function useVaultActionController({
 		proof: VaultReconciliationProof | null,
 	): Promise<void> {
 		const latest = actionRef.current;
-		if (!latest || latest.id !== actionId) return;
-		const identityCurrent = latest.identityKey === identityRef.current;
+		if (!isVaultMarkerActionCurrent(latest, actionId, marker, routeIdentityRef.current, mountedRef.current)) return;
+		const routeCurrent = isVaultActionCurrent(latest, routeIdentityRef.current, mountedRef.current);
 		const storedMarker = findPendingFundsAction(marker.env, marker.owner);
 		const markerCurrent = Boolean(storedMarker && fundsActionReferencesEqual(storedMarker, marker));
-		const canVerify = Boolean(proof?.match && proof.stateVerified && identityCurrent && markerCurrent);
+		const canVerify = Boolean(proof?.match && proof.stateVerified && routeCurrent && markerCurrent);
 		const verified = canVerify ? await removeFundsActionMarkerSafely(marker.id) : false;
+		const currentAfterRemoval = actionRef.current;
+		if (
+			!isVaultMarkerActionCurrent(currentAfterRemoval, actionId, marker, routeIdentityRef.current, mountedRef.current)
+		) {
+			return;
+		}
 		const result = verified ? "success" : "unknown";
-		const doneState = transitionFundsAction(latest.state, { type: "resolve", result });
+		const doneState = transitionFundsAction(currentAfterRemoval.state, { type: "resolve", result });
 		updateAction({
-			...latest,
+			...currentAfterRemoval,
 			state: doneState,
 			isPreflighting: false,
 			receipt:
@@ -589,6 +724,7 @@ export function useVaultActionController({
 	async function verifyAgain(): Promise<void> {
 		const current = actionRef.current;
 		if (!current || current.state.stage !== "done" || current.state.result !== "unknown" || !current.marker) return;
+		if (!isVaultActionCurrent(current, routeIdentityRef.current, mountedRef.current)) return;
 		const storedMarker = findPendingFundsAction(current.marker.env, current.marker.owner);
 		if (!storedMarker || !fundsActionReferencesEqual(storedMarker, current.marker)) return;
 		const reconcilingState = transitionFundsAction(current.state, { type: "verify" });
@@ -601,6 +737,7 @@ export function useVaultActionController({
 		const current = actionRef.current;
 		if (
 			!current ||
+			!isVaultActionCurrent(current, routeIdentityRef.current, mountedRef.current) ||
 			current.state.stage !== "done" ||
 			(current.state.result !== "rejected" && current.state.result !== "apiError")
 		) {
@@ -675,6 +812,7 @@ function createRecoveredVaultAction({
 	vaultAddress,
 	detail,
 	identityKey,
+	routeIdentityKey,
 }: {
 	markers: readonly FundsActionReference[];
 	env: FundsActionReference["env"];
@@ -682,6 +820,7 @@ function createRecoveredVaultAction({
 	vaultAddress: `0x${string}`;
 	detail: VaultDetail | null;
 	identityKey: string;
+	routeIdentityKey: string;
 }): ActiveVaultAction | null {
 	if (!recoveryOwner || !detail || vaultAddress === zeroAddress) return null;
 	if (detail.vaultAddress.toLowerCase() !== vaultAddress.toLowerCase()) return null;
@@ -717,6 +856,7 @@ function createRecoveredVaultAction({
 		amount: amount.displayAmount,
 		state: { stage: "done", result: "unknown" },
 		identityKey,
+		routeIdentityKey,
 		ownerAddress: recoveryOwner,
 		detail,
 		marker,
@@ -826,13 +966,125 @@ export function createVaultIdentityKey(input: {
 	].join(":");
 }
 
+function normalizeVaultAddress(value: string): `0x${string}` | null {
+	return /^0x[a-fA-F0-9]{40}$/.test(value) ? (value.toLowerCase() as `0x${string}`) : null;
+}
+
+function createVaultRouteIdentity(input: {
+	identityKey: string;
+	env: FundsActionReference["env"];
+	vaultAddress: `0x${string}`;
+	ownerAddress: `0x${string}` | undefined;
+}): VaultRouteIdentity {
+	const ownerAddress = input.ownerAddress?.toLowerCase() as `0x${string}` | undefined;
+	return {
+		...input,
+		ownerAddress,
+		key: [input.identityKey, input.env, input.vaultAddress, ownerAddress ?? "no-owner"].join("|"),
+	};
+}
+
+function vaultRouteIdentitiesEqual(expected: VaultRouteIdentity, current: VaultRouteIdentity): boolean {
+	return (
+		expected.key === current.key &&
+		expected.identityKey === current.identityKey &&
+		expected.env === current.env &&
+		expected.vaultAddress === current.vaultAddress &&
+		expected.ownerAddress?.toLowerCase() === current.ownerAddress?.toLowerCase()
+	);
+}
+
+function isVaultActionCurrent(
+	action: ActiveVaultAction | null,
+	currentRoute: VaultRouteIdentity,
+	mounted: boolean,
+): action is ActiveVaultAction {
+	return Boolean(
+		mounted &&
+			action &&
+			action.identityKey === currentRoute.identityKey &&
+			action.routeIdentityKey === currentRoute.key &&
+			action.ownerAddress.toLowerCase() === currentRoute.ownerAddress?.toLowerCase() &&
+			action.detail.vaultAddress.toLowerCase() === currentRoute.vaultAddress,
+	);
+}
+
+function isVaultActionEpochCurrent(
+	expectedAction: ActiveVaultAction,
+	currentAction: ActiveVaultAction | null,
+	currentRoute: VaultRouteIdentity,
+	mounted: boolean,
+): currentAction is ActiveVaultAction {
+	return Boolean(
+		isVaultActionCurrent(currentAction, currentRoute, mounted) &&
+			currentAction.id === expectedAction.id &&
+			currentAction.identityKey === expectedAction.identityKey &&
+			currentAction.routeIdentityKey === expectedAction.routeIdentityKey &&
+			currentAction.ownerAddress.toLowerCase() === expectedAction.ownerAddress.toLowerCase() &&
+			currentAction.detail.vaultAddress.toLowerCase() === expectedAction.detail.vaultAddress.toLowerCase(),
+	);
+}
+
+function isVaultMarkerActionCurrent(
+	action: ActiveVaultAction | null,
+	actionId: string,
+	marker: FundsActionReference,
+	currentRoute: VaultRouteIdentity,
+	mounted: boolean,
+): action is ActiveVaultAction {
+	return Boolean(
+		isVaultActionCurrent(action, currentRoute, mounted) &&
+			action.id === actionId &&
+			marker.identityEpoch === actionId &&
+			marker.env === currentRoute.env &&
+			marker.owner.toLowerCase() === currentRoute.ownerAddress?.toLowerCase() &&
+			marker.target.toLowerCase() === currentRoute.vaultAddress,
+	);
+}
+
+function assertVaultRequestCurrent(
+	expected: VaultRequestLease,
+	currentRequest: VaultRequestLease | null,
+	currentRoute: VaultRouteIdentity,
+	mounted: boolean,
+): void {
+	if (
+		!mounted ||
+		expected.abortController.signal.aborted ||
+		currentRequest !== expected ||
+		!vaultRouteIdentitiesEqual(expected.routeIdentity, currentRoute)
+	) {
+		throw new VaultActionContextChangedError();
+	}
+}
+
+function assertVaultActionCurrent(
+	expectedAction: ActiveVaultAction,
+	currentAction: ActiveVaultAction | null,
+	expectedRoute: VaultRouteIdentity,
+	currentRoute: VaultRouteIdentity,
+	mounted: boolean,
+	signal?: AbortSignal,
+): void {
+	if (
+		signal?.aborted ||
+		!vaultRouteIdentitiesEqual(expectedRoute, currentRoute) ||
+		!isVaultActionEpochCurrent(expectedAction, currentAction, currentRoute, mounted)
+	) {
+		throw new VaultActionContextChangedError();
+	}
+}
+
 function createActionEpoch(identityKey: string): string {
 	actionEpoch += 1;
 	return `${identityKey}:${Date.now()}:${actionEpoch}`;
 }
 
-function assertVaultIdentityCurrent(expected: string, current: string) {
-	if (expected !== current) throw new Error("Wallet or network changed during the Vault action");
+class VaultActionContextChangedError extends Error {
+	constructor() {
+		super("Vault route, owner, network, or action epoch changed");
+		this.name = "VaultActionContextChangedError";
+	}
 }
 
 class VaultActionPreflightError extends Error {

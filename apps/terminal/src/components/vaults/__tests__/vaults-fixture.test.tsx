@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import {
 	resolveVaultDetailFixture,
@@ -11,6 +11,14 @@ import {
 	VaultsFixture,
 	type VaultsFixtureState,
 } from "../vaults-fixture";
+
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, className }: { children: ReactNode; className?: string }) => (
+		<a href="/vaults/mock" className={className}>
+			{children}
+		</a>
+	),
+}));
 
 describe("Vault fixtures", () => {
 	let container: HTMLDivElement;
@@ -44,10 +52,10 @@ describe("Vault fixtures", () => {
 		},
 	);
 
-	it("keeps fixture classification fail-closed", () => {
+	it("omits unsupported fixture classification instead of guessing it", () => {
 		renderList("normal");
-		expect(container.textContent).toContain("Rows remain unclassified instead of being guessed");
-		expect(container.textContent).not.toContain("Official Vaults");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Official")).toBe(false);
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "User")).toBe(false);
 	});
 
 	it("renders a placeholder-only normal detail fixture", () => {

@@ -206,6 +206,12 @@ function VaultActionRisk({
 						<li>
 							<Trans>The confirmed server lock timestamp governs when withdrawal becomes available.</Trans>
 						</li>
+						<li>
+							<Trans>
+								Hyperliquid documents a four-day lock after the latest HLP deposit and a one-day lock for user Vaults.
+								The returned server timestamp remains authoritative for this deposit.
+							</Trans>
+						</li>
 					</>
 				) : (
 					<>
@@ -331,7 +337,9 @@ function ReviewRow({ label, value, mono = false }: { label: React.ReactNode; val
 			<dt className="shrink-0 text-fg-muted">{label}</dt>
 			<dd
 				className={
-					mono ? "min-w-0 truncate font-mono tabular-nums text-fg" : "text-right font-semibold tabular-nums text-fg"
+					mono
+						? "min-w-0 break-all text-right font-mono tabular-nums text-fg"
+						: "text-right font-semibold tabular-nums text-fg"
 				}
 			>
 				{value}

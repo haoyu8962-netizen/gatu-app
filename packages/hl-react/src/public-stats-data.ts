@@ -15,15 +15,6 @@ export const PUBLIC_STATS_DATA_LIMITS = {
 	vaults: { maximumContentLength: 32 * 1024 * 1024, maximumRows: 50_000 },
 } as const;
 
-interface CachedPublicStatsProjection {
-	data: readonly unknown[];
-	etag?: string;
-	lastModified?: string;
-}
-
-let cachedProjectionEnv: HyperliquidEnv | null = null;
-let cachedProjections: Partial<Record<PublicStatsDataset, CachedPublicStatsProjection>> = {};
-
 export interface PublicLeaderboardPerformance {
 	readonly pnl: string;
 	readonly roi: string;
@@ -303,19 +294,11 @@ async function fetchPublicStatsData<T extends readonly unknown[]>(
 	normalize: (value: unknown, env: HyperliquidEnv) => T,
 	signal?: AbortSignal,
 ): Promise<T> {
-	selectProjectionEnvironment(env);
-	const cached = cachedProjections[dataset];
-	const headers: Record<string, string> = {};
-	if (cached?.etag) headers["If-None-Match"] = cached.etag;
-	if (cached?.lastModified) headers["If-Modified-Since"] = cached.lastModified;
-	const response = await fetch(getPublicStatsDataUrl(env, dataset), {
-		signal,
-		...(Object.keys(headers).length > 0 ? { headers } : {}),
-	});
-	if (response.status === 304) {
-		if (!cached) invalidResponse(dataset, env, "$http.304");
-		return cached.data as T;
-	}
+	// Do not add If-None-Match or If-Modified-Since from application code.
+	// The public stats CloudFront distribution rejects the resulting browser
+	// CORS preflight. A plain GET still benefits from the browser's native HTTP
+	// cache without turning a same-origin refetch into an OPTIONS request.
+	const response = await fetch(getPublicStatsDataUrl(env, dataset), { signal });
 	if (!response.ok) {
 		throw new PublicStatsDataError(
 			"http_error",
@@ -339,13 +322,6 @@ async function fetchPublicStatsData<T extends readonly unknown[]>(
 
 	try {
 		const normalized = normalize(await readBoundedJsonResponse(response, dataset, env), env);
-		if (cachedProjectionEnv === env) {
-			cachedProjections[dataset] = {
-				data: normalized,
-				etag: response.headers?.get("etag") ?? undefined,
-				lastModified: response.headers?.get("last-modified") ?? undefined,
-			};
-		}
 		return normalized;
 	} catch (cause) {
 		if (cause instanceof PublicStatsDataError) throw cause;
@@ -467,13 +443,7 @@ function resourceLimit(dataset: PublicStatsDataset, env: HyperliquidEnv, path: s
 	);
 }
 
-function selectProjectionEnvironment(env: HyperliquidEnv): void {
-	if (cachedProjectionEnv === env) return;
-	cachedProjectionEnv = env;
-	cachedProjections = {};
-}
-
+/** @internal Kept for compatibility with existing deterministic test setup. */
 export function clearPublicStatsDataCacheForTests(): void {
-	cachedProjectionEnv = null;
-	cachedProjections = {};
+	// Normalized projections are owned by the env-scoped React Query cache.
 }
