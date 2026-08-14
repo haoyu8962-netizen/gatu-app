@@ -4097,7 +4097,6 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "Limite"
 
-#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "Achat limite"
 
