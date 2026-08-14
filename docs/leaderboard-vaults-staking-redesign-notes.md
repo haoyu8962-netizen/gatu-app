@@ -30,6 +30,7 @@ Primary official sources:
 - [Hyperliquid Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Hyperliquid Exchange endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
 - [Hyperliquid staking](https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/staking)
+- [Hyperliquid node / delegation README](https://github.com/hyperliquid-dex/node#delegation)
 - [Hyperliquid staking linking](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees#staking-linking)
 - [Hyperliquid unstaking FAQ](https://hyperliquid.gitbook.io/hyperliquid-docs/support/faq/unstaking-and-link-staking-issues/unstaking-transfer-taking-more-than-7-days)
 - [Hyperliquid legacy Vaults](https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/vaults/hypercore-vaults-legacy)
@@ -188,6 +189,8 @@ Official legacy behavior is contextual copy only: HLP locks the most recent depo
 | Reward settlement | Official Staking docs: rewards accrue every minute, are distributed daily, and are automatically redelegated/compounded | Explain automatic compounding. Staking must not render a Claim CTA; Claim controls in section 18c belong to Referrals only. |
 | Lifetime rewards | No reliable summary; summing history assumes complete retention | Do not label a client sum as lifetime unless completeness is documented. |
 | Action history | `delegatorHistory({user})[]` → `{time,hash,delta}` | Render exact event semantics and real hash. |
+| Withdrawal duration by network | Mainnet Staking/Exchange docs specify seven days; the official node README specifies a five-minute unbonding period and current Testnet initiated/finalized history confirms approximately five minutes | Render Mainnet as seven days and Testnet as approximately five minutes. Do not apply the Mainnet duration to Testnet. |
+| Finalized withdrawal hash | Current Mainnet and Testnet history uses the all-zero hash sentinel for system finalization | Render “system finalization / hash unavailable” and never create an Explorer link for the sentinel. |
 | Spot HYPE available | Validated spot clearinghouse state for the verified owner | Add an integration/domain mapping; do not reuse staking available. |
 | Staking link state | `userFees({user}).stakingLink` | Read-only status is safe. Any action must implement the permanent two-party flow described below. |
 
@@ -221,8 +224,8 @@ All amounts are parsed and scaled in pure domain functions with Big.js. `vaultTr
 | Withdraw from Vault | `vaultTransfer({vaultAddress,isDeposit:false,usd})` | Verified, approved local trading Agent selected by the existing registry | Fresh conservatively quantized `maxWithdrawable`, lock state, and withdrawal risk fields; match new `vaultWithdraw` by Vault, owner, and requested amount. Final UI uses ledger `netWithdrawnUsd`, `commission`, and `closingCost` | Same; requested amount is not guaranteed net received. |
 | Spot → Staking available | `cDeposit({wei})` | Exact active master user wallet | Fresh spot balance; match a new `delegatorHistory` `cDeposit` event and refreshed available/spot balances | No automatic retry after signature dispatch. |
 | Delegate | `tokenDelegate({validator,wei,isUndelegate:false})` | Exact active master user wallet | Fresh available stake and validator status; match new delegate history plus refreshed delegation/summary. Use returned `lockedUntilTimestamp` | No automatic retry. |
-| Undelegate | `tokenDelegate({validator,wei,isUndelegate:true})` | Exact active master user wallet | Fresh exact delegation and expired server lock; match `isUndelegate:true`, delegated decrease, and immediate available increase | No automatic retry. This does **not** start the seven-day queue. |
-| Staking available → Spot | `cWithdraw({wei})` | Exact active master user wallet | Fresh available balance and `nPendingWithdrawals < 5`; match a new withdrawal `phase:"initiated"` event and pending aggregate/count increase. Later `finalized` records completion | No automatic retry. This is the only seven-day queue action. |
+| Undelegate | `tokenDelegate({validator,wei,isUndelegate:true})` | Exact active master user wallet | Fresh exact delegation and expired server lock; match `isUndelegate:true`, delegated decrease, and immediate available increase | No automatic retry. This does **not** start the transfer queue. |
+| Staking available → Spot | `cWithdraw({wei})` | Exact active master user wallet | Fresh available balance and `nPendingWithdrawals < 5`; match a new withdrawal `phase:"initiated"` event and pending aggregate/count increase. Later `finalized` records completion | No automatic retry. This starts the Mainnet seven-day or Testnet approximately five-minute queue. |
 | Initiate staking link | `linkStakingUser({user:stakingAddress,isFinalize:false})` | Exact trading user wallet | Fresh `userFees(trading).stakingLink`; reconcile requested state | Deliberately not exposed under the approved boundary; the page is read-only for linking. |
 | Finalize staking link | `linkStakingUser({user:tradingAddress,isFinalize:true})` | Exact staking user wallet | Revalidate both parties and requested relationship; reconcile both `userFees` views | Deliberately not exposed; no unlink or misleading reversible control exists. |
 
@@ -246,9 +249,11 @@ Before any write, the controller must also pass the existing legal and geographi
 
 The shared lock now includes the delivered write methods `vaultTransfer`, `cDeposit`, `cWithdraw`, and `tokenDelegate`, which also places them on `useExchange`'s `retry: false` path. `linkStakingUser` remains unexposed because linking writes are outside the approved boundary. This integration-layer change and its lock/concurrency tests are the required safety exception to a page-only edit boundary.
 
-That Web Lock ends when the SDK Promise settles; by itself it does **not** prevent another tab from replaying an operation after a transport timeout enters `unknown`. The delivered global host therefore uses a non-secret operation marker keyed by environment and verified owner. It records the exact public operation tuple before dispatch, is visible across tabs, and resumes read-only reconciliation after route changes or reload. It is cleared only by a definitive rejection, exact reconciliation, or the explicit two-step destructive recovery flow, never by an automatic TTL. No wallet credential or private key enters this marker.
+That Web Lock ends when the SDK Promise settles; by itself it does **not** prevent another tab from replaying an operation after a transport timeout enters `unknown`. The delivered global host therefore uses a non-secret operation marker keyed by environment and verified owner. It records the exact public operation tuple before dispatch and remains visible across tabs. Returning to the exact Staking page or Vault address rehydrates that marker as `done: unknown` and permits only authoritative, read-only reconciliation. It is cleared only by a definitive rejection, exact reconciliation, or the explicit two-step destructive recovery flow, never by an automatic TTL. No wallet credential or private key enters this marker.
 
-The app-shell-owned host keeps the Modal/Sheet and identity/environment epoch alive across route unmounts. An identity or environment change aborts UI work and hides the action, but retains an ambiguous marker for its original identity so returning to that identity can continue reconciliation. Page components cannot own or silently discard an awaiting/submitted/reconciling/unknown operation.
+The app-shell-owned host keeps the public operation tuple and identity/environment epoch alive across route unmounts; it does not pretend that React modal state itself survives a reload. An identity or environment change aborts UI work and hides the action, but retains an ambiguous marker for its original owner and environment. The exact owner may resume verification from either the master-wallet session or its verified Agent-only read session. Recovery validates the SDK method, direction, asset, atomic decimals, target, amount, baselines, and owner/environment before hydrating, and cannot reach any signing path.
+
+Ledger/history reconciliation accepts exactly one new matching event that was absent from the pre-sign baseline plus the expected authoritative state movement. Zero or multiple matching candidates remain `unknown`. Because the SDK success response contains no nonce or transaction hash, even a unique tuple match cannot cryptographically distinguish the browser request from an identical operation submitted elsewhere; the UI therefore describes the on-chain operation as verified rather than claiming a uniquely attributable SDK response.
 
 ## 4. Page-state mapping
 
@@ -281,7 +286,7 @@ The handoff token source is `designs/Gatu标志加载动画/docs/hl-ui-spec/toke
 
 | Handoff statement | Verified behavior | Delivered resolution |
 | --- | --- | --- |
-| Undelegate enters a seven-day queue | Undelegate returns funds immediately to Staking available after its one-day delegation lock. Only `cWithdraw` starts the seven-day queue; at most five are pending | Correct every label, review, state transition, and reconciliation rule. |
+| Undelegate enters a seven-day queue | Undelegate returns funds immediately to Staking available after its one-day delegation lock. Only `cWithdraw` starts the withdrawal queue; it is seven days on Mainnet and approximately five minutes on Testnet, with at most five pending | Correct every label, review, state transition, and reconciliation rule, and render the duration from the selected environment. |
 | Staking link can be unlinked / rewards belong to trading account | Linking permanently attributes staking to a trading account for fee discounts; no unlink exists. The staking user obtains complete control over trading funds and gives up its own discount | Delivered read-only link status and permanent-control warning. No signing or `stakingLinkDisableTradingUser` “unlink” control is exposed. |
 | Validator commission can rise at any time | Official rules constrain an increase unless the new commission is at most 1% | Remove the absolute claim; render the returned commission only. |
 | Jailed validators always reject a new delegation | Official docs say jailed validators do not produce blocks or rewards, but do not document this exact API rejection | A Gatu safety policy may disable delegation to jailed validators, labeled as product protection rather than protocol fact. |
@@ -323,7 +328,7 @@ The `.dc.html` files and their runtimes were used only for visual and interactio
 | Vault 20 USDC minimum and universal four-day lock | Removed the unsupported minimum and enforce only the server-returned lock timestamp. Context copy distinguishes HLP's four-day latest-deposit lock from a user Vault's one-day lock. |
 | Vault Official/User grouping and badges | Left visibly unavailable because neither the documented API nor the approved feed supplies a reliable classification. Deposited and Leading remain owner-backed; unknown rows are never guessed into a category. |
 | Vault withdrawal preview | Does not promise static post-operation shares or requested amount as net received. Review copy covers forced position closure, slippage, commission, and closing cost; final values come from the ledger. |
-| Staking “undelegate to seven-day queue” | Corrected: undelegation returns to Staking available after the delegation lock; only `cWithdraw` initiates the seven-day withdrawal queue. |
+| Staking “undelegate to seven-day queue” | Corrected: undelegation returns to Staking available after the delegation lock; only `cWithdraw` initiates the withdrawal queue (seven days on Mainnet, approximately five minutes on Testnet). |
 | Staking per-withdrawal progress rows | Replaced with the authoritative aggregate amount/count and initiated/finalized history because the API exposes no stable queue ID or unlock timestamp. |
 | Staking Claim and unlink controls | Omitted. Rewards auto-compound, and staking linking is permanent rather than unlinkable. Linking status and risk copy are read-only under this delivery boundary. |
 | Validator detail route | Omitted because the handoff contains no detail screen, field contract, or state specification. Validator selection and current delegation remain on `/staking`. |
@@ -398,6 +403,7 @@ Only the following delivery-owned categories belong to this redesign:
   - `apps/terminal/src/lib/hyperliquid/index.ts`
 - Safety, presentation, and localization:
   - `apps/terminal/src/hooks/use-geo-restriction.ts`
+  - `apps/terminal/src/config/security-headers.ts`
   - `apps/terminal/src/styles.css`
   - `apps/terminal/src/locales/{ar,en,es,fr,hi,zh}/messages.po`
   - the funds, public-stats, domain, controller, view, export, lock, and navigation tests under the page directories and `apps/terminal/src/lib/tests/`
@@ -415,6 +421,7 @@ No third-party dependency was added.
 | `funds-action-lock.ts` | Adds only `vaultTransfer`, `cDeposit`, `cWithdraw`, and `tokenDelegate` to the existing funds Web Lock and `retry:false` classification | All previously protected methods retain their behavior; linking writes remain disabled. |
 | `explorer.ts` | Adds the missing typed address-URL helper required by Leaderboard rows | Existing transaction/token URL helpers are unchanged. |
 | `use-geo-restriction.ts` | Exposes non-breaking error/resolved/retry signals so financial writes fail closed when geography cannot be established | Existing country/proxy/loading fields and public reads are preserved. |
+| `security-headers.ts` | Allows the reviewed Hyperliquid App public-stats origin in `connect-src`; without it, the strict browser CSP correctly blocked the delivered Vaults and Leaderboard adapters | All existing API, RPC, WebSocket, wallet, analytics, and asset sources remain unchanged. |
 | `routes/__root.tsx` | Mounts the lazy funds-action recovery host inside the existing Exchange scope so ambiguous actions survive route changes | Provider ordering and existing route surfaces remain intact. |
 | Navigation and generated route tree | Converts only the Vaults, Staking, and Leaderboard placeholders into real desktop/mobile routes | Earn remains disabled; existing route identities and wallet controls are unchanged. |
 | `styles.css` | Adds product-semantic variables only | Existing token values and shared component styles are unchanged. |
@@ -435,17 +442,32 @@ No third-party dependency was added.
 | Sensitive data | No Agent private key, wallet credential, or sensitive request field is sent to a backend, logged, persisted in the recovery marker, captured in fixtures, or included in screenshots. |
 | External links | Leaderboard explorer links use the integration helper with `target="_blank" rel="noopener"`. |
 
-### 8.6 Verification commands and recorded results
+### 8.6 SDK/documentation audit corrections
+
+The post-implementation audit against pinned `@nktkas/hyperliquid@0.33.3`, current Hyperliquid developer documentation, and live read-only Mainnet/Testnet response shapes produced these corrections:
+
+- Public Leaderboard/Vault feeds are now permitted by the app CSP; schema, environment, streaming-size, and fail-closed controls remain in the integration adapter.
+- A disconnected public Vault detail omits the optional `user` parameter instead of passing `undefined`, so the shared Info hook does not incorrectly disable the public request.
+- Staking performs a second fresh account/validator preflight at the SDK execution boundary. Reconciliation still uses the separately persisted pre-dispatch history and state baselines.
+- `cWithdraw` copy is environment-specific: Mainnet uses the documented seven-day period, while current Testnet history and the official node README indicate approximately five minutes. An all-zero finalized-withdrawal hash is treated as a system-finalization sentinel and never linked as a transaction.
+- Vault and Staking pages can hydrate only a semantically valid, exact owner/environment marker into `done/unknown`. Recovery is read-only, never re-enters signing, and retains the marker unless one unique post-baseline history event and the authoritative state direction both verify.
+- Marker storage rejects invalid method/direction/asset/decimal/target combinations, duplicate IDs, and multiple operations for one environment/owner. Corrupt storage remains locked until the explicit two-step destructive clear.
+- Vault non-funding-ledger reads now pass the documented `startTime`. A two-day lookback tolerates client/exchange clock skew, while the persisted hash baseline prevents older same-amount events from proving the new request.
+- Cross-tab destructive confirmation is bound to the exact marker ID, so replacing marker A with marker B resets the two-step confirmation. Multiple exact history candidates remain `unknown` instead of being arbitrarily attributed.
+
+Residual boundary: SDK success responses contain no transaction hash or request nonce that later history exposes. The implementation therefore verifies a unique matching history event plus a directional account-state change, but cannot cryptographically distinguish an otherwise identical operation submitted from another origin. The UI and this document do not claim that stronger attribution.
+
+### 8.7 Verification commands and recorded results
 
 | Command/check | Result |
 | --- | --- |
 | `pnpm lint` | Passed. The only diagnostic is the pre-existing `apps/terminal/src/lib/lazy.ts` `noExplicitAny` warning; there are no new lint errors. |
 | `pnpm typecheck` | Passed for all three workspace packages. |
-| `pnpm --dir apps/terminal exec vitest run src/lib/tests/funds-action-state.test.ts src/lib/tests/funds-action-reconciliation.test.ts src/lib/tests/funds-action-marker.test.ts src/lib/tests/funds-action-recovery-host.test.tsx src/components/staking/__tests__/use-staking-actions.test.tsx src/components/vaults/__tests__/use-vault-action-controller.test.tsx` | Passed: 6 files, 59 tests. This includes every action stage/result and transition, exact baselines, late/ambiguous outcomes, recovery, and zero blind retries. |
+| `pnpm --dir apps/terminal exec vitest run src/lib/tests/funds-action-state.test.ts src/lib/tests/funds-action-reconciliation.test.ts src/lib/tests/funds-action-marker.test.ts src/lib/tests/funds-action-recovery-host.test.tsx src/components/staking/__tests__/use-staking-actions.test.tsx src/components/vaults/__tests__/use-vault-action-controller.test.tsx` | Passed: 6 files, 104 tests. This includes every action stage/result and transition, exact baselines, late/ambiguous outcomes, recovery, and zero blind retries. |
 | Targeted fixture/controller/domain/public-stats Vitest groups | Passed in the recorded runs: one 8-file/57-test group and one 4-file/22-test group. Coverage includes DEV-only fixture gating, page states, sorting/filtering, feed isolation/limits, malformed responses, and Vault classification failure behavior. |
 | `pnpm i18n:extract`, `pnpm i18n:compile`, and `msgfmt --check --check-format` for all six catalogs | Passed. English and Chinese are complete for the new copy; the Chinese catalog has no remaining non-obsolete untranslated message. |
-| `pnpm build` | Passed. Client and server/Nitro builds, static-import cycle check, total bundle budget, and the explicit Leaderboard/Staking/Vaults surface budgets all passed. Final measured client gzip is 2,993,483 bytes; route chunks are 9,643 / 23,131 / 27,075 bytes respectively. |
-| `PATH=/Users/zhixing/.nvm/versions/node/v22.18.0/bin:$PATH pnpm --dir apps/terminal exec vitest run --maxWorkers=1` in a clean task-only worktree | Passed: 361 files and 3,227 tests; one intentional soak test skipped. The single-worker run avoids the suite's known `mobile-agent-sync-route` parallel `act()` flake while exercising the complete test inventory. A preliminary run in the shared dirty worktree also identified an out-of-scope Balance visual-contract mismatch; those concurrent files are not staged, and the same Balance tests pass in this clean delivery worktree. |
+| `pnpm build` | Passed. Client and server/Nitro builds, static-import cycle check, total bundle budget, and the explicit Leaderboard/Staking/Vaults surface budgets all passed. Final measured client gzip is 2,996,804 bytes; Leaderboard/Staking/Vaults route chunks are 9,638 / 23,907 / 27,709 gzip bytes respectively. |
+| `PATH=/Users/zhixing/.nvm/versions/node/v22.18.0/bin:$PATH pnpm --dir apps/terminal exec vitest run --maxWorkers=1` | Passed: 362 files and 3,285 tests; one intentional soak test skipped. The single-worker run avoids the suite's known `mobile-agent-sync-route` parallel `act()` timing fluctuation while exercising the complete test inventory. |
 | Browser acceptance on `http://localhost:3006` | Passed for the captured desktop/mobile routes: no page errors, no horizontal page overflow, and all 112 screenshot files are present. |
 
 The commit contains only the files listed in this delivery. Concurrent Balance-surface changes remain unstaged and are not used as evidence for this redesign.

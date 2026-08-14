@@ -2258,6 +2258,10 @@ msgid "Delegate HYPE to validators to support consensus and earn rewards. Undele
 msgstr "将 HYPE 委托给验证者，以支持共识并赚取奖励。解除委托后，HYPE 会返回质押可用余额；只有另行转至 Spot 才会启动 7 天队列。"
 
 #: src/components/staking/staking-view.tsx
+msgid "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the Testnet queue, which takes approximately five minutes."
+msgstr "将 HYPE 委托给验证者，以支持共识并赚取奖励。解除委托后，HYPE 会返回质押可用余额；只有另行转至 Spot 才会启动测试网队列，耗时约 5 分钟。"
+
+#: src/components/staking/staking-view.tsx
 msgid "Delegated"
 msgstr "已委托"
 
@@ -4971,6 +4975,10 @@ msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确�
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 msgstr "只有此转账会启动 7 天队列。Hyperliquid 每个地址最多允许 5 笔待处理提取。"
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address."
+msgstr "只有此转账会启动耗时约 5 分钟的测试网队列。Hyperliquid 每个地址最多允许 5 笔待处理提取。"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "open"
 #~ msgstr "未成交"
@@ -7183,6 +7191,10 @@ msgid "Starting camera..."
 msgstr "正在启动相机…"
 
 #: src/components/staking/staking-action-modal.tsx
+msgid "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
+msgstr "启动从质押余额转入 Spot 的测试网转账队列，耗时约 5 分钟。"
+
+#: src/components/staking/staking-action-modal.tsx
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "启动从质押余额转入 Spot 的 7 天转账队列。"
 
@@ -7468,6 +7480,10 @@ msgstr "切换中..."
 #~ msgid "Sync ID"
 #~ msgstr "同步 ID"
 
+#: src/components/staking/staking-view.tsx
+msgid "System finalization · hash unavailable"
+msgstr "系统结算 · 无可用交易哈希"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
@@ -7586,6 +7602,10 @@ msgstr "测试网"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Testnet preview; market link disabled"
 msgstr "测试网预览；市场链接已禁用"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Testnet queue: approximately five minutes"
+msgstr "测试网队列：约 5 分钟"
 
 #: src/domain/trade/pre-transfer-check.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
@@ -8580,6 +8600,10 @@ msgstr "将 HYPE 从您的 Spot 余额转入质押可用余额。"
 #: src/components/staking/staking-view.tsx
 msgid "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
 msgstr "转入 Spot 需经过 7 天队列。Hyperliquid 仅提供汇总金额和笔数，因此此处不会推断单笔解锁时间或进度。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Transfers to Spot use an approximately five-minute queue on Testnet. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+msgstr "在测试网上，转入 Spot 需经过约 5 分钟的队列。Hyperliquid 仅提供汇总金额和笔数，因此此处不会推断单笔解锁时间或进度。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Trending"

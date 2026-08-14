@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { isAddress } from "viem";
+import { isAddress, zeroAddress } from "viem";
 import type { HyperliquidEnv } from "@/lib/hyperliquid";
 
 export const FUNDS_ACTION_MARKER_STORAGE_KEY = "gatu.funds_action.pending.v1";
@@ -114,6 +114,40 @@ function isStateBaseline(value: unknown): value is FundsActionStateBaseline {
 	);
 }
 
+function isNonZeroAddress(value: unknown): value is `0x${string}` {
+	return typeof value === "string" && isAddress(value) && value.toLowerCase() !== zeroAddress;
+}
+
+function hasValidActionSemantics(candidate: Partial<FundsActionReference>): boolean {
+	const baselineKind = candidate.stateBaseline?.kind;
+	if (candidate.method === "vaultTransfer") {
+		return (
+			isNonZeroAddress(candidate.target) &&
+			(candidate.direction === "deposit" || candidate.direction === "withdraw") &&
+			candidate.asset === "USDC" &&
+			candidate.atomicDecimals === 6 &&
+			(baselineKind === undefined || baselineKind === "vault")
+		);
+	}
+	if (candidate.method === "cDeposit" || candidate.method === "cWithdraw") {
+		return (
+			candidate.target === "staking" &&
+			candidate.direction === (candidate.method === "cDeposit" ? "deposit" : "withdraw") &&
+			candidate.asset === "HYPE" &&
+			candidate.atomicDecimals === 8 &&
+			(baselineKind === undefined || baselineKind === "staking")
+		);
+	}
+	if (candidate.method !== "tokenDelegate") return false;
+	return (
+		isNonZeroAddress(candidate.target) &&
+		(candidate.direction === "delegate" || candidate.direction === "undelegate") &&
+		candidate.asset === "HYPE" &&
+		candidate.atomicDecimals === 8 &&
+		(baselineKind === undefined || baselineKind === "staking")
+	);
+}
+
 function isFundsActionReference(value: unknown): value is FundsActionReference {
 	if (!value || typeof value !== "object") return false;
 	const candidate = value as Partial<FundsActionReference>;
@@ -147,8 +181,22 @@ function isFundsActionReference(value: unknown): value is FundsActionReference {
 		(candidate.historyBaseline === undefined || isHistoryBaseline(candidate.historyBaseline)) &&
 		(candidate.stateBaseline === undefined || isStateBaseline(candidate.stateBaseline)) &&
 		((candidate.historyBaseline === undefined && candidate.stateBaseline === undefined) ||
-			(candidate.historyBaseline !== undefined && candidate.stateBaseline !== undefined))
+			(candidate.historyBaseline !== undefined && candidate.stateBaseline !== undefined)) &&
+		hasValidActionSemantics(candidate)
 	);
+}
+
+function isFundsActionReferenceArray(value: unknown): value is readonly FundsActionReference[] {
+	if (!Array.isArray(value) || !value.every(isFundsActionReference)) return false;
+	const ids = new Set<string>();
+	const owners = new Set<string>();
+	for (const marker of value) {
+		const ownerKey = `${marker.env}:${marker.owner.toLowerCase()}`;
+		if (ids.has(marker.id) || owners.has(ownerKey)) return false;
+		ids.add(marker.id);
+		owners.add(ownerKey);
+	}
+	return true;
 }
 
 function readMarkerStorageSnapshot(): FundsActionMarkerStorageSnapshot {
@@ -157,7 +205,7 @@ function readMarkerStorageSnapshot(): FundsActionMarkerStorageSnapshot {
 		const raw = window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY);
 		if (raw === null) return EMPTY_STORAGE_SNAPSHOT;
 		const parsed: unknown = JSON.parse(raw);
-		if (!Array.isArray(parsed) || !parsed.every(isFundsActionReference)) return { status: "corrupt" };
+		if (!isFundsActionReferenceArray(parsed)) return { status: "corrupt" };
 		return { status: "available", markers: parsed };
 	} catch {
 		return { status: "corrupt" };

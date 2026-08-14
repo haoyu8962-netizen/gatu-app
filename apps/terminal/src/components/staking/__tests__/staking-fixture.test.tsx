@@ -41,12 +41,24 @@ describe("StakingFixture", () => {
 		render("normal");
 		expect(container.textContent).toContain("Sample Active Validator");
 		expect(container.textContent).toContain("Placeholder validator data for visual review");
+		act(() => {
+			[...container.querySelectorAll("button")]
+				.find((candidate) => candidate.textContent?.trim() === "Staking actions")
+				?.click();
+		});
+		expect(container.textContent).toContain("System finalization · hash unavailable");
 
 		render("empty");
 		expect(container.textContent).toContain("No validators found");
 	});
 
-	function render(fixture: StakingFixtureState) {
-		act(() => root.render(<StakingFixture key={fixture} fixture={fixture} />));
+	it("keeps fixture queue copy aligned with the selected environment", () => {
+		render("normal", "Testnet");
+		expect(container.textContent).toContain("Testnet queue, which takes approximately five minutes");
+		expect(container.textContent).not.toContain("seven-day queue");
+	});
+
+	function render(fixture: StakingFixtureState, env: "Mainnet" | "Testnet" = "Mainnet") {
+		act(() => root.render(<StakingFixture key={`${fixture}:${env}`} fixture={fixture} env={env} />));
 	}
 });

@@ -17,6 +17,7 @@ const JAILED_VALIDATOR = "0x0000000000000000000000000000000000002002" as const;
 const INACTIVE_VALIDATOR = "0x0000000000000000000000000000000000002003" as const;
 const SIGNER = "0x0000000000000000000000000000000000003001" as const;
 const FIXTURE_HASH = `0x${"ab".repeat(32)}` as `0x${string}`;
+const SYSTEM_FINALIZATION_HASH = `0x${"0".repeat(64)}` as `0x${string}`;
 
 export function getStakingFixtureFromLocation(): StakingFixtureState | null {
 	return resolveStakingFixture(typeof window === "undefined" ? "" : window.location.search, import.meta.env.DEV);
@@ -28,7 +29,7 @@ export function resolveStakingFixture(search: string, isDevelopment: boolean): S
 	return FIXTURE_STATES.find((state) => state === fixture) ?? null;
 }
 
-export function StakingFixture({ fixture }: { fixture: StakingFixtureState }) {
+export function StakingFixture({ fixture, env }: { fixture: StakingFixtureState; env: "Mainnet" | "Testnet" }) {
 	const { t } = useLingui();
 	const validators =
 		fixture === "normal"
@@ -42,7 +43,7 @@ export function StakingFixture({ fixture }: { fixture: StakingFixtureState }) {
 	const account = fixture === "normal" ? createAccount() : fixture === "empty" ? createEmptyAccount() : null;
 	const period = "week" as const;
 	const controller: StakingController = {
-		env: "Mainnet",
+		env,
 		pageState: fixture,
 		publicState: fixture === "loading" ? "loading" : fixture === "error" ? "error" : "ready",
 		accountState: fixture === "loading" ? "loading" : fixture === "error" ? "error" : "ready",
@@ -164,6 +165,11 @@ function createAccount(): NonNullable<StakingController["account"]> {
 				time: Date.UTC(2026, 0, 12, 8),
 				hash: FIXTURE_HASH,
 				action: { type: "delegate", validator: ACTIVE_VALIDATOR, amount: "2500" },
+			},
+			{
+				time: Date.UTC(2026, 0, 13, 8),
+				hash: SYSTEM_FINALIZATION_HASH,
+				action: { type: "withdrawalFinalized", amount: "750" },
 			},
 		],
 		spotHypeAvailable: "4800",

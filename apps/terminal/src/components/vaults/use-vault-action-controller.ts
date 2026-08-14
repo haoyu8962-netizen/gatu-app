@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { zeroAddress } from "viem";
 import {
@@ -9,10 +9,12 @@ import {
 	findPendingFundsAction,
 	fundsActionReferencesEqual,
 	removeFundsActionMarkerSafely,
+	useFundsActionMarkers,
 } from "@/components/funds-action/funds-action-marker";
 import {
 	createFundsActionHistoryBaseline,
 	type FundsActionMatch,
+	getFundsActionHistoryStartTime,
 	reconcileVaultFundsAction,
 	type VaultReconciliationState,
 	verifyVaultReconciliationState,
@@ -28,6 +30,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	readPersistTradingConnection,
+	useActiveAgentOwner,
 	useAgentRegistration,
 	useAgentStatus,
 	useExchange,
@@ -70,12 +73,13 @@ export interface ActiveVaultAction {
 	receipt?: VaultActionReceipt;
 	errorMessage?: string;
 	isPreflighting: boolean;
+	recoveredFromMarker?: boolean;
 }
 
 interface VaultExecutionLease {
 	actionId: string;
 	identityKey: string;
-	markerId: string;
+	reference: FundsActionReference;
 	ownerAddress: `0x${string}`;
 	atomicAmount: number;
 	eligibilityDeadline: number;
@@ -116,15 +120,24 @@ export function useVaultActionController({
 	const hyperliquid = useHyperliquid();
 	const legalStatus = useLegalStatus();
 	const geo = useGeoRestriction();
+	const activeAgentOwner = useActiveAgentOwner();
 	const agentStatus = useAgentStatus();
 	const agentRegistration = useAgentRegistration();
+	const fundsActionMarkers = useFundsActionMarkers();
 	const [activeAction, setActiveAction] = useState<ActiveVaultAction | null>(null);
 	const actionRef = useRef<ActiveVaultAction | null>(null);
 	const mountedRef = useRef(true);
 	const requestPendingRef = useRef(false);
 	const executionLeaseRef = useRef<VaultExecutionLease | null>(null);
+	const hydratedRecoveryMarkerIdRef = useRef<string | null>(null);
 
 	const exactOwner = getExactMasterOwner(wallet, hyperliquid.clientKey, hyperliquid.sessionMode);
+	const recoveryOwner =
+		hyperliquid.sessionMode === "agent-only"
+			? activeAgentOwner?.env === hyperliquid.env
+				? activeAgentOwner.address
+				: undefined
+			: exactOwner;
 	const identityKey = createVaultIdentityKey({
 		env: hyperliquid.env,
 		clientKey: hyperliquid.clientKey,
@@ -133,7 +146,24 @@ export function useVaultActionController({
 	});
 	const identityRef = useRef(identityKey);
 	identityRef.current = identityKey;
-	const visibleAction = activeAction?.identityKey === identityKey ? activeAction : null;
+	const validVaultAddress = /^0x[a-fA-F0-9]{40}$/.test(vaultAddress) ? (vaultAddress as `0x${string}`) : zeroAddress;
+	const visibleAction =
+		activeAction?.identityKey === identityKey &&
+		activeAction.detail.vaultAddress.toLowerCase() === validVaultAddress.toLowerCase()
+			? activeAction
+			: null;
+	const recoveredAction = useMemo(
+		() =>
+			createRecoveredVaultAction({
+				markers: fundsActionMarkers,
+				env: hyperliquid.env,
+				recoveryOwner,
+				vaultAddress: validVaultAddress,
+				detail,
+				identityKey,
+			}),
+		[detail, fundsActionMarkers, hyperliquid.env, identityKey, recoveryOwner, validVaultAddress],
+	);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -144,15 +174,51 @@ export function useVaultActionController({
 
 	useEffect(() => {
 		const current = actionRef.current;
-		if (!current || current.identityKey === identityKey) return;
+		if (
+			!current ||
+			(current.identityKey === identityKey &&
+				current.detail.vaultAddress.toLowerCase() === validVaultAddress.toLowerCase())
+		) {
+			return;
+		}
 		// The persisted public marker remains available to the root recovery host,
-		// but the old account can never continue rendering or signing in this shell.
+		// but a different account, network, or Vault can never continue rendering
+		// or signing in this shell.
 		executionLeaseRef.current = null;
 		actionRef.current = null;
 		setActiveAction(null);
-	}, [identityKey]);
+	}, [identityKey, validVaultAddress]);
 
-	const validVaultAddress = /^0x[a-fA-F0-9]{40}$/.test(vaultAddress) ? (vaultAddress as `0x${string}`) : zeroAddress;
+	useEffect(() => {
+		const current = activeAction;
+		if (!recoveredAction) {
+			hydratedRecoveryMarkerIdRef.current = null;
+			if (current?.recoveredFromMarker && current.state.stage === "done" && current.state.result === "unknown") {
+				actionRef.current = null;
+				setActiveAction(null);
+			}
+			return;
+		}
+		if (
+			current?.recoveredFromMarker &&
+			current.state.stage === "done" &&
+			current.state.result === "unknown" &&
+			current.marker?.id !== recoveredAction.marker?.id
+		) {
+			hydratedRecoveryMarkerIdRef.current = recoveredAction.marker?.id ?? null;
+			actionRef.current = recoveredAction;
+			setActiveAction(recoveredAction);
+			return;
+		}
+		if (current || hydratedRecoveryMarkerIdRef.current === recoveredAction.marker?.id) return;
+		// This synchronizes a validated public recovery marker into page-local UI
+		// state only. Authorization and SDK dispatch remain reachable exclusively
+		// from the review/confirm event path below.
+		hydratedRecoveryMarkerIdRef.current = recoveredAction.marker?.id ?? null;
+		actionRef.current = recoveredAction;
+		setActiveAction(recoveredAction);
+	}, [activeAction, recoveredAction]);
+
 	const queryOwner = exactOwner ?? zeroAddress;
 	const queryEnabled = Boolean(exactOwner && validVaultAddress !== zeroAddress);
 	const detailQuery = useInfo(
@@ -183,7 +249,9 @@ export function useVaultActionController({
 				throw new VaultLocalPreDispatchError();
 			}
 			const marker = findPendingFundsAction(hyperliquid.env, lease.ownerAddress);
-			if (!marker || marker.id !== lease.markerId) throw new VaultLocalPreDispatchError();
+			if (!marker || !fundsActionReferencesEqual(marker, lease.reference)) {
+				throw new VaultLocalPreDispatchError();
+			}
 			if (
 				params.vaultAddress.toLowerCase() !== marker.target.toLowerCase() ||
 				params.isDeposit !== (marker.direction === "deposit") ||
@@ -324,6 +392,7 @@ export function useVaultActionController({
 			if (!ownerAddress || ownerAddress.toLowerCase() !== current.ownerAddress.toLowerCase()) {
 				throw new Error("The active owner wallet no longer matches this Vault action");
 			}
+			const startedAt = Date.now();
 
 			const [legal, geoResult, requirements, freshDetail, freshEquities, freshClearinghouse, freshHistory] =
 				await Promise.all([
@@ -333,7 +402,10 @@ export function useVaultActionController({
 					detailQuery.refetch({ cancelRefetch: true }),
 					equitiesQuery.refetch({ cancelRefetch: true }),
 					clearinghouseQuery.refetch({ cancelRefetch: true }),
-					hyperliquid.info.userNonFundingLedgerUpdates({ user: ownerAddress }),
+					hyperliquid.info.userNonFundingLedgerUpdates({
+						user: ownerAddress,
+						startTime: getFundsActionHistoryStartTime(startedAt),
+					}),
 				]);
 			assertVaultIdentityCurrent(current.identityKey, identityRef.current);
 			if (legal.error || !legal.data?.acceptedTerms || !legal.data.userAllowed || !legal.data.canPerformActions) {
@@ -377,7 +449,6 @@ export function useVaultActionController({
 				throw new Error("Fresh Vault reconciliation baseline could not be verified");
 			}
 
-			const startedAt = Date.now();
 			marker = createFundsActionReference({
 				env: hyperliquid.env,
 				owner: ownerAddress,
@@ -404,7 +475,7 @@ export function useVaultActionController({
 			executionLeaseRef.current = {
 				actionId: current.id,
 				identityKey: current.identityKey,
-				markerId: marker.id,
+				reference: marker,
 				ownerAddress,
 				atomicAmount: scaledAmount.atomicNumber,
 				eligibilityDeadline: Date.now() + ELIGIBILITY_LEASE_MS,
@@ -578,7 +649,10 @@ async function reconcileMarker(
 	for (let attempt = 0; attempt < RECONCILIATION_ATTEMPTS; attempt += 1) {
 		try {
 			const [history, detail, equities, clearinghouse] = await Promise.all([
-				info.userNonFundingLedgerUpdates({ user: marker.owner }),
+				info.userNonFundingLedgerUpdates({
+					user: marker.owner,
+					startTime: getFundsActionHistoryStartTime(marker.startedAt),
+				}),
 				info.vaultDetails({ vaultAddress: marker.target as `0x${string}`, user: marker.owner }),
 				info.userVaultEquities({ user: marker.owner }),
 				info.clearinghouseState({ user: marker.owner }),
@@ -592,6 +666,93 @@ async function reconcileMarker(
 		if (attempt < RECONCILIATION_ATTEMPTS - 1) await waitForReconciliationAttempt();
 	}
 	return null;
+}
+
+function createRecoveredVaultAction({
+	markers,
+	env,
+	recoveryOwner,
+	vaultAddress,
+	detail,
+	identityKey,
+}: {
+	markers: readonly FundsActionReference[];
+	env: FundsActionReference["env"];
+	recoveryOwner: `0x${string}` | undefined;
+	vaultAddress: `0x${string}`;
+	detail: VaultDetail | null;
+	identityKey: string;
+}): ActiveVaultAction | null {
+	if (!recoveryOwner || !detail || vaultAddress === zeroAddress) return null;
+	if (detail.vaultAddress.toLowerCase() !== vaultAddress.toLowerCase()) return null;
+
+	const ownerMarkers = markers.filter(
+		(marker) => marker.env === env && marker.owner.toLowerCase() === recoveryOwner.toLowerCase(),
+	);
+	if (ownerMarkers.length !== 1) return null;
+	const marker = ownerMarkers[0];
+	if (
+		marker.method !== "vaultTransfer" ||
+		(marker.direction !== "deposit" && marker.direction !== "withdraw") ||
+		marker.asset !== "USDC" ||
+		marker.atomicDecimals !== USDC_ATOMIC_DECIMALS ||
+		marker.target.toLowerCase() !== vaultAddress.toLowerCase() ||
+		!marker.historyBaseline ||
+		!marker.stateBaseline ||
+		marker.stateBaseline.kind !== "vault" ||
+		!isRecoveryIdentityEpoch(marker, marker.identityEpoch) ||
+		!isRecoveryMarkerId(marker)
+	) {
+		return null;
+	}
+
+	const amount = scaleFundsAmount(marker.displayAmount, USDC_ATOMIC_DECIMALS);
+	if (!amount.valid || amount.displayAmount !== marker.displayAmount || amount.atomicAmount !== marker.atomicAmount) {
+		return null;
+	}
+
+	return {
+		id: marker.identityEpoch,
+		action: marker.direction,
+		amount: amount.displayAmount,
+		state: { stage: "done", result: "unknown" },
+		identityKey,
+		ownerAddress: recoveryOwner,
+		detail,
+		marker,
+		isPreflighting: false,
+		recoveredFromMarker: true,
+	};
+}
+
+function isRecoveryMarkerId(marker: FundsActionReference): boolean {
+	const prefix = `${marker.env}:${marker.owner.toLowerCase()}:${marker.method}:${marker.startedAt}:`;
+	return marker.id.startsWith(prefix) && marker.id.length > prefix.length;
+}
+
+function isRecoveryIdentityEpoch(marker: FundsActionReference, value: string): boolean {
+	const parts = value.split(":");
+	if (parts.length !== 6) return false;
+	const [epochEnv, epochClientKey, epochMode, epochWallet, createdAtRaw, sequenceRaw] = parts;
+	if (
+		epochEnv !== marker.env ||
+		epochClientKey?.toLowerCase() !== marker.owner.toLowerCase() ||
+		epochMode !== "wallet" ||
+		epochWallet?.toLowerCase() !== marker.owner.toLowerCase() ||
+		!/^\d+$/.test(createdAtRaw ?? "") ||
+		!/^\d+$/.test(sequenceRaw ?? "")
+	) {
+		return false;
+	}
+	const createdAt = Number(createdAtRaw);
+	const sequence = Number(sequenceRaw);
+	return (
+		Number.isSafeInteger(createdAt) &&
+		createdAt > 0 &&
+		createdAt <= marker.startedAt &&
+		Number.isSafeInteger(sequence) &&
+		sequence > 0
+	);
 }
 
 interface VaultReconciliationProof {

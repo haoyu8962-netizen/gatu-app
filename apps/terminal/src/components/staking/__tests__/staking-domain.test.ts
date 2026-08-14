@@ -6,6 +6,7 @@ import {
 	createValidatorViews,
 	deriveStakingPageState,
 	formatStakingAmount,
+	isSystemFinalizedWithdrawal,
 	parseSpotHypeAvailable,
 	parseStakingDelegations,
 	parseStakingHistory,
@@ -125,6 +126,31 @@ describe("staking domain", () => {
 				},
 			]),
 		).toMatchObject([{ action: { type: "undelegate" } }, { action: { type: "withdrawalInitiated" } }]);
+	});
+
+	it("recognizes only finalized withdrawals with the protocol zero-hash sentinel as system finalizations", () => {
+		const zeroHash = `0x${"0".repeat(64)}` as const;
+		expect(
+			isSystemFinalizedWithdrawal({
+				time: 1_700_000_000_000,
+				hash: zeroHash,
+				action: { type: "withdrawalFinalized", amount: "2" },
+			}),
+		).toBe(true);
+		expect(
+			isSystemFinalizedWithdrawal({
+				time: 1_700_000_000_000,
+				hash: zeroHash,
+				action: { type: "withdrawalInitiated", amount: "2" },
+			}),
+		).toBe(false);
+		expect(
+			isSystemFinalizedWithdrawal({
+				time: 1_700_000_000_000,
+				hash: HASH,
+				action: { type: "withdrawalFinalized", amount: "2" },
+			}),
+		).toBe(false);
 	});
 
 	it("validates the read-only permanent staking-link discriminant", () => {

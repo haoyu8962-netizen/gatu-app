@@ -12,6 +12,7 @@ const ACTIVE = "0x2222222222222222222222222222222222222222" as const;
 const JAILED = "0x3333333333333333333333333333333333333333" as const;
 const INACTIVE = "0x4444444444444444444444444444444444444444" as const;
 const HASH = `0x${"ab".repeat(32)}` as const;
+const SYSTEM_FINALIZATION_HASH = `0x${"0".repeat(64)}` as const;
 
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 
@@ -82,6 +83,11 @@ function props(overrides: Partial<StakingViewProps> = {}): StakingViewProps {
 					hash: HASH,
 					action: { type: "withdrawalInitiated", amount: "1" },
 				},
+				{
+					time: 1_700_000_000_002,
+					hash: SYSTEM_FINALIZATION_HASH,
+					action: { type: "withdrawalFinalized", amount: "0.5" },
+				},
 			],
 			spotHypeAvailable: "8",
 			stakingLink: null,
@@ -107,6 +113,14 @@ describe("StakingView", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			value: vi.fn().mockReturnValue({
+				addEventListener: vi.fn(),
+				matches: false,
+				removeEventListener: vi.fn(),
+			}),
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -124,6 +138,7 @@ describe("StakingView", () => {
 		expect(container.textContent).toContain("Jailed Validator");
 		expect(container.textContent).toContain("Inactive Validator");
 		expect(container.textContent).toContain("1.5 HYPE · 2/5");
+		expect(container.textContent).toContain("Transfers to Spot use a seven-day queue");
 		expect(container.textContent).toContain("no individual unlock time or progress is inferred");
 		expect(button(container, "Spot to staking").disabled).toBe(false);
 		expect(button(container, "Staking to Spot").disabled).toBe(false);
@@ -150,15 +165,35 @@ describe("StakingView", () => {
 		expect(container.textContent).not.toContain(ACTIVE);
 	});
 
-	it("keeps undelegation and the seven-day Spot transfer as separate history semantics", () => {
+	it("keeps undelegation and the Mainnet Spot transfer as separate history semantics", () => {
 		act(() => root.render(<StakingView {...props()} />));
 		act(() => button(container, "Staking actions").click());
 
 		expect(container.textContent).toContain("Undelegated from Active Validator");
 		expect(container.textContent).toContain("Staking to Spot · initiated");
+		expect(container.textContent).toContain("Staking to Spot · finalized");
+		expect(container.textContent).toContain("System finalization · hash unavailable");
 		const explorerLink = container.querySelector(`a[href*="${HASH}"]`) as HTMLAnchorElement | null;
 		expect(explorerLink?.target).toBe("_blank");
 		expect(explorerLink?.rel).toBe("noopener");
+		expect(container.querySelector(`a[href*="${SYSTEM_FINALIZATION_HASH}"]`)).toBeNull();
+	});
+
+	it("shows the approximately five-minute queue throughout the Testnet view and modal", () => {
+		act(() => root.render(<StakingView {...props({ env: "Testnet" })} />));
+
+		expect(container.textContent).toContain("Testnet queue, which takes approximately five minutes");
+		expect(container.textContent).toContain("approximately five-minute queue on Testnet");
+		expect(container.textContent).not.toContain("seven-day queue");
+
+		act(() => button(container, "Staking to Spot").click());
+		expect(document.body.textContent).toContain(
+			"Starts the approximately five-minute Testnet transfer queue from staking balance to Spot.",
+		);
+		expect(document.body.textContent).toContain("Testnet queue: approximately five minutes");
+		expect(document.body.textContent).toContain(
+			"Only this transfer starts the Testnet queue, which takes approximately five minutes.",
+		);
 	});
 
 	it("shows an Agent-only owner as read-only and disables every funding action", () => {

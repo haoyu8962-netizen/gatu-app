@@ -2414,6 +2414,10 @@ msgid "Delegate HYPE to validators to support consensus and earn rewards. Undele
 msgstr ""
 
 #: src/components/staking/staking-view.tsx
+msgid "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the Testnet queue, which takes approximately five minutes."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
 msgid "Delegated"
 msgstr ""
 
@@ -5343,6 +5347,10 @@ msgstr ""
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 msgstr ""
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address."
+msgstr ""
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
 #~ msgstr ""
@@ -7803,6 +7811,10 @@ msgid "Starting camera..."
 msgstr "Démarrage de la caméra..."
 
 #: src/components/staking/staking-action-modal.tsx
+msgid "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
+msgstr ""
+
+#: src/components/staking/staking-action-modal.tsx
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr ""
 
@@ -8100,6 +8112,10 @@ msgstr "Changement..."
 #~ msgid "Sync ID"
 #~ msgstr "ID de synchronisation"
 
+#: src/components/staking/staking-view.tsx
+msgid "System finalization · hash unavailable"
+msgstr ""
+
 #: src/lib/trade/order-types.ts
 #~ msgid "Take Limit"
 #~ msgstr ""
@@ -8226,6 +8242,10 @@ msgstr "Testnet"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Testnet preview; market link disabled"
 msgstr "Aperçu testnet ; lien du marché désactivé"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Testnet queue: approximately five minutes"
+msgstr ""
 
 #: src/domain/trade/pre-transfer-check.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
@@ -9263,6 +9283,10 @@ msgstr ""
 
 #: src/components/staking/staking-view.tsx
 msgid "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+msgstr ""
+
+#: src/components/staking/staking-view.tsx
+msgid "Transfers to Spot use an approximately five-minute queue on Testnet. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
 msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx

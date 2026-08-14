@@ -1,6 +1,7 @@
 import type { InfoClient } from "@nktkas/hyperliquid";
 import Big from "big.js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { isAddress, zeroAddress } from "viem";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { getReferralActionGeo, type ReferralActionGeoDecision } from "@/lib/geo/get-referral-action-geo";
 import { useExchange, useHyperliquid, useLegalStatus } from "@/lib/hyperliquid";
@@ -37,6 +38,7 @@ import {
 	parseStakingSummary,
 	parseValidatorSummaries,
 	type StakingActionSubmission,
+	validateHypeActionAmount,
 } from "./domain/staking";
 
 const RECONCILIATION_ATTEMPTS = 6;
@@ -49,6 +51,7 @@ export interface StakingActionSession {
 	errorMessage: string | null;
 	match: FundsActionMatch | null;
 	reference: FundsActionReference | null;
+	recoveredFromMarker: boolean;
 }
 
 export interface StakingActionsController {
@@ -85,13 +88,13 @@ interface StakingPreflightSnapshot {
 
 interface ExecutionLease {
 	id: symbol;
+	mode: "write" | "recovery";
 	identity: StakingActionIdentity;
 	submission: StakingActionSubmission;
 	identityEpoch: string;
 	geoDeadline: number;
 	preflightComplete: boolean;
 	sdkBoundaryPassed: boolean;
-	baselineSnapshot: StakingPreflightSnapshot | null;
 	reference: FundsActionReference | null;
 	abortController: AbortController;
 }
@@ -147,6 +150,68 @@ export function buildStakingExchangeParameters(submission: StakingActionSubmissi
 			wei: submission.wei,
 			isUndelegate: submission.request.kind === "undelegate",
 		},
+	};
+}
+
+export function buildStakingRecoverySubmission(reference: FundsActionReference): StakingActionSubmission | null {
+	if (
+		reference.asset !== "HYPE" ||
+		reference.atomicDecimals !== 8 ||
+		!reference.historyBaseline ||
+		reference.stateBaseline?.kind !== "staking"
+	) {
+		return null;
+	}
+	const amount = validateHypeActionAmount(reference.displayAmount);
+	if (!amount.valid || amount.amount !== reference.displayAmount || String(amount.wei) !== reference.atomicAmount) {
+		return null;
+	}
+
+	if (reference.method === "cDeposit") {
+		if (
+			reference.direction !== "deposit" ||
+			reference.target !== "staking" ||
+			reference.stateBaseline.targetDelegation !== "0"
+		) {
+			return null;
+		}
+		return {
+			request: { kind: "cDeposit", maxAmount: amount.amount },
+			amount: amount.amount,
+			wei: amount.wei,
+		};
+	}
+	if (reference.method === "cWithdraw") {
+		if (
+			reference.direction !== "withdraw" ||
+			reference.target !== "staking" ||
+			reference.stateBaseline.targetDelegation !== "0"
+		) {
+			return null;
+		}
+		return {
+			request: { kind: "cWithdraw", maxAmount: amount.amount },
+			amount: amount.amount,
+			wei: amount.wei,
+		};
+	}
+	if (
+		reference.method !== "tokenDelegate" ||
+		(reference.direction !== "delegate" && reference.direction !== "undelegate") ||
+		!isAddress(reference.target) ||
+		reference.target !== reference.target.toLowerCase() ||
+		reference.target.toLowerCase() === zeroAddress
+	) {
+		return null;
+	}
+	return {
+		request: {
+			kind: reference.direction,
+			maxAmount: amount.amount,
+			validator: reference.target as `0x${string}`,
+		},
+		amount: amount.amount,
+		wei: amount.wei,
 	};
 }
 
@@ -220,6 +285,10 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 	const mountedRef = useRef(true);
 	const identityKey = createStakingIdentityKey(identity);
 	const previousIdentityKeyRef = useRef(identityKey);
+	const recoveredSession = useMemo<StakingActionSession | null>(
+		() => buildStakingRecoveredSession(markers, env, ownerAddress, identityKey),
+		[env, identityKey, markers, ownerAddress],
+	);
 
 	function updateActive(next: StakingActionSession | null) {
 		activeRef.current = next;
@@ -237,7 +306,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		}
 		const owner = lease.identity.owner;
 		if (!owner) throw new StakingActionPreflightError("The staking owner is unavailable.");
-		const snapshot = lease.baselineSnapshot ?? (await loadStakingPreflightSnapshot(info, owner, signal));
+		const snapshot = await loadStakingPreflightSnapshot(info, owner, signal);
 		assertIdentityCurrent(lease.identity, identityRef.current);
 		assertStakingActionPreflight(lease.submission, snapshot);
 		lease.preflightComplete = true;
@@ -293,6 +362,25 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		setActive(null);
 	}, [identityKey]);
 
+	useEffect(() => {
+		if (executionRef.current) return;
+		const current = activeRef.current;
+		if (current?.recoveredFromMarker) {
+			const unchanged = Boolean(
+				current.reference &&
+					recoveredSession?.reference &&
+					fundsActionReferencesEqual(current.reference, recoveredSession.reference),
+			);
+			if (unchanged) return;
+			activeRef.current = recoveredSession;
+			setActive(recoveredSession);
+			return;
+		}
+		if (current || !recoveredSession) return;
+		activeRef.current = recoveredSession;
+		setActive(recoveredSession);
+	}, [recoveredSession]);
+
 	const hasPendingMarker = Boolean(
 		ownerAddress &&
 			markers.some((marker) => marker.env === env && marker.owner.toLowerCase() === ownerAddress.toLowerCase()),
@@ -317,6 +405,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			errorMessage: null,
 			match: null,
 			reference: null,
+			recoveredFromMarker: false,
 		});
 	}
 
@@ -332,13 +421,13 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		const startIdentity = identityRef.current;
 		const lease: ExecutionLease = {
 			id: Symbol("staking-action"),
+			mode: "write",
 			identity: startIdentity,
 			submission: current.submission,
 			identityEpoch: `${controllerEpochRef.current}:${env}:${ownerAddress?.toLowerCase() ?? "disconnected"}`,
 			geoDeadline: 0,
 			preflightComplete: false,
 			sdkBoundaryPassed: false,
-			baselineSnapshot: null,
 			reference: null,
 			abortController: new AbortController(),
 		};
@@ -374,7 +463,6 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			assertStakingActionPreflight(lease.submission, baselineSnapshot);
 			const baseline = createStakingBaseline(lease.submission, baselineSnapshot);
 			if (!baseline) throw new StakingActionPreflightError("Fresh staking reconciliation baseline is unavailable.");
-			lease.baselineSnapshot = baselineSnapshot;
 			const reference = createReference(lease, baseline);
 			if (!(await acquireFundsActionMarker(reference))) {
 				throw new StakingActionPreflightError("Another funds operation is awaiting verification.");
@@ -497,20 +585,26 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 			return;
 		const reference = ownerAddress ? findPendingFundsAction(env, ownerAddress) : null;
 		if (!reference || !current.reference || !fundsActionReferencesEqual(reference, current.reference)) return;
+		if (current.identityKey !== identityKey || !referenceMatchesRecoveryIdentity(reference, identityRef.current))
+			return;
 		const lease: ExecutionLease = {
 			id: Symbol("staking-reconciliation"),
+			mode: "recovery",
 			identity: identityRef.current,
 			submission: current.submission,
 			identityEpoch: reference.identityEpoch,
 			geoDeadline: 0,
 			preflightComplete: true,
 			sdkBoundaryPassed: true,
-			baselineSnapshot: null,
 			reference,
 			abortController: new AbortController(),
 		};
 		executionRef.current = lease;
-		updateActive({ ...current, state: transitionFundsAction(current.state, { type: "verify" }), errorMessage: null });
+		updateActive({
+			...current,
+			state: transitionFundsAction(current.state, { type: "verify" }),
+			errorMessage: null,
+		});
 		await reconcile(lease);
 	}
 
@@ -535,6 +629,7 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 
 	function executionIsCurrent(lease: ExecutionLease): boolean {
 		if (!mountedRef.current || executionRef.current !== lease) return false;
+		if (lease.mode === "recovery") return recoveryIdentityIsCurrent(lease.identity, identityRef.current);
 		try {
 			assertIdentityCurrent(lease.identity, identityRef.current);
 			return true;
@@ -547,7 +642,48 @@ export function useStakingActions(ownerAddress: `0x${string}` | undefined): Stak
 		if (executionRef.current !== lease) return;
 		executionRef.current = null;
 		lease.abortController.abort();
+		const current = activeRef.current;
+		if (
+			lease.mode === "recovery" &&
+			current?.recoveredFromMarker &&
+			current.state.stage === "done" &&
+			current.state.result === "unknown"
+		) {
+			const currentIdentity = identityRef.current;
+			updateActive(
+				buildStakingRecoveredSession(
+					getFundsActionMarkers(),
+					currentIdentity.env,
+					currentIdentity.owner,
+					createStakingIdentityKey(currentIdentity),
+				),
+			);
+		}
 	}
+}
+
+function buildStakingRecoveredSession(
+	markers: readonly FundsActionReference[],
+	env: StakingActionIdentity["env"],
+	owner: StakingActionIdentity["owner"],
+	identityKey: string,
+): StakingActionSession | null {
+	if (!owner) return null;
+	const matching = markers.filter((marker) => marker.env === env && hasSameWalletAddress(marker.owner, owner));
+	if (matching.length !== 1) return null;
+	const [reference] = matching;
+	if (!reference) return null;
+	const submission = buildStakingRecoverySubmission(reference);
+	if (!submission) return null;
+	return {
+		submission,
+		identityKey,
+		state: { stage: "done", result: "unknown" },
+		errorMessage: "statusUnknown",
+		match: null,
+		reference,
+		recoveredFromMarker: true,
+	};
 }
 
 async function loadStakingPreflightSnapshot(
@@ -672,6 +808,21 @@ function assertIdentityCurrent(expected: StakingActionIdentity, current: Staking
 	) {
 		throw new StakingActionPreflightError("The active master wallet or network changed.");
 	}
+}
+
+function referenceMatchesRecoveryIdentity(reference: FundsActionReference, identity: StakingActionIdentity): boolean {
+	return Boolean(
+		identity.owner && reference.env === identity.env && hasSameWalletAddress(reference.owner, identity.owner),
+	);
+}
+
+function recoveryIdentityIsCurrent(expected: StakingActionIdentity, current: StakingActionIdentity): boolean {
+	return Boolean(
+		expected.owner &&
+			current.owner &&
+			expected.env === current.env &&
+			hasSameWalletAddress(expected.owner, current.owner),
+	);
 }
 
 function assertExecutionCurrent(expected: ExecutionLease, current: ExecutionLease | null): void {

@@ -13,7 +13,11 @@ import {
 	useFundsActionMarkerStorageStatus,
 	useFundsActionMarkers,
 } from "./funds-action-marker";
-import { reconcileStakingFundsAction, reconcileVaultFundsAction } from "./funds-action-reconciliation";
+import {
+	getFundsActionHistoryStartTime,
+	reconcileStakingFundsAction,
+	reconcileVaultFundsAction,
+} from "./funds-action-reconciliation";
 
 export function FundsActionRecoveryHost() {
 	const { t } = useLingui();
@@ -22,7 +26,7 @@ export function FundsActionRecoveryHost() {
 	const markers = useFundsActionMarkers();
 	const storageStatus = useFundsActionMarkerStorageStatus();
 	const [detailsOpen, setDetailsOpen] = useState(false);
-	const [confirmClear, setConfirmClear] = useState(false);
+	const [confirmClearMarkerId, setConfirmClearMarkerId] = useState<string | null>(null);
 	const walletOwner = clientKey === "disconnected" ? undefined : clientKey;
 	const owner =
 		sessionMode === "agent-only" ? (activeAgentOwner?.env === env ? activeAgentOwner.address : undefined) : walletOwner;
@@ -32,7 +36,7 @@ export function FundsActionRecoveryHost() {
 	const queryOwner = marker?.owner ?? zeroAddress;
 	const vaultHistory = useInfo(
 		"userNonFundingLedgerUpdates",
-		{ user: queryOwner },
+		{ user: queryOwner, startTime: getFundsActionHistoryStartTime(marker?.startedAt ?? 0) },
 		{ enabled: marker?.method === "vaultTransfer", retry: false, refetchInterval: 5_000 },
 	);
 	const stakingHistory = useInfo(
@@ -50,14 +54,15 @@ export function FundsActionRecoveryHost() {
 	if (storageStatus === "corrupt") return <CorruptMarkerRecovery />;
 	if (!marker) return null;
 	const activeMarker = marker;
+	const confirmClear = confirmClearMarkerId === activeMarker.id;
 
 	async function clearMarker() {
-		if (!confirmClear) {
-			setConfirmClear(true);
+		if (confirmClearMarkerId !== activeMarker.id) {
+			setConfirmClearMarkerId(activeMarker.id);
 			return;
 		}
 		if (await removeFundsActionMarkerSafely(activeMarker.id)) {
-			setConfirmClear(false);
+			setConfirmClearMarkerId(null);
 			setDetailsOpen(false);
 		}
 	}
@@ -82,7 +87,7 @@ export function FundsActionRecoveryHost() {
 				open={detailsOpen}
 				onOpenChange={(open) => {
 					setDetailsOpen(open);
-					if (!open) setConfirmClear(false);
+					if (!open) setConfirmClearMarkerId(null);
 				}}
 				size="sm"
 				layer="blocking"

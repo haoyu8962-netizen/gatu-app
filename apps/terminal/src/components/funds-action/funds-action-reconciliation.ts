@@ -1,6 +1,15 @@
 import Big from "big.js";
 import type { FundsActionHistoryBaseline, FundsActionReference, FundsActionStateBaseline } from "./funds-action-marker";
 
+// Hyperliquid accepts signing nonces from (block time - 2 days, block time + 1 day).
+// Anchoring every read to this persisted lookback tolerates an accepted client
+// clock that is ahead of the eventual ledger event while still bounding history.
+export const FUNDS_ACTION_HISTORY_LOOKBACK_MS = 2 * 24 * 60 * 60 * 1_000;
+
+export function getFundsActionHistoryStartTime(startedAt: number): number {
+	return Math.max(0, startedAt - FUNDS_ACTION_HISTORY_LOOKBACK_MS);
+}
+
 export interface FundsActionMatch {
 	hash: string;
 	time: number;
@@ -73,6 +82,7 @@ export function reconcileVaultFundsAction(marker: FundsActionReference, snapshot
 	if (!entries) return null;
 	const target = marker.target.toLocaleLowerCase();
 	const owner = marker.owner.toLocaleLowerCase();
+	const matches: FundsActionMatch[] = [];
 
 	for (const entry of entries) {
 		if (marker.direction === "deposit" && entry.delta.type === "vaultDeposit") {
@@ -81,7 +91,7 @@ export function reconcileVaultFundsAction(marker: FundsActionReference, snapshot
 				entry.delta.vault.toLocaleLowerCase() === target &&
 				equalDecimal(entry.delta.usdc, marker.displayAmount)
 			) {
-				return { hash: entry.hash, time: entry.time, finalAmount: entry.delta.usdc as string };
+				matches.push({ hash: entry.hash, time: entry.time, finalAmount: entry.delta.usdc as string });
 			}
 		}
 		if (marker.direction === "withdraw" && entry.delta.type === "vaultWithdraw") {
@@ -92,28 +102,29 @@ export function reconcileVaultFundsAction(marker: FundsActionReference, snapshot
 				entry.delta.user.toLocaleLowerCase() === owner &&
 				equalDecimal(entry.delta.requestedUsd, marker.displayAmount)
 			) {
-				return {
+				matches.push({
 					hash: entry.hash,
 					time: entry.time,
 					finalAmount: typeof entry.delta.netWithdrawnUsd === "string" ? entry.delta.netWithdrawnUsd : undefined,
 					commission: typeof entry.delta.commission === "string" ? entry.delta.commission : undefined,
 					closingCost: typeof entry.delta.closingCost === "string" ? entry.delta.closingCost : undefined,
-				};
+				});
 			}
 		}
 	}
-	return null;
+	return matches.length === 1 ? (matches[0] ?? null) : null;
 }
 
 export function reconcileStakingFundsAction(marker: FundsActionReference, snapshot: unknown): FundsActionMatch | null {
 	if (marker.method === "vaultTransfer") return null;
 	const entries = getFreshHistoryEntries(marker, snapshot);
 	if (!entries) return null;
+	const matches: FundsActionMatch[] = [];
 	for (const entry of entries) {
 		if (marker.method === "cDeposit") {
 			const deposit = entry.delta.cDeposit;
 			if (isRecord(deposit) && equalDecimal(deposit.amount, marker.displayAmount)) {
-				return { hash: entry.hash, time: entry.time, finalAmount: deposit.amount as string };
+				matches.push({ hash: entry.hash, time: entry.time, finalAmount: deposit.amount as string });
 			}
 		}
 
@@ -124,7 +135,7 @@ export function reconcileStakingFundsAction(marker: FundsActionReference, snapsh
 				withdrawal.phase === "initiated" &&
 				equalDecimal(withdrawal.amount, marker.displayAmount)
 			) {
-				return { hash: entry.hash, time: entry.time, finalAmount: withdrawal.amount as string };
+				matches.push({ hash: entry.hash, time: entry.time, finalAmount: withdrawal.amount as string });
 			}
 		}
 
@@ -137,11 +148,11 @@ export function reconcileStakingFundsAction(marker: FundsActionReference, snapsh
 				delegation.isUndelegate === (marker.direction === "undelegate") &&
 				equalDecimal(delegation.amount, marker.displayAmount)
 			) {
-				return { hash: entry.hash, time: entry.time, finalAmount: delegation.amount as string };
+				matches.push({ hash: entry.hash, time: entry.time, finalAmount: delegation.amount as string });
 			}
 		}
 	}
-	return null;
+	return matches.length === 1 ? (matches[0] ?? null) : null;
 }
 
 export interface VaultReconciliationState {

@@ -13,6 +13,7 @@ import {
 	getFundsActionMarkers,
 	persistFundsActionMarker,
 } from "@/components/funds-action/funds-action-marker";
+import { getFundsActionHistoryStartTime } from "@/components/funds-action/funds-action-reconciliation";
 import { FundsActionRecoveryHost } from "@/components/funds-action/funds-action-recovery-host";
 import { formatDateTime } from "@/lib/format";
 
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => ({
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	activeAgentOwner: null as { env: "Mainnet" | "Testnet"; address: `0x${string}` } | null,
+	infoCalls: [] as Array<{ method: string; params: Record<string, unknown> }>,
 	vaultHistory: [] as unknown[],
 	stakingHistory: [] as unknown[],
 }));
@@ -52,12 +54,15 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useActiveAgentOwner: () => mocks.activeAgentOwner,
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env, sessionMode: mocks.sessionMode }),
-	useInfo: (method: string) => ({
-		data: method === "userNonFundingLedgerUpdates" ? mocks.vaultHistory : mocks.stakingHistory,
-		error: null,
-		isLoading: false,
-		refetch: vi.fn(),
-	}),
+	useInfo: (method: string, params: Record<string, unknown>) => {
+		mocks.infoCalls.push({ method, params });
+		return {
+			data: method === "userNonFundingLedgerUpdates" ? mocks.vaultHistory : mocks.stakingHistory,
+			error: null,
+			isLoading: false,
+			refetch: vi.fn(),
+		};
+	},
 }));
 
 describe("FundsActionRecoveryHost", () => {
@@ -71,6 +76,7 @@ describe("FundsActionRecoveryHost", () => {
 		mocks.env = "Mainnet";
 		mocks.sessionMode = "wallet";
 		mocks.activeAgentOwner = null;
+		mocks.infoCalls = [];
 		mocks.vaultHistory = [];
 		mocks.stakingHistory = [];
 		clearFundsActionMarkersForTests();
@@ -167,6 +173,10 @@ describe("FundsActionRecoveryHost", () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
 		renderHost();
+		expect(mocks.infoCalls).toContainEqual({
+			method: "userNonFundingLedgerUpdates",
+			params: { user: WALLET_OWNER, startTime: getFundsActionHistoryStartTime(marker.startedAt) },
+		});
 		expect(getFundsActionMarkers()).toHaveLength(1);
 
 		mocks.vaultHistory = [
@@ -202,6 +212,39 @@ describe("FundsActionRecoveryHost", () => {
 		});
 		expect(getFundsActionMarkers()).toEqual([]);
 		expect(container.textContent).toBe("");
+	});
+
+	it("does not inherit a clear confirmation when another tab replaces the marker", () => {
+		const marker = createVaultMarker({ owner: WALLET_OWNER });
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		renderHost();
+		openDetails();
+		clickButton("Clear record");
+		expect(findButton("Confirm clear record")).toBeDefined();
+
+		const replacement = createVaultMarker({
+			id: `Mainnet:${WALLET_OWNER}:vaultTransfer:1786000000001:replacement`,
+			owner: WALLET_OWNER,
+			displayAmount: "99",
+			atomicAmount: "99000000",
+			startedAt: 1_786_000_000_001,
+		});
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, JSON.stringify([replacement]));
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent("storage", {
+					key: FUNDS_ACTION_MARKER_STORAGE_KEY,
+					newValue: JSON.stringify([replacement]),
+					storageArea: window.localStorage,
+				}),
+			);
+		});
+
+		expect(container.textContent).toContain("99 USDC");
+		expect(findButton("Confirm clear record")).toBeUndefined();
+		clickButton("Clear record");
+		expect(getFundsActionMarkers()).toEqual([replacement]);
+		expect(findButton("Confirm clear record")).toBeDefined();
 	});
 
 	it("surfaces corrupt storage globally and requires two explicit clicks to clear it", async () => {

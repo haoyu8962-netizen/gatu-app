@@ -2427,6 +2427,10 @@ msgid "Delegate HYPE to validators to support consensus and earn rewards. Undele
 msgstr "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the seven-day queue."
 
 #: src/components/staking/staking-view.tsx
+msgid "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the Testnet queue, which takes approximately five minutes."
+msgstr "Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking availability; only a separate transfer to Spot starts the Testnet queue, which takes approximately five minutes."
+
+#: src/components/staking/staking-view.tsx
 msgid "Delegated"
 msgstr "Delegated"
 
@@ -5364,6 +5368,10 @@ msgstr "Only the public address is submitted for approval. After fresh extraAgen
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 msgstr "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 
+#: src/components/staking/staking-action-modal.tsx
+msgid "Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address."
+msgstr "Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address."
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
 #~ msgstr "Only you control your funds. No email or password required."
@@ -7824,6 +7832,10 @@ msgid "Starting camera..."
 msgstr "Starting camera..."
 
 #: src/components/staking/staking-action-modal.tsx
+msgid "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
+msgstr "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
+
+#: src/components/staking/staking-action-modal.tsx
 msgid "Starts the seven-day transfer queue from staking balance to Spot."
 msgstr "Starts the seven-day transfer queue from staking balance to Spot."
 
@@ -8121,6 +8133,10 @@ msgstr "Switching..."
 #~ msgid "Sync ID"
 #~ msgstr "Sync ID"
 
+#: src/components/staking/staking-view.tsx
+msgid "System finalization · hash unavailable"
+msgstr "System finalization · hash unavailable"
+
 #: src/lib/trade/order-types.ts
 #~ msgid "Take Limit"
 #~ msgstr "Take Limit"
@@ -8247,6 +8263,10 @@ msgstr "Testnet"
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Testnet preview; market link disabled"
 msgstr "Testnet preview; market link disabled"
+
+#: src/components/staking/staking-action-modal.tsx
+msgid "Testnet queue: approximately five minutes"
+msgstr "Testnet queue: approximately five minutes"
 
 #: src/domain/trade/pre-transfer-check.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
@@ -9289,6 +9309,10 @@ msgstr "Transfers HYPE from your Spot balance to your available staking balance.
 #: src/components/staking/staking-view.tsx
 msgid "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
 msgstr "Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+
+#: src/components/staking/staking-view.tsx
+msgid "Transfers to Spot use an approximately five-minute queue on Testnet. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
+msgstr "Transfers to Spot use an approximately five-minute queue on Testnet. Hyperliquid exposes only the aggregate amount and count, so no individual unlock time or progress is inferred here."
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Trending"

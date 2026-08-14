@@ -5,11 +5,15 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	clearFundsActionMarkersForTests,
+	createFundsActionReference,
+	FUNDS_ACTION_MARKER_STORAGE_KEY,
+	type FundsActionReference,
 	getFundsActionMarkers,
 	persistFundsActionMarker,
 } from "@/components/funds-action/funds-action-marker";
+import { getFundsActionHistoryStartTime } from "@/components/funds-action/funds-action-reconciliation";
 import type { VaultDetail, VaultOwnerViewState } from "@/components/vaults/domain/vaults";
-import { useVaultActionController } from "@/components/vaults/use-vault-action-controller";
+import { createVaultIdentityKey, useVaultActionController } from "@/components/vaults/use-vault-action-controller";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
@@ -25,6 +29,7 @@ interface QueryState {
 const mocks = vi.hoisted(() => ({
 	agentRegister: vi.fn(),
 	agentRefetch: vi.fn(),
+	activeAgentOwner: null as { env: "Mainnet" | "Testnet"; address: `0x${string}` } | null,
 	clientKey: "0x1111111111111111111111111111111111111111",
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	exchangeGuard: null as null | ((params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => void),
@@ -32,6 +37,7 @@ const mocks = vi.hoisted(() => ({
 	geoRetry: vi.fn(),
 	history: vi.fn(),
 	legalRefetch: vi.fn(),
+	locksRequest: vi.fn(),
 	queries: new Map<string, QueryState>(),
 	reconnectWallet: vi.fn(),
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
@@ -71,11 +77,17 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	readPersistTradingConnection: () => true,
+	useActiveAgentOwner: () => mocks.activeAgentOwner,
 	useAgentRegistration: () => ({ register: mocks.agentRegister, status: "idle", error: null }),
 	useAgentStatus: () => ({ refetchAgent: mocks.agentRefetch }),
 	useExchange: (_method: string, options: { executionGuard: typeof mocks.exchangeGuard }) => {
 		mocks.exchangeGuard = options.executionGuard;
-		return { mutateAsync: mocks.exchangeMutate };
+		return {
+			mutateAsync: async (params: { vaultAddress: `0x${string}`; isDeposit: boolean; usd: number }) => {
+				options.executionGuard?.(params);
+				return mocks.exchangeMutate(params);
+			},
+		};
 	},
 	useHyperliquid: () => ({
 		env: mocks.env,
@@ -98,8 +110,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 let controller: ReturnType<typeof useVaultActionController> | null = null;
 
-function Probe() {
-	controller = useVaultActionController({ vaultAddress: VAULT, detail: DETAIL, owner: OWNER_VIEW });
+function Probe({ vaultAddress = VAULT, detail = DETAIL }: { vaultAddress?: string; detail?: VaultDetail | null }) {
+	controller = useVaultActionController({ vaultAddress, detail, owner: OWNER_VIEW });
 	return null;
 }
 
@@ -121,16 +133,20 @@ describe("useVaultActionController", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.locksRequest
+			.mockReset()
+			.mockImplementation(async (_name: string, _options: LockOptions, callback: (lock: object) => unknown) =>
+				callback({}),
+			);
 		Object.defineProperty(navigator, "locks", {
 			configurable: true,
 			value: {
-				request: vi.fn(async (_name: string, _options: LockOptions, callback: (lock: object) => unknown) =>
-					callback({}),
-				),
+				request: mocks.locksRequest,
 			},
 		});
 		clearFundsActionMarkersForTests();
 		mocks.clientKey = OWNER;
+		mocks.activeAgentOwner = null;
 		mocks.env = "Mainnet";
 		mocks.sessionMode = "wallet";
 		mocks.wallet = { hasWalletAccess: true, walletAddress: OWNER };
@@ -144,9 +160,8 @@ describe("useVaultActionController", () => {
 		};
 		mocks.agentRegister.mockReset();
 		mocks.agentRefetch.mockReset().mockResolvedValue({ isAgentReady: true, needsAgent: false });
-		mocks.exchangeMutate.mockReset().mockImplementation(async (params) => {
+		mocks.exchangeMutate.mockReset().mockImplementation(async () => {
 			expect(getFundsActionMarkers()).toHaveLength(1);
-			mocks.exchangeGuard?.(params);
 			return { status: "ok", response: { type: "default" } };
 		});
 		mocks.geoRetry.mockReset().mockResolvedValue({
@@ -203,6 +218,10 @@ describe("useVaultActionController", () => {
 			receipt: { hash: HASH, finalAmount: "1" },
 		});
 		expect(current().action?.receipt?.operationReference).toContain("vaultTransfer");
+		const historyStartTimes = mocks.history.mock.calls.map(([params]) => params.startTime);
+		expect(historyStartTimes).toHaveLength(2);
+		expect(new Set(historyStartTimes).size).toBe(1);
+		expect(historyStartTimes[0]).toEqual(expect.any(Number));
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 
@@ -273,16 +292,14 @@ describe("useVaultActionController", () => {
 	it("returns rejected/apiError to review and performs every fresh preflight before creating a new marker", async () => {
 		const firstMarkerEpochs: string[] = [];
 		mocks.exchangeMutate
-			.mockImplementationOnce(async (params) => {
+			.mockImplementationOnce(async () => {
 				const marker = getFundsActionMarkers()[0];
 				if (marker) firstMarkerEpochs.push(marker.identityEpoch);
-				mocks.exchangeGuard?.(params);
 				throw { code: 4001, message: "User rejected the request" };
 			})
-			.mockImplementationOnce(async (params) => {
+			.mockImplementationOnce(async () => {
 				const marker = getFundsActionMarkers()[0];
 				if (marker) firstMarkerEpochs.push(marker.identityEpoch);
-				mocks.exchangeGuard?.(params);
 				return { status: "ok", response: { type: "default" } };
 			});
 		await openAndReview();
@@ -304,6 +321,44 @@ describe("useVaultActionController", () => {
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 
+	it.each([
+		{
+			field: "identity epoch",
+			tamper: (marker: FundsActionReference): FundsActionReference => ({
+				...marker,
+				identityEpoch: `${marker.identityEpoch}:tampered`,
+			}),
+		},
+		{
+			field: "history baseline",
+			tamper: (marker: FundsActionReference): FundsActionReference => ({
+				...marker,
+				historyBaseline: {
+					version: 1,
+					observedAt: (marker.historyBaseline?.observedAt ?? marker.startedAt) + 1,
+					hashes: marker.historyBaseline?.hashes ?? [],
+				},
+			}),
+		},
+	])("blocks the SDK mutation when a same-ID marker's $field changes before signing", async ({ tamper }) => {
+		mocks.locksRequest.mockImplementationOnce(
+			async (_name: string, _options: LockOptions, callback: (lock: object) => unknown) => {
+				const acquired = await callback({});
+				const marker = getFundsActionMarkers()[0];
+				expect(marker).toBeDefined();
+				if (marker) expect(persistFundsActionMarker(tamper(marker))).toBe(true);
+				return acquired;
+			},
+		);
+		await openAndReview();
+
+		await act(async () => current().confirm());
+
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "apiError" } });
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
 	it("fails a fresh closed-Vault preflight before persisting or calling the SDK", async () => {
 		mocks.queries.set("vaultDetails", query({ ...RAW_DETAIL, isClosed: true }));
 		await openAndReview();
@@ -312,6 +367,42 @@ describe("useVaultActionController", () => {
 		expect(current().action).toMatchObject({ state: { stage: "review", result: null } });
 		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
 		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("hydrates and verifies the exact owner marker read-only in an Agent-only session", async () => {
+		act(() => root.unmount());
+		controller = null;
+		const marker = createPendingVaultMarker();
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		mocks.sessionMode = "agent-only";
+		mocks.clientKey = OWNER;
+		mocks.wallet = { hasWalletAccess: false, walletAddress: undefined };
+		mocks.activeAgentOwner = { env: "Mainnet", address: OWNER };
+		mocks.history.mockResolvedValue([
+			{
+				time: marker.startedAt,
+				hash: HASH,
+				delta: { type: "vaultDeposit", vault: VAULT, usdc: marker.displayAmount },
+			},
+		]);
+
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+
+		expect(current().action).toMatchObject({
+			ownerAddress: OWNER,
+			state: { stage: "done", result: "unknown" },
+			marker,
+		});
+		await act(async () => current().verifyAgain());
+
+		expect(current().action).toMatchObject({ state: { stage: "done", result: "success" } });
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+		expect(mocks.history).toHaveBeenCalledWith({
+			user: OWNER,
+			startTime: getFundsActionHistoryStartTime(marker.startedAt),
+		});
 	});
 
 	it("fails closed on an unknown jurisdiction before Agent verification", async () => {
@@ -413,6 +504,18 @@ describe("useVaultActionController", () => {
 		expect(current().action).toMatchObject({ state: { stage: "done", result: "unknown" } });
 		expect(getFundsActionMarkers()).toHaveLength(1);
 		expect(mocks.exchangeMutate).toHaveBeenCalledOnce();
+		const persistedMarker = getFundsActionMarkers()[0];
+		expect(persistedMarker?.historyBaseline?.observedAt).toBeGreaterThanOrEqual(persistedMarker?.startedAt ?? 0);
+
+		act(() => root.unmount());
+		controller = null;
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+		expect(current().action).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			marker: persistedMarker,
+		});
+		expect(mocks.exchangeMutate).toHaveBeenCalledOnce();
 
 		mocks.history.mockImplementation(async () => {
 			const marker = getFundsActionMarkers()[0];
@@ -440,6 +543,156 @@ describe("useVaultActionController", () => {
 		expect(getFundsActionMarkers()).toHaveLength(0);
 	});
 
+	it("hydrates an exact persisted Vault marker after refresh and verifies it without signing again", async () => {
+		act(() => root.unmount());
+		controller = null;
+		const marker = createPendingVaultMarker();
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		mocks.history.mockResolvedValue([
+			{
+				time: marker.startedAt,
+				hash: HASH,
+				delta: { type: "vaultDeposit", vault: VAULT, usdc: marker.displayAmount },
+			},
+		]);
+
+		root = createI18nRoot(container);
+		act(() => root.render(<Probe />));
+
+		expect(current().action).toMatchObject({
+			id: marker.identityEpoch,
+			action: "deposit",
+			amount: "1",
+			state: { stage: "done", result: "unknown" },
+			marker,
+		});
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+
+		await act(async () => current().verifyAgain());
+
+		expect(current().action).toMatchObject({
+			state: { stage: "done", result: "success" },
+			receipt: { hash: HASH, finalAmount: "1" },
+		});
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+		expect(getFundsActionMarkers()).toHaveLength(0);
+	});
+
+	it("hydrates a pending marker only after routing to its exact Vault", () => {
+		const otherVault = "0x4444444444444444444444444444444444444444" as const;
+		act(() => root.render(<Probe vaultAddress={otherVault} detail={{ ...DETAIL, vaultAddress: otherVault }} />));
+		const marker = createPendingVaultMarker();
+		act(() => {
+			expect(persistFundsActionMarker(marker), JSON.stringify(marker)).toBe(true);
+		});
+		expect(current().action).toBeNull();
+
+		act(() => root.render(<Probe />));
+
+		expect(current().action).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			marker,
+		});
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+	});
+
+	it("clears stale recovered UI when another tab removes its marker", () => {
+		const marker = createPendingVaultMarker();
+		act(() => {
+			expect(persistFundsActionMarker(marker)).toBe(true);
+		});
+		expect(current().action).toMatchObject({ marker, recoveredFromMarker: true });
+
+		window.localStorage.removeItem(FUNDS_ACTION_MARKER_STORAGE_KEY);
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent("storage", {
+					key: FUNDS_ACTION_MARKER_STORAGE_KEY,
+					newValue: null,
+					storageArea: window.localStorage,
+				}),
+			);
+		});
+
+		expect(current().action).toBeNull();
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+	});
+
+	it("replaces stale recovered UI when another tab replaces its exact marker", () => {
+		const marker = createPendingVaultMarker();
+		act(() => {
+			expect(persistFundsActionMarker(marker)).toBe(true);
+		});
+		const replacement = createPendingVaultMarker({
+			atomicAmount: "2000000",
+			displayAmount: "2",
+			sequence: 2,
+			startedAt: marker.startedAt + 10,
+		});
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, JSON.stringify([replacement]));
+		act(() => {
+			window.dispatchEvent(
+				new StorageEvent("storage", {
+					key: FUNDS_ACTION_MARKER_STORAGE_KEY,
+					newValue: JSON.stringify([replacement]),
+					storageArea: window.localStorage,
+				}),
+			);
+		});
+
+		expect(current().action).toMatchObject({
+			amount: "2",
+			marker: replacement,
+			recoveredFromMarker: true,
+			state: { stage: "done", result: "unknown" },
+		});
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+	});
+
+	it("refuses recovery markers with mismatched Vault action semantics, amount, or identity", () => {
+		const base = createPendingVaultMarker();
+		const storageRejectedMarkers: readonly FundsActionReference[] = [
+			{ ...base, method: "cDeposit" },
+			{ ...base, direction: "delegate" },
+			{ ...base, asset: "HYPE" },
+			{ ...base, atomicDecimals: 8 },
+			{
+				...base,
+				stateBaseline: {
+					kind: "staking",
+					spotAvailable: "1",
+					delegated: "0",
+					undelegated: "0",
+					totalPendingWithdrawal: "0",
+					nPendingWithdrawals: 0,
+					targetDelegation: "0",
+				},
+			},
+		];
+		for (const marker of storageRejectedMarkers) {
+			expect(persistFundsActionMarker(marker), JSON.stringify(marker)).toBe(false);
+		}
+
+		const hydrationRejectedMarkers: readonly FundsActionReference[] = [
+			{ ...base, atomicAmount: "1000001" },
+			{ ...base, displayAmount: "9007199254.740992", atomicAmount: "9007199254740992" },
+			{ ...base, identityEpoch: "Mainnet:another-owner:wallet:no-wallet:1:1" },
+			{ ...base, id: base.id.replace("Mainnet:", "Testnet:") },
+		];
+
+		for (const marker of hydrationRejectedMarkers) {
+			act(() => root.unmount());
+			controller = null;
+			clearFundsActionMarkersForTests();
+			expect(persistFundsActionMarker(marker), JSON.stringify(marker)).toBe(true);
+			root = createI18nRoot(container);
+			act(() => root.render(<Probe />));
+			expect(current().action).toBeNull();
+		}
+
+		expect(mocks.exchangeMutate).not.toHaveBeenCalled();
+	});
+
 	it("does not let an old unknown dialog reconcile or clear a replacement marker", async () => {
 		vi.useFakeTimers();
 		mocks.history.mockResolvedValue([]);
@@ -455,10 +708,12 @@ describe("useVaultActionController", () => {
 		const staleReference = current().action?.marker;
 		expect(staleReference).toBeDefined();
 		if (!staleReference) return;
-		window.localStorage.removeItem("gatu.funds_action.pending.v1");
-		clearFundsActionMarkersForTests();
 		const replacement = { ...staleReference, id: `${staleReference.id}:replacement`, identityEpoch: "replacement" };
-		expect(persistFundsActionMarker(replacement)).toBe(true);
+		act(() => {
+			window.localStorage.removeItem("gatu.funds_action.pending.v1");
+			clearFundsActionMarkersForTests();
+			expect(persistFundsActionMarker(replacement)).toBe(true);
+		});
 		mocks.history.mockResolvedValue([
 			{ time: 1, hash: HASH, delta: { type: "vaultDeposit", vault: VAULT, usdc: "1" } },
 		]);
@@ -516,6 +771,41 @@ describe("useVaultActionController", () => {
 
 function query(data: unknown): QueryState {
 	return { data, refetch: vi.fn().mockResolvedValue({ data, error: null }) };
+}
+
+function createPendingVaultMarker({
+	atomicAmount = "1000000",
+	displayAmount = "1",
+	sequence = 1,
+	startedAt = 1_700_000_000_001,
+}: {
+	atomicAmount?: string;
+	displayAmount?: string;
+	sequence?: number;
+	startedAt?: number;
+} = {}): FundsActionReference {
+	const createdAt = startedAt - 1;
+	const identityKey = createVaultIdentityKey({
+		env: mocks.env,
+		clientKey: mocks.clientKey,
+		sessionMode: mocks.sessionMode,
+		walletAddress: mocks.wallet.walletAddress,
+	});
+	return createFundsActionReference({
+		env: mocks.env,
+		owner: OWNER,
+		method: "vaultTransfer",
+		target: VAULT,
+		direction: "deposit",
+		displayAmount,
+		atomicAmount,
+		atomicDecimals: 6,
+		asset: "USDC",
+		startedAt,
+		identityEpoch: `${identityKey}:${createdAt}:${sequence}`,
+		historyBaseline: { version: 1, observedAt: createdAt, hashes: [] },
+		stateBaseline: { kind: "vault", vaultEquity: "10", withdrawable: "50" },
+	});
 }
 
 const SNAPSHOT = {

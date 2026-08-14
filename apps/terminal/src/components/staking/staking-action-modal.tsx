@@ -97,7 +97,7 @@ export function StakingActionModal({
 		>
 			<ModalHeader>
 				<ModalTitle>{getActionTitle(action)}</ModalTitle>
-				<p className="text-xs text-fg-muted">{getActionDescription(action)}</p>
+				<p className="text-xs text-fg-muted">{getActionDescription(action, isTestnet)}</p>
 			</ModalHeader>
 			<ModalContent className="space-y-4">
 				{controlled && fundsState ? <ActionProgress state={fundsState} /> : null}
@@ -124,7 +124,7 @@ export function StakingActionModal({
 								<Trans>Max</Trans>
 							</Button>
 						</div>
-						<ActionRisk action={action} />
+						<ActionRisk action={action} isTestnet={isTestnet} />
 					</>
 				) : visibleStage === "review" ? (
 					<>
@@ -138,7 +138,7 @@ export function StakingActionModal({
 							) : null}
 							<ReviewRow label={t`Amount`} value={`${formatStakingAmount(submission?.amount ?? "0", 8)} HYPE`} />
 						</div>
-						<ActionRisk action={action} />
+						<ActionRisk action={action} isTestnet={isTestnet} />
 						<Alert
 							tone="information"
 							size="xs"
@@ -410,12 +410,16 @@ function getActionTitle(action: StakingActionRequest) {
 	}
 }
 
-function getActionDescription(action: StakingActionRequest) {
+function getActionDescription(action: StakingActionRequest, isTestnet: boolean) {
 	switch (action.kind) {
 		case "cDeposit":
 			return <Trans>Transfers HYPE from your Spot balance to your available staking balance.</Trans>;
 		case "cWithdraw":
-			return <Trans>Starts the seven-day transfer queue from staking balance to Spot.</Trans>;
+			return isTestnet ? (
+				<Trans>Starts the approximately five-minute Testnet transfer queue from staking balance to Spot.</Trans>
+			) : (
+				<Trans>Starts the seven-day transfer queue from staking balance to Spot.</Trans>
+			);
 		case "delegate":
 			return <Trans>Delegates available staking HYPE to the selected validator.</Trans>;
 		case "undelegate":
@@ -423,9 +427,19 @@ function getActionDescription(action: StakingActionRequest) {
 	}
 }
 
-function ActionRisk({ action }: { action: StakingActionRequest }) {
+function ActionRisk({ action, isTestnet }: { action: StakingActionRequest; isTestnet: boolean }) {
 	const { t } = useLingui();
 	if (action.kind === "cWithdraw") {
+		if (isTestnet) {
+			return (
+				<Alert
+					tone="warning"
+					size="xs"
+					title={t`Testnet queue: approximately five minutes`}
+					description={t`Only this transfer starts the Testnet queue, which takes approximately five minutes. Hyperliquid allows at most five pending withdrawals per address.`}
+				/>
+			);
+		}
 		return (
 			<Alert
 				tone="warning"

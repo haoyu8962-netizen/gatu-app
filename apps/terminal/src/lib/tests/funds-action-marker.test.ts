@@ -16,6 +16,16 @@ import {
 } from "@/components/funds-action/funds-action-marker";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
+const TARGET = "0x2222222222222222222222222222222222222222" as const;
+const STAKING_BASELINE = {
+	kind: "staking",
+	spotAvailable: "100",
+	delegated: "0",
+	undelegated: "0",
+	totalPendingWithdrawal: "0",
+	nPendingWithdrawals: 0,
+	targetDelegation: "0",
+} as const;
 
 function installExclusiveLockManager() {
 	const tails = new Map<string, Promise<void>>();
@@ -50,7 +60,7 @@ function reference(overrides = {}) {
 		env: "Mainnet",
 		owner: OWNER,
 		method: "vaultTransfer",
-		target: "0x2222222222222222222222222222222222222222",
+		target: TARGET,
 		direction: "deposit",
 		displayAmount: "12.5",
 		atomicAmount: "12500000",
@@ -80,6 +90,62 @@ describe("funds action marker", () => {
 		expect(findPendingFundsAction("Mainnet", OWNER.toUpperCase())).toEqual(marker);
 		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBe(JSON.stringify([marker]));
 		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).not.toContain("privateKey");
+	});
+
+	it.each([
+		{
+			method: "vaultTransfer",
+			target: TARGET,
+			direction: "withdraw",
+			atomicDecimals: 6,
+			asset: "USDC",
+			stateBaseline: { kind: "vault", vaultEquity: "100", withdrawable: "100" },
+		},
+		{
+			method: "cDeposit",
+			target: "staking",
+			direction: "deposit",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cWithdraw",
+			target: "staking",
+			direction: "withdraw",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "tokenDelegate",
+			target: TARGET,
+			direction: "delegate",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "tokenDelegate",
+			target: TARGET,
+			direction: "undelegate",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		},
+	])("accepts the valid $method/$direction operation tuple", (overrides) => {
+		const marker = reference(overrides);
+
+		expect(persistFundsActionMarker(marker)).toBe(true);
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "available", markers: [marker] });
+	});
+
+	it("refuses to persist a marker with mismatched action semantics", () => {
+		const marker = reference({ direction: "delegate" });
+
+		expect(persistFundsActionMarker(marker)).toBe(false);
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "available", markers: [] });
+		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBeNull();
 	});
 
 	it("blocks a second marker for the same environment and owner", () => {
@@ -166,6 +232,127 @@ describe("funds action marker", () => {
 		expect(getFundsActionMarkers()[0]?.historyBaseline).toBeUndefined();
 	});
 
+	it("keeps a semantically valid legacy staking marker readable", () => {
+		const marker = reference({
+			method: "tokenDelegate",
+			target: TARGET,
+			direction: "undelegate",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		});
+		const { historyBaseline: _history, stateBaseline: _state, ...legacy } = marker;
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, JSON.stringify([legacy]));
+
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "available", markers: [legacy] });
+	});
+
+	it.each([
+		{ method: "vaultTransfer", target: "staking" },
+		{ method: "vaultTransfer", target: "0x0000000000000000000000000000000000000000" },
+		{ method: "vaultTransfer", direction: "delegate" },
+		{ method: "vaultTransfer", asset: "HYPE" },
+		{ method: "vaultTransfer", atomicDecimals: 8 },
+		{ method: "vaultTransfer", stateBaseline: STAKING_BASELINE },
+		{
+			method: "cDeposit",
+			target: TARGET,
+			direction: "deposit",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cDeposit",
+			target: "staking",
+			direction: "withdraw",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cWithdraw",
+			target: "staking",
+			direction: "deposit",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cWithdraw",
+			target: "staking",
+			direction: "withdraw",
+			asset: "USDC",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cWithdraw",
+			target: "staking",
+			direction: "withdraw",
+			asset: "HYPE",
+			atomicDecimals: 6,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "cWithdraw",
+			target: "staking",
+			direction: "withdraw",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: { kind: "vault", vaultEquity: "0", withdrawable: "100" },
+		},
+		{
+			method: "tokenDelegate",
+			target: "staking",
+			direction: "delegate",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "tokenDelegate",
+			target: "0x0000000000000000000000000000000000000000",
+			direction: "delegate",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+		{
+			method: "tokenDelegate",
+			target: TARGET,
+			direction: "deposit",
+			asset: "HYPE",
+			atomicDecimals: 8,
+			stateBaseline: STAKING_BASELINE,
+		},
+	])("treats a stored marker with mismatched action semantics as corrupt", (overrides) => {
+		const marker = reference(overrides);
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, JSON.stringify([marker]));
+
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "corrupt" });
+		expect(getFundsActionMarkers()).toEqual([]);
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+	});
+
+	it("rejects invalid legacy action semantics without overwriting storage", () => {
+		const marker = reference({
+			method: "cDeposit",
+			target: "staking",
+			direction: "withdraw",
+			atomicDecimals: 8,
+			asset: "HYPE",
+			stateBaseline: STAKING_BASELINE,
+		});
+		const { historyBaseline: _history, stateBaseline: _state, ...legacy } = marker;
+		const raw = JSON.stringify([legacy]);
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, raw);
+
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "corrupt" });
+		expect(persistFundsActionMarker(reference())).toBe(false);
+		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBe(raw);
+	});
+
 	it("rejects a partially upgraded or malformed baseline", () => {
 		const marker = reference();
 		const { stateBaseline: _state, ...partial } = marker;
@@ -187,6 +374,30 @@ describe("funds action marker", () => {
 		expect(persistFundsActionMarker(reference())).toBe(false);
 		await expect(acquireFundsActionMarker(reference())).resolves.toBe(false);
 		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBe("{not-json");
+	});
+
+	it("treats duplicate marker ids as corrupt at the storage array boundary", () => {
+		const first = reference();
+		const second = {
+			...reference({ owner: "0x3333333333333333333333333333333333333333", startedAt: 1720000000001 }),
+			id: first.id,
+		};
+		const raw = JSON.stringify([first, second]);
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, raw);
+
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "corrupt" });
+		expect(persistFundsActionMarker(reference())).toBe(false);
+		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBe(raw);
+	});
+
+	it("treats multiple markers for one environment and owner as corrupt", () => {
+		const raw = JSON.stringify([reference(), reference({ startedAt: 1720000000001 })]);
+		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, raw);
+
+		expect(getFundsActionMarkerStorageSnapshot()).toEqual({ status: "corrupt" });
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+		expect(removeFundsActionMarker("missing")).toBe(false);
+		expect(window.localStorage.getItem(FUNDS_ACTION_MARKER_STORAGE_KEY)).toBe(raw);
 	});
 
 	it("requires the recovery-only destructive clear before corrupt storage unlocks", async () => {

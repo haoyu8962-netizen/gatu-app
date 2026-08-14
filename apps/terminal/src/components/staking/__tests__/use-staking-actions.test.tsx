@@ -4,13 +4,20 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	type CreateFundsActionReferenceInput,
 	clearFundsActionMarkersForTests,
+	createFundsActionReference,
+	type FundsActionReference,
 	findPendingFundsAction,
 	persistFundsActionMarker,
 	removeFundsActionMarker,
 } from "../../funds-action/funds-action-marker";
 import type { StakingActionSubmission } from "../domain/staking";
-import { type StakingActionsController, useStakingActions } from "../use-staking-actions";
+import {
+	buildStakingRecoverySubmission,
+	type StakingActionsController,
+	useStakingActions,
+} from "../use-staking-actions";
 
 const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const OTHER = "0x2222222222222222222222222222222222222222" as const;
@@ -45,6 +52,10 @@ const mocks = vi.hoisted(() => ({
 		summary: { delegated: "5", undelegated: "10", totalPendingWithdrawal: "0", nPendingWithdrawals: 0 } as unknown,
 		validators: [] as unknown[],
 	},
+	sdkBoundaryEvents: [] as string[],
+	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+	spotReads: 0,
+	hasWalletAccess: true,
 	walletAddress: "0x1111111111111111111111111111111111111111" as `0x${string}` | undefined,
 }));
 
@@ -61,8 +72,8 @@ vi.mock("../../funds-action/funds-action-marker", async (importOriginal) => {
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		hasWalletAccess: Boolean(mocks.walletAddress),
-		sessionMode: mocks.walletAddress ? "wallet" : "disconnected",
+		hasWalletAccess: mocks.hasWalletAccess,
+		sessionMode: mocks.sessionMode,
 		walletAddress: mocks.walletAddress,
 	}),
 }));
@@ -81,6 +92,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		return {
 			mutateAsync: async (params: unknown) => {
 				options.executionGuard?.(params);
+				mocks.sdkBoundaryEvents.push("executionGuard");
 				const signal = new AbortController().signal;
 				await options.preExecutionGuard?.(params, signal);
 				await mocks.afterPreflight();
@@ -97,13 +109,15 @@ vi.mock("@/lib/hyperliquid", () => ({
 			delegatorHistory: vi.fn(async () => mocks.history),
 			delegatorSummary: vi.fn(async () => mocks.preflight.summary),
 			spotClearinghouseState: vi.fn(async () => {
+				mocks.spotReads += 1;
+				mocks.sdkBoundaryEvents.push(`spotRead:${mocks.spotReads}`);
 				const snapshot = mocks.preflight.spot;
 				await mocks.afterPreflight();
 				return snapshot;
 			}),
 			validatorSummaries: vi.fn(async () => mocks.preflight.validators),
 		},
-		sessionMode: mocks.walletAddress ? "wallet" : "disconnected",
+		sessionMode: mocks.sessionMode,
 	}),
 	useLegalStatus: () => ({
 		data: { acceptedTerms: true, userAllowed: true, canPerformActions: true },
@@ -153,6 +167,87 @@ function history(amount = "2") {
 	return [{ time: Date.now() + 1_000, hash: HASH, delta: { cDeposit: { amount } } }];
 }
 
+function stakingReference(overrides: Partial<CreateFundsActionReferenceInput> = {}): FundsActionReference {
+	return createFundsActionReference({
+		env: "Mainnet",
+		owner: OWNER,
+		method: "cDeposit",
+		target: "staking",
+		direction: "deposit",
+		displayAmount: "2",
+		atomicAmount: "200000000",
+		atomicDecimals: 8,
+		asset: "HYPE",
+		startedAt: 1_720_000_000_000,
+		identityEpoch: "staking-recovery-epoch",
+		historyBaseline: { version: 1, observedAt: 1_720_000_000_000, hashes: [] },
+		stateBaseline: {
+			kind: "staking",
+			spotAvailable: "10",
+			delegated: "5",
+			undelegated: "10",
+			totalPendingWithdrawal: "0",
+			nPendingWithdrawals: 0,
+			targetDelegation: "0",
+		},
+		...overrides,
+	});
+}
+
+describe("staking marker recovery validation", () => {
+	it("reconstructs every SDK staking action only from its canonical persisted tuple", () => {
+		expect(buildStakingRecoverySubmission(stakingReference())).toEqual({
+			request: { kind: "cDeposit", maxAmount: "2" },
+			amount: "2",
+			wei: 200_000_000,
+		});
+		expect(buildStakingRecoverySubmission(stakingReference({ method: "cWithdraw", direction: "withdraw" }))).toEqual({
+			request: { kind: "cWithdraw", maxAmount: "2" },
+			amount: "2",
+			wei: 200_000_000,
+		});
+		expect(
+			buildStakingRecoverySubmission(
+				stakingReference({ method: "tokenDelegate", direction: "delegate", target: VALIDATOR }),
+			),
+		).toEqual({
+			request: { kind: "delegate", maxAmount: "2", validator: VALIDATOR },
+			amount: "2",
+			wei: 200_000_000,
+		});
+		expect(
+			buildStakingRecoverySubmission(
+				stakingReference({ method: "tokenDelegate", direction: "undelegate", target: VALIDATOR }),
+			),
+		).toEqual({
+			request: { kind: "undelegate", maxAmount: "2", validator: VALIDATOR },
+			amount: "2",
+			wei: 200_000_000,
+		});
+	});
+
+	it("fails closed for mismatched asset, decimals, direction, target, amount, safe wei, or baselines", () => {
+		const base = stakingReference();
+		const { historyBaseline: _historyBaseline, stateBaseline: _stateBaseline, ...legacy } = base;
+		const invalid: FundsActionReference[] = [
+			{ ...base, asset: "USDC" },
+			{ ...base, atomicDecimals: 6 },
+			{ ...base, direction: "withdraw" },
+			{ ...base, target: "Staking" },
+			{ ...base, displayAmount: "2.0" },
+			{ ...base, displayAmount: "2.1" },
+			{ ...base, atomicAmount: "200000001" },
+			{ ...base, displayAmount: "90071992.54740992", atomicAmount: "9007199254740992" },
+			{ ...base, method: "tokenDelegate", direction: "deposit", target: VALIDATOR },
+			{ ...base, method: "tokenDelegate", direction: "delegate", target: "not-an-address" },
+			legacy,
+			{ ...base, stateBaseline: { kind: "vault", vaultEquity: "1", withdrawable: "1" } },
+		];
+
+		for (const reference of invalid) expect(buildStakingRecoverySubmission(reference)).toBeNull();
+	});
+});
+
 describe("useStakingActions orchestration", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -162,9 +257,13 @@ describe("useStakingActions orchestration", () => {
 		mocks.clientKey = OWNER;
 		mocks.env = "Mainnet";
 		mocks.owner = OWNER;
+		mocks.sessionMode = "wallet";
+		mocks.hasWalletAccess = true;
 		mocks.walletAddress = OWNER;
 		mocks.history = [];
 		mocks.options = {};
+		mocks.sdkBoundaryEvents = [];
+		mocks.spotReads = 0;
 		mocks.preflight = {
 			delegations: [],
 			spot: { balances: [{ coin: "HYPE", token: 150, total: "10", hold: "0" }] },
@@ -213,6 +312,198 @@ describe("useStakingActions orchestration", () => {
 		act(() => current().review(cDeposit()));
 		await act(async () => current().submit());
 	}
+
+	async function remountWithMarker(reference: FundsActionReference) {
+		act(() => root.unmount());
+		expect(persistFundsActionMarker(reference)).toBe(true);
+		controller = null;
+		const react = await import("react-dom/client");
+		root = react.createRoot(container);
+		await act(async () => {
+			root.render(<Probe />);
+			await Promise.resolve();
+		});
+	}
+
+	async function beginBlockedRecoveryVerification(reference: FundsActionReference) {
+		vi.useFakeTimers();
+		await remountWithMarker(reference);
+		mocks.history = history();
+		mocks.preflight.spot = { balances: [{ coin: "HYPE", token: 150, total: "8", hold: "0" }] };
+		mocks.preflight.summary = {
+			delegated: "5",
+			undelegated: "12",
+			totalPendingWithdrawal: "0",
+			nPendingWithdrawals: 0,
+		};
+		let releaseSnapshot: (() => void) | undefined;
+		mocks.afterPreflight.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					releaseSnapshot = resolve;
+				}),
+		);
+
+		let verification!: Promise<void>;
+		act(() => {
+			verification = current().verify();
+		});
+		await act(async () => Promise.resolve());
+
+		return {
+			release() {
+				if (!releaseSnapshot) throw new Error("Recovery snapshot did not start");
+				releaseSnapshot();
+			},
+			verification,
+		};
+	}
+
+	async function finishBlockedRecoveryVerification(verification: Promise<void>) {
+		await act(async () => {
+			await vi.runAllTimersAsync();
+			await verification;
+		});
+	}
+
+	it("hydrates an exact persisted marker after a route remount and verifies it without signing again", async () => {
+		const reference = stakingReference();
+		await remountWithMarker(reference);
+
+		expect(current().active).toMatchObject({
+			submission: { request: { kind: "cDeposit" }, amount: "2", wei: 200_000_000 },
+			state: { stage: "done", result: "unknown" },
+			errorMessage: "statusUnknown",
+			reference,
+			recoveredFromMarker: true,
+		});
+		expect(current().hasPendingMarker).toBe(true);
+		expect(current().canStart).toBe(false);
+
+		mocks.history = history();
+		mocks.preflight.spot = { balances: [{ coin: "HYPE", token: 150, total: "8", hold: "0" }] };
+		mocks.preflight.summary = {
+			delegated: "5",
+			undelegated: "12",
+			totalPendingWithdrawal: "0",
+			nPendingWithdrawals: 0,
+		};
+		await act(async () => current().verify());
+
+		expect(current().active?.state).toEqual({ stage: "done", result: "success" });
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+		expect(mocks.methods.cDeposit).not.toHaveBeenCalled();
+		expect(mocks.methods.cWithdraw).not.toHaveBeenCalled();
+		expect(mocks.methods.tokenDelegate).not.toHaveBeenCalled();
+	});
+
+	it("keeps recovery unknown when any persisted marker field changes during read-only reconciliation", async () => {
+		const reference = stakingReference();
+		const { release, verification } = await beginBlockedRecoveryVerification(reference);
+		const replacement = { ...reference, identityEpoch: "replacement-recovery-epoch" };
+		act(() => {
+			expect(persistFundsActionMarker(replacement)).toBe(true);
+			release();
+		});
+		await finishBlockedRecoveryVerification(verification);
+
+		expect(current().active).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			reference: replacement,
+			recoveredFromMarker: true,
+		});
+		expect(findPendingFundsAction("Mainnet", OWNER)).toEqual(replacement);
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
+
+	it("clears a recovered session when another tab removes its marker during read-only verification", async () => {
+		const reference = stakingReference();
+		const { release, verification } = await beginBlockedRecoveryVerification(reference);
+		act(() => {
+			removeFundsActionMarker(reference.id);
+			release();
+		});
+		await finishBlockedRecoveryVerification(verification);
+
+		expect(current().active).toBeNull();
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
+
+	it("hydrates a new-ID replacement marker after a read-only verification race", async () => {
+		const reference = stakingReference();
+		const { release, verification } = await beginBlockedRecoveryVerification(reference);
+		const replacement = {
+			...reference,
+			id: `${reference.id}:replacement`,
+			identityEpoch: "replacement-recovery-epoch",
+		};
+		act(() => {
+			removeFundsActionMarker(reference.id);
+			expect(persistFundsActionMarker(replacement)).toBe(true);
+			release();
+		});
+		await finishBlockedRecoveryVerification(verification);
+
+		expect(current().active).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			reference: replacement,
+			recoveredFromMarker: true,
+		});
+		expect(findPendingFundsAction("Mainnet", OWNER)).toEqual(replacement);
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
+
+	it("hydrates and read-only verifies an exact owner marker in an Agent-only session", async () => {
+		mocks.sessionMode = "agent-only";
+		mocks.hasWalletAccess = false;
+		mocks.walletAddress = undefined;
+		mocks.clientKey = OWNER;
+		await remountWithMarker(stakingReference());
+
+		expect(current().active).toMatchObject({
+			state: { stage: "done", result: "unknown" },
+			recoveredFromMarker: true,
+		});
+		expect(current().canStart).toBe(false);
+
+		mocks.history = history();
+		mocks.preflight.spot = { balances: [{ coin: "HYPE", token: 150, total: "8", hold: "0" }] };
+		mocks.preflight.summary = {
+			delegated: "5",
+			undelegated: "12",
+			totalPendingWithdrawal: "0",
+			nPendingWithdrawals: 0,
+		};
+		await act(async () => current().verify());
+
+		expect(current().active?.state).toEqual({ stage: "done", result: "success" });
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
+
+	it("never hydrates another owner's persisted marker into an Agent-only session", async () => {
+		mocks.sessionMode = "agent-only";
+		mocks.hasWalletAccess = false;
+		mocks.walletAddress = undefined;
+		mocks.owner = OTHER;
+		mocks.clientKey = OTHER;
+		await remountWithMarker(stakingReference());
+
+		expect(current().active).toBeNull();
+		expect(current().hasPendingMarker).toBe(false);
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
+
+	it("keeps a same-owner marker locked but refuses hydration when its staking tuple is inconsistent", async () => {
+		const invalid = stakingReference({ atomicAmount: "200000001" });
+		await remountWithMarker(invalid);
+
+		expect(current().active).toBeNull();
+		expect(current().hasPendingMarker).toBe(true);
+		expect(current().canStart).toBe(false);
+		expect(findPendingFundsAction("Mainnet", OWNER)).toEqual(invalid);
+		expect(Object.values(mocks.methods).every((method) => method.mock.calls.length === 0)).toBe(true);
+	});
 
 	it("dispatches once and reports success only after exact history reconciliation", async () => {
 		mocks.history = [];
@@ -324,6 +615,21 @@ describe("useStakingActions orchestration", () => {
 		await reviewAndSubmit();
 		expect(mocks.methods.cDeposit).not.toHaveBeenCalled();
 		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+	});
+
+	it("rereads after the SDK guard and blocks a balance change that occurred after the reconciliation baseline", async () => {
+		mocks.acquire.mockImplementationOnce(async () => {
+			mocks.preflight.spot = { balances: [{ coin: "HYPE", token: 150, total: "1", hold: "0" }] };
+			return true;
+		});
+
+		await reviewAndSubmit();
+
+		expect(mocks.spotReads).toBe(2);
+		expect(mocks.sdkBoundaryEvents.slice(0, 3)).toEqual(["spotRead:1", "executionGuard", "spotRead:2"]);
+		expect(mocks.methods.cDeposit).not.toHaveBeenCalled();
+		expect(findPendingFundsAction("Mainnet", OWNER)).toBeNull();
+		expect(current().active?.state).toEqual({ stage: "done", result: "apiError" });
 	});
 
 	it("runs the SDK-bound guard again and never mutates when the marker changes during preflight", async () => {

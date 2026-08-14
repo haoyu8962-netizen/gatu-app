@@ -4,7 +4,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "@/lib/tests/harness/react";
-import { useVaultsController } from "../use-vaults-controller";
+import { useVaultDetailController, useVaultsController } from "../use-vaults-controller";
 
 interface QueryState<T> {
 	data: T | undefined;
@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 	activeOwner: null as null | { env: "Mainnet" | "Testnet"; address: `0x${string}` },
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	info: new Map<string, QueryState<unknown>>(),
+	infoCalls: [] as Array<{ method: string; params: unknown; options: unknown }>,
 	publicVaults: {} as QueryState<readonly PublicVaultFixture[]>,
 	wallet: {
 		address: undefined as `0x${string}` | undefined,
@@ -33,7 +34,8 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({ useWalletSession: () => mo
 vi.mock("@/lib/hyperliquid", () => ({
 	useActiveAgentOwner: () => mocks.activeOwner,
 	useHyperliquid: () => ({ env: mocks.env }),
-	useInfo: (method: string) => {
+	useInfo: (method: string, params: unknown, options: unknown) => {
+		mocks.infoCalls.push({ method, params, options });
 		const state = mocks.info.get(method);
 		if (!state) throw new Error(`Missing query fixture for ${method}`);
 		return state;
@@ -42,11 +44,19 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 let controller: ReturnType<typeof useVaultsController> | null = null;
+let detailController: ReturnType<typeof useVaultDetailController> | null = null;
 
 function Probe() {
 	controller = useVaultsController();
 	return null;
 }
+
+function DetailProbe() {
+	detailController = useVaultDetailController(VAULT_ADDRESS);
+	return null;
+}
+
+const VAULT_ADDRESS = "0x0000000000000000000000000000000000000001";
 
 describe("useVaultsController", () => {
 	let container: HTMLDivElement;
@@ -55,13 +65,15 @@ describe("useVaultsController", () => {
 	beforeEach(() => {
 		mocks.activeOwner = null;
 		mocks.env = "Mainnet";
+		mocks.infoCalls = [];
 		mocks.wallet = { address: undefined, sessionMode: "disconnected" };
 		mocks.publicVaults = query([publicVault()], { dataUpdatedAt: 1234 });
-		mocks.info = new Map([
+		mocks.info = new Map<string, QueryState<unknown>>([
 			["userVaultEquities", query(undefined)],
 			["leadingVaults", query(undefined)],
 		]);
 		controller = null;
+		detailController = null;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -97,6 +109,20 @@ describe("useVaultsController", () => {
 		expect(mocks.info.get("userVaultEquities")?.refetch).not.toHaveBeenCalled();
 	});
 
+	it("loads public Vault details while disconnected without passing an empty optional user", () => {
+		mocks.info = new Map<string, QueryState<unknown>>([
+			["vaultDetails", query(vaultDetail())],
+			["userVaultEquities", query(undefined)],
+		]);
+
+		act(() => root.render(<DetailProbe />));
+
+		expect(detailCurrent()).toMatchObject({ state: "normal", owner: { status: "disconnected" } });
+		expect(mocks.infoCalls.find((call) => call.method === "vaultDetails")?.params).toEqual({
+			vaultAddress: VAULT_ADDRESS,
+		});
+	});
+
 	function render() {
 		act(() => root.render(<Probe />));
 	}
@@ -104,6 +130,11 @@ describe("useVaultsController", () => {
 	function current() {
 		if (!controller) throw new Error("Controller was not captured");
 		return controller;
+	}
+
+	function detailCurrent() {
+		if (!detailController) throw new Error("Detail controller was not captured");
+		return detailController;
 	}
 });
 
@@ -135,5 +166,36 @@ function publicVault() {
 			month: ["0", "3"],
 			allTime: ["0", "4"],
 		},
+	};
+}
+
+function vaultDetail() {
+	const snapshot = {
+		accountValueHistory: [[1_700_000_000_000, "100"]],
+		pnlHistory: [[1_700_000_000_000, "0"]],
+		vlm: "0",
+	};
+	return {
+		name: "Sample Vault",
+		vaultAddress: VAULT_ADDRESS,
+		leader: "0x0000000000000000000000000000000000000002",
+		description: "Verified public detail",
+		portfolio: [
+			["day", snapshot],
+			["week", snapshot],
+			["month", snapshot],
+			["allTime", snapshot],
+		],
+		apr: 0.1,
+		followerState: null,
+		leaderFraction: 1,
+		leaderCommission: 0.1,
+		followers: [],
+		maxDistributable: 100,
+		maxWithdrawable: 0,
+		isClosed: false,
+		relationship: { type: "normal" },
+		allowDeposits: true,
+		alwaysCloseOnWithdraw: false,
 	};
 }

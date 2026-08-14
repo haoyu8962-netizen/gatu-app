@@ -22,21 +22,21 @@ export interface StakingPageProps {
 
 export function StakingPage({ onActionSubmit }: StakingPageProps) {
 	const fixture = getStakingFixtureFromLocation();
+	const isTestnet = useIsTestnet();
 	if (fixture) {
 		return (
 			<div className="min-h-dvh bg-portfolio-canvas font-sans text-fg min-[1001px]:pb-8">
 				<main className="mx-auto w-full max-w-[var(--staking-frame-max)] px-4 py-4 min-[1001px]:px-8 min-[1001px]:py-6 min-[1200px]:px-16">
-					<StakingFixture fixture={fixture} />
+					<StakingFixture fixture={fixture} env={isTestnet ? "Testnet" : "Mainnet"} />
 				</main>
 			</div>
 		);
 	}
-	return <StakingLive onActionSubmit={onActionSubmit} />;
+	return <StakingLive onActionSubmit={onActionSubmit} isTestnet={isTestnet} />;
 }
 
-function StakingLive({ onActionSubmit }: StakingPageProps) {
+function StakingLive({ onActionSubmit, isTestnet }: StakingPageProps & { isTestnet: boolean }) {
 	const isMobile = useIsMobile();
-	const isTestnet = useIsTestnet();
 	const controller = useStakingController();
 	const actions = useStakingActions(controller.ownerAddress);
 	const actionSubmit = onActionSubmit ?? actions.review;

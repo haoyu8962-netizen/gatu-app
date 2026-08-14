@@ -32,6 +32,7 @@ import {
 	canUndelegate,
 	formatStakingAmount,
 	formatStakingRatio,
+	isSystemFinalizedWithdrawal,
 	type StakingActionRequest,
 	type StakingActionSubmission,
 	type StakingHistoryAction,
@@ -118,10 +119,18 @@ export function StakingView(props: StakingViewProps) {
 							<Trans>Staking</Trans>
 						</h1>
 						<p className="mt-1 max-w-2xl text-xs leading-5 text-fg-muted">
-							<Trans>
-								Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to staking
-								availability; only a separate transfer to Spot starts the seven-day queue.
-							</Trans>
+							{props.env === "Testnet" ? (
+								<Trans>
+									Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to
+									staking availability; only a separate transfer to Spot starts the Testnet queue, which takes
+									approximately five minutes.
+								</Trans>
+							) : (
+								<Trans>
+									Delegate HYPE to validators to support consensus and earn rewards. Undelegating returns HYPE to
+									staking availability; only a separate transfer to Spot starts the seven-day queue.
+								</Trans>
+							)}
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -222,10 +231,17 @@ export function StakingView(props: StakingViewProps) {
 									</span>
 								</div>
 								<p className="mt-2 text-2xs leading-4 text-fg-muted">
-									<Trans>
-										Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count, so
-										no individual unlock time or progress is inferred here.
-									</Trans>
+									{props.env === "Testnet" ? (
+										<Trans>
+											Transfers to Spot use an approximately five-minute queue on Testnet. Hyperliquid exposes only the
+											aggregate amount and count, so no individual unlock time or progress is inferred here.
+										</Trans>
+									) : (
+										<Trans>
+											Transfers to Spot use a seven-day queue. Hyperliquid exposes only the aggregate amount and count,
+											so no individual unlock time or progress is inferred here.
+										</Trans>
+									)}
 								</p>
 							</div>
 							<StakingLinkCard link={account.stakingLink} />
@@ -309,6 +325,7 @@ export function StakingView(props: StakingViewProps) {
 					ownerAddress={props.ownerAddress}
 					open
 					isMobile={isMobile}
+					isTestnet={props.env === "Testnet"}
 					onOpenChange={(open) => {
 						if (!open) setActiveAction(null);
 					}}
@@ -703,15 +720,21 @@ function HistoryContent({
 							{formatStakingAmount(entry.action.amount, 8)} HYPE
 						</TableCell>
 						<TableCell size="dense" className="text-right">
-							<a
-								href={getExplorerTxUrl(entry.hash, isTestnet)}
-								target="_blank"
-								rel="noopener"
-								className="inline-flex items-center gap-1 text-brand hover:underline"
-							>
-								{shortenAddress(entry.hash, 6, 6)}
-								<ArrowRightIcon aria-hidden="true" className="size-3" />
-							</a>
+							{isSystemFinalizedWithdrawal(entry) ? (
+								<span className="text-fg-muted">
+									<Trans>System finalization · hash unavailable</Trans>
+								</span>
+							) : (
+								<a
+									href={getExplorerTxUrl(entry.hash, isTestnet)}
+									target="_blank"
+									rel="noopener"
+									className="inline-flex items-center gap-1 text-brand hover:underline"
+								>
+									{shortenAddress(entry.hash, 6, 6)}
+									<ArrowRightIcon aria-hidden="true" className="size-3" />
+								</a>
+							)}
 						</TableCell>
 					</TableRow>
 				))}

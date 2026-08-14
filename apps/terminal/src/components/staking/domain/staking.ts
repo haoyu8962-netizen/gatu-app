@@ -211,6 +211,10 @@ export function parseStakingHistory(value: unknown): StakingHistoryEntry[] | nul
 	return history;
 }
 
+export function isSystemFinalizedWithdrawal(entry: StakingHistoryEntry): boolean {
+	return entry.action.type === "withdrawalFinalized" && /^0x0{64}$/iu.test(entry.hash);
+}
+
 export function parseStakingLink(value: unknown): StakingLink | undefined {
 	if (!isRecord(value) || !("stakingLink" in value)) return undefined;
 	const link = value.stakingLink;

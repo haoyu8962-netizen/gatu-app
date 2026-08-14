@@ -12,6 +12,7 @@ const OWNER = "0x1111111111111111111111111111111111111111" as const;
 const TARGET = "0x2222222222222222222222222222222222222222";
 const HASH = `0x${"a".repeat(64)}`;
 const OLD_HASH = `0x${"b".repeat(64)}`;
+const SECOND_HASH = `0x${"c".repeat(64)}`;
 
 function vaultReference(direction: "deposit" | "withdraw") {
 	return createFundsActionReference({
@@ -109,6 +110,21 @@ describe("funds action reconciliation", () => {
 				},
 			]),
 		).toMatchObject({ finalAmount: "12.1", commission: "0.3", closingCost: "0.1" });
+	});
+
+	it("fails closed when multiple exact new history candidates could explain one marker", () => {
+		expect(
+			reconcileVaultFundsAction(vaultReference("deposit"), [
+				{ time: 1001, hash: HASH, delta: { type: "vaultDeposit", vault: TARGET, usdc: "12.5" } },
+				{ time: 1002, hash: SECOND_HASH, delta: { type: "vaultDeposit", vault: TARGET, usdc: "12.50" } },
+			]),
+		).toBeNull();
+		expect(
+			reconcileStakingFundsAction(stakingReference("cDeposit", "deposit"), [
+				{ time: 1001, hash: HASH, delta: { cDeposit: { amount: "2.5" } } },
+				{ time: 1002, hash: SECOND_HASH, delta: { cDeposit: { amount: "2.50" } } },
+			]),
+		).toBeNull();
 	});
 
 	it("matches staking deposit, withdrawal initiation, delegation, and undelegation exactly", () => {

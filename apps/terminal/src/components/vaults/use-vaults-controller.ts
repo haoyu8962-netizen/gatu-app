@@ -109,10 +109,9 @@ export function useVaultDetailController(vaultAddress: string): VaultDetailContr
 	const validAddress = isVaultAddress(vaultAddress);
 	const detailQuery = useInfo(
 		"vaultDetails",
-		{
-			vaultAddress: validAddress ? vaultAddress : EMPTY_ADDRESS,
-			user: accountAddress,
-		},
+		accountAddress
+			? { vaultAddress: validAddress ? vaultAddress : EMPTY_ADDRESS, user: accountAddress }
+			: { vaultAddress: validAddress ? vaultAddress : EMPTY_ADDRESS },
 		{
 			enabled: validAddress,
 			requestTimeoutMs: REQUEST_TIMEOUT_MS,
