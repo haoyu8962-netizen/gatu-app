@@ -115,7 +115,7 @@ export function MobileTradeSizeControl({
 					/>
 				</div>
 
-				<div className={cn(tradingInputFrameClass, "h-[31px] w-[63px] shrink-0 rounded-[8px] px-2")}>
+				<div className={cn(tradingInputFrameClass, "h-[31px] w-20 shrink-0 rounded-[8px] px-2")}>
 					<NumberInput
 						aria-label={percentAriaLabel}
 						inputMode="decimal"

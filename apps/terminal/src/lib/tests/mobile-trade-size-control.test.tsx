@@ -89,6 +89,19 @@ describe("MobileTradeSizeControl", () => {
 		expect(onPercentChange).toHaveBeenLastCalledWith(0);
 	});
 
+	it("reserves mobile-safe width for one-decimal percentages", () => {
+		renderControl({ sliderValue: 80.7 });
+
+		const percentInput = getInput(container, "Order size percentage");
+		expect(percentInput.value).toBe("80.7");
+		expect(percentInput.className).toContain("max-[1000px]:text-base");
+		expect(percentInput.parentElement?.className).toContain("w-20");
+		expect(percentInput.nextElementSibling?.textContent).toBe("%");
+
+		changeInput(percentInput, "100.0");
+		expect(percentInput.value).toBe("100.0");
+	});
+
 	it("disables percent-based sizing without disabling manual size entry or the unit switch", () => {
 		const onSizeChange = vi.fn();
 		const onSizeModeToggle = vi.fn();
