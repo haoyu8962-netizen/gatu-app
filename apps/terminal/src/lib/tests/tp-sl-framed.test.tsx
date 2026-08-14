@@ -67,6 +67,42 @@ describe("TpSlSection framed order-panel card", () => {
 		expect(container.textContent).toContain("Estimated PnL after trigger");
 	});
 
+	it("uses a two-column framed layout without outer card background", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					framed: true,
+					linkedReturnInputs: linkedReturnInputs(),
+					mobileTouchSafe: true,
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					referencePrice: 100,
+					side: "buy",
+					size: 1,
+					slPrice: "",
+					szDecimals: 2,
+					tpPrice: "",
+				}),
+			);
+		});
+
+		const section = container.firstElementChild as HTMLElement | null;
+		expect(section?.className).not.toContain("bg-trading-panel-card");
+		expect(section?.className).not.toContain("border-trading-panel-stroke-card");
+
+		const tpPriceFrame = container.querySelector<HTMLInputElement>('input[placeholder="TP Price"]')?.parentElement;
+		const tpReturnFrame = container.querySelector<HTMLInputElement>('input[placeholder="Profit"]')?.parentElement;
+		const row = tpPriceFrame?.parentElement;
+
+		expect(row?.className).toContain("grid-cols-2");
+		expect(tpPriceFrame?.className).toContain("w-full");
+		expect(tpPriceFrame?.className).toContain("box-border");
+		expect(tpPriceFrame?.className).not.toContain("min-w-[");
+		expect(tpReturnFrame?.className).toContain("w-full");
+		expect(tpReturnFrame?.className).toContain("box-border");
+		expect(tpReturnFrame?.className).not.toContain("min-w-[");
+	});
+
 	it("shows direction errors instead of the estimated PnL line", () => {
 		act(() => {
 			root.render(

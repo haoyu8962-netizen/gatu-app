@@ -177,7 +177,7 @@ export function TpSlSection({
 
 	if (framed) {
 		return (
-			<div className="min-w-0 space-y-3 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card p-3">
+			<div className="min-w-0 space-y-2">
 				<FramedTpSlRow
 					priceAriaLabel={t`Take Profit`}
 					pricePlaceholder={t`TP Price`}
@@ -343,7 +343,7 @@ export function TpSlSection({
 }
 
 const framedFrameClass =
-	"flex h-8 min-w-0 items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-1.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
+	"flex h-8 w-full min-w-0 box-border items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-1.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
 const framedInputClass =
 	"h-7 min-w-0 flex-1 bg-transparent px-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
 
@@ -396,11 +396,10 @@ function FramedTpSlRow({
 
 	return (
 		<div className="min-w-0 space-y-1.5">
-			<div className="flex min-w-0 flex-wrap gap-1.5">
+			<div className={cn("grid min-w-0 gap-2", returnInput ? "grid-cols-2" : "grid-cols-1")}>
 				<div
 					className={cn(
 						framedFrameClass,
-						"min-w-[7rem] flex-[1.2]",
 						mobileSafe && "max-[1000px]:h-11",
 						!!error && "border-trading-panel-error focus-within:border-trading-panel-error",
 						disabled && "opacity-50",
@@ -421,14 +420,7 @@ function FramedTpSlRow({
 					/>
 				</div>
 				{returnInput && (
-					<div
-						className={cn(
-							framedFrameClass,
-							"min-w-[6rem] flex-1",
-							mobileSafe && "max-[1000px]:h-11",
-							returnDisabled && "opacity-50",
-						)}
-					>
+					<div className={cn(framedFrameClass, mobileSafe && "max-[1000px]:h-11", returnDisabled && "opacity-50")}>
 						<NumberInput
 							aria-label={returnInput.ariaLabel}
 							aria-describedby={error ? errorId : undefined}
