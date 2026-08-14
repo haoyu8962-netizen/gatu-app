@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
+import { createMarketCatalogQueryOptions } from "@/lib/hyperliquid/markets/market-catalog-query";
 import { MarketsProvider, useMarkets } from "@/lib/hyperliquid/markets/use-markets";
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +15,22 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const QUERY_DATA = {
-	spotMeta: { tokens: [], universe: [] } as SpotMetaResponse,
+	spotMeta: {
+		tokens: [
+			{
+				name: "USDC",
+				szDecimals: 2,
+				weiDecimals: 6,
+				index: 0,
+				tokenId: "0x00000000000000000000000000000000",
+				isCanonical: true,
+				evmContract: null,
+				fullName: "USD Coin",
+				deployerTradingFeeShare: "0",
+			},
+		],
+		universe: [],
+	} as SpotMetaResponse,
 	perpDexs: [null] as unknown as PerpDexsResponse,
 	allPerpMetas: [{ universe: [], marginTables: [], collateralToken: 0 }] as MetaResponse[],
 };
@@ -78,7 +95,36 @@ describe("market catalog query policy", () => {
 				persist: true,
 				requestTimeoutMs: 6_000,
 				retry: false,
+				retryOnMount: false,
 			});
 		}
+	});
+
+	it("does not repeat a failed bootstrap request when the provider mounts", async () => {
+		const spotMeta = vi.fn(async () => {
+			throw new Error("catalog unavailable");
+		});
+		const queryClient = new QueryClient();
+		const queryOptions = createMarketCatalogQueryOptions(
+			{
+				spotMeta,
+				perpDexs: vi.fn(),
+				allPerpMetas: vi.fn(),
+			},
+			"Mainnet",
+		)[0];
+
+		await queryClient.prefetchQuery(queryOptions);
+		expect(spotMeta).toHaveBeenCalledOnce();
+
+		const observer = new QueryObserver(queryClient, queryOptions);
+		const unsubscribe = observer.subscribe(() => undefined);
+		await Promise.resolve();
+		expect(spotMeta).toHaveBeenCalledOnce();
+
+		await observer.refetch();
+		expect(spotMeta).toHaveBeenCalledTimes(2);
+		unsubscribe();
+		queryClient.clear();
 	});
 });

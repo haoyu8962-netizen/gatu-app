@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
@@ -9,6 +9,7 @@ import {
 	readDesktopGridLayouts,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
+import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -34,11 +35,20 @@ const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-w
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 function preloadPrimaryWorkspacePanels() {
+	if (
+		typeof window === "undefined" ||
+		typeof window.matchMedia !== "function" ||
+		!window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT_PX + 1}px)`).matches
+	) {
+		return;
+	}
 	const preloads = [ChartPanel.preload?.(), OrderbookPanel.preload?.(), TradePanel.preload?.()].filter(
 		(preload): preload is Promise<void> => preload !== undefined,
 	);
 	void Promise.allSettled(preloads);
 }
+
+preloadPrimaryWorkspacePanels();
 
 function DesktopWorkspaceSkeleton() {
 	const panelClassName = "desktop-grid-panel animate-pulse bg-fill-weaker motion-reduce:animate-none";
@@ -80,8 +90,6 @@ export function MainWorkspace() {
 	const navigateToMarket = useMarketNavigation();
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 	const spotSocials = getSpotAssetSocials(selectedMarket);
-
-	useEffect(preloadPrimaryWorkspacePanels, []);
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);

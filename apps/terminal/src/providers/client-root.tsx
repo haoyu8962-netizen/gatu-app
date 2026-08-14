@@ -1,0 +1,103 @@
+import { HyperliquidExchangePolicyProvider, HyperliquidProvider } from "@gatu/hl-react";
+import { i18n } from "@lingui/core";
+import { t } from "@lingui/core/macro";
+import { I18nProvider } from "@lingui/react";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
+import { WagmiProvider } from "@privy-io/wagmi";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import type { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import type { ReactNode } from "react";
+import { toast } from "sonner";
+import { OrderReconciliation } from "@/components/trade/order-reconciliation";
+import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
+import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
+import { STORAGE_KEYS } from "@/config/app";
+import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
+import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
+import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
+import { TRADING_AGENT_NAME } from "@/config/trading-agent";
+import { config } from "@/config/wagmi";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { MarketsProvider } from "@/lib/hyperliquid/markets";
+import { getNetwork } from "@/lib/network";
+import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "@/lib/query-persistence";
+import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
+import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
+import { ClientRuntimeProvider } from "@/providers/client-runtime";
+import { PwaInstallProvider } from "@/providers/pwa-install";
+import { useTheme } from "@/stores/use-global-settings-store";
+
+const network = getNetwork();
+const env = network === "testnet" ? "Testnet" : "Mainnet";
+const persister = createSyncStoragePersister({
+	storage: window.localStorage,
+	key: STORAGE_KEYS.RQ_CACHE,
+	throttleTime: 1000,
+});
+
+try {
+	localStorage.removeItem(STORAGE_KEYS.LEGACY_METADATA);
+} catch {}
+
+interface Props {
+	children: ReactNode;
+	queryClient: QueryClient;
+}
+
+function HyperliquidBridge({ children }: { children: ReactNode }) {
+	const { address, authenticated, ready } = useWalletSession();
+
+	return (
+		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
+			<HyperliquidProvider
+				env={env}
+				userAddress={address}
+				allowAgentOnlySession={ready && !authenticated}
+				builderConfig={DEFAULT_BUILDER_CONFIG}
+				agentName={TRADING_AGENT_NAME}
+				onAgentCleanupFailure={() => {
+					toast.error(
+						t`The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it.`,
+					);
+				}}
+			>
+				<MarketsProvider>{children}</MarketsProvider>
+			</HyperliquidProvider>
+		</HyperliquidExchangePolicyProvider>
+	);
+}
+
+export function ClientRootProvider({ children, queryClient }: Props) {
+	const theme = useTheme();
+	const persistenceCallbacks = createQueryPersistenceCallbacks(queryClient, persister);
+
+	return (
+		<PwaInstallProvider>
+			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
+				<SmartWalletsProvider>
+					<PersistQueryClientProvider
+						client={queryClient}
+						persistOptions={createQueryPersistenceOptions(persister)}
+						onSuccess={persistenceCallbacks.onSuccess}
+						onError={persistenceCallbacks.onError}
+					>
+						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
+							<I18nProvider i18n={i18n}>
+								<BaseUiDirectionProvider>
+									<HyperliquidBridge>
+										<EmbeddedDepositAutoBridge />
+										<OrderReconciliation />
+										<TwapReconciliation />
+										<ClientRuntimeProvider>{children}</ClientRuntimeProvider>
+									</HyperliquidBridge>
+								</BaseUiDirectionProvider>
+							</I18nProvider>
+						</WagmiProvider>
+					</PersistQueryClientProvider>
+				</SmartWalletsProvider>
+			</PrivyProvider>
+		</PwaInstallProvider>
+	);
+}

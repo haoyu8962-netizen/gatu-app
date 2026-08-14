@@ -1,53 +1,33 @@
-import { HyperliquidExchangePolicyProvider, HyperliquidProvider } from "@gatu/hl-react";
 import { i18n } from "@lingui/core";
-import { t } from "@lingui/core/macro";
 import { I18nProvider } from "@lingui/react";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
-import { WagmiProvider } from "@privy-io/wagmi";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { toast } from "sonner";
-import { OrderReconciliation } from "@/components/trade/order-reconciliation";
-import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
-import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
-import { RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
-import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
-import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
-import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
-import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
-import { TRADING_AGENT_NAME } from "@/config/trading-agent";
-import { config } from "@/config/wagmi";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { MarketsProvider } from "@/lib/hyperliquid/markets";
-import { getNetwork } from "@/lib/network";
-import { shouldPersistQuery } from "@/lib/query-persistence";
-import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
-import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
-import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
-import { PwaInstallProvider } from "@/providers/pwa-install";
-import { useTheme } from "@/stores/use-global-settings-store";
+import { useHydrated, useRouterState } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import "@/lib/i18n";
-
-const network = getNetwork();
-const env = network === "testnet" ? "Testnet" : "Mainnet";
+import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
+import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
+import { ClientRuntimeProvider, isDocumentRoutePath } from "@/providers/client-runtime";
 
 const isServer = typeof document === "undefined";
-
-if (!isServer) {
-	try {
-		localStorage.removeItem(STORAGE_KEYS.LEGACY_METADATA);
-	} catch {}
+// Start fetching the client-only wallet runtime as soon as the root module evaluates. The
+// Suspense boundary can hydrate the stable shell without waiting for it, while this eager promise
+// avoids introducing a second network waterfall after hydration. Document-only entries keep the
+// wallet code deferred, but a later client navigation into the app can still load it on demand.
+let clientRootProviderModule: Promise<typeof import("@/providers/client-root")> | undefined;
+function loadClientRootProvider() {
+	clientRootProviderModule ??= import("@/providers/client-root");
+	return clientRootProviderModule;
 }
-
-const persister = isServer
+if (!isServer && !isDocumentRoutePath(window.location.pathname)) {
+	void loadClientRootProvider();
+}
+const LazyClientRootProvider = isServer
 	? null
-	: createSyncStoragePersister({
-			storage: window.localStorage,
-			key: STORAGE_KEYS.RQ_CACHE,
-			throttleTime: 1000,
-		});
+	: lazy(() =>
+			loadClientRootProvider().then((module) => ({
+				default: module.ClientRootProvider,
+			})),
+		);
 
 export function getRootProviderContext() {
 	const queryClient = new QueryClient({
@@ -61,85 +41,28 @@ export function getRootProviderContext() {
 	return { queryClient };
 }
 
-function HyperliquidBridge({ children }: { children: React.ReactNode }) {
-	const { address, authenticated, ready } = useWalletSession();
-
-	return (
-		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
-			<HyperliquidProvider
-				env={env}
-				userAddress={address}
-				allowAgentOnlySession={ready && !authenticated}
-				builderConfig={DEFAULT_BUILDER_CONFIG}
-				agentName={TRADING_AGENT_NAME}
-				onAgentCleanupFailure={() => {
-					toast.error(
-						t`The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it.`,
-					);
-				}}
-			>
-				<MarketsProvider>{children}</MarketsProvider>
-			</HyperliquidProvider>
-		</HyperliquidExchangePolicyProvider>
-	);
-}
-
-// Server-rendered routes only need request-scoped query and i18n state. Hyperliquid and
-// wallet providers stay client-only so SSR never opens a persistent market WebSocket.
 function ServerProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<I18nProvider i18n={i18n}>
-				<BaseUiDirectionProvider>{children}</BaseUiDirectionProvider>
+				<BaseUiDirectionProvider>
+					<ClientRuntimeProvider ready={false}>{children}</ClientRuntimeProvider>
+				</BaseUiDirectionProvider>
 			</I18nProvider>
 		</QueryClientProvider>
 	);
 }
 
-// Privy requires the order PrivyProvider > QueryClientProvider > WagmiProvider, and the
-// WagmiProvider must come from @privy-io/wagmi so Privy drives the connector state.
-function ClientProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
-	const theme = useTheme();
-	if (!persister) return null;
-
-	return (
-		<PwaInstallProvider>
-			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
-				<SmartWalletsProvider>
-					<PersistQueryClientProvider
-						client={queryClient}
-						persistOptions={{
-							persister,
-							maxAge: RQ_CACHE_MAX_AGE_MS,
-							buster: RQ_CACHE_BUSTER,
-							dehydrateOptions: {
-								shouldDehydrateQuery: shouldPersistQuery,
-							},
-						}}
-					>
-						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
-							<I18nProvider i18n={i18n}>
-								<BaseUiDirectionProvider>
-									<HyperliquidBridge>
-										<EmbeddedDepositAutoBridge />
-										<OrderReconciliation />
-										<TwapReconciliation />
-										{children}
-									</HyperliquidBridge>
-								</BaseUiDirectionProvider>
-							</I18nProvider>
-						</WagmiProvider>
-					</PersistQueryClientProvider>
-				</SmartWalletsProvider>
-			</PrivyProvider>
-		</PwaInstallProvider>
-	);
-}
-
 export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
-	if (isServer) {
+	const hydrated = useHydrated();
+	const pathname = useRouterState({ select: (state) => state.location.pathname });
+	if (isServer || !hydrated || !LazyClientRootProvider || isDocumentRoutePath(pathname)) {
 		return <ServerProviders queryClient={queryClient}>{children}</ServerProviders>;
 	}
 
-	return <ClientProviders queryClient={queryClient}>{children}</ClientProviders>;
+	return (
+		<Suspense fallback={<ServerProviders queryClient={queryClient}>{children}</ServerProviders>}>
+			<LazyClientRootProvider queryClient={queryClient}>{children}</LazyClientRootProvider>
+		</Suspense>
+	);
 }

@@ -3,53 +3,116 @@ import { cn } from "@/lib/cn";
 
 export function AppShellSkeleton() {
 	return (
-		<>
-			<div className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden">
+		<div aria-hidden="true" data-testid="app-shell-fallback">
+			<style>{`
+				[data-shell-mobile]{display:flex}
+				[data-shell-desktop]{display:none}
+				@media (min-width:1001px){
+					[data-shell-mobile]{display:none}
+					[data-shell-desktop]{display:flex}
+				}
+			`}</style>
+			<div
+				data-shell-mobile
+				className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
+			>
 				<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
 					<div className="h-14 px-3 flex items-center justify-between">
 						<div className="flex items-center gap-1.5">
-							<div className="size-6 rounded bg-surface animate-pulse" />
-							<div className="h-3 w-20 rounded bg-surface animate-pulse" />
+							<span className="grid size-6 place-items-center rounded-[6px] bg-market-close-control text-market-close-on-control">
+								<svg viewBox="0 0 120 120" width={16} height={16} fill="none" className="size-4">
+									<title>Gatu</title>
+									<path
+										d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
+										stroke="currentColor"
+										strokeWidth="16"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									/>
+								</svg>
+							</span>
+							<span className="text-sm font-bold text-market-close-fg">gatu</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<div className="size-8 rounded bg-surface animate-pulse" />
-							<div className="size-8 rounded bg-surface animate-pulse" />
+							<div className="size-8 rounded-[8px] border border-stroke-weak bg-surface" />
+							<div className="h-8 w-20 rounded-[8px] bg-market-close-control" />
 						</div>
 					</div>
 				</div>
-				<div className="flex-1 min-h-0 p-4 space-y-3">
-					<div className="h-5 w-32 rounded bg-surface animate-pulse" />
-					<div className="h-48 w-full rounded bg-surface/50 animate-pulse" />
-					<div className="flex gap-3">
-						<div className="h-4 w-16 rounded bg-surface animate-pulse" />
-						<div className="h-4 w-16 rounded bg-surface animate-pulse" />
-						<div className="h-4 w-16 rounded bg-surface animate-pulse" />
+				<div className="flex min-h-0 flex-1 flex-col gap-[3px] bg-grid-container p-[3px]">
+					<div className="h-12 shrink-0 bg-surface" />
+					<div className="min-h-48 flex-[3] bg-surface" />
+					<div className="grid min-h-40 flex-[2] grid-cols-2 gap-[3px]">
+						<div className="bg-surface" />
+						<div className="bg-surface" />
 					</div>
+					<div className="min-h-36 flex-[2] bg-surface" />
 				</div>
 				<div className="border-t border-stroke-weak/60 pb-[env(safe-area-inset-bottom)]">
 					<div className="flex items-stretch">
 						{["markets", "trade", "account"].map((tab) => (
 							<div key={tab} className="flex-1 h-14 flex flex-col items-center justify-center gap-1 py-2">
-								<div className="size-5 rounded bg-surface animate-pulse" />
-								<div className="h-2 w-8 rounded bg-surface animate-pulse" />
+								<div className="size-5 rounded-[5px] bg-fill-weaker" />
+								<div className="h-1.5 w-8 rounded bg-fill-weaker" />
 							</div>
 						))}
 					</div>
 				</div>
 			</div>
-			<div className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
+			<div data-shell-desktop className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
 				<div
 					className={cn(
 						APP_HEADER_HEIGHT_CLASS,
 						"flex shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5",
 					)}
 				>
-					<div className="size-[26px] animate-pulse rounded-[7px] bg-market-close-control" />
-					<div className="h-4 w-12 animate-pulse rounded bg-market-close-hover" />
-					<div className="ml-auto h-[34px] w-28 animate-pulse rounded-[10px] bg-market-close-hover" />
+					<span className="grid size-[26px] place-items-center rounded-[7px] bg-market-close-control text-market-close-on-control">
+						<svg viewBox="0 0 120 120" width={18} height={18} fill="none" className="size-[18px]">
+							<title>Gatu</title>
+							<path
+								d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
+								stroke="currentColor"
+								strokeWidth="16"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							/>
+						</svg>
+					</span>
+					<span className="text-base font-bold text-market-close-fg">gatu</span>
+					<div className="ml-4 flex items-center gap-1">
+						{[56, 70, 52, 62, 68].map((width) => (
+							<div key={width} className="h-[34px] rounded-[8px] bg-market-close-hover" style={{ width }} />
+						))}
+					</div>
+					<div className="ml-auto h-[34px] w-28 rounded-[10px] bg-market-close-control" />
 				</div>
-				<div className="flex-1 min-h-0 animate-pulse bg-surface/20" />
+				<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
+					<div className="grid min-h-[71rem] grid-cols-[repeat(14,minmax(0,1fr))] auto-rows-[30px] gap-[3px] p-[3px] min-[1421px]:grid-cols-[repeat(16,minmax(0,1fr))]">
+						<div data-shell-panel className="col-span-10 row-span-1 bg-surface" />
+						<div data-shell-panel className="col-span-10 row-span-1 row-start-2 bg-surface" />
+						<div
+							data-shell-panel
+							className="col-span-10 row-span-[18] row-start-3 bg-surface min-[1421px]:row-span-[18]"
+						/>
+						<div
+							data-shell-panel
+							className="col-span-4 col-start-11 row-span-[21] row-start-1 bg-surface min-[1421px]:col-span-3 min-[1421px]:row-span-20"
+						/>
+						<div
+							data-shell-panel
+							className="col-span-4 col-start-11 row-span-[18] row-start-[22] bg-surface min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-20 min-[1421px]:row-start-1"
+						/>
+						<div
+							data-shell-panel
+							className="col-span-10 row-span-[26] row-start-[22] bg-surface min-[1421px]:col-span-13 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]"
+						/>
+						<div
+							data-shell-panel
+							className="col-span-4 col-start-11 row-span-8 row-start-[40] bg-surface min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]"
+						/>
+					</div>
+				</div>
 			</div>
-		</>
+		</div>
 	);
 }

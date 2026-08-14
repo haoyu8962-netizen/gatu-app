@@ -98,6 +98,16 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useIsMobile");
 	});
 
+	it("starts the primary lazy panel imports when the terminal module is evaluated", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("preloadPrimaryWorkspacePanels();");
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useEffect(preloadPrimaryWorkspacePanels");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("MOBILE_BREAKPOINT_PX + 1");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("window.matchMedia");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("ChartPanel.preload?.()");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("OrderbookPanel.preload?.()");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("TradePanel.preload?.()");
+	});
+
 	it("observes border-box height with cleanup and persists RGL's compacted layouts", () => {
 		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height");
 		expect(GRID_CONTENT_HEIGHT_SOURCE).not.toContain("offsetHeight");

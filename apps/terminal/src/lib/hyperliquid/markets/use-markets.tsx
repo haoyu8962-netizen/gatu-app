@@ -22,15 +22,19 @@ import {
 	getSpotDisplayName,
 } from "./helper";
 import {
+	MARKET_CATALOG_DEXS_STALE_TIME_MS,
+	MARKET_CATALOG_META_STALE_TIME_MS,
+	MARKET_CATALOG_REQUEST_TIMEOUT_MS,
+} from "./market-catalog-query";
+import {
+	areAllPerpMetasValid,
+	arePerpDexsValid,
 	createMarketCatalogState,
 	getRetryableMarketCatalogQueries,
+	isSpotMetaValid,
 	type MarketCatalogQueries,
 	type MarketCatalogState,
 } from "./market-catalog-state";
-
-const META_STALE_TIME_MS = 30 * 60 * 1_000;
-const DEXS_STALE_TIME_MS = 5 * 60 * 1_000;
-const MARKET_CATALOG_REQUEST_TIMEOUT_MS = 6_000;
 
 export interface MarketsWithExactLookup extends Markets {
 	getMarketByName(name: string): UnifiedMarket | undefined;
@@ -231,32 +235,38 @@ export function MarketsProvider({ children }: Props) {
 	const isRestoring = useIsRestoring();
 	const spotMetaQuery = useInfo("spotMeta", undefined, {
 		refetchInterval: Infinity,
-		staleTime: META_STALE_TIME_MS,
+		staleTime: MARKET_CATALOG_META_STALE_TIME_MS,
 		gcTime: RQ_CACHE_MAX_AGE_MS,
 		persist: true,
 		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
 		retry: false,
+		retryOnMount: false,
 	});
 	const perpDexsQuery = useInfo("perpDexs", undefined, {
 		refetchInterval: Infinity,
-		staleTime: DEXS_STALE_TIME_MS,
+		staleTime: MARKET_CATALOG_DEXS_STALE_TIME_MS,
 		gcTime: RQ_CACHE_MAX_AGE_MS,
 		persist: true,
 		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
 		retry: false,
+		retryOnMount: false,
 	});
 	const allPerpMetasQuery = useInfo("allPerpMetas", undefined, {
 		refetchInterval: Infinity,
-		staleTime: META_STALE_TIME_MS,
+		staleTime: MARKET_CATALOG_META_STALE_TIME_MS,
 		gcTime: RQ_CACHE_MAX_AGE_MS,
 		persist: true,
 		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
 		retry: false,
+		retryOnMount: false,
 	});
 
-	const { data: spotMeta, isLoading: spotLoading, error: spotError } = spotMetaQuery;
-	const { data: perpDexs, isLoading: dexsLoading, error: dexsError } = perpDexsQuery;
-	const { data: allPerpMetas, isLoading: allMetasLoading, error: allMetasError } = allPerpMetasQuery;
+	const { isLoading: spotLoading, error: spotError } = spotMetaQuery;
+	const { isLoading: dexsLoading, error: dexsError } = perpDexsQuery;
+	const { isLoading: allMetasLoading, error: allMetasError } = allPerpMetasQuery;
+	const spotMeta = isSpotMetaValid(spotMetaQuery.data) ? spotMetaQuery.data : undefined;
+	const perpDexs = arePerpDexsValid(perpDexsQuery.data) ? perpDexsQuery.data : undefined;
+	const allPerpMetas = areAllPerpMetasValid(allPerpMetasQuery.data) ? allPerpMetasQuery.data : undefined;
 
 	const perpMeta = allPerpMetas?.[0];
 

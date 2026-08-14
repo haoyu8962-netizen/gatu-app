@@ -11,12 +11,12 @@ export function getRouter() {
 		routeTree,
 		context: { ...rqContext },
 		defaultPreload: "intent",
+		defaultPendingMinMs: 0,
 		Wrap: (props: { children: React.ReactNode }) => {
-			return (
-				<ApplicationErrorBoundary>
-					<RootProvider {...rqContext}>{props.children}</RootProvider>
-				</ApplicationErrorBoundary>
-			);
+			return <ApplicationErrorBoundary>{props.children}</ApplicationErrorBoundary>;
+		},
+		InnerWrap: (props: { children: React.ReactNode }) => {
+			return <RootProvider {...rqContext}>{props.children}</RootProvider>;
 		},
 	});
 

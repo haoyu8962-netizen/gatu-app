@@ -65,6 +65,7 @@ export {
 	useExchange,
 } from "./hooks/useExchange";
 export {
+	type InfoRequestOptions,
 	infoKey,
 	infoPersistedKey,
 	infoQueryOptions,

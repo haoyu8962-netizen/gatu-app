@@ -61,28 +61,111 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isSpotMetaValid(value: unknown): value is SpotMetaResponse {
-	return isRecord(value) && Array.isArray(value.tokens) && Array.isArray(value.universe);
+function isFiniteInteger(value: unknown): value is number {
+	return typeof value === "number" && Number.isSafeInteger(value);
+}
+
+function isSpotTokenValid(value: unknown): boolean {
+	return (
+		isRecord(value) &&
+		typeof value.name === "string" &&
+		value.name.length > 0 &&
+		isFiniteInteger(value.szDecimals) &&
+		isFiniteInteger(value.weiDecimals) &&
+		isFiniteInteger(value.index) &&
+		typeof value.tokenId === "string" &&
+		typeof value.isCanonical === "boolean" &&
+		(value.fullName === null || typeof value.fullName === "string")
+	);
+}
+
+function isSpotPairValid(value: unknown, tokenIndexes: ReadonlySet<number>): boolean {
+	return (
+		isRecord(value) &&
+		typeof value.name === "string" &&
+		value.name.length > 0 &&
+		isFiniteInteger(value.index) &&
+		typeof value.isCanonical === "boolean" &&
+		Array.isArray(value.tokens) &&
+		value.tokens.length === 2 &&
+		value.tokens.every((tokenIndex) => isFiniteInteger(tokenIndex) && tokenIndexes.has(tokenIndex))
+	);
+}
+
+export function isSpotMetaValid(value: unknown): value is SpotMetaResponse {
+	if (!isRecord(value) || !Array.isArray(value.tokens) || !Array.isArray(value.universe)) return false;
+	if (!value.tokens.every(isSpotTokenValid)) return false;
+	const tokenIndexes = new Set<number>();
+	for (const token of value.tokens) {
+		if (!isRecord(token) || !isFiniteInteger(token.index) || tokenIndexes.has(token.index)) return false;
+		tokenIndexes.add(token.index);
+	}
+	return value.universe.every((pair) => isSpotPairValid(pair, tokenIndexes));
 }
 
 function isPerpMetaValid(value: unknown): value is MetaResponse {
-	return isRecord(value) && Array.isArray(value.universe) && Array.isArray(value.marginTables);
+	if (
+		!isRecord(value) ||
+		!Array.isArray(value.universe) ||
+		!Array.isArray(value.marginTables) ||
+		!isFiniteInteger(value.collateralToken)
+	) {
+		return false;
+	}
+	return value.universe.every(
+		(asset) =>
+			isRecord(asset) &&
+			typeof asset.name === "string" &&
+			asset.name.length > 0 &&
+			isFiniteInteger(asset.szDecimals) &&
+			typeof asset.maxLeverage === "number" &&
+			Number.isFinite(asset.maxLeverage) &&
+			isFiniteInteger(asset.marginTableId),
+	);
 }
 
-function areAllPerpMetasValid(value: unknown): value is MetaResponse[] {
+export function areAllPerpMetasValid(value: unknown): value is MetaResponse[] {
 	return Array.isArray(value) && value.length > 0 && value.every(isPerpMetaValid);
 }
 
-function arePerpDexsValid(value: unknown): value is PerpDexsResponse {
-	return Array.isArray(value);
+export function arePerpDexsValid(value: unknown): value is PerpDexsResponse {
+	return (
+		Array.isArray(value) &&
+		value.every(
+			(dex, index) =>
+				(index === 0 && dex === null) ||
+				(index > 0 &&
+					isRecord(dex) &&
+					typeof dex.name === "string" &&
+					dex.name.length > 0 &&
+					(dex.deployerFeeScale === undefined || typeof dex.deployerFeeScale === "string")),
+		)
+	);
+}
+
+export function hasCompleteMarketCatalogData({
+	spotMeta,
+	perpDexs,
+	allPerpMetas,
+}: {
+	spotMeta: unknown;
+	perpDexs: unknown;
+	allPerpMetas: unknown;
+}): boolean {
+	if (!isSpotMetaValid(spotMeta)) return false;
+	if (!areAllPerpMetasValid(allPerpMetas)) return false;
+	if (!arePerpDexsValid(perpDexs)) return false;
+	if (perpDexs.length < allPerpMetas.length) return false;
+	const spotTokenIndexes = new Set(spotMeta.tokens.map((token) => token.index));
+	return allPerpMetas.every((meta) => spotTokenIndexes.has(meta.collateralToken));
 }
 
 function hasCompleteCatalogData(queries: MarketCatalogQueries): boolean {
-	const { spotMeta, perpDexs, allPerpMetas } = queries;
-	if (!isSpotMetaValid(spotMeta.data)) return false;
-	if (!areAllPerpMetasValid(allPerpMetas.data)) return false;
-	if (!arePerpDexsValid(perpDexs.data)) return false;
-	return perpDexs.data.length >= allPerpMetas.data.length;
+	return hasCompleteMarketCatalogData({
+		spotMeta: queries.spotMeta.data,
+		perpDexs: queries.perpDexs.data,
+		allPerpMetas: queries.allPerpMetas.data,
+	});
 }
 
 function getQueryList(queries: MarketCatalogQueries) {
@@ -208,12 +291,15 @@ export function createMarketCatalogState({
 }
 
 export function getRetryableMarketCatalogQueries(queries: MarketCatalogQueries) {
+	const spotMetaIsValid = isSpotMetaValid(queries.spotMeta.data);
+	const perpDexsAreValid = arePerpDexsValid(queries.perpDexs.data);
+	const allPerpMetasAreValid = areAllPerpMetasValid(queries.allPerpMetas.data);
 	const isRetryable = (query: MarketCatalogQuery<unknown>, isValid: boolean) =>
 		query.fetchStatus !== "fetching" && (query.status === "error" || !isValid || query.isStale);
 	const retryable: MarketCatalogQuery<unknown>[] = [];
-	if (isRetryable(queries.spotMeta, isSpotMetaValid(queries.spotMeta.data))) retryable.push(queries.spotMeta);
-	if (isRetryable(queries.perpDexs, arePerpDexsValid(queries.perpDexs.data))) retryable.push(queries.perpDexs);
-	if (isRetryable(queries.allPerpMetas, areAllPerpMetasValid(queries.allPerpMetas.data))) {
+	if (isRetryable(queries.spotMeta, spotMetaIsValid)) retryable.push(queries.spotMeta);
+	if (isRetryable(queries.perpDexs, perpDexsAreValid)) retryable.push(queries.perpDexs);
+	if (isRetryable(queries.allPerpMetas, allPerpMetasAreValid)) {
 		retryable.push(queries.allPerpMetas);
 	}
 	if (
@@ -222,6 +308,18 @@ export function getRetryableMarketCatalogQueries(queries: MarketCatalogQueries) 
 		queries.perpDexs.data.length < queries.allPerpMetas.data.length
 	) {
 		if (!retryable.includes(queries.perpDexs)) retryable.push(queries.perpDexs);
+		if (!retryable.includes(queries.allPerpMetas)) retryable.push(queries.allPerpMetas);
+	}
+	if (
+		spotMetaIsValid &&
+		perpDexsAreValid &&
+		allPerpMetasAreValid &&
+		queries.perpDexs.data.length >= queries.allPerpMetas.data.length &&
+		!hasCompleteCatalogData(queries) &&
+		queries.spotMeta.fetchStatus !== "fetching" &&
+		queries.allPerpMetas.fetchStatus !== "fetching"
+	) {
+		if (!retryable.includes(queries.spotMeta)) retryable.push(queries.spotMeta);
 		if (!retryable.includes(queries.allPerpMetas)) retryable.push(queries.allPerpMetas);
 	}
 	return retryable;

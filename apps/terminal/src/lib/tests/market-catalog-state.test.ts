@@ -1,13 +1,31 @@
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import {
+	areAllPerpMetasValid,
+	arePerpDexsValid,
 	createMarketCatalogState,
 	getRetryableMarketCatalogQueries,
+	isSpotMetaValid,
 	type MarketCatalogQueries,
 	type MarketCatalogQuery,
 } from "@/lib/hyperliquid/markets/market-catalog-state";
 
-const SPOT_META = { tokens: [], universe: [] } as SpotMetaResponse;
+const SPOT_META = {
+	tokens: [
+		{
+			name: "USDC",
+			szDecimals: 2,
+			weiDecimals: 6,
+			index: 0,
+			tokenId: "0x00000000000000000000000000000000",
+			isCanonical: true,
+			evmContract: null,
+			fullName: "USD Coin",
+			deployerTradingFeeShare: "0",
+		},
+	],
+	universe: [],
+} as SpotMetaResponse;
 const ALL_PERP_METAS = [{ universe: [], marginTables: [], collateralToken: 0 }] as MetaResponse[];
 const PERP_DEXS = [null] as unknown as PerpDexsResponse;
 
@@ -33,6 +51,19 @@ function createQueries(overrides: Partial<MarketCatalogQueries> = {}): MarketCat
 }
 
 describe("market catalog state", () => {
+	it("rejects nested catalog corruption before market construction", () => {
+		expect(isSpotMetaValid({ tokens: [null], universe: [] })).toBe(false);
+		expect(
+			isSpotMetaValid({
+				tokens: [],
+				universe: [{ name: "@1", tokens: [1, 0], index: 1, isCanonical: true }],
+			}),
+		).toBe(false);
+		expect(areAllPerpMetasValid([{ universe: [null], marginTables: [], collateralToken: 0 }])).toBe(false);
+		expect(arePerpDexsValid([null, null])).toBe(false);
+		expect(arePerpDexsValid([null, { name: "test" }])).toBe(true);
+	});
+
 	it("keeps an empty catalog in restoring state until persistence finishes", () => {
 		const queries = createQueries({
 			spotMeta: createQuery<SpotMetaResponse>(undefined),
@@ -192,5 +223,13 @@ describe("market catalog state", () => {
 		const queries = createQueries({ spotMeta: retryingSpot });
 
 		expect(getRetryableMarketCatalogQueries(queries)).not.toContain(retryingSpot);
+	});
+
+	it("retries both sides of an invalid collateral reference", () => {
+		const spotMeta = createQuery(SPOT_META);
+		const allPerpMetas = createQuery([{ universe: [], marginTables: [], collateralToken: 1 }] as MetaResponse[]);
+		const queries = createQueries({ spotMeta, allPerpMetas });
+
+		expect(getRetryableMarketCatalogQueries(queries)).toEqual([spotMeta, allPerpMetas]);
 	});
 });

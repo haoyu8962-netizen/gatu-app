@@ -1,8 +1,9 @@
 import { infoKey, infoKeys, infoPersistedKey } from "@gatu/hl-react";
 import { QueryClient } from "@tanstack/react-query";
+import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
 import { describe, expect, it } from "vitest";
 import { RQ_CACHE_BUSTER } from "@/config/app";
-import { shouldPersistQuery } from "@/lib/query-persistence";
+import { createQueryPersistenceCallbacks, shouldPersistQuery } from "@/lib/query-persistence";
 
 describe("query persistence", () => {
 	it("invalidates caches written before successful-only dehydration", () => {
@@ -53,5 +54,29 @@ describe("query persistence", () => {
 
 		resolveQuery?.("done");
 		await expect(request).resolves.toBe("done");
+	});
+
+	it("saves queries that completed before the persistence provider subscribed", async () => {
+		const queryClient = new QueryClient();
+		const catalogKey = infoPersistedKey("spotMeta", undefined, "Mainnet");
+		queryClient.setQueryData(catalogKey, { tokens: [], universe: [] });
+		let persistedClient: PersistedClient | undefined;
+		const persister = {
+			persistClient: (client) => {
+				persistedClient = client;
+			},
+			restoreClient: () => undefined,
+			removeClient: () => undefined,
+		} satisfies Persister;
+
+		const callbacks = createQueryPersistenceCallbacks(queryClient, persister);
+		await callbacks.onSuccess();
+
+		expect(persistedClient).toMatchObject({
+			buster: RQ_CACHE_BUSTER,
+			clientState: {
+				queries: [{ queryKey: catalogKey, state: { status: "success" } }],
+			},
+		});
 	});
 });

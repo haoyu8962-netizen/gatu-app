@@ -1,0 +1,79 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { isDocumentRoutePath } from "@/providers/client-runtime";
+
+const rootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/root.tsx"), "utf8");
+const clientRootProviderSource = readFileSync(resolve(process.cwd(), "src/providers/client-root.tsx"), "utf8");
+const rootRouteSource = readFileSync(resolve(process.cwd(), "src/routes/__root.tsx"), "utf8");
+const routerSource = readFileSync(resolve(process.cwd(), "src/router.tsx"), "utf8");
+
+describe("root provider startup split", () => {
+	it("classifies document routes without activating the wallet runtime", () => {
+		expect(isDocumentRoutePath("/docs")).toBe(true);
+		expect(isDocumentRoutePath("/terms/")).toBe(true);
+		expect(isDocumentRoutePath("/trade/HYPE")).toBe(false);
+	});
+
+	it("keeps wallet runtimes out of the statically imported root provider", () => {
+		expect(rootProviderSource).toContain('import("@/providers/client-root")');
+		expect(rootProviderSource).toContain("let clientRootProviderModule");
+		expect(rootProviderSource).toContain("void loadClientRootProvider()");
+		expect(rootProviderSource).toContain("!isDocumentRoutePath(window.location.pathname)");
+		expect(rootProviderSource).toContain("lazy(() =>");
+		expect(rootProviderSource).not.toContain('from "@privy-io/react-auth"');
+		expect(rootProviderSource).not.toContain('from "@privy-io/wagmi"');
+		expect(rootProviderSource).not.toContain('from "@gatu/hl-react"');
+	});
+
+	it("keeps the server and hydration fallback disconnected", () => {
+		expect(rootProviderSource).toContain("useHydrated()");
+		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
+		expect(rootProviderSource).toContain("<ClientRuntimeProvider ready={false}>");
+		expect(rootProviderSource).toContain(
+			"<Suspense fallback={<ServerProviders queryClient={queryClient}>{children}</ServerProviders>}>",
+		);
+		expect(rootRouteSource).toContain("if (!clientRuntimeReady) return <AppShellSkeleton />");
+		expect(rootRouteSource).not.toContain("<ClientOnly");
+	});
+
+	it("mounts the route-aware provider inside router context without moving the fatal boundary", () => {
+		expect(routerSource).toContain("<ApplicationErrorBoundary>{props.children}</ApplicationErrorBoundary>");
+		expect(routerSource).toContain("InnerWrap:");
+		expect(routerSource).toContain("<RootProvider {...rqContext}>{props.children}</RootProvider>");
+		expect(routerSource).toContain("defaultPendingMinMs: 0");
+	});
+
+	it("applies the persisted theme before the terminal stylesheet is parsed", () => {
+		const themeScript = rootRouteSource.indexOf("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
+		const stylesheet = rootRouteSource.indexOf('<link rel="stylesheet"');
+
+		expect(rootRouteSource).toContain('<html lang="en" dir="ltr" className="dark"');
+		expect(rootRouteSource).toContain('localStorage.getItem("global-settings-v2")');
+		expect(rootRouteSource).toContain("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
+		expect(themeScript).toBeGreaterThanOrEqual(0);
+		expect(stylesheet).toBeGreaterThan(themeScript);
+	});
+
+	it("preserves the managed wallet and signing provider hierarchy", () => {
+		const providerOrder = [
+			"<PrivyProvider",
+			"<SmartWalletsProvider>",
+			"<PersistQueryClientProvider",
+			"<WagmiProvider",
+			"<HyperliquidBridge>",
+			"<ClientRuntimeProvider>",
+		];
+		const indexes = providerOrder.map((provider) => clientRootProviderSource.indexOf(provider));
+
+		expect(indexes.every((index) => index >= 0)).toBe(true);
+		expect(indexes).toEqual([...indexes].sort((left, right) => left - right));
+		expect(clientRootProviderSource).toContain("setActiveWalletForWagmi={selectPrivyWagmiWallet}");
+		expect(clientRootProviderSource).toContain("allowAgentOnlySession={ready && !authenticated}");
+		expect(clientRootProviderSource).toContain("<EmbeddedDepositAutoBridge />");
+		expect(clientRootProviderSource).toContain("<OrderReconciliation />");
+		expect(clientRootProviderSource).toContain("<TwapReconciliation />");
+		expect(clientRootProviderSource).toContain("onSuccess={persistenceCallbacks.onSuccess}");
+		expect(clientRootProviderSource).toContain("onError={persistenceCallbacks.onError}");
+	});
+});

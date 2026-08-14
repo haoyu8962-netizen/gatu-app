@@ -67,12 +67,31 @@ function createReferralJoinDevRequestGuard(): Plugin {
   }
 }
 
-function createManualChunks(id: string) {
+const tanstackChunkByPackage = new Map([
+  ['query-core', 'vendor-tanstack-query'],
+  ['query-persist-client-core', 'vendor-tanstack-query'],
+  ['query-sync-storage-persister', 'vendor-tanstack-query'],
+  ['react-query', 'vendor-tanstack-query'],
+  ['react-query-persist-client', 'vendor-tanstack-query'],
+  ['react-table', 'vendor-tanstack-table'],
+  ['table-core', 'vendor-tanstack-table'],
+  ['react-virtual', 'vendor-tanstack-virtual'],
+  ['virtual-core', 'vendor-tanstack-virtual'],
+])
+
+function resolveTanstackChunk(id: string) {
+  const packageName = id.match(/node_modules\/@tanstack\/([^/]+)/)?.[1]
+  if (!packageName) return
+
+  return tanstackChunkByPackage.get(packageName) ?? 'vendor-tanstack-router'
+}
+
+export function createManualChunks(id: string) {
   if (id.includes('node_modules')) {
     if (id.includes('@base-ui')) return 'vendor-base-ui'
     if (id.includes('@phosphor-icons/react')) return 'vendor-icons'
     if (id.includes('@radix-ui')) return 'vendor-radix'
-    if (id.includes('@tanstack')) return 'vendor-tanstack'
+    if (id.includes('@tanstack')) return resolveTanstackChunk(id)
     if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
   }
 }
