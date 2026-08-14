@@ -108,6 +108,7 @@ export function TradingViewChart({
 	const overlayLines = useTradingViewOverlayLines(market, symbol);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const widgetEpochRef = useRef(0);
 	const datafeedRef = useRef<ChartDatafeed | null>(null);
 	const chartReadyRef = useRef(false);
 	const pendingDataResetRef = useRef(false);
@@ -140,6 +141,7 @@ export function TradingViewChart({
 	const themeSwitchSequenceRef = useRef(0);
 	const themeSwitchWatchdogRef = useRef<{
 		widget: IChartingLibraryWidget;
+		widgetEpoch: number;
 		sequence: number;
 		remainingMs: number;
 		startedAt: number;
@@ -150,6 +152,7 @@ export function TradingViewChart({
 	const stateSaveSequenceRef = useRef(0);
 	const stateSaveRef = useRef<{
 		widget: IChartingLibraryWidget;
+		widgetEpoch: number;
 		sequence: number;
 		sourceSymbol: string | undefined;
 		targetInterval: string;
@@ -169,6 +172,7 @@ export function TradingViewChart({
 	const overlayControllerRef = useRef<TradingViewOverlayController | null>(null);
 	const overlayRetryRef = useRef<{
 		at: number;
+		widgetEpoch: number;
 		timeout: ReturnType<typeof setTimeout>;
 	} | null>(null);
 	const overlayDisabledWidgetRef = useRef<IChartingLibraryWidget | null>(null);
@@ -273,6 +277,15 @@ export function TradingViewChart({
 		overlayRetryRef.current = null;
 	};
 
+	const beginWidgetRebuild = () => {
+		widgetEpochRef.current += 1;
+		chartReadyRef.current = false;
+		clearOverlayRetry();
+		setIsInitializing(true);
+		setInitError(null);
+		setRetryNonce((value) => value + 1);
+	};
+
 	const disableOverlaysForWidget = (widget: IChartingLibraryWidget) => {
 		if (widgetRef.current !== widget) return;
 		clearOverlayRetry();
@@ -308,17 +321,18 @@ export function TradingViewChart({
 	};
 
 	const scheduleOverlayRetry = (widget: IChartingLibraryWidget, attemptAtMs: number) => {
+		const widgetEpoch = widgetEpochRef.current;
 		const pending = overlayRetryRef.current;
-		if (pending && pending.at <= attemptAtMs) return;
+		if (pending && pending.widgetEpoch === widgetEpoch && pending.at <= attemptAtMs) return;
 		clearOverlayRetry();
 		const timeout = setTimeout(
 			() => {
 				if (overlayRetryRef.current?.timeout === timeout) overlayRetryRef.current = null;
-				if (widgetRef.current === widget) syncOverlaysRef.current();
+				if (widgetEpochRef.current === widgetEpoch && widgetRef.current === widget) syncOverlaysRef.current();
 			},
 			Math.max(0, attemptAtMs - Date.now()),
 		);
-		overlayRetryRef.current = { at: attemptAtMs, timeout };
+		overlayRetryRef.current = { at: attemptAtMs, widgetEpoch, timeout };
 	};
 
 	syncOverlaysRef.current = () => {
@@ -359,6 +373,7 @@ export function TradingViewChart({
 	applySymbolRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
+		const widgetEpoch = widgetEpochRef.current;
 		if (!activeRef.current) return;
 		if (overlayRecoveryWidgetRef.current === widget) return;
 		if (
@@ -391,6 +406,7 @@ export function TradingViewChart({
 
 		const handleSymbolSwitchComplete = (actualSymbol = getActiveChartSymbol(widget)) => {
 			if (
+				widgetEpochRef.current === widgetEpoch &&
 				widgetRef.current === widget &&
 				targetSymbolRef.current === nextSymbol &&
 				targetIntervalRef.current === nextInterval &&
@@ -405,6 +421,7 @@ export function TradingViewChart({
 			clearSymbolSwitchTimeout();
 			symbolSwitchTimeoutRef.current = setTimeout(() => {
 				if (
+					widgetEpochRef.current !== widgetEpoch ||
 					widgetRef.current !== widget ||
 					targetSymbolRef.current !== nextSymbol ||
 					targetIntervalRef.current !== nextInterval ||
@@ -443,7 +460,7 @@ export function TradingViewChart({
 				widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => handleSymbolSwitchComplete());
 			} catch {
 				finishSymbolSwitch();
-				setInitError("symbol-switch");
+				if (widgetEpochRef.current === widgetEpoch) setInitError("symbol-switch");
 			}
 		};
 
@@ -464,15 +481,19 @@ export function TradingViewChart({
 	const armThemeSwitchWatchdog = () => {
 		const watchdog = themeSwitchWatchdogRef.current;
 		if (!watchdog || watchdog.timeout || shouldPauseThemeWatchdog()) return;
+		if (watchdog.widgetEpoch !== widgetEpochRef.current) {
+			clearThemeSwitchWatchdog(watchdog.widget, watchdog.sequence);
+			return;
+		}
 		if (watchdog.remainingMs <= 0) {
-			rebuildThemeWidget(watchdog.widget, watchdog.sequence);
+			rebuildThemeWidget(watchdog.widget, watchdog.sequence, watchdog.widgetEpoch);
 			return;
 		}
 		watchdog.startedAt = Date.now();
 		watchdog.timeout = setTimeout(() => {
 			watchdog.timeout = null;
 			watchdog.remainingMs = 0;
-			rebuildThemeWidget(watchdog.widget, watchdog.sequence);
+			rebuildThemeWidget(watchdog.widget, watchdog.sequence, watchdog.widgetEpoch);
 		}, watchdog.remainingMs);
 	};
 
@@ -484,7 +505,12 @@ export function TradingViewChart({
 		watchdog.remainingMs = Math.max(0, watchdog.remainingMs - (Date.now() - watchdog.startedAt));
 	};
 
-	const rebuildThemeWidget = (widget: IChartingLibraryWidget, sequence?: number) => {
+	const rebuildThemeWidget = (
+		widget: IChartingLibraryWidget,
+		sequence?: number,
+		widgetEpoch = widgetEpochRef.current,
+	) => {
+		if (widgetEpochRef.current !== widgetEpoch) return;
 		if (widgetRef.current !== widget || themeRecoveryWidgetRef.current === widget) return;
 		if (sequence !== undefined && themeSwitchSequenceRef.current !== sequence) return;
 		themeRecoveryWidgetRef.current = widget;
@@ -512,6 +538,7 @@ export function TradingViewChart({
 	applyThemeRef.current = (nextTheme) => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
+		const widgetEpoch = widgetEpochRef.current;
 		if (themeRecoveryWidgetRef.current === widget) return;
 		if (themeSwitchInFlightWidgetRef.current === widget) return;
 
@@ -544,6 +571,7 @@ export function TradingViewChart({
 		themeSwitchInFlightWidgetRef.current = widget;
 		themeSwitchWatchdogRef.current = {
 			widget,
+			widgetEpoch,
 			sequence,
 			remainingMs: THEME_SWITCH_TIMEOUT_MS,
 			startedAt: 0,
@@ -565,6 +593,7 @@ export function TradingViewChart({
 
 		void themeSwitch
 			.then(() => {
+				if (widgetEpochRef.current !== widgetEpoch) return;
 				if (widgetRef.current !== widget) return;
 				if (themeSwitchSequenceRef.current !== sequence) return;
 				if (themeRecoveryWidgetRef.current === widget) return;
@@ -577,6 +606,7 @@ export function TradingViewChart({
 				themeSwitchFailed = true;
 			})
 			.finally(() => {
+				if (widgetEpochRef.current !== widgetEpoch) return;
 				if (themeSwitchInFlightWidgetRef.current === widget) {
 					themeSwitchInFlightWidgetRef.current = null;
 				}
@@ -621,6 +651,10 @@ export function TradingViewChart({
 	function finishStatePreservingRebuild(widget: IChartingLibraryWidget, sequence: number, state?: object) {
 		const request = stateSaveRef.current;
 		if (!request || request.widget !== widget || request.sequence !== sequence) return;
+		if (request.widgetEpoch !== widgetEpochRef.current) {
+			clearStateSave(widget, sequence);
+			return;
+		}
 		const shouldRebuild =
 			request.overlayRebuild ||
 			request.themeRebuild ||
@@ -642,12 +676,16 @@ export function TradingViewChart({
 		themeRecoveryWidgetRef.current = widget;
 		themeSwitchSequenceRef.current += 1;
 		clearThemeSwitchWatchdog(widget);
-		setRetryNonce((value) => value + 1);
+		beginWidgetRebuild();
 	}
 
 	const armStateSaveWatchdog = () => {
 		const request = stateSaveRef.current;
 		if (!request || request.timeout || shouldPauseStateSaveWatchdog()) return;
+		if (request.widgetEpoch !== widgetEpochRef.current) {
+			clearStateSave(request.widget, request.sequence);
+			return;
+		}
 		if (request.remainingMs <= 0) {
 			finishStatePreservingRebuild(request.widget, request.sequence);
 			return;
@@ -683,6 +721,7 @@ export function TradingViewChart({
 		stateSaveSequenceRef.current = sequence;
 		const request = {
 			widget,
+			widgetEpoch: widgetEpochRef.current,
 			sequence,
 			sourceSymbol: getActiveChartSymbol(widget),
 			targetInterval: targetIntervalRef.current,
@@ -719,7 +758,7 @@ export function TradingViewChart({
 		if (!widget || !chartReadyRef.current) {
 			stateSaveSequenceRef.current += 1;
 			clearStateSave();
-			setRetryNonce((value) => value + 1);
+			beginWidgetRebuild();
 			return;
 		}
 
@@ -762,10 +801,12 @@ export function TradingViewChart({
 	useEffect(() => {
 		void retryNonce;
 		if (!containerRef.current) return;
+		const widgetEpoch = widgetEpochRef.current;
 		let disposed = false;
 		let readyWatchdog:
 			| {
 					widget: IChartingLibraryWidget;
+					widgetEpoch: number;
 					automaticRetryCount: number;
 					remainingMs: number;
 					startedAt: number;
@@ -825,10 +866,21 @@ export function TradingViewChart({
 			clearDrawingEventSubscription();
 			const callback = (sourceId: EntityId, eventType: DrawingEventType) => {
 				if (eventType !== "remove") return;
-				if (disposed || widgetRef.current !== widget || !chartReadyRef.current) return;
+				if (
+					disposed ||
+					widgetEpochRef.current !== widgetEpoch ||
+					widgetRef.current !== widget ||
+					!chartReadyRef.current
+				)
+					return;
 				if (!overlayControllerRef.current?.handleDrawingRemoved(sourceId)) return;
 				queueMicrotask(() => {
-					if (!disposed && widgetRef.current === widget && chartReadyRef.current) {
+					if (
+						!disposed &&
+						widgetEpochRef.current === widgetEpoch &&
+						widgetRef.current === widget &&
+						chartReadyRef.current
+					) {
 						syncOverlaysRef.current();
 					}
 				});
@@ -890,7 +942,7 @@ export function TradingViewChart({
 		};
 
 		const handleFinalFailure = (reason: string) => {
-			if (disposed) return;
+			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
 			setIsInitializing(false);
 			setInitError(reason);
 		};
@@ -899,6 +951,7 @@ export function TradingViewChart({
 			!activeRef.current || document.visibilityState === "hidden" || !navigator.onLine;
 
 		const retryOrFail = (reason: string, automaticRetryCount: number) => {
+			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
 			removeWidget();
 			if (shouldPauseReadyWatchdog()) {
 				deferredInitializationFailure = { reason, automaticRetryCount };
@@ -914,6 +967,7 @@ export function TradingViewChart({
 		const handleReadyDeadline = (watchdog: NonNullable<typeof readyWatchdog>) => {
 			if (
 				disposed ||
+				widgetEpochRef.current !== watchdog.widgetEpoch ||
 				readyWatchdog !== watchdog ||
 				chartReadyRef.current ||
 				widgetRef.current !== watchdog.widget ||
@@ -925,7 +979,14 @@ export function TradingViewChart({
 		};
 
 		const armReadyWatchdog = (watchdog: NonNullable<typeof readyWatchdog>) => {
-			if (disposed || readyWatchdog !== watchdog || watchdog.timeout || shouldPauseReadyWatchdog()) return;
+			if (
+				disposed ||
+				widgetEpochRef.current !== watchdog.widgetEpoch ||
+				readyWatchdog !== watchdog ||
+				watchdog.timeout ||
+				shouldPauseReadyWatchdog()
+			)
+				return;
 			if (watchdog.remainingMs <= 0) {
 				handleReadyDeadline(watchdog);
 				return;
@@ -988,12 +1049,13 @@ export function TradingViewChart({
 		window.addEventListener("pageshow", handlePageLifecycleChange);
 
 		async function initWidget(automaticRetryCount: number): Promise<void> {
+			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
 			setIsInitializing(true);
 			setInitError(null);
 			try {
 				await loadTradingViewScript();
 
-				if (disposed || !containerRef.current) return;
+				if (disposed || widgetEpochRef.current !== widgetEpoch || !containerRef.current) return;
 				const tradingView = window.TradingView;
 				if (!tradingView) throw new Error("tradingview-unavailable");
 
@@ -1065,6 +1127,7 @@ export function TradingViewChart({
 
 				const watchdog = {
 					widget,
+					widgetEpoch,
 					automaticRetryCount,
 					remainingMs: CHART_READY_TIMEOUT_MS,
 					startedAt: 0,
@@ -1074,7 +1137,7 @@ export function TradingViewChart({
 				armReadyWatchdog(watchdog);
 
 				widget.onChartReady(() => {
-					if (disposed || widgetRef.current !== widget) return;
+					if (disposed || widgetEpochRef.current !== widgetEpoch || widgetRef.current !== widget) return;
 					clearReadyWatchdog();
 					chartReadyRef.current = true;
 					pendingChartStateRef.current = null;
@@ -1093,7 +1156,7 @@ export function TradingViewChart({
 					syncOverlaysRef.current();
 				});
 			} catch {
-				if (disposed) return;
+				if (disposed || widgetEpochRef.current !== widgetEpoch) return;
 				retryOrFail("exception", automaticRetryCount);
 			}
 		}
@@ -1192,15 +1255,16 @@ export function TradingViewChart({
 				</output>
 			)}
 			{initError && (
-				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
+				<div
+					role="alert"
+					className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center"
+				>
 					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>
 					<button
 						type="button"
 						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
 						onClick={() => {
-							setIsInitializing(true);
-							setInitError(null);
-							setRetryNonce((value) => value + 1);
+							beginWidgetRebuild();
 						}}
 					>
 						{t`Retry`}

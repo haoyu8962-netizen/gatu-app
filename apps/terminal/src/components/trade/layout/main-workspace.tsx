@@ -20,6 +20,7 @@ import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
+import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 import { useGridContentHeight } from "./use-grid-content-height";
 
 const AccountPanel = createLazyComponent(() => import("../tradebox/account-panel"), "AccountPanel");
@@ -29,9 +30,9 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
-const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
-const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker" />;
-const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker" />;
+const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
+const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
+const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 function preloadPrimaryWorkspacePanels() {
@@ -51,31 +52,8 @@ function preloadPrimaryWorkspacePanels() {
 preloadPrimaryWorkspacePanels();
 
 function DesktopWorkspaceSkeleton() {
-	const panelClassName = "desktop-grid-panel animate-pulse bg-fill-weaker motion-reduce:animate-none";
-
 	return (
-		<div
-			aria-hidden="true"
-			className="grid min-h-[71rem] grid-cols-[repeat(14,minmax(0,1fr))] auto-rows-[30px] gap-[3px] p-[3px] min-[1421px]:min-h-[71rem] min-[1421px]:grid-cols-[repeat(16,minmax(0,1fr))]"
-		>
-			<div className={`${panelClassName} col-span-10 row-span-1 min-[1421px]:col-span-10`} />
-			<div className={`${panelClassName} col-span-10 row-span-1 row-start-2 min-[1421px]:col-span-10`} />
-			<div
-				className={`${panelClassName} col-span-10 row-span-[18] row-start-3 min-[1421px]:col-span-10 min-[1421px]:row-span-[18]`}
-			/>
-			<div
-				className={`${panelClassName} col-span-4 col-start-11 row-span-[21] row-start-1 min-[1421px]:col-span-3 min-[1421px]:col-start-11 min-[1421px]:row-span-20`}
-			/>
-			<div
-				className={`${panelClassName} col-span-4 col-start-11 row-span-[18] row-start-[22] min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-20 min-[1421px]:row-start-1`}
-			/>
-			<div
-				className={`${panelClassName} col-span-10 row-span-[26] row-start-[22] min-[1421px]:col-span-13 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]`}
-			/>
-			<div
-				className={`${panelClassName} col-span-4 col-start-11 row-span-8 row-start-[40] min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]`}
-			/>
-		</div>
+		<DesktopGridLoadingSurface panelClassName="desktop-grid-panel animate-pulse bg-fill-weaker motion-reduce:animate-none" />
 	);
 }
 

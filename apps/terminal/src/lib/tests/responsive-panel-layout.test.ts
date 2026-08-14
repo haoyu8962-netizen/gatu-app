@@ -22,6 +22,10 @@ const MAIN_WORKSPACE_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/main-workspace.tsx"),
 	"utf8",
 );
+const DESKTOP_GRID_LOADING_SURFACE_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/layout/desktop-grid-loading-surface.tsx"),
+	"utf8",
+);
 const GRID_CONTENT_HEIGHT_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/layout/use-grid-content-height.ts"),
 	"utf8",
@@ -106,6 +110,15 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("ChartPanel.preload?.()");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("OrderbookPanel.preload?.()");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("TradePanel.preload?.()");
+	});
+
+	it("shares the default desktop loading surface and disables every pulse for reduced motion", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
+		expect(DESKTOP_GRID_LOADING_SURFACE_SOURCE).not.toContain('from "react-grid-layout"');
+
+		const pulseLines = MAIN_WORKSPACE_SOURCE.split("\n").filter((line) => line.includes("animate-pulse"));
+		expect(pulseLines.length).toBeGreaterThan(0);
+		for (const line of pulseLines) expect(line).toContain("motion-reduce:animate-none");
 	});
 
 	it("observes border-box height with cleanup and persists RGL's compacted layouts", () => {

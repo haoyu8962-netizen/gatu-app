@@ -292,6 +292,159 @@ describe("TradingViewChart", () => {
 		);
 	});
 
+	it("commits the initializing mask before removing a widget for a state-preserving rebuild", async () => {
+		let failOverlaySync = false;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (!failOverlaySync) return null;
+			failOverlaySync = false;
+			return false;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		let finishLoading: (() => void) | undefined;
+		vi.mocked(loadTradingViewScript).mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finishLoading = resolve;
+				}),
+		);
+		let stateAtRemoval:
+			| {
+					ariaBusy: string | null | undefined;
+					hasLoadingOutput: boolean;
+					maskClassName: string | undefined;
+			  }
+			| undefined;
+		widgets[0]?.remove.mockImplementationOnce(() => {
+			stateAtRemoval = {
+				ariaBusy: container.firstElementChild?.getAttribute("aria-busy"),
+				hasLoadingOutput: container.querySelector("[data-chart-loading]") !== null,
+				maskClassName: container.querySelector("[data-chart-initializing]")?.className,
+			};
+		});
+		failOverlaySync = true;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(stateAtRemoval).toEqual({
+			ariaBusy: "true",
+			hasLoadingOutput: true,
+			maskClassName: expect.stringContaining("opacity-100"),
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		act(() => finishLoading?.());
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+	});
+
+	it("ignores an old ready callback after a state-preserving rebuild begins", async () => {
+		const readyCallbacks: Array<() => void> = [];
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation((callback: () => void) => {
+				readyCallbacks.push(callback);
+			});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		act(() => readyCallbacks[0]?.());
+		await flushChartEffects();
+
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+
+		let finishLoading: (() => void) | undefined;
+		vi.mocked(loadTradingViewScript).mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finishLoading = resolve;
+				}),
+		);
+		await act(async () => {
+			finishSave?.({ charts: ["saved layout"] });
+			readyCallbacks[0]?.();
+			await Promise.resolve();
+		});
+
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector("[data-chart-loading]")).not.toBeNull();
+
+		act(() => finishLoading?.());
+		await flushChartEffects();
+		act(() => readyCallbacks[1]?.());
+		await flushChartEffects();
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
+	});
+
+	it("closes a failed state-preserving rebuild with an explicit retry state", async () => {
+		let failOverlaySync = false;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (!failOverlaySync) return null;
+			failOverlaySync = false;
+			return false;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		vi.mocked(loadTradingViewScript)
+			.mockRejectedValueOnce(new Error("rebuild load failed"))
+			.mockRejectedValueOnce(new Error("rebuild retry failed"));
+		failOverlaySync = true;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		await flushChartEffects();
+
+		expect(loadTradingViewScript).toHaveBeenCalledTimes(3);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(container.textContent).toContain("Something went wrong");
+		expect(container.textContent).toContain("Retry");
+		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.querySelector("[data-chart-loading]")).toBeNull();
+		expect(container.querySelector("[data-chart-initializing]")?.className).toContain("opacity-0");
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
+	});
+
 	it("keeps the latest requested interval when it changes during overlay state capture", async () => {
 		let failOverlaySync = false;
 		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {

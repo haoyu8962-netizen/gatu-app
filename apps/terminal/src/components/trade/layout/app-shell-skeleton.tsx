@@ -1,5 +1,6 @@
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
+import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 
 export function AppShellSkeleton() {
 	return (
@@ -87,30 +88,7 @@ export function AppShellSkeleton() {
 					<div className="ml-auto h-[34px] w-28 rounded-[10px] bg-market-close-control" />
 				</div>
 				<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
-					<div className="grid min-h-[71rem] grid-cols-[repeat(14,minmax(0,1fr))] auto-rows-[30px] gap-[3px] p-[3px] min-[1421px]:grid-cols-[repeat(16,minmax(0,1fr))]">
-						<div data-shell-panel className="col-span-10 row-span-1 bg-surface" />
-						<div data-shell-panel className="col-span-10 row-span-1 row-start-2 bg-surface" />
-						<div
-							data-shell-panel
-							className="col-span-10 row-span-[18] row-start-3 bg-surface min-[1421px]:row-span-[18]"
-						/>
-						<div
-							data-shell-panel
-							className="col-span-4 col-start-11 row-span-[21] row-start-1 bg-surface min-[1421px]:col-span-3 min-[1421px]:row-span-20"
-						/>
-						<div
-							data-shell-panel
-							className="col-span-4 col-start-11 row-span-[18] row-start-[22] bg-surface min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-20 min-[1421px]:row-start-1"
-						/>
-						<div
-							data-shell-panel
-							className="col-span-10 row-span-[26] row-start-[22] bg-surface min-[1421px]:col-span-13 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]"
-						/>
-						<div
-							data-shell-panel
-							className="col-span-4 col-start-11 row-span-8 row-start-[40] bg-surface min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]"
-						/>
-					</div>
+					<DesktopGridLoadingSurface markShellPanels panelClassName="bg-surface" />
 				</div>
 			</div>
 		</div>

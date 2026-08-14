@@ -41,6 +41,21 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(container.textContent).toContain("gatu");
 	});
 
+	it("uses the shared fractional desktop geometry without changing the mobile shell", () => {
+		act(() => root.render(<AppShellSkeleton />));
+
+		const desktopLoadingSurface = container.querySelector<HTMLElement>("[data-desktop-grid-loading-surface]");
+		const chartPanel = container.querySelector<HTMLElement>('[data-desktop-grid-loading-panel="chart"]');
+
+		expect(desktopLoadingSurface?.style.getPropertyValue("--dgl-md-container-h")).toBe("1554px");
+		expect(desktopLoadingSurface?.style.getPropertyValue("--dgl-lg-container-h")).toBe("1138.2px");
+		expect(chartPanel?.style.getPropertyValue("--dgl-md-t")).toBe("92px");
+		expect(chartPanel?.style.getPropertyValue("--dgl-md-h")).toBe("588px");
+		expect(chartPanel?.style.getPropertyValue("--dgl-lg-t")).toBe("92px");
+		expect(chartPanel?.style.getPropertyValue("--dgl-lg-h")).toBe("581px");
+		expect(container.querySelectorAll("[data-shell-mobile]")).toHaveLength(1);
+	});
+
 	it("keeps the lazy-loading shell pinned with the current three-item navigation shape", () => {
 		act(() => root.render(<MobileLoadingFallback />));
 
