@@ -153,7 +153,7 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it.each(["allDexsClearinghouseState", "openOrders"])(
+	it.each(["allDexsClearinghouseState", "clearinghouseState", "openOrders", "spotState", "twapStates", "webData3"])(
 		"keeps retained %s snapshots stale until the reconnect delivers fresh data",
 		async (method) => {
 			const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
@@ -195,6 +195,44 @@ describe("store staleness integration", () => {
 			store.getState().releaseSubscription(key);
 		},
 	);
+
+	it("resubscribes a watchdog-stale market stream without reconnecting for a transport-stale account snapshot", async () => {
+		let notifyDisconnect: (() => void) | undefined;
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({
+			ssr: false,
+			triggerReconnect,
+			subscribeDisconnect: (listener) => {
+				notifyDisconnect = listener;
+				return () => {};
+			},
+		});
+		const marketUnsubscribe = vi.fn(async () => {});
+		const marketSubscribe = vi.fn(async () => ({ unsubscribe: marketUnsubscribe }));
+		const accountSubscribe = vi.fn(async () => ({ unsubscribe: vi.fn(async () => {}) }));
+		const marketKey = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
+		const accountKey = JSON.stringify(["hl", "subscription", "openOrders", { user: "0xabc" }]);
+
+		store.getState().acquireSubscription(marketKey, marketSubscribe);
+		store.getState().acquireSubscription(accountKey, accountSubscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(marketKey, { mids: {} });
+		store.getState().setSubscriptionData(accountKey, { orders: [] });
+		notifyDisconnect?.();
+
+		expect(store.getState().subscriptions[accountKey]?.isStale).toBe(true);
+		expect(store.getState().subscriptions[marketKey]?.isStale).toBe(false);
+
+		await vi.advanceTimersByTimeAsync(25_000);
+
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		expect(marketSubscribe).toHaveBeenCalledTimes(2);
+		expect(marketUnsubscribe).toHaveBeenCalledOnce();
+		expect(accountSubscribe).toHaveBeenCalledOnce();
+
+		store.getState().releaseSubscription(marketKey);
+		store.getState().releaseSubscription(accountKey);
+	});
 
 	it.each(["l2Book", "bbo"])("drops hidden buffered %s data when the confirmed subscription fails", async (method) => {
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });

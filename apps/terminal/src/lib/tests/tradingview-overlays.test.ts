@@ -8,6 +8,7 @@ import {
 } from "@/lib/chart/tradingview-overlays";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
+import type { EntityId } from "@/types/charting_library";
 
 const labels = {
 	limitBuy: "Limit Buy",
@@ -145,11 +146,11 @@ describe("buildTradingViewOverlayLines", () => {
 			positionDex: "",
 			quoteSymbol: "USDC",
 			orders: [],
-			positions: [createPosition({ szi: "-0.004300", unrealizedPnl: "invalid", returnOnEquity: "0.015" })],
+			positions: [createPosition({ szi: "-0.004300", unrealizedPnl: "invalid", returnOnEquity: "-0.015" })],
 			labels: { ...labels, roe: "Return" },
 		});
 
-		expect(lines[0]).toMatchObject({ label: "Short · Return +1.5% · 0.0043", tone: 0 });
+		expect(lines[0]).toMatchObject({ label: "Short · Return -1.5% · 0.0043", tone: -1 });
 	});
 
 	it("does not create position lines for spot markets", () => {
@@ -234,14 +235,17 @@ describe("TradingViewOverlayController", () => {
 
 		const options = createShape.mock.calls[0]?.[1];
 		expect(options?.overrides).toEqual({
+			bold: false,
 			fontsize: 10,
 			horzLabelsAlign: "right",
+			italic: false,
 			linecolor: "buy-line",
 			linestyle: 2,
 			linewidth: 1,
 			showLabel: true,
 			showPrice: true,
 			textcolor: "buy-text",
+			vertLabelsAlign: "middle",
 		});
 		expect(options?.overrides).not.toHaveProperty("linetoolhorzline.linecolor");
 	});
@@ -384,7 +388,102 @@ describe("TradingViewOverlayController", () => {
 		expect(secondResult).toBe(4_000);
 	});
 
-	it("retains failed removals and retries them before replacing an overlay", () => {
+	it("caps each creation retry delay at 30 seconds without abandoning the overlay", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(1_000);
+		const createShape = vi.fn(() => null);
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "order:BTC:1",
+			kind: "order",
+			price: 100,
+			label: "Limit Buy",
+			side: "buy",
+		};
+
+		let retryAt = controller.sync(chart, "BTC", [line], palette);
+		for (let attempt = 1; attempt < 8; attempt += 1) {
+			expect(typeof retryAt).toBe("number");
+			vi.setSystemTime(retryAt as number);
+			retryAt = controller.sync(chart, "BTC", [line], palette);
+		}
+
+		expect(retryAt).not.toBe(false);
+		expect((retryAt as number) - Date.now()).toBe(30_000);
+		expect(createShape).toHaveBeenCalledTimes(8);
+	});
+
+	it("propagates createShape exceptions without converting them into a null retry", () => {
+		const createShape = vi
+			.fn()
+			.mockImplementationOnce(() => {
+				throw new Error("TradingView drawing API failed");
+			})
+			.mockReturnValue("shape-1");
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "order:BTC:1",
+			kind: "order",
+			price: 100,
+			label: "Limit Buy",
+			side: "buy",
+		};
+
+		expect(() => controller.sync(chart, "BTC", [line], palette)).toThrow("TradingView drawing API failed");
+		expect(controller.sync(chart, "BTC", [line], palette)).toBeNull();
+		expect(createShape).toHaveBeenCalledTimes(2);
+	});
+
+	it("evicts a user-removed drawing so the next sync recreates it", () => {
+		let nextId = 0;
+		const createShape = vi.fn(() => `shape-${++nextId}`);
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity: vi.fn() } as unknown as TradingViewOverlayChart;
+		const controller = new TradingViewOverlayController();
+		const line: TradingViewOverlayLine = {
+			key: "position::BTC",
+			kind: "position",
+			price: 100,
+			label: "Long · 1",
+			side: "buy",
+		};
+
+		controller.sync(chart, "BTC", [line], palette);
+		expect(controller.handleDrawingRemoved("shape-1" as EntityId)).toBe(true);
+		expect(controller.handleDrawingRemoved("unmanaged-shape" as EntityId)).toBe(false);
+		controller.sync(chart, "BTC", [line], palette);
+
+		expect(createShape).toHaveBeenCalledTimes(2);
+		expect(chart.removeEntity).not.toHaveBeenCalled();
+	});
+
+	it("ignores the drawing removal event emitted by its own replacement", () => {
+		let nextId = 0;
+		const controller = new TradingViewOverlayController();
+		const internalRemovalResults: boolean[] = [];
+		const createShape = vi.fn(() => `shape-${++nextId}`);
+		const removeEntity = vi.fn((id: EntityId) => {
+			internalRemovalResults.push(controller.handleDrawingRemoved(id));
+		});
+		const chart = { createShape, getShapeById: vi.fn(), removeEntity } as unknown as TradingViewOverlayChart;
+		const line: TradingViewOverlayLine = {
+			key: "order:BTC:1",
+			kind: "order",
+			price: 100,
+			label: "Limit Buy",
+			side: "buy",
+		};
+
+		controller.sync(chart, "BTC", [line], palette);
+		controller.sync(chart, "BTC", [{ ...line, price: 101 }], palette);
+		controller.sync(chart, "BTC", [{ ...line, price: 101 }], palette);
+
+		expect(internalRemovalResults).toEqual([false]);
+		expect(createShape).toHaveBeenCalledTimes(2);
+	});
+
+	it("reports a failed removal without replacing the retained entry", () => {
 		let nextId = 0;
 		const createShape = vi.fn(() => `shape-${++nextId}`);
 		const removeEntity = vi.fn().mockImplementationOnce(() => {
@@ -406,12 +505,6 @@ describe("TradingViewOverlayController", () => {
 		expect(removeEntity).toHaveBeenCalledTimes(1);
 		expect(createShape).toHaveBeenCalledOnce();
 		expect(failedResult).toBe(false);
-
-		const recoveredResult = controller.sync(chart, "BTC", [{ ...line, price: 101 }], palette);
-
-		expect(removeEntity).toHaveBeenCalledTimes(2);
-		expect(createShape).toHaveBeenCalledTimes(2);
-		expect(recoveredResult).toBeNull();
 	});
 
 	it("force-disposes failed entries so a rebuilt widget can render fresh overlays", () => {

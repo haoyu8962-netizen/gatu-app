@@ -73,6 +73,69 @@ describe("WebSocket transport monitor", () => {
 		unsubscribe();
 	});
 
+	it("notifies disconnect for an explicit reconnect even when the socket emits no close event", () => {
+		const socket = new FakeSocket();
+		socket.reconnect.mockImplementation(() => {
+			socket.readyState = 2;
+		});
+		const monitor = createMonitor(socket);
+		const disconnect = vi.fn();
+		const unsubscribe = monitor.subscribeDisconnect(disconnect);
+
+		monitor.requestReconnect();
+
+		expect(socket.reconnect).toHaveBeenCalledOnce();
+		expect(disconnect).toHaveBeenCalledOnce();
+		unsubscribe();
+	});
+
+	it("isolates disconnect listener failures without rolling back a successful reconnect request", () => {
+		const socket = new FakeSocket();
+		socket.reconnect.mockImplementation(() => {});
+		const monitor = createMonitor(socket);
+		const throwingListener = vi.fn(() => {
+			throw new Error("listener failed");
+		});
+		const laterListener = vi.fn();
+		const unsubscribeThrowing = monitor.subscribeDisconnect(throwingListener);
+		const unsubscribeLater = monitor.subscribeDisconnect(laterListener);
+
+		expect(() => monitor.requestReconnect()).not.toThrow();
+		monitor.requestReconnect();
+
+		expect(socket.reconnect).toHaveBeenCalledOnce();
+		expect(throwingListener).toHaveBeenCalledOnce();
+		expect(laterListener).toHaveBeenCalledOnce();
+
+		socket.open();
+		monitor.requestReconnect();
+		expect(socket.reconnect).toHaveBeenCalledTimes(2);
+		expect(laterListener).toHaveBeenCalledTimes(2);
+
+		unsubscribeThrowing();
+		unsubscribeLater();
+	});
+
+	it("isolates reconnect listener failures so later listeners still observe the generation", () => {
+		const socket = new FakeSocket();
+		const monitor = createMonitor(socket);
+		const throwingListener = vi.fn(() => {
+			throw new Error("listener failed");
+		});
+		const laterListener = vi.fn();
+		const unsubscribeThrowing = monitor.subscribeReconnect(throwingListener);
+		const unsubscribeLater = monitor.subscribeReconnect(laterListener);
+
+		socket.dispatchEvent(new Event("close"));
+		expect(() => socket.open()).not.toThrow();
+
+		expect(throwingListener).toHaveBeenCalledWith(1);
+		expect(laterListener).toHaveBeenCalledWith(1);
+
+		unsubscribeThrowing();
+		unsubscribeLater();
+	});
+
 	it("does not treat the first successful connection as a reconnect", () => {
 		const socket = new FakeSocket(0);
 		const monitor = createMonitor(socket);

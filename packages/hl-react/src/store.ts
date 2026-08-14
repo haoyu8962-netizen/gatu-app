@@ -104,9 +104,18 @@ function shouldDiscardRetainedDataOnError(key: string): boolean {
 	return method === "l2Book" || method === "bbo";
 }
 
+const FRESH_ACCOUNT_SNAPSHOT_METHODS = new Set([
+	"allDexsClearinghouseState",
+	"clearinghouseState",
+	"openOrders",
+	"spotState",
+	"twapStates",
+	"webData3",
+]);
+
 function shouldAwaitFreshSnapshotAfterError(key: string): boolean {
 	const method = getSubscriptionMethodForKey(key);
-	return method === "allDexsClearinghouseState" || method === "openOrders";
+	return method !== undefined && FRESH_ACCOUNT_SNAPSHOT_METHODS.has(method);
 }
 
 function safelyTriggerReconnect(triggerReconnect: (() => void) | undefined): void {
@@ -202,7 +211,18 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		queueMicrotask(() => {
 			staleRecoveryEvaluationQueued = false;
 			const state = store.getState();
-			const staleKeys = Object.keys(state.subscriptions).filter((key) => state.subscriptions[key]?.isStale);
+			const staleKeys = [...subscriptionRuntime.entries()]
+				.filter(([key, runtime]) => {
+					const entry = state.subscriptions[key];
+					return (
+						runtime.refCount > 0 &&
+						runtime.recoverStale !== undefined &&
+						entry?.status !== "error" &&
+						entry?.isStale === true &&
+						watchdog.isStale(key)
+					);
+				})
+				.map(([key]) => key);
 			if (staleKeys.length === 0) return;
 
 			if (staleKeys.length > 1) {
@@ -216,6 +236,19 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			if (!key || !runtime?.recoverStale) return;
 			recordRecoveryEvent("stream-stale", "resubscribe", [key]);
 			runtime.recoverStale();
+		});
+	}
+
+	function recoverAccountSnapshots(store: StoreApi<HyperliquidStoreState>, keys: string[]): void {
+		if (keys.length === 0) return;
+		queueMicrotask(() => {
+			const subscriptions = store.getState().subscriptions;
+			for (const key of keys) {
+				const runtime = subscriptionRuntime.get(key);
+				if (subscriptions[key]?.isStale !== true || !runtime?.recoverStale || runtime.refCount <= 0) continue;
+				watchdog.arm(key);
+				runtime.recoverStale();
+			}
 		});
 	}
 
@@ -237,21 +270,26 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	function markRetainedAccountSnapshotsStale(
 		store: StoreApi<HyperliquidStoreState>,
 		shouldMark: (key: string) => boolean = () => true,
-	) {
+	): string[] {
 		const currentSubscriptions = store.getState().subscriptions;
 		let nextSubscriptions = currentSubscriptions;
+		const newlyStaleKeys: string[] = [];
 
 		for (const [key, entry] of Object.entries(currentSubscriptions)) {
-			if (!shouldAwaitFreshSnapshotAfterError(key) || entry.data === undefined || !shouldMark(key)) continue;
+			if (!shouldAwaitFreshSnapshotAfterError(key) || !shouldMark(key)) continue;
 			visibilityBuffer.delete(key);
+			if (entry.data === undefined) continue;
 			if (entry.isStale) continue;
 			if (nextSubscriptions === currentSubscriptions) nextSubscriptions = { ...currentSubscriptions };
 			nextSubscriptions[key] = { ...entry, isStale: true };
+			newlyStaleKeys.push(key);
 		}
 
 		if (nextSubscriptions !== currentSubscriptions) {
 			store.setState({ subscriptions: nextSubscriptions, ...deriveWsState(nextSubscriptions) });
 		}
+
+		return newlyStaleKeys;
 	}
 
 	function attachSingletons(
@@ -269,7 +307,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			} else if (wasHidden) {
 				wasHidden = false;
 				const resumedAtMs = Date.now();
-				markRetainedAccountSnapshotsStale(store, (key) => {
+				const expiredSnapshotKeys = markRetainedAccountSnapshotsStale(store, (key) => {
 					const runtime = subscriptionRuntime.get(key);
 					return (
 						runtime?.lastMessageAt !== undefined &&
@@ -278,6 +316,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					);
 				});
 				flushVisibilityBuffer(store);
+				recoverAccountSnapshots(store, expiredSnapshotKeys);
 			}
 		});
 

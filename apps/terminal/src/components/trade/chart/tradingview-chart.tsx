@@ -21,7 +21,13 @@ import {
 import { TradingViewOverlayController, type TradingViewOverlayPalette } from "@/lib/chart/tradingview-overlays";
 import { cn } from "@/lib/cn";
 import { subscribeWsReconnect, type UnifiedMarketInfo } from "@/lib/hyperliquid";
-import type { IChartingLibraryWidget, LanguageCode, ResolutionString } from "@/types/charting_library";
+import type {
+	DrawingEventType,
+	EntityId,
+	IChartingLibraryWidget,
+	LanguageCode,
+	ResolutionString,
+} from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
 	CHART_DISABLED_FEATURES,
@@ -109,6 +115,7 @@ export function TradingViewChart({
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
 	const intervalPropRef = useRef(interval);
+	const intervalSequenceRef = useRef(0);
 	const targetThemeRef = useRef(theme);
 	const targetLocaleRef = useRef(locale);
 	const committedLocaleRef = useRef(locale);
@@ -145,7 +152,10 @@ export function TradingViewChart({
 		widget: IChartingLibraryWidget;
 		sequence: number;
 		sourceSymbol: string | undefined;
+		targetInterval: string;
+		intervalSequence: number;
 		localeRebuild: boolean;
+		overlayRebuild: boolean;
 		themeRebuild: boolean;
 		remainingMs: number;
 		startedAt: number;
@@ -161,6 +171,12 @@ export function TradingViewChart({
 		at: number;
 		timeout: ReturnType<typeof setTimeout>;
 	} | null>(null);
+	const overlayDisabledWidgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const overlayDisabledSymbolRef = useRef<string | null>(null);
+	const overlayRecoveryConsumedRef = useRef(false);
+	const overlayRecoverySymbolRef = useRef<string | null>(null);
+	const overlayRecoveryWidgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const overlayDisableNextWidgetRef = useRef(false);
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestLocaleSwitchRef = useRef<() => void>(() => {});
@@ -171,6 +187,7 @@ export function TradingViewChart({
 	const [retryNonce, setRetryNonce] = useState(0);
 	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
 	targetSymbolRef.current = widgetSymbol;
+	targetThemeRef.current = theme;
 	activeRef.current = active;
 	overlayLinesRef.current = overlayLines;
 	if (market) {
@@ -205,10 +222,30 @@ export function TradingViewChart({
 		clearPendingSymbolSwitch();
 	};
 
+	const resetOverlayRecoveryForVerifiedSymbol = (widget: IChartingLibraryWidget, nextSymbol: string) => {
+		const recoverySymbol = overlayRecoverySymbolRef.current;
+		const disabledSymbol = overlayDisabledWidgetRef.current === widget ? overlayDisabledSymbolRef.current : null;
+		if (
+			(recoverySymbol === null || recoverySymbol === nextSymbol) &&
+			(disabledSymbol === null || disabledSymbol === nextSymbol)
+		) {
+			return;
+		}
+		overlayRecoveryConsumedRef.current = false;
+		overlayRecoverySymbolRef.current = null;
+		overlayDisableNextWidgetRef.current = false;
+		if (overlayDisabledWidgetRef.current === widget) {
+			overlayDisabledWidgetRef.current = null;
+			overlayDisabledSymbolRef.current = null;
+		}
+	};
+
 	const completeSymbolSwitch = (nextSymbol: string, nextInterval: string) => {
 		appliedSymbolRef.current = nextSymbol;
 		appliedIntervalRef.current = nextInterval;
 		finishSymbolSwitch();
+		const widget = widgetRef.current;
+		if (widget) resetOverlayRecoveryForVerifiedSymbol(widget, nextSymbol);
 		syncOverlaysRef.current();
 	};
 
@@ -236,13 +273,38 @@ export function TradingViewChart({
 		overlayRetryRef.current = null;
 	};
 
-	const rebuildOverlayWidget = (widget: IChartingLibraryWidget) => {
-		if (widgetRef.current !== widget || !chartReadyRef.current) return;
-		chartReadyRef.current = false;
+	const disableOverlaysForWidget = (widget: IChartingLibraryWidget) => {
+		if (widgetRef.current !== widget) return;
 		clearOverlayRetry();
-		setIsInitializing(true);
-		setInitError(null);
-		setRetryNonce((value) => value + 1);
+		overlayDisabledWidgetRef.current = widget;
+		overlayDisabledSymbolRef.current = appliedSymbolRef.current ?? targetSymbolRef.current;
+		overlayRecoverySymbolRef.current ??= overlayDisabledSymbolRef.current;
+		overlayControllerRef.current?.dispose();
+	};
+
+	const handleFatalOverlaySync = (widget: IChartingLibraryWidget, cleanupAlreadyFailed = false): boolean => {
+		if (widgetRef.current !== widget || !chartReadyRef.current) return false;
+		if (overlayDisabledWidgetRef.current === widget) return true;
+		if (overlayRecoveryWidgetRef.current === widget) return false;
+		clearOverlayRetry();
+		if (overlayRecoveryConsumedRef.current) {
+			const overlayController = overlayControllerRef.current;
+			const cleared = !cleanupAlreadyFailed && (!overlayController || overlayController.clear());
+			if (cleared) {
+				disableOverlaysForWidget(widget);
+				return true;
+			}
+			overlayDisableNextWidgetRef.current = true;
+			overlayRecoveryWidgetRef.current = widget;
+			requestStatePreservingRebuild(widget, "overlay");
+			return false;
+		}
+
+		overlayRecoveryConsumedRef.current = true;
+		overlayRecoverySymbolRef.current = appliedSymbolRef.current ?? targetSymbolRef.current;
+		overlayRecoveryWidgetRef.current = widget;
+		requestStatePreservingRebuild(widget, "overlay");
+		return false;
 	};
 
 	const scheduleOverlayRetry = (widget: IChartingLibraryWidget, attemptAtMs: number) => {
@@ -262,25 +324,35 @@ export function TradingViewChart({
 	syncOverlaysRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current || !activeRef.current || pendingSymbolRef.current) return;
+		if (
+			overlayDisabledWidgetRef.current === widget ||
+			overlayRecoveryWidgetRef.current === widget ||
+			themeSwitchInFlightWidgetRef.current === widget
+		) {
+			return;
+		}
 		const nextSymbol = targetSymbolRef.current;
 		if (!isChartSymbolApplied(getActiveChartSymbol(widget), nextSymbol)) return;
 
 		try {
-			const retryAt = overlayControllerRef.current?.sync(
+			const overlayController = overlayControllerRef.current;
+			if (!overlayController) return;
+			const retryAt = overlayController.sync(
 				widget.activeChart(),
 				nextSymbol,
 				overlayLinesRef.current,
 				getTradingViewOverlayPalette(),
 			);
-			if (retryAt === undefined) return;
 			if (retryAt === false) {
-				rebuildOverlayWidget(widget);
+				handleFatalOverlaySync(widget);
 				return;
 			}
 			if (retryAt !== null) scheduleOverlayRetry(widget, retryAt);
-			else clearOverlayRetry();
+			else {
+				clearOverlayRetry();
+			}
 		} catch {
-			rebuildOverlayWidget(widget);
+			handleFatalOverlaySync(widget);
 		}
 	};
 
@@ -288,6 +360,13 @@ export function TradingViewChart({
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
 		if (!activeRef.current) return;
+		if (overlayRecoveryWidgetRef.current === widget) return;
+		if (
+			themeSwitchInFlightWidgetRef.current === widget ||
+			(appliedThemeRef.current !== null && appliedThemeRef.current !== targetThemeRef.current)
+		) {
+			return;
+		}
 
 		const nextSymbol = targetSymbolRef.current;
 		const nextInterval = targetIntervalRef.current;
@@ -303,9 +382,8 @@ export function TradingViewChart({
 
 		clearPendingSymbolSwitch();
 		const overlayController = overlayControllerRef.current;
-		if (overlayController && !overlayController.clear()) {
-			rebuildOverlayWidget(widget);
-			return;
+		if (overlayDisabledWidgetRef.current !== widget && overlayController && !overlayController.clear()) {
+			if (!handleFatalOverlaySync(widget, true)) return;
 		}
 		pendingSymbolRef.current = nextSymbol;
 		pendingIntervalRef.current = nextInterval;
@@ -456,6 +534,7 @@ export function TradingViewChart({
 			}
 			themeSwitchRetryTargetRef.current = null;
 			appliedThemeRef.current = nextTheme;
+			applySymbolRef.current();
 			syncOverlaysRef.current();
 			return;
 		}
@@ -493,7 +572,6 @@ export function TradingViewChart({
 				widget.applyOverrides(buildChartOverrides());
 				appliedThemeRef.current = nextTheme;
 				themeSwitchRetryTargetRef.current = null;
-				syncOverlaysRef.current();
 			})
 			.catch(() => {
 				themeSwitchFailed = true;
@@ -512,7 +590,11 @@ export function TradingViewChart({
 					applyThemeRef.current(targetTheme);
 					return;
 				}
-				if (!themeSwitchFailed) return;
+				if (!themeSwitchFailed) {
+					applySymbolRef.current();
+					syncOverlaysRef.current();
+					return;
+				}
 				retryOrRebuildTheme(widget, nextTheme);
 			});
 	};
@@ -540,15 +622,20 @@ export function TradingViewChart({
 		const request = stateSaveRef.current;
 		if (!request || request.widget !== widget || request.sequence !== sequence) return;
 		const shouldRebuild =
-			request.themeRebuild || (request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
+			request.overlayRebuild ||
+			request.themeRebuild ||
+			(request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
 		const sourceMatchesTarget =
 			request.sourceSymbol !== undefined && isChartSymbolApplied(request.sourceSymbol, targetSymbolRef.current);
 		clearStateSave(widget, sequence);
 		if (widgetRef.current !== widget || !shouldRebuild) {
 			if (themeRecoveryWidgetRef.current === widget) themeRecoveryWidgetRef.current = null;
+			if (overlayRecoveryWidgetRef.current === widget) overlayRecoveryWidgetRef.current = null;
 			return;
 		}
-		const currentInterval = captureCurrentInterval(widget);
+		const intervalChangedDuringSave =
+			request.intervalSequence !== intervalSequenceRef.current || request.targetInterval !== targetIntervalRef.current;
+		const currentInterval = intervalChangedDuringSave ? targetIntervalRef.current : captureCurrentInterval(widget);
 		pendingChartStateRef.current = state && sourceMatchesTarget ? cloneChartState(state) : null;
 		pendingChartStateSymbolRef.current = pendingChartStateRef.current ? (request.sourceSymbol ?? null) : null;
 		pendingChartIntervalRef.current = currentInterval;
@@ -581,11 +668,12 @@ export function TradingViewChart({
 		request.remainingMs = Math.max(0, request.remainingMs - (Date.now() - request.startedAt));
 	};
 
-	function requestStatePreservingRebuild(widget: IChartingLibraryWidget, reason: "locale" | "theme") {
+	function requestStatePreservingRebuild(widget: IChartingLibraryWidget, reason: "locale" | "overlay" | "theme") {
 		if (widgetRef.current !== widget) return;
 		const pendingRequest = stateSaveRef.current;
 		if (pendingRequest?.widget === widget) {
 			if (reason === "locale") pendingRequest.localeRebuild = true;
+			if (reason === "overlay") pendingRequest.overlayRebuild = true;
 			if (reason === "theme") pendingRequest.themeRebuild = true;
 			return;
 		}
@@ -597,7 +685,10 @@ export function TradingViewChart({
 			widget,
 			sequence,
 			sourceSymbol: getActiveChartSymbol(widget),
+			targetInterval: targetIntervalRef.current,
+			intervalSequence: intervalSequenceRef.current,
 			localeRebuild: reason === "locale",
+			overlayRebuild: reason === "overlay",
 			themeRebuild: reason === "theme",
 			remainingMs: LOCALE_STATE_SAVE_TIMEOUT_MS,
 			startedAt: 0,
@@ -619,7 +710,7 @@ export function TradingViewChart({
 			const request = stateSaveRef.current;
 			if (request) {
 				request.localeRebuild = false;
-				if (!request.themeRebuild) clearStateSave(request.widget, request.sequence);
+				if (!request.overlayRebuild && !request.themeRebuild) clearStateSave(request.widget, request.sequence);
 			}
 			return;
 		}
@@ -682,6 +773,12 @@ export function TradingViewChart({
 			  }
 			| undefined;
 		let deferredInitializationFailure: { reason: string; automaticRetryCount: number } | undefined;
+		let drawingEventSubscription:
+			| {
+					widget: IChartingLibraryWidget;
+					callback: (sourceId: EntityId, eventType: DrawingEventType) => void;
+			  }
+			| undefined;
 		chartReadyRef.current = false;
 
 		const clearReadyWatchdog = () => {
@@ -715,13 +812,48 @@ export function TradingViewChart({
 			return getChartSymbolInfo(currentMarket);
 		}
 
+		const clearDrawingEventSubscription = () => {
+			const subscription = drawingEventSubscription;
+			drawingEventSubscription = undefined;
+			if (!subscription) return;
+			try {
+				subscription.widget.unsubscribe("drawing_event", subscription.callback);
+			} catch {}
+		};
+
+		const subscribeToDrawingEvents = (widget: IChartingLibraryWidget) => {
+			clearDrawingEventSubscription();
+			const callback = (sourceId: EntityId, eventType: DrawingEventType) => {
+				if (eventType !== "remove") return;
+				if (disposed || widgetRef.current !== widget || !chartReadyRef.current) return;
+				if (!overlayControllerRef.current?.handleDrawingRemoved(sourceId)) return;
+				queueMicrotask(() => {
+					if (!disposed && widgetRef.current === widget && chartReadyRef.current) {
+						syncOverlaysRef.current();
+					}
+				});
+			};
+			try {
+				widget.subscribe("drawing_event", callback);
+				drawingEventSubscription = { widget, callback };
+			} catch {}
+		};
+
 		const removeWidget = () => {
 			clearReadyWatchdog();
 			clearPendingSymbolSwitch();
 			stateSaveSequenceRef.current += 1;
 			clearStateSave();
-			overlayControllerRef.current?.dispose();
 			const widget = widgetRef.current;
+			if (
+				widget &&
+				overlayDisabledWidgetRef.current === widget &&
+				overlayDisabledSymbolRef.current === targetSymbolRef.current
+			) {
+				overlayDisableNextWidgetRef.current = true;
+			}
+			clearDrawingEventSubscription();
+			overlayControllerRef.current?.dispose();
 			clearOverlayRetry();
 			const datafeed = datafeedRef.current;
 			themeSwitchSequenceRef.current += 1;
@@ -744,6 +876,13 @@ export function TradingViewChart({
 			themeSwitchRetryTargetRef.current = null;
 			if (themeRecoveryWidgetRef.current === widget) {
 				themeRecoveryWidgetRef.current = null;
+			}
+			if (overlayRecoveryWidgetRef.current === widget) {
+				overlayRecoveryWidgetRef.current = null;
+			}
+			if (overlayDisabledWidgetRef.current === widget) {
+				overlayDisabledWidgetRef.current = null;
+				if (!overlayDisableNextWidgetRef.current) overlayDisabledSymbolRef.current = null;
 			}
 			if (themeSwitchInFlightWidgetRef.current === widget) {
 				themeSwitchInFlightWidgetRef.current = null;
@@ -912,6 +1051,13 @@ export function TradingViewChart({
 					...(savedChartState ? { saved_data: savedChartState } : {}),
 				});
 				widgetRef.current = widget;
+				if (overlayDisableNextWidgetRef.current) {
+					overlayDisableNextWidgetRef.current = false;
+					overlayDisabledWidgetRef.current = widget;
+					overlayDisabledSymbolRef.current =
+						overlayRecoverySymbolRef.current ?? overlayDisabledSymbolRef.current ?? initialSymbol;
+					overlayControllerRef.current?.dispose();
+				}
 				appliedSymbolRef.current = savedChartState ? null : initialSymbol;
 				appliedIntervalRef.current = savedChartState ? null : initialInterval;
 				appliedThemeRef.current = savedChartState ? null : initialTheme;
@@ -936,6 +1082,11 @@ export function TradingViewChart({
 					pendingChartIntervalRef.current = null;
 					setIsInitializing(false);
 					setInitError(null);
+					subscribeToDrawingEvents(widget);
+					const activeSymbol = getActiveChartSymbol(widget);
+					if (isChartSymbolApplied(activeSymbol, targetSymbolRef.current)) {
+						resetOverlayRecoveryForVerifiedSymbol(widget, targetSymbolRef.current);
+					}
 					if (pendingDataResetRef.current) requestDataResetRef.current();
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
@@ -971,6 +1122,7 @@ export function TradingViewChart({
 		if (intervalPropRef.current === interval) return;
 		intervalPropRef.current = interval;
 		targetIntervalRef.current = interval;
+		intervalSequenceRef.current += 1;
 		pendingChartIntervalRef.current = null;
 		applySymbolRef.current();
 	}, [interval]);

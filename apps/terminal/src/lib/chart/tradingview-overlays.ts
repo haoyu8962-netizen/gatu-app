@@ -105,7 +105,7 @@ export function buildTradingViewOverlayLines({
 		kind: "position",
 		price: entryPrice,
 		label: buildPositionLabel(side === "buy" ? labels.long : labels.short, position, size, pnl, quoteSymbol, labels),
-		tone: !pnl || pnl.eq(0) ? 0 : pnl.gt(0) ? 1 : -1,
+		tone: getPositionTone(pnl ?? toBig(position.returnOnEquity)),
 		side,
 	});
 
@@ -128,6 +128,7 @@ export class TradingViewOverlayController {
 	private symbol: string | null = null;
 	private readonly entries = new Map<string, OverlayEntry>();
 	private readonly creationRetries = new Map<string, CreationRetry>();
+	private readonly removalsInFlight = new Set<EntityId>();
 
 	sync(
 		chart: TradingViewOverlayChart,
@@ -191,6 +192,17 @@ export class TradingViewOverlayController {
 		return retryAt;
 	}
 
+	handleDrawingRemoved(id: EntityId): boolean {
+		if (this.removalsInFlight.has(id)) return false;
+		for (const [key, entry] of this.entries) {
+			if (entry.id !== id) continue;
+			this.entries.delete(key);
+			this.creationRetries.delete(key);
+			return true;
+		}
+		return false;
+	}
+
 	clear(): boolean {
 		for (const [key, entry] of this.entries) {
 			if (this.removeEntry(entry)) this.entries.delete(key);
@@ -206,6 +218,7 @@ export class TradingViewOverlayController {
 		this.clear();
 		this.entries.clear();
 		this.creationRetries.clear();
+		this.removalsInFlight.clear();
 		this.chart = null;
 		this.symbol = null;
 	}
@@ -216,34 +229,33 @@ export class TradingViewOverlayController {
 		colors: ResolvedOverlayColors,
 	): EntityId | null {
 		const overrides = {
+			bold: false,
 			fontsize: 10,
 			horzLabelsAlign: "right",
+			italic: false,
 			linecolor: colors.line,
 			linestyle: DASHED_LINE_STYLE,
 			linewidth: 1,
 			showLabel: true,
 			showPrice: true,
 			textcolor: colors.text,
+			vertLabelsAlign: "middle",
 		} satisfies HorzlineShapeOverrides;
 
-		try {
-			return chart.createShape<HorzlineShapeOverrides>(
-				{ time: Math.floor(Date.now() / 1000), price: line.price },
-				{
-					shape: "horizontal_line",
-					text: line.label,
-					lock: true,
-					disableSelection: true,
-					disableSave: true,
-					disableUndo: true,
-					showInObjectsTree: false,
-					zOrder: "bottom",
-					overrides,
-				},
-			);
-		} catch {
-			return null;
-		}
+		return chart.createShape<HorzlineShapeOverrides>(
+			{ time: Math.floor(Date.now() / 1000), price: line.price },
+			{
+				shape: "horizontal_line",
+				text: line.label,
+				lock: true,
+				disableSelection: true,
+				disableSave: true,
+				disableUndo: true,
+				showInObjectsTree: false,
+				zOrder: "bottom",
+				overrides,
+			},
+		);
 	}
 
 	private updateLine(
@@ -268,11 +280,16 @@ export class TradingViewOverlayController {
 	}
 
 	private removeEntry(entry: OverlayEntry): boolean {
+		const chart = this.chart;
+		if (!chart) return false;
+		this.removalsInFlight.add(entry.id);
 		try {
-			this.chart?.removeEntity(entry.id, { disableUndo: true });
+			chart.removeEntity(entry.id, { disableUndo: true });
 			return true;
 		} catch {
 			return false;
+		} finally {
+			this.removalsInFlight.delete(entry.id);
 		}
 	}
 
@@ -292,17 +309,26 @@ function buildPositionLabel(
 	labels: TradingViewOverlayLabels,
 ): string {
 	const roe = toBig(position.returnOnEquity);
-	const performance = pnl
-		? `${labels.pnl} ${formatQuoteAmount(pnl.toString(), quoteSymbol, {
-				decimals: 2,
-				signDisplay: "exceptZero",
-			})}${roe ? ` (${formatPercent(roe.toString(), 1)})` : ""}`
-		: roe
-			? `${labels.roe} ${formatPercent(roe.toString(), 1)}`
-			: "";
-	return performance
-		? `${direction} · ${performance} · ${size.abs().toString()}`
-		: `${direction} · ${size.abs().toString()}`;
+	let performance = "";
+	if (pnl) {
+		const formattedPnl = formatQuoteAmount(pnl.toString(), quoteSymbol, {
+			decimals: 2,
+			signDisplay: "exceptZero",
+		});
+		const formattedRoe = roe ? ` (${formatPercent(roe.toString(), 1)})` : "";
+		performance = `${labels.pnl} ${formattedPnl}${formattedRoe}`;
+	} else if (roe) {
+		performance = `${labels.roe} ${formatPercent(roe.toString(), 1)}`;
+	}
+
+	const quantity = size.abs().toString();
+	if (!performance) return `${direction} · ${quantity}`;
+	return `${direction} · ${performance} · ${quantity}`;
+}
+
+function getPositionTone(pnl: ReturnType<typeof toBig>): -1 | 0 | 1 {
+	if (!pnl || pnl.eq(0)) return 0;
+	return pnl.gt(0) ? 1 : -1;
 }
 
 interface ResolvedOverlayColors {

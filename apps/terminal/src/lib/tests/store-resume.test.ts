@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
 
 describe("store-driven resume via singletons", () => {
 	beforeEach(async () => {
@@ -11,6 +12,7 @@ describe("store-driven resume via singletons", () => {
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
 		const mod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = mod.createHyperliquidStore;
+		getStoreInternals = mod.getStoreInternals;
 	});
 
 	afterEach(() => {
@@ -45,8 +47,9 @@ describe("store-driven resume via singletons", () => {
 
 	it("marks an expired retained account snapshot stale synchronously on foreground resume", async () => {
 		vi.useFakeTimers({ now: 0 });
-		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
-		const { subscribe } = createFakeSubscription();
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
 		const key = JSON.stringify(["hl", "subscription", "openOrders", { user: "0xabc" }]);
 
 		store.getState().acquireSubscription(key, subscribe);
@@ -60,7 +63,52 @@ describe("store-driven resume via singletons", () => {
 		document.dispatchEvent(new Event("visibilitychange"));
 
 		expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(subscribe).toHaveBeenCalledTimes(2);
+		expect(triggerReconnect).not.toHaveBeenCalled();
 		store.getState().releaseSubscription(key);
+	});
+
+	it("restarts watchdog deadlines before recovering multiple expired foreground snapshots", async () => {
+		vi.useFakeTimers({ now: 0 });
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const methods = ["openOrders", "webData3"];
+		const streams = methods.map((method) => {
+			const subscribe = vi.fn(createFakeSubscription().subscribe);
+			const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
+			return { key, subscribe };
+		});
+
+		for (const { key, subscribe } of streams) {
+			store.getState().acquireSubscription(key, subscribe);
+		}
+		await vi.advanceTimersByTimeAsync(0);
+		for (const { key } of streams) {
+			store.getState().setSubscriptionData(key, { sequence: 1 });
+		}
+
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		vi.setSystemTime(60_000);
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		await vi.advanceTimersByTimeAsync(0);
+
+		for (const { key, subscribe } of streams) {
+			expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+			expect(subscribe).toHaveBeenCalledTimes(2);
+		}
+
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(triggerReconnect).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(triggerReconnect).toHaveBeenCalledOnce();
+
+		for (const { key } of streams) {
+			store.getState().releaseSubscription(key);
+		}
 	});
 
 	it("calls triggerReconnect when network goes offline→online", async () => {
@@ -141,28 +189,61 @@ describe("store-driven resume via singletons", () => {
 		store.getState().releaseSubscription("test:initial-offline");
 	});
 
-	it("marks retained account snapshots stale as soon as the transport disconnects", async () => {
+	it.each(["allDexsClearinghouseState", "clearinghouseState", "openOrders", "spotState", "twapStates", "webData3"])(
+		"marks retained %s snapshots stale as soon as the transport disconnects",
+		async (method) => {
+			let notifyDisconnect: (() => void) | undefined;
+			const detachDisconnect = vi.fn();
+			const store = createHyperliquidStore({
+				ssr: false,
+				triggerReconnect: vi.fn(),
+				subscribeDisconnect: (listener) => {
+					notifyDisconnect = listener;
+					return detachDisconnect;
+				},
+			});
+			const { subscribe } = createFakeSubscription();
+			const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
+
+			store.getState().acquireSubscription(key, subscribe);
+			await new Promise<void>((resolve) => setTimeout(resolve, 0));
+			store.getState().setSubscriptionData(key, { sequence: 1 });
+			notifyDisconnect?.();
+
+			expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
+			store.getState().releaseSubscription(key);
+			expect(detachDisconnect).toHaveBeenCalledOnce();
+		},
+	);
+
+	it("drops a hidden account snapshot buffer when the transport disconnects before first paint", async () => {
 		let notifyDisconnect: (() => void) | undefined;
-		const detachDisconnect = vi.fn();
 		const store = createHyperliquidStore({
 			ssr: false,
 			triggerReconnect: vi.fn(),
 			subscribeDisconnect: (listener) => {
 				notifyDisconnect = listener;
-				return detachDisconnect;
+				return () => {};
 			},
 		});
 		const { subscribe } = createFakeSubscription();
 		const key = JSON.stringify(["hl", "subscription", "openOrders", { user: "0xabc" }]);
 
-		store.getState().acquireSubscription(key, subscribe);
+		store.getState().acquireSubscription(key, subscribe, undefined, true);
 		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
 		store.getState().setSubscriptionData(key, { sequence: 1 });
-		notifyDisconnect?.();
+		expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(true);
 
-		expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
+		notifyDisconnect?.();
+		expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(false);
+
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		expect(store.getState().subscriptions[key]?.data).toBeUndefined();
+
 		store.getState().releaseSubscription(key);
-		expect(detachDisconnect).toHaveBeenCalledOnce();
 	});
 
 	it("does not call triggerReconnect on visible without prior hidden", async () => {

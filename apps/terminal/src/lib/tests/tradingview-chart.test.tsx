@@ -58,6 +58,7 @@ vi.mock("@/components/trade/chart/datafeed", () => ({
 }));
 
 type MockWidget = {
+	__emitDrawingEvent: (sourceId: string, eventType: MockDrawingEventType) => void;
 	__setActiveSymbol: (symbol: string) => void;
 	__getTheme: () => "light" | "dark";
 	__setTheme: (theme: "light" | "dark") => void;
@@ -72,7 +73,12 @@ type MockWidget = {
 	resetData: ReturnType<typeof vi.fn>;
 	save: ReturnType<typeof vi.fn>;
 	setSymbol: ReturnType<typeof vi.fn>;
+	subscribe: ReturnType<typeof vi.fn>;
+	unsubscribe: ReturnType<typeof vi.fn>;
 };
+
+type MockDrawingEventType = "click" | "move" | "remove";
+type MockDrawingEventCallback = (sourceId: string, eventType: MockDrawingEventType) => void;
 
 function createMockSubscription() {
 	const callbacks: Array<() => void> = [];
@@ -99,10 +105,14 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 	let currentTheme = options.theme ?? "dark";
 	let currentSymbol = (options as { symbol?: string }).symbol ?? "BTC";
 	const symbolChanged = createMockSubscription();
+	const drawingEventCallbacks = new Set<MockDrawingEventCallback>();
 	const resetData = vi.fn();
 	let currentInterval = (options as { interval?: string }).interval ?? "60";
 
 	return {
+		__emitDrawingEvent: (sourceId, eventType) => {
+			for (const callback of drawingEventCallbacks) callback(sourceId, eventType);
+		},
 		__setActiveSymbol: (symbol: string) => {
 			currentSymbol = symbol;
 		},
@@ -137,6 +147,12 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 			currentSymbol = symbol;
 			currentInterval = _interval;
 			callback();
+		}),
+		subscribe: vi.fn((event: string, callback: MockDrawingEventCallback) => {
+			if (event === "drawing_event") drawingEventCallbacks.add(callback);
+		}),
+		unsubscribe: vi.fn((event: string, callback: MockDrawingEventCallback) => {
+			if (event === "drawing_event") drawingEventCallbacks.delete(callback);
 		}),
 	};
 }
@@ -224,14 +240,15 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(failedClear).toHaveBeenCalled();
+		expect(widgets[0]?.save).toHaveBeenCalledWith(expect.any(Function), { includeDrawings: true });
 		expect(widgets[0]?.setSymbol).not.toHaveBeenCalled();
 		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
 		expect(widgetConstructor).toHaveBeenCalledTimes(2);
 		expect(widgets[1]?.setSymbol).not.toHaveBeenCalled();
 	});
 
-	it("rebuilds the widget when a normal overlay sync cannot remove stale account data", async () => {
-		let shouldFailClosed = true;
+	it("preserves chart state while rebuilding after a fatal overlay sync", async () => {
+		let shouldFailClosed = false;
 		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
 			if (shouldFailClosed) {
 				shouldFailClosed = false;
@@ -244,10 +261,423 @@ describe("TradingViewChart", () => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
+		const savedState = { charts: [{ panes: [{ studies: ["Moving Average"], drawings: ["trend"] }] }] };
+		widgets[0]?.activeChart.mockReturnValue({
+			onSymbolChanged: vi.fn(() => createMockSubscription()),
+			resetData: vi.fn(),
+			resolution: vi.fn(() => "1D"),
+			symbol: vi.fn(() => "BTC"),
+		});
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => callback(savedState));
+		shouldFailClosed = true;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
 
 		expect(sync).toHaveBeenCalled();
+		expect(widgets[0]?.save).toHaveBeenCalledWith(expect.any(Function), { includeDrawings: true });
 		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
 		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ interval: "1D", saved_data: savedState, symbol: "BTC" }),
+		);
+	});
+
+	it("keeps the latest requested interval when it changes during overlay state capture", async () => {
+		let failOverlaySync = false;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (!failOverlaySync) return null;
+			failOverlaySync = false;
+			return false;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const widget = widgets[0];
+		let finishSave: ((state: object) => void) | undefined;
+		const savedState = { charts: ["BTC layout"] };
+		widget?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+		widget?.setSymbol.mockImplementation(() => {});
+		failOverlaySync = true;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "15",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widget?.setSymbol).not.toHaveBeenCalled();
+
+		await act(async () => {
+			finishSave?.(savedState);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ interval: "15", saved_data: savedState, symbol: "BTC" }),
+		);
+	});
+
+	it("does not let an empty overlay sync reset the one-rebuild recovery budget", async () => {
+		let overlayApiThrows = 0;
+		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (overlayApiThrows > 0) {
+				overlayApiThrows -= 1;
+				throw new Error("overlay API failed");
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		overlayApiThrows = 1;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgets[1]?.remove).not.toHaveBeenCalled();
+
+		overlayApiThrows = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: false,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.remove).not.toHaveBeenCalled();
+		const callsAfterDisable = sync.mock.calls.length;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(sync).toHaveBeenCalledTimes(callsAfterDisable);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+		expect(sync.mock.calls.length).toBeGreaterThan(callsAfterDisable);
+	});
+
+	it("resets the overlay recovery budget after a verified market switch", async () => {
+		let overlayApiThrows = 0;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (overlayApiThrows > 0) {
+				overlayApiThrows -= 1;
+				throw new Error("overlay API failed");
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		overlayApiThrows = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "ETH",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widgets[1]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+
+		overlayApiThrows = 1;
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+		expect(widgets[1]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ symbol: "ETH" }));
+	});
+
+	it("resets recovery when the target market changes while overlay state capture is pending", async () => {
+		let overlayApiThrows = 0;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (overlayApiThrows > 0) {
+				overlayApiThrows -= 1;
+				throw new Error("overlay API failed");
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+		overlayApiThrows = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "ETH",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		await act(async () => {
+			finishSave?.({ charts: ["BTC layout"] });
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ symbol: "ETH" }));
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.not.objectContaining({ saved_data: expect.anything() }));
+
+		overlayApiThrows = 1;
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+	});
+
+	it("uses one sanitize rebuild when a second fatal overlay cannot remove stale drawings", async () => {
+		let fatalSyncs = 0;
+		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (fatalSyncs > 0) {
+				fatalSyncs -= 1;
+				return false;
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		fatalSyncs = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "en",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+
+		vi.spyOn(TradingViewOverlayController.prototype, "clear").mockReturnValueOnce(false);
+		fatalSyncs = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "en",
+					yAxisInside: false,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+		expect(widgets[1]?.remove).toHaveBeenCalledOnce();
+		expect(widgets[2]?.remove).not.toHaveBeenCalled();
+		const callsAfterSanitize = sync.mock.calls.length;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					locale: "zh",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(4);
+		expect(sync).toHaveBeenCalledTimes(callsAfterSanitize);
+		expect(widgets[3]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("sanitizes a consumed recovery when overlay cleanup fails during a market switch", async () => {
+		let fatalSyncs = 0;
+		vi.spyOn(TradingViewOverlayController.prototype, "sync").mockImplementation(() => {
+			if (fatalSyncs > 0) {
+				fatalSyncs -= 1;
+				return false;
+			}
+			return null;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		fatalSyncs = 1;
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					interval: "60",
+					theme: "dark",
+					yAxisInside: true,
+				}),
+			);
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		const symbolCallsBeforeSwitch = widgets[1]?.setSymbol.mock.calls.length ?? 0;
+
+		vi.spyOn(TradingViewOverlayController.prototype, "clear").mockReturnValueOnce(false);
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgets[1]?.setSymbol).toHaveBeenCalledTimes(symbolCallsBeforeSwitch);
+		expect(widgetConstructor).toHaveBeenCalledTimes(3);
+		expect(widgetConstructor).toHaveBeenLastCalledWith(expect.objectContaining({ symbol: "ETH" }));
+		expect(widgets[2]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("recreates a managed overlay after TradingView reports that its drawing was removed", async () => {
+		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockReturnValue(null);
+		const handleDrawingRemoved = vi
+			.spyOn(TradingViewOverlayController.prototype, "handleDrawingRemoved")
+			.mockReturnValue(true);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		const widget = widgets[0];
+		const callsBeforeRemoval = sync.mock.calls.length;
+
+		act(() => widget?.__emitDrawingEvent("shape-1", "remove"));
+		await flushChartEffects();
+
+		expect(handleDrawingRemoved).toHaveBeenCalledWith("shape-1");
+		expect(sync.mock.calls.length).toBeGreaterThan(callsBeforeRemoval);
+		const callsAfterRemoval = sync.mock.calls.length;
+		act(() => widget?.__emitDrawingEvent("shape-1", "move"));
+		await flushChartEffects();
+		expect(handleDrawingRemoved).toHaveBeenCalledOnce();
+		expect(sync).toHaveBeenCalledTimes(callsAfterRemoval);
+
+		widget?.unsubscribe.mockImplementation(() => {});
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		handleDrawingRemoved.mockClear();
+		act(() => widget?.__emitDrawingEvent("shape-1", "remove"));
+		await flushChartEffects();
+		expect(handleDrawingRemoved).not.toHaveBeenCalled();
+		expect(widget?.unsubscribe).toHaveBeenCalledWith("drawing_event", expect.any(Function));
 	});
 
 	it("automatically retries a failed overlay creation without waiting for another render", async () => {
@@ -681,6 +1111,112 @@ describe("TradingViewChart", () => {
 		expect(widget?.changeTheme).toHaveBeenCalledTimes(1);
 		expect(widget?.changeTheme).toHaveBeenCalledWith("light", { disableUndo: true });
 		expect(widget?.applyOverrides).toHaveBeenCalledTimes(1);
+	});
+
+	it("defers overlay synchronization until an in-flight theme switch has unlocked", async () => {
+		const sync = vi.spyOn(TradingViewOverlayController.prototype, "sync").mockReturnValue(null);
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let resolveTheme: (() => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveTheme = resolve;
+				}),
+		);
+		const callsBeforeThemeSwitch = sync.mock.calls.length;
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(sync).toHaveBeenCalledTimes(callsBeforeThemeSwitch);
+
+		await act(async () => {
+			widget?.__setTheme("light");
+			resolveTheme?.();
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		expect(sync).toHaveBeenCalledTimes(callsBeforeThemeSwitch + 1);
+	});
+
+	it("defers overlay cleanup and symbol changes until an in-flight theme switch unlocks", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		const clear = vi.spyOn(TradingViewOverlayController.prototype, "clear");
+		let resolveTheme: (() => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveTheme = resolve;
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "15", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.changeTheme).toHaveBeenCalledOnce();
+		expect(clear).not.toHaveBeenCalled();
+		expect(widget?.setSymbol).not.toHaveBeenCalled();
+
+		await act(async () => {
+			widget?.__setTheme("light");
+			resolveTheme?.();
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		expect(clear).toHaveBeenCalled();
+		expect(widget?.setSymbol).toHaveBeenCalledWith("ETH", "15", expect.any(Function));
+	});
+
+	it("applies a deferred symbol after a stale theme switch rejects back to the current theme", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		let rejectTheme: ((error: Error) => void) | undefined;
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((_resolve, reject) => {
+					rejectTheme = reject;
+				}),
+		);
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "15", theme: "dark" }));
+		});
+		await flushChartEffects();
+		expect(widget?.setSymbol).not.toHaveBeenCalled();
+
+		await act(async () => {
+			rejectTheme?.(new Error("stale light theme failed"));
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		expect(widget?.getTheme).toHaveBeenLastCalledWith();
+		expect(widget?.setSymbol).toHaveBeenCalledWith("ETH", "15", expect.any(Function));
+		expect(widgetConstructor).toHaveBeenCalledOnce();
 	});
 
 	it("serializes and coalesces rapid async theme switches", async () => {

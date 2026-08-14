@@ -61,16 +61,21 @@ export function createWsTransportMonitor(
 		reconnectRequested = true;
 		try {
 			socket.reconnect();
-			markDisconnected();
 		} catch {
 			reconnectRequested = false;
+			return;
 		}
+		markDisconnected();
 	};
 
 	const markDisconnected = () => {
 		if (!hasOpened || disconnectedAfterOpen) return;
 		disconnectedAfterOpen = true;
-		for (const listener of [...disconnectListeners]) listener();
+		for (const listener of [...disconnectListeners]) {
+			try {
+				listener();
+			} catch {}
+		}
 	};
 
 	const handleOpen: EventListener = () => {
@@ -83,7 +88,9 @@ export function createWsTransportMonitor(
 		if (!shouldNotify) return;
 		generation += 1;
 		for (const listener of [...listeners]) {
-			listener(generation);
+			try {
+				listener(generation);
+			} catch {}
 		}
 	};
 
