@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
@@ -7,8 +7,13 @@ import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { findCanonicalMarketForRoute, getTradePathForMarket } from "@/lib/hyperliquid/market-route";
+import {
+	findCanonicalMarketForRoute,
+	getTradePathForMarket,
+	isMalformedTradeMarketPath,
+} from "@/lib/hyperliquid/market-route";
 import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
+import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -16,6 +21,7 @@ import { useMarketActions } from "@/stores/use-market-store";
 import { GeoRestrictionBanner } from "./geo/geo-restriction-banner";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
+import { TerminalBootError } from "./layout/terminal-boot-error";
 import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
 import { MobileTerminal } from "./mobile/mobile-terminal";
 import { TestnetBanner } from "./testnet-banner";
@@ -26,13 +32,22 @@ const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "Foot
 
 export function TradeTerminalPage() {
 	const navigate = useNavigate();
+	const { pathname } = useLocation();
 	const { routeMarketName, routeScope } = useExchangeScope();
-	const { getMarketInfo, markets, isLoading, error } = useMarketsInfo();
-	const exactMarket = routeMarketName ? getMarketInfo(routeMarketName) : undefined;
+	const { getMarketByName, getMarketInfo, markets, catalogState, retryMarketCatalog } = useMarketsInfo();
+	const exactMarket = routeMarketName ? getMarketByName(routeMarketName) : undefined;
+	const routeMarket = exactMarket ?? (routeMarketName ? getMarketInfo(routeMarketName) : undefined);
 	const canonicalMarket =
-		routeMarketName && !exactMarket && markets.length > 0
+		routeMarketName && !routeMarket && markets.length > 0
 			? findCanonicalMarketForRoute(markets, routeMarketName)
 			: undefined;
+	const bootStatus = getTradeTerminalBootStatus({
+		hasRouteMarketName: Boolean(routeMarketName),
+		hasResolvedMarket: Boolean(routeMarket),
+		hasCanonicalMarket: Boolean(canonicalMarket),
+		hasMalformedRouteMarket: isMalformedTradeMarketPath(pathname),
+		catalogState,
+	});
 
 	useEffect(() => {
 		if (!canonicalMarket) return;
@@ -44,9 +59,10 @@ export function TradeTerminalPage() {
 		});
 	}, [canonicalMarket, navigate, routeScope]);
 
-	if (routeMarketName && !exactMarket) {
-		if (canonicalMarket || isLoading) return <AppShellSkeleton />;
-		if (!error) return <NotFoundPage />;
+	if (bootStatus !== "ready") {
+		if (bootStatus === "loading" || bootStatus === "redirecting") return <AppShellSkeleton />;
+		if (bootStatus === "notFound") return <NotFoundPage />;
+		return <TerminalBootError isPaused={bootStatus === "paused"} onRetry={() => void retryMarketCatalog()} />;
 	}
 
 	return <TradeTerminalContent />;

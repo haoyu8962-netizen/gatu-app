@@ -2062,6 +2062,7 @@ msgid "Connecting..."
 msgstr "جارٍ الاتصال..."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Connection could not be established."
 msgstr "تعذر إنشاء الاتصال."
 
@@ -6736,6 +6737,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7657,6 +7659,7 @@ msgstr "تم قبول بعض الأوامر. راجع الأوامر المفت�
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "حدث خطأ ما"
 
@@ -10307,6 +10310,7 @@ msgstr "تمت دعوتك باستخدام رمز الإحالة {initialReferra
 msgid "You will approximately receive"
 msgstr "ستتلقى تقريبًا"
 
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"
 msgstr "أنت غير متصل"

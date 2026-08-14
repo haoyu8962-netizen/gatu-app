@@ -2062,6 +2062,7 @@ msgid "Connecting..."
 msgstr "कनेक्ट हो रहा है..."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Connection could not be established."
 msgstr "कनेक्शन स्थापित नहीं किया जा सका।"
 
@@ -6736,6 +6737,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7657,6 +7659,7 @@ msgstr "कुछ ऑर्डर स्वीकार किए गए। प�
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"
 
@@ -10307,6 +10310,7 @@ msgstr "आपको रेफ़रल कोड {initialReferralCode} के �
 msgid "You will approximately receive"
 msgstr "आपको लगभग प्राप्त होगा"
 
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"
 msgstr "आप ऑफ़लाइन हैं"

@@ -104,6 +104,8 @@ describe("market catalog identity", () => {
 		const lookup = createMarketLookup(markets.spot as UnifiedMarketInfo[]);
 
 		expect(markets.spot.map((market) => market.routeName)).toEqual(["@43", "@200"]);
+		expect(markets.getMarketByName("@43")?.assetId).toBe(10043);
+		expect(markets.getMarketByName("MOG/USDC")).toBeUndefined();
 		expect(lookup.byPairName.has("MOG/USDC")).toBe(false);
 		expect(lookup.byName.get("@43")?.assetId).toBe(10043);
 		expect(lookup.byName.get("@200")?.assetId).toBe(10200);

@@ -2062,6 +2062,7 @@ msgid "Connecting..."
 msgstr "Conectando..."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Connection could not be established."
 msgstr "No se pudo establecer la conexión."
 
@@ -6736,6 +6737,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7657,6 +7659,7 @@ msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de vol
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "Algo salió mal"
 
@@ -10307,6 +10310,7 @@ msgstr "Te invitaron con el código de referido {initialReferralCode}. Revísalo
 msgid "You will approximately receive"
 msgstr "Recibirás aproximadamente"
 
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"
 msgstr "Estás sin conexión"

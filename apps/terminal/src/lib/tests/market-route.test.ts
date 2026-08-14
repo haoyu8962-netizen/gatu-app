@@ -4,6 +4,8 @@ import {
 	getTradePathForMarket,
 	getTradePathForMarketName,
 	getTradeRouteMarketFromPath,
+	isMalformedTradeMarketPath,
+	isSafeTradeRouteMarketName,
 } from "@/lib/hyperliquid/market-route";
 
 describe("trade route market parsing", () => {
@@ -36,6 +38,14 @@ describe("trade route market parsing", () => {
 		expect(getTradeRouteMarketFromPath(path)).toBeUndefined();
 	});
 
+	it("distinguishes the empty trade route from malformed market paths", () => {
+		expect(isMalformedTradeMarketPath("/trade")).toBe(false);
+		expect(isMalformedTradeMarketPath("/trade/")).toBe(false);
+		expect(isMalformedTradeMarketPath("/portfolio")).toBe(false);
+		expect(isMalformedTradeMarketPath("/trade/%E0%A4%A")).toBe(true);
+		expect(isMalformedTradeMarketPath("/trade/BTC/USDC/junk")).toBe(true);
+	});
+
 	it("accepts a trailing slash on symbol paths", () => {
 		expect(getTradeRouteMarketFromPath("/trade/BTC/")).toEqual({
 			name: "BTC",
@@ -44,13 +54,28 @@ describe("trade route market parsing", () => {
 		});
 	});
 
-	it("keeps malformed encoded segments fail-soft without throwing", () => {
+	it("rejects malformed encoded segments without throwing", () => {
 		expect(() => getTradeRouteMarketFromPath("/trade/%E0%A4%A")).not.toThrow();
-		expect(getTradeRouteMarketFromPath("/trade/%E0%A4%A")).toEqual({
-			name: "%E0%A4%A",
-			scope: "perp",
-			dex: undefined,
-		});
+		expect(getTradeRouteMarketFromPath("/trade/%E0%A4%A")).toBeUndefined();
+	});
+
+	it.each([".", "..", "BTC/USDC/EXTRA", "BTC\\USDC", " BTC", "BTC\u0000", "xyz:", ":BTC", "xyz:BTC:USD"])(
+		"rejects unsafe market name %j",
+		(marketName) => {
+			expect(isSafeTradeRouteMarketName(marketName)).toBe(false);
+			expect(getTradePathForMarketName(marketName)).toBe("/trade/BTC");
+		},
+	);
+
+	it("rejects non-well-formed Unicode before URL encoding", () => {
+		const unpairedSurrogate = String.fromCharCode(0xd800);
+		expect(isSafeTradeRouteMarketName(unpairedSurrogate)).toBe(false);
+		expect(() => getTradePathForMarketName(unpairedSurrogate)).not.toThrow();
+		expect(getTradePathForMarketName(unpairedSurrogate)).toBe("/trade/BTC");
+	});
+
+	it.each(["BTC", "xyz:SILVER", "@107", "ETH/USDC", "ΤOKEN"])("accepts URL-safe market name %s", (marketName) => {
+		expect(isSafeTradeRouteMarketName(marketName)).toBe(true);
 	});
 
 	it.each([

@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
@@ -33,6 +33,42 @@ const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fil
 const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker" />;
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
+function preloadPrimaryWorkspacePanels() {
+	const preloads = [ChartPanel.preload?.(), OrderbookPanel.preload?.(), TradePanel.preload?.()].filter(
+		(preload): preload is Promise<void> => preload !== undefined,
+	);
+	void Promise.allSettled(preloads);
+}
+
+function DesktopWorkspaceSkeleton() {
+	const panelClassName = "desktop-grid-panel animate-pulse bg-fill-weaker motion-reduce:animate-none";
+
+	return (
+		<div
+			aria-hidden="true"
+			className="grid min-h-[71rem] grid-cols-[repeat(14,minmax(0,1fr))] auto-rows-[30px] gap-[3px] p-[3px] min-[1421px]:min-h-[71rem] min-[1421px]:grid-cols-[repeat(16,minmax(0,1fr))]"
+		>
+			<div className={`${panelClassName} col-span-10 row-span-1 min-[1421px]:col-span-10`} />
+			<div className={`${panelClassName} col-span-10 row-span-1 row-start-2 min-[1421px]:col-span-10`} />
+			<div
+				className={`${panelClassName} col-span-10 row-span-[18] row-start-3 min-[1421px]:col-span-10 min-[1421px]:row-span-[18]`}
+			/>
+			<div
+				className={`${panelClassName} col-span-4 col-start-11 row-span-[21] row-start-1 min-[1421px]:col-span-3 min-[1421px]:col-start-11 min-[1421px]:row-span-20`}
+			/>
+			<div
+				className={`${panelClassName} col-span-4 col-start-11 row-span-[18] row-start-[22] min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-20 min-[1421px]:row-start-1`}
+			/>
+			<div
+				className={`${panelClassName} col-span-10 row-span-[26] row-start-[22] min-[1421px]:col-span-13 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]`}
+			/>
+			<div
+				className={`${panelClassName} col-span-4 col-start-11 row-span-8 row-start-[40] min-[1421px]:col-span-3 min-[1421px]:col-start-14 min-[1421px]:row-span-14 min-[1421px]:row-start-[21]`}
+			/>
+		</div>
+	);
+}
+
 export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
@@ -44,6 +80,8 @@ export function MainWorkspace() {
 	const navigateToMarket = useMarketNavigation();
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 	const spotSocials = getSpotAssetSocials(selectedMarket);
+
+	useEffect(preloadPrimaryWorkspacePanels, []);
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
@@ -130,7 +168,7 @@ export function MainWorkspace() {
 					</div>
 				</Responsive>
 			) : (
-				<div className="h-[41rem] bg-grid-container" />
+				<DesktopWorkspaceSkeleton />
 			)}
 		</div>
 	);

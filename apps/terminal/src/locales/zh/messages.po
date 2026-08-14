@@ -1927,6 +1927,7 @@ msgid "Connecting..."
 msgstr "连接中..."
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Connection could not be established."
 msgstr "无法建立连接。"
 
@@ -6235,6 +6236,7 @@ msgstr "继续跟踪"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
@@ -7045,6 +7047,7 @@ msgstr "部分订单已被接受。重试前请检查当前委托。"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "出错了"
 
@@ -9586,6 +9589,7 @@ msgstr "您通过推荐码 {initialReferralCode} 收到了邀请。应用前请�
 msgid "You will approximately receive"
 msgstr "预计收到"
 
+#: src/components/trade/layout/terminal-boot-error.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"
 msgstr "您已离线"

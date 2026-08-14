@@ -4,13 +4,16 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { DEFAULT_FAVORITE_MARKETS, DEFAULT_MARKET_NAME, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
 import type { ExchangeScope } from "@/domain/market";
+import { isSafeTradeRouteMarketName } from "@/lib/hyperliquid/market-route";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import { useExchangeScope } from "@/providers/exchange-scope";
 
+const safeMarketNameSchema = z.string().refine(isSafeTradeRouteMarketName);
+
 const marketStoreSchema = z.object({
 	state: z.object({
-		selectedMarkets: z.record(z.string(), z.string()).optional(),
-		favoriteMarkets: z.array(z.string()).optional(),
+		selectedMarkets: z.record(z.string(), safeMarketNameSchema).optional(),
+		favoriteMarkets: z.array(safeMarketNameSchema).optional(),
 	}),
 });
 
@@ -32,11 +35,13 @@ const useMarketStore = create<MarketStore>()(
 			favoriteMarkets: [...DEFAULT_FAVORITE_MARKETS],
 			actions: {
 				setSelectedMarket: (scope, marketName) => {
+					if (!isSafeTradeRouteMarketName(marketName)) return;
 					set((state) => ({
 						selectedMarkets: { ...state.selectedMarkets, [scope]: marketName },
 					}));
 				},
 				toggleFavoriteMarket: (marketName) => {
+					if (!isSafeTradeRouteMarketName(marketName)) return;
 					set((state) => ({
 						favoriteMarkets: state.favoriteMarkets.includes(marketName)
 							? state.favoriteMarkets.filter((m) => m !== marketName)
@@ -81,6 +86,11 @@ export function useSelectedMarket(): string {
 
 export function useSelectedMarkets() {
 	return useMarketStore((state) => state.selectedMarkets);
+}
+
+export function getTradeHomeMarketName(): string {
+	const marketName = useMarketStore.getState().selectedMarkets.all;
+	return isSafeTradeRouteMarketName(marketName) ? marketName : DEFAULT_SELECTED_MARKETS.all;
 }
 
 export function useFavoriteMarkets() {

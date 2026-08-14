@@ -1,3 +1,4 @@
+import { DEFAULT_MARKET_NAME } from "@/config/app";
 import type { ExchangeScope } from "@/domain/market";
 import { BUILDER_DEX_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market";
 import type { UnifiedMarketInfo } from "./hooks/useMarketsInfo";
@@ -8,17 +9,63 @@ export interface TradeRouteMarket {
 	dex: string | undefined;
 }
 
-function decodeSegment(segment: string | undefined): string {
-	if (!segment) return "";
+const MAX_TRADE_ROUTE_MARKET_NAME_LENGTH = 128;
+
+function hasUnsafeRouteCharacter(segment: string): boolean {
+	for (const character of segment) {
+		const codePoint = character.codePointAt(0);
+		if (
+			character === "\\" ||
+			codePoint === undefined ||
+			codePoint <= 0x1f ||
+			(codePoint >= 0x7f && codePoint <= 0x9f)
+		) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function decodeSegment(segment: string | undefined): string | undefined {
+	if (!segment) return undefined;
 	try {
 		return decodeURIComponent(segment);
 	} catch {
-		return segment;
+		return undefined;
 	}
 }
 
 function encodeSegment(segment: string): string {
 	return encodeURIComponent(segment).replace(/%3A/gi, BUILDER_DEX_SEPARATOR).replace(/%40/gi, "@");
+}
+
+function isSafeTradeRouteSegment(segment: string): boolean {
+	if (!segment || segment === "." || segment === ".." || segment.trim() !== segment) return false;
+	if (segment.includes(SPOT_MARKET_NAME_SEPARATOR) || hasUnsafeRouteCharacter(segment)) return false;
+
+	try {
+		return decodeURIComponent(encodeURIComponent(segment)) === segment;
+	} catch {
+		return false;
+	}
+}
+
+export function isSafeTradeRouteMarketName(marketName: unknown): marketName is string {
+	if (typeof marketName !== "string" || marketName.length > MAX_TRADE_ROUTE_MARKET_NAME_LENGTH) return false;
+
+	const segments = marketName.split(SPOT_MARKET_NAME_SEPARATOR);
+	if (segments.length === 2) {
+		return segments.every(
+			(segment) =>
+				isSafeTradeRouteSegment(segment) && !segment.startsWith("@") && !segment.includes(BUILDER_DEX_SEPARATOR),
+		);
+	}
+	if (segments.length !== 1 || !isSafeTradeRouteSegment(segments[0])) return false;
+
+	const builderSegments = segments[0].split(BUILDER_DEX_SEPARATOR);
+	return (
+		builderSegments.length === 1 || (builderSegments.length === 2 && builderSegments.every(isSafeTradeRouteSegment))
+	);
 }
 
 export function getTradeRouteMarketFromPath(pathname: string): TradeRouteMarket | undefined {
@@ -41,12 +88,16 @@ export function getTradeRouteMarketFromPath(pathname: string): TradeRouteMarket 
 		) {
 			return undefined;
 		}
+		const name = `${symbol}${SPOT_MARKET_NAME_SEPARATOR}${quote}`;
+		if (!isSafeTradeRouteMarketName(name)) return undefined;
 		return {
-			name: `${symbol}${SPOT_MARKET_NAME_SEPARATOR}${quote}`,
+			name,
 			scope: "spot",
 			dex: undefined,
 		};
 	}
+
+	if (!isSafeTradeRouteMarketName(symbol)) return undefined;
 
 	if (symbol.includes(BUILDER_DEX_SEPARATOR)) {
 		return {
@@ -71,6 +122,13 @@ export function getTradeRouteMarketFromPath(pathname: string): TradeRouteMarket 
 	};
 }
 
+export function isMalformedTradeMarketPath(pathname: string): boolean {
+	const normalizedPath = pathname.replace(/\/+$/, "");
+	if (normalizedPath === "/trade" || normalizedPath === "trade") return false;
+	if (!(normalizedPath.startsWith("/trade/") || normalizedPath.startsWith("trade/"))) return false;
+	return getTradeRouteMarketFromPath(pathname) === undefined;
+}
+
 export function getTradePathForMarket(market: UnifiedMarketInfo): string {
 	if (market.kind === "spot") {
 		const routeName = market.routeName ?? market.pairName;
@@ -84,12 +142,13 @@ export function getTradePathForMarket(market: UnifiedMarketInfo): string {
 }
 
 export function getTradePathForMarketName(marketName: string): string {
-	const [baseToken, quoteToken] = marketName.split(SPOT_MARKET_NAME_SEPARATOR);
+	const safeMarketName = isSafeTradeRouteMarketName(marketName) ? marketName : DEFAULT_MARKET_NAME;
+	const [baseToken, quoteToken] = safeMarketName.split(SPOT_MARKET_NAME_SEPARATOR);
 	if (baseToken && quoteToken) {
 		return `/trade/${encodeSegment(baseToken)}/${encodeSegment(quoteToken)}`;
 	}
 
-	return `/trade/${encodeSegment(marketName)}`;
+	return `/trade/${encodeSegment(safeMarketName)}`;
 }
 
 export function findCanonicalMarketForRoute(

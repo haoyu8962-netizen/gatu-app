@@ -1,30 +1,20 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { ROUTE_SEO } from "@/config/seo";
 import { getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
 import { buildPageHead } from "@/lib/seo";
-import { useSelectedMarkets } from "@/stores/use-market-store";
+import { getTradeHomeMarketName } from "@/stores/use-market-store";
 
 export const Route = createFileRoute("/")({
 	ssr: false,
-	head: () => buildPageHead(ROUTE_SEO.TRADE),
-	component: TradeIndexRedirect,
-});
-
-function TradeIndexRedirect() {
-	const navigate = useNavigate();
-	const selectedMarkets = useSelectedMarkets();
-	const marketName = selectedMarkets.all ?? DEFAULT_SELECTED_MARKETS.all;
-
-	useEffect(() => {
-		void navigate({
-			to: getTradePathForMarketName(marketName),
+	pendingMinMs: 0,
+	pendingComponent: AppShellSkeleton,
+	beforeLoad: () => {
+		throw redirect({
+			to: getTradePathForMarketName(getTradeHomeMarketName()),
 			search: { scope: "all" },
 			replace: true,
-			resetScroll: false,
 		});
-	}, [marketName, navigate]);
-
-	return null;
-}
+	},
+	head: () => buildPageHead(ROUTE_SEO.TRADE),
+});

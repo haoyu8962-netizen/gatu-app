@@ -194,11 +194,18 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			return marketLookup.byName.get(name) ?? marketLookup.byPairName.get(name);
 		};
 	}, [marketLookup]);
+	const getMarketByName = useMemo(() => {
+		return (name: string): UnifiedMarketInfo | undefined => marketLookup.byName.get(name);
+	}, [marketLookup]);
 
 	return {
 		...result,
 		isLoading: markets.isLoading,
 		error: markets.error,
+		catalogState: markets.catalogState,
+		catalogQueries: markets.catalogQueries,
+		retryMarketCatalog: markets.retryMarketCatalog,
+		getMarketByName,
 		getMarketInfo,
 	};
 }
