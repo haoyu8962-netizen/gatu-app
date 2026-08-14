@@ -50,6 +50,7 @@ IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端
 | `Caddyfile` | Caddy 反代 + 自动 HTTPS + 缓存/安全头 |
 | `env.build.example` | 构建期 `VITE_*` 变量(打进客户端 bundle) |
 | `env.runtime.example` | 运行期变量(`PORT` / `IPDATA_API_KEY`) |
+| `validate-production-env.mjs` | 生产共享环境、CCTP rollout 与 canonical origin 构建前门禁 |
 | `deploy.sh` | 更新/构建/重启/健康检查一条龙 |
 
 ---
@@ -143,6 +144,36 @@ sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```
+
+当前生产 CCTP rollout 为仅开放邮箱 Smart Wallet Sponsored 主网入金，外部钱包主网入金保持关闭。
+在主机的共享配置中设置：
+
+```dotenv
+# /opt/gatu/shared/.env.local
+VITE_HYPERLIQUID_TESTNET=
+VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=
+VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true
+
+# /opt/gatu/shared/.env.runtime
+GATU_MAINNET_PUBLIC_BASE_URL=https://app.gatu.ai
+GATU_TESTNET_PUBLIC_BASE_URL=https://testnet.gatu.ai
+GATU_CCTP_MAINNET_RELEASE_MODE=sponsored-only
+```
+
+`env.build.example` 仍把所有资金 gate 保持为空，不得把 `true` 提交为模板默认值。
+`GATU_CCTP_MAINNET_RELEASE_MODE` 是部署确认值，不会进入客户端 bundle：`deploy.sh` 在安装依赖或构建前
+核对它与两个主网 gate。任何重复变量、引号/注释造成的含糊布尔值、开启 External、关闭
+Sponsored 却声明 `sponsored-only`，或非 canonical public origin 都会 fail-fast。紧急停止新 Sponsored 提交时，
+同时把 Sponsored gate 留空且设为 `GATU_CCTP_MAINNET_RELEASE_MODE=disabled`，重新构建发布；在途记录仍继续对账。
+
+`deploy.sh` 会在构建前清除调用 shell 里继承的所有 `VITE_*`，防止它们以高于 dotenv 的优先级覆盖
+`/opt/gatu/shared/.env.local`。它还会拒绝 `apps/terminal/.env`、`.env.production` 或
+`.env.production.local` 这些可以覆盖共享文件的额外 Vite 配置。因此共享文件是生产 bundle 的唯一 `VITE_*` 来源。
+
+两个公网 origin 共用一个 bundle，因此不能把 `VITE_HYPERLIQUID_TESTNET=true` 写入生产共享文件。浏览器运行时会把
+`app.gatu.ai` 固定到 Mainnet、`testnet.gatu.ai` 固定到 Testnet，并忽略这两个 canonical hostname 上的
+localStorage 选网值。CCTP 再根据已绑定的运行时网络只读取对应 mainnet/testnet gate；主网 External 为空不会
+影响 testnet origin 独立的 gate。部署验证器还会拒绝非精确两个 canonical origin 的 runtime 配置。
 
 ## 6. 加 swap(构建 OOM 兜底)
 
@@ -396,6 +427,8 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 ## 上线 Checklist
 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
+- [ ] 主网 CCTP 当前 rollout 为 Sponsored-only：Sponsored gate 为 `true`、External gate 留空，且 `.env.runtime` 的 `GATU_CCTP_MAINNET_RELEASE_MODE=sponsored-only`
+- [ ] `node deploy/validate-production-env.mjs /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime apps/terminal` 通过
 - [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
 - [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 登记已迁移到共享原子 TTL 存储
 - [ ] PM 激活和 LI.FI 新 bridge 两个独立 rollout 已决策；未批准的 gate 保持为空

@@ -32,6 +32,15 @@ curl_with_deadline() {
 	curl --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS" --max-time "$CURL_MAX_TIME_SECONDS" "$@"
 }
 
+clear_inherited_vite_environment() {
+	local variable_name
+	while IFS= read -r variable_name; do
+		case "$variable_name" in
+		VITE_*) unset "$variable_name" ;;
+		esac
+	done < <(compgen -e)
+}
+
 ensure_pnpm() {
 	local expected
 	expected="$(node -e "const pm=require('./package.json').packageManager || ''; const match=pm.match(/^pnpm@(.+)$/); if (!match) process.exit(1); process.stdout.write(match[1]);")" || {
@@ -634,8 +643,11 @@ install_referral_uri_guard
 verify_systemd_unit
 verify_caddy_config
 
-echo "==> [3/8] Inject build-time env (VITE_* → apps/terminal/.env.local)"
+echo "==> [3/8] Validate and inject production environment"
 test -f "$SHARED/.env.local" || { echo "ERROR: missing $SHARED/.env.local"; exit 1; }
+test -f "$SHARED/.env.runtime" || { echo "ERROR: missing $SHARED/.env.runtime"; exit 1; }
+clear_inherited_vite_environment
+node deploy/validate-production-env.mjs "$SHARED/.env.local" "$SHARED/.env.runtime" apps/terminal
 cp "$SHARED/.env.local" apps/terminal/.env.local
 
 echo "==> [4/8] Install deps (frozen lockfile)"

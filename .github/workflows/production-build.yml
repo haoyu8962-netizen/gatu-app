@@ -30,6 +30,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Test production environment validator
+        run: node --test deploy/validate-production-env.test.mjs
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-
