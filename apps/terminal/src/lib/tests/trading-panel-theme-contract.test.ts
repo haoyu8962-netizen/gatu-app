@@ -91,3 +91,9 @@ function readCssVariable(source: string, selector: string, variable: string): st
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	return declaration?.[1]?.trim();
 }
+
+describe("shared foreground contract", () => {
+	it("keeps disabled text legible in both themes", () => {
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-fg-disabled")).toBe("var(--icon-neutral)");
+	});
+});

@@ -43,7 +43,7 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 ### Foreground — text intensity
 - `text-fg` primary text (max contrast)
 - `text-fg-muted` secondary/muted text
-- `text-fg-disabled` disabled state
+- `text-fg-disabled` disabled state — bridged to `--icon-neutral` (60% ink/white) so disabled labels stay legible; the raw `--text-disabled` (12% alpha) is reserved for disabled fills/strokes, never text
 - `text-fg-inverse` / `text-fg-inverse-muted` / `text-fg-inverse-disabled` inverted text on dark/brand surfaces
 
 ### Semantic — shared bg/text
