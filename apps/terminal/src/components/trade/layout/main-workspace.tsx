@@ -52,9 +52,7 @@ function preloadPrimaryWorkspacePanels() {
 preloadPrimaryWorkspacePanels();
 
 function DesktopWorkspaceSkeleton() {
-	return (
-		<DesktopGridLoadingSurface panelClassName="desktop-grid-panel animate-pulse bg-fill-weaker motion-reduce:animate-none" />
-	);
+	return <DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />;
 }
 
 export function MainWorkspace() {

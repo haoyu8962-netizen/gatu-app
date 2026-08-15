@@ -56,15 +56,17 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(container.querySelectorAll("[data-shell-mobile]")).toHaveLength(1);
 	});
 
-	it("keeps the lazy-loading shell pinned with the current three-item navigation shape", () => {
+	it("reuses the SSR mobile shell for the lazy-loading fallback so the swap is pixel-stable", () => {
 		act(() => root.render(<MobileLoadingFallback />));
 
 		const mobileShell = container.firstElementChild;
+		expect(mobileShell?.hasAttribute("data-shell-mobile")).toBe(true);
 		expect(mobileShell?.className).toContain("fixed");
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
 		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
-		expect(mobileShell?.querySelectorAll(`[style="min-height: 56px;"]`)).toHaveLength(3);
+		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1.h-14")).toHaveLength(3);
+		expect(mobileShell?.innerHTML).not.toContain("animate-pulse");
 	});
 });

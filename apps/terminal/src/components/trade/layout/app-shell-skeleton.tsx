@@ -13,53 +13,7 @@ export function AppShellSkeleton() {
 					[data-shell-desktop]{display:flex}
 				}
 			`}</style>
-			<div
-				data-shell-mobile
-				className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
-			>
-				<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
-					<div className="h-14 px-3 flex items-center justify-between">
-						<div className="flex items-center gap-1.5">
-							<span className="grid size-6 place-items-center rounded-[6px] bg-market-close-control text-market-close-on-control">
-								<svg viewBox="0 0 120 120" width={16} height={16} fill="none" className="size-4">
-									<title>Gatu</title>
-									<path
-										d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
-										stroke="currentColor"
-										strokeWidth="16"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								</svg>
-							</span>
-							<span className="text-sm font-bold text-market-close-fg">gatu</span>
-						</div>
-						<div className="flex items-center gap-2">
-							<div className="size-8 rounded-[8px] border border-stroke-weak bg-surface" />
-							<div className="h-8 w-20 rounded-[8px] bg-market-close-control" />
-						</div>
-					</div>
-				</div>
-				<div className="flex min-h-0 flex-1 flex-col gap-[3px] bg-grid-container p-[3px]">
-					<div className="h-12 shrink-0 bg-surface" />
-					<div className="min-h-48 flex-[3] bg-surface" />
-					<div className="grid min-h-40 flex-[2] grid-cols-2 gap-[3px]">
-						<div className="bg-surface" />
-						<div className="bg-surface" />
-					</div>
-					<div className="min-h-36 flex-[2] bg-surface" />
-				</div>
-				<div className="border-t border-stroke-weak/60 pb-[env(safe-area-inset-bottom)]">
-					<div className="flex items-stretch">
-						{["markets", "trade", "account"].map((tab) => (
-							<div key={tab} className="flex-1 h-14 flex flex-col items-center justify-center gap-1 py-2">
-								<div className="size-5 rounded-[5px] bg-fill-weaker" />
-								<div className="h-1.5 w-8 rounded bg-fill-weaker" />
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
+			<MobileShellSkeleton />
 			<div data-shell-desktop className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
 				<div
 					className={cn(
@@ -89,6 +43,58 @@ export function AppShellSkeleton() {
 				</div>
 				<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
 					<DesktopGridLoadingSurface markShellPanels panelClassName="bg-surface" />
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export function MobileShellSkeleton() {
+	return (
+		<div
+			data-shell-mobile
+			className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
+		>
+			<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
+				<div className="h-14 px-3 flex items-center justify-between">
+					<div className="flex items-center gap-1.5">
+						<span className="grid size-6 place-items-center rounded-[6px] bg-market-close-control text-market-close-on-control">
+							<svg viewBox="0 0 120 120" width={16} height={16} fill="none" className="size-4">
+								<title>Gatu</title>
+								<path
+									d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
+									stroke="currentColor"
+									strokeWidth="16"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								/>
+							</svg>
+						</span>
+						<span className="text-sm font-bold text-market-close-fg">gatu</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<div className="size-8 rounded-[8px] border border-stroke-weak bg-surface" />
+						<div className="h-8 w-20 rounded-[8px] bg-market-close-control" />
+					</div>
+				</div>
+			</div>
+			<div className="flex min-h-0 flex-1 flex-col gap-[3px] bg-grid-container p-[3px]">
+				<div className="h-12 shrink-0 bg-surface" />
+				<div className="min-h-48 flex-[3] bg-surface" />
+				<div className="grid min-h-40 flex-[2] grid-cols-2 gap-[3px]">
+					<div className="bg-surface" />
+					<div className="bg-surface" />
+				</div>
+				<div className="min-h-36 flex-[2] bg-surface" />
+			</div>
+			<div className="border-t border-stroke-weak/60 pb-[env(safe-area-inset-bottom)]">
+				<div className="flex items-stretch">
+					{["markets", "trade", "account"].map((tab) => (
+						<div key={tab} className="flex-1 h-14 flex flex-col items-center justify-center gap-1 py-2">
+							<div className="size-5 rounded-[5px] bg-fill-weaker" />
+							<div className="h-1.5 w-8 rounded bg-fill-weaker" />
+						</div>
+					))}
 				</div>
 			</div>
 		</div>
