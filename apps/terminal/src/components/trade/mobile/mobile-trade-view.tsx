@@ -4,6 +4,7 @@ import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/r
 import { type ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
+import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
@@ -170,6 +171,24 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const markPriceStatus = market?.markPriceStatus ?? "loading";
 	const { midPx } = useOrderbookMidPrice(active && (usesLimitPrice || usesTriggerPrice) ? market?.name : undefined);
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const formattedMidForPrefill = getFormattedMidPrice(
+		midReferencePrice,
+		market?.szDecimals,
+		market?.kind === "spot" ? "spot" : "perp",
+		market?.assetId,
+	);
+	const limitPrefillKey = active && usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
+	const prefilledLimitKeyRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (limitPrefillKey === null) {
+			prefilledLimitKeyRef.current = null;
+			return;
+		}
+		if (prefilledLimitKeyRef.current === limitPrefillKey) return;
+		if (limitPriceInput !== "" || formattedMidForPrefill === undefined) return;
+		prefilledLimitKeyRef.current = limitPrefillKey;
+		setLimitPriceInput(formattedMidForPrefill);
+	}, [limitPrefillKey, limitPriceInput, formattedMidForPrefill]);
 
 	const {
 		accountAbstraction,

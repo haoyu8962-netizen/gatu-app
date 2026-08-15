@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
@@ -182,6 +182,18 @@ export function TradeFormFields({
 	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
+	const limitPrefillKey = usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
+	const prefilledLimitKeyRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (limitPrefillKey === null) {
+			prefilledLimitKeyRef.current = null;
+			return;
+		}
+		if (prefilledLimitKeyRef.current === limitPrefillKey) return;
+		if (limitPriceInput !== "" || formattedMid === undefined) return;
+		prefilledLimitKeyRef.current = limitPrefillKey;
+		setLimitPrice(formattedMid);
+	}, [limitPrefillKey, limitPriceInput, formattedMid, setLimitPrice]);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
