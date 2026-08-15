@@ -3,7 +3,7 @@
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PriceInput } from "@/components/ui/price-input";
+import { getFormattedMidPrice, PriceInput } from "@/components/ui/price-input";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -44,5 +44,16 @@ describe("PriceInput", () => {
 
 		act(() => midButton.click());
 		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890.12");
+	});
+});
+
+describe("getFormattedMidPrice", () => {
+	it("keeps the decimal-only formatting when no asset is known", () => {
+		expect(getFormattedMidPrice("55.8925", 2, "perp")).toBe("55.8925");
+	});
+
+	it("rounds the mid to a protocol-legal tick when the asset is known", () => {
+		expect(getFormattedMidPrice("55.8925", 2, "perp", 0)).toBe("55.893");
+		expect(getFormattedMidPrice("55.95", 2, "perp", 0)).toBe("55.95");
 	});
 });

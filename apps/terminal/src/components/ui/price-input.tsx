@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { CrosshairIcon } from "@phosphor-icons/react";
 import type React from "react";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
 import { type Numeric, toBig, toFixed } from "@/lib/trade/numbers";
 import { NumberInput } from "./number-input";
@@ -11,9 +12,13 @@ export function getFormattedMidPrice(
 	midPrice: Numeric | undefined,
 	szDecimals: number | undefined,
 	marketType: "perp" | "spot" | undefined,
+	assetId?: number,
 ): string | undefined {
 	const parsedMid = toBig(midPrice);
 	if (!parsedMid?.gt(0)) return undefined;
+	if (typeof assetId === "number" && typeof szDecimals === "number") {
+		return formatPriceForOrder(parsedMid, { assetId, szDecimals });
+	}
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS, marketType);
 	return toFixed(parsedMid, priceDecimals);
 }
@@ -22,12 +27,13 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>,
 	midPrice?: Numeric;
 	szDecimals?: number;
 	marketType?: "perp" | "spot";
+	assetId?: number;
 	onMidClick?: (formattedPrice: string) => void;
 }
 
-export function PriceInput({ midPrice, szDecimals, marketType, onMidClick, labelValue, ...props }: Props) {
+export function PriceInput({ midPrice, szDecimals, marketType, assetId, onMidClick, labelValue, ...props }: Props) {
 	const { t } = useLingui();
-	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType);
+	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType, assetId);
 	const hasMid = formattedMid != null && onMidClick != null;
 	function handleMidClick() {
 		if (!onMidClick || !formattedMid) return;

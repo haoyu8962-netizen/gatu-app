@@ -736,6 +736,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							midPrice={midReferencePrice}
 							szDecimals={market?.szDecimals}
 							marketType={market?.kind === "spot" ? "spot" : "perp"}
+							assetId={market?.assetId}
 							disabled={isFormDisabled}
 						/>
 					)}
@@ -753,6 +754,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								midPrice={midReferencePrice}
 								szDecimals={market?.szDecimals}
 								marketType={market?.kind === "spot" ? "spot" : "perp"}
+								assetId={market?.assetId}
 								disabled={isFormDisabled}
 							/>
 						</div>

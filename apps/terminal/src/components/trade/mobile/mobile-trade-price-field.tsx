@@ -14,13 +14,14 @@ export function MobileTradePriceField({
 	disabled,
 	midPrice,
 	marketType,
+	assetId,
 	onMidClick,
 	szDecimals,
 	unitLabel,
 	...props
 }: Props) {
 	const { t } = useLingui();
-	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType);
+	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType, assetId);
 	const hasMidAction = formattedMid != null && onMidClick != null;
 	const accessibleLabel = unitLabel ? `${label} (${unitLabel})` : label;
 

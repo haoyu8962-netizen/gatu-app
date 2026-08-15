@@ -174,7 +174,7 @@ export function TradeFormFields({
 	}
 	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
-	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType);
+	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
@@ -314,6 +314,7 @@ export function TradeFormFields({
 							midPrice={midReferencePrice}
 							szDecimals={szDecimals}
 							marketType={marketType}
+							assetId={market?.assetId}
 							disabled={isFormDisabled}
 						/>
 						<TradeTifChips orderType={orderType} disabled={isFormDisabled} />

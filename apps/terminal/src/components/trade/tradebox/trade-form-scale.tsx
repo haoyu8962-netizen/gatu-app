@@ -9,10 +9,11 @@ interface Props {
 	midPrice: Numeric;
 	szDecimals: number;
 	marketType: "perp" | "spot";
+	assetId?: number;
 	disabled: boolean;
 }
 
-export function TradeFormScale({ midPrice, szDecimals, marketType, disabled }: Props) {
+export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disabled }: Props) {
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
@@ -29,6 +30,7 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, disabled }: P
 				midPrice={midPrice}
 				szDecimals={szDecimals}
 				marketType={marketType}
+				assetId={assetId}
 				className="w-full text-xs tabular-nums"
 				disabled={disabled}
 			/>
@@ -41,6 +43,7 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, disabled }: P
 				midPrice={midPrice}
 				szDecimals={szDecimals}
 				marketType={marketType}
+				assetId={assetId}
 				className="w-full text-xs tabular-nums"
 				disabled={disabled}
 			/>
