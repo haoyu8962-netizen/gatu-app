@@ -159,14 +159,32 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 	),
 );
 
+// Keeps <html class> in sync with the persisted theme, re-asserting past any document-shell
+// re-render (React re-acquiring the <html> singleton writes back the SSR default) via a
+// MutationObserver. The idempotent `contains` guard makes it settle in one pass.
 function applyThemeClass(theme: Theme) {
 	if (typeof document === "undefined") return;
 	const root = document.documentElement;
+	const other = theme === "dark" ? "light" : "dark";
+	if (root.classList.contains(theme) && !root.classList.contains(other)) return;
 	root.classList.remove("light", "dark");
 	root.classList.add(theme);
 }
 
-applyThemeClass(useGlobalSettingsStore.getState().theme);
+function syncDocumentTheme() {
+	applyThemeClass(useGlobalSettingsStore.getState().theme);
+}
+
+const globalScope = globalThis as { __gatuThemeDocSync?: boolean };
+if (typeof document !== "undefined" && !globalScope.__gatuThemeDocSync) {
+	globalScope.__gatuThemeDocSync = true;
+	syncDocumentTheme();
+	new MutationObserver(syncDocumentTheme).observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["class"],
+	});
+}
+
 useGlobalSettingsStore.subscribe((state, prev) => {
 	if (state.theme !== prev.theme) applyThemeClass(state.theme);
 	if (state.numberFormatLocale !== prev.numberFormatLocale) notifyNumberFormatChange();
