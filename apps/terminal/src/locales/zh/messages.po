@@ -2723,6 +2723,10 @@ msgstr "请输入有效的最高价"
 msgid "Enter a valid min price"
 msgstr "请输入有效的最低价"
 
+#: src/lib/errors/format.ts
+msgid "Enter a valid scale skew"
+msgstr "请输入有效的数量偏斜"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Enter a valid size using the market's size precision."
@@ -6630,6 +6634,10 @@ msgstr "分段订单价格必须对应不同的价格档位"
 msgid "Scale size is too small for the selected number of orders"
 msgstr "分段订单总数量不足以分配到所选订单数量"
 
+#: src/lib/errors/definitions/scale.ts
+msgid "Scale skew must be {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX}"
+msgstr "数量偏斜须为{SCALE_SKEW_MIN}-{SCALE_SKEW_MAX}"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Scan on your phone"
 msgstr "用手机扫描"
@@ -7069,6 +7077,16 @@ msgstr "每笔子订单数量"
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
 msgstr "数量精度必须为非负整数"
+
+#: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
+msgid "Size Skew"
+msgstr "数量偏斜"
+
+#: src/lib/errors/definitions/scale.ts
+#: src/lib/errors/format.ts
+msgid "Size skew is too aggressive for the total size"
+msgstr "数量偏斜相对总数量过大"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts

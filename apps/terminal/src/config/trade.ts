@@ -40,6 +40,10 @@ export const TWAP_MIN_NOTIONAL_PER_MINUTE_USD = 10;
 export const TWAP_SUBORDER_INTERVAL_SECONDS = 30;
 export const SCALE_LEVELS_MIN = 2;
 export const SCALE_LEVELS_MAX = 20;
+export const SCALE_SKEW_DEFAULT = 1;
+export const SCALE_SKEW_MIN = 0.01;
+export const SCALE_SKEW_MAX = 100;
+export const SCALE_SKEW_MAX_DECIMALS = 4;
 
 export const DEFAULT_MAX_LEVERAGE = 50;
 export const MARKET_LEVERAGE_HARD_MAX = 100;

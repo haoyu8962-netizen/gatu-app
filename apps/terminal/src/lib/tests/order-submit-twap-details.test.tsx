@@ -58,6 +58,7 @@ function twapInput(overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInput 
 		scaleStartPriceInput: "",
 		scaleEndPriceInput: "",
 		scaleLevelsNum: null,
+		scaleSkewInput: "",
 		twapMinutesNum: 30,
 		twapRandomize: true,
 		twapTriggerPx: null,

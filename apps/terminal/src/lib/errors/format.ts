@@ -137,8 +137,12 @@ export function formatOrderPlanError(message: string): string {
 			return t`Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`;
 		case "Enter a valid scale price range":
 			return t`Enter price range`;
+		case "Enter a valid scale skew":
+			return t`Enter a valid scale skew`;
 		case "Scale size is too small for the selected number of orders":
 			return t`Scale size is too small for the selected number of orders`;
+		case "Size skew is too aggressive for the total size":
+			return t`Size skew is too aggressive for the total size`;
 		case "Scale prices must resolve to distinct ticks":
 			return t`Scale prices must resolve to distinct ticks`;
 		case "Scale level below min notional":

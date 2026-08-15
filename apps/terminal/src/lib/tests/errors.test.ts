@@ -132,6 +132,10 @@ describe("errors", () => {
 			"Scale prices must resolve to distinct ticks",
 		);
 		expect(formatOrderPlanError("Enter a valid scale price range")).toBe("Enter price range");
+		expect(formatOrderPlanError("Enter a valid scale skew")).toBe("Enter a valid scale skew");
+		expect(formatOrderPlanError("Size skew is too aggressive for the total size")).toBe(
+			"Size skew is too aggressive for the total size",
+		);
 		expect(formatOrderPlanError("Unknown plan error")).toBe("Unknown plan error");
 	});
 });

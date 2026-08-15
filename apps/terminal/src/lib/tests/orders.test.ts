@@ -6,6 +6,7 @@ import {
 	formatPriceForOrder,
 	formatSizeForOrder,
 	getDefaultLeverage,
+	resolveScaleSkewNumber,
 } from "@/domain/trade/orders";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -106,6 +107,7 @@ describe("scale order planning", () => {
 			scaleStartPriceInput: "10",
 			scaleEndPriceInput: "30",
 			scaleLevelsNum: 4,
+			scaleSkew: 1,
 		});
 
 		expect(plan.issues).toEqual([]);
@@ -121,6 +123,7 @@ describe("scale order planning", () => {
 			scaleStartPriceInput: "10",
 			scaleEndPriceInput: "30",
 			scaleLevelsNum: 4,
+			scaleSkew: 1,
 		});
 
 		expect(plan.issues).toContain("insufficient-size");
@@ -135,6 +138,7 @@ describe("scale order planning", () => {
 			scaleStartPriceInput: "10",
 			scaleEndPriceInput: "30",
 			scaleLevelsNum: 4,
+			scaleSkew: 1,
 		});
 
 		expect(plan.issues).toContain("min-notional");
@@ -149,6 +153,7 @@ describe("scale order planning", () => {
 			scaleStartPriceInput: "100.001",
 			scaleEndPriceInput: "100.004",
 			scaleLevelsNum: 4,
+			scaleSkew: 1,
 		});
 
 		expect(plan.issues).toContain("duplicate-price");
@@ -162,8 +167,103 @@ describe("scale order planning", () => {
 			scaleStartPriceInput: "10",
 			scaleEndPriceInput: "30",
 			scaleLevelsNum: 21,
+			scaleSkew: 1,
 		});
 
 		expect(plan).toEqual({ levels: [], issues: ["invalid-levels"] });
+	});
+});
+
+describe("scale order size skew", () => {
+	function skewedPlan(scaleSkew: string | number | null, sizeValue = 8) {
+		return createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue,
+			szDecimals: 0,
+			scaleStartPriceInput: "10",
+			scaleEndPriceInput: "30",
+			scaleLevelsNum: 4,
+			scaleSkew,
+		});
+	}
+
+	function sizes(plan: ReturnType<typeof createScaleOrderLevelPlan>): Big[] {
+		return plan.levels.map((level) => Big(level.size));
+	}
+
+	it("keeps the equal split when the skew is one", () => {
+		const plan = skewedPlan(1, 7);
+
+		expect(plan.issues).toEqual([]);
+		expect(plan.levels.map((level) => level.size)).toEqual(["2", "2", "2", "1"]);
+	});
+
+	it("defaults an empty skew to the equal split", () => {
+		expect(skewedPlan(null, 7).levels.map((level) => level.size)).toEqual(["2", "2", "2", "1"]);
+		expect(skewedPlan("", 7).levels.map((level) => level.size)).toEqual(["2", "2", "2", "1"]);
+	});
+
+	it("ramps sizes up so the last level is skew times the first while preserving the total", () => {
+		const plan = skewedPlan(3);
+		const levelSizes = sizes(plan);
+
+		expect(plan.issues).toEqual([]);
+		expect(plan.levels.map((level) => level.size)).toEqual(["1", "2", "2", "3"]);
+		expect(levelSizes.reduce((total, size) => total.plus(size), Big(0)).toString()).toBe("8");
+		expect(levelSizes[3].div(levelSizes[0]).minus(3).abs().lte(1)).toBe(true);
+		for (let index = 1; index < levelSizes.length; index += 1) {
+			expect(levelSizes[index].gte(levelSizes[index - 1])).toBe(true);
+		}
+	});
+
+	it("ramps sizes down when the skew is below one", () => {
+		const plan = skewedPlan("0.5");
+		const levelSizes = sizes(plan);
+
+		expect(plan.issues).toEqual([]);
+		expect(levelSizes.reduce((total, size) => total.plus(size), Big(0)).toString()).toBe("8");
+		for (let index = 1; index < levelSizes.length; index += 1) {
+			expect(levelSizes[index].lte(levelSizes[index - 1])).toBe(true);
+		}
+	});
+
+	it("preserves the total in fractional size units", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: "1.234",
+			szDecimals: 3,
+			scaleStartPriceInput: "100",
+			scaleEndPriceInput: "200",
+			scaleLevelsNum: 5,
+			scaleSkew: "2.5",
+		});
+
+		expect(plan.issues).toEqual([]);
+		expect(plan.levels.reduce((total, level) => total.plus(level.size), Big(0)).toString()).toBe("1.234");
+		expect(plan.levels.every((level) => /^\d+(\.\d{1,3})?$/.test(level.size))).toBe(true);
+	});
+
+	it("rejects a zero or negative skew", () => {
+		expect(skewedPlan(0)).toEqual({ levels: [], issues: ["invalid-skew"] });
+		expect(skewedPlan(-1)).toEqual({ levels: [], issues: ["invalid-skew"] });
+		expect(skewedPlan("abc")).toEqual({ levels: [], issues: ["invalid-skew"] });
+	});
+
+	it("reports a skew that starves the smallest level of a full lot as a skew problem", () => {
+		expect(skewedPlan(100)).toEqual({ levels: [], issues: ["insufficient-size-for-skew"] });
+		expect(skewedPlan("0.01")).toEqual({ levels: [], issues: ["insufficient-size-for-skew"] });
+	});
+
+	it("still reports a total below one lot per level as insufficient size", () => {
+		expect(skewedPlan(100, 3)).toEqual({ levels: [], issues: ["insufficient-size"] });
+	});
+
+	it("resolves the skew input the same way for validation and submission", () => {
+		expect(resolveScaleSkewNumber("")).toBe(1);
+		expect(resolveScaleSkewNumber("2.5")).toBe(2.5);
+		expect(resolveScaleSkewNumber("0.0001")).toBe(0.0001);
+		expect(resolveScaleSkewNumber("0")).toBeNull();
+		expect(resolveScaleSkewNumber("-1")).toBeNull();
+		expect(resolveScaleSkewNumber("abc")).toBeNull();
 	});
 });

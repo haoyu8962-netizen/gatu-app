@@ -11,6 +11,7 @@ interface Props {
 	scaleStart: number | null;
 	scaleEnd: number | null;
 	scaleLevels: number;
+	scaleSkew: number | null;
 	orderValue: number;
 	marginRequired: number;
 	estimatedFee: number;
@@ -23,6 +24,7 @@ export function ScaleOrderSummary({
 	scaleStart,
 	scaleEnd,
 	scaleLevels,
+	scaleSkew,
 	orderValue,
 	marginRequired,
 	estimatedFee,
@@ -59,6 +61,16 @@ export function ScaleOrderSummary({
 			<SummaryRow label={t`Number of Orders`}>
 				<span className={cn("whitespace-nowrap", scaleLevels > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{scaleLevels > 0 ? scaleLevels : FALLBACK_VALUE_PLACEHOLDER}
+				</span>
+			</SummaryRow>
+			<SummaryRow label={t`Size Skew`}>
+				<span
+					className={cn(
+						"whitespace-nowrap",
+						scaleSkew !== null && scaleSkew > 0 ? "" : "font-normal text-trading-panel-muted",
+					)}
+				>
+					{scaleSkew !== null && scaleSkew > 0 ? scaleSkew : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			<SummaryRow label={t`Order Value`}>

@@ -9,6 +9,7 @@ import { createI18nRoot } from "./harness/react";
 const mocks = vi.hoisted(() => ({
 	setScaleEnd: vi.fn(),
 	setScaleLevels: vi.fn(),
+	setScaleSkew: vi.fn(),
 	setScaleStart: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => mocks,
 	useScaleEnd: () => "",
 	useScaleLevels: () => 4,
+	useScaleSkew: () => "1",
 	useScaleStart: () => "",
 }));
 
@@ -31,6 +33,7 @@ describe("TradeFormScale Mid controls", () => {
 		root = createI18nRoot(container);
 		mocks.setScaleEnd.mockReset();
 		mocks.setScaleLevels.mockReset();
+		mocks.setScaleSkew.mockReset();
 		mocks.setScaleStart.mockReset();
 	});
 

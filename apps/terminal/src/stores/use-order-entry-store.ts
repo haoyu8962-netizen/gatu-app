@@ -2,7 +2,7 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist, subscribeWithSelector } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
-import { type LimitTif, ORDER_TYPES, type OrderType } from "@/config/trade";
+import { type LimitTif, ORDER_TYPES, type OrderType, SCALE_SKEW_DEFAULT } from "@/config/trade";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import { isScaleOrderType, isTriggerOrderType } from "@/lib/trade/order-types";
 import type { Side, SizeMode } from "@/lib/trade/types";
@@ -20,6 +20,7 @@ interface FormState {
 	scaleStart: string;
 	scaleEnd: string;
 	scaleLevels: number;
+	scaleSkew: string;
 	twapMinutes: number;
 	twapRandomize: boolean;
 	twapTriggerPrice: string;
@@ -43,6 +44,7 @@ interface OrderEntryActions {
 	setScaleStart: (price: string) => void;
 	setScaleEnd: (price: string) => void;
 	setScaleLevels: (levels: number) => void;
+	setScaleSkew: (skew: string) => void;
 	setTwapMinutes: (minutes: number) => void;
 	setTwapRandomize: (randomize: boolean) => void;
 	setTwapTriggerPrice: (price: string) => void;
@@ -74,6 +76,7 @@ const DEFAULT_FORM: FormState = {
 	scaleStart: "",
 	scaleEnd: "",
 	scaleLevels: 4,
+	scaleSkew: String(SCALE_SKEW_DEFAULT),
 	twapMinutes: 30,
 	twapRandomize: true,
 	twapTriggerPrice: "",
@@ -151,6 +154,7 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 			setScaleStart: (scaleStart) => set({ scaleStart }),
 			setScaleEnd: (scaleEnd) => set({ scaleEnd }),
 			setScaleLevels: (scaleLevels) => set({ scaleLevels }),
+			setScaleSkew: (scaleSkew) => set({ scaleSkew }),
 			setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
 			setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
 			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
@@ -209,6 +213,9 @@ export function useScaleEnd() {
 }
 export function useScaleLevels() {
 	return useOrderEntryFormStore((s) => s.scaleLevels);
+}
+export function useScaleSkew() {
+	return useOrderEntryFormStore((s) => s.scaleSkew);
 }
 
 export function useTwapMinutes() {

@@ -26,6 +26,8 @@ import {
 	scaleLevelsRangeValidator,
 	scalePricePrecisionValidator,
 	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+	scaleSkewRangeValidator,
 	scaleStartEndDifferValidator,
 } from "../definitions/scale";
 import { enterTpSlPriceValidator, slPriceValidator, type TpSlContext, tpPriceValidator } from "../definitions/tpsl";
@@ -101,6 +103,8 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	scaleSizeAllocationValidator,
 	scalePricePrecisionValidator,
 	scaleLevelMinNotionalValidator,
+	scaleSkewRangeValidator,
+	scaleSkewAllocationValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,
 	twapTriggerPricePositiveValidator,

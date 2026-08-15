@@ -36,6 +36,7 @@ function spotContext(overrides: Partial<SpotOrderContext> = {}): SpotOrderContex
 		scaleStartPriceNum: null,
 		scaleEndPriceNum: null,
 		scaleLevelsNum: null,
+		scaleSkewNum: null,
 		twapOrder: false,
 		twapMinutesNum: null,
 		twapTriggerPriceNum: null,
@@ -75,6 +76,7 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		scaleStartPriceNum: null,
 		scaleEndPriceNum: null,
 		scaleLevelsNum: null,
+		scaleSkewNum: null,
 		twapOrder: false,
 		twapMinutesNum: null,
 		twapTriggerPriceNum: null,
@@ -112,6 +114,92 @@ describe("spot advanced order validation", () => {
 		);
 
 		expect(result.errors.map((error) => error.code)).toContain("SCL_001");
+	});
+
+	it("rejects a scale skew outside the supported range", () => {
+		const context = {
+			scaleOrder: true,
+			scaleStartPriceNum: 20,
+			scaleEndPriceNum: 30,
+			scaleLevelsNum: 4,
+			sizeValue: 10,
+			orderValue: 250,
+		};
+		const tooLarge = validateSpotOrder(spotContext({ ...context, scaleSkewNum: 101 }));
+		const missing = validateSpotOrder(spotContext({ ...context, scaleSkewNum: null }));
+		const inRange = validateSpotOrder(spotContext({ ...context, scaleSkewNum: 2 }));
+
+		expect(tooLarge.errors.find((error) => error.code === "SCL_007")?.message).toBe("Scale skew must be 0.01-100");
+		expect(missing.errors.map((error) => error.code)).toContain("SCL_007");
+		expect(inRange.errors.filter((error) => error.category === "scale")).toEqual([]);
+	});
+
+	it("rejects a scale skew below the lower bound on both stacks", () => {
+		const context = {
+			scaleOrder: true,
+			scaleStartPriceNum: 20,
+			scaleEndPriceNum: 30,
+			scaleLevelsNum: 4,
+			sizeValue: 10,
+			orderValue: 250,
+		};
+
+		for (const scaleSkewNum of [0.005, 0]) {
+			const spot = validateSpotOrder(spotContext({ ...context, scaleSkewNum }));
+			const perp = validatePerpOrder(perpContext({ ...context, scaleSkewNum }));
+
+			expect(spot.errors.map((error) => error.code)).toContain("SCL_007");
+			expect(perp.errors.map((error) => error.code)).toContain("SCL_007");
+		}
+
+		const lowerBound = validateSpotOrder(spotContext({ ...context, scaleSkewNum: 0.01 }));
+		expect(lowerBound.errors.map((error) => error.code)).not.toContain("SCL_007");
+	});
+
+	it("surfaces a skew that starves the first level as a skew allocation error", () => {
+		const context = {
+			scaleOrder: true,
+			szDecimals: 0,
+			scaleStartPriceNum: 20,
+			scaleEndPriceNum: 30,
+			scaleLevelsNum: 4,
+			scaleSkewNum: 100,
+			sizeValue: 8,
+			orderValue: 200,
+		};
+		const spot = validateSpotOrder(spotContext(context));
+		const perp = validatePerpOrder(perpContext(context));
+
+		expect(spot.errors.find((error) => error.code === "SCL_008")?.message).toBe(
+			"Size skew is too aggressive for the total size",
+		);
+		expect(perp.errors.map((error) => error.code)).toContain("SCL_008");
+		expect(spot.errors.map((error) => error.code)).not.toContain("SCL_005");
+		expect(spot.errors.map((error) => error.code)).not.toContain("SCL_007");
+	});
+
+	it("keeps the plain size error when the total is below one lot per level", () => {
+		const result = validateSpotOrder(
+			spotContext({
+				scaleOrder: true,
+				szDecimals: 0,
+				scaleStartPriceNum: 20,
+				scaleEndPriceNum: 30,
+				scaleLevelsNum: 4,
+				scaleSkewNum: 100,
+				sizeValue: 3,
+				orderValue: 75,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).toContain("SCL_005");
+		expect(result.errors.map((error) => error.code)).not.toContain("SCL_008");
+	});
+
+	it("ignores the scale skew for non-scale orders", () => {
+		const result = validateSpotOrder(spotContext({ scaleSkewNum: 0 }));
+
+		expect(result.errors.filter((error) => error.category === "scale")).toEqual([]);
 	});
 
 	it("rejects a one-minute TWAP instead of silently clamping it", () => {

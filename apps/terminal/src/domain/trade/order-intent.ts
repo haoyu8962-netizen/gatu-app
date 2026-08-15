@@ -39,6 +39,7 @@ export type EntryOrderIntent = {
 	scaleStartPriceInput: string;
 	scaleEndPriceInput: string;
 	scaleLevelsNum: number | null;
+	scaleSkewInput: string;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;
@@ -150,6 +151,7 @@ function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 			scaleStartPriceInput: intent.scaleStartPriceInput,
 			scaleEndPriceInput: intent.scaleEndPriceInput,
 			scaleLevelsNum: intent.scaleLevelsNum,
+			scaleSkewInput: intent.scaleSkewInput,
 			tpSlEnabled: intent.tpSlEnabled,
 			canUseTpSl: intent.canUseTpSl,
 			tpPriceNum: intent.tpPriceNum,

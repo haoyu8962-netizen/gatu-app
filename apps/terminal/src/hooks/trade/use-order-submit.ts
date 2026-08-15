@@ -40,6 +40,7 @@ export interface OrderSubmitInput {
 	scaleStartPriceInput: string;
 	scaleEndPriceInput: string;
 	scaleLevelsNum: number | null;
+	scaleSkewInput: string;
 	twapMinutesNum: number | null;
 	twapRandomize: boolean;
 	twapTriggerPx: string | null;
@@ -102,6 +103,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 			scaleStartPriceInput,
 			scaleEndPriceInput,
 			scaleLevelsNum,
+			scaleSkewInput,
 			twapMinutesNum,
 			twapRandomize,
 			twapTriggerPx,
@@ -201,6 +203,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					scaleStartPriceInput,
 					scaleEndPriceInput,
 					scaleLevelsNum,
+					scaleSkewInput,
 					tpSlEnabled,
 					canUseTpSl,
 					tpPriceNum,

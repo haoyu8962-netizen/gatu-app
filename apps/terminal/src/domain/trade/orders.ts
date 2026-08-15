@@ -11,9 +11,10 @@ import {
 	type OrderType,
 	SCALE_LEVELS_MAX,
 	SCALE_LEVELS_MIN,
+	SCALE_SKEW_DEFAULT,
 } from "@/config/trade";
 import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
-import { formatDecimalFloor, isPositive, type Numeric, toBig } from "@/lib/trade/numbers";
+import { formatDecimalFloor, isPositive, type Numeric, toBig, toNumber } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
 export interface OrderBuildParams {
@@ -32,6 +33,7 @@ export interface OrderBuildParams {
 	scaleStartPriceInput: string;
 	scaleEndPriceInput: string;
 	scaleLevelsNum: number | null;
+	scaleSkewInput: string;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;
@@ -95,6 +97,7 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 		scaleStartPriceInput,
 		scaleEndPriceInput,
 		scaleLevelsNum,
+		scaleSkewInput,
 		tpSlEnabled,
 		canUseTpSl,
 		tpPriceNum,
@@ -122,6 +125,7 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 			scaleStartPriceInput,
 			scaleEndPriceInput,
 			scaleLevelsNum,
+			scaleSkew: scaleSkewInput,
 		});
 	} else if (isTriggerOrder) {
 		buildTriggerOrder(orders, {
@@ -185,12 +189,15 @@ export interface ScaleOrderPlanParams {
 	scaleStartPriceInput: Numeric;
 	scaleEndPriceInput: Numeric;
 	scaleLevelsNum: number | null;
+	scaleSkew: Numeric;
 }
 
 export type ScaleOrderPlanIssue =
 	| "invalid-levels"
 	| "invalid-price-range"
+	| "invalid-skew"
 	| "insufficient-size"
+	| "insufficient-size-for-skew"
 	| "duplicate-price"
 	| "min-notional";
 
@@ -223,6 +230,9 @@ export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOr
 		return { levels: [], issues: ["invalid-price-range"] };
 	}
 
+	const skew = resolveScaleSkew(params.scaleSkew);
+	if (!skew) return { levels: [], issues: ["invalid-skew"] };
+
 	const totalSize = toBig(params.sizeValue);
 	if (!totalSize || totalSize.lte(0)) return { levels: [], issues: ["insufficient-size"] };
 
@@ -230,8 +240,9 @@ export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOr
 	const totalSizeUnits = totalSize.times(sizeFactor).round(0, Big.roundDown);
 	if (totalSizeUnits.lt(levels)) return { levels: [], issues: ["insufficient-size"] };
 
-	const unitsPerLevel = totalSizeUnits.div(levels).round(0, Big.roundDown);
-	const remainderUnits = totalSizeUnits.minus(unitsPerLevel.times(levels)).toNumber();
+	const unitsByLevel = allocateScaleSizeUnits(totalSizeUnits, levels, skew);
+	if (unitsByLevel.some((units) => units.lt(1))) return { levels: [], issues: ["insufficient-size-for-skew"] };
+
 	const priceStep = end.minus(start).div(levels - 1);
 	const plannedLevels: ScaleOrderLevel[] = [];
 	const formattedPrices = new Set<string>();
@@ -239,8 +250,7 @@ export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOr
 
 	for (let index = 0; index < levels; index += 1) {
 		const price = formatPriceForOrder(start.plus(priceStep.times(index)), params);
-		const sizeUnits = index < remainderUnits ? unitsPerLevel.plus(1) : unitsPerLevel;
-		const size = formatDecimalFloor(sizeUnits.div(sizeFactor), params.szDecimals);
+		const size = formatDecimalFloor(unitsByLevel[index].div(sizeFactor), params.szDecimals);
 		const priceValue = toBig(price);
 		const sizeValue = toBig(size);
 
@@ -255,6 +265,43 @@ export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOr
 	}
 
 	return { levels: plannedLevels, issues: Array.from(issues) };
+}
+
+function resolveScaleSkew(value: Numeric): Big | null {
+	if (value == null || value === "") return Big(SCALE_SKEW_DEFAULT);
+	const skew = toBig(value);
+	if (!skew || skew.lte(0)) return null;
+	return skew;
+}
+
+export function resolveScaleSkewNumber(input: string): number | null {
+	return toNumber(resolveScaleSkew(input));
+}
+
+/**
+ * Split integer size units across levels so sizes ramp linearly from the first level to the last
+ * with last/first === skew. Weights are kept as exact decimals ((n-1) + (skew-1)*i) and the split
+ * uses floor + largest-remainder (lower index wins ties), so the total is preserved exactly and
+ * skew === 1 reproduces the plain equal split.
+ */
+function allocateScaleSizeUnits(totalUnits: Big, levels: number, skew: Big): Big[] {
+	const span = Math.max(levels - 1, 1);
+	const weights = Array.from({ length: levels }, (_, index) => skew.minus(1).times(index).plus(span));
+	const weightSum = weights.reduce((sum, weight) => sum.plus(weight), Big(0));
+	const remainders = weights.map((weight) => totalUnits.times(weight).mod(weightSum));
+	const unitsByLevel = weights.map((weight, index) => totalUnits.times(weight).minus(remainders[index]).div(weightSum));
+	const allocated = unitsByLevel.reduce((sum, units) => sum.plus(units), Big(0));
+	const leftover = totalUnits.minus(allocated).toNumber();
+	const ranked = remainders
+		.map((remainder, index) => ({ remainder, index }))
+		.sort((a, b) => b.remainder.cmp(a.remainder) || a.index - b.index);
+
+	for (let rank = 0; rank < leftover; rank += 1) {
+		const { index } = ranked[rank];
+		unitsByLevel[index] = unitsByLevel[index].plus(1);
+	}
+
+	return unitsByLevel;
 }
 
 function buildScaleOrders(orders: ExchangeOrder[], params: ScaleOrderParams): void {
@@ -279,8 +326,12 @@ function getScaleOrderPlanError(issue: ScaleOrderPlanIssue): string {
 			return `Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`;
 		case "invalid-price-range":
 			return "Enter a valid scale price range";
+		case "invalid-skew":
+			return "Enter a valid scale skew";
 		case "insufficient-size":
 			return "Scale size is too small for the selected number of orders";
+		case "insufficient-size-for-skew":
+			return "Size skew is too aggressive for the total size";
 		case "duplicate-price":
 			return "Scale prices must resolve to distinct ticks";
 		case "min-notional":

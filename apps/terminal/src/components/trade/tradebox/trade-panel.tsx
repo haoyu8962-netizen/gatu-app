@@ -16,6 +16,7 @@ import {
 } from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
+import { resolveScaleSkewNumber } from "@/domain/trade/orders";
 import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
@@ -68,6 +69,7 @@ import {
 	useReduceOnly,
 	useScaleEnd,
 	useScaleLevels,
+	useScaleSkew,
 	useScaleStart,
 	useSizeMode,
 	useSlPrice,
@@ -225,6 +227,7 @@ export function TradePanel() {
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
+	const scaleSkewInput = useScaleSkew();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
 	const twapTriggerPriceInput = useTwapTriggerPrice();
@@ -286,6 +289,7 @@ export function TradePanel() {
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
+	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
 
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
@@ -337,6 +341,7 @@ export function TradePanel() {
 		scaleStartPriceNum,
 		scaleEndPriceNum,
 		scaleLevelsNum,
+		scaleSkewNum,
 		twapMinutesNum,
 		twapTriggerPriceNum,
 		twapStopPriceNum,
@@ -475,6 +480,7 @@ export function TradePanel() {
 			scaleStartPriceInput,
 			scaleEndPriceInput,
 			scaleLevelsNum,
+			scaleSkewInput,
 			twapMinutesNum,
 			twapRandomize,
 			twapTriggerPx,
@@ -539,6 +545,7 @@ export function TradePanel() {
 					scaleStart={scaleStartPriceNum}
 					scaleEnd={scaleEndPriceNum}
 					scaleLevels={scaleLevelsNum}
+					scaleSkew={scaleSkewNum}
 					orderValue={orderValue}
 					marginRequired={marginRequired}
 					estimatedFee={estimatedFee}

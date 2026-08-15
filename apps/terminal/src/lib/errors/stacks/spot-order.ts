@@ -13,6 +13,8 @@ import {
 	scaleLevelsRangeValidator,
 	scalePricePrecisionValidator,
 	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+	scaleSkewRangeValidator,
 	scaleStartEndDifferValidator,
 } from "../definitions/scale";
 import {
@@ -74,6 +76,8 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	scaleSizeAllocationValidator,
 	scalePricePrecisionValidator,
 	scaleLevelMinNotionalValidator,
+	scaleSkewRangeValidator,
+	scaleSkewAllocationValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,
 	twapTriggerPricePositiveValidator,

@@ -27,6 +27,7 @@ export interface BaseOrderInput {
 	scaleStartPriceNum: number | null;
 	scaleEndPriceNum: number | null;
 	scaleLevelsNum: number | null;
+	scaleSkewNum: number | null;
 	twapMinutesNum: number | null;
 	twapTriggerPriceNum: number | null;
 	twapStopPriceNum: number | null;

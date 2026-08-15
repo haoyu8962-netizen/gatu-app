@@ -8,6 +8,7 @@ import {
 	useOrderEntryActions as useActions,
 	useOrderType,
 	useReduceOnly,
+	useScaleSkew,
 	useTif,
 	useTpSlEnabled,
 	useTwapStopPrice,
@@ -59,6 +60,7 @@ describe("order entry store persistence", () => {
 			actions.setScaleStart("98");
 			actions.setScaleEnd("102");
 			actions.setScaleLevels(5);
+			actions.setScaleSkew("2");
 			actions.setTwapMinutes(60);
 			actions.setTwapRandomize(false);
 			actions.setTwapTriggerPrice("101");
@@ -120,6 +122,28 @@ describe("order entry store persistence", () => {
 		});
 		act(() => actions.resetForm());
 		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
+		expect(setItemSpy).not.toHaveBeenCalled();
+	});
+
+	it("keeps the scale skew transient, untouched by price resets, and restored by resetForm", () => {
+		let snapshot: string | undefined;
+
+		function StateProbe() {
+			snapshot = useScaleSkew();
+			return null;
+		}
+
+		act(() => root.render(createElement(StateProbe)));
+		expect(snapshot).toBe("1");
+
+		act(() => actions.setScaleSkew("2.5"));
+		expect(snapshot).toBe("2.5");
+
+		act(() => actions.resetPrices());
+		expect(snapshot).toBe("2.5");
+
+		act(() => actions.resetForm());
+		expect(snapshot).toBe("1");
 		expect(setItemSpy).not.toHaveBeenCalled();
 	});
 

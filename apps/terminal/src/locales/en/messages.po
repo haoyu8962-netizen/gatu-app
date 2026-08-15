@@ -2924,6 +2924,10 @@ msgstr "Enter a valid max price"
 msgid "Enter a valid min price"
 msgstr "Enter a valid min price"
 
+#: src/lib/errors/format.ts
+msgid "Enter a valid scale skew"
+msgstr "Enter a valid scale skew"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Enter a valid size using the market's size precision."
@@ -7153,6 +7157,10 @@ msgstr "Scale prices must resolve to distinct ticks"
 msgid "Scale size is too small for the selected number of orders"
 msgstr "Scale size is too small for the selected number of orders"
 
+#: src/lib/errors/definitions/scale.ts
+msgid "Scale skew must be {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX}"
+msgstr "Scale skew must be {SCALE_SKEW_MIN}-{SCALE_SKEW_MAX}"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Scan a QR code from a desktop wallet."
 #~ msgstr "Scan a QR code from a desktop wallet."
@@ -7689,6 +7697,16 @@ msgstr "Size per Suborder"
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
 msgstr "Size precision must be a non-negative integer"
+
+#: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
+msgid "Size Skew"
+msgstr "Size Skew"
+
+#: src/lib/errors/definitions/scale.ts
+#: src/lib/errors/format.ts
+msgid "Size skew is too aggressive for the total size"
+msgstr "Size skew is too aggressive for the total size"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "SL"

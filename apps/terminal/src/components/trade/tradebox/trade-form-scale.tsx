@@ -1,9 +1,21 @@
 import { t } from "@lingui/core/macro";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
-import { SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/trade";
+import {
+	SCALE_LEVELS_MAX,
+	SCALE_LEVELS_MIN,
+	SCALE_SKEW_MAX,
+	SCALE_SKEW_MAX_DECIMALS,
+	SCALE_SKEW_MIN,
+} from "@/config/trade";
 import type { Numeric } from "@/lib/trade/numbers";
-import { useOrderEntryActions, useScaleEnd, useScaleLevels, useScaleStart } from "@/stores/use-order-entry-store";
+import {
+	useOrderEntryActions,
+	useScaleEnd,
+	useScaleLevels,
+	useScaleSkew,
+	useScaleStart,
+} from "@/stores/use-order-entry-store";
 
 interface Props {
 	midPrice: Numeric;
@@ -17,7 +29,8 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disa
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
-	const { setScaleStart, setScaleEnd, setScaleLevels } = useOrderEntryActions();
+	const scaleSkewInput = useScaleSkew();
+	const { setScaleStart, setScaleEnd, setScaleLevels, setScaleSkew } = useOrderEntryActions();
 
 	return (
 		<>
@@ -56,6 +69,19 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disa
 				allowDecimals={false}
 				min={SCALE_LEVELS_MIN}
 				max={SCALE_LEVELS_MAX}
+				className="w-full text-xs tabular-nums"
+				disabled={disabled}
+			/>
+			<NumberInput
+				label={t`Size Skew`}
+				labelValue={`${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}`}
+				placeholder="1"
+				value={scaleSkewInput}
+				onChange={(e) => setScaleSkew(e.target.value)}
+				allowDecimals
+				maxAllowedDecimals={SCALE_SKEW_MAX_DECIMALS}
+				min={SCALE_SKEW_MIN}
+				max={SCALE_SKEW_MAX}
 				className="w-full text-xs tabular-nums"
 				disabled={disabled}
 			/>
