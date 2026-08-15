@@ -441,8 +441,9 @@ function FramedTpSlRow({
 								aria-label={t`Toggle profit and loss unit`}
 								aria-pressed={returnInput.unitLabel === "%"}
 								className={cn(
-									"ml-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
-									mobileSafe && "max-[1000px]:min-h-11 max-[1000px]:min-w-11",
+									"relative ml-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
+									mobileSafe &&
+										"max-[1000px]:before:absolute max-[1000px]:before:-inset-x-2.5 max-[1000px]:before:-inset-y-3 max-[1000px]:before:content-['']",
 								)}
 							>
 								{returnInput.unitLabel}
