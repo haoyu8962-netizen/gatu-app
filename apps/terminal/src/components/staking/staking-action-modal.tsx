@@ -194,7 +194,7 @@ function ActionProgress({ state }: { state: FundsActionState }) {
 				<li
 					key={step}
 					data-active={state.stage === step ? "true" : undefined}
-					className="truncate rounded-8 bg-fill-weaker px-1 py-1 text-center text-2xs text-fg-muted data-[active=true]:bg-brand-soft data-[active=true]:font-semibold data-[active=true]:text-brand"
+					className="truncate rounded-8 bg-fill-weaker px-1 py-1 text-center text-2xs text-fg-muted data-[active=true]:bg-brand-soft data-[active=true]:text-brand"
 				>
 					{getStageLabel(step)}
 				</li>

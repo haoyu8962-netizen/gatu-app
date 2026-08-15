@@ -176,7 +176,7 @@ function PeriodSelector({ period, onChange }: PeriodSelectorProps) {
 	const { t } = useLingui();
 	return (
 		<fieldset
-			className="flex max-w-full gap-1 overflow-x-auto rounded-8 border border-stroke-weak bg-background p-1"
+			className="flex max-w-full gap-1 overflow-x-auto rounded-8 border border-stroke-weak bg-sunken p-1"
 			aria-label={t`Leaderboard period`}
 		>
 			<PeriodButton active={period === "day"} onClick={() => onChange("day")}>
@@ -356,7 +356,7 @@ function MobileLeaderboard(props: CommonLeaderboardProps) {
 			</div>
 			<div className="space-y-2.5">
 				{props.rows.map((row) => (
-					<article key={row.address} className="rounded-12 border border-stroke-weak bg-background p-3">
+					<article key={row.address} className="rounded-12 border border-stroke-weak bg-fill-weaker p-3">
 						<div className="mb-3 flex items-center justify-between gap-3 border-b border-stroke-weak pb-3">
 							<TraderLink href={row.href} address={row.address} displayName={row.displayName} />
 							<Rank rank={row.rank} />

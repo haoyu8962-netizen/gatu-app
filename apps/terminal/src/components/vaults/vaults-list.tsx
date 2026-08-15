@@ -126,7 +126,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 					{(["all", "deposited", "leading"] as const).map((item) => (
 						<Button
 							key={item}
-							variant={filter === item ? "filled" : "outline"}
+							variant="outline"
 							intent={filter === item ? "brand" : "neutral"}
 							size="xs"
 							aria-pressed={filter === item}
