@@ -40,6 +40,7 @@ import {
 	useTpSlEnabled,
 	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
+import { SizePercentInput } from "../components/size-percent-input";
 import { SliderTickMarks } from "../components/slider-tick-marks";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradeFormScale } from "./trade-form-scale";
@@ -377,51 +378,63 @@ export function TradeFormFields({
 					</div>
 					{displaySizeError && <p className="text-2xs text-trading-panel-error">{displaySizeError}</p>}
 
-					<div className="flex flex-col gap-0.5">
-						<div className="relative min-w-0">
-							<TradeSizeSlider
-								value={sliderValue}
-								onPercentChange={handleSizePercentApply}
-								disabled={isFormDisabled || maxSize <= 0}
-								ariaLabel={`${t`Size`} (%)`}
-								thumbSize="md"
-								thumbAlignment="edge"
-								controlClassName="h-8"
-								trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
-								indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
-								thumbClassName={cn(
-									"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
-									accentBorderClass,
-								)}
-							/>
-							<SliderTickMarks
-								insetClassName="inset-x-[9px]"
-								activeClassName={cn(accentBorderClass, accentBgClass)}
-								positions={SIZE_PERCENT_OPTIONS.map((pct) => ({
-									key: pct,
-									leftPercent: pct,
-									active: sliderValue >= pct,
-								}))}
-							/>
-						</div>
-						<div className="flex items-center justify-between text-3xs tabular-nums leading-none">
-							{SIZE_PERCENT_OPTIONS.map((pct) => (
-								<button
-									key={pct}
-									type="button"
-									onClick={() => handleSizePercentApply(pct)}
+					<div className="flex items-start gap-2">
+						<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+							<div className="relative min-w-0">
+								<TradeSizeSlider
+									value={sliderValue}
+									onPercentChange={handleSizePercentApply}
 									disabled={isFormDisabled || maxSize <= 0}
-									className={cn(
-										"-mx-1 cursor-pointer px-1 py-1 transition-colors disabled:cursor-not-allowed",
-										Math.abs(sliderValue - pct) < 0.05
-											? cn("font-bold", accentTextClass)
-											: "text-trading-panel-subtle hover:text-trading-panel-fg",
+									ariaLabel={`${t`Size`} (%)`}
+									thumbSize="md"
+									thumbAlignment="edge"
+									controlClassName="h-8"
+									trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
+									indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
+									thumbClassName={cn(
+										"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
+										accentBorderClass,
 									)}
-								>
-									{pct}%
-								</button>
-							))}
+								/>
+								<SliderTickMarks
+									insetClassName="inset-x-[9px]"
+									activeClassName={cn(accentBorderClass, accentBgClass)}
+									positions={SIZE_PERCENT_OPTIONS.map((pct) => ({
+										key: pct,
+										leftPercent: pct,
+										active: sliderValue >= pct,
+									}))}
+								/>
+							</div>
+							<div className="flex items-center justify-between text-3xs tabular-nums leading-none">
+								{SIZE_PERCENT_OPTIONS.map((pct) => (
+									<button
+										key={pct}
+										type="button"
+										onClick={() => handleSizePercentApply(pct)}
+										disabled={isFormDisabled || maxSize <= 0}
+										className={cn(
+											"-mx-1 cursor-pointer px-1 py-1 transition-colors disabled:cursor-not-allowed",
+											Math.abs(sliderValue - pct) < 0.05
+												? cn("font-bold", accentTextClass)
+												: "text-trading-panel-subtle hover:text-trading-panel-fg",
+										)}
+									>
+										{pct}%
+									</button>
+								))}
+							</div>
 						</div>
+						<SizePercentInput
+							value={sliderValue}
+							onPercentChange={handleSizePercentApply}
+							disabled={isFormDisabled || maxSize <= 0}
+							ariaLabel={`${t`Size`} (%)`}
+							frameClassName={cn(
+								"h-8 w-16 shrink-0 rounded-[8px] px-2",
+								(isFormDisabled || maxSize <= 0) && "opacity-50",
+							)}
+						/>
 					</div>
 				</div>
 			</div>

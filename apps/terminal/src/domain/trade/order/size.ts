@@ -174,6 +174,11 @@ export function getSliderValue(sizeValue: number, maxSize: number): number {
 	return Math.min(100, sz.div(max).times(100).toNumber());
 }
 
+export function formatSliderPercent(value: number): string {
+	if (!Number.isFinite(value) || value <= 0) return "0";
+	return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+}
+
 export function getSizeInputMaxDecimals(sizeMode: SizeMode, szDecimals: number): number {
 	return sizeMode === "quote" ? QUOTE_SIZE_INPUT_MAX_DECIMALS : szDecimals;
 }

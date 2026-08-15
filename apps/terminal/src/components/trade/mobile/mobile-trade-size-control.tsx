@@ -1,11 +1,11 @@
 import { CaretDownIcon } from "@phosphor-icons/react";
 import type { ChangeEvent } from "react";
-import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { SizePercentInput } from "../components/size-percent-input";
 import { SliderTickMarks } from "../components/slider-tick-marks";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 
@@ -42,23 +42,6 @@ export function MobileTradeSizeControl({
 }: Props) {
 	const accentBgClass = side === "buy" ? "bg-trading-panel-success" : "bg-trading-panel-error";
 	const accentBorderClass = side === "buy" ? "border-trading-panel-success" : "border-trading-panel-error";
-	const [percentDraft, setPercentDraft] = useState<string | null>(null);
-	const displayPercent = percentDraft ?? formatPercent(sliderValue);
-
-	function handlePercentChange(event: ChangeEvent<HTMLInputElement>) {
-		const nextValue = event.target.value;
-		setPercentDraft(nextValue);
-		if (nextValue.trim() === "") return;
-		const parsedValue = Number(nextValue);
-		if (!Number.isFinite(parsedValue)) return;
-		const nextPercent = Math.min(100, Math.max(0, parsedValue));
-		if (parsedValue > 100) setPercentDraft("100");
-		onPercentChange(nextPercent);
-	}
-
-	function handlePercentBlur() {
-		setPercentDraft(null);
-	}
 
 	return (
 		<div className="space-y-2">
@@ -115,33 +98,15 @@ export function MobileTradeSizeControl({
 					/>
 				</div>
 
-				<div className={cn(tradingInputFrameClass, "h-[31px] w-20 shrink-0 rounded-[8px] px-2")}>
-					<NumberInput
-						aria-label={percentAriaLabel}
-						inputMode="decimal"
-						inputSize="sm"
-						mobileSafe
-						value={displayPercent}
-						onFocus={() => setPercentDraft(formatPercent(sliderValue))}
-						onBlur={handlePercentBlur}
-						onChange={handlePercentChange}
-						maxAllowedDecimals={1}
-						min={0}
-						max={100}
-						className={cn(
-							"h-7 min-w-0 bg-transparent px-0 text-right font-semibold tabular-nums",
-							displayPercent === "0" ? "text-trading-panel-subtle" : "text-trading-panel-fg",
-						)}
-						disabled={!canUsePercent}
-					/>
-					<span className="ml-1 shrink-0 text-2xs text-trading-panel-subtle">%</span>
-				</div>
+				<SizePercentInput
+					value={sliderValue}
+					onPercentChange={onPercentChange}
+					disabled={!canUsePercent}
+					ariaLabel={percentAriaLabel}
+					frameClassName="h-[31px] w-20 shrink-0 rounded-[8px] px-2"
+					mobileSafe
+				/>
 			</div>
 		</div>
 	);
-}
-
-function formatPercent(value: number): string {
-	if (!Number.isFinite(value) || value <= 0) return "0";
-	return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
 }
