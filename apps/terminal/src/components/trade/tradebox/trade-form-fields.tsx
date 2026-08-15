@@ -65,10 +65,10 @@ const inputFrameErrorClass =
 
 function chipClass(active: boolean): string {
 	return cn(
-		"cursor-pointer whitespace-nowrap rounded-[7px] border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+		"cursor-pointer whitespace-nowrap rounded-[7px] border px-2.5 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 		active
-			? "border-trading-panel-control bg-surface font-bold text-trading-panel-fg"
-			: "border-trading-panel-stroke-card font-semibold text-trading-panel-muted hover:text-trading-panel-fg",
+			? "border-trading-panel-control bg-surface text-trading-panel-fg"
+			: "border-trading-panel-stroke-card text-trading-panel-muted hover:text-trading-panel-fg",
 	);
 }
 

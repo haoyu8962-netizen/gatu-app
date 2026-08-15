@@ -219,11 +219,11 @@ export function TokenSelectorContent({
 									key={s.value}
 									onClick={() => handleScopeSelect(s.value)}
 									className={cn(
-										"shrink-0 cursor-pointer whitespace-nowrap border-b-2 px-px text-[13px] transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+										"shrink-0 cursor-pointer whitespace-nowrap border-b-2 px-px text-[13px] font-semibold transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 										mobile ? "h-11" : "h-10",
 										isSelected
-											? "border-trading-panel-control font-bold text-trading-panel-fg"
-											: "border-transparent font-medium text-trading-panel-subtle hover:text-trading-panel-fg",
+											? "border-trading-panel-control text-trading-panel-fg"
+											: "border-transparent text-trading-panel-subtle hover:text-trading-panel-fg",
 									)}
 									aria-pressed={isSelected}
 								>
@@ -254,11 +254,11 @@ export function TokenSelectorContent({
 									key={sub.value}
 									onClick={() => handleSubcategorySelect(sub.value)}
 									className={cn(
-										"shrink-0 cursor-pointer whitespace-nowrap rounded-[7px] border px-2.5 py-1 text-xs transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+										"shrink-0 cursor-pointer whitespace-nowrap rounded-[7px] border px-2.5 py-1 text-xs font-medium transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 										mobile && "relative after:absolute after:-inset-x-1 after:-inset-y-[9px] after:content-['']",
 										isSelected
-											? "border-trading-panel-stroke-input bg-trading-panel-hover font-bold text-trading-panel-fg"
-											: "border-transparent font-medium text-trading-panel-muted hover:text-trading-panel-fg",
+											? "border-trading-panel-stroke-input bg-trading-panel-hover text-trading-panel-fg"
+											: "border-transparent text-trading-panel-muted hover:text-trading-panel-fg",
 									)}
 									aria-label={t`Filter by ${label}`}
 									aria-pressed={isSelected}
