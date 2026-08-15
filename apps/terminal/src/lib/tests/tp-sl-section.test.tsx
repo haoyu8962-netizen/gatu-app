@@ -192,8 +192,10 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");
 		expect(toggles).toHaveLength(2);
 		for (const toggle of toggles) {
-			expect(toggle.className).toContain("max-[1000px]:min-h-11");
-			expect(toggle.className).toContain("max-[1000px]:min-w-11");
+			expect(toggle.className).toContain("max-[1000px]:before:absolute");
+			expect(toggle.className).toContain("max-[1000px]:before:-inset-x-2.5");
+			expect(toggle.className).toContain("max-[1000px]:before:-inset-y-3");
+			expect(toggle.className).not.toContain("min-w-11");
 		}
 	});
 
