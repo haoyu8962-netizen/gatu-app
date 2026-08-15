@@ -521,4 +521,43 @@ describe("useTrackedTwapOrder", () => {
 			await first;
 		});
 	});
+
+	it("persists trigger and stop prices from the submitted details in the reconciliation intent", async () => {
+		const addSpy = vi.spyOn(getPendingTwapActions(), "add");
+		mocks.mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "twapOrder", data: { status: { running: { twapId: 90 } } } },
+		});
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		const params = { ...createParams(22), details: { t: { p: "105.5", a: true }, s: "110" } };
+		await act(async () => {
+			await hookValue?.submitTwap(params, { coin: "BTC", riskContext: CROSS_PERP_RISK_CONTEXT });
+		});
+
+		expect(mocks.mutateAsync).toHaveBeenCalledWith(params);
+		expect(addSpy).toHaveBeenCalledOnce();
+		expect(addSpy.mock.calls[0]?.[0].intent).toMatchObject({
+			assetId: 22,
+			stopPx: "110",
+			trigger: { px: "105.5", above: true },
+		});
+	});
+
+	it("records a null stop and trigger when a TWAP is submitted without details", async () => {
+		const addSpy = vi.spyOn(getPendingTwapActions(), "add");
+		mocks.mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "twapOrder", data: { status: { running: { twapId: 91 } } } },
+		});
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		await act(async () => {
+			await hookValue?.submitTwap(createParams(23), { coin: "BTC", riskContext: CROSS_PERP_RISK_CONTEXT });
+		});
+
+		expect(mocks.mutateAsync).toHaveBeenCalledWith(createParams(23));
+		expect(mocks.mutateAsync.mock.calls[0]?.[0]).not.toHaveProperty("details");
+		expect(addSpy.mock.calls[0]?.[0].intent).toMatchObject({ assetId: 23, stopPx: null, trigger: null });
+	});
 });

@@ -292,7 +292,16 @@ export function TradeFormFields({
 					</div>
 				)}
 
-				{twapOrder && <TradeFormTwap disabled={isFormDisabled} />}
+				{twapOrder && (
+					<TradeFormTwap
+						disabled={isFormDisabled}
+						side={side}
+						quoteToken={quoteToken}
+						markPx={markPx}
+						assetId={market?.assetId}
+						szDecimals={szDecimals}
+					/>
+				)}
 
 				{usesLimitPrice && (
 					<div className="flex min-w-0 flex-col gap-2">

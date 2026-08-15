@@ -287,4 +287,54 @@ describe("entry TWAP SDK execution guard", () => {
 			"selected market",
 		);
 	});
+
+	it("does not require a live mark for a plain TWAP or one whose details are both null", () => {
+		const stale = executionState({ markPriceStatus: "loading", markPx: undefined, markPriceReceivedAt: undefined });
+		expect(() => assertEntryTwapExecutionAllowed(params, stale, 1_001)).not.toThrow();
+		expect(() =>
+			assertEntryTwapExecutionAllowed({ ...params, details: { t: null, s: null } }, stale, 1_001),
+		).not.toThrow();
+	});
+
+	it("re-validates the trigger direction against the live mark when the request fires", () => {
+		const above = { ...params, details: { t: { p: "105", a: true }, s: null } };
+		const below = { ...params, details: { t: { p: "95", a: false }, s: null } };
+		expect(() => assertEntryTwapExecutionAllowed(above, executionState(), 1_001)).not.toThrow();
+		expect(() => assertEntryTwapExecutionAllowed(below, executionState(), 1_001)).not.toThrow();
+
+		expect(() => assertEntryTwapExecutionAllowed(above, executionState({ markPx: "106" }), 1_001)).toThrow(
+			"Trigger price is no longer valid against the live mark price",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(below, executionState({ markPx: "94" }), 1_001)).toThrow(
+			"Trigger price is no longer valid against the live mark price",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(above, executionState({ markPx: "105" }), 1_001)).toThrow(
+			"Trigger price is no longer valid against the live mark price",
+		);
+	});
+
+	it("rejects TWAP trigger and stop details once the mark is stale or missing", () => {
+		const withTrigger = { ...params, details: { t: { p: "105", a: true }, s: null } };
+		const withStop = { ...params, details: { t: null, s: "110" } };
+		expect(() => assertEntryTwapExecutionAllowed(withTrigger, executionState(), 11_001)).toThrow(
+			"Live mark price is unavailable",
+		);
+		expect(() =>
+			assertEntryTwapExecutionAllowed(withStop, executionState({ markPriceStatus: "loading" }), 1_001),
+		).toThrow("Live mark price is unavailable");
+	});
+
+	it("re-validates the stop side against the live mark for buys and sells", () => {
+		const buyStop = { ...params, details: { t: null, s: "110" } };
+		const sellStop = { twap: { ...params.twap, b: false }, details: { t: null, s: "90" } };
+		expect(() => assertEntryTwapExecutionAllowed(buyStop, executionState(), 1_001)).not.toThrow();
+		expect(() => assertEntryTwapExecutionAllowed(sellStop, executionState(), 1_001)).not.toThrow();
+
+		expect(() => assertEntryTwapExecutionAllowed(buyStop, executionState({ markPx: "110" }), 1_001)).toThrow(
+			"Stop price is no longer valid against the live mark price",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(sellStop, executionState({ markPx: "89" }), 1_001)).toThrow(
+			"Stop price is no longer valid against the live mark price",
+		);
+	});
 });

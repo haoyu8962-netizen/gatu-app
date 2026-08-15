@@ -39,7 +39,16 @@ import {
 	triggerPositionExistsValidator,
 	triggerPositionSizeValidator,
 } from "../definitions/trigger";
-import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
+import {
+	type TwapContext,
+	twapMinNotionalValidator,
+	twapMinutesRangeValidator,
+	twapStopBeyondTriggerValidator,
+	twapStopDirectionValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapTriggerPricePositiveValidator,
+} from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
 export interface PerpOrderContext extends OrderInputContext, TpSlContext, TriggerContext, ScaleContext, TwapContext {
@@ -94,6 +103,11 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	scaleLevelMinNotionalValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,
+	twapTriggerPricePositiveValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapStopDirectionValidator,
+	twapStopBeyondTriggerValidator,
 ];
 
 export function validatePerpOrder(context: PerpOrderContext): PerpOrderValidationResult {

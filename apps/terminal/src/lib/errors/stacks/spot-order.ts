@@ -26,7 +26,16 @@ import {
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
 } from "../definitions/spot-input";
-import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
+import {
+	type TwapContext,
+	twapMinNotionalValidator,
+	twapMinutesRangeValidator,
+	twapStopBeyondTriggerValidator,
+	twapStopDirectionValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapTriggerPricePositiveValidator,
+} from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
 export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext, ScaleContext, TwapContext {
@@ -67,6 +76,11 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	scaleLevelMinNotionalValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,
+	twapTriggerPricePositiveValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapStopDirectionValidator,
+	twapStopBeyondTriggerValidator,
 	insufficientQuoteBalanceValidator,
 	insufficientBaseBalanceValidator,
 ];

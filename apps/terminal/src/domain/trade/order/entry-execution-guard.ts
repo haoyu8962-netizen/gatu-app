@@ -187,6 +187,26 @@ export function assertEntryOrderExecutionAllowed(
 	assertAttachedTriggerDirections(params, state);
 }
 
+function assertTwapDetailsStillValid(params: TwapOrderParameters, state: EntryOrderExecutionState, now: number): void {
+	const details = params.details;
+	if (!details || (details.t === null && details.s === null)) return;
+	if (!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now) || !state.markPx) {
+		throw new Error("Live mark price is unavailable");
+	}
+	const mark = new Big(state.markPx);
+	if (details.t !== null) {
+		const trigger = new Big(details.t.p);
+		if (!trigger.gt(0) || trigger.eq(mark) || trigger.gt(mark) !== details.t.a) {
+			throw new Error("Trigger price is no longer valid against the live mark price");
+		}
+	}
+	if (details.s !== null) {
+		const stop = new Big(details.s);
+		const stopValid = params.twap.b ? stop.gt(mark) : stop.lt(mark);
+		if (!stopValid) throw new Error("Stop price is no longer valid against the live mark price");
+	}
+}
+
 export function assertEntryTwapExecutionAllowed(
 	params: TwapOrderParameters,
 	state: EntryOrderExecutionState,
@@ -212,4 +232,5 @@ export function assertEntryTwapExecutionAllowed(
 	if (available === undefined || new Big(params.twap.s).lte(0) || new Big(available).lt(params.twap.s)) {
 		throw new Error("Trading availability changed before submission");
 	}
+	assertTwapDetailsStillValid(params, state, now);
 }

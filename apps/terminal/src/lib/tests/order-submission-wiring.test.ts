@@ -37,6 +37,23 @@ describe("order submission wiring", () => {
 		);
 	});
 
+	it("tick-rounds TWAP trigger and stop prices once in the panel and requires a live mark whenever either is set", () => {
+		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
+		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
+
+		expect(orderSubmit).toContain("const details = buildTwapOrderDetails({");
+		expect(orderSubmit).toMatch(/twap: \{[\s\S]*?\},\s*\.\.\.\(details \? \{ details \} : \{\}\),/);
+		expect(orderSubmit).not.toMatch(/details:\s*\{\s*t:\s*null,\s*s:\s*null/);
+		expect(orderSubmit).not.toContain("formatPriceForOrder(twapTriggerPrice");
+		expect(tradePanel).toContain("const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);");
+		expect(tradePanel).toContain("const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);");
+		expect(tradePanel).toContain("const twapTriggerPriceNum = toNumber(twapTriggerPx);");
+		expect(tradePanel).toContain("const twapStopPriceNum = toNumber(twapStopPx);");
+		expect(tradePanel).toMatch(
+			/const requiresLiveMarkPrice =\s*orderType === "market" \|\|\s*triggerOrder \|\|\s*\(twapOrder && \(isPositive\(twapTriggerPriceNum\) \|\| isPositive\(twapStopPriceNum\)\)\);/,
+		);
+	});
+
 	it("gates the desktop reduce-only flag by market capability before it reaches validation and submission", () => {
 		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
 

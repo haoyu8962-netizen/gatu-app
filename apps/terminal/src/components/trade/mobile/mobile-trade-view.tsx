@@ -339,11 +339,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		scaleEndPriceNum: null,
 		scaleLevelsNum: null,
 		twapMinutesNum: null,
+		twapTriggerPriceNum: null,
+		twapStopPriceNum: null,
 	};
 
 	const validation = useOrderValidation(
 		isSpotMarket
 			? spotInput(baseInput, {
+					markPx,
 					baseAvailable: spotBalance.baseAvailable,
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,

@@ -10,6 +10,8 @@ import {
 	useReduceOnly,
 	useTif,
 	useTpSlEnabled,
+	useTwapStopPrice,
+	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
 
 type OrderEntryActions = ReturnType<typeof useActions>;
@@ -59,6 +61,8 @@ describe("order entry store persistence", () => {
 			actions.setScaleLevels(5);
 			actions.setTwapMinutes(60);
 			actions.setTwapRandomize(false);
+			actions.setTwapTriggerPrice("101");
+			actions.setTwapStopPrice("103");
 			actions.setReduceOnly(true);
 			actions.setTpSlEnabled(true);
 			actions.setTpPrice("110");
@@ -88,6 +92,35 @@ describe("order entry store persistence", () => {
 			},
 			version: 2,
 		});
+	});
+
+	it("keeps TWAP trigger and stop prices transient and clears them with the other prices", () => {
+		let snapshot: { twapTriggerPrice: string; twapStopPrice: string } | undefined;
+
+		function StateProbe() {
+			snapshot = { twapTriggerPrice: useTwapTriggerPrice(), twapStopPrice: useTwapStopPrice() };
+			return null;
+		}
+
+		act(() => root.render(createElement(StateProbe)));
+		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
+
+		act(() => {
+			actions.setTwapTriggerPrice("101.5");
+			actions.setTwapStopPrice("103");
+		});
+		expect(snapshot).toEqual({ twapTriggerPrice: "101.5", twapStopPrice: "103" });
+
+		act(() => actions.resetPrices());
+		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
+
+		act(() => {
+			actions.setTwapTriggerPrice("99");
+			actions.setTwapStopPrice("97");
+		});
+		act(() => actions.resetForm());
+		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
+		expect(setItemSpy).not.toHaveBeenCalled();
 	});
 
 	it("preserves order-type-dependent transient resets", () => {

@@ -16,6 +16,7 @@ import {
 } from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
+import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -36,7 +37,7 @@ import {
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
@@ -76,6 +77,8 @@ import {
 	useTriggerPrice,
 	useTwapMinutes,
 	useTwapRandomize,
+	useTwapStopPrice,
+	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import {
 	getOrderbookActionsStore,
@@ -224,6 +227,8 @@ export function TradePanel() {
 	const scaleLevelsNum = useScaleLevels();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
+	const twapTriggerPriceInput = useTwapTriggerPrice();
+	const twapStopPriceInput = useTwapStopPrice();
 	const tpSlEnabled = useTpSlEnabled();
 	const tpPriceInput = useTpPrice();
 	const slPriceInput = useSlPrice();
@@ -232,8 +237,16 @@ export function TradePanel() {
 	const stopOrder = isStopOrderType(orderType);
 	const takeProfitOrder = isTakeProfitOrderType(orderType);
 	const triggerOrder = isTriggerOrderType(orderType);
-	const requiresLiveMarkPrice = orderType === "market" || triggerOrder;
 	const twapOrder = isTwapOrderType(orderType);
+	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
+	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
+	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const twapTriggerPriceNum = toNumber(twapTriggerPx);
+	const twapStopPriceNum = toNumber(twapStopPx);
+	const requiresLiveMarkPrice =
+		orderType === "market" ||
+		triggerOrder ||
+		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -325,11 +338,14 @@ export function TradePanel() {
 		scaleEndPriceNum,
 		scaleLevelsNum,
 		twapMinutesNum,
+		twapTriggerPriceNum,
+		twapStopPriceNum,
 	};
 
 	const validation = useOrderValidation(
 		isSpotMarket
 			? spotInput(baseInput, {
+					markPx,
 					baseAvailable: spotBalance.baseAvailable,
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,
@@ -449,6 +465,7 @@ export function TradePanel() {
 			sizeValue,
 			price,
 			executionReferencePx,
+			markPx,
 			marginMode,
 			slippageBps,
 			reduceOnly,
@@ -460,6 +477,8 @@ export function TradePanel() {
 			scaleLevelsNum,
 			twapMinutesNum,
 			twapRandomize,
+			twapTriggerPx,
+			twapStopPx,
 			tpSlEnabled,
 			canUseTpSl,
 			tpPriceNum,
@@ -502,6 +521,9 @@ export function TradePanel() {
 			return (
 				<TwapOrderSummary
 					twapMinutesNum={twapMinutesNum}
+					twapTriggerPriceNum={twapTriggerPriceNum}
+					twapStopPriceNum={twapStopPriceNum}
+					side={side}
 					sizeValue={sizeValue}
 					orderValue={orderValue}
 					estimatedFee={estimatedFee}

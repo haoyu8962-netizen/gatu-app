@@ -414,6 +414,14 @@ msgstr "操作"
 msgid "Activate DEX"
 msgstr "激活 DEX"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≤ {triggerPrice}"
+msgstr "标记价 ≤ {triggerPrice} 时激活"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≥ {triggerPrice}"
+msgstr "标记价 ≥ {triggerPrice} 时激活"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "active"
 #~ msgstr "活跃"
@@ -2707,6 +2715,14 @@ msgstr "请输入正数，最多 6 位小数。"
 msgid "Enter a positive target leverage."
 msgstr "请输入大于 0 的目标杠杆。"
 
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid max price"
+msgstr "请输入有效的最高价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid min price"
+msgstr "请输入有效的最低价"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Enter a valid size using the market's size precision."
@@ -2717,6 +2733,10 @@ msgstr "请按该市场的数量精度输入有效数量。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Enter a valid TP/SL order configuration."
 msgstr "请输入有效的止盈止损委托配置。"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid trigger price"
+msgstr "请输入有效的触发价"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -4398,6 +4418,18 @@ msgstr "最大"
 msgid "Max Drawdown"
 msgstr "最大回撤"
 
+#: src/lib/trade/twap-labels.ts
+msgid "Max Price"
+msgstr "最高价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Max price must be above mark"
+msgstr "最高价须高于标记价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Max price must be above trigger price"
+msgstr "最高价须高于触发价"
+
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Max Slippage"
 #~ msgstr "最大滑点"
@@ -4445,6 +4477,18 @@ msgstr "最小委托 ${ORDER_MIN_NOTIONAL_USD}"
 #: src/lib/errors/definitions/order-input.ts
 msgid "Min order $10"
 msgstr "最小订单 $10"
+
+#: src/lib/trade/twap-labels.ts
+msgid "Min Price"
+msgstr "最低价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Min price must be below mark"
+msgstr "最低价须低于标记价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Min price must be below trigger price"
+msgstr "最低价须低于触发价"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Minimum"
@@ -8705,8 +8749,14 @@ msgstr "触发订单必须减少当前仓位"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Trigger Price"
 msgstr "触发价"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Trigger price must differ from mark"
+msgstr "触发价不能等于标记价"
 
 #: src/lib/errors/definitions/trigger.ts
 msgid "Trigger size exceeds position size"

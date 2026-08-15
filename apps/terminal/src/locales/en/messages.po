@@ -438,6 +438,14 @@ msgstr "Actions"
 msgid "Activate DEX"
 msgstr "Activate DEX"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≤ {triggerPrice}"
+msgstr "Activates when mark ≤ {triggerPrice}"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≥ {triggerPrice}"
+msgstr "Activates when mark ≥ {triggerPrice}"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "active"
 #~ msgstr "active"
@@ -2908,6 +2916,14 @@ msgstr "Enter a positive amount with up to 6 decimal places."
 msgid "Enter a positive target leverage."
 msgstr "Enter a positive target leverage."
 
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid max price"
+msgstr "Enter a valid max price"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid min price"
+msgstr "Enter a valid min price"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Enter a valid size using the market's size precision."
@@ -2918,6 +2934,10 @@ msgstr "Enter a valid size using the market's size precision."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Enter a valid TP/SL order configuration."
 msgstr "Enter a valid TP/SL order configuration."
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Enter a valid trigger price"
+msgstr "Enter a valid trigger price"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -4740,6 +4760,18 @@ msgstr "Max Drawdown"
 #~ msgid "Max Fee Rate (%)"
 #~ msgstr "Max Fee Rate (%)"
 
+#: src/lib/trade/twap-labels.ts
+msgid "Max Price"
+msgstr "Max Price"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Max price must be above mark"
+msgstr "Max price must be above mark"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Max price must be above trigger price"
+msgstr "Max price must be above trigger price"
+
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Max Slippage"
 #~ msgstr "Max Slippage"
@@ -4791,6 +4823,18 @@ msgstr "Min order ${ORDER_MIN_NOTIONAL_USD}"
 #: src/lib/errors/definitions/order-input.ts
 msgid "Min order $10"
 msgstr "Min order $10"
+
+#: src/lib/trade/twap-labels.ts
+msgid "Min Price"
+msgstr "Min Price"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Min price must be below mark"
+msgstr "Min price must be below mark"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Min price must be below trigger price"
+msgstr "Min price must be below trigger price"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Minimum"
@@ -9414,12 +9458,18 @@ msgstr "Trigger order must reduce your current position"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Trigger Price"
 msgstr "Trigger Price"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr "Trigger Price (USDC)"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "Trigger price must differ from mark"
+msgstr "Trigger price must differ from mark"
 
 #: src/lib/errors/definitions/trigger.ts
 msgid "Trigger size exceeds position size"

@@ -22,6 +22,8 @@ interface FormState {
 	scaleLevels: number;
 	twapMinutes: number;
 	twapRandomize: boolean;
+	twapTriggerPrice: string;
+	twapStopPrice: string;
 	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	tpPrice: string;
@@ -43,6 +45,8 @@ interface OrderEntryActions {
 	setScaleLevels: (levels: number) => void;
 	setTwapMinutes: (minutes: number) => void;
 	setTwapRandomize: (randomize: boolean) => void;
+	setTwapTriggerPrice: (price: string) => void;
+	setTwapStopPrice: (price: string) => void;
 	setReduceOnly: (reduceOnly: boolean) => void;
 	setTpSlEnabled: (enabled: boolean) => void;
 	setTpPrice: (price: string) => void;
@@ -72,6 +76,8 @@ const DEFAULT_FORM: FormState = {
 	scaleLevels: 4,
 	twapMinutes: 30,
 	twapRandomize: true,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	reduceOnly: false,
 	tpSlEnabled: false,
 	tpPrice: "",
@@ -147,6 +153,8 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 			setScaleLevels: (scaleLevels) => set({ scaleLevels }),
 			setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
 			setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
+			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
+			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
 			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
 			setTpSlEnabled: (tpSlEnabled) => set({ tpSlEnabled }),
 			setTpPrice: (tpPrice) => set({ tpPrice }),
@@ -161,6 +169,8 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 					triggerPrice: "",
 					scaleStart: "",
 					scaleEnd: "",
+					twapTriggerPrice: "",
+					twapStopPrice: "",
 					tpPrice: "",
 					slPrice: "",
 				}),
@@ -206,6 +216,12 @@ export function useTwapMinutes() {
 }
 export function useTwapRandomize() {
 	return useOrderEntryFormStore((s) => s.twapRandomize);
+}
+export function useTwapTriggerPrice() {
+	return useOrderEntryFormStore((s) => s.twapTriggerPrice);
+}
+export function useTwapStopPrice() {
+	return useOrderEntryFormStore((s) => s.twapStopPrice);
 }
 
 export function useTpSlEnabled() {

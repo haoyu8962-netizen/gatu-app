@@ -4,10 +4,11 @@ import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } fro
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
 import { formatOrderPlanError } from "@/lib/errors/format";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { isPositive } from "@/lib/trade/numbers";
+import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
@@ -29,6 +30,7 @@ export interface OrderSubmitInput {
 	sizeValue: number;
 	price: number;
 	executionReferencePx: number;
+	markPx: number;
 	marginMode: MarginMode;
 	slippageBps: number;
 	reduceOnly: boolean;
@@ -40,6 +42,8 @@ export interface OrderSubmitInput {
 	scaleLevelsNum: number | null;
 	twapMinutesNum: number | null;
 	twapRandomize: boolean;
+	twapTriggerPx: string | null;
+	twapStopPx: string | null;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;
@@ -88,6 +92,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 			sizeValue,
 			price,
 			executionReferencePx,
+			markPx,
 			marginMode,
 			slippageBps,
 			reduceOnly,
@@ -99,6 +104,8 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 			scaleLevelsNum,
 			twapMinutesNum,
 			twapRandomize,
+			twapTriggerPx,
+			twapStopPx,
 			tpSlEnabled,
 			canUseTpSl,
 			tpPriceNum,
@@ -141,6 +148,11 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					});
 					return;
 				}
+				const details = buildTwapOrderDetails({
+					triggerPx: toBig(twapTriggerPx)?.gt(0) ? twapTriggerPx : null,
+					stopPx: toBig(twapStopPx)?.gt(0) ? twapStopPx : null,
+					markPx,
+				});
 				const submission = await submitTwap(
 					{
 						twap: {
@@ -151,6 +163,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 							m: minutes,
 							t: twapRandomize,
 						},
+						...(details ? { details } : {}),
 					},
 					{ coin: market.name, queueId: orderId, riskContext },
 				);

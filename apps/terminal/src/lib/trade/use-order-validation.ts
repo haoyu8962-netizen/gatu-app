@@ -28,9 +28,12 @@ export interface BaseOrderInput {
 	scaleEndPriceNum: number | null;
 	scaleLevelsNum: number | null;
 	twapMinutesNum: number | null;
+	twapTriggerPriceNum: number | null;
+	twapStopPriceNum: number | null;
 }
 
 export interface SpotOrderFields {
+	markPx: number;
 	baseAvailable: number;
 	quoteAvailable: number;
 	baseToken: string;
