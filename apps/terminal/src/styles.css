@@ -464,12 +464,12 @@
     /* Dark mode follows the terminal's existing semantic contrast system. */
     --market-close-text-strong: var(--text-strong);
     --market-close-text-muted: var(--text-weak);
-    --market-close-text-subtle: var(--text-weak);
+    --market-close-text-subtle: var(--icon-neutral);
     --market-close-stroke-card: var(--stroke-weak);
     --market-close-stroke-input: var(--stroke-strong);
     --market-close-stroke-control: var(--stroke-strong);
     --market-close-surface-card: var(--fill-weak);
-    --market-close-surface-hover: var(--fill-hover);
+    --market-close-surface-hover: var(--fill-press);
     --market-close-control-active: var(--fill-selected);
     --market-close-control-active-text: var(--text-inverse-strong);
     --market-close-danger: var(--fill-error-strong);
@@ -488,12 +488,12 @@
     --trading-panel-text-strong: var(--text-strong);
     --trading-panel-text-muted: var(--text-weak);
     --trading-panel-text-subtle: var(--icon-neutral);
-    --trading-panel-stroke-card: color-mix(in srgb, var(--stroke-weak) 40%, transparent);
+    --trading-panel-stroke-card: var(--stroke-weak);
     --trading-panel-stroke-input: color-mix(in srgb, var(--stroke-strong) 40%, var(--stroke-weak));
     --trading-panel-stroke-control: var(--stroke-strong);
-    --trading-panel-stroke-row: color-mix(in srgb, var(--stroke-weak) 40%, transparent);
-    --trading-panel-surface-card: var(--bg-raised);
-    --trading-panel-surface-hover: var(--fill-hover);
+    --trading-panel-stroke-row: color-mix(in srgb, var(--stroke-weak) 70%, transparent);
+    --trading-panel-surface-card: var(--fill-weak);
+    --trading-panel-surface-hover: var(--fill-press);
     --trading-panel-control-active: var(--fill-selected);
     --trading-panel-control-active-text: var(--text-inverse-strong);
     --trading-panel-success: var(--text-success);
@@ -506,7 +506,7 @@
     --trading-panel-error-disabled-fill: var(--fill-disabled);
     --trading-panel-on-success: var(--text-success);
     --trading-panel-on-error: var(--text-error);
-    --trading-panel-on-disabled: var(--text-disabled);
+    --trading-panel-on-disabled: var(--icon-neutral);
     --trading-panel-success-soft: var(--fill-success-weak);
     --trading-panel-error-soft: var(--fill-error-weak);
     --trading-panel-scrim: var(--fill-overlay);

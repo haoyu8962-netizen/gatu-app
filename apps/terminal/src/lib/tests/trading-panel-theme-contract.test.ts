@@ -31,7 +31,15 @@ describe("trading panel theme contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-text-strong")).toBe("var(--text-strong)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-text-muted")).toBe("var(--text-weak)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-text-subtle")).toBe("var(--icon-neutral)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-surface-card")).toBe("var(--bg-raised)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-surface-card")).toBe("var(--fill-weak)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-surface-hover")).toBe("var(--fill-press)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-stroke-card")).toBe("var(--stroke-weak)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-stroke-row")).toBe(
+			"color-mix(in srgb, var(--stroke-weak) 70%, transparent)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-on-disabled")).toBe("var(--icon-neutral)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-surface-hover")).toBe("var(--fill-press)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-text-subtle")).toBe("var(--icon-neutral)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-control-active")).toBe("var(--fill-selected)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-success")).toBe("var(--text-success)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-error")).toBe("var(--text-error)");
