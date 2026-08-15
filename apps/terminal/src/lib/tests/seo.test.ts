@@ -35,6 +35,16 @@ describe("seo", () => {
 		expect(routeHead.links.filter((link) => link.rel === "canonical")).toHaveLength(1);
 	});
 
+	it("preloads the latin font subsets with the attributes the font cache requires", () => {
+		const rootHead = buildRootHead(["/fonts/inter-latin.woff2", "/fonts/plex-latin.woff2"]);
+		const preloads = rootHead.links.filter((link) => link.rel === "preload");
+		expect(preloads).toEqual([
+			{ rel: "preload", href: "/fonts/inter-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+			{ rel: "preload", href: "/fonts/plex-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+		]);
+		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
+	});
+
 	it("builds a complete large social card without a stale Twitter account", () => {
 		const head = buildPageHead();
 		const expectedImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`;

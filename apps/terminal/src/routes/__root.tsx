@@ -14,7 +14,11 @@ import { isDocumentRoutePath, useClientRuntimeReady } from "@/providers/client-r
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
+import ibmPlexSansLatinWoff2 from "@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url";
+import interLatinWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import appCss from "../styles.css?url";
+
+const FONT_PRELOAD_URLS = [interLatinWoff2, ibmPlexSansLatinWoff2];
 
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
 const FundsActionRecoveryHost = createLazyComponent(
@@ -41,7 +45,7 @@ interface RootSearch {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	validateSearch: (search: Record<string, unknown>): RootSearch => (search.scope === "all" ? { scope: "all" } : {}),
-	head: () => buildRootHead(),
+	head: () => buildRootHead(FONT_PRELOAD_URLS),
 	shellComponent: RootDocument,
 	component: RootComponent,
 	errorComponent: RouterErrorPage,

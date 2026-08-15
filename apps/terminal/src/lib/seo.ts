@@ -44,7 +44,7 @@ export interface PageSeoOptions {
 	noIndex?: boolean;
 }
 
-export function buildRootHead(): HeadOutput {
+export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutput {
 	return {
 		meta: [
 			{ charSet: "utf-8" },
@@ -63,6 +63,9 @@ export function buildRootHead(): HeadOutput {
 			{ rel: "manifest", href: "/manifest.json" },
 			{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
 			{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
+			...fontPreloadUrls.map(
+				(href): LinkTag => ({ rel: "preload", href, as: "font", type: "font/woff2", crossOrigin: "anonymous" }),
+			),
 		],
 	};
 }
@@ -80,6 +83,8 @@ interface LinkTag {
 	href: string;
 	type?: string;
 	sizes?: string;
+	as?: string;
+	crossOrigin?: "anonymous" | "use-credentials" | "";
 }
 
 interface HeadOutput {
