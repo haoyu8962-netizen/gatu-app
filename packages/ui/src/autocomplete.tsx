@@ -156,7 +156,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		const renderPopup = (
 			<Combobox.Portal>
 				<Combobox.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
-					<Combobox.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+					<Combobox.Popup className="max-h-64 overflow-auto bg-overlay p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<Combobox.List>
 							{filteredOptions.map((option) => (
 								<Combobox.Item

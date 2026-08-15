@@ -171,7 +171,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					intent: item.danger ? "danger" : "neutral",
 				}),
 				"justify-between",
-				item.active && !item.danger && "font-semibold text-fg",
+				item.active && !item.danger && "text-fg",
 			);
 
 		const renderItem = (item: DropdownItem, index: number) => {
@@ -251,7 +251,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						>
 							<Menu.Popup
 								className={cn(
-									"max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									"max-h-64 min-w-40 overflow-y-auto bg-overlay p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 									popupClassName,
 								)}
 							>
