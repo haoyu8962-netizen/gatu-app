@@ -11,8 +11,13 @@ const testState = vi.hoisted(() => ({
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
 		testState.marketOrderSlippagePercent = value;
 	}),
+	skipOrderConfirmation: false,
+	setSkipOrderConfirmation: vi.fn((value: boolean) => {
+		testState.skipOrderConfirmation = value;
+	}),
 	numberInputProps: null as Record<string, unknown> | null,
 	sliderProps: null as Record<string, unknown> | null,
+	toggleProps: [] as Record<string, unknown>[],
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -29,7 +34,10 @@ vi.mock("@gatu/ui", () => ({
 		testState.sliderProps = props;
 		return createElement("div", { "data-testid": "slider" });
 	},
-	Toggle: () => createElement("div"),
+	Toggle: (props: Record<string, unknown>) => {
+		testState.toggleProps.push(props);
+		return createElement("div");
+	},
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
@@ -59,9 +67,11 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 		setMarketOrderSlippagePercent: testState.setMarketOrderSlippagePercent,
 		setNetwork: vi.fn(),
 		setShowOrderbookInQuote: vi.fn(),
+		setSkipOrderConfirmation: testState.setSkipOrderConfirmation,
 	}),
 	useMarketOrderSlippagePercent: () => testState.marketOrderSlippagePercent,
 	useNetwork: () => "mainnet",
+	useSkipOrderConfirmation: () => testState.skipOrderConfirmation,
 }));
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
@@ -74,8 +84,11 @@ describe("GlobalSettingsModal", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.marketOrderSlippagePercent = 0.5;
 		testState.setMarketOrderSlippagePercent.mockClear();
+		testState.skipOrderConfirmation = false;
+		testState.setSkipOrderConfirmation.mockClear();
 		testState.numberInputProps = null;
 		testState.sliderProps = null;
+		testState.toggleProps = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -103,4 +116,33 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.setMarketOrderSlippagePercent).toHaveBeenCalledWith(1.2);
 		expect(testState.sliderProps?.value).toBe(1.2);
 	});
+
+	it("shows the order confirmation toggle on and writes the inverted skip flag when turned off", () => {
+		const toggle = findOrderConfirmationToggle();
+
+		expect(toggle?.checked).toBe(true);
+
+		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(false));
+
+		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledTimes(1);
+		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledWith(true);
+	});
+
+	it("renders the toggle off once the skip preference is stored", () => {
+		testState.skipOrderConfirmation = true;
+		testState.toggleProps = [];
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalSettingsModal))));
+
+		const toggle = findOrderConfirmationToggle();
+
+		expect(toggle?.checked).toBe(false);
+
+		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(true));
+
+		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledWith(false);
+	});
 });
+
+function findOrderConfirmationToggle(): Record<string, unknown> | undefined {
+	return testState.toggleProps.find((props) => props["aria-label"] === "Order confirmation");
+}

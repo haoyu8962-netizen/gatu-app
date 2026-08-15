@@ -54,6 +54,14 @@ export interface OrderSubmitInput {
 	triggerOrder: boolean;
 }
 
+/**
+ * The price fields an order-entry surface must re-read at submit time. Everything else in
+ * `OrderSubmitInput` is user intent that must stay frozen once a confirmation is shown.
+ */
+export type OrderSubmitLivePrices = Pick<OrderSubmitInput, "price" | "executionReferencePx" | "markPx">;
+
+export type OrderSubmitDraftInput = Omit<OrderSubmitInput, keyof OrderSubmitLivePrices>;
+
 interface UseOrderSubmitResult {
 	handleSubmit: (input: OrderSubmitInput) => Promise<void>;
 	isSubmitting: boolean;

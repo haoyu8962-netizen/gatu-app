@@ -1125,6 +1125,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "取消"
@@ -1440,6 +1441,10 @@ msgstr "平多"
 msgid "Close navigation"
 msgstr "关闭导航"
 
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Close order confirmation"
+msgstr "关闭下单确认"
+
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 msgid "Close order modification"
 msgstr "关闭委托修改"
@@ -1681,6 +1686,10 @@ msgstr "确认清除不可读记录"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "在钱包中确认"
+
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Confirm Order"
+msgstr "确认下单"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -2159,6 +2168,7 @@ msgstr "正在创建你的钱包，请稍候..."
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "全仓"
 
@@ -2597,6 +2607,7 @@ msgid "Docs"
 msgstr "文档"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Don't show this confirmation again"
 msgstr "以后不再提示"
 
@@ -2693,6 +2704,7 @@ msgstr "启用中"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "End Price"
 msgstr "结束价格"
 
@@ -2818,6 +2830,7 @@ msgstr "净值"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Est. Fee"
 msgstr "预估费用"
 
@@ -3721,6 +3734,7 @@ msgstr "IOC（立即成交或取消）"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Isolated"
 msgstr "逐仓"
 
@@ -3859,6 +3873,7 @@ msgstr "旧版奖励历史"
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "杠杆"
 
@@ -3879,6 +3894,7 @@ msgid "Limit"
 msgstr "限价"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -3943,6 +3959,7 @@ msgstr "已关联质押账户：{0}。"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"
 msgstr "清算价"
 
@@ -4249,6 +4266,7 @@ msgstr "保证金率"
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Margin Req."
 msgstr "保证金要求"
 
@@ -4314,11 +4332,13 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "市场"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -4709,6 +4729,7 @@ msgstr "下一页金库"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "No"
 msgstr "否"
 
@@ -5016,6 +5037,7 @@ msgstr "数字格式"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "委托数量"
 
@@ -5204,10 +5226,20 @@ msgstr "以计价资产显示订单簿"
 msgid "Order book view"
 msgstr "订单簿视图"
 
+#: src/hooks/trade/use-order-confirmation.ts
+msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
+msgstr "订单条件在确认前发生变化，请重新核对后再提交。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Order confirmation"
+msgstr "下单确认"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order confirmed by the exchange."
 msgstr "交易所已确认订单。"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
@@ -5280,6 +5312,7 @@ msgstr "订单类型"
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Order Value"
 msgstr "订单价值"
 
@@ -5798,6 +5831,11 @@ msgstr "上一页金库"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Price"
 msgstr "价格"
 
@@ -5926,6 +5964,7 @@ msgid "Quote-asset rewards are shown separately and are never added together as 
 msgstr "不同报价资产的奖励将分别显示，不会合并为 USD 金额。"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Randomize timing"
 msgstr "随机化时间"
 
@@ -6060,6 +6099,7 @@ msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "只减仓"
@@ -6441,6 +6481,10 @@ msgstr "查看请求"
 msgid "Review revoke"
 msgstr "检查撤销操作"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Review side, size and price before each order is sent."
+msgstr "每次下单前检查方向、数量和价格。"
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条款</0>。"
@@ -6448,6 +6492,10 @@ msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条�
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条款</1>。"
+
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Review the order before it is sent to the exchange."
+msgstr "在提交到交易所之前检查该订单。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Review the public fields and try again."
@@ -6542,6 +6590,7 @@ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
 msgstr "运行时长"
 
@@ -6609,6 +6658,7 @@ msgstr "保存图片"
 msgid "Saving..."
 msgstr "正在保存..."
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
@@ -6989,6 +7039,10 @@ msgstr "显示 ROE 百分比"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "显示最近 30 天返回的奖励领取记录，其中可能包含推荐奖励和 Builder 奖励。"
 
+#: src/domain/trade/order-confirmation.ts
+msgid "Side"
+msgstr "方向"
+
 #: src/components/ui/sidebar.tsx
 #~ msgid "Sidebar"
 #~ msgstr "侧边栏"
@@ -7059,6 +7113,7 @@ msgstr "签名中..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Size"
 msgstr "数量"
 
@@ -7081,6 +7136,7 @@ msgstr "数量精度必须为非负整数"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Size Skew"
 msgstr "数量偏斜"
 
@@ -7107,6 +7163,7 @@ msgstr "止损价"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "滑点"
 
@@ -7307,6 +7364,7 @@ msgstr "启动相机"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Start Price"
 msgstr "起始价"
 
@@ -7364,6 +7422,7 @@ msgstr "股票"
 msgid "Stop"
 msgstr "止损"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
@@ -7372,6 +7431,7 @@ msgstr "止损限价"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Stop Loss"
 msgstr "止损"
 
@@ -7396,6 +7456,7 @@ msgstr "止损限价价格"
 msgid "Stop loss return"
 msgstr "止损收益"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
@@ -7447,6 +7508,7 @@ msgstr "正在提交至 Hyperliquid"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
 msgstr "提交中..."
 
@@ -7617,6 +7679,7 @@ msgstr "系统结算 · 无可用交易哈希"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "止盈"
@@ -7629,6 +7692,7 @@ msgstr "止盈 / 止损"
 msgid "Take profit limit"
 msgstr "止盈限价"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
@@ -7646,6 +7710,7 @@ msgstr "止盈限价必须低于或等于触发价。"
 msgid "Take profit limit price"
 msgstr "止盈限价价格"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
@@ -8770,6 +8835,8 @@ msgstr "触发订单必须减少当前仓位"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Trigger Price"
 msgstr "触发价"
 
@@ -8814,6 +8881,7 @@ msgstr "TVL"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
@@ -8891,6 +8959,7 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Type"
 msgstr "类型"
 
@@ -9640,6 +9709,8 @@ msgstr "此地址暂不支持提款。"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Yes"
 msgstr "是"
 

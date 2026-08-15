@@ -27,6 +27,7 @@ const globalSettingsSchema = z.object({
 		hideSmallBalances: z.boolean().optional(),
 		showOrderbookInQuote: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
+		skipOrderConfirmation: z.boolean().optional(),
 		numberFormatLocale: z.string().optional(),
 		marketOrderSlippagePercent: z.number().optional(),
 		marginMode: z.enum(["cross", "isolated"]).optional(),
@@ -43,6 +44,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
 	showOrderbookInQuote: false,
 	showChartScanlines: false,
+	skipOrderConfirmation: false,
 	numberFormatLocale: defaultNumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
@@ -56,6 +58,7 @@ interface GlobalSettingsStore {
 	hideSmallBalances: boolean;
 	showOrderbookInQuote: boolean;
 	showChartScanlines: boolean;
+	skipOrderConfirmation: boolean;
 	numberFormatLocale: NumberFormatLocale;
 	marketOrderSlippagePercent: number;
 	marginMode: MarginMode;
@@ -67,6 +70,7 @@ interface GlobalSettingsStore {
 		setHideSmallBalances: (next: boolean) => void;
 		setShowOrderbookInQuote: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
+		setSkipOrderConfirmation: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
 		setMarketOrderSlippagePercent: (percent: number) => void;
 		setMarginMode: (mode: MarginMode) => void;
@@ -85,6 +89,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setHideSmallBalances: (next) => set({ hideSmallBalances: next }),
 				setShowOrderbookInQuote: (next) => set({ showOrderbookInQuote: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
+				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
 				setMarketOrderSlippagePercent: (percent) => {
 					const next = Math.min(
@@ -108,12 +113,13 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 		}),
 		{
 			name: STORAGE_KEYS.GLOBAL_SETTINGS,
-			version: 3,
+			version: 4,
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
 				showOrderbookInQuote: state.showOrderbookInQuote,
 				showChartScanlines: state.showChartScanlines,
+				skipOrderConfirmation: state.skipOrderConfirmation,
 				...(state.numberFormatLocale === defaultNumberFormatLocale
 					? {}
 					: { numberFormatLocale: state.numberFormatLocale }),
@@ -136,6 +142,10 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					typeof p.showOrderbookInQuote === "boolean"
 						? p.showOrderbookInQuote
 						: DEFAULT_GLOBAL_SETTINGS.showOrderbookInQuote;
+				const skipOrderConfirmation =
+					typeof p.skipOrderConfirmation === "boolean"
+						? p.skipOrderConfirmation
+						: DEFAULT_GLOBAL_SETTINGS.skipOrderConfirmation;
 				const slippagePercent = Math.min(
 					Math.max(
 						p?.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
@@ -149,6 +159,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...p,
 					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
 					showOrderbookInQuote,
+					skipOrderConfirmation,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p?.theme === "light" ? "light" : "dark",
@@ -233,6 +244,14 @@ export function useMarketOrderSlippageBpsString(): string {
 
 export function useMarketOrderSlippageBps() {
 	return Number(useMarketOrderSlippageBpsString());
+}
+
+export function useSkipOrderConfirmation() {
+	return useGlobalSettingsStore((state) => state.skipOrderConfirmation);
+}
+
+export function getSkipOrderConfirmation(): boolean {
+	return useGlobalSettingsStore.getState().skipOrderConfirmation;
 }
 
 export function useMarginMode() {

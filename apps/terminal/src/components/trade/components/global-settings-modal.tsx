@@ -28,6 +28,7 @@ import {
 	useGlobalSettingsActions,
 	useMarketOrderSlippagePercent,
 	useNetwork,
+	useSkipOrderConfirmation,
 } from "@/stores/use-global-settings-store";
 
 export function GlobalSettingsModal() {
@@ -36,7 +37,9 @@ export function GlobalSettingsModal() {
 	const { t } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote } = useGlobalSettings();
-	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork } = useGlobalSettingsActions();
+	const skipOrderConfirmation = useSkipOrderConfirmation();
+	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork, setSkipOrderConfirmation } =
+		useGlobalSettingsActions();
 	const network = useNetwork();
 	const { clientKey, env } = useHyperliquid();
 	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
@@ -76,6 +79,10 @@ export function GlobalSettingsModal() {
 		setLocalSlippageInput(null);
 		setLocalSlippageSlider(null);
 		close();
+	}
+
+	function handleOrderConfirmationToggle(nextEnabled: boolean) {
+		setSkipOrderConfirmation(!nextEnabled);
 	}
 
 	function handleDesktopLayoutReset() {
@@ -133,6 +140,14 @@ export function GlobalSettingsModal() {
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
+						<SettingRow label={t`Order confirmation`} hint={t`Review side, size and price before each order is sent.`}>
+							<Toggle
+								size="xs"
+								aria-label={t`Order confirmation`}
+								checked={!skipOrderConfirmation}
+								onCheckedChange={handleOrderConfirmationToggle}
+							/>
+						</SettingRow>
 						<SettingRow
 							label={t`Market close confirmation`}
 							hint={

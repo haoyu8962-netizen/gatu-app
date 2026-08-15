@@ -16,6 +16,7 @@ import {
 } from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
+import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
 import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
@@ -23,8 +24,9 @@ import {
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
-import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -90,6 +92,7 @@ import {
 import { AccountModeModal } from "./account-mode-modal";
 import { LeverageModal } from "./leverage-modal";
 import { MarginModeModal } from "./margin-mode-modal";
+import { OrderConfirmationModal } from "./order-confirmation-modal";
 import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
 import { TradeFormFields } from "./trade-form-fields";
@@ -370,6 +373,23 @@ export function TradePanel() {
 					slPriceNum,
 				}),
 	);
+
+	function canExecuteOrder() {
+		if (tradeRestricted) return false;
+		if (!isConnected || !address) return false;
+		if (isAvailabilityBlocked) return false;
+		if (!validation.canSubmit) return false;
+		if (!market || !baseToken || typeof market.assetId !== "number") return false;
+		if (!requiresLiveMarkPrice) return true;
+		return isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt);
+	}
+
+	async function submitWithLivePrices(input: OrderSubmitDraftInput) {
+		await submitOrder({ ...input, price, executionReferencePx, markPx });
+	}
+
+	const confirmation = useOrderConfirmation({ execute: submitWithLivePrices, canExecute: canExecuteOrder });
+
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
@@ -445,54 +465,82 @@ export function TradePanel() {
 	}
 
 	async function handleSubmit() {
-		if (tradeRestricted) return;
-		if (!isConnected || !address) return;
-		if (isAvailabilityBlocked) return;
-		if (!validation.canSubmit || isSubmitting) return;
+		if (isSubmitting || !canExecuteOrder()) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
-		if (
-			requiresLiveMarkPrice &&
-			!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt)
-		) {
-			return;
-		}
 
-		await submitOrder({
-			market: {
-				assetId: market.assetId,
-				kind: market.kind === "spot" ? "spot" : "perp",
-				name: market.name,
-				szDecimals: market.szDecimals,
-			},
-			baseToken,
+		const draft: OrderConfirmationDraft = {
+			assetId: market.assetId,
+			marketLabel: market.pairName ?? market.name,
+			marketKind: market.kind === "spot" ? "spot" : "perp",
+			isLeveraged: capabilities.isLeveraged,
 			side,
+			sideLabel: sideLabels[side],
 			orderType,
-			sizeValue,
-			price,
-			executionReferencePx,
-			markPx,
-			marginMode,
-			slippageBps,
-			reduceOnly,
 			tif,
-			limitPriceInput,
-			triggerPriceInput,
-			scaleStartPriceInput,
-			scaleEndPriceInput,
-			scaleLevelsNum,
-			scaleSkewInput,
-			twapMinutesNum,
+			baseToken,
+			szDecimals: market.szDecimals,
+			sizeValue,
+			orderValue,
+			limitPrice: toNumber(limitPriceInput),
+			triggerPrice: triggerPriceNum,
+			scaleStartPrice: scaleStartPriceNum,
+			scaleEndPrice: scaleEndPriceNum,
+			scaleLevels: scaleLevelsNum,
+			scaleSkew: scaleSkewNum,
+			twapMinutes: twapMinutesNum,
 			twapRandomize,
-			twapTriggerPx,
-			twapStopPx,
-			tpSlEnabled,
-			canUseTpSl,
-			tpPriceNum,
-			slPriceNum,
-			twapOrder,
-			scaleOrder,
-			triggerOrder,
-		});
+			twapTriggerPrice: twapTriggerPriceNum,
+			twapStopPrice: twapStopPriceNum,
+			tpSlEnabled: tpSlEnabled && canUseTpSl,
+			tpPrice: tpPriceNum,
+			slPrice: slPriceNum,
+			reduceOnly,
+			leverage,
+			marginMode,
+			marginRequired,
+			estimatedFee,
+			feeRatePercent,
+			liqPrice,
+			liqWarning,
+			slippagePercent,
+		};
+
+		await confirmation.requestSubmit(
+			{
+				market: {
+					assetId: market.assetId,
+					kind: market.kind === "spot" ? "spot" : "perp",
+					name: market.name,
+					szDecimals: market.szDecimals,
+				},
+				baseToken,
+				side,
+				orderType,
+				sizeValue,
+				marginMode,
+				slippageBps,
+				reduceOnly,
+				tif,
+				limitPriceInput,
+				triggerPriceInput,
+				scaleStartPriceInput,
+				scaleEndPriceInput,
+				scaleLevelsNum,
+				scaleSkewInput,
+				twapMinutesNum,
+				twapRandomize,
+				twapTriggerPx,
+				twapStopPx,
+				tpSlEnabled,
+				canUseTpSl,
+				tpPriceNum,
+				slPriceNum,
+				twapOrder,
+				scaleOrder,
+				triggerOrder,
+			},
+			draft,
+		);
 	}
 
 	const validationErrorText =
@@ -615,6 +663,17 @@ export function TradePanel() {
 				onConnect={() => setActiveModal("wallet")}
 				onApply={handleAccountModeChange}
 			/>
+			{confirmation.pending && (
+				<OrderConfirmationModal
+					open
+					draft={confirmation.pending.draft}
+					isSubmitting={confirmation.isConfirming}
+					dontShowAgain={confirmation.dontShowAgain}
+					onDontShowAgainChange={confirmation.setDontShowAgain}
+					onConfirm={confirmation.confirm}
+					onOpenChange={confirmation.cancel}
+				/>
+			)}
 
 			<div className="flex flex-col gap-5 px-3 py-3">
 				<TradeHeader

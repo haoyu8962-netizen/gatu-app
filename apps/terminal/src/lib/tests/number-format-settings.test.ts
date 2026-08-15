@@ -54,7 +54,7 @@ describe("number format settings", () => {
 		expect(getNumberFormatLocale()).toBe("de-DE");
 		expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.GLOBAL_SETTINGS) ?? "{}")).toMatchObject({
 			state: { numberFormatLocale: "de-DE" },
-			version: 3,
+			version: 4,
 		});
 	});
 
@@ -69,7 +69,7 @@ describe("number format settings", () => {
 		expect(getNumberFormatLocale()).toBe(defaultNumberFormatLocale);
 		expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.GLOBAL_SETTINGS) ?? "{}")).toMatchObject({
 			state: {},
-			version: 3,
+			version: 4,
 		});
 	});
 });

@@ -17,22 +17,26 @@ import {
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
+import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import type { OrderSubmitDraftInput } from "@/hooks/trade/use-order-submit";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatOrderPlanError } from "@/lib/errors/format";
 import { bpsToPercentage, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
@@ -86,6 +90,7 @@ import {
 } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
+import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
 import { TradeHeader } from "../tradebox/trade-header";
@@ -484,67 +489,148 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setTriggerPrice("");
 	}
 
-	async function handleSubmit() {
-		if (tradeRestricted) return;
-		if (isUnsupportedMobileAlgoOrder) return;
-		if (!isConnected || !address) return;
-		if (isAvailabilityBlocked) return;
-		if (!validation.canSubmit || isSubmitting) return;
-		if (!market || !baseToken || typeof market.assetId !== "number") return;
-		if (
-			requiresLiveMarkPrice &&
-			!isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt)
-		) {
-			return;
-		}
+	function canExecuteOrder() {
+		if (tradeRestricted) return false;
+		if (isUnsupportedMobileAlgoOrder) return false;
+		if (!isConnected || !address) return false;
+		if (isAvailabilityBlocked) return false;
+		if (!validation.canSubmit) return false;
+		if (!market || !baseToken || typeof market.assetId !== "number") return false;
+		if (!requiresLiveMarkPrice) return true;
+		return isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt);
+	}
 
-		const orderSzDecimals = market.szDecimals ?? 0;
+	async function handleSubmit() {
+		if (isSubmitting || !canExecuteOrder()) return;
+		if (!market || !baseToken || typeof market.assetId !== "number") return;
+
+		const draft: OrderConfirmationDraft = {
+			assetId: market.assetId,
+			marketLabel: market.pairName ?? market.name,
+			marketKind: isSpotMarket ? "spot" : "perp",
+			isLeveraged: capabilities.isLeveraged,
+			side,
+			sideLabel: sideLabels[side],
+			orderType,
+			tif,
+			baseToken,
+			szDecimals: market.szDecimals,
+			sizeValue,
+			orderValue,
+			limitPrice: toNumber(limitPriceInput),
+			triggerPrice: toNumber(triggerPrice),
+			scaleStartPrice: null,
+			scaleEndPrice: null,
+			scaleLevels: null,
+			scaleSkew: null,
+			twapMinutes: null,
+			twapRandomize: false,
+			twapTriggerPrice: null,
+			twapStopPrice: null,
+			tpSlEnabled: tpSlEnabled && canUseTpSl,
+			tpPrice: toNumber(tpPrice),
+			slPrice: toNumber(slPrice),
+			reduceOnly,
+			leverage,
+			marginMode,
+			marginRequired,
+			estimatedFee,
+			feeRatePercent,
+			liqPrice,
+			liqWarning,
+			slippagePercent,
+		};
+
+		await confirmation.requestSubmit(
+			{
+				market: {
+					assetId: market.assetId,
+					kind: isSpotMarket ? "spot" : "perp",
+					name: market.name,
+					szDecimals: market.szDecimals,
+				},
+				baseToken,
+				side,
+				orderType,
+				sizeValue,
+				marginMode,
+				slippageBps,
+				reduceOnly,
+				tif,
+				limitPriceInput,
+				triggerPriceInput: triggerPrice,
+				scaleStartPriceInput: "",
+				scaleEndPriceInput: "",
+				scaleLevelsNum: null,
+				scaleSkewInput: "",
+				twapMinutesNum: null,
+				twapRandomize: false,
+				twapTriggerPx: null,
+				twapStopPx: null,
+				tpSlEnabled,
+				canUseTpSl,
+				tpPriceNum: toNumber(tpPrice),
+				slPriceNum: toNumber(slPrice),
+				twapOrder: false,
+				scaleOrder: false,
+				triggerOrder: isTriggerOrder,
+			},
+			draft,
+		);
+	}
+
+	async function executeSubmit(input: OrderSubmitDraftInput) {
+		const orderAssetId = input.market.assetId;
+		const orderSzDecimals = input.market.szDecimals ?? 0;
+		const priceFormat = { assetId: orderAssetId, szDecimals: orderSzDecimals };
+		const marketExecution = input.orderType === "market" || isTakerOrderType(input.orderType);
+		const executionPrice = marketExecution ? executionReferencePx : toNumberOrZero(input.limitPriceInput);
 		const plan = buildOrderPlan({
 			kind: "entry",
-			assetId: market.assetId,
-			side,
-			orderType,
-			sizeValue,
+			assetId: orderAssetId,
+			side: input.side,
+			orderType: input.orderType,
+			sizeValue: input.sizeValue,
 			szDecimals: orderSzDecimals,
 			markPx: executionReferencePx,
-			price,
-			slippageBps,
-			reduceOnly,
-			tif,
-			limitPriceInput,
-			triggerPriceInput: triggerPrice,
-			scaleStartPriceInput: "",
-			scaleEndPriceInput: "",
-			scaleLevelsNum: null,
-			scaleSkewInput: "",
-			tpSlEnabled,
-			canUseTpSl,
-			tpPriceNum: toNumber(tpPrice),
-			slPriceNum: toNumber(slPrice),
+			price: executionPrice,
+			slippageBps: input.slippageBps,
+			reduceOnly: input.reduceOnly,
+			tif: input.tif,
+			limitPriceInput: input.limitPriceInput,
+			triggerPriceInput: input.triggerPriceInput,
+			scaleStartPriceInput: input.scaleStartPriceInput,
+			scaleEndPriceInput: input.scaleEndPriceInput,
+			scaleLevelsNum: input.scaleLevelsNum,
+			scaleSkewInput: input.scaleSkewInput,
+			tpSlEnabled: input.tpSlEnabled,
+			canUseTpSl: input.canUseTpSl,
+			tpPriceNum: input.tpPriceNum,
+			slPriceNum: input.slPriceNum,
 		});
 
 		const entryOrder = plan.orders[0];
-		if (!entryOrder) return;
-
-		const tpPriceNum = toNumber(tpPrice);
-		const slPriceNum = toNumber(slPrice);
-		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
-		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
+		const hasTp = input.tpSlEnabled && input.canUseTpSl && isPositive(input.tpPriceNum);
+		const hasSl = input.tpSlEnabled && input.canUseTpSl && isPositive(input.slPriceNum);
 
 		const orderId = addOrder({
-			market: baseToken,
-			side,
-			size: String(entryOrder.s),
-			price: formatPriceForOrder(price, { assetId: market.assetId, szDecimals: orderSzDecimals }),
-			orderType: getQueueEntryType(isTriggerOrder, isMarketExecution),
-			tpPrice: hasTp
-				? formatPriceForOrder(tpPriceNum ?? 0, { assetId: market.assetId, szDecimals: orderSzDecimals })
-				: undefined,
-			slPrice: hasSl
-				? formatPriceForOrder(slPriceNum ?? 0, { assetId: market.assetId, szDecimals: orderSzDecimals })
-				: undefined,
+			market: input.baseToken,
+			side: input.side,
+			size: entryOrder ? String(entryOrder.s) : formatSizeForOrder(input.sizeValue, orderSzDecimals),
+			price: formatPriceForOrder(executionPrice, priceFormat),
+			orderType: getQueueEntryType(isTriggerOrderType(input.orderType), marketExecution),
+			tpPrice: hasTp ? formatPriceForOrder(input.tpPriceNum ?? 0, priceFormat) : undefined,
+			slPrice: hasSl ? formatPriceForOrder(input.slPriceNum ?? 0, priceFormat) : undefined,
 			status: "pending",
 		});
+
+		if (plan.errors.length > 0 || !entryOrder) {
+			updateOrder(orderId, {
+				status: "failed",
+				error: plan.errors.map(formatOrderPlanError).join("; ") || t`Order failed`,
+			});
+			return;
+		}
 
 		try {
 			const submission = await submitOrder(
@@ -597,6 +683,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			});
 		}
 	}
+
+	const confirmation = useOrderConfirmation({ execute: executeSubmit, canExecute: canExecuteOrder });
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 
@@ -947,6 +1035,18 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				)}
 				{!embedded && <MobileBottomNavSpacer />}
 			</div>
+
+			{confirmation.pending && (
+				<OrderConfirmationModal
+					open
+					draft={confirmation.pending.draft}
+					isSubmitting={confirmation.isConfirming}
+					dontShowAgain={confirmation.dontShowAgain}
+					onDontShowAgainChange={confirmation.setDontShowAgain}
+					onConfirm={confirmation.confirm}
+					onOpenChange={confirmation.cancel}
+				/>
+			)}
 
 			{walletModalOpen && (
 				<Suspense fallback={null}>

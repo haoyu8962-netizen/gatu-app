@@ -1248,6 +1248,7 @@ msgstr "Camera preview for desktop wallet QR"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Cancel"
 msgstr "Cancel"
@@ -1563,6 +1564,10 @@ msgstr "Close Long"
 msgid "Close navigation"
 msgstr "Close navigation"
 
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Close order confirmation"
+msgstr "Close order confirmation"
+
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 msgid "Close order modification"
 msgstr "Close order modification"
@@ -1809,6 +1814,10 @@ msgstr "Confirm clear unreadable record"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirm in wallet"
+
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Confirm Order"
+msgstr "Confirm Order"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Confirm order size change"
@@ -2312,6 +2321,7 @@ msgstr "Creating your wallet. Please wait..."
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Cross"
 msgstr "Cross"
 
@@ -2786,6 +2796,7 @@ msgid "Docs"
 msgstr "Docs"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Don't show this confirmation again"
 msgstr "Don't show this confirmation again"
 
@@ -2890,6 +2901,7 @@ msgstr "Enabling"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "End Price"
 msgstr "End Price"
 
@@ -3019,6 +3031,7 @@ msgstr "Equity"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Est. Fee"
 msgstr "Est. Fee"
 
@@ -3987,6 +4000,7 @@ msgstr "IOC (Immediate Or Cancel)"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Isolated"
 msgstr "Isolated"
 
@@ -4134,6 +4148,7 @@ msgstr "Legacy reward history"
 #: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Leverage"
 msgstr "Leverage"
 
@@ -4158,6 +4173,7 @@ msgid "Limit"
 msgstr "Limit"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -4230,6 +4246,7 @@ msgstr "Linked staking account: {0}."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"
 msgstr "Liq. Price"
 
@@ -4564,6 +4581,7 @@ msgstr "Margin Ratio"
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Margin Req."
 msgstr "Margin Req."
 
@@ -4636,11 +4654,13 @@ msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Market"
 msgstr "Market"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -5068,6 +5088,7 @@ msgstr "Next Vault page"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "No"
 msgstr "No"
 
@@ -5400,6 +5421,7 @@ msgstr "Number format"
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "Number of Orders"
 
@@ -5643,10 +5665,20 @@ msgstr "Order book in quote asset"
 msgid "Order book view"
 msgstr "Order book view"
 
+#: src/hooks/trade/use-order-confirmation.ts
+msgid "Order conditions changed before it was confirmed. Review the order and submit it again."
+msgstr "Order conditions changed before it was confirmed. Review the order and submit it again."
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Order confirmation"
+msgstr "Order confirmation"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order confirmed by the exchange."
 msgstr "Order confirmed by the exchange."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
@@ -5719,6 +5751,7 @@ msgstr "Order type"
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Order Value"
 msgstr "Order Value"
 
@@ -6273,6 +6306,11 @@ msgstr "Previous Vault page"
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Price"
 msgstr "Price"
 
@@ -6414,6 +6452,7 @@ msgid "Quote-asset rewards are shown separately and are never added together as 
 msgstr "Quote-asset rewards are shown separately and are never added together as USD."
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Randomize timing"
 msgstr "Randomize timing"
 
@@ -6560,6 +6599,7 @@ msgstr "Recovery could not be saved in this browser. Record the Arbitrum transac
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "Reduce Only"
@@ -6963,6 +7003,10 @@ msgstr "Review request"
 msgid "Review revoke"
 msgstr "Review revoke"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Review side, size and price before each order is sent."
+msgstr "Review side, size and price before each order is sent."
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "Review the available deployer information and our <0>Terms of Use</0> before trading."
@@ -6970,6 +7014,10 @@ msgstr "Review the available deployer information and our <0>Terms of Use</0> be
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
+
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
+msgid "Review the order before it is sent to the exchange."
+msgstr "Review the order before it is sent to the exchange."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Review the public fields and try again."
@@ -7064,6 +7112,7 @@ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
 msgstr "Runtime"
 
@@ -7132,6 +7181,7 @@ msgstr "Save image"
 msgid "Saving..."
 msgstr "Saving..."
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
@@ -7605,9 +7655,9 @@ msgstr "Show ROE percentage"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#~ msgid "Side"
-#~ msgstr "Side"
+#: src/domain/trade/order-confirmation.ts
+msgid "Side"
+msgstr "Side"
 
 #: src/components/ui/sidebar.tsx
 #~ msgid "Sidebar"
@@ -7679,6 +7729,7 @@ msgstr "Signing..."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Size"
 msgstr "Size"
 
@@ -7701,6 +7752,7 @@ msgstr "Size precision must be a non-negative integer"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Size Skew"
 msgstr "Size Skew"
 
@@ -7735,6 +7787,7 @@ msgstr "SL Price"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "Slippage"
 
@@ -7944,6 +7997,7 @@ msgstr "Start camera"
 
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Start Price"
 msgstr "Start Price"
 
@@ -8005,6 +8059,7 @@ msgstr "Stocks"
 msgid "Stop"
 msgstr "Stop"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
@@ -8013,6 +8068,7 @@ msgstr "Stop Limit"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
@@ -8037,6 +8093,7 @@ msgstr "Stop loss limit price"
 msgid "Stop loss return"
 msgstr "Stop loss return"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
@@ -8088,6 +8145,7 @@ msgstr "Submitting to Hyperliquid"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/order-confirmation-modal.tsx
 msgid "Submitting..."
 msgstr "Submitting..."
 
@@ -8278,6 +8336,7 @@ msgstr "System finalization · hash unavailable"
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "Take Profit"
@@ -8290,6 +8349,7 @@ msgstr "Take Profit / Stop Loss"
 msgid "Take profit limit"
 msgstr "Take profit limit"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
@@ -8307,6 +8367,7 @@ msgstr "Take profit limit must be at or below its trigger."
 msgid "Take profit limit price"
 msgstr "Take profit limit price"
 
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
@@ -9479,6 +9540,8 @@ msgstr "Trigger order must reduce your current position"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Trigger Price"
 msgstr "Trigger Price"
 
@@ -9527,6 +9590,7 @@ msgstr "TVL"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
@@ -9604,6 +9668,7 @@ msgstr "Two-sided open interest: the sum of long and short positions on this con
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Type"
 msgstr "Type"
 
@@ -10382,6 +10447,8 @@ msgstr "Withdrawals are unavailable for this address."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/domain/trade/order-confirmation.ts
+#: src/domain/trade/order-confirmation.ts
 msgid "Yes"
 msgstr "Yes"
 

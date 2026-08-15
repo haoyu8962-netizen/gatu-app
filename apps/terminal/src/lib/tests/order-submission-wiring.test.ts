@@ -60,8 +60,63 @@ describe("order submission wiring", () => {
 		expect(tradePanel).toContain("const reduceOnlyChecked = useReduceOnly();");
 		expect(tradePanel).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
 		expect(tradePanel).toMatch(/perpInput\(baseInput, \{[\s\S]*?\breduceOnly,[\s\S]*?\}\)/);
-		expect(tradePanel).toMatch(/await submitOrder\(\{[\s\S]*?\breduceOnly,[\s\S]*?\}\);/);
+		expect(tradePanel).toMatch(
+			/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\breduceOnly,[\s\S]*?\},\s*draft,\s*\);/,
+		);
 		expect(tradePanel).not.toMatch(/reduceOnly: reduceOnlyChecked/);
+	});
+
+	it("routes both order-entry surfaces through the shared confirmation gate", () => {
+		for (const path of ["components/trade/tradebox/trade-panel.tsx", "components/trade/mobile/mobile-trade-view.tsx"]) {
+			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
+			expect(source).toContain("useOrderConfirmation(");
+			expect(source).toContain("<OrderConfirmationModal");
+			expect(source).toContain("confirmation.requestSubmit(");
+			expect(source).toContain("canExecute: canExecuteOrder })");
+			expect(source).toContain("function canExecuteOrder()");
+			expect(source).toMatch(/if \(isSubmitting \|\| !canExecuteOrder\(\)\) return;/);
+		}
+
+		const confirmationHook = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-confirmation.ts"), "utf8");
+		expect(confirmationHook).toContain("getSkipOrderConfirmation()");
+		expect(confirmationHook).toMatch(/if \(!canExecute\(\)\) \{[\s\S]*?setPending\(null\);/);
+		expect(confirmationHook).toMatch(
+			/if \(dontShowAgain\) setSkipOrderConfirmation\(true\);\s*setIsConfirming\(true\);/,
+		);
+
+		const skipMatches = collectSourceFiles(SOURCE_ROOT)
+			.filter((path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"))
+			.filter((path) => readFileSync(path, "utf8").includes("getSkipOrderConfirmation()"))
+			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""))
+			.sort();
+
+		expect(skipMatches).toEqual(["hooks/trade/use-order-confirmation.ts", "stores/use-global-settings-store.ts"]);
+	});
+
+	it("keeps price-bearing fields out of the confirmation snapshot on both surfaces", () => {
+		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
+		const mobileTradeView = readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8");
+		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
+
+		expect(orderSubmit).toContain(
+			'export type OrderSubmitLivePrices = Pick<OrderSubmitInput, "price" | "executionReferencePx" | "markPx">;',
+		);
+		expect(orderSubmit).toContain(
+			"export type OrderSubmitDraftInput = Omit<OrderSubmitInput, keyof OrderSubmitLivePrices>;",
+		);
+
+		const snapshot = tradePanel.match(/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\},\s*draft,\s*\);/);
+		expect(snapshot).not.toBeNull();
+		for (const field of ["price,", "executionReferencePx,", "markPx,"]) {
+			expect(snapshot?.[0]).not.toContain(field);
+		}
+		expect(tradePanel).toContain("await submitOrder({ ...input, price, executionReferencePx, markPx });");
+
+		expect(mobileTradeView).toContain("async function executeSubmit(input: OrderSubmitDraftInput) {");
+		expect(mobileTradeView).toContain(
+			"const executionPrice = marketExecution ? executionReferencePx : toNumberOrZero(input.limitPriceInput);",
+		);
+		expect(mobileTradeView).toMatch(/sizeValue: input\.sizeValue,/);
 	});
 
 	it("keeps desktop and mobile TWAP views wired to shared subscription and cancellation boundaries", () => {
