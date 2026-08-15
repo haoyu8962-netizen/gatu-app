@@ -14,7 +14,7 @@ interface Props {
 export function ReferralRewardsCard({ claimDisabled, onClaim, rewards }: Props) {
 	useNumberFormatRevision();
 	return (
-		<article className="h-full rounded-[10px] border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:rounded-[12px] min-[1001px]:px-4 min-[1001px]:py-3.5">
+		<article className="h-full rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-3 min-[1001px]:rounded-[12px] min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<h2 className="text-xs font-bold text-fg min-[1001px]:text-2sm">

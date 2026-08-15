@@ -17,9 +17,7 @@ describe("referral 18C and 18D visual contract", () => {
 	it("keeps every data state inside one compact responsive surface", () => {
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
 
-		expect(dashboard).toContain(
-			"overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_32px_rgba(20,30,45,0.08)] min-[1001px]:rounded-[14px]",
-		);
+		expect(dashboard).toContain("overflow-hidden rounded-[20px] bg-surface shadow-raised min-[1001px]:rounded-[14px]");
 		expect(dashboard.match(/<ReferralSurface/g)).toHaveLength(1);
 		expect(dashboard).not.toContain('<div className="mb-4">{header}</div>');
 		expect(dashboard).toContain("aria-busy={busy || undefined}");

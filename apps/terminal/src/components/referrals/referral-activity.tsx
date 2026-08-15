@@ -41,7 +41,7 @@ export function ReferralActivity({
 				<TabsList className="w-full gap-3 overflow-x-auto px-4 min-[1001px]:gap-[18px] min-[1001px]:px-5">
 					<TabsTrigger
 						value="traders"
-						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+						className="whitespace-nowrap px-1 py-2.5 text-xs min-[1001px]:py-[11px] min-[1001px]:text-2sm"
 					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Traders</Trans>
@@ -52,7 +52,7 @@ export function ReferralActivity({
 					</TabsTrigger>
 					<TabsTrigger
 						value="claims"
-						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+						className="whitespace-nowrap px-1 py-2.5 text-xs min-[1001px]:py-[11px] min-[1001px]:text-2sm"
 					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Claims</Trans>
@@ -63,7 +63,7 @@ export function ReferralActivity({
 					</TabsTrigger>
 					<TabsTrigger
 						value="legacy"
-						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+						className="whitespace-nowrap px-1 py-2.5 text-xs min-[1001px]:py-[11px] min-[1001px]:text-2sm"
 					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Legacy</Trans>

@@ -44,7 +44,7 @@ function ReferralSurface({
 		<section
 			aria-busy={busy || undefined}
 			aria-labelledby={titleId}
-			className="overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_32px_rgba(20,30,45,0.08)] min-[1001px]:rounded-[14px]"
+			className="overflow-hidden rounded-[20px] bg-surface shadow-raised min-[1001px]:rounded-[14px]"
 		>
 			{children}
 		</section>

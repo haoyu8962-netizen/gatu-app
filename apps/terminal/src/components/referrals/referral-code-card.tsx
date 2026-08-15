@@ -63,7 +63,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 	}
 
 	return (
-		<article className="h-full rounded-[10px] border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:rounded-[12px] min-[1001px]:px-4 min-[1001px]:py-3.5">
+		<article className="h-full rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-3 min-[1001px]:rounded-[12px] min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h2 className="text-xs font-bold text-fg min-[1001px]:text-2sm">
@@ -95,10 +95,10 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 							<span
 								className={
 									complete
-										? "grid size-4 shrink-0 place-items-center rounded-full bg-success text-white"
+										? "grid size-4 shrink-0 place-items-center rounded-full bg-success text-fg-inverse"
 										: active
-											? "grid size-4 shrink-0 place-items-center rounded-full bg-brand text-[10px] font-semibold text-white"
-											: "grid size-4 shrink-0 place-items-center rounded-full border border-stroke-strong text-[10px] text-fg-muted"
+											? "grid size-4 shrink-0 place-items-center rounded-full bg-brand text-3xs font-semibold text-fg-inverse"
+											: "grid size-4 shrink-0 place-items-center rounded-full border border-stroke-strong text-3xs text-fg-muted"
 								}
 							>
 								{complete ? <CheckIcon className="size-2.5" weight="bold" /> : step}
@@ -125,7 +125,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						aria-valuemin={0}
 						aria-valuemax={100}
 						aria-valuenow={activationProgress ?? 0}
-						className="mt-2 h-1.5 overflow-hidden rounded-full bg-fill"
+						className="mt-2 h-1.5 overflow-hidden rounded-full bg-fill-press"
 					>
 						<div className="h-full rounded-full bg-brand" style={{ width: `${activationProgress ?? 0}%` }} />
 					</div>
