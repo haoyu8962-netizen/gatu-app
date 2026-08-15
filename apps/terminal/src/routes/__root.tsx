@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
+import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
@@ -11,6 +12,7 @@ import { createLazyComponent } from "@/lib/lazy";
 import { buildRootHead } from "@/lib/seo";
 import { isDocumentRoutePath, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
+import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
 import appCss from "../styles.css?url";
 
@@ -49,13 +51,25 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootComponent() {
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
 	const isDocumentRoute = isDocumentRoutePath(pathname);
-	const clientRuntimeReady = useClientRuntimeReady();
 
 	useEffect(() => {
 		registerServiceWorker();
 	}, []);
 
 	if (isDocumentRoute) return <Outlet />;
+
+	return (
+		<ApplicationErrorBoundary>
+			<ClientRuntimeGate>
+				<AppRuntime />
+			</ClientRuntimeGate>
+		</ApplicationErrorBoundary>
+	);
+}
+
+function AppRuntime() {
+	const clientRuntimeReady = useClientRuntimeReady();
+
 	if (!clientRuntimeReady) return <AppShellSkeleton />;
 
 	return (
@@ -101,7 +115,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 				<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>
-				<link rel="stylesheet" href={appCss} />
+				<link rel="stylesheet" href={appCss} precedence="default" />
 			</head>
 			<body>
 				{children}

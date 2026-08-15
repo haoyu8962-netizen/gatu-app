@@ -87,18 +87,20 @@ describe("application error boundaries", () => {
 		await expect(started).resolves.toBe("started");
 	});
 
-	it("keeps the outer boundary in Wrap and the router-aware provider in InnerWrap", () => {
+	it("mounts the fatal boundary inside the document shell so <html>/<head> never unmount", () => {
 		const routerSource = readFileSync(resolve(process.cwd(), "src/router.tsx"), "utf8");
 		const rootRouteSource = readFileSync(resolve(process.cwd(), "src/routes/__root.tsx"), "utf8");
-		const wrapStart = routerSource.indexOf("Wrap:");
-		const innerWrapStart = routerSource.indexOf("InnerWrap:");
-		const boundaryStart = routerSource.indexOf("<ApplicationErrorBoundary>");
-		const providerStart = routerSource.indexOf("<RootProvider");
-		const boundaryEnd = routerSource.indexOf("</ApplicationErrorBoundary>");
 
-		expect(boundaryStart).toBeGreaterThan(wrapStart);
-		expect(boundaryEnd).toBeLessThan(innerWrapStart);
-		expect(providerStart).toBeGreaterThan(innerWrapStart);
+		expect(routerSource).not.toMatch(/\n\s*Wrap:/);
+		expect(routerSource).not.toContain("ApplicationErrorBoundary");
+		expect(routerSource).toContain("InnerWrap:");
+		expect(routerSource).toContain("<RootProvider {...rqContext}>{props.children}</RootProvider>");
+
+		const bodyStart = rootRouteSource.indexOf("<body>");
+		const boundaryInRoot = rootRouteSource.indexOf("<ApplicationErrorBoundary>");
+		expect(boundaryInRoot).toBeGreaterThanOrEqual(0);
+		expect(rootRouteSource).toContain("<ApplicationErrorBoundary>\n\t\t\t<ClientRuntimeGate>");
 		expect(rootRouteSource).toContain("errorComponent: RouterErrorPage");
+		expect(bodyStart).toBeGreaterThan(boundaryInRoot);
 	});
 });

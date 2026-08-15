@@ -26,22 +26,33 @@ describe("root provider startup split", () => {
 		expect(rootProviderSource).not.toContain('from "@gatu/hl-react"');
 	});
 
-	it("keeps the server and hydration fallback disconnected", () => {
+	it("keeps the document shell provider structurally stable across hydration", () => {
+		expect(rootProviderSource).toContain("<ClientRuntimeProvider ready={false}>");
+		expect(rootProviderSource).not.toContain("<Suspense fallback={<ServerProviders");
+		const rootProviderBody = rootProviderSource.slice(
+			rootProviderSource.indexOf("export function RootProvider"),
+			rootProviderSource.indexOf("export function ClientRuntimeGate"),
+		);
+		expect(rootProviderBody).not.toContain("useHydrated");
+		expect(rootProviderBody).not.toContain("Suspense");
+	});
+
+	it("activates the wallet runtime inside <body> through the client runtime gate", () => {
+		expect(rootProviderSource).toContain("export function ClientRuntimeGate");
 		expect(rootProviderSource).toContain("useHydrated()");
 		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
-		expect(rootProviderSource).toContain("<ClientRuntimeProvider ready={false}>");
-		expect(rootProviderSource).toContain(
-			"<Suspense fallback={<ServerProviders queryClient={queryClient}>{children}</ServerProviders>}>",
-		);
+		expect(rootProviderSource).toContain("<Suspense fallback={children}>");
+		expect(rootRouteSource).toContain("<ClientRuntimeGate>");
 		expect(rootRouteSource).toContain("if (!clientRuntimeReady) return <AppShellSkeleton />");
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
-	it("mounts the route-aware provider inside router context without moving the fatal boundary", () => {
-		expect(routerSource).toContain("<ApplicationErrorBoundary>{props.children}</ApplicationErrorBoundary>");
+	it("mounts the route-aware provider inside router context and the fatal boundary inside body", () => {
+		expect(routerSource).not.toContain("ApplicationErrorBoundary");
 		expect(routerSource).toContain("InnerWrap:");
 		expect(routerSource).toContain("<RootProvider {...rqContext}>{props.children}</RootProvider>");
 		expect(routerSource).toContain("defaultPendingMinMs: 0");
+		expect(rootRouteSource).toContain("<ApplicationErrorBoundary>");
 	});
 
 	it("applies the persisted theme before the terminal stylesheet is parsed", () => {
@@ -53,6 +64,10 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).toContain("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
 		expect(themeScript).toBeGreaterThanOrEqual(0);
 		expect(stylesheet).toBeGreaterThan(themeScript);
+	});
+
+	it("registers the terminal stylesheet as a hoistable resource that survives shell re-renders", () => {
+		expect(rootRouteSource).toContain('<link rel="stylesheet" href={appCss} precedence="default" />');
 	});
 
 	it("preserves the managed wallet and signing provider hierarchy", () => {

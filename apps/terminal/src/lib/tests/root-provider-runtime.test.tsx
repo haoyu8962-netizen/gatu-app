@@ -4,7 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RootProvider } from "@/providers/root";
+import { ClientRuntimeGate, RootProvider } from "@/providers/root";
 
 const runtime = vi.hoisted(() => ({
 	clientProviderRenders: 0,
@@ -27,6 +27,16 @@ vi.mock("@/providers/client-root", () => ({
 	},
 }));
 
+function MountProbe({ label, counters }: { label: string; counters: { mounts: number; unmounts: number } }) {
+	useEffect(() => {
+		counters.mounts += 1;
+		return () => {
+			counters.unmounts += 1;
+		};
+	}, [counters]);
+	return <span>{label}</span>;
+}
+
 describe("root provider runtime boundary", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -48,41 +58,56 @@ describe("root provider runtime boundary", () => {
 		container.remove();
 	});
 
-	it("keeps a document route mounted across hydration without loading client providers", () => {
-		let mounts = 0;
-		let unmounts = 0;
+	it("keeps the document shell mounted across hydration on every route", () => {
+		runtime.pathname = "/trade/HYPE";
+		const counters = { mounts: 0, unmounts: 0 };
 
-		function DocumentProbe() {
-			useEffect(() => {
-				mounts += 1;
-				return () => {
-					unmounts += 1;
-				};
-			}, []);
-			return <span data-testid="document">Document</span>;
+		function render() {
+			act(() => {
+				root.render(
+					<RootProvider queryClient={queryClient}>
+						<MountProbe label="Shell" counters={counters} />
+					</RootProvider>,
+				);
+			});
 		}
 
-		act(() => {
-			root.render(
-				<RootProvider queryClient={queryClient}>
-					<DocumentProbe />
-				</RootProvider>,
-			);
-		});
+		render();
+		expect(container.textContent).toBe("Shell");
+
+		runtime.hydrated = true;
+		render();
+
+		expect(container.textContent).toBe("Shell");
+		expect(counters.mounts).toBe(1);
+		expect(counters.unmounts).toBe(0);
+		expect(runtime.clientProviderRenders).toBe(0);
+	});
+
+	it("keeps a document route mounted across hydration without loading client providers", () => {
+		const counters = { mounts: 0, unmounts: 0 };
+
+		function render() {
+			act(() => {
+				root.render(
+					<RootProvider queryClient={queryClient}>
+						<ClientRuntimeGate>
+							<MountProbe label="Document" counters={counters} />
+						</ClientRuntimeGate>
+					</RootProvider>,
+				);
+			});
+		}
+
+		render();
 		expect(container.textContent).toBe("Document");
 
 		runtime.hydrated = true;
-		act(() => {
-			root.render(
-				<RootProvider queryClient={queryClient}>
-					<DocumentProbe />
-				</RootProvider>,
-			);
-		});
+		render();
 
 		expect(container.textContent).toBe("Document");
-		expect(mounts).toBe(1);
-		expect(unmounts).toBe(0);
+		expect(counters.mounts).toBe(1);
+		expect(counters.unmounts).toBe(0);
 		expect(runtime.clientProviderRenders).toBe(0);
 	});
 
@@ -92,11 +117,36 @@ describe("root provider runtime boundary", () => {
 		act(() => {
 			root.render(
 				<RootProvider queryClient={queryClient}>
-					<span>Terminal frame</span>
+					<ClientRuntimeGate>
+						<span>Terminal frame</span>
+					</ClientRuntimeGate>
 				</RootProvider>,
 			);
 		});
 		expect(container.textContent).toBe("Terminal frame");
 		expect(runtime.clientProviderRenders).toBe(0);
+	});
+
+	it("activates the wallet runtime for a trading route after hydration", async () => {
+		runtime.pathname = "/trade/HYPE";
+		runtime.hydrated = true;
+
+		await act(async () => {
+			root.render(
+				<RootProvider queryClient={queryClient}>
+					<ClientRuntimeGate>
+						<span>Terminal frame</span>
+					</ClientRuntimeGate>
+				</RootProvider>,
+			);
+		});
+		for (let attempt = 0; attempt < 20 && runtime.clientProviderRenders === 0; attempt += 1) {
+			await act(async () => {
+				await new Promise((resolve) => setTimeout(resolve, 10));
+			});
+		}
+
+		expect(container.textContent).toBe("Terminal frame");
+		expect(runtime.clientProviderRenders).toBeGreaterThan(0);
 	});
 });
