@@ -20,7 +20,6 @@ import { formatDecimalFloor, isPositive, toNumber, toNumberOrZero } from "@/lib/
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
-	isTriggerOrderType,
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
@@ -158,7 +157,6 @@ export function TradeFormFields({
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 
-	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
@@ -427,8 +425,8 @@ export function TradeFormFields({
 						reduceOnly={
 							capabilities.hasReduceOnly
 								? {
-										checked: triggerOrder || reduceOnly,
-										disabled: isFormDisabled || triggerOrder,
+										checked: reduceOnly,
+										disabled: isFormDisabled,
 										onCheckedChange: setReduceOnly,
 									}
 								: undefined

@@ -67,6 +67,7 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		stopOrder: false,
 		takeProfitOrder: false,
 		positionSize: null,
+		reduceOnly: false,
 		scaleOrder: false,
 		scaleStartPriceNum: null,
 		scaleEndPriceNum: null,
@@ -123,7 +124,7 @@ describe("reduce-only trigger validation", () => {
 		expect(result.canSubmit).toBe(false);
 	});
 
-	it("blocks a trigger order when no position exists", () => {
+	it("blocks a reduce-only trigger order when no position exists", () => {
 		const result = validatePerpOrder(
 			perpContext({
 				orderType: "stopMarket",
@@ -133,13 +134,14 @@ describe("reduce-only trigger validation", () => {
 				side: "sell",
 				stopOrder: true,
 				positionSize: 0,
+				reduceOnly: true,
 			}),
 		);
 
 		expect(result.errors.map((error) => error.code)).toContain("TRG_005");
 	});
 
-	it("requires the trigger side to reduce the current position", () => {
+	it("requires a reduce-only trigger side to reduce the current position", () => {
 		const result = validatePerpOrder(
 			perpContext({
 				orderType: "stopMarket",
@@ -149,6 +151,7 @@ describe("reduce-only trigger validation", () => {
 				side: "buy",
 				stopOrder: true,
 				positionSize: 10,
+				reduceOnly: true,
 			}),
 		);
 
@@ -167,10 +170,86 @@ describe("reduce-only trigger validation", () => {
 				positionSize: 10,
 				sizeValue: 11,
 				orderValue: 1_100,
+				reduceOnly: true,
 			}),
 		);
 
 		expect(result.errors.map((error) => error.code)).toContain("TRG_007");
+	});
+});
+
+describe("opening trigger validation", () => {
+	it("allows a trigger order to open a position when reduce-only is off", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 95,
+				side: "sell",
+				stopOrder: true,
+				positionSize: 0,
+				reduceOnly: false,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).not.toContain("TRG_005");
+		expect(result.canSubmit).toBe(true);
+	});
+
+	it("allows a trigger order to add to the current position when reduce-only is off", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 105,
+				side: "buy",
+				stopOrder: true,
+				positionSize: 10,
+				reduceOnly: false,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).not.toContain("TRG_006");
+		expect(result.canSubmit).toBe(true);
+	});
+
+	it("does not cap an opening trigger at the current position size", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 95,
+				side: "sell",
+				stopOrder: true,
+				positionSize: 10,
+				sizeValue: 11,
+				orderValue: 1_100,
+				reduceOnly: false,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).not.toContain("TRG_007");
+		expect(result.canSubmit).toBe(true);
+	});
+
+	it("still enforces the mark-relative trigger direction for opening triggers", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 95,
+				side: "buy",
+				stopOrder: true,
+				positionSize: 0,
+				reduceOnly: false,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).toContain("TRG_001");
 	});
 });
 

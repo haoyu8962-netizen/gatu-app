@@ -19,9 +19,11 @@ describe("limit price prefill contract", () => {
 		}
 	});
 
-	it("keeps trigger orders reduce-only on mobile exactly like desktop", () => {
-		expect(MOBILE_VIEW).toContain("checked: isTriggerOrder || reduceOnly");
-		expect(MOBILE_VIEW).toContain("disabled: isFormDisabled || isTriggerOrder");
-		expect(DESKTOP_FIELDS).toContain("checked: triggerOrder || reduceOnly");
+	it("lets the reduce-only checkbox follow user input for trigger orders on both surfaces", () => {
+		for (const source of [DESKTOP_FIELDS, MOBILE_VIEW]) {
+			expect(source).toContain("checked: reduceOnly,");
+			expect(source).not.toMatch(/checked: (isTriggerOrder|triggerOrder) \|\| reduceOnly/);
+			expect(source).not.toMatch(/disabled: isFormDisabled \|\| (isTriggerOrder|triggerOrder)/);
+		}
 	});
 });

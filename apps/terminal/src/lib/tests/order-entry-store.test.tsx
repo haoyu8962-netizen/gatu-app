@@ -109,13 +109,35 @@ describe("order entry store persistence", () => {
 			actions.setTif("Ioc");
 			actions.setOrderType("stopMarket");
 		});
-		expect(snapshot).toEqual({ orderType: "stopMarket", reduceOnly: true, tpSlEnabled: false, tif: "Ioc" });
+		expect(snapshot).toEqual({ orderType: "stopMarket", reduceOnly: false, tpSlEnabled: false, tif: "Ioc" });
 
+		act(() => actions.setReduceOnly(true));
 		act(() => actions.setOrderType("market"));
-		expect(snapshot).toEqual({ orderType: "market", reduceOnly: false, tpSlEnabled: false, tif: "Ioc" });
+		expect(snapshot).toEqual({ orderType: "market", reduceOnly: true, tpSlEnabled: false, tif: "Ioc" });
 
 		act(() => actions.setOrderType("scale"));
-		expect(snapshot).toEqual({ orderType: "scale", reduceOnly: false, tpSlEnabled: false, tif: "Gtc" });
+		expect(snapshot).toEqual({ orderType: "scale", reduceOnly: true, tpSlEnabled: false, tif: "Gtc" });
+	});
+
+	it("leaves reduce-only under user control when switching to and from trigger order types", () => {
+		let snapshot: { orderType: string; reduceOnly: boolean } | undefined;
+
+		function StateProbe() {
+			snapshot = { orderType: useOrderType(), reduceOnly: useReduceOnly() };
+			return null;
+		}
+
+		act(() => root.render(createElement(StateProbe)));
+		act(() => actions.setOrderType("stopMarket"));
+		expect(snapshot).toEqual({ orderType: "stopMarket", reduceOnly: false });
+
+		act(() => actions.setReduceOnly(true));
+		act(() => actions.setOrderType("takeProfitLimit"));
+		expect(snapshot).toEqual({ orderType: "takeProfitLimit", reduceOnly: true });
+
+		act(() => actions.setReduceOnly(false));
+		act(() => actions.setOrderType("limit"));
+		expect(snapshot).toEqual({ orderType: "limit", reduceOnly: false });
 	});
 
 	it("keeps order-type-dependent state coherent when persistence throws", () => {
@@ -145,6 +167,6 @@ describe("order entry store persistence", () => {
 			}
 		});
 		expect(storageError).toBeInstanceOf(DOMException);
-		expect(snapshot).toEqual({ orderType: "stopMarket", reduceOnly: true, tpSlEnabled: false });
+		expect(snapshot).toEqual({ orderType: "stopMarket", reduceOnly: false, tpSlEnabled: false });
 	});
 });

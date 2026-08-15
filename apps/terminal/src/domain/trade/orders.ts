@@ -129,6 +129,7 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 			szDecimals,
 			isBuy,
 			formattedSize,
+			reduceOnly,
 			triggerPriceInput,
 			limitPriceInput,
 			isStopOrder,
@@ -298,6 +299,7 @@ interface TriggerOrderParams {
 	szDecimals: number;
 	isBuy: boolean;
 	formattedSize: string;
+	reduceOnly: boolean;
 	triggerPriceInput: string;
 	limitPriceInput: string;
 	isStopOrder: boolean;
@@ -328,7 +330,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 		b: params.isBuy,
 		p: orderPx,
 		s: params.formattedSize,
-		r: true,
+		r: params.reduceOnly,
 		t: {
 			trigger: {
 				isMarket: !params.usesLimitPriceForOrder,

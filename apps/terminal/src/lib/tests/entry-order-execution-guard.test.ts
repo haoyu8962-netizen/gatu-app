@@ -191,6 +191,23 @@ describe("entry order SDK execution guard", () => {
 		).toThrow("Trigger price is no longer valid");
 	});
 
+	it("accepts an opening trigger that is not reduce-only and still enforces directional capacity", () => {
+		const opening = triggerOrder(true, "sl", "101");
+		expect(opening.orders[0]?.r).toBe(false);
+		expect(() => assertEntryOrderExecutionAllowed(opening, executionState(), 1_001)).not.toThrow();
+
+		const reducing: OrderParameters = { ...opening, orders: [{ ...opening.orders[0], r: true }] };
+		expect(() => assertEntryOrderExecutionAllowed(reducing, executionState(), 1_001)).not.toThrow();
+
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				opening,
+				executionState({ availability: { kind: "perp", maxBaseBySide: { buy: "0.5", sell: "10" } } }),
+				1_001,
+			),
+		).toThrow("Trading availability changed");
+	});
+
 	it("validates attached limit TP/SL against the parent price without requiring a live mark", () => {
 		expect(() =>
 			assertEntryOrderExecutionAllowed(limitWithAttachedTpSl(), executionState({ markPriceStatus: "stale" }), 1_001),

@@ -12,6 +12,11 @@ export interface TriggerContext {
 	takeProfitOrder: boolean;
 	positionSize: number | null;
 	sizeValue: number;
+	reduceOnly: boolean;
+}
+
+function isReduceOnlyTrigger(ctx: TriggerContext): boolean {
+	return ctx.usesTriggerPrice && ctx.reduceOnly;
 }
 
 export const stopTriggerAboveMarkValidator: Validator<TriggerContext> = createValidator({
@@ -76,7 +81,7 @@ export const triggerPositionExistsValidator: Validator<TriggerContext> = createV
 	category: "trigger",
 	priority: 304,
 	getMessage: () => t`Open a position before placing a trigger order`,
-	validate: (ctx) => !ctx.usesTriggerPrice || ctx.positionSize === null || ctx.positionSize !== 0,
+	validate: (ctx) => !isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize !== 0,
 });
 
 export const triggerPositionDirectionValidator: Validator<TriggerContext> = createValidator({
@@ -86,7 +91,7 @@ export const triggerPositionDirectionValidator: Validator<TriggerContext> = crea
 	priority: 305,
 	getMessage: () => t`Trigger order must reduce your current position`,
 	validate: (ctx) => {
-		if (!ctx.usesTriggerPrice || ctx.positionSize === null || ctx.positionSize === 0) return true;
+		if (!isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize === 0) return true;
 		return ctx.side === "sell" ? ctx.positionSize > 0 : ctx.positionSize < 0;
 	},
 });
@@ -98,7 +103,7 @@ export const triggerPositionSizeValidator: Validator<TriggerContext> = createVal
 	priority: 306,
 	getMessage: () => t`Trigger size exceeds position size`,
 	validate: (ctx) => {
-		if (!ctx.usesTriggerPrice || ctx.positionSize === null || ctx.positionSize === 0) return true;
+		if (!isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize === 0) return true;
 		const reducesPosition = ctx.side === "sell" ? ctx.positionSize > 0 : ctx.positionSize < 0;
 		if (!reducesPosition) return true;
 		const size = toBig(ctx.sizeValue);

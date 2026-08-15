@@ -216,7 +216,8 @@ export function TradePanel() {
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const selectedPrice = useSelectedPrice();
-	const reduceOnly = useReduceOnly();
+	const reduceOnlyChecked = useReduceOnly();
+	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const triggerPriceInput = useTriggerPrice();
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
@@ -341,6 +342,7 @@ export function TradePanel() {
 					stopOrder,
 					takeProfitOrder,
 					positionSize: validatedPositionSize,
+					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
 					tpPriceNum,

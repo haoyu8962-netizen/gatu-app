@@ -19,6 +19,18 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).toContain("if (isUnsupportedMobileAlgoOrder) return");
 	});
 
+	it("clears reduce-only together with the other inputs after a submitted order", () => {
+		expect(mobileTradeView).toMatch(
+			/function resetSubmittedForm\(\) \{\s*setSizeInput\(""\);\s*setLimitPriceInput\(""\);\s*setReduceOnly\(false\);\s*setTpPrice\(""\);\s*setSlPrice\(""\);\s*setTriggerPrice\(""\);\s*\}/,
+		);
+		expect(mobileTradeView).toMatch(/submission\.state === "reconciling"\) \{\s*resetSubmittedForm\(\);/);
+		expect(mobileTradeView).toMatch(
+			/status: "success", outcome: deriveOrderOutcome\(statuses\) \}\);\s*resetSubmittedForm\(\);/,
+		);
+		expect(mobileTradeView).toMatch(/status: "partial",[\s\S]*?\}\);\s*resetSubmittedForm\(\);/);
+		expect(mobileTradeView).not.toMatch(/setSizeInput\(""\);\s*setLimitPriceInput\(""\);\s*setTpPrice/);
+	});
+
 	it("does not advertise a create action that the mobile signer cannot encode", () => {
 		expect(mobileTwapTab).not.toContain('setOrderType("twap")');
 		expect(mobileTwapTab).not.toContain("Create TWAP");

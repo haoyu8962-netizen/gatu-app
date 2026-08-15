@@ -210,6 +210,70 @@ describe("buildOrders low-level trigger guard", () => {
 		expect(orders[0]?.p).toBe("94");
 		expect(orders[0]?.t).toEqual({ trigger: { isMarket: false, triggerPx: "95", tpsl: "sl" } });
 	});
+
+	it("builds an opening trigger order when reduce-only is off", () => {
+		const { orders } = buildOrders(buildParams({ triggerPriceInput: "95", reduceOnly: false }));
+
+		expect(orders).toHaveLength(1);
+		expect(orders[0]?.r).toBe(false);
+	});
+
+	it("keeps a trigger order reduce-only when the checkbox is on", () => {
+		const { orders } = buildOrders(buildParams({ triggerPriceInput: "95", reduceOnly: true }));
+
+		expect(orders).toHaveLength(1);
+		expect(orders[0]?.r).toBe(true);
+	});
+
+	it("follows the reduce-only flag for market triggers", () => {
+		const opening = buildOrders(
+			buildParams({
+				orderType: "stopMarket",
+				triggerPriceInput: "95",
+				limitPriceInput: "",
+				usesLimitPriceForOrder: false,
+				reduceOnly: false,
+			}),
+		);
+		const reducing = buildOrders(
+			buildParams({
+				orderType: "stopMarket",
+				triggerPriceInput: "95",
+				limitPriceInput: "",
+				usesLimitPriceForOrder: false,
+				reduceOnly: true,
+			}),
+		);
+
+		expect(opening.orders[0]?.r).toBe(false);
+		expect(reducing.orders[0]?.r).toBe(true);
+	});
+});
+
+describe("buildOrderPlan entry trigger reduce-only", () => {
+	it("submits an opening stop-market order with r false", () => {
+		const plan = buildOrderPlan(entry({ orderType: "stopMarket", triggerPriceInput: "105", reduceOnly: false }));
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.grouping).toBe("na");
+		expect(plan.orders).toEqual([
+			{
+				a: 0,
+				b: true,
+				p: "115.5",
+				s: "1",
+				r: false,
+				t: { trigger: { isMarket: true, triggerPx: "105", tpsl: "sl" } },
+			},
+		]);
+	});
+
+	it("submits a reduce-only stop-market order with r true", () => {
+		const plan = buildOrderPlan(entry({ orderType: "stopMarket", triggerPriceInput: "105", reduceOnly: true }));
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.orders[0]?.r).toBe(true);
+	});
 });
 
 describe("attached TP/SL order planning", () => {

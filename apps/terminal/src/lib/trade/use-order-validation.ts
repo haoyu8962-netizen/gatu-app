@@ -44,6 +44,7 @@ export interface PerpOrderFields {
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
 	positionSize: number | null;
+	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;

@@ -285,6 +285,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}, [active, isUnsupportedMobileAlgoOrder, setOrderType]);
 
 	useEffect(() => {
+		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
+	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
+
+	useEffect(() => {
 		if (selectedPrice === null) return;
 
 		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
@@ -352,6 +356,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
 					positionSize: validatedPositionSize,
+					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
 					tpPriceNum: toNumber(tpPrice),
@@ -466,6 +471,15 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		}
 	}
 
+	function resetSubmittedForm() {
+		setSizeInput("");
+		setLimitPriceInput("");
+		setReduceOnly(false);
+		setTpPrice("");
+		setSlPrice("");
+		setTriggerPrice("");
+	}
+
 	async function handleSubmit() {
 		if (tradeRestricted) return;
 		if (isUnsupportedMobileAlgoOrder) return;
@@ -540,11 +554,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				return;
 			}
 			if (submission.state === "reconciling") {
-				setSizeInput("");
-				setLimitPriceInput("");
-				setTpPrice("");
-				setSlPrice("");
-				setTriggerPrice("");
+				resetSubmittedForm();
 				return;
 			}
 
@@ -556,11 +566,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			}
 
 			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
-			setSizeInput("");
-			setLimitPriceInput("");
-			setTpPrice("");
-			setSlPrice("");
-			setTriggerPrice("");
+			resetSubmittedForm();
 		} catch (error) {
 			if (isOrderBatchResolutionError(error)) {
 				const { resolution } = error;
@@ -571,11 +577,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						totalCount: resolution.totalCount,
 						error: resolution.errors.join("; ") || undefined,
 					});
-					setSizeInput("");
-					setLimitPriceInput("");
-					setTpPrice("");
-					setSlPrice("");
-					setTriggerPrice("");
+					resetSubmittedForm();
 					return;
 				}
 				updateOrder(orderId, {
@@ -813,8 +815,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							reduceOnly={
 								capabilities.hasReduceOnly
 									? {
-											checked: isTriggerOrder || reduceOnly,
-											disabled: isFormDisabled || isTriggerOrder,
+											checked: reduceOnly,
+											disabled: isFormDisabled,
 											onCheckedChange: setReduceOnly,
 										}
 									: undefined

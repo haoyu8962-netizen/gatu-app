@@ -37,6 +37,16 @@ describe("order submission wiring", () => {
 		);
 	});
 
+	it("gates the desktop reduce-only flag by market capability before it reaches validation and submission", () => {
+		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
+
+		expect(tradePanel).toContain("const reduceOnlyChecked = useReduceOnly();");
+		expect(tradePanel).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
+		expect(tradePanel).toMatch(/perpInput\(baseInput, \{[\s\S]*?\breduceOnly,[\s\S]*?\}\)/);
+		expect(tradePanel).toMatch(/await submitOrder\(\{[\s\S]*?\breduceOnly,[\s\S]*?\}\);/);
+		expect(tradePanel).not.toMatch(/reduceOnly: reduceOnlyChecked/);
+	});
+
 	it("keeps desktop and mobile TWAP views wired to shared subscription and cancellation boundaries", () => {
 		for (const path of ["components/trade/positions/twap-tab.tsx", "components/trade/mobile/mobile-twap-tab.tsx"]) {
 			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
