@@ -29,7 +29,7 @@ app.gatu.ai, testnet.gatu.ai {
 
 	# Charting Library v28 can stall during repeated WebKit loads when its scripts
 	# are reused from a hot immutable cache. Revalidate the complete chart package.
-	@chart_assets path /charting_library/* /tradingview-theme.css
+	@chart_assets path /charting_library/* /tradingview-theme-*.css
 	# The deferred set replaces every upstream Cache-Control value with one final
 	# policy. Do not use the additive header form here: conflicting policies can
 	# leave the non-hashed chart entry pinned to an obsolete bundle manifest.

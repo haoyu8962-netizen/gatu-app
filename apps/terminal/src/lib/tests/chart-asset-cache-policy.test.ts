@@ -46,7 +46,7 @@ afterEach(() => {
 describe("TradingView asset cache policy", () => {
 	it("revalidates the complete chart package at the application server", () => {
 		expect(viteConfig).toMatch(/'\/charting_library\/\*\*'[\s\S]*?max-age=0, must-revalidate/);
-		expect(viteConfig).toMatch(/'\/tradingview-theme\.css'[\s\S]*?max-age=0, must-revalidate/);
+		expect(viteConfig).toMatch(/'\/tradingview-theme-\*\.css'[\s\S]*?max-age=0, must-revalidate/);
 		expect(viteConfig).toMatch(
 			/publicAssets:[\s\S]*?baseURL: '\/charting_library'[\s\S]*?maxAge: 0[\s\S]*?fallthrough: false/,
 		);
@@ -67,7 +67,7 @@ describe("TradingView asset cache policy", () => {
 	});
 
 	it("overrides upstream chart cache headers and rejects missing chart files at the edge", () => {
-		expect(caddyfile).toContain("@chart_assets path /charting_library/* /tradingview-theme.css");
+		expect(caddyfile).toContain("@chart_assets path /charting_library/* /tradingview-theme-*.css");
 		expect(caddyfile).toContain('header @chart_assets >Cache-Control "public, max-age=0, must-revalidate"');
 		expect(caddyfile).toMatch(/@missing_chart_asset[\s\S]*?path \/charting_library\/\*[\s\S]*?not file/);
 		expect(caddyfile).toMatch(/root \/opt\/gatu\/current[\s\S]*?try_files public\//);
@@ -83,7 +83,8 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain(
 			'node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root" "$CHART_LIBRARY_MANIFEST_PATH"',
 		);
-		expect(deployScript).toContain('fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH"');
+		expect(deployScript).toContain('CHART_THEME_PATHS="/tradingview-theme-dark.css /tradingview-theme-light.css"');
+		expect(deployScript).toContain('fetch_revalidated_asset "$base_url" "$chart_theme_path"');
 		expect(deployScript).toContain("verify_missing_chart_asset");
 		expect(deployScript).toContain("edge_health_check");
 		expect(deployScript).toMatch(

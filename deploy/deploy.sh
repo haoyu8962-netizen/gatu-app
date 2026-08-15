@@ -16,7 +16,7 @@ KEEP_RELEASES="${KEEP_RELEASES:-5}"
 BRANCH="${1:-main}"
 SOCIAL_IMAGE_PATH="/gatu-terminal-og-v1.png"
 CHART_LIBRARY_PATH="/charting_library"
-CHART_THEME_PATH="/tradingview-theme.css"
+CHART_THEME_PATHS="/tradingview-theme-dark.css /tradingview-theme-light.css"
 CHART_LIBRARY_MANIFEST_PATH="${REPO}/deploy/manifests/tradingview-charting-library.json"
 CHART_CACHE_POLICY="public, max-age=0, must-revalidate"
 REFERRAL_DEEP_LINK_PATH="/join/__gatu_healthcheck__"
@@ -495,9 +495,11 @@ verify_chart_delivery() {
 	if ! fetch_revalidated_asset "$base_url" "${CHART_LIBRARY_PATH}/sameorigin.html" "$tmpdir" "text/html" "TradingView same-origin document"; then
 		return 1
 	fi
-	if ! fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH" "$tmpdir" "text/css" "TradingView theme stylesheet"; then
-		return 1
-	fi
+	for chart_theme_path in $CHART_THEME_PATHS; do
+		if ! fetch_revalidated_asset "$base_url" "$chart_theme_path" "$tmpdir" "text/css" "TradingView theme stylesheet (${chart_theme_path})"; then
+			return 1
+		fi
+	done
 
 	chart_assets="$(extract_initial_chart_assets "$chart_entry")" || return 1
 	while IFS= read -r asset; do

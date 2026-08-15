@@ -302,11 +302,13 @@ async function verifyChartBuild(sourcePublicRoot, outputPublicRoot, manifestPath
 		await assertValidCompressedAsset(outputChartRoot, relativePath, baseRelativePath);
 	}
 
-	await assertIdentical(
-		resolve(sourcePublicRoot, "tradingview-theme.css"),
-		resolve(outputPublicRoot, "tradingview-theme.css"),
-		"TradingView theme stylesheet",
-	);
+	for (const themeFile of ["tradingview-theme-dark.css", "tradingview-theme-light.css"]) {
+		await assertIdentical(
+			resolve(sourcePublicRoot, themeFile),
+			resolve(outputPublicRoot, themeFile),
+			`TradingView ${themeFile} theme stylesheet`,
+		);
+	}
 }
 
 async function generateManifest(sourcePublicRoot, manifestPath) {

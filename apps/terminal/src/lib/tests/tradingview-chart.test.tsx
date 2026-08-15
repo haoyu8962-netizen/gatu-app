@@ -38,7 +38,7 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 	colorToHex: (color: string) => color,
 	colorToRgba: (color: string, alpha: number) => `${color}:${alpha}`,
 	getChartColors: () => ({ green: "green", red: "red", textSecondary: "secondary" }),
-	getChartCssUrl: vi.fn(() => "/tradingview-theme.css"),
+	getChartCssUrl: vi.fn((theme: "light" | "dark") => `/tradingview-theme-${theme}.css`),
 	getLoadingScreenColors: () => ({}),
 	getToolbarBgColor: () => "#000",
 }));
@@ -2138,7 +2138,7 @@ describe("TradingViewChart", () => {
 
 		expect(widgetConstructor).toHaveBeenCalledWith(
 			expect.objectContaining({
-				custom_css_url: "/tradingview-theme.css",
+				custom_css_url: "/tradingview-theme-dark.css",
 			}),
 		);
 		expect(widgetConstructor.mock.calls[0]?.[0]).not.toHaveProperty("toolbar_bg");

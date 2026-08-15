@@ -44,7 +44,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.
 - Application modals and drawers use the dedicated `bg-modal` surface, which resolves to `#0F1A1F` in the terminal dark theme. Do not change `bg-overlay` to achieve this; tooltips, toasts, and selection indicators still depend on its raised contrast.
 - Raised or interactive TradingView layers use `#1D1E26`; do not flatten those layers into the canvas color.
-- TradingView theme CSS runs inside an iframe, so application CSS variables do not automatically inherit into it. Define its semantic background variables inside `tradingview-theme.css`.
+- TradingView theme CSS runs inside an iframe, so application CSS variables do not automatically inherit into it. Define its semantic background variables inside `tradingview-theme-{dark,light}.css`.
 - Keep the single theme-aware TradingView stylesheet used by runtime theme switching; changing CSS URLs on theme changes would require rebuilding the iframe.
 - Keep theme colors in shared tokens or existing style abstractions where possible instead of scattering new literals.
 

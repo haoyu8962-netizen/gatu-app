@@ -77,7 +77,8 @@ describe("TradingView build asset verification", () => {
 			["charting_library/charting_library.js", "entry"],
 			["charting_library/sameorigin.html", "document"],
 			["charting_library/bundles/lazy.js", "lazy"],
-			["tradingview-theme.css", ":root{}"],
+			["tradingview-theme-dark.css", ":root{}"],
+			["tradingview-theme-light.css", ":root{}"],
 		] as const) {
 			writeAsset(source, relativePath, contents);
 			writeAsset(output, relativePath, contents);
@@ -98,8 +99,10 @@ describe("TradingView build asset verification", () => {
 		writeAsset(source, "charting_library/sameorigin.html", "document");
 		writeAsset(output, "charting_library/sameorigin.html", "document");
 		writeAsset(source, "charting_library/bundles/lazy.js", "lazy");
-		writeAsset(source, "tradingview-theme.css", ":root{}");
-		writeAsset(output, "tradingview-theme.css", ":root{}");
+		writeAsset(source, "tradingview-theme-dark.css", ":root{}");
+		writeAsset(source, "tradingview-theme-light.css", ":root{}");
+		writeAsset(output, "tradingview-theme-dark.css", ":root{}");
+		writeAsset(output, "tradingview-theme-light.css", ":root{}");
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
 
@@ -110,8 +113,10 @@ describe("TradingView build asset verification", () => {
 		const { manifest, output, source } = createPublicRoots();
 		writeAsset(source, "charting_library/sameorigin.html", "document");
 		writeAsset(output, "charting_library/sameorigin.html", "document");
-		writeAsset(source, "tradingview-theme.css", ":root{}");
-		writeAsset(output, "tradingview-theme.css", ":root{}");
+		writeAsset(source, "tradingview-theme-dark.css", ":root{}");
+		writeAsset(source, "tradingview-theme-light.css", ":root{}");
+		writeAsset(output, "tradingview-theme-dark.css", ":root{}");
+		writeAsset(output, "tradingview-theme-light.css", ":root{}");
 		writePackageMetadataPair(source, output);
 
 		expect(runVerifier(source, output, manifest)).toThrow(/missing required asset: charting_library\.js/);
@@ -123,8 +128,10 @@ describe("TradingView build asset verification", () => {
 		writeAsset(output, "charting_library/charting_library.js", "entry");
 		writeAsset(source, "charting_library/sameorigin.html", "document");
 		writeAsset(output, "charting_library/sameorigin.html", "document");
-		writeAsset(source, "tradingview-theme.css", ":root{color:white}");
-		writeAsset(output, "tradingview-theme.css", ":root{color:black}");
+		writeAsset(source, "tradingview-theme-dark.css", ":root{color:white}");
+		writeAsset(source, "tradingview-theme-light.css", ":root{color:white}");
+		writeAsset(output, "tradingview-theme-dark.css", ":root{color:black}");
+		writeAsset(output, "tradingview-theme-light.css", ":root{color:black}");
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
 
@@ -136,7 +143,8 @@ describe("TradingView build asset verification", () => {
 		for (const root of [source, output]) {
 			writeAsset(root, "charting_library/charting_library.js", "reviewed-entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
@@ -152,7 +160,8 @@ describe("TradingView build asset verification", () => {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
 			writeAsset(root, "charting_library/bundles/lazy.js", "lazy");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		writeAsset(output, "charting_library/bundles/lazy.js.br", zlib.brotliCompressSync(Buffer.from("other")));
@@ -169,7 +178,8 @@ describe("TradingView build asset verification", () => {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
 			writeAsset(root, "charting_library/bundles/lazy.js", "lazy");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		writeAsset(output, "charting_library/bundles/lazy.js.gz", "not-gzip");
@@ -187,7 +197,8 @@ describe("TradingView build asset verification", () => {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
 			writeAsset(root, "charting_library/bundles/lazy.js", "lazy");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		writeAsset(
@@ -205,7 +216,8 @@ describe("TradingView build asset verification", () => {
 		for (const root of [source, output]) {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
@@ -221,7 +233,8 @@ describe("TradingView build asset verification", () => {
 		for (const root of [source, output]) {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
@@ -237,7 +250,8 @@ describe("TradingView build asset verification", () => {
 		for (const root of [source, output]) {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
@@ -253,7 +267,8 @@ describe("TradingView build asset verification", () => {
 		for (const root of [source, output]) {
 			writeAsset(root, "charting_library/charting_library.js", "entry");
 			writeAsset(root, "charting_library/sameorigin.html", "document");
-			writeAsset(root, "tradingview-theme.css", ":root{}");
+			writeAsset(root, "tradingview-theme-dark.css", ":root{}");
+			writeAsset(root, "tradingview-theme-light.css", ":root{}");
 		}
 		writePackageMetadataPair(source, output);
 		generateManifest(source, manifest);
@@ -267,7 +282,8 @@ describe("TradingView build asset verification", () => {
 		const { manifest, source } = createPublicRoots();
 		writeAsset(source, "charting_library/charting_library.js", "entry");
 		writeAsset(source, "charting_library/sameorigin.html", "document");
-		writeAsset(source, "tradingview-theme.css", ":root{}");
+		writeAsset(source, "tradingview-theme-dark.css", ":root{}");
+		writeAsset(source, "tradingview-theme-light.css", ":root{}");
 		writePackageMetadata(source);
 
 		generateManifest(source, manifest);

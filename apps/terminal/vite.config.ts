@@ -152,7 +152,7 @@ const config = defineConfig({
         '/charting_library/**': {
           headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
-        '/tradingview-theme.css': {
+        '/tradingview-theme-*.css': {
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
         '/sw.js': {
