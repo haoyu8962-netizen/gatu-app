@@ -69,7 +69,7 @@ export function FundsActionRecoveryHost() {
 
 	return (
 		<>
-			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-warning-strong bg-modal p-3 shadow-overlay">
+			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay">
 				<WarningCircleIcon className="size-5 shrink-0 text-warning" weight="fill" />
 				<div className="min-w-0">
 					<p className="text-xs font-bold text-fg">
@@ -113,7 +113,7 @@ export function FundsActionRecoveryHost() {
 							</Trans>
 						</p>
 					) : matchedHistory ? (
-						<output className="block rounded-10 bg-positive-soft px-3 py-2 text-xs leading-5 text-positive">
+						<output className="block rounded-10 bg-success-soft px-3 py-2 text-xs leading-5 text-success">
 							<Trans>
 								A new exact history event matches this request. Open the related page to verify fresh account state; the
 								record remains locked until both checks pass.
@@ -181,7 +181,7 @@ function CorruptMarkerRecovery() {
 
 	return (
 		<>
-			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-danger-strong bg-modal p-3 shadow-overlay">
+			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-error-strong bg-overlay p-3 shadow-overlay">
 				<WarningCircleIcon className="size-5 shrink-0 text-error" weight="fill" />
 				<div className="min-w-0">
 					<p className="text-xs font-bold text-fg">
