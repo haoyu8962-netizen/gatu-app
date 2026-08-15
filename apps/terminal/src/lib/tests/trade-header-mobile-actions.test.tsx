@@ -61,7 +61,9 @@ describe("TradeHeader mobile margin actions", () => {
 		const onMarginLeverageClick = vi.fn();
 		renderHeader({ onMarginModeClick, onLeverageClick, onMarginLeverageClick });
 		expect(container.querySelector(".grid")?.className).toContain("minmax(2.75rem,0.8fr)");
-		expect(container.querySelector(".grid")?.className).toContain("minmax(4.125rem,1fr)");
+		expect(container.querySelector(".grid")?.className).toContain(
+			"grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)_minmax(2rem,1fr)]",
+		);
 		expect(getButton(container, "Cross").className).toContain("after:h-11");
 		expect(getButton(container, "10x").className).toContain("after:h-11");
 

@@ -674,8 +674,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				<div
 					className={cn(
 						embedded
-							? "flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2 font-market-close"
-							: "px-3 py-4 space-y-4",
+							? "trade-panel-container flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2 font-market-close"
+							: "trade-panel-container px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader

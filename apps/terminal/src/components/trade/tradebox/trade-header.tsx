@@ -1,6 +1,6 @@
 import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, SpinnerGapIcon, UserCircleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
@@ -129,8 +129,8 @@ export function TradeHeader({
 					className={cn(
 						"grid min-w-0 overflow-hidden bg-surface",
 						isLeveraged
-							? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(2.75rem,0.8fr)_minmax(4.125rem,1fr)]"
-							: "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
+							? "grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)_minmax(2rem,1fr)]"
+							: "grid-cols-[minmax(max-content,1.2fr)_minmax(2rem,1fr)]",
 					)}
 				>
 					<Dropdown
@@ -183,7 +183,8 @@ export function TradeHeader({
 						{(isAccountModeLoading || isAccountModeUpdating) && (
 							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
 						)}
-						<span className="truncate">{compactAccountModeLabel}</span>
+						<span className="trade-card-label-full truncate">{compactAccountModeLabel}</span>
+						<UserCircleIcon className="trade-card-label-compact size-4 shrink-0" aria-hidden />
 						<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 					</button>
 				</div>

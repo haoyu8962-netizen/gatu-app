@@ -34,9 +34,9 @@ export function MobileTradePriceField({
 				disabled && "opacity-50",
 			)}
 		>
-			<span className="mr-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-subtle">
+			<span className="mr-1.5 min-w-0 shrink truncate whitespace-nowrap text-2xs text-trading-panel-subtle">
 				{label}
-				{unitLabel ? <span className="max-[339px]:hidden"> ({unitLabel})</span> : null}
+				{unitLabel ? <span className="trade-card-label-full"> ({unitLabel})</span> : null}
 			</span>
 			<div className="min-w-0 flex-1">
 				<PriceInput
@@ -58,7 +58,7 @@ export function MobileTradePriceField({
 					onClick={() => onMidClick(formattedMid)}
 					disabled={disabled}
 					aria-label={`${t`Use mid price`} ${formattedMid}`}
-					className="relative ml-2 h-8 min-w-8 shrink-0 whitespace-nowrap text-xs font-semibold text-trading-panel-success transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:text-trading-panel-success/80 disabled:cursor-not-allowed disabled:opacity-50"
+					className="relative ml-1 h-8 shrink-0 whitespace-nowrap text-xs font-semibold text-trading-panel-success transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:text-trading-panel-success/80 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					{t`Mid`}
 				</button>
