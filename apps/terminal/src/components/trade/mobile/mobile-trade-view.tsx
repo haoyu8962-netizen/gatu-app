@@ -207,7 +207,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		isSwitchingMode,
 		switchModeError,
 		allowsIsolatedMarginRemoval,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	} = useOrderEntryData({
+		market,
+		side,
+		markPx,
+		sizeMode,
+		sizeInput,
+		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+	});
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active,
 		assetId: market?.assetId,

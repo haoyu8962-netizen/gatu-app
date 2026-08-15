@@ -56,6 +56,8 @@ interface UseOrderEntryDataOptions {
 	markPx: number;
 	sizeMode: SizeMode;
 	sizeInput: string;
+	/** Limit price for limit-priced order types; when > 0 it drives size/value conversion instead of mark. */
+	limitPx?: number;
 }
 
 export function useOrderEntryData({
@@ -64,6 +66,7 @@ export function useOrderEntryData({
 	markPx,
 	sizeMode,
 	sizeInput,
+	limitPx,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
@@ -99,7 +102,7 @@ export function useOrderEntryData({
 		subscriptionReceivedAt,
 	} = useAssetLeverage();
 
-	const conversionPrice = markPx > 0 ? markPx : 0;
+	const conversionPrice = getConversionPrice(markPx, limitPx);
 	const isSpotMarket = market?.kind === "spot";
 	const streamAvailabilityStatus = getOrderAvailabilityStatus({
 		isConnected,
@@ -211,4 +214,9 @@ export function useOrderEntryData({
 		allowsIsolatedMarginRemoval,
 		maxTradeSzs,
 	};
+}
+
+export function getConversionPrice(markPx: number, limitPx: number | undefined): number {
+	if (typeof limitPx === "number" && limitPx > 0) return limitPx;
+	return markPx > 0 ? markPx : 0;
 }

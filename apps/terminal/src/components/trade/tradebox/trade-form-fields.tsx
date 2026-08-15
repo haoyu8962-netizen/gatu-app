@@ -145,7 +145,14 @@ export function TradeFormFields({
 		orderValue,
 		sizeModeLabel,
 		szDecimals,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	} = useOrderEntryData({
+		market,
+		side,
+		markPx,
+		sizeMode,
+		sizeInput,
+		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+	});
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 

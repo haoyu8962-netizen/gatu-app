@@ -120,6 +120,8 @@ export function TradePanel() {
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
 
+	const orderType = useOrderType();
+	const limitPriceInput = useLimitPrice();
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -154,7 +156,14 @@ export function TradePanel() {
 		isSwitchingMode,
 		switchModeError,
 		allowsIsolatedMarginRemoval,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	} = useOrderEntryData({
+		market,
+		side,
+		markPx,
+		sizeMode,
+		sizeInput,
+		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+	});
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active: true,
 		assetId: market?.assetId,
@@ -207,9 +216,7 @@ export function TradePanel() {
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const selectedPrice = useSelectedPrice();
-	const orderType = useOrderType();
 	const reduceOnly = useReduceOnly();
-	const limitPriceInput = useLimitPrice();
 	const triggerPriceInput = useTriggerPrice();
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();

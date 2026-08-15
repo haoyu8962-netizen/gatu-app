@@ -8,6 +8,7 @@ import {
 } from "@/domain/trade/order/availability";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
+import { getConversionPrice } from "@/hooks/trade/use-order-entry-data";
 
 const usdcBalance: SpotBalance = {
 	coin: "USDC",
@@ -327,5 +328,17 @@ describe("order availability routing", () => {
 		expect(getOrderAvailabilityFlags(true, "error")).toMatchObject({ hasError: true, isBlocked: true });
 		expect(getOrderAvailabilityFlags(true, "idle")).toMatchObject({ isBlocked: true });
 		expect(getOrderAvailabilityFlags(false, "idle")).toMatchObject({ isBlocked: false });
+	});
+});
+
+describe("order entry conversion price", () => {
+	it("uses the limit price for limit-priced orders so size and value match what will be sent", () => {
+		expect(getConversionPrice(56, 50)).toBe(50);
+	});
+
+	it("falls back to mark when no valid limit price is present", () => {
+		expect(getConversionPrice(56, undefined)).toBe(56);
+		expect(getConversionPrice(56, 0)).toBe(56);
+		expect(getConversionPrice(0, undefined)).toBe(0);
 	});
 });
