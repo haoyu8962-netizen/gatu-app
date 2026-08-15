@@ -162,7 +162,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
-	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrderType(orderType);
+	const isTriggerOrder = isTriggerOrderType(orderType);
+	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder;
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
 	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
@@ -497,7 +498,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			side,
 			size: String(entryOrder.s),
 			price: formatPriceForOrder(price, { assetId: market.assetId, szDecimals: orderSzDecimals }),
-			orderType: getQueueEntryType(isTriggerOrderType(orderType), isMarketExecution),
+			orderType: getQueueEntryType(isTriggerOrder, isMarketExecution),
 			tpPrice: hasTp
 				? formatPriceForOrder(tpPriceNum ?? 0, { assetId: market.assetId, szDecimals: orderSzDecimals })
 				: undefined,
@@ -792,7 +793,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							tradingPanel
 							reduceOnly={
 								capabilities.hasReduceOnly
-									? { checked: reduceOnly, disabled: isFormDisabled, onCheckedChange: setReduceOnly }
+									? {
+											checked: isTriggerOrder || reduceOnly,
+											disabled: isFormDisabled || isTriggerOrder,
+											onCheckedChange: setReduceOnly,
+										}
 									: undefined
 							}
 							tpSl={
