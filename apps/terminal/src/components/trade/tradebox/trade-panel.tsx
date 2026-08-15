@@ -24,6 +24,7 @@ import {
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
@@ -172,6 +173,7 @@ export function TradePanel() {
 		sizeInput,
 		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
 	});
+	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active: true,
 		assetId: market?.assetId,
@@ -612,6 +614,7 @@ export function TradePanel() {
 				takerFeePercent={takerFeePercent}
 				makerFeePercent={makerFeePercent}
 				slippagePercent={slippagePercent}
+				estimatedSlippage={slippageEstimate}
 				szDecimals={market?.szDecimals}
 				onSlippageClick={openSettingsDialog}
 				orderType={orderType}

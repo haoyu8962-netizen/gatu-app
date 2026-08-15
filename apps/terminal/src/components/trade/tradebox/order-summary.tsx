@@ -3,8 +3,9 @@ import { PencilIcon } from "@phosphor-icons/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import type { OrderType } from "@/config/trade";
+import type { MarketSlippageEstimate } from "@/domain/trade/order/slippage";
 import { cn } from "@/lib/cn";
-import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
+import { bpsToPercentage, formatPrice, formatSlippageBps, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { SummaryRow } from "../components/summary-row";
@@ -17,6 +18,7 @@ interface Props {
 	takerFeePercent: string;
 	makerFeePercent: string;
 	slippagePercent: number;
+	estimatedSlippage?: MarketSlippageEstimate | null;
 	szDecimals: number | undefined;
 	onSlippageClick: () => void;
 	orderType: OrderType;
@@ -31,6 +33,7 @@ export function OrderSummary({
 	takerFeePercent,
 	makerFeePercent,
 	slippagePercent,
+	estimatedSlippage,
 	szDecimals,
 	onSlippageClick,
 	orderType,
@@ -40,6 +43,9 @@ export function OrderSummary({
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = orderType === "market";
+	const estimatedSlippageText = formatSlippageBps(estimatedSlippage?.slippageBps, {
+		lowerBound: estimatedSlippage?.exceedsVisibleDepth,
+	});
 
 	return (
 		<div className="flex min-w-0 flex-col">
@@ -68,16 +74,23 @@ export function OrderSummary({
 				</SummaryRow>
 			)}
 			{showSlippage && (
-				<SummaryRow label={t`Slippage`}>
-					<button
-						type="button"
-						onClick={onSlippageClick}
-						className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-					>
-						<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-						<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-					</button>
-				</SummaryRow>
+				<>
+					<SummaryRow label={t`Est. Slippage`}>
+						<span className={cn("whitespace-nowrap", !estimatedSlippageText && "font-normal text-trading-panel-muted")}>
+							{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+						</span>
+					</SummaryRow>
+					<SummaryRow label={t`Slippage`}>
+						<button
+							type="button"
+							onClick={onSlippageClick}
+							className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+						>
+							<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+							<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+						</button>
+					</SummaryRow>
+				</>
 			)}
 			<SummaryRow label={t`Fees`}>
 				<span

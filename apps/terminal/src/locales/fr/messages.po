@@ -3031,6 +3031,11 @@ msgstr "Frais est."
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "P&L est. à la limite"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "Glissement est."
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""

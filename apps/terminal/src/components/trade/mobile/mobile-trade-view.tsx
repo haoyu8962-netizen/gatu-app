@@ -27,6 +27,7 @@ import {
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import type { OrderSubmitDraftInput } from "@/hooks/trade/use-order-submit";
@@ -37,7 +38,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatOrderPlanError } from "@/lib/errors/format";
-import { bpsToPercentage, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { bpsToPercentage, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useAgentStatus,
@@ -239,6 +240,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+	});
+	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
+	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
+		lowerBound: slippageEstimate?.exceedsVisibleDepth,
 	});
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active,
@@ -965,26 +970,34 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							/>
 						)}
 						{orderType === "market" && (
-							<div
-								className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}
-							>
-								<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-								{embedded && !isConnected ? (
-									<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-									</span>
-								) : (
-									<button
-										type="button"
-										onClick={openSettingsDialog}
-										className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-									>
-										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-									</button>
-								)}
-							</div>
+							<>
+								<SummaryRow
+									label={t`Est. Slippage`}
+									value={estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+									valueClass={estimatedSlippageText ? undefined : "text-trading-panel-muted"}
+									compact={embedded}
+								/>
+								<div
+									className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
+								>
+									<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+									{embedded && !isConnected ? (
+										<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
+											<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+										</span>
+									) : (
+										<button
+											type="button"
+											onClick={openSettingsDialog}
+											className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+										>
+											<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+										</button>
+									)}
+								</div>
+							</>
 						)}
 						<SummaryRow
 							label={t`Est. Fee`}

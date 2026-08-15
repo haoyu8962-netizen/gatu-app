@@ -52,7 +52,7 @@ export interface L2BookSubscriptionOptions {
 	fast?: boolean;
 }
 
-type RawBookSides = readonly [readonly RawBookLevel[], readonly RawBookLevel[]];
+export type RawBookSides = readonly [readonly RawBookLevel[], readonly RawBookLevel[]];
 
 export interface RawSpreadInfoOptions {
 	bboMid?: string | null;

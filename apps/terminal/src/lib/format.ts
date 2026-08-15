@@ -427,6 +427,38 @@ export function bpsToPercentage(bps: string | number | null | undefined, decimal
 	return (parsed.value / 1000).toFixed(decimals);
 }
 
+const SLIPPAGE_MIN_DISPLAY_PERCENT = 0.0001;
+
+export interface FormatSlippageOptions {
+	/** The order consumed all visible depth, so the real cost is worse than the returned figure. */
+	lowerBound?: boolean;
+}
+
+/**
+ * Format real basis points of order-book slippage as a percentage string.
+ * Divides by 100 (1 bp = 0.01%), unlike bpsToPercentage which divides by 1000
+ * for the tenth-of-a-bp builder fee convention. Taker slippage on liquid markets
+ * is sub-bp, so the decimals scale down instead of rounding to "0.00%".
+ * @example formatSlippageBps(37) -> "0.37%"
+ * @example formatSlippageBps(0.0793) -> "0.0008%"
+ * @example formatSlippageBps(120, { lowerBound: true }) -> ">1.20%"
+ */
+export function formatSlippageBps(bps: number | null | undefined, options: FormatSlippageOptions = {}): string | null {
+	if (typeof bps !== "number" || !Number.isFinite(bps) || bps < 0) return null;
+	const percent = bps / 100;
+	if (options.lowerBound) return `>${formatNumber(percent, getSlippagePercentDecimals(percent))}%`;
+	if (percent > 0 && percent < SLIPPAGE_MIN_DISPLAY_PERCENT) {
+		return `<${formatNumber(SLIPPAGE_MIN_DISPLAY_PERCENT, 4)}%`;
+	}
+	return `${formatNumber(percent, getSlippagePercentDecimals(percent))}%`;
+}
+
+function getSlippagePercentDecimals(percent: number): number {
+	if (percent >= 0.1) return 2;
+	if (percent >= 0.01) return 3;
+	return 4;
+}
+
 /**
  * Format duration in minutes to human-readable string
  * @example formatDuration(5) -> "5m"

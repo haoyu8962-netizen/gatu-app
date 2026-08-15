@@ -1,6 +1,7 @@
 import { i18n } from "@lingui/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	bpsToPercentage,
 	formatDateTime,
 	formatDateTimeShort,
 	formatLiquidationPrice,
@@ -8,6 +9,7 @@ import {
 	formatPercent,
 	formatPrice,
 	formatQuoteAmount,
+	formatSlippageBps,
 	formatTime,
 	formatToken,
 	formatUSD,
@@ -98,5 +100,30 @@ describe("format", () => {
 		formatSettings.numberFormatLocale = "de-DE";
 		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
 		expect(formatDateTimeShort(value, { ...options, locale: "en-US" })).toBe("08/12, 14:35");
+	});
+
+	it("resolves sub-basis-point slippage instead of collapsing it to zero", () => {
+		expect(formatSlippageBps(37)).toBe("0.37%");
+		expect(formatSlippageBps(1.5)).toBe("0.015%");
+		expect(formatSlippageBps(0.7556)).toBe("0.0076%");
+		expect(formatSlippageBps(0.0793)).toBe("0.0008%");
+	});
+
+	it("keeps slippage distinguishable from the tenth-of-a-bp builder fee conversion", () => {
+		expect(formatSlippageBps(100)).toBe("1.00%");
+		expect(bpsToPercentage(100)).toBe("0.10");
+	});
+
+	it("labels a floor value and a depth-exhausted lower bound", () => {
+		expect(formatSlippageBps(0.0001)).toBe("<0.0001%");
+		expect(formatSlippageBps(0)).toBe("0.0000%");
+		expect(formatSlippageBps(120, { lowerBound: true })).toBe(">1.20%");
+	});
+
+	it("reports no slippage text without a usable number", () => {
+		expect(formatSlippageBps(null)).toBeNull();
+		expect(formatSlippageBps(undefined)).toBeNull();
+		expect(formatSlippageBps(Number.NaN)).toBeNull();
+		expect(formatSlippageBps(-1)).toBeNull();
 	});
 });

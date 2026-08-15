@@ -3031,6 +3031,11 @@ msgstr "अनु. शुल्क"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "लिमिट पर अनुमानित P&L"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "अनु. स्लिपेज"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""

@@ -2838,6 +2838,11 @@ msgstr "预估费用"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "限价预估盈亏"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "预估滑点"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Establish Connection"

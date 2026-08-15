@@ -3031,6 +3031,11 @@ msgstr "الرسوم المقدرة"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "الربح/الخسارة التقديري عند السعر المحدد"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "الانزلاق المقدر"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""
