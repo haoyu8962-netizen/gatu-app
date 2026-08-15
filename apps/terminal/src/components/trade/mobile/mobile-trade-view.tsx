@@ -12,15 +12,16 @@ import { get24hChange, getPositionDex } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	assertEntryOrderExecutionAllowed,
+	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
+import { getOrderPrice } from "@/domain/trade/order/price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
-import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { resolveScaleSkewNumber } from "@/domain/trade/orders";
+import { formatTwapPriceInput, getTwapSuborderCount } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -30,15 +31,21 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
-import type { OrderSubmitDraftInput } from "@/hooks/trade/use-order-submit";
+import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
-import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatOrderPlanError } from "@/lib/errors/format";
-import { bpsToPercentage, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
+import {
+	bpsToPercentage,
+	formatDuration,
+	formatNumber,
+	formatPrice,
+	formatSlippageBps,
+	formatToken,
+	formatUSD,
+} from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useAgentStatus,
@@ -48,7 +55,6 @@ import {
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -63,6 +69,7 @@ import {
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
+import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
@@ -77,13 +84,20 @@ import {
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderType,
+	useScaleEnd,
+	useScaleLevels,
+	useScaleSkew,
+	useScaleStart,
 	useSlPrice,
 	useTif,
 	useTpPrice,
 	useTpSlEnabled,
 	useTriggerPrice,
+	useTwapMinutes,
+	useTwapRandomize,
+	useTwapStopPrice,
+	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import {
 	getOrderbookActionsStore,
 	getSelectedPriceForMarket,
@@ -92,8 +106,10 @@ import {
 import { TokenSelector } from "../chart/token-selector";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
+import { TradeFormScale } from "../tradebox/trade-form-scale";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
+import { TradeFormTwap } from "../tradebox/trade-form-twap";
 import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -139,11 +155,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
 
-	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
-	const isUnsupportedMobileAlgoOrder = isTwapOrderType(orderType) || isScaleOrderType(orderType);
+	const twapOrder = isTwapOrderType(orderType);
+	const scaleOrder = isScaleOrderType(orderType);
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
@@ -151,9 +167,17 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const slPrice = useSlPrice();
 	const tif = useTif();
 	const triggerPrice = useTriggerPrice();
+	const scaleStartPriceInput = useScaleStart();
+	const scaleEndPriceInput = useScaleEnd();
+	const scaleLevelsNum = useScaleLevels();
+	const scaleSkewInput = useScaleSkew();
+	const twapMinutesNum = useTwapMinutes();
+	const twapRandomize = useTwapRandomize();
+	const twapTriggerPriceInput = useTwapTriggerPrice();
+	const twapStopPriceInput = useTwapStopPrice();
 	const [sizeInput, setSizeInput] = useState("");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
-	const [reduceOnly, setReduceOnly] = useState(false);
+	const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -170,17 +194,31 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const isTriggerOrder = isTriggerOrderType(orderType);
-	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder;
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
 	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
 	const markPriceStatus = market?.markPriceStatus ?? "loading";
-	const { midPx } = useOrderbookMidPrice(active && (usesLimitPrice || usesTriggerPrice) ? market?.name : undefined);
+	const marketType = market?.kind === "spot" ? "spot" : "perp";
+	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
+	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
+	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const twapTriggerPriceNum = toNumber(twapTriggerPx);
+	const twapStopPriceNum = toNumber(twapStopPx);
+	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
+	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
+	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
+	const requiresLiveMarkPrice =
+		orderType === "market" ||
+		isTriggerOrder ||
+		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
+	const { midPx } = useOrderbookMidPrice(
+		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
+	);
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 	const formattedMidForPrefill = getFormattedMidPrice(
 		midReferencePrice,
 		market?.szDecimals,
-		market?.kind === "spot" ? "spot" : "perp",
+		marketType,
 		market?.assetId,
 	);
 	const limitPrefillKey = active && usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
@@ -241,6 +279,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeInput,
 		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
 	});
+	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
 	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
 		lowerBound: slippageEstimate?.exceedsVisibleDepth,
@@ -280,7 +319,16 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			assertEntryOrderExecutionAllowed(params, orderExecutionStateRef.current),
 		[],
 	);
-	const { submitOrder, isPending: isSubmitting } = useTrackedOrder({ executionGuard });
+	const twapExecutionGuard = useCallback(
+		(params: Parameters<typeof assertEntryTwapExecutionAllowed>[0]) =>
+			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit({
+		executionGuard,
+		twapExecutionGuard,
+		onReset: resetSubmittedForm,
+	});
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	useEffect(() => {
@@ -291,12 +339,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}, [active]);
 
 	useEffect(() => {
-		if (active && isUnsupportedMobileAlgoOrder) setOrderType("market");
-	}, [active, isUnsupportedMobileAlgoOrder, setOrderType]);
-
-	useEffect(() => {
-		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
-	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
+		if (active && isSpotMarket && (isTriggerOrder || twapOrder)) setOrderType("market");
+	}, [active, isSpotMarket, isTriggerOrder, twapOrder, setOrderType]);
 
 	useEffect(() => {
 		if (selectedPrice === null) return;
@@ -308,7 +352,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setOrderType("limit");
 		setLimitPriceInput(price);
 	}, [market?.name, selectedPrice, setOrderType]);
-	const price = isMarketExecution ? executionReferencePx : toNumberOrZero(limitPriceInput);
+	const price = getOrderPrice(
+		orderType,
+		executionReferencePx,
+		limitPriceInput,
+		triggerPrice,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+	);
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
 	const validatedPositionSize =
@@ -323,6 +374,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const liqPrice = liquidationInfo?.liqPrice ?? null;
 	const liqWarning = liquidationInfo?.liqWarning ?? false;
 	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
+	const twapSuborderCount = getTwapSuborderCount(twapMinutesNum);
+	const twapSizePerSuborder = twapSuborderCount > 0 ? sizeValue / twapSuborderCount : 0;
 
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,
@@ -343,15 +396,15 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		usesLimitPrice,
 		usesTriggerPrice,
 		triggerPriceNum: toNumber(triggerPrice),
-		scaleOrder: false,
-		twapOrder: false,
-		scaleStartPriceNum: null,
-		scaleEndPriceNum: null,
-		scaleLevelsNum: null,
-		scaleSkewNum: null,
-		twapMinutesNum: null,
-		twapTriggerPriceNum: null,
-		twapStopPriceNum: null,
+		scaleOrder,
+		twapOrder,
+		scaleStartPriceNum,
+		scaleEndPriceNum,
+		scaleLevelsNum,
+		scaleSkewNum,
+		twapMinutesNum,
+		twapTriggerPriceNum,
+		twapStopPriceNum,
 	};
 
 	const validation = useOrderValidation(
@@ -383,7 +436,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			? validation.errors.join(" \u2022 ")
 			: "";
 	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
-	const riskContext = isSpotMarket ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
@@ -488,7 +540,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	function resetSubmittedForm() {
 		setSizeInput("");
 		setLimitPriceInput("");
-		setReduceOnly(false);
+		setReduceOnlyChecked(false);
 		setTpPrice("");
 		setSlPrice("");
 		setTriggerPrice("");
@@ -496,7 +548,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	function canExecuteOrder() {
 		if (tradeRestricted) return false;
-		if (isUnsupportedMobileAlgoOrder) return false;
 		if (!isConnected || !address) return false;
 		if (isAvailabilityBlocked) return false;
 		if (!validation.canSubmit) return false;
@@ -524,14 +575,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			orderValue,
 			limitPrice: toNumber(limitPriceInput),
 			triggerPrice: toNumber(triggerPrice),
-			scaleStartPrice: null,
-			scaleEndPrice: null,
-			scaleLevels: null,
-			scaleSkew: null,
-			twapMinutes: null,
-			twapRandomize: false,
-			twapTriggerPrice: null,
-			twapStopPrice: null,
+			scaleStartPrice: scaleStartPriceNum,
+			scaleEndPrice: scaleEndPriceNum,
+			scaleLevels: scaleLevelsNum,
+			scaleSkew: scaleSkewNum,
+			twapMinutes: twapMinutesNum,
+			twapRandomize,
+			twapTriggerPrice: twapTriggerPriceNum,
+			twapStopPrice: twapStopPriceNum,
 			tpSlEnabled: tpSlEnabled && canUseTpSl,
 			tpPrice: toNumber(tpPrice),
 			slPrice: toNumber(slPrice),
@@ -564,20 +615,20 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				tif,
 				limitPriceInput,
 				triggerPriceInput: triggerPrice,
-				scaleStartPriceInput: "",
-				scaleEndPriceInput: "",
-				scaleLevelsNum: null,
-				scaleSkewInput: "",
-				twapMinutesNum: null,
-				twapRandomize: false,
-				twapTriggerPx: null,
-				twapStopPx: null,
+				scaleStartPriceInput,
+				scaleEndPriceInput,
+				scaleLevelsNum,
+				scaleSkewInput,
+				twapMinutesNum,
+				twapRandomize,
+				twapTriggerPx,
+				twapStopPx,
 				tpSlEnabled,
 				canUseTpSl,
 				tpPriceNum: toNumber(tpPrice),
 				slPriceNum: toNumber(slPrice),
-				twapOrder: false,
-				scaleOrder: false,
+				twapOrder,
+				scaleOrder,
 				triggerOrder: isTriggerOrder,
 			},
 			draft,
@@ -585,108 +636,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}
 
 	async function executeSubmit(input: OrderSubmitDraftInput) {
-		const orderAssetId = input.market.assetId;
-		const orderSzDecimals = input.market.szDecimals ?? 0;
-		const priceFormat = { assetId: orderAssetId, szDecimals: orderSzDecimals };
-		const marketExecution = input.orderType === "market" || isTakerOrderType(input.orderType);
-		const executionPrice = marketExecution ? executionReferencePx : toNumberOrZero(input.limitPriceInput);
-		const plan = buildOrderPlan({
-			kind: "entry",
-			assetId: orderAssetId,
-			side: input.side,
-			orderType: input.orderType,
-			sizeValue: input.sizeValue,
-			szDecimals: orderSzDecimals,
-			markPx: executionReferencePx,
-			price: executionPrice,
-			slippageBps: input.slippageBps,
-			reduceOnly: input.reduceOnly,
-			tif: input.tif,
-			limitPriceInput: input.limitPriceInput,
-			triggerPriceInput: input.triggerPriceInput,
-			scaleStartPriceInput: input.scaleStartPriceInput,
-			scaleEndPriceInput: input.scaleEndPriceInput,
-			scaleLevelsNum: input.scaleLevelsNum,
-			scaleSkewInput: input.scaleSkewInput,
-			tpSlEnabled: input.tpSlEnabled,
-			canUseTpSl: input.canUseTpSl,
-			tpPriceNum: input.tpPriceNum,
-			slPriceNum: input.slPriceNum,
-		});
-
-		const entryOrder = plan.orders[0];
-		const hasTp = input.tpSlEnabled && input.canUseTpSl && isPositive(input.tpPriceNum);
-		const hasSl = input.tpSlEnabled && input.canUseTpSl && isPositive(input.slPriceNum);
-
-		const orderId = addOrder({
-			market: input.baseToken,
-			side: input.side,
-			size: entryOrder ? String(entryOrder.s) : formatSizeForOrder(input.sizeValue, orderSzDecimals),
-			price: formatPriceForOrder(executionPrice, priceFormat),
-			orderType: getQueueEntryType(isTriggerOrderType(input.orderType), marketExecution),
-			tpPrice: hasTp ? formatPriceForOrder(input.tpPriceNum ?? 0, priceFormat) : undefined,
-			slPrice: hasSl ? formatPriceForOrder(input.slPriceNum ?? 0, priceFormat) : undefined,
-			status: "pending",
-		});
-
-		if (plan.errors.length > 0 || !entryOrder) {
-			updateOrder(orderId, {
-				status: "failed",
-				error: plan.errors.map(formatOrderPlanError).join("; ") || t`Order failed`,
-			});
-			return;
-		}
-
-		try {
-			const submission = await submitOrder(
-				{ orders: plan.orders, grouping: plan.grouping },
-				{ queueId: orderId, riskContext },
-			);
-			if (submission.state === "blocked") {
-				updateOrder(orderId, {
-					status: "failed",
-					error: t`Another order for this market is still being confirmed.`,
-				});
-				return;
-			}
-			if (submission.state === "reconciling") {
-				resetSubmittedForm();
-				return;
-			}
-
-			const statuses = submission.result.response?.data?.statuses ?? [];
-			const errors = extractStatusErrors(statuses);
-			if (errors.length > 0) {
-				updateOrder(orderId, { status: "failed", error: errors.join("; ") });
-				return;
-			}
-
-			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
-			resetSubmittedForm();
-		} catch (error) {
-			if (isOrderBatchResolutionError(error)) {
-				const { resolution } = error;
-				if (resolution.status === "partial") {
-					updateOrder(orderId, {
-						status: "partial",
-						acceptedCount: resolution.acceptedCount,
-						totalCount: resolution.totalCount,
-						error: resolution.errors.join("; ") || undefined,
-					});
-					resetSubmittedForm();
-					return;
-				}
-				updateOrder(orderId, {
-					status: "failed",
-					error: resolution.errors.join("; ") || t`The exchange did not accept the order.`,
-				});
-				return;
-			}
-			updateOrder(orderId, {
-				status: "failed",
-				error: error instanceof Error ? error.message : t`Order failed`,
-			});
-		}
+		await submitOrder({ ...input, price, executionReferencePx, markPx });
 	}
 
 	const confirmation = useOrderConfirmation({ execute: executeSubmit, canExecute: canExecuteOrder });
@@ -771,10 +721,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="min-w-0 text-right">
 						<div className={cn("truncate whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
-							{formatPrice(markPx || null, {
-								szDecimals: market?.szDecimals,
-								marketType: market?.kind === "spot" ? "spot" : "perp",
-							})}
+							{formatPrice(markPx || null, { szDecimals: market?.szDecimals, marketType })}
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
@@ -815,7 +762,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						isAccountModeLoading={accountModeControl.isLoading}
 						isAccountModeUpdating={accountModeControl.isUpdating}
 						onAccountModeClick={handleAccountModeSettingsOpen}
-						hideAlgoOrders
+						hideSpotTwap
 						compact={embedded}
 						layout="mobile"
 					/>
@@ -862,9 +809,34 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							onMidClick={setTriggerPrice}
 							midPrice={midReferencePrice}
 							szDecimals={market?.szDecimals}
-							marketType={market?.kind === "spot" ? "spot" : "perp"}
+							marketType={marketType}
 							assetId={market?.assetId}
 							disabled={isFormDisabled}
+						/>
+					)}
+
+					{twapOrder && (
+						<TradeFormTwap
+							disabled={isFormDisabled}
+							side={side}
+							quoteToken={priceUnitLabel}
+							markPx={markPx}
+							assetId={market?.assetId}
+							szDecimals={szDecimals}
+							compact
+							mobileSafe
+						/>
+					)}
+
+					{scaleOrder && (
+						<TradeFormScale
+							midPrice={midReferencePrice}
+							szDecimals={szDecimals}
+							marketType={marketType}
+							assetId={market?.assetId}
+							disabled={isFormDisabled}
+							compact
+							mobileSafe
 						/>
 					)}
 
@@ -880,7 +852,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								onMidClick={setLimitPriceInput}
 								midPrice={midReferencePrice}
 								szDecimals={market?.szDecimals}
-								marketType={market?.kind === "spot" ? "spot" : "perp"}
+								marketType={marketType}
 								assetId={market?.assetId}
 								disabled={isFormDisabled}
 							/>
@@ -903,7 +875,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						sliderValue={sliderValue}
 					/>
 
-					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice) && (
+					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice || scaleOrder) && (
 						<TradeOptionCheckboxes
 							className={cn(
 								"flex flex-wrap items-center gap-y-1",
@@ -913,9 +885,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							reduceOnly={
 								capabilities.hasReduceOnly
 									? {
-											checked: reduceOnly,
+											checked: reduceOnlyChecked,
 											disabled: isFormDisabled,
-											onCheckedChange: setReduceOnly,
+											onCheckedChange: setReduceOnlyChecked,
 										}
 									: undefined
 							}
@@ -925,7 +897,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 									: undefined
 							}
 						>
-							{orderType === "limit" ? (
+							{orderType === "limit" || scaleOrder ? (
 								<TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel />
 							) : null}
 						</TradeOptionCheckboxes>
@@ -946,6 +918,59 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					)}
 
 					<div className={cn("border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}>
+						{twapOrder && (
+							<>
+								<SummaryRow
+									label={t`Runtime`}
+									value={twapMinutesNum > 0 ? formatDuration(twapMinutesNum) : FALLBACK_VALUE_PLACEHOLDER}
+									compact={embedded}
+								/>
+								<SummaryRow
+									label={t`Number of Orders`}
+									value={formatSummaryCount(twapSuborderCount)}
+									compact={embedded}
+								/>
+								<SummaryRow
+									label={t`Size per Suborder`}
+									value={
+										twapSizePerSuborder > 0
+											? formatToken(twapSizePerSuborder, { decimals: szDecimals, symbol: baseToken })
+											: FALLBACK_VALUE_PLACEHOLDER
+									}
+									compact={embedded}
+								/>
+								{isPositive(twapTriggerPriceNum) && (
+									<SummaryRow
+										label={t`Trigger Price`}
+										value={formatSummaryPrice(twapTriggerPriceNum, market?.szDecimals, marketType)}
+										compact={embedded}
+									/>
+								)}
+								{isPositive(twapStopPriceNum) && (
+									<SummaryRow
+										label={getTwapStopPriceLabel(side)}
+										value={formatSummaryPrice(twapStopPriceNum, market?.szDecimals, marketType)}
+										compact={embedded}
+									/>
+								)}
+							</>
+						)}
+						{scaleOrder && (
+							<>
+								<SummaryRow
+									label={t`Start Price`}
+									value={formatSummaryPrice(scaleStartPriceNum, market?.szDecimals, marketType)}
+									compact={embedded}
+								/>
+								<SummaryRow
+									label={t`End Price`}
+									value={formatSummaryPrice(scaleEndPriceNum, market?.szDecimals, marketType)}
+									compact={embedded}
+								/>
+								<SummaryRow label={t`Number of Orders`} value={formatSummaryCount(scaleLevelsNum)} compact={embedded} />
+								<SummaryRow label={t`Size Skew`} value={formatSummaryCount(scaleSkewNum)} compact={embedded} />
+							</>
+						)}
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={t`Liq. Price`}
@@ -1098,6 +1123,14 @@ function SummaryRow({
 	);
 }
 
+function formatSummaryPrice(value: number | null, szDecimals: number | undefined, marketType: "perp" | "spot"): string {
+	return isPositive(value) ? formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
+}
+
+function formatSummaryCount(value: number | null): string {
+	return isPositive(value) ? formatNumber(String(value)) : FALLBACK_VALUE_PLACEHOLDER;
+}
+
 function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
 	if (!liqPrice) return "text-trading-panel-muted";
 	if (liqWarning) return "text-trading-panel-error";
@@ -1216,9 +1249,4 @@ function getApprovalButtonText(
 	if (isRegistering) return labels.signing;
 	if (isApprovalLoading || !canApprove) return labels.loading;
 	return labels.enableTrading;
-}
-
-function getQueueEntryType(isTriggerEntry: boolean, isMarketExecution: boolean): "trigger" | "market" | "limit" {
-	if (isTriggerEntry) return "trigger";
-	return isMarketExecution ? "market" : "limit";
 }

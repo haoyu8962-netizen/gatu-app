@@ -21,7 +21,7 @@ describe("limit price prefill contract", () => {
 
 	it("lets the reduce-only checkbox follow user input for trigger orders on both surfaces", () => {
 		for (const source of [DESKTOP_FIELDS, MOBILE_VIEW]) {
-			expect(source).toContain("checked: reduceOnly,");
+			expect(source).toMatch(/checked: reduceOnly(Checked)?,/);
 			expect(source).not.toMatch(/checked: (isTriggerOrder|triggerOrder) \|\| reduceOnly/);
 			expect(source).not.toMatch(/disabled: isFormDisabled \|\| (isTriggerOrder|triggerOrder)/);
 		}

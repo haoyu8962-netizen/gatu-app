@@ -684,7 +684,6 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "其中一个市场的另一笔委托仍在确认中。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-order-submit.ts
@@ -2702,6 +2701,7 @@ msgstr "关联手机前，请先在此桌面端启用交易并批准 Builder 费
 msgid "Enabling"
 msgstr "启用中"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -3547,7 +3547,6 @@ msgid "Hold to reveal QR"
 msgstr "按住以显示二维码"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "小时"
 
@@ -3558,6 +3557,10 @@ msgstr "多头支付空头的小时费率（如果为负，则空头支付多头
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "How Hyperliquid referrals work"
 msgstr "Hyperliquid 推荐机制"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Hrs"
+msgstr "时"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "HYPE is the native token of Hyperliquid."
@@ -4494,6 +4497,7 @@ msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "中间价"
@@ -4554,6 +4558,9 @@ msgid "Minimum withdrawal is ${minimum}"
 msgstr "最低提款金额为 ${minimum}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Mins"
+msgstr "分"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
 msgstr "分钟"
@@ -5039,6 +5046,8 @@ msgstr "未报告"
 msgid "Number format"
 msgstr "数字格式"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -5244,8 +5253,6 @@ msgstr "下单确认"
 msgid "Order confirmed by the exchange."
 msgstr "交易所已确认订单。"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
@@ -6594,6 +6601,7 @@ msgstr "运行中"
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
@@ -7131,6 +7139,7 @@ msgstr "数量不能超过委托的剩余数量。"
 #~ msgid "Size exceeds position"
 #~ msgstr "数量超过仓位"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Size per Suborder"
 msgstr "每笔子订单数量"
@@ -7139,6 +7148,7 @@ msgstr "每笔子订单数量"
 msgid "Size precision must be a non-negative integer"
 msgstr "数量精度必须为非负整数"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7367,6 +7377,7 @@ msgstr "起始价与结束价须不同"
 msgid "Start camera"
 msgstr "启动相机"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7877,7 +7888,6 @@ msgstr "最新的 extraAgents 数据中已出现完全匹配的名称和公开�
 msgid "The exchange did not accept every order."
 msgstr "交易所未接受全部订单。"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -8834,6 +8844,7 @@ msgstr "触发订单必须减少当前仓位"
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
@@ -9250,6 +9261,7 @@ msgid "Use max available balance"
 msgstr "使用全部可用余额"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "Use mid price"
 msgstr "使用中间价"
 

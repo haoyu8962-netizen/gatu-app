@@ -3,6 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const SOURCE_ROOT = resolve(import.meta.dirname, "../..");
+const ORDER_ENTRY_SURFACES = [
+	"components/trade/tradebox/trade-panel.tsx",
+	"components/trade/mobile/mobile-trade-view.tsx",
+];
 
 describe("order submission wiring", () => {
 	it("routes every production order action through the tracked submitter", () => {
@@ -35,39 +39,49 @@ describe("order submission wiring", () => {
 		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8")).toContain(
 			"useOrderSubmit({ executionGuard, twapExecutionGuard })",
 		);
+		expect(readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8")).toMatch(
+			/useOrderSubmit\(\{\s*executionGuard,\s*twapExecutionGuard,/,
+		);
 	});
 
-	it("tick-rounds TWAP trigger and stop prices once in the panel and requires a live mark whenever either is set", () => {
+	it("tick-rounds TWAP trigger and stop prices once on every surface and requires a live mark whenever either is set", () => {
 		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
-		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
 
 		expect(orderSubmit).toContain("const details = buildTwapOrderDetails({");
 		expect(orderSubmit).toMatch(/twap: \{[\s\S]*?\},\s*\.\.\.\(details \? \{ details \} : \{\}\),/);
 		expect(orderSubmit).not.toMatch(/details:\s*\{\s*t:\s*null,\s*s:\s*null/);
 		expect(orderSubmit).not.toContain("formatPriceForOrder(twapTriggerPrice");
-		expect(tradePanel).toContain("const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);");
-		expect(tradePanel).toContain("const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);");
-		expect(tradePanel).toContain("const twapTriggerPriceNum = toNumber(twapTriggerPx);");
-		expect(tradePanel).toContain("const twapStopPriceNum = toNumber(twapStopPx);");
-		expect(tradePanel).toMatch(
-			/const requiresLiveMarkPrice =\s*orderType === "market" \|\|\s*triggerOrder \|\|\s*\(twapOrder && \(isPositive\(twapTriggerPriceNum\) \|\| isPositive\(twapStopPriceNum\)\)\);/,
-		);
+
+		for (const path of ORDER_ENTRY_SURFACES) {
+			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
+
+			expect(source).toContain("const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);");
+			expect(source).toContain("const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);");
+			expect(source).toContain("const twapTriggerPriceNum = toNumber(twapTriggerPx);");
+			expect(source).toContain("const twapStopPriceNum = toNumber(twapStopPx);");
+			expect(source).toMatch(
+				/const requiresLiveMarkPrice =\s*orderType === "market" \|\|\s*(?:is)?[Tt]riggerOrder \|\|\s*\(twapOrder && \(isPositive\(twapTriggerPriceNum\) \|\| isPositive\(twapStopPriceNum\)\)\);/,
+			);
+		}
 	});
 
-	it("gates the desktop reduce-only flag by market capability before it reaches validation and submission", () => {
+	it("gates the reduce-only flag by market capability on both surfaces before it reaches validation and submission", () => {
 		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
+		const mobileTradeView = readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8");
 
 		expect(tradePanel).toContain("const reduceOnlyChecked = useReduceOnly();");
-		expect(tradePanel).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
-		expect(tradePanel).toMatch(/perpInput\(baseInput, \{[\s\S]*?\breduceOnly,[\s\S]*?\}\)/);
-		expect(tradePanel).toMatch(
-			/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\breduceOnly,[\s\S]*?\},\s*draft,\s*\);/,
-		);
-		expect(tradePanel).not.toMatch(/reduceOnly: reduceOnlyChecked/);
+		expect(mobileTradeView).toContain("const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);");
+
+		for (const source of [tradePanel, mobileTradeView]) {
+			expect(source).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
+			expect(source).toMatch(/perpInput\(baseInput, \{[\s\S]*?\breduceOnly,[\s\S]*?\}\)/);
+			expect(source).toMatch(/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\breduceOnly,[\s\S]*?\},\s*draft,\s*\);/);
+			expect(source).not.toMatch(/reduceOnly: reduceOnlyChecked/);
+		}
 	});
 
 	it("routes both order-entry surfaces through the shared confirmation gate", () => {
-		for (const path of ["components/trade/tradebox/trade-panel.tsx", "components/trade/mobile/mobile-trade-view.tsx"]) {
+		for (const path of ORDER_ENTRY_SURFACES) {
 			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
 			expect(source).toContain("useOrderConfirmation(");
 			expect(source).toContain("<OrderConfirmationModal");
@@ -105,18 +119,16 @@ describe("order submission wiring", () => {
 			"export type OrderSubmitDraftInput = Omit<OrderSubmitInput, keyof OrderSubmitLivePrices>;",
 		);
 
-		const snapshot = tradePanel.match(/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\},\s*draft,\s*\);/);
-		expect(snapshot).not.toBeNull();
-		for (const field of ["price,", "executionReferencePx,", "markPx,"]) {
-			expect(snapshot?.[0]).not.toContain(field);
+		for (const source of [tradePanel, mobileTradeView]) {
+			const snapshot = source.match(/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\},\s*draft,\s*\);/);
+			expect(snapshot).not.toBeNull();
+			for (const field of ["price,", "executionReferencePx,", "markPx,"]) {
+				expect(snapshot?.[0]).not.toContain(field);
+			}
+			expect(source).toContain("await submitOrder({ ...input, price, executionReferencePx, markPx });");
 		}
-		expect(tradePanel).toContain("await submitOrder({ ...input, price, executionReferencePx, markPx });");
 
 		expect(mobileTradeView).toContain("async function executeSubmit(input: OrderSubmitDraftInput) {");
-		expect(mobileTradeView).toContain(
-			"const executionPrice = marketExecution ? executionReferencePx : toNumberOrZero(input.limitPriceInput);",
-		);
-		expect(mobileTradeView).toMatch(/sizeValue: input\.sizeValue,/);
 	});
 
 	it("keeps desktop and mobile TWAP views wired to shared subscription and cancellation boundaries", () => {

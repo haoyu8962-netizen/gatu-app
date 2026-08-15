@@ -31,7 +31,7 @@ interface Props {
 	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
 	onAccountModeClick: () => void;
-	hideAlgoOrders?: boolean;
+	hideSpotTwap?: boolean;
 	compact?: boolean;
 	layout?: "desktop" | "mobile";
 }
@@ -53,7 +53,7 @@ export function TradeHeader({
 	isAccountModeLoading,
 	isAccountModeUpdating,
 	onAccountModeClick,
-	hideAlgoOrders,
+	hideSpotTwap,
 	compact,
 	layout = "desktop",
 }: Props) {
@@ -71,7 +71,7 @@ export function TradeHeader({
 	const isSpot = marketKind === "spot";
 	const advancedOrderTypeItems = ADVANCED_ORDER_TYPES.filter((type) => {
 		if (isSpot && !SPOT_ALLOWED_TYPES.includes(type)) return false;
-		if (hideAlgoOrders && (type === "twap" || type === "scale")) return false;
+		if (isSpot && hideSpotTwap && type === "twap") return false;
 		return true;
 	}).map((type) => ({
 		label: getAdvancedOrderTypeLabel(type),

@@ -70,6 +70,12 @@ interface UseOrderSubmitResult {
 interface UseOrderSubmitOptions {
 	executionGuard?: ExchangeExecutionGuard<"order">;
 	twapExecutionGuard?: ExchangeExecutionGuard<"twapOrder">;
+	/**
+	 * Runs wherever the shared order-entry store is reset, so a surface that keeps part of its
+	 * form outside that store (the mobile panel holds size, limit price and reduce-only locally)
+	 * clears exactly on the outcomes that clear the store.
+	 */
+	onReset?: () => void;
 }
 
 type QueueOrderType = "twap" | "scale" | "trigger" | "limit" | "market";
@@ -91,6 +97,11 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 	const { resetForm } = useOrderEntryActions();
 
 	const isSubmitting = isSubmittingOrder || isSubmittingTwap;
+
+	function resetSubmittedForm() {
+		resetForm();
+		options.onReset?.();
+	}
 
 	async function handleSubmit(input: OrderSubmitInput) {
 		const {
@@ -188,7 +199,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 				if (submission.state === "reconciling") {
-					resetForm();
+					resetSubmittedForm();
 					return;
 				}
 				throwIfResponseError(submission.result.response?.data?.status);
@@ -235,7 +246,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 				if (submission.state === "reconciling") {
-					resetForm();
+					resetSubmittedForm();
 					return;
 				}
 
@@ -249,7 +260,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				}
 			}
 
-			resetForm();
+			resetSubmittedForm();
 		} catch (error) {
 			if (isOrderBatchResolutionError(error)) {
 				const { resolution } = error;
@@ -260,7 +271,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 						totalCount: resolution.totalCount,
 						error: resolution.errors.join("; ") || undefined,
 					});
-					resetForm();
+					resetSubmittedForm();
 					return;
 				}
 				updateOrder(orderId, {

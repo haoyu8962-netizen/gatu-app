@@ -720,7 +720,6 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "इनमें से एक बाज़ार के लिए एक अन्य ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-order-submit.ts
@@ -2886,6 +2885,7 @@ msgstr "सक्षम किया जा रहा है"
 #~ msgid "Enabling..."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -3780,7 +3780,6 @@ msgid "Hold to reveal QR"
 msgstr "QR दिखाने के लिए दबाए रखें"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "घंटे"
 
@@ -3791,6 +3790,10 @@ msgstr "लॉन्ग द्वारा शॉर्ट को चुका�
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "How Hyperliquid referrals work"
 msgstr "Hyperliquid रेफ़रल कैसे काम करते हैं"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Hrs"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "HYPE is the native token of Hyperliquid."
@@ -4819,6 +4822,7 @@ msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -4879,6 +4883,9 @@ msgid "Minimum withdrawal is ${minimum}"
 msgstr "न्यूनतम निकासी ${minimum} है"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Mins"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
 msgstr "मिनट"
@@ -5402,6 +5409,8 @@ msgstr "नंबर फ़ॉर्मेट"
 #~ msgid "Number Format"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -5662,8 +5671,6 @@ msgstr ""
 msgid "Order confirmed by the exchange."
 msgstr "एक्सचेंज ने ऑर्डर की पुष्टि कर दी है।"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
@@ -7095,6 +7102,7 @@ msgstr "चल रहा है"
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
@@ -7726,6 +7734,7 @@ msgstr "साइज़ ऑर्डर के शेष साइज़ से 
 #~ msgid "Size exceeds position"
 #~ msgstr "साइज़ पोज़िशन से अधिक है"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Size per Suborder"
 msgstr "प्रति सबऑर्डर साइज़"
@@ -7734,6 +7743,7 @@ msgstr "प्रति सबऑर्डर साइज़"
 msgid "Size precision must be a non-negative integer"
 msgstr "साइज़ परिशुद्धता एक गैर-ऋणात्मक पूर्णांक होनी चाहिए"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7979,6 +7989,7 @@ msgstr "प्रारंभ और समाप्ति अलग होन�
 msgid "Start camera"
 msgstr "कैमरा शुरू करें"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8517,7 +8528,6 @@ msgstr ""
 msgid "The exchange did not accept every order."
 msgstr "एक्सचेंज ने सभी ऑर्डर स्वीकार नहीं किए।"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -9514,6 +9524,7 @@ msgstr "ट्रिगर ऑर्डर को आपकी मौजूद�
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
@@ -9935,6 +9946,7 @@ msgid "Use max available balance"
 msgstr "अधिकतम उपलब्ध शेष राशि का उपयोग करें"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "Use mid price"
 msgstr "मध्य मूल्य का उपयोग करें"
 

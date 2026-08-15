@@ -720,7 +720,6 @@ msgid "Another order for one of these markets is still being confirmed."
 msgstr "Todavía se está confirmando otra orden para uno de estos mercados."
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-order-submit.ts
@@ -2886,6 +2885,7 @@ msgstr "Activando"
 #~ msgid "Enabling..."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -3780,7 +3780,6 @@ msgid "Hold to reveal QR"
 msgstr "Mantén pulsado para mostrar el QR"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "Hora(s)"
 
@@ -3791,6 +3790,10 @@ msgstr "Tasa horaria que los largos pagan a los cortos (si es negativa, los cort
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "How Hyperliquid referrals work"
 msgstr "Cómo funcionan los referidos de Hyperliquid"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Hrs"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "HYPE is the native token of Hyperliquid."
@@ -4819,6 +4822,7 @@ msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -4879,6 +4883,9 @@ msgid "Minimum withdrawal is ${minimum}"
 msgstr "El retiro mínimo es de ${minimum}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Mins"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
 msgstr "Minuto(s)"
@@ -5402,6 +5409,8 @@ msgstr "Formato de número"
 #~ msgid "Number Format"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -5662,8 +5671,6 @@ msgstr ""
 msgid "Order confirmed by the exchange."
 msgstr "La orden ha sido confirmada por el exchange."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
@@ -7095,6 +7102,7 @@ msgstr "En ejecución"
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgstr "Tiempo de ejecución ({TWAP_MINUTES_MIN}m - {0}h)"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
@@ -7726,6 +7734,7 @@ msgstr "El tamaño no puede superar el tamaño restante de la orden."
 #~ msgid "Size exceeds position"
 #~ msgstr "El tamaño excede la posición"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Size per Suborder"
 msgstr "Tamaño por suborden"
@@ -7734,6 +7743,7 @@ msgstr "Tamaño por suborden"
 msgid "Size precision must be a non-negative integer"
 msgstr "La precisión del tamaño debe ser un entero no negativo"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7979,6 +7989,7 @@ msgstr "El inicio y el final deben ser distintos"
 msgid "Start camera"
 msgstr "Iniciar cámara"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8517,7 +8528,6 @@ msgstr ""
 msgid "The exchange did not accept every order."
 msgstr "El exchange no aceptó todas las órdenes."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
@@ -9514,6 +9524,7 @@ msgstr "La orden de activación debe reducir su posición actual"
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
@@ -9935,6 +9946,7 @@ msgid "Use max available balance"
 msgstr "Usar el saldo máximo disponible"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "Use mid price"
 msgstr "Usar precio medio"
 

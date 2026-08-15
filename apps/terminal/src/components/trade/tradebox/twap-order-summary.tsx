@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
+import { getTwapRuntimeMinutes, getTwapSuborderCount } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -36,8 +37,8 @@ export function TwapOrderSummary({
 }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const minutes = Math.max(0, Math.round(twapMinutesNum ?? 0));
-	const numberOfOrders = minutes > 0 ? Math.floor((minutes * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1 : 0;
+	const minutes = getTwapRuntimeMinutes(twapMinutesNum);
+	const numberOfOrders = getTwapSuborderCount(twapMinutesNum);
 	const sizePerSuborder = numberOfOrders > 0 ? sizeValue / numberOfOrders : 0;
 	const stopPriceLabel = getTwapStopPriceLabel(side);
 
