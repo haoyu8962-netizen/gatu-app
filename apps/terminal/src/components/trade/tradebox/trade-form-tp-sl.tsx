@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
@@ -59,14 +59,7 @@ export function TradeFormTpSl({
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals);
 	const normalizedReferencePrice = normalizePrice(referencePrice);
-	const returnContextKey = [
-		marketId ?? "",
-		side,
-		normalizedReferencePrice ?? "",
-		size,
-		leverage ?? "",
-		quoteSymbol ?? "",
-	].join("|");
+	const returnContextKey = [marketId ?? "", side, quoteSymbol ?? ""].join("|");
 
 	function normalizePrice(value: string | number | null): string | null {
 		if (assetId === null) return null;
@@ -117,7 +110,7 @@ export function TradeFormTpSl({
 		if (getUnit(kind) === "roe") {
 			return formatReturnMagnitude(
 				calculateRoeMagnitudeFromPriceExact(normalizedReferencePrice, normalizedPrice, side, kind, leverage),
-				1,
+				2,
 			);
 		}
 		return formatReturnMagnitude(
@@ -140,6 +133,26 @@ export function TradeFormTpSl({
 		if (kind === "tp" && !validateTpPrice(normalizedReferencePrice, normalizedTarget, side)) return null;
 		if (kind === "sl" && !validateSlPrice(normalizedReferencePrice, normalizedTarget, side)) return null;
 		return toBig(target)?.eq(normalizedTarget) ? target : normalizedTarget;
+	}
+
+	const tpDraftValue = getCurrentDraft("tp");
+	const slDraftValue = getCurrentDraft("sl");
+	// biome-ignore lint/correctness/useExhaustiveDependencies: re-derive linked prices only when the market inputs the drafts depend on move
+	useEffect(() => {
+		syncPriceFromDraft("tp", tpDraftValue);
+		syncPriceFromDraft("sl", slDraftValue);
+	}, [normalizedReferencePrice, size, leverage, tpUnit, slUnit]);
+
+	function syncPriceFromDraft(kind: TpSlKind, draft: string | null) {
+		if (draft === null) return;
+		const magnitude = toBig(draft);
+		if (!magnitude || magnitude.lte(0)) return;
+		const target = priceFromReturn(kind, magnitude.toString());
+		if (target === null) return;
+		const current = kind === "tp" ? tpPriceInput : slPriceInput;
+		if (toBig(current)?.eq(target)) return;
+		if (kind === "tp") setTpPrice(target);
+		else setSlPrice(target);
 	}
 
 	function handleReturnChange(kind: TpSlKind, value: string) {

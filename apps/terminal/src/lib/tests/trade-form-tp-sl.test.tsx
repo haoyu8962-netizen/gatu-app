@@ -98,14 +98,34 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(findInput(container, "Take Profit").value).toBe("");
 	});
 
-	it("invalidates the return draft when its entry-price context changes", () => {
+	it("keeps the typed return as the source and re-derives the price when the entry reference moves", () => {
 		resetPrices({ referencePrice: 80 });
 		changeInput(findInput(container, "Take profit return"), "50");
 		expect(findInput(container, "Take Profit").value).toBe("84.00");
 
 		renderForm({ referencePrice: 82 });
+		expect(findInput(container, "Take profit return").value).toBe("50");
+		expect(findInput(container, "Take Profit").value).toBe("86.10");
+	});
+
+	it("lets the user finish typing a multi-digit return while the reference price ticks", () => {
+		resetPrices({ referencePrice: 80 });
+		const returnInput = findInput(container, "Take profit return");
+		changeInput(returnInput, "10");
+		renderForm({ referencePrice: 80.5 });
+		changeInput(returnInput, "105");
+		expect(returnInput.value).toBe("105");
+		expect(findInput(container, "Take Profit").value).toBe("88.95");
+	});
+
+	it("returns to price-as-source once the return field blurs", () => {
+		resetPrices({ referencePrice: 80 });
+		const returnInput = findInput(container, "Take profit return");
+		changeInput(returnInput, "50");
+		act(() => returnInput.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		renderForm({ referencePrice: 82 });
 		expect(findInput(container, "Take Profit").value).toBe("84.00");
-		expect(findInput(container, "Take profit return").value).toBe("24.4");
+		expect(returnInput.value).toBe("24.39");
 	});
 
 	it("keeps an existing price when a return conversion cannot resolve", () => {

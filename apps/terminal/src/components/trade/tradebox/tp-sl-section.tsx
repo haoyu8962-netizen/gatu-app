@@ -392,7 +392,7 @@ function FramedTpSlRow({
 	const inputId = useId();
 	const errorId = `${inputId}-error`;
 	const returnDisabled = disabled || returnInput?.disabled;
-	const unitToggleDisabled = returnDisabled || returnInput?.unitToggleDisabled;
+	const unitToggleDisabled = disabled || returnInput?.unitToggleDisabled;
 
 	return (
 		<div className="min-w-0 space-y-1.5">
