@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
@@ -33,6 +33,10 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
 	const priceDecimals = getTradePriceDecimals(selectedMarket?.markPx, szDecimals, marketType);
 	const processed = useMemo(() => processTrades(trades ?? []), [trades]);
+	const initialTradeIds = useRef<Set<string> | null>(null);
+	if (initialTradeIds.current === null && processed.length > 0) {
+		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
+	}
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
 
@@ -75,6 +79,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 								showInQuote={showOrderbookInQuote}
 								isTestnet={isTestnet}
 								compact={compact}
+								initial={initialTradeIds.current?.has(trade.id)}
 							/>
 						))}
 					</div>

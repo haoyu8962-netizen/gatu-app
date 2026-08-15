@@ -13,9 +13,18 @@ interface Props {
 	showInQuote: boolean;
 	isTestnet: boolean;
 	compact?: boolean;
+	initial?: boolean;
 }
 
-function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, isTestnet, compact = false }: Props) {
+function TradeRowComponent({
+	trade,
+	priceDecimals,
+	szDecimals,
+	showInQuote,
+	isTestnet,
+	compact = false,
+	initial = false,
+}: Props) {
 	useNumberFormatRevision();
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
 	const sizeDisplay = showInQuote
@@ -27,6 +36,7 @@ function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, isTe
 			href={getExplorerTxUrl(trade.hash, isTestnet)}
 			target="_blank"
 			rel="noopener noreferrer"
+			data-initial={initial || undefined}
 			className={cn(
 				"grid h-6 items-center tabular-nums hover:bg-fill-hover group",
 				compact ? "grid-cols-2 gap-2 text-2xs" : "trades-grid gap-1 text-xs",
