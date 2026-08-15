@@ -184,7 +184,7 @@ export function LeverageEditor({
 				<span className="ml-2 shrink-0 text-xs text-trading-panel-muted">x</span>
 			</div>
 			{riskValue > 10 && (
-				<p className="rounded-[10px] border border-trading-panel-error-disabled-fill bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">
+				<p className="rounded-[10px] border border-stroke-error-weak bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">
 					<Trans>High leverage significantly increases liquidation risk. Use with caution.</Trans>
 				</p>
 			)}

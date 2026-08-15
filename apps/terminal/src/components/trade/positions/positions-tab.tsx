@@ -309,7 +309,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 									disabled={!closeAllPreview}
 									aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
 									title={closeAllUnavailableReason ?? undefined}
-									className="min-h-[27px] whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled bg-modal px-2.5 text-xs leading-4 font-semibold text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-subtle"
+									className="min-h-[27px] whitespace-nowrap rounded-[7px] border border-stroke-error-weak bg-modal px-2.5 text-xs leading-4 font-semibold text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-subtle"
 								>
 									{t`Close All`}
 								</button>

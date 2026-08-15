@@ -266,7 +266,7 @@ export function TwapTab() {
 															</Tooltip>
 															<button
 																type="button"
-																className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled px-3 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+																className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-stroke-error-weak px-3 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
 																aria-label={t`Terminate TWAP order`}
 																aria-busy={cancellingTwapId === twapId}
 																disabled={cancellingTwapId !== null}

@@ -97,7 +97,7 @@ export function WithdrawForm({
 			return (
 				<div
 					role="alert"
-					className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
+					className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
 				>
 					<p>
 						<Trans>Unable to verify the current Hyperliquid withdrawal route.</Trans>
@@ -261,7 +261,7 @@ export function WithdrawForm({
 			{prerequisiteError ? (
 				<div
 					role="alert"
-					className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
+					className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
 				>
 					<p>{prerequisiteError}</p>
 					{canRetryPrerequisites ? (

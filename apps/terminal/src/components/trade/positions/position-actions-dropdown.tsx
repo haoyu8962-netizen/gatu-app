@@ -37,7 +37,7 @@ export function PositionActionsDropdown({
 				size="xxs"
 				disabled={!canClose || isRowClosing}
 				onClick={onMarketClose}
-				className={`${positionTableInlineActionClass} border-market-close-danger-disabled text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:!outline-market-close-control`}
+				className={`${positionTableInlineActionClass} border-stroke-error-weak text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:!outline-market-close-control`}
 			>
 				{isRowClosing ? t`Closing...` : t`Market Close`}
 			</Button>

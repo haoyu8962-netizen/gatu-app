@@ -252,7 +252,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 										aria-busy={isCancelling}
 										disabled={cancellingTwapId !== null}
 										onClick={() => void cancelTwap(state.coin, twapId)}
-										className="min-h-11 rounded-[8px] border border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
+										className="min-h-11 rounded-[8px] border border-stroke-error-weak bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
 									>
 										{isCancelling ? t`Terminating...` : t`Terminate`}
 									</button>
