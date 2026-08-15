@@ -836,24 +836,28 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								compact={embedded}
 							/>
 						)}
-						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
-							<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-							{embedded && !isConnected ? (
-								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-								</span>
-							) : (
-								<button
-									type="button"
-									onClick={openSettingsDialog}
-									className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-								>
-									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-								</button>
-							)}
-						</div>
+						{orderType === "market" && (
+							<div
+								className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}
+							>
+								<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+								{embedded && !isConnected ? (
+									<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
+										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+									</span>
+								) : (
+									<button
+										type="button"
+										onClick={openSettingsDialog}
+										className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+									>
+										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+									</button>
+								)}
+							</div>
+						)}
 						<SummaryRow
 							label={t`Est. Fee`}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
