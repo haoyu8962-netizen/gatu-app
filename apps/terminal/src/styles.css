@@ -80,9 +80,9 @@
   /* ---- Spacing Base (4px grid) ---- */
   --spacing: 4px;
 
-  /* ---- Shadows ---- */
-  --shadow-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
-  --shadow-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.08), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+  /* ---- Shadows (themed: see --elevation-* in :root/.dark) ---- */
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
   --inset-shadow-sunken: inset 0 1px 4px rgba(0, 0, 0, 0.08);
 
   /* ---- Letter Spacing ---- */
@@ -119,6 +119,10 @@
   /* ==================== LIGHT MODE ==================== */
   :root {
     color-scheme: light;
+
+    /* Elevation (light): shared surfaces stack on white, so shadows stay soft. */
+    --elevation-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+    --elevation-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.08), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
 
     /* API wallet page — handoff semantics mapped to project tokens. */
     --api-wallet-frame-max: 90rem;
@@ -361,6 +365,11 @@
   /* ==================== DARK MODE ==================== */
   .dark {
     color-scheme: dark;
+
+    /* Elevation: the light shadows are near-invisible on #0f1a1f, so overlays need heavier
+       black to lift off the terminal surface. */
+    --elevation-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.32), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --elevation-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.48), 0 8px 8px -4px rgba(0, 0, 0, 0.32);
 
     /* Background */
     --bg-base: #0f1a1f;
