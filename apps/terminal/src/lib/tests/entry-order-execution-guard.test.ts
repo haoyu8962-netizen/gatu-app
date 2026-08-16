@@ -288,6 +288,69 @@ describe("entry TWAP SDK execution guard", () => {
 		);
 	});
 
+	it("accepts a spot buy TWAP using its official spot asset id and exact quote availability", () => {
+		const spotParams = { twap: { ...params.twap, a: 10_000, s: "1.25" } };
+		const spotState = executionState({
+			assetId: 10_000,
+			availability: { kind: "spot", baseAvailable: "0", quoteAvailable: "125" },
+		});
+
+		expect(() => assertEntryTwapExecutionAllowed(spotParams, spotState, 1_001)).not.toThrow();
+		expect(() =>
+			assertEntryTwapExecutionAllowed(
+				spotParams,
+				{
+					...spotState,
+					availability: { kind: "spot", baseAvailable: "0", quoteAvailable: "124.999999999999999999" },
+				},
+				1_001,
+			),
+		).toThrow("Trading availability changed");
+	});
+
+	it("requires a fresh mark to value a spot buy TWAP against quote availability", () => {
+		const spotParams = { twap: { ...params.twap, a: 10_000 } };
+		const spotState = executionState({
+			assetId: 10_000,
+			availability: { kind: "spot", baseAvailable: "0", quoteAvailable: "100" },
+		});
+
+		expect(() => assertEntryTwapExecutionAllowed(spotParams, spotState, 11_001)).toThrow(
+			"Live mark price is unavailable",
+		);
+	});
+
+	it("uses exact base availability for a spot sell TWAP without requiring a mark", () => {
+		const spotParams = { twap: { ...params.twap, a: 10_000, b: false, s: "2.000000000000000001" } };
+		const spotState = executionState({
+			assetId: 10_000,
+			availability: {
+				kind: "spot",
+				baseAvailable: "2.000000000000000001",
+				quoteAvailable: "0",
+			},
+			markPriceStatus: "loading",
+			markPx: undefined,
+			markPriceReceivedAt: undefined,
+		});
+
+		expect(() => assertEntryTwapExecutionAllowed(spotParams, spotState, 1_001)).not.toThrow();
+		expect(() =>
+			assertEntryTwapExecutionAllowed(
+				spotParams,
+				{
+					...spotState,
+					availability: {
+						kind: "spot",
+						baseAvailable: "2.000000000000000000",
+						quoteAvailable: "0",
+					},
+				},
+				1_001,
+			),
+		).toThrow("Trading availability changed");
+	});
+
 	it("does not require a live mark for a plain TWAP or one whose details are both null", () => {
 		const stale = executionState({ markPriceStatus: "loading", markPx: undefined, markPriceReceivedAt: undefined });
 		expect(() => assertEntryTwapExecutionAllowed(params, stale, 1_001)).not.toThrow();

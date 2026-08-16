@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { QUOTE_SIZE_INPUT_MAX_DECIMALS } from "@/config/trade";
 import type { SpotBalanceData } from "@/domain/trade/balances";
-import { floorToDecimals, formatDecimalFloor, toBig } from "@/lib/trade/numbers";
+import { floorToDecimals, formatDecimalFloor, type Numeric, toBig } from "@/lib/trade/numbers";
 import type { Side, SizeMode } from "@/lib/trade/types";
 
 interface MaxSizeInput {
@@ -15,7 +15,7 @@ interface OrderEntryMaxSizeInput {
 	isConnected: boolean;
 	isSpotMarket: boolean;
 	side: Side;
-	price: number;
+	price: Numeric;
 	spotBalance: SpotBalanceData;
 	szDecimals: number;
 	maxTradeSzs: [number, number] | null;
@@ -72,8 +72,7 @@ export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
 			const quote = toBig(input.spotBalance.quoteAvailable);
 			const px = toBig(input.price);
 			if (!quote || !px || quote.lte(0) || px.lte(0)) return 0;
-			const size = quote.div(px).toNumber();
-			const floored = floorToDecimals(size, input.szDecimals);
+			const floored = quote.div(px).round(input.szDecimals, Big.roundDown).toNumber();
 			return Number.isFinite(floored) ? floored : 0;
 		}
 		const floored = floorToDecimals(input.spotBalance.baseAvailable, input.szDecimals);
@@ -131,8 +130,8 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 	if (input.isSpotMarket) {
 		if (isBuy) {
 			if (isQuoteMode) {
-				const quoteAmount = Big(input.spotBalance.quoteAvailable).times(pct);
-				return quoteAmount.toFixed(2);
+				const quoteAmount = Big(input.maxSize).times(input.price).times(pct);
+				return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 			}
 			const tokenAmount = Big(input.maxSize).times(pct).toNumber();
 			return formatSizeValue(tokenAmount, input.szDecimals);

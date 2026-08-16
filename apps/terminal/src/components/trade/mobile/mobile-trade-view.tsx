@@ -207,9 +207,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
+	const spotBuyTwapOrder = twapOrder && market?.kind === "spot" && side === "buy";
 	const requiresLiveMarkPrice =
 		orderType === "market" ||
 		isTriggerOrder ||
+		spotBuyTwapOrder ||
 		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
 	const { midPx } = useOrderbookMidPrice(
 		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
@@ -278,6 +280,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");

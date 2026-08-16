@@ -172,6 +172,7 @@ export function TradePanel() {
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
@@ -251,9 +252,11 @@ export function TradePanel() {
 	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
 	const twapTriggerPriceNum = toNumber(twapTriggerPx);
 	const twapStopPriceNum = toNumber(twapStopPx);
+	const spotBuyTwapOrder = twapOrder && market?.kind === "spot" && side === "buy";
 	const requiresLiveMarkPrice =
 		orderType === "market" ||
 		triggerOrder ||
+		spotBuyTwapOrder ||
 		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);

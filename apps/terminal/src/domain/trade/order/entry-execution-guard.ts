@@ -207,6 +207,39 @@ function assertTwapDetailsStillValid(params: TwapOrderParameters, state: EntryOr
 	}
 }
 
+function assertTwapSizeWithinCurrentAvailability(
+	params: TwapOrderParameters,
+	state: EntryOrderExecutionState,
+	now: number,
+): void {
+	const size = new Big(params.twap.s);
+	if (!size.gt(0)) throw new Error("Trading availability changed before submission");
+
+	const side = params.twap.b ? "buy" : "sell";
+	if (state.availability.kind === "perp") {
+		const available = state.availability.maxBaseBySide[side];
+		if (available === undefined || new Big(available).lt(size)) {
+			throw new Error("Trading availability changed before submission");
+		}
+		return;
+	}
+
+	if (!params.twap.b) {
+		if (new Big(state.availability.baseAvailable).lt(size)) {
+			throw new Error("Trading availability changed before submission");
+		}
+		return;
+	}
+
+	const markPx = state.markPx;
+	if (!isLiveMarkPriceReady(state.markPriceStatus, markPx, state.markPriceReceivedAt, now) || !markPx) {
+		throw new Error("Live mark price is unavailable");
+	}
+	if (new Big(state.availability.quoteAvailable).lt(size.times(markPx))) {
+		throw new Error("Trading availability changed before submission");
+	}
+}
+
 export function assertEntryTwapExecutionAllowed(
 	params: TwapOrderParameters,
 	state: EntryOrderExecutionState,
@@ -226,11 +259,6 @@ export function assertEntryTwapExecutionAllowed(
 	) {
 		throw new Error("Trading availability data is unavailable");
 	}
-	const side = params.twap.b ? "buy" : "sell";
-	if (state.availability.kind !== "perp") throw new Error("TWAP availability data is unavailable");
-	const available = state.availability.maxBaseBySide[side];
-	if (available === undefined || new Big(params.twap.s).lte(0) || new Big(available).lt(params.twap.s)) {
-		throw new Error("Trading availability changed before submission");
-	}
+	assertTwapSizeWithinCurrentAvailability(params, state, now);
 	assertTwapDetailsStillValid(params, state, now);
 }

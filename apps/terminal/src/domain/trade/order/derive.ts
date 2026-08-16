@@ -6,11 +6,18 @@ import {
 	type SpotAvailableAfterMaintenance,
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
+import { getExecutedPrice } from "@/domain/trade/order/price";
 import { getMaxSizeForOrderEntry, getOrderValue, getSizeValueFromInput } from "@/domain/trade/order/size";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
+
+export interface MarketOrderSizingInput {
+	referencePx: number;
+	slippageBps: number;
+}
 
 export interface OrderEntryInputs {
 	isConnected: boolean;
@@ -25,6 +32,7 @@ export interface OrderEntryInputs {
 	maxTradeSzs: [number, number] | null;
 	/** Available to trade in quote token: [buy, sell]. */
 	availableToTrade: [number, number] | null;
+	marketOrderSizing: MarketOrderSizingInput | null;
 }
 
 export interface OrderEntryDerived {
@@ -57,6 +65,25 @@ function getAvailableBalance(
 	return isBuy ? availableLong : availableShort;
 }
 
+function getMaxSizePrice(
+	inputs: OrderEntryInputs,
+	isSpotMarket: boolean,
+	isBuy: boolean,
+	szDecimals: number,
+): number | string {
+	if (!isSpotMarket || !isBuy || !inputs.marketOrderSizing) return inputs.conversionPrice;
+	if (typeof inputs.market?.assetId !== "number") return 0;
+
+	const executionPrice = getExecutedPrice(
+		"market",
+		"buy",
+		inputs.marketOrderSizing.referencePx,
+		inputs.marketOrderSizing.slippageBps,
+		inputs.conversionPrice,
+	);
+	return formatPriceForOrder(executionPrice, { assetId: inputs.market.assetId, szDecimals });
+}
+
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
 	const isBuy = inputs.side === "buy";
@@ -73,12 +100,13 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
 	const availableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
 	const displayAvailableBalance = availableBalance;
+	const maxSizePrice = getMaxSizePrice(inputs, isSpotMarket, isBuy, szDecimals);
 
 	const maxSize = getMaxSizeForOrderEntry({
 		isConnected: inputs.isConnected,
 		isSpotMarket,
 		side: inputs.side,
-		price: inputs.conversionPrice,
+		price: maxSizePrice,
 		spotBalance,
 		szDecimals,
 		maxTradeSzs: inputs.maxTradeSzs,

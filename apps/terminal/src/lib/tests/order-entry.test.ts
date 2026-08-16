@@ -53,6 +53,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: null,
 			availableToTrade: null,
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBe(0);
@@ -71,6 +72,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0.05, 0.05],
 			availableToTrade: [5.655465, 5.655465],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBeCloseTo(5.655465);
@@ -89,6 +91,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0, 0],
 			availableToTrade: [0, 0],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBe(0);
@@ -107,6 +110,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: null,
 			availableToTrade: null,
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBe(0);
@@ -125,6 +129,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0, 0],
 			availableToTrade: [0, 0],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBe(0);
@@ -143,6 +148,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0.75, 0.25],
 			availableToTrade: [75, 25],
+			marketOrderSizing: null,
 		});
 		const short = deriveOrderEntry({
 			isConnected: true,
@@ -154,6 +160,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0.75, 0.25],
 			availableToTrade: [75, 25],
+			marketOrderSizing: null,
 		});
 
 		expect(long).toMatchObject({ availableBalance: 75, maxSize: 0.75 });
@@ -171,6 +178,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [0, 0],
 			availableToTrade: [0, 0],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.availableBalance).toBe(0);
@@ -189,6 +197,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [20, 20],
 			availableToTrade: [6820, 6820],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.sizeValue).toBe(5);
@@ -206,6 +215,7 @@ describe("order entry balances", () => {
 			spotBalances: [usdcBalance],
 			maxTradeSzs: [20, 20],
 			availableToTrade: [6820, 6820],
+			marketOrderSizing: null,
 		});
 
 		expect(derived.sizeValue).toBe(0.014);

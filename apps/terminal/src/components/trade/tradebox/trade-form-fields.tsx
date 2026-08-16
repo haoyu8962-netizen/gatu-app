@@ -28,6 +28,7 @@ import { getAvailableTifOptions, getTifOptionLabel } from "@/lib/trade/tif";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import {
 	useLimitPrice,
 	useOrderEntryActions,
@@ -124,8 +125,10 @@ export function TradeFormFields({
 	const triggerPriceInput = useTriggerPrice();
 	const reduceOnly = useReduceOnly();
 	const tpSlEnabled = useTpSlEnabled();
+	const slippageBps = useMarketOrderSlippageBps();
 
 	const markPx = toNumberOrZero(market?.markPx);
+	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
 
 	const {
 		isSpotMarket,
@@ -152,6 +155,7 @@ export function TradeFormFields({
 		sizeMode,
 		sizeInput,
 		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();

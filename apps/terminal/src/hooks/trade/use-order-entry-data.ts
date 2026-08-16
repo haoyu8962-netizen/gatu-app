@@ -6,7 +6,7 @@ import {
 	getOrderAvailabilityFlags,
 	getOrderAvailabilityStatus,
 } from "@/domain/trade/order/availability";
-import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
+import { deriveOrderEntry, type MarketOrderSizingInput, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import type { EntryOrderExecutionAvailability } from "@/domain/trade/order/entry-execution-guard";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -58,6 +58,7 @@ interface UseOrderEntryDataOptions {
 	sizeInput: string;
 	/** Limit price for limit-priced order types; when > 0 it drives size/value conversion instead of mark. */
 	limitPx?: number;
+	marketOrderSizing: MarketOrderSizingInput | null;
 }
 
 export function useOrderEntryData({
@@ -67,6 +68,7 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 	limitPx,
+	marketOrderSizing,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
@@ -157,6 +159,7 @@ export function useOrderEntryData({
 		spotAvailableAfterMaintenance,
 		maxTradeSzs,
 		availableToTrade,
+		marketOrderSizing,
 	});
 
 	function getSizeForPercent(pct: number): string {

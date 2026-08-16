@@ -39,7 +39,7 @@ describe("mobile order safety contract", () => {
 		);
 	});
 
-	it("keeps spot twap out of reach while the execution guard stays perp-only", () => {
+	it("keeps the existing mobile spot TWAP product gate while desktop Spot TWAP remains supported", () => {
 		expect(tradeHeader).toContain('if (isSpot && hideSpotTwap && type === "twap") return false;');
 		expect(mobileTradeView).toContain("hideSpotTwap");
 		expect(mobileTradeView).toContain(
