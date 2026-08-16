@@ -286,7 +286,7 @@ function UserMenuSkeleton() {
 		<div
 			className={cn(
 				APP_BAR_BUTTON_HEIGHT_CLASS,
-				"h-[34px] w-36 shrink-0 animate-pulse rounded-[10px] bg-market-close-hover max-[1181px]:w-32",
+				"h-[34px] w-36 shrink-0 rounded-[10px] bg-market-close-hover max-[1181px]:w-32",
 			)}
 		/>
 	);

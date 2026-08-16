@@ -27,6 +27,22 @@ class MockResizeObserver {
 	}
 }
 
+function SuspenseSwapHarness({ contentReady }: { contentReady: boolean }) {
+	const [, setLayouts] = useState<ResponsiveLayouts<DesktopGridBreakpoint>>(() => ({
+		lg: DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.map((item) => ({ ...item })),
+		md: DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => ({ ...item })),
+	}));
+	const ref = useGridContentHeight(true, "lg", "tradingInterface", setLayouts);
+
+	if (!contentReady) return <div className="h-[41rem] w-full" />;
+
+	return (
+		<div ref={ref}>
+			<div />
+		</div>
+	);
+}
+
 function GridContentHeightHarness({
 	mounted,
 	breakpoint,
@@ -95,6 +111,19 @@ describe("grid content height observer", () => {
 		act(() => root?.unmount());
 		root = null;
 		expect(lgObserver?.disconnect).toHaveBeenCalledTimes(1);
+	});
+
+	it("observes only once the measured node is mounted so Suspense fallbacks never size the grid", () => {
+		act(() => root?.render(<SuspenseSwapHarness contentReady={false} />));
+		expect(observers).toHaveLength(0);
+
+		act(() => root?.render(<SuspenseSwapHarness contentReady />));
+		expect(observers).toHaveLength(1);
+		expect(observers[0]?.observe).toHaveBeenCalledTimes(1);
+
+		act(() => root?.render(<SuspenseSwapHarness contentReady={false} />));
+		expect(observers[0]?.disconnect).toHaveBeenCalledTimes(1);
+		expect(observers).toHaveLength(1);
 	});
 
 	it("falls back to contentRect and does not observe before mount", () => {

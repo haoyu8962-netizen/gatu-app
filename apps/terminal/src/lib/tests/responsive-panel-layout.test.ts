@@ -112,13 +112,13 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("TradePanel.preload?.()");
 	});
 
-	it("shares the default desktop loading surface and disables every pulse for reduced motion", () => {
+	it("shares the default desktop loading surface with the shell skeleton and never animates it", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<DesktopGridLoadingSurface");
 		expect(DESKTOP_GRID_LOADING_SURFACE_SOURCE).not.toContain('from "react-grid-layout"');
 
-		const pulseLines = MAIN_WORKSPACE_SOURCE.split("\n").filter((line) => line.includes("animate-pulse"));
-		expect(pulseLines.length).toBeGreaterThan(0);
-		for (const line of pulseLines) expect(line).toContain("motion-reduce:animate-none");
+		expect(MAIN_WORKSPACE_SOURCE).toContain('panelClassName="desktop-grid-panel bg-surface"');
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-pulse");
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-spin");
 	});
 
 	it("observes border-box height with cleanup and persists RGL's compacted layouts", () => {

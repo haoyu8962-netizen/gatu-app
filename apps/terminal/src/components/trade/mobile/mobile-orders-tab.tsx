@@ -1,9 +1,9 @@
 import { Button, Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ListIcon } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import {

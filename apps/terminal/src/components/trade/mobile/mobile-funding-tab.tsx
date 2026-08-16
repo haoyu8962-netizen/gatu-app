@@ -1,7 +1,7 @@
 import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";

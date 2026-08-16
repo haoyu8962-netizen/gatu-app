@@ -7,8 +7,8 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
 import { Suspense, useId, useState } from "react";
+import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import {
@@ -387,7 +387,7 @@ function MetricRow({ emphasized = false, label, loading, value, valueClassName }
 	return (
 		<div className="flex min-h-11 items-center justify-between gap-4 py-2.5 text-sm">
 			<span className="text-fg-muted">{label}</span>
-			<Skeleton name="mobile-account-overview-metric" loading={loading}>
+			<Skeleton name="mobile-account-overview-metric" loading={loading} fallback={<SkeletonValue className="w-20" />}>
 				<span className={cn("font-medium tabular-nums text-fg", emphasized && "font-semibold", valueClassName)}>
 					{value}
 				</span>

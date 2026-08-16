@@ -30,10 +30,7 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
-const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
-const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
-const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker motion-reduce:animate-none" />;
-const chartPanelFallback = <div className="h-full w-full bg-background" />;
+const panelFallback = <div aria-hidden="true" className="h-full w-full bg-surface" />;
 
 function preloadPrimaryWorkspacePanels() {
 	if (
@@ -118,7 +115,7 @@ export function MainWorkspace() {
 					</div>
 
 					<div key="chart" className="desktop-grid-panel overflow-hidden bg-surface">
-						<Suspense fallback={chartPanelFallback}>
+						<Suspense fallback={panelFallback}>
 							<ChartPanel />
 						</Suspense>
 					</div>
@@ -130,11 +127,11 @@ export function MainWorkspace() {
 					</div>
 
 					<div key="tradingInterface" className="desktop-grid-panel overflow-hidden bg-surface">
-						<div ref={tradeContentRef}>
-							<Suspense fallback={tradePanelFallback}>
+						<Suspense fallback={panelFallback}>
+							<div ref={tradeContentRef}>
 								<TradePanel key={marketKey} />
-							</Suspense>
-						</div>
+							</div>
+						</Suspense>
 					</div>
 
 					<div key="accountTable" className="desktop-grid-panel overflow-hidden bg-surface">
@@ -144,11 +141,11 @@ export function MainWorkspace() {
 					</div>
 
 					<div key="accountInfo" data-panel-id="accountInfo" className="desktop-grid-panel overflow-hidden bg-surface">
-						<div ref={accountContentRef}>
-							<Suspense fallback={accountPanelFallback}>
+						<Suspense fallback={panelFallback}>
+							<div ref={accountContentRef}>
 								<AccountPanel />
-							</Suspense>
-						</div>
+							</div>
+						</Suspense>
 					</div>
 				</Responsive>
 			) : (

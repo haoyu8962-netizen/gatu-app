@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";

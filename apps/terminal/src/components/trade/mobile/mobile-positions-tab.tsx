@@ -1,8 +1,8 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { HL_ALL_DEXS } from "@/config/app";
 import {
 	ALL_POSITION_MARKETS,

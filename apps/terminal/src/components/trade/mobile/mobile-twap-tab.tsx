@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
-import { Skeleton } from "boneyard-js/react";
 import { type ReactNode, useMemo, useState } from "react";
 import { type TwapSubview, TwapSubviewTabs } from "@/components/trade/twap/twap-subview-tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getToolbarTwapMetrics } from "@/domain/trade/trading-toolbar-metrics";
