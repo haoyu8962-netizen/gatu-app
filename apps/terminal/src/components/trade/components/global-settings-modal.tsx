@@ -118,7 +118,9 @@ export function GlobalSettingsModal() {
 										max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 										maxAllowedDecimals={2}
 										inputSize="sm"
-										className="w-16 text-right tabular-nums"
+										mobileSafe
+										aria-label={t`Slippage tolerance`}
+										className="w-16 text-right tabular-nums max-[1000px]:h-8"
 									/>
 									<span className="text-xs text-fg-muted">%</span>
 								</div>
@@ -172,7 +174,12 @@ export function GlobalSettingsModal() {
 
 					<SettingsGroup label={t`Display`}>
 						<SettingRow label={t`Order book in quote asset`}>
-							<Toggle size="xs" checked={showOrderbookInQuote} onCheckedChange={setShowOrderbookInQuote} />
+							<Toggle
+								size="xs"
+								aria-label={t`Order book in quote asset`}
+								checked={showOrderbookInQuote}
+								onCheckedChange={setShowOrderbookInQuote}
+							/>
 						</SettingRow>
 						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
 							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>

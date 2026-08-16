@@ -1009,21 +1009,15 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 									className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
 								>
 									<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-									{embedded && !isConnected ? (
-										<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-											<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-										</span>
-									) : (
-										<button
-											type="button"
-											onClick={openSettingsDialog}
-											className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-										>
-											<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-										</button>
-									)}
+									<button
+										type="button"
+										onClick={openSettingsDialog}
+										aria-label={t`Slippage`}
+										className="relative inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+									>
+										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+									</button>
 								</div>
 							</>
 						)}

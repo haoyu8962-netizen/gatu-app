@@ -141,6 +141,16 @@ describe("GlobalSettingsModal", () => {
 
 		expect(testState.setSkipOrderConfirmation).toHaveBeenCalledWith(false);
 	});
+
+	it("names the slippage input and every settings toggle", () => {
+		expect(testState.numberInputProps?.["aria-label"]).toBe("Slippage tolerance");
+		expect(testState.numberInputProps?.mobileSafe).toBe(true);
+		expect(testState.numberInputProps?.className).toContain("max-[1000px]:h-8");
+		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
+			"Order confirmation",
+			"Order book in quote asset",
+		]);
+	});
 });
 
 function findOrderConfirmationToggle(): Record<string, unknown> | undefined {

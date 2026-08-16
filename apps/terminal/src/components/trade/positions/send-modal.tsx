@@ -315,12 +315,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 					<TextInput
 						placeholder={t`Destination address`}
+						aria-label={t`Destination address`}
 						value={destination}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
 						autoComplete="off"
 						spellCheck={false}
 						disabled={isPending || !accountModeReady || !accountDataReady}
+						mobileSafe
 						className={cn(
+							"max-[1000px]:min-h-11",
 							destination &&
 								!isValidDestination &&
 								"border-stroke-error-strong focus-visible:border-stroke-error-strong",
@@ -362,8 +365,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						value={amount}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
 						disabled={isPending || !accountModeReady || !accountDataReady}
+						mobileSafe
 						className={cn(
-							"w-full tabular-nums",
+							"w-full tabular-nums max-[1000px]:h-11",
 							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",
 						)}
 					/>

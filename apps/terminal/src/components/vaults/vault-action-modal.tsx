@@ -98,6 +98,8 @@ export function VaultActionModal({
 							inputMode="decimal"
 							autoComplete="off"
 							placeholder="0.00"
+							mobileSafe
+							className="max-[1000px]:min-h-11"
 							hint={
 								availableAmount === null
 									? t`Available amount is not verified`

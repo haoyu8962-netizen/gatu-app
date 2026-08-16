@@ -234,8 +234,9 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 								value={amount}
 								onChange={(e) => handleAmountChange(e.target.value)}
 								disabled={!!internalTransfersDisabledReason || isPending}
+								mobileSafe
 								className={cn(
-									"w-full tabular-nums",
+									"w-full tabular-nums max-[1000px]:h-11",
 									exceedsBalance(amount, availableBalanceValue) &&
 										"border-stroke-error-strong focus:border-stroke-error-strong",
 								)}

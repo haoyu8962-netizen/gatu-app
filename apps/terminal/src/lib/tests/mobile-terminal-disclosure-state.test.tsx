@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act, type ReactNode } from "react";
+import { act, type ReactNode, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MobilePositionsDisclosureStates } from "@/components/trade/mobile/use-mobile-disclosure-set";
@@ -10,6 +10,8 @@ const terminalState = vi.hoisted(() => ({
 	address: "0x1234",
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	isConnected: true,
+	accountEffectMounts: 0,
+	accountEffectCleanups: 0,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -56,7 +58,22 @@ vi.mock("@/components/trade/mobile/mobile-market-bar-provider", () => ({
 }));
 
 vi.mock("@/components/trade/mobile/mobile-account-view", () => ({
-	MobileAccountView: () => <div data-testid="account-surface" />,
+	MobileAccountView: () => {
+		const [revision, setRevision] = useState(0);
+		useEffect(() => {
+			terminalState.accountEffectMounts += 1;
+			return () => {
+				terminalState.accountEffectCleanups += 1;
+			};
+		}, []);
+		return (
+			<div data-testid="account-surface" data-revision={revision}>
+				<button type="button" onClick={() => setRevision((value) => value + 1)}>
+					Update account state
+				</button>
+			</div>
+		);
+	},
 }));
 
 vi.mock("@/components/trade/mobile/mobile-bottom-nav", () => ({
@@ -86,6 +103,8 @@ describe("MobileTerminal disclosure state", () => {
 		terminalState.address = "0x1234";
 		terminalState.env = "Mainnet";
 		terminalState.isConnected = true;
+		terminalState.accountEffectMounts = 0;
+		terminalState.accountEffectCleanups = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -146,5 +165,39 @@ describe("MobileTerminal disclosure state", () => {
 		terminalState.isConnected = false;
 		render();
 		expect(container.querySelector<HTMLElement>('[data-testid="trade-surface"]')?.dataset.expanded).toBe("false");
+	});
+
+	it("preserves Account DOM state while hidden and resets it for a new identity", () => {
+		terminalState.activeTab = "account";
+		render();
+		const accountSurface = container.querySelector<HTMLElement>('[data-testid="account-surface"]');
+		expect(accountSurface).not.toBeNull();
+		if (!accountSurface) throw new Error("Account surface did not render");
+		expect(terminalState.accountEffectMounts).toBe(1);
+		expect(terminalState.accountEffectCleanups).toBe(0);
+
+		accountSurface.scrollTop = 120;
+		act(() => accountSurface.querySelector("button")?.click());
+		expect(accountSurface.dataset.revision).toBe("1");
+
+		terminalState.activeTab = "trade";
+		render();
+		expect(container.querySelector('[data-testid="account-surface"]')).toBe(accountSurface);
+		expect(accountSurface.parentElement?.style.display).toBe("none");
+		expect(terminalState.accountEffectCleanups).toBe(1);
+
+		terminalState.activeTab = "account";
+		render();
+		expect(container.querySelector('[data-testid="account-surface"]')).toBe(accountSurface);
+		expect(accountSurface.dataset.revision).toBe("1");
+		expect(accountSurface.scrollTop).toBe(120);
+		expect(terminalState.accountEffectMounts).toBe(2);
+
+		terminalState.address = "0xABCD";
+		render();
+		const nextAccountSurface = container.querySelector<HTMLElement>('[data-testid="account-surface"]');
+		expect(nextAccountSurface).not.toBe(accountSurface);
+		expect(nextAccountSurface?.dataset.revision).toBe("0");
+		expect(nextAccountSurface?.scrollTop).toBe(0);
 	});
 });

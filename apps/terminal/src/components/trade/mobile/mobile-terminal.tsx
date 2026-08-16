@@ -1,3 +1,4 @@
+import { Activity } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -63,11 +64,14 @@ export function MobileTerminal({ className }: Props) {
 								disclosureStates={disclosureStates}
 							/>
 						</div>
-						{activeTab === "account" && (
-							<div className={cn("absolute inset-0 min-h-0 w-full", "visible z-10 opacity-100 pointer-events-auto")}>
+						<Activity key={disclosureIdentity ?? "disconnected"} mode={activeTab === "account" ? "visible" : "hidden"}>
+							<div
+								aria-hidden={activeTab !== "account"}
+								className="absolute inset-0 z-10 min-h-0 w-full pointer-events-auto"
+							>
 								<MobileAccountView />
 							</div>
-						)}
+						</Activity>
 					</div>
 				</main>
 			</MobileMarketBarProvider>

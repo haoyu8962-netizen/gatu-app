@@ -80,4 +80,28 @@ describe("NumberInput keyboard stepping", () => {
 		expect(suffix?.className).toContain("text-[13px]");
 		expect(suffix?.className).not.toContain("right-2 ");
 	});
+
+	it("associates its visible label while preserving an explicit input id", () => {
+		const explicitId = "transfer-amount";
+		act(() => {
+			root.render(<NumberInput id={explicitId} label="Amount" onChange={vi.fn()} value="" />);
+		});
+
+		const input = container.querySelector<HTMLInputElement>("input");
+		const label = container.querySelector<HTMLLabelElement>("label");
+		expect(input?.id).toBe(explicitId);
+		expect(label?.htmlFor).toBe(explicitId);
+		expect(label?.textContent).toBe("Amount");
+	});
+
+	it("generates an input id for labels when the caller does not provide one", () => {
+		act(() => {
+			root.render(<NumberInput label="Price" onChange={vi.fn()} value="" />);
+		});
+
+		const input = container.querySelector<HTMLInputElement>("input");
+		const label = container.querySelector<HTMLLabelElement>("label");
+		expect(input?.id).toBeTruthy();
+		expect(label?.htmlFor).toBe(input?.id);
+	});
 });

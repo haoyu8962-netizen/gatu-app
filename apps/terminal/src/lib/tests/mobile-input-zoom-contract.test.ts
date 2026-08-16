@@ -29,6 +29,24 @@ const SPOT_SWAP_MODAL = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/components/spot-swap-modal.tsx"),
 	"utf8",
 );
+const GLOBAL_SETTINGS_MODAL = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/components/global-settings-modal.tsx"),
+	"utf8",
+);
+const TRANSFER_MODAL = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/positions/transfer-modal.tsx"),
+	"utf8",
+);
+const SEND_MODAL = readFileSync(resolve(TEST_DIR, "../..", "components/trade/positions/send-modal.tsx"), "utf8");
+const STAKING_ACTION_MODAL = readFileSync(
+	resolve(TEST_DIR, "../..", "components/staking/staking-action-modal.tsx"),
+	"utf8",
+);
+const VAULT_ACTION_MODAL = readFileSync(resolve(TEST_DIR, "../..", "components/vaults/vault-action-modal.tsx"), "utf8");
+const MOBILE_ORDER_MODIFICATION_MODAL = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-order-modification-modal.tsx"),
+	"utf8",
+);
 
 function countMobileSafeInputs(source: string): number {
 	return source.match(/\bmobileSafe\b/g)?.length ?? 0;
@@ -72,5 +90,28 @@ describe("mobile input zoom contract", () => {
 
 	it("covers the responsive spot swap amount input", () => {
 		expect(countMobileSafeInputs(SPOT_SWAP_MODAL)).toBe(1);
+	});
+
+	it("covers mobile settings and funds-action inputs without changing desktop typography", () => {
+		expect(countMobileSafeInputs(GLOBAL_SETTINGS_MODAL)).toBe(1);
+		expect(countMobileSafeInputs(TRANSFER_MODAL)).toBe(1);
+		expect(countMobileSafeInputs(SEND_MODAL)).toBe(2);
+		expect(countMobileSafeInputs(STAKING_ACTION_MODAL)).toBe(1);
+		expect(countMobileSafeInputs(VAULT_ACTION_MODAL)).toBe(1);
+		expect(GLOBAL_SETTINGS_MODAL).toContain("max-[1000px]:h-8");
+		expect(TRANSFER_MODAL).toContain("max-[1000px]:h-11");
+		expect(SEND_MODAL).toContain("max-[1000px]:min-h-11");
+		expect(STAKING_ACTION_MODAL).toContain("max-[1000px]:min-h-11");
+		expect(VAULT_ACTION_MODAL).toContain("max-[1000px]:min-h-11");
+	});
+
+	it("uses iOS-safe text for the native mobile order modification inputs", () => {
+		expect(MOBILE_ORDER_MODIFICATION_MODAL.match(/<input/g)).toHaveLength(2);
+		expect(
+			MOBILE_ORDER_MODIFICATION_MODAL.match(
+				/className="min-w-0 flex-1 border-0 bg-transparent py-2\.5 text-right text-base/g,
+			),
+		).toHaveLength(2);
+		expect(MOBILE_ORDER_MODIFICATION_MODAL).not.toMatch(/<input[\s\S]{0,500}text-sm/);
 	});
 });

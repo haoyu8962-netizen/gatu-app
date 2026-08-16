@@ -1,7 +1,8 @@
+import { Trans } from "@lingui/react/macro";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect } from "react";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
-import { createLazyComponent } from "@/lib/lazy";
 import {
 	discardPositionMarketCloseModal,
 	useCommandMenuActions,
@@ -14,19 +15,17 @@ import {
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
 import { Hip3DeployerDisclaimer } from "./hip3-deployer-disclaimer";
+import {
+	CommandMenu,
+	DepositModal,
+	GlobalSettingsModal,
+	PositionMarketCloseModal,
+	SendModal,
+	SpotSwapModal,
+	TransferModal,
+} from "./lazy-global-modals";
 import { LegalAcceptanceModal } from "./legal-acceptance-modal";
 import { TradingOnboardingGate } from "./trading-onboarding-gate";
-
-const DepositModal = createLazyComponent(() => import("../tradebox/deposit-modal"), "DepositModal");
-const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-modal"), "GlobalSettingsModal");
-const SpotSwapModal = createLazyComponent(() => import("./spot-swap-modal"), "SpotSwapModal");
-const CommandMenu = createLazyComponent(() => import("./command-menu"), "CommandMenu");
-const TransferModal = createLazyComponent(() => import("../positions/transfer-modal"), "TransferModal");
-const SendModal = createLazyComponent(() => import("../positions/send-modal"), "SendModal");
-const PositionMarketCloseModal = createLazyComponent(
-	() => import("../positions/position-market-close-modal"),
-	"PositionMarketCloseModal",
-);
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -182,7 +181,7 @@ function SharedGlobalModals({
 	if (!activeModal) return null;
 
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<GlobalModalLoadingFallback />}>
 			{activeModal === "deposit" && <DepositModal />}
 			{activeModal === "internalTransfer" && (
 				<TransferModal
@@ -211,5 +210,16 @@ function SharedGlobalModals({
 					<PositionMarketCloseModal key={marketCloseSession.sessionId} />
 				)}
 		</Suspense>
+	);
+}
+
+function GlobalModalLoadingFallback() {
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim" aria-busy="true">
+			<output className="flex items-center gap-2 rounded-12 border border-stroke-weak bg-modal px-4 py-3 text-sm text-fg shadow-overlay">
+				<SpinnerGapIcon className="size-4 animate-spin text-brand motion-reduce:animate-none" aria-hidden="true" />
+				<Trans>Loading...</Trans>
+			</output>
+		</div>
 	);
 }

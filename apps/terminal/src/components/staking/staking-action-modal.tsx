@@ -113,6 +113,8 @@ export function StakingActionModal({
 								setShowError(false);
 							}}
 							placeholder="0.00"
+							mobileSafe
+							className="max-[1000px]:min-h-11"
 							iconRight={<span className="text-xs font-semibold">HYPE</span>}
 							error={showError && !validation.valid ? getAmountError(validation, t) : undefined}
 						/>

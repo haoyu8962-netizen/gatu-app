@@ -81,4 +81,11 @@ describe("mobile order safety contract", () => {
 		expect(mobileTwapTab).not.toContain('setOrderType("twap")');
 		expect(mobileTwapTab).not.toContain("Create TWAP");
 	});
+
+	it("keeps the slippage settings control interactive before wallet connection", () => {
+		expect(mobileTradeView).not.toContain("embedded && !isConnected ?");
+		expect(mobileTradeView).toMatch(
+			/<button\s+type="button"\s+onClick=\{openSettingsDialog\}\s+aria-label=\{t`Slippage`\}/,
+		);
+	});
 });

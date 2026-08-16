@@ -206,6 +206,8 @@ describe("mobile order modification", () => {
 		expect(document.body.textContent).toContain("Limit · Reduce Only");
 		expect(size?.value).toBe("2.000");
 		expect(trigger).toBeNull();
+		expect(size?.className).toContain("text-base");
+		expect(size?.className).not.toContain("text-sm");
 
 		act(() => {
 			if (size) changeInput(size, "1.");

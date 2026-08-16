@@ -67,7 +67,7 @@ vi.mock("@gatu/ui", () => ({
 			{ "aria-label": "select", value, onChange: () => {} },
 			options.map((option) => createElement("option", { key: option.value, value: option.value }, option.label)),
 		),
-	TextInput: (props: Record<string, unknown>) => createElement("input", props),
+	TextInput: ({ mobileSafe: _mobileSafe, ...props }: Record<string, unknown>) => createElement("input", props),
 }));
 
 vi.mock("@/components/ui/number-input", () => ({

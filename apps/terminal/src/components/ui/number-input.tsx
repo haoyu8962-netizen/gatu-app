@@ -16,7 +16,7 @@
 import { Input as BaseInput } from "@base-ui/react/input";
 import Big from "big.js";
 import type * as React from "react";
-import { useCallback } from "react";
+import { useCallback, useId } from "react";
 import { cn } from "@/lib/cn";
 import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
@@ -134,11 +134,14 @@ export function NumberInput({
 	onChange,
 	onKeyDown,
 	disabled,
+	id,
 	label,
 	labelValue,
 	onLabelValueClick,
 	...props
 }: Props) {
+	const generatedInputId = useId();
+	const inputId = id ?? generatedInputId;
 	const effectiveAllowDecimals = allowDecimals && (maxAllowedDecimals === undefined || maxAllowedDecimals > 0);
 	const hasMax = maxLabel != null && onMaxClick != null;
 	const hasSuffix = !hasMax && suffix != null;
@@ -243,6 +246,7 @@ export function NumberInput({
 
 	const inputEl = (
 		<BaseInput
+			id={inputId}
 			type="text"
 			inputMode={effectiveAllowDecimals ? "decimal" : "numeric"}
 			data-slot="input"
@@ -301,7 +305,9 @@ export function NumberInput({
 	return (
 		<div>
 			<div className="mb-1.5 flex items-center justify-between">
-				<span className={labelTypographyClass}>{label}</span>
+				<label className={labelTypographyClass} htmlFor={inputId}>
+					{label}
+				</label>
 				{labelValue != null && onLabelValueClick ? (
 					<button
 						type="button"

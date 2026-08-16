@@ -51,6 +51,7 @@ interface TextInputProps
 	iconLeft?: React.ReactNode;
 	iconRight?: React.ReactNode;
 	inputClassName?: string;
+	mobileSafe?: boolean;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 }
 
@@ -69,6 +70,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 			iconLeft,
 			iconRight,
 			inputClassName,
+			mobileSafe,
 			name,
 			...props
 		},
@@ -109,6 +111,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						className={cn(
 							"flex-1 min-w-0 bg-transparent outline-none",
 							inputTextSizeClasses[size],
+							mobileSafe && "max-[1000px]:text-base max-[1000px]:leading-5",
 							"font-normal text-fg placeholder:text-fg-muted",
 							"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
 							inputClassName,

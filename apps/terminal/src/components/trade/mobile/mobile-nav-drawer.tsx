@@ -1,20 +1,26 @@
-import { Badge, Button, ButtonIcon, Drawer, DrawerContent } from "@gatu/ui";
+import { Badge, Button, ButtonIcon, Drawer, DrawerContent, DrawerTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DownloadSimpleIcon, GearIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { type PreloadableGlobalModal, preloadGlobalModal } from "../components/lazy-global-modals";
 import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
 	const { t } = useLingui();
 	const { pathname } = useLocation();
 	const [open, setOpen] = useState(false);
+	const [pendingModal, setPendingModal] = useState<PreloadableGlobalModal | null>(null);
+	const [preloadFailed, setPreloadFailed] = useState(false);
+	const pendingModalRef = useRef<PreloadableGlobalModal | null>(null);
+	const preloadRequestRef = useRef(0);
+	const closingForModalRef = useRef(false);
 	const { hasWalletAccess } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
@@ -31,8 +37,68 @@ export function MobileNavDrawer() {
 		);
 	}
 
+	const cancelPendingModal = useCallback(() => {
+		preloadRequestRef.current += 1;
+		pendingModalRef.current = null;
+		closingForModalRef.current = false;
+		setPendingModal(null);
+		setPreloadFailed(false);
+	}, []);
+
+	useEffect(
+		() => () => {
+			preloadRequestRef.current += 1;
+			pendingModalRef.current = null;
+			closingForModalRef.current = false;
+		},
+		[],
+	);
+
 	function close() {
+		cancelPendingModal();
 		setOpen(false);
+	}
+
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen && !closingForModalRef.current) cancelPendingModal();
+		setOpen(nextOpen);
+	}
+
+	function requestGlobalModal(modal: PreloadableGlobalModal) {
+		if (pendingModalRef.current) return;
+
+		const requestId = preloadRequestRef.current + 1;
+		preloadRequestRef.current = requestId;
+		pendingModalRef.current = modal;
+		setPendingModal(modal);
+		setPreloadFailed(false);
+
+		void preloadGlobalModal(modal).then(
+			() => {
+				if (preloadRequestRef.current !== requestId || pendingModalRef.current !== modal) return;
+				closingForModalRef.current = true;
+				setOpen(false);
+			},
+			() => {
+				if (preloadRequestRef.current !== requestId || pendingModalRef.current !== modal) return;
+				pendingModalRef.current = null;
+				setPendingModal(null);
+				setPreloadFailed(true);
+			},
+		);
+	}
+
+	function handleOpenChangeComplete(completedOpen: boolean) {
+		if (completedOpen || !closingForModalRef.current) return;
+
+		const modal = pendingModalRef.current;
+		closingForModalRef.current = false;
+		pendingModalRef.current = null;
+		setPendingModal(null);
+		setPreloadFailed(false);
+
+		if (modal === "deposit") openDepositModal("deposit");
+		if (modal === "settings") openSettingsDialog();
 	}
 
 	return (
@@ -43,14 +109,20 @@ export function MobileNavDrawer() {
 				size="md"
 				className="touch-target"
 				aria-label={t`Open navigation`}
-				onClick={() => setOpen(true)}
+				onClick={() => {
+					cancelPendingModal();
+					setOpen(true);
+				}}
 			>
 				<ListIcon className="size-4.5 text-trading-panel-fg" />
 			</ButtonIcon>
 
-			<Drawer side="left" open={open} onOpenChange={setOpen}>
-				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0">
-					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
+			<Drawer side="left" open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={handleOpenChangeComplete}>
+				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0 pl-[env(safe-area-inset-left)]">
+					<DrawerTitle className="sr-only">
+						<Trans>Navigation</Trans>
+					</DrawerTitle>
+					<div className="h-[calc(3rem+env(safe-area-inset-top))] px-3 pt-[env(safe-area-inset-top)] flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<Link
 							to={tradeHomePath}
 							search={{ scope: "all" }}
@@ -149,17 +221,27 @@ export function MobileNavDrawer() {
 						</nav>
 					</div>
 
-					<div className="shrink-0 p-3 border-t border-stroke-weak/60 flex flex-col gap-2">
+					<div className="shrink-0 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] border-t border-stroke-weak/60 flex flex-col gap-2">
+						{preloadFailed && (
+							<p role="alert" className="text-center text-2xs text-error">
+								<Trans>Try again</Trans>
+							</p>
+						)}
 						{hasWalletAccess && !tradeRestricted && (
 							<Button
 								variant="filled"
 								intent="brand"
 								size="sm"
-								onClick={() => {
-									openDepositModal("deposit");
-									close();
-								}}
-								iconLeft={<DownloadSimpleIcon className="size-3.5" />}
+								onClick={() => requestGlobalModal("deposit")}
+								disabled={pendingModal !== null}
+								aria-busy={pendingModal === "deposit" || undefined}
+								iconLeft={
+									pendingModal === "deposit" ? (
+										<SpinnerGapIcon className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+									) : (
+										<DownloadSimpleIcon className="size-3.5" />
+									)
+								}
 								className="w-full"
 							>
 								<Trans>Deposit</Trans>
@@ -172,12 +254,15 @@ export function MobileNavDrawer() {
 								intent="neutral"
 								size="md"
 								aria-label={t`Settings`}
-								onClick={() => {
-									openSettingsDialog();
-									close();
-								}}
+								onClick={() => requestGlobalModal("settings")}
+								disabled={pendingModal !== null}
+								aria-busy={pendingModal === "settings" || undefined}
 							>
-								<GearIcon className="size-4" />
+								{pendingModal === "settings" ? (
+									<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+								) : (
+									<GearIcon className="size-4" />
+								)}
 							</ButtonIcon>
 						</div>
 					</div>

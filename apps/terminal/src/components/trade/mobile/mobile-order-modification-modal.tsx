@@ -123,7 +123,7 @@ export function MobileOrderModificationModal({
 								aria-label={t`Trigger Price`}
 								aria-invalid={triggerPriceInvalid || undefined}
 								aria-describedby={describedBy}
-								className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-sm font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-base font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
 								onChange={(event) => onTriggerPriceChange(event.target.value)}
 								onKeyDown={handleInputKeyDown}
 							/>
@@ -149,7 +149,7 @@ export function MobileOrderModificationModal({
 							aria-label={t`Size`}
 							aria-invalid={sizeInvalid || undefined}
 							aria-describedby={describedBy}
-							className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-sm font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
+							className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-right text-base font-semibold tabular-nums text-market-close-fg outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
 							onChange={(event) => onSizeChange(event.target.value)}
 							onKeyDown={handleInputKeyDown}
 						/>
