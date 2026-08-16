@@ -32,7 +32,7 @@ async function lookupIpData(ip: string, apiKey: string): Promise<GeoVerdict> {
 // fail-closed if compliance requires. In dev, an `override` of "US" or "CA-ON" (country or
 // country-region) can be passed to simulate a jurisdiction.
 export const getGeo = createServerFn({ method: "GET" })
-	.inputValidator((input: { override?: string | null } | undefined): { override: string | null } => ({
+	.validator((input: { override?: string | null } | undefined): { override: string | null } => ({
 		override: input?.override ?? null,
 	}))
 	.handler(async ({ data }): Promise<GeoVerdict> => {
