@@ -114,8 +114,12 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# position} other {# positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
-msgstr "{positionCount, plural, one {Maintenez pour fermer # position} other {Maintenez pour fermer # positions}}"
+msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+msgstr ""
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#~ msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+#~ msgstr "{positionCount, plural, one {Maintenez pour fermer # position} other {Maintenez pour fermer # positions}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1355,7 +1359,6 @@ msgid "Checking fresh API wallet data…"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Vérification de la route de dépôt actuelle d’Hyperliquid…"
@@ -1461,6 +1464,10 @@ msgstr ""
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "Cliquez pour en savoir plus sur cet actif."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Click to submit · Each market may return a different result"
+msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Click to submit · Filled trades cannot be reversed"
@@ -2657,6 +2664,7 @@ msgid "Destination"
 msgstr "Destination"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
@@ -3768,8 +3776,8 @@ msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "Maintenez pendant 4 secondes pour afficher le QR d'accès téléphone"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Hold for 800 ms to confirm · Each market may return a different result"
-msgstr "Maintenez 800 ms pour confirmer · Chaque marché peut renvoyer un résultat différent"
+#~ msgid "Hold for 800 ms to confirm · Each market may return a different result"
+#~ msgstr "Maintenez 800 ms pour confirmer · Chaque marché peut renvoyer un résultat différent"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Hold to confirm · Filled trades cannot be reversed"
@@ -3813,8 +3821,8 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "Hyperliquid calcule et ajoute la marge nécessaire pour atteindre le levier cible."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
-msgstr "Hyperliquid exige actuellement un dépôt Circle CCTP depuis Arbitrum."
+#~ msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+#~ msgstr "Hyperliquid exige actuellement un dépôt Circle CCTP depuis Arbitrum."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
@@ -4401,6 +4409,7 @@ msgstr "Chargement du portefeuille..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/global-modals.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -5000,6 +5009,7 @@ msgstr "Transférez des USDC entre vos comptes Perp et Spot."
 msgid "Name"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "Navigation"
@@ -5650,6 +5660,7 @@ msgstr "ORACLE"
 msgid "Order Book"
 msgstr "Carnet d'ordres"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "Carnet d'ordres en actif de cotation"
@@ -7779,12 +7790,14 @@ msgstr "Prix SL"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "Glissement"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -9555,6 +9568,7 @@ msgid "Triggered"
 msgstr "Déclenché"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "Réessayer"
 

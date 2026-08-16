@@ -184,8 +184,6 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 				<TradingActionButton
 					onClick={handleConfirm}
 					requireReadyConfirmation
-					holdDurationMs={800}
-					holdProgressClassName="bg-black/20 transition-none"
 					disabled={isActionDisabled}
 					intent="error"
 					size="lg"
@@ -202,7 +200,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 							{progressLabel}
 						</>
 					) : (
-						<Plural value={positionCount} one="Hold to close # position" other="Hold to close # positions" />
+						<Plural value={positionCount} one="Close # position" other="Close # positions" />
 					)}
 				</TradingActionButton>
 				<button
@@ -214,7 +212,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 					{t`Back`}
 				</button>
 				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
-					{t`Hold for 800 ms to confirm · Each market may return a different result`}
+					{t`Click to submit · Each market may return a different result`}
 				</p>
 			</PositionCloseDialogFooter>
 		</PositionCloseDialogShell>

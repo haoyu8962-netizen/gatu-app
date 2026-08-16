@@ -114,8 +114,12 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# पोज़िशन} other {# पोज़िशन}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
-msgstr "{positionCount, plural, one {# पोज़िशन बंद करने के लिए दबाए रखें} other {# पोज़िशन बंद करने के लिए दबाए रखें}}"
+msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+msgstr ""
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#~ msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+#~ msgstr "{positionCount, plural, one {# पोज़िशन बंद करने के लिए दबाए रखें} other {# पोज़िशन बंद करने के लिए दबाए रखें}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1355,7 +1359,6 @@ msgid "Checking fresh API wallet data…"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Hyperliquid के मौजूदा जमा रूट की जाँच की जा रही है..."
@@ -1461,6 +1464,10 @@ msgstr ""
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "इस एसेट के बारे में अधिक जानने के लिए क्लिक करें।"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Click to submit · Each market may return a different result"
+msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Click to submit · Filled trades cannot be reversed"
@@ -2657,6 +2664,7 @@ msgid "Destination"
 msgstr "गंतव्य"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
@@ -3768,8 +3776,8 @@ msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "फ़ोन एक्सेस QR दिखाने के लिए 4 सेकंड दबाए रखें"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Hold for 800 ms to confirm · Each market may return a different result"
-msgstr "पुष्टि के लिए 800 ms दबाए रखें · प्रत्येक बाज़ार का परिणाम अलग हो सकता है"
+#~ msgid "Hold for 800 ms to confirm · Each market may return a different result"
+#~ msgstr "पुष्टि के लिए 800 ms दबाए रखें · प्रत्येक बाज़ार का परिणाम अलग हो सकता है"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Hold to confirm · Filled trades cannot be reversed"
@@ -3813,8 +3821,8 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "Hyperliquid लक्ष्य लीवरेज तक पहुँचने के लिए आवश्यक मार्जिन की गणना करके उसे जोड़ता है।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
-msgstr "Hyperliquid को फ़िलहाल Arbitrum से Circle CCTP जमा आवश्यक है।"
+#~ msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+#~ msgstr "Hyperliquid को फ़िलहाल Arbitrum से Circle CCTP जमा आवश्यक है।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
@@ -4401,6 +4409,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/global-modals.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -5000,6 +5009,7 @@ msgstr "अपने Perp और Spot खातों के बीच USDC ट�
 msgid "Name"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "नेविगेशन"
@@ -5650,6 +5660,7 @@ msgstr "ऑरेकल"
 msgid "Order Book"
 msgstr "ऑर्डर बुक"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "क्वोट एसेट में ऑर्डर बुक"
@@ -7779,12 +7790,14 @@ msgstr "SL मूल्य"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "स्लिपेज"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -9555,6 +9568,7 @@ msgid "Triggered"
 msgstr "ट्रिगर हुआ"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "फिर से प्रयास करें"
 

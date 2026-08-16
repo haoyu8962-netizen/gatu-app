@@ -114,8 +114,12 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# مركز} other {# مراكز}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
-msgstr "{positionCount, plural, one {اضغط مطولاً لإغلاق # مركز} other {اضغط مطولاً لإغلاق # مراكز}}"
+msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+msgstr ""
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#~ msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+#~ msgstr "{positionCount, plural, one {اضغط مطولاً لإغلاق # مركز} other {اضغط مطولاً لإغلاق # مراكز}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1355,7 +1359,6 @@ msgid "Checking fresh API wallet data…"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "جارٍ التحقق من مسار الإيداع الحالي في Hyperliquid..."
@@ -1461,6 +1464,10 @@ msgstr ""
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "انقر لمعرفة المزيد عن هذا الأصل."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Click to submit · Each market may return a different result"
+msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Click to submit · Filled trades cannot be reversed"
@@ -2657,6 +2664,7 @@ msgid "Destination"
 msgstr "الوجهة"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
@@ -3768,8 +3776,8 @@ msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "اضغط مطولاً لمدة 4 ثوانٍ لإظهار رمز QR الخاص بوصول الهاتف"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Hold for 800 ms to confirm · Each market may return a different result"
-msgstr "اضغط مطولاً لمدة 800 مللي ثانية للتأكيد · قد يُرجع كل سوق نتيجة مختلفة"
+#~ msgid "Hold for 800 ms to confirm · Each market may return a different result"
+#~ msgstr "اضغط مطولاً لمدة 800 مللي ثانية للتأكيد · قد يُرجع كل سوق نتيجة مختلفة"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Hold to confirm · Filled trades cannot be reversed"
@@ -3813,8 +3821,8 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "يحسب Hyperliquid الهامش المطلوب للوصول إلى الرافعة المالية المستهدفة ويضيفه."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
-msgstr "يتطلب Hyperliquid حاليًا إيداعًا عبر Circle CCTP من Arbitrum."
+#~ msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+#~ msgstr "يتطلب Hyperliquid حاليًا إيداعًا عبر Circle CCTP من Arbitrum."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
@@ -4401,6 +4409,7 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/global-modals.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -5000,6 +5009,7 @@ msgstr "نقل USDC بين حسابي Perp وSpot الخاصين بك."
 msgid "Name"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "التنقل"
@@ -5650,6 +5660,7 @@ msgstr "أوراكل"
 msgid "Order Book"
 msgstr "دفتر الأوامر"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "دفتر الأوامر بعملة التسعير"
@@ -7779,12 +7790,14 @@ msgstr "سعر SL"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "الانزلاق"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -9555,6 +9568,7 @@ msgid "Triggered"
 msgstr "تم التفعيل"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "حاول مرة أخرى"
 

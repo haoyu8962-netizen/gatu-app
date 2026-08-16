@@ -106,8 +106,12 @@ msgid "{positionCount, plural, one {# position} other {# positions}}"
 msgstr "{positionCount, plural, one {# 个仓位} other {# 个仓位}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
-msgstr "{positionCount, plural, one {按住以平掉 # 个仓位} other {按住以平掉 # 个仓位}}"
+msgid "{positionCount, plural, one {Close # position} other {Close # positions}}"
+msgstr "{positionCount, plural, one {平掉 # 个仓位} other {平掉 # 个仓位}}"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#~ msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+#~ msgstr "{positionCount, plural, one {按住以平掉 # 个仓位} other {按住以平掉 # 个仓位}}"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
@@ -1236,7 +1240,6 @@ msgid "Checking fresh API wallet data…"
 msgstr "正在检查最新的 API 钱包数据…"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "正在检查 Hyperliquid 当前的充值路由..."
@@ -1346,6 +1349,10 @@ msgstr "清除不可读的存储记录不会取消任何链上操作。确认前
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "点击了解更多关于此资产的信息。"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Click to submit · Each market may return a different result"
+msgstr "点击提交 · 每个市场可能返回不同结果"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Click to submit · Filled trades cannot be reversed"
@@ -2489,6 +2496,7 @@ msgid "Destination"
 msgstr "目标"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
@@ -3535,8 +3543,8 @@ msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "按住 4 秒以显示手机访问二维码"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Hold for 800 ms to confirm · Each market may return a different result"
-msgstr "按住 800 毫秒确认 · 每个市场可能返回不同结果"
+#~ msgid "Hold for 800 ms to confirm · Each market may return a different result"
+#~ msgstr "按住 800 毫秒确认 · 每个市场可能返回不同结果"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Hold to confirm · Filled trades cannot be reversed"
@@ -3580,8 +3588,8 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "Hyperliquid 会计算并补充达到目标杠杆所需的保证金。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
-msgstr "Hyperliquid 当前要求从 Arbitrum 通过 Circle CCTP 充值。"
+#~ msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+#~ msgstr "Hyperliquid 当前要求从 Arbitrum 通过 Circle CCTP 充值。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
@@ -4131,6 +4139,7 @@ msgstr "加载钱包中..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/global-modals.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -4667,6 +4676,7 @@ msgstr "在合约账户与现货账户之间划转 USDC。"
 msgid "Name"
 msgstr "名称"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Navigation"
 msgstr "导航"
@@ -5232,6 +5242,7 @@ msgstr "预言机"
 msgid "Order Book"
 msgstr "订单簿"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "以计价资产显示订单簿"
@@ -7176,12 +7187,14 @@ msgid "SL Price"
 msgstr "止损价"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Slippage"
 msgstr "滑点"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -8871,6 +8884,7 @@ msgid "Triggered"
 msgstr "已触发"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "重试"
 
