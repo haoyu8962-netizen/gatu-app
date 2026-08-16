@@ -347,8 +347,11 @@ sudo systemctl restart gatu
 
 > 更新时构建期间旧进程继续服务,旧 release 目录不会被覆盖。新 release 会携带上一版 hashed assets,
 > 所以刚发布后旧客户端仍能拉到上一版动态 chunk。只有 `restart` 那几秒短暂中断。
-> `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 实际引用的入口 JS、`trade-terminal-page-*.js`,
-> 以及交易页动态引用的 `mobile-terminal-*.js`;任何一个 hashed asset 返回 HTML/500/非 JavaScript
+> `deploy.sh` 先等待 SSR HTML 就绪,然后拉取 HTML 实际引用的入口 JS。交易终端是组件级懒加载,
+> 因此检查会从当前 HTML 的 module script/modulepreload 出发,有界遍历真实 ESM import 图,
+> 并验证首个可达层中唯一的当前代 `trade-terminal-page-*.js`。它不会扫描 release 目录中为旧标签页保留的历史 hash;
+> fresh build 的 bundle budget 门禁负责禁止产物内出现多份同名页面 chunk。任何检查过程中读取的 hashed asset
+> 返回 HTML/500/非 JavaScript,或图越界、首个可达层解析出多代交易 chunk,
 > 都会失败并尝试回滚到上一个 release。它还会在 Node 直连、`GATU_MAINNET_PUBLIC_BASE_URL`
 > 和 `GATU_TESTNET_PUBLIC_BASE_URL`
 > 指向的 Caddy 最终入口核对 TradingView 入口、`sameorigin.html`、入口引用的初始 JS/CSS bundles、

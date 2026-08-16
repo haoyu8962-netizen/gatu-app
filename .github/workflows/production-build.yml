@@ -30,8 +30,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Test production environment validator
-        run: node --test deploy/validate-production-env.test.mjs
+      - name: Test production deployment validators
+        run: >-
+          node --test
+          deploy/validate-production-env.test.mjs
+          deploy/resolve-client-asset.test.mjs
 
       - name: Test TradingView integration
         working-directory: apps/terminal
@@ -49,6 +52,48 @@ jobs:
         env:
           GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Verify production lazy client graph
+        run: |
+          set -euo pipefail
+          graph_tmp="$(mktemp -d)"
+          server_pid=""
+          cleanup() {
+            if [ -n "$server_pid" ]; then
+              kill "$server_pid" 2>/dev/null || true
+              wait "$server_pid" 2>/dev/null || true
+            fi
+            rm -rf "$graph_tmp"
+          }
+          trap cleanup EXIT
+
+          HOST=127.0.0.1 PORT=3099 NODE_ENV=production \
+            node --require=./deploy/referral-uri-guard.cjs apps/terminal/.output/server/index.mjs \
+            >"$graph_tmp/server.log" 2>&1 &
+          server_pid="$!"
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --connect-timeout 2 --max-time 5 -fsS \
+              -o "$graph_tmp/builders-perp.html" http://127.0.0.1:3099/builders-perp \
+              2>"$graph_tmp/readiness-error"; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$graph_tmp/server.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$graph_tmp/readiness-error"
+            cat "$graph_tmp/server.log"
+            exit 1
+          fi
+
+          node deploy/resolve-client-asset.mjs \
+            http://127.0.0.1:3099 "$graph_tmp/builders-perp.html" trade-terminal-page
 
       - name: Verify TradingView package and compressed build assets
         run: node deploy/verify-chart-build.mjs apps/terminal/public apps/terminal/.output/public deploy/manifests/tradingview-charting-library.json

@@ -412,19 +412,6 @@ verify_sitewide_noindex() {
 	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Testnet application page"
 }
 
-extract_asset() {
-	local file="$1"
-	local pattern="$2"
-	node - "$file" "$pattern" <<'NODE'
-const fs = require("node:fs");
-const [file, pattern] = process.argv.slice(2);
-const text = fs.readFileSync(file, "utf8");
-const match = text.match(new RegExp(pattern));
-if (!match) process.exit(1);
-process.stdout.write(match[0]);
-NODE
-}
-
 extract_js_assets() {
 	local file="$1"
 	node - "$file" <<'NODE'
@@ -560,42 +547,69 @@ health_check() {
 	local require_chart_delivery="${4:-true}"
 	local require_referral_join="${5:-true}"
 	local base_url="http://127.0.0.1:${port}"
-	local tmpdir html_file trade_file entry_asset trade_asset
+	local tmpdir html_file trade_file readiness_error entry_asset trade_asset ready
 	tmpdir="$(mktemp -d)"
 	html_file="${tmpdir}/builders-perp.html"
 	trade_file="${tmpdir}/trade-terminal-page.js"
+	readiness_error="${tmpdir}/readiness-error"
+	ready="false"
 
 	for _ in $(seq 1 30); do
-		if curl_with_deadline -fsS -o "$html_file" "${base_url}/builders-perp"; then
-			entry_asset="$(extract_first_js_asset "$html_file" || true)"
-			trade_asset="$(extract_asset "$html_file" '/assets/trade-terminal-page-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
-			if [ -n "$entry_asset" ] && [ -n "$trade_asset" ]; then
-				if fetch_referenced_js_assets "$base_url" "$html_file" "$tmpdir"; then
-					if ! curl_with_deadline -fsS -o "$trade_file" "${base_url}${trade_asset}"; then
-						rm -rf "$tmpdir"
-						return 1
-					fi
-					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir" &&
-						fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image" &&
-						verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release" &&
-							{ [ "$require_referral_join" != "true" ] || verify_referral_deep_link "$base_url" "$tmpdir"; } &&
-							{ [ "$require_referral_join" != "true" ] || verify_malformed_referral_deep_link "$base_url" "$tmpdir"; }; then
-						if [ "$require_chart_delivery" = "true" ] && ! verify_chart_delivery "$base_url" "$tmpdir"; then
-							rm -rf "$tmpdir"
-							return 1
-						fi
-						rm -rf "$tmpdir"
-						return 0
-					fi
-					rm -rf "$tmpdir"
-					return 1
-				fi
-			fi
+		if curl_with_deadline -fsS -o "$html_file" "${base_url}/builders-perp" 2>"$readiness_error"; then
+			ready="true"
+			break
 		fi
 		sleep 1
 	done
+	if [ "$ready" != "true" ]; then
+		echo "ERROR: application did not become ready at ${base_url}/builders-perp." >&2
+		cat "$readiness_error" >&2 || true
+		rm -rf "$tmpdir"
+		return 1
+	fi
+
+	entry_asset="$(extract_first_js_asset "$html_file" || true)"
+	if [ -z "$entry_asset" ]; then
+		echo "ERROR: application HTML did not reference a client JavaScript entry asset." >&2
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	trade_asset="$(node deploy/resolve-client-asset.mjs "$base_url" "$html_file" trade-terminal-page)" || {
+		rm -rf "$tmpdir"
+		return 1
+	}
+	if ! fetch_referenced_js_assets "$base_url" "$html_file" "$tmpdir"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if ! fetch_js_asset "$base_url" "$trade_asset" "$tmpdir"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	cp "${tmpdir}/body" "$trade_file"
+	if ! fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if ! fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if ! verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if [ "$require_referral_join" = "true" ] &&
+		{ ! verify_referral_deep_link "$base_url" "$tmpdir" || ! verify_malformed_referral_deep_link "$base_url" "$tmpdir"; }; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
+	if [ "$require_chart_delivery" = "true" ] && ! verify_chart_delivery "$base_url" "$tmpdir"; then
+		rm -rf "$tmpdir"
+		return 1
+	fi
 	rm -rf "$tmpdir"
-	return 1
+	return 0
 }
 
 edge_health_check() {
