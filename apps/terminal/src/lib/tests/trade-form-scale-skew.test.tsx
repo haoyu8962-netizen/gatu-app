@@ -31,8 +31,7 @@ function changeInput(input: HTMLInputElement, value: string) {
 }
 
 function getSkewInput(container: HTMLElement): HTMLInputElement {
-	const label = [...container.querySelectorAll("span")].find((node) => node.textContent === "Size Skew");
-	const input = label?.parentElement?.parentElement?.querySelector("input");
+	const input = container.querySelector('input[aria-label="Size Skew"]');
 	if (!(input instanceof HTMLInputElement)) throw new Error("Missing Size Skew input");
 	return input;
 }
