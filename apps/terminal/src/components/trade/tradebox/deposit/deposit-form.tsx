@@ -77,19 +77,8 @@ export function DepositForm({
 		cctpFeeLoading ||
 		pendingCctpRecovery;
 	const routingNotice = (() => {
-		if (routingStatus === "loading") {
-			return (
-				<div className="rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
-					<Trans>Checking the current Hyperliquid deposit route...</Trans>
-				</div>
-			);
-		}
-		if (cctpRoutingReady && !fundingAddress) {
-			return (
-				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
-					<Trans>Hyperliquid currently requires a Circle CCTP deposit from Arbitrum.</Trans>
-				</div>
-			);
+		if (routingStatus === "loading" || (cctpRoutingReady && !fundingAddress)) {
+			return null;
 		}
 		return (
 			<div
