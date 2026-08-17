@@ -213,7 +213,10 @@ describe("mobile order modification", () => {
 			if (size) changeInput(size, "1.");
 		});
 		expect(size?.value).toBe("1.");
-		expect(document.body.querySelector<HTMLButtonElement>('button[type="submit"]')?.className).toContain("min-h-11");
+		const submit = document.body.querySelector<HTMLButtonElement>('button[type="submit"]');
+		expect(submit?.className).toContain("min-h-11");
+		expect(submit?.className).toContain("text-market-close-on-control");
+		expect(submit?.className).not.toContain("text-market-close-control-text");
 	});
 
 	it("marks invalid fields with ARIA and disables submission", () => {

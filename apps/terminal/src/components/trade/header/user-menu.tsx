@@ -167,7 +167,7 @@ export function UserMenu({ variant = "default" }: Props) {
 				)}
 				popupClassName={cn(
 					isDesktopNav &&
-						"min-w-[268px] rounded-[12px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px]",
+						"min-w-[268px] rounded-[12px] border-market-close-stroke-card bg-overlay p-1 font-market-close shadow-overlay [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px]",
 				)}
 				triggerAriaLabel={t`Account and wallet`}
 				trigger={

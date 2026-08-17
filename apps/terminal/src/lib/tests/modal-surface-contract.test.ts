@@ -7,6 +7,16 @@ import { describe, expect, it } from "vitest";
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_THEME_CSS = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
 const SHARED_THEME_CSS = readFileSync(resolve(TEST_DIR, "../../../../..", "packages/ui/src/globals.css"), "utf8");
+const TERMINAL_COMPONENTS_DIR = resolve(TEST_DIR, "../..", "components");
+const POPOVER_SOURCE = readTerminalComponent("ui/popover.tsx");
+const ORDER_TOAST_SOURCE = readTerminalComponent("trade/tradebox/order-toast.tsx");
+const DESKTOP_UTILITIES_MENU_SOURCE = readTerminalComponent("trade/header/desktop-utilities-menu.tsx");
+const TOP_NAV_SOURCE = readTerminalComponent("trade/header/top-nav.tsx");
+const USER_MENU_SOURCE = readTerminalComponent("trade/header/user-menu.tsx");
+const TOKEN_SELECTOR_POPUP_SOURCE = readTerminalComponent("trade/chart/token-selector-popup.tsx");
+const MOBILE_AGENT_QR_SCANNER_SOURCE = readTerminalComponent("trade/components/mobile-agent-qr-scanner.tsx");
+const TRADING_DROPDOWN_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-dropdown.ts"), "utf8");
+const POSITION_ACTIONS_DROPDOWN_SOURCE = readTerminalComponent("trade/positions/position-actions-dropdown.tsx");
 
 describe("modal surface contract", () => {
 	it("uses the dedicated modal surface for blocking overlays", () => {
@@ -17,6 +27,20 @@ describe("modal surface contract", () => {
 	it("keeps lightweight overlays on the raised overlay surface", () => {
 		expect(tooltipPopupVariants()).toContain("bg-overlay");
 		expect(tooltipPopupVariants()).not.toContain("bg-modal");
+	});
+
+	it("keeps transient terminal layers raised without flattening modal and drawer surfaces", () => {
+		expect(POPOVER_SOURCE).toContain("font-sans bg-overlay text-fg");
+		expect(ORDER_TOAST_SOURCE).toContain('"bg-overlay/95 backdrop-blur-sm"');
+		expect(DESKTOP_UTILITIES_MENU_SOURCE).toContain("bg-overlay p-2");
+		expect(TOP_NAV_SOURCE.match(/popupClassName="[^"]*bg-overlay[^"]*"/g)).toHaveLength(2);
+		expect(USER_MENU_SOURCE).toContain("bg-overlay p-1");
+		expect(TOKEN_SELECTOR_POPUP_SOURCE).toContain("bg-modal p-0");
+		expect(TOKEN_SELECTOR_POPUP_SOURCE).toContain("bg-overlay p-0");
+		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).toContain("bg-modal px-6 text-center");
+		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).not.toContain("bg-[#0F1A1F]");
+		expect(TRADING_DROPDOWN_SOURCE).toContain("bg-overlay p-1");
+		expect(POSITION_ACTIONS_DROPDOWN_SOURCE).toContain("bg-overlay p-1.5 shadow-overlay");
 	});
 
 	it("keeps the shared and terminal modal tokens wired to their intended surfaces", () => {
@@ -85,4 +109,8 @@ function readCssVariable(source: string, selector: string, variable: string): st
 
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	return declaration?.[1]?.trim();
+}
+
+function readTerminalComponent(relativePath: string): string {
+	return readFileSync(resolve(TERMINAL_COMPONENTS_DIR, relativePath), "utf8");
 }

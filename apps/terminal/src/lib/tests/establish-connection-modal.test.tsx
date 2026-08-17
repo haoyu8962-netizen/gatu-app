@@ -34,17 +34,19 @@ vi.mock("@/lib/errors/format", () => ({
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
+		className,
 		children,
 		onOpenChange,
 		presentation,
 	}: {
+		className?: string;
 		children: ReactNode;
 		onOpenChange: (open: boolean) => void;
 		presentation: string;
 	}) =>
 		createElement(
 			"div",
-			{ "data-presentation": presentation, role: "dialog" },
+			{ "data-presentation": presentation, className, role: "dialog" },
 			children,
 			createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close"),
 		),
@@ -116,7 +118,10 @@ describe("EstablishConnectionModal", () => {
 		testState.isMobile = true;
 		await renderModal();
 
-		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
+		const dialog = container.querySelector('[role="dialog"]');
+		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
+		expect(dialog?.className).toContain("min-[1001px]:rounded-16");
+		expect(dialog?.className).not.toContain("min-[1000px]");
 		const connect = [...container.querySelectorAll("button")].find(
 			(button) => button.textContent === "Establish Connection",
 		);

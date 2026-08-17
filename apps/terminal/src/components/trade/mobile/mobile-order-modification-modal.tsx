@@ -166,7 +166,7 @@ export function MobileOrderModificationModal({
 				<ModalFooter className="px-4 pt-3 pb-4">
 					<button
 						type="submit"
-						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-control-text transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
+						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-on-control transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
 						aria-busy={busy || undefined}
 						disabled={isConfirmDisabled}
 					>

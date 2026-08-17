@@ -90,7 +90,7 @@ export function TokenSelectorPopup({
 	if (mobile) {
 		return (
 			<DrawerContent
-				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 bg-surface p-0 shadow-none transition-[opacity,transform] duration-200 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
+				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 bg-modal p-0 shadow-none transition-[opacity,transform] duration-200 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
 				overlayClassName="z-10 bg-transparent overscroll-none transition-none"
 				aria-labelledby={headingId}
 			>
@@ -103,7 +103,7 @@ export function TokenSelectorPopup({
 		<PopoverContent
 			className={cn(
 				TOKEN_SELECTOR_POPOVER_WIDTH,
-				"overflow-hidden rounded-[12px] border-trading-panel-stroke-card bg-surface p-0 data-starting-style:scale-100 data-ending-style:scale-100",
+				"overflow-hidden rounded-[12px] border-trading-panel-stroke-card bg-overlay p-0 data-starting-style:scale-100 data-ending-style:scale-100",
 			)}
 			align="start"
 			sideOffset={4}

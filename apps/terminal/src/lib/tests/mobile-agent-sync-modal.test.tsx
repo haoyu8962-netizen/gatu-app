@@ -50,6 +50,7 @@ const testState = vi.hoisted(() => ({
 		legacyLinkInput: false as const,
 	},
 	hasWalletAccess: true,
+	isMobile: false,
 	localAgent: null as Record<string, unknown> | null,
 	qrToCanvas: vi.fn(),
 	registerMobileSyncTicket: vi.fn(),
@@ -92,20 +93,26 @@ vi.mock("@phosphor-icons/react", () => ({
 	WarningCircleIcon: Icon,
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => testState.isMobile,
+}));
+
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		onOpenChange,
 		open,
+		presentation,
 	}: {
 		children: ReactNode;
 		onOpenChange: (open: boolean) => void;
 		open: boolean;
+		presentation?: string;
 	}) =>
 		open
 			? createElement(
 					"div",
-					{ role: "dialog" },
+					{ "data-presentation": presentation, role: "dialog" },
 					createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close modal"),
 					children,
 				)
@@ -283,6 +290,7 @@ describe("MobileAgentSyncModal", () => {
 		root = createI18nRoot(container);
 		testState.walletAddress = USER_ADDRESS;
 		testState.hasWalletAccess = true;
+		testState.isMobile = false;
 		testState.features.createAndReveal = true;
 		testState.features.importFromQr = true;
 		testState.approveAgent.mockReset();
@@ -393,6 +401,13 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 		expect(container.textContent).toContain("Trading key approved");
 	}
+
+	it("uses a drawer at the terminal mobile breakpoint", async () => {
+		testState.isMobile = true;
+		await renderModal();
+
+		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
+	});
 
 	it("requires a separate review and explicit master-wallet approval before concealing the QR", async () => {
 		await renderModal();

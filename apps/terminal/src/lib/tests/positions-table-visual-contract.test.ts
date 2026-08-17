@@ -89,6 +89,9 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).toContain("Maintenance Margin Ratio");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
+		expect(POSITIONS_TAB_SOURCE).toContain('"bg-market-close-success"');
+		expect(POSITIONS_TAB_SOURCE).toContain('"text-market-close-success"');
+		expect(POSITIONS_TAB_SOURCE).not.toContain("market-close-profit");
 	});
 
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {

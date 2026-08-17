@@ -186,7 +186,10 @@ describe("Hip3DeployerDisclaimer", () => {
 			root.render(createElement(Hip3DeployerDisclaimer, { documentationUrl: undefined }));
 		});
 
-		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
+		const dialog = container.querySelector('[role="dialog"]');
+		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
+		expect(dialog?.className).toContain("min-[1001px]:rounded-16");
+		expect(dialog?.className).not.toContain("min-[1000px]");
 		expect(container.querySelectorAll('a[target="_blank"]')).toHaveLength(1);
 		expect(container.querySelector('a[href="/terms"]')).not.toBeNull();
 	});

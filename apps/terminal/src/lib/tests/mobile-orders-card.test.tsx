@@ -351,6 +351,8 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(cancel?.className).toContain("after:h-11");
 		expect(cancel?.className).toContain("after:min-w-11");
 		expect(cancel?.className).toContain("after:top-[calc(50%_-_1px)]");
+		expect(cancel?.className).toContain("disabled:text-fg-disabled");
+		expect(cancel?.className).not.toContain("disabled:text-market-close-danger-disabled");
 		act(() => cancel?.click());
 
 		expect(mocks.resetCancelError).toHaveBeenCalled();

@@ -51,7 +51,7 @@ export function PositionActionsDropdown({
 				hideCaret
 				disabled={!canManage || isRowClosing}
 				align="end"
-				popupClassName="min-w-32 rounded-[10px] border-market-close-stroke-card bg-modal p-1.5 shadow-overlay"
+				popupClassName="min-w-32 rounded-[10px] border-market-close-stroke-card bg-overlay p-1.5 shadow-overlay"
 				items={[
 					{
 						label: t`Limit Close`,

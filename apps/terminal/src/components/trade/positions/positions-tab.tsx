@@ -275,7 +275,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 												? "bg-market-close-danger"
 												: accountRisk.tone === "warning"
 													? "bg-warning"
-													: "bg-market-close-profit",
+													: "bg-market-close-success",
 										)}
 										style={{ width: `${accountRisk.progressPercent ?? "0"}%` }}
 									/>
@@ -289,7 +289,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 												? "text-market-close-danger"
 												: accountRisk.tone === "warning"
 													? "text-warning"
-													: "text-market-close-profit",
+													: "text-market-close-success",
 									)}
 								>
 									{formatPercent(accountSummary?.maintenanceMarginRatio ?? null, {

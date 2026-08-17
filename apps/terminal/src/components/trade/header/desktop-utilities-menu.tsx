@@ -39,7 +39,7 @@ export function DesktopUtilitiesMenu({ className, onOpenSettings }: Props) {
 			<PopoverContent
 				align="end"
 				sideOffset={6}
-				className="w-52 rounded-[12px] border-market-close-stroke-card bg-surface p-2 font-market-close shadow-overlay"
+				className="w-52 rounded-[12px] border-market-close-stroke-card bg-overlay p-2 font-market-close shadow-overlay"
 			>
 				<div className="flex items-center justify-between rounded-[8px] px-3 py-1 text-[13px] leading-[18px] font-medium text-market-close-fg">
 					<span>

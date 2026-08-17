@@ -210,7 +210,7 @@ export function getLoadingScreenColors(): { backgroundColor: string; foregroundC
 	const colors = getChartColors();
 	return {
 		backgroundColor: colorToHex(colors.background),
-		foregroundColor: colorToHex(colors.background),
+		foregroundColor: colorToHex(colors.foreground),
 	};
 }
 

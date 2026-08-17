@@ -4,6 +4,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, useMemo, useState } from "react";
 import { zeroAddress } from "viem";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDateTime } from "@/lib/format";
 import { useActiveAgentOwner, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import {
@@ -22,6 +23,7 @@ import {
 
 export function FundsActionRecoveryHost() {
 	const { t } = useLingui();
+	const isMobile = useIsMobile();
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const activeAgentOwner = useActiveAgentOwner();
 	const markers = useFundsActionMarkers();
@@ -90,6 +92,7 @@ export function FundsActionRecoveryHost() {
 					if (!open) setConfirmClearMarkerId(null);
 				}}
 				size="sm"
+				presentation={isMobile ? "drawer" : "modal"}
 				layer="blocking"
 				closeLabel={t`Close pending operation details`}
 			>
@@ -165,6 +168,7 @@ export function FundsActionRecoveryHost() {
 
 function CorruptMarkerRecovery() {
 	const { t } = useLingui();
+	const isMobile = useIsMobile();
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const [confirmClear, setConfirmClear] = useState(false);
 
@@ -202,6 +206,7 @@ function CorruptMarkerRecovery() {
 					if (!open) setConfirmClear(false);
 				}}
 				size="sm"
+				presentation={isMobile ? "drawer" : "modal"}
 				layer="blocking"
 				closeLabel={t`Close unreadable operation details`}
 			>

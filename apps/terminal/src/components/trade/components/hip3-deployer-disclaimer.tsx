@@ -41,7 +41,7 @@ export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
 			overlayClassName="backdrop-blur-[2px] duration-100"
-			className="max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1000px]:max-w-[32.5rem] min-[1000px]:rounded-16"
+			className="max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1001px]:max-w-[32.5rem] min-[1001px]:rounded-16"
 		>
 			<ModalHeader divider={false} className="px-6 pt-5 pb-2">
 				<ModalTitle className="text-base font-normal">

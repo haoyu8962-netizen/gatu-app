@@ -37,12 +37,15 @@ describe("boot placeholder contract", () => {
 		expect(workspace).not.toContain("bg-fill-weaker");
 	});
 
-	it("announces the chart wait without drawing a second loading idiom", () => {
+	it("keeps chart initialization visible with the shared loading indicator", () => {
 		const chartPanel = readComponent("trade/chart/chart-panel.tsx");
 		const chartWidget = readComponent("trade/chart/tradingview-chart.tsx");
 
 		expect(chartPanel).toContain('className="block h-full w-full bg-surface"');
 		expect(chartPanel).toContain('<span className="sr-only">');
-		expect(chartWidget).toContain('<output data-chart-loading aria-live="polite" className="sr-only">');
+		expect(chartWidget).toContain("data-chart-loading");
+		expect(chartWidget).toContain("text-fg-muted");
+		expect(chartWidget).toContain("SpinnerGapIcon");
+		expect(chartWidget).toContain("animate-spin");
 	});
 });

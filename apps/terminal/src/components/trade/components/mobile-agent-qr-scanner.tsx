@@ -190,7 +190,7 @@ export function MobileAgentQrScanner({
 						aria-label={t`Camera preview for desktop wallet QR`}
 					/>
 					{!cameraActive && (
-						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0F1A1F] px-6 text-center">
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-modal px-6 text-center">
 							<QrCodeIcon className="size-12 text-brand" weight="duotone" aria-hidden />
 							<p className="text-xs text-fg-muted">
 								<Trans>Scan the QR shown by Link Mobile Device on your desktop.</Trans>

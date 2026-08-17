@@ -1035,8 +1035,13 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		const mask = container.querySelector("[data-chart-initializing]");
-		expect(container.querySelector("[data-chart-loading]")).not.toBeNull();
+		const loading = container.querySelector("[data-chart-loading]");
+		expect(loading).not.toBeNull();
 		expect(container.textContent).toContain("Loading...");
+		expect(loading?.className).toContain("flex");
+		expect(loading?.className).toContain("text-fg-muted");
+		expect(loading?.className).not.toContain("sr-only");
+		expect(loading?.querySelector("svg")?.getAttribute("class")).toContain("animate-spin");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");

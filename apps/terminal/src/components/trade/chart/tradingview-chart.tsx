@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
@@ -1242,7 +1243,12 @@ export function TradingViewChart({
 				)}
 			/>
 			{isInitializing && !initError && (
-				<output data-chart-loading aria-live="polite" className="sr-only">
+				<output
+					data-chart-loading
+					aria-live="polite"
+					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 px-4 text-center text-xs font-medium text-fg-muted"
+				>
+					<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
 					{t`Loading...`}
 				</output>
 			)}

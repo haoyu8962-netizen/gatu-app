@@ -1,6 +1,7 @@
 :root,
 html.theme-light {
 
+	--tv-raised-bg: #ffffff;
 	--tv-bg: #ffffff;
 	--tv-fg: #000626;
 	--tv-muted-fg: #000933;
@@ -215,7 +216,7 @@ html.theme-dark {
 	--tv-raised-bg: #1d1e26;
 	--tv-bg: var(--tv-app-bg);
 	--tv-fg: #ffffff;
-	--tv-muted-fg: #ffffff;
+	--tv-muted-fg: #ffffffc7;
 	--tv-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--tv-toolbar-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--tv-accent: #b2bcf1;
@@ -228,7 +229,7 @@ html.theme-dark {
 	--tv-color-toolbar-button-background-active: rgba(178, 188, 241, 0.15);
 	--tv-color-toolbar-button-background-active-hover: rgba(178, 188, 241, 0.4);
 	--tv-color-toolbar-button-background-clicked: rgba(255, 255, 255, 0.1);
-	--tv-color-toolbar-button-text: #ffffff;
+	--tv-color-toolbar-button-text: var(--tv-muted-fg);
 	--tv-color-toolbar-button-text-hover: #ffffff;
 	--tv-color-toolbar-button-text-active: #b2bcf1;
 	--tv-color-toolbar-button-text-active-hover: #b2bcf1;
@@ -247,11 +248,11 @@ html.theme-dark {
 	--tv-color-popup-element-text-hover: #ffffff;
 	--tv-color-popup-element-background-hover: rgba(255, 255, 255, 0.06);
 	--tv-color-popup-element-divider-background: color-mix(in srgb, #ffffff1f 60%, transparent);
-	--tv-color-popup-element-secondary-text: #ffffff;
+	--tv-color-popup-element-secondary-text: var(--tv-muted-fg);
 	--tv-color-popup-element-hint-text: rgba(255, 255, 255, 0.7);
 	--tv-color-popup-element-text-active: #b2bcf1;
 	--tv-color-popup-element-background-active: rgba(178, 188, 241, 0.15);
-	--tv-color-popup-element-toolbox-text: #ffffff;
+	--tv-color-popup-element-toolbox-text: var(--tv-muted-fg);
 	--tv-color-popup-element-toolbox-text-hover: #ffffff;
 	--tv-color-popup-element-toolbox-text-active-hover: #b2bcf1;
 	--tv-color-popup-element-toolbox-background-hover: rgba(255, 255, 255, 0.06);
@@ -289,16 +290,16 @@ html.theme-dark {
 	--themed-color-button-text-color: #ffffff;
 	--themed-color-arrow-text: #ffffff;
 
-	--themed-color-text-secondary: #ffffff;
-	--themed-color-default-gray: #ffffff;
-	--themed-color-gray: #ffffff;
-	--themed-color-grayed-text: #ffffff;
-	--themed-color-placeholder: #ffffff;
-	--themed-color-icon: #ffffff;
-	--themed-color-icons: #ffffff;
-	--themed-color-primary-icon: #ffffff;
-	--themed-color-sort-button: #ffffff;
-	--themed-color-drag-icon: #ffffff;
+	--themed-color-text-secondary: var(--tv-muted-fg);
+	--themed-color-default-gray: var(--tv-muted-fg);
+	--themed-color-gray: var(--tv-muted-fg);
+	--themed-color-grayed-text: var(--tv-muted-fg);
+	--themed-color-placeholder: var(--tv-muted-fg);
+	--themed-color-icon: var(--tv-muted-fg);
+	--themed-color-icons: var(--tv-muted-fg);
+	--themed-color-primary-icon: var(--tv-muted-fg);
+	--themed-color-sort-button: var(--tv-muted-fg);
+	--themed-color-drag-icon: var(--tv-muted-fg);
 	--themed-color-disabled-title: rgba(255, 255, 255, 0.5);
 
 	--themed-color-border: color-mix(in srgb, #ffffff1f 60%, transparent);
@@ -319,11 +320,11 @@ html.theme-dark {
 	--themed-color-input-bg: var(--tv-raised-bg);
 	--themed-color-input-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-input-text: #ffffff;
-	--themed-color-input-placeholder-text: #ffffff;
-	--themed-color-input-border-hover: #ffffff;
+	--themed-color-input-placeholder-text: var(--tv-muted-fg);
+	--themed-color-input-border-hover: var(--tv-muted-fg);
 	--themed-color-input-disabled-bg: var(--tv-raised-bg);
 	--themed-color-input-disabled-border: rgba(255, 255, 255, 0.060784313725490195);
-	--themed-color-input-disabled-text: #ffffff;
+	--themed-color-input-disabled-text: var(--tv-muted-fg);
 
 	--themed-color-hovered-background: rgba(255, 255, 255, 0.06);
 	--themed-color-background-hover: rgba(255, 255, 255, 0.06);
@@ -354,8 +355,8 @@ html.theme-dark {
 	--themed-color-favorite-checked: #b2bcf1;
 
 	--themed-color-scrollbar-default: color-mix(in srgb, #ffffff1f 60%, transparent);
-	--themed-color-scrollbar-hover: #ffffff;
-	--themed-color-scrollbar-active: #ffffff;
+	--themed-color-scrollbar-hover: var(--tv-muted-fg);
+	--themed-color-scrollbar-active: var(--tv-muted-fg);
 	--themed-color-scroll-bg: var(--tv-raised-bg);
 	--themed-color-overlay-scroll-bar: color-mix(in srgb, #ffffff1f 60%, transparent);
 
@@ -365,12 +366,12 @@ html.theme-dark {
 	--themed-color-tooltip-text: #ffffff;
 
 	--themed-color-checkbox: color-mix(in srgb, #ffffff1f 60%, transparent);
-	--themed-color-checkbox-hover: #ffffff;
+	--themed-color-checkbox-hover: var(--tv-muted-fg);
 	--themed-color-checkbox-checked: #b2bcf1;
 	--themed-color-checkbox-checked-hover: #b2bcf1;
 	--themed-color-checkbox-icon: #ffffff;
 	--themed-color-radio: color-mix(in srgb, #ffffff1f 60%, transparent);
-	--themed-color-radio-hover: #ffffff;
+	--themed-color-radio-hover: var(--tv-muted-fg);
 	--themed-color-radio-checked: #b2bcf1;
 	--themed-color-radio-checked-hover: #b2bcf1;
 
@@ -389,7 +390,7 @@ html.theme-dark {
 	--themed-color-icon-selected: #b2bcf1;
 	--themed-color-icon-selected-hover: #b2bcf1;
 	--themed-color-arrow-text-hover: #ffffff;
-	--themed-color-arrow-stroke: #ffffff;
+	--themed-color-arrow-stroke: var(--tv-muted-fg);
 	--themed-color-caret-hover: #ffffff;
 	--themed-color-close-button-hover-bg: rgba(255, 255, 255, 0.06);
 	--themed-color-close-button-hover-text: #ffffff;
@@ -404,11 +405,11 @@ html.theme-dark {
 	--themed-color-content-primary-neutral-bold: #ffffff;
 	--themed-color-content-primary-neutral-semi-bold: #ffffff;
 	--themed-color-content-primary-neutral-normal: #ffffff;
-	--themed-color-content-primary-neutral-light: #ffffff;
+	--themed-color-content-primary-neutral-light: var(--tv-muted-fg);
 	--themed-color-content-primary-neutral-extra-light: rgba(255, 255, 255, 0.6);
-	--themed-color-content-secondary-neutral: #ffffff;
-	--themed-color-content-secondary-neutral-medium: #ffffff;
-	--themed-color-content-secondary-neutral-semi-bold: #ffffff;
+	--themed-color-content-secondary-neutral: var(--tv-muted-fg);
+	--themed-color-content-secondary-neutral-medium: var(--tv-muted-fg);
+	--themed-color-content-secondary-neutral-semi-bold: var(--tv-muted-fg);
 	--themed-color-content-disabled: rgba(255, 255, 255, 0.5);
 
 	--themed-color-container-fill-primary-neutral: var(--tv-raised-bg);
@@ -466,14 +467,19 @@ html,
 body,
 .chart-page,
 .chart-container,
-.layout__area--center,
-.chart-controls-bar,
-.layout__area--top {
+.layout__area--center {
 	background: var(--tv-bg) !important;
 	background-color: var(--tv-bg) !important;
 }
 
 /* ========== TOP TOOLBAR & CHROME ========== */
+.layout__area--top,
+.layout__area--left,
+.chart-controls-bar {
+	background: var(--tv-raised-bg) !important;
+	background-color: var(--tv-raised-bg) !important;
+}
+
 .layout__area--top {
 	border-bottom: 1px solid var(--tv-toolbar-border, var(--tv-border)) !important;
 	height: 36px !important;
@@ -516,19 +522,25 @@ body,
 
 /* ========== SEARCH INPUT ========== */
 [class*="search"] input,
-[class*="Search"] input {
-	background-color: var(--tv-bg) !important;
+[class*="Search"] input,
+input[class*="search"],
+input[class*="Search"] {
+	background-color: var(--themed-color-input-bg, var(--tv-raised-bg)) !important;
 	color: var(--tv-fg) !important;
 	border-color: var(--tv-border) !important;
 	caret-color: var(--tv-fg) !important;
 }
 
 [class*="search"] input::placeholder,
-[class*="Search"] input::placeholder {
+[class*="Search"] input::placeholder,
+input[class*="search"]::placeholder,
+input[class*="Search"]::placeholder {
 	color: var(--tv-muted-fg) !important;
 }
 
 [class*="search"] input:focus,
-[class*="Search"] input:focus {
+[class*="Search"] input:focus,
+input[class*="search"]:focus,
+input[class*="Search"]:focus {
 	border-color: var(--tv-accent) !important;
 }

@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	buildChartOverrides,
@@ -6,6 +9,12 @@ import {
 	getChartColors,
 	getLoadingScreenColors,
 } from "@/lib/chart/theme-colors";
+
+const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const TRADINGVIEW_THEME_STYLESHEETS = [
+	readFileSync(resolve(TEST_DIR, "../../../public/tradingview-theme-dark.css"), "utf8"),
+	readFileSync(resolve(TEST_DIR, "../../../public/tradingview-theme-light.css"), "utf8"),
+];
 
 const cssVariables = {
 	"--bg-base": "#0f1a1f",
@@ -44,8 +53,26 @@ describe("chart theme colors", () => {
 		expect(overrides["scalesProperties.backgroundColor"]).toBe("#0f1a1f");
 		expect(getLoadingScreenColors()).toEqual({
 			backgroundColor: "#0f1a1f",
-			foregroundColor: "#0f1a1f",
+			foregroundColor: "#ffffff",
 		});
+	});
+
+	it("keeps the dark chart canvas separate from elevated interactive chrome", () => {
+		for (const stylesheet of TRADINGVIEW_THEME_STYLESHEETS) {
+			expect(stylesheet).toContain("--tv-app-bg: #0f1a1f;");
+			expect(stylesheet).toContain("--tv-raised-bg: #1d1e26;");
+			expect(stylesheet).toContain("--tv-muted-fg: #ffffffc7;");
+			expect(stylesheet).toContain(
+				"html,\nbody,\n.chart-page,\n.chart-container,\n.layout__area--center {\n\tbackground: var(--tv-bg) !important;",
+			);
+			expect(stylesheet).toContain(
+				".layout__area--top,\n.layout__area--left,\n.chart-controls-bar {\n\tbackground: var(--tv-raised-bg) !important;",
+			);
+			expect(stylesheet).toContain(
+				'[class*="search"] input,\n[class*="Search"] input,\ninput[class*="search"],\ninput[class*="Search"] {',
+			);
+			expect(stylesheet).toContain("background-color: var(--themed-color-input-bg, var(--tv-raised-bg)) !important;");
+		}
 	});
 
 	it("overrides the TradingView pane separator with the shared border treatment", () => {

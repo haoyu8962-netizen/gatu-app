@@ -66,7 +66,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 				</button>
 				<button
 					type="button"
-					className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled min-[1001px]:min-h-10"
+					className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted min-[1001px]:min-h-10"
 					aria-busy={isSubmitting}
 					disabled={isSubmitting || orderCount === 0}
 					onClick={handleConfirm}

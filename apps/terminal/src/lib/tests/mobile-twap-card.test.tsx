@@ -231,6 +231,8 @@ describe("MobileTwapTab card", () => {
 		const terminate = container.querySelector<HTMLButtonElement>('button[aria-label="Terminate TWAP order"]');
 		expect(terminate?.className).toContain("min-h-11");
 		expect(terminate?.className).toContain("rounded-[8px]");
+		expect(terminate?.className).toContain("disabled:text-fg-disabled");
+		expect(terminate?.className).not.toContain("disabled:text-market-close-danger-disabled");
 		act(() => terminate?.click());
 		expect(mocks.cancelTwap).toHaveBeenCalledWith("GOOGL", 42);
 	});

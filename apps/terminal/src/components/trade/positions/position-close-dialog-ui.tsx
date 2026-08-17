@@ -299,7 +299,7 @@ export function PositionCloseSizingControls({
 					controlClassName="h-9 min-[1001px]:h-8"
 					trackClassName="h-1 !rounded-[2px] bg-market-close-stroke-card ring-0 !shadow-none"
 					indicatorClassName="min-w-0 !rounded-[2px] bg-market-close-control !shadow-none"
-					thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-[0_2px_6px_rgba(20,30,45,0.2)] before:-inset-[7px] [&:has(input:focus-visible)]:!outline-none min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
+					thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-trading-panel-slider before:-inset-[7px] [&:has(input:focus-visible)]:!outline-none min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
 				/>
 				<div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
 					{SLIDER_MARKS.map((mark) => (

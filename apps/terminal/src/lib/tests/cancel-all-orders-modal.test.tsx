@@ -102,8 +102,9 @@ describe("CancelAllOrdersModal", () => {
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Network failed");
 		const buttons = container.querySelectorAll<HTMLButtonElement>("button");
 		expect([...buttons].every((button) => button.disabled)).toBe(true);
-		expect([...buttons].find((button) => button.textContent === "Canceling...")?.getAttribute("aria-busy")).toBe(
-			"true",
-		);
+		const canceling = [...buttons].find((button) => button.textContent === "Canceling...");
+		expect(canceling?.getAttribute("aria-busy")).toBe("true");
+		expect(canceling?.className).toContain("disabled:bg-market-close-danger-disabled");
+		expect(canceling?.className).toContain("disabled:text-market-close-muted");
 	});
 });

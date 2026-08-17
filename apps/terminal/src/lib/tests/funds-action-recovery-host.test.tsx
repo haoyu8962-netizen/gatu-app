@@ -29,13 +29,18 @@ const mocks = vi.hoisted(() => ({
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	activeAgentOwner: null as { env: "Mainnet" | "Testnet"; address: `0x${string}` } | null,
 	infoCalls: [] as Array<{ method: string; params: Record<string, unknown> }>,
+	isMobile: false,
 	vaultHistory: [] as unknown[],
 	stakingHistory: [] as unknown[],
 }));
 
 vi.mock("@gatu/ui", () => ({
-	AdaptiveModal: ({ children, open }: { children: ReactNode; open: boolean }) =>
-		open ? <section data-testid="recovery-modal">{children}</section> : null,
+	AdaptiveModal: ({ children, open, presentation }: { children: ReactNode; open: boolean; presentation?: string }) =>
+		open ? (
+			<section data-presentation={presentation} data-testid="recovery-modal">
+				{children}
+			</section>
+		) : null,
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) => (
 		<button type="button" disabled={disabled} onClick={onClick}>
 			{children}
@@ -45,6 +50,10 @@ vi.mock("@gatu/ui", () => ({
 	ModalFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 	ModalHeader: ({ children }: { children: ReactNode }) => <header>{children}</header>,
 	ModalTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => mocks.isMobile,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -77,6 +86,7 @@ describe("FundsActionRecoveryHost", () => {
 		mocks.sessionMode = "wallet";
 		mocks.activeAgentOwner = null;
 		mocks.infoCalls = [];
+		mocks.isMobile = false;
 		mocks.vaultHistory = [];
 		mocks.stakingHistory = [];
 		clearFundsActionMarkersForTests();
@@ -196,6 +206,15 @@ describe("FundsActionRecoveryHost", () => {
 		expect(getFundsActionMarkers()).toEqual([marker]);
 	});
 
+	it("uses the terminal mobile drawer for pending-operation details", () => {
+		mocks.isMobile = true;
+		expect(persistFundsActionMarker(createVaultMarker({ owner: WALLET_OWNER }))).toBe(true);
+		renderHost();
+		openDetails();
+
+		expect(container.querySelector('[data-testid="recovery-modal"]')?.getAttribute("data-presentation")).toBe("drawer");
+	});
+
 	it("requires two explicit destructive clicks before clearing the recovery record", async () => {
 		const marker = createVaultMarker({ owner: WALLET_OWNER });
 		expect(persistFundsActionMarker(marker)).toBe(true);
@@ -250,6 +269,7 @@ describe("FundsActionRecoveryHost", () => {
 	it("surfaces corrupt storage globally and requires two explicit clicks to clear it", async () => {
 		mocks.clientKey = "disconnected";
 		mocks.sessionMode = "disconnected";
+		mocks.isMobile = true;
 		renderHost();
 		window.localStorage.setItem(FUNDS_ACTION_MARKER_STORAGE_KEY, '{"not":"a valid marker list"}');
 		act(() => {
@@ -265,6 +285,7 @@ describe("FundsActionRecoveryHost", () => {
 		expect(container.textContent).toContain("Funds operation record unreadable");
 		expect(container.textContent).toContain("New funds actions are locked until this record is resolved");
 		openDetails();
+		expect(container.querySelector('[data-testid="recovery-modal"]')?.getAttribute("data-presentation")).toBe("drawer");
 		expect(container.textContent).toContain("will not overwrite it or enable another funds action");
 
 		clickButton("Clear unreadable record");

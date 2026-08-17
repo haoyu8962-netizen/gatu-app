@@ -24,6 +24,7 @@ import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
@@ -217,6 +218,7 @@ function MobileAgentSyncSession({
 	walletAddress,
 	hasWalletAccess,
 }: MobileAgentSyncSessionProps) {
+	const isMobile = useIsMobile();
 	const { builderConfig } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, walletAddress);
 	const approveAgent = useExplicitAgentApproval();
@@ -1096,7 +1098,13 @@ function MobileAgentSyncSession({
 		syncState.status !== "visible";
 
 	return (
-		<AdaptiveModal open={open} onOpenChange={handleOpenChange} size="md" className="max-h-[min(92dvh,48rem)]">
+		<AdaptiveModal
+			open={open}
+			onOpenChange={handleOpenChange}
+			size="md"
+			presentation={isMobile ? "drawer" : "modal"}
+			className="max-h-[min(92dvh,48rem)]"
+		>
 			<ModalHeader>
 				<div className="flex items-center gap-2">
 					<DeviceMobileIcon className="size-4 text-brand" weight="duotone" aria-hidden />

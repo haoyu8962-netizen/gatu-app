@@ -186,7 +186,7 @@ export function OrderToast() {
 			className={cn(
 				ORDER_TOAST_WIDTH,
 				"fixed z-[var(--z-toast)] bottom-[var(--order-toast-mobile-bottom)] min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]",
-				"bg-surface/95 backdrop-blur-sm",
+				"bg-overlay/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
 				"font-sans",

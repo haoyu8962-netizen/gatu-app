@@ -123,6 +123,7 @@ describe("OrderToast placement", () => {
 		expect(status?.className).toContain("min-[1001px]:w-80");
 		expect(status?.className).toContain("bottom-[var(--order-toast-mobile-bottom)]");
 		expect(status?.className).toContain("min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]");
+		expect(status?.className).toContain("bg-overlay/95");
 		expect(status?.style.getPropertyValue("--order-toast-mobile-bottom")).toBe(
 			`calc(env(safe-area-inset-bottom) + ${MOBILE_BOTTOM_NAV_HEIGHT_PX + ORDER_TOAST_MOBILE_GAP_PX}px)`,
 		);

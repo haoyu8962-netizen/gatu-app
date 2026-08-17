@@ -1169,7 +1169,7 @@ function MobileOrderCard({
 							</button>
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-danger-disabled"
+								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>
