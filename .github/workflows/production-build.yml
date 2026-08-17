@@ -64,7 +64,9 @@ jobs:
           src/lib/tests/deposit-form-routing.test.tsx
           src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
           src/lib/tests/deposit-order-cta.test.tsx
+          src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
+          src/lib/tests/geo-server-functions.test.ts
           src/lib/tests/referral-action-geo.test.ts
           src/lib/tests/trading-onboarding-gate.test.tsx
           src/lib/tests/usdc-routing.test.ts
@@ -79,6 +81,7 @@ jobs:
         env:
           GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          NODE_ENV: production
 
       - name: Verify production lazy client graph
         run: |

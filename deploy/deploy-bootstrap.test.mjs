@@ -153,6 +153,11 @@ test("a forged synchronization marker without the inherited lock fails closed", 
 	assert.match(result.stderr, /did not inherit its lock descriptor/);
 });
 
+test("production deployment fixes NODE_ENV before building", () => {
+	const source = readFileSync(DEPLOY_SCRIPT, "utf8");
+	assert.match(source, /NODE_ENV=production[^\n]*NITRO_PRESET=node-server pnpm build/);
+});
+
 test("deployment rejects invalid branches and forged synchronization markers", async (context) => {
 	await context.test("invalid branch", () => {
 		const { result } = runBootstrap({ validBranch: false });

@@ -781,7 +781,7 @@ build_commit="$(git rev-parse HEAD)"
 build_commit_short="$(git rev-parse --short HEAD)"
 release_name="$(date -u +%Y%m%d%H%M%S)-${build_commit_short}"
 build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
+NODE_ENV=production GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
 
 echo "==> [6/8] Publish immutable release"
 previous_release="$(readlink -f "$CURRENT" 2>/dev/null || true)"

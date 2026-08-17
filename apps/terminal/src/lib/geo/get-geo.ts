@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestIP } from "@tanstack/react-start/server";
-import { type GeoVerdict, isTradeRestricted } from "@/config/geo";
+import type { GeoVerdict } from "@/config/geo";
+import { resolveDevelopmentGeoVerdict } from "@/lib/geo/development-geo";
 import { parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
 
 const IPDATA_BASE = "https://api.ipdata.co";
@@ -23,16 +24,21 @@ async function lookupIpData(ip: string, apiKey: string): Promise<GeoVerdict> {
 // Resolves the visitor's jurisdiction server-side: the client IP never leaves the server and
 // the API key stays out of the client bundle. Browsing is never blocked — this only tells the
 // client whether to allow trading. An undetermined lookup fails closed for funds actions while
-// browsing remains available. In dev, an `override` of "US" or "CA-ON" (country or
-// country-region) can be passed to simulate a jurisdiction.
+// browsing remains available. Dev defaults to GB because loopback/private IPs cannot be
+// geolocated; an `override` of "US" or "CA-ON" (country or country-region) can simulate
+// another jurisdiction.
 export const getGeo = createServerFn({ method: "GET" })
 	.validator((input: { override?: string | null } | undefined): { override: string | null } => ({
 		override: input?.override ?? null,
 	}))
 	.handler(async ({ data }): Promise<GeoVerdict> => {
-		if (import.meta.env.DEV && data.override) {
-			const [country, region] = data.override.toUpperCase().split("-");
-			return { country, tradeRestricted: isTradeRestricted(country, region), proxy: false };
+		const developmentVerdict = resolveDevelopmentGeoVerdict({
+			enabled: import.meta.env.DEV && process.env.NODE_ENV === "development",
+			override: data.override,
+		});
+		if (developmentVerdict) return developmentVerdict;
+		if (import.meta.env.DEV && process.env.NODE_ENV === "development") {
+			throw new Error("Invalid development geo override");
 		}
 
 		const apiKey = process.env.IPDATA_API_KEY;

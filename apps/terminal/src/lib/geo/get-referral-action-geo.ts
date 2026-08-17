@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestIP } from "@tanstack/react-start/server";
-import { isTradeRestricted } from "@/config/geo";
+import { resolveDevelopmentGeoVerdict } from "@/lib/geo/development-geo";
 import { parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
 
 const IPDATA_BASE = "https://api.ipdata.co";
@@ -43,15 +43,15 @@ export function deriveReferralActionGeoDecision(
 	return { checkedAt, country, status: "allowed", ttlMs: REFERRAL_GEO_LEASE_MS };
 }
 
-function createDevelopmentDecision(override: string, checkedAt: number): ReferralActionGeoDecision {
-	const [country, region] = override.toUpperCase().split("-");
-	if (!country || !/^[A-Z]{2}$/.test(country)) {
+function createDevelopmentDecision(override: string | null, checkedAt: number): ReferralActionGeoDecision {
+	const verdict = resolveDevelopmentGeoVerdict({ enabled: true, override });
+	if (!verdict?.country) {
 		return { checkedAt, reason: "invalid_response", status: "unavailable" };
 	}
-	if (isTradeRestricted(country, region)) {
-		return { checkedAt, country, reason: "jurisdiction", status: "blocked" };
+	if (verdict.tradeRestricted) {
+		return { checkedAt, country: verdict.country, reason: "jurisdiction", status: "blocked" };
 	}
-	return { checkedAt, country, status: "allowed", ttlMs: REFERRAL_GEO_LEASE_MS };
+	return { checkedAt, country: verdict.country, status: "allowed", ttlMs: REFERRAL_GEO_LEASE_MS };
 }
 
 export const getReferralActionGeo = createServerFn({ method: "POST" })
@@ -60,7 +60,9 @@ export const getReferralActionGeo = createServerFn({ method: "POST" })
 	}))
 	.handler(async ({ data }): Promise<ReferralActionGeoDecision> => {
 		const checkedAt = Date.now();
-		if (import.meta.env.DEV && data.override) return createDevelopmentDecision(data.override, checkedAt);
+		if (import.meta.env.DEV && process.env.NODE_ENV === "development") {
+			return createDevelopmentDecision(data.override, checkedAt);
+		}
 
 		const apiKey = process.env.IPDATA_API_KEY;
 		if (!apiKey) return { checkedAt, reason: "missing_config", status: "unavailable" };
