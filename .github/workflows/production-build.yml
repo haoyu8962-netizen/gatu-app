@@ -66,6 +66,7 @@ jobs:
           src/lib/tests/deposit-order-cta.test.tsx
           src/lib/tests/development-geo.test.ts
           src/lib/tests/embedded-deposit-auto-bridge.test.tsx
+          src/lib/tests/funding-address-card.test.tsx
           src/lib/tests/geo-server-functions.test.ts
           src/lib/tests/referral-action-geo.test.ts
           src/lib/tests/trading-onboarding-gate.test.tsx
@@ -75,6 +76,7 @@ jobs:
           src/lib/tests/use-email-embedded-wallet.test.tsx
           src/lib/tests/use-geo-restriction.test.tsx
           src/lib/tests/use-usdc-routing.test.ts
+          src/lib/tests/unit-deposit-info.test.tsx
 
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build

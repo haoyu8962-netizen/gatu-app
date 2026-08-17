@@ -145,6 +145,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
 #~ msgid "% filled"
 #~ msgstr "% पूर्ण"
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "~2 minutes"
+msgstr "~2 मिनट"
+
 #. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
 msgid "market.asset.spcxd.description"
@@ -1212,6 +1216,10 @@ msgstr "लॉन्ग खरीदें"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "डिफ़ॉल्ट रूप से, TP/SL पूरी पोज़िशन पर लागू होता है और मार्क मूल्य ट्रिगर तक पहुँचने पर मार्केट ऑर्डर सबमिट करता है। निश्चित आकार रखने के लिए राशि कॉन्फ़िगर करें, या अपनी लिमिट प्राइस पर सबमिट करने के लिए लिमिट निष्पादन चुनें।"
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Calculated after funding"
+msgstr "फ़ंड आने के बाद गणना होगी"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "कैमरा एक्सेस विफल रहा। कैमरा एक्सेस की अनुमति देकर फिर से प्रयास करें, या अपने सिस्टम कैमरे से QR स्कैन करें।"
@@ -1381,6 +1389,7 @@ msgid "Checking the current Hyperliquid withdrawal route..."
 msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "जांच हो रही है..."
@@ -2158,7 +2167,6 @@ msgstr "कॉन्ट्रैक्ट"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "कॉपी हो गया"
 
@@ -2184,7 +2192,6 @@ msgid "Copy address"
 msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "पता कॉपी करें"
 
@@ -3500,6 +3507,7 @@ msgstr "पसंदीदा"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "शुल्क"
@@ -6450,6 +6458,10 @@ msgstr "प्रोसेसिंग"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Processing deposit"
 #~ msgstr "जमा प्रोसेस हो रही है"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Processing time"
+msgstr "प्रोसेसिंग समय"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -9864,6 +9876,7 @@ msgstr "निकासी पात्रता सत्यापित नह
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
@@ -10022,6 +10035,10 @@ msgstr "दावा योग्य USDC"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
 msgstr "USDC जमा Hyperliquid को भेज दिया गया"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "USDC on HyperCore"
+msgstr "HyperCore पर USDC"
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "USDC received. Depositing to Hyperliquid..."
@@ -10587,6 +10604,7 @@ msgstr "आप नीचे मौजूदा मोबाइल एक्स�
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "You receive"
 msgstr "आपको प्राप्त होगा"
 

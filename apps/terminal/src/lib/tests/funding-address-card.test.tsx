@@ -52,9 +52,16 @@ describe("FundingAddressCard", () => {
 		expect(container.textContent).toContain(address);
 		const qrCanvas = container.querySelector('canvas[aria-label="Deposit address QR code"]');
 		expect(qrCanvas?.parentElement?.className).toContain("size-[140px]");
+		const addressText = Array.from(container.querySelectorAll("span")).find(
+			(element) => element.textContent === address,
+		);
+		expect(addressText?.className).toContain("min-[1001px]:whitespace-nowrap");
+		expect(addressText?.className).toContain("min-[1001px]:break-normal");
+		expect(addressText?.className).not.toContain("truncate");
 		const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy deposit address"]');
-		expect(copyButton?.className).toContain("min-h-11");
-		expect(copyButton?.textContent).toBe("Copy Address");
+		expect(copyButton?.className).toContain("size-8");
+		expect(copyButton?.textContent).toBe("");
+		expect(copyButton?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
 	});
 
 	it.each(["loading", "unavailable"] as const)("does not expose an address while the card is %s", async (state) => {

@@ -33,6 +33,7 @@ interface Props {
 	cctpFee: string | null;
 	cctpNetAmount: string | null;
 	cctpFeeLoading: boolean;
+	cctpFeeError: boolean;
 	pendingCctpRecovery: boolean;
 	usesFundingAddressFlow: boolean;
 	fundingAddressPending: boolean;
@@ -64,6 +65,7 @@ export function DepositForm({
 	cctpFee,
 	cctpNetAmount,
 	cctpFeeLoading,
+	cctpFeeError,
 	pendingCctpRecovery,
 	usesFundingAddressFlow,
 	fundingAddressPending,
@@ -322,7 +324,13 @@ export function DepositForm({
 							</div>
 						) : null}
 
-						<UnitDepositInfo cctpFee={cctpFee} cctpNetAmount={cctpNetAmount} cctpFeeLoading={cctpFeeLoading} />
+						<UnitDepositInfo
+							presentation="funding"
+							cctpFee={cctpFee}
+							cctpNetAmount={cctpNetAmount}
+							cctpFeeLoading={cctpFeeLoading}
+							cctpFeeError={cctpFeeError}
+						/>
 					</>
 				) : null}
 

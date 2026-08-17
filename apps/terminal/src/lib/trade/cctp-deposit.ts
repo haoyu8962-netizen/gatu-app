@@ -364,6 +364,21 @@ export function calculateCctpDepositFee(amountRaw: bigint, quote: CctpDepositFee
 	};
 }
 
+/**
+ * Returns an exact max-fee preview only when Circle's protocol fee is independent
+ * of the transfer amount. The preview is display-only; execution still recalculates
+ * the fee from the funded balance and a fresh quote before signing.
+ */
+export function getAmountIndependentCctpMaxFeeRaw(quote: CctpDepositFeeQuote): bigint | null {
+	let minimumFeeBps: Big;
+	try {
+		minimumFeeBps = new Big(quote.minimumFeeBps);
+	} catch {
+		return null;
+	}
+	return minimumFeeBps.eq(0) ? quote.forwardFeeRaw.med : null;
+}
+
 export function addressToBytes32(address: Address): Hex {
 	assertAddress(address, "CCTP address");
 	return padHex(address, { size: 32 });

@@ -1,7 +1,7 @@
-import { Button } from "@gatu/ui";
+import { ButtonIcon } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 
@@ -103,22 +103,26 @@ export function FundingAddressCard(props: Props) {
 				</p>
 				<div className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2">
 					<span
-						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg"
+						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg min-[1001px]:break-normal min-[1001px]:whitespace-nowrap"
 						title={props.address}
 					>
 						{props.address}
 					</span>
-					<Button
+					<ButtonIcon
 						type="button"
 						variant="outline"
 						intent="neutral"
-						size="xs"
+						size="sm"
 						onClick={() => copy(props.address)}
 						aria-label={copied ? t`Copied` : t`Copy deposit address`}
-						className="min-h-11 shrink-0 rounded-[7px] border-market-close-stroke-input bg-modal px-2.5 text-[11px] font-semibold text-market-close-fg shadow-none hover:border-market-close-control min-[1001px]:min-h-7"
+						className="rounded-[7px] border-market-close-stroke-input bg-modal text-market-close-fg shadow-none hover:border-market-close-control"
 					>
-						{copied ? <Trans>Copied</Trans> : <Trans>Copy Address</Trans>}
-					</Button>
+						{copied ? (
+							<CheckIcon className="size-4 text-success" weight="bold" aria-hidden="true" />
+						) : (
+							<CopyIcon className="size-4" aria-hidden="true" />
+						)}
+					</ButtonIcon>
 				</div>
 			</div>
 		</div>

@@ -42,7 +42,7 @@ import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { calculateCctpDepositFee } from "@/lib/trade/cctp-deposit";
+import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
 	buildCctpWithdrawalParameters,
@@ -217,9 +217,7 @@ export function DepositModal() {
 			selectedDepositRoute === "cctp" &&
 			isEmbeddedDeposit &&
 			sponsoredCctpEnabled &&
-			sponsoredCctpReadiness.status === "ready" &&
-			maxDepositRaw !== undefined &&
-			maxDepositRaw > 0n,
+			sponsoredCctpReadiness.status === "ready",
 		isTestnet,
 	});
 	const displayedCctpDepositFeeQuery = isEmbeddedDeposit ? embeddedCctpDepositFeeQuery : cctpDepositFeeQuery;
@@ -297,9 +295,12 @@ export function DepositModal() {
 			displayedCctpDepositFeeQuery.isError ||
 			!displayedCctpDepositFeeQuery.calculation ||
 			displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false);
-	const cctpDepositFee = displayedCctpDepositFeeQuery.calculation
-		? formatUnits(displayedCctpDepositFeeQuery.calculation.maxFeeRaw, 6)
-		: null;
+	const displayedCctpDepositFeeRaw =
+		displayedCctpDepositFeeQuery.calculation?.maxFeeRaw ??
+		(isEmbeddedDeposit && displayedCctpDepositFeeQuery.data?.feeQuote
+			? getAmountIndependentCctpMaxFeeRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+			: null);
+	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
 	const cctpDepositNetAmount = displayedCctpDepositFeeQuery.calculation
 		? formatUnits(displayedCctpDepositFeeQuery.calculation.netAmountRaw, 6)
 		: null;
@@ -1165,6 +1166,7 @@ export function DepositModal() {
 								cctpFee={cctpDepositFee}
 								cctpNetAmount={cctpDepositNetAmount}
 								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}
+								cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
 								pendingCctpRecovery={
 									!depositHash &&
 									!!cctpDepositTracking.recoveryRecord &&

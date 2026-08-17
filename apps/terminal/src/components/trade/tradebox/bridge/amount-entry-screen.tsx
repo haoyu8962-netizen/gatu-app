@@ -7,7 +7,8 @@ import { PERCENT_OPTIONS } from "@/config/bridge";
 import { isValidUsdInput, usdToTokenAmount } from "@/lib/bridge/format";
 import { cn } from "@/lib/cn";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
-import { HyperCoreUsdcIcon, TokenIcon } from "./shared-ui";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { TokenIcon } from "./shared-ui";
 
 const BRIDGE_USD_INPUT_WIDTH = "w-36";
 

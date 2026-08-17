@@ -19,6 +19,7 @@ const testState = vi.hoisted(() => ({
 	depositError: null as Error | null,
 	depositExecutionRoute: null as "bridge" | "cctp" | null,
 	depositHash: undefined as `0x${string}` | undefined,
+	depositMaxRaw: 10_000_000n,
 	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
 	emailAddress: null as string | null,
 	submissionOutcomeUnknown: false,
@@ -279,7 +280,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		isArbitrum: true,
 		isSwitching: false,
 		maxAmount: "10",
-		maxDepositRaw: 10_000_000n,
+		maxDepositRaw: testState.depositMaxRaw,
 		networkName: "Arbitrum",
 		reset: vi.fn(),
 		sponsoredCctpEnabled: true,
@@ -443,6 +444,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.depositError = null;
 		testState.depositExecutionRoute = null;
 		testState.depositHash = undefined;
+		testState.depositMaxRaw = 10_000_000n;
 		testState.depositStatus = "idle";
 		testState.emailAddress = null;
 		testState.cctpDepositFeeCalls.length = 0;
@@ -654,6 +656,23 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		expect(testState.cctpDepositFeeCalls).toContainEqual({
 			amountRaw: 10_000_000n,
+			enabled: true,
+			isTestnet: false,
+		});
+	});
+
+	it("prefetches the current Circle fee quote before the embedded wallet receives USDC", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.depositMaxRaw = 0n;
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.cctpDepositFeeCalls.length = 0;
+
+		await rerender();
+
+		expect(testState.cctpDepositFeeCalls).toContainEqual({
+			amountRaw: 0n,
 			enabled: true,
 			isTestnet: false,
 		});

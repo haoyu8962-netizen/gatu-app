@@ -141,6 +141,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 #~ msgid "% filled"
 #~ msgstr "% 已成交"
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "~2 minutes"
+msgstr "~2 分钟"
+
 #. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
 msgid "market.asset.spcxd.description"
@@ -1105,6 +1109,10 @@ msgstr "买入做多"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格达到触发价时提交市价单。可设置固定数量，或选择限价执行并按指定限价提交。"
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Calculated after funding"
+msgstr "资金到账后计算"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "无法访问相机。请允许相机权限后重试，或使用系统相机扫描二维码。"
@@ -1262,6 +1270,7 @@ msgid "Checking the current Hyperliquid withdrawal route..."
 msgstr "正在检查 Hyperliquid 当前的提现路由..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "检查中..."
@@ -2023,7 +2032,6 @@ msgstr "合约"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "已复制"
 
@@ -2049,7 +2057,6 @@ msgid "Copy address"
 msgstr "复制地址"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "复制地址"
 
@@ -3287,6 +3294,7 @@ msgstr "收藏夹"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "手续费"
@@ -5987,6 +5995,10 @@ msgstr "处理中"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Processing deposit"
 #~ msgstr "正在处理充值"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Processing time"
+msgstr "处理时间"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -9179,6 +9191,7 @@ msgstr "无法验证提现资格。请求未提交。"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
@@ -9337,6 +9350,10 @@ msgstr "可领取 USDC"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
 msgstr "USDC 存款已提交到 Hyperliquid"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "USDC on HyperCore"
+msgstr "HyperCore 上的 USDC"
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "USDC received. Depositing to Hyperliquid..."
@@ -9870,6 +9887,7 @@ msgstr "您仍可在下方验证并撤销现有移动访问权限。"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "You receive"
 msgstr "您将收到"
 

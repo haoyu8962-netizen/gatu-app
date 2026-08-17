@@ -2,12 +2,16 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const cctpMessages = [
+	"~2 minutes",
+	"Calculated after funding",
 	"Gas-sponsored CCTP deposits are not enabled for this network.",
 	"Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}.",
 	"Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused.",
 	"Legacy Bridge2 deposits are no longer accepted. Deposits are paused.",
 	"Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.",
 	"Unable to verify the CCTP authorization.",
+	"Processing time",
+	"USDC on HyperCore",
 ] as const;
 
 function escapePoMessage(message: string): string {

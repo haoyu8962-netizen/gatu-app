@@ -26,6 +26,7 @@ import {
 	encodeCctpForwardHookData,
 	fetchCctpDepositFees,
 	fetchCctpFastAllowance,
+	getAmountIndependentCctpMaxFeeRaw,
 	getHyperCoreRecipientState,
 	hasHyperCoreMainnetState,
 	normalizeCctpDepositFees,
@@ -290,6 +291,11 @@ describe("CCTP fee handling", () => {
 		expect(() => calculateCctpDepositFee(200_000n, normalizeCctpDepositFees(createFeePayload()))).toThrow(
 			"CCTP fees must be lower than the deposit amount",
 		);
+	});
+
+	it("only exposes an amount-independent fee preview when the protocol fee is zero", () => {
+		expect(getAmountIndependentCctpMaxFeeRaw(normalizeCctpDepositFees(createFeePayload(0)))).toBe(200_000n);
+		expect(getAmountIndependentCctpMaxFeeRaw(normalizeCctpDepositFees(createFeePayload(1.3)))).toBeNull();
 	});
 });
 

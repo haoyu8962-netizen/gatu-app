@@ -1,6 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CoinIcon, WalletIcon } from "@phosphor-icons/react";
-import { BRIDGE_QUOTE_VALIDITY_MS, HL_ICON_URL, USDC_ICON_URL } from "@/config/bridge";
+import { BRIDGE_QUOTE_VALIDITY_MS } from "@/config/bridge";
 import { cn } from "@/lib/cn";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { isSafeHttpUrl } from "@/lib/safe-url";
@@ -44,21 +44,6 @@ export function PoweredByLiFi() {
 			<span className="text-3xs">Powered by</span>
 			<LiFiLogo className="h-2.5" />
 		</a>
-	);
-}
-
-export function HyperCoreUsdcIcon({ size = "md" }: { size?: "sm" | "md" }) {
-	const iconSize = size === "sm" ? "size-5" : "size-8";
-	const badgeSize = size === "sm" ? "size-2.5" : "size-3.5";
-	return (
-		<div className="relative shrink-0">
-			<img src={USDC_ICON_URL} alt="USDC" className={cn(iconSize, "rounded-full")} />
-			<img
-				src={HL_ICON_URL}
-				alt="Hyperliquid"
-				className={cn("absolute -bottom-0.5 -right-0.5 rounded-full border border-overlay", badgeSize)}
-			/>
-		</div>
 	);
 }
 

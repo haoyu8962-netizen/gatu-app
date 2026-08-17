@@ -39,17 +39,23 @@ vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
 vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
 	UnitDepositInfo: ({
 		cctpFee,
+		cctpFeeError,
 		cctpFeeLoading,
 		cctpNetAmount,
+		presentation,
 	}: {
 		cctpFee?: string | null;
+		cctpFeeError?: boolean;
 		cctpFeeLoading?: boolean;
 		cctpNetAmount?: string | null;
+		presentation?: string;
 	}) =>
 		createElement("div", {
 			"data-cctp-fee": cctpFee,
+			"data-cctp-fee-error": cctpFeeError,
 			"data-cctp-fee-loading": cctpFeeLoading,
 			"data-cctp-net": cctpNetAmount,
+			"data-presentation": presentation,
 			"data-testid": "deposit-instructions",
 		}),
 }));
@@ -86,6 +92,7 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		cctpFee: null,
 		cctpNetAmount: null,
 		cctpFeeLoading: false,
+		cctpFeeError: false,
 		pendingCctpRecovery: false,
 		usesFundingAddressFlow: true,
 		fundingAddressPending: false,
@@ -124,6 +131,7 @@ describe("DepositForm routing gate", () => {
 		const instructions = container.querySelector('[data-testid="deposit-instructions"]');
 		expect(instructions?.getAttribute("data-cctp-fee")).toBe("0.2");
 		expect(instructions?.getAttribute("data-cctp-net")).toBe("8.8");
+		expect(instructions?.getAttribute("data-presentation")).toBe("funding");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");

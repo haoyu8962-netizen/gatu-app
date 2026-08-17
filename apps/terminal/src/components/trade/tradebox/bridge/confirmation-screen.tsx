@@ -24,7 +24,8 @@ import {
 	useBridgeQuote,
 } from "@/lib/lifi/use-quote";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { HyperCoreUsdcIcon, QuoteCountdown, TokenIcon } from "./shared-ui";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { QuoteCountdown, TokenIcon } from "./shared-ui";
 
 interface Props {
 	token: BridgeToken;

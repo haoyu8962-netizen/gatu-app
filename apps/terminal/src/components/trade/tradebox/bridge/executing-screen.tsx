@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { BRIDGE_TIMEOUT_MS, LIFI_EXPLORER_URL } from "@/config/bridge";
 import { shortenAddress } from "@/lib/format";
-import { ExplorerLink, HyperCoreUsdcIcon } from "./shared-ui";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { ExplorerLink } from "./shared-ui";
 
 const BRIDGE_MESSAGE_MAX_WIDTH = "max-w-70";
 

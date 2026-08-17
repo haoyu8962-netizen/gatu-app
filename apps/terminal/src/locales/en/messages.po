@@ -149,6 +149,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 #~ msgid "% filled"
 #~ msgstr "% filled"
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "~2 minutes"
+msgstr "~2 minutes"
+
 #. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
 msgid "market.asset.spcxd.description"
@@ -1216,6 +1220,10 @@ msgstr "Buy Long"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Calculated after funding"
+msgstr "Calculated after funding"
+
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
@@ -1385,6 +1393,7 @@ msgid "Checking the current Hyperliquid withdrawal route..."
 msgstr "Checking the current Hyperliquid withdrawal route..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "Checking..."
@@ -2171,7 +2180,6 @@ msgstr "Contract"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "Copied"
 
@@ -2197,7 +2205,6 @@ msgid "Copy address"
 msgstr "Copy address"
 
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copy Address"
 msgstr "Copy Address"
 
@@ -3513,6 +3520,7 @@ msgstr "Favorites"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "Fee"
@@ -6471,6 +6479,10 @@ msgstr "Processing"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Processing deposit"
 #~ msgstr "Processing deposit"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Processing time"
+msgstr "Processing time"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -9889,6 +9901,7 @@ msgstr "Unable to verify withdrawal eligibility. Request was not submitted."
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
@@ -10047,6 +10060,10 @@ msgstr "USDC claimable"
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
 msgstr "USDC deposit submitted to Hyperliquid"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "USDC on HyperCore"
+msgstr "USDC on HyperCore"
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "USDC received. Depositing to Hyperliquid..."
@@ -10612,6 +10629,7 @@ msgstr "You can still verify and revoke existing mobile access below."
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "You receive"
 msgstr "You receive"
 
