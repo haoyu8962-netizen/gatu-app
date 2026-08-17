@@ -99,6 +99,17 @@ describe("getDepositAvailability", () => {
 				geoStatus: "allowed",
 				hasWalletAccess: true,
 				isEmbeddedWallet: false,
+				network: "mainnet",
+				sessionMode: "wallet",
+			}),
+		).toMatchObject({ available: true, path: "external", releasePathEnabled: true });
+
+		expect(
+			getDepositAvailability({
+				featureFlags: ENABLED_FEATURES,
+				geoStatus: "allowed",
+				hasWalletAccess: true,
+				isEmbeddedWallet: false,
 				network: "testnet",
 				sessionMode: "wallet",
 			}),

@@ -37,13 +37,23 @@ they are not themselves user consent to move funds. In particular, enabling
 the sponsored mainnet flag must not make the application-wide recovery host
 sign or broadcast a deposit.
 
-The current production deployment contract is Sponsored-only on Mainnet:
-`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`, while the Mainnet external
-wallet flag must remain empty. The production validator rejects a release that
-enables the external Mainnet path. That path remains implemented behind its
-independent gate for testnet verification or a future separately authorized
-release; its presence in the code does not mean it is currently available in
-production.
+Production supports four explicit Mainnet release modes, and the deployment
+validator requires the mode to match the two Mainnet flags exactly:
+
+| Release mode | External flag | Sponsored flag |
+|---|---:|---:|
+| `disabled` | empty | empty |
+| `external-only` | `true` | empty |
+| `sponsored-only` | empty | `true` |
+| `both` | `true` | `true` |
+
+The validator does not hard-disable the external Mainnet path. It validates the
+declared release shape; it cannot prove that a funded end-to-end exercise has
+been completed. Operators should still review funded testnet evidence and run
+a controlled, small-value Mainnet deposit and recovery exercise for each path
+they intend to enable. The current host can expose both paths by setting both
+Mainnet flags to `true` and `GATU_CCTP_MAINNET_RELEASE_MODE=both` before
+rebuilding and deploying.
 
 Every deposit entry point uses the same fail-closed capability decision before
 opening the modal or starting empty-account onboarding. That decision first
@@ -89,15 +99,15 @@ owner and authorization signer; the outer Arbitrum transaction sender may be a
 Smart Wallet or account-abstraction entry point and must not be treated as the
 depositor identity.
 
-The sponsored path remains disabled in a public release until funded Arbitrum
-Sepolia and a controlled, non-public production-candidate mainnet run cover
-exact-wallet activation, authorization binding, paymaster submission, the exact
-success event, matching skipped-event rejection, Circle attestation,
-forwarding, refresh recovery, and final HyperCore credit. A successful
-unrelated sponsored transaction is not release evidence for CCTP. The current
-build flag has no user or wallet allowlist: enabling it in a public bundle makes
-the explicitly confirmed mainnet path available to every eligible email-wallet
-user.
+Before enabling the sponsored path in a public release, operators should use
+funded Arbitrum Sepolia and a controlled, non-public production-candidate
+Mainnet run to cover exact-wallet activation, authorization binding, paymaster
+submission, the exact success event, matching skipped-event rejection, Circle
+attestation, forwarding, refresh recovery, and final HyperCore credit. A
+successful unrelated sponsored transaction is not release evidence for CCTP.
+The current build flag has no user or wallet allowlist: enabling it in a public
+bundle makes the explicitly confirmed mainnet path available to every eligible
+email-wallet user.
 
 Before the UI reveals the exact embedded-wallet funding address, it performs a
 read-only readiness check for that exact embedded wallet: Privy must construct
@@ -178,11 +188,13 @@ browser-managed email wallet paying gas. Capacity exhaustion therefore needs
 monitoring and alerting with enough headroom for wallet deployment, estimation,
 Bundler, and Paymaster request patterns.
 
-After those policies and production-sized limits are active, run the smallest
-mainnet E2E in an access-controlled production-candidate environment using the
-same commit and Sponsored-only bundle intended for release. If traffic cannot
-be isolated, add a real runtime allowlist or equivalent access control first;
-do not describe the global build flag as a canary allowlist.
+After those policies and production-sized limits are active, operators should
+run the smallest Mainnet E2E in an access-controlled production-candidate
+environment using the same commit and the `sponsored-only` or `both` bundle
+intended for release. This is release evidence rather than a condition the
+deployment validator can verify. If traffic cannot be isolated, add a real
+runtime allowlist or equivalent access control first; do not describe the
+global build flag as a canary allowlist.
 
 A rejected sponsored submission without a source hash remains an unknown
 outcome. The unresolved authorization intent stays fail-closed until recovery

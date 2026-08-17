@@ -145,6 +145,15 @@ describe("CCTP deposit configuration", () => {
 			testnetExternalWallet: true,
 			testnetSponsoredWallet: false,
 		});
+		expect(
+			resolveCctpDepositFeatureFlags({
+				VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED: "true",
+				VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED: "true",
+			}),
+		).toMatchObject({
+			mainnetExternalWallet: true,
+			mainnetSponsoredWallet: true,
+		});
 	});
 
 	it("uses Circle native USDC and official HyperCore contracts on both environments", () => {

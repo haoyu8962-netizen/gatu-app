@@ -5,7 +5,12 @@ import { resolve } from "node:path";
 
 const EXPECTED_MAINNET_ORIGIN = "https://app.gatu.ai";
 const EXPECTED_TESTNET_ORIGIN = "https://testnet.gatu.ai";
-const SUPPORTED_RELEASE_MODES = new Set(["disabled", "sponsored-only"]);
+const MAINNET_RELEASE_PROFILES = new Map([
+	["disabled", { external: "", sponsored: "" }],
+	["sponsored-only", { external: "", sponsored: "true" }],
+	["external-only", { external: "true", sponsored: "" }],
+	["both", { external: "true", sponsored: "true" }],
+]);
 const OPTIONAL_BOOLEAN_BUILD_FLAGS = [
 	"VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED",
 	"VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED",
@@ -53,6 +58,9 @@ function requireExactValue(values, filePath, name, expected) {
 }
 
 function validateBuildEnvironment(values, filePath, releaseMode) {
+	const releaseProfile = MAINNET_RELEASE_PROFILES.get(releaseMode);
+	if (!releaseProfile) fail(`Unsupported validated mainnet CCTP release mode: ${releaseMode}.`);
+
 	const privyAppId = requireValue(values, filePath, "VITE_PRIVY_APP_ID");
 	if (!/^[A-Za-z0-9_-]+$/.test(privyAppId)) {
 		fail(`${filePath} requires a non-empty, unquoted VITE_PRIVY_APP_ID.`);
@@ -60,12 +68,17 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 
 	requireExactValue(values, filePath, "VITE_HYPERLIQUID_TESTNET", "");
 	requireExactValue(values, filePath, "VITE_HYPERLIQUID_AGENT_NAME", "gatu");
-	requireExactValue(values, filePath, "VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED", "");
+	requireExactValue(
+		values,
+		filePath,
+		"VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED",
+		releaseProfile.external,
+	);
 	requireExactValue(
 		values,
 		filePath,
 		"VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED",
-		releaseMode === "sponsored-only" ? "true" : "",
+		releaseProfile.sponsored,
 	);
 
 	for (const name of OPTIONAL_BOOLEAN_BUILD_FLAGS) {
@@ -74,6 +87,8 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 			fail(`${filePath} requires ${name} to be empty or the exact literal true.`);
 		}
 	}
+
+	return releaseProfile;
 }
 
 function validateRuntimeEnvironment(values, filePath) {
@@ -86,9 +101,9 @@ function validateRuntimeEnvironment(values, filePath) {
 	}
 
 	const releaseMode = requireValue(values, filePath, "GATU_CCTP_MAINNET_RELEASE_MODE");
-	if (!SUPPORTED_RELEASE_MODES.has(releaseMode)) {
+	if (!MAINNET_RELEASE_PROFILES.has(releaseMode)) {
 		fail(
-			`${filePath} requires GATU_CCTP_MAINNET_RELEASE_MODE to be disabled or sponsored-only; received ${releaseMode || "<empty>"}.`,
+			`${filePath} requires GATU_CCTP_MAINNET_RELEASE_MODE to be disabled, sponsored-only, external-only, or both; received ${releaseMode || "<empty>"}.`,
 		);
 	}
 	return releaseMode;
@@ -113,7 +128,7 @@ function main() {
 	const runtimeEnvironment = parseEnvironmentFile(runtimeEnvironmentPath);
 	const releaseMode = validateRuntimeEnvironment(runtimeEnvironment, runtimeEnvironmentPath);
 	const buildEnvironment = parseEnvironmentFile(buildEnvironmentPath);
-	validateBuildEnvironment(buildEnvironment, buildEnvironmentPath, releaseMode);
+	const mainnetProfile = validateBuildEnvironment(buildEnvironment, buildEnvironmentPath, releaseMode);
 
 	const testnetExternal = requireValue(
 		buildEnvironment,
@@ -129,7 +144,8 @@ function main() {
 		[
 			"Production environment contract validated:",
 			`mainnet=${releaseMode}`,
-			"mainnet-external=disabled",
+			`mainnet-external=${mainnetProfile.external === "true" ? "enabled" : "disabled"}`,
+			`mainnet-sponsored=${mainnetProfile.sponsored === "true" ? "enabled" : "disabled"}`,
 			`testnet-external=${testnetExternal === "true" ? "enabled" : "disabled"}`,
 			`testnet-sponsored=${testnetSponsored === "true" ? "enabled" : "disabled"}`,
 		].join(" ") + "\n",

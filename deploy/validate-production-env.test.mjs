@@ -8,6 +8,12 @@ import { spawnSync } from "node:child_process";
 
 const SCRIPT_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "validate-production-env.mjs");
 const temporaryDirectories = [];
+const MAINNET_RELEASE_PROFILES = [
+	{ releaseMode: "disabled", mainnetExternal: "", mainnetSponsored: "" },
+	{ releaseMode: "sponsored-only", mainnetExternal: "", mainnetSponsored: "true" },
+	{ releaseMode: "external-only", mainnetExternal: "true", mainnetSponsored: "" },
+	{ releaseMode: "both", mainnetExternal: "true", mainnetSponsored: "true" },
+];
 
 function createEnvironmentFiles({
 	releaseMode = "sponsored-only",
@@ -64,29 +70,64 @@ afterEach(() => {
 	for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true });
 });
 
-test("accepts the sponsored-only mainnet production profile", () => {
-	const result = validate();
-	assert.equal(result.status, 0, result.stderr);
-	assert.match(result.stdout, /mainnet=sponsored-only/);
-	assert.match(result.stdout, /mainnet-external=disabled/);
+test("accepts every exact mainnet CCTP release profile", () => {
+	for (const profile of MAINNET_RELEASE_PROFILES) {
+		const result = validate(profile);
+		assert.equal(result.status, 0, `${profile.releaseMode}: ${result.stderr}`);
+		assert.match(result.stdout, new RegExp(`mainnet=${profile.releaseMode}`));
+		assert.match(
+			result.stdout,
+			new RegExp(`mainnet-external=${profile.mainnetExternal === "true" ? "enabled" : "disabled"}`),
+		);
+		assert.match(
+			result.stdout,
+			new RegExp(`mainnet-sponsored=${profile.mainnetSponsored === "true" ? "enabled" : "disabled"}`),
+		);
+	}
 });
 
-test("accepts the emergency disabled profile only when both mainnet paths are disabled", () => {
-	const result = validate({ releaseMode: "disabled", mainnetSponsored: "" });
-	assert.equal(result.status, 0, result.stderr);
-	assert.match(result.stdout, /mainnet=disabled/);
+test("rejects every mainnet release mode and gate mismatch", () => {
+	for (const profile of MAINNET_RELEASE_PROFILES) {
+		for (const mainnetExternal of ["", "true"]) {
+			for (const mainnetSponsored of ["", "true"]) {
+				if (
+					mainnetExternal === profile.mainnetExternal &&
+					mainnetSponsored === profile.mainnetSponsored
+				) {
+					continue;
+				}
+				const result = validate({ releaseMode: profile.releaseMode, mainnetExternal, mainnetSponsored });
+				assert.equal(
+					result.status,
+					1,
+					`${profile.releaseMode} unexpectedly accepted external=${mainnetExternal || "<empty>"} sponsored=${mainnetSponsored || "<empty>"}`,
+				);
+				assert.match(result.stderr, /VITE_CCTP_(EXTERNAL|SPONSORED)_DEPOSIT_MAINNET_ENABLED/);
+			}
+		}
+	}
 });
 
-test("rejects a mainnet external wallet rollout", () => {
-	const result = validate({ mainnetExternal: "true" });
-	assert.equal(result.status, 1);
-	assert.match(result.stderr, /VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=<empty>/);
+test("rejects ambiguous mainnet gate values", () => {
+	for (const profile of MAINNET_RELEASE_PROFILES) {
+		for (const ambiguous of ["false", "TRUE", "1", '"true"']) {
+			const externalResult = validate({ ...profile, mainnetExternal: ambiguous });
+			assert.equal(externalResult.status, 1);
+			assert.match(externalResult.stderr, /VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED/);
+
+			const sponsoredResult = validate({ ...profile, mainnetSponsored: ambiguous });
+			assert.equal(sponsoredResult.status, 1);
+			assert.match(sponsoredResult.stderr, /VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED/);
+		}
+	}
 });
 
-test("rejects a sponsored-only profile without the sponsored gate", () => {
-	const result = validate({ mainnetSponsored: "" });
-	assert.equal(result.status, 1);
-	assert.match(result.stderr, /VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true/);
+test("rejects unsupported mainnet release modes", () => {
+	for (const releaseMode of ["", "enabled", "all", "Both"]) {
+		const result = validate({ releaseMode });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /disabled, sponsored-only, external-only, or both/);
+	}
 });
 
 test("rejects a testnet-default shared production bundle", () => {
