@@ -359,8 +359,30 @@ sudo systemctl restart gatu
 > `/build-meta.json`,确认线上 commit 与 release 就是刚发布的版本；自动回滚后也会精确
 > 核对上一个 release，不会把仍在响应的失败新版本误报为回滚成功。所有健康检查 HTTP
 > 请求都有连接和总时限，网络异常不会让部署无限挂起。
+> 对畸形 Referral URI 的检查分两层：Node 直连必须由应用 guard 返回带安全响应头的 404；
+> 公网 Caddy 入口固定使用 HTTP/1.1，并必须在进入路由前返回 400。HTTP/2 协议中止、DNS/TLS
+> 错误或其他没有有效 HTTP 状态码的传输失败都不会被当成“已安全拒绝”。
+
+`deploy.sh` 会在 fetch/reset 之前非阻塞获取 `/opt/gatu/shared/deploy.lock`，并让同步后的
+canonical 部署进程继承同一锁描述符。即使外层调用 shell 被终止，仍在运行的构建子树
+也不会提前释放锁。并发部署会以退出码 75 快速失败，不会同时写 `.output` 或切换
+`current`。同步到远端的精确 commit 后，脚本总会通过 `exec` 重新载入仓库中的 canonical
+`deploy.sh`，避免当前 Bash 进程继续执行 reset 前的旧函数。
 
 ### 已有服务器从旧部署模式迁移
+
+从尚未包含上述互斥/re-exec 逻辑的旧 `deploy.sh` 迁移时，旧 Bash 进程无法在
+`git reset` 后自动学会新逻辑。先暂停 CI、cron 和其他手工部署触发器，确认没有部署进程后，
+仅首次用 `gatu` 用户显式同步并从新文件启动；在最后一条命令完成前不要恢复其他触发器：
+
+```bash
+sudo -u gatu git -C /opt/gatu/repo fetch --prune origin
+sudo -u gatu git -C /opt/gatu/repo reset --hard origin/test-pr102
+sudo -u gatu /bin/bash -n /opt/gatu/repo/deploy/deploy.sh
+sudo -u gatu /bin/bash /opt/gatu/repo/deploy/deploy.sh test-pr102
+```
+
+之后只需执行最后一条部署命令；脚本会自行加锁、精确同步并重新载入新版本。
 
 旧服务器第一次运行新版 `deploy.sh` 时，如果已安装 Caddy 配置与仓库不一致，
 脚本会在构建前 fail closed。用管理员账号执行:

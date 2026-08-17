@@ -95,8 +95,9 @@ describe("TradingView asset cache policy", () => {
 		);
 		expect(deployScript).toContain("verify_release_parity");
 		expect(deployScript).toContain("verify_referral_deep_link");
-		expect(deployScript).toContain("verify_malformed_referral_deep_link");
-		expect(deployScript).toContain("curl_with_deadline --path-as-is -sS");
+		expect(deployScript).toContain("verify_upstream_malformed_referral_deep_link");
+		expect(deployScript).toContain("verify_edge_rejects_malformed_referral_deep_link");
+		expect(deployScript).toContain("curl_with_deadline --http1.1 --path-as-is -sS");
 		expect(deployScript).toContain('REFERRAL_RELEASE_CAPABILITY="referral-join-v1"');
 		expect(deployScript).toContain('rollback_require_referral_join="false"');
 		expect(deployScript).toContain(
@@ -105,6 +106,11 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain("verify_exact_http_status");
 		expect(deployScript).toContain('REFERRAL_ROUTE_MARKER=\'<meta name="gatu-route" content="referral-join"\'');
 		expect(deployScript).toContain("verify_sitewide_noindex");
+		expect(deployScript).toContain('sync_and_reexec_deploy "$@"');
+		expect(deployScript).toContain('exec /bin/bash "$REPO/deploy/deploy.sh" "$@"');
+		expect(deployScript).toContain("flock -n 9");
+		expect(deployScript).toContain("GATU_DEPLOY_LOCK_FD=9");
+		expect(deployScript).toContain('readlink -f "/proc/$$/fd/9"');
 		expect(deployScript).toContain(`cp deploy/referral-uri-guard.cjs "\${release_tmp}/referral-uri-guard.cjs"`);
 		expect(systemdUnit).toContain(
 			"ExecStart=/usr/bin/node --require=/opt/gatu/shared/referral-uri-guard.cjs server/index.mjs",
@@ -114,7 +120,10 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toMatch(/installed_guard="\$\{SHARED\}\/referral-uri-guard\.cjs"/);
 		expect(deployScript).toContain('node --check "$source_guard"');
 		expect(deployScript).toMatch(
-			/health_check\(\)[\s\S]*?verify_referral_deep_link[\s\S]*?verify_malformed_referral_deep_link/,
+			/health_check\(\)[\s\S]*?verify_referral_deep_link[\s\S]*?verify_upstream_malformed_referral_deep_link/,
+		);
+		expect(deployScript).toMatch(
+			/edge_health_check\(\)[\s\S]*?verify_referral_deep_link[\s\S]*?verify_edge_rejects_malformed_referral_deep_link/,
 		);
 		expect(referralUriGuard).toContain('pathname !== "/join" && !pathname.startsWith("/join/")');
 		expect(referralUriGuard).toContain("decodeURI(pathname)");

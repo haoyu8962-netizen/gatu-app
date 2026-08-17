@@ -27,6 +27,78 @@ REFERRAL_RELEASE_CAPABILITY="referral-join-v1"
 NOINDEX_POLICY="noindex, nofollow"
 CURL_CONNECT_TIMEOUT_SECONDS=5
 CURL_MAX_TIME_SECONDS=15
+DEPLOY_LOCK_PATH="${SHARED}/deploy.lock"
+
+sync_and_reexec_deploy() {
+	local target_sha current_sha lock_target expected_lock_target
+
+	if [ "$#" -gt 1 ]; then
+		echo "ERROR: usage: deploy.sh [branch]" >&2
+		exit 64
+	fi
+	if ! git check-ref-format --branch "$BRANCH" >/dev/null 2>&1; then
+		echo "ERROR: invalid deployment branch: ${BRANCH}" >&2
+		exit 64
+	fi
+	if [ ! -d "$REPO" ] || [ ! -d "$SHARED" ]; then
+		echo "ERROR: deployment repository or shared directory is missing." >&2
+		exit 1
+	fi
+
+	if [ -z "${GATU_DEPLOY_SYNCED_SHA:-}" ]; then
+		if ! command -v flock >/dev/null 2>&1; then
+			echo "ERROR: flock is required to serialize deployments." >&2
+			exit 1
+		fi
+		exec 9>"$DEPLOY_LOCK_PATH"
+		if ! flock -n 9; then
+			echo "ERROR: another deployment is already running (lock: ${DEPLOY_LOCK_PATH})." >&2
+			exit 75
+		fi
+		export GATU_DEPLOY_LOCK_FD=9
+
+		echo "==> [1/8] Sync repo to origin/${BRANCH}"
+		cd "$REPO"
+		git fetch --prune origin
+		target_sha="$(git rev-parse --verify "refs/remotes/origin/${BRANCH}^{commit}")" || {
+			echo "ERROR: origin/${BRANCH} does not resolve to a commit." >&2
+			exit 1
+		}
+		git reset --hard "$target_sha"
+		/bin/bash -n "$REPO/deploy/deploy.sh"
+		export GATU_DEPLOY_SYNCED_SHA="$target_sha"
+		exec /bin/bash "$REPO/deploy/deploy.sh" "$@"
+	fi
+
+	if [[ ! "$GATU_DEPLOY_SYNCED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+		echo "ERROR: invalid synchronized deployment commit marker." >&2
+		exit 1
+	fi
+	if [ "${GATU_DEPLOY_LOCK_FD:-}" != "9" ]; then
+		echo "ERROR: synchronized deployment did not inherit its lock descriptor." >&2
+		exit 1
+	fi
+	lock_target="$(readlink -f "/proc/$$/fd/9" 2>/dev/null || true)"
+	expected_lock_target="$(readlink -f "$DEPLOY_LOCK_PATH" 2>/dev/null || true)"
+	if [ -z "$lock_target" ] || [ "$lock_target" != "$expected_lock_target" ]; then
+		echo "ERROR: synchronized deployment lock descriptor does not reference ${DEPLOY_LOCK_PATH}." >&2
+		exit 1
+	fi
+	if ! flock -n 9; then
+		echo "ERROR: synchronized deployment no longer owns its deployment lock." >&2
+		exit 1
+	fi
+	cd "$REPO"
+	current_sha="$(git rev-parse HEAD)"
+	if [ "$current_sha" != "$GATU_DEPLOY_SYNCED_SHA" ]; then
+		echo "ERROR: repository HEAD changed between deployment synchronization and re-exec." >&2
+		exit 1
+	fi
+	if ! git diff --quiet HEAD --; then
+		echo "ERROR: tracked repository files changed after deployment synchronization." >&2
+		exit 1
+	fi
+}
 
 curl_with_deadline() {
 	curl --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS" --max-time "$CURL_MAX_TIME_SECONDS" "$@"
@@ -142,7 +214,7 @@ publish_release() {
 	cp deploy/referral-uri-guard.cjs "${release_tmp}/referral-uri-guard.cjs"
 	if [ -n "$previous_release" ] && [ -d "${previous_release}/public/assets" ] && [ -d "${release_tmp}/public/assets" ]; then
 		echo "Carry forward previous hashed assets from ${previous_release}" >&2
-		find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp -n {} "${release_tmp}/public/assets/" \;
+		find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp --update=none {} "${release_tmp}/public/assets/" \;
 	fi
 	printf '%s\n' "$release_commit" > "${release_tmp}/.gatu-release-commit"
 	printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
@@ -386,20 +458,49 @@ verify_referral_deep_link() {
 	fetch_js_asset "$base_url" "$entry_asset" "$tmpdir"
 }
 
-verify_malformed_referral_deep_link() {
+verify_upstream_malformed_referral_deep_link() {
 	local base_url="$1"
 	local tmpdir="$2"
 	local malformed_path="/join/%"
-	local status
+	local status curl_status
 
-	status="$(curl_with_deadline --path-as-is -sS -D "${tmpdir}/headers" -o "${tmpdir}/body" -w '%{http_code}' "${base_url}${malformed_path}")" || true
+	if status="$(curl_with_deadline --http1.1 --path-as-is -sS -D "${tmpdir}/headers" -o "${tmpdir}/body" -w '%{http_code}' "${base_url}${malformed_path}")"; then
+		:
+	else
+		curl_status=$?
+		echo "ERROR: failed to request malformed referral deep link from the Node upstream (curl ${curl_status})." >&2
+		return 1
+	fi
 	if [ "$status" != "404" ]; then
-		echo "ERROR: malformed referral deep link must return 404, received ${status:-request failure}." >&2
+		echo "ERROR: Node upstream must return 404 for a malformed referral deep link, received ${status}." >&2
 		return 1
 	fi
 	verify_single_header_value "${tmpdir}/headers" "cache-control" "$REFERRAL_CACHE_POLICY" "Malformed referral deep link" || return 1
 	verify_single_header_value "${tmpdir}/headers" "referrer-policy" "$REFERRAL_REFERRER_POLICY" "Malformed referral deep link" || return 1
 	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Malformed referral deep link"
+}
+
+verify_edge_rejects_malformed_referral_deep_link() {
+	local base_url="$1"
+	local tmpdir="$2"
+	local malformed_path="/join/%"
+	local status curl_status
+
+	if status="$(curl_with_deadline --http1.1 --path-as-is -sS -o "${tmpdir}/body" -w '%{http_code}' "${base_url}${malformed_path}")"; then
+		:
+	else
+		curl_status=$?
+		echo "ERROR: failed to verify the public edge rejection for a malformed referral deep link (curl ${curl_status})." >&2
+		return 1
+	fi
+	if [ "$status" != "400" ]; then
+		echo "ERROR: public edge must reject a malformed referral deep link with 400, received ${status}." >&2
+		return 1
+	fi
+	if grep -Eqi '<!doctype[[:space:]]+html|<html([[:space:]>])' "${tmpdir}/body"; then
+		echo "ERROR: public edge returned an HTML application fallback for a malformed referral deep link." >&2
+		return 1
+	fi
 }
 
 verify_sitewide_noindex() {
@@ -600,7 +701,7 @@ health_check() {
 		return 1
 	fi
 	if [ "$require_referral_join" = "true" ] &&
-		{ ! verify_referral_deep_link "$base_url" "$tmpdir" || ! verify_malformed_referral_deep_link "$base_url" "$tmpdir"; }; then
+		{ ! verify_referral_deep_link "$base_url" "$tmpdir" || ! verify_upstream_malformed_referral_deep_link "$base_url" "$tmpdir"; }; then
 		rm -rf "$tmpdir"
 		return 1
 	fi
@@ -625,7 +726,7 @@ edge_health_check() {
 		if verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release" &&
 			verify_chart_delivery "$base_url" "$tmpdir" &&
 			{ [ "$require_referral_join" != "true" ] || verify_referral_deep_link "$base_url" "$tmpdir"; } &&
-			{ [ "$require_referral_join" != "true" ] || verify_malformed_referral_deep_link "$base_url" "$tmpdir"; } &&
+			{ [ "$require_referral_join" != "true" ] || verify_edge_rejects_malformed_referral_deep_link "$base_url" "$tmpdir"; } &&
 			{ [ "$require_sitewide_noindex" != "true" ] || verify_sitewide_noindex "$base_url" "$tmpdir"; }; then
 			rm -rf "$tmpdir"
 			return 0
@@ -648,10 +749,12 @@ cleanup_old_releases() {
 	done
 }
 
-echo "==> [1/8] Sync repo to origin/${BRANCH}"
-cd "$REPO"
-git fetch --prune origin
-git reset --hard "origin/${BRANCH}"
+if [ "${BASH_SOURCE[0]}" != "$0" ]; then
+	return 0
+fi
+
+sync_and_reexec_deploy "$@"
+unset GATU_DEPLOY_LOCK_FD GATU_DEPLOY_SYNCED_SHA
 
 echo "==> [2/8] Verify package manager and systemd unit"
 ensure_pnpm

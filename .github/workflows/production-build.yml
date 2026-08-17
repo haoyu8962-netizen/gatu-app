@@ -33,6 +33,8 @@ jobs:
       - name: Test production deployment validators
         run: >-
           node --test
+          deploy/deploy-bootstrap.test.mjs
+          deploy/deploy-health-check.test.mjs
           deploy/validate-production-env.test.mjs
           deploy/resolve-client-asset.test.mjs
 
