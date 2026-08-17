@@ -29,6 +29,7 @@ import {
 	useDefaultDexBalances,
 	useSelectedDexBalances,
 } from "@/hooks/trade/use-account-balances";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -50,7 +51,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
-	const { isConnected, sessionMode, walletAddress } = useWalletSession();
+	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
 	const markets = useMarkets();
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
@@ -145,8 +147,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { tradeRestricted } = useGeoRestriction();
-	const hasWalletAccess = sessionMode === "wallet";
+	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeEntry = shouldShowLiFiBridgeTab({
 		isEmbeddedDeposit: false,
@@ -166,15 +167,21 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		!accountSummary.usesSpotStateForPerps &&
 		selectedBalances.dex === "" &&
 		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
-	const internalTransferDisabledReason = !accountModeReady
-		? t`Select a supported account mode before moving funds.`
-		: !fundsActionsReady
-			? t`Balance data is unavailable. Try again after the connection recovers.`
-			: usesSharedQuoteBalance
-				? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-				: null;
+	const internalTransferDisabledReason = !hasWalletAccess
+		? t`Connect the owner wallet before moving funds.`
+		: !accountModeReady
+			? t`Select a supported account mode before moving funds.`
+			: !fundsActionsReady
+				? t`Balance data is unavailable. Try again after the connection recovers.`
+				: usesSharedQuoteBalance
+					? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+					: null;
+	const depositGeoBlocked =
+		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
+	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 
 	if (!isConnected) {
+		const showsEmailDeposit = depositAvailability.path === "sponsored";
 		return (
 			<div className={cn("flex h-full min-h-0 flex-col bg-background", className)}>
 				<div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
@@ -182,13 +189,32 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<WalletIcon className="size-10 text-fg-muted" />
 					</div>
 					<div className="max-w-xs space-y-2 text-center">
-						<h2 className="text-lg font-semibold">{t`Connect Wallet`}</h2>
+						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
 						<p className="text-sm text-fg-muted">
-							{t`Connect your wallet to view your account, positions, and start trading.`}
+							{showsEmailDeposit
+								? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
+								: t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
-					<Button variant="outline" intent="brand" size="md" onClick={() => setWalletModalOpen(true)}>
-						{t`Connect Wallet`}
+					<Button
+						variant="outline"
+						intent="brand"
+						size="md"
+						disabled={showsEmailDeposit && !depositAvailability.available}
+						onClick={
+							showsEmailDeposit
+								? depositAvailability.available
+									? () => openDepositModal("deposit")
+									: undefined
+								: () => setWalletModalOpen(true)
+						}
+						title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
+					>
+						{showsEmailDeposit
+							? depositAvailability.available
+								? t`Deposit`
+								: depositAvailability.unavailableLabel
+							: t`Connect Wallet`}
 					</Button>
 				</div>
 				{walletModalOpen ? (
@@ -313,19 +339,26 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				) : null}
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
-					{tradeRestricted || !hasWalletAccess ? (
+					{depositGeoBlocked ? (
+						<p className="text-center text-sm text-fg-muted">{depositAvailability.unavailableReason}</p>
+					) : tradeRestricted || !showsFundsActions ? (
 						<p className="text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
 						<div className="space-y-2">
+							{depositAvailability.unavailableReason ? (
+								<output className="text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</output>
+							) : null}
 							<Button
 								variant="filled"
 								intent="brand"
 								size="md"
-								onClick={() => openDepositModal("deposit")}
+								disabled={!depositAvailability.available}
+								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+								title={depositAvailability.unavailableReason ?? undefined}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 								className="min-h-11 w-full"
 							>
-								{t`Deposit`}
+								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 							</Button>
 							<div className="grid grid-cols-2 gap-2">
 								<Tooltip content={internalTransferDisabledReason} side="top">
@@ -347,7 +380,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									variant="outline"
 									intent="neutral"
 									size="md"
-									disabled={!fundsActionsReady}
+									disabled={!hasWalletAccess || !fundsActionsReady}
 									onClick={() => openDepositModal("withdraw")}
 									iconLeft={<UploadSimpleIcon className="size-4" />}
 									className="min-h-11"
@@ -355,7 +388,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									{t`Withdraw`}
 								</Button>
 							</div>
-							{showBridgeEntry ? (
+							{hasWalletAccess && showBridgeEntry ? (
 								<Button
 									variant="outline"
 									intent="neutral"

@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { getTradingAccountFundingState } from "@/domain/trade/onboarding";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useAgentStatus, useHyperliquid } from "@/lib/hyperliquid";
 import {
@@ -24,6 +26,12 @@ export function TradingOnboardingGate({ children }: Props) {
 	const { env } = useHyperliquid();
 	const { agentVerificationStatus, isAgentReady } = useAgentStatus();
 	const balances = useDefaultDexBalances();
+	const {
+		available: depositAvailable,
+		geoResolutionStatus,
+		reason: depositAvailabilityReason,
+		unavailableReason: depositUnavailableReason,
+	} = useDepositAvailability();
 	const activeModal = useGlobalModalType();
 	const establishConnection = useEstablishConnectionModalActions();
 	const deposit = useDepositModalActions();
@@ -57,10 +65,32 @@ export function TradingOnboardingGate({ children }: Props) {
 	}, [agentVerificationStatus, clearAgentPromptDismissal, promptIdentity]);
 
 	useEffect(() => {
-		if (!identity || pendingDepositIdentity !== identity || fundingState === "loading") return;
+		if (!identity || pendingDepositIdentity !== identity || fundingState === "loading" || fundingState === "error") {
+			return;
+		}
+		if (fundingState !== "empty") {
+			setPendingDepositIdentity(null);
+			return;
+		}
+		if (!depositAvailable && depositAvailabilityReason === "geo-unresolved" && geoResolutionStatus === "loading") {
+			return;
+		}
 		setPendingDepositIdentity(null);
-		if (fundingState === "empty") deposit.open("deposit");
-	}, [deposit, fundingState, identity, pendingDepositIdentity]);
+		if (depositAvailable) {
+			deposit.open("deposit");
+			return;
+		}
+		if (depositUnavailableReason) toast.error(depositUnavailableReason);
+	}, [
+		deposit,
+		depositAvailabilityReason,
+		depositAvailable,
+		depositUnavailableReason,
+		fundingState,
+		geoResolutionStatus,
+		identity,
+		pendingDepositIdentity,
+	]);
 
 	const wasRequested = activeModal === "establishConnection";
 	const shouldAutoOpen = activeModal === null && !wasDismissed && agentVerificationStatus === "missing";

@@ -6,6 +6,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -20,6 +21,7 @@ export function MobileBalancesTab() {
 	const { t } = useLingui();
 	const { getToken } = useSpotTokens();
 	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
 		direction: TransferDirection;
@@ -43,7 +45,19 @@ export function MobileBalancesTab() {
 		});
 	}
 
-	if (!isConnected) return <MobileBalancesState label={t`Connect your wallet to view balances.`} />;
+	if (!isConnected) {
+		if (depositAvailability.path === "sponsored") {
+			return (
+				<MobileBalancesState
+					label={depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`}
+					actionLabel={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					actionDisabled={!depositAvailability.available}
+					onAction={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+				/>
+			);
+		}
+		return <MobileBalancesState label={t`Connect your wallet to view balances.`} />;
+	}
 	if (hasError) return <MobileBalancesState variant="error" label={t`Failed to load balances.`} />;
 	if (isLoading) return <MobileBalancesState loading label={t`Loading balances...`} />;
 	if (!accountModeReady) {
@@ -58,9 +72,10 @@ export function MobileBalancesTab() {
 			) : null}
 			{balances.length === 0 ? (
 				<MobileBalancesState
-					label={t`No balances found. Deposit funds to start trading.`}
-					actionLabel={t`Deposit`}
-					onAction={() => openDepositModal("deposit")}
+					label={depositAvailability.unavailableReason ?? t`No balances found. Deposit funds to start trading.`}
+					actionLabel={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					actionDisabled={!depositAvailability.available}
+					onAction={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 				/>
 			) : (
 				<div className="flex min-h-0 flex-col">
@@ -130,12 +145,14 @@ function MobileBalancesState({
 	loading = false,
 	variant = "muted",
 	actionLabel,
+	actionDisabled = false,
 	onAction,
 }: {
 	label: string;
 	loading?: boolean;
 	variant?: "muted" | "error";
 	actionLabel?: string;
+	actionDisabled?: boolean;
 	onAction?: () => void;
 }) {
 	return (
@@ -154,12 +171,13 @@ function MobileBalancesState({
 			>
 				{label}
 			</p>
-			{actionLabel && onAction ? (
+			{actionLabel ? (
 				<Button
 					variant="outline"
 					intent="neutral"
 					size="sm"
 					onClick={onAction}
+					disabled={actionDisabled}
 					className="min-h-11 rounded-[8px] border-market-close-stroke-control px-4 text-xs font-semibold text-market-close-fg"
 				>
 					{actionLabel}

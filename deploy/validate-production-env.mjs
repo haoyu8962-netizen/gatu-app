@@ -80,6 +80,11 @@ function validateRuntimeEnvironment(values, filePath) {
 	requireExactValue(values, filePath, "GATU_MAINNET_PUBLIC_BASE_URL", EXPECTED_MAINNET_ORIGIN);
 	requireExactValue(values, filePath, "GATU_TESTNET_PUBLIC_BASE_URL", EXPECTED_TESTNET_ORIGIN);
 
+	const ipdataApiKey = requireValue(values, filePath, "IPDATA_API_KEY");
+	if (ipdataApiKey.length === 0 || /^(['"]).*\1$/.test(ipdataApiKey)) {
+		fail(`${filePath} requires a non-empty, unquoted IPDATA_API_KEY.`);
+	}
+
 	const releaseMode = requireValue(values, filePath, "GATU_CCTP_MAINNET_RELEASE_MODE");
 	if (!SUPPORTED_RELEASE_MODES.has(releaseMode)) {
 		fail(

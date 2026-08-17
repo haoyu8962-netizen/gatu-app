@@ -29,6 +29,7 @@ import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { executeWithFreshWithdrawalRoute, useFreshUsdcRouting, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
@@ -116,6 +117,7 @@ export function DepositModal() {
 	const queryClient = useQueryClient();
 	const { env, info } = useHyperliquid();
 	const isTestnet = useIsTestnet();
+	const depositAvailability = useDepositAvailability();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
 	const usdcRoutingQuery = useUsdcRouting(open);
 	const fetchFreshUsdcRouting = useFreshUsdcRouting();
@@ -157,7 +159,12 @@ export function DepositModal() {
 	const cctpDepositFeeQuery = useCctpDepositFee({
 		amountRaw: depositAmountRaw,
 		enabled:
-			open && depositRouteReady && selectedDepositRoute === "cctp" && !isEmbeddedDeposit && cctpExternalDepositEnabled,
+			open &&
+			depositAvailability.available &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			!isEmbeddedDeposit &&
+			cctpExternalDepositEnabled,
 		isTestnet,
 	});
 
@@ -186,6 +193,7 @@ export function DepositModal() {
 		reset: resetDeposit,
 		networkName: depositNetworkName,
 		sponsoredCctpEnabled,
+		sponsoredCctpReadiness,
 	} = useDeposit({
 		balanceEnabled: open,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
@@ -193,15 +201,23 @@ export function DepositModal() {
 		depositRoute: selectedDepositRoute,
 		expectedCctpMaxFeeRaw: cctpDepositFeeQuery.calculation?.maxFeeRaw,
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
+		sponsoredReadinessEnabled:
+			open &&
+			depositAvailability.available &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			isEmbeddedDeposit,
 	});
 	const embeddedCctpDepositFeeQuery = useCctpDepositFee({
 		amountRaw: maxDepositRaw,
 		enabled:
 			open &&
+			depositAvailability.available &&
 			depositRouteReady &&
 			selectedDepositRoute === "cctp" &&
 			isEmbeddedDeposit &&
 			sponsoredCctpEnabled &&
+			sponsoredCctpReadiness.status === "ready" &&
 			maxDepositRaw !== undefined &&
 			maxDepositRaw > 0n,
 		isTestnet,
@@ -300,32 +316,36 @@ export function DepositModal() {
 				: null;
 	const depositValidation = !depositRouteReady
 		? { valid: false, error: null }
-		: embeddedWalletValidationError
-			? { valid: false, error: embeddedWalletValidationError }
-			: selectedDepositRoute === "bridge"
-				? {
-						valid: false,
-						error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
-					}
-				: !isEmbeddedDeposit && !cctpExternalDepositEnabled
+		: !depositAvailability.available
+			? { valid: false, error: depositAvailability.unavailableReason }
+			: embeddedWalletValidationError
+				? { valid: false, error: embeddedWalletValidationError }
+				: selectedDepositRoute === "bridge"
 					? {
 							valid: false,
-							error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+							error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
 						}
-					: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
-						? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
-						: cctpDepositAmountLimitError
-							? { valid: false, error: cctpDepositAmountLimitError }
-							: cctpDepositFeeUnavailable
-								? {
-										valid: false,
-										error: displayedCctpDepositFeeQuery.isError
-											? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-											: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
-												? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
-												: null,
-									}
-								: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error };
+					: !isEmbeddedDeposit && !cctpExternalDepositEnabled
+						? {
+								valid: false,
+								error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+							}
+						: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
+							? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
+							: isEmbeddedDeposit && sponsoredCctpReadiness.status !== "ready"
+								? { valid: false, error: null }
+								: cctpDepositAmountLimitError
+									? { valid: false, error: cctpDepositAmountLimitError }
+									: cctpDepositFeeUnavailable
+										? {
+												valid: false,
+												error: displayedCctpDepositFeeQuery.isError
+													? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+													: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
+														? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+														: null,
+											}
+										: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error };
 	const canUseFundsActions = hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
@@ -458,9 +478,9 @@ export function DepositModal() {
 	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
-		if (!open || visibleTab !== "deposit" || !needsEmbeddedWallet) return;
+		if (!open || visibleTab !== "deposit" || !depositAvailability.available || !needsEmbeddedWallet) return;
 		void ensureEmailEmbeddedWallet().catch(() => {});
-	}, [ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
+	}, [depositAvailability.available, ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
 
 	useEffect(() => {
 		if (!open) {
@@ -582,7 +602,15 @@ export function DepositModal() {
 	}
 
 	async function handleDepositSubmit() {
-		if (!depositValidation.valid || !canUseDeposit || isDepositPending || !depositRouteReady) return;
+		if (
+			!depositAvailability.available ||
+			!depositValidation.valid ||
+			!canUseDeposit ||
+			isDepositPending ||
+			!depositRouteReady
+		) {
+			return;
+		}
 
 		setDepositCctpPreflightError(null);
 		const preflightId = depositPreflightIdRef.current + 1;
@@ -1131,6 +1159,8 @@ export function DepositModal() {
 								onRetryRouting={handleDepositRoutingRetry}
 								networkName={depositNetworkName}
 								sponsoredCctpEnabled={sponsoredCctpEnabled}
+								sponsoredCctpReadiness={sponsoredCctpReadiness}
+								depositUnavailableReason={depositAvailability.unavailableReason}
 								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
 								cctpNetAmount={cctpDepositNetAmount}
@@ -1141,8 +1171,21 @@ export function DepositModal() {
 									cctpDepositTracking.data?.status !== "forward-submitted"
 								}
 								usesFundingAddressFlow={isEmbeddedDeposit}
-								fundingAddressPending={isEmbeddedDeposit && !embeddedWalletError && !depositEmbeddedWalletAddress}
-								fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
+								fundingAddressPending={
+									depositAvailability.available &&
+									isEmbeddedDeposit &&
+									!embeddedWalletError &&
+									!depositEmbeddedWalletAddress
+								}
+								fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
+								fundingAddress={
+									depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
+										? depositEmbeddedWalletAddress
+										: undefined
+								}
+								onRetryFundingAddress={() => {
+									void ensureEmailEmbeddedWallet().catch(() => {});
+								}}
 								onDone={handleClose}
 							/>
 						) : (

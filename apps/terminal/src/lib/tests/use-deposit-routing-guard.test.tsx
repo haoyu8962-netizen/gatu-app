@@ -2,7 +2,7 @@
 
 import { getFundsActionLockName } from "@gatu/hl-react/internal/exchange/funds-action-lock";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, createElement } from "react";
+import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
 	decodeFunctionData,
@@ -25,6 +25,7 @@ import {
 } from "@/lib/trade/cctp-deposit-tracking";
 
 const WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
+const SECOND_WALLET_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const PERMIT_SIGNATURE = `0x${"0".repeat(128)}1b` as const;
 const SOURCE_HASH = `0x${"1".repeat(64)}` as Hash;
 
@@ -106,6 +107,7 @@ const testState = vi.hoisted(() => {
 	return {
 		createWalletClient: vi.fn(),
 		fetchRouting: vi.fn(),
+		geoRefetch: vi.fn(),
 		getClientForChain: vi.fn(),
 		getUserRole: vi.fn(),
 		isTestnet: false,
@@ -153,7 +155,7 @@ vi.mock("@gatu/hl-react", () => ({
 }));
 
 vi.mock("@privy-io/react-auth", () => ({
-	useWallets: () => ({ wallets: [testState.wallet] }),
+	useWallets: () => ({ ready: true, wallets: [testState.wallet] }),
 }));
 
 vi.mock("@privy-io/react-auth/smart-wallets", () => ({
@@ -162,6 +164,10 @@ vi.mock("@privy-io/react-auth/smart-wallets", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ walletAddress: WALLET_ADDRESS }),
+}));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({ retry: testState.geoRefetch }),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -221,6 +227,7 @@ describe("useDeposit fresh USDC route guard", () => {
 		testState.routingError = null;
 		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
 		testState.sponsoredEnabled = true;
+		testState.wallet.address = WALLET_ADDRESS;
 		testState.wallet.connectorType = "embedded";
 		testState.wallet.chainId = "eip155:42161";
 		testState.fetchRouting.mockImplementation(async () => {
@@ -238,6 +245,10 @@ describe("useDeposit fresh USDC route guard", () => {
 		testState.publicClient.getTransactionCount.mockResolvedValue(0);
 		testState.publicClient.readContract.mockResolvedValue(0n);
 		testState.getUserRole.mockResolvedValue({ role: "user" });
+		testState.geoRefetch.mockResolvedValue({
+			data: { country: "GB", proxy: false, tradeRestricted: false },
+			isError: false,
+		});
 		testState.permitSign.mockResolvedValue(PERMIT_SIGNATURE);
 		testState.smartSendTransaction.mockRejectedValue(new Error("smart transaction boundary reached"));
 		testState.walletWriteContract.mockRejectedValue(new Error("wallet transaction boundary reached"));
@@ -269,10 +280,14 @@ describe("useDeposit fresh USDC route guard", () => {
 		executionScope = "manual",
 		mode,
 		route = "bridge",
+		sponsoredReadinessEnabled = false,
+		walletAddress = WALLET_ADDRESS,
 	}: {
 		executionScope?: "automatic" | "manual";
 		mode: "smart" | "wallet";
 		route?: "bridge" | "cctp";
+		sponsoredReadinessEnabled?: boolean;
+		walletAddress?: `0x${string}`;
 	}) {
 		capturedDeposit = useDeposit({
 			balanceEnabled: false,
@@ -280,7 +295,8 @@ describe("useDeposit fresh USDC route guard", () => {
 			mode,
 			depositRoute: route,
 			expectedCctpMaxFeeRaw: route === "cctp" ? 200_000n : undefined,
-			walletAddress: WALLET_ADDRESS,
+			sponsoredReadinessEnabled,
+			walletAddress,
 		});
 		return null;
 	}
@@ -303,6 +319,25 @@ describe("useDeposit fresh USDC route guard", () => {
 		return capturedDeposit;
 	}
 
+	async function renderSponsoredReadiness() {
+		await act(async () => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(Probe, { mode: "smart", route: "cctp", sponsoredReadinessEnabled: true }),
+				),
+			);
+		});
+		for (let attempt = 0; attempt < 5 && capturedDeposit?.sponsoredCctpReadiness.status === "loading"; attempt += 1) {
+			await act(async () => {
+				await Promise.resolve();
+			});
+		}
+		if (!capturedDeposit) throw new Error("Deposit hook was not captured");
+		return capturedDeposit;
+	}
+
 	async function submit(
 		mode: "smart" | "wallet",
 		route: "bridge" | "cctp" = "bridge",
@@ -318,6 +353,164 @@ describe("useDeposit fresh USDC route guard", () => {
 			await depositHook.deposit("5", submittedReview);
 		});
 	}
+
+	it("preflights the target-chain Smart Wallet without signing or submitting", async () => {
+		const depositHook = await renderSponsoredReadiness();
+
+		expect(testState.getClientForChain).toHaveBeenCalledOnce();
+		expect(testState.getClientForChain).toHaveBeenCalledWith({ id: 42161 });
+		expect(depositHook.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{
+			failure: "build-gate-disabled" as const,
+			prepare: () => {
+				testState.sponsoredEnabled = false;
+			},
+			expectedClientCalls: 0,
+		},
+		{
+			failure: "smart-client-unavailable" as const,
+			prepare: () => {
+				testState.getClientForChain.mockResolvedValue(undefined);
+			},
+			expectedClientCalls: 1,
+		},
+		{
+			failure: "wrong-chain" as const,
+			prepare: () => {
+				testState.getClientForChain.mockResolvedValue({ chain: { id: 421614 }, paymaster: {} });
+			},
+			expectedClientCalls: 1,
+		},
+		{
+			failure: "paymaster-unavailable" as const,
+			prepare: () => {
+				testState.getClientForChain.mockResolvedValue({ chain: { id: 42161 }, paymaster: undefined });
+			},
+			expectedClientCalls: 1,
+		},
+	])(
+		"reports $failure before exposing sponsored funding readiness",
+		async ({ expectedClientCalls, failure, prepare }) => {
+			prepare();
+
+			const depositHook = await renderSponsoredReadiness();
+
+			expect(testState.getClientForChain).toHaveBeenCalledTimes(expectedClientCalls);
+			expect(depositHook.sponsoredCctpReadiness).toMatchObject({ status: "error", failure });
+			expect(testState.permitSign).not.toHaveBeenCalled();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		},
+	);
+
+	it("ignores an older Smart Wallet readiness result after retry", async () => {
+		let resolveFirst: ((client: { chain: { id: number }; paymaster: object }) => void) | undefined;
+		testState.getClientForChain
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolveFirst = resolve;
+					}),
+			)
+			.mockResolvedValue({ chain: { id: 42161 }, paymaster: {} });
+
+		const firstRender = await renderSponsoredReadiness();
+		expect(firstRender.sponsoredCctpReadiness.status).toBe("loading");
+
+		await act(async () => {
+			firstRender.sponsoredCctpReadiness.retry();
+			await Promise.resolve();
+		});
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+
+		await act(async () => {
+			resolveFirst?.({ chain: { id: 421614 }, paymaster: {} });
+			await Promise.resolve();
+		});
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+		expect(testState.getClientForChain).toHaveBeenCalledTimes(2);
+	});
+
+	it("keeps the current readiness when StrictMode's discarded request resolves late", async () => {
+		let resolveDiscarded: ((client: { chain: { id: number }; paymaster: object }) => void) | undefined;
+		testState.getClientForChain
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolveDiscarded = resolve;
+					}),
+			)
+			.mockResolvedValue({ chain: { id: 42161 }, paymaster: {} });
+
+		await act(async () => {
+			root.render(
+				createElement(
+					StrictMode,
+					null,
+					createElement(
+						QueryClientProvider,
+						{ client: queryClient },
+						createElement(Probe, { mode: "smart", route: "cctp", sponsoredReadinessEnabled: true }),
+					),
+				),
+			);
+			await Promise.resolve();
+		});
+
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+		expect(testState.getClientForChain).toHaveBeenCalledTimes(2);
+
+		await act(async () => {
+			resolveDiscarded?.({ chain: { id: 421614 }, paymaster: {} });
+			await Promise.resolve();
+		});
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+	});
+
+	it("withholds readiness immediately when the embedded wallet identity changes", async () => {
+		let resolvePreviousIdentity: ((client: { chain: { id: number }; paymaster: object }) => void) | undefined;
+		testState.getClientForChain
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolvePreviousIdentity = resolve;
+					}),
+			)
+			.mockResolvedValue({ chain: { id: 42161 }, paymaster: {} });
+
+		const firstRender = await renderSponsoredReadiness();
+		expect(firstRender.sponsoredCctpReadiness.status).toBe("loading");
+
+		testState.wallet.address = SECOND_WALLET_ADDRESS;
+		await act(async () => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(Probe, {
+						mode: "smart",
+						route: "cctp",
+						sponsoredReadinessEnabled: true,
+						walletAddress: SECOND_WALLET_ADDRESS,
+					}),
+				),
+			);
+			await Promise.resolve();
+		});
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+
+		await act(async () => {
+			resolvePreviousIdentity?.({ chain: { id: 421614 }, paymaster: {} });
+			await Promise.resolve();
+		});
+		expect(capturedDeposit?.sponsoredCctpReadiness).toMatchObject({ status: "ready", failure: null });
+		expect(testState.getClientForChain).toHaveBeenCalledTimes(2);
+	});
 
 	it.each([
 		{
@@ -365,6 +558,40 @@ describe("useDeposit fresh USDC route guard", () => {
 		expect(testState.permitSign).not.toHaveBeenCalled();
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
 		expect(capturedDeposit?.error?.message).toContain("Legacy Bridge2 deposits are no longer accepted");
+	});
+
+	it.each(["smart", "wallet"] as const)(
+		"fails closed before %s CCTP signing when regional availability cannot be verified",
+		async (mode) => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			testState.geoRefetch.mockResolvedValue({ data: undefined, isError: true });
+
+			await submit(mode, "cctp");
+
+			expect(testState.geoRefetch).toHaveBeenCalledOnce();
+			expect(testState.getUserRole).not.toHaveBeenCalled();
+			expect(testState.permitSign).not.toHaveBeenCalled();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toContain("Unable to verify regional availability");
+		},
+	);
+
+	it.each(["smart", "wallet"] as const)("fails closed before %s CCTP signing in a restricted region", async (mode) => {
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.geoRefetch.mockResolvedValue({
+			data: { country: "US", proxy: false, tradeRestricted: true },
+			isError: false,
+		});
+
+		await submit(mode, "cctp");
+
+		expect(testState.geoRefetch).toHaveBeenCalledOnce();
+		expect(testState.getUserRole).not.toHaveBeenCalled();
+		expect(testState.permitSign).not.toHaveBeenCalled();
+		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+		expect(testState.walletWriteContract).not.toHaveBeenCalled();
+		expect(capturedDeposit?.error?.message).toContain("Deposits are not available in your region");
 	});
 
 	it("uses the verified Circle CCTP path for an external wallet and never enters Bridge2", async () => {

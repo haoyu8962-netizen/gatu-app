@@ -13,6 +13,8 @@ const testState = vi.hoisted(() => ({
 	accountGuard: vi.fn(),
 	activeTab: "deposit" as "deposit" | "withdraw",
 	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
+	depositAvailable: true,
+	depositUnavailableReason: null as string | null,
 	deposit: vi.fn(),
 	depositError: null as Error | null,
 	depositExecutionRoute: null as "bridge" | "cctp" | null,
@@ -45,6 +47,14 @@ const testState = vi.hoisted(() => ({
 	},
 	routingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
 	routingRefetch: vi.fn(),
+	sponsoredReadinessFailure: null as
+		| "build-gate-disabled"
+		| "smart-client-unavailable"
+		| "wrong-chain"
+		| "paymaster-unavailable"
+		| null,
+	sponsoredReadinessRetry: vi.fn(),
+	sponsoredReadinessStatus: "ready" as "idle" | "loading" | "ready" | "error",
 	spotMeta: {
 		tokens: [{ index: 37, isCanonical: true, name: "USDC" }],
 		universe: [],
@@ -138,6 +148,18 @@ vi.mock("@/config/cctp-deposit", async (importOriginal) => {
 
 vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
 	useCctpDepositTracking: () => ({ data: undefined, isError: false, recoveryRecord: null }),
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		path: testState.emailAddress ? "sponsored" : "external",
+		reason: testState.depositAvailable ? null : "geo-unresolved",
+		releasePathEnabled: true,
+		signerReady: true,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.depositUnavailableReason,
+	}),
 }));
 
 vi.mock("@/hooks/trade/use-usdc-routing", async (importOriginal) => {
@@ -261,6 +283,11 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		networkName: "Arbitrum",
 		reset: vi.fn(),
 		sponsoredCctpEnabled: true,
+		sponsoredCctpReadiness: {
+			failure: testState.sponsoredReadinessFailure,
+			retry: testState.sponsoredReadinessRetry,
+			status: testState.sponsoredReadinessStatus,
+		},
 		status: testState.depositStatus,
 		switchError: null,
 		switchToArbitrum: vi.fn(),
@@ -308,17 +335,26 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		requiresExplicitFundingDeposit,
 		routingStatus,
 		usesFundingAddressFlow,
+		fundingAddress,
+		sponsoredCctpReadiness,
 	}: {
+		fundingAddress?: string;
 		onRetryRouting: () => void;
 		onSubmit: () => void;
 		requiresExplicitFundingDeposit?: boolean;
 		routingStatus: string;
+		sponsoredCctpReadiness: { status: string };
 		usesFundingAddressFlow: boolean;
 	}) =>
 		createElement(
 			"div",
-			{ "data-testid": "deposit-routing-status", "data-status": routingStatus },
-			!usesFundingAddressFlow || requiresExplicitFundingDeposit
+			{
+				"data-funding-address": fundingAddress,
+				"data-readiness-status": sponsoredCctpReadiness.status,
+				"data-testid": "deposit-routing-status",
+				"data-status": routingStatus,
+			},
+			!usesFundingAddressFlow || (requiresExplicitFundingDeposit && sponsoredCctpReadiness.status === "ready")
 				? createElement(
 						"button",
 						{ onClick: onSubmit, type: "button" },
@@ -402,12 +438,17 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.activeTab = "deposit";
 		testState.modalOpen = false;
 		testState.deposit.mockReset();
+		testState.depositAvailable = true;
+		testState.depositUnavailableReason = null;
 		testState.depositError = null;
 		testState.depositExecutionRoute = null;
 		testState.depositHash = undefined;
 		testState.depositStatus = "idle";
 		testState.emailAddress = null;
 		testState.cctpDepositFeeCalls.length = 0;
+		testState.sponsoredReadinessFailure = null;
+		testState.sponsoredReadinessRetry.mockReset();
+		testState.sponsoredReadinessStatus = "ready";
 		testState.submissionOutcomeUnknown = false;
 		testState.preTransferFresh = {
 			fee: "0",
@@ -616,6 +657,53 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			enabled: true,
 			isTestnet: false,
 		});
+	});
+
+	it("withholds the embedded funding address and fee preflight until the Smart Wallet is ready", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.sponsoredReadinessFailure = "paymaster-unavailable";
+		testState.sponsoredReadinessStatus = "error";
+		testState.cctpDepositFeeCalls.length = 0;
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.getAttribute("data-readiness-status")).toBe("error");
+		expect(depositForm?.hasAttribute("data-funding-address")).toBe(false);
+		expect(testState.cctpDepositFeeCalls).toContainEqual({
+			amountRaw: 10_000_000n,
+			enabled: false,
+			isTestnet: false,
+		});
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Deposit 10 USDC")).toBe(
+			false,
+		);
+	});
+
+	it("withholds a programmatically opened funding address when deposit capability is unavailable", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.emailAddress = "trader@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = "Unable to verify regional availability.";
+		testState.cctpDepositFeeCalls.length = 0;
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.hasAttribute("data-funding-address")).toBe(false);
+		expect(testState.cctpDepositFeeCalls).toContainEqual({
+			amountRaw: 10_000_000n,
+			enabled: false,
+			isTestnet: false,
+		});
+
+		await act(async () => getButton("Deposit 10 USDC").click());
+		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
 	it("submits a mainnet sponsored deposit only after the user explicitly confirms the reviewed full balance", async () => {

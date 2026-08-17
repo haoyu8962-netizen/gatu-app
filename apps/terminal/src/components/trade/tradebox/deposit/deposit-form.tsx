@@ -4,6 +4,7 @@ import { Trans } from "@lingui/react/macro";
 import { formatUnits } from "viem";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
+import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
 import { AmountInput } from "./amount-input";
 import { AssetSelect } from "./asset-select";
 import { FundingAddressCard } from "./funding-address-card";
@@ -26,6 +27,8 @@ interface Props {
 	onRetryRouting: () => void;
 	networkName: string;
 	sponsoredCctpEnabled: boolean;
+	sponsoredCctpReadiness: SponsoredCctpReadiness;
+	depositUnavailableReason?: string | null;
 	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
 	cctpNetAmount: string | null;
@@ -33,7 +36,9 @@ interface Props {
 	pendingCctpRecovery: boolean;
 	usesFundingAddressFlow: boolean;
 	fundingAddressPending: boolean;
+	fundingAddressError?: string | null;
 	fundingAddress?: `0x${string}`;
+	onRetryFundingAddress?: () => void;
 	onDone?: () => void;
 }
 
@@ -53,6 +58,8 @@ export function DepositForm({
 	onRetryRouting,
 	networkName,
 	sponsoredCctpEnabled,
+	sponsoredCctpReadiness,
+	depositUnavailableReason = null,
 	requiresExplicitFundingDeposit,
 	cctpFee,
 	cctpNetAmount,
@@ -60,7 +67,9 @@ export function DepositForm({
 	pendingCctpRecovery,
 	usesFundingAddressFlow,
 	fundingAddressPending,
+	fundingAddressError = null,
 	fundingAddress,
+	onRetryFundingAddress,
 	onDone,
 }: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
@@ -68,7 +77,11 @@ export function DepositForm({
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
 	const depositRoutingReady = cctpRoutingReady && !fundingAddress;
 	const explicitFundingDepositReady =
-		requiresExplicitFundingDeposit && cctpRoutingReady && sponsoredCctpEnabled && !!fundingAddress;
+		requiresExplicitFundingDeposit &&
+		cctpRoutingReady &&
+		sponsoredCctpEnabled &&
+		sponsoredCctpReadiness.status === "ready" &&
+		!!fundingAddress;
 	const explicitFundingDepositDisabled =
 		!validation.valid ||
 		isPending ||
@@ -183,39 +196,102 @@ export function DepositForm({
 					<Trans>Retry</Trans>
 				</Button>
 			) : undefined;
-		const fundingAddressState =
-			cctpRoutingReady && sponsoredCctpEnabled && fundingAddress
-				? ({ address: fundingAddress, state: "ready" } as const)
-				: routingStatus === "loading"
-					? ({ message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const)
-					: cctpRoutingReady && sponsoredCctpEnabled && fundingAddressPending
-						? ({ message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const)
-						: cctpRoutingReady && !sponsoredCctpEnabled
-							? ({
-									message: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
-									state: "unavailable",
-								} as const)
-							: bridgeRoutingReady
-								? ({
-										message: <Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>,
-										state: "unavailable",
-									} as const)
-								: cctpRoutingReady
-									? ({
-											message: (
-												<Trans>
-													Your email wallet is unavailable. Sign out and log in again with the same email, then retry.
-												</Trans>
-											),
-											state: "unavailable",
-										} as const)
-									: ({
-											message: (
-												<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
-											),
-											action: retryRoutingAction,
-											state: "unavailable",
-										} as const);
+		const retrySponsoredReadinessAction =
+			sponsoredCctpReadiness.status === "error" && sponsoredCctpReadiness.failure !== "build-gate-disabled" ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={sponsoredCctpReadiness.retry}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const retryFundingAddressAction =
+			fundingAddressError && onRetryFundingAddress ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={onRetryFundingAddress}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const sponsoredReadinessError = (() => {
+			switch (sponsoredCctpReadiness.failure) {
+				case "build-gate-disabled":
+					return <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>;
+				case "wrong-chain":
+					return <Trans>The gas-sponsored wallet is configured for a different Arbitrum network.</Trans>;
+				case "paymaster-unavailable":
+					return <Trans>Gas sponsorship is unavailable for this Arbitrum network.</Trans>;
+				default:
+					return <Trans>Unable to prepare the gas-sponsored wallet for this network.</Trans>;
+			}
+		})();
+		const fundingAddressReady =
+			!depositUnavailableReason &&
+			cctpRoutingReady &&
+			sponsoredCctpEnabled &&
+			sponsoredCctpReadiness.status === "ready" &&
+			!!fundingAddress;
+		const fundingAddressState = (() => {
+			if (depositUnavailableReason) {
+				return { message: depositUnavailableReason, state: "unavailable" } as const;
+			}
+			if (routingStatus === "loading") {
+				return { message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const;
+			}
+			if (cctpRoutingReady && !sponsoredCctpEnabled) {
+				return {
+					message: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
+					state: "unavailable",
+				} as const;
+			}
+			if (bridgeRoutingReady) {
+				return {
+					message: <Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>,
+					state: "unavailable",
+				} as const;
+			}
+			if (!cctpRoutingReady) {
+				return {
+					message: <Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>,
+					action: retryRoutingAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (fundingAddressPending) {
+				return { message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const;
+			}
+			if (fundingAddressError) {
+				return {
+					message: fundingAddressError,
+					action: retryFundingAddressAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (sponsoredCctpReadiness.status === "idle" || sponsoredCctpReadiness.status === "loading") {
+				return { message: <Trans>Checking gas-sponsored wallet readiness...</Trans>, state: "loading" } as const;
+			}
+			if (sponsoredCctpReadiness.status === "error") {
+				return {
+					message: sponsoredReadinessError,
+					action: retrySponsoredReadinessAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (fundingAddressReady && fundingAddress) return { address: fundingAddress, state: "ready" } as const;
+			return {
+				message: (
+					<Trans>Your email wallet is unavailable. Sign out and log in again with the same email, then retry.</Trans>
+				),
+				state: "unavailable",
+			} as const;
+		})();
 
 		return (
 			<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
@@ -229,7 +305,7 @@ export function DepositForm({
 
 				<FundingAddressCard {...fundingAddressState} />
 
-				{cctpRoutingReady && sponsoredCctpEnabled && fundingAddress ? (
+				{fundingAddressReady ? (
 					<>
 						{embeddedDepositStatus ? (
 							<div
@@ -250,7 +326,7 @@ export function DepositForm({
 					</>
 				) : null}
 
-				{cctpRoutingReady && sponsoredCctpEnabled && fundingAddress ? (
+				{fundingAddressReady ? (
 					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
 						<Trans>
 							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other

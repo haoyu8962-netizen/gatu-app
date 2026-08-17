@@ -126,9 +126,20 @@ vi.mock("@/domain/trade/balances", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
+		hasWalletAccess: true,
 		isConnected: true,
 		sessionMode: "wallet",
 		walletAddress: "0x1111111111111111111111111111111111111111",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: true,
+		path: "external",
+		reason: null,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: null,
 	}),
 }));
 
@@ -137,7 +148,7 @@ vi.mock("@/lib/lifi/bridge-execution-state", () => ({
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ tradeRestricted: false }),
+	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({

@@ -1359,6 +1359,19 @@ msgid "Checking fresh API wallet data…"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Checking gas-sponsored wallet readiness..."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Checking regional availability. Deposits are temporarily unavailable."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Checking regional availability. Trading is temporarily unavailable."
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Comprobando la ruta de depósito actual de Hyperliquid..."
@@ -1913,6 +1926,15 @@ msgstr ""
 
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Connect the exact owner wallet before continuing."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Connect the owner wallet before moving funds."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Connect the owner wallet to deposit."
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
@@ -2502,7 +2524,10 @@ msgstr "Desplegador"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2599,6 +2624,16 @@ msgstr "La transacción de depósito se transmitió, pero falló la confirmació
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "La transacción de depósito se envió, pero no se confirmó en Arbitrum. Es posible que el nonce de tu billetera no esté sincronizado con la red. Borra la actividad pendiente o restablece los datos de nonce en tu billetera y vuelve a intentarlo."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/hooks/trade/use-deposit-availability.ts
+#: src/lib/trade/use-button-content.ts
+msgid "Deposit unavailable"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Deposit USDC"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
@@ -2637,6 +2672,30 @@ msgstr "Los depósitos y retiros no están permitidos."
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Deposits and withdrawals remain available."
 msgstr "Los depósitos y retiros siguen disponibles."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits are not available in your region."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposits are not available in your region. This deposit was not submitted."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from email wallets are not enabled on Mainnet."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from email wallets are not enabled on Testnet."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from external wallets are not enabled on Mainnet."
+msgstr ""
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from external wallets are not enabled on Testnet."
+msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
@@ -3656,7 +3715,12 @@ msgstr "Gaming"
 msgid "Gas ({0})"
 msgstr "Gas ({0})"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Gas sponsorship is unavailable for this Arbitrum network."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5529,6 +5593,12 @@ msgstr "Abra una posición antes de colocar una orden de activación"
 msgid "Open command menu"
 msgstr "Abrir menú de comandos"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Open Deposit to prepare your email wallet."
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
@@ -6887,6 +6957,8 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -8565,6 +8637,10 @@ msgstr "El exchange no devolvió el estado final del TWAP. Revisa las órdenes T
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr ""
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "La clave generada permanece solo en esta pestaña. No apruebes otra clave ni recargues la página."
@@ -9706,6 +9782,10 @@ msgstr "No se pudo cargar el modo de cuenta actual. Vuelve a conectar tu billete
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "No se pudo cargar la tarifa actual de retiro mediante CCTP."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to prepare the gas-sponsored wallet for this network."
+msgstr ""
+
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
@@ -9722,6 +9802,19 @@ msgstr "No se puede verificar el acceso"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "No se pudo verificar el saldo disponible"
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to verify regional availability. This deposit was not submitted."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Unable to verify regional availability. Trading is temporarily unavailable."
+msgstr ""
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

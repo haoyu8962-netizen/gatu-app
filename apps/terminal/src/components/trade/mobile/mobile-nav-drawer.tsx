@@ -4,8 +4,8 @@ import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
@@ -22,13 +22,14 @@ export function MobileNavDrawer() {
 	const preloadRequestRef = useRef(0);
 	const closingForModalRef = useRef(false);
 	const { hasWalletAccess } = useWalletSession();
-	const { tradeRestricted } = useGeoRestriction();
+	const depositAvailability = useDepositAvailability();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const tradeHomePath = useTradeHomePath();
 	const tradeActive = isTradeRoutePath(pathname);
 	const vaultsActive = pathname === "/vaults" || pathname.startsWith("/vaults/");
 	const soonLabel = t`Soon`;
+	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
 
 	function getNavLinkClass(active: boolean): string {
 		return cn(
@@ -97,7 +98,7 @@ export function MobileNavDrawer() {
 		setPendingModal(null);
 		setPreloadFailed(false);
 
-		if (modal === "deposit") openDepositModal("deposit");
+		if (modal === "deposit" && depositAvailability.available) openDepositModal("deposit");
 		if (modal === "settings") openSettingsDialog();
 	}
 
@@ -227,25 +228,33 @@ export function MobileNavDrawer() {
 								<Trans>Try again</Trans>
 							</p>
 						)}
-						{hasWalletAccess && !tradeRestricted && (
-							<Button
-								variant="filled"
-								intent="brand"
-								size="sm"
-								onClick={() => requestGlobalModal("deposit")}
-								disabled={pendingModal !== null}
-								aria-busy={pendingModal === "deposit" || undefined}
-								iconLeft={
-									pendingModal === "deposit" ? (
-										<SpinnerGapIcon className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-									) : (
-										<DownloadSimpleIcon className="size-3.5" />
-									)
-								}
-								className="w-full"
-							>
-								<Trans>Deposit</Trans>
-							</Button>
+						{showsDepositEntry && (
+							<>
+								<Button
+									variant="filled"
+									intent="brand"
+									size="sm"
+									onClick={depositAvailability.available ? () => requestGlobalModal("deposit") : undefined}
+									disabled={pendingModal !== null || !depositAvailability.available}
+									aria-busy={pendingModal === "deposit" || undefined}
+									aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+									iconLeft={
+										pendingModal === "deposit" ? (
+											<SpinnerGapIcon className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+										) : (
+											<DownloadSimpleIcon className="size-3.5" />
+										)
+									}
+									className="w-full"
+								>
+									{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
+								</Button>
+								{depositAvailability.unavailableReason ? (
+									<output className="text-center text-2xs text-fg-muted">
+										{depositAvailability.unavailableReason}
+									</output>
+								) : null}
+							</>
 						)}
 						<div className="flex items-center justify-between pt-1">
 							<ThemeToggle />

@@ -14,6 +14,8 @@ interface ButtonContentInput {
 	isBalanceLoading?: boolean;
 	hasBalanceError?: boolean;
 	canDeposit: boolean;
+	depositUnavailableReason?: string | null;
+	tradingUnavailableReason?: string | null;
 	validation: FormValidationResult;
 	isAgentReady: boolean;
 	isApprovalLoading: boolean;
@@ -75,7 +77,8 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			return {
 				text: registerText,
 				action: input.onRegister,
-				disabled: isRegistering || !input.canApprove || input.isApprovalLoading,
+				disabled: isRegistering || !input.canApprove || input.isApprovalLoading || !!input.tradingUnavailableReason,
+				disabledReason: input.tradingUnavailableReason ?? undefined,
 				variant: "cyan",
 			};
 		}
@@ -97,16 +100,18 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		}
 		if (stage === "deposit") {
 			return {
-				text: t`Deposit`,
+				text: input.canDeposit ? t`Deposit` : t`Deposit unavailable`,
 				action: input.canDeposit ? input.onDeposit : () => {},
 				disabled: !input.canDeposit,
+				disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
 				variant: "cyan",
 			};
 		}
 		return {
 			text: t`Place ${input.sideLabel} Order`,
 			action: input.onSubmit,
-			disabled: !input.validation.canSubmit || input.isSubmitting,
+			disabled: !input.validation.canSubmit || input.isSubmitting || !!input.tradingUnavailableReason,
+			disabledReason: input.tradingUnavailableReason ?? undefined,
 			variant: input.side as "buy" | "sell",
 		};
 	}, [
@@ -118,6 +123,8 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.isBalanceLoading,
 		input.hasBalanceError,
 		input.canDeposit,
+		input.depositUnavailableReason,
+		input.tradingUnavailableReason,
 		input.validation.needsApproval,
 		input.validation.canSubmit,
 		input.isAgentReady,

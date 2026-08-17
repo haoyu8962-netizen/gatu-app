@@ -8,21 +8,25 @@ function getDevOverride(): string | null {
 
 export function useGeoRestriction() {
 	const override = getDevOverride();
-	const { data, isError, isLoading, refetch } = useQuery({
+	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey: ["geo", override],
 		queryFn: () => getGeo({ data: { override } }),
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: Number.POSITIVE_INFINITY,
 		retry: 1,
 	});
+	const hasResolvedCountry = typeof data?.country === "string" && data.country.trim().length > 0;
+	const isResolved = hasResolvedCountry && !isError;
+	const tradeRestricted = hasResolvedCountry && (data?.tradeRestricted === true || data?.proxy === true);
 
 	return {
-		tradeRestricted: data?.tradeRestricted ?? false,
+		actionsBlocked: !isResolved || tradeRestricted,
+		tradeRestricted,
 		country: data?.country ?? null,
 		proxy: data?.proxy ?? false,
-		isResolving: isLoading,
+		isResolving: isFetching,
 		isError,
-		isResolved: data !== undefined && !isError,
+		isResolved,
 		retry: refetch,
 	};
 }

@@ -10,6 +10,7 @@ import {
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -41,7 +42,8 @@ export function PortfolioPage() {
 	const isTestnet = useIsTestnet();
 	const { hasWalletAccess, isConnected } = useWalletSession();
 	const { reconnectWallet } = useReconnectWallet();
-	const { tradeRestricted } = useGeoRestriction();
+	const depositAvailability = useDepositAvailability();
+	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
 	const { accountAbstraction } = useDefaultDexBalances();
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 	const [accountModeModalOpen, setAccountModeModalOpen] = useState(false);
@@ -50,6 +52,7 @@ export function PortfolioPage() {
 	const { open: openSendModal } = useSendModalActions();
 	const { openStablecoins: openStablecoinSwapModal } = useSwapModalActions();
 	const fundsActionsDisabled = !hasWalletAccess || tradeRestricted;
+	const depositDisabled = !depositAvailability.available;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const modeDependentFundsActionsDisabled = fundsActionsDisabled || !accountModeReady;
 	const internalTransferDisabledReason = !accountModeReady
@@ -138,16 +141,22 @@ export function PortfolioPage() {
 							>
 								<Trans>Withdraw</Trans>
 							</Button>
-							<Button
-								variant="filled"
-								intent="brand"
-								size="sm"
-								disabled={fundsActionsDisabled}
-								onClick={() => openDepositModal("deposit")}
-								iconLeft={<DownloadSimpleIcon className="size-3.5" />}
-							>
-								<Trans>Deposit</Trans>
-							</Button>
+							<Tooltip content={depositAvailability.unavailableReason} side="top">
+								<span className="inline-flex">
+									<Button
+										variant="filled"
+										intent="brand"
+										size="sm"
+										disabled={depositDisabled}
+										onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+										aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+										title={depositAvailability.unavailableReason ?? undefined}
+										iconLeft={<DownloadSimpleIcon className="size-3.5" />}
+									>
+										{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
+									</Button>
+								</span>
+							</Tooltip>
 						</div>
 					</div>
 

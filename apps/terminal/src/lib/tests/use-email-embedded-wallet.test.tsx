@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 
 const EMBEDDED_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
+const SECOND_EMBEDDED_WALLET_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 
 const testState = vi.hoisted(() => ({
 	createWallet: vi.fn(),
@@ -27,11 +28,17 @@ function Probe() {
 	return null;
 }
 
-function emailUser(): User {
+function emailUser({
+	email = "trader@example.com",
+	id = "did:privy:test-user",
+}: {
+	email?: string;
+	id?: string;
+} = {}): User {
 	return {
-		email: { address: "trader@example.com" },
-		id: "did:privy:test-user",
-		linkedAccounts: [{ address: "trader@example.com", type: "email" }],
+		email: { address: email },
+		id,
+		linkedAccounts: [{ address: email, type: "email" }],
 	} as User;
 }
 
@@ -100,5 +107,101 @@ describe("useEmailEmbeddedWallet", () => {
 		expect(hook.embeddedWalletError).toBeNull();
 		expect(hook.isCreatingEmbeddedWallet).toBe(false);
 		expect(testState.createWallet).toHaveBeenCalledOnce();
+	});
+
+	it("recovers from a synchronous Privy wallet-creation failure", async () => {
+		const creationError = new Error("Wallet creation is unavailable");
+		testState.createWallet.mockImplementationOnce(() => {
+			throw creationError;
+		});
+		const hook = renderHook();
+
+		await act(async () => {
+			await expect(hook.ensureEmailEmbeddedWallet()).rejects.toBe(creationError);
+		});
+
+		expect(hookValue?.embeddedWalletError).toBe(creationError);
+		expect(hookValue?.isCreatingEmbeddedWallet).toBe(false);
+	});
+
+	it("does not expose a locally created address after the Privy user changes", async () => {
+		testState.createWallet.mockResolvedValueOnce({ address: EMBEDDED_WALLET_ADDRESS });
+		let hook = renderHook();
+
+		await act(async () => {
+			await expect(hook.ensureEmailEmbeddedWallet()).resolves.toBe(EMBEDDED_WALLET_ADDRESS);
+		});
+		expect(hookValue?.embeddedWalletAddress).toBe(EMBEDDED_WALLET_ADDRESS);
+
+		testState.user = emailUser({ email: "second@example.com", id: "did:privy:second-user" });
+		hook = renderHook();
+
+		expect(hook.embeddedWalletAddress).toBeUndefined();
+		expect(hook.needsEmbeddedWallet).toBe(true);
+		expect(hook.embeddedWalletError).toBeNull();
+		expect(hook.isCreatingEmbeddedWallet).toBe(false);
+	});
+
+	it("rejects a late creation result from the previous user without poisoning the new session", async () => {
+		let resolveFirstCreation: ((wallet: { address: string }) => void) | undefined;
+		const firstCreation = new Promise<{ address: string }>((resolve) => {
+			resolveFirstCreation = resolve;
+		});
+		testState.createWallet
+			.mockReturnValueOnce(firstCreation)
+			.mockResolvedValueOnce({ address: SECOND_EMBEDDED_WALLET_ADDRESS });
+		const firstHook = renderHook();
+		let staleRequest: Promise<`0x${string}`> | undefined;
+
+		act(() => {
+			staleRequest = firstHook.ensureEmailEmbeddedWallet();
+		});
+		expect(hookValue?.isCreatingEmbeddedWallet).toBe(true);
+
+		testState.user = emailUser({ email: "second@example.com", id: "did:privy:second-user" });
+		let secondHook = renderHook();
+		expect(secondHook.embeddedWalletAddress).toBeUndefined();
+		expect(secondHook.isCreatingEmbeddedWallet).toBe(false);
+
+		await act(async () => {
+			resolveFirstCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+			await expect(staleRequest).rejects.toThrow("Email wallet session changed");
+		});
+		expect(hookValue?.embeddedWalletAddress).toBeUndefined();
+		expect(hookValue?.embeddedWalletError).toBeNull();
+
+		secondHook = hookValue ?? secondHook;
+		await act(async () => {
+			await expect(secondHook.ensureEmailEmbeddedWallet()).resolves.toBe(SECOND_EMBEDDED_WALLET_ADDRESS);
+		});
+		expect(hookValue?.embeddedWalletAddress).toBe(SECOND_EMBEDDED_WALLET_ADDRESS);
+		expect(testState.createWallet).toHaveBeenCalledTimes(2);
+	});
+
+	it("invalidates an in-flight creation across logout and login of the same Privy user", async () => {
+		let resolveCreation: ((wallet: { address: string }) => void) | undefined;
+		testState.createWallet.mockReturnValueOnce(
+			new Promise<{ address: string }>((resolve) => {
+				resolveCreation = resolve;
+			}),
+		);
+		const firstHook = renderHook();
+		let staleRequest: Promise<`0x${string}`> | undefined;
+		act(() => {
+			staleRequest = firstHook.ensureEmailEmbeddedWallet();
+		});
+
+		testState.user = null;
+		renderHook();
+		testState.user = emailUser();
+		const restoredHook = renderHook();
+		expect(restoredHook.embeddedWalletAddress).toBeUndefined();
+
+		await act(async () => {
+			resolveCreation?.({ address: EMBEDDED_WALLET_ADDRESS });
+			await expect(staleRequest).rejects.toThrow("Email wallet session changed");
+		});
+		expect(hookValue?.embeddedWalletAddress).toBeUndefined();
+		expect(hookValue?.embeddedWalletError).toBeNull();
 	});
 });

@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
 	activeTab: "positions",
+	depositAvailable: true,
+	depositUnavailableReason: null as string | null,
 	openDepositModal: vi.fn(),
 	setPositionsActiveTab: vi.fn(),
 }));
@@ -47,6 +49,14 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.depositUnavailableReason,
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -98,6 +108,8 @@ describe("desktop positions panel shell", () => {
 
 	beforeEach(() => {
 		testState.activeTab = "positions";
+		testState.depositAvailable = true;
+		testState.depositUnavailableReason = null;
 		testState.openDepositModal.mockReset();
 		testState.setPositionsActiveTab.mockReset();
 		i18n.load("en", {});
@@ -277,6 +289,23 @@ describe("desktop positions panel shell", () => {
 		act(() => withdrawButton?.click());
 		expect(testState.openDepositModal).toHaveBeenNthCalledWith(1, "deposit");
 		expect(testState.openDepositModal).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("keeps the transfers Deposit entry inert with an explicit reason when its path is unavailable", () => {
+		testState.activeTab = "transfers";
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		render(true);
+
+		const actions = container.querySelector<HTMLElement>('[data-testid="positions-header-actions"]');
+		const depositButton = Array.from(actions?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+			(button) => button.textContent === "Deposit",
+		);
+		expect(depositButton?.disabled).toBe(true);
+		expect(depositButton?.getAttribute("aria-label")).toBe("Deposit unavailable");
+		expect(depositButton?.title).toBe("Deposits from external wallets are not enabled on Mainnet.");
+		act(() => depositButton?.click());
+		expect(testState.openDepositModal).not.toHaveBeenCalled();
 	});
 
 	it.each([

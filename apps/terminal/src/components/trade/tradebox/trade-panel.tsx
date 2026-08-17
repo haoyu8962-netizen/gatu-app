@@ -23,6 +23,7 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
@@ -106,7 +107,8 @@ const ERROR_LINGER_MS = 1500;
 
 export function TradePanel() {
 	const { t } = useLingui();
-	const { address, isConnected, sessionMode } = useWalletSession();
+	const { address, isConnected } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
@@ -118,7 +120,14 @@ export function TradePanel() {
 
 	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
-	const { tradeRestricted } = useGeoRestriction();
+	const geoRestriction = useGeoRestriction();
+	const tradeActionsBlocked = geoRestriction.actionsBlocked;
+	const tradeRestricted = geoRestriction.tradeRestricted;
+	const tradingUnavailableReason = !geoRestriction.isResolved
+		? geoRestriction.isError
+			? t`Unable to verify regional availability. Trading is temporarily unavailable.`
+			: t`Checking regional availability. Trading is temporarily unavailable.`
+		: null;
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
@@ -380,7 +389,7 @@ export function TradePanel() {
 	);
 
 	function canExecuteOrder() {
-		if (tradeRestricted) return false;
+		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
 		if (isAvailabilityBlocked) return false;
 		if (!validation.canSubmit) return false;
@@ -450,7 +459,7 @@ export function TradePanel() {
 	);
 
 	function handleRegister() {
-		if (tradeRestricted) return;
+		if (tradeActionsBlocked) return;
 		if (isRegistering) return;
 		if (!isConnected || !address) {
 			setActiveModal("wallet");
@@ -560,7 +569,9 @@ export function TradePanel() {
 		availableBalance,
 		isBalanceLoading: isAvailabilityLoading,
 		hasBalanceError: hasAvailabilityError,
-		canDeposit: sessionMode === "wallet",
+		canDeposit: depositAvailability.available,
+		depositUnavailableReason: depositAvailability.unavailableReason,
+		tradingUnavailableReason,
 		validation,
 		isAgentReady,
 		isApprovalLoading,
@@ -717,7 +728,7 @@ export function TradePanel() {
 
 						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
-						{tradeRestricted ? (
+						{tradeRestricted && !buttonContent.disabledReason ? (
 							<Button
 								variant="filled"
 								size="xs"
@@ -747,6 +758,9 @@ export function TradePanel() {
 								{buttonContent.text}
 							</Button>
 						)}
+						{buttonContent.disabledReason ? (
+							<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
+						) : null}
 					</div>
 					<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
 				</div>

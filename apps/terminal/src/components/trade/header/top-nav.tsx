@@ -5,8 +5,8 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
@@ -23,11 +23,12 @@ export function TopNav() {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { hasWalletAccess } = useWalletSession();
 	const isTestnet = useIsTestnet();
-	const { tradeRestricted } = useGeoRestriction();
 	const tradeHomePath = useTradeHomePath();
+	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
 
 	const tradeActive = isTradeRoutePath(pathname);
 	const portfolioActive = pathname === "/portfolio";
@@ -210,12 +211,15 @@ export function TopNav() {
 			</div>
 
 			<div className="ml-auto flex min-h-[34px] items-center gap-2">
-				{hasWalletAccess && !tradeRestricted && (
+				{showsDepositEntry && (
 					<Button
 						variant="filled"
 						intent="brand"
 						size="sm"
-						onClick={() => openDepositModal("deposit")}
+						disabled={!depositAvailability.available}
+						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+						aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+						title={depositAvailability.unavailableReason ?? undefined}
 						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
 						className={cn(
 							APP_BAR_BUTTON_HEIGHT_CLASS,
@@ -223,7 +227,7 @@ export function TopNav() {
 						)}
 					>
 						<span className="max-[1181px]:sr-only">
-							<Trans>Deposit</Trans>
+							{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
 						</span>
 					</Button>
 				)}

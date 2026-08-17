@@ -10,6 +10,9 @@ import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	depositOpen: vi.fn(),
+	depositAvailable: true,
+	depositPath: "external" as "external" | "sponsored",
+	depositUnavailableReason: null as string | null,
 	hasWalletAccess: false,
 	pathname: "/api-wallet",
 	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
@@ -19,18 +22,26 @@ const testState = vi.hoisted(() => ({
 vi.mock("@gatu/ui", () => ({
 	Badge: ({ children }: { children: ReactNode }) => createElement("span", null, children),
 	Button: ({
+		"aria-label": ariaLabel,
 		"aria-busy": ariaBusy,
 		children,
 		disabled,
 		iconLeft,
 		onClick,
 	}: {
+		"aria-label"?: string;
 		"aria-busy"?: boolean;
 		children: ReactNode;
 		disabled?: boolean;
 		iconLeft?: ReactNode;
 		onClick?: () => void;
-	}) => createElement("button", { "aria-busy": ariaBusy, disabled, onClick, type: "button" }, iconLeft, children),
+	}) =>
+		createElement(
+			"button",
+			{ "aria-busy": ariaBusy, "aria-label": ariaLabel, disabled, onClick, type: "button" },
+			iconLeft,
+			children,
+		),
 	ButtonIcon: ({
 		"aria-busy": ariaBusy,
 		"aria-label": ariaLabel,
@@ -113,8 +124,17 @@ vi.mock("@/hooks/trade/use-trade-home-path", () => ({
 	useTradeHomePath: () => "/trade/HYPE",
 }));
 
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		path: testState.depositPath,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.depositUnavailableReason,
+	}),
+}));
+
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ tradeRestricted: false }),
+	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -139,6 +159,9 @@ describe("MobileNavDrawer", () => {
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.depositOpen.mockReset();
+		testState.depositAvailable = true;
+		testState.depositPath = "external";
+		testState.depositUnavailableReason = null;
 		testState.hasWalletAccess = false;
 		testState.pathname = "/api-wallet";
 		testState.preloadGlobalModal.mockReset();
@@ -301,5 +324,20 @@ describe("MobileNavDrawer", () => {
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="drawer-close-complete"]')?.click());
 		expect(testState.depositOpen).toHaveBeenCalledWith("deposit");
 		expect(testState.settingsOpen).not.toHaveBeenCalled();
+	});
+
+	it("does not preload an unavailable Deposit path and shows its reason", async () => {
+		testState.hasWalletAccess = true;
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const depositButton = container.querySelector<HTMLButtonElement>('button[aria-label="Deposit unavailable"]');
+		expect(depositButton?.disabled).toBe(true);
+		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
+		await act(async () => depositButton?.click());
+		expect(testState.preloadGlobalModal).not.toHaveBeenCalled();
+		expect(testState.depositOpen).not.toHaveBeenCalled();
 	});
 });

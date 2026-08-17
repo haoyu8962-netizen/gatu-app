@@ -7,6 +7,7 @@ import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -44,6 +45,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
 	const { open: openSwapModal } = useSwapModalActions();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -211,31 +213,43 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	}
 
 	function renderPlaceholder() {
-		if (!isConnected) return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
+		if (!isConnected) {
+			if (depositAvailability.path === "sponsored") {
+				return renderDepositPlaceholder(t`Open Deposit to prepare your email wallet.`);
+			}
+			return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
+		}
 		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
 		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
 		if (!accountModeReady) {
 			return <Placeholder variant="error">{t`Select a supported account mode to view balances.`}</Placeholder>;
 		}
 		if (balances.length === 0) {
-			return (
-				<Placeholder>
-					<div className="flex flex-col items-center gap-2.5 text-center">
-						<span>{t`No balances found. Deposit funds to start trading.`}</span>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							onClick={() => openDepositModal("deposit")}
-							className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"
-						>
-							{t`Deposit`}
-						</Button>
-					</div>
-				</Placeholder>
-			);
+			return renderDepositPlaceholder(t`No balances found. Deposit funds to start trading.`);
 		}
 		return null;
+	}
+
+	function renderDepositPlaceholder(defaultLabel: string) {
+		return (
+			<Placeholder>
+				<div className="flex flex-col items-center gap-2.5 text-center">
+					<span>{depositAvailability.unavailableReason ?? defaultLabel}</span>
+					<Button
+						variant="outline"
+						intent="neutral"
+						size="xs"
+						disabled={!depositAvailability.available}
+						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+						aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+						title={depositAvailability.unavailableReason ?? undefined}
+						className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"
+					>
+						{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					</Button>
+				</div>
+			</Placeholder>
+		);
 	}
 
 	const placeholder = renderPlaceholder();

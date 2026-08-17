@@ -46,17 +46,27 @@ The terminal must preserve this ordering:
    or spot balance means funded. Missing or failed snapshots never mean empty.
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
    both snapshots definitively establish that the account is empty. Enabling
-   a deposit also requires a successful, runtime-validated `usdcRouting`
-   response for the active environment. New deposits are CCTP-only: an exact,
-   fresh `depositRoute === "cctp"` is required. A `bridge` response pauses
-   deposits and must not reactivate retired manual or automatic Bridge2
-   submission. A connected external wallet may use Circle's self-submitted
-   `CctpExtension` flow after dynamic fee and Fast Transfer allowance checks.
-   An email wallet may sign for `CctpExtensionV2`, with the configured Privy
-   Smart Wallet and Arbitrum paymaster/bundler sponsoring submission. Each path
-   and environment requires its independent fail-closed release flag after
-   funded end-to-end review. Loading, failed, or malformed routing data never
-   permits submission.
+   a deposit first requires the shared capability decision to classify the
+   authenticated owner's exact wallet path as external-wallet or sponsored
+   embedded-wallet. It then requires that exact path's independent environment
+   release flag and a completed, unrestricted geo verdict. The external path
+   also requires its exact owner signer to be ready. An eligible authenticated
+   email session may open the modal before its embedded signer is activated so
+   the modal can create or activate that exact wallet, but it must not reveal a
+   funding address before readiness succeeds. Any other unavailable capability
+   must not open a dead-end deposit dialog. A successful, runtime-validated
+   `usdcRouting` response is also required for the active environment. New
+   deposits are CCTP-only: an exact, fresh `depositRoute === "cctp"` is
+   required. A `bridge` response pauses deposits and must not reactivate
+   retired manual or automatic Bridge2 submission. A connected external wallet
+   may use Circle's self-submitted `CctpExtension` flow after dynamic fee and
+   Fast Transfer allowance checks. An email wallet may sign for
+   `CctpExtensionV2`, with the configured Privy Smart Wallet and Arbitrum
+   paymaster/bundler sponsoring submission. Before exposing its real funding
+   address, the UI read-only preflights the exact embedded wallet's Smart Wallet
+   client, target Arbitrum chain, and paymaster. Execution repeats those checks;
+   the preflight does not prove paymaster policy, quota, or end-to-end success.
+   Loading, failed, or malformed routing or geo data never permits submission.
 8. **Approve the builder fee when needed for an action.** Do not add this
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
@@ -158,6 +168,23 @@ an explicit security reset.
   Privy Smart Wallet/paymaster submission path. Recovery validates the exact
   V2 event by owner, amount, and nonce; it does not infer the owner from the
   account-abstraction outer transaction.
+- Every deposit surface uses the shared exact-wallet capability decision.
+  Wallet path, environment-specific release flag, and resolved geo verdict are
+  independent gates; a state that fails any gate is unavailable and must not
+  open the deposit modal from onboarding, desktop, mobile, portfolio, or empty
+  balance views. External paths also require the exact owner signer to be
+  ready. Eligible authenticated email paths may enter the modal before signer
+  activation only because that modal creates or activates the exact embedded
+  wallet and continues to hide its funding address until readiness succeeds.
+- Sponsored-email funding addresses remain hidden until the exact embedded
+  wallet can construct a Smart Wallet client for the target Arbitrum chain and
+  exposes a configured paymaster. This read-only check does not establish
+  ZeroDev selector policy, quota capacity, or funded end-to-end correctness.
+- After acquiring the per-owner funds-action lock and before requesting a
+  deposit signature, refetch geo and fail closed on provider failure, timeout,
+  invalid or incomplete IPdata data, proxy signals, or a restricted verdict.
+  IPdata parsing is strict; region-scoped countries such as Canada do not pass
+  without a valid region.
 - Account-mode changes and mode-dependent funds actions acquire one Web Lock
   scoped by Hyperliquid environment and owner. The lock is held until the SDK
   request settles. Lock acquisition times out after ten seconds; an acquired
@@ -178,6 +205,8 @@ an explicit security reset.
 | Builder-fee approval | `packages/hl-react/src/signing/use-builder-fee-approval.ts` |
 | Action authorization | `packages/hl-react/src/signing/use-trading-authorization.ts` |
 | Funding-state derivation | `apps/terminal/src/domain/trade/onboarding.ts` |
+| Deposit capability derivation | `apps/terminal/src/domain/trade/deposit-availability.ts`, `apps/terminal/src/hooks/trade/use-deposit-availability.ts` |
+| Geo parsing and fail-closed query | `apps/terminal/src/lib/geo/ipdata-geo.ts`, `get-geo.ts`, `apps/terminal/src/hooks/use-geo-restriction.ts` |
 | USDC routing validation | `apps/terminal/src/domain/trade/usdc-routing.ts` |
 | USDC routing query and pre-submit guard | `apps/terminal/src/hooks/trade/use-usdc-routing.ts` |
 | Runtime flow orchestration | `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx` |
@@ -202,6 +231,11 @@ At minimum, changes to this flow must cover:
 - temporary signer loss and restoration, confirmed wallet changes, explicit
   logout, duplicate registration, timeout, and background/foreground transitions;
 - funded, empty, loading, and failed account snapshots;
+- external and embedded wallet-path classification, each environment release
+  flag, disconnected and Agent-only external sessions, authenticated email
+  sessions awaiting exact embedded-wallet activation, restricted geo, and
+  unresolved geo across every desktop, mobile, portfolio, and onboarding
+  deposit entry;
 - `usdcRouting` loading, error, malformed, `cctp`, and `bridge` responses in
   both mainnet and testnet query scopes;
 - a route change immediately before deposit or withdrawal aborting without a
@@ -212,10 +246,18 @@ At minimum, changes to this flow must cover:
 - external CCTP fee/allowance changes, testnet mainnet-state and 1,000-USDC
   gates, receipt mismatch, and recovery after refresh;
 - sponsored CCTP exact-wallet activation, deterministic nonce binding,
-  environment gates, paymaster failure, success/skipped event discrimination,
-  account-abstraction outer transaction shape, and refresh recovery;
+  environment gates, address-hiding Smart Wallet/chain/paymaster readiness,
+  paymaster failure, success/skipped event discrimination, account-abstraction
+  outer transaction shape, and refresh recovery;
+- a fresh geo refetch occurring inside the funds lock before signature, with
+  IPdata timeout, provider error, malformed response, proxy signals, and Canada
+  without a region all failing closed;
 - same-owner funds actions serializing across tabs until the first SDK promise
   settles, with unavailable Web Locks and bounded acquisition waits failing
   closed;
 - builder-fee approval remaining separate from Agent registration;
 - desktop and mobile modal presentation.
+
+Production deployment preflight validation also requires a non-empty, unquoted
+`IPDATA_API_KEY`. Configure and rotate it in the runtime secret store; never
+commit, log, or expose its value through a `VITE_` client variable.

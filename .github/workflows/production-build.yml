@@ -49,6 +49,30 @@ jobs:
           src/lib/tests/tradingview-*.test.ts
           src/lib/tests/tradingview-*.test.tsx
 
+      - name: Test Deposit, CCTP, routing, and geo guards
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/cctp-deposit-catalogs.test.ts
+          src/lib/tests/cctp-deposit-tracking.test.ts
+          src/lib/tests/cctp-deposit.test.ts
+          src/lib/tests/deposit-availability.test.tsx
+          src/lib/tests/deposit-broadcast.test.ts
+          src/lib/tests/deposit-empty-balances-entry.test.tsx
+          src/lib/tests/deposit-execution-state.test.ts
+          src/lib/tests/deposit-form-routing.test.tsx
+          src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
+          src/lib/tests/deposit-order-cta.test.tsx
+          src/lib/tests/embedded-deposit-auto-bridge.test.tsx
+          src/lib/tests/referral-action-geo.test.ts
+          src/lib/tests/trading-onboarding-gate.test.tsx
+          src/lib/tests/usdc-routing.test.ts
+          src/lib/tests/use-cctp-deposit-tracking.test.tsx
+          src/lib/tests/use-deposit-routing-guard.test.tsx
+          src/lib/tests/use-email-embedded-wallet.test.tsx
+          src/lib/tests/use-geo-restriction.test.tsx
+          src/lib/tests/use-usdc-routing.test.ts
+
       - name: Build production terminal and enforce bundle budget
         run: pnpm --filter @gatu/terminal build
         env:

@@ -26,6 +26,7 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
@@ -131,7 +132,8 @@ interface Props {
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { address, isConnected, sessionMode } = useWalletSession();
+	const { address, isConnected } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
@@ -189,7 +191,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { tradeRestricted } = useGeoRestriction();
+	const geoRestriction = useGeoRestriction();
+	const tradeActionsBlocked = geoRestriction.actionsBlocked;
+	const tradeRestricted = geoRestriction.tradeRestricted;
+	const tradingUnavailableReason = !geoRestriction.isResolved
+		? geoRestriction.isError
+			? t`Unable to verify regional availability. Trading is temporarily unavailable.`
+			: t`Checking regional availability. Trading is temporarily unavailable.`
+		: null;
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
@@ -522,7 +531,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	);
 
 	async function handleApprove() {
-		if (tradeRestricted) return;
+		if (tradeActionsBlocked) return;
 		if (isRegistering) return;
 		if (!isConnected || !address) {
 			setWalletModalOpen(true);
@@ -550,7 +559,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}
 
 	function canExecuteOrder() {
-		if (tradeRestricted) return false;
+		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
 		if (isAvailabilityBlocked) return false;
 		if (!validation.canSubmit) return false;
@@ -653,7 +662,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availableBalance,
 		isBalanceLoading: isAvailabilityLoading,
 		hasBalanceError: hasAvailabilityError,
-		canDeposit: sessionMode === "wallet",
+		canDeposit: depositAvailability.available,
+		depositUnavailableReason: depositAvailability.unavailableReason,
+		tradingUnavailableReason,
 		needsApproval: validation.needsApproval,
 		isAgentReady,
 		isApprovalLoading,
@@ -670,6 +681,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			loading: t`Loading...`,
 			balanceError: t`Failed to load balances.`,
 			deposit: t`Deposit`,
+			depositUnavailable: t`Deposit unavailable`,
 			signing: t`Signing...`,
 			enableTrading: t`Enable Trading`,
 		},
@@ -1047,7 +1059,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			>
 				{displayValidationError && <p className="text-xs text-error mb-2">{displayValidationError}</p>}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
-				{tradeRestricted ? (
+				{tradeRestricted && !buttonContent.disabledReason ? (
 					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">
 						{t`Trading is not available in your region`}
 					</Button>
@@ -1068,6 +1080,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{buttonContent.text}
 					</Button>
 				)}
+				{buttonContent.disabledReason ? (
+					<output className="mt-2 text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
+				) : null}
 				{!embedded && <MobileBottomNavSpacer />}
 			</div>
 
@@ -1142,6 +1157,8 @@ interface MobileButtonContentInput {
 	isBalanceLoading: boolean;
 	hasBalanceError: boolean;
 	canDeposit: boolean;
+	depositUnavailableReason?: string | null;
+	tradingUnavailableReason?: string | null;
 	needsApproval: boolean;
 	isAgentReady: boolean;
 	isApprovalLoading: boolean;
@@ -1166,11 +1183,12 @@ interface MobileOrderButtonLabels {
 	loading: string;
 	balanceError: string;
 	deposit: string;
+	depositUnavailable: string;
 	signing: string;
 	enableTrading: string;
 }
 
-function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
+export function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
 	const stage = getOrderActionStage({
 		isConnected: input.isConnected,
 		needsChainSwitch: input.needsChainSwitch,
@@ -1201,7 +1219,8 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 		return {
 			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.isApprovalLoading, input.labels),
 			action: input.onApprove,
-			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove,
+			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove || !!input.tradingUnavailableReason,
+			disabledReason: input.tradingUnavailableReason ?? undefined,
 			variant: "cyan",
 		};
 	}
@@ -1223,16 +1242,18 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	}
 	if (stage === "deposit") {
 		return {
-			text: input.labels.deposit,
+			text: input.canDeposit ? input.labels.deposit : input.labels.depositUnavailable,
 			action: input.canDeposit ? input.onDeposit : () => {},
 			disabled: !input.canDeposit,
+			disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
 			variant: "cyan",
 		};
 	}
 	return {
 		text: input.sideLabel,
 		action: input.onSubmit,
-		disabled: !input.canSubmit || input.isSubmitting,
+		disabled: !input.canSubmit || input.isSubmitting || !!input.tradingUnavailableReason,
+		disabledReason: input.tradingUnavailableReason ?? undefined,
 		variant: input.side,
 	};
 }

@@ -77,6 +77,11 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		onRetryRouting: vi.fn(),
 		networkName: "Arbitrum",
 		sponsoredCctpEnabled: true,
+		sponsoredCctpReadiness: {
+			status: "ready" as const,
+			failure: null,
+			retry: vi.fn(),
+		},
 		requiresExplicitFundingDeposit: false,
 		cctpFee: null,
 		cctpNetAmount: null,
@@ -123,6 +128,23 @@ describe("DepositForm routing gate", () => {
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 5 USDC");
+	});
+
+	it("withholds a ready funding address when deposit capability is unavailable", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			depositUnavailableReason: "Unable to verify regional availability.",
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const fundingAddress = container.querySelector('[data-testid="funding-address"]');
+		expect(fundingAddress?.getAttribute("data-address-state")).toBe("unavailable");
+		expect(fundingAddress?.hasAttribute("data-address")).toBe(false);
+		expect(container.textContent).toContain("Unable to verify regional availability.");
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
 	});
 
 	it("keeps testnet funding automatic without rendering the mainnet confirmation action", async () => {
@@ -246,6 +268,100 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+	});
+
+	it("shows a recoverable wallet-creation error instead of waiting on readiness forever", async () => {
+		const onRetryFundingAddress = vi.fn();
+		const props = {
+			...createProps("ready", "cctp"),
+			fundingAddress: undefined,
+			fundingAddressError: "Embedded wallet creation failed.",
+			onRetryFundingAddress,
+			sponsoredCctpReadiness: {
+				status: "loading" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
+		expect(container.textContent).toContain("Embedded wallet creation failed.");
+		expect(container.textContent).not.toContain("Checking gas-sponsored wallet readiness");
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		act(() => retryButton?.click());
+		expect(onRetryFundingAddress).toHaveBeenCalledOnce();
+	});
+
+	it("withholds the funding address while gas-sponsored wallet readiness is loading", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			sponsoredCctpReadiness: {
+				status: "loading" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="funding-address"]')?.hasAttribute("data-address")).toBe(false);
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.textContent).toContain("Checking gas-sponsored wallet readiness");
+	});
+
+	it.each([
+		{
+			failure: "build-gate-disabled" as const,
+			message: "Gas-sponsored CCTP deposits are not enabled",
+			canRetry: false,
+		},
+		{
+			failure: "smart-client-unavailable" as const,
+			message: "Unable to prepare the gas-sponsored wallet",
+			canRetry: true,
+		},
+		{
+			failure: "wrong-chain" as const,
+			message: "configured for a different Arbitrum network",
+			canRetry: true,
+		},
+		{
+			failure: "paymaster-unavailable" as const,
+			message: "Gas sponsorship is unavailable",
+			canRetry: true,
+		},
+	])("withholds the funding address when readiness fails with $failure", async ({ canRetry, failure, message }) => {
+		const retry = vi.fn();
+		const props = {
+			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
+			sponsoredCctpReadiness: { status: "error" as const, failure, retry },
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="funding-address"]')?.hasAttribute("data-address")).toBe(false);
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.textContent).toContain(message);
+		expect(
+			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 9 USDC")),
+		).toBe(false);
+
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(!!retryButton).toBe(canRetry);
+		act(() => retryButton?.click());
+		expect(retry).toHaveBeenCalledTimes(canRetry ? 1 : 0);
 	});
 
 	it("does not expose the funding address when sponsored CCTP is disabled", async () => {

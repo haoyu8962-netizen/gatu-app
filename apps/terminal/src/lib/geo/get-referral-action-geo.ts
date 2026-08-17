@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestIP } from "@tanstack/react-start/server";
-import { z } from "zod";
 import { isTradeRestricted } from "@/config/geo";
+import { parseIpdataGeoResponse } from "@/lib/geo/ipdata-geo";
 
 const IPDATA_BASE = "https://api.ipdata.co";
 const REFERRAL_GEO_LEASE_MS = 60_000;
@@ -30,27 +30,14 @@ export function deriveReferralActionGeoDecision(
 	value: unknown,
 	checkedAt: number,
 ): Extract<ReferralActionGeoDecision, { status: "allowed" | "blocked" }> | null {
-	const result = z
-		.object({
-			country_code: z.string().regex(/^[A-Z]{2}$/),
-			region_code: z.string().nullable().optional(),
-			threat: z
-				.object({
-					is_anonymous: z.boolean(),
-					is_proxy: z.boolean(),
-					is_tor: z.boolean(),
-				})
-				.passthrough(),
-		})
-		.passthrough()
-		.safeParse(value);
-	if (!result.success) return null;
+	const parsed = parseIpdataGeoResponse(value);
+	if (!parsed) return null;
 
-	const { country_code: country, region_code: region, threat } = result.data;
-	if (threat.is_proxy || threat.is_tor || threat.is_anonymous) {
+	const { country, proxy, tradeRestricted } = parsed;
+	if (proxy) {
 		return { checkedAt, country, reason: "proxy", status: "blocked" };
 	}
-	if (isTradeRestricted(country, region)) {
+	if (tradeRestricted) {
 		return { checkedAt, country, reason: "jurisdiction", status: "blocked" };
 	}
 	return { checkedAt, country, status: "allowed", ttlMs: REFERRAL_GEO_LEASE_MS };

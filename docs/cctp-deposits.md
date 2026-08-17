@@ -37,6 +37,28 @@ they are not themselves user consent to move funds. In particular, enabling
 the sponsored mainnet flag must not make the application-wide recovery host
 sign or broadcast a deposit.
 
+The current production deployment contract is Sponsored-only on Mainnet:
+`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`, while the Mainnet external
+wallet flag must remain empty. The production validator rejects a release that
+enables the external Mainnet path. That path remains implemented behind its
+independent gate for testnet verification or a future separately authorized
+release; its presence in the code does not mean it is currently available in
+production.
+
+Every deposit entry point uses the same fail-closed capability decision before
+opening the modal or starting empty-account onboarding. That decision first
+classifies the authenticated owner's exact wallet path as either
+external-wallet or sponsored embedded-wallet, then requires that path's
+independent environment release flag and a completed, unrestricted geo verdict.
+The external path additionally requires its exact owner signer to be ready, so
+Agent-only and disconnected external sessions remain unavailable. An eligible,
+authenticated email session may open the modal before its exact embedded signer
+has been created or activated; the modal owns that activation and still withholds
+the funding address until readiness succeeds. Unresolved-geo, restricted-geo,
+and disabled-path states must not open a modal that can only fail later. A
+release flag for the other wallet path or environment never satisfies this
+check.
+
 The implementation uses:
 
 - Circle native USDC for the selected Arbitrum environment;
@@ -77,6 +99,21 @@ build flag has no user or wallet allowlist: enabling it in a public bundle makes
 the explicitly confirmed mainnet path available to every eligible email-wallet
 user.
 
+Before the UI reveals the exact embedded-wallet funding address, it performs a
+read-only readiness check for that exact embedded wallet: Privy must construct
+its Smart Wallet client for the selected Arbitrum chain, the client must report
+that same target chain, and a paymaster must be configured. The address remains
+hidden while the check is pending or after any of those checks fails. The
+execution path repeats the exact-owner, chain, paymaster, routing, fee,
+allowance, balance, and release checks inside the funds-action boundary before
+any signature or broadcast.
+
+This readiness check does not sign, send, or move funds. It also does not prove
+that the ZeroDev contract-selector policy is correct, that sponsorship quota or
+rate limits have capacity, or that the complete UserOperation-to-HyperCore path
+works. Those properties still require dashboard review, monitoring, and a
+funded end-to-end release check.
+
 Sending USDC to the displayed embedded-wallet address does not by itself
 authorize a mainnet CCTP deposit. After funds arrive, the modal reviews the
 complete available native-USDC balance and current Circle fee. The user must
@@ -98,6 +135,29 @@ mainnet background deposit.
 
 The application never stores an EIP-3009 authorization signature in browser
 storage.
+
+## Geo Enforcement
+
+Deposit capability requires a resolved, unrestricted server geo verdict. The
+deposit execution path does not rely only on that cached UI state: after it has
+acquired the per-owner funds lock and before requesting an EIP-3009 signature,
+it freshly refetches the verdict. A provider error, timeout, missing client IP,
+missing credential, malformed payload, invalid country code, proxy/Tor/
+anonymous signal, or restricted jurisdiction fails closed for the funds
+action. Browsing remains available.
+
+IPdata responses are parsed through one strict shared schema. Every accepted
+response requires a two-letter uppercase country code and the core proxy, Tor,
+and anonymous boolean threat fields. When IPdata returns its separate VPN or
+iCloud Private Relay signals, either one also blocks the action. Countries with
+region-specific restrictions require a valid region code; in particular, a
+Canada response without a region is unresolved and cannot permit a deposit.
+
+Production deployment preflight validation requires `IPDATA_API_KEY` in the
+runtime environment. Its value must be non-empty and unquoted. Operators must
+configure and periodically rotate this credential through the deployment
+secret store; the real value must never be committed, logged, placed in a
+client build variable, or copied into this document.
 
 ## Paymaster Production Policy
 

@@ -10,6 +10,9 @@ import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	hasWalletAccess: true,
+	depositAvailable: true,
+	depositPath: "external" as "external" | "sponsored",
+	depositUnavailableReason: null as string | null,
 	isTestnet: false,
 	navigate: vi.fn(),
 	openDepositModal: vi.fn(),
@@ -20,8 +23,22 @@ const testState = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
-	Button: ({ children, iconLeft, onClick }: { children: ReactNode; iconLeft?: ReactNode; onClick?: () => void }) =>
-		createElement("button", { onClick, type: "button" }, iconLeft, children),
+	Button: ({
+		"aria-label": ariaLabel,
+		children,
+		disabled,
+		iconLeft,
+		onClick,
+		title,
+	}: {
+		"aria-label"?: string;
+		children: ReactNode;
+		disabled?: boolean;
+		iconLeft?: ReactNode;
+		onClick?: () => void;
+		title?: string;
+	}) =>
+		createElement("button", { "aria-label": ariaLabel, disabled, onClick, title, type: "button" }, iconLeft, children),
 	ButtonIcon: ({
 		"aria-label": ariaLabel,
 		children,
@@ -137,8 +154,19 @@ vi.mock("@/hooks/trade/use-trade-home-path", () => ({
 	useTradeHomePath: () => testState.tradeHomePath,
 }));
 
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable && !testState.tradeRestricted,
+		path: testState.depositPath,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.tradeRestricted
+			? "Deposits are not available in your region."
+			: testState.depositUnavailableReason,
+	}),
+}));
+
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ tradeRestricted: testState.tradeRestricted }),
+	useGeoRestriction: () => ({ actionsBlocked: testState.tradeRestricted, tradeRestricted: testState.tradeRestricted }),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -169,6 +197,9 @@ describe("TopNav", () => {
 		vi.clearAllMocks();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.hasWalletAccess = true;
+		testState.depositAvailable = true;
+		testState.depositPath = "external";
+		testState.depositUnavailableReason = null;
 		testState.isTestnet = false;
 		testState.pathname = "/trade/HYPE";
 		testState.tradeHomePath = "/trade/HYPE";
@@ -341,7 +372,21 @@ describe("TopNav", () => {
 		testState.hasWalletAccess = true;
 		testState.tradeRestricted = true;
 		renderNav();
-		expect(findButton("Deposit")).toBeUndefined();
+		const restrictedDeposit = findButton("Deposit unavailable");
+		expect(restrictedDeposit?.disabled).toBe(true);
+		expect(restrictedDeposit?.getAttribute("aria-label")).toBe("Deposit unavailable");
+		expect(restrictedDeposit?.title).toBe("Deposits are not available in your region.");
+		act(() => restrictedDeposit?.click());
+		expect(testState.openDepositModal).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows an email Deposit entry before its embedded signer is active", () => {
+		testState.hasWalletAccess = false;
+		testState.depositPath = "sponsored";
+		renderNav();
+
+		act(() => findButton("Deposit")?.click());
+		expect(testState.openDepositModal).toHaveBeenCalledWith("deposit");
 	});
 
 	it("keeps account, theme, language, and settings controls mounted", () => {

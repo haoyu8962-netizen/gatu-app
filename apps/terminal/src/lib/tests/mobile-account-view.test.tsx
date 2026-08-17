@@ -62,6 +62,8 @@ const balanceSnapshot = {
 
 const testState = {
 	accountAbstraction: "unifiedAccount",
+	depositAvailable: true,
+	depositUnavailableReason: null as string | null,
 	isDataStale: false,
 	perpStateStatus: "success",
 	snapshotsReady: true,
@@ -117,14 +119,25 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ tradeRestricted: false }),
+	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
+		hasWalletAccess: true,
 		isConnected: true,
 		sessionMode: "wallet",
 		walletAddress: "0x1111111111111111111111111111111111111111",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		path: "external",
+		reason: testState.depositAvailable ? null : "external-deposit-disabled",
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.depositUnavailableReason,
 	}),
 }));
 
@@ -150,6 +163,8 @@ describe("mobile account view", () => {
 
 	beforeEach(() => {
 		testState.accountAbstraction = "unifiedAccount";
+		testState.depositAvailable = true;
+		testState.depositUnavailableReason = null;
 		testState.isDataStale = false;
 		testState.perpStateStatus = "success";
 		testState.snapshotsReady = true;
@@ -287,6 +302,27 @@ describe("mobile account view", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
 		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("keeps an unavailable Deposit action inert and shows the release reason", () => {
+		testState.accountAbstraction = "disabled";
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+
+		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Deposit unavailable",
+		);
+		expect(depositButton?.disabled).toBe(true);
+		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
+		act(() => depositButton?.click());
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 	});
 
 	it("leaves wallet identity controls to the shared mobile header", () => {

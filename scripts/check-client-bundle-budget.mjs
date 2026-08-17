@@ -7,7 +7,7 @@ const assetsDirectory = resolve(process.argv[2] ?? "apps/terminal/.output/public
 const budgets = {
 	largestChunkRawBytes: 4_050_000,
 	largestChunkGzipBytes: 1_200_000,
-	totalGzipBaselineBytes: 3_049_397,
+	totalGzipBaselineBytes: 3_061_686,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],

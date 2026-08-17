@@ -33,6 +33,7 @@ import {
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
 import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	finishDepositExecution,
@@ -82,6 +83,18 @@ type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
 type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
 type WalletProviderStatus = "idle" | "loading" | "ready" | "error";
 
+export type SponsoredCctpReadinessFailure =
+	| "build-gate-disabled"
+	| "smart-client-unavailable"
+	| "wrong-chain"
+	| "paymaster-unavailable";
+
+export interface SponsoredCctpReadiness {
+	status: "idle" | "loading" | "ready" | "error";
+	failure: SponsoredCctpReadinessFailure | null;
+	retry: () => void;
+}
+
 interface ValidationResult {
 	valid: boolean;
 	error: string | null;
@@ -101,6 +114,7 @@ export interface UseDepositResult {
 	walletProviderError: Error | null;
 	networkName: string;
 	sponsoredCctpEnabled: boolean;
+	sponsoredCctpReadiness: SponsoredCctpReadiness;
 	depositRoute: DepositRoute;
 	balance: string;
 	balanceRaw: bigint | undefined;
@@ -130,6 +144,7 @@ interface UseDepositOptions {
 	walletAddress?: `0x${string}`;
 	depositRoute: DepositRoute;
 	expectedCctpMaxFeeRaw?: bigint;
+	sponsoredReadinessEnabled?: boolean;
 }
 
 interface UsdcBalanceState {
@@ -150,6 +165,12 @@ interface ProviderChainState {
 	chainId: number | null;
 	status: WalletProviderStatus;
 	error: Error | null;
+}
+
+interface SponsoredCctpReadinessState {
+	key: string;
+	status: SponsoredCctpReadiness["status"];
+	failure: SponsoredCctpReadinessFailure | null;
 }
 
 type ReadyWalletClient = WalletClient<Transport, Chain, Account>;
@@ -237,6 +258,14 @@ function createProviderChainState(
 
 function createIdleBalanceState(key = ""): UsdcBalanceState {
 	return { key, status: "idle", raw: undefined, error: null };
+}
+
+function createSponsoredCctpReadinessState(
+	key: string,
+	status: SponsoredCctpReadiness["status"],
+	failure: SponsoredCctpReadinessFailure | null = null,
+): SponsoredCctpReadinessState {
+	return { key, status, failure };
 }
 
 function toError(error: unknown): Error {
@@ -908,6 +937,118 @@ function useDepositUsdcBalance(
 	};
 }
 
+function useSponsoredCctpReadiness({
+	chainId,
+	enabled,
+	featureEnabled,
+	getClientForChain,
+	wallet,
+	walletAddress,
+	walletsReady,
+}: {
+	chainId: number;
+	enabled: boolean;
+	featureEnabled: boolean;
+	getClientForChain: ReturnType<typeof useSmartWallets>["getClientForChain"];
+	wallet: ConnectedWallet | undefined;
+	walletAddress: `0x${string}` | undefined;
+	walletsReady: boolean;
+}): SponsoredCctpReadiness {
+	const [retryAttempt, setRetryAttempt] = useState(0);
+	const [state, setState] = useState<SponsoredCctpReadinessState>(() => createSponsoredCctpReadinessState("", "idle"));
+	const requestIdRef = useRef(0);
+	const readinessKey = [
+		enabled ? "enabled" : "disabled",
+		featureEnabled ? "released" : "gated",
+		chainId,
+		walletAddress?.toLowerCase() ?? "no-address",
+		wallet?.address.toLowerCase() ?? "no-wallet",
+		wallet?.chainId ?? "no-chain",
+		walletsReady ? "wallets-ready" : "wallets-loading",
+		retryAttempt,
+	].join(":");
+	const inputStatus: SponsoredCctpReadiness["status"] = !enabled
+		? "idle"
+		: !featureEnabled || (walletAddress && walletsReady && !wallet)
+			? "error"
+			: "loading";
+	const inputFailure: SponsoredCctpReadinessFailure | null = !enabled
+		? null
+		: !featureEnabled
+			? "build-gate-disabled"
+			: walletAddress && walletsReady && !wallet
+				? "smart-client-unavailable"
+				: null;
+
+	useEffect(() => {
+		const requestId = requestIdRef.current + 1;
+		requestIdRef.current = requestId;
+		setState(createSponsoredCctpReadinessState(readinessKey, inputStatus, inputFailure));
+		if (!enabled || !featureEnabled || !walletAddress || !walletsReady || !wallet) return;
+
+		let cancelled = false;
+		void (async () => {
+			try {
+				const client = await getClientForChain({ id: chainId });
+				if (cancelled || requestIdRef.current !== requestId) return;
+				if (!client) {
+					setState(createSponsoredCctpReadinessState(readinessKey, "error", "smart-client-unavailable"));
+					return;
+				}
+
+				const clientChainId = getClientChainId(client);
+				if (clientChainId === null) {
+					setState(createSponsoredCctpReadinessState(readinessKey, "error", "smart-client-unavailable"));
+					return;
+				}
+				if (clientChainId !== chainId) {
+					setState(createSponsoredCctpReadinessState(readinessKey, "error", "wrong-chain"));
+					return;
+				}
+				if (!client.paymaster) {
+					setState(createSponsoredCctpReadinessState(readinessKey, "error", "paymaster-unavailable"));
+					return;
+				}
+
+				setState(createSponsoredCctpReadinessState(readinessKey, "ready"));
+			} catch {
+				if (!cancelled && requestIdRef.current === requestId) {
+					setState(createSponsoredCctpReadinessState(readinessKey, "error", "smart-client-unavailable"));
+				}
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		chainId,
+		enabled,
+		featureEnabled,
+		getClientForChain,
+		inputFailure,
+		inputStatus,
+		readinessKey,
+		wallet,
+		walletAddress,
+		walletsReady,
+	]);
+
+	const retry = useCallback(() => {
+		requestIdRef.current += 1;
+		setState(createSponsoredCctpReadinessState(readinessKey, inputStatus, inputFailure));
+		setRetryAttempt((previous) => previous + 1);
+	}, [inputFailure, inputStatus, readinessKey]);
+	const currentState =
+		state.key === readinessKey ? state : createSponsoredCctpReadinessState(readinessKey, inputStatus, inputFailure);
+
+	return {
+		status: currentState.status,
+		failure: currentState.failure,
+		retry,
+	};
+}
+
 export function useDeposit({
 	balanceEnabled = true,
 	balancePollIntervalMs,
@@ -916,6 +1057,7 @@ export function useDeposit({
 	walletAddress: walletAddressOverride,
 	depositRoute,
 	expectedCctpMaxFeeRaw,
+	sponsoredReadinessEnabled = false,
 }: UseDepositOptions): UseDepositResult {
 	const network = getDepositNetwork(useIsTestnet());
 	const bridgeDepositConfig = getDepositConfig(network);
@@ -924,12 +1066,22 @@ export function useDeposit({
 	const depositChain = getDepositChain(network);
 	const { walletAddress: sessionWalletAddress } = useWalletSession();
 	const walletAddress = walletAddressOverride ?? sessionWalletAddress;
-	const { wallets } = useWallets();
+	const { ready: walletsReady, wallets } = useWallets();
 	const { getClientForChain } = useSmartWallets();
 	const depositWallet = useMemo(
 		() => selectDepositWallet(wallets, walletAddress, mode === "smart"),
 		[mode, wallets, walletAddress],
 	);
+	const sponsoredCctpEnabled = depositRoute === "cctp" && isCctpSponsoredDepositEnabled(network === "testnet");
+	const sponsoredCctpReadiness = useSponsoredCctpReadiness({
+		chainId: cctpDepositConfig.chainId,
+		enabled: sponsoredReadinessEnabled && mode === "smart" && depositRoute === "cctp",
+		featureEnabled: sponsoredCctpEnabled,
+		getClientForChain,
+		wallet: depositWallet,
+		walletAddress,
+		walletsReady,
+	});
 	const chain = useDepositChain(depositWallet, walletAddress, depositConfig, mode === "wallet");
 	const {
 		balanceRaw,
@@ -945,6 +1097,7 @@ export function useDeposit({
 	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const state = useDepositExecutionState(executionKey);
 	const assertFreshSelectedDepositRoute = useAssertFreshDepositRoute(depositRoute);
+	const { retry: refreshGeoRestriction } = useGeoRestriction();
 
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
@@ -1017,6 +1170,13 @@ export function useDeposit({
 				const cctpDepositUser = ready.address;
 				const cctpTrackingEnv = network === "testnet" ? "Testnet" : "Mainnet";
 				const hash = await runWithFundsActionLock(cctpTrackingEnv, ready.address, async () => {
+					const freshGeo = await refreshGeoRestriction();
+					if (freshGeo.isError || !freshGeo.data?.country || !/^[A-Z]{2}$/.test(freshGeo.data.country)) {
+						throw new Error(t`Unable to verify regional availability. This deposit was not submitted.`);
+					}
+					if (freshGeo.data.tradeRestricted || freshGeo.data.proxy) {
+						throw new Error(t`Deposits are not available in your region. This deposit was not submitted.`);
+					}
 					if (amountRaw > CCTP_MAX_DEPOSIT_USDC) {
 						throw new Error(t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
 					}
@@ -1309,6 +1469,7 @@ export function useDeposit({
 			network,
 			publicClient,
 			refetch,
+			refreshGeoRestriction,
 			walletAddress,
 		],
 	);
@@ -1320,7 +1481,8 @@ export function useDeposit({
 	return {
 		...chain,
 		networkName: depositConfig.displayName,
-		sponsoredCctpEnabled: depositRoute === "cctp" && isCctpSponsoredDepositEnabled(network === "testnet"),
+		sponsoredCctpEnabled,
+		sponsoredCctpReadiness,
 		depositRoute,
 		balance,
 		balanceRaw,

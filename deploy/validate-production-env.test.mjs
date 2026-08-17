@@ -19,6 +19,7 @@ function createEnvironmentFiles({
 	agentName = "gatu",
 	mainnetOrigin = "https://app.gatu.ai",
 	testnetOrigin = "https://testnet.gatu.ai",
+	ipdataApiKey = "ipdata-api-key",
 	extraBuild = "",
 } = {}) {
 	const directory = mkdtempSync(resolve(tmpdir(), "gatu-production-env-"));
@@ -42,6 +43,7 @@ function createEnvironmentFiles({
 	writeFileSync(
 		runtimeEnvironmentPath,
 		[
+			...(ipdataApiKey === null ? [] : [`IPDATA_API_KEY=${ipdataApiKey}`]),
 			`GATU_MAINNET_PUBLIC_BASE_URL=${mainnetOrigin}`,
 			`GATU_TESTNET_PUBLIC_BASE_URL=${testnetOrigin}`,
 			`GATU_CCTP_MAINNET_RELEASE_MODE=${releaseMode}`,
@@ -109,6 +111,19 @@ test("rejects non-canonical public origins", () => {
 	const result = validate({ mainnetOrigin: "https://preview.gatu.ai" });
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /GATU_MAINNET_PUBLIC_BASE_URL=https:\/\/app\.gatu\.ai/);
+});
+
+test("rejects a missing or quoted geo lookup credential", () => {
+	for (const [ipdataApiKey, expectedError] of [
+		[null, /must declare IPDATA_API_KEY/],
+		["", /non-empty, unquoted IPDATA_API_KEY/],
+		['"ipdata-api-key"', /non-empty, unquoted IPDATA_API_KEY/],
+		["'ipdata-api-key'", /non-empty, unquoted IPDATA_API_KEY/],
+	]) {
+		const result = validate({ ipdataApiKey });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, expectedError);
+	}
 });
 
 test("rejects ambiguous testnet gate values", () => {

@@ -1,4 +1,4 @@
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -25,6 +25,7 @@ import {
 	useDefaultDexBalances,
 	useSelectedDexBalances,
 } from "@/hooks/trade/use-account-balances";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -70,6 +71,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const tabs = includeTransfers ? [...POSITIONS_TABS, PORTFOLIO_TRANSFERS_TAB] : POSITIONS_TABS;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
 	const [isPending, startTransition] = useTransition();
 	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
 	const tabScrollRef = useRef<HTMLDivElement>(null);
@@ -353,15 +355,22 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 					>
 						{showsFundsActions ? (
 							<>
-								<Button
-									variant="filled"
-									intent="neutral"
-									size="xxs"
-									onClick={() => openDepositModal("deposit")}
-									className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
-								>
-									<Trans context="Trading toolbar action">Deposit</Trans>
-								</Button>
+								<Tooltip content={depositAvailability.unavailableReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="filled"
+											intent="neutral"
+											size="xxs"
+											disabled={!depositAvailability.available}
+											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+											title={depositAvailability.unavailableReason ?? undefined}
+											className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+										>
+											<Trans context="Trading toolbar action">Deposit</Trans>
+										</Button>
+									</span>
+								</Tooltip>
 								<Button
 									variant="outline"
 									intent="neutral"

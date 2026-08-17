@@ -16,6 +16,7 @@ export interface ButtonContent {
 	text: string;
 	action: () => void;
 	disabled: boolean;
+	disabledReason?: string;
 	variant: "cyan" | "buy" | "sell";
 }
 

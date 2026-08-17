@@ -10,6 +10,7 @@ import {
 	useDefaultDexBalances,
 	useSelectedDexBalances,
 } from "@/hooks/trade/use-account-balances";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -37,8 +38,9 @@ export function AccountPanel() {
 	const { t } = useLingui();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { isConnected, sessionMode, walletAddress } = useWalletSession();
-	const { tradeRestricted } = useGeoRestriction();
+	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
+	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
@@ -85,7 +87,6 @@ export function AccountPanel() {
 		!summaryBalances.isDataStale &&
 		summaryBalances.perpStateStatus === "success" &&
 		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success");
-	const hasWalletAccess = sessionMode === "wallet";
 	const fundsActionsReady =
 		accountModeReady &&
 		!selectedBalances.hasError &&
@@ -98,13 +99,18 @@ export function AccountPanel() {
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const internalTransferDisabledReason = !accountModeReady
-		? t`Select a supported account mode before moving funds.`
-		: !fundsActionsReady
-			? t`Balance data is unavailable. Try again after the connection recovers.`
-			: isQuoteBalanceSharedWithPerps(accountAbstraction)
-				? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-				: null;
+	const internalTransferDisabledReason = !hasWalletAccess
+		? t`Connect the owner wallet before moving funds.`
+		: !accountModeReady
+			? t`Select a supported account mode before moving funds.`
+			: !fundsActionsReady
+				? t`Balance data is unavailable. Try again after the connection recovers.`
+				: isQuoteBalanceSharedWithPerps(accountAbstraction)
+					? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+					: null;
+	const depositGeoBlocked =
+		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
+	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 
 	const marginRatioTone = perpMetrics ? getMarginRatioTone(perpMetrics.marginRatio) : null;
 	const perpRows: SummaryRow[] = perpMetrics
@@ -179,14 +185,21 @@ export function AccountPanel() {
 						</>
 					)}
 
-					{tradeRestricted || !hasWalletAccess ? (
+					{depositGeoBlocked ? (
+						<p className="mt-4 text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</p>
+					) : tradeRestricted || !showsFundsActions ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
 						<div className="grid grid-cols-2 gap-2 mt-4">
+							{depositAvailability.unavailableReason ? (
+								<output className="col-span-2 text-center text-xs text-fg-muted">
+									{depositAvailability.unavailableReason}
+								</output>
+							) : null}
 							<Button
 								variant="outline"
 								intent="neutral"
-								disabled={!fundsActionsReady}
+								disabled={!hasWalletAccess || !fundsActionsReady}
 								onClick={() => openDepositModal("withdraw")}
 								aria-label={t`Withdraw`}
 								iconLeft={<UploadSimpleIcon className="size-4" />}
@@ -194,16 +207,22 @@ export function AccountPanel() {
 							>
 								{t`Withdraw`}
 							</Button>
-							<Button
-								variant="filled"
-								intent="neutral"
-								onClick={() => openDepositModal("deposit")}
-								aria-label={t`Deposit`}
-								iconLeft={<DownloadSimpleIcon className="size-4" />}
-								className="rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
-							>
-								{t`Deposit`}
-							</Button>
+							<Tooltip content={depositAvailability.unavailableReason} side="top">
+								<span className="inline-flex w-full">
+									<Button
+										variant="filled"
+										intent="neutral"
+										disabled={!depositAvailability.available}
+										onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+										aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+										title={depositAvailability.unavailableReason ?? undefined}
+										iconLeft={<DownloadSimpleIcon className="size-4" />}
+										className="w-full rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
+									>
+										{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+									</Button>
+								</span>
+							</Tooltip>
 							<Tooltip content={internalTransferDisabledReason} side="top">
 								<span className="inline-flex w-full">
 									<Button
@@ -219,7 +238,7 @@ export function AccountPanel() {
 									</Button>
 								</span>
 							</Tooltip>
-							{showBridgeEntry ? (
+							{hasWalletAccess && showBridgeEntry ? (
 								<Button
 									variant="outline"
 									intent="neutral"

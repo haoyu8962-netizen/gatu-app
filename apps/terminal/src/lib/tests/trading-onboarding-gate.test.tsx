@@ -23,8 +23,13 @@ const testState = vi.hoisted(() => ({
 	},
 	closeConnection: vi.fn(),
 	connectionProps: null as { onClose: () => void; onConnected: () => void } | null,
+	depositAvailable: true,
+	depositAvailabilityReason: null as string | null,
+	depositUnavailableReason: null as string | null,
+	geoResolutionStatus: "resolved" as "loading" | "error" | "resolved",
 	hasWalletAccess: true,
 	openDeposit: vi.fn(),
+	toastError: vi.fn(),
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
 }));
@@ -34,6 +39,19 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		hasWalletAccess: testState.hasWalletAccess,
 		walletAddress: testState.walletAddress,
 	}),
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		geoResolutionStatus: testState.geoResolutionStatus,
+		reason: testState.depositAvailabilityReason,
+		unavailableReason: testState.depositUnavailableReason,
+	}),
+}));
+
+vi.mock("sonner", () => ({
+	toast: { error: testState.toastError },
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -85,9 +103,14 @@ describe("TradingOnboardingGate", () => {
 		};
 		testState.closeConnection.mockReset();
 		testState.connectionProps = null;
+		testState.depositAvailable = true;
+		testState.depositAvailabilityReason = null;
+		testState.depositUnavailableReason = null;
 		testState.env = "Mainnet";
+		testState.geoResolutionStatus = "resolved";
 		testState.hasWalletAccess = true;
 		testState.openDeposit.mockReset();
+		testState.toastError.mockReset();
 		testState.walletAddress = OWNER;
 		resetTradingOnboardingStore();
 	});
@@ -196,6 +219,57 @@ describe("TradingOnboardingGate", () => {
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+	});
+
+	it("reports an unavailable Deposit path instead of opening a guaranteed failure", () => {
+		testState.depositAvailable = false;
+		testState.depositAvailabilityReason = "external-deposit-disabled";
+		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith("Deposits from external wallets are not enabled on Mainnet.");
+	});
+
+	it("preserves empty-account onboarding until regional availability resolves", () => {
+		testState.depositAvailable = false;
+		testState.depositAvailabilityReason = "geo-unresolved";
+		testState.depositUnavailableReason = "Checking regional availability.";
+		testState.geoResolutionStatus = "loading";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+		expect(testState.toastError).not.toHaveBeenCalled();
+
+		testState.depositAvailable = true;
+		testState.depositAvailabilityReason = null;
+		testState.depositUnavailableReason = null;
+		testState.geoResolutionStatus = "resolved";
+		renderGate();
+
+		expect(testState.openDeposit).toHaveBeenCalledOnce();
+		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+	});
+
+	it("reports a terminal regional lookup error instead of waiting silently", () => {
+		testState.depositAvailable = false;
+		testState.depositAvailabilityReason = "geo-unresolved";
+		testState.depositUnavailableReason = "Unable to verify regional availability.";
+		testState.geoResolutionStatus = "error";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith("Unable to verify regional availability.");
+
+		testState.depositAvailable = true;
+		testState.depositAvailabilityReason = null;
+		testState.depositUnavailableReason = null;
+		testState.geoResolutionStatus = "resolved";
+		renderGate();
 		expect(testState.openDeposit).not.toHaveBeenCalled();
 	});
 

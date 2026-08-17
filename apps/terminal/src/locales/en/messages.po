@@ -1363,6 +1363,19 @@ msgid "Checking fresh API wallet data…"
 msgstr "Checking fresh API wallet data…"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Checking gas-sponsored wallet readiness..."
+msgstr "Checking gas-sponsored wallet readiness..."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Checking regional availability. Deposits are temporarily unavailable."
+msgstr "Checking regional availability. Deposits are temporarily unavailable."
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Checking regional availability. Trading is temporarily unavailable."
+msgstr "Checking regional availability. Trading is temporarily unavailable."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Checking the current Hyperliquid deposit route..."
@@ -1927,6 +1940,15 @@ msgstr "Connect or restore the verified owner account to use account-specific Va
 #: src/components/vaults/use-vault-action-controller.ts
 msgid "Connect the exact owner wallet before continuing."
 msgstr "Connect the exact owner wallet before continuing."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Connect the owner wallet before moving funds."
+msgstr "Connect the owner wallet before moving funds."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Connect the owner wallet to deposit."
+msgstr "Connect the owner wallet to deposit."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect the same owner wallet used on desktop before importing phone access."
@@ -2515,7 +2537,10 @@ msgstr "Deployer"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2612,6 +2637,16 @@ msgstr "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed.
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/hooks/trade/use-deposit-availability.ts
+#: src/lib/trade/use-button-content.ts
+msgid "Deposit unavailable"
+msgstr "Deposit unavailable"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Deposit USDC"
+msgstr "Deposit USDC"
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
@@ -2650,6 +2685,30 @@ msgstr "Deposits and withdrawals are not allowed."
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Deposits and withdrawals remain available."
 msgstr "Deposits and withdrawals remain available."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits are not available in your region."
+msgstr "Deposits are not available in your region."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposits are not available in your region. This deposit was not submitted."
+msgstr "Deposits are not available in your region. This deposit was not submitted."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from email wallets are not enabled on Mainnet."
+msgstr "Deposits from email wallets are not enabled on Mainnet."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from email wallets are not enabled on Testnet."
+msgstr "Deposits from email wallets are not enabled on Testnet."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from external wallets are not enabled on Mainnet."
+msgstr "Deposits from external wallets are not enabled on Mainnet."
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Deposits from external wallets are not enabled on Testnet."
+msgstr "Deposits from external wallets are not enabled on Testnet."
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
@@ -3673,7 +3732,12 @@ msgstr "Gaming"
 msgid "Gas ({0})"
 msgstr "Gas ({0})"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Gas sponsorship is unavailable for this Arbitrum network."
+msgstr "Gas sponsorship is unavailable for this Arbitrum network."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5550,6 +5614,12 @@ msgstr "Open a position before placing a trigger order"
 msgid "Open command menu"
 msgstr "Open command menu"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Open Deposit to prepare your email wallet."
+msgstr "Open Deposit to prepare your email wallet."
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
@@ -6908,6 +6978,8 @@ msgstr "Resume tracking"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -8586,6 +8658,10 @@ msgstr "The exchange did not return a final TWAP status. Review active TWAP orde
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
+msgstr "The gas-sponsored wallet is configured for a different Arbitrum network."
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "The generated key remains only in this tab. Do not approve another key or reload the page."
@@ -9731,6 +9807,10 @@ msgstr "Unable to load the current account mode. Reconnect your wallet and try a
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "Unable to load the current CCTP withdrawal fee."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to prepare the gas-sponsored wallet for this network."
+msgstr "Unable to prepare the gas-sponsored wallet for this network."
+
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
@@ -9747,6 +9827,19 @@ msgstr "Unable to verify access"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "Unable to verify available balance"
+
+#: src/hooks/trade/use-deposit-availability.ts
+msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
+msgstr "Unable to verify regional availability. Deposits are temporarily unavailable."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to verify regional availability. This deposit was not submitted."
+msgstr "Unable to verify regional availability. This deposit was not submitted."
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Unable to verify regional availability. Trading is temporarily unavailable."
+msgstr "Unable to verify regional availability. Trading is temporarily unavailable."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
