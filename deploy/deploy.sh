@@ -146,6 +146,10 @@ verify_caddy_config() {
 		echo "ERROR: /usr/bin/caddy is not installed." >&2
 		exit 1
 	fi
+	if ! node "$REPO/deploy/validate-caddy-forwarded-headers.mjs" "$source_config" /usr/bin/caddy; then
+		echo "ERROR: repository Caddyfile violates the client IP forwarding contract." >&2
+		exit 1
+	fi
 	if ! /usr/bin/caddy adapt --config "$source_config" --adapter caddyfile >/dev/null; then
 		echo "ERROR: repository Caddyfile could not be adapted." >&2
 		exit 1

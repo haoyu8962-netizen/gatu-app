@@ -62,11 +62,11 @@ app.gatu.ai, testnet.gatu.ai {
 
 	# The one-time mobile QR endpoint rate-limits by the client IP received by
 	# Nitro. Replace, rather than append, inbound forwarding headers so clients
-	# cannot mint arbitrary limiter buckets.
+	# cannot mint arbitrary limiter buckets. A header_up set already overwrites
+	# the inbound value. Do not pair it with a same-name delete: Caddy aggregates
+	# header operations and applies deletes after sets.
 	reverse_proxy 127.0.0.1:3000 {
-		header_up -X-Forwarded-For
 		header_up X-Forwarded-For {remote_host}
-		header_up -X-Real-IP
 		header_up X-Real-IP {remote_host}
 	}
 

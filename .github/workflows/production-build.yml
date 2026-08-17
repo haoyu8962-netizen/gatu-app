@@ -35,6 +35,7 @@ jobs:
           node --test
           deploy/deploy-bootstrap.test.mjs
           deploy/deploy-health-check.test.mjs
+          deploy/validate-caddy-forwarded-headers.test.mjs
           deploy/validate-production-env.test.mjs
           deploy/resolve-client-asset.test.mjs
 

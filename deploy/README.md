@@ -39,7 +39,8 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
 
 `/mobile-agent-sync-ticket` 会先验证同源、体积和完整 schema，再按 Caddy 覆盖写入的客户端
 IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端口直接暴露公网，也不要
-删除 `Caddyfile` 中覆盖 `X-Forwarded-For` / `X-Real-IP` 的配置。若前置 CloudFront 或其他
+删除 `Caddyfile` 中覆盖 `X-Forwarded-For` / `X-Real-IP` 的单条 set 配置，也不得为同名头
+同时添加 `header_up -...`：Caddy 会聚合头操作并在 set 之后执行 delete。若前置 CloudFront 或其他
 代理，必须重新建立受信代理链并验证应用拿到的是终端客户端 IP，而不是可由请求方伪造的头。
 
 本目录文件:
@@ -48,6 +49,7 @@ IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端
 |---|---|
 | `gatu.service` | systemd 服务单元(进程守护 + 崩溃自启) |
 | `Caddyfile` | Caddy 反代 + 自动 HTTPS + 缓存/安全头 |
+| `validate-caddy-forwarded-headers.mjs` | 拒绝客户端 IP 转发头的 set/delete 冲突、追加或重复配置 |
 | `env.build.example` | 构建期 `VITE_*` 变量(打进客户端 bundle) |
 | `env.runtime.example` | 运行期变量(`PORT` / `IPDATA_API_KEY`) |
 | `validate-production-env.mjs` | 生产共享环境、CCTP rollout 与 canonical origin 构建前门禁 |
@@ -217,6 +219,7 @@ sudo systemctl enable gatu          # 开机自启（先不 start，等首次 de
 ## 8. 安装 Caddy 配置
 
 ```bash
+sudo -u gatu /usr/bin/node /opt/gatu/repo/deploy/validate-caddy-forwarded-headers.mjs /opt/gatu/repo/deploy/Caddyfile /usr/bin/caddy
 sudo /usr/bin/caddy validate --config /opt/gatu/repo/deploy/Caddyfile --adapter caddyfile
 sudo /usr/bin/install -m 0644 /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo mkdir -p /var/log/caddy && sudo chown caddy:caddy /var/log/caddy
@@ -388,6 +391,7 @@ sudo -u gatu /bin/bash /opt/gatu/repo/deploy/deploy.sh test-pr102
 脚本会在构建前 fail closed。用管理员账号执行:
 
 ```bash
+sudo -u gatu /usr/bin/node /opt/gatu/repo/deploy/validate-caddy-forwarded-headers.mjs /opt/gatu/repo/deploy/Caddyfile /usr/bin/caddy
 sudo /usr/bin/caddy validate --config /opt/gatu/repo/deploy/Caddyfile --adapter caddyfile
 sudo /usr/bin/install -m 0644 /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo /usr/bin/systemctl reload caddy
