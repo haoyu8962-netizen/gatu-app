@@ -5222,7 +5222,7 @@ msgstr "Aucun solde trouvé. Déposez des fonds pour commencer à trader."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
-msgstr ""
+msgstr "Aucun point de données sélectionné"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."

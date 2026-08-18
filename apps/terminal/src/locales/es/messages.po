@@ -5222,7 +5222,7 @@ msgstr "No se encontraron saldos. Deposita fondos para comenzar a operar."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
-msgstr ""
+msgstr "No se seleccionó ningún punto de datos"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."

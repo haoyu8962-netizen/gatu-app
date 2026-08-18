@@ -5222,7 +5222,7 @@ msgstr "لم يتم العثور على أرصدة. أودع أموالاً لب
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
-msgstr ""
+msgstr "لم يتم تحديد نقطة بيانات"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."

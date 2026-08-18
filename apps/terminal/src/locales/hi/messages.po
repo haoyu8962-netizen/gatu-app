@@ -5222,7 +5222,7 @@ msgstr "कोई शेष नहीं मिला। ट्रेडिं�
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
-msgstr ""
+msgstr "कोई डेटा बिंदु चयनित नहीं है"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
