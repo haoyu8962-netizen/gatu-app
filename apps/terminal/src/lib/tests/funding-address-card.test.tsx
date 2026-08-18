@@ -81,4 +81,21 @@ describe("FundingAddressCard", () => {
 		const statusRole = state === "loading" ? "status" : "alert";
 		expect(stateContainer?.querySelector(`[role="${statusRole}"]`)?.className).toContain("size-[140px]");
 	});
+
+	it("renders a silent loading skeleton when no readiness message is provided", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<FundingAddressCard state="loading" />
+				</I18nProvider>,
+			);
+		});
+
+		const stateContainer = container.querySelector('[data-address-state="loading"]');
+		expect(stateContainer).not.toBeNull();
+		expect(stateContainer?.querySelector('[role="status"]')).toBeNull();
+		expect(stateContainer?.firstElementChild?.querySelector("p")).toBeNull();
+		expect(stateContainer?.querySelector('[data-address-placeholder="skeleton"]')).not.toBeNull();
+		expect(stateContainer?.textContent).toBe("Deposit address");
+	});
 });

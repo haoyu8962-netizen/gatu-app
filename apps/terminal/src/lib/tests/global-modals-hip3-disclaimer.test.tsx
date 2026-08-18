@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,7 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	activeModal: "deposit" as string | null,
 	closeCommandMenu: vi.fn(),
+	closeDepositModal: vi.fn(),
+	depositPath: "sponsored" as "external" | "sponsored",
 	discardPositionMarketCloseModal: vi.fn(),
+	depositModalTab: "deposit" as "bridge" | "deposit" | "withdraw",
 	hip3Disclaimer: {
 		isRequired: true,
 		dex: "xyz" as string | undefined,
@@ -28,6 +33,8 @@ const testState = vi.hoisted(() => ({
 	marketClosePresentation: "confirmation" as "confirmation" | "direct",
 	marketClosePhase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
 	marketCloseError: null as string | null,
+	lazySuspension: new Promise<never>(() => {}),
+	suspendedLazyComponent: null as string | null,
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
@@ -60,9 +67,18 @@ vi.mock("@/components/trade/components/trading-onboarding-gate", () => ({
 		createElement("div", { "data-testid": "TradingOnboardingGate" }, children),
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => false,
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({ path: testState.depositPath }),
+}));
+
 vi.mock("@/lib/lazy", () => ({
 	createLazyComponent: (_loader: unknown, exportName: string) =>
 		function LazyComponent(props: Record<string, unknown>) {
+			if (testState.suspendedLazyComponent === exportName) throw testState.lazySuspension;
 			return createElement("div", { "data-props": JSON.stringify(props), "data-testid": exportName });
 		},
 }));
@@ -70,6 +86,8 @@ vi.mock("@/lib/lazy", () => ({
 vi.mock("@/stores/use-global-modal-store", () => ({
 	discardPositionMarketCloseModal: testState.discardPositionMarketCloseModal,
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
+	useDepositModalActions: () => ({ close: testState.closeDepositModal }),
+	useDepositModalTab: () => testState.depositModalTab,
 	useGlobalModalType: () => testState.activeModal,
 	useSendModalAccountType: () => "spot",
 	useSendModalActions: () => ({ close: testState.closeSendModal }),
@@ -93,10 +111,22 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			value: vi.fn().mockReturnValue({
+				addEventListener: vi.fn(),
+				matches: false,
+				removeEventListener: vi.fn(),
+			}),
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
 		testState.activeModal = "deposit";
+		testState.closeDepositModal.mockReset();
+		testState.depositPath = "sponsored";
+		testState.depositModalTab = "deposit";
 		testState.hip3Disclaimer = {
 			isRequired: true,
 			dex: "xyz",
@@ -119,6 +149,8 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.marketClosePresentation = "confirmation";
 		testState.marketClosePhase = "idle";
 		testState.marketCloseError = null;
+		testState.lazySuspension = new Promise<never>(() => {});
+		testState.suspendedLazyComponent = null;
 	});
 
 	afterEach(() => {
@@ -194,10 +226,56 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 	it("does not show the trade disclaimer on shared non-trading pages", async () => {
 		const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals)));
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("keeps the deposit modal shell stable while its lazy chunk loads", async () => {
+		testState.suspendedLazyComponent = "DepositModal";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
+
+		const fallback = document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]');
+		expect(fallback).not.toBeNull();
+		expect(fallback?.getAttribute("aria-busy")).toBe("true");
+		expect(fallback?.getAttribute("data-deposit-loading-layout")).toBe("funding-address");
+		expect(fallback?.getAttribute("data-desktop-content-height")).toBe("37.5rem");
+		expect(fallback?.className).toContain("min-[1001px]:h-[37.5rem]");
+		expect(fallback?.querySelectorAll("[data-skeleton-slot]")).toHaveLength(6);
+		expect(fallback?.querySelector('[aria-hidden="true"]')).not.toBeNull();
+		expect(fallback?.querySelector(".sr-only")?.textContent).toContain("Loading");
+		expect(fallback?.querySelector(".animate-spin")).toBeNull();
+		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
+
+		const closeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
+		expect(closeButton).not.toBeNull();
+		act(() => closeButton?.click());
+		expect(testState.closeDepositModal).toHaveBeenCalledOnce();
+	});
+
+	it("preserves the compact loading fallback for other lazy global modals", async () => {
+		testState.activeModal = "settings";
+		testState.suspendedLazyComponent = "GlobalSettingsModal";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
+
+		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).not.toBeNull();
+		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
+	});
+
+	it("preserves the compact loading fallback for external-wallet deposits", async () => {
+		testState.depositPath = "external";
+		testState.suspendedLazyComponent = "DepositModal";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
+
+		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).not.toBeNull();
+		expect(document.body.querySelector('[data-testid="deposit-modal-loading-fallback"]')).toBeNull();
 	});
 
 	it("mounts the globally accessible Send modal with the requested account defaults", async () => {

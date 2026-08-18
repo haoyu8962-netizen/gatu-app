@@ -26,7 +26,12 @@ vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
 	}) =>
 		createElement(
 			"div",
-			{ "data-address": address, "data-address-state": state, "data-testid": "funding-address" },
+			{
+				"data-address": address,
+				"data-address-state": state,
+				"data-has-message": message == null ? "false" : "true",
+				"data-testid": "funding-address",
+			},
 			message,
 			action,
 		),
@@ -275,7 +280,8 @@ describe("DepositForm routing gate", () => {
 		});
 
 		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
 	});
 
 	it("shows a recoverable wallet-creation error instead of waiting on readiness forever", async () => {
@@ -303,7 +309,7 @@ describe("DepositForm routing gate", () => {
 		expect(onRetryFundingAddress).toHaveBeenCalledOnce();
 	});
 
-	it("withholds the funding address without showing a transient gas-readiness prompt", async () => {
+	it("shows a silent funding skeleton without a transient gas-readiness prompt", async () => {
 		const props = {
 			...createProps("ready", "cctp"),
 			requiresExplicitFundingDeposit: true,
@@ -319,12 +325,163 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.querySelector('[data-testid="funding-address"]')).toBeNull();
-		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
-		expect(
-			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 9 USDC")),
-		).toBe(false);
+		const fundingAddress = container.querySelector('[data-testid="funding-address"]');
+		expect(fundingAddress?.getAttribute("data-address-state")).toBe("loading");
+		expect(fundingAddress?.getAttribute("data-has-message")).toBe("false");
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Checking gas-sponsored wallet readiness");
+		const submitButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(submitButton?.disabled).toBe(true);
+		act(() => submitButton?.click());
 		expect(props.onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("keeps the desktop funding shell stable while sponsored readiness settles", async () => {
+		const loadingProps = {
+			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
+			sponsoredCctpReadiness: {
+				status: "loading" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, loadingProps)));
+		});
+
+		const loadingShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
+		expect(loadingShell?.getAttribute("data-deposit-readiness")).toBe("loading");
+		expect(loadingShell?.className).toContain("min-[1001px]:min-h-[37.5rem]");
+		expect(loadingShell?.className).not.toContain(" min-h-[37.5rem]");
+		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
+		const loadingChildCount = loadingShell?.children.length;
+
+		const readyProps = {
+			...loadingProps,
+			sponsoredCctpReadiness: {
+				status: "ready" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, readyProps)));
+		});
+
+		const readyShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
+		expect(readyShell).toBe(loadingShell);
+		expect(readyShell?.getAttribute("data-deposit-readiness")).toBe("ready");
+		expect(readyShell?.children.length).toBe(loadingChildCount);
+		expect(container.querySelector('[data-address-state="ready"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
+		const doneButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Done");
+		expect(doneButton?.className).toContain("mt-auto");
+	});
+
+	it("keeps destination slots stable from route loading through sponsored readiness", async () => {
+		const routeLoadingProps = {
+			...createProps("loading", null),
+			balance: "9",
+			maxAmount: "9",
+			maxDepositRaw: 9_000_000n,
+			requiresExplicitFundingDeposit: true,
+			sponsoredCctpReadiness: {
+				status: "idle" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+			validation: { valid: true, error: null },
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, routeLoadingProps)));
+		});
+
+		const routeLoadingShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
+		const detailsPlaceholder = container.querySelector<HTMLElement>('[data-deposit-placeholder="funding-details"]');
+		const noticePlaceholder = container.querySelector<HTMLElement>(
+			'[data-deposit-placeholder="funding-network-notice"]',
+		);
+		expect(detailsPlaceholder?.getAttribute("aria-hidden")).toBe("true");
+		expect(detailsPlaceholder?.getAttribute("data-deposit-slot")).toBe("funding-details");
+		expect(noticePlaceholder?.getAttribute("aria-hidden")).toBe("true");
+		expect(noticePlaceholder?.getAttribute("data-deposit-slot")).toBe("funding-network-notice");
+		expect(noticePlaceholder?.querySelector("span")?.className).toContain("invisible");
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).toBeNull();
+		const routeLoadingDepositButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(routeLoadingDepositButton?.disabled).toBe(true);
+		const routeLoadingChildCount = routeLoadingShell?.children.length;
+		const detailsSlotIndex = [...(routeLoadingShell?.children ?? [])].indexOf(detailsPlaceholder as Element);
+		const noticeSlotIndex = [...(routeLoadingShell?.children ?? [])].indexOf(noticePlaceholder as Element);
+
+		const readinessLoadingProps = {
+			...routeLoadingProps,
+			depositRoute: "cctp" as const,
+			routingStatus: "ready" as const,
+			sponsoredCctpReadiness: {
+				status: "loading" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, readinessLoadingProps)));
+		});
+
+		const readinessLoadingShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
+		const readinessDetailsSlot = container.querySelector<HTMLElement>('[data-deposit-slot="funding-details"]');
+		const readinessNoticeSlot = container.querySelector<HTMLElement>('[data-deposit-slot="funding-network-notice"]');
+		expect(readinessLoadingShell).toBe(routeLoadingShell);
+		expect(readinessLoadingShell?.children.length).toBe(routeLoadingChildCount);
+		expect(container.querySelector('[data-deposit-placeholder="funding-details"]')).toBeNull();
+		expect(container.querySelector('[data-deposit-placeholder="funding-network-notice"]')).toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
+		const readinessDepositButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(readinessDepositButton).toBe(routeLoadingDepositButton);
+		expect(readinessDepositButton?.disabled).toBe(true);
+		expect([...(readinessLoadingShell?.children ?? [])].indexOf(readinessDetailsSlot as Element)).toBe(
+			detailsSlotIndex,
+		);
+		expect([...(readinessLoadingShell?.children ?? [])].indexOf(readinessNoticeSlot as Element)).toBe(noticeSlotIndex);
+
+		const readyProps = {
+			...readinessLoadingProps,
+			sponsoredCctpReadiness: {
+				status: "ready" as const,
+				failure: null,
+				retry: vi.fn(),
+			},
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, readyProps)));
+		});
+
+		const readyShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
+		expect(readyShell).toBe(routeLoadingShell);
+		expect(readyShell?.children.length).toBe(routeLoadingChildCount);
+		expect(container.querySelector('[data-address-state="ready"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
+		const readyDepositButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(readyDepositButton).toBe(routeLoadingDepositButton);
+		expect(readyDepositButton?.disabled).toBe(false);
 	});
 
 	it.each([

@@ -84,9 +84,8 @@ export function DepositForm({
 		sponsoredCctpEnabled &&
 		sponsoredCctpReadiness.status === "ready" &&
 		!!fundingAddress;
-	const showExplicitFundingDepositAction =
-		explicitFundingDepositReady && maxDepositRaw !== undefined && maxDepositRaw > 0n;
 	const explicitFundingDepositDisabled =
+		!explicitFundingDepositReady ||
 		!validation.valid ||
 		isPending ||
 		balanceStatus === "loading" ||
@@ -279,7 +278,7 @@ export function DepositForm({
 				} as const;
 			}
 			if (sponsoredCctpReadiness.status === "idle" || sponsoredCctpReadiness.status === "loading") {
-				return null;
+				return { state: "loading" } as const;
 			}
 			if (sponsoredCctpReadiness.status === "error") {
 				return {
@@ -296,9 +295,33 @@ export function DepositForm({
 				state: "unavailable",
 			} as const;
 		})();
+		const showFundingDestinationDetails =
+			!depositUnavailableReason &&
+			cctpRoutingReady &&
+			sponsoredCctpEnabled &&
+			(fundingAddressState.state === "loading" || fundingAddressState.state === "ready");
+		const showFundingDestinationPlaceholders =
+			!depositUnavailableReason && routingStatus === "loading" && sponsoredCctpEnabled;
+		const showExplicitFundingDepositAction =
+			requiresExplicitFundingDeposit &&
+			!depositUnavailableReason &&
+			sponsoredCctpEnabled &&
+			(showFundingDestinationDetails || showFundingDestinationPlaceholders) &&
+			maxDepositRaw !== undefined &&
+			maxDepositRaw > 0n;
+		const fundingNetworkNotice = (
+			<Trans>
+				Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
+				networks. Minimum deposit is {minimumDeposit}.
+			</Trans>
+		);
 
 		return (
-			<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
+			<div
+				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg min-[1001px]:min-h-[37.5rem]"
+				data-deposit-layout="funding-address"
+				data-deposit-readiness={sponsoredCctpReadiness.status}
+			>
 				<div className="pt-0.5 text-center">
 					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>
@@ -307,11 +330,11 @@ export function DepositForm({
 
 				{transferSelectors}
 
-				{fundingAddressState ? <FundingAddressCard {...fundingAddressState} /> : null}
+				<FundingAddressCard {...fundingAddressState} />
 
-				{fundingAddressReady ? (
-					<>
-						{embeddedDepositStatus ? (
+				{showFundingDestinationDetails ? (
+					<div className="contents" data-deposit-slot="funding-details">
+						{fundingAddressReady && embeddedDepositStatus ? (
 							<div
 								role={embeddedDepositStatus.tone === "error" ? "alert" : "status"}
 								className={
@@ -333,15 +356,50 @@ export function DepositForm({
 							cctpFeeLoading={cctpFeeLoading}
 							cctpFeeError={cctpFeeError}
 						/>
-					</>
+					</div>
+				) : showFundingDestinationPlaceholders ? (
+					<div
+						aria-hidden="true"
+						className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3"
+						data-deposit-placeholder="funding-details"
+						data-deposit-slot="funding-details"
+					>
+						{["receive", "fee", "time"].map((row) => (
+							<div
+								className={
+									row === "receive"
+										? "flex h-5 items-center justify-between gap-3"
+										: "flex h-4 items-center justify-between gap-3"
+								}
+								key={row}
+							>
+								<div className="h-2 w-16 rounded-full bg-market-close-stroke-input/50" />
+								<div className="h-2 w-24 rounded-full bg-market-close-stroke-input/50" />
+							</div>
+						))}
+					</div>
 				) : null}
 
-				{fundingAddressReady ? (
-					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
-						<Trans>
-							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-							networks. Minimum deposit is {minimumDeposit}.
-						</Trans>
+				{showFundingDestinationDetails ? (
+					<div
+						className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+						data-deposit-notice="funding-network"
+						data-deposit-slot="funding-network-notice"
+					>
+						{fundingNetworkNotice}
+					</div>
+				) : showFundingDestinationPlaceholders ? (
+					<div
+						aria-hidden="true"
+						className="relative overflow-hidden rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
+						data-deposit-placeholder="funding-network-notice"
+						data-deposit-slot="funding-network-notice"
+					>
+						<span className="invisible">{fundingNetworkNotice}</span>
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3">
+							<div className="h-2 w-4/5 rounded-full bg-market-close-stroke-input/50" />
+							<div className="h-2 w-3/5 rounded-full bg-market-close-stroke-input/50" />
+						</div>
 					</div>
 				) : null}
 
@@ -362,7 +420,7 @@ export function DepositForm({
 					variant="filled"
 					intent="neutral"
 					onClick={onDone}
-					className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90"
+					className="mt-auto min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90"
 				>
 					<Trans>Done</Trans>
 				</Button>

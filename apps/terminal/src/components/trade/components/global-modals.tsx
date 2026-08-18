@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect } from "react";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import {
@@ -14,6 +15,7 @@ import {
 	useTransferModalActions,
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
+import { DepositModalLoadingFallback } from "./deposit-modal-loading-fallback";
 import { Hip3DeployerDisclaimer } from "./hip3-deployer-disclaimer";
 import {
 	CommandMenu,
@@ -181,7 +183,7 @@ function SharedGlobalModals({
 	if (!activeModal) return null;
 
 	return (
-		<Suspense fallback={<GlobalModalLoadingFallback />}>
+		<Suspense fallback={activeModal === "deposit" ? <DepositModalSuspenseFallback /> : <GlobalModalLoadingFallback />}>
 			{activeModal === "deposit" && <DepositModal />}
 			{activeModal === "internalTransfer" && (
 				<TransferModal
@@ -213,9 +215,18 @@ function SharedGlobalModals({
 	);
 }
 
+function DepositModalSuspenseFallback() {
+	const { path } = useDepositAvailability();
+	return path === "sponsored" ? <DepositModalLoadingFallback /> : <GlobalModalLoadingFallback />;
+}
+
 function GlobalModalLoadingFallback() {
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim" aria-busy="true">
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
+			data-testid="global-modal-loading-fallback"
+			aria-busy="true"
+		>
 			<output className="flex items-center gap-2 rounded-12 border border-stroke-weak bg-modal px-4 py-3 text-sm text-fg shadow-overlay">
 				<SpinnerGapIcon className="size-4 animate-spin text-brand motion-reduce:animate-none" aria-hidden="true" />
 				<Trans>Loading...</Trans>
