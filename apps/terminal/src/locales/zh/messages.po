@@ -4880,7 +4880,7 @@ msgstr "未找到余额。存入资金开始交易。"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "No data point selected"
-msgstr ""
+msgstr "未选择数据点"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
