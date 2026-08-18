@@ -296,6 +296,8 @@ describe("PortfolioPerformanceChart", () => {
 		);
 		act(() => accountValueTab?.click());
 		expect(getTooltip(container)).toBeNull();
+		act(() => getPlot(container).dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(getTooltip(container)?.textContent).toBe("August 9, 2026 · +$7.00");
 
 		const pnlTab = [...container.querySelectorAll("button")].find((button) => button.textContent === "PNL");
 		act(() => pnlTab?.click());

@@ -125,7 +125,7 @@ export function PortfolioPerformanceChart({
 	const activePoint = activeInteraction ? chart.points[activeInteraction.index] : undefined;
 	const latestValue = chart.points.at(-1)?.rawValue ?? null;
 	const formattedLatestValue = formatLatestValue(latestValue, metric);
-	const activeLabel = activePoint ? formatPointLabel(activePoint, metric) : null;
+	const activeLabel = activePoint ? formatPointLabel(activePoint) : null;
 	const hasRenderableChart = !isLoading && !isUnavailable && chart.points.length > 0;
 	const tooltipAnchor =
 		activeInteraction?.source === "pointer"
@@ -442,11 +442,11 @@ function formatLatestValue(latestValue: string | null, metric: ChartMetric): str
 	});
 }
 
-function formatPointLabel(point: ChartPoint, metric: ChartMetric): string {
+function formatPointLabel(point: ChartPoint): string {
 	const date = formatDateTime(point.timestamp, { year: "numeric", month: "long", day: "numeric" });
 	const value = formatUSD(point.rawValue, {
 		compact: false,
-		signDisplay: metric === "accountValue" ? "auto" : "exceptZero",
+		signDisplay: "exceptZero",
 	});
 	return `${date} · ${value}`;
 }
