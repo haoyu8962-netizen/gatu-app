@@ -1366,10 +1366,6 @@ msgstr "Comprobando la cuenta..."
 msgid "Checking fresh API wallet data…"
 msgstr ""
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Checking gas-sponsored wallet readiness..."
-msgstr ""
-
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
 msgstr ""

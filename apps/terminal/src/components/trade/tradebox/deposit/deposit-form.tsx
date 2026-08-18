@@ -84,6 +84,8 @@ export function DepositForm({
 		sponsoredCctpEnabled &&
 		sponsoredCctpReadiness.status === "ready" &&
 		!!fundingAddress;
+	const showExplicitFundingDepositAction =
+		explicitFundingDepositReady && maxDepositRaw !== undefined && maxDepositRaw > 0n;
 	const explicitFundingDepositDisabled =
 		!validation.valid ||
 		isPending ||
@@ -277,7 +279,7 @@ export function DepositForm({
 				} as const;
 			}
 			if (sponsoredCctpReadiness.status === "idle" || sponsoredCctpReadiness.status === "loading") {
-				return { message: <Trans>Checking gas-sponsored wallet readiness...</Trans>, state: "loading" } as const;
+				return null;
 			}
 			if (sponsoredCctpReadiness.status === "error") {
 				return {
@@ -305,7 +307,7 @@ export function DepositForm({
 
 				{transferSelectors}
 
-				<FundingAddressCard {...fundingAddressState} />
+				{fundingAddressState ? <FundingAddressCard {...fundingAddressState} /> : null}
 
 				{fundingAddressReady ? (
 					<>
@@ -343,7 +345,7 @@ export function DepositForm({
 					</div>
 				) : null}
 
-				{explicitFundingDepositReady ? (
+				{showExplicitFundingDepositAction ? (
 					<Button
 						variant="filled"
 						intent="neutral"

@@ -298,15 +298,16 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
 		expect(container.textContent).toContain("Embedded wallet creation failed.");
-		expect(container.textContent).not.toContain("Checking gas-sponsored wallet readiness");
 		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
 		act(() => retryButton?.click());
 		expect(onRetryFundingAddress).toHaveBeenCalledOnce();
 	});
 
-	it("withholds the funding address while gas-sponsored wallet readiness is loading", async () => {
+	it("withholds the funding address without showing a transient gas-readiness prompt", async () => {
 		const props = {
 			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
 			sponsoredCctpReadiness: {
 				status: "loading" as const,
 				failure: null,
@@ -318,10 +319,38 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="funding-address"]')?.hasAttribute("data-address")).toBe(false);
+		expect(container.querySelector('[data-testid="funding-address"]')).toBeNull();
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
-		expect(container.textContent).toContain("Checking gas-sponsored wallet readiness");
+		expect(
+			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 9 USDC")),
+		).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ balanceStatus: "success" as const, maxDepositRaw: 0n, name: "confirmed as zero" },
+		{ balanceStatus: "loading" as const, maxDepositRaw: undefined, name: "not resolved yet" },
+	])("hides the explicit deposit action while the balance is $name", async ({ balanceStatus, maxDepositRaw }) => {
+		const props = {
+			...createProps("ready", "cctp"),
+			balance: "0",
+			balanceStatus,
+			maxAmount: "0",
+			maxDepositRaw,
+			requiresExplicitFundingDeposit: true,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[data-address-state="ready"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(
+			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 0 USDC")),
+		).toBe(false);
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Done")).toBe(true);
+		expect(props.onSubmit).not.toHaveBeenCalled();
 	});
 
 	it.each([

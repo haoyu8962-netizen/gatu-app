@@ -1247,10 +1247,6 @@ msgstr "正在检查账户…"
 msgid "Checking fresh API wallet data…"
 msgstr "正在检查最新的 API 钱包数据…"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Checking gas-sponsored wallet readiness..."
-msgstr "正在检查 Gas 赞助钱包是否就绪……"
-
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
 msgstr "正在检查地区可用性，存款暂时不可用。"
