@@ -1387,7 +1387,6 @@ msgstr "جارٍ التحقق من مسار السحب الحالي في Hyperli
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "جارٍ التحقق..."
 
@@ -3135,8 +3134,8 @@ msgid "Estimated Liquidation Price"
 msgstr "سعر التصفية المقدر"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Estimated net credit"
-msgstr "صافي المبلغ المتوقع قيده"
+#~ msgid "Estimated net credit"
+#~ msgstr "صافي المبلغ المتوقع قيده"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -4872,8 +4871,8 @@ msgstr ""
 #~ msgstr "الحد الأقصى للانزلاق المسموح به لأوامر السوق."
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Maximum CCTP fee"
-msgstr "الحد الأقصى لرسوم CCTP"
+#~ msgid "Maximum CCTP fee"
+#~ msgstr "الحد الأقصى لرسوم CCTP"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"

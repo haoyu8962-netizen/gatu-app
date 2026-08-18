@@ -301,9 +301,6 @@ export function DepositModal() {
 			? getAmountIndependentCctpMaxFeeRaw(displayedCctpDepositFeeQuery.data.feeQuote)
 			: null);
 	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
-	const cctpDepositNetAmount = displayedCctpDepositFeeQuery.calculation
-		? formatUnits(displayedCctpDepositFeeQuery.calculation.netAmountRaw, 6)
-		: null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" &&
 		reviewedDepositAmountRaw !== undefined &&
@@ -1164,7 +1161,6 @@ export function DepositModal() {
 								depositUnavailableReason={depositAvailability.unavailableReason}
 								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
-								cctpNetAmount={cctpDepositNetAmount}
 								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}
 								cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
 								pendingCctpRecovery={

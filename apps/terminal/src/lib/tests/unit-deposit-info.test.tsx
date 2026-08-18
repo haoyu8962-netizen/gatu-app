@@ -27,7 +27,7 @@ describe("UnitDepositInfo", () => {
 		await act(async () => {
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<UnitDepositInfo presentation="funding" cctpFee="0.2" />
+					<UnitDepositInfo cctpFee="0.2" />
 				</I18nProvider>,
 			);
 		});
@@ -51,27 +51,11 @@ describe("UnitDepositInfo", () => {
 		await act(async () => {
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<UnitDepositInfo presentation="funding" {...props} />
+					<UnitDepositInfo {...props} />
 				</I18nProvider>,
 			);
 		});
 
 		expect(container.textContent).toContain(expected);
-	});
-
-	it("preserves the amount-based calculation summary for external wallets", async () => {
-		await act(async () => {
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<UnitDepositInfo cctpFee="0.2" cctpNetAmount="4.8" />
-				</I18nProvider>,
-			);
-		});
-
-		const card = container.querySelector('[data-presentation="calculation"]');
-		expect(card?.textContent).toContain("Maximum CCTP fee");
-		expect(card?.textContent).toContain("0.2 USDC");
-		expect(card?.textContent).toContain("Estimated net credit");
-		expect(card?.textContent).toContain("4.8 USDC");
 	});
 });

@@ -1391,7 +1391,6 @@ msgstr "Checking the current Hyperliquid withdrawal route..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "Checking..."
 
@@ -3148,8 +3147,8 @@ msgid "Estimated Liquidation Price"
 msgstr "Estimated Liquidation Price"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Estimated net credit"
-msgstr "Estimated net credit"
+#~ msgid "Estimated net credit"
+#~ msgstr "Estimated net credit"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -4893,8 +4892,8 @@ msgstr "Max price must be above trigger price"
 #~ msgstr "Max slippage allowed for market orders."
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Maximum CCTP fee"
-msgstr "Maximum CCTP fee"
+#~ msgid "Maximum CCTP fee"
+#~ msgstr "Maximum CCTP fee"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"

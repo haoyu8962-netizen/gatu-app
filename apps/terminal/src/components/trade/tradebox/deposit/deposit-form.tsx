@@ -31,7 +31,6 @@ interface Props {
 	depositUnavailableReason?: string | null;
 	requiresExplicitFundingDeposit: boolean;
 	cctpFee: string | null;
-	cctpNetAmount: string | null;
 	cctpFeeLoading: boolean;
 	cctpFeeError: boolean;
 	pendingCctpRecovery: boolean;
@@ -63,7 +62,6 @@ export function DepositForm({
 	depositUnavailableReason = null,
 	requiresExplicitFundingDeposit,
 	cctpFee,
-	cctpNetAmount,
 	cctpFeeLoading,
 	cctpFeeError,
 	pendingCctpRecovery,
@@ -77,7 +75,6 @@ export function DepositForm({
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
-	const depositRoutingReady = cctpRoutingReady && !fundingAddress;
 	const explicitFundingDepositReady =
 		requiresExplicitFundingDeposit &&
 		cctpRoutingReady &&
@@ -349,13 +346,7 @@ export function DepositForm({
 							</div>
 						) : null}
 
-						<UnitDepositInfo
-							presentation="funding"
-							cctpFee={cctpFee}
-							cctpNetAmount={cctpNetAmount}
-							cctpFeeLoading={cctpFeeLoading}
-							cctpFeeError={cctpFeeError}
-						/>
+						<UnitDepositInfo cctpFee={cctpFee} cctpFeeLoading={cctpFeeLoading} cctpFeeError={cctpFeeError} />
 					</div>
 				) : showFundingDestinationPlaceholders ? (
 					<div
@@ -443,10 +434,6 @@ export function DepositForm({
 				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
-			) : null}
-
-			{depositRoutingReady ? (
-				<UnitDepositInfo cctpFee={cctpFee} cctpNetAmount={cctpNetAmount} cctpFeeLoading={cctpFeeLoading} />
 			) : null}
 
 			<AmountInput

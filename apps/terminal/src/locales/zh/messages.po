@@ -1268,7 +1268,6 @@ msgstr "正在检查 Hyperliquid 当前的提现路由..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "检查中..."
 
@@ -2938,8 +2937,8 @@ msgid "Estimated Liquidation Price"
 msgstr "预估强平价格"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Estimated net credit"
-msgstr "预计净入账"
+#~ msgid "Estimated net credit"
+#~ msgstr "预计净入账"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -4551,8 +4550,8 @@ msgstr "最高价须高于触发价"
 #~ msgstr "市价单允许的最大滑点。"
 
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Maximum CCTP fee"
-msgstr "CCTP 最高费用"
+#~ msgid "Maximum CCTP fee"
+#~ msgstr "CCTP 最高费用"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"

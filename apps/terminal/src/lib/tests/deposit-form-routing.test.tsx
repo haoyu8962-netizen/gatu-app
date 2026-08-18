@@ -46,21 +46,16 @@ vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
 		cctpFee,
 		cctpFeeError,
 		cctpFeeLoading,
-		cctpNetAmount,
-		presentation,
 	}: {
 		cctpFee?: string | null;
 		cctpFeeError?: boolean;
 		cctpFeeLoading?: boolean;
-		cctpNetAmount?: string | null;
-		presentation?: string;
 	}) =>
 		createElement("div", {
 			"data-cctp-fee": cctpFee,
 			"data-cctp-fee-error": cctpFeeError,
 			"data-cctp-fee-loading": cctpFeeLoading,
-			"data-cctp-net": cctpNetAmount,
-			"data-presentation": presentation,
+			"data-presentation": "funding",
 			"data-testid": "deposit-instructions",
 		}),
 }));
@@ -95,7 +90,6 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		},
 		requiresExplicitFundingDeposit: false,
 		cctpFee: null,
-		cctpNetAmount: null,
 		cctpFeeLoading: false,
 		cctpFeeError: false,
 		pendingCctpRecovery: false,
@@ -125,7 +119,6 @@ describe("DepositForm routing gate", () => {
 		const props = {
 			...createProps("ready", "cctp"),
 			cctpFee: "0.2",
-			cctpNetAmount: "8.8",
 		};
 		await act(async () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
@@ -135,7 +128,6 @@ describe("DepositForm routing gate", () => {
 		expect(container.querySelector('[data-address-state="ready"]')?.getAttribute("data-address")).toBe(FUNDING_ADDRESS);
 		const instructions = container.querySelector('[data-testid="deposit-instructions"]');
 		expect(instructions?.getAttribute("data-cctp-fee")).toBe("0.2");
-		expect(instructions?.getAttribute("data-cctp-net")).toBe("8.8");
 		expect(instructions?.getAttribute("data-presentation")).toBe("funding");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
@@ -583,5 +575,6 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.querySelector('[data-testid="funding-address"]')).toBeNull();
 		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
 	});
 });
