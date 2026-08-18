@@ -40,7 +40,9 @@ export function DepositModalLoadingFallback() {
 				<ModalTitle
 					className={
 						usesFundsRedesign
-							? "text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6"
+							? activeTab === "deposit"
+								? "sr-only"
+								: "text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6"
 							: undefined
 					}
 				>

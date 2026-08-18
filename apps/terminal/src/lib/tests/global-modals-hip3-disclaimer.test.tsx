@@ -246,7 +246,11 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(fallback?.className).toContain("min-[1001px]:h-[37.5rem]");
 		expect(fallback?.querySelectorAll("[data-skeleton-slot]")).toHaveLength(6);
 		expect(fallback?.querySelector('[aria-hidden="true"]')).not.toBeNull();
-		expect(fallback?.querySelector(".sr-only")?.textContent).toContain("Loading");
+		const depositTitle = document.body.querySelector("h2");
+		expect(depositTitle?.textContent).toBe("Deposit");
+		expect(depositTitle?.className).toContain("sr-only");
+		expect(document.body.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby")).toBe(depositTitle?.id);
+		expect(fallback?.querySelector("span.sr-only")?.textContent).toContain("Loading");
 		expect(fallback?.querySelector(".animate-spin")).toBeNull();
 		expect(container.querySelector('[data-testid="global-modal-loading-fallback"]')).toBeNull();
 
@@ -254,6 +258,18 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(closeButton).not.toBeNull();
 		act(() => closeButton?.click());
 		expect(testState.closeDepositModal).toHaveBeenCalledOnce();
+	});
+
+	it("keeps the withdrawal title visible while its lazy chunk loads", async () => {
+		testState.depositModalTab = "withdraw";
+		testState.suspendedLazyComponent = "DepositModal";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalModals))));
+
+		const withdrawTitle = document.body.querySelector("h2");
+		expect(withdrawTitle?.textContent).toBe("Withdraw");
+		expect(withdrawTitle?.className).not.toContain("sr-only");
 	});
 
 	it("preserves the compact loading fallback for other lazy global modals", async () => {

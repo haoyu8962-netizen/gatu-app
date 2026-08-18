@@ -73,7 +73,8 @@ vi.mock("@gatu/ui", () => ({
 	Button: ({ children }: { children?: ReactNode }) => createElement("button", { type: "button" }, children),
 	ModalContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
-	ModalTitle: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
+	ModalTitle: ({ children, className }: { children?: ReactNode; className?: string }) =>
+		createElement("h2", { className }, children),
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
@@ -671,6 +672,24 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			enabled: true,
 			isTestnet: false,
 		});
+	});
+
+	it("keeps the deposit title accessible but visually hides it from the form", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+
+		await rerender();
+
+		const depositTitle = container.querySelector("h2");
+		expect(depositTitle?.textContent).toBe("Deposit");
+		expect(depositTitle?.className).toContain("sr-only");
+
+		testState.activeTab = "withdraw";
+		await rerender();
+
+		const withdrawTitle = container.querySelector("h2");
+		expect(withdrawTitle?.textContent).toBe("Withdraw");
+		expect(withdrawTitle?.className).not.toContain("sr-only");
 	});
 
 	it("queries the shared Circle fee cache for the embedded wallet's current sponsored deposit amount", async () => {
