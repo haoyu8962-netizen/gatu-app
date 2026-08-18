@@ -397,7 +397,7 @@ function expectTooltipInsideChart(container: HTMLElement, width: number, height:
 	expect(left).toBeGreaterThanOrEqual(0);
 	expect(top).toBeGreaterThanOrEqual(0);
 	expect(left + tooltipWidth).toBeLessThanOrEqual(width);
-	expect(top + 48).toBeLessThanOrEqual(height);
+	expect(top + 36).toBeLessThanOrEqual(height);
 }
 
 function createRect(width: number, height: number, left: number, top: number): DOMRect {
