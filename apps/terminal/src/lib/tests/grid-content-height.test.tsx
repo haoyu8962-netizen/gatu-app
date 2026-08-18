@@ -14,6 +14,8 @@ interface ObserverInstance {
 }
 
 const observers: ObserverInstance[] = [];
+const animationFrames = new Map<number, FrameRequestCallback>();
+let nextAnimationFrameId = 1;
 
 class MockResizeObserver {
 	callback: ResizeObserverCallback;
@@ -25,6 +27,12 @@ class MockResizeObserver {
 		this.callback = callback;
 		observers.push(this);
 	}
+}
+
+function flushAnimationFrames() {
+	const pendingFrames = [...animationFrames.values()];
+	animationFrames.clear();
+	for (const callback of pendingFrames) callback(performance.now());
 }
 
 function SuspenseSwapHarness({ contentReady }: { contentReady: boolean }) {
@@ -69,7 +77,22 @@ describe("grid content height observer", () => {
 
 	beforeEach(() => {
 		observers.length = 0;
+		animationFrames.clear();
+		nextAnimationFrameId = 1;
 		vi.stubGlobal("ResizeObserver", MockResizeObserver);
+		vi.stubGlobal(
+			"requestAnimationFrame",
+			vi.fn((callback: FrameRequestCallback) => {
+				const animationFrameId = nextAnimationFrameId;
+				nextAnimationFrameId += 1;
+				animationFrames.set(animationFrameId, callback);
+				return animationFrameId;
+			}),
+		);
+		vi.stubGlobal(
+			"cancelAnimationFrame",
+			vi.fn((animationFrameId: number) => animationFrames.delete(animationFrameId)),
+		);
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -97,6 +120,7 @@ describe("grid content height observer", () => {
 				],
 				mdObserver as unknown as ResizeObserver,
 			);
+			flushAnimationFrames();
 		});
 
 		const observedMd = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
@@ -138,9 +162,43 @@ describe("grid content height observer", () => {
 				[{ borderBoxSize: [], contentRect: { height: 166 } } as unknown as ResizeObserverEntry],
 				observer as unknown as ResizeObserver,
 			);
+			flushAnimationFrames();
 		});
 
 		const observed = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
 		expect(observed.md?.find((item) => item.i === "tradingInterface")?.h).toBe(5.13);
+	});
+
+	it("coalesces repeated measurements and cancels pending work on cleanup", () => {
+		const onLayouts = vi.fn();
+		act(() => root?.render(<GridContentHeightHarness mounted breakpoint="md" onLayouts={onLayouts} />));
+		const observer = observers[0];
+
+		act(() => {
+			observer?.callback(
+				[{ borderBoxSize: [{ blockSize: 166 }], contentRect: { height: 166 } } as unknown as ResizeObserverEntry],
+				observer as unknown as ResizeObserver,
+			);
+			observer?.callback(
+				[{ borderBoxSize: [{ blockSize: 850 }], contentRect: { height: 850 } } as unknown as ResizeObserverEntry],
+				observer as unknown as ResizeObserver,
+			);
+			flushAnimationFrames();
+		});
+
+		const observed = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
+		expect(observed.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
+		expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
+
+		act(() => {
+			observer?.callback(
+				[{ borderBoxSize: [{ blockSize: 166 }], contentRect: { height: 166 } } as unknown as ResizeObserverEntry],
+				observer as unknown as ResizeObserver,
+			);
+			root?.unmount();
+		});
+		root = null;
+		expect(cancelAnimationFrame).toHaveBeenCalledWith(3);
+		expect(animationFrames).toHaveLength(0);
 	});
 });

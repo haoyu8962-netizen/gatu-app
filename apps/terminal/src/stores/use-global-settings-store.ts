@@ -22,6 +22,9 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 
 type Theme = "dark" | "light";
 
+const THEME_TRANSITION_GUARD_ATTRIBUTE = "data-theme-transition";
+let themeTransitionReleaseFrame: number | undefined;
+
 const globalSettingsSchema = z.object({
 	state: z.object({
 		hideSmallBalances: z.boolean().optional(),
@@ -170,14 +173,34 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 	),
 );
 
+function suppressThemeTransitions(root: HTMLElement) {
+	root.setAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE, "");
+	const view = root.ownerDocument.defaultView;
+	if (!view || typeof view.requestAnimationFrame !== "function") {
+		root.removeAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE);
+		return;
+	}
+
+	if (themeTransitionReleaseFrame !== undefined) {
+		view.cancelAnimationFrame(themeTransitionReleaseFrame);
+	}
+	themeTransitionReleaseFrame = view.requestAnimationFrame(() => {
+		themeTransitionReleaseFrame = view.requestAnimationFrame(() => {
+			root.removeAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE);
+			themeTransitionReleaseFrame = undefined;
+		});
+	});
+}
+
 // Keeps <html class> in sync with the persisted theme, re-asserting past any document-shell
 // re-render (React re-acquiring the <html> singleton writes back the SSR default) via a
 // MutationObserver. The idempotent `contains` guard makes it settle in one pass.
-function applyThemeClass(theme: Theme) {
+function applyThemeClass(theme: Theme, suppressTransitions = false) {
 	if (typeof document === "undefined") return;
 	const root = document.documentElement;
 	const other = theme === "dark" ? "light" : "dark";
 	if (root.classList.contains(theme) && !root.classList.contains(other)) return;
+	if (suppressTransitions) suppressThemeTransitions(root);
 	root.classList.remove("light", "dark");
 	root.classList.add(theme);
 }
@@ -190,14 +213,17 @@ const globalScope = globalThis as { __gatuThemeDocSync?: boolean };
 if (typeof document !== "undefined" && !globalScope.__gatuThemeDocSync) {
 	globalScope.__gatuThemeDocSync = true;
 	syncDocumentTheme();
-	new MutationObserver(syncDocumentTheme).observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ["class"],
-	});
+	new MutationObserver(() => applyThemeClass(useGlobalSettingsStore.getState().theme, true)).observe(
+		document.documentElement,
+		{
+			attributes: true,
+			attributeFilter: ["class"],
+		},
+	);
 }
 
 useGlobalSettingsStore.subscribe((state, prev) => {
-	if (state.theme !== prev.theme) applyThemeClass(state.theme);
+	if (state.theme !== prev.theme) applyThemeClass(state.theme, true);
 	if (state.numberFormatLocale !== prev.numberFormatLocale) notifyNumberFormatChange();
 });
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { calcGridItemPosition, verticalCompactor } from "react-grid-layout";
+import { calcGridItemPosition } from "react-grid-layout";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS,
@@ -18,6 +18,7 @@ import {
 	readDesktopGridLayouts,
 	resetDesktopGridLayouts,
 	syncGridItemContentHeight,
+	syncGridItemResize,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
@@ -96,15 +97,15 @@ describe("desktop grid layout", () => {
 		const layouts = cloneDefaultLayouts();
 		const originalLg = layouts.lg;
 		const originalMd = layouts.md;
-		const originalMdChart = originalMd?.find((item) => item.i === "chart");
 
 		const next = syncGridItemContentHeight(layouts, "md", "tradingInterface", 850);
 
 		expect(next).not.toBe(layouts);
 		expect(next.lg).toBe(originalLg);
 		expect(next.md).not.toBe(originalMd);
-		expect(next.md?.find((item) => item.i === "chart")).toBe(originalMdChart);
+		expect(next.md?.find((item) => item.i === "chart")).toMatchObject({ x: 0, y: 2.7, w: 10, h: 17.9 });
 		expect(next.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
+		expect(next.md?.find((item) => item.i === "marketData")?.y).toBe(25.85);
 		expect(next.lg?.find((item) => item.i === "tradingInterface")?.h).toBe(20.4);
 	});
 
@@ -272,19 +273,12 @@ describe("desktop grid layout", () => {
 		expect(restoredTrading).toMatchObject({ x: 10, w: 4 });
 	});
 
-	it("round-trips the compacted active layout without losing user geometry", () => {
+	it("round-trips an atomically compacted content height without losing user geometry", () => {
 		const layouts = cloneDefaultLayouts();
 		layouts.md = layouts.md?.map((item) => (item.i === "accountTable" ? { ...item, h: 14 } : item));
 
 		const observed = syncGridItemContentHeight(layouts, "md", "tradingInterface", 850);
 		writeDesktopGridLayouts(observed);
-		expect(readDesktopGridLayouts().md?.find((item) => item.i === "tradingInterface")?.h).toBe(20.6);
-
-		const compacted = {
-			...observed,
-			md: verticalCompactor.compact(observed.md ?? [], DESKTOP_GRID_COLS.md),
-		};
-		writeDesktopGridLayouts(compacted);
 
 		const restored = readDesktopGridLayouts().md;
 		expect(restored?.find((item) => item.i === "tradingInterface")).toMatchObject({ y: 0, h: 25.85 });
@@ -301,14 +295,34 @@ describe("desktop grid layout", () => {
 		const observed = syncGridItemContentHeight(layouts, "lg", "tradingInterface", 850);
 		expect(observed.md).toBe(originalMd);
 
-		writeDesktopGridLayouts({
-			...observed,
-			lg: verticalCompactor.compact(observed.lg ?? [], DESKTOP_GRID_COLS.lg),
-		});
+		writeDesktopGridLayouts(observed);
 
 		const restoredMd = readDesktopGridLayouts().md;
 		expect(restoredMd?.find((item) => item.i === "accountTable")?.h).toBe(14);
 		expect(restoredMd?.find((item) => item.i === "tradingInterface")?.h).toBe(20.6);
+	});
+
+	it("merges a user resize into the latest active layout instead of accepting a stale responsive snapshot", () => {
+		const layouts = cloneDefaultLayouts();
+		const withMeasuredContent = syncGridItemContentHeight(layouts, "md", "tradingInterface", 850);
+		const staleChart = DEFAULT_DESKTOP_GRID_LAYOUTS.md.find((item) => item.i === "chart");
+		if (!staleChart) throw new Error("Expected the compact desktop chart layout");
+
+		const resized = syncGridItemResize(withMeasuredContent, "md", { ...staleChart, w: 9, h: 18 });
+
+		expect(resized.lg).toBe(withMeasuredContent.lg);
+		expect(resized.md?.find((item) => item.i === "chart")).toMatchObject({ w: 9, h: 18 });
+		expect(resized.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
+		expect(resized.md?.find((item) => item.i === "marketData")?.y).toBe(25.85);
+	});
+
+	it("rejects invalid or unknown resize results", () => {
+		const layouts = cloneDefaultLayouts();
+		const chart = DEFAULT_DESKTOP_GRID_LAYOUTS.md.find((item) => item.i === "chart");
+		if (!chart) throw new Error("Expected the compact desktop chart layout");
+
+		expect(syncGridItemResize(layouts, "md", { ...chart, w: 100 })).toBe(layouts);
+		expect(syncGridItemResize(layouts, "md", { ...chart, i: "missing", w: 9 })).toBe(layouts);
 	});
 });
 

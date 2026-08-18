@@ -775,6 +775,15 @@
     display: none;
   }
 
+  html[data-theme-transition],
+  html[data-theme-transition]::before,
+  html[data-theme-transition]::after,
+  html[data-theme-transition] *,
+  html[data-theme-transition] *::before,
+  html[data-theme-transition] *::after {
+    transition-property: none !important;
+  }
+
   body {
     overscroll-behavior-y: contain;
   }

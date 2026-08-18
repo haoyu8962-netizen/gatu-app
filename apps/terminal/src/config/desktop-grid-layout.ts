@@ -1,4 +1,10 @@
-import { getBreakpointFromWidth, type Layout, type ResponsiveLayouts } from "react-grid-layout";
+import {
+	getBreakpointFromWidth,
+	type Layout,
+	type LayoutItem,
+	type ResponsiveLayouts,
+	verticalCompactor,
+} from "react-grid-layout";
 
 export const DESKTOP_GRID_BREAKPOINTS = {
 	lg: 1420,
@@ -179,7 +185,45 @@ export function syncGridItemContentHeight(
 		return { ...item, h: constrainedRows };
 	});
 
-	return changed ? { ...layouts, [breakpoint]: nextActiveLayout } : layouts;
+	return changed
+		? { ...layouts, [breakpoint]: verticalCompactor.compact(nextActiveLayout, DESKTOP_GRID_COLS[breakpoint]) }
+		: layouts;
+}
+
+export function syncGridItemResize(
+	layouts: ResponsiveLayouts<DesktopGridBreakpoint>,
+	breakpoint: DesktopGridBreakpoint,
+	resizedItem: LayoutItem,
+): ResponsiveLayouts<DesktopGridBreakpoint> {
+	const activeLayout = layouts[breakpoint];
+	if (!activeLayout) return layouts;
+
+	let changed = false;
+	const nextActiveLayout = activeLayout.map((item) => {
+		if (item.i !== resizedItem.i) return item;
+
+		const handles = item.resizeHandles ?? ["se"];
+		const canResizeWest = handles.some((handle) => handle.includes("w"));
+		const canResizeNorth = handles.some((handle) => handle.includes("n"));
+		const canResizeWidth = canResizeWest || handles.some((handle) => handle.includes("e"));
+		const canResizeHeight = canResizeNorth || handles.some((handle) => handle.includes("s"));
+		const nextItem = {
+			...item,
+			x: canResizeWest ? resizedItem.x : item.x,
+			y: canResizeNorth ? resizedItem.y : item.y,
+			w: canResizeWidth ? resizedItem.w : item.w,
+			h: canResizeHeight ? resizedItem.h : item.h,
+		};
+		if (!hasValidGeometry(nextItem, item, DESKTOP_GRID_COLS[breakpoint])) return item;
+		if (item.x === nextItem.x && item.y === nextItem.y && item.w === nextItem.w && item.h === nextItem.h) return item;
+
+		changed = true;
+		return nextItem;
+	});
+
+	return changed
+		? { ...layouts, [breakpoint]: verticalCompactor.compact(nextActiveLayout, DESKTOP_GRID_COLS[breakpoint]) }
+		: layouts;
 }
 
 export function readDesktopGridLayouts(): ResponsiveLayouts<DesktopGridBreakpoint> {

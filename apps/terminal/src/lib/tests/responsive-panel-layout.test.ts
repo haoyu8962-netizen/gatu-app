@@ -121,13 +121,16 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("animate-spin");
 	});
 
-	it("observes border-box height with cleanup and persists RGL's compacted layouts", () => {
+	it("batches border-box measurements and persists only committed layouts", () => {
 		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height");
 		expect(GRID_CONTENT_HEIGHT_SOURCE).not.toContain("offsetHeight");
-		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("return () => observer.disconnect()");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("onLayoutChange={(_, allLayouts) =>");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("setLayouts(allLayouts)");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("writeDesktopGridLayouts(allLayouts)");
+		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("requestAnimationFrame");
+		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("cancelAnimationFrame");
+		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("observer.disconnect()");
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain("onLayoutChange=");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("onResizeStop={(_, _oldItem, resizedItem) =>");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("syncGridItemResize(prev, activeBreakpoint, resizedItem)");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("useEffect(() => writeDesktopGridLayouts(layouts), [layouts])");
 	});
 
 	it("reveals the dedicated grid container surface through desktop panel gutters", () => {

@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
@@ -7,6 +7,7 @@ import {
 	DESKTOP_GRID_ROW_HEIGHT_PX,
 	getDesktopGridBreakpoint,
 	readDesktopGridLayouts,
+	syncGridItemResize,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
@@ -64,6 +65,8 @@ export function MainWorkspace() {
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 	const spotSocials = getSpotAssetSocials(selectedMarket);
 
+	useEffect(() => writeDesktopGridLayouts(layouts), [layouts]);
+
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
 	}
@@ -82,9 +85,9 @@ export function MainWorkspace() {
 					containerPadding={gridSpacing}
 					dragConfig={{ enabled: false }}
 					resizeConfig={{ enabled: true }}
-					onLayoutChange={(_, allLayouts) => {
-						setLayouts(allLayouts);
-						writeDesktopGridLayouts(allLayouts);
+					onResizeStop={(_, _oldItem, resizedItem) => {
+						if (!resizedItem) return;
+						setLayouts((prev) => syncGridItemResize(prev, activeBreakpoint, resizedItem));
 					}}
 				>
 					<div

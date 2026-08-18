@@ -20,15 +20,23 @@ export function useGridContentHeight(
 		(node: HTMLDivElement | null) => {
 			if (!mounted || !node) return;
 
+			let animationFrame: number | null = null;
 			const observer = new ResizeObserver(([entry]) => {
 				if (!entry) return;
 				const contentHeight = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
 				if (!Number.isFinite(contentHeight) || contentHeight <= 0) return;
-				setLayouts((prev) => syncGridItemContentHeight(prev, breakpoint, itemId, contentHeight));
+				if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+				animationFrame = requestAnimationFrame(() => {
+					setLayouts((prev) => syncGridItemContentHeight(prev, breakpoint, itemId, contentHeight));
+					animationFrame = null;
+				});
 			});
 			observer.observe(node);
 
-			return () => observer.disconnect();
+			return () => {
+				if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+				observer.disconnect();
+			};
 		},
 		[breakpoint, itemId, mounted, setLayouts],
 	);
