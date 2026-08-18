@@ -149,7 +149,9 @@ describe("DepositForm routing gate", () => {
 
 		const icon = container.querySelector<HTMLImageElement>('img[src="/coins/USDC.svg"]');
 		expect(icon?.alt).toBe("");
-		expect(icon?.parentElement?.getAttribute("aria-hidden")).toBe("true");
+		expect(icon?.getAttribute("aria-hidden")).toBe("true");
+		expect(icon?.className).toContain("size-10");
+		expect(icon?.parentElement?.className).not.toContain("bg-market-close-control");
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("Up to 0.2 USDC in fees will be deducted from your deposit.");
 		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();

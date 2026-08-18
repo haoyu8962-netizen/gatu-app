@@ -423,9 +423,7 @@ export function DepositForm({
 	return (
 		<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
 			<div className="flex flex-col items-center gap-2 text-center">
-				<div className="grid size-10 place-items-center rounded-full bg-market-close-control" aria-hidden="true">
-					<img src={USDC_ICON_URL} alt="" className="size-8 rounded-full" />
-				</div>
+				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 rounded-full" />
 				<div className="space-y-0.5">
 					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
 						<Trans>Deposit USDC from Arbitrum</Trans>
