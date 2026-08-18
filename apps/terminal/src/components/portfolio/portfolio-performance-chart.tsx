@@ -86,9 +86,9 @@ const PLOT_PADDING_BOTTOM = 24;
 const PLOT_PADDING_LEFT = 60;
 const TIME_TICK_SPACING = 108;
 const TOOLTIP_GAP = 6;
-const TOOLTIP_HEIGHT = 36;
+const TOOLTIP_HEIGHT = 32;
 const TOOLTIP_INSET = 6;
-const TOOLTIP_WIDTH = 192;
+const TOOLTIP_WIDTH = 176;
 
 export function PortfolioPerformanceChart({
 	accountValueHistory,
@@ -398,7 +398,7 @@ export function PortfolioPerformanceChart({
 						{activeLabel && tooltipPosition ? (
 							<span
 								role="tooltip"
-								className="pointer-events-none absolute z-[var(--z-tooltip)] flex h-9 items-center justify-center break-words rounded-xs border border-stroke-weak bg-overlay px-2 text-center text-2xs font-medium leading-4 text-fg shadow-raised tabular-nums [overflow-wrap:anywhere]"
+								className="pointer-events-none absolute z-[var(--z-tooltip)] flex h-8 items-center justify-center break-words rounded-32 border border-stroke-weak bg-overlay px-2 text-center text-2xs font-medium leading-3 text-fg shadow-raised tabular-nums [overflow-wrap:anywhere]"
 								style={{
 									left: `${tooltipPosition.left}px`,
 									top: `${tooltipPosition.top}px`,
