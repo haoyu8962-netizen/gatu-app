@@ -11,7 +11,6 @@ import { type DepositAvailabilityPresentation, useDepositAvailability } from "@/
 import { createI18nRoot } from "./harness/react";
 
 const ENABLED_FEATURES: CctpDepositFeatureFlags = {
-	mainnetExternalWallet: true,
 	mainnetSponsoredWallet: true,
 	testnetExternalWallet: true,
 	testnetSponsoredWallet: true,
@@ -39,7 +38,6 @@ const hookState = vi.hoisted(() => ({
 
 vi.mock("@/config/cctp-deposit", () => ({
 	CCTP_DEPOSIT_FEATURES: {
-		mainnetExternalWallet: false,
 		mainnetSponsoredWallet: true,
 		testnetExternalWallet: false,
 		testnetSponsoredWallet: false,
@@ -75,14 +73,14 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 describe("getDepositAvailability", () => {
-	it("selects the external release gate for the active network", () => {
+	it("keeps Mainnet external available while honoring the Testnet release gate", () => {
 		expect(
 			getDepositAvailability({
-				featureFlags: { ...ENABLED_FEATURES, mainnetExternalWallet: false },
+				featureFlags: { ...ENABLED_FEATURES, testnetExternalWallet: false },
 				geoStatus: "allowed",
 				hasWalletAccess: true,
 				isEmbeddedWallet: false,
-				network: "mainnet",
+				network: "testnet",
 				sessionMode: "wallet",
 			}),
 		).toEqual({

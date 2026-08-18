@@ -6,11 +6,10 @@ import { resolve } from "node:path";
 const EXPECTED_MAINNET_ORIGIN = "https://app.gatu.ai";
 const EXPECTED_TESTNET_ORIGIN = "https://testnet.gatu.ai";
 const MAINNET_RELEASE_PROFILES = new Map([
-	["disabled", { external: "", sponsored: "" }],
-	["sponsored-only", { external: "", sponsored: "true" }],
-	["external-only", { external: "true", sponsored: "" }],
-	["both", { external: "true", sponsored: "true" }],
+	["external-only", { sponsored: "" }],
+	["both", { sponsored: "true" }],
 ]);
+const LEGACY_MAINNET_EXTERNAL_GATE = "VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED";
 const OPTIONAL_BOOLEAN_BUILD_FLAGS = [
 	"VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED",
 	"VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED",
@@ -68,12 +67,12 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 
 	requireExactValue(values, filePath, "VITE_HYPERLIQUID_TESTNET", "");
 	requireExactValue(values, filePath, "VITE_HYPERLIQUID_AGENT_NAME", "gatu");
-	requireExactValue(
-		values,
-		filePath,
-		"VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED",
-		releaseProfile.external,
-	);
+	const legacyMainnetExternalGate = values.get(LEGACY_MAINNET_EXTERNAL_GATE);
+	if (legacyMainnetExternalGate !== undefined && legacyMainnetExternalGate !== "true") {
+		fail(
+			`${filePath} may omit ${LEGACY_MAINNET_EXTERNAL_GATE} or keep the legacy acknowledgement at the exact literal true; Mainnet external deposits cannot be disabled by build configuration.`,
+		);
+	}
 	requireExactValue(
 		values,
 		filePath,
@@ -103,7 +102,7 @@ function validateRuntimeEnvironment(values, filePath) {
 	const releaseMode = requireValue(values, filePath, "GATU_CCTP_MAINNET_RELEASE_MODE");
 	if (!MAINNET_RELEASE_PROFILES.has(releaseMode)) {
 		fail(
-			`${filePath} requires GATU_CCTP_MAINNET_RELEASE_MODE to be disabled, sponsored-only, external-only, or both; received ${releaseMode || "<empty>"}.`,
+			`${filePath} requires GATU_CCTP_MAINNET_RELEASE_MODE to be external-only or both; received ${releaseMode || "<empty>"}.`,
 		);
 	}
 	return releaseMode;
@@ -144,7 +143,7 @@ function main() {
 		[
 			"Production environment contract validated:",
 			`mainnet=${releaseMode}`,
-			`mainnet-external=${mainnetProfile.external === "true" ? "enabled" : "disabled"}`,
+			"mainnet-external=enabled",
 			`mainnet-sponsored=${mainnetProfile.sponsored === "true" ? "enabled" : "disabled"}`,
 			`testnet-external=${testnetExternal === "true" ? "enabled" : "disabled"}`,
 			`testnet-sponsored=${testnetSponsored === "true" ? "enabled" : "disabled"}`,

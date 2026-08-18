@@ -126,34 +126,22 @@ function createSponsoredReceipt({
 }
 
 describe("CCTP deposit configuration", () => {
-	it("keeps mainnet and testnet activation independently fail-closed", () => {
+	it("keeps external Mainnet deposits on while other paths remain independently gated", () => {
 		expect(resolveCctpDepositFeatureFlags({})).toEqual({
-			mainnetExternalWallet: false,
 			mainnetSponsoredWallet: false,
 			testnetExternalWallet: false,
 			testnetSponsoredWallet: false,
 		});
 		expect(
 			resolveCctpDepositFeatureFlags({
-				VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED: "false",
 				VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED: "true",
 				VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED: "true",
 				VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED: "false",
 			}),
 		).toEqual({
-			mainnetExternalWallet: false,
 			mainnetSponsoredWallet: true,
 			testnetExternalWallet: true,
 			testnetSponsoredWallet: false,
-		});
-		expect(
-			resolveCctpDepositFeatureFlags({
-				VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED: "true",
-				VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED: "true",
-			}),
-		).toMatchObject({
-			mainnetExternalWallet: true,
-			mainnetSponsoredWallet: true,
 		});
 	});
 

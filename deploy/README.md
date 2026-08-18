@@ -140,7 +140,8 @@ sudo -u gatu cp /opt/gatu/repo/deploy/env.runtime.example /opt/gatu/shared/.env.
 sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 # 编辑这两个文件填入真实值：
 #   .env.local   → VITE_PRIVY_APP_ID；保留 VITE_HYPERLIQUID_AGENT_NAME=gatu；
-#                  移动配对放量时再把对应 gate 设为精确的 "true"
+#                  主网 External CCTP 固定开启；Sponsored、测试网和移动配对
+#                  仅在启用时把对应 gate 设为精确的 "true"
 #   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
 #                  GATU_MAINNET_PUBLIC_BASE_URL / GATU_TESTNET_PUBLIC_BASE_URL 保持为
 #                  对应的两个 exact public origin；修改域名时同步修改 deploy/Caddyfile
@@ -148,18 +149,17 @@ sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```
 
-生产 CCTP 支持四种显式发布模式；`GATU_CCTP_MAINNET_RELEASE_MODE` 必须与两个主网构建开关严格一致：
+主网 External CCTP 是固定能力，不再由构建变量关闭。生产 CCTP 只支持两种显式发布模式；
+`GATU_CCTP_MAINNET_RELEASE_MODE` 必须与 Sponsored 主网构建开关严格一致：
 
-| 发布模式 | External gate | Sponsored gate |
+| 发布模式 | External | Sponsored gate |
 |---|---:|---:|
-| `disabled` | 留空 | 留空 |
-| `external-only` | `true` | 留空 |
-| `sponsored-only` | 留空 | `true` |
-| `both` | `true` | `true` |
+| `external-only` | 固定开启 | 留空 |
+| `both` | 固定开启 | `true` |
 
-这些是全量构建开关，不是白名单或分组开关。`external-only` 或 `both` 会对所有符合条件的
-外部钱包用户开放直接 CCTP 路径；`sponsored-only` 或 `both` 会对所有符合条件的邮箱钱包用户开放
-Sponsored 路径，但仍必须在弹窗内显式确认全部可用 USDC 与 Circle 费用后才会签名和广播。
+External 会对所有符合条件的外部钱包用户开放直接 CCTP 路径。Sponsored 是全量构建开关，不是白名单
+或分组开关；`both` 会同时对符合条件的邮箱钱包用户开放 Sponsored 路径。两条路径仍必须在弹窗内
+显式确认金额与 Circle 费用后才会签名和广播。
 
 开启 Sponsored 路径前建议完成以下生产验收：
 
@@ -169,7 +169,7 @@ Sponsored 路径，但仍必须在弹窗内显式确认全部可用 USDC 与 Cir
    `0x300fb2a3`。
 3. 按生产容量设置请求次数、单笔 Gas、累计 Gas 和 Gas Price 限额，并配置监控和预警；不得直接照搬测试网限额。
 4. 在不对普通用户开放的受控 production-candidate 环境中，使用同一 commit 和将要发布的
-   `sponsored-only` 或 `both` bundle 完成一次小额主网 E2E，核对 source receipt、唯一 success event、
+   `both` bundle 完成一次小额主网 E2E，核对 source receipt、唯一 success event、
    Circle forward、HyperCore 到账、刷新恢复与零重复提交。若无法隔离流量，不得把全量开关宣称为
    “白名单 canary”；应先增加真正的运行时白名单或流量隔离。
 
@@ -183,7 +183,6 @@ Sponsored 路径，但仍必须在弹窗内显式确认全部可用 USDC 与 Cir
 # /opt/gatu/shared/.env.local
 VITE_HYPERLIQUID_TESTNET=
 VITE_HYPERLIQUID_AGENT_NAME=gatu
-VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true
 VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true
 
 # /opt/gatu/shared/.env.runtime
@@ -192,15 +191,18 @@ GATU_TESTNET_PUBLIC_BASE_URL=https://testnet.gatu.ai
 GATU_CCTP_MAINNET_RELEASE_MODE=both
 ```
 
-`env.build.example` 仍把所有资金 gate 保持为空，不得把 `true` 提交为模板默认值。
+旧主机可以继续保留 `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true`；它只作为兼容确认值，应用不再
+读取它，也不能用空值或 `false` 关闭主网 External。新配置不再声明该变量。
+`env.build.example` 仍把 Sponsored、测试网和其他资金 gate 保持为空，不得把 `true` 提交为模板默认值。
 `VITE_HYPERLIQUID_AGENT_NAME=gatu` 是生产浏览器 Agent 的固定 named slot；本地开发默认使用
 `gatu-dev`。任何连接主网的预览或预发布 bundle 必须配置独立且不超过 16 字符的名称，不能复用
 `gatu`，否则 Hyperliquid 会注销同名生产 Agent。
 `GATU_CCTP_MAINNET_RELEASE_MODE` 是部署确认值，不会进入客户端 bundle：`deploy.sh` 在安装依赖或构建前
-核对它与两个主网 gate。任何重复变量、引号/注释造成的含糊布尔值、模式与开关组合不匹配，
-或非 canonical public origin 都会 fail-fast。紧急停止所有新 CCTP 提交时，同时把两个主网 gate 留空且设为
-`GATU_CCTP_MAINNET_RELEASE_MODE=disabled`，重新构建发布；在途记录仍继续对账。只停止其中一条路径时，
-清空该路径的 gate，并把 release mode 切换为与剩余开关一致的 `external-only`、`sponsored-only` 或 `disabled`。
+核对它与 Sponsored 主网 gate。任何重复变量、引号/注释造成的含糊布尔值、模式与开关组合不匹配，
+或非 canonical public origin 都会 fail-fast。Sponsored 可通过清空其 gate 并切换为 `external-only` 停止。
+主网 External 没有环境变量停用入口；异常时仍由 fresh CCTP route、地区、owner signer、Circle fee/allowance、
+余额、receipt 与恢复守卫 fail closed。如需产品级紧急停用，必须发布经过审查的代码变更，同时继续对账在途记录，
+且不得回退 Bridge2。
 
 `deploy.sh` 会在构建前清除调用 shell 里继承的所有 `VITE_*`，防止它们以高于 dotenv 的优先级覆盖
 `/opt/gatu/shared/.env.local`。它还会拒绝 `apps/terminal/.env`、`.env.production` 或
@@ -321,27 +323,30 @@ Mobile Agent 和已有 Agent 的远端对账都保持可用。
 流量并留出在途 route 排空窗口，再发布关闭版本；发布后用同一标签页刷新验证 committed route 的恢复入口，
 并确认新标签页、桌面账户入口和移动账户入口均不再显示新 Bridge 入口。
 
-Circle CCTP 新入金使用按钱包路径和环境拆分的四个独立门禁：
+Circle CCTP 新入金把主网 External 作为固定能力，并保留三个按钱包路径和环境拆分的独立门禁：
 
 - `VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=true`：仅在 Arbitrum Sepolia 筹资 E2E 已验证授权、烧毁事件、Circle attestation/forward 和 HyperCore 到账恢复后开启。
-- `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true`：仅在上述测试网验收通过，并完成小额主网实际到账与恢复演练后开启。
+- 主网 External 无构建开关，始终使用 Circle 官方 `CctpExtension.batchDepositForBurnWithAuth` 直接路径；小额主网实际到账与恢复演练仍是运维验收建议，不是功能门禁。
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=true`：仅在邮箱 embedded EOA 精确账户签名、`CctpExtensionV2` 确定性 nonce、Privy Smart Wallet/Paymaster 提交、success/skipped 事件分类、刷新恢复和最终 HyperCore 到账均已通过 Arbitrum Sepolia 筹资 E2E 后开启。
 - `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true`：仅在 sponsored 测试网验收通过、ZeroDev 主网策略按上述合约/方法收紧并设好生产容量限额，且受控 production-candidate 小额主网到账、重试及恢复演练完成后开启。
 
-四个开关的源码默认值都是关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。它们是构建期全量门禁，不是用户白名单或无需部署的远程 kill switch：关闭任意路径后必须重建发布，已加载旧 bundle 的标签页不会立即失效。
+其余三个开关的源码默认值都是关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为 Sponsored 或测试网发布授权。
+它们是构建期全量门禁，不是用户白名单或无需部署的远程 kill switch：关闭任意受控路径后必须重建发布，
+已加载旧 bundle 的标签页不会立即失效。主网 External 仍要求 fresh `usdcRouting=cctp`，但该响应是执行安全守卫，
+不是可选的发布授权。
 
 新入金政策为 CCTP-only。即使 Hyperliquid `usdcRouting.depositRoute`
 返回 `bridge`，也必须暂停新入金，不得重新打开 Bridge2；已广播的旧 Bridge2 交易仍需保留历史和恢复对账。下线旧通道时先禁止所有新的手动/自动 Bridge2 请求，再等待在途记录排空；不得删除历史查询，也不得一并禁用独立的 legacy withdrawal `withdraw3`。
 
 推荐发布顺序（这是运维验收建议，不是部署验证器的隐式链上证明）：
 
-1. 四个门禁全部关闭发布，确认 Bridge2 新签名/提交已 fail closed，旧记录仍可恢复。
-2. 分别开启 external testnet 和 sponsored testnet 做筹资 E2E；Sponsored 额外覆盖已消费 nonce、余额不足、
+1. 发布主网 External 基线，确认非 CCTP route 与 Bridge2 新签名/提交均 fail closed，旧记录仍可恢复。
+2. 分别开启 External testnet 和 Sponsored testnet 做筹资 E2E；Sponsored 额外覆盖已消费 nonce、余额不足、
    Paymaster 拒绝、RPC 超时、刷新恢复和最终到账用例。
 3. 对计划开放的每条路径，在受控、非公开的 production-candidate 环境中使用小额 USDC 完成主网 E2E；
    Sponsored 还应先收紧 ZeroDev 主网 Contract Policy 并设定生产容量限额。当前代码没有内部白名单，
    不得把全量开关当作白名单 canary。
-4. 根据实际要开放的路径选择 `external-only`、`sponsored-only` 或 `both`。模式必须与两个主网 gate 严格对应；
+4. 根据是否开放 Sponsored 选择 `external-only` 或 `both`。模式必须与 Sponsored 主网 gate 严格对应；
    回滚时停止相应的新 CCTP 提交，继续追踪已提交交易，绝不回退 Bridge2。
 
 ---
@@ -494,7 +499,7 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 ## 上线 Checklist
 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填，`VITE_HYPERLIQUID_AGENT_NAME=gatu`，生产 mainnet 的 `VITE_HYPERLIQUID_TESTNET` 留空
-- [ ] 主网 CCTP rollout 已在 `disabled`、`external-only`、`sponsored-only`、`both` 中明确选择，且两个主网 gate 与 `.env.runtime` 的 `GATU_CCTP_MAINNET_RELEASE_MODE` 严格对应；当前主机同时开放两条路径时三者分别为 `true` / `true` / `both`
+- [ ] 主网 External CCTP 固定开启；已在 `external-only`、`both` 中选择是否开放 Sponsored，且 Sponsored gate 与 `.env.runtime` 的 `GATU_CCTP_MAINNET_RELEASE_MODE` 严格对应
 - [ ] 若开启 Sponsored，ZeroDev Arbitrum One 已关闭 Sponsor All，Contract Policy 只允许 `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` / `batchSponsorDepositForBurn` (`0x300fb2a3`)，并已设定经过容量评估的 Request、单笔/累计 Gas 与 Gas Price 限额、监控和预警
 - [ ] 建议对每条已开启的 CCTP 路径完成受控 production-candidate 小额主网 E2E；这是真实资金上线验收，不是部署验证器的隐式禁用条件
 - [ ] `node deploy/validate-production-env.mjs /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime apps/terminal` 通过

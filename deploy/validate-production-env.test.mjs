@@ -9,16 +9,14 @@ import { spawnSync } from "node:child_process";
 const SCRIPT_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "validate-production-env.mjs");
 const temporaryDirectories = [];
 const MAINNET_RELEASE_PROFILES = [
-	{ releaseMode: "disabled", mainnetExternal: "", mainnetSponsored: "" },
-	{ releaseMode: "sponsored-only", mainnetExternal: "", mainnetSponsored: "true" },
-	{ releaseMode: "external-only", mainnetExternal: "true", mainnetSponsored: "" },
-	{ releaseMode: "both", mainnetExternal: "true", mainnetSponsored: "true" },
+	{ releaseMode: "external-only", mainnetSponsored: "" },
+	{ releaseMode: "both", mainnetSponsored: "true" },
 ];
 
 function createEnvironmentFiles({
-	releaseMode = "sponsored-only",
-	mainnetExternal = "",
-	mainnetSponsored = "true",
+	releaseMode = "external-only",
+	mainnetExternal = null,
+	mainnetSponsored = "",
 	testnetExternal = "true",
 	testnetSponsored = "true",
 	testnetBuild = "",
@@ -39,7 +37,9 @@ function createEnvironmentFiles({
 			"VITE_PRIVY_APP_ID=privy-app-id",
 			`VITE_HYPERLIQUID_TESTNET=${testnetBuild}`,
 			`VITE_HYPERLIQUID_AGENT_NAME=${agentName}`,
-			`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=${mainnetExternal}`,
+			...(mainnetExternal === null
+				? []
+				: [`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=${mainnetExternal}`]),
 			`VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=${testnetExternal}`,
 			`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=${mainnetSponsored}`,
 			`VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=${testnetSponsored}`,
@@ -70,15 +70,12 @@ afterEach(() => {
 	for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true });
 });
 
-test("accepts every exact mainnet CCTP release profile", () => {
+test("accepts every exact always-external mainnet CCTP release profile", () => {
 	for (const profile of MAINNET_RELEASE_PROFILES) {
 		const result = validate(profile);
 		assert.equal(result.status, 0, `${profile.releaseMode}: ${result.stderr}`);
 		assert.match(result.stdout, new RegExp(`mainnet=${profile.releaseMode}`));
-		assert.match(
-			result.stdout,
-			new RegExp(`mainnet-external=${profile.mainnetExternal === "true" ? "enabled" : "disabled"}`),
-		);
+		assert.match(result.stdout, /mainnet-external=enabled/);
 		assert.match(
 			result.stdout,
 			new RegExp(`mainnet-sponsored=${profile.mainnetSponsored === "true" ? "enabled" : "disabled"}`),
@@ -86,35 +83,38 @@ test("accepts every exact mainnet CCTP release profile", () => {
 	}
 });
 
-test("rejects every mainnet release mode and gate mismatch", () => {
+test("accepts the legacy exact-true mainnet external acknowledgement in every profile", () => {
 	for (const profile of MAINNET_RELEASE_PROFILES) {
-		for (const mainnetExternal of ["", "true"]) {
-			for (const mainnetSponsored of ["", "true"]) {
-				if (
-					mainnetExternal === profile.mainnetExternal &&
-					mainnetSponsored === profile.mainnetSponsored
-				) {
-					continue;
-				}
-				const result = validate({ releaseMode: profile.releaseMode, mainnetExternal, mainnetSponsored });
-				assert.equal(
-					result.status,
-					1,
-					`${profile.releaseMode} unexpectedly accepted external=${mainnetExternal || "<empty>"} sponsored=${mainnetSponsored || "<empty>"}`,
-				);
-				assert.match(result.stderr, /VITE_CCTP_(EXTERNAL|SPONSORED)_DEPOSIT_MAINNET_ENABLED/);
-			}
-		}
+		const result = validate({ ...profile, mainnetExternal: "true" });
+		assert.equal(result.status, 0, `${profile.releaseMode}: ${result.stderr}`);
+		assert.match(result.stdout, /mainnet-external=enabled/);
 	}
 });
 
-test("rejects ambiguous mainnet gate values", () => {
+test("rejects every mainnet release mode and sponsored gate mismatch", () => {
+	for (const profile of MAINNET_RELEASE_PROFILES) {
+		const mainnetSponsored = profile.mainnetSponsored === "true" ? "" : "true";
+		const result = validate({ releaseMode: profile.releaseMode, mainnetSponsored });
+		assert.equal(
+			result.status,
+			1,
+			`${profile.releaseMode} unexpectedly accepted sponsored=${mainnetSponsored || "<empty>"}`,
+		);
+		assert.match(result.stderr, /VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED/);
+	}
+});
+
+test("rejects legacy attempts to disable the permanent mainnet external path", () => {
+	for (const legacyValue of ["", "false", "TRUE", "1", '"true"']) {
+		const result = validate({ mainnetExternal: legacyValue });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED/);
+	}
+});
+
+test("rejects ambiguous mainnet sponsored gate values", () => {
 	for (const profile of MAINNET_RELEASE_PROFILES) {
 		for (const ambiguous of ["false", "TRUE", "1", '"true"']) {
-			const externalResult = validate({ ...profile, mainnetExternal: ambiguous });
-			assert.equal(externalResult.status, 1);
-			assert.match(externalResult.stderr, /VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED/);
-
 			const sponsoredResult = validate({ ...profile, mainnetSponsored: ambiguous });
 			assert.equal(sponsoredResult.status, 1);
 			assert.match(sponsoredResult.stderr, /VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED/);
@@ -123,10 +123,10 @@ test("rejects ambiguous mainnet gate values", () => {
 });
 
 test("rejects unsupported mainnet release modes", () => {
-	for (const releaseMode of ["", "enabled", "all", "Both"]) {
+	for (const releaseMode of ["", "disabled", "sponsored-only", "enabled", "all", "Both"]) {
 		const result = validate({ releaseMode });
 		assert.equal(result.status, 1);
-		assert.match(result.stderr, /disabled, sponsored-only, external-only, or both/);
+		assert.match(result.stderr, /external-only or both/);
 	}
 });
 

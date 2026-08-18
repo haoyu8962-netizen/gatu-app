@@ -41,7 +41,7 @@ export function getDepositAvailability({
 				: featureFlags.testnetExternalWallet
 			: isEmbeddedWallet
 				? featureFlags.mainnetSponsoredWallet
-				: featureFlags.mainnetExternalWallet;
+				: true;
 	const state = { path, releasePathEnabled, signerReady };
 
 	if (geoStatus === "restricted") return { ...state, available: false, reason: "geo-restricted" };

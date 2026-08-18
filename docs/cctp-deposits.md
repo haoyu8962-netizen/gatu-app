@@ -24,50 +24,51 @@ deposit parameters. The Privy Smart Wallet submits
 sponsors the source-chain gas. Authentication alone is insufficient: the
 embedded EOA must match the selected Hyperliquid owner exactly.
 
-Activation remains independently fail-closed for path and environment:
+Direct external-wallet deposits on Mainnet are a permanent product capability
+and do not have a build-time activation gate. Activation remains independently
+fail-closed for the other path/environment combinations:
 
-- `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED`
 - `VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED`
 - `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED`
 - `VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED`
 
-None defaults to enabled. The sponsored flag does not enable the external path
-or the other environment. These flags authorize a release to expose a path;
-they are not themselves user consent to move funds. In particular, enabling
-the sponsored mainnet flag must not make the application-wide recovery host
-sign or broadcast a deposit.
+These three flags default to disabled. A sponsored flag does not enable the
+other environment, and the Testnet external flag does not alter Mainnet. These
+flags authorize a release to expose a controlled path; they are not themselves
+user consent to move funds. In particular, enabling the sponsored Mainnet flag
+must not make the application-wide recovery host sign or broadcast a deposit.
 
-Production supports four explicit Mainnet release modes, and the deployment
-validator requires the mode to match the two Mainnet flags exactly:
+Production supports two explicit Mainnet release modes. External is enabled in
+both, and the deployment validator requires the mode to match the sponsored
+Mainnet flag exactly:
 
-| Release mode | External flag | Sponsored flag |
+| Release mode | External | Sponsored flag |
 |---|---:|---:|
-| `disabled` | empty | empty |
-| `external-only` | `true` | empty |
-| `sponsored-only` | empty | `true` |
-| `both` | `true` | `true` |
+| `external-only` | always enabled | empty |
+| `both` | always enabled | `true` |
 
-The validator does not hard-disable the external Mainnet path. It validates the
-declared release shape; it cannot prove that a funded end-to-end exercise has
-been completed. Operators should still review funded testnet evidence and run
-a controlled, small-value Mainnet deposit and recovery exercise for each path
-they intend to enable. The current host can expose both paths by setting both
-Mainnet flags to `true` and `GATU_CCTP_MAINNET_RELEASE_MODE=both` before
-rebuilding and deploying.
+The application ignores the retired
+`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED` build switch. Older production
+hosts may retain its exact value `true` as a compatible acknowledgement, but
+an empty or false legacy value cannot disable Mainnet external deposits. The
+validator cannot prove that a funded end-to-end exercise has been completed.
+Operators should still review funded testnet evidence and run controlled,
+small-value Mainnet deposit and recovery exercises. The current host can expose
+both paths by setting `VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=true` and
+`GATU_CCTP_MAINNET_RELEASE_MODE=both` before rebuilding and deploying.
 
 Every deposit entry point uses the same fail-closed capability decision before
 opening the modal or starting empty-account onboarding. That decision first
 classifies the authenticated owner's exact wallet path as either
-external-wallet or sponsored embedded-wallet, then requires that path's
-independent environment release flag and a completed, unrestricted geo verdict.
+external-wallet or sponsored embedded-wallet, then requires the applicable
+release policy and a completed, unrestricted geo verdict.
 The external path additionally requires its exact owner signer to be ready, so
 Agent-only and disconnected external sessions remain unavailable. An eligible,
 authenticated email session may open the modal before its exact embedded signer
 has been created or activated; the modal owns that activation and still withholds
 the funding address until readiness succeeds. Unresolved-geo, restricted-geo,
-and disabled-path states must not open a modal that can only fail later. A
-release flag for the other wallet path or environment never satisfies this
-check.
+and disabled controlled-path states must not open a modal that can only fail
+later. A release flag for another environment never satisfies this check.
 
 The implementation uses:
 
@@ -190,9 +191,9 @@ Bundler, and Paymaster request patterns.
 
 After those policies and production-sized limits are active, operators should
 run the smallest Mainnet E2E in an access-controlled production-candidate
-environment using the same commit and the `sponsored-only` or `both` bundle
-intended for release. This is release evidence rather than a condition the
-deployment validator can verify. If traffic cannot be isolated, add a real
+environment using the same commit and the `both` bundle intended for release.
+This is release evidence rather than a condition the deployment validator can
+verify. If traffic cannot be isolated, add a real
 runtime allowlist or equivalent access control first; do not describe the
 global build flag as a canary allowlist.
 

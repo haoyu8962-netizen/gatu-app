@@ -157,9 +157,10 @@ implementation.
   `ReceiveWithAuthorization`, destination domain `19`, the official forwarder
   for both recipient fields, exact hook data, and strict source-receipt event
   validation. Reject Agent/API-wallet recipient addresses.
-- Keep external CCTP disabled by default and gated independently for mainnet
-  and testnet until funded end-to-end evidence for that environment is
-  reviewed. A route value alone is not a release authorization.
+- Keep direct external-wallet CCTP permanently enabled on Mainnet. Testnet
+  external CCTP remains independently gated until funded end-to-end evidence
+  is reviewed. A route value is always an execution guard; it does not enable
+  a controlled Testnet or sponsored release path.
 - Embedded/email CCTP uses the exact embedded EOA for the EIP-3009 signature and
   `CctpExtensionV2` for the burn. The configured Privy Smart Wallet plus
   Arbitrum paymaster/bundler submits and sponsors the transaction. Gate this
@@ -197,8 +198,8 @@ implementation.
   complete a small-value mainnet E2E in a controlled, non-public
   production-candidate environment using the release commit and bundle. If
   traffic cannot be isolated, add a real runtime allowlist or equivalent access
-  control before calling the run a canary. A public Sponsored-only bundle makes
-  the explicitly confirmed path available to every eligible email-wallet user.
+  control before calling the run a canary. A public `both` bundle makes the
+  explicitly confirmed path available to every eligible email-wallet user.
 - The V2 authorization nonce must bind owner, amount, validity window, and full
   deposit data. Verify the receipt per `owner + amount + authNonce`; a matching
   `SponsoredDepositForBurnSkipped` is a definitive failure even if the outer
