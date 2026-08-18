@@ -5220,6 +5220,10 @@ msgstr "कोई शेष नहीं मिला। ट्रेडिं�
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "No data point selected"
+msgstr ""
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
 msgstr ""
@@ -5346,6 +5350,7 @@ msgstr "चयनित फ़िल्टरों से मेल खान�
 msgid "No orders match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाला कोई ऑर्डर नहीं है।"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr ""

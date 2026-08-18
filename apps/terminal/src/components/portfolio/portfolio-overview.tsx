@@ -255,6 +255,7 @@ export function PortfolioOverview() {
 					accountValueHistory={snapshot?.accountValueHistory ?? []}
 					pnlHistory={snapshot?.pnlHistory ?? []}
 					perpsPnlHistory={perpsSnapshot?.pnlHistory ?? []}
+					period={period}
 					isLoading={isPortfolioLoading}
 					isUnavailable={isPortfolioUnavailable}
 					onRetry={() => {

@@ -5220,6 +5220,10 @@ msgstr "لم يتم العثور على أرصدة. أودع أموالاً لب
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "No data point selected"
+msgstr ""
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
 msgstr ""
@@ -5346,6 +5350,7 @@ msgstr "لا توجد أوامر تطابق عوامل التصفية المحد
 msgid "No orders match these filters."
 msgstr "لا توجد أوامر تطابق عوامل التصفية هذه."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr ""

@@ -4878,6 +4878,10 @@ msgstr "未找到余额"
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "No data point selected"
+msgstr ""
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
 msgstr "未返回任何存款人。"
@@ -5003,6 +5007,7 @@ msgstr "没有符合所选筛选条件的委托。"
 msgid "No orders match these filters."
 msgstr "没有符合筛选条件的委托。"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr "暂无表现历史"

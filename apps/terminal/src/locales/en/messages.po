@@ -5241,6 +5241,10 @@ msgstr "No balances found. Deposit funds to start trading."
 #~ msgid "No camera was found on this device."
 #~ msgstr "No camera was found on this device."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "No data point selected"
+msgstr "No data point selected"
+
 #: src/components/vaults/vault-detail-view.tsx
 msgid "No depositors were returned."
 msgstr "No depositors were returned."
@@ -5367,6 +5371,7 @@ msgstr "No orders match the selected filters."
 msgid "No orders match these filters."
 msgstr "No orders match these filters."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr "No performance history"
