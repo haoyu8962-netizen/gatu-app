@@ -11,6 +11,9 @@ const cctpMessages = [
 	"Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.",
 	"Unable to verify the CCTP authorization.",
 	"Processing time",
+	"The fee will be confirmed using Circle's latest quote before submission.",
+	"Unable to verify the current Circle fee. Deposits are temporarily unavailable.",
+	"Up to {cctpFee} USDC in fees will be deducted from your deposit.",
 	"USDC on HyperCore",
 ] as const;
 

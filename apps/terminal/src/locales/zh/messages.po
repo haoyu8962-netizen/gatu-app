@@ -8008,6 +8008,10 @@ msgid "The extraAgents request failed. Existing API wallets continue to operate,
 msgstr "extraAgents 请求失败。现有 API 钱包仍可正常使用，但在验证到最新数据前，管理功能将保持禁用。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "The fee will be confirmed using Circle's latest quote before submission."
+msgstr "手续费将在提交前根据 Circle 的最新报价确认。"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
 msgstr "Gas 赞助钱包配置到了另一个 Arbitrum 网络。"
 
@@ -9155,6 +9159,10 @@ msgstr "无法验证当前账户模式。请求未提交。"
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
+msgstr "无法验证当前的 Circle 手续费，存款暂时不可用。"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify the current HyperCore USDC destination."
 msgstr "无法验证当前 HyperCore USDC 目标地址。"
@@ -9296,6 +9304,10 @@ msgstr "解除质押"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unsupported resolution: {0}"
 msgstr "不支持的分辨率: {0}"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Up to {cctpFee} USDC in fees will be deducted from your deposit."
+msgstr "存款金额中最多将扣除 {cctpFee} USDC 手续费。"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx

@@ -296,10 +296,12 @@ export function DepositModal() {
 			!displayedCctpDepositFeeQuery.calculation ||
 			displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false);
 	const displayedCctpDepositFeeRaw =
-		displayedCctpDepositFeeQuery.calculation?.maxFeeRaw ??
-		(isEmbeddedDeposit && displayedCctpDepositFeeQuery.data?.feeQuote
-			? getAmountIndependentCctpMaxFeeRaw(displayedCctpDepositFeeQuery.data.feeQuote)
-			: null);
+		selectedDepositRoute === "cctp"
+			? (displayedCctpDepositFeeQuery.calculation?.maxFeeRaw ??
+				(displayedCctpDepositFeeQuery.data?.feeQuote
+					? getAmountIndependentCctpMaxFeeRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+					: null))
+			: null;
 	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
 	const cctpDepositAmountLimitError =
 		selectedDepositRoute === "cctp" &&

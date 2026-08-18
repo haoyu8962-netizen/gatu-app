@@ -12,6 +12,10 @@ import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-s
 const testState = vi.hoisted(() => ({
 	accountGuard: vi.fn(),
 	activeTab: "deposit" as "deposit" | "withdraw",
+	cctpDepositFeeCalculation: { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n } as {
+		maxFeeRaw: bigint;
+		netAmountRaw: bigint;
+	} | null,
 	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
@@ -118,19 +122,21 @@ vi.mock("@/hooks/trade/use-cctp-withdrawal-fee", () => ({
 vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
 	useCctpDepositFee: (options: { amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }) => {
 		testState.cctpDepositFeeCalls.push(options);
+		const feeQuote = {
+			finalityThreshold: 1000,
+			forwardFeeRaw: { high: 200_001n, low: 199_999n, med: 200_000n },
+			minimumFeeBps: "0",
+		};
 		return {
-			calculation: { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n },
+			calculation: testState.cctpDepositFeeCalculation,
+			data: { fastAllowanceRaw: 100_000_000n, feeQuote },
 			hasSufficientFastAllowance: true,
 			isError: false,
 			isLoading: false,
 			refetch: vi.fn().mockResolvedValue({
 				data: {
 					fastAllowanceRaw: 100_000_000n,
-					feeQuote: {
-						finalityThreshold: 1000,
-						forwardFeeRaw: { high: 200_001n, low: 199_999n, med: 200_000n },
-						minimumFeeBps: "0",
-					},
+					feeQuote,
 				},
 				isError: false,
 			}),
@@ -337,8 +343,10 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		routingStatus,
 		usesFundingAddressFlow,
 		fundingAddress,
+		cctpFee,
 		sponsoredCctpReadiness,
 	}: {
+		cctpFee?: string | null;
 		fundingAddress?: string;
 		onRetryRouting: () => void;
 		onSubmit: () => void;
@@ -350,6 +358,7 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		createElement(
 			"div",
 			{
+				"data-cctp-fee": cctpFee,
 				"data-funding-address": fundingAddress,
 				"data-readiness-status": sponsoredCctpReadiness.status,
 				"data-testid": "deposit-routing-status",
@@ -447,6 +456,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.depositMaxRaw = 10_000_000n;
 		testState.depositStatus = "idle";
 		testState.emailAddress = null;
+		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n };
 		testState.cctpDepositFeeCalls.length = 0;
 		testState.sponsoredReadinessFailure = null;
 		testState.sponsoredReadinessRetry.mockReset();
@@ -643,6 +653,24 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-status")).toBe(
 			"ready",
 		);
+	});
+
+	it("passes the amount-independent Circle forwarding fee to an empty external deposit form", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "deposit";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.cctpDepositFeeCalculation = null;
+		testState.cctpDepositFeeCalls.length = 0;
+
+		await rerender();
+
+		const depositForm = container.querySelector('[data-testid="deposit-routing-status"]');
+		expect(depositForm?.getAttribute("data-cctp-fee")).toBe("0.2");
+		expect(testState.cctpDepositFeeCalls).toContainEqual({
+			amountRaw: undefined,
+			enabled: true,
+			isTestnet: false,
+		});
 	});
 
 	it("queries the shared Circle fee cache for the embedded wallet's current sponsored deposit amount", async () => {

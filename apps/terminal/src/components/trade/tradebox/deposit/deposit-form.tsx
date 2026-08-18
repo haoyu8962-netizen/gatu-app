@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { formatUnits } from "viem";
+import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
@@ -421,10 +422,26 @@ export function DepositForm({
 
 	return (
 		<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
-			<div className="pt-0.5 text-center">
-				<h3 className="text-[15px] leading-5 font-bold">
-					<Trans>Deposit USDC from Arbitrum</Trans>
-				</h3>
+			<div className="flex flex-col items-center gap-2 text-center">
+				<div className="grid size-10 place-items-center rounded-full bg-market-close-control" aria-hidden="true">
+					<img src={USDC_ICON_URL} alt="" className="size-8 rounded-full" />
+				</div>
+				<div className="space-y-0.5">
+					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
+						<Trans>Deposit USDC from Arbitrum</Trans>
+					</h3>
+					<p className="min-h-[18px] text-[11px] leading-[18px] text-market-close-subtle">
+						{cctpRoutingReady ? (
+							cctpFeeError ? (
+								<Trans>Unable to verify the current Circle fee. Deposits are temporarily unavailable.</Trans>
+							) : cctpFee ? (
+								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
+							) : (
+								<Trans>The fee will be confirmed using Circle's latest quote before submission.</Trans>
+							)
+						) : null}
+					</p>
+				</div>
 			</div>
 
 			{transferSelectors}

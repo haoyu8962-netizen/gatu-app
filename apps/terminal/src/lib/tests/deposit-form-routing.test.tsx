@@ -133,6 +133,72 @@ describe("DepositForm routing gate", () => {
 		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
 		expect(container.textContent).toContain("You send");
 		expect(container.textContent).toContain("Minimum 5 USDC");
+		expect(container.querySelector('img[src="/coins/USDC.svg"]')).toBeNull();
+	});
+
+	it("shows the external wallet header with a decorative USDC icon and current Circle fee", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			cctpFee: "0.2",
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const icon = container.querySelector<HTMLImageElement>('img[src="/coins/USDC.svg"]');
+		expect(icon?.alt).toBe("");
+		expect(icon?.parentElement?.getAttribute("aria-hidden")).toBe("true");
+		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
+		expect(container.textContent).toContain("Up to 0.2 USDC in fees will be deducted from your deposit.");
+		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
+	});
+
+	it("keeps the external wallet fee line stable until Circle provides a current quote", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.textContent).toContain("The fee will be confirmed using Circle's latest quote before submission.");
+		expect(container.textContent).not.toContain("—");
+	});
+
+	it("shows that external deposits are unavailable when the Circle fee cannot be verified", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			cctpFeeError: true,
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.textContent).toContain(
+			"Unable to verify the current Circle fee. Deposits are temporarily unavailable.",
+		);
+		expect(container.textContent).not.toContain("before submission");
+	});
+
+	it("does not show a Circle fee for a paused legacy route", async () => {
+		const props = {
+			...createProps("ready", "bridge"),
+			cctpFee: "0.2",
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.textContent).not.toContain("0.2 USDC in fees");
+		expect(container.textContent).not.toContain("Circle's latest quote");
 	});
 
 	it("withholds a ready funding address when deposit capability is unavailable", async () => {

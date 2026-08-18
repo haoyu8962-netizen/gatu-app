@@ -8648,6 +8648,10 @@ msgid "The extraAgents request failed. Existing API wallets continue to operate,
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "The fee will be confirmed using Circle's latest quote before submission."
+msgstr "سيتم تأكيد الرسوم باستخدام أحدث عرض أسعار من Circle قبل الإرسال."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
 msgstr ""
 
@@ -9840,6 +9844,10 @@ msgstr "تعذّر التحقق من وضع الحساب الحالي. لم يت
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "تعذر التحقق من رسوم Circle CCTP الحالية وسعة Fast Transfer."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
+msgstr "تعذر التحقق من رسوم Circle الحالية. عمليات الإيداع غير متاحة مؤقتًا."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify the current HyperCore USDC destination."
 msgstr "تعذر التحقق من وجهة USDC الحالية على HyperCore."
@@ -9981,6 +9989,10 @@ msgstr "إلغاء الرهن"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unsupported resolution: {0}"
 msgstr "دقة غير مدعومة: {0}"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Up to {cctpFee} USDC in fees will be deducted from your deposit."
+msgstr "سيُخصم ما يصل إلى {cctpFee} USDC كرسوم من إيداعك."
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
