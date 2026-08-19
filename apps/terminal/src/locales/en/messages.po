@@ -362,7 +362,6 @@ msgstr "Account Margin Ratio"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "Account mode"
 

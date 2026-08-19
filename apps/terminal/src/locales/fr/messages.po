@@ -358,7 +358,6 @@ msgstr "Ratio de marge du compte"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "Mode de compte"
 

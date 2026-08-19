@@ -1,6 +1,6 @@
 import { Dropdown } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, SpinnerGapIcon, UserCircleIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
@@ -30,8 +30,7 @@ interface Props {
 	accountMode?: AccountAbstraction;
 	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
-	onAccountModeClick: () => void;
-	hideSpotTwap?: boolean;
+	onAccountModeClick?: () => void;
 	compact?: boolean;
 	layout?: "desktop" | "mobile";
 }
@@ -53,7 +52,6 @@ export function TradeHeader({
 	isAccountModeLoading,
 	isAccountModeUpdating,
 	onAccountModeClick,
-	hideSpotTwap,
 	compact,
 	layout = "desktop",
 }: Props) {
@@ -71,7 +69,6 @@ export function TradeHeader({
 	const isSpot = marketKind === "spot";
 	const advancedOrderTypeItems = ADVANCED_ORDER_TYPES.filter((type) => {
 		if (isSpot && !SPOT_ALLOWED_TYPES.includes(type)) return false;
-		if (isSpot && hideSpotTwap && type === "twap") return false;
 		return true;
 	}).map((type) => ({
 		label: getAdvancedOrderTypeLabel(type),
@@ -129,8 +126,8 @@ export function TradeHeader({
 					className={cn(
 						"grid min-w-0 overflow-hidden bg-surface",
 						isLeveraged
-							? "grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)_minmax(2rem,1fr)]"
-							: "grid-cols-[minmax(max-content,1.2fr)_minmax(2rem,1fr)]",
+							? "grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)]"
+							: "grid-cols-1",
 					)}
 				>
 					<Dropdown
@@ -172,21 +169,6 @@ export function TradeHeader({
 							</button>
 						</>
 					)}
-					<button
-						type="button"
-						onClick={onAccountModeClick}
-						disabled={isAccountModeLoading || isAccountModeUpdating}
-						className={cn(mobileControlClass, "justify-end")}
-						aria-label={t`Account mode`}
-						aria-haspopup="dialog"
-					>
-						{(isAccountModeLoading || isAccountModeUpdating) && (
-							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
-						)}
-						<span className="trade-card-label-full truncate">{compactAccountModeLabel}</span>
-						<UserCircleIcon className="trade-card-label-compact size-4 shrink-0" aria-hidden />
-						<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
-					</button>
 				</div>
 
 				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />

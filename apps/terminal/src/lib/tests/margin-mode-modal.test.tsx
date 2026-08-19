@@ -74,7 +74,8 @@ vi.mock("@gatu/ui", () => ({
 	},
 	ModalContent: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("div", props, children),
-	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
+	ModalFooter: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
+		createElement("footer", props, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
 	ModalPopup: ({
 		children,
@@ -375,9 +376,12 @@ describe("MarginModeModal", () => {
 		});
 
 		expect(modalHarness.presentation).toBe("drawer");
+		expect(modalHarness.adaptiveClassName).toContain("max-h-[calc(100dvh-1rem)]");
 		expect(container.textContent).toContain("HYPE-USDC Margin mode");
 		expect(container.textContent).toContain("Position margin");
 		expect(container.textContent).toContain("Account type");
+		expect(getButton(container, "Position margin").className).toContain("min-h-10");
+		expect(getButton(container, "Account type").className).toContain("min-h-10");
 		expect(container.querySelector('[data-testid="leverage-slider"]')).toBeNull();
 		expect(getButton(container, "Cross").className).toContain("rounded-12");
 		expect(getButton(container, "Cross").className).toContain("border-trading-panel-control");
@@ -399,7 +403,10 @@ describe("MarginModeModal", () => {
 		});
 		expect(container.querySelector("h2")?.textContent).toBe("Account type");
 		act(() => getButton(container, "Unified account").click());
-		await act(async () => getButton(container, "Confirm").click());
+		const confirmButton = getButton(container, "Confirm");
+		expect(confirmButton.className).toContain("min-h-11");
+		expect(confirmButton.closest("footer")?.className).toContain("pb-3");
+		await act(async () => confirmButton.click());
 
 		expect(accountApply).toHaveBeenCalledWith("unifiedAccount");
 		expect(onApply).not.toHaveBeenCalled();

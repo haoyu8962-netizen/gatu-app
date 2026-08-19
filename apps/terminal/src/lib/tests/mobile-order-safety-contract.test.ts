@@ -39,12 +39,11 @@ describe("mobile order safety contract", () => {
 		);
 	});
 
-	it("keeps the existing mobile spot TWAP product gate while desktop Spot TWAP remains supported", () => {
-		expect(tradeHeader).toContain('if (isSpot && hideSpotTwap && type === "twap") return false;');
-		expect(mobileTradeView).toContain("hideSpotTwap");
-		expect(mobileTradeView).toContain(
-			'if (active && isSpotMarket && (isTriggerOrder || twapOrder)) setOrderType("market")',
-		);
+	it("keeps spot TWAP reachable through the guarded mobile order-entry path", () => {
+		expect(tradeHeader).not.toContain("hideSpotTwap");
+		expect(mobileTradeView).not.toContain("hideSpotTwap");
+		expect(mobileTradeView).toContain('if (active && isSpotMarket && isTriggerOrder) setOrderType("market")');
+		expect(mobileTradeView).not.toContain("isSpotMarket && (isTriggerOrder || twapOrder)");
 	});
 
 	it("clears reduce-only together with the other locally held inputs after a submitted order", () => {

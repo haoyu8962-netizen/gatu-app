@@ -209,6 +209,20 @@ describe("spot advanced order validation", () => {
 		expect(result.errors.map((error) => error.code)).toContain("TWAP_001");
 	});
 
+	it("accepts a valid spot TWAP", () => {
+		const result = validateSpotOrder(
+			spotContext({
+				twapOrder: true,
+				twapMinutesNum: 30,
+				orderValue: 1_000,
+				requiresLiveMarkPrice: true,
+			}),
+		);
+
+		expect(result.errors.filter((error) => error.category === "twap")).toEqual([]);
+		expect(result.canSubmit).toBe(true);
+	});
+
 	it("skips mark-relative TWAP checks when the spot mark is unavailable", () => {
 		const result = validateSpotOrder(
 			spotContext({

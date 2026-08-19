@@ -121,6 +121,21 @@ describe("useOrderSubmit TWAP details", () => {
 		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", { status: "success", outcome: "twapStarted" });
 	});
 
+	it("submits spot TWAP with the official asset id, base size, and spot risk context", async () => {
+		await submit(
+			twapInput({
+				market: { assetId: 10_000, kind: "spot", name: "@0", szDecimals: 4 },
+				baseToken: "PURR",
+				sizeValue: 1.23456,
+			}),
+		);
+
+		expect(mocks.submitTwap).toHaveBeenCalledOnce();
+		const [params, options] = mocks.submitTwap.mock.calls[0] ?? [];
+		expect(params).toEqual({ twap: { a: 10_000, b: true, s: "1.2345", r: false, m: 30, t: true } });
+		expect(options).toMatchObject({ coin: "@0", queueId: "queue-1", riskContext: { marketKind: "spot" } });
+	});
+
 	it("derives the trigger direction from the live mark, not the execution reference price", async () => {
 		await submit(twapInput({ twapTriggerPx: "100.2", markPx: 100, executionReferencePx: 100.5 }));
 		expect(mocks.submitTwap.mock.calls[0]?.[0]).toMatchObject({ details: { t: { p: "100.2", a: true }, s: null } });

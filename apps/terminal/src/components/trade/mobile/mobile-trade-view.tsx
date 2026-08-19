@@ -339,8 +339,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}, [active]);
 
 	useEffect(() => {
-		if (active && isSpotMarket && (isTriggerOrder || twapOrder)) setOrderType("market");
-	}, [active, isSpotMarket, isTriggerOrder, twapOrder, setOrderType]);
+		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
+	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
 
 	useEffect(() => {
 		if (selectedPrice === null) return;
@@ -465,12 +465,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	function handleLeverageSettingsOpen() {
 		setMarginDialogView("leverage");
-		setShowMarginDialog(true);
-	}
-
-	function handleAccountModeSettingsOpen() {
-		setMarginDialogView("margin");
-		setSettingsTab("account");
 		setShowMarginDialog(true);
 	}
 
@@ -761,11 +755,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						onMarginModeClick={handleMarginSettingsOpen}
 						onLeverageClick={handleLeverageSettingsOpen}
 						isLeveraged={capabilities.isLeveraged}
-						accountMode={accountModeControl.accountAbstraction}
-						isAccountModeLoading={accountModeControl.isLoading}
-						isAccountModeUpdating={accountModeControl.isUpdating}
-						onAccountModeClick={handleAccountModeSettingsOpen}
-						hideSpotTwap
 						compact={embedded}
 						layout="mobile"
 					/>

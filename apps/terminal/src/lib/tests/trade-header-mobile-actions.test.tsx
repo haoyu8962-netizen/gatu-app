@@ -4,6 +4,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeHeader } from "@/components/trade/tradebox/trade-header";
+import type { OrderType } from "@/config/trade";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -33,6 +34,7 @@ describe("TradeHeader mobile margin actions", () => {
 		onLeverageClick?: () => void;
 		onMarginLeverageClick?: () => void;
 		onMarginModeClick?: () => void;
+		onOrderTypeChange?: (type: OrderType) => void;
 	}) {
 		act(() => {
 			root.render(
@@ -43,7 +45,7 @@ describe("TradeHeader mobile margin actions", () => {
 					leverage={10}
 					marginMode="cross"
 					marketKind={callbacks.marketKind ?? "perp"}
-					onOrderTypeChange={vi.fn()}
+					onOrderTypeChange={callbacks.onOrderTypeChange ?? vi.fn()}
 					onAccountModeClick={callbacks.onAccountModeClick ?? vi.fn()}
 					onSideChange={vi.fn()}
 					orderType="market"
@@ -55,15 +57,18 @@ describe("TradeHeader mobile margin actions", () => {
 		});
 	}
 
-	it("routes margin mode and leverage to their independent mobile entries", () => {
+	it("renders only the three leveraged mobile controls and routes their independent actions", () => {
 		const onMarginModeClick = vi.fn();
 		const onLeverageClick = vi.fn();
 		const onMarginLeverageClick = vi.fn();
 		renderHeader({ onMarginModeClick, onLeverageClick, onMarginLeverageClick });
-		expect(container.querySelector(".grid")?.className).toContain("minmax(2.75rem,0.8fr)");
-		expect(container.querySelector(".grid")?.className).toContain(
-			"grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)_minmax(2rem,1fr)]",
+		const controlGrid = container.querySelector(".grid");
+		expect(controlGrid?.className).toContain(
+			"grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)]",
 		);
+		expect(controlGrid?.querySelectorAll("button")).toHaveLength(3);
+		expect(container.querySelector('button[aria-label="Account mode"]')).toBeNull();
+		expect(container.querySelector(".trade-card-label-compact")).toBeNull();
 		expect(getButton(container, "Cross").className).toContain("after:h-11");
 		expect(getButton(container, "10x").className).toContain("after:h-11");
 
@@ -88,25 +93,64 @@ describe("TradeHeader mobile margin actions", () => {
 		expect(onMarginLeverageClick).toHaveBeenCalledTimes(2);
 	});
 
-	it("keeps account mode reachable on mobile spot markets", () => {
+	it("keeps all supported spot order types without leaving an account-mode column", async () => {
 		const onAccountModeClick = vi.fn();
+		const onOrderTypeChange = vi.fn();
 		renderHeader({
 			accountMode: "default",
 			isLeveraged: false,
 			marketKind: "spot",
 			onAccountModeClick,
+			onOrderTypeChange,
 		});
 
-		act(() => getButton(container, "Account").click());
-		expect(onAccountModeClick).toHaveBeenCalledOnce();
+		const controlGrid = container.querySelector(".grid");
+		expect(controlGrid?.className).toContain("grid-cols-1");
+		expect(controlGrid?.querySelectorAll("button")).toHaveLength(1);
+		expect(container.querySelector('button[aria-label="Account mode"]')).toBeNull();
+		expect(container.querySelector(".trade-card-label-compact")).toBeNull();
+		expect(onAccountModeClick).not.toHaveBeenCalled();
+
+		const orderTypeButton = controlGrid?.querySelector<HTMLButtonElement>('button[aria-label="Order type"]');
+		if (!orderTypeButton) throw new Error("Expected the mobile spot order-type control");
+		await act(async () => orderTypeButton.click());
+		expect([...document.querySelectorAll('[role="menuitem"]')].map((item) => item.textContent?.trim())).toEqual([
+			"Market",
+			"Limit",
+			"TWAP",
+			"Scale",
+		]);
+		const twapItem = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+			(item) => item.textContent?.trim() === "TWAP",
+		);
+		if (!twapItem) throw new Error("Expected the mobile spot TWAP entry");
+		act(() => twapItem.click());
+		expect(onOrderTypeChange).toHaveBeenCalledWith("twap");
 	});
 
-	it("uses the compact account fallback on narrow mobile controls", () => {
-		renderHeader({ accountMode: null });
+	it("preserves all three leveraged desktop cards and their independent actions", () => {
+		const onMarginModeClick = vi.fn();
+		const onLeverageClick = vi.fn();
+		const onAccountModeClick = vi.fn();
+		renderHeader({ layout: "desktop", onMarginModeClick, onLeverageClick, onAccountModeClick });
 
-		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
-		expect(accountModeButton?.textContent).toContain("Account");
-		expect(accountModeButton?.textContent).not.toContain("Unavailable");
+		const controlGrid = container.querySelector(".trade-control-grid");
+		expect(controlGrid?.className).toContain("grid-cols-3");
+		expect(controlGrid?.querySelectorAll("button")).toHaveLength(3);
+		const marginModeButton = controlGrid?.querySelector<HTMLButtonElement>('button[title="Cross"]');
+		const leverageButton = controlGrid?.querySelector<HTMLButtonElement>('button[title="10x"]');
+		const accountModeButton = controlGrid?.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		if (!marginModeButton || !leverageButton || !accountModeButton) {
+			throw new Error("Expected all three leveraged desktop cards");
+		}
+
+		act(() => marginModeButton.click());
+		act(() => leverageButton.click());
+		act(() => accountModeButton.click());
+
+		expect(onMarginModeClick).toHaveBeenCalledOnce();
+		expect(onLeverageClick).toHaveBeenCalledOnce();
+		expect(onAccountModeClick).toHaveBeenCalledOnce();
 	});
 
 	it("keeps account mode reachable on desktop spot markets", () => {

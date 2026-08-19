@@ -342,7 +342,6 @@ msgstr "账户保证金率"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "账户模式"
 
