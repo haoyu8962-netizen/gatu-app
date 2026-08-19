@@ -20,6 +20,8 @@ const MOBILE_SIZE_CONTROL_SOURCE = readFileSync(
 	"utf8",
 );
 const DESKTOP_PERCENT_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<SizePercentInput[\s\S]*?\/>/)?.[0] ?? "";
+const DESKTOP_SLIDER_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<TradeSizeSlider[\s\S]*?\/>/)?.[0] ?? "";
+const DESKTOP_TICK_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<SliderTickMarks[\s\S]*?\/>/)?.[0] ?? "";
 
 interface RenderOverrides {
 	disabled?: boolean;
@@ -153,6 +155,18 @@ describe("size percent input wiring", () => {
 
 	it("dims the desktop percent frame with its sibling input frames", () => {
 		expect(DESKTOP_PERCENT_USAGE).toContain('(isFormDisabled || maxSize <= 0) && "opacity-50"');
+	});
+
+	it("keeps the desktop slider and tick marks without percentage shortcut buttons", () => {
+		expect(DESKTOP_SLIDER_USAGE).toContain("value={sliderValue}");
+		expect(DESKTOP_SLIDER_USAGE).toContain("onPercentChange={handleSizePercentApply}");
+		expect(DESKTOP_SLIDER_USAGE).toContain("disabled={isFormDisabled || maxSize <= 0}");
+		expect(DESKTOP_TICK_USAGE).toContain("positions={SIZE_PERCENT_OPTIONS.map((pct)");
+		expect(DESKTOP_TICK_USAGE).toContain("active: sliderValue >= pct");
+		expect(TRADE_FORM_FIELDS_SOURCE.match(/SIZE_PERCENT_OPTIONS\.map/g) ?? []).toHaveLength(1);
+		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("Math.abs(sliderValue - pct)");
+		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("{pct}%");
+		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("accentTextClass");
 	});
 });
 

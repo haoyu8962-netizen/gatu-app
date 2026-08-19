@@ -211,7 +211,6 @@ export function TradeFormFields({
 	}
 
 	const isBuy = side === "buy";
-	const accentTextClass = isBuy ? "text-trading-panel-success" : "text-trading-panel-error";
 	const accentBgClass = isBuy ? "bg-trading-panel-success" : "bg-trading-panel-error";
 	const accentBorderClass = isBuy ? "border-trading-panel-success" : "border-trading-panel-error";
 
@@ -383,51 +382,31 @@ export function TradeFormFields({
 					{displaySizeError && <p className="text-2xs text-trading-panel-error">{displaySizeError}</p>}
 
 					<div className="flex items-start gap-2">
-						<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-							<div className="relative min-w-0">
-								<TradeSizeSlider
-									value={sliderValue}
-									onPercentChange={handleSizePercentApply}
-									disabled={isFormDisabled || maxSize <= 0}
-									ariaLabel={`${t`Size`} (%)`}
-									thumbSize="md"
-									thumbAlignment="edge"
-									controlClassName="h-8"
-									trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
-									indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
-									thumbClassName={cn(
-										"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
-										accentBorderClass,
-									)}
-								/>
-								<SliderTickMarks
-									insetClassName="inset-x-[9px]"
-									activeClassName={cn(accentBorderClass, accentBgClass)}
-									positions={SIZE_PERCENT_OPTIONS.map((pct) => ({
-										key: pct,
-										leftPercent: pct,
-										active: sliderValue >= pct,
-									}))}
-								/>
-							</div>
-							<div className="flex items-center justify-between text-3xs tabular-nums leading-none">
-								{SIZE_PERCENT_OPTIONS.map((pct) => (
-									<button
-										key={pct}
-										type="button"
-										onClick={() => handleSizePercentApply(pct)}
-										disabled={isFormDisabled || maxSize <= 0}
-										className={cn(
-											"-mx-1 cursor-pointer px-1 py-1 transition-colors disabled:cursor-not-allowed",
-											Math.abs(sliderValue - pct) < 0.05
-												? cn("font-bold", accentTextClass)
-												: "text-trading-panel-subtle hover:text-trading-panel-fg",
-										)}
-									>
-										{pct}%
-									</button>
-								))}
-							</div>
+						<div className="relative min-w-0 flex-1">
+							<TradeSizeSlider
+								value={sliderValue}
+								onPercentChange={handleSizePercentApply}
+								disabled={isFormDisabled || maxSize <= 0}
+								ariaLabel={`${t`Size`} (%)`}
+								thumbSize="md"
+								thumbAlignment="edge"
+								controlClassName="h-8"
+								trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
+								indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
+								thumbClassName={cn(
+									"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
+									accentBorderClass,
+								)}
+							/>
+							<SliderTickMarks
+								insetClassName="inset-x-[9px]"
+								activeClassName={cn(accentBorderClass, accentBgClass)}
+								positions={SIZE_PERCENT_OPTIONS.map((pct) => ({
+									key: pct,
+									leftPercent: pct,
+									active: sliderValue >= pct,
+								}))}
+							/>
 						</div>
 						<SizePercentInput
 							value={sliderValue}
