@@ -121,7 +121,7 @@ describe("compact mobile orderbook modes", () => {
 		expect(container.querySelector('[aria-label="Order book view"]')?.className).toContain("size-11");
 	});
 
-	it("renders only real rows, caps the compact ladder at five levels, and anchors rows around the midpoint", () => {
+	it("renders only real rows, caps the compact ladder at five levels, and distributes available height", () => {
 		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
 		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
 
@@ -129,8 +129,8 @@ describe("compact mobile orderbook modes", () => {
 		expect(bids?.children.length).toBe(2);
 		expect([...(asks?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
 		expect([...(bids?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
-		expect(asks?.className).toContain("justify-end");
-		expect(bids?.className).toContain("justify-start");
+		expect(asks?.className).toContain("justify-between");
+		expect(bids?.className).toContain("justify-between");
 
 		act(() => root.render(<CompactOrderbookHarness asks={SIX_ASKS} />));
 

@@ -485,7 +485,10 @@ export function CompactOrderbook({
 			>
 				<div
 					data-slot="compact-orderbook-asks"
-					className={cn("flex-1 min-h-0 flex flex-col justify-end gap-[4px] overflow-hidden", !showAsks && "hidden")}
+					className={cn(
+						"flex-1 min-h-0 flex flex-col justify-between gap-[4px] overflow-hidden",
+						!showAsks && "hidden",
+					)}
 				>
 					{hasAsks ? (
 						asks
@@ -536,7 +539,10 @@ export function CompactOrderbook({
 
 				<div
 					data-slot="compact-orderbook-bids"
-					className={cn("flex-1 min-h-0 flex flex-col justify-start gap-[4px] overflow-hidden", !showBids && "hidden")}
+					className={cn(
+						"flex-1 min-h-0 flex flex-col justify-between gap-[4px] overflow-hidden",
+						!showBids && "hidden",
+					)}
 				>
 					{hasBids ? (
 						bids
