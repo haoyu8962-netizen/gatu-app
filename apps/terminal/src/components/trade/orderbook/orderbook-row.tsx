@@ -94,9 +94,7 @@ function OrderbookRowComponent({
 					title={compact ? undefined : priceText}
 					className={cn(
 						"min-w-0 truncate text-left justify-start",
-						isAsk
-							? cn("orderbook-price-ask", compact && "text-trading-panel-error")
-							: cn("orderbook-price-bid", compact && "text-trading-panel-success"),
+						isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
 					)}
 				>
 					{priceText}

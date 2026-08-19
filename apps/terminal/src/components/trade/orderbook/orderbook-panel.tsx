@@ -18,7 +18,7 @@ import {
 	getSnapshotPriceDecimals,
 	processLevels,
 } from "@/lib/trade/orderbook";
-import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { useSizeMode } from "@/stores/use-order-entry-store";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
@@ -28,8 +28,8 @@ export function OrderbookPanel() {
 	const { t } = useLingui();
 	useRenderCommitTrack("orderbook");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
-	const { showOrderbookInQuote } = useGlobalSettings();
-	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
+	const sizeMode = useSizeMode();
+	const showOrderbookInQuote = sizeMode === "quote";
 	const [visibleRows, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
@@ -104,7 +104,6 @@ export function OrderbookPanel() {
 	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
-	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
 
 	const hasFailure = orderbookStatus === "error" || orderbookIsStale;
 
@@ -168,18 +167,18 @@ export function OrderbookPanel() {
 							popupClassName="min-w-0 w-max"
 						/>
 					</div>
-					<button className="min-w-0 hover:text-fg truncate" type="button" onClick={toggleAssetDisplay}>
+					<div className="min-w-0 truncate">
 						<span className="flex min-w-0 items-center justify-end gap-0.5">
 							{t`Size`}
 							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
 						</span>
-					</button>
-					<button className="min-w-0 hover:text-fg truncate" type="button" onClick={toggleAssetDisplay}>
+					</div>
+					<div className="min-w-0 truncate">
 						<span className="flex min-w-0 items-center justify-end gap-0.5">
 							{t`Total`}
 							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
 						</span>
-					</button>
+					</div>
 				</div>
 
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -238,7 +237,7 @@ export function OrderbookPanel() {
 			</TabsContent>
 
 			<TabsContent value="trades" keepMounted className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
-				<TradesPanel />
+				<TradesPanel showInQuote={showOrderbookInQuote} />
 			</TabsContent>
 		</Tabs>
 	);

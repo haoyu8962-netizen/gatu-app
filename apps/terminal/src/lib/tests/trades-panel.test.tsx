@@ -9,6 +9,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { TradesPanel } from "@/components/trade/orderbook/trades-panel";
 
 const mocks = vi.hoisted(() => ({
+	sizeMode: "base" as "base" | "quote",
 	subscriptionMethods: [] as string[],
 	result: {
 		data: undefined as
@@ -49,8 +50,6 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
-	useGlobalSettingsActions: () => ({ setShowOrderbookInQuote: vi.fn() }),
 	useIsTestnet: () => false,
 }));
 
@@ -61,6 +60,7 @@ describe("TradesPanel", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.sizeMode = "base";
 		mocks.subscriptionMethods.length = 0;
 		mocks.result.data = undefined;
 		mocks.result.error = null;
@@ -139,6 +139,38 @@ describe("TradesPanel", () => {
 		expect(container.textContent).not.toContain("Waiting for trades");
 	});
 
+	it("derives its static asset heading and values from the shared order size mode", () => {
+		mocks.result.data = [
+			{
+				coin: "HYPE",
+				hash: "0xabc",
+				px: "64.50",
+				side: "B",
+				sz: "1.25",
+				tid: 42,
+				time: Date.UTC(2026, 6, 22, 12, 0, 0),
+				users: ["0xbuyer", "0xseller"],
+			},
+		];
+		mocks.result.status = "active";
+
+		renderPanel();
+
+		const heading = container.querySelector(".trades-asset-heading");
+		const trade = container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xabc"]');
+		expect(heading?.textContent).toBe("(HYPE)");
+		expect(heading?.closest("button")).toBeNull();
+		expect(trade?.children[1]?.textContent).toBe("1.25");
+
+		mocks.sizeMode = "quote";
+		renderPanel();
+
+		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(USDC)");
+		expect(
+			container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xabc"]')?.children[1]?.textContent,
+		).toBe("80.63");
+	});
+
 	it("preserves the subscription error state", () => {
 		mocks.result.error = new Error("Subscription unavailable");
 		mocks.result.status = "error";
@@ -152,7 +184,7 @@ describe("TradesPanel", () => {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<TradesPanel />
+					<TradesPanel showInQuote={mocks.sizeMode === "quote"} />
 				</I18nProvider>,
 			),
 		);

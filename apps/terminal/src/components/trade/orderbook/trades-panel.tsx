@@ -1,14 +1,18 @@
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { useMemo, useRef } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { getTradePriceDecimals, processTrades } from "@/lib/trade/trades";
-import { useGlobalSettings, useGlobalSettingsActions, useIsTestnet } from "@/stores/use-global-settings-store";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { TradeRow } from "./trade-row";
 
-export function TradesPanel({ compact = false }: { compact?: boolean }) {
+interface Props {
+	compact?: boolean;
+	showInQuote: boolean;
+}
+
+export function TradesPanel({ compact = false, showInQuote }: Props) {
 	const { t } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
@@ -20,8 +24,6 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	} = useSubscription("trades", params, {
 		enabled: !!selectedMarket && !!subscriptionCoin,
 	});
-	const { showOrderbookInQuote } = useGlobalSettings();
-	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
 	const isTestnet = useIsTestnet();
 
 	const { baseToken, quoteToken } = useMemo(() => {
@@ -37,8 +39,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	if (initialTradeIds.current === null && processed.length > 0) {
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
 	}
-	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
-	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
+	const displayAsset = showInQuote ? quoteToken : baseToken;
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
@@ -49,17 +50,12 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 				)}
 			>
 				<div className="min-w-0 truncate text-left">{t`Price`}</div>
-				<button
-					type="button"
-					onClick={toggleAssetDisplay}
-					className="min-w-0 overflow-hidden text-right hover:text-fg transition-colors"
-				>
+				<div className="min-w-0 overflow-hidden text-right">
 					<span className="flex min-w-0 items-center justify-end gap-0.5">
 						<span className="shrink-0">{t`Size`}</span>
 						<span className="trades-asset-heading min-w-0 truncate text-fg">({displayAsset})</span>
-						<ArrowsLeftRightIcon className="size-2 shrink-0 opacity-40" />
 					</span>
-				</button>
+				</div>
 				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
 			</div>
 
@@ -76,7 +72,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 								trade={trade}
 								priceDecimals={priceDecimals}
 								szDecimals={szDecimals}
-								showInQuote={showOrderbookInQuote}
+								showInQuote={showInQuote}
 								isTestnet={isTestnet}
 								compact={compact}
 								initial={initialTradeIds.current?.has(trade.id)}

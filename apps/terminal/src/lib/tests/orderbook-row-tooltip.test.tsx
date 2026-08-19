@@ -30,13 +30,7 @@ function createTouchEvent(type: string): MouseEvent {
 describe("compact orderbook cumulative tooltip", () => {
 	let container: HTMLDivElement;
 	let root: Root;
-
-	beforeEach(() => {
-		vi.useFakeTimers();
-		getOrderbookActionsStore().actions.clearSelectedPrice();
-		container = document.createElement("div");
-		document.body.appendChild(container);
-		root = createI18nRoot(container);
+	function renderRow(side: "ask" | "bid") {
 		act(() => {
 			root.render(
 				<OrderbookRow
@@ -48,11 +42,20 @@ describe("compact orderbook cumulative tooltip", () => {
 					maxTotal="500"
 					priceDecimals={3}
 					quoteAsset="USDC"
-					side="ask"
+					side={side}
 					szDecimals={2}
 				/>,
 			);
 		});
+	}
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createI18nRoot(container);
+		renderRow("ask");
 	});
 
 	afterEach(() => {
@@ -83,5 +86,16 @@ describe("compact orderbook cumulative tooltip", () => {
 			row.click();
 		});
 		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+	});
+
+	it("uses dedicated order book colors for both sides", () => {
+		const askPrice = container.querySelector(".orderbook-price-ask");
+		expect(askPrice).not.toBeNull();
+		expect(askPrice?.classList.contains("text-trading-panel-error")).toBe(false);
+
+		renderRow("bid");
+		const bidPrice = container.querySelector(".orderbook-price-bid");
+		expect(bidPrice).not.toBeNull();
+		expect(bidPrice?.classList.contains("text-trading-panel-success")).toBe(false);
 	});
 });

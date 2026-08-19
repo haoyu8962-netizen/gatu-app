@@ -40,6 +40,9 @@ describe("responsive panel layout contract", () => {
 		expect(TERMINAL_STYLES).toContain("@container orderbook-panel (max-width: 11.1875rem)");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr)");
+		const narrowOrderbookRule = readCssBlock(TERMINAL_STYLES, "@container orderbook-panel (max-width: 17.4375rem)");
+		expect(narrowOrderbookRule).toContain(".trades-grid");
+		expect(narrowOrderbookRule).not.toContain(".orderbook-grid");
 
 		expect(TRADES_PANEL_SOURCE).toContain("trades-grid");
 		expect(TRADE_ROW_SOURCE).toContain("trades-grid");
@@ -64,7 +67,7 @@ describe("responsive panel layout contract", () => {
 		expect(ORDERBOOK_PANEL_SOURCE.match(/<TradesPanel/g)).toHaveLength(1);
 		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="book"/);
 		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="trades"\s+keepMounted/);
-		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel />");
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel showInQuote={showOrderbookInQuote} />");
 		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("<TradesPanel key=");
 		expect(TRADE_ROW_SOURCE).toContain('"grid h-6 items-center tabular-nums');
 		expect(TRADES_PANEL_SOURCE).toContain('"trades-grid gap-1 px-2 h-8 text-xs"');
@@ -156,4 +159,21 @@ function readCssVariable(source: string, selector: string, variable: string): st
 
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	return declaration?.[1]?.trim();
+}
+
+function readCssBlock(source: string, selector: string): string | undefined {
+	const selectorStart = source.indexOf(`${selector} {`);
+	if (selectorStart === -1) return undefined;
+
+	const blockStart = source.indexOf("{", selectorStart);
+	let depth = 0;
+	for (let index = blockStart; index < source.length; index += 1) {
+		if (source[index] === "{") depth += 1;
+		if (source[index] !== "}") continue;
+
+		depth -= 1;
+		if (depth === 0) return source.slice(blockStart + 1, index);
+	}
+
+	return undefined;
 }

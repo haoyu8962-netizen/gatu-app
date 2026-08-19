@@ -21,7 +21,20 @@ const mocks = vi.hoisted(() => ({
 	lastL2Subscription: undefined as { enabled: boolean; params: Record<string, unknown> } | undefined,
 	market: { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	midPx: "100.5" as string | undefined,
+	sizeMode: "base" as "base" | "quote",
 	status: "subscribing" as "active" | "error" | "idle" | "subscribing",
+	trades: undefined as
+		| Array<{
+				coin: string;
+				hash: string;
+				px: string;
+				side: "A" | "B";
+				sz: string;
+				tid: number;
+				time: number;
+				users: [string, string];
+		  }>
+		| undefined,
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -32,7 +45,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			mocks.lastL2Subscription = { enabled: options?.enabled === true, params };
 			return { data: mocks.book, error: mocks.error, isStale: mocks.isStale, status: mocks.status };
 		}
-		return { data: undefined, error: undefined, isStale: false, status: "idle" };
+		return { data: mocks.trades, error: undefined, isStale: false, status: "active" };
 	},
 }));
 
@@ -56,9 +69,11 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
-	useGlobalSettingsActions: () => ({ setShowOrderbookInQuote: vi.fn() }),
 	useIsTestnet: () => false,
+}));
+
+vi.mock("@/stores/use-order-entry-store", () => ({
+	useSizeMode: () => mocks.sizeMode,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -83,7 +98,9 @@ describe("OrderbookPanel safety", () => {
 		mocks.lastL2Subscription = undefined;
 		mocks.market = { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
 		mocks.midPx = "100.5";
+		mocks.sizeMode = "base";
 		mocks.status = "subscribing";
+		mocks.trades = undefined;
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -146,6 +163,58 @@ describe("OrderbookPanel safety", () => {
 		renderPanel();
 
 		expect(container.querySelector('[data-slot="orderbook-spread"]')?.textContent).toContain("1.00 (0.995%)");
+	});
+
+	it("derives static headings, cumulative totals, and depth from the shared order size mode", () => {
+		mocks.book = snapshot(
+			"HYPE",
+			[
+				{ n: 1, px: "100", sz: "1" },
+				{ n: 1, px: "50", sz: "1" },
+			],
+			[{ n: 1, px: "101", sz: "1" }],
+		);
+		mocks.status = "active";
+		mocks.trades = [
+			{
+				coin: "HYPE",
+				hash: "0xtrade",
+				px: "100",
+				side: "B",
+				sz: "1.5",
+				tid: 1,
+				time: Date.UTC(2026, 6, 22, 12, 0, 0),
+				users: ["0xbuyer", "0xseller"],
+			},
+		];
+
+		renderPanel();
+
+		const baseHeadings = container.querySelectorAll(".orderbook-asset-heading");
+		expect(Array.from(baseHeadings, (heading) => heading.textContent)).toEqual(["(HYPE)", "(HYPE)"]);
+		expect(Array.from(baseHeadings, (heading) => heading.closest("button"))).toEqual([null, null]);
+		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(HYPE)");
+		expect(
+			container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xtrade"]')?.children[1]?.textContent,
+		).toBe("1.50");
+		const baseBidDepth = container.querySelectorAll<HTMLElement>(".depth-bar-bid");
+		expect(baseBidDepth[0]?.style.width).toBe("50%");
+		expect(baseBidDepth[1]?.style.width).toBe("100%");
+
+		mocks.sizeMode = "quote";
+		renderPanel();
+
+		const quoteHeadings = container.querySelectorAll(".orderbook-asset-heading");
+		expect(Array.from(quoteHeadings, (heading) => heading.textContent)).toEqual(["(USDC)", "(USDC)"]);
+		expect(container.querySelector(".trades-asset-heading")?.textContent).toBe("(USDC)");
+		expect(
+			container.querySelector<HTMLAnchorElement>('a[href="https://example.test/tx/0xtrade"]')?.children[1]?.textContent,
+		).toBe("150.00");
+		const quoteBidDepth = container.querySelectorAll<HTMLElement>(".depth-bar-bid");
+		expect(Number.parseFloat(quoteBidDepth[0]?.style.width ?? "0")).toBeCloseTo(66.67, 2);
+		expect(quoteBidDepth[1]?.style.width).toBe("100%");
+		expect(container.querySelector('button[aria-label*="Total 150"]')).not.toBeNull();
+		expect(mocks.lastL2Subscription).toEqual({ enabled: true, params: { coin: "HYPE" } });
 	});
 
 	it("keeps the desktop subscription active across tabs and fails closed while the market identity changes", () => {

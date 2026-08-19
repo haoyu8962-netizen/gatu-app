@@ -9,6 +9,13 @@ const INPUT_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/ui/inpu
 const TRADING_CTA_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-cta.ts"), "utf8");
 
 describe("trading panel theme contract", () => {
+	it("keeps order book depth colors on their dedicated palette in both themes", () => {
+		for (const selector of [":root", ".dark"]) {
+			expect(readCssVariable(TERMINAL_THEME_CSS, selector, "--orderbook-depth-bid")).toBe("#1fa67d");
+			expect(readCssVariable(TERMINAL_THEME_CSS, selector, "--orderbook-depth-ask")).toBe("#ed7088");
+		}
+	});
+
 	it("maps the light trading panel to the design handoff palette", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-strong")).toBe("#1a2330");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-muted")).toBe("#6b7686");
