@@ -170,14 +170,20 @@ export function PortfolioPerformanceChart({
 		setInteractionStore({ history, metric, period, value });
 	}
 
-	function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+	function updateInteractionFromPointer(event: React.PointerEvent<HTMLDivElement>) {
 		if (!chart.points.length) return;
 		const rect = event.currentTarget.getBoundingClientRect();
 		const scaleX = chartSize.width / Math.max(rect.width, 1);
 		const scaleY = chartSize.height / Math.max(rect.height, 1);
 		const pointerX = clamp((event.clientX - rect.left) * scaleX, 0, chartSize.width);
 		const pointerY = clamp((event.clientY - rect.top) * scaleY, 0, chartSize.height);
-		const index = findNearestPointIndex(chart.points, clamp(pointerX, chart.plotLeft, chart.plotRight));
+		const pointerPlotX = clamp(pointerX, chart.plotLeft, chart.plotRight);
+		const firstTimestamp = chart.points[0]?.timestamp ?? 0;
+		const lastTimestamp = chart.points.at(-1)?.timestamp ?? firstTimestamp;
+		const pointerPlotRatio =
+			(pointerPlotX - chart.plotLeft) / Math.max(chart.plotRight - chart.plotLeft, Number.EPSILON);
+		const targetTimestamp = firstTimestamp + (lastTimestamp - firstTimestamp) * pointerPlotRatio;
+		const index = findNearestPortfolioPointIndex(chart.points, targetTimestamp);
 		setInteraction({
 			history,
 			index,
@@ -187,6 +193,20 @@ export function PortfolioPerformanceChart({
 			pointerYRatio: pointerY / chartSize.height,
 			source: "pointer",
 		});
+	}
+
+	function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+		if (event.pointerType !== "touch") return;
+		event.currentTarget.setPointerCapture?.(event.pointerId);
+		updateInteractionFromPointer(event);
+	}
+
+	function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+		updateInteractionFromPointer(event);
+	}
+
+	function handlePointerCancel() {
+		setInteraction(null);
 	}
 
 	function handlePointerLeave() {
@@ -203,20 +223,42 @@ export function PortfolioPerformanceChart({
 	function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
 		if (!chart.points.length) return;
 		if (event.key === "Escape") {
+			event.preventDefault();
 			setInteraction(null);
 			return;
 		}
-		if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+		if (event.key === "Home") {
+			event.preventDefault();
+			setInteraction(null);
+			return;
+		}
+		if (event.key === "End") {
+			event.preventDefault();
+			setKeyboardInteraction(chart.points.length - 1);
+			return;
+		}
+		if (
+			event.key !== "ArrowLeft" &&
+			event.key !== "ArrowRight" &&
+			event.key !== "ArrowDown" &&
+			event.key !== "ArrowUp"
+		) {
+			return;
+		}
 
 		event.preventDefault();
-		const currentIndex = activeInteraction?.index;
-		const index =
-			currentIndex === undefined
-				? event.key === "ArrowRight"
-					? 0
-					: chart.points.length - 1
-				: clamp(currentIndex + (event.key === "ArrowRight" ? 1 : -1), 0, chart.points.length - 1);
+		const direction = event.key === "ArrowRight" || event.key === "ArrowUp" ? 1 : -1;
+		const index = clamp((activeInteraction?.index ?? -1) + direction, -1, chart.points.length - 1);
+		if (index === -1) {
+			setInteraction(null);
+			return;
+		}
+		setKeyboardInteraction(index);
+	}
+
+	function setKeyboardInteraction(index: number) {
 		const point = chart.points[index];
+		if (!point) return;
 		setInteraction({
 			history,
 			index,
@@ -269,17 +311,19 @@ export function PortfolioPerformanceChart({
 				) : chart.points.length ? (
 					<div
 						ref={plotRef}
-						className="relative block size-full min-h-0 cursor-crosshair overflow-hidden rounded-xs border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-stroke-focus"
+						className="relative block size-full min-h-0 touch-pan-y cursor-crosshair overflow-hidden rounded-xs border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-stroke-focus"
 						aria-label={t`Portfolio history chart`}
-						aria-keyshortcuts="ArrowLeft ArrowRight Escape"
+						aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End Escape"
 						aria-orientation="horizontal"
 						aria-valuemax={chart.points.length - 1}
-						aria-valuemin={0}
-						aria-valuenow={activeInteraction?.index ?? 0}
+						aria-valuemin={-1}
+						aria-valuenow={activeInteraction?.index ?? -1}
 						aria-valuetext={activeLabel ?? t`No data point selected`}
 						role="slider"
 						tabIndex={0}
 						onKeyDown={handleKeyDown}
+						onPointerCancel={handlePointerCancel}
+						onPointerDown={handlePointerDown}
 						onPointerLeave={handlePointerLeave}
 						onPointerMove={handlePointerMove}
 						data-portfolio-chart-plot
@@ -409,9 +453,6 @@ export function PortfolioPerformanceChart({
 								{activeLabel}
 							</span>
 						) : null}
-						<output className="sr-only" aria-live="polite">
-							{activeLabel}
-						</output>
 					</div>
 				) : (
 					<output className="absolute inset-0 grid place-items-center px-4 text-center text-xs text-fg-muted">
@@ -640,17 +681,29 @@ function formatTimeTick(timestamp: number, period: PortfolioPeriod): string {
 	return `${month}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function findNearestPointIndex(points: ChartPoint[], x: number): number {
-	let nearestIndex = 0;
-	let nearestDistance = Number.POSITIVE_INFINITY;
-	for (const [index, point] of points.entries()) {
-		const distance = Math.abs(point.x - x);
-		if (distance < nearestDistance) {
-			nearestDistance = distance;
-			nearestIndex = index;
-		}
+export function findNearestPortfolioPointIndex(
+	points: readonly { timestamp: number }[],
+	targetTimestamp: number,
+): number {
+	if (points.length === 0) return -1;
+
+	let lowerBound = 0;
+	let upperBound = points.length;
+	while (lowerBound < upperBound) {
+		const midpoint = lowerBound + Math.floor((upperBound - lowerBound) / 2);
+		const point = points[midpoint];
+		if (point && point.timestamp < targetTimestamp) lowerBound = midpoint + 1;
+		else upperBound = midpoint;
 	}
-	return nearestIndex;
+
+	if (lowerBound === 0) return 0;
+	if (lowerBound === points.length) return points.length - 1;
+	const pointBefore = points[lowerBound - 1];
+	const pointAfter = points[lowerBound];
+	if (!pointBefore || !pointAfter) return Math.max(0, lowerBound - 1);
+	return targetTimestamp - pointBefore.timestamp <= pointAfter.timestamp - targetTimestamp
+		? lowerBound - 1
+		: lowerBound;
 }
 
 function getTooltipPosition(pointerX: number, pointerY: number, size: ChartSize) {
