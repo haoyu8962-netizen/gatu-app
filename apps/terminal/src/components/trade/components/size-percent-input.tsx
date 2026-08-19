@@ -7,6 +7,8 @@ import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 
 interface Props {
+	ariaDescribedBy?: string;
+	ariaInvalid?: boolean;
 	ariaLabel: string;
 	disabled: boolean;
 	frameClassName?: string;
@@ -18,6 +20,8 @@ interface Props {
 }
 
 export function SizePercentInput({
+	ariaDescribedBy,
+	ariaInvalid,
 	ariaLabel,
 	disabled,
 	frameClassName,
@@ -48,6 +52,8 @@ export function SizePercentInput({
 	return (
 		<div className={cn(tradingInputFrameClass, frameClassName)}>
 			<NumberInput
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid || undefined}
 				aria-label={ariaLabel}
 				inputMode="decimal"
 				inputSize={inputSize}

@@ -12,6 +12,8 @@ import { TradeSizeSlider } from "../components/trade-size-slider";
 interface Props {
 	canUsePercent: boolean;
 	disabled: boolean;
+	errorId?: string;
+	hasError?: boolean;
 	maxAllowedDecimals: number;
 	onPercentChange: (percent: number) => void;
 	onSizeChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -28,6 +30,8 @@ interface Props {
 export function MobileTradeSizeControl({
 	canUsePercent,
 	disabled,
+	errorId,
+	hasError = false,
 	maxAllowedDecimals,
 	onPercentChange,
 	onSizeChange,
@@ -48,6 +52,8 @@ export function MobileTradeSizeControl({
 			<div className={cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")}>
 				<span className="mr-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-subtle">{sizeLabel}</span>
 				<NumberInput
+					aria-describedby={hasError ? errorId : undefined}
+					aria-invalid={hasError || undefined}
 					aria-label={sizeAriaLabel}
 					inputMode="decimal"
 					inputSize="lg"
@@ -77,6 +83,8 @@ export function MobileTradeSizeControl({
 						onPercentChange={onPercentChange}
 						disabled={!canUsePercent}
 						ariaLabel={percentAriaLabel}
+						ariaDescribedBy={hasError ? errorId : undefined}
+						ariaInvalid={hasError || undefined}
 						thumbSize="md"
 						thumbAlignment="edge"
 						controlClassName="h-[33px]"
@@ -103,6 +111,8 @@ export function MobileTradeSizeControl({
 					onPercentChange={onPercentChange}
 					disabled={!canUsePercent}
 					ariaLabel={percentAriaLabel}
+					ariaDescribedBy={hasError ? errorId : undefined}
+					ariaInvalid={hasError || undefined}
 					frameClassName="h-[31px] w-20 shrink-0 rounded-[8px] px-2"
 					mobileSafe
 				/>

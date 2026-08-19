@@ -1,12 +1,13 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
@@ -123,6 +124,7 @@ interface Props {
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
+	const validationErrorId = useId();
 	const { address, isConnected } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
@@ -437,6 +439,15 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			? validation.errors.join(" \u2022 ")
 			: "";
 	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
+	const sizeValidationErrorText =
+		sizeValue > maxSize && maxSize > 0
+			? t`Exceeds max size`
+			: orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD
+				? t`Min order $${ORDER_MIN_NOTIONAL_USD}`
+				: "";
+	const displaySizeValidationError = useLingeringText(sizeValidationErrorText, ERROR_LINGER_MS);
+	const hasDisplayedSizeValidationError =
+		displaySizeValidationError !== "" && displayValidationError.includes(displaySizeValidationError);
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
@@ -856,6 +867,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					<MobileTradeSizeControl
 						canUsePercent={!isFormDisabled && maxSize > 0}
 						disabled={isFormDisabled}
+						errorId={hasDisplayedSizeValidationError ? validationErrorId : undefined}
+						hasError={hasDisplayedSizeValidationError}
 						maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
 						onPercentChange={applySizeFromPercent}
 						onSizeChange={handleSizeInputChange}
@@ -1009,7 +1022,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					embedded ? "px-2.5 py-2" : "px-3 py-3",
 				)}
 			>
-				{displayValidationError && <p className="text-xs text-error mb-2">{displayValidationError}</p>}
+				{displayValidationError && (
+					<p id={validationErrorId} className="text-xs text-error mb-2">
+						{displayValidationError}
+					</p>
+				)}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
 				{tradeRestricted && !buttonContent.disabledReason ? (
 					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">

@@ -111,6 +111,7 @@ export function TradeFormFields({
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
+	const sizeErrorId = useId();
 	const limitFieldId = useId();
 	const triggerFieldId = useId();
 
@@ -183,6 +184,7 @@ export function TradeFormFields({
 		return t`Min order $${ORDER_MIN_NOTIONAL_USD}`;
 	}
 	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
+	const hasDisplayedSizeError = displaySizeError !== "";
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
 	const limitPrefillKey = usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
@@ -361,6 +363,8 @@ export function TradeFormFields({
 						</label>
 						<NumberInput
 							id={sizeFieldId}
+							aria-describedby={hasDisplayedSizeError ? sizeErrorId : undefined}
+							aria-invalid={hasDisplayedSizeError || undefined}
 							placeholder="0.00"
 							value={sizeInput}
 							onChange={(e) => setSize(e.target.value)}
@@ -379,7 +383,11 @@ export function TradeFormFields({
 							<CaretDownIcon className="size-3 text-trading-panel-subtle" />
 						</button>
 					</div>
-					{displaySizeError && <p className="text-2xs text-trading-panel-error">{displaySizeError}</p>}
+					{displaySizeError && (
+						<p id={sizeErrorId} className="text-2xs text-trading-panel-error">
+							{displaySizeError}
+						</p>
+					)}
 
 					<div className="flex items-start gap-2">
 						<div className="relative min-w-0 flex-1">
@@ -388,6 +396,8 @@ export function TradeFormFields({
 								onPercentChange={handleSizePercentApply}
 								disabled={isFormDisabled || maxSize <= 0}
 								ariaLabel={`${t`Size`} (%)`}
+								ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}
+								ariaInvalid={hasDisplayedSizeError || undefined}
 								thumbSize="md"
 								thumbAlignment="edge"
 								controlClassName="h-8"
@@ -413,6 +423,8 @@ export function TradeFormFields({
 							onPercentChange={handleSizePercentApply}
 							disabled={isFormDisabled || maxSize <= 0}
 							ariaLabel={`${t`Size`} (%)`}
+							ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}
+							ariaInvalid={hasDisplayedSizeError || undefined}
 							frameClassName={cn(
 								"h-8 w-16 shrink-0 rounded-[8px] px-2",
 								(isFormDisabled || maxSize <= 0) && "opacity-50",
