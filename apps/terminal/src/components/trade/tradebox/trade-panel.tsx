@@ -168,6 +168,7 @@ export function TradePanel() {
 		positionStateReady,
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		setPendingLeverage,
 		resetPendingLeverage,
@@ -648,6 +649,7 @@ export function TradePanel() {
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
+				committedLeverage={committedLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				hasPosition={hasPosition}
@@ -665,6 +667,7 @@ export function TradePanel() {
 				onOpenChange={handleLeverageModalOpenChange}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
+				committedLeverage={committedLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				isUpdating={isSwitchingMode}

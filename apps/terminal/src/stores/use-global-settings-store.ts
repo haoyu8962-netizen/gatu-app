@@ -75,7 +75,7 @@ interface GlobalSettingsStore {
 		setShowChartScanlines: (next: boolean) => void;
 		setSkipOrderConfirmation: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
-		setMarketOrderSlippagePercent: (percent: number) => void;
+		setMarketOrderSlippagePercent: (percent: number) => number;
 		setMarginMode: (mode: MarginMode) => void;
 		setPositionsActiveTab: (tab: string) => void;
 		setMobileActiveTab: (tab: string) => void;
@@ -95,12 +95,15 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
 				setMarketOrderSlippagePercent: (percent) => {
+					const current = get().marketOrderSlippagePercent;
+					if (!Number.isFinite(percent)) return current;
 					const next = Math.min(
 						Math.max(percent, MARKET_ORDER_SLIPPAGE_MIN_PERCENT),
 						MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 					);
-					if (get().marketOrderSlippagePercent === next) return;
+					if (current === next) return next;
 					set({ marketOrderSlippagePercent: next });
+					return next;
 				},
 				setMarginMode: (mode) => set({ marginMode: mode }),
 				setPositionsActiveTab: (tab) => set({ positionsActiveTab: tab }),

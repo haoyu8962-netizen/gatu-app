@@ -34,6 +34,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	leverage: number;
 	currentLeverage: number;
 	pendingLeverage: number | null;
+	committedLeverage: number | null;
 	maxLeverage: number;
 	setPendingLeverage: (value: number) => void;
 	resetPendingLeverage: () => void;
@@ -84,6 +85,7 @@ export function useOrderEntryData({
 		displayLeverage: leverage,
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		setPendingLeverage,
 		resetPending: resetPendingLeverage,
@@ -202,6 +204,7 @@ export function useOrderEntryData({
 		leverage,
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		setPendingLeverage,
 		resetPendingLeverage,

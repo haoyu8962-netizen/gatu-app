@@ -194,6 +194,14 @@ export function PositionCloseSizingControls({
 	children,
 }: PositionCloseSizingControlsProps) {
 	const { t } = useLingui();
+	const requestedPercent = formatPositionMarketClosePercent(String(viewModel.sliderValue));
+	const effectivePercent = viewModel.effectivePercent;
+	const requestedValue = toBig(requestedPercent);
+	const effectiveValue = toBig(effectivePercent);
+	const sliderAriaValueText =
+		requestedValue && effectiveValue && requestedValue.eq(effectiveValue)
+			? `${requestedPercent}%`
+			: t`${requestedPercent}% requested; ${effectivePercent}% after size precision`;
 
 	function handleSizeBlur() {
 		if (intent.kind !== "size" || resolution.errors.length > 0) return;
@@ -294,7 +302,7 @@ export function PositionCloseSizingControls({
 					ariaLabel={t`Close percentage slider`}
 					ariaDescribedBy={hasDescribedError ? errorId : undefined}
 					ariaInvalid={visibleSizingError !== null}
-					ariaValueText={`${viewModel.effectivePercent}%`}
+					ariaValueText={sliderAriaValueText}
 					className="relative z-10"
 					controlClassName="h-9 min-[1001px]:h-8"
 					trackClassName="h-1 !rounded-[2px] bg-market-close-stroke-card ring-0 !shadow-none"

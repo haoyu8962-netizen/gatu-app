@@ -56,10 +56,16 @@ export function GlobalSettingsModal() {
 		setLocalSlippageInput(nextValue);
 		if (nextValue.trim() === "") return;
 		const parsed = Number(nextValue);
-		if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
+		if (!Number.isFinite(parsed) || parsed < MARKET_ORDER_SLIPPAGE_MIN_PERCENT) return;
+		const committed = setMarketOrderSlippagePercent(parsed);
+		if (committed !== parsed) setLocalSlippageInput(String(committed));
 	}
 
 	function handleSlippageInputBlur() {
+		if (localSlippageInput !== null && localSlippageInput.trim() !== "") {
+			const parsed = Number(localSlippageInput);
+			if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
+		}
 		setLocalSlippageInput(null);
 	}
 
@@ -128,6 +134,7 @@ export function GlobalSettingsModal() {
 							<Slider
 								label={t`Slippage tolerance`}
 								labelHidden
+								getAriaValueText={(_formattedValue, value) => `${value}%`}
 								value={slippageSliderValue}
 								onValueChange={handleSlippageSliderChange}
 								onValueCommitted={handleSlippageSliderCommit}

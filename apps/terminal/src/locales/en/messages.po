@@ -129,9 +129,9 @@ msgstr "{positionCount, plural, one {This submits a market close for the open po
 msgid "{positionCount} positions were closed at market."
 msgstr "{positionCount} positions were closed at market."
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-#~ msgstr "{requestedPercent}% requested; {effectivePercent}% after size precision"
+#: src/components/trade/positions/position-close-dialog-ui.tsx
+msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
+msgstr "{requestedPercent}% requested; {effectivePercent}% after size precision"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "{sliderValue}% selected; {effectivePercent}% after size precision"

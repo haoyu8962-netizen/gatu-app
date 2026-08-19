@@ -267,6 +267,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		positionStateReady,
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		setPendingLeverage,
 		resetPendingLeverage,
@@ -695,6 +696,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
+				committedLeverage={committedLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				hasPosition={hasPosition}

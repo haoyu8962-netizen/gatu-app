@@ -129,9 +129,9 @@ msgstr "{positionCount, plural, one {Esto envía un cierre a mercado para la pos
 msgid "{positionCount} positions were closed at market."
 msgstr "Se cerraron {positionCount} posiciones a mercado."
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-#~ msgstr ""
+#: src/components/trade/positions/position-close-dialog-ui.tsx
+msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "{totalSeconds} seconds"

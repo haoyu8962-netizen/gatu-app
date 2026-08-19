@@ -58,6 +58,7 @@ interface Props {
 	currentMode: MarginMode;
 	currentLeverage: number;
 	pendingLeverage: number | null;
+	committedLeverage?: number | null;
 	maxLeverage: number;
 	onPendingLeverageChange: (value: number) => void;
 	hasPosition: boolean;
@@ -186,7 +187,8 @@ function MarginModeModalComponent({
 }: Props) {
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const marketFormKey = marketIdentity ?? "market";
-	const formKey = `${open}:${marketFormKey}`;
+	const capabilityKey = `${formProps.maxLeverage}:${formProps.showLeverage ? "leveraged" : "fixed"}`;
+	const formKey = `${open}:${marketFormKey}:${capabilityKey}`;
 	const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
 	const dismissBlocked = actionPending || submissionLocked;
 
@@ -229,7 +231,7 @@ function MarginModeModalComponent({
 			>
 				{mobileView === "leverage" ? (
 					<MobileLeverageDrawerContent
-						key={`${marketFormKey}:leverage`}
+						key={`${marketFormKey}:leverage:${capabilityKey}`}
 						{...formProps}
 						isUpdating={dismissBlocked || !open}
 						onClose={() => handleOpenChange(false)}
@@ -338,7 +340,7 @@ export const MarginModeModal = memo(MarginModeModalComponent);
 
 function MobileLeverageDrawerContent(props: FormProps) {
 	const [leverageDraft, setLeverageDraft] = useState<number | null>(null);
-	const displayLeverage = leverageDraft ?? props.pendingLeverage ?? props.currentLeverage;
+	const displayLeverage = props.committedLeverage ?? leverageDraft ?? props.pendingLeverage ?? props.currentLeverage;
 
 	return (
 		<>
@@ -369,6 +371,7 @@ function MarginModeForm({
 	currentMode,
 	currentLeverage,
 	pendingLeverage,
+	committedLeverage: appliedLeverage = null,
 	maxLeverage,
 	onPendingLeverageChange,
 	hasPosition,
@@ -411,8 +414,8 @@ function MarginModeForm({
 		onLeverageDraftChange?.(null);
 	}, [onLeverageDraftChange, resetAutoClose, sessionOpen]);
 
-	const displayLeverage = submittedLeverage ?? leverageDraft ?? pendingLeverage ?? currentLeverage;
-	const committedLeverage = pendingLeverage ?? currentLeverage;
+	const canonicalLeverage = pendingLeverage ?? currentLeverage;
+	const displayLeverage = appliedLeverage ?? submittedLeverage ?? leverageDraft ?? canonicalLeverage;
 
 	function handleLeverageChange(value: number) {
 		onLeverageDraftChange?.(null);
@@ -497,8 +500,9 @@ function MarginModeForm({
 
 				{showLeverageControls && (
 					<LeverageEditor
+						key={`${maxLeverage}:${appliedLeverage ?? "draft"}`}
 						value={displayLeverage}
-						riskValue={submittedLeverage ?? committedLeverage}
+						riskValue={appliedLeverage ?? submittedLeverage ?? canonicalLeverage}
 						max={maxLeverage}
 						disabled={isUpdating}
 						onChange={handleLeverageChange}
@@ -574,6 +578,7 @@ function MarginModeForm({
 						iconLeft={<CheckIcon className="size-3.5" weight="bold" />}
 					>
 						<Trans>Updated</Trans>
+						{showLeverageControls ? ` ${displayLeverage}x` : null}
 					</Button>
 				) : (
 					<TradingActionButton

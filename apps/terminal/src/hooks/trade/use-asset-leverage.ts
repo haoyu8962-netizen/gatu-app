@@ -109,6 +109,7 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 interface UseAssetLeverageReturn {
 	currentLeverage: number;
 	pendingLeverage: number | null;
+	committedLeverage: number | null;
 	maxLeverage: number;
 	displayLeverage: number;
 	isDirty: boolean;
@@ -142,6 +143,11 @@ function getDefaultLeverage(maxLeverage: number): number {
 	return Math.min(10, maxLeverage);
 }
 
+function normalizeLeverage(value: number, maxLeverage: number): number {
+	const normalizedMax = Number.isFinite(maxLeverage) ? Math.max(1, Math.floor(maxLeverage)) : 1;
+	return Math.max(1, Math.min(Math.round(value), normalizedMax));
+}
+
 function leverageUpdateInProgressError(): Error {
 	return new Error(t`Another action for this market is already in progress.`);
 }
@@ -173,7 +179,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const operationTypeRef = useRef<OperationType>(null);
 	const executionIntentRef = useRef<LeverageExecutionIntent | null>(null);
 	const requestInFlightRef = useRef(false);
-	const [pendingLeverage, setPendingLeverageState] = useState<number | null>(null);
+	const [pendingLeverageState, setPendingLeverageState] = useState<number | null>(null);
+	const [committedLeverageState, setCommittedLeverageState] = useState<number | null>(null);
 	const [disconnectedLeverage, setDisconnectedLeverage] = useState<number | null>(null);
 
 	const onChainLeverage = currentActiveAssetData?.leverage?.value ?? null;
@@ -210,6 +217,11 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		return getDefaultLeverage(maxLeverage);
 	}
 	const currentLeverage = computeCurrentLeverage();
+	const normalizedPendingLeverage =
+		pendingLeverageState === null ? null : normalizeLeverage(pendingLeverageState, maxLeverage);
+	const pendingLeverage = normalizedPendingLeverage === currentLeverage ? null : normalizedPendingLeverage;
+	const committedLeverage =
+		committedLeverageState === null ? null : normalizeLeverage(committedLeverageState, maxLeverage);
 	const leverageExecutionStateRef = useRef<LeverageExecutionState>({
 		assetId,
 		isPerpMarket,
@@ -257,12 +269,26 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			}),
 	});
 
-	const displayLeverage = pendingLeverage ?? currentLeverage;
+	const displayLeverage = pendingLeverage ?? committedLeverage ?? currentLeverage;
 	const isDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
+
+	useEffect(() => {
+		setPendingLeverageState((previous) => {
+			if (previous === null) return previous;
+			const next = normalizeLeverage(previous, maxLeverage);
+			return next === currentLeverage ? null : next === previous ? previous : next;
+		});
+		setCommittedLeverageState((previous) => {
+			if (previous === null) return previous;
+			const next = normalizeLeverage(previous, maxLeverage);
+			return next === currentLeverage ? null : next === previous ? previous : next;
+		});
+	}, [currentLeverage, maxLeverage]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: baseToken change triggers reset
 	useEffect(() => {
 		setPendingLeverageState(null);
+		setCommittedLeverageState(null);
 		operationTypeRef.current = null;
 		executionIntentRef.current = null;
 		resetMutation();
@@ -271,7 +297,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const setPendingLeverage = useCallback(
 		(value: number) => {
 			if (!Number.isFinite(value)) return;
-			const clamped = Math.max(1, Math.min(Math.round(value), maxLeverage));
+			const clamped = normalizeLeverage(value, maxLeverage);
+			setCommittedLeverageState(null);
 			if (!isConnected) {
 				setDisconnectedLeverage(clamped);
 				setPendingLeverageState(null);
@@ -289,6 +316,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const resetPending = useCallback(() => {
 		if (requestInFlightRef.current) return;
 		setPendingLeverageState(null);
+		setCommittedLeverageState(null);
 		operationTypeRef.current = null;
 		executionIntentRef.current = null;
 		resetMutation();
@@ -310,7 +338,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				leverage: pendingLeverage,
 			});
 
-			setPendingLeverageState(null);
+			setCommittedLeverageState(pendingLeverage);
+			setPendingLeverageState(pendingLeverage === currentLeverage ? null : pendingLeverage);
 		} finally {
 			requestInFlightRef.current = false;
 		}
@@ -356,11 +385,12 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
 			if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
-			const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
+			const clamped = normalizeLeverage(leverageValue, maxLeverage);
 			const modeChanged = mode !== marginMode;
 			const leverageChanged = clamped !== currentLeverage;
 			if (!modeChanged && !leverageChanged) {
 				setPendingLeverageState(null);
+				setCommittedLeverageState(clamped);
 				return;
 			}
 
@@ -372,6 +402,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				setStoredMarginMode(mode);
 				setDisconnectedLeverage(clamped);
 				setPendingLeverageState(null);
+				setCommittedLeverageState(clamped);
 				return;
 			}
 
@@ -392,7 +423,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				});
 
 				setStoredMarginMode(mode);
-				setPendingLeverageState(null);
+				setCommittedLeverageState(clamped);
+				setPendingLeverageState(clamped === currentLeverage ? null : clamped);
 			} finally {
 				requestInFlightRef.current = false;
 			}
@@ -441,6 +473,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	return {
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		displayLeverage,
 		isDirty,

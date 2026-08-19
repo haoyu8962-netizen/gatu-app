@@ -13,6 +13,7 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 	currentLeverage: number;
 	pendingLeverage: number | null;
+	committedLeverage?: number | null;
 	maxLeverage: number;
 	onPendingLeverageChange: (value: number) => void;
 	isUpdating: boolean;
@@ -65,6 +66,7 @@ function LeverageModalContent({
 	onOpenChange,
 	currentLeverage,
 	pendingLeverage,
+	committedLeverage: appliedLeverage = null,
 	maxLeverage,
 	onPendingLeverageChange,
 	isUpdating,
@@ -98,8 +100,8 @@ function LeverageModalContent({
 		setLeverageInputValid(true);
 	}, [open, resetAutoClose]);
 
-	const committedLeverage = pendingLeverage ?? currentLeverage;
-	const displayLeverage = submittedLeverage ?? dragLeverage ?? committedLeverage;
+	const canonicalLeverage = pendingLeverage ?? currentLeverage;
+	const displayLeverage = appliedLeverage ?? submittedLeverage ?? dragLeverage ?? canonicalLeverage;
 	const isDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
 
 	function handleLeverageChange(value: number) {
@@ -111,7 +113,7 @@ function LeverageModalContent({
 		if (!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || applyInFlightRef.current) return;
 		applyInFlightRef.current = true;
 		onSubmissionLockChange(true);
-		const leverageToSubmit = committedLeverage;
+		const leverageToSubmit = canonicalLeverage;
 		setSubmittedLeverage(leverageToSubmit);
 		try {
 			await onApply(leverageToSubmit);
@@ -139,8 +141,9 @@ function LeverageModalContent({
 			</ModalHeader>
 			<ModalContent className="space-y-4">
 				<LeverageEditor
+					key={`${maxLeverage}:${appliedLeverage ?? "draft"}`}
 					value={displayLeverage}
-					riskValue={submittedLeverage ?? committedLeverage}
+					riskValue={appliedLeverage ?? submittedLeverage ?? canonicalLeverage}
 					max={maxLeverage}
 					disabled={isUpdating || !open}
 					onChange={handleLeverageChange}
@@ -175,7 +178,13 @@ function LeverageModalContent({
 					className="gap-1.5 min-h-10 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
 				>
 					{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}
-					{showSuccess ? <Trans>Updated</Trans> : <Trans>Confirm</Trans>}
+					{showSuccess ? (
+						<>
+							<Trans>Updated</Trans> {displayLeverage}x
+						</>
+					) : (
+						<Trans>Confirm</Trans>
+					)}
 				</TradingActionButton>
 			</ModalFooter>
 		</>
