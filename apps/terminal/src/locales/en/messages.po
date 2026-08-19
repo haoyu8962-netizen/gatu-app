@@ -1165,12 +1165,6 @@ msgstr "Bridge failed"
 #~ msgid "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 #~ msgstr "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
-#: src/components/trade/tradebox/scale-order-summary.tsx
-msgid "Builder Fee"
-msgstr "Builder Fee"
-
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Fee Approval"
 #~ msgstr "Builder Fee Approval"
@@ -3114,11 +3108,6 @@ msgstr "Est. Fee"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "Est. P&L at Limit"
-
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
-msgid "Est. Slippage"
-msgstr "Est. Slippage"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"

@@ -7,7 +7,6 @@ import { useSwitchChain, useWalletClient } from "wagmi";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
@@ -29,7 +28,6 @@ import {
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
@@ -38,15 +36,7 @@ import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import {
-	bpsToPercentage,
-	formatDuration,
-	formatNumber,
-	formatPrice,
-	formatSlippageBps,
-	formatToken,
-	formatUSD,
-} from "@/lib/format";
+import { formatDuration, formatNumber, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useAgentStatus,
@@ -294,10 +284,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
 	});
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
-	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
-	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
-		lowerBound: slippageEstimate?.exceedsVisibleDepth,
-	});
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active,
 		assetId: market?.assetId,
@@ -387,7 +373,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const liquidationInfo = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }) : null;
 	const liqPrice = liquidationInfo?.liqPrice ?? null;
 	const liqWarning = liquidationInfo?.liqWarning ?? false;
-	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
 	const twapSuborderCount = getTwapSuborderCount(twapMinutesNum);
 	const twapSizePerSuborder = twapSuborderCount > 0 ? sizeValue / twapSuborderCount : 0;
 
@@ -989,17 +974,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								<SummaryRow label={t`Size Skew`} value={formatSummaryCount(scaleSkewNum)} compact={embedded} />
 							</>
 						)}
-						{capabilities.isLeveraged && (
-							<SummaryRow
-								label={t`Liq. Price`}
-								value={
-									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
-								}
-								valueClass={liqValueClass}
-								labelClass="border-b border-dashed border-trading-panel-stroke-control"
-								compact={embedded}
-							/>
-						)}
 						<SummaryRow
 							label={t`Order Value`}
 							value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
@@ -1013,28 +987,20 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							/>
 						)}
 						{orderType === "market" && (
-							<>
-								<SummaryRow
-									label={t`Est. Slippage`}
-									value={estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
-									valueClass={estimatedSlippageText ? undefined : "text-trading-panel-muted"}
-									compact={embedded}
-								/>
-								<div
-									className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
+							<div
+								className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
+							>
+								<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+								<button
+									type="button"
+									onClick={openSettingsDialog}
+									aria-label={t`Slippage`}
+									className="relative inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 								>
-									<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-									<button
-										type="button"
-										onClick={openSettingsDialog}
-										aria-label={t`Slippage`}
-										className="relative inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-									>
-										<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-									</button>
-								</div>
-							</>
+									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+								</button>
+							</div>
 						)}
 						<SummaryRow
 							label={t`Est. Fee`}
@@ -1042,14 +1008,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							valueClass="text-trading-panel-muted"
 							compact={embedded}
 						/>
-						{DEFAULT_BUILDER_CONFIG?.f ? (
-							<SummaryRow
-								label={t`Builder Fee`}
-								value={`${bpsToPercentage(DEFAULT_BUILDER_CONFIG.f)}%`}
-								valueClass="text-trading-panel-muted"
-								compact={embedded}
-							/>
-						) : null}
 					</div>
 				</div>
 			</div>
@@ -1114,18 +1072,16 @@ function SummaryRow({
 	label,
 	value,
 	valueClass,
-	labelClass,
 	compact,
 }: {
 	label: string;
 	value: string;
 	valueClass?: string;
-	labelClass?: string;
 	compact?: boolean;
 }) {
 	return (
 		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
-			<span className={cn("min-w-0 truncate text-trading-panel-muted", labelClass)}>{label}</span>
+			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
 			<span
 				className={cn(
 					"shrink-0 whitespace-nowrap text-right font-semibold tabular-nums",
@@ -1144,12 +1100,6 @@ function formatSummaryPrice(value: number | null, szDecimals: number | undefined
 
 function formatSummaryCount(value: number | null): string {
 	return isPositive(value) ? formatNumber(String(value)) : FALLBACK_VALUE_PLACEHOLDER;
-}
-
-function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
-	if (!liqPrice) return "text-trading-panel-muted";
-	if (liqWarning) return "text-trading-panel-error";
-	return "text-trading-panel-fg";
 }
 
 interface MobileButtonContentInput {

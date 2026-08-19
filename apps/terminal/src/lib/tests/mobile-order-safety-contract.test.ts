@@ -88,4 +88,14 @@ describe("mobile order safety contract", () => {
 			/<button\s+type="button"\s+onClick=\{openSettingsDialog\}\s+aria-label=\{t`Slippage`\}/,
 		);
 	});
+
+	it("removes only the read-only liquidation, estimated slippage, and builder fee rows", () => {
+		expect(mobileTradeView).not.toContain("t`Liq. Price`");
+		expect(mobileTradeView).not.toContain("t`Est. Slippage`");
+		expect(mobileTradeView).not.toContain("t`Builder Fee`");
+		expect(mobileTradeView).toContain("t`Order Value`");
+		expect(mobileTradeView).toContain("t`Margin Req.`");
+		expect(mobileTradeView).toContain("t`Slippage`");
+		expect(mobileTradeView).toContain("t`Est. Fee`");
+	});
 });

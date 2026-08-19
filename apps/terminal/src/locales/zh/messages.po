@@ -1066,12 +1066,6 @@ msgstr "跨链失败"
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
-#: src/components/trade/tradebox/scale-order-summary.tsx
-msgid "Builder Fee"
-msgstr "构建者费用"
-
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Builder rewards are shown below"
 #~ msgstr "Builder 奖励显示在下方"
@@ -2908,11 +2902,6 @@ msgstr "预估费用"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "限价预估盈亏"
-
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
-msgid "Est. Slippage"
-msgstr "预估滑点"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx

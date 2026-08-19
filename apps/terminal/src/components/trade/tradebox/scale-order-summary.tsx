@@ -1,8 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { cn } from "@/lib/cn";
-import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
+import { formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { SummaryRow } from "../components/summary-row";
@@ -90,11 +89,6 @@ export function ScaleOrderSummary({
 					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 				</span>
 			</SummaryRow>
-			{DEFAULT_BUILDER_CONFIG?.f && (
-				<SummaryRow label={t`Builder Fee`}>
-					<span className="whitespace-nowrap font-normal text-trading-panel-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
-				</SummaryRow>
-			)}
 		</div>
 	);
 }
