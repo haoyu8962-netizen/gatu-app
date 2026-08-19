@@ -29,6 +29,8 @@ interface FormState {
 	tpSlEnabled: boolean;
 	tpPrice: string;
 	slPrice: string;
+	tpReturnInvalid: boolean;
+	slReturnInvalid: boolean;
 	tif: LimitTif;
 }
 
@@ -53,6 +55,8 @@ interface OrderEntryActions {
 	setTpSlEnabled: (enabled: boolean) => void;
 	setTpPrice: (price: string) => void;
 	setSlPrice: (price: string) => void;
+	setTpReturnInvalid: (invalid: boolean) => void;
+	setSlReturnInvalid: (invalid: boolean) => void;
 	setTif: (tif: LimitTif) => void;
 
 	resetForm: () => void;
@@ -85,6 +89,8 @@ const DEFAULT_FORM: FormState = {
 	tpSlEnabled: false,
 	tpPrice: "",
 	slPrice: "",
+	tpReturnInvalid: false,
+	slReturnInvalid: false,
 	tif: "Gtc",
 };
 
@@ -125,7 +131,10 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 		...DEFAULT_FORM,
 
 		actions: {
-			setSide: (side) => usePersistedOrderEntryStore.setState({ side }),
+			setSide: (side) => {
+				set({ tpReturnInvalid: false, slReturnInvalid: false });
+				usePersistedOrderEntryStore.setState({ side });
+			},
 
 			setOrderType: (orderType) => {
 				const isTrigger = isTriggerOrderType(orderType);
@@ -135,6 +144,8 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 					const needsTifReset = isScale && state.tif === "Ioc";
 					return {
 						tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
+						tpReturnInvalid: isTrigger ? false : state.tpReturnInvalid,
+						slReturnInvalid: isTrigger ? false : state.slReturnInvalid,
 						tif: needsTifReset ? "Gtc" : state.tif,
 					};
 				});
@@ -160,9 +171,16 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
 			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
 			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
-			setTpSlEnabled: (tpSlEnabled) => set({ tpSlEnabled }),
-			setTpPrice: (tpPrice) => set({ tpPrice }),
-			setSlPrice: (slPrice) => set({ slPrice }),
+			setTpSlEnabled: (tpSlEnabled) =>
+				set((state) => ({
+					tpSlEnabled,
+					tpReturnInvalid: tpSlEnabled ? state.tpReturnInvalid : false,
+					slReturnInvalid: tpSlEnabled ? state.slReturnInvalid : false,
+				})),
+			setTpPrice: (tpPrice) => set({ tpPrice, tpReturnInvalid: false }),
+			setSlPrice: (slPrice) => set({ slPrice, slReturnInvalid: false }),
+			setTpReturnInvalid: (tpReturnInvalid) => set({ tpReturnInvalid }),
+			setSlReturnInvalid: (slReturnInvalid) => set({ slReturnInvalid }),
 			setTif: (tif) => set({ tif }),
 
 			resetForm: () => set({ ...DEFAULT_FORM }),
@@ -177,6 +195,8 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()(
 					twapStopPrice: "",
 					tpPrice: "",
 					slPrice: "",
+					tpReturnInvalid: false,
+					slReturnInvalid: false,
 				}),
 		},
 	})),
@@ -239,6 +259,15 @@ export function useTpPrice() {
 }
 export function useSlPrice() {
 	return useOrderEntryFormStore((s) => s.slPrice);
+}
+export function useTpReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.tpReturnInvalid);
+}
+export function useSlReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.slReturnInvalid);
+}
+export function useTpSlReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.tpReturnInvalid || s.slReturnInvalid);
 }
 
 export function useTif() {

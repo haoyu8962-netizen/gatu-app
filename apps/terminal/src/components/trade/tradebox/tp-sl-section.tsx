@@ -57,6 +57,7 @@ interface LinkedReturnInput {
 	ariaLabel: string;
 	placeholder: string;
 	value: string;
+	error?: string | null;
 	unitLabel?: string;
 	onUnitToggle?: () => void;
 	unitToggleDisabled?: boolean;
@@ -393,6 +394,8 @@ function FramedTpSlRow({
 	const errorId = `${inputId}-error`;
 	const returnDisabled = disabled || returnInput?.disabled;
 	const unitToggleDisabled = disabled || returnInput?.unitToggleDisabled;
+	const returnError = returnInput?.error;
+	const displayError = error ?? returnError;
 
 	return (
 		<div className="min-w-0 space-y-1.5">
@@ -426,13 +429,15 @@ function FramedTpSlRow({
 							framedFrameClass,
 							!returnDisabled &&
 								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
+							!!returnError &&
+								"border-trading-panel-error hover:not-data-disabled:border-trading-panel-error focus-within:border-trading-panel-error",
 							returnDisabled && "opacity-50",
 						)}
 					>
 						<NumberInput
 							aria-label={returnInput.ariaLabel}
-							aria-describedby={error ? errorId : undefined}
-							aria-invalid={Boolean(error)}
+							aria-describedby={returnError ? errorId : undefined}
+							aria-invalid={Boolean(returnError)}
 							placeholder={returnInput.placeholder}
 							value={returnInput.value}
 							onChange={(e) => returnInput.onChange(e.target.value)}
@@ -460,12 +465,12 @@ function FramedTpSlRow({
 					</div>
 				)}
 			</div>
-			{error && (
+			{displayError && (
 				<p id={errorId} role="alert" className="text-2xs text-trading-panel-error">
-					{error}
+					{displayError}
 				</p>
 			)}
-			{!error && pnl !== null && (
+			{!displayError && pnl !== null && (
 				<p className="text-2xs tabular-nums text-trading-panel-muted">
 					{t`Estimated PnL after trigger`}{" "}
 					<span className={cn("font-semibold", pnlToneClass)}>{formatPnlValue(pnl)}</span>

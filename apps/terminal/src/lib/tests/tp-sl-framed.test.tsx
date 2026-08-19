@@ -6,12 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TpSlSection } from "@/components/trade/tradebox/tp-sl-section";
 import { createI18nRoot } from "./harness/react";
 
-function linkedReturnInputs(overrides?: { onUnitToggle?: () => void; onTpChange?: (value: string) => void }) {
+function linkedReturnInputs(overrides?: {
+	onUnitToggle?: () => void;
+	onTpChange?: (value: string) => void;
+	tpError?: string;
+}) {
 	return {
 		unitLabel: "%",
 		onUnitToggle: overrides?.onUnitToggle ?? vi.fn(),
 		tp: {
 			ariaLabel: "Take profit return",
+			error: overrides?.tpError,
 			placeholder: "Profit",
 			value: "",
 			onChange: overrides?.onTpChange ?? vi.fn(),
@@ -140,6 +145,33 @@ describe("TpSlSection framed order-panel card", () => {
 		});
 
 		expect(container.textContent).toContain("Take profit trigger must be above mark");
+	});
+
+	it("associates a linked amount error only with the return input", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					framed: true,
+					linkedReturnInputs: linkedReturnInputs({ tpError: "Invalid amount" }),
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					referencePrice: 100,
+					side: "buy",
+					size: 1,
+					slPrice: "",
+					tpPrice: "",
+				}),
+			);
+		});
+
+		const priceInput = container.querySelector<HTMLInputElement>('input[aria-label="Take Profit"]');
+		const returnInput = container.querySelector<HTMLInputElement>('input[aria-label="Take profit return"]');
+		expect(priceInput?.getAttribute("aria-invalid")).toBe("false");
+		expect(priceInput?.getAttribute("aria-describedby")).toBeNull();
+		expect(returnInput?.getAttribute("aria-invalid")).toBe("true");
+		expect(returnInput?.getAttribute("aria-describedby")).toBeTruthy();
+		expect(returnInput?.parentElement?.className).toContain("border-trading-panel-error");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid amount");
 	});
 
 	it("toggles the return unit from the paired input", () => {

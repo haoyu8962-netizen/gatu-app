@@ -83,6 +83,7 @@ function perpContext(overrides: Partial<PerpOrderContext> = {}): PerpOrderContex
 		twapStopPriceNum: null,
 		tpSlEnabled: false,
 		canUseTpSl: false,
+		tpSlReturnInvalid: false,
 		tpPriceNum: null,
 		slPriceNum: null,
 		...overrides,
@@ -444,6 +445,21 @@ describe("opening trigger validation", () => {
 });
 
 describe("attached TP/SL precision validation", () => {
+	it("rejects an invalid linked amount even when the other trigger is valid", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				tpSlEnabled: true,
+				canUseTpSl: true,
+				tpSlReturnInvalid: true,
+				tpPriceNum: null,
+				slPriceNum: 90,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).toEqual(["TPSL_004"]);
+		expect(result.canSubmit).toBe(false);
+	});
+
 	it("rejects a TP that only differs before protocol price normalization", () => {
 		const result = validatePerpOrder(
 			perpContext({

@@ -51,6 +51,7 @@ export interface PerpOrderFields {
 	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
+	tpSlReturnInvalid: boolean;
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
 }

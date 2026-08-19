@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { act, createElement } from "react";
+import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TradeFormTpSl } from "@/components/trade/tradebox/trade-form-tp-sl";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
 function findInput(container: HTMLElement, ariaLabel: string): HTMLInputElement {
@@ -23,6 +24,12 @@ function changeInput(input: HTMLInputElement, value: string) {
 describe("TradeFormTpSl linked return inputs", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	let orderActions!: ReturnType<typeof useOrderEntryActions>;
+
+	function ActionsProbe() {
+		orderActions = useOrderEntryActions();
+		return null;
+	}
 
 	beforeEach(() => {
 		container = document.createElement("div");
@@ -38,17 +45,22 @@ describe("TradeFormTpSl linked return inputs", () => {
 	function renderForm(overrides?: Partial<Parameters<typeof TradeFormTpSl>[0]>) {
 		act(() => {
 			root.render(
-				createElement(TradeFormTpSl, {
-					assetId: 0,
-					marketId: "BTC",
-					referencePrice: 100,
-					size: 2,
-					szDecimals: 4,
-					disabled: false,
-					quoteSymbol: "USDC",
-					leverage: 10,
-					...overrides,
-				}),
+				createElement(
+					Fragment,
+					null,
+					createElement(ActionsProbe),
+					createElement(TradeFormTpSl, {
+						assetId: 0,
+						marketId: "BTC",
+						referencePrice: 100,
+						size: 2,
+						szDecimals: 4,
+						disabled: false,
+						quoteSymbol: "USDC",
+						leverage: 10,
+						...overrides,
+					}),
+				),
 			);
 		});
 	}
@@ -65,7 +77,7 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(findInput(container, "Take Profit").value).toBe("84.00");
 	});
 
-	it("clears a stale take-profit price when the converted target rounds to the entry reference", () => {
+	it("preserves and marks a return that rounds to the entry reference as invalid", () => {
 		resetPrices({ referencePrice: 80 });
 		const tpReturn = findInput(container, "Take profit return");
 		changeInput(tpReturn, "50");
@@ -73,6 +85,13 @@ describe("TradeFormTpSl linked return inputs", () => {
 
 		changeInput(tpReturn, "0.01");
 		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(findInput(container, "Take Profit").getAttribute("aria-invalid")).toBe("false");
+		expect(tpReturn.value).toBe("0.01");
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("true");
+		expect(container.textContent).toContain("Invalid amount");
+
+		act(() => tpReturn.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		expect(tpReturn.value).toBe("0.01");
 	});
 
 	it("normalizes the entry and return target to the same protocol price rules", () => {
@@ -81,10 +100,16 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(findInput(container, "Take Profit").value).toBe("0.012347");
 	});
 
-	it("clears a target that collapses onto the entry after protocol rounding", () => {
-		resetPrices({ assetId: 0, referencePrice: 12345, leverage: 10, szDecimals: 0 });
-		changeInput(findInput(container, "Take profit return"), "0.01");
+	it("revalidates an active return when protocol precision metadata changes", () => {
+		resetPrices({ assetId: 0, referencePrice: 0.012345678, leverage: 2, szDecimals: 0 });
+		const tpReturn = findInput(container, "Take profit return");
+		changeInput(tpReturn, "0.01");
+		expect(findInput(container, "Take Profit").value).toBe("0.012347");
+
+		renderForm({ assetId: 0, referencePrice: 0.012345678, leverage: 2, szDecimals: 2 });
 		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(tpReturn.value).toBe("0.01");
+		expect(container.textContent).toContain("Invalid amount");
 	});
 
 	it("clears a stale take-profit price when the return draft is incomplete", () => {
@@ -96,6 +121,7 @@ describe("TradeFormTpSl linked return inputs", () => {
 		changeInput(tpReturn, ".");
 		expect(tpReturn.value).toBe(".");
 		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(container.textContent).toContain("Invalid amount");
 	});
 
 	it("keeps the typed return as the source and re-derives the price when the entry reference moves", () => {
@@ -168,6 +194,80 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(toggles[0]?.textContent).toBe("USDH");
 		changeInput(findInput(container, "Take profit return"), "10");
 		expect(findInput(container, "Take Profit").value).toBe("105.00");
+	});
+
+	it("re-derives a collateral target when size changes", () => {
+		resetPrices({ referencePrice: 100, size: 2 });
+		const toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		act(() => toggle?.click());
+		const tpReturn = findInput(container, "Take profit return");
+		changeInput(tpReturn, "10");
+		expect(findInput(container, "Take Profit").value).toBe("105.00");
+
+		renderForm({ referencePrice: 100, size: 4 });
+		expect(tpReturn.value).toBe("10");
+		expect(findInput(container, "Take Profit").value).toBe("102.50");
+	});
+
+	it("keeps an unrepresentable collateral amount invalid until it is corrected or cleared", () => {
+		resetPrices({ referencePrice: 100, size: 2 });
+		changeInput(findInput(container, "Stop Loss"), "95");
+		const toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		act(() => toggle?.click());
+		const tpReturn = findInput(container, "Take profit return");
+
+		changeInput(tpReturn, "0.001");
+		expect(tpReturn.value).toBe("0.001");
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("true");
+		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(container.textContent).toContain("Invalid amount");
+
+		changeInput(tpReturn, "2");
+		expect(findInput(container, "Take Profit").value).toBe("101.00");
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+		expect(container.textContent).not.toContain("Invalid amount");
+
+		changeInput(tpReturn, "");
+		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+		expect(findInput(container, "Stop Loss").value).toBe("95");
+	});
+
+	it("keeps a positive sub-cent collateral return distinguishable from zero", () => {
+		resetPrices({ referencePrice: 100, size: 0.00001, szDecimals: 5 });
+		changeInput(findInput(container, "Take Profit"), "101");
+		const toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		act(() => toggle?.click());
+
+		expect(findInput(container, "Take profit return").value).toBe("0.00001");
+	});
+
+	it("resets collateral mode safely when quote metadata disappears", () => {
+		resetPrices({ quoteSymbol: "USDC" });
+		let toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		act(() => toggle?.click());
+		changeInput(findInput(container, "Take profit return"), "10");
+		expect(toggle?.textContent).toBe("$");
+
+		renderForm({ quoteSymbol: null });
+		toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		expect(toggle?.textContent).toBe("%");
+		expect(toggle?.disabled).toBe(true);
+		expect(findInput(container, "Take profit return").disabled).toBe(false);
+		expect(findInput(container, "Take profit return").value).not.toBe("10");
+	});
+
+	it("preserves the selected unit when the order side changes", () => {
+		resetPrices();
+		let toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		act(() => toggle?.click());
+		expect(toggle?.textContent).toBe("$");
+
+		act(() => orderActions.setSide("sell"));
+		toggle = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]')[0];
+		expect(toggle?.textContent).toBe("$");
+
+		act(() => orderActions.setSide("buy"));
 	});
 
 	it("fails closed when builder collateral metadata is missing", () => {

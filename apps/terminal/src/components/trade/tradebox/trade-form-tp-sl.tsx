@@ -13,7 +13,14 @@ import {
 	validateSlPrice,
 	validateTpPrice,
 } from "@/lib/trade/tpsl";
-import { useOrderEntryActions, useOrderSide, useSlPrice, useTpPrice } from "@/stores/use-order-entry-store";
+import {
+	useOrderEntryActions,
+	useOrderSide,
+	useSlPrice,
+	useSlReturnInvalid,
+	useTpPrice,
+	useTpReturnInvalid,
+} from "@/stores/use-order-entry-store";
 import { TpSlSection } from "./tp-sl-section";
 
 interface Props {
@@ -35,9 +42,34 @@ interface ReturnDraft {
 	value: string;
 }
 
-export function TradeFormTpSl({
+interface SyncLinkedPriceParams {
+	draft: string | null;
+	target: string | null | undefined;
+	currentPrice: string;
+	setPrice: (price: string) => void;
+	setInvalid: (invalid: boolean) => void;
+}
+
+function syncLinkedPrice({ draft, target, currentPrice, setPrice, setInvalid }: SyncLinkedPriceParams) {
+	if (draft === null) return;
+	if (target === null || target === undefined) {
+		if (currentPrice !== "") setPrice("");
+		setInvalid(draft !== "");
+		return;
+	}
+	if (!toBig(currentPrice)?.eq(target)) setPrice(target);
+	setInvalid(false);
+}
+
+export function TradeFormTpSl(props: Props) {
+	const side = useOrderSide();
+	const returnContextKey = [props.marketId ?? "", side, props.quoteSymbol ?? ""].join("|");
+	const unitContextKey = [props.marketId ?? "", props.quoteSymbol ?? ""].join("|");
+	return <TradeFormTpSlFields key={unitContextKey} {...props} side={side} returnContextKey={returnContextKey} />;
+}
+
+function TradeFormTpSlFields({
 	assetId,
-	marketId,
 	referencePrice,
 	size,
 	szDecimals,
@@ -45,12 +77,15 @@ export function TradeFormTpSl({
 	quoteSymbol,
 	leverage,
 	mobileTouchSafe,
-}: Props) {
+	side,
+	returnContextKey,
+}: Props & { side: "buy" | "sell"; returnContextKey: string }) {
 	const { t } = useLingui();
-	const side = useOrderSide();
 	const tpPriceInput = useTpPrice();
 	const slPriceInput = useSlPrice();
-	const { setTpPrice, setSlPrice } = useOrderEntryActions();
+	const tpReturnInvalid = useTpReturnInvalid();
+	const slReturnInvalid = useSlReturnInvalid();
+	const { setTpPrice, setSlPrice, setTpReturnInvalid, setSlReturnInvalid } = useOrderEntryActions();
 
 	const [tpUnit, setTpUnit] = useState<ReturnUnit>("roe");
 	const [slUnit, setSlUnit] = useState<ReturnUnit>("roe");
@@ -59,7 +94,6 @@ export function TradeFormTpSl({
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals);
 	const normalizedReferencePrice = normalizePrice(referencePrice);
-	const returnContextKey = [marketId ?? "", side, quoteSymbol ?? ""].join("|");
 
 	function normalizePrice(value: string | number | null): string | null {
 		if (assetId === null) return null;
@@ -98,7 +132,9 @@ export function TradeFormTpSl({
 
 	function formatReturnMagnitude(value: string | number | null, fractionDigits: number): string {
 		const parsed = toBig(value)?.abs();
-		return parsed?.gt(0) ? parsed.round(fractionDigits).toString() : "";
+		if (!parsed?.gt(0)) return "";
+		const rounded = parsed.round(fractionDigits);
+		return rounded.gt(0) ? rounded.toString() : parsed.toFixed();
 	}
 
 	function getReturnValue(kind: TpSlKind): string {
@@ -135,44 +171,72 @@ export function TradeFormTpSl({
 		return toBig(target)?.eq(normalizedTarget) ? target : normalizedTarget;
 	}
 
+	function getDraftTarget(kind: TpSlKind, draft: string | null): string | null | undefined {
+		if (draft === null) return undefined;
+		if (!/^\d*\.?\d*$/.test(draft)) return null;
+		const magnitude = toBig(draft);
+		if (!magnitude?.gt(0)) return null;
+		return priceFromReturn(kind, magnitude.toString());
+	}
+
 	const tpDraftValue = getCurrentDraft("tp");
 	const slDraftValue = getCurrentDraft("sl");
-	// biome-ignore lint/correctness/useExhaustiveDependencies: re-derive linked prices only when the market inputs the drafts depend on move
-	useEffect(() => {
-		syncPriceFromDraft("tp", tpDraftValue);
-		syncPriceFromDraft("sl", slDraftValue);
-	}, [normalizedReferencePrice, size, leverage, tpUnit, slUnit]);
+	const tpDraftTarget = getDraftTarget("tp", tpDraftValue);
+	const slDraftTarget = getDraftTarget("sl", slDraftValue);
 
-	function syncPriceFromDraft(kind: TpSlKind, draft: string | null) {
-		if (draft === null) return;
-		const magnitude = toBig(draft);
-		if (!magnitude || magnitude.lte(0)) return;
-		const target = priceFromReturn(kind, magnitude.toString());
-		if (target === null) return;
-		const current = kind === "tp" ? tpPriceInput : slPriceInput;
-		if (toBig(current)?.eq(target)) return;
-		if (kind === "tp") setTpPrice(target);
-		else setSlPrice(target);
-	}
+	useEffect(() => {
+		syncLinkedPrice({
+			draft: tpDraftValue,
+			target: tpDraftTarget,
+			currentPrice: tpPriceInput,
+			setPrice: setTpPrice,
+			setInvalid: setTpReturnInvalid,
+		});
+		syncLinkedPrice({
+			draft: slDraftValue,
+			target: slDraftTarget,
+			currentPrice: slPriceInput,
+			setPrice: setSlPrice,
+			setInvalid: setSlReturnInvalid,
+		});
+	}, [
+		tpDraftValue,
+		tpDraftTarget,
+		tpPriceInput,
+		setTpPrice,
+		setTpReturnInvalid,
+		slDraftValue,
+		slDraftTarget,
+		slPriceInput,
+		setSlPrice,
+		setSlReturnInvalid,
+	]);
+
+	useEffect(
+		() => () => {
+			setTpReturnInvalid(false);
+			setSlReturnInvalid(false);
+		},
+		[setTpReturnInvalid, setSlReturnInvalid],
+	);
 
 	function handleReturnChange(kind: TpSlKind, value: string) {
 		const setDraft = kind === "tp" ? setTpReturnDraft : setSlReturnDraft;
 		const setPrice = kind === "tp" ? setTpPrice : setSlPrice;
+		const setInvalid = kind === "tp" ? setTpReturnInvalid : setSlReturnInvalid;
+		const currentPrice = kind === "tp" ? tpPriceInput : slPriceInput;
 		setDraft({ contextKey: returnContextKey, value });
-		if (!/^\d*\.?\d*$/.test(value)) {
-			setPrice("");
-			return;
-		}
-		const magnitude = toBig(value);
-		if (!magnitude || magnitude.lte(0)) {
-			setPrice("");
-			return;
-		}
-		const target = priceFromReturn(kind, magnitude.toString());
-		setPrice(target ?? "");
+		syncLinkedPrice({
+			draft: value,
+			target: getDraftTarget(kind, value),
+			currentPrice,
+			setPrice,
+			setInvalid,
+		});
 	}
 
 	function handleReturnBlur(kind: TpSlKind) {
+		if (kind === "tp" ? tpReturnInvalid : slReturnInvalid) return;
 		if (kind === "tp") setTpReturnDraft(null);
 		else setSlReturnDraft(null);
 	}
@@ -182,9 +246,11 @@ export function TradeFormTpSl({
 		if (kind === "tp") {
 			setTpUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setTpReturnDraft(null);
+			setTpReturnInvalid(false);
 		} else {
 			setSlUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setSlReturnDraft(null);
+			setSlReturnInvalid(false);
 		}
 	}
 
@@ -245,9 +311,10 @@ export function TradeFormTpSl({
 					ariaLabel: t`Take profit return`,
 					placeholder: t`Profit`,
 					value: getReturnValue("tp"),
+					error: tpReturnInvalid && tpDraftValue !== null ? t`Invalid amount` : null,
 					unitLabel: getUnitLabel("tp"),
 					onUnitToggle: () => handleUnitToggle("tp"),
-					unitToggleDisabled: quoteSymbol === null,
+					unitToggleDisabled: quoteSymbol === null && getUnit("tp") === "roe",
 					disabled: disabled || !canLinkReturn("tp"),
 					onBlur: () => handleReturnBlur("tp"),
 					onChange: (value) => handleReturnChange("tp", value),
@@ -256,9 +323,10 @@ export function TradeFormTpSl({
 					ariaLabel: t`Stop loss return`,
 					placeholder: t`Loss`,
 					value: getReturnValue("sl"),
+					error: slReturnInvalid && slDraftValue !== null ? t`Invalid amount` : null,
 					unitLabel: getUnitLabel("sl"),
 					onUnitToggle: () => handleUnitToggle("sl"),
-					unitToggleDisabled: quoteSymbol === null,
+					unitToggleDisabled: quoteSymbol === null && getUnit("sl") === "roe",
 					disabled: disabled || !canLinkReturn("sl"),
 					onBlur: () => handleReturnBlur("sl"),
 					onChange: (value) => handleReturnChange("sl", value),

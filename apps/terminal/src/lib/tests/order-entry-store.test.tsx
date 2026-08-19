@@ -11,6 +11,7 @@ import {
 	useScaleSkew,
 	useTif,
 	useTpSlEnabled,
+	useTpSlReturnInvalid,
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
@@ -123,6 +124,43 @@ describe("order entry store persistence", () => {
 		act(() => actions.resetForm());
 		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
 		expect(setItemSpy).not.toHaveBeenCalled();
+	});
+
+	it("clears linked TP/SL amount errors when their price or form state resets", () => {
+		let returnInvalid: boolean | undefined;
+
+		function StateProbe() {
+			returnInvalid = useTpSlReturnInvalid();
+			return null;
+		}
+
+		act(() => root.render(createElement(StateProbe)));
+		expect(returnInvalid).toBe(false);
+
+		act(() => {
+			actions.setTpSlEnabled(true);
+			actions.setTpReturnInvalid(true);
+		});
+		expect(returnInvalid).toBe(true);
+
+		act(() => actions.setTpPrice("110"));
+		expect(returnInvalid).toBe(false);
+
+		act(() => actions.setSlReturnInvalid(true));
+		expect(returnInvalid).toBe(true);
+		act(() => actions.resetPrices());
+		expect(returnInvalid).toBe(false);
+
+		act(() => actions.setSlReturnInvalid(true));
+		act(() => actions.setTpSlEnabled(false));
+		expect(returnInvalid).toBe(false);
+
+		act(() => {
+			actions.setTpReturnInvalid(true);
+			actions.setSide("sell");
+		});
+		expect(returnInvalid).toBe(false);
+		act(() => actions.setSide("buy"));
 	});
 
 	it("keeps the scale skew transient, untouched by price resets, and restored by resetForm", () => {

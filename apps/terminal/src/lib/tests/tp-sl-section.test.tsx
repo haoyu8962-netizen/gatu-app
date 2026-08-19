@@ -194,7 +194,8 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(priceInput?.className).not.toContain("max-[1000px]:text-base");
 		expect(returnInput?.className).not.toContain("max-[1000px]:text-base");
 		expect(priceInput?.getAttribute("aria-invalid")).toBe("true");
-		expect(returnInput?.getAttribute("aria-describedby")).toBe(priceInput?.getAttribute("aria-describedby"));
+		expect(returnInput?.getAttribute("aria-invalid")).toBe("false");
+		expect(returnInput?.getAttribute("aria-describedby")).toBeNull();
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");
 		expect(toggles).toHaveLength(2);
 		for (const toggle of toggles) {

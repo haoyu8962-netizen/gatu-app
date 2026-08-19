@@ -4053,6 +4053,9 @@ msgstr "Insufficient balance"
 msgid "Insufficient funds for gas"
 msgstr "Insufficient funds for gas"
 
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
+#: src/lib/errors/definitions/tpsl.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/trade/withdrawal.ts
 msgid "Invalid amount"

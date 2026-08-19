@@ -93,6 +93,7 @@ import {
 	useTif,
 	useTpPrice,
 	useTpSlEnabled,
+	useTpSlReturnInvalid,
 	useTriggerPrice,
 	useTwapMinutes,
 	useTwapRandomize,
@@ -165,6 +166,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
+	const tpSlReturnInvalid = useTpSlReturnInvalid();
 	const tpPrice = useTpPrice();
 	const slPrice = useSlPrice();
 	const tif = useTif();
@@ -438,6 +440,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
+					tpSlReturnInvalid,
 					tpPriceNum: toNumber(tpPrice),
 					slPriceNum: toNumber(slPrice),
 				}),

@@ -10,6 +10,7 @@ export interface TpSlContext {
 	szDecimals: number;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
+	tpSlReturnInvalid: boolean;
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
 	price: number;
@@ -21,6 +22,15 @@ function normalizePrice(ctx: TpSlContext, value: number): string | number {
 	return formatPriceForOrder(value, { assetId: ctx.assetId, szDecimals: ctx.szDecimals });
 }
 
+export const tpSlReturnValidator: Validator<TpSlContext> = createValidator({
+	id: "tpsl-return-invalid",
+	code: "TPSL_004",
+	category: "tpsl",
+	priority: 199,
+	getMessage: () => t`Invalid amount`,
+	validate: (ctx) => !ctx.tpSlEnabled || !ctx.canUseTpSl || !ctx.tpSlReturnInvalid,
+});
+
 export const enterTpSlPriceValidator: Validator<TpSlContext> = createValidator({
 	id: "enter-tpsl-price",
 	code: "TPSL_001",
@@ -29,6 +39,7 @@ export const enterTpSlPriceValidator: Validator<TpSlContext> = createValidator({
 	getMessage: () => t`Enter TP or SL price`,
 	validate: (ctx) => {
 		if (!ctx.tpSlEnabled || !ctx.canUseTpSl) return true;
+		if (ctx.tpSlReturnInvalid) return true;
 		const hasTp = isPositive(ctx.tpPriceNum);
 		const hasSl = isPositive(ctx.slPriceNum);
 		return hasTp || hasSl;
@@ -63,4 +74,9 @@ export const slPriceValidator: Validator<TpSlContext> = createValidator({
 	},
 });
 
-export const tpSlValidators: Validator<TpSlContext>[] = [enterTpSlPriceValidator, tpPriceValidator, slPriceValidator];
+export const tpSlValidators: Validator<TpSlContext>[] = [
+	tpSlReturnValidator,
+	enterTpSlPriceValidator,
+	tpPriceValidator,
+	slPriceValidator,
+];

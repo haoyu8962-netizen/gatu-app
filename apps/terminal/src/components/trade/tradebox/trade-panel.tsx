@@ -80,6 +80,7 @@ import {
 	useTif,
 	useTpPrice,
 	useTpSlEnabled,
+	useTpSlReturnInvalid,
 	useTriggerPrice,
 	useTwapMinutes,
 	useTwapRandomize,
@@ -248,6 +249,7 @@ export function TradePanel() {
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const tpSlEnabled = useTpSlEnabled();
+	const tpSlReturnInvalid = useTpSlReturnInvalid();
 	const tpPriceInput = useTpPrice();
 	const slPriceInput = useSlPrice();
 	const tif = useTif();
@@ -383,6 +385,7 @@ export function TradePanel() {
 					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
+					tpSlReturnInvalid,
 					tpPriceNum,
 					slPriceNum,
 				}),

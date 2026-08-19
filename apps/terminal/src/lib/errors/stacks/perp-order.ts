@@ -30,7 +30,13 @@ import {
 	scaleSkewRangeValidator,
 	scaleStartEndDifferValidator,
 } from "../definitions/scale";
-import { enterTpSlPriceValidator, slPriceValidator, type TpSlContext, tpPriceValidator } from "../definitions/tpsl";
+import {
+	enterTpSlPriceValidator,
+	slPriceValidator,
+	type TpSlContext,
+	tpPriceValidator,
+	tpSlReturnValidator,
+} from "../definitions/tpsl";
 import {
 	stopTriggerAboveMarkValidator,
 	stopTriggerBelowMarkValidator,
@@ -87,6 +93,7 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	enterSizeValidator,
 	minOrderNotionalValidator,
 	exceedsMaxSizeValidator,
+	tpSlReturnValidator,
 	enterTpSlPriceValidator,
 	tpPriceValidator,
 	slPriceValidator,
