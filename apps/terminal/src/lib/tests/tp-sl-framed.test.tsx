@@ -90,17 +90,34 @@ describe("TpSlSection framed order-panel card", () => {
 		expect(section?.className).not.toContain("bg-trading-panel-card");
 		expect(section?.className).not.toContain("border-trading-panel-stroke-card");
 
-		const tpPriceFrame = container.querySelector<HTMLInputElement>('input[placeholder="TP Price"]')?.parentElement;
-		const tpReturnFrame = container.querySelector<HTMLInputElement>('input[placeholder="Profit"]')?.parentElement;
+		const tpPriceInput = container.querySelector<HTMLInputElement>('input[placeholder="TP Price"]');
+		const tpReturnInput = container.querySelector<HTMLInputElement>('input[placeholder="Profit"]');
+		const tpPriceFrame = tpPriceInput?.parentElement;
+		const tpReturnFrame = tpReturnInput?.parentElement;
 		const row = tpPriceFrame?.parentElement;
 
 		expect(row?.className).toContain("grid-cols-2");
+		expect(row?.className).toContain("gap-2.5");
 		expect(tpPriceFrame?.className).toContain("w-full");
 		expect(tpPriceFrame?.className).toContain("box-border");
+		expect(tpPriceFrame?.className).toContain("h-8.25");
+		expect(tpPriceFrame?.className).toContain("gap-1.5");
+		expect(tpPriceFrame?.className).toContain("rounded-16");
+		expect(tpPriceFrame?.className).toContain("bg-transparent");
+		expect(tpPriceFrame?.className).toContain("py-1.25");
+		expect(tpPriceFrame?.className).toContain("pr-3");
+		expect(tpPriceFrame?.className).toContain("pl-2.5");
 		expect(tpPriceFrame?.className).not.toContain("min-w-[");
 		expect(tpReturnFrame?.className).toContain("w-full");
 		expect(tpReturnFrame?.className).toContain("box-border");
 		expect(tpReturnFrame?.className).not.toContain("min-w-[");
+		expect(tpPriceInput?.className).toContain("flex-auto");
+		expect(tpPriceInput?.className).toContain("min-w-0");
+		expect(tpPriceInput?.className).toContain("text-xs");
+		expect(tpReturnInput?.className).toContain("flex-auto");
+		expect(tpReturnInput?.className).toContain("min-w-0");
+		expect(tpReturnInput?.className).toContain("text-xs");
+		expect(tpReturnFrame?.querySelector("button")?.className).toContain("flex-none");
 	});
 
 	it("shows direction errors instead of the estimated PnL line", () => {

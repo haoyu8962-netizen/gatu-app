@@ -158,7 +158,7 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(onUnitToggle).toHaveBeenCalledOnce();
 	});
 
-	it("keeps framed mobile inputs and unit controls touch-safe and associates errors", () => {
+	it("keeps framed mobile inputs at the fixed field size and associates errors", () => {
 		act(() => {
 			root.render(
 				createElement(TpSlSection, {
@@ -185,8 +185,14 @@ describe("TpSlSection position ROE shortcuts", () => {
 		const priceInput = container.querySelector<HTMLInputElement>('input[aria-label="Take Profit"]');
 		const returnInput = container.querySelector<HTMLInputElement>('input[aria-label="Take profit return"]');
 		const toggles = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]');
-		expect(priceInput?.className).toContain("max-[1000px]:h-11");
-		expect(returnInput?.className).toContain("max-[1000px]:h-11");
+		expect(priceInput?.parentElement?.className).toContain("h-8.25");
+		expect(returnInput?.parentElement?.className).toContain("h-8.25");
+		expect(priceInput?.className).toContain("text-xs");
+		expect(returnInput?.className).toContain("text-xs");
+		expect(priceInput?.className).not.toContain("max-[1000px]:h-11");
+		expect(returnInput?.className).not.toContain("max-[1000px]:h-11");
+		expect(priceInput?.className).not.toContain("max-[1000px]:text-base");
+		expect(returnInput?.className).not.toContain("max-[1000px]:text-base");
 		expect(priceInput?.getAttribute("aria-invalid")).toBe("true");
 		expect(returnInput?.getAttribute("aria-describedby")).toBe(priceInput?.getAttribute("aria-describedby"));
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");

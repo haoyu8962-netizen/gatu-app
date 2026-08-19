@@ -343,9 +343,9 @@ export function TpSlSection({
 }
 
 const framedFrameClass =
-	"flex h-8 w-full min-w-0 box-border items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-1.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
+	"flex h-8.25 w-full min-w-0 box-border items-center gap-1.5 rounded-16 border border-trading-panel-stroke-input bg-transparent py-1.25 pr-3 pl-2.5 text-xs [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
 const framedInputClass =
-	"h-7 min-w-0 flex-1 bg-transparent px-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
+	"h-auto w-auto min-w-0 flex-auto bg-transparent p-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
 
 function resolveLinkedReturnInput(
 	linkedReturnInputs: Props["linkedReturnInputs"],
@@ -396,12 +396,14 @@ function FramedTpSlRow({
 
 	return (
 		<div className="min-w-0 space-y-1.5">
-			<div className={cn("grid min-w-0 gap-2", returnInput ? "grid-cols-2" : "grid-cols-1")}>
+			<div className={cn("grid w-full min-w-0 gap-2.5", returnInput ? "grid-cols-2" : "grid-cols-1")}>
 				<div
 					className={cn(
 						framedFrameClass,
-						mobileSafe && "max-[1000px]:h-11",
-						!!error && "border-trading-panel-error focus-within:border-trading-panel-error",
+						!disabled &&
+							"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
+						!!error &&
+							"border-trading-panel-error hover:not-data-disabled:border-trading-panel-error focus-within:border-trading-panel-error",
 						disabled && "opacity-50",
 					)}
 				>
@@ -411,26 +413,31 @@ function FramedTpSlRow({
 						aria-describedby={error ? errorId : undefined}
 						aria-invalid={Boolean(error)}
 						placeholder={pricePlaceholder}
-						mobileSafe={mobileSafe}
 						value={priceValue}
 						onChange={(e) => onPriceChange(e.target.value)}
 						onBlur={onPriceBlur}
-						className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
+						className={framedInputClass}
 						disabled={disabled}
 					/>
 				</div>
 				{returnInput && (
-					<div className={cn(framedFrameClass, mobileSafe && "max-[1000px]:h-11", returnDisabled && "opacity-50")}>
+					<div
+						className={cn(
+							framedFrameClass,
+							!returnDisabled &&
+								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
+							returnDisabled && "opacity-50",
+						)}
+					>
 						<NumberInput
 							aria-label={returnInput.ariaLabel}
 							aria-describedby={error ? errorId : undefined}
 							aria-invalid={Boolean(error)}
 							placeholder={returnInput.placeholder}
-							mobileSafe={mobileSafe}
 							value={returnInput.value}
 							onChange={(e) => returnInput.onChange(e.target.value)}
 							onBlur={returnInput.onBlur}
-							className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
+							className={framedInputClass}
 							disabled={returnDisabled}
 						/>
 						{returnInput.onUnitToggle && (
@@ -441,7 +448,7 @@ function FramedTpSlRow({
 								aria-label={t`Toggle profit and loss unit`}
 								aria-pressed={returnInput.unitLabel === "%"}
 								className={cn(
-									"relative ml-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
+									"relative inline-flex flex-none cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
 									mobileSafe &&
 										"max-[1000px]:before:absolute max-[1000px]:before:-inset-x-2.5 max-[1000px]:before:-inset-y-3 max-[1000px]:before:content-['']",
 								)}
