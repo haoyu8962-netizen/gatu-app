@@ -2902,6 +2902,10 @@ msgstr "预估费用"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "限价预估盈亏"
 
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "预估滑点"
+
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Establish Connection"
@@ -4032,6 +4036,7 @@ msgstr "已关联质押账户：{0}。"
 #~ msgid "Liq"
 #~ msgstr "清算"
 
+#: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"

@@ -2,29 +2,38 @@ import { useLingui } from "@lingui/react/macro";
 import { PencilIcon } from "@phosphor-icons/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { OrderType } from "@/config/trade";
+import type { MarketSlippageEstimate } from "@/domain/trade/order/slippage";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
+import { formatPrice, formatSlippageBps, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
+	liqPrice: number | null;
+	liqWarning: boolean;
 	orderValue: number;
 	marginRequired: number;
 	takerFeePercent: string;
 	makerFeePercent: string;
 	slippagePercent: number;
+	estimatedSlippage?: MarketSlippageEstimate | null;
+	szDecimals: number | undefined;
 	onSlippageClick: () => void;
 	orderType: OrderType;
 	marketKind?: MarketKind;
 }
 
 export function OrderSummary({
+	liqPrice,
+	liqWarning,
 	orderValue,
 	marginRequired,
 	takerFeePercent,
 	makerFeePercent,
 	slippagePercent,
+	estimatedSlippage,
+	szDecimals,
 	onSlippageClick,
 	orderType,
 	marketKind = "perp",
@@ -33,9 +42,24 @@ export function OrderSummary({
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = orderType === "market";
+	const estimatedSlippageText = formatSlippageBps(estimatedSlippage?.slippageBps, {
+		lowerBound: estimatedSlippage?.exceedsVisibleDepth,
+	});
 
 	return (
 		<div className="flex min-w-0 flex-col">
+			{isLeveraged && (
+				<SummaryRow label={t`Liq. Price`}>
+					<span
+						className={cn(
+							"whitespace-nowrap",
+							liqPrice ? liqWarning && "text-trading-panel-error" : "font-normal text-trading-panel-muted",
+						)}
+					>
+						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
+					</span>
+				</SummaryRow>
+			)}
 			<SummaryRow label={t`Order Value`}>
 				<span className={cn("whitespace-nowrap", orderValue <= 0 && "font-normal text-trading-panel-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
@@ -49,16 +73,23 @@ export function OrderSummary({
 				</SummaryRow>
 			)}
 			{showSlippage && (
-				<SummaryRow label={t`Slippage`}>
-					<button
-						type="button"
-						onClick={onSlippageClick}
-						className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-					>
-						<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-						<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-					</button>
-				</SummaryRow>
+				<>
+					<SummaryRow label={t`Est. Slippage`}>
+						<span className={cn("whitespace-nowrap", !estimatedSlippageText && "font-normal text-trading-panel-muted")}>
+							{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+						</span>
+					</SummaryRow>
+					<SummaryRow label={t`Slippage`}>
+						<button
+							type="button"
+							onClick={onSlippageClick}
+							className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
+						>
+							<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+							<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+						</button>
+					</SummaryRow>
+				</>
 			)}
 			<SummaryRow label={t`Fees`}>
 				<span

@@ -3095,6 +3095,10 @@ msgstr "Comisión est."
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "P&L est. en el límite"
 
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "Deslizamiento est."
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""
@@ -4302,6 +4306,7 @@ msgstr ""
 #~ msgid "Liq"
 #~ msgstr "Liq"
 
+#: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"

@@ -3108,6 +3108,10 @@ msgstr "Est. Fee"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "Est. P&L at Limit"
 
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "Est. Slippage"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr "Est. time"
@@ -4319,6 +4323,7 @@ msgstr "Linked staking account: {0}."
 #~ msgid "Liq"
 #~ msgstr "Liq"
 
+#: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"

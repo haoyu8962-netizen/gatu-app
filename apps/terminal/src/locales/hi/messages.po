@@ -3095,6 +3095,10 @@ msgstr "अनु. शुल्क"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "लिमिट पर अनुमानित P&L"
 
+#: src/components/trade/tradebox/order-summary.tsx
+msgid "Est. Slippage"
+msgstr "अनु. स्लिपेज"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""
@@ -4302,6 +4306,7 @@ msgstr ""
 #~ msgid "Liq"
 #~ msgstr "लिक्विडेशन"
 
+#: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
 msgid "Liq. Price"

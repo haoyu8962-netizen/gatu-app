@@ -19,6 +19,7 @@ const zhTranslations: Record<string, string> = {
 	"Take Profit / Stop Loss": "止盈 / 止损",
 	"TP/SL": "止盈止损",
 	"Order Value": "订单价值",
+	"Est. Slippage": "预估滑点",
 	Slippage: "滑点",
 	"Order Book": "订单簿",
 	Price: "价格",
@@ -170,11 +171,15 @@ function TestSurface() {
 				tpSl={{ checked: false, disabled: false, onCheckedChange: () => {} }}
 			/>
 			<OrderSummary
+				liqPrice={65}
+				liqWarning={false}
 				orderValue={150000}
 				marginRequired={12000}
 				takerFeePercent="0.0500%"
 				makerFeePercent="0.0150%"
 				slippagePercent={2.5}
+				estimatedSlippage={{ avgPx: 100.37, exceedsVisibleDepth: false, refPx: 100, slippageBps: 37 }}
+				szDecimals={2}
 				onSlippageClick={() => {}}
 				orderType="market"
 			/>
@@ -249,6 +254,8 @@ describe("language hot switching", () => {
 		expect(checkbox?.getAttribute("aria-checked")).toBe("false");
 		expect(container.textContent).toContain("$150,000.00");
 		expect(container.textContent).toContain("$12,000.00");
+		expect(container.textContent).toContain("Est. Slippage");
+		expect(container.textContent).toContain("0.37%");
 		expect(container.textContent).toContain("Slippage");
 		expect(container.textContent).toContain("2.5%");
 
@@ -268,6 +275,7 @@ describe("language hot switching", () => {
 		expect(container.textContent).toContain("只减仓");
 		expect(container.textContent).toContain("止盈止损");
 		expect(container.textContent).toContain("订单价值");
+		expect(container.textContent).toContain("预估滑点");
 		expect(container.textContent).toContain("滑点");
 		expect(container.textContent).toContain("价格");
 		expect(container.textContent).toContain("数量");
