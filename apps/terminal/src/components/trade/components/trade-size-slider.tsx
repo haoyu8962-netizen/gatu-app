@@ -1,9 +1,13 @@
 import { Slider, type SliderProps, type SliderThumbSize } from "@gatu/ui";
 import Big from "big.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type SliderCommitDetails = Parameters<NonNullable<SliderProps["onValueCommitted"]>>[1];
 
 interface Props {
 	value: number;
 	onPercentChange: (value: number) => void;
+	onPercentCommit?: (value: number, details: SliderCommitDetails) => void;
 	disabled?: boolean;
 	thumbSize?: SliderThumbSize;
 	ariaLabel: string;
@@ -21,6 +25,7 @@ interface Props {
 export function TradeSizeSlider({
 	value,
 	onPercentChange,
+	onPercentCommit,
 	disabled,
 	thumbSize,
 	ariaLabel,
@@ -34,8 +39,49 @@ export function TradeSizeSlider({
 	indicatorClassName,
 	thumbClassName,
 }: Props) {
+	const sliderRootRef = useRef<HTMLDivElement>(null);
+	const activePointerIdRef = useRef<number | null>(null);
+	const interactionStartRef = useRef(value);
+	const onPercentChangeRef = useRef(onPercentChange);
+	const [lifecycleVersion, setLifecycleVersion] = useState(0);
+
+	onPercentChangeRef.current = onPercentChange;
+
+	const cancelActivePreview = useCallback(() => {
+		if (activePointerIdRef.current === null) return;
+
+		activePointerIdRef.current = null;
+		const sliderRoot = sliderRootRef.current;
+		sliderRoot?.removeAttribute("data-dragging");
+		const nativeInput = sliderRoot?.querySelector<HTMLInputElement>('input[type="range"]');
+		if (nativeInput) nativeInput.value = String(interactionStartRef.current);
+		onPercentChangeRef.current(interactionStartRef.current);
+		setLifecycleVersion((version) => version + 1);
+	}, []);
+
+	useEffect(() => {
+		function handlePointerCancel(event: PointerEvent) {
+			const activePointerId = activePointerIdRef.current;
+			if (activePointerId === null || event.pointerId !== activePointerId) return;
+			cancelActivePreview();
+		}
+
+		function handleVisibilityChange() {
+			if (document.visibilityState === "hidden") cancelActivePreview();
+		}
+
+		document.addEventListener("pointercancel", handlePointerCancel);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			document.removeEventListener("pointercancel", handlePointerCancel);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
+	}, [cancelActivePreview]);
+
 	return (
 		<Slider
+			key={lifecycleVersion}
+			ref={sliderRootRef}
 			aria-describedby={ariaDescribedBy}
 			aria-invalid={ariaInvalid}
 			className={className}
@@ -50,14 +96,33 @@ export function TradeSizeSlider({
 			indicatorClassName={indicatorClassName}
 			thumbClassName={thumbClassName}
 			value={value}
-			onPointerDown={(event) => {
-				if (disabled || !event.currentTarget.setPointerCapture) return;
-				event.currentTarget.setPointerCapture(event.pointerId);
+			onPointerDownCapture={(event) => {
+				if (disabled || event.button !== 0) return;
+				interactionStartRef.current = value;
+				activePointerIdRef.current = event.pointerId;
+			}}
+			onLostPointerCapture={(event) => {
+				if (event.pointerId === activePointerIdRef.current) cancelActivePreview();
 			}}
 			onValueChange={(nextValue, eventDetails) => {
 				if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
 				onPercentChange(normalizePercent(nextValue));
 			}}
+			onValueCommitted={
+				onPercentCommit
+					? (nextValue, eventDetails) => {
+							if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
+							if (
+								(eventDetails.reason === "drag" || eventDetails.reason === "track-press") &&
+								activePointerIdRef.current === null
+							) {
+								return;
+							}
+							activePointerIdRef.current = null;
+							onPercentCommit(normalizePercent(nextValue), eventDetails);
+						}
+					: undefined
+			}
 			max={100}
 			step={0.1}
 			disabled={disabled}

@@ -81,6 +81,7 @@ export function MobileTradeSizeControl({
 					<TradeSizeSlider
 						value={sliderValue}
 						onPercentChange={onPercentChange}
+						onPercentCommit={onPercentChange}
 						disabled={!canUsePercent}
 						ariaLabel={percentAriaLabel}
 						ariaDescribedBy={hasError ? errorId : undefined}

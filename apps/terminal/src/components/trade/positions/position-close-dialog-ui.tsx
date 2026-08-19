@@ -296,6 +296,7 @@ export function PositionCloseSizingControls({
 				<TradeSizeSlider
 					value={viewModel.sliderValue}
 					onPercentChange={handleSliderChange}
+					onPercentCommit={handleSliderChange}
 					disabled={disabled}
 					thumbSize="lg"
 					thumbAlignment="center"

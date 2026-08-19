@@ -394,6 +394,7 @@ export function TradeFormFields({
 							<TradeSizeSlider
 								value={sliderValue}
 								onPercentChange={handleSizePercentApply}
+								onPercentCommit={handleSizePercentApply}
 								disabled={isFormDisabled || maxSize <= 0}
 								ariaLabel={`${t`Size`} (%)`}
 								ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}
