@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act, type ComponentProps, type ReactNode, useState } from "react";
+import { act, type ComponentProps, type ReactNode, type Ref, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,7 +9,7 @@ interface SliderDoubleProps {
 	onPointerDownCapture?: (event: { button: number; pointerId: number }) => void;
 	onValueChange?: (value: number, details: { reason: string }) => void;
 	onValueCommitted?: (value: number, details: { reason: string }) => void;
-	ref?: (node: HTMLDivElement | null) => void | { current: HTMLDivElement | null };
+	ref?: Ref<HTMLDivElement>;
 	value?: number;
 }
 
