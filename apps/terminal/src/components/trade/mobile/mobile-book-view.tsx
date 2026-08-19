@@ -4,16 +4,15 @@ import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import {
+	type OrderbookFeedSnapshot,
+	type OrderbookFeedSource,
+	useOrderbookFeed,
+} from "@/hooks/trade/use-orderbook-feed";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
-import {
-	type SubEvent,
-	type SubParams,
-	useHyperliquid,
-	useSelectedMarketInfo,
-	useSubscription,
-} from "@/lib/hyperliquid";
+import { type SubParams, useHyperliquid, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig, toNumber } from "@/lib/trade/numbers";
 import {
@@ -42,7 +41,7 @@ import {
 } from "./mobile-orderbook-layout";
 
 const DEFAULT_LEVEL_COUNT = 12;
-const COMPACT_LEVEL_COUNT = 5;
+const COMPACT_LEVEL_COUNT = 6;
 const MIN_LEVEL_COUNT = 3;
 const LADDER_RESIZE_SETTLE_MS = 120;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
@@ -50,16 +49,24 @@ const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_TTL_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_MAX_KEYS = 12;
 
-type L2BookEvent = SubEvent<"l2Book">;
 type L2BookParams = SubParams<"l2Book">;
-type CachedOrderbookSnapshot = { key: string; data: L2BookEvent; savedAtMonotonic: number };
+type CachedOrderbookSnapshot = { key: string; data: OrderbookFeedSnapshot; savedAtMonotonic: number };
 
-const DISABLED_L2_BOOK_PARAMS: L2BookParams = { coin: "" };
 const orderbookSnapshotCache = new Map<string, CachedOrderbookSnapshot>();
 
-function getOrderbookSnapshotCacheKey(env: string, params: L2BookParams | null): string | null {
+function bookMatchesSource(book: OrderbookFeedSnapshot, source: OrderbookFeedSource): boolean {
+	const isFast = "fast" in book && book.fast === true;
+	if (source === "l2") return !isFast;
+	return isFast === (source === "l2Book-fast");
+}
+
+function getOrderbookSnapshotCacheKey(
+	env: string,
+	params: L2BookParams | null,
+	source: OrderbookFeedSource,
+): string | null {
 	if (!params?.coin) return null;
-	return `${env}:${params.coin}:${getPriceGroupingKey(params)}:${params.fast ? "fast" : "full"}`;
+	return `${env}:${params.coin}:${getPriceGroupingKey(params)}:${source}`;
 }
 
 function getFreshOrderbookSnapshotCache(
@@ -83,7 +90,7 @@ function getFreshOrderbookSnapshotCache(
 	return snapshot;
 }
 
-function writeOrderbookSnapshotCache(key: string, data: L2BookEvent): CachedOrderbookSnapshot | null {
+function writeOrderbookSnapshotCache(key: string, data: OrderbookFeedSnapshot): CachedOrderbookSnapshot | null {
 	const previousSnapshot = orderbookSnapshotCache.get(key);
 	if (!Number.isFinite(data.time) || (previousSnapshot && previousSnapshot.data.time > data.time)) {
 		return previousSnapshot ?? null;
@@ -176,7 +183,6 @@ export function MobileBookView({
 		if (!name) return null;
 		return getL2BookSubscriptionParams(name, selectedOption, { fast: compact || undefined });
 	}, [compact, name, selectedOption]);
-	const bookCacheKey = useMemo(() => getOrderbookSnapshotCacheKey(env, subscriptionParams), [env, subscriptionParams]);
 	const isBookViewActive = active && view === "book";
 	const keepSubscriptionWarm = useWarmBoolean(isBookViewActive, ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS);
 	const subscriptionEnabled = keepSubscriptionWarm && !!selectedMarket && !!subscriptionParams;
@@ -184,15 +190,23 @@ export function MobileBookView({
 	const {
 		data: liveBook,
 		isStale,
+		source: bookSource,
 		status: bookStatus,
-	} = useSubscription("l2Book", subscriptionParams ?? DISABLED_L2_BOOK_PARAMS, {
+	} = useOrderbookFeed({
+		compact: Boolean(compact),
 		enabled: subscriptionEnabled,
+		env,
+		params: subscriptionParams,
 	});
+	const bookCacheKey = useMemo(
+		() => getOrderbookSnapshotCacheKey(env, subscriptionParams, bookSource),
+		[bookSource, env, subscriptionParams],
+	);
 	const matchingLiveBook =
 		liveBook &&
 		subscriptionParams &&
 		liveBook.coin === subscriptionParams.coin &&
-		Boolean(liveBook.fast) === Boolean(subscriptionParams.fast) &&
+		bookMatchesSource(liveBook, bookSource) &&
 		Number.isFinite(liveBook.time)
 			? liveBook
 			: undefined;

@@ -59,6 +59,19 @@ describe("client error report privacy", () => {
 		expect(parseClientErrorReport({ ...valid, message: PRIVATE_KEY })).toBeNull();
 		expect(parseClientErrorReport({ ...valid, frames: [`asset:${WALLET_ADDRESS}:1`] })).toBeNull();
 	});
+
+	it("accepts only allowlisted reasons on incremental orderbook fallback reports", () => {
+		const report = createClientErrorReport(new Error("private protocol failure"), {
+			kind: "orderbook_l2_fallback",
+			fallbackReason: "snapshot_timeout",
+			pathname: "/trade/BTC",
+			origin: "https://gatu.ai",
+		});
+
+		expect(parseClientErrorReport(report)).toEqual(report);
+		expect(parseClientErrorReport({ ...report, fallbackReason: "raw_private_payload" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, kind: "window_error" })).toBeNull();
+	});
 });
 
 describe("client error transport", () => {
@@ -132,7 +145,10 @@ describe("client error transport", () => {
 		for (const [index, kind] of CLIENT_ERROR_KINDS.entries()) {
 			const error = new Error("failure");
 			error.stack = `Error\n    at task (${window.location.origin}/assets/app.js:${index + 1}:1)`;
-			reportClientError(error, { kind });
+			reportClientError(
+				error,
+				kind === "orderbook_l2_fallback" ? { kind, fallbackReason: "snapshot_timeout" } : { kind },
+			);
 		}
 
 		expect(fetch).toHaveBeenCalledTimes(5);

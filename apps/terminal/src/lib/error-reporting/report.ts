@@ -1,3 +1,5 @@
+import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@gatu/hl-react/subscriptions/l2";
+
 export const CLIENT_ERROR_REPORT_ENDPOINT = "/client-error-report";
 export const CLIENT_ERROR_REPORT_MAX_BYTES = 4096;
 export const CLIENT_ERROR_REPORT_MAX_FRAMES = 5;
@@ -7,6 +9,7 @@ export const CLIENT_ERROR_KINDS = [
 	"router_boundary",
 	"react_uncaught",
 	"react_recoverable",
+	"orderbook_l2_fallback",
 	"window_error",
 	"unhandled_rejection",
 ] as const;
@@ -59,6 +62,7 @@ export type ClientErrorName = (typeof CLIENT_ERROR_NAMES)[number];
 export interface ClientErrorReport {
 	schema: 1;
 	kind: ClientErrorKind;
+	fallbackReason?: L2BookStreamErrorCode;
 	category: ClientErrorCategory;
 	errorName: ClientErrorName;
 	route: ClientErrorRoute;
@@ -66,18 +70,39 @@ export interface ClientErrorReport {
 	componentFrames: string[];
 }
 
-interface CreateClientErrorReportOptions {
-	kind: ClientErrorKind;
+interface CreateClientErrorReportBaseOptions {
 	pathname: string;
 	origin: string;
 	componentStack?: string;
 }
 
+export type CreateClientErrorReportOptions = CreateClientErrorReportBaseOptions &
+	(
+		| {
+				kind: "orderbook_l2_fallback";
+				fallbackReason: L2BookStreamErrorCode;
+		  }
+		| {
+				kind: Exclude<ClientErrorKind, "orderbook_l2_fallback">;
+				fallbackReason?: never;
+		  }
+	);
+
 const CLIENT_ERROR_KIND_SET = new Set<string>(CLIENT_ERROR_KINDS);
+const L2_FALLBACK_REASON_SET = new Set<string>(L2_BOOK_STREAM_ERROR_CODES);
 const CLIENT_ERROR_CATEGORY_SET = new Set<string>(CLIENT_ERROR_CATEGORIES);
 const CLIENT_ERROR_ROUTE_SET = new Set<string>(CLIENT_ERROR_ROUTES);
 const CLIENT_ERROR_NAME_SET = new Set<string>(CLIENT_ERROR_NAMES);
-const REPORT_KEYS = new Set(["schema", "kind", "category", "errorName", "route", "frames", "componentFrames"]);
+const REPORT_KEYS = new Set([
+	"schema",
+	"kind",
+	"fallbackReason",
+	"category",
+	"errorName",
+	"route",
+	"frames",
+	"componentFrames",
+]);
 const SAFE_FRAME_PATTERN = /^(?:asset|source):[1-9][0-9]{0,6}:[0-9]{1,5}$/;
 const ASSET_SOURCE_PATTERN = /^\/assets\/[A-Za-z0-9._~-]{1,180}\.(?:js|mjs)$/;
 const DEVELOPMENT_SOURCE_PATTERN = /^\/src\/[A-Za-z0-9_./@~-]{1,220}\.(?:js|jsx|ts|tsx)$/;
@@ -89,6 +114,7 @@ export function createClientErrorReport(error: unknown, options: CreateClientErr
 	return {
 		schema: 1,
 		kind: options.kind,
+		...(options.kind === "orderbook_l2_fallback" ? { fallbackReason: options.fallbackReason } : {}),
 		category: classifyError(details.name, details.message),
 		errorName: normalizeErrorName(details.name),
 		route: classifyRoute(options.pathname),
@@ -101,6 +127,11 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 	if (!isRecord(value) || Object.keys(value).some((key) => !REPORT_KEYS.has(key))) return null;
 	if (value.schema !== 1) return null;
 	if (!isEnumValue(value.kind, CLIENT_ERROR_KIND_SET)) return null;
+	if (value.kind === "orderbook_l2_fallback") {
+		if (!isEnumValue(value.fallbackReason, L2_FALLBACK_REASON_SET)) return null;
+	} else if (value.fallbackReason !== undefined) {
+		return null;
+	}
 	if (!isEnumValue(value.category, CLIENT_ERROR_CATEGORY_SET)) return null;
 	if (!isEnumValue(value.errorName, CLIENT_ERROR_NAME_SET)) return null;
 	if (!isEnumValue(value.route, CLIENT_ERROR_ROUTE_SET)) return null;
@@ -109,6 +140,9 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 	return {
 		schema: 1,
 		kind: value.kind as ClientErrorKind,
+		...(value.kind === "orderbook_l2_fallback"
+			? { fallbackReason: value.fallbackReason as L2BookStreamErrorCode }
+			: {}),
 		category: value.category as ClientErrorCategory,
 		errorName: value.errorName as ClientErrorName,
 		route: value.route as ClientErrorRoute,

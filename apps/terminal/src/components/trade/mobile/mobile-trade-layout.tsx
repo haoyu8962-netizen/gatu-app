@@ -57,7 +57,7 @@ function TradeOrderView({
 		>
 			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
 
-			<div className="w-full min-w-0 min-h-[370px] flex items-stretch">
+			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[435px] flex items-stretch">
 				<MobileTradeView
 					key={marketKey}
 					active={active}

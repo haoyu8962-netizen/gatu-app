@@ -1,7 +1,7 @@
 import {
 	CLIENT_ERROR_REPORT_ENDPOINT,
 	CLIENT_ERROR_REPORT_MAX_BYTES,
-	type ClientErrorKind,
+	type CreateClientErrorReportOptions,
 	createClientErrorReport,
 } from "./report";
 
@@ -15,10 +15,9 @@ let removeGlobalListeners: (() => void) | null = null;
 const recentReports = new Map<string, number>();
 const reportedErrors = new WeakSet<object>();
 
-interface ReportClientErrorOptions {
-	kind: ClientErrorKind;
-	componentStack?: string;
-}
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
+export type ReportClientErrorOptions = DistributiveOmit<CreateClientErrorReportOptions, "pathname" | "origin">;
 
 export function installGlobalErrorReporting(): () => void {
 	if (removeGlobalListeners) return removeGlobalListeners;
@@ -50,12 +49,22 @@ export function reportClientError(error: unknown, options: ReportClientErrorOpti
 		reportedErrors.add(error);
 	}
 
-	const report = createClientErrorReport(error, {
-		kind: options.kind,
+	const sharedReportOptions = {
 		pathname: window.location.pathname,
 		origin: window.location.origin,
 		componentStack: options.componentStack,
-	});
+	};
+	const report =
+		options.kind === "orderbook_l2_fallback"
+			? createClientErrorReport(error, {
+					...sharedReportOptions,
+					kind: options.kind,
+					fallbackReason: options.fallbackReason,
+				})
+			: createClientErrorReport(error, {
+					...sharedReportOptions,
+					kind: options.kind,
+				});
 	const body = JSON.stringify(report);
 	if (new TextEncoder().encode(body).byteLength > CLIENT_ERROR_REPORT_MAX_BYTES) return false;
 

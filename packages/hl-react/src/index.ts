@@ -74,6 +74,10 @@ export {
 	useInfo,
 } from "./hooks/useInfo";
 export {
+	type L2BookSubscriptionOptions,
+	useL2BookSubscription,
+} from "./hooks/useL2BookSubscription";
+export {
 	publicStatsDataKeys,
 	type UsePublicLeaderboardOptions,
 	type UsePublicVaultsOptions,
@@ -249,6 +253,24 @@ export {
 	type UseTradingAuthorizationResult,
 	useTradingAuthorization,
 } from "./signing/use-trading-authorization";
+export {
+	buildL2SubscriptionPayload,
+	canUseL2Decompression,
+	createL2BookProcessor,
+	decodeL2CompressedDelta,
+	inflateL2CompressedPayload,
+	L2_BOOK_STREAM_ERROR_CODES,
+	type L2BookDelta,
+	type L2BookLevel,
+	type L2BookLevels,
+	type L2BookProcessor,
+	type L2BookSnapshot,
+	L2BookStreamError,
+	type L2BookStreamErrorCode,
+	type L2SubscriptionParameters,
+	type L2SubscriptionPayload,
+	mergeL2BookSide,
+} from "./subscriptions/l2";
 export type {
 	HyperliquidConfig,
 	HyperliquidQueryError,

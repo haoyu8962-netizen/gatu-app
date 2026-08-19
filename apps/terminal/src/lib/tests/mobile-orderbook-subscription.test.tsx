@@ -15,6 +15,7 @@ type BookEvent = {
 
 type SubscriptionState = {
 	data?: BookEvent;
+	error?: unknown;
 	isStale: boolean;
 	status: "idle" | "subscribing" | "active" | "error";
 };
@@ -29,6 +30,17 @@ const mocks = vi.hoisted(() => ({
 		szDecimals: 2,
 	},
 	midPriceCoins: [] as Array<string | undefined>,
+	l2SubscriptionCalls: [] as Array<{
+		options: { enabled?: boolean };
+		params: { coin: string; mantissa?: number; nSigFigs?: number | null };
+	}>,
+	l2SubscriptionListeners: new Set<() => void>(),
+	l2SubscriptionState: {
+		data: undefined,
+		error: undefined,
+		isStale: false,
+		status: "subscribing",
+	} as SubscriptionState,
 	subscriptionCalls: [] as Array<{
 		options: { enabled?: boolean };
 		params: { coin: string; fast?: boolean; mantissa?: number; nSigFigs?: number | null };
@@ -46,6 +58,30 @@ vi.mock("@/lib/hyperliquid", async () => {
 	return {
 		useHyperliquid: () => ({ env: mocks.env }),
 		useSelectedMarketInfo: () => ({ data: mocks.market }),
+		canUseL2Decompression: () => true,
+		L2BookStreamError: class L2BookStreamError extends Error {
+			code: string;
+
+			constructor(code: string) {
+				super(code);
+				this.code = code;
+			}
+		},
+		useL2BookSubscription: (
+			params: { coin: string; mantissa?: number; nSigFigs?: number | null },
+			options: { enabled?: boolean },
+		) => {
+			mocks.l2SubscriptionCalls.push({ options, params });
+			const state = useSyncExternalStore(
+				(listener) => {
+					mocks.l2SubscriptionListeners.add(listener);
+					return () => mocks.l2SubscriptionListeners.delete(listener);
+				},
+				() => mocks.l2SubscriptionState,
+				() => mocks.l2SubscriptionState,
+			);
+			return { ...state, lastMessageAt: undefined, unsubscribe: undefined };
+		},
 		useSubscription: (
 			_method: string,
 			params: { coin: string; fast?: boolean; mantissa?: number; nSigFigs?: number | null },
@@ -60,10 +96,14 @@ vi.mock("@/lib/hyperliquid", async () => {
 				() => mocks.subscriptionState,
 				() => mocks.subscriptionState,
 			);
-			return { ...state, error: undefined, unsubscribe: undefined };
+			return { ...state, lastMessageAt: undefined, unsubscribe: undefined };
 		},
 	};
 });
+
+const errorReportingMocks = vi.hoisted(() => ({ reportClientError: vi.fn() }));
+
+vi.mock("@/lib/error-reporting/client", () => errorReportingMocks);
 
 vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 	useOrderbookMidPrice: (coin: string | undefined) => {
@@ -102,9 +142,22 @@ describe("mobile orderbook subscription lifecycle", () => {
 			szDecimals: 2,
 		};
 		mocks.midPriceCoins.length = 0;
+		mocks.l2SubscriptionCalls.length = 0;
 		mocks.subscriptionCalls.length = 0;
 		mocks.env = "Mainnet";
-		mocks.subscriptionState = { data: undefined, isStale: false, status: "subscribing" };
+		mocks.l2SubscriptionState = {
+			data: undefined,
+			error: undefined,
+			isStale: false,
+			status: "subscribing",
+		};
+		mocks.subscriptionState = {
+			data: undefined,
+			error: undefined,
+			isStale: false,
+			status: "subscribing",
+		};
+		errorReportingMocks.reportClientError.mockReset();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -114,6 +167,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		mocks.subscriptionListeners.clear();
+		mocks.l2SubscriptionListeners.clear();
 		container.remove();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		vi.restoreAllMocks();
@@ -133,14 +187,25 @@ describe("mobile orderbook subscription lifecycle", () => {
 		return call;
 	}
 
+	function latestL2SubscriptionCall() {
+		const call = mocks.l2SubscriptionCalls.at(-1);
+		if (!call) throw new Error("Missing l2 subscription call");
+		return call;
+	}
+
 	function setSubscriptionState(state: SubscriptionState) {
 		act(() => {
 			mocks.subscriptionState = state;
+			mocks.l2SubscriptionState = {
+				...state,
+				data: state.data ? { ...state.data, fast: undefined } : undefined,
+			};
 			for (const listener of mocks.subscriptionListeners) listener();
+			for (const listener of mocks.l2SubscriptionListeners) listener();
 		});
 	}
 
-	it("uses the fast five-level feed only for compact books and isolates its cache identity", () => {
+	it("uses the incremental feed only for compact books and isolates its cache identity", () => {
 		setSubscriptionState({
 			data: createBook(mocks.market.name),
 			isStale: false,
@@ -148,7 +213,9 @@ describe("mobile orderbook subscription lifecycle", () => {
 		});
 		render({ compact: true });
 
-		expect(latestSubscriptionCall().params.fast).toBe(true);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(true);
+		expect(latestL2SubscriptionCall().params).toEqual({ coin: mocks.market.name });
+		expect(latestSubscriptionCall().options.enabled).toBe(false);
 		expect(container.textContent).toContain("101.0");
 
 		setSubscriptionState({
@@ -158,11 +225,13 @@ describe("mobile orderbook subscription lifecycle", () => {
 		});
 		render({ compact: false });
 
+		expect(latestL2SubscriptionCall().options.enabled).toBe(false);
+		expect(latestSubscriptionCall().options.enabled).toBe(true);
 		expect(latestSubscriptionCall().params.fast).toBeUndefined();
 		expect(container.textContent).not.toContain("101.0");
 	});
 
-	it("keeps compact ladders at five real rows without observing their height", () => {
+	it("keeps compact ladders at six real rows without observing their height", () => {
 		let resizeObserverCount = 0;
 		vi.stubGlobal(
 			"ResizeObserver",
@@ -188,7 +257,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 			toJSON: () => ({}),
 		});
 		setSubscriptionState({
-			data: createBook(mocks.market.name, Date.now(), true, 5),
+			data: createBook(mocks.market.name, Date.now(), true, 6),
 			isStale: false,
 			status: "active",
 		});
@@ -197,7 +266,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 
 		for (const side of ["asks", "bids"]) {
 			const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
-			expect(ladder?.children.length).toBe(5);
+			expect(ladder?.children.length).toBe(6);
 			expect(
 				[...(ladder?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true"),
 			).toHaveLength(0);
@@ -205,21 +274,64 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(resizeObserverCount).toBe(0);
 	});
 
+	it("fails over immediately to the public fast feed without reusing the incremental snapshot", () => {
+		setSubscriptionState({
+			data: createBook(mocks.market.name, Date.now(), false, 6),
+			isStale: false,
+			status: "active",
+		});
+		render({ compact: true });
+		expect(container.querySelector('button[title="106.00"]')).not.toBeNull();
+
+		act(() => {
+			mocks.l2SubscriptionState = {
+				data: createBook(mocks.market.name, Date.now(), false, 6),
+				error: new Error("private stream failed"),
+				isStale: false,
+				status: "error",
+			};
+			mocks.subscriptionState = {
+				data: createBook(mocks.market.name, Date.now(), true, 5),
+				error: undefined,
+				isStale: false,
+				status: "active",
+			};
+			for (const listener of mocks.l2SubscriptionListeners) listener();
+			for (const listener of mocks.subscriptionListeners) listener();
+		});
+
+		expect(latestSubscriptionCall().options.enabled).toBe(true);
+		expect(latestSubscriptionCall().params.fast).toBe(true);
+		expect(container.querySelector('button[title="106.00"]')).toBeNull();
+		for (const side of ["asks", "bids"]) {
+			const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
+			expect(ladder?.children.length).toBe(5);
+			expect(
+				[...(ladder?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true"),
+			).toHaveLength(0);
+		}
+		expect(errorReportingMocks.reportClientError).toHaveBeenCalledOnce();
+		expect(errorReportingMocks.reportClientError).toHaveBeenCalledWith(expect.any(Error), {
+			kind: "orderbook_l2_fallback",
+			fallbackReason: "subscribe_failed",
+		});
+	});
+
 	it("keeps an inactive book warm for ten seconds and then releases the subscription", () => {
 		render({ active: true });
-		expect(latestSubscriptionCall().options.enabled).toBe(true);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(true);
 		expect(mocks.midPriceCoins.at(-1)).toBe(mocks.market.name);
 
 		vi.useFakeTimers();
 		render({ active: false });
-		expect(latestSubscriptionCall().options.enabled).toBe(true);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(true);
 		expect(mocks.midPriceCoins.at(-1)).toBeUndefined();
 
 		act(() => vi.advanceTimersByTime(9_999));
-		expect(latestSubscriptionCall().options.enabled).toBe(true);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(true);
 
 		act(() => vi.advanceTimersByTime(1));
-		expect(latestSubscriptionCall().options.enabled).toBe(false);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(false);
 	});
 
 	it("never presents an old market snapshot under the newly selected market", () => {

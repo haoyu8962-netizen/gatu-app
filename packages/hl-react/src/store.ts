@@ -107,10 +107,11 @@ function clearCooldownTimer(runtime: SubscriptionRuntime): void {
 
 function shouldDiscardRetainedDataOnError(key: string): boolean {
 	const method = getSubscriptionMethodForKey(key);
-	return method === "l2Book" || method === "bbo";
+	return method === "l2" || method === "l2Book" || method === "bbo";
 }
 
 const FRESH_SNAPSHOT_METHODS = new Set([
+	"l2",
 	"allDexsClearinghouseState",
 	"clearinghouseState",
 	"fastAssetCtxs",
@@ -224,6 +225,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					return (
 						runtime.refCount > 0 &&
 						runtime.recoverStale !== undefined &&
+						getSubscriptionMethodForKey(key) !== "l2" &&
 						entry?.status !== "error" &&
 						entry?.isStale === true &&
 						watchdog.isStale(key)
@@ -442,7 +444,10 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 							if (!current || current.isStale) return state;
 							return setSubscriptionEntry(state, key, { ...current, isStale: true });
 						});
-						scheduleStaleRecovery(store);
+						// The raw l2 wrapper owns its rolling five-second frame deadline.
+						// Replacing it through generic stale recovery would restart that
+						// deadline forever on a silent reconnect and prevent fast fallback.
+						if (getSubscriptionMethodForKey(key) !== "l2") scheduleStaleRecovery(store);
 					});
 				}
 			} else if (pauseWhenHidden === false) {
@@ -599,6 +604,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						runtime.reconnectAttempts = 0;
 						const method = getSubscriptionMethodForKey(key);
 						if (
+							method === "l2" ||
 							method === "l2Book" ||
 							method === "fastAssetCtxs" ||
 							method === "activeAssetCtx" ||

@@ -18,6 +18,7 @@ export const WS_RELIABILITY_LIMITS = {
 	payload: {
 		defaultMaxBytes: 256 * 1024,
 		perMethodMaxBytes: {
+			l2: 1024 * 1024,
 			l2Book: 1024 * 1024,
 			allMids: 512 * 1024,
 			fastAssetCtxs: 512 * 1024,
@@ -37,10 +38,12 @@ export const WS_RELIABILITY_LIMITS = {
 	},
 	staleness: {
 		checkIntervalMs: 5_000,
-		// SDK l2Book snapshots arrive around every 5s by default and every
-		// 0.5s in fast mode. Allow several missed snapshots before recovery.
+		// Public l2Book snapshots arrive around every 5s by default. The
+		// incremental l2 channel and l2Book fast mode arrive around every 0.5s.
+		// Allow several missed snapshots before recovery.
 		l2BookFastThresholdMs: 3_000,
 		perMethodThresholdMs: {
+			l2: 3_000,
 			l2Book: 15_000,
 			allMids: 20_000,
 			activeAssetCtx: 10_000,

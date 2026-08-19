@@ -116,6 +116,12 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
+	it("reserves enough compact-book height for six 24px rows per side", () => {
+		render();
+
+		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain("min-h-[435px]");
+	});
+
 	it("forwards surface visibility so the hidden order form can pause live BBO updates", () => {
 		render(false);
 		expect(container.querySelector('[aria-label="Mobile order size"]')?.getAttribute("data-active")).toBe("false");

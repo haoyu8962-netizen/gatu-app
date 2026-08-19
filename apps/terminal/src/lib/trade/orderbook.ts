@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { toBig } from "@/lib/trade/numbers";
 
-export type RawBookLevel = { px: string; sz: string; n: number };
+export type RawBookLevel = { px: string; sz: string; n?: number };
 
 export type BookLevel = {
 	price: string;

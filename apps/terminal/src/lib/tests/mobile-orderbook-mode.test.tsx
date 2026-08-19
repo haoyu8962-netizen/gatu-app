@@ -121,7 +121,7 @@ describe("compact mobile orderbook modes", () => {
 		expect(container.querySelector('[aria-label="Order book view"]')?.className).toContain("size-11");
 	});
 
-	it("renders only real rows, caps the compact ladder at five levels, and distributes available height", () => {
+	it("renders only real rows, caps the compact ladder at six levels, and distributes available height", () => {
 		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
 		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
 
@@ -134,8 +134,8 @@ describe("compact mobile orderbook modes", () => {
 
 		act(() => root.render(<CompactOrderbookHarness asks={SIX_ASKS} />));
 
-		expect(asks?.children.length).toBe(5);
-		expect(asks?.querySelector('button[title="106.0"]')).toBeNull();
+		expect(asks?.children.length).toBe(6);
+		expect(asks?.querySelector('button[title="106.0"]')).not.toBeNull();
 	});
 
 	it("preserves a row DOM node when a neighboring price level is inserted", () => {
