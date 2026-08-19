@@ -11,6 +11,7 @@ const leverageState = vi.hoisted(() => ({
 		assetId: 1,
 		maxLeverage: 20,
 	},
+	resetMutation: vi.fn(),
 	setMarginMode: vi.fn(),
 }));
 
@@ -35,7 +36,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		mutateAsync: vi.fn(),
 		isPending: false,
 		error: null,
-		reset: vi.fn(),
+		reset: leverageState.resetMutation,
 	}),
 	useUserPositions: () => ({
 		getPosition: () => null,
@@ -76,6 +77,7 @@ describe("disconnected leverage canonical state", () => {
 			maxLeverage: 20,
 		};
 		leverageState.setMarginMode.mockReset();
+		leverageState.resetMutation.mockReset();
 		act(() => root.render(<Probe />));
 	});
 
