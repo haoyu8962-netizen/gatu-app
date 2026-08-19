@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, useRef, useState } from "react";
+import { act, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
@@ -14,20 +14,21 @@ const BIDS = [
 	{ price: "99", quoteSize: "148.5", quoteTotal: "148.5", size: "1.5", total: "1.5" },
 	{ price: "98", quoteSize: "245", quoteTotal: "393.5", size: "2.5", total: "4" },
 ];
+const SIX_ASKS = Array.from({ length: 6 }, (_, index) => ({
+	price: String(101 + index),
+	quoteSize: String(101 + index),
+	quoteTotal: String(101 + index),
+	size: "1",
+	total: String(index + 1),
+}));
 
 function CompactOrderbookHarness({ asks = ASKS }: { asks?: typeof ASKS }) {
 	const [mode, setMode] = useState<CompactOrderbookMode>("both");
-	const askLadderRef = useRef<HTMLDivElement>(null);
-	const bidLadderRef = useRef<HTMLDivElement>(null);
 
 	return (
 		<CompactOrderbook
 			asks={asks}
 			bids={BIDS}
-			askLevelCount={2}
-			bidLevelCount={2}
-			askLadderRef={askLadderRef}
-			bidLadderRef={bidLadderRef}
 			bookStatus="active"
 			flashResetKey="HYPE:0.1"
 			hasSnapshot
@@ -118,6 +119,23 @@ describe("compact mobile orderbook modes", () => {
 		);
 		expect(container.querySelector('[aria-label="Price precision"]')?.className).toContain("min-h-6");
 		expect(container.querySelector('[aria-label="Order book view"]')?.className).toContain("size-11");
+	});
+
+	it("renders only real rows, caps the compact ladder at five levels, and anchors rows around the midpoint", () => {
+		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
+		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
+
+		expect(asks?.children.length).toBe(2);
+		expect(bids?.children.length).toBe(2);
+		expect([...(asks?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
+		expect([...(bids?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
+		expect(asks?.className).toContain("justify-end");
+		expect(bids?.className).toContain("justify-start");
+
+		act(() => root.render(<CompactOrderbookHarness asks={SIX_ASKS} />));
+
+		expect(asks?.children.length).toBe(5);
+		expect(asks?.querySelector('button[title="106.0"]')).toBeNull();
 	});
 
 	it("preserves a row DOM node when a neighboring price level is inserted", () => {

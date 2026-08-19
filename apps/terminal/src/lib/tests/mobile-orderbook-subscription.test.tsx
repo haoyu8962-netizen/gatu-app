@@ -9,7 +9,7 @@ import { createI18nRoot } from "./harness/react";
 type BookEvent = {
 	coin: string;
 	fast?: true;
-	levels: [[{ n: number; px: string; sz: string }], [{ n: number; px: string; sz: string }]];
+	levels: [Array<{ n: number; px: string; sz: string }>, Array<{ n: number; px: string; sz: string }>];
 	time: number;
 };
 
@@ -74,11 +74,14 @@ vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 
 import { MobileBookView } from "@/components/trade/mobile/mobile-book-view";
 
-function createBook(coin: string, time = Date.now(), fast = true): BookEvent {
+function createBook(coin: string, time = Date.now(), fast = true, levelCount = 1): BookEvent {
 	return {
 		coin,
 		fast: fast ? true : undefined,
-		levels: [[{ n: 1, px: "99", sz: "2" }], [{ n: 1, px: "101", sz: "3" }]],
+		levels: [
+			Array.from({ length: levelCount }, (_, index) => ({ n: 1, px: String(99 - index), sz: "2" })),
+			Array.from({ length: levelCount }, (_, index) => ({ n: 1, px: String(101 + index), sz: "3" })),
+		],
 		time,
 	};
 }
@@ -113,6 +116,8 @@ describe("mobile orderbook subscription lifecycle", () => {
 		mocks.subscriptionListeners.clear();
 		container.remove();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 		vi.useRealTimers();
 	});
 
@@ -155,6 +160,49 @@ describe("mobile orderbook subscription lifecycle", () => {
 
 		expect(latestSubscriptionCall().params.fast).toBeUndefined();
 		expect(container.textContent).not.toContain("101.0");
+	});
+
+	it("keeps compact ladders at five real rows without observing their height", () => {
+		let resizeObserverCount = 0;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor() {
+					resizeObserverCount += 1;
+				}
+
+				disconnect() {}
+				observe() {}
+				unobserve() {}
+			},
+		);
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+			bottom: 236,
+			height: 236,
+			left: 0,
+			right: 200,
+			top: 0,
+			width: 200,
+			x: 0,
+			y: 0,
+			toJSON: () => ({}),
+		});
+		setSubscriptionState({
+			data: createBook(mocks.market.name, Date.now(), true, 5),
+			isStale: false,
+			status: "active",
+		});
+
+		render({ compact: true });
+
+		for (const side of ["asks", "bids"]) {
+			const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
+			expect(ladder?.children.length).toBe(5);
+			expect(
+				[...(ladder?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true"),
+			).toHaveLength(0);
+		}
+		expect(resizeObserverCount).toBe(0);
 	});
 
 	it("keeps an inactive book warm for ten seconds and then releases the subscription", () => {
