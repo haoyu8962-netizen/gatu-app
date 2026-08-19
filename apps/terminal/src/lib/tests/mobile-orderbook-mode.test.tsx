@@ -2,33 +2,41 @@
 
 import { act, useState } from "react";
 import type { Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
 import { createI18nRoot } from "./harness/react";
 
-const ASKS = [
-	{ price: "101", quoteSize: "101", quoteTotal: "101", size: "1", total: "1" },
-	{ price: "102", quoteSize: "204", quoteTotal: "305", size: "2", total: "3" },
-];
-const BIDS = [
-	{ price: "99", quoteSize: "148.5", quoteTotal: "148.5", size: "1.5", total: "1.5" },
-	{ price: "98", quoteSize: "245", quoteTotal: "393.5", size: "2.5", total: "4" },
-];
-const SIX_ASKS = Array.from({ length: 6 }, (_, index) => ({
+const ASKS = Array.from({ length: 20 }, (_, index) => ({
 	price: String(101 + index),
 	quoteSize: String(101 + index),
-	quoteTotal: String(101 + index),
+	quoteTotal: String(((index + 1) * (202 + index)) / 2),
+	size: "1",
+	total: String(index + 1),
+}));
+const BIDS = Array.from({ length: 20 }, (_, index) => ({
+	price: String(99 - index),
+	quoteSize: String(99 - index),
+	quoteTotal: String(((index + 1) * (198 - index)) / 2),
 	size: "1",
 	total: String(index + 1),
 }));
 
-function CompactOrderbookHarness({ asks = ASKS }: { asks?: typeof ASKS }) {
+function CompactOrderbookHarness({
+	asks = ASKS,
+	bids = BIDS,
+	showOrderbookInQuote = false,
+}: {
+	asks?: typeof ASKS;
+	bids?: typeof BIDS;
+	showOrderbookInQuote?: boolean;
+}) {
 	const [mode, setMode] = useState<CompactOrderbookMode>("both");
 
 	return (
 		<CompactOrderbook
 			asks={asks}
-			bids={BIDS}
+			baseToken="HYPE"
+			bids={bids}
 			bookStatus="active"
 			flashResetKey="HYPE:0.1"
 			hasSnapshot
@@ -36,7 +44,7 @@ function CompactOrderbookHarness({ asks = ASKS }: { asks?: typeof ASKS }) {
 			isTransitioning={false}
 			marketName="HYPE"
 			priceDecimals={1}
-			showOrderbookInQuote={false}
+			showOrderbookInQuote={showOrderbookInQuote}
 			szDecimals={2}
 			mid="100"
 			midDirection="up"
@@ -47,16 +55,58 @@ function CompactOrderbookHarness({ asks = ASKS }: { asks?: typeof ASKS }) {
 			mode={mode}
 			onModeChange={setMode}
 			priceToken="USDC"
-			sizeToken="HYPE"
+			quoteToken="USDC"
+			sizeToken={showOrderbookInQuote ? "USDC" : "HYPE"}
 		/>
 	);
 }
 
 describe("compact mobile orderbook modes", () => {
 	let container: HTMLDivElement;
+	let disconnectCallCount: number;
+	let observedElement: Element | undefined;
+	let observerCallback: ResizeObserverCallback | undefined;
+	let observerInstance: ResizeObserver | undefined;
+	let measuredHeight: number;
 	let root: Root;
 
 	beforeEach(() => {
+		measuredHeight = 304;
+		disconnectCallCount = 0;
+		observedElement = undefined;
+		observerCallback = undefined;
+		observerInstance = undefined;
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+			() =>
+				({
+					bottom: measuredHeight,
+					height: measuredHeight,
+					left: 0,
+					right: 154,
+					top: 0,
+					width: 154,
+					x: 0,
+					y: 0,
+					toJSON: () => ({}),
+				}) as DOMRect,
+		);
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				constructor(callback: ResizeObserverCallback) {
+					observerCallback = callback;
+					observerInstance = this;
+				}
+
+				disconnect() {
+					disconnectCallCount += 1;
+				}
+				observe = (element: Element) => {
+					observedElement = element;
+				};
+				unobserve() {}
+			},
+		);
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -66,97 +116,100 @@ describe("compact mobile orderbook modes", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
-	it("switches between both, asks-only, and bids-only without remounting a subscription surface", () => {
-		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
-		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
-		const modeButton = container.querySelector<HTMLButtonElement>('[aria-label="Order book view"]');
+	function resizeBook(height: number) {
+		measuredHeight = height;
+		if (!observerCallback || !observerInstance || !observedElement) throw new Error("Order book was not observed");
+		act(() => {
+			observerCallback?.([{ target: observedElement } as ResizeObserverEntry], observerInstance as ResizeObserver);
+		});
+	}
 
-		expect(asks?.classList.contains("hidden")).toBe(false);
-		expect(bids?.classList.contains("hidden")).toBe(false);
+	function getLadder(side: "asks" | "bids") {
+		const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
+		if (!ladder) throw new Error(`Missing ${side} ladder`);
+		return ladder;
+	}
+
+	it("keeps one fixed slot budget across the three persistent view controls", () => {
+		const controls = [...container.querySelectorAll<HTMLButtonElement>("button[data-mode]")];
+		const footer = controls[0]?.closest("div");
+
+		expect(controls.map((button) => button.dataset.mode)).toEqual(["both", "asks", "bids"]);
+		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["true", "false", "false"]);
+		expect(getLadder("asks").children).toHaveLength(5);
+		expect(getLadder("bids").children).toHaveLength(5);
 		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')).not.toBeNull();
 
-		act(() => modeButton?.click());
-		const asksItem = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
-			(item) => item.textContent === "Show asks only",
-		);
-		act(() => asksItem?.click());
-		expect(asks?.classList.contains("hidden")).toBe(false);
-		expect(bids?.classList.contains("hidden")).toBe(true);
+		act(() => controls[1]?.click());
+		expect(getLadder("asks").children).toHaveLength(11);
+		expect(getLadder("bids").classList.contains("hidden")).toBe(true);
 		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')).toBeNull();
-		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.width).toBe("100%");
-		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.backgroundColor).toBe("");
+		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
+		expect(controls[0]?.closest("div")).toBe(footer);
 
-		act(() => modeButton?.click());
-		const bidsItem = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
-			(item) => item.textContent === "Show bids only",
-		);
-		act(() => bidsItem?.click());
-		expect(asks?.classList.contains("hidden")).toBe(true);
-		expect(bids?.classList.contains("hidden")).toBe(false);
+		act(() => controls[2]?.click());
+		expect(getLadder("bids").children).toHaveLength(11);
+		expect(getLadder("asks").classList.contains("hidden")).toBe(true);
+		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
 	});
 
-	it("uses directional mid-price color and a neutral spread treatment", () => {
+	it("grows from eleven to thirteen slots when the shared fieldset grows", () => {
+		expect(getLadder("asks").children).toHaveLength(5);
+		expect(getLadder("bids").children).toHaveLength(5);
+
+		resizeBook(378);
+
+		expect(getLadder("asks").children).toHaveLength(6);
+		expect(getLadder("bids").children).toHaveLength(6);
+		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
+		expect(getLadder("asks").children).toHaveLength(13);
+	});
+
+	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {
 		const mid = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-mid"]');
-		const midValue = mid?.querySelector("span");
+		const midValue = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-mid-price"]');
 		const spread = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-spread"]');
 
-		expect(mid?.className).toContain("justify-start");
 		expect(mid?.getAttribute("data-direction")).toBe("up");
+		expect(midValue?.textContent).toBe("$100.0");
 		expect(midValue?.className).toContain("text-trading-panel-success");
-		expect(midValue?.className).not.toContain("text-warning");
-		expect(spread?.className).toContain("sr-only");
-		expect(spread?.className).not.toContain("text-warning");
-		expect(mid?.title).toContain("2.0 (2.000%)");
-		expect(container.textContent).toContain("Price USDC");
-		expect(container.textContent).toContain("Size HYPE");
-		expect(container.querySelector('[data-slot="compact-orderbook-price-token"]')?.className).toContain(
-			"max-[339px]:hidden",
-		);
-		expect(container.querySelector('[data-slot="compact-orderbook-size-token"]')?.className).toContain(
-			"max-[339px]:hidden",
-		);
-		expect(container.querySelector('[aria-label="Price precision"]')?.className).toContain("min-h-6");
-		expect(container.querySelector('[aria-label="Order book view"]')?.className).toContain("size-11");
+		expect(mid?.querySelector("svg")).toBeNull();
+		expect(spread?.textContent).toBe("2.0 (2.000%)");
+		expect(spread?.className).not.toContain("sr-only");
+		expect(container.textContent).toContain("Price (USDC)");
+		expect(container.textContent).toContain("Size (HYPE)");
 	});
 
-	it("renders only real rows, caps the compact ladder at six levels, and distributes available height", () => {
-		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
-		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
+	it("uses the controlled quote unit for the header and displayed sizes", () => {
+		act(() => root.render(<CompactOrderbookHarness showOrderbookInQuote />));
 
-		expect(asks?.children.length).toBe(2);
-		expect(bids?.children.length).toBe(2);
-		expect([...(asks?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
-		expect([...(bids?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(0);
-		expect(asks?.className).toContain("justify-between");
-		expect(bids?.className).toContain("justify-between");
-
-		act(() => root.render(<CompactOrderbookHarness asks={SIX_ASKS} />));
-
-		expect(asks?.children.length).toBe(6);
-		expect(asks?.querySelector('button[title="106.0"]')).not.toBeNull();
+		expect(container.textContent).toContain("Size (USDC)");
+		expect(getLadder("asks").textContent).toContain("101.00");
 	});
 
-	it("preserves a row DOM node when a neighboring price level is inserted", () => {
-		const row = container.querySelector<HTMLButtonElement>('button[title="101.0"]');
-		expect(row).not.toBeNull();
+	it("fills sparse snapshots from the far edge while keeping each BBO next to the mid", () => {
+		act(() => root.render(<CompactOrderbookHarness asks={ASKS.slice(0, 2)} bids={BIDS.slice(0, 2)} />));
+		const askChildren = [...getLadder("asks").children];
+		const bidChildren = [...getLadder("bids").children];
 
-		act(() => {
-			root.render(
-				<CompactOrderbookHarness
-					asks={[ASKS[0], { price: "101.5", quoteSize: "101.5", quoteTotal: "202.5", size: "1", total: "2" }, ASKS[1]]}
-				/>,
-			);
-		});
-
-		expect(container.querySelector<HTMLButtonElement>('button[title="101.0"]')).toBe(row);
+		expect(askChildren).toHaveLength(5);
+		expect(askChildren.slice(0, 3).every((row) => row.getAttribute("aria-hidden") === "true")).toBe(true);
+		expect(askChildren.at(-1)?.getAttribute("aria-label")).toContain("Ask, Price 101.0,");
+		expect(bidChildren).toHaveLength(5);
+		expect(bidChildren[0]?.getAttribute("aria-label")).toContain("Bid, Price 99.0,");
+		expect(bidChildren.slice(2).every((row) => row.getAttribute("aria-hidden") === "true")).toBe(true);
 	});
 
-	it("renders an explicit empty state for one empty side", () => {
-		act(() => root.render(<CompactOrderbookHarness asks={[]} />));
+	it("observes only the shared fieldset and disconnects on unmount", () => {
+		expect(observedElement?.tagName).toBe("FIELDSET");
+		expect(disconnectCallCount).toBe(0);
 
-		expect(container.querySelector('[data-slot="compact-orderbook-asks"]')?.textContent).toContain("No orders");
-		expect(container.querySelector('[data-slot="compact-orderbook-bids"]')?.textContent).not.toContain("No orders");
+		act(() => root.unmount());
+		expect(disconnectCallCount).toBe(1);
+		root = createI18nRoot(container);
 	});
 });

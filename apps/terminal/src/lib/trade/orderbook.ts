@@ -103,10 +103,10 @@ export function getRawSpreadInfo(levels: RawBookSides | undefined, options: RawS
 	};
 }
 
-export function getSideMaxTotal(levels: readonly BookLevel[]): string {
+export function getSideMaxTotal(levels: readonly BookLevel[], showInQuote = false): string {
 	return levels
 		.reduce((max, level) => {
-			const total = toBig(level.total);
+			const total = toBig(showInQuote ? level.quoteTotal : level.total);
 			return total?.gt(max) ? total : max;
 		}, Big(0))
 		.toString();

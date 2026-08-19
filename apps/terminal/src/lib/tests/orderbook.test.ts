@@ -89,6 +89,19 @@ describe("order book display derivations", () => {
 		expect(getDepthPercentage(asks[1].total, askMax)).toBe(100);
 	});
 
+	it("normalizes quote-denominated depth with exact cumulative notionals", () => {
+		const levels = processLevels([
+			{ px: "100", sz: "1", n: 1 },
+			{ px: "50", sz: "2", n: 1 },
+		]);
+
+		const maxQuoteTotal = getSideMaxTotal(levels, true);
+
+		expect(maxQuoteTotal).toBe("200");
+		expect(getDepthPercentage(levels[0].quoteTotal, maxQuoteTotal)).toBe(50);
+		expect(getDepthPercentage(levels[1].quoteTotal, maxQuoteTotal)).toBe(100);
+	});
+
 	it("keeps non-zero sub-cent quote values visible", () => {
 		expect(getOrderbookQuoteDecimals("0")).toBe(2);
 		expect(getOrderbookQuoteDecimals("0.0042")).toBe(4);

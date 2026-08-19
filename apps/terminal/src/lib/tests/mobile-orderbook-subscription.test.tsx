@@ -193,6 +193,10 @@ describe("mobile orderbook subscription lifecycle", () => {
 		return call;
 	}
 
+	function getAskPrice(price: string) {
+		return container.querySelector<HTMLButtonElement>(`button[aria-label^="Ask, Price ${price},"]`);
+	}
+
 	function setSubscriptionState(state: SubscriptionState) {
 		act(() => {
 			mocks.subscriptionState = state;
@@ -231,23 +235,26 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(container.textContent).not.toContain("101.0");
 	});
 
-	it("keeps compact ladders at six real rows without observing their height", () => {
+	it("uses one shared compact observer to derive the two-sided slot budget", () => {
 		let resizeObserverCount = 0;
+		let observedElement: Element | undefined;
 		vi.stubGlobal(
 			"ResizeObserver",
-			class {
+			class implements ResizeObserver {
 				constructor() {
 					resizeObserverCount += 1;
 				}
 
 				disconnect() {}
-				observe() {}
+				observe(element: Element) {
+					observedElement = element;
+				}
 				unobserve() {}
 			},
 		);
 		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
-			bottom: 236,
-			height: 236,
+			bottom: 304,
+			height: 304,
 			left: 0,
 			right: 200,
 			top: 0,
@@ -257,7 +264,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 			toJSON: () => ({}),
 		});
 		setSubscriptionState({
-			data: createBook(mocks.market.name, Date.now(), true, 6),
+			data: createBook(mocks.market.name, Date.now(), true, 20),
 			isStale: false,
 			status: "active",
 		});
@@ -266,12 +273,13 @@ describe("mobile orderbook subscription lifecycle", () => {
 
 		for (const side of ["asks", "bids"]) {
 			const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
-			expect(ladder?.children.length).toBe(6);
+			expect(ladder?.children.length).toBe(5);
 			expect(
 				[...(ladder?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true"),
 			).toHaveLength(0);
 		}
-		expect(resizeObserverCount).toBe(0);
+		expect(resizeObserverCount).toBe(1);
+		expect(observedElement?.tagName).toBe("FIELDSET");
 	});
 
 	it("fails over immediately to the public fast feed without reusing the incremental snapshot", () => {
@@ -281,7 +289,8 @@ describe("mobile orderbook subscription lifecycle", () => {
 			status: "active",
 		});
 		render({ compact: true });
-		expect(container.querySelector('button[title="106.00"]')).not.toBeNull();
+		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
+		expect(getAskPrice("106.00")).not.toBeNull();
 
 		act(() => {
 			mocks.l2SubscriptionState = {
@@ -302,14 +311,11 @@ describe("mobile orderbook subscription lifecycle", () => {
 
 		expect(latestSubscriptionCall().options.enabled).toBe(true);
 		expect(latestSubscriptionCall().params.fast).toBe(true);
-		expect(container.querySelector('button[title="106.00"]')).toBeNull();
-		for (const side of ["asks", "bids"]) {
-			const ladder = container.querySelector<HTMLElement>(`[data-slot="compact-orderbook-${side}"]`);
-			expect(ladder?.children.length).toBe(5);
-			expect(
-				[...(ladder?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true"),
-			).toHaveLength(0);
-		}
+		expect(getAskPrice("106.00")).toBeNull();
+		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
+		expect(asks?.children.length).toBe(11);
+		expect(asks?.querySelectorAll("button")).toHaveLength(5);
+		expect([...(asks?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(6);
 		expect(errorReportingMocks.reportClientError).toHaveBeenCalledOnce();
 		expect(errorReportingMocks.reportClientError).toHaveBeenCalledWith(expect.any(Error), {
 			kind: "orderbook_l2_fallback",
@@ -371,7 +377,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 			status: "active",
 		});
 		render();
-		expect(container.querySelector('button[title="101.00"]')).not.toBeNull();
+		expect(getAskPrice("101.00")).not.toBeNull();
 
 		setSubscriptionState({
 			data: createBook(mocks.market.name),
@@ -380,7 +386,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 		});
 		render();
 
-		expect(container.querySelector('button[title="101.00"]')).toBeNull();
+		expect(getAskPrice("101.00")).toBeNull();
 		expect(container.textContent).toContain("Failed to load order book");
 		expect(container.querySelector('[role="alert"]')).not.toBeNull();
 	});
@@ -397,7 +403,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 		setSubscriptionState({ data: undefined, isStale: false, status: "subscribing" });
 		render();
 
-		const cachedPrice = container.querySelector<HTMLButtonElement>('button[title="101.00"]');
+		const cachedPrice = getAskPrice("101.00");
 		expect(cachedPrice).not.toBeNull();
 		expect(container.querySelector('[data-slot="orderbook-busy-overlay"]')).not.toBeNull();
 		const loadingStatus = container.querySelector('output[aria-live="polite"]');
@@ -449,11 +455,11 @@ describe("mobile orderbook subscription lifecycle", () => {
 		await act(async () => {});
 		setSubscriptionState({ data: undefined, isStale: false, status: "subscribing" });
 		render();
-		expect(container.querySelector('button[title="101.00"]')).not.toBeNull();
+		expect(getAskPrice("101.00")).not.toBeNull();
 
 		act(() => vi.advanceTimersByTime(10_001));
 
-		expect(container.querySelector('button[title="101.00"]')).toBeNull();
+		expect(getAskPrice("101.00")).toBeNull();
 	});
 
 	it("expires a disabled cache even when the system clock moves backwards", async () => {
@@ -470,10 +476,10 @@ describe("mobile orderbook subscription lifecycle", () => {
 		try {
 			setSubscriptionState({ data: undefined, isStale: false, status: "subscribing" });
 			render();
-			expect(container.querySelector('button[title="101.00"]')).not.toBeNull();
+			expect(getAskPrice("101.00")).not.toBeNull();
 
 			act(() => vi.advanceTimersByTime(10_001));
-			expect(container.querySelector('button[title="101.00"]')).toBeNull();
+			expect(getAskPrice("101.00")).toBeNull();
 		} finally {
 			dateNowSpy.mockRestore();
 		}

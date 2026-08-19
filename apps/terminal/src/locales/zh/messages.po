@@ -7406,7 +7406,6 @@ msgstr "Spot 转入质押可用"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Spread"
@@ -8627,6 +8626,7 @@ msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
 msgid "Total"
@@ -8649,6 +8649,7 @@ msgstr "可领取总额"
 msgid "Total Equity"
 msgstr "总权益"
 
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "总名义价值"

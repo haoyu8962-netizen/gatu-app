@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 		| undefined,
 	error: undefined as Error | undefined,
 	isStale: false,
+	lastL2Subscription: undefined as { enabled: boolean; params: Record<string, unknown> } | undefined,
 	market: { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	midPx: "100.5" as string | undefined,
 	status: "subscribing" as "active" | "error" | "idle" | "subscribing",
@@ -26,8 +27,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
 	useSelectedMarketInfo: () => ({ data: mocks.market }),
-	useSubscription: (method: string) => {
+	useSubscription: (method: string, params: Record<string, unknown>, options?: { enabled?: boolean }) => {
 		if (method === "l2Book") {
+			mocks.lastL2Subscription = { enabled: options?.enabled === true, params };
 			return { data: mocks.book, error: mocks.error, isStale: mocks.isStale, status: mocks.status };
 		}
 		return { data: undefined, error: undefined, isStale: false, status: "idle" };
@@ -78,6 +80,8 @@ describe("OrderbookPanel safety", () => {
 		mocks.book = undefined;
 		mocks.error = undefined;
 		mocks.isStale = false;
+		mocks.lastL2Subscription = undefined;
+		mocks.market = { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
 		mocks.midPx = "100.5";
 		mocks.status = "subscribing";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -142,6 +146,34 @@ describe("OrderbookPanel safety", () => {
 		renderPanel();
 
 		expect(container.querySelector('[data-slot="orderbook-spread"]')?.textContent).toContain("1.00 (0.995%)");
+	});
+
+	it("keeps the desktop subscription active across tabs and fails closed while the market identity changes", () => {
+		mocks.book = snapshot("HYPE", [{ n: 1, px: "99.95", sz: "1" }], [{ n: 1, px: "100.05", sz: "1" }]);
+		mocks.status = "active";
+		renderPanel();
+
+		expect(mocks.lastL2Subscription).toEqual({ enabled: true, params: { coin: "HYPE" } });
+		const tradesTab = container.querySelector<HTMLButtonElement>('button[aria-label="Recent Trades"]');
+		if (!tradesTab) throw new Error("Missing recent trades tab");
+		const bookTab = container.querySelector<HTMLButtonElement>('button[aria-label="Order Book"]');
+		if (!bookTab) throw new Error("Missing order book tab");
+		act(() => tradesTab.click());
+		expect(mocks.lastL2Subscription).toEqual({ enabled: true, params: { coin: "HYPE" } });
+
+		mocks.market = { kind: "perp", markPx: "64000", name: "BTC", pairName: "BTC-USDC", szDecimals: 5 };
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<OrderbookPanel />
+				</I18nProvider>,
+			);
+		});
+		expect(mocks.lastL2Subscription).toEqual({ enabled: true, params: { coin: "BTC" } });
+
+		act(() => bookTab.click());
+		expect(container.textContent).not.toContain("99.95");
+		expect(container.querySelector('button[aria-label*="limit price"]')).toBeNull();
 	});
 
 	function renderPanel() {

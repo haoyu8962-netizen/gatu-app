@@ -18,7 +18,7 @@ export const DESKTOP_GRID_COLS = {
 
 export const DESKTOP_GRID_ROW_HEIGHT_PX = 30;
 export const DESKTOP_GRID_GAP_PX = 3;
-export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v8";
+export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v9";
 const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
 	"trade-desktop-grid-layout-v1",
 	"trade-desktop-grid-layout-v2",
@@ -27,6 +27,7 @@ const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
 	"trade-desktop-grid-layout-v5",
 	"trade-desktop-grid-layout-v6",
 	"trade-desktop-grid-layout-v7",
+	"trade-desktop-grid-layout-v8",
 ] as const;
 const GRID_GEOMETRY_EPSILON = 1e-9;
 
@@ -97,13 +98,13 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 		},
 	],
 	md: [
-		{ i: "favoriteCoins", x: 0, y: 0, w: 10, h: 1.3, minH: 1.3, maxH: 2, minW: 4, isDraggable: false },
-		{ i: "coinInfo", x: 0, y: 1.3, w: 10, h: 1.4, minH: 1.4, maxH: 1.4, minW: 4, isDraggable: false },
+		{ i: "favoriteCoins", x: 0, y: 0, w: 8, h: 1.3, minH: 1.3, maxH: 2, minW: 4, isDraggable: false },
+		{ i: "coinInfo", x: 0, y: 1.3, w: 8, h: 1.4, minH: 1.4, maxH: 1.4, minW: 4, isDraggable: false },
 		{
 			i: "chart",
 			x: 0,
 			y: 2.7,
-			w: 10,
+			w: 8,
 			h: 17.9,
 			minH: 16,
 			minW: 4,
@@ -112,23 +113,23 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 		},
 		{
 			i: "marketData",
-			x: 10,
-			y: 20.6,
-			w: 4,
-			h: 18.4,
+			x: 8,
+			y: 0,
+			w: 3,
+			h: 20.6,
 			minH: 16,
-			minW: 4,
+			minW: 3,
 			isDraggable: false,
-			resizeHandles: ["n", "w", "nw"],
+			resizeHandles: ["w", "e", "s", "sw", "se"],
 		},
 		{
 			i: "tradingInterface",
-			x: 10,
+			x: 11,
 			y: 0,
-			w: 4,
+			w: 3,
 			h: 20.6,
 			minH: 5,
-			minW: 4,
+			minW: 3,
 			isDraggable: false,
 			resizeHandles: ["w"],
 		},
@@ -136,22 +137,22 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			i: "accountTable",
 			x: 0,
 			y: 20.6,
-			w: 10,
-			h: 26.4,
+			w: 11,
+			h: 14,
 			minH: 5,
-			minW: 10,
-			maxW: 10,
+			minW: 11,
+			maxW: 11,
 			isDraggable: false,
 			resizeHandles: [],
 		},
 		{
 			i: "accountInfo",
-			x: 10,
-			y: 39,
-			w: 4,
-			h: 8,
+			x: 11,
+			y: 20.6,
+			w: 3,
+			h: 14,
 			minH: 5,
-			minW: 4,
+			minW: 3,
 			isDraggable: false,
 			resizeHandles: ["w"],
 		},

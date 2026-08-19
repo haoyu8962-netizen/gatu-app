@@ -57,7 +57,7 @@ function TradeOrderView({
 		>
 			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
 
-			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[435px] flex items-stretch">
+			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[370px] flex items-stretch">
 				<MobileTradeView
 					key={marketKey}
 					active={active}
@@ -67,7 +67,14 @@ function TradeOrderView({
 					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
 				/>
 				<div className="relative flex-1 min-w-0 self-stretch">
-					<MobileBookView active={active} compact inTabLayout view="book" className="absolute inset-0" />
+					<MobileBookView
+						active={active}
+						compact
+						inTabLayout
+						showOrderbookInQuote={sizeMode === "quote"}
+						view="book"
+						className="absolute inset-0"
+					/>
 				</div>
 			</div>
 

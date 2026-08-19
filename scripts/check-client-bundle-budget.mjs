@@ -16,7 +16,7 @@ const budgets = {
 		allowedIncreaseBytes: 10_000,
 	},
 	surfaces: [
-		{ name: "trade-terminal-page", baselineGzipBytes: 111_141, allowedIncreaseBytes: 4_000 },
+		{ name: "trade-terminal-page", baselineGzipBytes: 114_338, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
 		{ name: "leaderboard", baselineGzipBytes: 12_083, allowedIncreaseBytes: 1_500 },

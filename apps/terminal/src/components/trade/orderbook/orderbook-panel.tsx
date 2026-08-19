@@ -83,8 +83,8 @@ export function OrderbookPanel() {
 		}
 		return reversed;
 	}, [asks]);
-	const bidMaxTotal = useMemo(() => getSideMaxTotal(bids), [bids]);
-	const askMaxTotal = useMemo(() => getSideMaxTotal(asks), [asks]);
+	const bidMaxTotal = useMemo(() => getSideMaxTotal(bids, showOrderbookInQuote), [bids, showOrderbookInQuote]);
+	const askMaxTotal = useMemo(() => getSideMaxTotal(asks, showOrderbookInQuote), [asks, showOrderbookInQuote]);
 	const fallbackPriceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
 	const priceDecimals = useMemo(
 		() => getSnapshotPriceDecimals(currentOrderbook?.levels, fallbackPriceDecimals),

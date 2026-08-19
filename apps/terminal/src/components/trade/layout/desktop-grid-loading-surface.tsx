@@ -20,13 +20,13 @@ export const DEFAULT_DESKTOP_GRID_LOADING_LAYOUTS = {
 		{ i: "accountInfo", x: 13, y: 20.4, w: 3, h: 14 },
 	],
 	md: [
-		{ i: "favoriteCoins", x: 0, y: 0, w: 10, h: 1.3 },
-		{ i: "coinInfo", x: 0, y: 1.3, w: 10, h: 1.4 },
-		{ i: "chart", x: 0, y: 2.7, w: 10, h: 17.9 },
-		{ i: "marketData", x: 10, y: 20.6, w: 4, h: 18.4 },
-		{ i: "tradingInterface", x: 10, y: 0, w: 4, h: 20.6 },
-		{ i: "accountTable", x: 0, y: 20.6, w: 10, h: 26.4 },
-		{ i: "accountInfo", x: 10, y: 39, w: 4, h: 8 },
+		{ i: "favoriteCoins", x: 0, y: 0, w: 8, h: 1.3 },
+		{ i: "coinInfo", x: 0, y: 1.3, w: 8, h: 1.4 },
+		{ i: "chart", x: 0, y: 2.7, w: 8, h: 17.9 },
+		{ i: "marketData", x: 8, y: 0, w: 3, h: 20.6 },
+		{ i: "tradingInterface", x: 11, y: 0, w: 3, h: 20.6 },
+		{ i: "accountTable", x: 0, y: 20.6, w: 11, h: 14 },
+		{ i: "accountInfo", x: 11, y: 20.6, w: 3, h: 14 },
 	],
 } as const;
 

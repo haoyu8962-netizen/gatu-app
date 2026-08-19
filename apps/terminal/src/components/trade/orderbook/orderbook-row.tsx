@@ -1,5 +1,7 @@
+import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { memo } from "react";
+import { useLongPressTooltip } from "@/hooks/ui/use-long-press-tooltip";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -18,6 +20,8 @@ interface Props {
 	szDecimals: number;
 	compact?: boolean;
 	disabled?: boolean;
+	baseAsset?: string;
+	quoteAsset?: string;
 }
 
 function OrderbookRowComponent({
@@ -31,30 +35,42 @@ function OrderbookRowComponent({
 	szDecimals,
 	compact = false,
 	disabled = false,
+	baseAsset,
+	quoteAsset,
 }: Props) {
 	useNumberFormatRevision();
 	const { setSelectedPrice } = useOrderbookActions();
-	const depthPct = getDepthPercentage(level.total, maxTotal);
 	const isAsk = side === "ask";
 
 	const sizeValue = showInQuote ? level.quoteSize : level.size;
 	const totalValue = showInQuote ? level.quoteTotal : level.total;
+	const depthPct = getDepthPercentage(totalValue, maxTotal);
 
 	const sizeDecimals = showInQuote ? getOrderbookQuoteDecimals(sizeValue) : szDecimals;
 	const totalDecimals = showInQuote ? getOrderbookQuoteDecimals(totalValue) : szDecimals;
 	const priceText = formatNumber(level.price, priceDecimals);
 	const sizeText = formatNumber(sizeValue, { decimals: sizeDecimals, compact: true });
 	const totalText = formatNumber(totalValue, { decimals: totalDecimals, compact: true });
+	const cumulativeBaseText = formatNumber(level.total, { decimals: szDecimals, compact: true });
+	const cumulativeQuoteText = formatNumber(level.quoteTotal, {
+		decimals: getOrderbookQuoteDecimals(level.quoteTotal),
+		compact: true,
+	});
 	const sideText = isAsk ? t`Ask` : t`Bid`;
 	const ariaLabel = `${sideText}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`;
+	const longPressTooltip = useLongPressTooltip({ enabled: compact && !disabled });
 
-	return (
+	const row = (
 		<button
 			type="button"
 			disabled={disabled}
-			onClick={() => setSelectedPrice(marketName, level.price)}
-			title={priceText}
+			onClick={() => {
+				if (longPressTooltip.consumeLongPressClick()) return;
+				setSelectedPrice(marketName, level.price);
+			}}
+			title={compact ? undefined : priceText}
 			aria-label={ariaLabel}
+			{...longPressTooltip.handlers}
 			className={cn(
 				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
 				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
@@ -75,7 +91,7 @@ function OrderbookRowComponent({
 				)}
 			>
 				<span
-					title={priceText}
+					title={compact ? undefined : priceText}
 					className={cn(
 						"min-w-0 truncate text-left justify-start",
 						isAsk
@@ -99,6 +115,33 @@ function OrderbookRowComponent({
 			</span>
 		</button>
 	);
+
+	if (!compact) return row;
+
+	return (
+		<Tooltip
+			open={longPressTooltip.open}
+			onOpenChange={longPressTooltip.onOpenChange}
+			closeOnClick={false}
+			delay={300}
+			side="left"
+			sideOffset={4}
+			content={
+				<span data-slot="orderbook-cumulative-tooltip" className="grid gap-1 tabular-nums">
+					<span>
+						{t`Total`}
+						{baseAsset ? ` (${baseAsset})` : ""}: {cumulativeBaseText}
+					</span>
+					<span>
+						{t`Total notional`}
+						{quoteAsset ? ` (${quoteAsset})` : ""}: {cumulativeQuoteText}
+					</span>
+				</span>
+			}
+		>
+			{row}
+		</Tooltip>
+	);
 }
 
 function areEqual(prev: Props, next: Props): boolean {
@@ -111,6 +154,8 @@ function areEqual(prev: Props, next: Props): boolean {
 		prev.showInQuote === next.showInQuote &&
 		prev.szDecimals === next.szDecimals &&
 		prev.disabled === next.disabled &&
+		prev.baseAsset === next.baseAsset &&
+		prev.quoteAsset === next.quoteAsset &&
 		prev.level.price === next.level.price &&
 		prev.level.size === next.level.size &&
 		prev.level.total === next.level.total &&

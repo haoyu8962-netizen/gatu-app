@@ -1,6 +1,6 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
@@ -35,13 +35,14 @@ import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import {
+	COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT,
+	getCompactOrderbookSlotCount,
 	getMobileOrderbookRowsForLadderHeight,
 	MOBILE_ORDERBOOK_ROW_METRICS,
 	type MobileOrderbookRowMetrics,
 } from "./mobile-orderbook-layout";
 
 const DEFAULT_LEVEL_COUNT = 12;
-const COMPACT_LEVEL_COUNT = 6;
 const MIN_LEVEL_COUNT = 3;
 const LADDER_RESIZE_SETTLE_MS = 120;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
@@ -144,6 +145,8 @@ interface MobileBookViewProps {
 	compact?: boolean;
 	/** Embedded in a parent tab layout: hide the Book/Trades toggle + bottom spacer; view is parent-controlled. */
 	inTabLayout?: boolean;
+	/** Controlled display unit for the compact book. Defaults to the global preference. */
+	showOrderbookInQuote?: boolean;
 	view?: View;
 }
 
@@ -152,6 +155,7 @@ export function MobileBookView({
 	className,
 	compact,
 	inTabLayout,
+	showOrderbookInQuote: controlledShowOrderbookInQuote,
 	view: viewProp,
 }: MobileBookViewProps) {
 	useNumberFormatRevision();
@@ -161,8 +165,9 @@ export function MobileBookView({
 	const view = viewProp ?? internalView;
 	const [compactOrderbookMode, setCompactOrderbookMode] = useState<CompactOrderbookMode>("both");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
-	const { showOrderbookInQuote } = useGlobalSettings();
+	const { showOrderbookInQuote: globalShowOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
+	const showOrderbookInQuote = controlledShowOrderbookInQuote ?? globalShowOrderbookInQuote;
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const name = selectedMarket?.name ?? "";
@@ -378,7 +383,9 @@ export function MobileBookView({
 						setSelectedOptionKey={setSelectedOptionKey}
 						mode={compactOrderbookMode}
 						onModeChange={setCompactOrderbookMode}
+						baseToken={baseToken}
 						priceToken={quoteToken}
+						quoteToken={quoteToken}
 						sizeToken={showOrderbookInQuote ? quoteToken : baseToken}
 					/>
 				) : (
@@ -420,6 +427,7 @@ interface OrderbookLayoutProps {
 }
 
 interface CompactOrderbookProps extends OrderbookLayoutProps {
+	baseToken: string;
 	flashResetKey: string;
 	mid: string | undefined;
 	midDirection: "up" | "down" | "flat";
@@ -430,6 +438,7 @@ interface CompactOrderbookProps extends OrderbookLayoutProps {
 	mode: CompactOrderbookMode;
 	onModeChange: (mode: CompactOrderbookMode) => void;
 	priceToken: string;
+	quoteToken: string;
 	sizeToken: string;
 }
 
@@ -453,20 +462,26 @@ export function CompactOrderbook({
 	setSelectedOptionKey,
 	mode,
 	onModeChange,
+	baseToken,
 	priceToken,
+	quoteToken,
 	sizeToken,
 }: CompactOrderbookProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const askLevelCount = COMPACT_LEVEL_COUNT;
-	const bidLevelCount = COMPACT_LEVEL_COUNT;
-	const hasAsks = asks.length > 0;
-	const hasBids = bids.length > 0;
+	const [slotCount, orderbookRef] = useCompactOrderbookSlotCount();
+	const splitLevelCount = Math.floor((slotCount - 1) / 2);
+	const askLevelCount = mode === "asks" ? slotCount : mode === "both" ? splitLevelCount : 0;
+	const bidLevelCount = mode === "bids" ? slotCount : mode === "both" ? splitLevelCount : 0;
+	const visibleAsks = useMemo(() => asks.slice(0, askLevelCount), [asks, askLevelCount]);
+	const visibleBids = useMemo(() => bids.slice(0, bidLevelCount), [bids, bidLevelCount]);
+	const hasAsks = visibleAsks.length > 0;
+	const hasBids = visibleBids.length > 0;
 	const showError = bookStatus === "error" && !hasAsks && !hasBids;
 	const showAsks = mode !== "bids";
 	const showBids = mode !== "asks";
-	const askMaxTotal = getVisibleMaxTotal(asks, askLevelCount);
-	const bidMaxTotal = getVisibleMaxTotal(bids, bidLevelCount);
+	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
+	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
 
 	if (showError) {
 		return <OrderbookStatus bookStatus={bookStatus} />;
@@ -475,25 +490,26 @@ export function CompactOrderbook({
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
 			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal text-trading-panel-subtle uppercase">
-				<div className="min-w-0 truncate" title={`${t`Price`} ${priceToken}`}>
+				<div className="min-w-0 truncate" title={`${t`Price`} (${priceToken})`}>
 					{t`Price`}{" "}
 					<span data-slot="compact-orderbook-price-token" className="normal-case max-[339px]:hidden">
-						{priceToken}
+						({priceToken})
 					</span>
 				</div>
-				<div className="min-w-0 truncate text-right" title={`${t`Size`} ${sizeToken}`}>
+				<div className="min-w-0 truncate text-right" title={`${t`Size`} (${sizeToken})`}>
 					{t`Size`}{" "}
 					<span data-slot="compact-orderbook-size-token" className="normal-case max-[339px]:hidden">
-						{sizeToken}
+						({sizeToken})
 					</span>
 				</div>
 			</div>
 
 			<fieldset
+				ref={orderbookRef}
 				disabled={!isInteractive}
 				aria-busy={isTransitioning}
 				className={cn(
-					"relative m-0 flex flex-1 min-h-0 flex-col overflow-hidden border-0 p-0",
+					"relative m-0 flex flex-1 min-h-0 flex-col gap-[4px] overflow-hidden border-0 p-0",
 					!isInteractive && "pointer-events-none",
 				)}
 			>
@@ -505,26 +521,35 @@ export function CompactOrderbook({
 					)}
 				>
 					{hasAsks ? (
-						asks
-							.slice(0, askLevelCount)
-							.reverse()
-							.map((level) => (
-								<OrderbookRow
-									key={`ask-${level.price}`}
-									disabled={!isInteractive}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={marketName}
-									side="ask"
-									maxTotal={askMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-									compact
-								/>
-							))
+						<>
+							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - visibleAsks.length)).map((key) => (
+								<OrderbookPlaceholderRow key={`ask-${key}`} compact />
+							))}
+							{visibleAsks
+								.slice()
+								.reverse()
+								.map((level) => (
+									<OrderbookRow
+										key={`ask-${level.price}`}
+										disabled={!isInteractive}
+										flashResetKey={flashResetKey}
+										level={level}
+										marketName={marketName}
+										side="ask"
+										maxTotal={askMaxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+										baseAsset={baseToken}
+										quoteAsset={quoteToken}
+										compact
+									/>
+								))}
+						</>
 					) : hasSnapshot ? (
-						<OrderbookEmptySide compact />
+						PLACEHOLDER_ROW_KEYS.slice(0, askLevelCount).map((key) => (
+							<OrderbookPlaceholderRow key={`ask-${key}`} compact />
+						))
 					) : (
 						<OrderbookSkeletonRows rows={askLevelCount} align="end" compact />
 					)}
@@ -535,19 +560,25 @@ export function CompactOrderbook({
 						data-slot="compact-orderbook-mid"
 						data-direction={midDirection}
 						title={`${t`Spread`}: ${spreadText}`}
-						className="shrink-0 flex h-[28px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
+						className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
 					>
 						<span
+							data-slot="compact-orderbook-mid-price"
 							className={cn(
-								"tabular-nums text-base",
+								"shrink-0 tabular-nums text-base",
 								midDirection === "up" && "text-trading-panel-success",
 								midDirection === "down" && "text-trading-panel-error",
 								midDirection === "flat" && "text-trading-panel-fg",
 							)}
 						>
-							{mid ? formatNumber(mid, priceDecimals) : FALLBACK_VALUE_PLACEHOLDER}
+							{mid ? `$${formatNumber(mid, priceDecimals)}` : FALLBACK_VALUE_PLACEHOLDER}
 						</span>
-						<MidTrendIcon direction={midDirection} className="size-4" />
+						<span
+							data-slot="compact-orderbook-spread"
+							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums text-trading-panel-subtle"
+						>
+							{spreadText}
+						</span>
 					</div>
 				)}
 
@@ -559,9 +590,8 @@ export function CompactOrderbook({
 					)}
 				>
 					{hasBids ? (
-						bids
-							.slice(0, bidLevelCount)
-							.map((level) => (
+						<>
+							{visibleBids.map((level) => (
 								<OrderbookRow
 									key={`bid-${level.price}`}
 									disabled={!isInteractive}
@@ -573,11 +603,19 @@ export function CompactOrderbook({
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
+									baseAsset={baseToken}
+									quoteAsset={quoteToken}
 									compact
 								/>
-							))
+							))}
+							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - visibleBids.length)).map((key) => (
+								<OrderbookPlaceholderRow key={`bid-${key}`} compact />
+							))}
+						</>
 					) : hasSnapshot ? (
-						<OrderbookEmptySide compact />
+						PLACEHOLDER_ROW_KEYS.slice(0, bidLevelCount).map((key) => (
+							<OrderbookPlaceholderRow key={`bid-${key}`} compact />
+						))
 					) : (
 						<OrderbookSkeletonRows rows={bidLevelCount} compact />
 					)}
@@ -586,7 +624,7 @@ export function CompactOrderbook({
 			</fieldset>
 			{isTransitioning && <OrderbookLoadingAnnouncement />}
 
-			<div className="shrink-0 h-11 border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1">
+			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1">
 				<Dropdown
 					size="sm"
 					hideCaret
@@ -603,9 +641,6 @@ export function CompactOrderbook({
 						}),
 					)}
 				/>
-				<span data-slot="compact-orderbook-spread" className="sr-only">
-					{t`Spread`}: {spreadText}
-				</span>
 				<span className="min-w-0 flex-1" aria-hidden="true" />
 				<CompactOrderbookModeControls mode={mode} onModeChange={onModeChange} />
 			</div>
@@ -613,8 +648,8 @@ export function CompactOrderbook({
 	);
 }
 
-function getVisibleMaxTotal(levels: BookLevel[], levelCount: number): string {
-	return getSideMaxTotal(levels.slice(0, levelCount));
+function getVisibleMaxTotal(levels: BookLevel[], levelCount: number, showInQuote = false): string {
+	return getSideMaxTotal(levels.slice(0, levelCount), showInQuote);
 }
 
 function CompactOrderbookModeControls({
@@ -626,44 +661,41 @@ function CompactOrderbookModeControls({
 }) {
 	const { t } = useLingui();
 	const options: Array<{ mode: CompactOrderbookMode; label: string; bars: Array<"ask" | "bid"> }> = [
-		{ mode: "asks", label: t`Show asks only`, bars: ["ask", "ask"] },
 		{ mode: "both", label: t`Show both sides`, bars: ["ask", "bid"] },
+		{ mode: "asks", label: t`Show asks only`, bars: ["ask", "ask"] },
 		{ mode: "bids", label: t`Show bids only`, bars: ["bid", "bid"] },
 	];
 
-	const selectedOption = options.find((option) => option.mode === mode) ?? options[1];
-
 	return (
-		<Dropdown
-			size="sm"
-			hideCaret
-			triggerVariant="minimal"
-			triggerAriaLabel={t`Order book view`}
-			align="end"
-			trigger={<OrderbookModeIcon bars={selectedOption.bars} selected />}
-			triggerClassName="size-11 shrink-0 p-0 text-trading-panel-muted"
-			popupClassName={tradingPanelDropdownPopupClass}
-			items={options.map(
-				(option): DropdownItem => ({
-					label: option.label,
-					icon: <OrderbookModeIcon bars={option.bars} />,
-					active: option.mode === mode,
-					onSelect: () => onModeChange(option.mode),
-				}),
-			)}
-		/>
+		<fieldset aria-label={t`Order book view`} className="m-0 flex shrink-0 items-center gap-1 border-0 p-0">
+			{options.map((option) => {
+				const selected = option.mode === mode;
+				return (
+					<button
+						key={option.mode}
+						type="button"
+						aria-label={option.label}
+						aria-pressed={selected}
+						data-mode={option.mode}
+						onClick={() => onModeChange(option.mode)}
+						className={cn(
+							"grid h-[22px] w-6 place-items-center rounded-[5px] text-trading-panel-muted transition-colors motion-reduce:transition-none",
+							selected
+								? "bg-trading-panel-card text-trading-panel-fg"
+								: "hover:bg-trading-panel-hover hover:text-trading-panel-fg",
+						)}
+					>
+						<OrderbookModeIcon bars={option.bars} />
+					</button>
+				);
+			})}
+		</fieldset>
 	);
 }
 
-function OrderbookModeIcon({ bars, selected }: { bars: Array<"ask" | "bid">; selected?: boolean }) {
+function OrderbookModeIcon({ bars }: { bars: Array<"ask" | "bid"> }) {
 	return (
-		<span
-			className={cn(
-				"grid size-3 grid-rows-2 overflow-hidden rounded-[3px]",
-				selected && "outline outline-1 outline-offset-1 outline-trading-panel-control",
-			)}
-			aria-hidden="true"
-		>
+		<span className="grid size-3 grid-rows-2 overflow-hidden rounded-[3px]" aria-hidden="true">
 			<span
 				style={{
 					backgroundColor: bars[0] === "ask" ? "var(--trading-panel-error)" : "var(--trading-panel-success)",
@@ -713,8 +745,8 @@ function SplitOrderbook({
 	const hasAsks = visibleAsks.length > 0;
 	const hasBids = visibleBids.length > 0;
 	const showError = bookStatus === "error" && !hasAsks && !hasBids;
-	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount);
-	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount);
+	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
+	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -917,8 +949,8 @@ export function SplitOrderbookRow({
 	useNumberFormatRevision();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
-	const depthPct = getDepthPercentage(level.total, maxTotal);
 	const totalValue = showInQuote ? level.quoteTotal : level.total;
+	const depthPct = getDepthPercentage(totalValue, maxTotal);
 	const totalDecimals = showInQuote ? getOrderbookQuoteDecimals(totalValue) : szDecimals;
 	const priceText = formatNumber(level.price, priceDecimals);
 	const sizeText = formatNumber(level.size, { decimals: szDecimals, compact: true });
@@ -1016,12 +1048,33 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean, metrics: 
 	return [rows, ladderRef] as const;
 }
 
-function OrderbookPlaceholderRow() {
-	return <div className="h-[23px] shrink-0" aria-hidden="true" />;
+function OrderbookPlaceholderRow({ compact }: { compact?: boolean }) {
+	return <div className={cn("shrink-0", compact ? "h-[24px]" : "h-[23px]")} aria-hidden="true" />;
 }
 
-function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {
-	if (direction === "up") return <TrendUpIcon className={cn("text-trading-panel-success", className)} />;
-	if (direction === "down") return <TrendDownIcon className={cn("text-trading-panel-error", className)} />;
-	return null;
+function useCompactOrderbookSlotCount() {
+	const orderbookRef = useRef<HTMLFieldSetElement>(null);
+	const [slotCount, setSlotCount] = useState(COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT);
+
+	useEffect(() => {
+		const element = orderbookRef.current;
+		if (!element) return;
+
+		function updateSlotCount(height: number) {
+			const nextSlotCount = getCompactOrderbookSlotCount(height);
+			if (nextSlotCount != null) setSlotCount(nextSlotCount);
+		}
+
+		updateSlotCount(element.getBoundingClientRect().height);
+		if (typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver(([entry]) => {
+			if (!entry) return;
+			updateSlotCount(entry.target.getBoundingClientRect().height);
+		});
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
+
+	return [slotCount, orderbookRef] as const;
 }

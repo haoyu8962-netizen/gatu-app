@@ -48,7 +48,9 @@ vi.mock("@/components/trade/mobile/mobile-trade-view", async () => {
 });
 
 vi.mock("@/components/trade/mobile/mobile-book-view", () => ({
-	MobileBookView: () => null,
+	MobileBookView: ({ showOrderbookInQuote }: { showOrderbookInQuote?: boolean }) => (
+		<div data-mobile-book data-show-in-quote={String(showOrderbookInQuote)} />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-chart-view", () => ({
@@ -116,10 +118,19 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
-	it("reserves enough compact-book height for six 24px rows per side", () => {
+	it("keeps the split minimum compatible with the eleven-slot compact book", () => {
 		render();
 
-		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain("min-h-[435px]");
+		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain("min-h-[370px]");
+	});
+
+	it("controls the order-book unit from the order form without synchronizing effects", () => {
+		render();
+		expect(container.querySelector("[data-mobile-book]")?.getAttribute("data-show-in-quote")).toBe("true");
+
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Toggle mobile size mode"]')?.click());
+
+		expect(container.querySelector("[data-mobile-book]")?.getAttribute("data-show-in-quote")).toBe("false");
 	});
 
 	it("forwards surface visibility so the hidden order form can pause live BBO updates", () => {

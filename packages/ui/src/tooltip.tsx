@@ -42,6 +42,7 @@ interface TooltipProps extends VariantProps<typeof tooltipPopupVariants> {
 	onOpenChange?: (open: boolean) => void;
 	delay?: number;
 	closeDelay?: number;
+	closeOnClick?: boolean;
 	arrow?: boolean;
 	className?: string;
 }
@@ -63,6 +64,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 			onOpenChange,
 			delay = 100,
 			closeDelay,
+			closeOnClick = true,
 			arrow = true,
 			className,
 		},
@@ -72,7 +74,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 
 		return (
 			<BaseTooltip.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
-				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} render={children} />
+				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} closeOnClick={closeOnClick} render={children} />
 				<BaseTooltip.Portal>
 					<BaseTooltip.Positioner
 						side={side}
