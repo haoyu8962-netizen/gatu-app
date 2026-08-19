@@ -43,21 +43,61 @@ export function TradeSizeSlider({
 	const activePointerIdRef = useRef<number | null>(null);
 	const interactionStartRef = useRef(value);
 	const onPercentChangeRef = useRef(onPercentChange);
+	const pendingPreviewRef = useRef<number | null>(null);
+	const previewFlushedThisFrameRef = useRef(false);
+	const previewFrameRef = useRef<number | null>(null);
+	const commitFrameRef = useRef<number | null>(null);
 	const [lifecycleVersion, setLifecycleVersion] = useState(0);
 
 	onPercentChangeRef.current = onPercentChange;
+
+	const clearScheduledPreview = useCallback(() => {
+		pendingPreviewRef.current = null;
+		if (previewFrameRef.current !== null) cancelAnimationFrame(previewFrameRef.current);
+		previewFrameRef.current = null;
+	}, []);
+
+	const flushScheduledPreview = useCallback(() => {
+		previewFlushedThisFrameRef.current = false;
+		const nextValue = pendingPreviewRef.current;
+		pendingPreviewRef.current = null;
+		if (nextValue === null) {
+			previewFrameRef.current = null;
+			return;
+		}
+
+		previewFlushedThisFrameRef.current = true;
+		onPercentChangeRef.current(nextValue);
+		previewFrameRef.current = requestAnimationFrame(flushScheduledPreview);
+	}, []);
+
+	const previewPointerValue = useCallback(
+		(nextValue: number) => {
+			if (previewFrameRef.current === null) {
+				onPercentChangeRef.current(nextValue);
+				previewFrameRef.current = requestAnimationFrame(() => {
+					previewFrameRef.current = requestAnimationFrame(flushScheduledPreview);
+				});
+				return;
+			}
+			pendingPreviewRef.current = nextValue;
+		},
+		[flushScheduledPreview],
+	);
 
 	const cancelActivePreview = useCallback(() => {
 		if (activePointerIdRef.current === null) return;
 
 		activePointerIdRef.current = null;
+		clearScheduledPreview();
+		previewFlushedThisFrameRef.current = false;
 		const sliderRoot = sliderRootRef.current;
 		sliderRoot?.removeAttribute("data-dragging");
 		const nativeInput = sliderRoot?.querySelector<HTMLInputElement>('input[type="range"]');
 		if (nativeInput) nativeInput.value = String(interactionStartRef.current);
 		onPercentChangeRef.current(interactionStartRef.current);
 		setLifecycleVersion((version) => version + 1);
-	}, []);
+	}, [clearScheduledPreview]);
 
 	useEffect(() => {
 		function handlePointerCancel(event: PointerEvent) {
@@ -75,8 +115,10 @@ export function TradeSizeSlider({
 		return () => {
 			document.removeEventListener("pointercancel", handlePointerCancel);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			clearScheduledPreview();
+			if (commitFrameRef.current !== null) cancelAnimationFrame(commitFrameRef.current);
 		};
-	}, [cancelActivePreview]);
+	}, [cancelActivePreview, clearScheduledPreview]);
 
 	return (
 		<Slider
@@ -106,7 +148,15 @@ export function TradeSizeSlider({
 			}}
 			onValueChange={(nextValue, eventDetails) => {
 				if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
-				onPercentChange(normalizePercent(nextValue));
+				const normalizedValue = normalizePercent(nextValue);
+				if (
+					activePointerIdRef.current !== null &&
+					(eventDetails.reason === "drag" || eventDetails.reason === "track-press")
+				) {
+					previewPointerValue(normalizedValue);
+					return;
+				}
+				onPercentChangeRef.current(normalizedValue);
 			}}
 			onValueCommitted={
 				onPercentCommit
@@ -118,8 +168,18 @@ export function TradeSizeSlider({
 							) {
 								return;
 							}
+							clearScheduledPreview();
 							activePointerIdRef.current = null;
-							onPercentCommit(normalizePercent(nextValue), eventDetails);
+							const committedValue = normalizePercent(nextValue);
+							if (previewFlushedThisFrameRef.current) {
+								commitFrameRef.current = requestAnimationFrame(() => {
+									commitFrameRef.current = null;
+									previewFlushedThisFrameRef.current = false;
+									onPercentCommit(committedValue, eventDetails);
+								});
+								return;
+							}
+							onPercentCommit(committedValue, eventDetails);
 						}
 					: undefined
 			}
