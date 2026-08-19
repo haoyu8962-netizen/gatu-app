@@ -78,11 +78,16 @@ try {
 	writeFileSync(tracePath, JSON.stringify({ traceEvents }));
 	process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 
-	if (result.previewCallbacks < 60) {
-		throw new Error(`Expected at least 60 pointer-driven previews, received ${result.previewCallbacks}`);
+	if (result.rawPointerMoves < 60) {
+		throw new Error(`Expected at least 60 pointermove samples, received ${result.rawPointerMoves}`);
 	}
-	if (result.previewCallbackRateHz < 50 || result.previewCallbackRateHz > 140) {
-		throw new Error(`Pointer preview rate ${result.previewCallbackRateHz.toFixed(2)}Hz is outside 50–140Hz`);
+	if (result.rawPointerMoveRateHz < 50 || result.rawPointerMoveRateHz > 140) {
+		throw new Error(`Pointermove rate ${result.rawPointerMoveRateHz.toFixed(2)}Hz is outside 50–140Hz`);
+	}
+	if (result.previewCallbacks < 1 || result.previewCallbacks > result.rawPointerMoves) {
+		throw new Error(
+			`Expected 1–${result.rawPointerMoves} coalesced previews, received ${result.previewCallbacks}`,
+		);
 	}
 	if (result.maxParentCommitsPerFrame > 1) {
 		throw new Error(`Observed ${result.maxParentCommitsPerFrame} parent commits in one animation frame`);

@@ -11,7 +11,10 @@ interface PerformanceAuditState {
 	frameId: number;
 	observing: boolean;
 	pendingCommitStarts: number[];
+	pointerFirstAt: number;
+	pointerLastAt: number;
 	previewCallbacks: number;
+	rawPointerMoves: number;
 	startedAt: number;
 }
 
@@ -23,7 +26,10 @@ const audit: PerformanceAuditState = {
 	frameId: 0,
 	observing: false,
 	pendingCommitStarts: [],
+	pointerFirstAt: 0,
+	pointerLastAt: 0,
 	previewCallbacks: 0,
+	rawPointerMoves: 0,
 	startedAt: 0,
 };
 
@@ -36,6 +42,7 @@ function percentile(values: number[], quantile: number): number {
 function snapshot() {
 	const elapsedMs = Math.max(0, performance.now() - audit.startedAt);
 	const commitsPerFrame = Object.values(audit.commitsByFrame);
+	const pointerSpanMs = Math.max(0, audit.pointerLastAt - audit.pointerFirstAt);
 	return {
 		callbackDurationMedianMs: percentile(audit.callbackDurations, 0.5),
 		callbackDurationP95Ms: percentile(audit.callbackDurations, 0.95),
@@ -44,9 +51,12 @@ function snapshot() {
 		commitLatencyP95Ms: percentile(audit.commitLatencies, 0.95),
 		elapsedMs,
 		maxParentCommitsPerFrame: Math.max(0, ...commitsPerFrame),
+		multiCommitFrames: Object.entries(audit.commitsByFrame).filter(([, count]) => count > 1),
 		parentCommits: commitsPerFrame.reduce((total, count) => total + count, 0),
 		previewCallbackRateHz: elapsedMs > 0 ? (audit.previewCallbacks * 1000) / elapsedMs : 0,
 		previewCallbacks: audit.previewCallbacks,
+		rawPointerMoveRateHz: pointerSpanMs > 0 ? ((audit.rawPointerMoves - 1) * 1000) / pointerSpanMs : 0,
+		rawPointerMoves: audit.rawPointerMoves,
 	};
 }
 
@@ -59,7 +69,10 @@ Object.assign(window, {
 			audit.commitsByFrame = {};
 			audit.observing = true;
 			audit.pendingCommitStarts = [];
+			audit.pointerFirstAt = 0;
+			audit.pointerLastAt = 0;
 			audit.previewCallbacks = 0;
+			audit.rawPointerMoves = 0;
 			audit.startedAt = performance.now();
 		},
 		snapshot,
@@ -68,6 +81,14 @@ Object.assign(window, {
 			return snapshot();
 		},
 	},
+});
+
+document.addEventListener("pointermove", (event) => {
+	if (!audit.observing || event.buttons !== 1) return;
+	const eventAt = performance.now();
+	if (audit.rawPointerMoves === 0) audit.pointerFirstAt = eventAt;
+	audit.pointerLastAt = eventAt;
+	audit.rawPointerMoves += 1;
 });
 
 function frameLoop() {
