@@ -47,6 +47,7 @@ export function TradeSizeSlider({
 	const previewFlushedThisFrameRef = useRef(false);
 	const previewFrameRef = useRef<number | null>(null);
 	const commitFrameRef = useRef<number | null>(null);
+	const commitEpochRef = useRef(0);
 	const [lifecycleVersion, setLifecycleVersion] = useState(0);
 
 	onPercentChangeRef.current = onPercentChange;
@@ -55,6 +56,12 @@ export function TradeSizeSlider({
 		pendingPreviewRef.current = null;
 		if (previewFrameRef.current !== null) cancelAnimationFrame(previewFrameRef.current);
 		previewFrameRef.current = null;
+	}, []);
+
+	const clearScheduledCommit = useCallback(() => {
+		commitEpochRef.current += 1;
+		if (commitFrameRef.current !== null) cancelAnimationFrame(commitFrameRef.current);
+		commitFrameRef.current = null;
 	}, []);
 
 	const flushScheduledPreview = useCallback(() => {
@@ -90,6 +97,7 @@ export function TradeSizeSlider({
 
 		activePointerIdRef.current = null;
 		clearScheduledPreview();
+		clearScheduledCommit();
 		previewFlushedThisFrameRef.current = false;
 		const sliderRoot = sliderRootRef.current;
 		sliderRoot?.removeAttribute("data-dragging");
@@ -97,7 +105,7 @@ export function TradeSizeSlider({
 		if (nativeInput) nativeInput.value = String(interactionStartRef.current);
 		onPercentChangeRef.current(interactionStartRef.current);
 		setLifecycleVersion((version) => version + 1);
-	}, [clearScheduledPreview]);
+	}, [clearScheduledCommit, clearScheduledPreview]);
 
 	useEffect(() => {
 		function handlePointerCancel(event: PointerEvent) {
@@ -116,9 +124,9 @@ export function TradeSizeSlider({
 			document.removeEventListener("pointercancel", handlePointerCancel);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			clearScheduledPreview();
-			if (commitFrameRef.current !== null) cancelAnimationFrame(commitFrameRef.current);
+			clearScheduledCommit();
 		};
-	}, [cancelActivePreview, clearScheduledPreview]);
+	}, [cancelActivePreview, clearScheduledCommit, clearScheduledPreview]);
 
 	return (
 		<Slider
@@ -140,6 +148,8 @@ export function TradeSizeSlider({
 			value={value}
 			onPointerDownCapture={(event) => {
 				if (disabled || event.button !== 0) return;
+				clearScheduledCommit();
+				previewFlushedThisFrameRef.current = false;
 				interactionStartRef.current = value;
 				activePointerIdRef.current = event.pointerId;
 			}}
@@ -172,13 +182,17 @@ export function TradeSizeSlider({
 							activePointerIdRef.current = null;
 							const committedValue = normalizePercent(nextValue);
 							if (previewFlushedThisFrameRef.current) {
+								clearScheduledCommit();
+								const commitEpoch = commitEpochRef.current;
 								commitFrameRef.current = requestAnimationFrame(() => {
+									if (commitEpoch !== commitEpochRef.current) return;
 									commitFrameRef.current = null;
 									previewFlushedThisFrameRef.current = false;
 									onPercentCommit(committedValue, eventDetails);
 								});
 								return;
 							}
+							clearScheduledCommit();
 							onPercentCommit(committedValue, eventDetails);
 						}
 					: undefined
