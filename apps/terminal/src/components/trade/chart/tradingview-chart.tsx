@@ -116,6 +116,7 @@ export function TradingViewChart({
 	const chartReadyRef = useRef(false);
 	const pendingDataResetRef = useRef(false);
 	const pendingRealtimeResetRef = useRef(false);
+	const failedHistoryStreamKeyRef = useRef<string | null>(null);
 	const hasLoadedHistoryRef = useRef(false);
 	const wsReconnectGenerationRef = useRef(0);
 	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
@@ -163,6 +164,7 @@ export function TradingViewChart({
 		sourceSymbol: string | undefined;
 		targetInterval: string;
 		intervalSequence: number;
+		historyRebuild: boolean;
 		localeRebuild: boolean;
 		overlayRebuild: boolean;
 		themeRebuild: boolean;
@@ -196,6 +198,7 @@ export function TradingViewChart({
 	const flushHistoryRecoveryRef = useRef<() => void>(() => {});
 	const reportDataResetFailureRef = useRef<() => void>(() => {});
 	const resetHistoryRecoveryRef = useRef<() => void>(() => {});
+	const retryHistoryWidgetRef = useRef<() => void>(() => {});
 	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
@@ -668,6 +671,7 @@ export function TradingViewChart({
 			return;
 		}
 		const shouldRebuild =
+			request.historyRebuild ||
 			request.overlayRebuild ||
 			request.themeRebuild ||
 			(request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
@@ -685,6 +689,10 @@ export function TradingViewChart({
 		pendingChartStateRef.current = state && sourceMatchesTarget ? cloneChartState(state) : null;
 		pendingChartStateSymbolRef.current = pendingChartStateRef.current ? (request.sourceSymbol ?? null) : null;
 		pendingChartIntervalRef.current = currentInterval;
+		if (request.historyRebuild) {
+			retryHistoryWidgetRef.current();
+			return;
+		}
 		themeRecoveryWidgetRef.current = widget;
 		themeSwitchSequenceRef.current += 1;
 		clearThemeSwitchWatchdog(widget);
@@ -718,10 +726,14 @@ export function TradingViewChart({
 		request.remainingMs = Math.max(0, request.remainingMs - (Date.now() - request.startedAt));
 	};
 
-	function requestStatePreservingRebuild(widget: IChartingLibraryWidget, reason: "locale" | "overlay" | "theme") {
+	function requestStatePreservingRebuild(
+		widget: IChartingLibraryWidget,
+		reason: "history" | "locale" | "overlay" | "theme",
+	) {
 		if (widgetRef.current !== widget) return;
 		const pendingRequest = stateSaveRef.current;
 		if (pendingRequest?.widget === widget) {
+			if (reason === "history") pendingRequest.historyRebuild = true;
 			if (reason === "locale") pendingRequest.localeRebuild = true;
 			if (reason === "overlay") pendingRequest.overlayRebuild = true;
 			if (reason === "theme") pendingRequest.themeRebuild = true;
@@ -738,6 +750,7 @@ export function TradingViewChart({
 			sourceSymbol: getActiveChartSymbol(widget),
 			targetInterval: targetIntervalRef.current,
 			intervalSequence: intervalSequenceRef.current,
+			historyRebuild: reason === "history",
 			localeRebuild: reason === "locale",
 			overlayRebuild: reason === "overlay",
 			themeRebuild: reason === "theme",
@@ -816,9 +829,9 @@ export function TradingViewChart({
 	};
 
 	flushPendingRealtimeResetRef.current = () => {
+		flushHistoryRecoveryRef.current();
 		if (pendingRealtimeResetRef.current) requestRealtimeResetRef.current();
 		if (pendingDataResetRef.current && canRunRealtimeReset()) requestDataResetRef.current();
-		flushHistoryRecoveryRef.current();
 	};
 
 	useEffect(
@@ -925,7 +938,7 @@ export function TradingViewChart({
 			} catch {}
 		};
 
-		const removeWidget = () => {
+		const removeWidget = (resetHistoryRecovery = true) => {
 			clearReadyWatchdog();
 			clearPendingSymbolSwitch();
 			stateSaveSequenceRef.current += 1;
@@ -955,8 +968,9 @@ export function TradingViewChart({
 			chartReadyRef.current = false;
 			pendingDataResetRef.current = false;
 			pendingRealtimeResetRef.current = false;
+			failedHistoryStreamKeyRef.current = null;
 			hasLoadedHistoryRef.current = false;
-			resetHistoryRecoveryRef.current();
+			if (resetHistoryRecovery) resetHistoryRecoveryRef.current();
 			scheduledDataResetWidgetRef.current = null;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
@@ -993,11 +1007,22 @@ export function TradingViewChart({
 			onExhausted: () => {
 				if (!hasLoadedHistoryRef.current) handleFinalFailure("history-recovery-exhausted");
 			},
-			onRetry: () => requestDataResetRef.current(),
+			onRetry: () => {
+				pendingDataResetRef.current = false;
+				pendingRealtimeResetRef.current = false;
+				if (datafeedRef.current?.resetRealtimeCache(failedHistoryStreamKeyRef.current ?? undefined)) return;
+				const widget = widgetRef.current;
+				if (!widget) {
+					reportDataResetFailureRef.current();
+					return;
+				}
+				requestStatePreservingRebuild(widget, "history");
+			},
 		});
 		flushHistoryRecoveryRef.current = historyRecovery.flush;
 		reportDataResetFailureRef.current = historyRecovery.handleFailure;
 		resetHistoryRecoveryRef.current = historyRecovery.reset;
+		retryHistoryWidgetRef.current = () => void initWidget(0, true);
 
 		const shouldPauseReadyWatchdog = () =>
 			!activeRef.current ||
@@ -1127,7 +1152,7 @@ export function TradingViewChart({
 		const unsubscribeCandleGate = subscribeCandleGate(handleCandleGateChange);
 		handleCandleGateChange();
 
-		async function initWidget(automaticRetryCount: number): Promise<void> {
+		async function initWidget(automaticRetryCount: number, preserveHistoryRecovery = false): Promise<void> {
 			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
 			setIsInitializing(true);
 			setInitError(null);
@@ -1138,7 +1163,7 @@ export function TradingViewChart({
 				const tradingView = window.TradingView;
 				if (!tradingView) throw new Error("tradingview-unavailable");
 
-				removeWidget();
+				removeWidget(!preserveHistoryRecovery);
 
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
@@ -1164,17 +1189,23 @@ export function TradingViewChart({
 					isKnownCoin: isSelectedMarketCoin,
 					onRealtimeReset: () => requestDataResetRef.current(),
 					requestRealtimeReset: () => requestRealtimeResetRef.current(),
-					onHistoryError: () => {
+					onHistoryError: (_error, historyStreamKey) => {
 						if (datafeedRef.current !== datafeed) return;
+						failedHistoryStreamKeyRef.current = historyStreamKey ?? null;
 						if (getCandleGateRetryAt() !== null) {
 							pendingDataResetRef.current = true;
+							historyRecovery.handleFailure();
 							return;
 						}
 						historyRecovery.handleFailure();
 					},
-					onHistorySuccess: () => {
+					onHistorySuccess: (historyStreamKey) => {
 						if (datafeedRef.current !== datafeed) return;
 						hasLoadedHistoryRef.current = true;
+						if (failedHistoryStreamKeyRef.current !== null && historyStreamKey !== failedHistoryStreamKeyRef.current) {
+							return;
+						}
+						failedHistoryStreamKeyRef.current = null;
 						historyRecovery.handleSuccess();
 					},
 				});
@@ -1281,6 +1312,7 @@ export function TradingViewChart({
 			flushHistoryRecoveryRef.current = () => {};
 			reportDataResetFailureRef.current = () => {};
 			resetHistoryRecoveryRef.current = () => {};
+			retryHistoryWidgetRef.current = () => {};
 		};
 	}, [retryNonce]);
 

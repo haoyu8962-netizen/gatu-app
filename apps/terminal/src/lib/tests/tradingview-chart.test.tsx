@@ -58,14 +58,17 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
 	createDatafeed: (options: {
-		onHistoryError?: (error: unknown) => void;
-		onHistorySuccess?: () => void;
+		onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
+		onHistorySuccess?: (historyStreamKey?: string) => void;
 		onRealtimeReset?: () => void;
 		getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
 	}) => {
 		testState.datafeedOptions.push(options);
 		const destroy = vi.fn();
-		const resetRealtimeCache = vi.fn(() => options.onRealtimeReset?.());
+		const resetRealtimeCache = vi.fn(() => {
+			options.onRealtimeReset?.();
+			return true;
+		});
 		testState.datafeedDestroys.push(destroy);
 		testState.datafeedResets.push(resetRealtimeCache);
 		return { destroy, resetRealtimeCache };
@@ -990,6 +993,11 @@ describe("TradingViewChart", () => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as {
+			onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
+		};
+		testState.datafeedResets[0]?.mockReturnValueOnce(false);
+		act(() => options.onHistoryError?.(new Error("rate limited"), "HYPE:1h"));
 
 		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
 		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
@@ -1001,7 +1009,8 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
-		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
 	});
 
 	it("retries a failed history load on the next lifecycle event", async () => {
@@ -1053,6 +1062,30 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(2);
+	});
+
+	it("rebuilds the widget when history fails before a realtime cache callback exists", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as {
+			onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
+		};
+		testState.datafeedResets[0]?.mockReturnValueOnce(false);
+
+		act(() => options.onHistoryError?.(new Error("network down"), "HYPE:5m"));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+
+		expect(widgets[0]?.save).toHaveBeenCalledWith(expect.any(Function), { includeDrawings: true });
+		expect(testState.datafeedResets[0]).toHaveBeenCalledWith("HYPE:5m");
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(testState.datafeedOptions).toHaveLength(2);
 	});
 
 	it("continues bounded recovery when TradingView rejects a data reset", async () => {

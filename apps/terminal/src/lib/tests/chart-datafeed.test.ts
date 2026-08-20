@@ -889,7 +889,12 @@ describe("TradingView datafeed", () => {
 		await Promise.resolve();
 		await Promise.resolve();
 
-		datafeed.resetRealtimeCache();
+		expect(datafeed.resetRealtimeCache("HYPE:5m")).toBe(false);
+		expect(throwingReset).not.toHaveBeenCalled();
+		expect(healthyReset).not.toHaveBeenCalled();
+		expect(onRealtimeReset).not.toHaveBeenCalled();
+
+		expect(datafeed.resetRealtimeCache("HYPE:1h")).toBe(true);
 
 		expect(throwingReset).toHaveBeenCalledTimes(1);
 		expect(healthyReset).toHaveBeenCalledTimes(1);
@@ -898,6 +903,15 @@ describe("TradingView datafeed", () => {
 		datafeed.unsubscribeBars("hype-listener-a");
 		datafeed.unsubscribeBars("hype-listener-b");
 		await vi.advanceTimersByTimeAsync(5_000);
+	});
+
+	it("reports when TradingView has no realtime cache callback to reset", () => {
+		const onRealtimeReset = vi.fn();
+		const datafeed = createDatafeed({ onRealtimeReset });
+
+		expect(datafeed.resetRealtimeCache()).toBe(false);
+		expect(onRealtimeReset).not.toHaveBeenCalled();
+		datafeed.destroy();
 	});
 
 	it("tries a bounded window before one exhaustive fallback when the first range is empty", async () => {
@@ -1254,7 +1268,7 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 
 		expect(onHistoryError).toHaveBeenCalledOnce();
-		expect(onHistoryError).toHaveBeenCalledWith(historyError);
+		expect(onHistoryError).toHaveBeenCalledWith(historyError, "RECOVERY:1h");
 		expect(onHistorySuccess).not.toHaveBeenCalled();
 		expect(onError).toHaveBeenCalledWith("network down");
 		datafeed.destroy();

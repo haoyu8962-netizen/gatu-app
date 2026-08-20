@@ -281,8 +281,8 @@ interface DatafeedOptions {
 		| undefined;
 	onRealtimeReset?: () => void;
 	requestRealtimeReset?: () => void;
-	onHistoryError?: (error: unknown) => void;
-	onHistorySuccess?: () => void;
+	onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
+	onHistorySuccess?: (historyStreamKey?: string) => void;
 }
 
 type ActiveRealtimeSubscription = {
@@ -293,7 +293,7 @@ type ActiveRealtimeSubscription = {
 
 export interface ChartDatafeed extends IBasicDataFeed {
 	destroy(): void;
-	resetRealtimeCache(): void;
+	resetRealtimeCache(historyStreamKey?: string): boolean;
 }
 
 export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
@@ -316,10 +316,10 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 		}, 0);
 		pendingCallbacks.add(timeoutId);
 	};
-	const resolveHistoryResult = (callback: () => void) => {
+	const resolveHistoryResult = (callback: () => void, historyStreamKey?: string) => {
 		resolveAsync(() => {
 			try {
-				options.onHistorySuccess?.();
+				options.onHistorySuccess?.(historyStreamKey);
 			} catch {}
 			callback();
 		});
@@ -376,15 +376,19 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			resolvedCoinBySymbol.clear();
 		},
 
-		resetRealtimeCache: () => {
-			if (destroyed) return;
-			if (realtimeSubscriptions.size === 0) return;
+		resetRealtimeCache: (historyStreamKey) => {
+			if (destroyed) return false;
+			let didReset = false;
 			for (const subscription of [...realtimeSubscriptions.values()]) {
+				if (historyStreamKey && subscription.streamKey !== historyStreamKey) continue;
 				try {
 					resetSubscription(subscription);
+					didReset = true;
 				} catch {}
 			}
+			if (!didReset) return false;
 			options.onRealtimeReset?.();
+			return true;
 		},
 
 		onReady: (callback: OnReadyCallback) => {
@@ -458,6 +462,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			onError: DatafeedErrorCallback,
 		) => {
 			if (destroyed) return;
+			let historyStreamKey: string | undefined;
 			void (async () => {
 				const interval = resolutionToInterval(resolution);
 				const barMs = resolutionToBarMs(resolution);
@@ -471,17 +476,18 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					resolveAsync(() => onError(t`Unknown symbol: ${symbolInfo.ticker ?? symbolInfo.name}`));
 					return;
 				}
+				historyStreamKey = streamKey(coin, interval);
 				const fromMs = Math.max(0, Math.floor(periodParams.from * 1000));
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
 				if (toMs <= fromMs) {
-					resolveHistoryResult(() => onResult([], { noData: false }));
+					resolveHistoryResult(() => onResult([], { noData: false }), historyStreamKey);
 					return;
 				}
 
 				const exhaustedBefore = exhaustedHistoryByStream.get(streamKey(coin, interval)) ?? 0;
 				if (toMs <= exhaustedBefore) {
-					resolveHistoryResult(() => onResult([], { noData: true }));
+					resolveHistoryResult(() => onResult([], { noData: true }), historyStreamKey);
 					return;
 				}
 
@@ -515,17 +521,17 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 				const lastBar = resultBars.at(-1);
 				if (!lastBar) {
-					resolveHistoryResult(() => onResult([], { noData }));
+					resolveHistoryResult(() => onResult([], { noData }), historyStreamKey);
 					return;
 				}
 
 				store.getState().setLastBar(key, cloneBar(lastBar));
 
 				const callbackBars = cloneBars(resultBars);
-				resolveHistoryResult(() => onResult(callbackBars, { noData: false }));
+				resolveHistoryResult(() => onResult(callbackBars, { noData: false }), historyStreamKey);
 			})().catch((error) => {
 				try {
-					options.onHistoryError?.(error);
+					options.onHistoryError?.(error, historyStreamKey);
 				} catch {}
 				resolveAsync(() => onError(describeHistoryError(error)));
 			});
