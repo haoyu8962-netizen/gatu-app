@@ -27,6 +27,7 @@ vi.mock("@/hooks/trade/use-active-asset-data", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useMarginMode: () => "cross",
+	useNetwork: () => "mainnet",
 	useGlobalSettingsActions: () => ({ setMarginMode: leverageState.setMarginMode }),
 }));
 
@@ -87,7 +88,7 @@ describe("disconnected leverage canonical state", () => {
 		currentHook = null;
 	});
 
-	it("writes a reduced market maximum back into the effective disconnected leverage", () => {
+	it("writes a reduced market maximum back without reviving the old value when the maximum rises", () => {
 		act(() => hookValue().setPendingLeverage(15));
 		expect(hookValue().currentLeverage).toBe(15);
 
@@ -97,6 +98,12 @@ describe("disconnected leverage canonical state", () => {
 		expect.soft(hookValue().currentLeverage).toBe(10);
 		expect.soft(hookValue().displayLeverage).toBe(10);
 		expect.soft(hookValue().maxLeverage).toBe(10);
+
+		leverageState.market = { ...leverageState.market, maxLeverage: 20 };
+		act(() => root.render(<Probe />));
+
+		expect.soft(hookValue().currentLeverage).toBe(10);
+		expect.soft(hookValue().displayLeverage).toBe(10);
 	});
 
 	it("does not carry a disconnected leverage selection into another market", () => {

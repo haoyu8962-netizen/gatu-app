@@ -414,10 +414,13 @@ function MarginModeForm({
 		onLeverageDraftChange?.(null);
 	}, [onLeverageDraftChange, resetAutoClose, sessionOpen]);
 
-	const canonicalLeverage = pendingLeverage ?? currentLeverage;
-	const displayLeverage = appliedLeverage ?? submittedLeverage ?? leverageDraft ?? canonicalLeverage;
+	const effectiveLeverage = appliedLeverage ?? currentLeverage;
+	const canonicalLeverage = pendingLeverage ?? effectiveLeverage;
+	const successfulLeverage = appliedLeverage ?? submittedLeverage ?? canonicalLeverage;
+	const displayLeverage = showSuccess ? successfulLeverage : (leverageDraft ?? canonicalLeverage);
 
 	function handleLeverageChange(value: number) {
+		if (showSuccess) return;
 		onLeverageDraftChange?.(null);
 		onPendingLeverageChange(value);
 	}
@@ -425,7 +428,7 @@ function MarginModeForm({
 	const showMarginControls = !mobileLayout || mobileView === "margin";
 	const showLeverageControls = showLeverage && maxLeverage > 1 && (!mobileLayout || mobileView === "leverage");
 	const modeDirty = showMarginControls && selectedMode !== currentMode;
-	const leverageDirty = showLeverageControls && pendingLeverage !== null && pendingLeverage !== currentLeverage;
+	const leverageDirty = showLeverageControls && pendingLeverage !== null && pendingLeverage !== effectiveLeverage;
 	const isDirty = modeDirty || leverageDirty;
 	const leverageInputInvalid = showLeverageControls && !leverageInputValid;
 	const hasLeverageDraft = showLeverageControls && leverageDraft !== null;
@@ -440,13 +443,14 @@ function MarginModeForm({
 			isUpdating ||
 			cannotSwitch ||
 			positionStateUnavailable ||
+			showSuccess ||
 			applyInFlightRef.current
 		)
 			return;
 		applyInFlightRef.current = true;
 		onSubmissionLockChange?.(true);
 		const mode = showMarginControls ? selectedMode : currentMode;
-		const lev = showLeverageControls ? (pendingLeverage ?? currentLeverage) : currentLeverage;
+		const lev = showLeverageControls ? canonicalLeverage : effectiveLeverage;
 		if (showLeverageControls) {
 			setSubmittedLeverage(lev);
 			onLeverageDraftChange?.(lev);
@@ -490,8 +494,10 @@ function MarginModeForm({
 									isSelected={selectedMode === option.id}
 									isCurrent={currentMode === option.id}
 									isDisabled={!allowsCrossMargin && option.id === "cross"}
-									isUpdating={isUpdating}
-									onSelect={() => setSelectedMode(option.id)}
+									isUpdating={isUpdating || showSuccess}
+									onSelect={() => {
+										if (!showSuccess) setSelectedMode(option.id);
+									}}
 								/>
 							))}
 						</div>
@@ -500,11 +506,11 @@ function MarginModeForm({
 
 				{showLeverageControls && (
 					<LeverageEditor
-						key={`${maxLeverage}:${appliedLeverage ?? "draft"}`}
+						key={maxLeverage}
 						value={displayLeverage}
-						riskValue={appliedLeverage ?? submittedLeverage ?? canonicalLeverage}
+						riskValue={showSuccess ? successfulLeverage : (leverageDraft ?? canonicalLeverage)}
 						max={maxLeverage}
-						disabled={isUpdating}
+						disabled={isUpdating || showSuccess}
 						onChange={handleLeverageChange}
 						onDraftChange={onLeverageDraftChange}
 						onInputValidityChange={setLeverageInputValid}
@@ -545,7 +551,10 @@ function MarginModeForm({
 				)}
 
 				{updateError && (
-					<div className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
+					<div
+						role="alert"
+						className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error"
+					>
 						<WarningIcon className="size-3.5 shrink-0" />
 						<span className="min-w-0 flex-1">{updateError.message || t`Update failed`}</span>
 					</div>
@@ -577,8 +586,7 @@ function MarginModeForm({
 						)}
 						iconLeft={<CheckIcon className="size-3.5" weight="bold" />}
 					>
-						<Trans>Updated</Trans>
-						{showLeverageControls ? ` ${displayLeverage}x` : null}
+						{showLeverageControls ? <Trans>Updated to {displayLeverage}x</Trans> : <Trans>Updated</Trans>}
 					</Button>
 				) : (
 					<TradingActionButton

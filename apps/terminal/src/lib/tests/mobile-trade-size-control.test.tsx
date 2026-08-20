@@ -39,8 +39,11 @@ describe("MobileTradeSizeControl", () => {
 				<MobileTradeSizeControl
 					canUsePercent={overrides.canUsePercent ?? true}
 					disabled={overrides.disabled ?? false}
+					interactionIdentity="mainnet:0xabc:BTC:base"
 					maxAllowedDecimals={8}
 					onPercentChange={overrides.onPercentChange ?? vi.fn()}
+					onPercentCancel={vi.fn()}
+					onPercentCommit={overrides.onPercentChange ?? vi.fn()}
 					onSizeChange={(event) => overrides.onSizeChange?.(event.target.value)}
 					onSizeModeToggle={overrides.onSizeModeToggle ?? vi.fn()}
 					percentAriaLabel="Order size percentage"

@@ -14,8 +14,12 @@ interface Props {
 	disabled: boolean;
 	errorId?: string;
 	hasError?: boolean;
+	interactionIdentity: string;
 	maxAllowedDecimals: number;
 	onPercentChange: (percent: number) => void;
+	onPercentCancel: (percent: number) => void;
+	onPercentCommit: (percent: number) => void;
+	onPercentInteractionStart?: (percent: number) => void;
 	onSizeChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	onSizeModeToggle: () => void;
 	percentAriaLabel: string;
@@ -32,8 +36,12 @@ export function MobileTradeSizeControl({
 	disabled,
 	errorId,
 	hasError = false,
+	interactionIdentity,
 	maxAllowedDecimals,
 	onPercentChange,
+	onPercentCancel,
+	onPercentCommit,
+	onPercentInteractionStart,
 	onSizeChange,
 	onSizeModeToggle,
 	percentAriaLabel,
@@ -80,8 +88,11 @@ export function MobileTradeSizeControl({
 				<div className="relative min-w-0 flex-1">
 					<TradeSizeSlider
 						value={sliderValue}
+						interactionIdentity={interactionIdentity}
 						onPercentChange={onPercentChange}
-						onPercentCommit={onPercentChange}
+						onPercentCancel={onPercentCancel}
+						onPercentCommit={onPercentCommit}
+						onPercentInteractionStart={onPercentInteractionStart}
 						disabled={!canUsePercent}
 						ariaLabel={percentAriaLabel}
 						ariaDescribedBy={hasError ? errorId : undefined}

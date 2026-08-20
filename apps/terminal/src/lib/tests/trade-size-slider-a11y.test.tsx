@@ -13,6 +13,8 @@ function AccessibleSliderFixture() {
 			<TradeSizeSlider
 				value={50}
 				onPercentChange={vi.fn()}
+				onPercentCancel={vi.fn()}
+				onPercentCommit={vi.fn()}
 				ariaLabel="Close percentage"
 				ariaValueText="50% requested; 46.6% after size precision"
 				ariaDescribedBy={descriptionId}
@@ -65,24 +67,45 @@ describe("TradeSizeSlider accessibility", () => {
 
 	it("uses Base UI keyboard handling without leaking fractional floating-point values", () => {
 		const onPercentChange = vi.fn();
+		const onPercentCommit = vi.fn();
 		act(() => {
-			root.render(<TradeSizeSlider value={0.2} onPercentChange={onPercentChange} ariaLabel="Size percentage" />);
+			root.render(
+				<TradeSizeSlider
+					value={0.2}
+					onPercentChange={onPercentChange}
+					onPercentCancel={vi.fn()}
+					onPercentCommit={onPercentCommit}
+					ariaLabel="Size percentage"
+				/>,
+			);
 		});
 
 		const input = container.querySelector<HTMLInputElement>('input[type="range"]');
 		act(() => input?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
 		expect(onPercentChange).toHaveBeenLastCalledWith(0.3);
+		expect(onPercentCommit).toHaveBeenLastCalledWith(0.3, expect.objectContaining({ reason: "keyboard" }));
 
 		act(() => input?.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true })));
 		expect(onPercentChange).toHaveBeenLastCalledWith(0);
+		expect(onPercentCommit).toHaveBeenLastCalledWith(0, expect.objectContaining({ reason: "keyboard" }));
 
 		act(() => input?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true })));
 		expect(onPercentChange).toHaveBeenLastCalledWith(100);
+		expect(onPercentCommit).toHaveBeenLastCalledWith(100, expect.objectContaining({ reason: "keyboard" }));
 	});
 
 	it("removes a disabled slider from native interaction", () => {
 		act(() => {
-			root.render(<TradeSizeSlider value={50} onPercentChange={vi.fn()} ariaLabel="Size percentage" disabled />);
+			root.render(
+				<TradeSizeSlider
+					value={50}
+					onPercentChange={vi.fn()}
+					onPercentCancel={vi.fn()}
+					onPercentCommit={vi.fn()}
+					ariaLabel="Size percentage"
+					disabled
+				/>,
+			);
 		});
 
 		const input = container.querySelector<HTMLInputElement>('input[type="range"]');
@@ -94,7 +117,13 @@ describe("TradeSizeSlider accessibility", () => {
 		act(() => {
 			root.render(
 				<DirectionProvider direction="rtl">
-					<TradeSizeSlider value={50} onPercentChange={onPercentChange} ariaLabel="Size percentage" />
+					<TradeSizeSlider
+						value={50}
+						onPercentChange={onPercentChange}
+						onPercentCancel={vi.fn()}
+						onPercentCommit={vi.fn()}
+						ariaLabel="Size percentage"
+					/>
 				</DirectionProvider>,
 			);
 		});

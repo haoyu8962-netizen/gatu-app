@@ -2,12 +2,15 @@
  * Core trading types used across order entry, validation, and execution.
  */
 
+import type { ValidationError } from "@/lib/errors/types";
+
 export type Side = "buy" | "sell";
 export type SizeMode = "base" | "quote";
 
 export interface FormValidationResult {
 	valid: boolean;
 	errors: string[];
+	validationErrors: ValidationError[];
 	canSubmit: boolean;
 	needsApproval: boolean;
 }

@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => ({
 		  }
 		| undefined,
 	isConnected: true,
+	accountAddress: "0x1111111111111111111111111111111111111111",
+	network: "mainnet" as "mainnet" | "testnet",
 	market: undefined as
 		| {
 				kind: "perp" | "builderPerp";
@@ -45,17 +47,22 @@ const mocks = vi.hoisted(() => ({
 	resetMutation: vi.fn(),
 	setStoredMarginMode: vi.fn(),
 	updateLeverage: vi.fn(),
+	updateLeverageError: null as Error | null,
 	executeLeverage: vi.fn(),
 	beforeQueuedExecution: null as null | (() => Promise<void>),
 	executionGuard: undefined as ((params: UpdateLeverageParams) => void) | undefined,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: mocks.isConnected ? USER : undefined, isConnected: mocks.isConnected }),
+	useWalletSession: () => ({
+		address: mocks.isConnected ? mocks.accountAddress : undefined,
+		isConnected: mocks.isConnected,
+	}),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useMarginMode: () => mocks.storedMarginMode,
+	useNetwork: () => mocks.network,
 	useGlobalSettingsActions: () => ({ setMarginMode: mocks.setStoredMarginMode }),
 }));
 
@@ -70,7 +77,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		return {
 			mutateAsync: mocks.updateLeverage,
 			isPending: false,
-			error: null,
+			error: mocks.updateLeverageError,
 			reset: mocks.resetMutation,
 		};
 	},
@@ -121,7 +128,7 @@ function builderPerp() {
 }
 
 function setActiveAsset(coin: string, type: "cross" | "isolated", value = 10) {
-	mocks.activeAssetData = { coin, user: USER, leverage: { type, value } };
+	mocks.activeAssetData = { coin, user: mocks.accountAddress, leverage: { type, value } };
 }
 
 function createDeferred() {
@@ -142,6 +149,8 @@ describe("useAssetLeverage", () => {
 		root = createRoot(container);
 		hookValue = null;
 		mocks.isConnected = true;
+		mocks.accountAddress = USER;
+		mocks.network = "mainnet";
 		mocks.market = corePerp();
 		mocks.position = null;
 		mocks.positionError = false;
@@ -157,12 +166,18 @@ describe("useAssetLeverage", () => {
 		mocks.setStoredMarginMode.mockReset();
 		mocks.executionGuard = undefined;
 		mocks.beforeQueuedExecution = null;
+		mocks.updateLeverageError = null;
 		mocks.executeLeverage.mockReset().mockResolvedValue({ status: "ok", response: { type: "default" } });
 		mocks.updateLeverage.mockReset().mockImplementation(async (params: UpdateLeverageParams) => {
 			mocks.executionGuard?.(params);
 			await mocks.beforeQueuedExecution?.();
 			mocks.executionGuard?.(params);
-			return mocks.executeLeverage(params);
+			try {
+				return await mocks.executeLeverage(params);
+			} catch (error) {
+				mocks.updateLeverageError = error instanceof Error ? error : new Error(String(error));
+				throw error;
+			}
 		});
 	});
 
@@ -170,6 +185,7 @@ describe("useAssetLeverage", () => {
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
+		vi.useRealTimers();
 	});
 
 	function renderHook() {
@@ -464,6 +480,171 @@ describe("useAssetLeverage", () => {
 		expect(mocks.setStoredMarginMode).toHaveBeenCalledWith("isolated");
 	});
 
+	it("keeps the successful leverage and margin mode effective until the subscription confirms both", async () => {
+		renderHook();
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("isolated", 20);
+		});
+
+		expect(currentHook().currentLeverage).toBe(10);
+		expect(currentHook().committedLeverage).toBe(20);
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+		expect(currentHook().pendingLeverage).toBeNull();
+
+		act(() => currentHook().resetPending());
+
+		expect(currentHook().committedLeverage).toBe(20);
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+
+		renderHook();
+		expect(currentHook().committedLeverage).toBe(20);
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+
+		setActiveAsset("ETH", "isolated", 20);
+		renderHook();
+
+		expect(currentHook().currentLeverage).toBe(20);
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+	});
+
+	it("hands authority to the first later successful snapshot even when it differs from the commit", async () => {
+		renderHook();
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("isolated", 20);
+		});
+
+		expect(currentHook().committedLeverage).toBe(20);
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+
+		renderHook();
+		expect(currentHook().committedLeverage).toBe(20);
+
+		setActiveAsset("ETH", "cross", 12);
+		renderHook();
+
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().currentLeverage).toBe(12);
+		expect(currentHook().displayLeverage).toBe(12);
+		expect(currentHook().marginMode).toBe("cross");
+	});
+
+	it("recognizes a successor snapshot by receipt time when the data reference is reused", async () => {
+		renderHook();
+		const observedSnapshot = mocks.activeAssetData;
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("isolated", 20);
+		});
+		expect(currentHook().committedLeverage).toBe(20);
+
+		mocks.activeAssetReceivedAt += 1;
+		renderHook();
+
+		expect(mocks.activeAssetData).toBe(observedSnapshot);
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(10);
+		expect(currentHook().marginMode).toBe("cross");
+	});
+
+	it("does not revive the old snapshot when no successor arrives for 20 seconds", async () => {
+		const now = Date.now();
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		mocks.activeAssetReceivedAt = now;
+		renderHook();
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("isolated", 20);
+		});
+		expect(currentHook().committedLeverage).toBe(20);
+
+		act(() => vi.advanceTimersByTime(19_999));
+		expect(currentHook().committedLeverage).toBe(20);
+
+		act(() => vi.advanceTimersByTime(1));
+		renderHook();
+		expect(currentHook().committedLeverage).toBe(20);
+		expect(currentHook().displayLeverage).toBe(20);
+		expect(currentHook().marginMode).toBe("isolated");
+	});
+
+	it("does not publish committed settings when the leverage request fails", async () => {
+		mocks.executeLeverage.mockRejectedValueOnce(new Error("request failed"));
+		renderHook();
+
+		await act(async () => {
+			await expect(currentHook().applyMarginAndLeverage("cross", 20)).rejects.toThrow("request failed");
+		});
+		renderHook();
+
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(10);
+		expect(currentHook().marginMode).toBe("cross");
+		expect(currentHook().updateError?.message).toBe("request failed");
+		expect(currentHook().switchModeError).toBeNull();
+	});
+
+	it("does not carry committed settings across market, account, or network boundaries", async () => {
+		renderHook();
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("cross", 20);
+		});
+		expect(currentHook().committedLeverage).toBe(20);
+
+		mocks.market = { ...corePerp(), name: "BTC", assetId: 0 };
+		setActiveAsset("BTC", "cross", 5);
+		renderHook();
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(5);
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("cross", 15);
+		});
+		expect(currentHook().committedLeverage).toBe(15);
+
+		mocks.accountAddress = "0x2222222222222222222222222222222222222222";
+		setActiveAsset("BTC", "cross", 7);
+		renderHook();
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(7);
+
+		await act(async () => {
+			await currentHook().applyMarginAndLeverage("cross", 12);
+		});
+		expect(currentHook().committedLeverage).toBe(12);
+
+		mocks.network = "testnet";
+		renderHook();
+		expect(currentHook().committedLeverage).toBeNull();
+		expect(currentHook().displayLeverage).toBe(7);
+	});
+
+	it("exposes a stable full transaction identity for the leverage interaction boundary", () => {
+		mocks.accountAddress = "0xAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa";
+		setActiveAsset("ETH", "cross");
+		const first = renderHook();
+
+		expect(first.transactionIdentity).toBe("mainnet:0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:perp:1:ETH");
+
+		mocks.accountAddress = mocks.accountAddress.toLowerCase();
+		setActiveAsset("ETH", "cross");
+		const caseOnlyChange = renderHook();
+		expect(caseOnlyChange.transactionIdentity).toBe(first.transactionIdentity);
+
+		mocks.network = "testnet";
+		const nextNetwork = renderHook();
+		expect(nextNetwork.transactionIdentity).toBe("testnet:0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:perp:1:ETH");
+	});
+
 	it("normalizes connected leverage input and rejects non-finite apply values", async () => {
 		setActiveAsset("ETH", "cross", 5);
 		renderHook();
@@ -481,6 +662,31 @@ describe("useAssetLeverage", () => {
 			);
 		});
 		expect(mocks.updateLeverage).not.toHaveBeenCalled();
+	});
+
+	it("persists a reduced maximum into pending and committed leverage state", async () => {
+		renderHook();
+		act(() => currentHook().setPendingLeverage(40));
+		expect(currentHook().pendingLeverage).toBe(40);
+
+		mocks.market = { ...corePerp(), maxLeverage: 20 };
+		renderHook();
+		expect(currentHook().pendingLeverage).toBe(20);
+
+		mocks.market = { ...corePerp(), maxLeverage: 50 };
+		renderHook();
+		expect(currentHook().pendingLeverage).toBe(20);
+
+		await act(async () => currentHook().applyMarginAndLeverage("cross", 40));
+		expect(currentHook().committedLeverage).toBe(40);
+
+		mocks.market = { ...corePerp(), maxLeverage: 20 };
+		renderHook();
+		expect(currentHook().committedLeverage).toBe(20);
+
+		mocks.market = { ...corePerp(), maxLeverage: 50 };
+		renderHook();
+		expect(currentHook().committedLeverage).toBe(20);
 	});
 
 	it("keeps modal action references stable across unrelated subscription renders", () => {

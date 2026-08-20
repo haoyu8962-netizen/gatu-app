@@ -16,6 +16,7 @@ const modalHarness = vi.hoisted(() => ({
 	popupClassName: "",
 	popupOverlayClassName: "",
 	popupRenders: 0,
+	showSuccess: false,
 	showClose: true,
 }));
 
@@ -75,12 +76,14 @@ vi.mock("@/components/trade/tradebox/leverage-editor", () => ({
 
 vi.mock("@/hooks/ui/use-auto-close-success", () => ({
 	useAutoCloseSuccess: () => ({
-		showSuccess: false,
+		showSuccess: modalHarness.showSuccess,
 		trigger: () => {
 			modalHarness.autoCloseTriggers += 1;
+			modalHarness.showSuccess = true;
 		},
 		reset: () => {
 			modalHarness.autoCloseResets += 1;
+			modalHarness.showSuccess = false;
 		},
 	}),
 }));
@@ -114,6 +117,7 @@ describe("LeverageModal", () => {
 		modalHarness.popupClassName = "";
 		modalHarness.popupOverlayClassName = "";
 		modalHarness.popupRenders = 0;
+		modalHarness.showSuccess = false;
 		modalHarness.showClose = true;
 	});
 
@@ -123,7 +127,13 @@ describe("LeverageModal", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderModal(pendingLeverage: number | null = null, open = true, marketIdentity = "HYPE") {
+	function renderModal(
+		pendingLeverage: number | null = null,
+		open = true,
+		marketIdentity = "HYPE",
+		committedLeverage: number | null = null,
+		updateError: Error | null = null,
+	) {
 		act(() => {
 			root.render(
 				<LeverageModal
@@ -131,10 +141,11 @@ describe("LeverageModal", () => {
 					onOpenChange={onOpenChange}
 					currentLeverage={3}
 					pendingLeverage={pendingLeverage}
+					committedLeverage={committedLeverage}
 					maxLeverage={10}
 					onPendingLeverageChange={onPendingLeverageChange}
 					isUpdating={false}
-					updateError={null}
+					updateError={updateError}
 					onApply={onApply}
 					marketIdentity={marketIdentity}
 				/>,
@@ -155,7 +166,7 @@ describe("LeverageModal", () => {
 			onDraftChange?.(6);
 		});
 
-		expect(container.querySelector("h2")?.textContent).toContain("6x");
+		expect(modalHarness.editorProps?.value).toBe(6);
 		expect(modalHarness.popupRenders).toBe(1);
 		expect(onPendingLeverageChange).not.toHaveBeenCalled();
 		expect(onApply).not.toHaveBeenCalled();
@@ -201,14 +212,14 @@ describe("LeverageModal", () => {
 		renderModal(6);
 		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
 		act(() => onDraftChange?.(8));
-		expect(container.querySelector("h2")?.textContent).toContain("8x");
+		expect(modalHarness.editorProps?.value).toBe(8);
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 
 		await act(async () => getButton(container, "Confirm").click());
 		expect(onApply).not.toHaveBeenCalled();
 
 		act(() => onDraftChange?.(null));
-		expect(container.querySelector("h2")?.textContent).toContain("6x");
+		expect(modalHarness.editorProps?.value).toBe(6);
 		expect(getButton(container, "Confirm").disabled).toBe(false);
 		await act(async () => getButton(container, "Confirm").click());
 
@@ -235,6 +246,50 @@ describe("LeverageModal", () => {
 		expect(onApply).toHaveBeenCalledWith(6);
 
 		await act(async () => resolveApply?.());
+	});
+
+	it("locks the editor and successful action against duplicate submissions", async () => {
+		renderModal(6);
+		await act(async () => getButton(container, "Confirm").click());
+		renderModal(null);
+
+		const successButton = getButton(container, "Updated");
+		expect(successButton.disabled).toBe(true);
+		expect(modalHarness.editorProps?.disabled).toBe(true);
+
+		const onChange = modalHarness.editorProps?.onChange as ((value: number) => void) | undefined;
+		act(() => onChange?.(8));
+		act(() => successButton.click());
+
+		expect(onPendingLeverageChange).not.toHaveBeenCalled();
+		expect(onApply).toHaveBeenCalledTimes(1);
+	});
+
+	it("lets a new draft override an earlier commit while its subscription is still pending", () => {
+		renderModal(null, true, "HYPE", 6);
+		expect(modalHarness.editorProps?.value).toBe(6);
+
+		const onChange = modalHarness.editorProps?.onChange as ((value: number) => void) | undefined;
+		act(() => onChange?.(8));
+		expect(onPendingLeverageChange).toHaveBeenCalledWith(8);
+
+		renderModal(8, true, "HYPE", 6);
+		expect(modalHarness.editorProps?.value).toBe(8);
+		expect(modalHarness.editorProps?.riskValue).toBe(8);
+	});
+
+	it("shows a failed leverage update and allows retrying it", async () => {
+		onApply.mockRejectedValueOnce(new Error("Leverage request failed"));
+		renderModal(6);
+		await act(async () => getButton(container, "Confirm").click());
+
+		renderModal(6, true, "HYPE", null, new Error("Leverage request failed"));
+		expect(container.textContent).toContain("Leverage request failed");
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Leverage request failed");
+
+		onApply.mockResolvedValueOnce(undefined);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(onApply).toHaveBeenCalledTimes(2);
 	});
 
 	it("blocks every dismissal path while the leverage request is in flight", async () => {
@@ -269,15 +324,15 @@ describe("LeverageModal", () => {
 		expect(modalHarness.popupRenders).toBe(1);
 	});
 
-	it("drops an uncommitted drag when the selected market changes", () => {
-		renderModal(null, true, "HYPE");
+	it("drops an uncommitted drag when the account changes on the same market", () => {
+		renderModal(null, true, "mainnet:0x1111:perp:1:HYPE");
 		const onDraftChange = modalHarness.editorProps?.onDraftChange as ((value: number | null) => void) | undefined;
 		act(() => onDraftChange?.(8));
-		expect(container.querySelector("h2")?.textContent).toContain("8x");
+		expect(modalHarness.editorProps?.value).toBe(8);
 
-		renderModal(null, true, "BTC");
+		renderModal(null, true, "mainnet:0x2222:perp:1:HYPE");
 
-		expect(container.querySelector("h2")?.textContent).toContain("3x");
+		expect(modalHarness.editorProps?.value).toBe(3);
 		expect(onPendingLeverageChange).not.toHaveBeenCalled();
 	});
 
@@ -288,10 +343,10 @@ describe("LeverageModal", () => {
 		renderModal(null);
 
 		expect(modalHarness.autoCloseTriggers).toBe(1);
-		expect(container.querySelector("h2")?.textContent).toContain("6x");
+		expect(modalHarness.editorProps?.value).toBe(6);
 	});
 
-	it("does not let an old market request close the new market session", async () => {
+	it("does not let an old account request succeed or close the new same-market session", async () => {
 		let resolveApply: (() => void) | undefined;
 		onApply.mockImplementation(
 			() =>
@@ -299,14 +354,14 @@ describe("LeverageModal", () => {
 					resolveApply = resolve;
 				}),
 		);
-		renderModal(6, true, "HYPE");
+		renderModal(6, true, "mainnet:0x1111:perp:1:HYPE");
 		act(() => getButton(container, "Confirm").click());
 
-		renderModal(7, true, "BTC");
+		renderModal(7, true, "mainnet:0x2222:perp:1:HYPE");
 		await act(async () => resolveApply?.());
 
 		expect(modalHarness.autoCloseTriggers).toBe(0);
-		expect(container.querySelector("h2")?.textContent).toContain("7x");
+		expect(modalHarness.editorProps?.value).toBe(7);
 		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
@@ -314,12 +369,12 @@ describe("LeverageModal", () => {
 		modalHarness.keepMounted = true;
 		renderModal(6);
 		await act(async () => getButton(container, "Confirm").click());
-		expect(container.querySelector("h2")?.textContent).toContain("6x");
+		expect(modalHarness.editorProps?.value).toBe(6);
 
 		renderModal(null, false);
 		renderModal(null, true);
 
 		expect(modalHarness.autoCloseResets).toBeGreaterThan(0);
-		expect(container.querySelector("h2")?.textContent).toContain("3x");
+		expect(modalHarness.editorProps?.value).toBe(3);
 	});
 });

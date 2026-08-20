@@ -40,7 +40,7 @@ function createDesktopInput(overrides: Partial<ButtonContentInput> = {}): Button
 		side: "buy",
 		sideLabel: "Buy",
 		switchChain: vi.fn(),
-		validation: { canSubmit: false, errors: [], needsApproval: false, valid: false },
+		validation: { canSubmit: false, errors: [], validationErrors: [], needsApproval: false, valid: false },
 		...overrides,
 	};
 }
@@ -153,7 +153,7 @@ describe("Deposit order CTA", () => {
 			createDesktopInput({
 				availableBalance: 10,
 				tradingUnavailableReason: TRADING_UNAVAILABLE_REASON,
-				validation: { canSubmit: true, errors: [], needsApproval: false, valid: true },
+				validation: { canSubmit: true, errors: [], validationErrors: [], needsApproval: false, valid: true },
 			}),
 		);
 		expect(orderContent).toMatchObject({

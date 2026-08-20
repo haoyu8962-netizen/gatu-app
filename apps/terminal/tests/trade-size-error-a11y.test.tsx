@@ -2,7 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act, type ComponentProps, type ComponentType, useId } from "react";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -40,31 +40,6 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 	}),
 }));
 
-vi.mock("@/hooks/trade/use-order-entry-data", () => ({
-	useOrderEntryData: () => ({
-		availableBalance: 100,
-		baseToken: "BTC",
-		capabilities: {
-			hasReduceOnly: false,
-			hasTpSl: false,
-		},
-		displayAvailableBalance: 100,
-		displayAvailableBalanceToken: "USDC",
-		hasAvailabilityError: false,
-		isAvailabilityBlocked: false,
-		isAvailabilityLoading: false,
-		isAvailabilityStale: false,
-		isSpotMarket: false,
-		leverage: 10,
-		maxSize: desktopState.maxSize,
-		orderValue: desktopState.orderValue,
-		quoteToken: "USDC",
-		sizeModeLabel: "BTC",
-		sizeValue: desktopState.sizeValue,
-		szDecimals: 3,
-	}),
-}));
-
 vi.mock("@/hooks/trade/use-orderbook-mid-price", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/hooks/trade/use-orderbook-mid-price")>()),
 	useOrderbookMidPrice: () => ({ midPx: null }),
@@ -96,17 +71,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTriggerPrice: () => "",
 }));
 
-import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-size-control";
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
-
-interface MobileSizeErrorProps {
-	errorId?: string;
-	hasError?: boolean;
-}
-
-const ErrorAwareMobileTradeSizeControl = MobileTradeSizeControl as ComponentType<
-	ComponentProps<typeof MobileTradeSizeControl> & MobileSizeErrorProps
->;
 
 describe("order-size error accessibility wiring", () => {
 	let container: HTMLDivElement;
@@ -134,6 +99,7 @@ describe("order-size error accessibility wiring", () => {
 
 		const error = findError(container, "Exceeds max size");
 		expect(error.id).not.toBe("");
+		expect(error.getAttribute("role")).toBe("alert");
 		const slider = getSlider(container);
 		const percentInput = getPercentInput(container);
 		expectInvalidDescription(slider, error.id);
@@ -149,21 +115,6 @@ describe("order-size error accessibility wiring", () => {
 		expectClearedDescription(getSlider(container));
 		expectClearedDescription(getPercentInput(container));
 	});
-
-	it("links the mobile slider and percentage input to the rendered max-size error, then clears the state", async () => {
-		await renderMobile(root, true);
-
-		const error = findError(container, "Exceeds max size");
-		expect(error.id).not.toBe("");
-		expectInvalidDescription(getSlider(container), error.id);
-		expectInvalidDescription(getPercentInput(container), error.id);
-
-		await renderMobile(root, false);
-
-		expect(findOptionalError(container, "Exceeds max size")).toBeNull();
-		expectClearedDescription(getSlider(container));
-		expectClearedDescription(getPercentInput(container));
-	});
 });
 
 async function renderDesktop(root: Root) {
@@ -171,6 +122,36 @@ async function renderDesktop(root: Root) {
 		root.render(
 			<I18nProvider i18n={i18n}>
 				<TradeFormFields
+					orderEntryData={{
+						availableBalance: 100,
+						baseToken: "BTC",
+						capabilities: {
+							allowsCrossMargin: true,
+							hasFunding: true,
+							hasMarginMode: true,
+							hasReduceOnly: false,
+							hasTpSl: false,
+							isCanonical: null,
+							isLeveraged: true,
+							isOnlyIsolated: false,
+							maxLeverage: 50,
+						},
+						displayAvailableBalance: 100,
+						displayAvailableBalanceToken: "USDC",
+						hasAvailabilityError: false,
+						isAvailabilityBlocked: false,
+						isAvailabilityLoading: false,
+						isAvailabilityStale: false,
+						isSpotMarket: false,
+						leverage: 10,
+						leverageInteractionIdentity: "BTC:perp:50",
+						maxSize: desktopState.maxSize,
+						orderValue: desktopState.orderValue,
+						quoteToken: "USDC",
+						sizeModeLabel: "BTC",
+						sizeValue: desktopState.sizeValue,
+						szDecimals: 3,
+					}}
 					price={100}
 					positionSize={0}
 					swapTargetToken={null}
@@ -181,36 +162,6 @@ async function renderDesktop(root: Root) {
 			</I18nProvider>,
 		);
 	});
-}
-
-function MobileSizeErrorHarness({ hasError }: { hasError: boolean }) {
-	const errorId = useId();
-	return (
-		<I18nProvider i18n={i18n}>
-			<ErrorAwareMobileTradeSizeControl
-				canUsePercent
-				disabled={false}
-				errorId={errorId}
-				hasError={hasError}
-				maxAllowedDecimals={3}
-				onPercentChange={vi.fn()}
-				onSizeChange={vi.fn()}
-				onSizeModeToggle={vi.fn()}
-				percentAriaLabel="Size (%)"
-				side="buy"
-				sizeAriaLabel="Size"
-				sizeInput={hasError ? "2" : "0.5"}
-				sizeLabel="Size"
-				sizeModeLabel="BTC"
-				sliderValue={hasError ? 100 : 50}
-			/>
-			{hasError ? <p id={errorId}>Exceeds max size</p> : null}
-		</I18nProvider>
-	);
-}
-
-async function renderMobile(root: Root, hasError: boolean) {
-	await act(async () => root.render(<MobileSizeErrorHarness hasError={hasError} />));
 }
 
 function findError(container: HTMLElement, message: string): HTMLParagraphElement {

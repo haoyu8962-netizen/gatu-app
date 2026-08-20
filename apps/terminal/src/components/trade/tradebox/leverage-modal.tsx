@@ -100,17 +100,28 @@ function LeverageModalContent({
 		setLeverageInputValid(true);
 	}, [open, resetAutoClose]);
 
-	const canonicalLeverage = pendingLeverage ?? currentLeverage;
-	const displayLeverage = appliedLeverage ?? submittedLeverage ?? dragLeverage ?? canonicalLeverage;
-	const isDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
+	const effectiveLeverage = appliedLeverage ?? currentLeverage;
+	const canonicalLeverage = pendingLeverage ?? effectiveLeverage;
+	const successfulLeverage = appliedLeverage ?? submittedLeverage ?? canonicalLeverage;
+	const displayLeverage = showSuccess ? successfulLeverage : (dragLeverage ?? canonicalLeverage);
+	const isDirty = pendingLeverage !== null && pendingLeverage !== effectiveLeverage;
 
 	function handleLeverageChange(value: number) {
+		if (showSuccess) return;
 		setDragLeverage(null);
 		onPendingLeverageChange(value);
 	}
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || applyInFlightRef.current) return;
+		if (
+			showSuccess ||
+			!isDirty ||
+			dragLeverage !== null ||
+			!leverageInputValid ||
+			isUpdating ||
+			applyInFlightRef.current
+		)
+			return;
 		applyInFlightRef.current = true;
 		onSubmissionLockChange(true);
 		const leverageToSubmit = canonicalLeverage;
@@ -141,18 +152,21 @@ function LeverageModalContent({
 			</ModalHeader>
 			<ModalContent className="space-y-4">
 				<LeverageEditor
-					key={`${maxLeverage}:${appliedLeverage ?? "draft"}`}
+					key={maxLeverage}
 					value={displayLeverage}
-					riskValue={appliedLeverage ?? submittedLeverage ?? canonicalLeverage}
+					riskValue={showSuccess ? successfulLeverage : (dragLeverage ?? canonicalLeverage)}
 					max={maxLeverage}
-					disabled={isUpdating || !open}
+					disabled={isUpdating || !open || showSuccess}
 					onChange={handleLeverageChange}
 					onDraftChange={setDragLeverage}
 					onInputValidityChange={setLeverageInputValid}
 					variant="modal"
 				/>
 				{updateError && (
-					<div className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
+					<div
+						role="alert"
+						className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error"
+					>
 						<WarningIcon className="size-3.5 shrink-0" />
 						<span className="min-w-0 flex-1">{updateError.message || t`Update failed`}</span>
 					</div>
@@ -173,18 +187,12 @@ function LeverageModalContent({
 				)}
 				<TradingActionButton
 					onClick={handleConfirm}
-					disabled={!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating}
+					disabled={!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || showSuccess}
 					containerClassName="flex-1"
 					className="gap-1.5 min-h-10 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control hover:opacity-90"
 				>
 					{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}
-					{showSuccess ? (
-						<>
-							<Trans>Updated</Trans> {displayLeverage}x
-						</>
-					) : (
-						<Trans>Confirm</Trans>
-					)}
+					{showSuccess ? <Trans>Updated to {displayLeverage}x</Trans> : <Trans>Confirm</Trans>}
 				</TradingActionButton>
 			</ModalFooter>
 		</>

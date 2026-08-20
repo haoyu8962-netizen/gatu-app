@@ -1,6 +1,6 @@
 import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import {
 	formatPositionMarketClosePercent,
@@ -198,6 +198,7 @@ export function PositionCloseSizingControls({
 	const effectivePercent = viewModel.effectivePercent;
 	const requestedValue = toBig(requestedPercent);
 	const effectiveValue = toBig(effectivePercent);
+	const sliderStartIntentRef = useRef<PositionCloseSizingIntent | null>(null);
 	const sliderAriaValueText =
 		requestedValue && effectiveValue && requestedValue.eq(effectiveValue)
 			? `${requestedPercent}%`
@@ -219,6 +220,21 @@ export function PositionCloseSizingControls({
 
 	function handleSliderChange(value: number) {
 		onIntentChange(value >= 100 ? { kind: "max" } : { kind: "percent", value: String(value) });
+	}
+
+	function handleSliderInteractionStart() {
+		sliderStartIntentRef.current = intent;
+	}
+
+	function handleSliderCancel() {
+		const startIntent = sliderStartIntentRef.current;
+		sliderStartIntentRef.current = null;
+		if (startIntent) onIntentChange(startIntent);
+	}
+
+	function handleSliderCommit(value: number) {
+		sliderStartIntentRef.current = null;
+		handleSliderChange(value);
 	}
 
 	return (
@@ -296,7 +312,9 @@ export function PositionCloseSizingControls({
 				<TradeSizeSlider
 					value={viewModel.sliderValue}
 					onPercentChange={handleSliderChange}
-					onPercentCommit={handleSliderChange}
+					onPercentCancel={handleSliderCancel}
+					onPercentCommit={handleSliderCommit}
+					onPercentInteractionStart={handleSliderInteractionStart}
 					disabled={disabled}
 					thumbSize="lg"
 					thumbAlignment="center"

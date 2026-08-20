@@ -141,6 +141,15 @@ export function TradePanel() {
 
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
+	const orderEntryData = useOrderEntryData({
+		market,
+		side,
+		markPx,
+		sizeMode,
+		sizeInput,
+		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
+		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
+	});
 	const {
 		accountAbstraction,
 		availabilityStatus,
@@ -163,6 +172,7 @@ export function TradePanel() {
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		leverageInteractionIdentity,
 		marginMode,
 		hasPosition,
 		positionStateReady,
@@ -173,18 +183,12 @@ export function TradePanel() {
 		setPendingLeverage,
 		resetPendingLeverage,
 		applyMarginAndLeverage,
+		isLeverageUpdating,
+		leverageUpdateError,
 		isSwitchingMode,
 		switchModeError,
 		allowsIsolatedMarginRemoval,
-	} = useOrderEntryData({
-		market,
-		side,
-		markPx,
-		sizeMode,
-		sizeInput,
-		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
-		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
-	});
+	} = orderEntryData;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active: true,
@@ -660,7 +664,7 @@ export function TradePanel() {
 				updateError={switchModeError}
 				showLeverage={false}
 				onApply={handleMarginApply}
-				marketIdentity={market?.name}
+				marketIdentity={leverageInteractionIdentity}
 			/>
 			<LeverageModal
 				open={activeModal === "leverage"}
@@ -670,10 +674,10 @@ export function TradePanel() {
 				committedLeverage={committedLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
-				isUpdating={isSwitchingMode}
-				updateError={switchModeError}
+				isUpdating={isLeverageUpdating}
+				updateError={leverageUpdateError}
 				onApply={handleLeverageApply}
-				marketIdentity={market?.name}
+				marketIdentity={leverageInteractionIdentity}
 			/>
 			<AccountModeModal
 				open={activeModal === "accountMode"}
@@ -718,6 +722,7 @@ export function TradePanel() {
 				/>
 
 				<TradeFormFields
+					orderEntryData={orderEntryData}
 					price={price}
 					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}

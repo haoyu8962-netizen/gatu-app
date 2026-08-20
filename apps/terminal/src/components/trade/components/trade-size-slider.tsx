@@ -1,13 +1,29 @@
 import { Slider, type SliderProps, type SliderThumbSize } from "@gatu/ui";
 import Big from "big.js";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 type SliderCommitDetails = Parameters<NonNullable<SliderProps["onValueCommitted"]>>[1];
+type SliderChangeDetails = Parameters<NonNullable<SliderProps["onValueChange"]>>[1];
+
+interface PointerSession {
+	pointerId: number;
+	pointerType: string;
+	startValue: number;
+	draftValue: number;
+	didChange: boolean;
+	didPublishPreview: boolean;
+	clientX: number;
+	clientY: number;
+}
 
 interface Props {
 	value: number;
 	onPercentChange: (value: number) => void;
-	onPercentCommit?: (value: number, details: SliderCommitDetails) => void;
+	onPercentCancel: (startValue: number) => void;
+	onPercentCommit: (value: number, details: SliderCommitDetails) => void;
+	onPercentInteractionStart?: (startValue: number) => void;
+	interactionIdentity?: string;
 	disabled?: boolean;
 	thumbSize?: SliderThumbSize;
 	ariaLabel: string;
@@ -25,7 +41,10 @@ interface Props {
 export function TradeSizeSlider({
 	value,
 	onPercentChange,
+	onPercentCancel,
 	onPercentCommit,
+	onPercentInteractionStart,
+	interactionIdentity,
 	disabled,
 	thumbSize,
 	ariaLabel,
@@ -39,18 +58,29 @@ export function TradeSizeSlider({
 	indicatorClassName,
 	thumbClassName,
 }: Props) {
-	const sliderRootRef = useRef<HTMLDivElement>(null);
-	const activePointerIdRef = useRef<number | null>(null);
-	const interactionStartRef = useRef(value);
+	const pointerSessionRef = useRef<PointerSession | null>(null);
 	const onPercentChangeRef = useRef(onPercentChange);
+	const onPercentCancelRef = useRef(onPercentCancel);
+	const onPercentCommitRef = useRef(onPercentCommit);
+	const onPercentInteractionStartRef = useRef(onPercentInteractionStart);
+	const interactionIdentityRef = useRef(interactionIdentity);
 	const pendingPreviewRef = useRef<number | null>(null);
-	const previewFlushedThisFrameRef = useRef(false);
 	const previewFrameRef = useRef<number | null>(null);
-	const commitFrameRef = useRef<number | null>(null);
-	const commitEpochRef = useRef(0);
-	const [lifecycleVersion, setLifecycleVersion] = useState(0);
+	const renderedPointerDraftRef = useRef<number>(value);
+	const [pointerDraftValue, setPointerDraftValue] = useState<number | null>(null);
 
-	onPercentChangeRef.current = onPercentChange;
+	useLayoutEffect(() => {
+		onPercentChangeRef.current = onPercentChange;
+		onPercentCancelRef.current = onPercentCancel;
+		onPercentCommitRef.current = onPercentCommit;
+		onPercentInteractionStartRef.current = onPercentInteractionStart;
+		renderedPointerDraftRef.current = pointerDraftValue ?? value;
+	}, [onPercentCancel, onPercentChange, onPercentCommit, onPercentInteractionStart, pointerDraftValue, value]);
+
+	const flushPendingPointerDraft = useCallback((session: PointerSession) => {
+		if (session.draftValue === renderedPointerDraftRef.current) return;
+		flushSync(() => setPointerDraftValue(session.draftValue));
+	}, []);
 
 	const clearScheduledPreview = useCallback(() => {
 		pendingPreviewRef.current = null;
@@ -58,80 +88,117 @@ export function TradeSizeSlider({
 		previewFrameRef.current = null;
 	}, []);
 
-	const clearScheduledCommit = useCallback(() => {
-		commitEpochRef.current += 1;
-		if (commitFrameRef.current !== null) cancelAnimationFrame(commitFrameRef.current);
-		commitFrameRef.current = null;
-	}, []);
+	const schedulePointerPreview = useCallback((nextValue: number) => {
+		pendingPreviewRef.current = nextValue;
+		if (previewFrameRef.current !== null) return;
 
-	const flushScheduledPreview = useCallback(() => {
-		previewFlushedThisFrameRef.current = false;
-		const nextValue = pendingPreviewRef.current;
-		pendingPreviewRef.current = null;
-		if (nextValue === null) {
+		previewFrameRef.current = requestAnimationFrame(() => {
 			previewFrameRef.current = null;
-			return;
-		}
-
-		previewFlushedThisFrameRef.current = true;
-		onPercentChangeRef.current(nextValue);
-		previewFrameRef.current = requestAnimationFrame(flushScheduledPreview);
+			const pendingValue = pendingPreviewRef.current;
+			pendingPreviewRef.current = null;
+			if (pendingValue === null) return;
+			const session = pointerSessionRef.current;
+			if (!session) return;
+			session.didPublishPreview = true;
+			onPercentChangeRef.current(pendingValue);
+		});
 	}, []);
 
-	const previewPointerValue = useCallback(
-		(nextValue: number) => {
-			if (previewFrameRef.current === null) {
-				onPercentChangeRef.current(nextValue);
-				previewFrameRef.current = requestAnimationFrame(() => {
-					previewFrameRef.current = requestAnimationFrame(flushScheduledPreview);
-				});
-				return;
-			}
-			pendingPreviewRef.current = nextValue;
+	const cancelPointerSession = useCallback(
+		(pointerId?: number) => {
+			const session = pointerSessionRef.current;
+			if (!session || (pointerId !== undefined && pointerId !== session.pointerId)) return;
+
+			pointerSessionRef.current = null;
+			clearScheduledPreview();
+			setPointerDraftValue(null);
+			endBasePointerInteraction(session);
+			if (session.didPublishPreview) onPercentCancelRef.current(session.startValue);
 		},
-		[flushScheduledPreview],
+		[clearScheduledPreview],
 	);
 
-	const cancelActivePreview = useCallback(() => {
-		if (activePointerIdRef.current === null) return;
-
-		activePointerIdRef.current = null;
-		clearScheduledPreview();
-		clearScheduledCommit();
-		previewFlushedThisFrameRef.current = false;
-		const sliderRoot = sliderRootRef.current;
-		sliderRoot?.removeAttribute("data-dragging");
-		const nativeInput = sliderRoot?.querySelector<HTMLInputElement>('input[type="range"]');
-		if (nativeInput) nativeInput.value = String(interactionStartRef.current);
-		onPercentChangeRef.current(interactionStartRef.current);
-		setLifecycleVersion((version) => version + 1);
-	}, [clearScheduledCommit, clearScheduledPreview]);
-
 	useEffect(() => {
+		function ignoreForeignPointer(event: PointerEvent) {
+			const session = pointerSessionRef.current;
+			if (!session) return;
+			if (event.pointerId === session.pointerId && event.isPrimary !== false) {
+				flushPendingPointerDraft(session);
+				session.clientX = event.clientX;
+				session.clientY = event.clientY;
+				return;
+			}
+			event.preventDefault();
+			event.stopImmediatePropagation();
+		}
+
 		function handlePointerCancel(event: PointerEvent) {
-			const activePointerId = activePointerIdRef.current;
-			if (activePointerId === null || event.pointerId !== activePointerId) return;
-			cancelActivePreview();
+			cancelPointerSession(event.pointerId);
 		}
 
 		function handleVisibilityChange() {
-			if (document.visibilityState === "hidden") cancelActivePreview();
+			if (document.visibilityState === "hidden") cancelPointerSession();
 		}
 
-		document.addEventListener("pointercancel", handlePointerCancel);
+		document.addEventListener("pointermove", ignoreForeignPointer, true);
+		document.addEventListener("pointerup", ignoreForeignPointer, true);
+		document.addEventListener("pointercancel", handlePointerCancel, true);
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		return () => {
-			document.removeEventListener("pointercancel", handlePointerCancel);
+			document.removeEventListener("pointermove", ignoreForeignPointer, true);
+			document.removeEventListener("pointerup", ignoreForeignPointer, true);
+			document.removeEventListener("pointercancel", handlePointerCancel, true);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			pointerSessionRef.current = null;
 			clearScheduledPreview();
-			clearScheduledCommit();
 		};
-	}, [cancelActivePreview, clearScheduledCommit, clearScheduledPreview]);
+	}, [cancelPointerSession, clearScheduledPreview, flushPendingPointerDraft]);
+
+	useLayoutEffect(() => {
+		if (interactionIdentityRef.current === interactionIdentity) return;
+		interactionIdentityRef.current = interactionIdentity;
+		cancelPointerSession();
+	}, [cancelPointerSession, interactionIdentity]);
+
+	useLayoutEffect(() => {
+		if (disabled) cancelPointerSession();
+	}, [cancelPointerSession, disabled]);
+
+	function handleValueChange(nextValue: number | readonly number[], eventDetails: SliderChangeDetails) {
+		if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
+		const normalizedValue = normalizePercent(nextValue);
+		if (isPointerReason(eventDetails.reason)) {
+			const session = pointerSessionRef.current;
+			if (!session) return;
+			const eventPointerId = getPointerId(eventDetails.event);
+			if (eventPointerId !== null && eventPointerId !== session.pointerId) return;
+			session.didChange = true;
+			session.draftValue = normalizedValue;
+			setPointerDraftValue(normalizedValue);
+			schedulePointerPreview(normalizedValue);
+			return;
+		}
+		onPercentChange(normalizedValue);
+	}
+
+	function handleValueCommitted(nextValue: number | readonly number[], eventDetails: SliderCommitDetails) {
+		if (typeof nextValue !== "number") return;
+		const session = pointerSessionRef.current;
+		if (session) {
+			if (!matchesPointerSession(eventDetails.event, session)) return;
+			pointerSessionRef.current = null;
+			clearScheduledPreview();
+			setPointerDraftValue(null);
+			if (!session.didChange || !isPointerReason(eventDetails.reason)) return;
+			onPercentCommitRef.current(session.draftValue, eventDetails);
+			return;
+		}
+		if (eventDetails.reason === "none" || isPointerReason(eventDetails.reason)) return;
+		onPercentCommitRef.current(normalizePercent(nextValue), eventDetails);
+	}
 
 	return (
 		<Slider
-			key={lifecycleVersion}
-			ref={sliderRootRef}
 			aria-describedby={ariaDescribedBy}
 			aria-invalid={ariaInvalid}
 			className={className}
@@ -145,63 +212,90 @@ export function TradeSizeSlider({
 			trackClassName={trackClassName}
 			indicatorClassName={indicatorClassName}
 			thumbClassName={thumbClassName}
-			value={value}
+			value={pointerDraftValue ?? value}
+			onTouchStartCapture={(event) => {
+				if (typeof PointerEvent === "function") event.stopPropagation();
+			}}
 			onPointerDownCapture={(event) => {
 				if (disabled || event.button !== 0) return;
-				clearScheduledCommit();
-				previewFlushedThisFrameRef.current = false;
-				interactionStartRef.current = value;
-				activePointerIdRef.current = event.pointerId;
-			}}
-			onLostPointerCapture={(event) => {
-				if (event.pointerId === activePointerIdRef.current) cancelActivePreview();
-			}}
-			onValueChange={(nextValue, eventDetails) => {
-				if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
-				const normalizedValue = normalizePercent(nextValue);
-				if (
-					activePointerIdRef.current !== null &&
-					(eventDetails.reason === "drag" || eventDetails.reason === "track-press")
-				) {
-					previewPointerValue(normalizedValue);
+				if (event.isPrimary === false || pointerSessionRef.current !== null) {
+					event.preventDefault();
+					event.stopPropagation();
 					return;
 				}
-				onPercentChangeRef.current(normalizedValue);
+				clearScheduledPreview();
+				pointerSessionRef.current = {
+					pointerId: event.pointerId,
+					pointerType: event.pointerType,
+					startValue: value,
+					draftValue: value,
+					didChange: false,
+					didPublishPreview: false,
+					clientX: event.clientX,
+					clientY: event.clientY,
+				};
+				onPercentInteractionStartRef.current?.(value);
+				setPointerDraftValue(value);
 			}}
-			onValueCommitted={
-				onPercentCommit
-					? (nextValue, eventDetails) => {
-							if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
-							if (
-								(eventDetails.reason === "drag" || eventDetails.reason === "track-press") &&
-								activePointerIdRef.current === null
-							) {
-								return;
-							}
-							clearScheduledPreview();
-							activePointerIdRef.current = null;
-							const committedValue = normalizePercent(nextValue);
-							if (previewFlushedThisFrameRef.current) {
-								clearScheduledCommit();
-								const commitEpoch = commitEpochRef.current;
-								commitFrameRef.current = requestAnimationFrame(() => {
-									if (commitEpoch !== commitEpochRef.current) return;
-									commitFrameRef.current = null;
-									previewFlushedThisFrameRef.current = false;
-									onPercentCommit(committedValue, eventDetails);
-								});
-								return;
-							}
-							clearScheduledCommit();
-							onPercentCommit(committedValue, eventDetails);
-						}
-					: undefined
-			}
+			onLostPointerCapture={(event) => {
+				cancelPointerSession(event.pointerId);
+			}}
+			onValueChange={handleValueChange}
+			onValueCommitted={handleValueCommitted}
 			max={100}
 			step={0.1}
 			disabled={disabled}
 		/>
 	);
+}
+
+function isPointerReason(reason: SliderChangeDetails["reason"] | SliderCommitDetails["reason"]): boolean {
+	return reason === "drag" || reason === "track-press";
+}
+
+function getPointerId(event: Event): number | null {
+	if (!("pointerId" in event) || typeof event.pointerId !== "number") return null;
+	return event.pointerId;
+}
+
+function matchesPointerSession(event: Event, session: PointerSession): boolean {
+	const pointerId = getPointerId(event);
+	if (pointerId !== null) return pointerId === session.pointerId;
+	return session.pointerType === "touch" && typeof TouchEvent === "function" && event instanceof TouchEvent;
+}
+
+function endBasePointerInteraction(session: PointerSession) {
+	const event = createPointerEvent("pointerup", session);
+	document.dispatchEvent(event);
+}
+
+function createPointerEvent(type: string, session: PointerSession): Event {
+	if (typeof PointerEvent === "function") {
+		return new PointerEvent(type, {
+			bubbles: true,
+			button: 0,
+			buttons: 0,
+			clientX: session.clientX,
+			clientY: session.clientY,
+			isPrimary: true,
+			pointerId: session.pointerId,
+			pointerType: session.pointerType,
+		});
+	}
+
+	const event = new MouseEvent(type, {
+		bubbles: true,
+		button: 0,
+		buttons: 0,
+		clientX: session.clientX,
+		clientY: session.clientY,
+	});
+	Object.defineProperties(event, {
+		isPrimary: { value: true },
+		pointerId: { value: session.pointerId },
+		pointerType: { value: session.pointerType },
+	});
+	return event;
 }
 
 function normalizePercent(value: number): number {

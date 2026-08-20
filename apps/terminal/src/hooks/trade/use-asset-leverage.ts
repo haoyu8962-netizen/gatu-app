@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import type { ActiveAssetDataWsEvent } from "@nktkas/hyperliquid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
@@ -10,7 +11,7 @@ import type { AssetAvailabilityStatus } from "@/domain/trade/order/availability"
 import { type ExchangeParams, getMarketCapabilities, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { getMarginModeFromLeverage, type MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber } from "@/lib/trade/numbers";
-import { useGlobalSettingsActions, useMarginMode } from "@/stores/use-global-settings-store";
+import { useGlobalSettingsActions, useMarginMode, useNetwork } from "@/stores/use-global-settings-store";
 import { useActiveAssetData } from "./use-active-asset-data";
 
 type OperationType = "leverage" | "mode" | null;
@@ -20,14 +21,27 @@ type LeverageExecutionIntent = {
 	leverage: number;
 };
 type DisconnectedLeverageState = {
-	marketIdentity: string | undefined;
+	transactionIdentity: string;
 	value: number;
+};
+type PendingLeverageState = {
+	transactionIdentity: string;
+	value: number;
+};
+type CommittedLeverageSettings = {
+	transactionIdentity: string;
+	mode: MarginMode;
+	leverage: number;
+	observedSnapshot: ActiveAssetDataWsEvent | undefined;
+	observedReceivedAt: number | undefined;
 };
 
 const ACTIVE_ASSET_DATA_MAX_AGE_MS = 20_000;
 const USER_POSITION_MAX_AGE_MS = 60_000;
 
 interface LeverageExecutionState {
+	transactionIdentity: string;
+	activeAssetSnapshot: ActiveAssetDataWsEvent | undefined;
 	assetId: number | undefined;
 	isPerpMarket: boolean;
 	maxLeverage: number;
@@ -111,6 +125,7 @@ function assertLeverageExecutionAllowed(params: ExchangeParams<"updateLeverage">
 }
 
 interface UseAssetLeverageReturn {
+	transactionIdentity: string;
 	currentLeverage: number;
 	pendingLeverage: number | null;
 	committedLeverage: number | null;
@@ -156,8 +171,18 @@ function leverageUpdateInProgressError(): Error {
 	return new Error(t`Another action for this market is already in progress.`);
 }
 
+function getLeverageExecutionIntentKind(
+	modeChanged: boolean,
+	leverageChanged: boolean,
+): LeverageExecutionIntent["kind"] {
+	if (!modeChanged) return "leverage";
+	if (leverageChanged) return "modeAndLeverage";
+	return "mode";
+}
+
 export function useAssetLeverage(): UseAssetLeverageReturn {
 	const {
+		accountAddress,
 		data: currentActiveAssetData,
 		isConnected,
 		market,
@@ -166,6 +191,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	} = useActiveAssetData();
 
 	const storedMarginMode = useMarginMode();
+	const network = useNetwork();
 	const { setMarginMode: setStoredMarginMode } = useGlobalSettingsActions();
 
 	const capabilities = getMarketCapabilities(market);
@@ -183,14 +209,15 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const operationTypeRef = useRef<OperationType>(null);
 	const executionIntentRef = useRef<LeverageExecutionIntent | null>(null);
 	const requestInFlightRef = useRef(false);
-	const [pendingLeverageState, setPendingLeverageState] = useState<number | null>(null);
-	const [committedLeverageState, setCommittedLeverageState] = useState<number | null>(null);
+	const [pendingLeverageState, setPendingLeverageState] = useState<PendingLeverageState | null>(null);
+	const [committedLeverageSettingsState, setCommittedLeverageSettingsState] =
+		useState<CommittedLeverageSettings | null>(null);
 	const [disconnectedLeverageState, setDisconnectedLeverageState] = useState<DisconnectedLeverageState | null>(null);
 
 	const onChainLeverage = currentActiveAssetData?.leverage?.value ?? null;
 	const onChainMarginMode = getMarginModeFromLeverage(currentActiveAssetData?.leverage);
 
-	function computeMarginMode(): MarginMode {
+	function computeAuthoritativeMarginMode(): MarginMode {
 		if (isOnlyIsolated) {
 			return "isolated";
 		}
@@ -199,7 +226,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 		return storedMarginMode;
 	}
-	const marginMode = computeMarginMode();
+	const authoritativeMarginMode = computeAuthoritativeMarginMode();
 	const activeAssetStateReady = !isConnected || subscriptionStatus === "success";
 	const marginModeStateReady =
 		isOnlyIsolated ||
@@ -210,13 +237,20 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const hasPosition = baseToken ? userPositions.getPosition(baseToken, positionDex) !== null : false;
 	const positionStateReady =
 		!isConnected || (!userPositions.isLoading && !userPositions.hasError && !userPositions.isStale);
+	const transactionIdentity = [
+		network,
+		accountAddress?.toLowerCase() ?? (isConnected ? "connected" : "disconnected"),
+		market?.kind ?? "unknown",
+		assetId ?? "unknown",
+		baseToken ?? "unknown",
+	].join(":");
 
 	const disconnectedLeverage =
-		disconnectedLeverageState !== null && disconnectedLeverageState.marketIdentity === baseToken
+		disconnectedLeverageState?.transactionIdentity === transactionIdentity
 			? normalizeLeverage(disconnectedLeverageState.value, maxLeverage)
 			: null;
 
-	function computeCurrentLeverage(): number {
+	function computeAuthoritativeLeverage(): number {
 		if (isConnected && onChainLeverage !== null) {
 			return onChainLeverage;
 		}
@@ -225,13 +259,25 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 		return getDefaultLeverage(maxLeverage);
 	}
-	const currentLeverage = computeCurrentLeverage();
+	const currentLeverage = computeAuthoritativeLeverage();
+	const committedLeverageSettings =
+		committedLeverageSettingsState?.transactionIdentity === transactionIdentity
+			? {
+					...committedLeverageSettingsState,
+					leverage: normalizeLeverage(committedLeverageSettingsState.leverage, maxLeverage),
+				}
+			: null;
+	const committedLeverage = committedLeverageSettings?.leverage ?? null;
+	const marginMode = committedLeverageSettings?.mode ?? authoritativeMarginMode;
+	const effectiveLeverage = committedLeverage ?? currentLeverage;
 	const normalizedPendingLeverage =
-		pendingLeverageState === null ? null : normalizeLeverage(pendingLeverageState, maxLeverage);
-	const pendingLeverage = normalizedPendingLeverage === currentLeverage ? null : normalizedPendingLeverage;
-	const committedLeverage =
-		committedLeverageState === null ? null : normalizeLeverage(committedLeverageState, maxLeverage);
+		pendingLeverageState?.transactionIdentity === transactionIdentity
+			? normalizeLeverage(pendingLeverageState.value, maxLeverage)
+			: null;
+	const pendingLeverage = normalizedPendingLeverage === effectiveLeverage ? null : normalizedPendingLeverage;
 	const leverageExecutionStateRef = useRef<LeverageExecutionState>({
+		transactionIdentity,
+		activeAssetSnapshot: currentActiveAssetData,
 		assetId,
 		isPerpMarket,
 		maxLeverage,
@@ -244,11 +290,13 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		positionStateReady,
 		positionReceivedAt: userPositions.receivedAt,
 		hasPosition,
-		currentLeverage,
+		currentLeverage: effectiveLeverage,
 		intent: executionIntentRef.current,
 	});
 	// Update during render so a queued mutation cannot observe the previous render's market or position state.
 	leverageExecutionStateRef.current = {
+		transactionIdentity,
+		activeAssetSnapshot: currentActiveAssetData,
 		assetId,
 		isPerpMarket,
 		maxLeverage,
@@ -261,7 +309,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		positionStateReady,
 		positionReceivedAt: userPositions.receivedAt,
 		hasPosition,
-		currentLeverage,
+		currentLeverage: effectiveLeverage,
 		intent: executionIntentRef.current,
 	};
 
@@ -278,60 +326,90 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			}),
 	});
 
-	const displayLeverage = pendingLeverage ?? committedLeverage ?? currentLeverage;
-	const isDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
+	const displayLeverage = pendingLeverage ?? effectiveLeverage;
+	const isDirty = pendingLeverage !== null;
 
 	useEffect(() => {
 		setDisconnectedLeverageState((previous) => {
-			if (previous === null || previous.marketIdentity !== baseToken) return previous;
-			const next = normalizeLeverage(previous.value, maxLeverage);
-			return next === previous.value ? previous : { ...previous, value: next };
+			if (previous?.transactionIdentity !== transactionIdentity) return previous;
+			const normalizedValue = normalizeLeverage(previous.value, maxLeverage);
+			return normalizedValue === previous.value ? previous : { ...previous, value: normalizedValue };
+		});
+		setCommittedLeverageSettingsState((previous) => {
+			if (previous?.transactionIdentity !== transactionIdentity) return previous;
+			const normalizedLeverage = normalizeLeverage(previous.leverage, maxLeverage);
+			return normalizedLeverage === previous.leverage ? previous : { ...previous, leverage: normalizedLeverage };
 		});
 		setPendingLeverageState((previous) => {
-			if (previous === null) return previous;
-			const next = normalizeLeverage(previous, maxLeverage);
-			return next === currentLeverage ? null : next === previous ? previous : next;
+			if (previous?.transactionIdentity !== transactionIdentity) return previous;
+			const normalizedValue = normalizeLeverage(previous.value, maxLeverage);
+			if (normalizedValue === effectiveLeverage) return null;
+			return normalizedValue === previous.value ? previous : { ...previous, value: normalizedValue };
 		});
-		setCommittedLeverageState((previous) => {
-			if (previous === null) return previous;
-			const next = normalizeLeverage(previous, maxLeverage);
-			return next === currentLeverage ? null : next === previous ? previous : next;
-		});
-	}, [baseToken, currentLeverage, maxLeverage]);
+	}, [effectiveLeverage, maxLeverage, transactionIdentity]);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: baseToken change triggers reset
+	useEffect(() => {
+		const committedSettings = committedLeverageSettingsState;
+		if (
+			committedSettings?.transactionIdentity !== transactionIdentity ||
+			subscriptionStatus !== "success" ||
+			currentActiveAssetData?.leverage === undefined
+		)
+			return;
+		const subscribedLeverage = normalizeLeverage(currentActiveAssetData.leverage.value, maxLeverage);
+		const subscribedMode = isOnlyIsolated ? "isolated" : onChainMarginMode;
+		const committedLeverageValue = normalizeLeverage(committedSettings.leverage, maxLeverage);
+		const subscriptionMatches =
+			committedLeverageValue === subscribedLeverage && committedSettings.mode === subscribedMode;
+		const hasDifferentReceipt =
+			subscriptionReceivedAt !== undefined &&
+			(committedSettings.observedReceivedAt === undefined ||
+				subscriptionReceivedAt !== committedSettings.observedReceivedAt);
+		const hasSuccessorSnapshot = currentActiveAssetData !== committedSettings.observedSnapshot || hasDifferentReceipt;
+		if (!subscriptionMatches && !hasSuccessorSnapshot) return;
+		setCommittedLeverageSettingsState((current) => (current === committedSettings ? null : current));
+	}, [
+		committedLeverageSettingsState,
+		currentActiveAssetData,
+		isOnlyIsolated,
+		maxLeverage,
+		onChainMarginMode,
+		subscriptionReceivedAt,
+		subscriptionStatus,
+		transactionIdentity,
+	]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: transaction identity is the external session boundary
 	useEffect(() => {
 		setPendingLeverageState(null);
-		setCommittedLeverageState(null);
+		setCommittedLeverageSettingsState(null);
 		setDisconnectedLeverageState(null);
 		operationTypeRef.current = null;
 		executionIntentRef.current = null;
 		resetMutation();
-	}, [baseToken, resetMutation]);
+	}, [transactionIdentity, resetMutation]);
 
 	const setPendingLeverage = useCallback(
 		(value: number) => {
 			if (!Number.isFinite(value)) return;
 			const clamped = normalizeLeverage(value, maxLeverage);
-			setCommittedLeverageState(null);
 			if (!isConnected) {
-				setDisconnectedLeverageState({ marketIdentity: baseToken, value: clamped });
+				setDisconnectedLeverageState({ transactionIdentity, value: clamped });
 				setPendingLeverageState(null);
 				return;
 			}
-			if (clamped === currentLeverage) {
+			if (clamped === effectiveLeverage) {
 				setPendingLeverageState(null);
 			} else {
-				setPendingLeverageState(clamped);
+				setPendingLeverageState({ transactionIdentity, value: clamped });
 			}
 		},
-		[baseToken, currentLeverage, isConnected, maxLeverage],
+		[effectiveLeverage, isConnected, maxLeverage, transactionIdentity],
 	);
 
 	const resetPending = useCallback(() => {
 		if (requestInFlightRef.current) return;
 		setPendingLeverageState(null);
-		setCommittedLeverageState(null);
 		operationTypeRef.current = null;
 		executionIntentRef.current = null;
 		resetMutation();
@@ -345,6 +423,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 		operationTypeRef.current = "leverage";
 		executionIntentRef.current = { kind: "leverage", mode: marginMode, leverage: pendingLeverage };
+		const requestIdentity = transactionIdentity;
 		requestInFlightRef.current = true;
 		try {
 			await updateLeverage({
@@ -353,8 +432,15 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				leverage: pendingLeverage,
 			});
 
-			setCommittedLeverageState(pendingLeverage);
-			setPendingLeverageState(pendingLeverage === currentLeverage ? null : pendingLeverage);
+			if (leverageExecutionStateRef.current.transactionIdentity !== requestIdentity) return;
+			setCommittedLeverageSettingsState({
+				transactionIdentity: requestIdentity,
+				mode: marginMode,
+				leverage: pendingLeverage,
+				observedSnapshot: leverageExecutionStateRef.current.activeAssetSnapshot,
+				observedReceivedAt: leverageExecutionStateRef.current.activeAssetReceivedAt,
+			});
+			setPendingLeverageState(null);
 		} finally {
 			requestInFlightRef.current = false;
 		}
@@ -379,16 +465,25 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 
 		operationTypeRef.current = "mode";
-		executionIntentRef.current = { kind: "mode", mode, leverage: currentLeverage };
+		executionIntentRef.current = { kind: "mode", mode, leverage: effectiveLeverage };
+		const requestIdentity = transactionIdentity;
 		requestInFlightRef.current = true;
 		try {
 			await updateLeverage({
 				asset: assetId,
 				isCross: mode === "cross",
-				leverage: currentLeverage,
+				leverage: effectiveLeverage,
 			});
 
+			if (leverageExecutionStateRef.current.transactionIdentity !== requestIdentity) return;
 			setStoredMarginMode(mode);
+			setCommittedLeverageSettingsState({
+				transactionIdentity: requestIdentity,
+				mode,
+				leverage: effectiveLeverage,
+				observedSnapshot: leverageExecutionStateRef.current.activeAssetSnapshot,
+				observedReceivedAt: leverageExecutionStateRef.current.activeAssetReceivedAt,
+			});
 		} finally {
 			requestInFlightRef.current = false;
 		}
@@ -402,10 +497,9 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 			const clamped = normalizeLeverage(leverageValue, maxLeverage);
 			const modeChanged = mode !== marginMode;
-			const leverageChanged = clamped !== currentLeverage;
+			const leverageChanged = clamped !== effectiveLeverage;
 			if (!modeChanged && !leverageChanged) {
 				setPendingLeverageState(null);
-				setCommittedLeverageState(clamped);
 				return;
 			}
 
@@ -415,9 +509,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 			if (!isConnected) {
 				setStoredMarginMode(mode);
-				setDisconnectedLeverageState({ marketIdentity: baseToken, value: clamped });
+				setDisconnectedLeverageState({ transactionIdentity, value: clamped });
 				setPendingLeverageState(null);
-				setCommittedLeverageState(clamped);
 				return;
 			}
 
@@ -426,9 +519,10 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 				if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
 			}
 
-			const intentKind = modeChanged ? (leverageChanged ? "modeAndLeverage" : "mode") : "leverage";
+			const intentKind = getLeverageExecutionIntentKind(modeChanged, leverageChanged);
 			operationTypeRef.current = intentKind === "leverage" ? "leverage" : "mode";
 			executionIntentRef.current = { kind: intentKind, mode, leverage: clamped };
+			const requestIdentity = transactionIdentity;
 			requestInFlightRef.current = true;
 			try {
 				await updateLeverage({
@@ -437,17 +531,23 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 					leverage: clamped,
 				});
 
+				if (leverageExecutionStateRef.current.transactionIdentity !== requestIdentity) return;
 				setStoredMarginMode(mode);
-				setCommittedLeverageState(clamped);
-				setPendingLeverageState(clamped === currentLeverage ? null : clamped);
+				setCommittedLeverageSettingsState({
+					transactionIdentity: requestIdentity,
+					mode,
+					leverage: clamped,
+					observedSnapshot: leverageExecutionStateRef.current.activeAssetSnapshot,
+					observedReceivedAt: leverageExecutionStateRef.current.activeAssetReceivedAt,
+				});
+				setPendingLeverageState(null);
 			} finally {
 				requestInFlightRef.current = false;
 			}
 		},
 		[
 			assetId,
-			baseToken,
-			currentLeverage,
+			effectiveLeverage,
 			hasPosition,
 			isConnected,
 			isOnlyIsolated,
@@ -456,6 +556,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			maxLeverage,
 			positionStateReady,
 			setStoredMarginMode,
+			transactionIdentity,
 			updateLeverage,
 		],
 	);
@@ -487,6 +588,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const switchModeError = error && operationTypeRef.current === "mode" ? (error as Error) : null;
 
 	return {
+		transactionIdentity,
 		currentLeverage,
 		pendingLeverage,
 		committedLeverage,

@@ -9335,6 +9335,11 @@ msgstr "已更新"
 msgid "Updated live"
 msgstr "实时更新"
 
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Updated to {displayLeverage}x"
+msgstr "已更新为 {displayLeverage}x"
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Updating..."
 msgstr "正在更新..."

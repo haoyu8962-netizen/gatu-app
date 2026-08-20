@@ -1,6 +1,7 @@
 import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
+import type { ValidationError } from "@/lib/errors/types";
 import type { FormValidationResult, Side } from "@/lib/trade/types";
 
 export interface BaseOrderInput {
@@ -70,13 +71,14 @@ export function perpInput(base: BaseOrderInput, perp: PerpOrderFields): PerpVali
 
 function toResult(result: {
 	valid: boolean;
-	errors: { message: string }[];
+	errors: ValidationError[];
 	canSubmit: boolean;
 	needsApproval: boolean;
 }): FormValidationResult {
 	return {
 		valid: result.valid,
 		errors: result.errors.map((e) => e.message),
+		validationErrors: result.errors,
 		canSubmit: result.canSubmit,
 		needsApproval: result.needsApproval,
 	};

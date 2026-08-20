@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { type ComponentType, type ReactNode, act, createElement, useState } from "react";
+import { type ReactNode, act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -61,9 +61,6 @@ import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-const LeverageModalWithCommittedState = LeverageModal as unknown as ComponentType<Record<string, unknown>>;
-const MarginModeModalWithCommittedState = MarginModeModal as unknown as ComponentType<Record<string, unknown>>;
-
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 	const button = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(label));
 	if (!(button instanceof HTMLButtonElement)) throw new Error(`${label} button not found`);
@@ -81,19 +78,18 @@ function DesktopCommittedValueHarness({ maxLeverage }: { maxLeverage: number }) 
 	const [storeLeverage, setStoreLeverage] = useState(3);
 	const [committedLeverage, setCommittedLeverage] = useState<number | null>(null);
 
-	async function applyLeverage(requestedLeverage: number): Promise<number> {
+	async function applyLeverage(requestedLeverage: number): Promise<void> {
 		const committed = Math.max(1, Math.min(Math.round(requestedLeverage), maxLeverage));
 		setStoreLeverage(committed);
 		setPendingLeverage(committed);
 		setCommittedLeverage(committed);
-		return committed;
 	}
 
 	return (
 		<>
 			<output data-testid="pending-leverage">{pendingLeverage ?? "none"}</output>
 			<output data-testid="store-leverage">{storeLeverage}</output>
-			<LeverageModalWithCommittedState
+			<LeverageModal
 				open
 				onOpenChange={() => {}}
 				currentLeverage={storeLeverage}
@@ -114,7 +110,7 @@ function MobileCapabilityHarness({ maxLeverage, showLeverage }: { maxLeverage: n
 	const [pendingLeverage, setPendingLeverage] = useState<number | null>(null);
 
 	return (
-		<MarginModeModalWithCommittedState
+		<MarginModeModal
 			open
 			onOpenChange={() => {}}
 			currentMode="cross"
@@ -130,7 +126,7 @@ function MobileCapabilityHarness({ maxLeverage, showLeverage }: { maxLeverage: n
 			isUpdating={false}
 			updateError={null}
 			showLeverage={showLeverage}
-			onApply={async () => 10}
+			onApply={async () => {}}
 			presentation="drawer"
 			mobileView="leverage"
 			marketIdentity="HYPE"
@@ -170,7 +166,7 @@ describe("slider effective leverage contracts", () => {
 		expect.soft(canonicalInput?.value).toBe("10");
 		expect.soft(container.querySelector('[data-testid="pending-leverage"]')?.textContent).toBe("10");
 		expect.soft(container.querySelector('[data-testid="store-leverage"]')?.textContent).toBe("10");
-		expect.soft(container.querySelector("h2")?.textContent).toContain("10x");
+		expect.soft(leverageHarness.sliderProps?.value).toBe(10);
 		expect.soft(successButton.textContent).toContain("10x");
 	});
 
@@ -178,14 +174,14 @@ describe("slider effective leverage contracts", () => {
 		act(() => root.render(<MobileCapabilityHarness maxLeverage={20} showLeverage />));
 		const onDrag = leverageHarness.sliderProps?.onChange as ((value: number) => void) | undefined;
 		act(() => onDrag?.(15));
-		expect(container.querySelector("h2")?.textContent).toContain("15x");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Leverage"]')?.value).toBe("15");
 
 		act(() => root.render(<MobileCapabilityHarness maxLeverage={1} showLeverage={false} />));
-		expect.soft(container.querySelector("h2")?.textContent).toContain("10x");
-		expect.soft(container.querySelector("h2")?.textContent).not.toContain("15x");
+		expect.soft(container.querySelector('[data-testid="leverage-slider"]')).toBeNull();
+		expect.soft(container.textContent).toContain("Leverage is fixed at 10× for this market.");
 
 		act(() => root.render(<MobileCapabilityHarness maxLeverage={10} showLeverage />));
-		expect.soft(container.querySelector("h2")?.textContent).toContain("10x");
+		expect.soft(container.querySelector<HTMLInputElement>('input[aria-label="Leverage"]')?.value).toBe("10");
 		expect.soft(leverageHarness.sliderProps?.value).toBe(10);
 	});
 });

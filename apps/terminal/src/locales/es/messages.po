@@ -131,7 +131,7 @@ msgstr "Se cerraron {positionCount} posiciones a mercado."
 
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-msgstr ""
+msgstr "Se solicitó el {requestedPercent} %; queda en el {effectivePercent} % tras aplicar la precisión del tamaño"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "{totalSeconds} seconds"
@@ -10019,6 +10019,11 @@ msgstr "Actualizado"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Updated live"
 msgstr "Actualizado en vivo"
+
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Updated to {displayLeverage}x"
+msgstr "Actualizado a {displayLeverage}x"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Updating..."

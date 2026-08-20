@@ -19,7 +19,7 @@ export default defineConfig({
 	],
 	server: {
 		fs: {
-			allow: [fileURLToPath(new URL("../..", import.meta.url))],
+			allow: [fileURLToPath(new URL("../../../..", import.meta.url))],
 		},
 	},
 });

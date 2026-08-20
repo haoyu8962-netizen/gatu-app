@@ -15,6 +15,7 @@ interface PerformanceAuditState {
 	pointerLastAt: number;
 	previewCallbacks: number;
 	rawPointerMoves: number;
+	startedFrame: number;
 	startedAt: number;
 }
 
@@ -30,6 +31,7 @@ const audit: PerformanceAuditState = {
 	pointerLastAt: 0,
 	previewCallbacks: 0,
 	rawPointerMoves: 0,
+	startedFrame: 0,
 	startedAt: 0,
 };
 
@@ -43,6 +45,7 @@ function snapshot() {
 	const elapsedMs = Math.max(0, performance.now() - audit.startedAt);
 	const commitsPerFrame = Object.values(audit.commitsByFrame);
 	const pointerSpanMs = Math.max(0, audit.pointerLastAt - audit.pointerFirstAt);
+	const renderedFrames = Math.max(0, audit.frameId - audit.startedFrame);
 	return {
 		callbackDurationMedianMs: percentile(audit.callbackDurations, 0.5),
 		callbackDurationP95Ms: percentile(audit.callbackDurations, 0.95),
@@ -57,6 +60,7 @@ function snapshot() {
 		previewCallbacks: audit.previewCallbacks,
 		rawPointerMoveRateHz: pointerSpanMs > 0 ? ((audit.rawPointerMoves - 1) * 1000) / pointerSpanMs : 0,
 		rawPointerMoves: audit.rawPointerMoves,
+		renderedFrames,
 	};
 }
 
@@ -73,6 +77,7 @@ Object.assign(window, {
 			audit.pointerLastAt = 0;
 			audit.previewCallbacks = 0;
 			audit.rawPointerMoves = 0;
+			audit.startedFrame = audit.frameId;
 			audit.startedAt = performance.now();
 		},
 		snapshot,
@@ -136,6 +141,7 @@ function SliderPerformanceFixture() {
 				<TradeSizeSlider
 					value={value}
 					onPercentChange={handlePreview}
+					onPercentCancel={handlePreview}
 					onPercentCommit={handleCommit}
 					ariaLabel="Size percentage"
 					thumbSize="lg"

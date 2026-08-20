@@ -5,6 +5,7 @@ import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 interface ActiveAssetDataState {
+	accountAddress: string | undefined;
 	data: ActiveAssetDataWsEvent | undefined;
 	isConnected: boolean;
 	market: UnifiedMarketInfo | undefined;
@@ -38,6 +39,7 @@ export function useActiveAssetData(): ActiveAssetDataState {
 	});
 
 	return {
+		accountAddress: address,
 		data: status === "success" || status === "stale" ? data : undefined,
 		isConnected,
 		market,

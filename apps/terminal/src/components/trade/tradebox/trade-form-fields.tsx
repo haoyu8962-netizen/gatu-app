@@ -8,8 +8,9 @@ import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD, type OrderType, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
-import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import type { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -28,7 +29,6 @@ import { getAvailableTifOptions, getTifOptionLabel } from "@/lib/trade/tif";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import {
 	useLimitPrice,
 	useOrderEntryActions,
@@ -49,7 +49,30 @@ import { TradeFormTpSl } from "./trade-form-tp-sl";
 import { TradeFormTwap } from "./trade-form-twap";
 import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
 
+type TradeFormOrderEntryData = Pick<
+	ReturnType<typeof useOrderEntryData>,
+	| "isSpotMarket"
+	| "isAvailabilityLoading"
+	| "isAvailabilityBlocked"
+	| "isAvailabilityStale"
+	| "hasAvailabilityError"
+	| "baseToken"
+	| "quoteToken"
+	| "capabilities"
+	| "availableBalance"
+	| "displayAvailableBalance"
+	| "displayAvailableBalanceToken"
+	| "leverage"
+	| "leverageInteractionIdentity"
+	| "maxSize"
+	| "sizeValue"
+	| "orderValue"
+	| "sizeModeLabel"
+	| "szDecimals"
+>;
+
 interface Props {
+	orderEntryData: TradeFormOrderEntryData;
 	price: number;
 	positionSize: number;
 	swapTargetToken: string | null;
@@ -101,6 +124,7 @@ function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled
 }
 
 export function TradeFormFields({
+	orderEntryData,
 	price,
 	positionSize,
 	swapTargetToken,
@@ -126,10 +150,8 @@ export function TradeFormFields({
 	const triggerPriceInput = useTriggerPrice();
 	const reduceOnly = useReduceOnly();
 	const tpSlEnabled = useTpSlEnabled();
-	const slippageBps = useMarketOrderSlippageBps();
 
 	const markPx = toNumberOrZero(market?.markPx);
-	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
 
 	const {
 		isSpotMarket,
@@ -144,20 +166,13 @@ export function TradeFormFields({
 		displayAvailableBalance,
 		displayAvailableBalanceToken,
 		leverage,
+		leverageInteractionIdentity,
 		maxSize,
 		sizeValue,
 		orderValue,
 		sizeModeLabel,
 		szDecimals,
-	} = useOrderEntryData({
-		market,
-		side,
-		markPx,
-		sizeMode,
-		sizeInput,
-		limitPx: usesLimitPriceForOrder(orderType) ? toNumberOrZero(limitPriceInput) : undefined,
-		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
-	});
+	} = orderEntryData;
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 
@@ -177,6 +192,7 @@ export function TradeFormFields({
 	const limitHasError = usesLimitPrice && !price && sizeValue > 0;
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
+	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${sizeMode}`;
 
 	function getSizeErrorText(): string {
 		if (!sizeHasError) return "";
@@ -204,6 +220,13 @@ export function TradeFormFields({
 		if (maxSize <= 0) return;
 		onSizePercentApply(pct);
 	}
+
+	const sliderInteraction = useSizeSliderInteraction({
+		applyPercent: handleSizePercentApply,
+		interactionIdentity: sliderInteractionIdentity,
+		setSizeInput: setSize,
+		sizeInput,
+	});
 
 	function formatAvailableBalance(): string {
 		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
@@ -384,7 +407,7 @@ export function TradeFormFields({
 						</button>
 					</div>
 					{displaySizeError && (
-						<p id={sizeErrorId} className="text-2xs text-trading-panel-error">
+						<p id={sizeErrorId} role="alert" className="text-2xs text-trading-panel-error">
 							{displaySizeError}
 						</p>
 					)}
@@ -393,8 +416,11 @@ export function TradeFormFields({
 						<div className="relative min-w-0 flex-1">
 							<TradeSizeSlider
 								value={sliderValue}
+								interactionIdentity={sliderInteractionIdentity}
 								onPercentChange={handleSizePercentApply}
-								onPercentCommit={handleSizePercentApply}
+								onPercentCancel={sliderInteraction.onPercentCancel}
+								onPercentCommit={sliderInteraction.onPercentCommit}
+								onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
 								disabled={isFormDisabled || maxSize <= 0}
 								ariaLabel={`${t`Size`} (%)`}
 								ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}

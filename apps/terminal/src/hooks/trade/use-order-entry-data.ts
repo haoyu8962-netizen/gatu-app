@@ -32,6 +32,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	convertSizeForModeToggle: () => string;
 
 	leverage: number;
+	leverageInteractionIdentity: string;
 	currentLeverage: number;
 	pendingLeverage: number | null;
 	committedLeverage: number | null;
@@ -43,6 +44,8 @@ interface OrderEntryData extends OrderEntryDerived {
 	positionStateReady: boolean;
 	switchMarginMode: (mode: "cross" | "isolated") => Promise<void>;
 	applyMarginAndLeverage: (mode: "cross" | "isolated", leverageValue: number) => Promise<void>;
+	isLeverageUpdating: boolean;
+	leverageUpdateError: Error | null;
 	isSwitchingMode: boolean;
 	switchModeError: Error | null;
 	isOnlyIsolated: boolean;
@@ -82,6 +85,7 @@ export function useOrderEntryData({
 		spotStateReceivedAt,
 	} = useDefaultDexBalances();
 	const {
+		transactionIdentity: leverageInteractionIdentity,
 		displayLeverage: leverage,
 		currentLeverage,
 		pendingLeverage,
@@ -97,6 +101,8 @@ export function useOrderEntryData({
 		positionStateReady,
 		switchMarginMode,
 		applyMarginAndLeverage,
+		isUpdating: isLeverageUpdating,
+		updateError: leverageUpdateError,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,
@@ -202,6 +208,7 @@ export function useOrderEntryData({
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		leverageInteractionIdentity,
 		currentLeverage,
 		pendingLeverage,
 		committedLeverage,
@@ -213,6 +220,8 @@ export function useOrderEntryData({
 		positionStateReady,
 		switchMarginMode,
 		applyMarginAndLeverage,
+		isLeverageUpdating,
+		leverageUpdateError,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,

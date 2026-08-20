@@ -7,7 +7,6 @@ import { useSwitchChain, useWalletClient } from "wagmi";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
@@ -20,6 +19,7 @@ import { getOrderPrice } from "@/domain/trade/order/price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
+import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
 import { formatTwapPriceInput, getTwapSuborderCount } from "@/domain/trade/twap-details";
 import {
@@ -33,7 +33,8 @@ import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
-import { useLingeringText } from "@/hooks/ui/use-lingering-text";
+import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
+import { useLingeringValidation } from "@/hooks/ui/use-lingering-validation";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -264,6 +265,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		leverageInteractionIdentity,
 		marginMode,
 		hasPosition,
 		positionStateReady,
@@ -274,6 +276,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setPendingLeverage,
 		resetPendingLeverage,
 		applyMarginAndLeverage,
+		isLeverageUpdating,
+		leverageUpdateError,
 		isSwitchingMode,
 		switchModeError,
 		allowsIsolatedMarginRemoval,
@@ -438,21 +442,24 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval
 			? validation.errors.join(" \u2022 ")
 			: "";
-	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
-	const sizeValidationErrorText =
-		sizeValue > maxSize && maxSize > 0
-			? t`Exceeds max size`
-			: orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD
-				? t`Min order $${ORDER_MIN_NOTIONAL_USD}`
-				: "";
-	const displaySizeValidationError = useLingeringText(sizeValidationErrorText, ERROR_LINGER_MS);
-	const hasDisplayedSizeValidationError =
-		displaySizeValidationError !== "" && displayValidationError.includes(displaySizeValidationError);
+	const validationSnapshot = useLingeringValidation(
+		validationErrorText,
+		hasOrderSizeValidationError(validation.validationErrors),
+		ERROR_LINGER_MS,
+	);
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
 		setSizeInput(getSizeForPercent(pct));
 	}
+
+	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${sizeMode}`;
+	const sliderInteraction = useSizeSliderInteraction({
+		applyPercent: applySizeFromPercent,
+		interactionIdentity: sliderInteractionIdentity,
+		setSizeInput,
+		sizeInput,
+	});
 
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
@@ -698,6 +705,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
+	const isMarginDialogUpdating = marginDialogView === "leverage" ? isLeverageUpdating : isSwitchingMode;
+	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
 		<div className={cn("flex flex-col self-stretch", !embedded && "h-full min-h-0 bg-background", className)}>
@@ -714,13 +723,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				positionStateReady={positionStateReady}
 				allowsCrossMargin={capabilities.allowsCrossMargin}
 				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
-				isUpdating={isSwitchingMode}
-				updateError={switchModeError}
+				isUpdating={isMarginDialogUpdating}
+				updateError={marginDialogError}
 				showLeverage={capabilities.isLeveraged}
 				onApply={handleLeverageApply}
 				presentation="drawer"
 				mobileView={marginDialogView}
-				marketIdentity={market?.name}
+				marketIdentity={leverageInteractionIdentity}
 				marketLabel={market?.pairName ?? market?.name}
 				settingsTab={settingsTab}
 				onSettingsTabChange={setSettingsTab}
@@ -867,10 +876,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					<MobileTradeSizeControl
 						canUsePercent={!isFormDisabled && maxSize > 0}
 						disabled={isFormDisabled}
-						errorId={hasDisplayedSizeValidationError ? validationErrorId : undefined}
-						hasError={hasDisplayedSizeValidationError}
+						errorId={validationSnapshot.hasSizeError ? validationErrorId : undefined}
+						hasError={validationSnapshot.hasSizeError}
+						interactionIdentity={sliderInteractionIdentity}
 						maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
 						onPercentChange={applySizeFromPercent}
+						onPercentCancel={sliderInteraction.onPercentCancel}
+						onPercentCommit={sliderInteraction.onPercentCommit}
+						onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
 						onSizeChange={handleSizeInputChange}
 						onSizeModeToggle={handleSizeModeToggle}
 						percentAriaLabel={`${t`Size`} (%)`}
@@ -1022,9 +1035,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					embedded ? "px-2.5 py-2" : "px-3 py-3",
 				)}
 			>
-				{displayValidationError && (
-					<p id={validationErrorId} className="text-xs text-error mb-2">
-						{displayValidationError}
+				{validationSnapshot.text && (
+					<p id={validationErrorId} role="alert" className="text-xs text-error mb-2">
+						{validationSnapshot.text}
 					</p>
 				)}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
