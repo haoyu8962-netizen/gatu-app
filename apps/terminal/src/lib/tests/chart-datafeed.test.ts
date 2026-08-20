@@ -872,7 +872,10 @@ describe("TradingView datafeed", () => {
 
 	it("invalidates realtime caches before requesting a TradingView data reset", async () => {
 		const onRealtimeReset = vi.fn();
-		const onResetCache = vi.fn();
+		const throwingReset = vi.fn(() => {
+			throw new Error("stale TradingView listener");
+		});
+		const healthyReset = vi.fn();
 		const datafeed = createDatafeed({
 			onRealtimeReset,
 			getSymbolInfo: (_symbolName, coin) =>
@@ -881,16 +884,19 @@ describe("TradingView datafeed", () => {
 		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
 		vi.useFakeTimers();
 
-		datafeed.subscribeBars(symbol, "60" as ResolutionString, vi.fn(), "hype-listener", onResetCache);
+		datafeed.subscribeBars(symbol, "60" as ResolutionString, vi.fn(), "hype-listener-a", throwingReset);
+		datafeed.subscribeBars(symbol, "60" as ResolutionString, vi.fn(), "hype-listener-b", healthyReset);
 		await Promise.resolve();
 		await Promise.resolve();
 
 		datafeed.resetRealtimeCache();
 
-		expect(onResetCache).toHaveBeenCalledTimes(1);
+		expect(throwingReset).toHaveBeenCalledTimes(1);
+		expect(healthyReset).toHaveBeenCalledTimes(1);
 		expect(onRealtimeReset).toHaveBeenCalledTimes(1);
 
-		datafeed.unsubscribeBars("hype-listener");
+		datafeed.unsubscribeBars("hype-listener-a");
+		datafeed.unsubscribeBars("hype-listener-b");
 		await vi.advanceTimersByTimeAsync(5_000);
 	});
 
@@ -1218,6 +1224,39 @@ describe("TradingView datafeed", () => {
 		expect(onError).toHaveBeenLastCalledWith("Chart data is temporarily rate limited");
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
 		expect(onResult).not.toHaveBeenCalled();
+		datafeed.destroy();
+	});
+
+	it("reports a non-rate-limited history failure to the recovery callback", async () => {
+		const historyError = new Error("network down");
+		infoClient.candleSnapshot.mockRejectedValueOnce(historyError);
+		const onHistoryError = vi.fn();
+		const onHistorySuccess = vi.fn();
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "RECOVERY"
+					? { name: "RECOVERY-USDC", ticker: "RECOVERY", description: "RECOVERY-USDC", pricescale: 100 }
+					: undefined,
+			onHistoryError,
+			onHistorySuccess,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "RECOVERY");
+		vi.useFakeTimers();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 1, firstDataRequest: true, from: 1, to: 2 },
+			vi.fn(),
+			onError,
+		);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(onHistoryError).toHaveBeenCalledOnce();
+		expect(onHistoryError).toHaveBeenCalledWith(historyError);
+		expect(onHistorySuccess).not.toHaveBeenCalled();
+		expect(onError).toHaveBeenCalledWith("network down");
 		datafeed.destroy();
 	});
 

@@ -3,6 +3,7 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
+import { createHistoryRecoveryController } from "@/lib/chart/history-recovery";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import {
 	getChartApiSymbol,
@@ -115,6 +116,7 @@ export function TradingViewChart({
 	const chartReadyRef = useRef(false);
 	const pendingDataResetRef = useRef(false);
 	const pendingRealtimeResetRef = useRef(false);
+	const hasLoadedHistoryRef = useRef(false);
 	const wsReconnectGenerationRef = useRef(0);
 	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const targetSymbolRef = useRef(symbol);
@@ -191,6 +193,9 @@ export function TradingViewChart({
 	const requestDataResetRef = useRef<() => void>(() => {});
 	const requestRealtimeResetRef = useRef<() => void>(() => {});
 	const flushPendingRealtimeResetRef = useRef<() => void>(() => {});
+	const flushHistoryRecoveryRef = useRef<() => void>(() => {});
+	const reportDataResetFailureRef = useRef<() => void>(() => {});
+	const resetHistoryRecoveryRef = useRef<() => void>(() => {});
 	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
@@ -792,6 +797,7 @@ export function TradingViewChart({
 				widget.activeChart().resetData();
 			} catch {
 				pendingDataResetRef.current = true;
+				reportDataResetFailureRef.current();
 			}
 		});
 	};
@@ -812,6 +818,7 @@ export function TradingViewChart({
 	flushPendingRealtimeResetRef.current = () => {
 		if (pendingRealtimeResetRef.current) requestRealtimeResetRef.current();
 		if (pendingDataResetRef.current && canRunRealtimeReset()) requestDataResetRef.current();
+		flushHistoryRecoveryRef.current();
 	};
 
 	useEffect(
@@ -948,6 +955,8 @@ export function TradingViewChart({
 			chartReadyRef.current = false;
 			pendingDataResetRef.current = false;
 			pendingRealtimeResetRef.current = false;
+			hasLoadedHistoryRef.current = false;
+			resetHistoryRecoveryRef.current();
 			scheduledDataResetWidgetRef.current = null;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
@@ -974,6 +983,21 @@ export function TradingViewChart({
 			setIsInitializing(false);
 			setInitError(reason);
 		};
+		const historyRecovery = createHistoryRecoveryController({
+			canRetry: () =>
+				!disposed &&
+				widgetEpochRef.current === widgetEpoch &&
+				widgetRef.current !== null &&
+				chartReadyRef.current &&
+				canRunRealtimeReset(),
+			onExhausted: () => {
+				if (!hasLoadedHistoryRef.current) handleFinalFailure("history-recovery-exhausted");
+			},
+			onRetry: () => requestDataResetRef.current(),
+		});
+		flushHistoryRecoveryRef.current = historyRecovery.flush;
+		reportDataResetFailureRef.current = historyRecovery.handleFailure;
+		resetHistoryRecoveryRef.current = historyRecovery.reset;
 
 		const shouldPauseReadyWatchdog = () =>
 			!activeRef.current ||
@@ -1141,7 +1165,17 @@ export function TradingViewChart({
 					onRealtimeReset: () => requestDataResetRef.current(),
 					requestRealtimeReset: () => requestRealtimeResetRef.current(),
 					onHistoryError: () => {
-						if (datafeedRef.current === datafeed) pendingDataResetRef.current = true;
+						if (datafeedRef.current !== datafeed) return;
+						if (getCandleGateRetryAt() !== null) {
+							pendingDataResetRef.current = true;
+							return;
+						}
+						historyRecovery.handleFailure();
+					},
+					onHistorySuccess: () => {
+						if (datafeedRef.current !== datafeed) return;
+						hasLoadedHistoryRef.current = true;
+						historyRecovery.handleSuccess();
 					},
 				});
 				datafeedRef.current = datafeed;
@@ -1241,8 +1275,12 @@ export function TradingViewChart({
 				clearTimeout(candleGateResumeTimer);
 				candleGateResumeTimer = null;
 			}
+			historyRecovery.destroy();
 			clearReadyWatchdog();
 			removeWidget();
+			flushHistoryRecoveryRef.current = () => {};
+			reportDataResetFailureRef.current = () => {};
+			resetHistoryRecoveryRef.current = () => {};
 		};
 	}, [retryNonce]);
 

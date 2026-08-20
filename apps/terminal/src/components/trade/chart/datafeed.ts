@@ -281,7 +281,8 @@ interface DatafeedOptions {
 		| undefined;
 	onRealtimeReset?: () => void;
 	requestRealtimeReset?: () => void;
-	onHistoryError?: () => void;
+	onHistoryError?: (error: unknown) => void;
+	onHistorySuccess?: () => void;
 }
 
 type ActiveRealtimeSubscription = {
@@ -314,6 +315,14 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			if (!destroyed) callback();
 		}, 0);
 		pendingCallbacks.add(timeoutId);
+	};
+	const resolveHistoryResult = (callback: () => void) => {
+		resolveAsync(() => {
+			try {
+				options.onHistorySuccess?.();
+			} catch {}
+			callback();
+		});
 	};
 	const rememberResolvedCoin = (rawSymbolName: string, symbolInfo: LibrarySymbolInfo) => {
 		const apiTicker = symbolInfo.ticker;
@@ -371,7 +380,9 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			if (destroyed) return;
 			if (realtimeSubscriptions.size === 0) return;
 			for (const subscription of [...realtimeSubscriptions.values()]) {
-				resetSubscription(subscription);
+				try {
+					resetSubscription(subscription);
+				} catch {}
 			}
 			options.onRealtimeReset?.();
 		},
@@ -464,13 +475,13 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
 				if (toMs <= fromMs) {
-					resolveAsync(() => onResult([], { noData: false }));
+					resolveHistoryResult(() => onResult([], { noData: false }));
 					return;
 				}
 
 				const exhaustedBefore = exhaustedHistoryByStream.get(streamKey(coin, interval)) ?? 0;
 				if (toMs <= exhaustedBefore) {
-					resolveAsync(() => onResult([], { noData: true }));
+					resolveHistoryResult(() => onResult([], { noData: true }));
 					return;
 				}
 
@@ -504,16 +515,18 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 				const lastBar = resultBars.at(-1);
 				if (!lastBar) {
-					resolveAsync(() => onResult([], { noData }));
+					resolveHistoryResult(() => onResult([], { noData }));
 					return;
 				}
 
 				store.getState().setLastBar(key, cloneBar(lastBar));
 
 				const callbackBars = cloneBars(resultBars);
-				resolveAsync(() => onResult(callbackBars, { noData: false }));
+				resolveHistoryResult(() => onResult(callbackBars, { noData: false }));
 			})().catch((error) => {
-				options.onHistoryError?.();
+				try {
+					options.onHistoryError?.(error);
+				} catch {}
 				resolveAsync(() => onError(describeHistoryError(error)));
 			});
 		},

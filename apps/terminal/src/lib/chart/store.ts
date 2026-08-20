@@ -250,7 +250,9 @@ export function createCandleStore(): CandleStore {
 						const current = get().streams[key];
 						if (!current) return;
 						for (const entry of current.listeners.values()) {
-							entry.onResetCache();
+							try {
+								entry.onResetCache();
+							} catch {}
 						}
 					},
 				};

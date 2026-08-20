@@ -5,6 +5,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
+import { CHART_HISTORY_RECOVERY_DELAYS_MS } from "@/lib/chart/history-recovery";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import { TradingViewOverlayController } from "@/lib/chart/tradingview-overlays";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
@@ -57,6 +58,8 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
 	createDatafeed: (options: {
+		onHistoryError?: (error: unknown) => void;
+		onHistorySuccess?: () => void;
 		onRealtimeReset?: () => void;
 		getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
 	}) => {
@@ -1007,8 +1010,8 @@ describe("TradingViewChart", () => {
 		});
 		await flushChartEffects();
 
-		const options = testState.datafeedOptions[0] as { onHistoryError?: () => void };
-		act(() => options.onHistoryError?.());
+		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
+		act(() => options.onHistoryError?.(new Error("network down")));
 		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
 
 		act(() => {
@@ -1017,6 +1020,86 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+	});
+
+	it("automatically retries a transient history failure with bounded backoff", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as {
+			onHistoryError?: (error: unknown) => void;
+			onHistorySuccess?: () => void;
+		};
+
+		act(() => options.onHistoryError?.(new Error("network down")));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0] - 1);
+		});
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(1);
+		});
+		await flushChartEffects();
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+
+		act(() => options.onHistorySuccess?.());
+		act(() => options.onHistoryError?.(new Error("network down again")));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(2);
+	});
+
+	it("continues bounded recovery when TradingView rejects a data reset", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
+		widgets[0]?.resetData.mockImplementation(() => {
+			throw new Error("reset failed");
+		});
+
+		act(() => options.onHistoryError?.(new Error("network down")));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[1]);
+		});
+		await flushChartEffects();
+
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(2);
+	});
+
+	it("offers the existing retry action when initial history recovery is exhausted", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
+
+		for (const delayMs of CHART_HISTORY_RECOVERY_DELAYS_MS) {
+			act(() => options.onHistoryError?.(new Error("network down")));
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(delayMs);
+			});
+			await flushChartEffects();
+		}
+		act(() => options.onHistoryError?.(new Error("network down")));
+
+		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.textContent).toContain("Retry");
 	});
 
 	it("defers a realtime reset while the page is hidden and flushes it when visible again", async () => {

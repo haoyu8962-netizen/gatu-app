@@ -320,11 +320,13 @@ describe("chart candle store subscriptions", () => {
 		vi.spyOn(Math, "random").mockReturnValue(0);
 		const store = createCandleStore();
 		const ticks: Bar[] = [];
-		const reset = vi.fn(() => {
+		const throwingReset = vi.fn(() => {
 			throw new Error("tradingview teardown");
 		});
+		const healthyReset = vi.fn();
 
-		store.getState().subscribe("BTC:5m", "BTC", "5m", "listener", (bar) => ticks.push(bar), reset);
+		store.getState().subscribe("BTC:5m", "BTC", "5m", "listener-a", (bar) => ticks.push(bar), throwingReset);
+		store.getState().subscribe("BTC:5m", "BTC", "5m", "listener-b", vi.fn(), healthyReset);
 		await flushMicrotasks();
 
 		testState.onError?.(new Error("socket dropped"));
@@ -333,7 +335,8 @@ describe("chart candle store subscriptions", () => {
 		await flushMicrotasks();
 
 		expect(testState.candle).toHaveBeenCalledTimes(2);
-		expect(reset).toHaveBeenCalledTimes(1);
+		expect(throwingReset).toHaveBeenCalledTimes(1);
+		expect(healthyReset).toHaveBeenCalledTimes(1);
 		expect(store.getState().streams["BTC:5m"]?.status).toBe("active");
 
 		testState.listener?.(nextCandle({ t: 300_000 }));
@@ -344,7 +347,8 @@ describe("chart candle store subscriptions", () => {
 		expect(testState.candle).toHaveBeenCalledTimes(2);
 		expect(testState.unsubscribe).not.toHaveBeenCalled();
 
-		store.getState().unsubscribe("BTC:5m", "listener");
+		store.getState().unsubscribe("BTC:5m", "listener-a");
+		store.getState().unsubscribe("BTC:5m", "listener-b");
 		await vi.advanceTimersByTimeAsync(5_000);
 		vi.restoreAllMocks();
 		vi.useRealTimers();

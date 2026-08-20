@@ -162,8 +162,8 @@ export function startSubscription(ctx: SubscribeContext): void {
 				ctx.onActive();
 
 				if (owner.recoveryGeneration > owner.recoveredGeneration) {
-					owner.recoveredGeneration = owner.recoveryGeneration;
 					ctx.onResetListeners();
+					owner.recoveredGeneration = owner.recoveryGeneration;
 				}
 			} catch {}
 
