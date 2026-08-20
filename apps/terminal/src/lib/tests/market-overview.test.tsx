@@ -35,8 +35,14 @@ function getRenderedStatIds(container: HTMLElement): MarketStatId[] {
 }
 
 const mocks = vi.hoisted(() => ({
+	allMidsEvent: undefined as { mids: Record<string, string> } | undefined,
+	allMidsIsStale: false,
+	allMidsStatus: "idle" as "idle" | "subscribing" | "active" | "error",
+	env: "Mainnet",
 	midPx: undefined as string | undefined,
+	midSnapshot: undefined as object | undefined,
 	receivedAt: Date.now() as number | undefined,
+	reconnectListener: undefined as (() => void) | undefined,
 	perpCtxStatus: "idle" as "idle" | "subscribing" | "active" | "error",
 	perpCtxIsStale: false,
 	perpCtxEvent: undefined as
@@ -44,6 +50,7 @@ const mocks = vi.hoisted(() => ({
 				coin: string;
 				ctx: {
 					markPx: string;
+					midPx?: string | null;
 					prevDayPx: string;
 					oraclePx: string;
 					dayNtlVlm: string;
@@ -59,6 +66,7 @@ const mocks = vi.hoisted(() => ({
 				coin: string;
 				ctx: {
 					markPx: string;
+					midPx?: string | null;
 					prevDayPx: string;
 					dayNtlVlm: string;
 					circulatingSupply?: string;
@@ -111,7 +119,7 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
-	useOrderbookMidPrice: () => ({ midPx: mocks.midPx, status: "idle" }),
+	useOrderbookMidPrice: () => ({ midPx: mocks.midPx, snapshot: mocks.midSnapshot, status: "idle" }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -119,9 +127,24 @@ vi.mock("@/lib/hyperliquid", () => ({
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	getSpotMarketApiCoin: (market: { kind?: string; name?: string } | undefined) =>
 		market?.kind === "spot" ? (market.name ?? "") : "",
+	subscribeWsReconnect: (listener: () => void) => {
+		mocks.reconnectListener = listener;
+		return () => {
+			if (mocks.reconnectListener === listener) mocks.reconnectListener = undefined;
+		};
+	},
+	useHyperliquid: () => ({ env: mocks.env }),
 	useMarketsInfo: () => ({ getMarketByName: () => mocks.fastMarket }),
 	useSelectedMarketInfo: () => ({ data: mocks.selectedMarket }),
 	useSubscription: (method: string) => {
+		if (method === "allMids") {
+			return {
+				data: mocks.allMidsEvent,
+				status: mocks.allMidsStatus,
+				isStale: mocks.allMidsIsStale,
+				lastMessageAt: mocks.allMidsEvent ? mocks.receivedAt : undefined,
+			};
+		}
 		const isPerp = method === "activeAssetCtx";
 		const data = isPerp ? mocks.perpCtxEvent : method === "activeSpotAssetCtx" ? mocks.spotCtxEvent : undefined;
 		return {
@@ -145,8 +168,14 @@ describe("MarketOverview", () => {
 
 	beforeEach(() => {
 		vi.spyOn(Date, "now").mockReturnValue(NOW);
+		mocks.allMidsEvent = undefined;
+		mocks.allMidsIsStale = false;
+		mocks.allMidsStatus = "idle";
+		mocks.env = "Mainnet";
 		mocks.midPx = undefined;
+		mocks.midSnapshot = undefined;
 		mocks.receivedAt = FRESH_RECEIVED_AT;
+		mocks.reconnectListener = undefined;
 		mocks.perpCtxStatus = "idle";
 		mocks.perpCtxIsStale = false;
 		mocks.perpCtxEvent = undefined;
@@ -369,7 +398,7 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(container.textContent).toContain("Mark80");
-		expect(container.textContent).toContain("24h Change+16 / +25.00%");
+		expect(container.textContent).toContain("24h Change+16.000 / +25.00%");
 		expect(container.textContent).toContain("ORACLE79");
 		expect(container.textContent).toContain("$10,000,000.00");
 		expect(container.textContent).toContain("$160.00");
@@ -552,7 +581,7 @@ describe("MarketOverview", () => {
 			expect(node.hasAttribute("aria-hidden")).toBe(false);
 			expect(node.hasAttribute("inert")).toBe(false);
 		}
-		expect(getStat("price").textContent).toContain("Price1.25");
+		expect(getStat("price").textContent).toBe("Price-");
 		expect(container.textContent).not.toContain("Mark80");
 
 		mocks.spotCtxStatus = "active";
@@ -597,8 +626,55 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(container.textContent).toContain("Mark71.8");
-		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
+		expect(container.textContent).toContain("24h Change+1.800 / +2.57%");
 		expect(container.textContent).not.toContain("Mark75");
+	});
+
+	it("keeps the spot headline at native precision and flashes only real same-source price changes", () => {
+		mocks.selectedMarket = createSpotMarket({ name: "@107", pairName: "HYPE-USDC", szDecimals: 2 });
+		mocks.midPx = "72.1375";
+		mocks.midSnapshot = { revision: 0 };
+		renderOverview();
+
+		let price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
+		expect(price?.textContent).toBe("72.138");
+		expect(price?.dataset.priceSource).toBe("bbo");
+		expect(price?.dataset.direction).toBeUndefined();
+		expect(price?.classList.contains("use-color-change")).toBe(false);
+
+		mocks.midPx = "72.138";
+		mocks.midSnapshot = { revision: 1 };
+		renderOverview();
+		price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
+		expect(price?.textContent).toBe("72.138");
+		expect(price?.dataset.direction).toBe("up");
+		expect(price?.classList.contains("use-color-change")).toBe(true);
+
+		mocks.midPx = "72.137";
+		mocks.midSnapshot = { revision: 2 };
+		renderOverview();
+		price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
+		expect(price?.textContent).toBe("72.137");
+		expect(price?.dataset.direction).toBe("down");
+	});
+
+	it("establishes a no-flash baseline when the spot headline changes source", () => {
+		mocks.selectedMarket = createSpotMarket({ name: "@107", pairName: "HYPE-USDC", szDecimals: 2 });
+		mocks.midPx = "72.1375";
+		mocks.midSnapshot = { revision: 0 };
+		renderOverview();
+
+		mocks.midPx = undefined;
+		mocks.midSnapshot = undefined;
+		mocks.allMidsStatus = "active";
+		mocks.allMidsEvent = { mids: { "@107": "72.2" } };
+		renderOverview();
+
+		const price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
+		expect(price?.textContent).toBe("72.200");
+		expect(price?.dataset.priceSource).toBe("allMids");
+		expect(price?.dataset.direction).toBeUndefined();
+		expect(price?.classList.contains("use-color-change")).toBe(false);
 	});
 
 	it("keeps unavailable funding distinct from a real zero rate", () => {
@@ -656,12 +732,14 @@ describe("MarketOverview", () => {
 
 	it("labels spot notionals with the selected market quote token", () => {
 		mocks.midPx = "1.3";
+		mocks.midSnapshot = { revision: 0 };
 		mocks.selectedMarket = createSpotMarket();
 		mocks.spotCtxStatus = "active";
 		mocks.spotCtxEvent = {
 			coin: "@999",
 			ctx: {
 				markPx: "1.25",
+				midPx: "1.2",
 				prevDayPx: "1.0",
 				dayNtlVlm: "12345.67",
 				circulatingSupply: "1000",
@@ -670,13 +748,13 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(container.textContent).toContain("Price1.3");
-		expect(container.textContent).toContain("24h Change+0.3 / +30.00%");
+		expect(container.textContent).toContain("24h Change+0.3000 / +30.00%");
 		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
 
-	it("rejects a stale spot context and keeps only the fresh exact price", () => {
+	it("rejects a stale spot context instead of presenting mark price as the market price", () => {
 		mocks.selectedMarket = createSpotMarket();
 		mocks.spotCtxStatus = "active";
 		mocks.spotCtxIsStale = true;
@@ -684,6 +762,7 @@ describe("MarketOverview", () => {
 			coin: "@999",
 			ctx: {
 				markPx: "9",
+				midPx: "9.5",
 				prevDayPx: "8",
 				dayNtlVlm: "999",
 				circulatingSupply: "9999",
@@ -691,10 +770,49 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 
-		expect(getStat("price").textContent).toContain("Price1.25");
+		expect(getStat("price").textContent).toBe("Price-");
 		expect(getStat("volume24h").textContent).toBe("24H VOL—");
 		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price9");
+	});
+
+	it("uses a fresh exact spot mid and keeps the different mark limited to valuation", () => {
+		mocks.selectedMarket = createSpotMarket();
+		mocks.spotCtxStatus = "active";
+		mocks.spotCtxEvent = {
+			coin: "@999",
+			ctx: {
+				markPx: "9",
+				midPx: "1.5",
+				prevDayPx: "1",
+				dayNtlVlm: "999",
+				circulatingSupply: "1000",
+			},
+		};
+		renderOverview();
+
+		expect(getStat("price").textContent).toContain("Price1.5000");
+		expect(getStat("marketCap").textContent).toContain("9,000 USDH");
+		expect(getStat("price").textContent).not.toContain("9");
+	});
+
+	it("fails closed when a fresh spot context has a mark but no midpoint", () => {
+		mocks.selectedMarket = createSpotMarket();
+		mocks.spotCtxStatus = "active";
+		mocks.spotCtxEvent = {
+			coin: "@999",
+			ctx: {
+				markPx: "9",
+				midPx: null,
+				prevDayPx: "1",
+				dayNtlVlm: "999",
+				circulatingSupply: "1000",
+			},
+		};
+		renderOverview();
+
+		expect(getStat("price").textContent).toBe("Price-");
+		expect(getStat("marketCap").textContent).toContain("9,000 USDH");
 	});
 
 	it("never carries a previous spot context across a same-instance market switch", () => {
@@ -704,6 +822,7 @@ describe("MarketOverview", () => {
 			coin: "@999",
 			ctx: {
 				markPx: "1.5",
+				midPx: "1.5",
 				prevDayPx: "1",
 				dayNtlVlm: "15000",
 				circulatingSupply: "1000",
@@ -725,7 +844,7 @@ describe("MarketOverview", () => {
 			],
 		});
 		renderOverview();
-		expect(getStat("price").textContent).toContain("Price2");
+		expect(getStat("price").textContent).toBe("Price-");
 		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price1.5");
 
@@ -733,6 +852,7 @@ describe("MarketOverview", () => {
 			coin: "@1000",
 			ctx: {
 				markPx: "2.5",
+				midPx: "2.5",
 				prevDayPx: "2",
 				dayNtlVlm: "25000",
 				circulatingSupply: "2000",

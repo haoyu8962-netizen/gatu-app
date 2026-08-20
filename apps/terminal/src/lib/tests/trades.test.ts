@@ -15,6 +15,7 @@ describe("trades", () => {
 
 	it("derives price precision from the market price", () => {
 		expect(getTradePriceDecimals("59.046", 2, "perp")).toBe(3);
+		expect(getTradePriceDecimals("72.1375", 2, "spot")).toBe(3);
 		expect(getTradePriceDecimals("63958", 4, "perp")).toBe(0);
 		expect(getTradePriceDecimals(null, 3, "spot")).toBe(5);
 	});

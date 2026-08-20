@@ -1,7 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { isLiveMarkPriceReady, resolveActiveMarketPrice, resolveFastMarketPrice } from "@/domain/trade/market-price";
+import {
+	isLiveMarkPriceReady,
+	resolveActiveMarketPrice,
+	resolveFastMarketPrice,
+	selectMarketHeadlinePrice,
+} from "@/domain/trade/market-price";
 
 describe("live market price", () => {
+	it("selects a tradable headline midpoint without substituting mark price", () => {
+		expect(
+			selectMarketHeadlinePrice({
+				bboMidPx: "72.1375",
+				allMidsPrice: "72.13",
+				assetCtxMidPx: "72.12",
+			}),
+		).toEqual({ source: "bbo", value: "72.1375" });
+		expect(
+			selectMarketHeadlinePrice({
+				bboMidPx: undefined,
+				allMidsPrice: undefined,
+				assetCtxMidPx: null,
+			}),
+		).toEqual({ source: null, value: undefined });
+	});
+
 	it("uses the exact fast-market key and preserves an explicit null mid", () => {
 		expect(
 			resolveFastMarketPrice({

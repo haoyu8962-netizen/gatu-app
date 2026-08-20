@@ -15,11 +15,11 @@ import {
 	formatQuoteAmount,
 	formatUSD,
 	shortenAddress,
-	szDecimalsToPriceDecimals,
 } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
+import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
 import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
@@ -76,7 +76,7 @@ export function MobileMarketBar({ className }: Props) {
 	}
 
 	const isSpot = market?.kind === "spot";
-	const priceDecimals = getPriceDecimals(market);
+	const priceDecimals = getPriceDecimals(market, displayPrice ?? marketMarkPx ?? oraclePx);
 	const fundingNum = toBig(funding)?.toNumber() ?? null;
 	const shouldRunFundingCountdown = expanded && !isSpot && fundingNum !== null;
 	useEffect(() => {
@@ -441,9 +441,12 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {
+function getPriceDecimals(
+	market: UnifiedMarketInfo | undefined,
+	referencePrice: string | number | null | undefined,
+): number {
 	if (!market) return 2;
-	return szDecimalsToPriceDecimals(market.szDecimals, market.kind === "spot" ? "spot" : "perp");
+	return getTradePriceDecimals(referencePrice, market.szDecimals, market.kind === "spot" ? "spot" : "perp");
 }
 
 function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {

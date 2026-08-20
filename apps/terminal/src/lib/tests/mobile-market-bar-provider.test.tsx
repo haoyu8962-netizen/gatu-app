@@ -318,6 +318,19 @@ describe("MobileMarketBarProvider", () => {
 		expect(price?.dataset.direction).toBe("none");
 	});
 
+	it("does not animate when only the decimal representation changes", () => {
+		mocks.bboMidPx = "101.0";
+		mocks.bboSnapshot = { revision: 0 };
+		let price = render("markets");
+		expect(price?.dataset.direction).toBe("none");
+
+		mocks.bboMidPx = "101.00";
+		mocks.bboSnapshot = { revision: 1 };
+		price = render("markets");
+		expect(price?.textContent).toBe("101.00");
+		expect(price?.dataset.direction).toBe("none");
+	});
+
 	it("starts a new animation baseline after a websocket reconnect", () => {
 		let price = render("markets");
 		expect(price?.dataset.direction).toBe("none");

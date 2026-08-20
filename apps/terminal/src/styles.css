@@ -1091,6 +1091,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .use-color-change,
     .orderbook-color-change {
       animation: none;
     }

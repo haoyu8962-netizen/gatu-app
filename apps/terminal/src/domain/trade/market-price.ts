@@ -45,9 +45,37 @@ export interface LiveMarketPriceSnapshot {
 	midReceivedAt: number | undefined;
 }
 
+type MarketValue = string | number | null | undefined;
+
+export type MarketHeadlinePriceSource = "bbo" | "allMids" | "assetCtxMid" | null;
+
+export interface MarketHeadlinePriceSample {
+	source: MarketHeadlinePriceSource;
+	value: MarketValue;
+}
+
 function getPositivePrice(value: unknown): string | undefined {
 	if (typeof value !== "string") return undefined;
 	return toBig(value)?.gt(0) ? value : undefined;
+}
+
+export function selectMarketHeadlinePrice({
+	bboMidPx,
+	allMidsPrice,
+	assetCtxMidPx,
+}: {
+	bboMidPx: MarketValue;
+	allMidsPrice: MarketValue;
+	assetCtxMidPx: MarketValue;
+}): MarketHeadlinePriceSample {
+	if (isPositivePrice(bboMidPx)) return { source: "bbo", value: bboMidPx };
+	if (isPositivePrice(allMidsPrice)) return { source: "allMids", value: allMidsPrice };
+	if (isPositivePrice(assetCtxMidPx)) return { source: "assetCtxMid", value: assetCtxMidPx };
+	return { source: null, value: undefined };
+}
+
+function isPositivePrice(value: MarketValue): boolean {
+	return toBig(value)?.gt(0) === true;
 }
 
 export function resolveFastMarketPrice({

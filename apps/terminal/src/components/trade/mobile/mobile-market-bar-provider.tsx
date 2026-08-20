@@ -1,25 +1,31 @@
-import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
-import { isLiveMarkPriceReady, LIVE_MARK_MAX_STALE_MS, resolveActiveMarketPrice } from "@/domain/trade/market-price";
+import { createContext, type ReactNode, useContext } from "react";
+import {
+	isLiveMarkPriceReady,
+	LIVE_MARK_MAX_STALE_MS,
+	type MarketHeadlinePriceSource,
+	resolveActiveMarketPrice,
+	selectMarketHeadlinePrice,
+} from "@/domain/trade/market-price";
+import {
+	type MarketPriceDirection,
+	type MarketPriceFlash,
+	useMarketPriceFlash,
+} from "@/hooks/trade/use-market-price-flash";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import {
 	getMarketApiCoin,
 	getSpotMarketApiCoin,
 	type SubParams,
-	subscribeWsReconnect,
 	type UnifiedMarketInfo,
 	useHyperliquid,
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { toBig } from "@/lib/trade/numbers";
 
-export type MobileMarketPriceSource = "bbo" | "allMids" | "assetCtxMid" | null;
-export type MobileMarketPriceDirection = "up" | "down";
-
-export interface MobileMarketPriceFlash {
-	sequence: number;
-	direction: MobileMarketPriceDirection | null;
-}
+export type MobileMarketPriceSource = MarketHeadlinePriceSource;
+export type MobileMarketPriceDirection = MarketPriceDirection;
+export type MobileMarketPriceFlash = MarketPriceFlash;
+export { selectMarketHeadlinePrice as selectMobileMarketPrice } from "@/domain/trade/market-price";
 
 interface MobileMarketBarSnapshot {
 	market: UnifiedMarketInfo | undefined;
@@ -41,41 +47,13 @@ interface Props {
 	enabled: boolean;
 }
 
-interface PriceSample {
-	source: MobileMarketPriceSource;
-	value: MarketValue;
-}
-
-interface PriceIdentity {
-	generation: number;
-	identity: string;
-	priceKey: string | null;
-	receipt: object | undefined;
-	source: MobileMarketPriceSource;
-}
-
-interface PriceFlashEvent extends MobileMarketPriceFlash {
-	identity: string;
-	priceKey: string | null;
-	source: MobileMarketPriceSource;
-}
-
 type AllMidsParams = SubParams<"allMids">;
 type MarketValue = string | number | null | undefined;
-
-const EMPTY_FLASH_EVENT: PriceFlashEvent = {
-	sequence: 0,
-	direction: null,
-	identity: "",
-	priceKey: null,
-	source: null,
-};
 
 const MobileMarketBarContext = createContext<MobileMarketBarSnapshot | null>(null);
 
 export function MobileMarketBarProvider({ children, enabled }: Props) {
 	const { env } = useHyperliquid();
-	const wsGeneration = useWsReconnectGeneration(enabled);
 	const { data: market } = useSelectedMarketInfo();
 	const isSpot = market?.kind === "spot";
 	const perpCoin = getMarketApiCoin(market);
@@ -137,7 +115,7 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 			? spotCtxEvent?.ctx
 			: undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
-	const priceSample = selectMobileMarketPrice({
+	const priceSample = selectMarketHeadlinePrice({
 		bboMidPx: midPx,
 		allMidsPrice,
 		assetCtxMidPx: liveCtx?.midPx,
@@ -153,67 +131,13 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 						: perpCtxEvent
 					: undefined;
 	const marketDex = market?.kind === "builderPerp" ? market.dex : isSpot ? "spot" : "perp";
-	const priceIdentity = `${env}:${marketDex}:${market?.name ?? ""}:${wsGeneration}`;
-	const priceKey = toBig(priceSample.value)?.toString() ?? null;
-	const [priceFlashEvent, setPriceFlashEvent] = useState<PriceFlashEvent>(EMPTY_FLASH_EVENT);
-	const awaitingReconnectReceiptRef = useRef<{ generation: number; receipt: object | undefined } | null>(null);
-	const previousPriceRef = useRef<PriceIdentity | null>(null);
-
-	useEffect(() => {
-		const current: PriceIdentity = {
-			generation: wsGeneration,
-			identity: priceIdentity,
-			priceKey,
-			receipt: priceReceipt,
-			source: priceSample.source,
-		};
-		const previous = previousPriceRef.current;
-		previousPriceRef.current = current;
-		if (previous && previous.generation !== current.generation) {
-			awaitingReconnectReceiptRef.current = {
-				generation: current.generation,
-				receipt: current.receipt,
-			};
-		}
-
-		const awaitingReconnectReceipt = awaitingReconnectReceiptRef.current;
-		if (awaitingReconnectReceipt?.generation === current.generation) {
-			if (!Object.is(awaitingReconnectReceipt.receipt, current.receipt)) {
-				awaitingReconnectReceiptRef.current = null;
-			}
-			setPriceFlashEvent((state) => createPriceFlashEvent(state, current, null));
-			return;
-		}
-
-		if (
-			!previous ||
-			!current.priceKey ||
-			!current.source ||
-			previous.identity !== current.identity ||
-			previous.source !== current.source ||
-			!previous.priceKey
-		) {
-			setPriceFlashEvent((state) => createPriceFlashEvent(state, current, null));
-			return;
-		}
-
-		const previousPrice = toBig(previous.priceKey);
-		const currentPrice = toBig(current.priceKey);
-		if (!previousPrice || !currentPrice || currentPrice.eq(previousPrice)) return;
-
-		setPriceFlashEvent((state) =>
-			createPriceFlashEvent(state, current, currentPrice.gt(previousPrice) ? "up" : "down"),
-		);
-	}, [priceIdentity, priceKey, priceReceipt, priceSample.source, wsGeneration]);
-
-	const isCurrentFlashEvent =
-		priceFlashEvent.identity === priceIdentity &&
-		priceFlashEvent.source === priceSample.source &&
-		priceFlashEvent.priceKey === priceKey;
-	const priceFlash: MobileMarketPriceFlash = {
-		sequence: priceFlashEvent.sequence,
-		direction: isCurrentFlashEvent ? priceFlashEvent.direction : null,
-	};
+	const priceFlash = useMarketPriceFlash({
+		enabled,
+		identity: `${env}:${marketDex}:${market?.name ?? ""}`,
+		receipt: priceReceipt,
+		source: priceSample.source,
+		value: priceSample.value,
+	});
 
 	const selectedLiveMark = isLiveMarkPriceReady(
 		market?.markPriceStatus ?? "loading",
@@ -241,54 +165,10 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 	return <MobileMarketBarContext value={snapshot}>{children}</MobileMarketBarContext>;
 }
 
-function createPriceFlashEvent(
-	previous: PriceFlashEvent,
-	current: PriceIdentity,
-	direction: MobileMarketPriceDirection | null,
-): PriceFlashEvent {
-	return {
-		sequence: previous.sequence + 1,
-		direction,
-		identity: current.identity,
-		priceKey: current.priceKey,
-		source: current.source,
-	};
-}
-
-function useWsReconnectGeneration(enabled: boolean): number {
-	const [generation, setGeneration] = useState(0);
-
-	useEffect(() => {
-		if (!enabled) return;
-		return subscribeWsReconnect(() => setGeneration((value) => value + 1));
-	}, [enabled]);
-
-	return generation;
-}
-
 export function useMobileMarketBarSnapshot(): MobileMarketBarSnapshot {
 	const snapshot = useContext(MobileMarketBarContext);
 	if (!snapshot) throw new Error("MobileMarketBar must be rendered inside MobileMarketBarProvider");
 	return snapshot;
-}
-
-export function selectMobileMarketPrice({
-	bboMidPx,
-	allMidsPrice,
-	assetCtxMidPx,
-}: {
-	bboMidPx: MarketValue;
-	allMidsPrice: MarketValue;
-	assetCtxMidPx: MarketValue;
-}): PriceSample {
-	if (isPositivePrice(bboMidPx)) return { source: "bbo", value: bboMidPx };
-	if (isPositivePrice(allMidsPrice)) return { source: "allMids", value: allMidsPrice };
-	if (isPositivePrice(assetCtxMidPx)) return { source: "assetCtxMid", value: assetCtxMidPx };
-	return { source: null, value: undefined };
-}
-
-function isPositivePrice(value: MarketValue): boolean {
-	return toBig(value)?.gt(0) === true;
 }
 
 function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {

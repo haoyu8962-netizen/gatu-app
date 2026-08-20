@@ -10,7 +10,13 @@ import {
 	getMarketCapUsd,
 	getOiUsd,
 } from "@/domain/market";
-import { isLiveMarkPriceReady, resolveActiveMarketPrice } from "@/domain/trade/market-price";
+import {
+	isLiveMarkPriceReady,
+	LIVE_MARK_MAX_STALE_MS,
+	resolveActiveMarketPrice,
+	selectMarketHeadlinePrice,
+} from "@/domain/trade/market-price";
+import { useMarketPriceFlash } from "@/hooks/trade/use-market-price-flash";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -21,19 +27,20 @@ import {
 	formatQuoteAmount,
 	formatUSD,
 	shortenAddress,
-	szDecimalsToPriceDecimals,
 } from "@/lib/format";
 import {
 	getExplorerTokenUrl,
 	getMarketApiCoin,
 	getSpotMarketApiCoin,
 	type UnifiedMarketInfo,
+	useHyperliquid,
 	useMarketsInfo,
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
+import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
@@ -149,12 +156,20 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
+function formatMarketHeaderPrice(value: string | number | null | undefined, decimals: number): string {
+	return formatNumber(value, {
+		minimumFractionDigits: decimals,
+		maximumFractionDigits: decimals,
+	});
+}
+
 export function MarketOverview() {
 	useNumberFormatRevision();
+	const { env } = useHyperliquid();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
-	const { midPx } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
+	const { midPx, snapshot: bboSnapshot } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
 	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
@@ -172,6 +187,15 @@ export function MarketOverview() {
 		isStale: spotCtxIsStale,
 		lastMessageAt: spotCtxReceivedAt,
 	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: !!spotCoin && isSpot });
+	const {
+		data: allMidsEvent,
+		isStale: allMidsIsStale,
+		lastMessageAt: allMidsReceivedAt,
+		status: allMidsStatus,
+	} = useSubscription("allMids", undefined, {
+		enabled: !!perpCoin && isSpot,
+		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
+	});
 
 	const perpPrice = resolveActiveMarketPrice({
 		coin: perpCoin,
@@ -198,6 +222,14 @@ export function MarketOverview() {
 	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
 	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
+	const allMidsCandidate = perpCoin ? allMidsEvent?.mids?.[perpCoin] : undefined;
+	const allMidsPrice = isLiveMarkPriceReady(
+		allMidsStatus === "active" && !allMidsIsStale ? "success" : allMidsStatus === "error" ? "error" : "loading",
+		allMidsCandidate,
+		allMidsReceivedAt,
+	)
+		? allMidsCandidate
+		: undefined;
 	const hasFreshSelectedMark = isLiveMarkPriceReady(
 		selectedMarketInfo?.markPriceStatus ?? "loading",
 		selectedMarketInfo?.markPx,
@@ -211,14 +243,39 @@ export function MarketOverview() {
 			fastMarketInfo?.markPx,
 			fastMarketInfo?.markPriceReceivedAt,
 		);
-	const selectedLiveMark = hasFreshSelectedMark
-		? selectedMarketInfo?.markPx
+	const selectedMarkSample = hasFreshSelectedMark
+		? { receipt: selectedMarketInfo, source: "selectedMarketMark", value: selectedMarketInfo?.markPx }
 		: hasFreshFastMark
-			? fastMarketInfo?.markPx
-			: undefined;
-
+			? { receipt: fastMarketInfo, source: "fastMarketMark", value: fastMarketInfo?.markPx }
+			: { receipt: undefined, source: null, value: undefined };
+	const selectedLiveMark = selectedMarkSample.value;
+	const spotPriceSample = selectMarketHeadlinePrice({
+		bboMidPx: midPx,
+		allMidsPrice,
+		assetCtxMidPx: liveCtx?.midPx,
+	});
 	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
-	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedLiveMark) : perpMarkPx;
+	const displayPrice = isSpot ? spotPriceSample.value : perpMarkPx;
+	const priceSource = isSpot ? spotPriceSample.source : perpCtx ? "activeAssetCtxMark" : selectedMarkSample.source;
+	const priceReceipt = isSpot
+		? spotPriceSample.source === "bbo"
+			? bboSnapshot
+			: spotPriceSample.source === "allMids"
+				? allMidsEvent
+				: spotPriceSample.source === "assetCtxMid"
+					? spotCtxEvent
+					: undefined
+		: perpCtx
+			? perpCtxEvent
+			: selectedMarkSample.receipt;
+	const marketScope = selectedMarketInfo?.kind === "builderPerp" ? selectedMarketInfo.dex : isSpot ? "spot" : "perp";
+	const priceFlash = useMarketPriceFlash({
+		enabled: !!selectedMarketInfo,
+		identity: `${env}:${marketScope}:${selectedMarketInfo?.name ?? ""}`,
+		receipt: priceReceipt,
+		source: priceSource,
+		value: displayPrice,
+	});
 	const dayNtlVlm = liveCtx?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx;
 	const openInterest = perpCtx?.openInterest;
@@ -236,16 +293,17 @@ export function MarketOverview() {
 	const spotCirculatingSupply = isSpot ? spotCtx?.circulatingSupply : null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 	const marketType = isSpot ? "spot" : "perp";
-	const priceDecimals = szDecimalsToPriceDecimals(selectedMarketInfo?.szDecimals ?? 2, marketType);
-	const priceText = formatNumber(displayPrice, {
-		minimumFractionDigits: 0,
-		maximumFractionDigits: priceDecimals,
-	});
+	const priceDecimals = getTradePriceDecimals(
+		displayPrice ?? selectedLiveMark,
+		selectedMarketInfo?.szDecimals ?? 2,
+		marketType,
+	);
+	const priceText = formatMarketHeaderPrice(displayPrice, priceDecimals);
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
 	const priceChangeText =
 		priceChange24h !== null
 			? formatNumber(priceChange24h, {
-					minimumFractionDigits: 0,
+					minimumFractionDigits: priceDecimals,
 					maximumFractionDigits: priceDecimals,
 					signDisplay: "exceptZero",
 				})
@@ -287,19 +345,27 @@ export function MarketOverview() {
 			<div data-market-overview-row="" className="relative flex w-max min-w-full items-center gap-6">
 				{renderStat(
 					"price",
-					<StatBlock label={isSpot ? t`Price` : t`Mark`} value={priceText} valueClass="text-trading-panel-fg" />,
+					<StatBlock
+						label={isSpot ? t`Price` : t`Mark`}
+						value={
+							<span
+								key={priceFlash.sequence}
+								data-direction={priceFlash.direction ?? undefined}
+								data-price-source={priceSource ?? undefined}
+								data-slot="market-overview-price-value"
+								className={cn(priceFlash.direction && "use-color-change")}
+							>
+								{priceText}
+							</span>
+						}
+						valueClass="text-trading-panel-fg"
+					/>,
 				)}
 				{!isSpot && (
 					<>
 						{renderStat(
 							"oracle",
-							<StatBlock
-								label={t`ORACLE`}
-								value={formatNumber(oraclePx, {
-									minimumFractionDigits: 0,
-									maximumFractionDigits: priceDecimals,
-								})}
-							/>,
+							<StatBlock label={t`ORACLE`} value={formatMarketHeaderPrice(oraclePx, priceDecimals)} />,
 						)}
 						{renderStat(
 							"change24h",

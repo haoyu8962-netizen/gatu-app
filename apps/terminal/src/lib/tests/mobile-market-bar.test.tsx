@@ -361,4 +361,30 @@ describe("MobileMarketBar", () => {
 		expect(price?.classList.contains("use-color-change")).toBe(true);
 		expect(price?.dataset.direction).toBe("up");
 	});
+
+	it("uses the same native headline precision as desktop for HYPE spot midpoints", () => {
+		Object.assign(mocks.selectedMarket, {
+			kind: "spot",
+			name: "@107",
+			pairName: "HYPE-USDC",
+			markPx: "72.137",
+			midPx: "72.1375",
+			prevDayPx: "70",
+			szDecimals: 2,
+		});
+		mocks.midPx = "72.1375";
+		mocks.midSnapshot = { revision: 0 };
+
+		renderBar();
+		let price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
+		expect(price?.title).toBe("72.138");
+		expect(price?.textContent).toBe("72.138");
+
+		mocks.midPx = "72.138";
+		mocks.midSnapshot = { revision: 1 };
+		renderBar();
+		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
+		expect(price?.title).toBe("72.138");
+		expect(price?.dataset.direction).toBe("up");
+	});
 });
