@@ -189,32 +189,39 @@ describe("store-driven resume via singletons", () => {
 		store.getState().releaseSubscription("test:initial-offline");
 	});
 
-	it.each(["allDexsClearinghouseState", "clearinghouseState", "openOrders", "spotState", "twapStates", "webData3"])(
-		"marks retained %s snapshots stale as soon as the transport disconnects",
-		async (method) => {
-			let notifyDisconnect: (() => void) | undefined;
-			const detachDisconnect = vi.fn();
-			const store = createHyperliquidStore({
-				ssr: false,
-				triggerReconnect: vi.fn(),
-				subscribeDisconnect: (listener) => {
-					notifyDisconnect = listener;
-					return detachDisconnect;
-				},
-			});
-			const { subscribe } = createFakeSubscription();
-			const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
+	it.each([
+		"activeAssetCtx",
+		"activeSpotAssetCtx",
+		"allMids",
+		"allDexsClearinghouseState",
+		"clearinghouseState",
+		"openOrders",
+		"spotState",
+		"twapStates",
+		"webData3",
+	])("marks retained %s snapshots stale as soon as the transport disconnects", async (method) => {
+		let notifyDisconnect: (() => void) | undefined;
+		const detachDisconnect = vi.fn();
+		const store = createHyperliquidStore({
+			ssr: false,
+			triggerReconnect: vi.fn(),
+			subscribeDisconnect: (listener) => {
+				notifyDisconnect = listener;
+				return detachDisconnect;
+			},
+		});
+		const { subscribe } = createFakeSubscription();
+		const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
 
-			store.getState().acquireSubscription(key, subscribe);
-			await new Promise<void>((resolve) => setTimeout(resolve, 0));
-			store.getState().setSubscriptionData(key, { sequence: 1 });
-			notifyDisconnect?.();
+		store.getState().acquireSubscription(key, subscribe);
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+		store.getState().setSubscriptionData(key, { sequence: 1 });
+		notifyDisconnect?.();
 
-			expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
-			store.getState().releaseSubscription(key);
-			expect(detachDisconnect).toHaveBeenCalledOnce();
-		},
-	);
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: { sequence: 1 }, isStale: true });
+		store.getState().releaseSubscription(key);
+		expect(detachDisconnect).toHaveBeenCalledOnce();
+	});
 
 	it("drops a hidden account snapshot buffer when the transport disconnects before first paint", async () => {
 		let notifyDisconnect: (() => void) | undefined;

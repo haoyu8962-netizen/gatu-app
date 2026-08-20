@@ -37,7 +37,6 @@ interface Props {
 
 interface DetailCellProps {
 	label: ReactNode;
-	multiline?: boolean;
 	tooltipContent?: ReactNode;
 	value: ReactNode;
 }
@@ -64,8 +63,9 @@ export function MobileMarketBar({ className }: Props) {
 		spotCirculatingSupply,
 	} = useMobileMarketBarSnapshot();
 	const navigateToMarket = useMarketNavigation();
-	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
+	const detailsId = useId();
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 	const initialPriceFlashSequenceRef = useRef(priceFlash.sequence);
 	const visiblePriceDirection =
@@ -162,6 +162,7 @@ export function MobileMarketBar({ className }: Props) {
 									: "border-trading-panel-stroke-input text-trading-panel-muted",
 							)}
 							aria-expanded={expanded}
+							aria-controls={detailsId}
 							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
 						>
 							<CaretDownIcon
@@ -175,7 +176,7 @@ export function MobileMarketBar({ className }: Props) {
 				</div>
 
 				{expanded && (
-					<div className="mx-4 border-t border-trading-panel-stroke-row">
+					<div id={detailsId} className="mx-4 border-t border-trading-panel-stroke-row">
 						{!isSpot && (
 							<>
 								<div className="grid grid-cols-2 gap-x-4 py-2.5">
@@ -207,7 +208,7 @@ export function MobileMarketBar({ className }: Props) {
 											fundingNum === null ? (
 												FALLBACK_VALUE_PLACEHOLDER
 											) : (
-												<span className="inline-flex items-center gap-2">
+												<span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
 													<span className={getPriceChangeColorClass(fundingNum)}>
 														{formatPercent(fundingNum, {
 															minimumFractionDigits: 4,
@@ -234,11 +235,10 @@ export function MobileMarketBar({ className }: Props) {
 										label={t`More Info`}
 										value={createSpotTokenInfo(
 											spotTokenAddress,
-											copiedSpotTokenAddress,
+											copiedSpotTokenAddress === spotTokenAddress,
 											copySpotTokenAddress,
 											spotSocials,
 										)}
-										multiline
 									/>
 								</div>
 							</>
@@ -298,7 +298,7 @@ function createSpotTokenInfo(
 	);
 }
 
-function DetailCell({ label, multiline = false, tooltipContent, value }: DetailCellProps) {
+function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const tooltipId = useId();
 	const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
@@ -403,10 +403,7 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 				)}
 			</div>
 			<div
-				className={cn(
-					"text-[13px] leading-5 font-semibold text-trading-panel-fg tabular-nums",
-					multiline ? "whitespace-normal" : "truncate",
-				)}
+				className="whitespace-normal break-words text-[13px] leading-5 font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
 				title={typeof value === "string" ? value : undefined}
 			>
 				{value}

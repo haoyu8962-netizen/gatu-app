@@ -18,58 +18,15 @@ const MAIN_WORKSPACE_SOURCE = readFileSync(
 );
 const NOW = 1_000_000;
 const FRESH_RECEIVED_AT = NOW - 100;
-const DEFAULT_MARKET_STAT_WIDTHS = {
-	price: 48,
-	oracle: 48,
-	change24h: 100,
-	volume24h: 100,
-	openInterest: 100,
-	funding: 104,
-	marketCap: 110,
-	contract: 112,
-} as const;
-type MarketStatId = keyof typeof DEFAULT_MARKET_STAT_WIDTHS;
-
-let marketOverviewWidth = 616;
-let marketStatWidths: Record<MarketStatId, number> = { ...DEFAULT_MARKET_STAT_WIDTHS };
-const resizeObservers: ResizeObserverMock[] = [];
-
-class ResizeObserverMock {
-	readonly callback: ResizeObserverCallback;
-
-	constructor(callback: ResizeObserverCallback) {
-		this.callback = callback;
-		resizeObservers.push(this);
-	}
-
-	observe() {}
-	unobserve() {}
-	disconnect() {}
-
-	emit() {
-		this.callback([], this as unknown as ResizeObserver);
-	}
-}
-
-function createRect(width: number): DOMRect {
-	return {
-		bottom: 34,
-		height: 34,
-		left: 0,
-		right: width,
-		top: 0,
-		width,
-		x: 0,
-		y: 0,
-		toJSON: () => ({}),
-	};
-}
-
-function getVisibleStatIds(container: HTMLElement): MarketStatId[] {
-	return Array.from(container.querySelectorAll<HTMLElement>("[data-market-stat]"))
-		.filter((node) => node.getAttribute("aria-hidden") !== "true")
-		.map((node) => node.dataset.marketStat as MarketStatId);
-}
+type MarketStatId =
+	| "price"
+	| "oracle"
+	| "change24h"
+	| "volume24h"
+	| "openInterest"
+	| "funding"
+	| "marketCap"
+	| "contract";
 
 function getRenderedStatIds(container: HTMLElement): MarketStatId[] {
 	return Array.from(container.querySelectorAll<HTMLElement>("[data-market-stat]")).map(
@@ -188,17 +145,6 @@ describe("MarketOverview", () => {
 
 	beforeEach(() => {
 		vi.spyOn(Date, "now").mockReturnValue(NOW);
-		marketOverviewWidth = 616;
-		marketStatWidths = { ...DEFAULT_MARKET_STAT_WIDTHS };
-		resizeObservers.length = 0;
-		vi.stubGlobal("ResizeObserver", ResizeObserverMock);
-		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-			if (this.hasAttribute("data-market-overview")) return createRect(marketOverviewWidth);
-			const statId = this.dataset.marketStat as MarketStatId | undefined;
-			const intrinsicWidth = statId ? marketStatWidths[statId] : 0;
-			const minWidth = Number.parseFloat(this.style.minWidth) || 0;
-			return createRect(Math.max(intrinsicWidth, minWidth));
-		});
 		mocks.midPx = undefined;
 		mocks.receivedAt = FRESH_RECEIVED_AT;
 		mocks.perpCtxStatus = "idle";
@@ -245,118 +191,58 @@ describe("MarketOverview", () => {
 		);
 	}
 
+	function renderKeyedOverview() {
+		const marketKey = String(mocks.selectedMarket.name ?? "default");
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview key={marketKey} />
+				</I18nProvider>,
+			),
+		);
+	}
+
 	function getStat(id: MarketStatId): HTMLElement {
 		const stat = container.querySelector<HTMLElement>(`[data-market-stat="${id}"]`);
 		if (!stat) throw new Error(`Missing ${id} market stat`);
 		return stat;
 	}
 
-	it("lets the MarketOverview container claim the toolbar's remaining width", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toMatch(
-			/className="ml-6 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain/,
-		);
-	});
+	function setFreshPerpContext(
+		overrides: Partial<{
+			markPx: string;
+			prevDayPx: string;
+			oraclePx: string;
+			dayNtlVlm: string;
+			openInterest: string;
+			funding: string;
+		}> = {},
+	) {
+		mocks.perpCtxStatus = "active";
+		mocks.perpCtxEvent = {
+			coin: String(mocks.selectedMarket.name),
+			ctx: {
+				markPx: "71.8",
+				prevDayPx: "70",
+				oraclePx: "71.7",
+				dayNtlVlm: "22228099.94",
+				openInterest: "1685179.8",
+				funding: "0.000006",
+				...overrides,
+			},
+		};
+	}
 
-	it.each([
-		{
-			viewportWidth: 1440,
-			containerWidth: 616,
-			gapPx: 24,
-			visible: ["price", "oracle", "change24h", "volume24h", "funding"],
-		},
-		{
-			viewportWidth: 1200,
-			containerWidth: 573,
-			gapPx: 16,
-			visible: ["price", "oracle", "change24h", "volume24h", "funding"],
-		},
-		{
-			viewportWidth: 1001,
-			containerWidth: 431,
-			gapPx: 12,
-			visible: ["price", "oracle", "change24h", "funding"],
-		},
-	] as const)(
-		"keeps only whole metrics at a $viewportWidth px viewport ($containerWidth px overview)",
-		({ containerWidth, gapPx, visible }) => {
-			marketOverviewWidth = containerWidth;
-			act(() =>
-				root.render(
-					<I18nProvider i18n={i18n}>
-						<MarketOverview />
-					</I18nProvider>,
-				),
-			);
+	it("gives the overview sole ownership of scrolling and resets it by market identity", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain('className="ml-6 min-w-0 flex-1 overflow-hidden"');
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketOverview key={marketKey} />");
 
-			expect(getVisibleStatIds(container)).toEqual(visible);
-			const row = container.querySelector<HTMLElement>("[data-market-overview-row]");
-			expect(row?.style.columnGap).toBe(`${gapPx}px`);
+		renderKeyedOverview();
+		const firstScroller = container.querySelector<HTMLElement>("[data-market-overview]");
+		expect(firstScroller).not.toBeNull();
+		if (!firstScroller) return;
+		firstScroller.scrollLeft = 240;
 
-			const occupiedWidth = visible.reduce((sum, id) => sum + marketStatWidths[id], 0) + (visible.length - 1) * gapPx;
-			expect(occupiedWidth).toBeLessThanOrEqual(containerWidth);
-
-			for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
-				const isVisible = (visible as readonly MarketStatId[]).includes(node.dataset.marketStat as MarketStatId);
-				expect(node.getAttribute("aria-hidden")).toBe(isVisible ? null : "true");
-				expect(node.hasAttribute("inert")).toBe(!isVisible);
-				expect(node.classList.contains("absolute")).toBe(!isVisible);
-				expect(node.classList.contains("invisible")).toBe(!isVisible);
-			}
-		},
-	);
-
-	it("recomputes whole-stat visibility when the actual container resizes", () => {
-		renderOverview();
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "volume24h", "funding"]);
-
-		marketOverviewWidth = 431;
-		act(() => resizeObservers.at(-1)?.emit());
-
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-	});
-
-	it("reserves high-water widths and requires headroom before revealing a hidden metric", () => {
-		marketOverviewWidth = 360;
-		renderOverview();
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-
-		marketStatWidths.oracle = 60;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("60px");
-
-		marketStatWidths.oracle = 48;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getStat("oracle").style.minWidth).toBe("60px");
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-
-		marketStatWidths.oracle = 80;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("80px");
-
-		marketStatWidths.oracle = 48;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("80px");
-
-		marketOverviewWidth = 383;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "funding"]);
-
-		marketOverviewWidth = 384;
-		act(() => resizeObservers.at(-1)?.emit());
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-	});
-
-	it("resets reserved widths synchronously when switching between perpetual markets", () => {
-		marketOverviewWidth = 360;
-		marketStatWidths.oracle = 80;
-		renderOverview();
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("80px");
-
-		marketStatWidths.oracle = 48;
 		mocks.selectedMarket = {
 			...mocks.selectedMarket,
 			name: "xyz:SECOND",
@@ -364,37 +250,103 @@ describe("MarketOverview", () => {
 			markPx: "42",
 			markPriceReceivedAt: FRESH_RECEIVED_AT,
 		};
-		renderOverview();
+		renderKeyedOverview();
 
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("48px");
-		expect(getStat("price").textContent).toContain("Mark42");
-		expect(getStat("price").textContent).not.toContain("71.8");
+		const secondScroller = container.querySelector<HTMLElement>("[data-market-overview]");
+		expect(secondScroller).not.toBe(firstScroller);
+		expect(secondScroller?.scrollLeft).toBe(0);
 	});
 
-	it("re-measures reserved widths when the number format changes", () => {
-		marketOverviewWidth = 360;
-		marketStatWidths.oracle = 80;
+	it("keeps every perpetual metric mounted in stable, keyboard-scrollable slots", () => {
 		renderOverview();
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "funding"]);
 
-		marketStatWidths.oracle = 48;
+		const overview = container.querySelector<HTMLElement>("[data-market-overview]");
+		const row = container.querySelector<HTMLElement>("[data-market-overview-row]");
+		expect(overview?.tagName).toBe("SECTION");
+		expect(overview?.getAttribute("aria-label")).toBeTruthy();
+		expect(overview?.tabIndex).toBe(0);
+		expect(overview?.className).toContain("overflow-x-auto");
+		expect(overview?.className).toContain("overscroll-x-contain");
+		expect(row?.className).toContain("w-max");
+		expect(row?.className).toContain("min-w-full");
+		expect(row?.className).toContain("gap-6");
+		expect(getRenderedStatIds(container)).toEqual([
+			"price",
+			"oracle",
+			"change24h",
+			"volume24h",
+			"openInterest",
+			"funding",
+		]);
+
+		const widthClasses: Record<MarketStatId, string> = {
+			price: "min-w-[90px]",
+			oracle: "min-w-[90px]",
+			change24h: "min-w-[170px]",
+			volume24h: "min-w-[136px]",
+			openInterest: "min-w-[136px]",
+			funding: "min-w-[128px]",
+			marketCap: "min-w-[136px]",
+			contract: "min-w-[112px]",
+		};
+		for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
+			expect(node.className).toContain(widthClasses[node.dataset.marketStat as MarketStatId]);
+			expect(node.hasAttribute("aria-hidden")).toBe(false);
+			expect(node.hasAttribute("inert")).toBe(false);
+			expect(node.classList.contains("absolute")).toBe(false);
+			expect(node.classList.contains("invisible")).toBe(false);
+		}
+	});
+
+	it("preserves metric nodes and geometry contracts across live ticks and number format changes", () => {
+		mocks.perpCtxStatus = "active";
+		mocks.perpCtxEvent = {
+			coin: "xyz:BRENTOIL",
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+		renderOverview();
+		const initialNodes = new Map(
+			Array.from(container.querySelectorAll<HTMLElement>("[data-market-stat]")).map((node) => [
+				node.dataset.marketStat as MarketStatId,
+				node,
+			]),
+		);
+
+		mocks.perpCtxEvent.ctx = {
+			markPx: "0.0000012345",
+			prevDayPx: "0.0000000001",
+			oraclePx: "999999999999.99",
+			dayNtlVlm: "999999999999.99",
+			openInterest: "999999999999.99",
+			funding: "-0.00001234",
+		};
+		renderOverview();
 		act(() => notifyNumberFormatChange());
 
-		expect(getVisibleStatIds(container)).toEqual(["price", "oracle", "change24h", "funding"]);
-		expect(getStat("oracle").style.minWidth).toBe("48px");
+		for (const [id, node] of initialNodes) {
+			expect(getStat(id)).toBe(node);
+			expect(getStat(id).className).toBe(node.className);
+		}
 	});
 
-	it("uses the selected market snapshot while realtime subscriptions warm up", () => {
+	it("uses only the fresh exact price while the full market context warms up", () => {
 		renderOverview();
 
-		expect(container.textContent).toContain("Mark71.8");
-		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
-		expect(container.textContent).toContain("ORACLE71.7");
-		expect(container.textContent).toContain("$22,228,099.94");
-		expect(container.textContent).toContain("$120,995,909.64");
-		expect(container.textContent).toContain("+0.0006%");
-		expect(container.textContent).not.toContain("—");
+		expect(getStat("price").textContent).toContain("Mark71.8");
+		expect(getStat("change24h").textContent).toBe("24h Change—");
+		expect(getStat("oracle").textContent).toBe("ORACLE-");
+		expect(getStat("volume24h").textContent).toBe("24H VOL-");
+		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
+		expect(getStat("funding").textContent).toBe("FUNDING / Resets in—");
+		expect(container.textContent).not.toContain("71.7");
+		expect(container.textContent).not.toContain("22,228,099.94");
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
@@ -447,9 +399,9 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toContain("Mark71.8");
-		expect(getStat("oracle").textContent).toContain("ORACLE71.7");
-		expect(getStat("volume24h").textContent).toContain("$22,228,099.94");
-		expect(getStat("openInterest").textContent).toContain("$120,995,909.64");
+		expect(getStat("oracle").textContent).toBe("ORACLE-");
+		expect(getStat("volume24h").textContent).toBe("24H VOL-");
+		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
 		expect(container.textContent).not.toContain("Mark999");
 		expect(container.textContent).not.toContain("ORACLE998");
 	});
@@ -494,7 +446,7 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toContain("Mark72.5");
-		expect(getStat("change24h").textContent).toContain("+2.5 / +3.57%");
+		expect(getStat("change24h").textContent).toBe("24h Change—");
 	});
 
 	it.each([
@@ -519,8 +471,8 @@ describe("MarketOverview", () => {
 		expect(getStat("price").textContent).toBe("Mark-");
 		expect(getStat("change24h").textContent).toBe("24h Change—");
 		expect(getStat("openInterest").textContent).toBe("OPEN INT-");
-		expect(getStat("oracle").textContent).toContain("71.7");
-		expect(getStat("volume24h").textContent).toContain("$22,228,099.94");
+		expect(getStat("oracle").textContent).toBe("ORACLE-");
+		expect(getStat("volume24h").textContent).toBe("24H VOL-");
 	});
 
 	it("never carries a previous perpetual context across a same-instance market switch", () => {
@@ -550,7 +502,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Mark42");
-		expect(getStat("oracle").textContent).toContain("ORACLE41.9");
+		expect(getStat("oracle").textContent).toBe("ORACLE-");
 		expect(container.textContent).not.toContain("Mark80");
 
 		mocks.perpCtxEvent = {
@@ -596,7 +548,10 @@ describe("MarketOverview", () => {
 		mocks.selectedMarket = createSpotMarket();
 		renderOverview();
 		expect(getRenderedStatIds(container)).toEqual(["price", "change24h", "volume24h", "marketCap", "contract"]);
-		expect(getVisibleStatIds(container)).toEqual(["price", "change24h", "volume24h", "marketCap", "contract"]);
+		for (const node of container.querySelectorAll<HTMLElement>("[data-market-stat]")) {
+			expect(node.hasAttribute("aria-hidden")).toBe(false);
+			expect(node.hasAttribute("inert")).toBe(false);
+		}
 		expect(getStat("price").textContent).toContain("Price1.25");
 		expect(container.textContent).not.toContain("Mark80");
 
@@ -638,14 +593,8 @@ describe("MarketOverview", () => {
 
 	it("uses the perpetual mark for price and change when the orderbook mid differs", () => {
 		mocks.midPx = "75";
-
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		setFreshPerpContext();
+		renderOverview();
 
 		expect(container.textContent).toContain("Mark71.8");
 		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
@@ -653,30 +602,15 @@ describe("MarketOverview", () => {
 	});
 
 	it("keeps unavailable funding distinct from a real zero rate", () => {
-		delete mocks.selectedMarket.funding;
-
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		renderOverview();
 
 		expect(container.textContent).toContain("FUNDING / Resets in—");
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
 	it("preserves zero and tiny funding signs in the current rate", () => {
-		mocks.selectedMarket.funding = "0";
-
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		setFreshPerpContext({ funding: "0" });
+		renderOverview();
 
 		expect(container.textContent).toContain("0.0000%");
 		expect(container.textContent).not.toContain("+0.0000%");
@@ -686,14 +620,8 @@ describe("MarketOverview", () => {
 			),
 		).toBe(true);
 
-		mocks.selectedMarket.funding = "0.000001";
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		if (mocks.perpCtxEvent) mocks.perpCtxEvent.ctx.funding = "0.000001";
+		renderOverview();
 		expect(container.textContent).toContain("+0.0001%");
 		expect(
 			Array.from(container.querySelectorAll(".text-trading-panel-success")).some((node) =>
@@ -701,14 +629,8 @@ describe("MarketOverview", () => {
 			),
 		).toBe(true);
 
-		mocks.selectedMarket.funding = "-0.000001";
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		if (mocks.perpCtxEvent) mocks.perpCtxEvent.ctx.funding = "-0.000001";
+		renderOverview();
 		expect(container.textContent).toContain("-0.0001%");
 		expect(
 			Array.from(container.querySelectorAll(".text-trading-panel-error")).some((node) =>
@@ -720,26 +642,14 @@ describe("MarketOverview", () => {
 	it("cleans up the funding countdown when funding becomes unavailable", () => {
 		const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
 		const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
-
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		setFreshPerpContext();
+		renderOverview();
 
 		const intervalId = setIntervalSpy.mock.results.at(-1)?.value;
 		expect(intervalId).toBeDefined();
 
-		delete mocks.selectedMarket.funding;
-		act(() =>
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<MarketOverview />
-				</I18nProvider>,
-			),
-		);
+		mocks.perpCtxStatus = "idle";
+		renderOverview();
 
 		expect(clearIntervalSpy).toHaveBeenCalledWith(intervalId);
 	});
@@ -747,6 +657,16 @@ describe("MarketOverview", () => {
 	it("labels spot notionals with the selected market quote token", () => {
 		mocks.midPx = "1.3";
 		mocks.selectedMarket = createSpotMarket();
+		mocks.spotCtxStatus = "active";
+		mocks.spotCtxEvent = {
+			coin: "@999",
+			ctx: {
+				markPx: "1.25",
+				prevDayPx: "1.0",
+				dayNtlVlm: "12345.67",
+				circulatingSupply: "1000",
+			},
+		};
 		renderOverview();
 
 		expect(container.textContent).toContain("Price1.3");
@@ -756,7 +676,7 @@ describe("MarketOverview", () => {
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
 
-	it("rejects a stale spot context and keeps the current spot snapshot", () => {
+	it("rejects a stale spot context and keeps only the fresh exact price", () => {
 		mocks.selectedMarket = createSpotMarket();
 		mocks.spotCtxStatus = "active";
 		mocks.spotCtxIsStale = true;
@@ -772,8 +692,8 @@ describe("MarketOverview", () => {
 		renderOverview();
 
 		expect(getStat("price").textContent).toContain("Price1.25");
-		expect(getStat("volume24h").textContent).toContain("12,345.67 USDH");
-		expect(getStat("marketCap").textContent).toContain("1,250 USDH");
+		expect(getStat("volume24h").textContent).toBe("24H VOL—");
+		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price9");
 	});
 
@@ -806,7 +726,7 @@ describe("MarketOverview", () => {
 		});
 		renderOverview();
 		expect(getStat("price").textContent).toContain("Price2");
-		expect(getStat("marketCap").textContent).toContain("4,000 USDH");
+		expect(getStat("marketCap").textContent).toBe("Market Cap—");
 		expect(container.textContent).not.toContain("Price1.5");
 
 		mocks.spotCtxEvent = {

@@ -13,6 +13,7 @@ import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
 const BASE_TOKEN_ID = "0x11111111111111111111111111111111";
 const mocks = vi.hoisted(() => ({
 	copy: vi.fn(),
+	copiedValue: null as string | null,
 	midPx: undefined as string | undefined,
 	midSnapshot: undefined as object | undefined,
 	selectedMarket: {
@@ -72,7 +73,11 @@ vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 }));
 
 vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
-	useCopyToClipboard: () => ({ copied: false, copy: mocks.copy }),
+	useCopyToClipboard: () => ({
+		copied: mocks.copiedValue !== null,
+		copiedValue: mocks.copiedValue,
+		copy: mocks.copy,
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -82,7 +87,33 @@ vi.mock("@/lib/hyperliquid", () => ({
 	subscribeWsReconnect: () => () => {},
 	useHyperliquid: () => ({ env: "Mainnet", isTestnet: false }),
 	useSelectedMarketInfo: () => ({ data: mocks.selectedMarket }),
-	useSubscription: () => ({ data: undefined, status: "idle" }),
+	useSubscription: (method: string, _params: unknown, options: { enabled?: boolean } = {}) => {
+		if (options.enabled === false) {
+			return { data: undefined, isStale: false, lastMessageAt: undefined, status: "idle" };
+		}
+		if (method === "activeAssetCtx" || method === "activeSpotAssetCtx") {
+			const market = mocks.selectedMarket as unknown as Record<string, string | number | undefined>;
+			return {
+				data: {
+					coin: market.name,
+					ctx: {
+						markPx: market.markPx,
+						midPx: market.midPx ?? null,
+						oraclePx: market.oraclePx,
+						prevDayPx: market.prevDayPx,
+						dayNtlVlm: market.dayNtlVlm,
+						openInterest: market.openInterest,
+						funding: market.funding,
+						circulatingSupply: market.circulatingSupply,
+					},
+				},
+				isStale: false,
+				lastMessageAt: Date.now(),
+				status: "active",
+			};
+		}
+		return { data: undefined, isStale: false, lastMessageAt: undefined, status: "idle" };
+	},
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -114,6 +145,7 @@ describe("MobileMarketBar", () => {
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.copy.mockReset();
+		mocks.copiedValue = null;
 		mocks.midPx = undefined;
 		mocks.midSnapshot = undefined;
 		Object.assign(mocks.selectedMarket, {
@@ -172,6 +204,59 @@ describe("MobileMarketBar", () => {
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')?.getAttribute("data-target-size")).toBe("touch");
 	});
 
+	it("scopes copied feedback to the current spot address", () => {
+		mocks.copiedValue = BASE_TOKEN_ID;
+		renderExpandedBar();
+		expect(container.querySelector('button[aria-label="Copied"]')).not.toBeNull();
+
+		mocks.selectedMarket.tokensInfo[0].tokenId = "0x33333333333333333333333333333333";
+		renderBar();
+
+		expect(container.querySelector('button[aria-label="Copied"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Copy token address"]')).not.toBeNull();
+	});
+
+	it("ignores delayed copy feedback from the previous spot address", async () => {
+		let finishCopy: (() => void) | undefined;
+		const pendingCopy = new Promise<void>((resolve) => {
+			finishCopy = resolve;
+		});
+		mocks.copy.mockImplementation(async (value: string) => {
+			await pendingCopy;
+			mocks.copiedValue = value;
+		});
+		renderExpandedBar();
+
+		const oldCopyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy token address"]');
+		act(() => oldCopyButton?.click());
+
+		mocks.selectedMarket.tokensInfo[0].tokenId = "0x33333333333333333333333333333333";
+		renderBar();
+		expect(container.querySelector('button[aria-label="Copied"]')).toBeNull();
+
+		await act(async () => finishCopy?.());
+		renderBar();
+		expect(mocks.copiedValue).toBe(BASE_TOKEN_ID);
+		expect(container.querySelector('button[aria-label="Copied"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Copy token address"]')).not.toBeNull();
+	});
+
+	it("keeps expanded values complete and associates the disclosure control", () => {
+		renderExpandedBar();
+
+		const collapseButton = container.querySelector<HTMLButtonElement>('button[aria-label="Collapse market details"]');
+		const detailsId = collapseButton?.getAttribute("aria-controls");
+		expect(detailsId).toBeTruthy();
+		expect(detailsId ? document.getElementById(detailsId) : null).not.toBeNull();
+
+		const volumeValue = Array.from(container.querySelectorAll<HTMLElement>("div")).find(
+			(node) => node.textContent === "12,345.67 USDH",
+		);
+		expect(volumeValue?.className).toContain("break-words");
+		expect(volumeValue?.className).toContain("[overflow-wrap:anywhere]");
+		expect(volumeValue?.className).not.toContain("truncate");
+	});
+
 	it("keeps compact controls visually small with 44px mobile hit targets", () => {
 		Object.assign(mocks.selectedMarket, {
 			kind: "perp",
@@ -187,6 +272,7 @@ describe("MobileMarketBar", () => {
 		expect(expandButton?.className).toContain("h-[30px]");
 		expect(expandButton?.className).toContain("w-9");
 		expect(expandButton?.className).toContain("after:size-11");
+		expect(expandButton?.getAttribute("aria-controls")).toBeTruthy();
 
 		const tooltipTrigger = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
 			button.textContent?.includes("Mark/ORACLE"),

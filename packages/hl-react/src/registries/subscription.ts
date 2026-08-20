@@ -191,11 +191,12 @@ export function getDefaultThrottle(method: SubMethod): number | undefined {
 }
 
 export function shouldAcceptSubscriptionEvent(method: SubMethod, params: unknown, event: unknown): boolean {
-	if (method !== "l2Book") return true;
+	if (method !== "l2Book" && method !== "activeAssetCtx" && method !== "activeSpotAssetCtx") return true;
 	if (!isRecord(params) || !isRecord(event)) return false;
 
 	const requestedCoin = params.coin;
 	if (typeof requestedCoin !== "string" || event.coin !== requestedCoin) return false;
+	if (method !== "l2Book") return true;
 
 	// @nktkas/hyperliquid 0.33.3 routes l2Book listeners by coin only. When a
 	// fast and a full-depth subscription overlap, both callbacks can therefore

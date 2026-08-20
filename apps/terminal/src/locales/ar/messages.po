@@ -131,7 +131,7 @@ msgstr "تم إغلاق {positionCount} من المراكز بسعر السوق.
 
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-msgstr ""
+msgstr "طُلب {requestedPercent}٪؛ {effectivePercent}٪ بعد تطبيق دقة الحجم"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "{totalSeconds} seconds"
@@ -3156,7 +3156,6 @@ msgstr "إيثريوم سلسلة كتل قابلة للبرمجة للعقود 
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "كل {TWAP_SUBORDER_INTERVAL_SECONDS} ثانية"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -4701,6 +4700,7 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4901,7 +4901,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "المتوسط"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"

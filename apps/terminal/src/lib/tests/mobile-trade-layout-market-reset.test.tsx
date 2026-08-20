@@ -9,6 +9,7 @@ const marketState = vi.hoisted(() => ({
 	routeMarketName: "xyz:GOOGL" as string | undefined,
 	selectedMarketName: "xyz:GOOGL",
 	mountCount: 0,
+	marketBarMountCount: 0,
 }));
 
 vi.mock("@/providers/exchange-scope", () => ({
@@ -57,9 +58,15 @@ vi.mock("@/components/trade/mobile/mobile-chart-view", () => ({
 	MobileChartView: () => null,
 }));
 
-vi.mock("@/components/trade/mobile/mobile-market-bar", () => ({
-	MobileMarketBar: () => null,
-}));
+vi.mock("@/components/trade/mobile/mobile-market-bar", async () => {
+	const React = await import("react");
+	return {
+		MobileMarketBar: () => {
+			const [mountId] = React.useState(() => ++marketState.marketBarMountCount);
+			return <div data-mobile-market-bar data-mount-id={mountId} />;
+		},
+	};
+});
 
 vi.mock("@/components/trade/mobile/mobile-balances-tab", () => ({
 	MobileBalancesTab: () => <div data-mobile-balances />,
@@ -83,7 +90,14 @@ import { MobileTradeLayout } from "@/components/trade/mobile/mobile-trade-layout
 
 function MobileTradeLayoutHarness({ active, showOrderForm }: { active: boolean; showOrderForm: boolean }) {
 	const disclosureStates = useMobilePositionsDisclosureStates("Mainnet:0x1234");
-	return <MobileTradeLayout active={active} showOrderForm={showOrderForm} disclosureStates={disclosureStates} />;
+	return (
+		<MobileTradeLayout
+			active={active}
+			showMarketBar
+			showOrderForm={showOrderForm}
+			disclosureStates={disclosureStates}
+		/>
+	);
 }
 
 describe("MobileTradeLayout market identity", () => {
@@ -97,6 +111,7 @@ describe("MobileTradeLayout market identity", () => {
 		marketState.routeMarketName = "xyz:GOOGL";
 		marketState.selectedMarketName = "xyz:GOOGL";
 		marketState.mountCount = 0;
+		marketState.marketBarMountCount = 0;
 	});
 
 	afterEach(() => {
@@ -147,6 +162,7 @@ describe("MobileTradeLayout market identity", () => {
 		expect(initialInput).not.toBeNull();
 		if (!initialInput) return;
 		const initialMountId = initialInput.dataset.mountId;
+		const initialMarketBarMountId = container.querySelector<HTMLElement>("[data-mobile-market-bar]")?.dataset.mountId;
 
 		render();
 		const sameMarketInput = container.querySelector<HTMLInputElement>('input[aria-label="Mobile order size"]');
@@ -162,6 +178,9 @@ describe("MobileTradeLayout market identity", () => {
 
 		const nextMarketInput = container.querySelector<HTMLInputElement>('input[aria-label="Mobile order size"]');
 		expect(nextMarketInput?.dataset.mountId).not.toBe(initialMountId);
+		expect(container.querySelector<HTMLElement>("[data-mobile-market-bar]")?.dataset.mountId).not.toBe(
+			initialMarketBarMountId,
+		);
 		const nextSizeModeButton = container.querySelector<HTMLButtonElement>(
 			'button[aria-label="Toggle mobile size mode"]',
 		);

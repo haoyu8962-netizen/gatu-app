@@ -150,7 +150,10 @@ describe("responsive panel layout contract", () => {
 		);
 		expect(MAIN_WORKSPACE_SOURCE).toContain('className="min-h-0 flex-1 bg-grid-container"');
 		expect(TERMINAL_STYLES).toMatch(
-			/\.desktop-terminal-grid\.react-grid-layout\s*{\s*background-color:\s*transparent;/,
+			/\.desktop-terminal-grid\.react-grid-layout\s*{\s*background-color:\s*transparent;\s*transition-property:\s*none\s*!important;/,
+		);
+		expect(TERMINAL_STYLES).toMatch(
+			/\.desktop-terminal-grid\s*>\s*\.react-grid-item\s*{\s*min-width:\s*0;\s*transition-property:\s*none\s*!important;/,
 		);
 	});
 });

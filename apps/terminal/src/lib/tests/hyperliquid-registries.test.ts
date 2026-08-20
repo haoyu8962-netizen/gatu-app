@@ -172,4 +172,13 @@ describe("subscription registry", () => {
 		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "BTC" }, fullEvent)).toBe(false);
 		expect(shouldAcceptSubscriptionEvent("trades", { coin: "ETH" }, fastEvent)).toBe(true);
 	});
+
+	it.each(["activeAssetCtx", "activeSpotAssetCtx"] as const)(
+		"rejects %s payloads routed to another market before they enter the shared store",
+		(method) => {
+			expect(shouldAcceptSubscriptionEvent(method, { coin: "ETH" }, { coin: "ETH", ctx: {} })).toBe(true);
+			expect(shouldAcceptSubscriptionEvent(method, { coin: "ETH" }, { coin: "BTC", ctx: {} })).toBe(false);
+			expect(shouldAcceptSubscriptionEvent(method, undefined, { coin: "ETH", ctx: {} })).toBe(false);
+		},
+	);
 });

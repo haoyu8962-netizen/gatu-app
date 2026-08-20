@@ -1,8 +1,7 @@
 import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
 	type FundingPeriodRates,
 	get24hChange,
@@ -11,7 +10,7 @@ import {
 	getMarketCapUsd,
 	getOiUsd,
 } from "@/domain/market";
-import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import { isLiveMarkPriceReady, resolveActiveMarketPrice } from "@/domain/trade/market-price";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -28,7 +27,6 @@ import {
 	getExplorerTokenUrl,
 	getMarketApiCoin,
 	getSpotMarketApiCoin,
-	type SpotMarketInfo,
 	type UnifiedMarketInfo,
 	useMarketsInfo,
 	useSelectedMarketInfo,
@@ -39,14 +37,6 @@ import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
-const MARKET_OVERVIEW_COMFORTABLE_WIDTH_PX = 600;
-const MARKET_OVERVIEW_COMPACT_WIDTH_PX = 480;
-const MARKET_OVERVIEW_REVEAL_BUFFER_PX = 16;
-const MARKET_OVERVIEW_GAP_PX = {
-	comfortable: 24,
-	compact: 16,
-	tight: 12,
-} as const;
 
 type MarketOverviewStatId =
 	| "price"
@@ -58,42 +48,18 @@ type MarketOverviewStatId =
 	| "marketCap"
 	| "contract";
 
-const PERP_STAT_PRIORITY: readonly MarketOverviewStatId[] = [
-	"price",
-	"change24h",
-	"funding",
-	"oracle",
-	"volume24h",
-	"openInterest",
-];
-const SPOT_STAT_PRIORITY: readonly MarketOverviewStatId[] = [
-	"price",
-	"change24h",
-	"volume24h",
-	"marketCap",
-	"contract",
-];
+const MARKET_OVERVIEW_STAT_WIDTH_CLASS: Record<MarketOverviewStatId, string> = {
+	price: "min-w-[90px]",
+	oracle: "min-w-[90px]",
+	change24h: "min-w-[170px]",
+	volume24h: "min-w-[136px]",
+	openInterest: "min-w-[136px]",
+	funding: "min-w-[128px]",
+	marketCap: "min-w-[136px]",
+	contract: "min-w-[112px]",
+};
 
-interface MarketOverviewLayout {
-	identity: string;
-	gapPx: number;
-	visibleKey: string;
-	statWidths: Partial<Record<MarketOverviewStatId, number>>;
-}
-
-function getMarketOverviewGap(containerWidth: number): number {
-	if (containerWidth >= MARKET_OVERVIEW_COMFORTABLE_WIDTH_PX) return MARKET_OVERVIEW_GAP_PX.comfortable;
-	if (containerWidth >= MARKET_OVERVIEW_COMPACT_WIDTH_PX) return MARKET_OVERVIEW_GAP_PX.compact;
-	return MARKET_OVERVIEW_GAP_PX.tight;
-}
-
-function areStatWidthsEqual(
-	left: Partial<Record<MarketOverviewStatId, number>>,
-	right: Partial<Record<MarketOverviewStatId, number>>,
-	ids: readonly MarketOverviewStatId[],
-): boolean {
-	return ids.every((id) => left[id] === right[id]);
-}
+const KEYBOARD_SCROLL_REGION_PROPS = { tabIndex: 0 } as const;
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
 	useNumberFormatRevision();
@@ -183,14 +149,8 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
-	if (market?.kind !== "spot") return null;
-	return (market as SpotMarketInfo).circulatingSupply;
-}
-
 export function MarketOverview() {
-	const numberFormatRevision = useNumberFormatRevision();
-	const { i18n } = useLingui();
+	useNumberFormatRevision();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
@@ -213,20 +173,28 @@ export function MarketOverview() {
 		lastMessageAt: spotCtxReceivedAt,
 	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: !!spotCoin && isSpot });
 
-	const hasFreshPerpCtx =
-		perpCtxEvent?.coin === perpCoin &&
-		isLiveMarkPriceReady(
-			perpCtxStatus === "active" && !perpCtxIsStale ? "success" : perpCtxStatus === "error" ? "error" : "loading",
-			perpCtxEvent?.ctx.markPx,
-			perpCtxReceivedAt,
-		);
-	const hasFreshSpotCtx =
-		spotCtxEvent?.coin === spotCoin &&
-		isLiveMarkPriceReady(
-			spotCtxStatus === "active" && !spotCtxIsStale ? "success" : spotCtxStatus === "error" ? "error" : "loading",
-			spotCtxEvent?.ctx.markPx,
-			spotCtxReceivedAt,
-		);
+	const perpPrice = resolveActiveMarketPrice({
+		coin: perpCoin,
+		enabled: !!perpCoin && !isSpot,
+		data: perpCtxEvent,
+		subscriptionStatus: perpCtxStatus,
+		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
+	});
+	const spotPriceSnapshot = resolveActiveMarketPrice({
+		coin: spotCoin,
+		enabled: !!spotCoin && isSpot,
+		data: spotCtxEvent,
+		subscriptionStatus: spotCtxStatus,
+		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
+	});
+	const hasFreshPerpCtx = isLiveMarkPriceReady(perpPrice.status, perpPrice.markPx, perpPrice.receivedAt);
+	const hasFreshSpotCtx = isLiveMarkPriceReady(
+		spotPriceSnapshot.status,
+		spotPriceSnapshot.markPx,
+		spotPriceSnapshot.receivedAt,
+	);
 	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
 	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
@@ -251,13 +219,13 @@ export function MarketOverview() {
 
 	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
 	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedLiveMark) : perpMarkPx;
-	const dayNtlVlm = liveCtx?.dayNtlVlm ?? selectedMarketInfo?.dayNtlVlm;
-	const oraclePx = perpCtx?.oraclePx ?? selectedMarketInfo?.oraclePx;
-	const openInterest = perpCtx?.openInterest ?? selectedMarketInfo?.openInterest;
+	const dayNtlVlm = liveCtx?.dayNtlVlm;
+	const oraclePx = perpCtx?.oraclePx;
+	const openInterest = perpCtx?.openInterest;
 	const markPx = perpMarkPx;
-	const funding = perpCtx?.funding ?? selectedMarketInfo?.funding;
+	const funding = perpCtx?.funding;
 
-	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
+	const prevDayForChange = liveCtx?.prevDayPx;
 
 	const fundingRate = toBig(funding)?.toString() ?? null;
 	const change24h = get24hChange(prevDayForChange, displayPrice);
@@ -265,9 +233,7 @@ export function MarketOverview() {
 	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 	const spotPrice = isSpot ? (liveCtx?.markPx ?? selectedLiveMark ?? midPx) : undefined;
-	const spotCirculatingSupply = isSpot
-		? (spotCtx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
-		: null;
+	const spotCirculatingSupply = isSpot ? spotCtx?.circulatingSupply : null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 	const marketType = isSpot ? "spot" : "perp";
 	const priceDecimals = szDecimalsToPriceDecimals(selectedMarketInfo?.szDecimals ?? 2, marketType);
@@ -303,128 +269,22 @@ export function MarketOverview() {
 					maximumFractionDigits: 0,
 				})
 			: "—";
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const statNodesRef = useRef(new Map<MarketOverviewStatId, HTMLDivElement>());
-	const layoutIdentity = JSON.stringify([
-		selectedMarketInfo?.kind ?? "unknown",
-		selectedMarketInfo?.name ?? "",
-		selectedMarketInfo?.pairName ?? "",
-		quoteToken,
-		i18n.locale,
-		numberFormatRevision,
-	]);
-	const [overviewLayout, setOverviewLayout] = useState<MarketOverviewLayout>({
-		identity: "",
-		gapPx: MARKET_OVERVIEW_GAP_PX.tight,
-		visibleKey: "price",
-		statWidths: {},
-	});
-	const isCurrentLayout = overviewLayout.identity === layoutIdentity;
-	const visibleStats = new Set(
-		isCurrentLayout
-			? (overviewLayout.visibleKey.split("|") as MarketOverviewStatId[])
-			: (["price"] as MarketOverviewStatId[]),
-	);
-	const reservedStatWidths = isCurrentLayout ? overviewLayout.statWidths : {};
-
-	useLayoutEffect(() => {
-		const observedContainer = containerRef.current;
-		if (!observedContainer) return;
-		const containerElement: HTMLDivElement = observedContainer;
-		const priority = isSpot ? SPOT_STAT_PRIORITY : PERP_STAT_PRIORITY;
-
-		function updateLayout() {
-			const containerWidth = containerElement.clientWidth || containerElement.getBoundingClientRect().width;
-			if (!Number.isFinite(containerWidth) || containerWidth <= 0) return;
-
-			const gapPx = getMarketOverviewGap(containerWidth);
-			const measuredWidths: Partial<Record<MarketOverviewStatId, number>> = {};
-			for (const id of priority) {
-				const node = statNodesRef.current.get(id);
-				const itemWidth = node ? Math.ceil(Math.max(node.getBoundingClientRect().width, node.scrollWidth)) : 0;
-				if (!Number.isFinite(itemWidth) || itemWidth <= 0) return;
-				measuredWidths[id] = itemWidth;
-			}
-
-			setOverviewLayout((current) => {
-				const matchesIdentity = current.identity === layoutIdentity;
-				const currentVisible = new Set(
-					matchesIdentity ? (current.visibleKey.split("|") as MarketOverviewStatId[]) : [],
-				);
-				const statWidths: Partial<Record<MarketOverviewStatId, number>> = {};
-				const visible: MarketOverviewStatId[] = [];
-				let occupiedWidth = 0;
-
-				for (const id of priority) {
-					const itemWidth = Math.max(matchesIdentity ? (current.statWidths[id] ?? 0) : 0, measuredWidths[id] ?? 0);
-					statWidths[id] = itemWidth;
-					const candidateWidth = occupiedWidth + (visible.length > 0 ? gapPx : 0) + itemWidth;
-					const revealBuffer = matchesIdentity && !currentVisible.has(id) ? MARKET_OVERVIEW_REVEAL_BUFFER_PX : 0;
-					if (visible.length > 0 && candidateWidth + revealBuffer > containerWidth) break;
-					visible.push(id);
-					occupiedWidth = candidateWidth;
-				}
-
-				const visibleKey = (visible.length > 0 ? visible : ["price"]).join("|");
-				if (
-					matchesIdentity &&
-					current.gapPx === gapPx &&
-					current.visibleKey === visibleKey &&
-					areStatWidthsEqual(current.statWidths, statWidths, priority)
-				) {
-					return current;
-				}
-				return { identity: layoutIdentity, gapPx, visibleKey, statWidths };
-			});
-		}
-
-		updateLayout();
-		window.addEventListener("resize", updateLayout);
-		if (typeof ResizeObserver === "undefined") {
-			return () => window.removeEventListener("resize", updateLayout);
-		}
-
-		const observer = new ResizeObserver(updateLayout);
-		observer.observe(containerElement);
-		for (const node of statNodesRef.current.values()) observer.observe(node);
-		return () => {
-			window.removeEventListener("resize", updateLayout);
-			observer.disconnect();
-		};
-	}, [isSpot, layoutIdentity]);
-
 	function renderStat(id: MarketOverviewStatId, content: ReactNode) {
-		const isVisible = visibleStats.has(id);
-		const minWidth = reservedStatWidths[id];
 		return (
-			<div
-				key={id}
-				ref={(node) => {
-					if (node) statNodesRef.current.set(id, node);
-					else statNodesRef.current.delete(id);
-				}}
-				data-market-stat={id}
-				aria-hidden={isVisible ? undefined : true}
-				inert={isVisible ? undefined : true}
-				style={minWidth ? { minWidth } : undefined}
-				className={cn("shrink-0", !isVisible && "pointer-events-none invisible absolute top-0 left-0")}
-			>
+			<div key={id} data-market-stat={id} className={cn("shrink-0", MARKET_OVERVIEW_STAT_WIDTH_CLASS[id])}>
 				{content}
 			</div>
 		);
 	}
 
 	return (
-		<div
-			ref={containerRef}
+		<section
 			data-market-overview=""
-			className="relative w-full min-w-0 overflow-hidden font-market-close text-[13px]"
+			aria-label={t`Market`}
+			{...KEYBOARD_SCROLL_REGION_PROPS}
+			className="relative w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain font-market-close text-[13px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-stroke-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>
-			<div
-				data-market-overview-row=""
-				className="relative flex w-max min-w-0 items-center"
-				style={{ columnGap: overviewLayout.gapPx }}
-			>
+			<div data-market-overview-row="" className="relative flex w-max min-w-full items-center gap-6">
 				{renderStat(
 					"price",
 					<StatBlock label={isSpot ? t`Price` : t`Mark`} value={priceText} valueClass="text-trading-panel-fg" />,
@@ -489,7 +349,7 @@ export function MarketOverview() {
 					</>
 				)}
 			</div>
-		</div>
+		</section>
 	);
 }
 

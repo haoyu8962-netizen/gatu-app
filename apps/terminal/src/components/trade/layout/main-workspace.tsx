@@ -112,8 +112,8 @@ export function MainWorkspace() {
 								<SpotMarketSocialLinks socials={spotSocials} />
 							</div>
 						) : null}
-						<div className="ml-6 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-							<MarketOverview />
+						<div className="ml-6 min-w-0 flex-1 overflow-hidden">
+							<MarketOverview key={marketKey} />
 						</div>
 					</div>
 

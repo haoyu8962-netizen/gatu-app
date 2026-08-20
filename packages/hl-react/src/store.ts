@@ -112,6 +112,9 @@ function shouldDiscardRetainedDataOnError(key: string): boolean {
 
 const FRESH_SNAPSHOT_METHODS = new Set([
 	"l2",
+	"activeAssetCtx",
+	"activeSpotAssetCtx",
+	"allMids",
 	"allDexsClearinghouseState",
 	"clearinghouseState",
 	"fastAssetCtxs",

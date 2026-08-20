@@ -1100,10 +1100,12 @@
 @layer components {
   .desktop-terminal-grid.react-grid-layout {
     background-color: transparent;
+    transition-property: none !important;
   }
 
   .desktop-terminal-grid > .react-grid-item {
     min-width: 0;
+    transition-property: none !important;
   }
 
   .desktop-terminal-grid > .react-grid-placeholder {

@@ -27,26 +27,39 @@ export function MobileTradeLayout({
 	showOrderForm = true,
 	disclosureStates,
 }: Props) {
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const { routeMarketName } = useExchangeScope();
+	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
+
 	return showOrderForm ? (
-		<TradeOrderView active={active} showMarketBar={showMarketBar} disclosureStates={disclosureStates} />
+		<TradeOrderView
+			active={active}
+			showMarketBar={showMarketBar}
+			marketKey={marketKey}
+			disclosureStates={disclosureStates}
+		/>
 	) : (
-		<MarketsDataView active={active} showMarketBar={showMarketBar} disclosureStates={disclosureStates} />
+		<MarketsDataView
+			active={active}
+			showMarketBar={showMarketBar}
+			marketKey={marketKey}
+			disclosureStates={disclosureStates}
+		/>
 	);
 }
 
 function TradeOrderView({
 	active,
 	showMarketBar,
+	marketKey,
 	disclosureStates,
 }: {
 	active: boolean;
 	showMarketBar: boolean;
+	marketKey: string;
 	disclosureStates: MobilePositionsDisclosureStates;
 }) {
-	const { data: selectedMarket } = useSelectedMarketInfo();
-	const { routeMarketName } = useExchangeScope();
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
-	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 
 	return (
 		<div
@@ -55,7 +68,7 @@ function TradeOrderView({
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
+			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[370px] flex items-stretch">
 				<MobileTradeView
@@ -95,10 +108,12 @@ function TradeOrderView({
 function MarketsDataView({
 	active,
 	showMarketBar,
+	marketKey,
 	disclosureStates,
 }: {
 	active: boolean;
 	showMarketBar: boolean;
+	marketKey: string;
 	disclosureStates: MobilePositionsDisclosureStates;
 }) {
 	const [topView, setTopView] = useState<TopView>("chart");
@@ -118,7 +133,7 @@ function MarketsDataView({
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
+			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
 				{tabs.map((tab) => {

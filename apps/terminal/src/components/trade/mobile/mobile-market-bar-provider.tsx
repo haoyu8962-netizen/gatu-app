@@ -1,9 +1,9 @@
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { isLiveMarkPriceReady, LIVE_MARK_MAX_STALE_MS, resolveActiveMarketPrice } from "@/domain/trade/market-price";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import {
 	getMarketApiCoin,
 	getSpotMarketApiCoin,
-	type SpotMarketInfo,
 	type SubParams,
 	subscribeWsReconnect,
 	type UnifiedMarketInfo,
@@ -85,23 +85,57 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 	const {
 		data: allMidsEvent,
 		isStale: allMidsIsStale,
+		lastMessageAt: allMidsReceivedAt,
 		status: allMidsStatus,
-	} = useSubscription("allMids", getAllMidsParams(market), { enabled: enabled && !!midsCoin });
+	} = useSubscription("allMids", getAllMidsParams(market), {
+		enabled: enabled && !!midsCoin,
+		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
+	});
 	const {
 		data: perpCtxEvent,
 		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
 		status: perpCtxStatus,
 	} = useSubscription("activeAssetCtx", { coin: perpCoin }, { enabled: enabled && !!perpCoin && !isSpot });
 	const {
 		data: spotCtxEvent,
 		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
 		status: spotCtxStatus,
 	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: enabled && !!spotCoin && isSpot });
 
-	const allMidsPrice =
-		allMidsStatus === "active" && !allMidsIsStale && midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
-	const perpCtx = !isSpot && perpCtxStatus === "active" && !perpCtxIsStale ? perpCtxEvent?.ctx : undefined;
-	const spotCtx = isSpot && spotCtxStatus === "active" && !spotCtxIsStale ? spotCtxEvent?.ctx : undefined;
+	const allMidsCandidate = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
+	const allMidsPrice = isLiveMarkPriceReady(
+		allMidsStatus === "active" && !allMidsIsStale ? "success" : allMidsStatus === "error" ? "error" : "loading",
+		allMidsCandidate,
+		allMidsReceivedAt,
+	)
+		? allMidsCandidate
+		: undefined;
+	const perpPrice = resolveActiveMarketPrice({
+		coin: perpCoin,
+		enabled: enabled && !!perpCoin && !isSpot,
+		data: perpCtxEvent,
+		subscriptionStatus: perpCtxStatus,
+		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
+	});
+	const spotPrice = resolveActiveMarketPrice({
+		coin: spotCoin,
+		enabled: enabled && !!spotCoin && isSpot,
+		data: spotCtxEvent,
+		subscriptionStatus: spotCtxStatus,
+		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
+	});
+	const perpCtx =
+		!isSpot && isLiveMarkPriceReady(perpPrice.status, perpPrice.markPx, perpPrice.receivedAt)
+			? perpCtxEvent?.ctx
+			: undefined;
+	const spotCtx =
+		isSpot && isLiveMarkPriceReady(spotPrice.status, spotPrice.markPx, spotPrice.receivedAt)
+			? spotCtxEvent?.ctx
+			: undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
 	const priceSample = selectMobileMarketPrice({
 		bboMidPx: midPx,
@@ -181,20 +215,27 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 		direction: isCurrentFlashEvent ? priceFlashEvent.direction : null,
 	};
 
-	const marketMarkPx = liveCtx?.markPx ?? market?.markPx;
+	const selectedLiveMark = isLiveMarkPriceReady(
+		market?.markPriceStatus ?? "loading",
+		market?.markPx,
+		market?.markPriceReceivedAt,
+	)
+		? market?.markPx
+		: undefined;
+	const marketMarkPx = liveCtx?.markPx ?? selectedLiveMark;
 	const snapshot: MobileMarketBarSnapshot = {
 		market,
 		displayPrice: priceSample.value,
 		priceSource: priceSample.source,
 		priceFlash,
-		prevDayPx: liveCtx?.prevDayPx ?? market?.prevDayPx,
+		prevDayPx: liveCtx?.prevDayPx,
 		marketMarkPx,
-		oraclePx: perpCtx?.oraclePx ?? market?.oraclePx,
-		dayNtlVlm: liveCtx?.dayNtlVlm ?? market?.dayNtlVlm,
-		openInterest: perpCtx?.openInterest ?? market?.openInterest,
-		funding: perpCtx?.funding ?? market?.funding,
-		spotMarkPx: isSpot ? (spotCtx?.markPx ?? market?.markPx) : undefined,
-		spotCirculatingSupply: isSpot ? (spotCtx?.circulatingSupply ?? getSpotCirculatingSupply(market)) : null,
+		oraclePx: perpCtx?.oraclePx,
+		dayNtlVlm: liveCtx?.dayNtlVlm,
+		openInterest: perpCtx?.openInterest,
+		funding: perpCtx?.funding,
+		spotMarkPx: isSpot ? (spotCtx?.markPx ?? selectedLiveMark) : undefined,
+		spotCirculatingSupply: isSpot ? spotCtx?.circulatingSupply : null,
 	};
 
 	return <MobileMarketBarContext value={snapshot}>{children}</MobileMarketBarContext>;
@@ -253,9 +294,4 @@ function isPositivePrice(value: MarketValue): boolean {
 function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
 	if (market?.kind !== "builderPerp") return undefined;
 	return { dex: market.dex };
-}
-
-function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
-	if (market?.kind !== "spot") return null;
-	return (market as SpotMarketInfo).circulatingSupply;
 }
