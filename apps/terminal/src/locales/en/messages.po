@@ -142,8 +142,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} seconds"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-#~ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
@@ -356,8 +356,6 @@ msgstr "Account Equity"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
 
@@ -400,8 +398,6 @@ msgstr "Account value"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Value"
 msgstr "Account Value"
 
@@ -1058,8 +1054,6 @@ msgid "Balance available to trade"
 msgstr "Balance available to trade"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "Balance data is stale."
 
@@ -1067,14 +1061,10 @@ msgstr "Balance data is stale."
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "Balance data is stale. Actions are temporarily unavailable."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1083,8 +1073,6 @@ msgstr "Balance data is stale. Actions are temporarily unavailable."
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1956,9 +1944,6 @@ msgid "Connect the exact owner wallet before continuing."
 msgstr "Connect the exact owner wallet before continuing."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect the owner wallet before moving funds."
 msgstr "Connect the owner wallet before moving funds."
@@ -2022,16 +2007,14 @@ msgstr "Connect wallet"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Connect Wallet"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Connect wallet to view account"
-#~ msgstr "Connect wallet to view account"
+msgid "Connect wallet to view account"
+msgstr "Connect wallet to view account"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
@@ -2136,7 +2119,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "Connect your wallet to view TWAP orders."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "Connect your wallet to view your account, positions, and start trading."
 
@@ -2376,22 +2358,22 @@ msgstr "Cross"
 msgid "Cross Account Leverage"
 msgstr "Cross Account Leverage"
 
-#: src/config/ui-text.ts
-msgid "Cross Leverage"
-msgstr "Cross Leverage"
-
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Maintenance Margin"
 msgstr "Cross Maintenance Margin"
+
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "Cross Leverage"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Cross Margin"
 #~ msgstr "Cross Margin"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Cross Margin Ratio"
-#~ msgstr "Cross Margin Ratio"
+msgid "Cross Margin Ratio"
+msgstr "Cross Margin Ratio"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -2571,7 +2553,6 @@ msgstr "Deployer"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2669,7 +2650,6 @@ msgid "Deposit unavailable"
 msgstr "Deposit unavailable"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr "Deposit USDC"
 
@@ -3137,8 +3117,6 @@ msgstr "Est. Fee"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "Est. P&L at Limit"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Slippage"
 msgstr "Est. Slippage"
@@ -3192,12 +3170,11 @@ msgstr "Estimated time"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -3218,10 +3195,6 @@ msgstr "Executed Size"
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Execution"
 msgstr "Execution"
-
-#: src/components/trade/positions/twap-tab.tsx
-msgid "Execution Interval"
-msgstr "Execution Interval"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3408,7 +3381,6 @@ msgstr "Failed to load balances"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/trade/use-button-content.ts
@@ -3673,7 +3645,6 @@ msgstr "Forward transaction submitted"
 msgid "Forwarding deposit"
 msgstr "Forwarding deposit"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "Frequency"
@@ -3784,12 +3755,6 @@ msgstr "Gas-sponsored CCTP deposits are not enabled for this network."
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
 #~ msgstr "Gas:"
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-msgid "GATU fee"
-msgstr "GATU fee"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Gatu invitation link"
@@ -3963,12 +3928,6 @@ msgstr "Hyperliquid does not currently show this account as eligible to create a
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid does not support pausing active TWAP orders."
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-msgid "Hyperliquid fee"
-msgstr "Hyperliquid fee"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
@@ -4374,7 +4333,6 @@ msgstr "Linked staking account: {0}."
 #~ msgid "Liq"
 #~ msgstr "Liq"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -4552,7 +4510,6 @@ msgstr "Loading wallet..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -4633,8 +4590,8 @@ msgstr "Mainnet"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Maintenance Margin"
-#~ msgstr "Maintenance Margin"
+msgid "Maintenance Margin"
+msgstr "Maintenance Margin"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Maintenance Margin Ratio"
@@ -4886,7 +4843,6 @@ msgstr "Master wallet verified"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
@@ -4971,6 +4927,7 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -5560,8 +5517,10 @@ msgstr "Number format"
 #~ msgstr "Number Format"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "Number of Orders"
@@ -5670,7 +5629,6 @@ msgstr "Open command menu"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr "Open Deposit to prepare your email wallet."
 
@@ -5952,7 +5910,6 @@ msgstr "Other Ledger Update"
 #~ msgstr "Other Options"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Overview"
 msgstr "Overview"
 
@@ -6131,8 +6088,8 @@ msgstr "Perps Account Equity"
 #~ msgstr "Perps Equity"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Perps Overview"
-#~ msgstr "Perps Overview"
+msgid "Perps Overview"
+msgstr "Perps Overview"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
@@ -6282,7 +6239,6 @@ msgid "Portfolio margin"
 msgstr "Portfolio margin"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Margin"
 msgstr "Portfolio Margin"
 
@@ -6427,7 +6383,6 @@ msgstr "Previous page"
 msgid "Previous Vault page"
 msgstr "Previous Vault page"
 
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -7262,13 +7217,10 @@ msgstr "Rows per page"
 msgid "Running"
 msgstr "Running"
 
+#. placeholder {0}: TWAP_MINUTES_MAX / 60
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#~ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-#~ msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-
-#: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
-msgstr "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -7485,11 +7437,8 @@ msgstr "Select {displayName} market"
 
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Select a supported account mode before moving funds."
@@ -7534,7 +7483,6 @@ msgid "Select market"
 msgstr "Select market"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Select mode"
 msgstr "Select mode"
@@ -7659,7 +7607,6 @@ msgstr "Separate"
 #~ msgstr "Separate Account Balances"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Accounts"
 msgstr "Separate Accounts"
 
@@ -7909,8 +7856,8 @@ msgstr "Size cannot exceed the order's remaining size."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "Size per Suborder"
-#~ msgstr "Size per Suborder"
+msgid "Size per Suborder"
+msgstr "Size per Suborder"
 
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
@@ -8319,8 +8266,8 @@ msgid "Submitting..."
 msgstr "Submitting..."
 
 #: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Suborder Frequency"
-#~ msgstr "Suborder Frequency"
+msgid "Suborder Frequency"
+msgstr "Suborder Frequency"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -9669,15 +9616,17 @@ msgstr "Transfer USDC"
 msgid "Transferring..."
 msgstr "Transferring..."
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "Transfers between Spot and Perps are unavailable in unified account mode."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
 msgstr "Transfers between Spot and Perps are unavailable in shared-balance account modes."
-
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-msgid "Transfers between Spot and Perps are unavailable in unified account mode."
-msgstr "Transfers between Spot and Perps are unavailable in unified account mode."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Transfers HYPE from your Spot balance to your available staking balance."
@@ -9823,12 +9772,8 @@ msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP order state is still loading. Please retry in a moment."
 
 #: src/lib/errors/definitions/twap.ts
-msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
-msgstr "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
-
-#: src/lib/errors/definitions/twap.ts
-#~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
-#~ msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #~ msgid "TWAP Orders"
@@ -10031,7 +9976,6 @@ msgid "Unified account"
 msgstr "Unified account"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Unified Account"
 msgstr "Unified Account"
 
@@ -10098,6 +10042,7 @@ msgstr "Update failed"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Updated"
