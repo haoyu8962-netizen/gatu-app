@@ -51,6 +51,10 @@ vi.mock("@/components/ui/number-input", () => ({
 	},
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => false,
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({ clientKey: "0xabc", env: "Mainnet" }),
 }));

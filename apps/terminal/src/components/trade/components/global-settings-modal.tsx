@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	readPositionMarketCloseConfirmationPreference,
@@ -41,6 +42,7 @@ export function GlobalSettingsModal() {
 	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork, setSkipOrderConfirmation } =
 		useGlobalSettingsActions();
 	const network = useNetwork();
+	const isMobile = useIsMobile();
 	const { clientKey, env } = useHyperliquid();
 	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
 	const confirmationIdentity = { owner: clientKey, env };
@@ -180,14 +182,16 @@ export function GlobalSettingsModal() {
 					</SettingsGroup>
 
 					<SettingsGroup label={t`Display`}>
-						<SettingRow label={t`Order book in quote asset`}>
-							<Toggle
-								size="xs"
-								aria-label={t`Order book in quote asset`}
-								checked={showOrderbookInQuote}
-								onCheckedChange={setShowOrderbookInQuote}
-							/>
-						</SettingRow>
+						{isMobile && (
+							<SettingRow label={t`Order book in quote asset`}>
+								<Toggle
+									size="xs"
+									aria-label={t`Order book in quote asset`}
+									checked={showOrderbookInQuote}
+									onCheckedChange={setShowOrderbookInQuote}
+								/>
+							</SettingRow>
+						)}
 						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
 							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
 								{t`Reset`}

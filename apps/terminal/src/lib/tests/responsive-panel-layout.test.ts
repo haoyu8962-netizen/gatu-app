@@ -40,9 +40,13 @@ describe("responsive panel layout contract", () => {
 		expect(TERMINAL_STYLES).toContain("@container orderbook-panel (max-width: 11.1875rem)");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
 		expect(TERMINAL_STYLES).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr)");
+		const baseOrderbookRule = readCssBlock(TERMINAL_STYLES, ".orderbook-grid");
+		expect(baseOrderbookRule).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr)");
+		expect(baseOrderbookRule).not.toContain("repeat(3, minmax(0, 1fr))");
 		const narrowOrderbookRule = readCssBlock(TERMINAL_STYLES, "@container orderbook-panel (max-width: 17.4375rem)");
+		expect(narrowOrderbookRule).toContain(".orderbook-grid");
+		expect(narrowOrderbookRule).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
 		expect(narrowOrderbookRule).toContain(".trades-grid");
-		expect(narrowOrderbookRule).not.toContain(".orderbook-grid");
 
 		expect(TRADES_PANEL_SOURCE).toContain("trades-grid");
 		expect(TRADE_ROW_SOURCE).toContain("trades-grid");
@@ -69,6 +73,8 @@ describe("responsive panel layout contract", () => {
 		expect(ORDERBOOK_PANEL_SOURCE).toMatch(/<TabsContent\s+value="trades"\s+keepMounted/);
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel showInQuote={showOrderbookInQuote} />");
 		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("<TradesPanel key=");
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("useSizeMode");
+		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("use-global-settings-store");
 		expect(TRADE_ROW_SOURCE).toContain('"grid h-6 items-center tabular-nums');
 		expect(TRADES_PANEL_SOURCE).toContain('"trades-grid gap-1 px-2 h-8 text-xs"');
 		expect(TRADES_PANEL_SOURCE).not.toContain("Waiting for trades...");

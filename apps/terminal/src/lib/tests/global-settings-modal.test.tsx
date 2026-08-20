@@ -1,16 +1,23 @@
 /** @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+
 const testState = vi.hoisted(() => ({
+	isMobile: false,
 	marketOrderSlippagePercent: 0.5,
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
 		testState.marketOrderSlippagePercent = value;
 	}),
+	setShowOrderbookInQuote: vi.fn(),
 	skipOrderConfirmation: false,
 	setSkipOrderConfirmation: vi.fn((value: boolean) => {
 		testState.skipOrderConfirmation = value;
@@ -47,6 +54,10 @@ vi.mock("@/components/ui/number-input", () => ({
 	},
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => testState.isMobile,
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({ clientKey: "0xabc", env: "Mainnet" }),
 }));
@@ -66,7 +77,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	useGlobalSettingsActions: () => ({
 		setMarketOrderSlippagePercent: testState.setMarketOrderSlippagePercent,
 		setNetwork: vi.fn(),
-		setShowOrderbookInQuote: vi.fn(),
+		setShowOrderbookInQuote: testState.setShowOrderbookInQuote,
 		setSkipOrderConfirmation: testState.setSkipOrderConfirmation,
 	}),
 	useMarketOrderSlippagePercent: () => testState.marketOrderSlippagePercent,
@@ -82,8 +93,10 @@ describe("GlobalSettingsModal", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		testState.isMobile = false;
 		testState.marketOrderSlippagePercent = 0.5;
 		testState.setMarketOrderSlippagePercent.mockClear();
+		testState.setShowOrderbookInQuote.mockClear();
 		testState.skipOrderConfirmation = false;
 		testState.setSkipOrderConfirmation.mockClear();
 		testState.numberInputProps = null;
@@ -92,13 +105,17 @@ describe("GlobalSettingsModal", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
-		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalSettingsModal))));
+		renderModal();
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
 	});
+
+	function renderModal() {
+		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalSettingsModal))));
+	}
 
 	it("keeps drag updates local and persists only the committed slippage", () => {
 		const onValueChange = testState.sliderProps?.onValueChange as ((value: number) => void) | undefined;
@@ -131,7 +148,7 @@ describe("GlobalSettingsModal", () => {
 	it("renders the toggle off once the skip preference is stored", () => {
 		testState.skipOrderConfirmation = true;
 		testState.toggleProps = [];
-		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalSettingsModal))));
+		renderModal();
 
 		const toggle = findOrderConfirmationToggle();
 
@@ -146,13 +163,60 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.numberInputProps?.["aria-label"]).toBe("Slippage tolerance");
 		expect(testState.numberInputProps?.mobileSafe).toBe(true);
 		expect(testState.numberInputProps?.className).toContain("max-[1000px]:h-8");
+		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual(["Order confirmation"]);
+
+		testState.isMobile = true;
+		testState.toggleProps = [];
+		act(() => root.unmount());
+		root = createRoot(container);
+		renderModal();
+
 		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
 			"Order confirmation",
 			"Order book in quote asset",
 		]);
 	});
+
+	it("hides the order book unit setting on the desktop layout", () => {
+		expect(findOrderbookUnitToggle()).toBeUndefined();
+		expect(container.textContent).not.toContain("Order book in quote asset");
+	});
+
+	it("shows the order book unit setting on the mobile layout and writes the global preference", () => {
+		testState.isMobile = true;
+		testState.toggleProps = [];
+		renderModal();
+
+		const toggle = findOrderbookUnitToggle();
+		expect(toggle?.checked).toBe(false);
+
+		act(() => (toggle?.onCheckedChange as ((next: boolean) => void) | undefined)?.(true));
+
+		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledTimes(1);
+		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledWith(true);
+		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
+	});
+
+	it("keeps the desktop order book unit source decoupled from the global setting", () => {
+		const modalSource = readFileSync(
+			resolve(TEST_DIR, "../..", "components/trade/components/global-settings-modal.tsx"),
+			"utf8",
+		);
+		const orderbookPanelSource = readFileSync(
+			resolve(TEST_DIR, "../..", "components/trade/orderbook/orderbook-panel.tsx"),
+			"utf8",
+		);
+
+		expect(modalSource).not.toContain("use-order-entry-store");
+		expect(orderbookPanelSource).toContain("useSizeMode");
+		expect(orderbookPanelSource).not.toContain("use-global-settings-store");
+	});
 });
 
 function findOrderConfirmationToggle(): Record<string, unknown> | undefined {
 	return testState.toggleProps.find((props) => props["aria-label"] === "Order confirmation");
+}
+
+function findOrderbookUnitToggle(): Record<string, unknown> | undefined {
+	return testState.toggleProps.find((props) => props["aria-label"] === "Order book in quote asset");
 }

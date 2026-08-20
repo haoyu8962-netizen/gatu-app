@@ -30,12 +30,12 @@ function createTouchEvent(type: string): MouseEvent {
 describe("compact orderbook cumulative tooltip", () => {
 	let container: HTMLDivElement;
 	let root: Root;
-	function renderRow(side: "ask" | "bid") {
+	function renderRow(side: "ask" | "bid", compact = true) {
 		act(() => {
 			root.render(
 				<OrderbookRow
 					baseAsset="HYPE"
-					compact
+					compact={compact}
 					flashResetKey="HYPE:full"
 					level={LEVEL}
 					marketName="HYPE"
@@ -88,14 +88,17 @@ describe("compact orderbook cumulative tooltip", () => {
 		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
 	});
 
-	it("uses dedicated order book colors for both sides", () => {
-		const askPrice = container.querySelector(".orderbook-price-ask");
-		expect(askPrice).not.toBeNull();
-		expect(askPrice?.classList.contains("text-trading-panel-error")).toBe(false);
+	it("uses shared order book price colors for compact and standard rows", () => {
+		for (const compact of [true, false]) {
+			renderRow("ask", compact);
+			const askPrice = container.querySelector(".orderbook-price-ask");
+			expect(askPrice).not.toBeNull();
+			expect(askPrice?.classList.contains("text-trading-panel-error")).toBe(false);
 
-		renderRow("bid");
-		const bidPrice = container.querySelector(".orderbook-price-bid");
-		expect(bidPrice).not.toBeNull();
-		expect(bidPrice?.classList.contains("text-trading-panel-success")).toBe(false);
+			renderRow("bid", compact);
+			const bidPrice = container.querySelector(".orderbook-price-bid");
+			expect(bidPrice).not.toBeNull();
+			expect(bidPrice?.classList.contains("text-trading-panel-success")).toBe(false);
+		}
 	});
 });

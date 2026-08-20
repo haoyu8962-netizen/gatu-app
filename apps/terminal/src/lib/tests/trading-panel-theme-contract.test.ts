@@ -9,11 +9,20 @@ const INPUT_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/ui/inpu
 const TRADING_CTA_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-cta.ts"), "utf8");
 
 describe("trading panel theme contract", () => {
-	it("keeps order book depth colors on their dedicated palette in both themes", () => {
-		for (const selector of [":root", ".dark"]) {
-			expect(readCssVariable(TERMINAL_THEME_CSS, selector, "--orderbook-depth-bid")).toBe("#1fa67d");
-			expect(readCssVariable(TERMINAL_THEME_CSS, selector, "--orderbook-depth-ask")).toBe("#ed7088");
-		}
+	it("keeps light order book colors semantic and dark on the measured Hyperliquid palette", () => {
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-depth-bid")).toBe("var(--text-success)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-depth-ask")).toBe("var(--text-error)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-depth-bid")).toBe("#1fa67d");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-depth-ask")).toBe("#ed7088");
+	});
+
+	it("keeps light order book prices at WCAG AA contrast on the light surface", () => {
+		const surface = resolveCssColor(":root", "--bg-raised");
+		const bid = resolveCssColor(":root", "--orderbook-depth-bid");
+		const ask = resolveCssColor(":root", "--orderbook-depth-ask");
+
+		expect(getContrastRatio(bid, surface)).toBeGreaterThanOrEqual(4.5);
+		expect(getContrastRatio(ask, surface)).toBeGreaterThanOrEqual(4.5);
 	});
 
 	it("maps the light trading panel to the design handoff palette", () => {
@@ -97,6 +106,32 @@ function readCssVariable(source: string, selector: string, variable: string): st
 
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	return declaration?.[1]?.trim();
+}
+
+function resolveCssColor(selector: string, variable: string): string {
+	let value = readCssVariable(TERMINAL_THEME_CSS, selector, variable);
+	for (let depth = 0; depth < 5 && value; depth += 1) {
+		const reference = /^var\((--[\w-]+)\)$/.exec(value);
+		if (!reference) break;
+		value = readCssVariable(TERMINAL_THEME_CSS, selector, reference[1]);
+	}
+	if (!value || !/^#[0-9a-f]{6}$/i.test(value)) {
+		throw new Error(`Could not resolve ${variable} in ${selector} to a hex color, got: ${value}`);
+	}
+	return value;
+}
+
+function getContrastRatio(foreground: string, background: string): number {
+	const [lighter, darker] = [getRelativeLuminance(foreground), getRelativeLuminance(background)].sort((a, b) => b - a);
+	return (lighter + 0.05) / (darker + 0.05);
+}
+
+function getRelativeLuminance(hex: string): number {
+	const [red, green, blue] = [1, 3, 5].map((offset) => {
+		const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+		return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }
 
 describe("shared foreground contract", () => {
