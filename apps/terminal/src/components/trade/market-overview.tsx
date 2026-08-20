@@ -280,7 +280,7 @@ export function MarketOverview() {
 	return (
 		<section
 			data-market-overview=""
-			aria-label={t`Market`}
+			aria-label={selectedMarketInfo?.pairName ?? t`Price`}
 			{...KEYBOARD_SCROLL_REGION_PROPS}
 			className="relative w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain font-market-close text-[13px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-stroke-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>

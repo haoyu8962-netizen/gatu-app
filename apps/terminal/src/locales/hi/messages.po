@@ -131,7 +131,7 @@ msgstr "{positionCount} पोज़िशन मार्केट मूल्
 
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-msgstr "{requestedPercent}% अनुरोध किया गया; साइज़ की सटीकता लागू करने के बाद {effectivePercent}%"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "{totalSeconds} seconds"
@@ -3156,6 +3156,7 @@ msgstr "एथेरियम स्मार्ट कॉन्ट्रैक�
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -4700,7 +4701,6 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4901,6 +4901,7 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"

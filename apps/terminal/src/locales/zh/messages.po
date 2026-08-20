@@ -2959,6 +2959,7 @@ msgstr "Ethereum 是一个用于智能合约和去中心化应用的可编程区
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "每 {TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -4395,7 +4396,6 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -4576,6 +4576,7 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "中间价"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
