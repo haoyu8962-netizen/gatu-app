@@ -14,6 +14,9 @@ export type StreamRuntime = {
 	cooldownTimer?: ReturnType<typeof setTimeout>;
 	releaseTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
+	recoveryGeneration: number;
+	recoveredGeneration: number;
+	awaitingFirstCandle: boolean;
 	coin: string;
 	interval: CandleInterval;
 };
@@ -112,14 +115,18 @@ export function startSubscription(ctx: SubscribeContext): void {
 
 	// The SDK fires onError at most once, only after a confirmed subscription fails, and
 	// removes the subscription itself — identity guards keep stale epochs from acting.
+	// Failures only mark a pending recovery; listeners are reset once per recovery
+	// generation after the server confirms the resubscription, and the failure streak
+	// clears only when the first candle proves the stream is actually delivering data.
 	let activeSubscription: ISubscription | undefined;
 	const onSubscriptionError = (error: unknown) => {
 		if (ctx.runtime.get(ctx.key) !== owner) return;
 		if (!activeSubscription || owner.subscription !== activeSubscription) return;
 		owner.subscription = undefined;
+		owner.awaitingFirstCandle = false;
+		owner.recoveryGeneration += 1;
 
 		ctx.onError(error ?? new Error("Subscription failed"));
-		ctx.onResetListeners();
 		scheduleReconnect(ctx);
 	};
 
@@ -130,6 +137,10 @@ export function startSubscription(ctx: SubscribeContext): void {
 				if (ctx.runtime.get(ctx.key) !== owner) return;
 				const bar = candleEventToBar(event);
 				if (!bar) return;
+				if (owner.awaitingFirstCandle) {
+					owner.awaitingFirstCandle = false;
+					owner.reconnectAttempts = 0;
+				}
 				ctx.onCandle(bar);
 			},
 			{ onError: onSubscriptionError },
@@ -143,9 +154,18 @@ export function startSubscription(ctx: SubscribeContext): void {
 			owner.promise = undefined;
 			owner.subscription = subscription;
 			activeSubscription = subscription;
-			owner.reconnectAttempts = 0;
+			owner.awaitingFirstCandle = true;
 
-			ctx.onActive();
+			// Listener callbacks can reach third-party TradingView code; their exceptions
+			// must not fall into the .catch below and misclassify a live subscription as failed.
+			try {
+				ctx.onActive();
+
+				if (owner.recoveryGeneration > owner.recoveredGeneration) {
+					owner.recoveredGeneration = owner.recoveryGeneration;
+					ctx.onResetListeners();
+				}
+			} catch {}
 
 			return subscription;
 		})
@@ -154,9 +174,10 @@ export function startSubscription(ctx: SubscribeContext): void {
 
 			owner.promise = undefined;
 			owner.subscription = undefined;
+			owner.awaitingFirstCandle = false;
+			owner.recoveryGeneration += 1;
 
 			ctx.onError(error);
-			ctx.onResetListeners();
 			scheduleReconnect(ctx);
 			return undefined;
 		});

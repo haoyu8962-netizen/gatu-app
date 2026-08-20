@@ -39,7 +39,9 @@ export function candleEventToBar(event: CandleWsEvent): Bar | null {
 }
 
 export function filterAndSortBars(bars: (Bar | null)[], fromMs: number, toMs: number): Bar[] {
-	return bars
-		.filter((bar): bar is Bar => bar !== null && bar.time >= fromMs && bar.time < toMs)
-		.sort((a, b) => a.time - b.time);
+	const barsByTime = new Map<number, Bar>();
+	for (const bar of bars) {
+		if (bar !== null && bar.time >= fromMs && bar.time < toMs) barsByTime.set(bar.time, bar);
+	}
+	return [...barsByTime.values()].sort((a, b) => a.time - b.time);
 }

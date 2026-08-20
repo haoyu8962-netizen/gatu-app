@@ -151,7 +151,14 @@ export function createCandleStore(): CandleStore {
 
 				let runtimeEntry = runtime.get(key);
 				if (!runtimeEntry) {
-					runtimeEntry = { reconnectAttempts: 0, coin, interval };
+					runtimeEntry = {
+						reconnectAttempts: 0,
+						recoveryGeneration: 0,
+						recoveredGeneration: 0,
+						awaitingFirstCandle: false,
+						coin,
+						interval,
+					};
 					runtime.set(key, runtimeEntry);
 				} else {
 					runtimeEntry.coin = coin;
@@ -249,10 +256,13 @@ export function createCandleStore(): CandleStore {
 				};
 
 				if (runtimeEntry.subscription || runtimeEntry.promise) {
-					const stream = get().streams[key];
-					if (stream?.lastBar) {
-						onTick(stream.lastBar);
-					}
+					setTimeout(() => {
+						const stream = get().streams[key];
+						const current = stream?.listeners.get(listenerId);
+						if (!stream || !current || current.onTick !== onTick || current.onResetCache !== onResetCache) return;
+						if (stream.status === "error" || !stream.lastBar) return;
+						current.onTick(stream.lastBar);
+					}, 0);
 					return;
 				}
 

@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
+import { CandleRateLimitError, requestCandleSnapshot } from "@/lib/chart/candle-gate";
 import { type CandleInterval, resolutionToBarMs, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import {
@@ -12,6 +13,7 @@ import {
 	symbolFromCoin,
 } from "@/lib/chart/symbol";
 import { getInfoClient } from "@/lib/hyperliquid";
+import { getHttpStatus } from "@/lib/query-retry";
 import type {
 	Bar,
 	DatafeedConfiguration,
@@ -63,7 +65,6 @@ const HISTORY_BACKFILL_MIN_BUCKETS = 100;
 const HISTORY_BACKFILL_WINDOW_MULTIPLIER = 2;
 
 type ActiveHistoryRequest = {
-	controller: AbortController;
 	reject: (reason: unknown) => void;
 	timeoutId: ReturnType<typeof setTimeout> | null;
 };
@@ -71,6 +72,11 @@ type ActiveHistoryRequest = {
 type HistoryRequestContext = {
 	activeRequests: Set<ActiveHistoryRequest>;
 	isDestroyed: () => boolean;
+};
+
+type FetchBarsResult = {
+	bars: Bar[];
+	rawCount: number;
 };
 
 type PreviousBarsResult = {
@@ -161,13 +167,11 @@ async function fetchBars(
 	toMs: number,
 	requestContext: HistoryRequestContext,
 	timeoutMs = CHART_HISTORY_REQUEST_TIMEOUT_MS,
-) {
+): Promise<FetchBarsResult> {
 	if (requestContext.isDestroyed()) throw createDatafeedDestroyedError();
 	if (timeoutMs <= 0) throw createHistoryTimeoutError();
 
-	const controller = new AbortController();
 	const activeRequest: ActiveHistoryRequest = {
-		controller,
 		reject: () => undefined,
 		timeoutId: null,
 	};
@@ -177,21 +181,15 @@ async function fetchBars(
 	requestContext.activeRequests.add(activeRequest);
 	activeRequest.timeoutId = setTimeout(() => {
 		activeRequest.reject(createHistoryTimeoutError());
-		controller.abort();
 	}, timeoutMs);
 
 	try {
-		const request = getInfoClient().candleSnapshot(
-			{
-				coin,
-				interval,
-				startTime: fromMs,
-				endTime: toMs,
-			},
-			controller.signal,
-		);
+		const request = requestCandleSnapshot({ coin, interval, startTime: fromMs, endTime: toMs });
 		const candles = await Promise.race([request, cancellation]);
-		return filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
+		return {
+			bars: filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs),
+			rawCount: candles.length,
+		};
 	} finally {
 		if (activeRequest.timeoutId !== null) clearTimeout(activeRequest.timeoutId);
 		activeRequest.timeoutId = null;
@@ -208,26 +206,41 @@ async function fetchPreviousBars(
 	countBack: number,
 	deadlineMs: number,
 	requestContext: HistoryRequestContext,
+	exhaustedHistoryByStream: Map<string, number>,
 ): Promise<PreviousBarsResult> {
-	if (currentBarCount === 0) {
-		if (beforeMs <= 0) return { bars: [], noData: true };
-		const bars = await fetchBars(coin, interval, 0, beforeMs, requestContext, deadlineMs - Date.now());
-		return { bars, noData: bars.length === 0 };
+	if (beforeMs <= 0) return { bars: [], noData: currentBarCount === 0 };
+
+	const exhaustionKey = streamKey(coin, interval);
+	const exhaustedBefore = exhaustedHistoryByStream.get(exhaustionKey) ?? 0;
+	if (currentBarCount === 0 && beforeMs <= exhaustedBefore) {
+		return { bars: [], noData: true };
 	}
 
 	const remainingApiCapacity = Math.max(0, HYPERLIQUID_MAX_CANDLES - currentBarCount);
-	const missingBarCount = Math.max(0, countBack - currentBarCount);
+	const missingBarCount = Math.max(1, countBack - currentBarCount);
 	const requestedBucketCount = Math.min(
 		remainingApiCapacity,
 		Math.max(HISTORY_BACKFILL_MIN_BUCKETS, missingBarCount * HISTORY_BACKFILL_WINDOW_MULTIPLIER),
 	);
-	if (requestedBucketCount === 0 || beforeMs <= 0) {
-		return { bars: [], noData: false };
-	}
+	if (requestedBucketCount === 0) return { bars: [], noData: false };
 
-	const fromMs = Math.max(0, beforeMs - requestedBucketCount * barMs);
-	const bars = await fetchBars(coin, interval, fromMs, beforeMs, requestContext, deadlineMs - Date.now());
-	return { bars, noData: false };
+	const windowFromMs = Math.max(0, beforeMs - requestedBucketCount * barMs);
+	const window = await fetchBars(coin, interval, windowFromMs, beforeMs, requestContext, deadlineMs - Date.now());
+	if (window.bars.length > 0 || currentBarCount > 0) return { bars: window.bars, noData: false };
+
+	const probe =
+		windowFromMs === 0 ? window : await fetchBars(coin, interval, 0, beforeMs, requestContext, deadlineMs - Date.now());
+	if (probe.rawCount > 0) return { bars: probe.bars, noData: false };
+
+	exhaustedHistoryByStream.set(exhaustionKey, Math.max(exhaustedBefore, beforeMs));
+	return { bars: [], noData: true };
+}
+
+function describeHistoryError(error: unknown): string {
+	if (error instanceof CandleRateLimitError || getHttpStatus(error) === 429) {
+		return t`Chart data is temporarily rate limited`;
+	}
+	return error instanceof Error ? error.message : String(error);
 }
 
 function mergeBarsToCountBack(previousBars: Bar[], currentBars: Bar[], countBack: number): Bar[] {
@@ -240,9 +253,8 @@ function mergeBarsToCountBack(previousBars: Bar[], currentBars: Bar[], countBack
 	return bars.length > limit ? bars.slice(-limit) : bars;
 }
 
-function shouldFetchPreviousBars(periodParams: PeriodParams, currentBarCount: number) {
-	const countBack = Math.max(1, Math.floor(periodParams.countBack) || 1);
-	return currentBarCount < countBack;
+function clampCountBack(periodParams: PeriodParams): number {
+	return Math.max(1, Math.floor(periodParams.countBack) || 1);
 }
 
 const configuration: DatafeedConfiguration = {
@@ -268,6 +280,8 @@ interface DatafeedOptions {
 		  }
 		| undefined;
 	onRealtimeReset?: () => void;
+	requestRealtimeReset?: () => void;
+	onHistoryError?: () => void;
 }
 
 type ActiveRealtimeSubscription = {
@@ -287,6 +301,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 	const resolvedCoinBySymbol = new Map<string, string>();
 	const activeHistoryRequests = new Set<ActiveHistoryRequest>();
 	const pendingCallbacks = new Set<ReturnType<typeof setTimeout>>();
+	const exhaustedHistoryByStream = new Map<string, number>();
 	let destroyed = false;
 	const historyRequestContext: HistoryRequestContext = {
 		activeRequests: activeHistoryRequests,
@@ -342,7 +357,6 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				if (request.timeoutId !== null) clearTimeout(request.timeoutId);
 				request.timeoutId = null;
 				request.reject(destroyedError);
-				request.controller.abort();
 			}
 			activeHistoryRequests.clear();
 
@@ -454,13 +468,20 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					return;
 				}
 
+				const exhaustedBefore = exhaustedHistoryByStream.get(streamKey(coin, interval)) ?? 0;
+				if (toMs <= exhaustedBefore) {
+					resolveAsync(() => onResult([], { noData: true }));
+					return;
+				}
+
 				const historyDeadline = Date.now() + CHART_HISTORY_REQUEST_TIMEOUT_MS;
-				const bars = await fetchBars(coin, interval, fromMs, toMs, historyRequestContext);
+				const { bars } = await fetchBars(coin, interval, fromMs, toMs, historyRequestContext);
 				if (destroyed) return;
 				const key = cacheKey(symbolInfo, resolution);
+				const countBack = clampCountBack(periodParams);
 				let resultBars = bars;
 				let noData = false;
-				if (shouldFetchPreviousBars(periodParams, bars.length)) {
+				if (bars.length < countBack) {
 					try {
 						const previous = await fetchPreviousBars(
 							coin,
@@ -468,12 +489,13 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 							fromMs,
 							barMs,
 							bars.length,
-							Math.max(1, Math.floor(periodParams.countBack) || 1),
+							countBack,
 							historyDeadline,
 							historyRequestContext,
+							exhaustedHistoryByStream,
 						);
 						noData = previous.noData;
-						resultBars = mergeBarsToCountBack(previous.bars, bars, periodParams.countBack);
+						resultBars = mergeBarsToCountBack(previous.bars, bars, countBack);
 					} catch (error) {
 						if (bars.length === 0) throw error;
 					}
@@ -491,7 +513,8 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				const callbackBars = cloneBars(resultBars);
 				resolveAsync(() => onResult(callbackBars, { noData: false }));
 			})().catch((error) => {
-				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
+				options.onHistoryError?.();
+				resolveAsync(() => onError(describeHistoryError(error)));
 			});
 		},
 
@@ -534,6 +557,10 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, () => {
 				if (realtimeSubscriptions.get(listenerGuid) !== realtimeSubscription) return;
+				if (options.requestRealtimeReset) {
+					options.requestRealtimeReset();
+					return;
+				}
 				resetSubscription(realtimeSubscription);
 				options.onRealtimeReset?.();
 			});

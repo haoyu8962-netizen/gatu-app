@@ -1345,6 +1345,10 @@ msgid "Chart"
 msgstr "चार्ट"
 
 #: src/components/trade/chart/datafeed.ts
+msgid "Chart data is temporarily rate limited"
+msgstr ""
+
+#: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "चार्ट इतिहास अनुरोध का समय समाप्त हो गया"
 
@@ -4333,6 +4337,10 @@ msgstr "लिक्विडेशन मूल्य"
 #~ msgid "Live account fee benefit"
 #~ msgstr "खाते का मौजूदा फ़ीस लाभ"
 
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Live chart data is rate limited. Retrying shortly."
+msgstr ""
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4475,12 +4483,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4680,10 +4683,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "मार्क प्राइस ऑरेकल कीमतों से प्राप्त होता है और अवास्तविक PnL तथा लिक्विडेशन की गणना के लिए उपयोग होता है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "मार्क प्राइस उपलब्ध नहीं है। बाज़ार डेटा की प्रतीक्षा करें और फिर से प्रयास करें।"

@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
+import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import {
 	getChartApiSymbol,
@@ -113,6 +114,8 @@ export function TradingViewChart({
 	const datafeedRef = useRef<ChartDatafeed | null>(null);
 	const chartReadyRef = useRef(false);
 	const pendingDataResetRef = useRef(false);
+	const pendingRealtimeResetRef = useRef(false);
+	const wsReconnectGenerationRef = useRef(0);
 	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
@@ -186,10 +189,13 @@ export function TradingViewChart({
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestLocaleSwitchRef = useRef<() => void>(() => {});
 	const requestDataResetRef = useRef<() => void>(() => {});
+	const requestRealtimeResetRef = useRef<() => void>(() => {});
+	const flushPendingRealtimeResetRef = useRef<() => void>(() => {});
 	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [retryNonce, setRetryNonce] = useState(0);
+	const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
 	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
 	targetSymbolRef.current = widgetSymbol;
 	targetThemeRef.current = theme;
@@ -790,10 +796,30 @@ export function TradingViewChart({
 		});
 	};
 
+	const canRunRealtimeReset = () =>
+		activeRef.current && document.visibilityState !== "hidden" && navigator.onLine && getCandleGateRetryAt() === null;
+
+	requestRealtimeResetRef.current = () => {
+		if (!datafeedRef.current) return;
+		if (!canRunRealtimeReset()) {
+			pendingRealtimeResetRef.current = true;
+			return;
+		}
+		pendingRealtimeResetRef.current = false;
+		datafeedRef.current.resetRealtimeCache();
+	};
+
+	flushPendingRealtimeResetRef.current = () => {
+		if (pendingRealtimeResetRef.current) requestRealtimeResetRef.current();
+		if (pendingDataResetRef.current && canRunRealtimeReset()) requestDataResetRef.current();
+	};
+
 	useEffect(
 		() =>
-			subscribeWsReconnect(() => {
-				datafeedRef.current?.resetRealtimeCache();
+			subscribeWsReconnect((generation) => {
+				if (generation <= wsReconnectGenerationRef.current) return;
+				wsReconnectGenerationRef.current = generation;
+				requestRealtimeResetRef.current();
 			}),
 		[],
 	);
@@ -921,6 +947,7 @@ export function TradingViewChart({
 			}
 			chartReadyRef.current = false;
 			pendingDataResetRef.current = false;
+			pendingRealtimeResetRef.current = false;
 			scheduledDataResetWidgetRef.current = null;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
@@ -949,7 +976,10 @@ export function TradingViewChart({
 		};
 
 		const shouldPauseReadyWatchdog = () =>
-			!activeRef.current || document.visibilityState === "hidden" || !navigator.onLine;
+			!activeRef.current ||
+			document.visibilityState === "hidden" ||
+			!navigator.onLine ||
+			getCandleGateRetryAt() !== null;
 
 		const retryOrFail = (reason: string, automaticRetryCount: number) => {
 			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
@@ -1042,12 +1072,36 @@ export function TradingViewChart({
 			} else {
 				resumeStateSaveWatchdogRef.current();
 			}
+			flushPendingRealtimeResetRef.current();
+		};
+
+		let candleGateResumeTimer: ReturnType<typeof setTimeout> | null = null;
+		const handleCandleGateChange = () => {
+			if (candleGateResumeTimer) {
+				clearTimeout(candleGateResumeTimer);
+				candleGateResumeTimer = null;
+			}
+			const retryAt = getCandleGateRetryAt();
+			if (retryAt !== null) {
+				pendingDataResetRef.current = true;
+				candleGateResumeTimer = setTimeout(
+					() => {
+						candleGateResumeTimer = null;
+						handleCandleGateChange();
+					},
+					Math.max(0, retryAt - Date.now()),
+				);
+			}
+			if (!disposed && widgetEpochRef.current === widgetEpoch) setRateLimitedUntil(retryAt);
+			handlePageLifecycleChange();
 		};
 
 		document.addEventListener("visibilitychange", handlePageLifecycleChange);
 		window.addEventListener("online", handlePageLifecycleChange);
 		window.addEventListener("offline", handlePageLifecycleChange);
 		window.addEventListener("pageshow", handlePageLifecycleChange);
+		const unsubscribeCandleGate = subscribeCandleGate(handleCandleGateChange);
+		handleCandleGateChange();
 
 		async function initWidget(automaticRetryCount: number): Promise<void> {
 			if (disposed || widgetEpochRef.current !== widgetEpoch) return;
@@ -1085,6 +1139,10 @@ export function TradingViewChart({
 					getSymbolInfo: getSelectedMarketSymbolInfo,
 					isKnownCoin: isSelectedMarketCoin,
 					onRealtimeReset: () => requestDataResetRef.current(),
+					requestRealtimeReset: () => requestRealtimeResetRef.current(),
+					onHistoryError: () => {
+						if (datafeedRef.current === datafeed) pendingDataResetRef.current = true;
+					},
 				});
 				datafeedRef.current = datafeed;
 
@@ -1114,6 +1172,7 @@ export function TradingViewChart({
 					...(savedChartState ? { saved_data: savedChartState } : {}),
 				});
 				widgetRef.current = widget;
+				if (getCandleGateRetryAt() !== null) pendingDataResetRef.current = true;
 				if (overlayDisableNextWidgetRef.current) {
 					overlayDisableNextWidgetRef.current = false;
 					overlayDisabledWidgetRef.current = widget;
@@ -1151,7 +1210,7 @@ export function TradingViewChart({
 					if (isChartSymbolApplied(activeSymbol, targetSymbolRef.current)) {
 						resetOverlayRecoveryForVerifiedSymbol(widget, targetSymbolRef.current);
 					}
-					if (pendingDataResetRef.current) requestDataResetRef.current();
+					flushPendingRealtimeResetRef.current();
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
 					syncOverlaysRef.current();
@@ -1177,6 +1236,11 @@ export function TradingViewChart({
 			window.removeEventListener("online", handlePageLifecycleChange);
 			window.removeEventListener("offline", handlePageLifecycleChange);
 			window.removeEventListener("pageshow", handlePageLifecycleChange);
+			unsubscribeCandleGate();
+			if (candleGateResumeTimer) {
+				clearTimeout(candleGateResumeTimer);
+				candleGateResumeTimer = null;
+			}
 			clearReadyWatchdog();
 			removeWidget();
 		};
@@ -1206,6 +1270,7 @@ export function TradingViewChart({
 			return;
 		}
 		resumeReadyWatchdogRef.current();
+		flushPendingRealtimeResetRef.current();
 		applyThemeRef.current(targetThemeRef.current);
 		applySymbolRef.current();
 		syncOverlaysRef.current();
@@ -1250,6 +1315,15 @@ export function TradingViewChart({
 				>
 					<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
 					{t`Loading...`}
+				</output>
+			)}
+			{rateLimitedUntil !== null && !isInitializing && !initError && (
+				<output
+					data-chart-rate-limited
+					aria-live="polite"
+					className="pointer-events-none absolute bottom-2 left-2 z-20 rounded-xs border border-stroke-weak bg-overlay px-2 py-1 text-2xs font-medium text-fg-muted"
+				>
+					{t`Live chart data is rate limited. Retrying shortly.`}
 				</output>
 			)}
 			{initError && (

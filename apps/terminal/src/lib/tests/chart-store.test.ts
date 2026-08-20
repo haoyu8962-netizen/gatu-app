@@ -275,26 +275,142 @@ describe("chart candle store subscriptions", () => {
 		vi.useRealTimers();
 	});
 
-	it("resets chart listeners when the subscription reports a failure", async () => {
+	it("defers listener recovery until the resubscription is confirmed", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(Math, "random").mockReturnValue(0);
 		const store = createCandleStore();
 		const ticks: Bar[] = [];
 		const reset = vi.fn();
 
 		store.getState().subscribe("BTC:5m", "BTC", "5m", "listener", (bar) => ticks.push(bar), reset);
-		await flushAsyncWork();
+		await flushMicrotasks();
 
 		testState.listener?.(nextCandle({ t: 300_000 }));
-		await flushAsyncWork();
-
 		testState.onError?.(new Error("socket dropped"));
-		await flushAsyncWork();
+		await flushMicrotasks();
 
 		expect(ticks).toEqual([expectedBar({ time: 300_000 })]);
-		expect(reset).toHaveBeenCalledTimes(1);
+		expect(reset).not.toHaveBeenCalled();
 		expect(testState.unsubscribe).not.toHaveBeenCalled();
 		expect(store.getState().streams["BTC:5m"]?.status).toBe("error");
 
+		await vi.advanceTimersByTimeAsync(250);
+		await flushMicrotasks();
+
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+		expect(reset).toHaveBeenCalledTimes(1);
+		expect(store.getState().streams["BTC:5m"]?.status).toBe("active");
+
+		testState.onError?.(new Error("socket dropped again"));
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(500);
+		await flushMicrotasks();
+
+		expect(testState.candle).toHaveBeenCalledTimes(3);
+		expect(reset).toHaveBeenCalledTimes(2);
+
 		store.getState().unsubscribe("BTC:5m", "listener");
+		await vi.advanceTimersByTimeAsync(5_000);
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	it("keeps the subscription alive when a recovery reset callback throws", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createCandleStore();
+		const ticks: Bar[] = [];
+		const reset = vi.fn(() => {
+			throw new Error("tradingview teardown");
+		});
+
+		store.getState().subscribe("BTC:5m", "BTC", "5m", "listener", (bar) => ticks.push(bar), reset);
+		await flushMicrotasks();
+
+		testState.onError?.(new Error("socket dropped"));
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(250);
+		await flushMicrotasks();
+
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+		expect(reset).toHaveBeenCalledTimes(1);
+		expect(store.getState().streams["BTC:5m"]?.status).toBe("active");
+
+		testState.listener?.(nextCandle({ t: 300_000 }));
+		await vi.advanceTimersByTimeAsync(5_000);
+		await flushMicrotasks();
+
+		expect(ticks).toEqual([expectedBar({ time: 300_000 })]);
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+		expect(testState.unsubscribe).not.toHaveBeenCalled();
+
+		store.getState().unsubscribe("BTC:5m", "listener");
+		await vi.advanceTimersByTimeAsync(5_000);
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	it("keeps escalating reconnect delays until a candle confirms recovery", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const store = createCandleStore();
+
+		store.getState().subscribe("SOL:1m", "SOL", "1m", "listener", vi.fn(), vi.fn());
+		await flushMicrotasks();
+
+		testState.onError?.(new Error("drop 1"));
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(250);
+		await flushMicrotasks();
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+
+		testState.onError?.(new Error("drop 2"));
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(499);
+		await flushMicrotasks();
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+		await vi.advanceTimersByTimeAsync(1);
+		await flushMicrotasks();
+		expect(testState.candle).toHaveBeenCalledTimes(3);
+
+		testState.listener?.(nextCandle());
+		testState.onError?.(new Error("drop 3"));
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(250);
+		await flushMicrotasks();
+		expect(testState.candle).toHaveBeenCalledTimes(4);
+
+		store.getState().unsubscribe("SOL:1m", "listener");
+		await vi.advanceTimersByTimeAsync(5_000);
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	it("replays the cached last bar to a new listener on a separate macrotask", async () => {
+		vi.useFakeTimers();
+		const store = createCandleStore();
+		const ticksA: Bar[] = [];
+
+		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-a", (bar) => ticksA.push(bar), vi.fn());
+		await flushMicrotasks();
+		testState.listener?.(nextCandle());
+
+		const ticksB: Bar[] = [];
+		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-b", (bar) => ticksB.push(bar), vi.fn());
+		expect(ticksB).toEqual([]);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(ticksB).toEqual([expectedBar()]);
+
+		const ticksC: Bar[] = [];
+		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-c", (bar) => ticksC.push(bar), vi.fn());
+		store.getState().unsubscribe("ETH:1m", "listener-c");
+		await vi.advanceTimersByTimeAsync(0);
+		expect(ticksC).toEqual([]);
+
+		store.getState().unsubscribe("ETH:1m", "listener-a");
+		store.getState().unsubscribe("ETH:1m", "listener-b");
+		await vi.advanceTimersByTimeAsync(5_000);
+		vi.useRealTimers();
 	});
 
 	it("retries after the SDK reports a subscription failure", async () => {

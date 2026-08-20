@@ -14,6 +14,8 @@ const testState = vi.hoisted(() => ({
 	datafeedOptions: [] as unknown[],
 	datafeedResets: [] as ReturnType<typeof vi.fn>[],
 	reconnectListener: undefined as ((generation: number) => void) | undefined,
+	gateRetryAt: null as number | null,
+	gateListeners: new Set<() => void>(),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -21,6 +23,16 @@ vi.mock("@/lib/hyperliquid", () => ({
 		testState.reconnectListener = listener;
 		return () => {
 			if (testState.reconnectListener === listener) testState.reconnectListener = undefined;
+		};
+	},
+}));
+
+vi.mock("@/lib/chart/candle-gate", () => ({
+	getCandleGateRetryAt: () => testState.gateRetryAt,
+	subscribeCandleGate: (listener: () => void) => {
+		testState.gateListeners.add(listener);
+		return () => {
+			testState.gateListeners.delete(listener);
 		};
 	},
 }));
@@ -182,6 +194,8 @@ describe("TradingViewChart", () => {
 		testState.datafeedOptions = [];
 		testState.datafeedResets = [];
 		testState.reconnectListener = undefined;
+		testState.gateRetryAt = null;
+		testState.gateListeners.clear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -916,6 +930,119 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+	});
+
+	it("ignores repeated reconnect notifications for the same generation", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => testState.reconnectListener?.(1));
+		act(() => testState.reconnectListener?.(1));
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+
+		act(() => testState.reconnectListener?.(2));
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(2);
+	});
+
+	it("shows the rate-limit notice, defers recovery while the gate is open, and refreshes after it closes", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			testState.gateRetryAt = Date.now() + 10_000;
+			for (const listener of [...testState.gateListeners]) listener();
+		});
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => testState.reconnectListener?.(1));
+		await flushChartEffects();
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+
+		act(() => {
+			testState.gateRetryAt = null;
+			for (const listener of [...testState.gateListeners]) listener();
+		});
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("recovers a widget that mounted while the candle gate was already open", async () => {
+		testState.gateRetryAt = Date.now() + 10_000;
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => {
+			testState.gateRetryAt = null;
+			for (const listener of [...testState.gateListeners]) listener();
+		});
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+	});
+
+	it("retries a failed history load on the next lifecycle event", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const options = testState.datafeedOptions[0] as { onHistoryError?: () => void };
+		act(() => options.onHistoryError?.());
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => {
+			window.dispatchEvent(new Event("online"));
+		});
+		await flushChartEffects();
+
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+	});
+
+	it("defers a realtime reset while the page is hidden and flushes it when visible again", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+		act(() => testState.reconnectListener?.(1));
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => {
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
 	});
 
 	it("defers symbol switching while the chart is inactive", async () => {

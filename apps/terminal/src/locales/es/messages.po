@@ -1345,6 +1345,10 @@ msgid "Chart"
 msgstr "Gráfico"
 
 #: src/components/trade/chart/datafeed.ts
+msgid "Chart data is temporarily rate limited"
+msgstr ""
+
+#: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
 msgstr "Se agotó el tiempo de espera de la solicitud del historial del gráfico"
 
@@ -4333,6 +4337,10 @@ msgstr "Precio de liquidación"
 #~ msgid "Live account fee benefit"
 #~ msgstr "Beneficio vigente en las comisiones de la cuenta"
 
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Live chart data is rate limited. Retrying shortly."
+msgstr ""
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4475,12 +4483,7 @@ msgstr "Cargando billetera..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4680,10 +4683,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "El precio de marca se deriva de los precios de oráculo y se usa para calcular el PnL no realizado y la liquidación."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "El precio de marca no está disponible. Espera los datos del mercado y vuelve a intentarlo."
