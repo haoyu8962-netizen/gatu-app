@@ -1,5 +1,6 @@
 import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
@@ -29,6 +30,7 @@ import {
 	getSpotMarketApiCoin,
 	type SpotMarketInfo,
 	type UnifiedMarketInfo,
+	useMarketsInfo,
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
@@ -39,6 +41,7 @@ import { StatBlock } from "./chart/stat-block";
 const HOUR_MS = 3_600_000;
 const MARKET_OVERVIEW_COMFORTABLE_WIDTH_PX = 600;
 const MARKET_OVERVIEW_COMPACT_WIDTH_PX = 480;
+const MARKET_OVERVIEW_REVEAL_BUFFER_PX = 16;
 const MARKET_OVERVIEW_GAP_PX = {
 	comfortable: 24,
 	compact: 16,
@@ -72,14 +75,24 @@ const SPOT_STAT_PRIORITY: readonly MarketOverviewStatId[] = [
 ];
 
 interface MarketOverviewLayout {
+	identity: string;
 	gapPx: number;
 	visibleKey: string;
+	statWidths: Partial<Record<MarketOverviewStatId, number>>;
 }
 
 function getMarketOverviewGap(containerWidth: number): number {
 	if (containerWidth >= MARKET_OVERVIEW_COMFORTABLE_WIDTH_PX) return MARKET_OVERVIEW_GAP_PX.comfortable;
 	if (containerWidth >= MARKET_OVERVIEW_COMPACT_WIDTH_PX) return MARKET_OVERVIEW_GAP_PX.compact;
 	return MARKET_OVERVIEW_GAP_PX.tight;
+}
+
+function areStatWidthsEqual(
+	left: Partial<Record<MarketOverviewStatId, number>>,
+	right: Partial<Record<MarketOverviewStatId, number>>,
+	ids: readonly MarketOverviewStatId[],
+): boolean {
+	return ids.every((id) => left[id] === right[id]);
 }
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
@@ -176,11 +189,13 @@ function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string
 }
 
 export function MarketOverview() {
-	useNumberFormatRevision();
+	const numberFormatRevision = useNumberFormatRevision();
+	const { i18n } = useLingui();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
+	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const { midPx } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
-	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
 	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
@@ -215,13 +230,24 @@ export function MarketOverview() {
 	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
 	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
-	const selectedLiveMark = isLiveMarkPriceReady(
+	const hasFreshSelectedMark = isLiveMarkPriceReady(
 		selectedMarketInfo?.markPriceStatus ?? "loading",
 		selectedMarketInfo?.markPx,
 		selectedMarketInfo?.markPriceReceivedAt,
-	)
+	);
+	const fastMarketInfo = selectedMarketInfo?.name ? getMarketByName(selectedMarketInfo.name) : undefined;
+	const hasFreshFastMark =
+		fastMarketInfo?.name === selectedMarketInfo?.name &&
+		isLiveMarkPriceReady(
+			fastMarketInfo?.markPriceStatus ?? "loading",
+			fastMarketInfo?.markPx,
+			fastMarketInfo?.markPriceReceivedAt,
+		);
+	const selectedLiveMark = hasFreshSelectedMark
 		? selectedMarketInfo?.markPx
-		: undefined;
+		: hasFreshFastMark
+			? fastMarketInfo?.markPx
+			: undefined;
 
 	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
 	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedLiveMark) : perpMarkPx;
@@ -279,11 +305,27 @@ export function MarketOverview() {
 			: "—";
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const statNodesRef = useRef(new Map<MarketOverviewStatId, HTMLDivElement>());
+	const layoutIdentity = JSON.stringify([
+		selectedMarketInfo?.kind ?? "unknown",
+		selectedMarketInfo?.name ?? "",
+		selectedMarketInfo?.pairName ?? "",
+		quoteToken,
+		i18n.locale,
+		numberFormatRevision,
+	]);
 	const [overviewLayout, setOverviewLayout] = useState<MarketOverviewLayout>({
+		identity: "",
 		gapPx: MARKET_OVERVIEW_GAP_PX.tight,
 		visibleKey: "price",
+		statWidths: {},
 	});
-	const visibleStats = new Set(overviewLayout.visibleKey.split("|") as MarketOverviewStatId[]);
+	const isCurrentLayout = overviewLayout.identity === layoutIdentity;
+	const visibleStats = new Set(
+		isCurrentLayout
+			? (overviewLayout.visibleKey.split("|") as MarketOverviewStatId[])
+			: (["price"] as MarketOverviewStatId[]),
+	);
+	const reservedStatWidths = isCurrentLayout ? overviewLayout.statWidths : {};
 
 	useLayoutEffect(() => {
 		const observedContainer = containerRef.current;
@@ -296,24 +338,44 @@ export function MarketOverview() {
 			if (!Number.isFinite(containerWidth) || containerWidth <= 0) return;
 
 			const gapPx = getMarketOverviewGap(containerWidth);
-			const visible: MarketOverviewStatId[] = [];
-			let occupiedWidth = 0;
-
+			const measuredWidths: Partial<Record<MarketOverviewStatId, number>> = {};
 			for (const id of priority) {
 				const node = statNodesRef.current.get(id);
-				const itemWidth = node ? node.getBoundingClientRect().width || node.scrollWidth : 0;
-				if (!Number.isFinite(itemWidth) || itemWidth <= 0) break;
-
-				const candidateWidth = occupiedWidth + (visible.length > 0 ? gapPx : 0) + itemWidth;
-				if (visible.length > 0 && candidateWidth > containerWidth) break;
-				visible.push(id);
-				occupiedWidth = candidateWidth;
+				const itemWidth = node ? Math.ceil(Math.max(node.getBoundingClientRect().width, node.scrollWidth)) : 0;
+				if (!Number.isFinite(itemWidth) || itemWidth <= 0) return;
+				measuredWidths[id] = itemWidth;
 			}
 
-			const visibleKey = (visible.length > 0 ? visible : ["price"]).join("|");
-			setOverviewLayout((current) =>
-				current.gapPx === gapPx && current.visibleKey === visibleKey ? current : { gapPx, visibleKey },
-			);
+			setOverviewLayout((current) => {
+				const matchesIdentity = current.identity === layoutIdentity;
+				const currentVisible = new Set(
+					matchesIdentity ? (current.visibleKey.split("|") as MarketOverviewStatId[]) : [],
+				);
+				const statWidths: Partial<Record<MarketOverviewStatId, number>> = {};
+				const visible: MarketOverviewStatId[] = [];
+				let occupiedWidth = 0;
+
+				for (const id of priority) {
+					const itemWidth = Math.max(matchesIdentity ? (current.statWidths[id] ?? 0) : 0, measuredWidths[id] ?? 0);
+					statWidths[id] = itemWidth;
+					const candidateWidth = occupiedWidth + (visible.length > 0 ? gapPx : 0) + itemWidth;
+					const revealBuffer = matchesIdentity && !currentVisible.has(id) ? MARKET_OVERVIEW_REVEAL_BUFFER_PX : 0;
+					if (visible.length > 0 && candidateWidth + revealBuffer > containerWidth) break;
+					visible.push(id);
+					occupiedWidth = candidateWidth;
+				}
+
+				const visibleKey = (visible.length > 0 ? visible : ["price"]).join("|");
+				if (
+					matchesIdentity &&
+					current.gapPx === gapPx &&
+					current.visibleKey === visibleKey &&
+					areStatWidthsEqual(current.statWidths, statWidths, priority)
+				) {
+					return current;
+				}
+				return { identity: layoutIdentity, gapPx, visibleKey, statWidths };
+			});
 		}
 
 		updateLayout();
@@ -329,10 +391,11 @@ export function MarketOverview() {
 			window.removeEventListener("resize", updateLayout);
 			observer.disconnect();
 		};
-	}, [isSpot]);
+	}, [isSpot, layoutIdentity]);
 
 	function renderStat(id: MarketOverviewStatId, content: ReactNode) {
 		const isVisible = visibleStats.has(id);
+		const minWidth = reservedStatWidths[id];
 		return (
 			<div
 				key={id}
@@ -343,6 +406,7 @@ export function MarketOverview() {
 				data-market-stat={id}
 				aria-hidden={isVisible ? undefined : true}
 				inert={isVisible ? undefined : true}
+				style={minWidth ? { minWidth } : undefined}
 				className={cn("shrink-0", !isVisible && "pointer-events-none invisible absolute top-0 left-0")}
 			>
 				{content}
@@ -415,7 +479,11 @@ export function MarketOverview() {
 							"contract",
 							<StatBlock
 								label={t`Contract`}
-								value={createSpotTokenContractValue(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
+								value={createSpotTokenContractValue(
+									spotTokenAddress,
+									copiedSpotTokenAddress === spotTokenAddress,
+									copySpotTokenAddress,
+								)}
 							/>,
 						)}
 					</>
