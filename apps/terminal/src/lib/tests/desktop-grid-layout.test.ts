@@ -33,7 +33,7 @@ describe("desktop grid layout", () => {
 		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
-		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v9");
+		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v10");
 	});
 
 	it("keeps 1420px in md and switches to lg only above the breakpoint", () => {
@@ -131,6 +131,7 @@ describe("desktop grid layout", () => {
 		window.localStorage.setItem("trade-desktop-grid-layout-v6", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v7", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v8", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v9", "legacy");
 
 		resetDesktopGridLayouts();
 
@@ -143,15 +144,29 @@ describe("desktop grid layout", () => {
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v6")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v7")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v8")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v9")).toBeNull();
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
 	});
 
-	it("discards the incompatible v8 geometry when the new layout is read", () => {
-		window.localStorage.setItem("trade-desktop-grid-layout-v8", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
+	it("discards the incompatible v9 geometry when the new layout is read", () => {
+		window.localStorage.setItem("trade-desktop-grid-layout-v9", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
 
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
-		expect(window.localStorage.getItem("trade-desktop-grid-layout-v8")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v9")).toBeNull();
 	});
+
+	it.each(["lg", "md"] as const)(
+		"keeps the %s account panel at its readable minimum while allowing longer content to grow",
+		(breakpoint) => {
+			const layouts = cloneDefaultLayouts();
+			const short = syncGridItemContentHeight(layouts, breakpoint, "accountInfo", 162);
+			const long = syncGridItemContentHeight(layouts, breakpoint, "accountInfo", 600);
+
+			expect(short[breakpoint]?.find((item) => item.i === "accountInfo")).toMatchObject({ h: 14, minH: 14 });
+			expect(long[breakpoint]?.find((item) => item.i === "accountInfo")?.h).toBeCloseTo(18.28, 2);
+			expect(short[breakpoint]?.find((item) => item.i === "tradingInterface")?.minH).toBe(5);
+		},
+	);
 
 	it("keeps the market toolbar compact without changing the workspace height", () => {
 		for (const breakpoint of ["lg", "md"] as const) {

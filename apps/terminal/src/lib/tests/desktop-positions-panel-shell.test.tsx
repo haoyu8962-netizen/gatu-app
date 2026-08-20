@@ -48,7 +48,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
+	useWalletSession: () => ({ address: "0x1234", hasWalletAccess: true, isConnected: true }),
 }));
 
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({

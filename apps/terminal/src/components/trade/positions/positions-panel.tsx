@@ -1,14 +1,17 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
 import {
-	getAccountEquityValue,
-	getPerpRiskSummaryValue,
+	accountOverviewNeedsTokenUsdPrices,
+	getPerpRiskSummaryUsdValue,
+	getSpotAccountValueUsdValue,
+	getTokenAmountUsdValue,
 	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
@@ -65,6 +68,7 @@ const POSITIONS_TAB_VALUES = new Set<string>(POSITIONS_TABS.map((tab) => tab.val
 
 export function PositionsPanel({ includeTransfers = false, autoHeight = false }: Props) {
 	const { _ } = useLingui();
+	const withdrawUnavailableId = useId();
 	useRenderCommitTrack("positions-table");
 	const storedActiveTab = usePositionsActiveTab();
 	const activeTab = resolvePositionsTab(storedActiveTab, includeTransfers);
@@ -75,7 +79,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const [isPending, startTransition] = useTransition();
 	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
 	const tabScrollRef = useRef<HTMLDivElement>(null);
-	const { address, isConnected } = useWalletSession();
+	const { address, hasWalletAccess, isConnected } = useWalletSession();
 	const ownerKey = address?.toLowerCase() ?? null;
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -98,24 +102,32 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const tokenUsdPrices = tokenUsdPriceState.prices;
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(selectedBalances.accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const accountEquity = getAccountEquityValue({
-		accountAbstraction: selectedBalances.accountAbstraction,
-		marginSummary: summaryBalances.marginSummary,
-		perpSummary: summaryBalances.perpSummary,
-		spotBalances: summaryBalances.spotBalances,
-		tokenUsdPrices,
-	});
-	const riskSummary = getPerpRiskSummaryValue(
-		usesSharedQuoteBalance
-			? selectedBalances.allDexClearinghouseStates.map(([, state]) => state)
-			: [
-					{
-						marginSummary: summaryBalances.marginSummary,
-						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-						assetPositions: summaryBalances.perpPositions,
-					},
-				],
-	);
+	const collateralTokenByDex = new Map<string, string>([
+		["", DEFAULT_QUOTE_TOKEN],
+		...markets.builderPerp.flatMap(
+			(market): Array<[string, string]> => (market.quoteToken ? [[market.dex, market.quoteToken.name]] : []),
+		),
+	]);
+	const selectedCollateralToken = collateralTokenByDex.get(summaryBalances.dex) ?? null;
+	const accountEquity = usesSharedQuoteBalance
+		? getSpotAccountValueUsdValue(summaryBalances.spotBalances, tokenUsdPrices)
+		: getTokenAmountUsdValue(summaryBalances.marginSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
+	const perpRiskStates = usesSharedQuoteBalance
+		? selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({
+				collateralToken: collateralTokenByDex.get(dex) ?? null,
+				marginSummary: state.crossMarginSummary,
+				crossMaintenanceMarginUsed: state.crossMaintenanceMarginUsed,
+				assetPositions: state.assetPositions,
+			}))
+		: [
+				{
+					collateralToken: selectedCollateralToken,
+					marginSummary: summaryBalances.perpSummary,
+					crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+					assetPositions: summaryBalances.perpPositions,
+				},
+			];
+	const riskSummary = getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices);
 	const accountAbstraction = selectedBalances.accountAbstraction;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
@@ -132,26 +144,46 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 					spotBalances: summaryBalances.spotBalances,
 				})
 			: accountAbstraction === "portfolioMargin"
-				? null
+				? summaryBalances.portfolioMarginRatio
 				: getToolbarAccountMarginRatio({
-						crossMaintenanceMarginUsed: riskSummary.crossMaintenanceMarginUsed,
-						accountEquity,
+						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+						accountEquity: summaryBalances.perpSummary?.accountValue ?? "0",
 					});
+	const requiresUsdPrices = accountOverviewNeedsTokenUsdPrices({
+		accountValues: usesSharedQuoteBalance
+			? []
+			: [{ token: selectedCollateralToken, value: summaryBalances.marginSummary?.accountValue }],
+		spotBalances: usesSharedQuoteBalance ? summaryBalances.spotBalances : [],
+		perpRiskStates,
+	});
 	const accountSummaryReady =
 		isConnected &&
 		accountModeReady &&
-		!summaryBalances.hasError &&
-		!summaryBalances.isDataStale &&
 		summaryBalances.perpStateStatus === "success" &&
-		summaryBalances.hasAllDexsSnapshot &&
-		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success") &&
+		!summaryBalances.isPerpStateStale &&
+		(!requiresUsdPrices || tokenUsdPriceState.status === "success") &&
 		(!usesSharedQuoteBalance ||
-			(summaryBalances.spotStateStatus === "success" && summaryBalances.hasSpotStateSnapshot));
+			(!summaryBalances.hasError &&
+				!summaryBalances.isDataStale &&
+				summaryBalances.hasAllDexsSnapshot &&
+				summaryBalances.spotStateStatus === "success" &&
+				summaryBalances.hasSpotStateSnapshot)) &&
+		accountEquity !== null &&
+		riskSummary !== null;
 	const fundsActionsReady =
+		hasWalletAccess &&
 		accountModeReady &&
-		!selectedBalances.hasError &&
-		selectedBalances.perpStateStatus === "success" &&
-		selectedBalances.spotStateStatus === "success";
+		!defaultBalances.hasError &&
+		!defaultBalances.isDataStale &&
+		defaultBalances.perpStateStatus === "success" &&
+		defaultBalances.spotStateStatus === "success";
+	const withdrawDisabledReason = !hasWalletAccess
+		? _(msg`Connect the owner wallet before moving funds.`)
+		: !accountModeReady
+			? _(msg`Select a supported account mode before moving funds.`)
+			: !fundsActionsReady
+				? _(msg`Balance data is unavailable. Try again after the connection recovers.`)
+				: null;
 	const {
 		positions,
 		isLoading: positionsLoading,
@@ -371,16 +403,27 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										</Button>
 									</span>
 								</Tooltip>
-								<Button
-									variant="outline"
-									intent="neutral"
-									size="xxs"
-									disabled={!fundsActionsReady}
-									onClick={() => openDepositModal("withdraw")}
-									className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
-								>
-									<Trans context="Trading toolbar action">Withdraw</Trans>
-								</Button>
+								{withdrawDisabledReason ? (
+									<span id={withdrawUnavailableId} className="sr-only">
+										{withdrawDisabledReason}
+									</span>
+								) : null}
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="xxs"
+											disabled={!!withdrawDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={() => openDepositModal("withdraw")}
+											className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+										>
+											<Trans context="Trading toolbar action">Withdraw</Trans>
+										</Button>
+									</span>
+								</Tooltip>
 							</>
 						) : null}
 						{showsPositionToolbar ? (

@@ -12,9 +12,11 @@ import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import {
+	accountOverviewNeedsTokenUsdPrices,
 	getAccountBalanceSummary,
-	getAccountEquityValue,
-	getPerpRiskSummaryValue,
+	getPerpRiskSummaryUsdValue,
+	getSpotAccountValueUsdValue,
+	getTokenAmountUsdValue,
 	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
@@ -51,6 +53,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
+	const transferUnavailableId = useId();
+	const withdrawUnavailableId = useId();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const markets = useMarkets();
@@ -60,19 +64,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const {
-		marginSummary,
-		perpSummary,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		withdrawable,
-		isSpotStateStale,
-		isDataStale,
-		isLoading,
-		hasError,
-	} = summaryBalances;
+	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable } = summaryBalances;
 	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
 	const tokenUsdPrices = tokenUsdPriceState.prices;
+	const collateralTokenByDex = new Map<string, string>([
+		["", DEFAULT_QUOTE_TOKEN],
+		...markets.builderPerp.flatMap(
+			(market): Array<[string, string]> => (market.quoteToken ? [[market.dex, market.quoteToken.name]] : []),
+		),
+	]);
+	const selectedCollateralToken = collateralTokenByDex.get(summaryBalances.dex) ?? null;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -82,24 +83,28 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		spotAvailableAfterMaintenance,
 		tokenUsdPrices,
 	});
-	const accountEquityValue = getAccountEquityValue({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		spotBalances,
-		tokenUsdPrices,
-	});
-	const riskSummary = getPerpRiskSummaryValue(
-		usesSharedQuoteBalance
-			? selectedBalances.allDexClearinghouseStates.map(([, state]) => state)
-			: [
-					{
-						marginSummary: summaryBalances.marginSummary,
-						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-						assetPositions: summaryBalances.perpPositions,
-					},
-				],
-	);
+	const accountEquityValue = usesSharedQuoteBalance
+		? getSpotAccountValueUsdValue(spotBalances, tokenUsdPrices)
+		: getTokenAmountUsdValue(marginSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
+	const crossAccountEquityValue = usesSharedQuoteBalance
+		? accountEquityValue
+		: getTokenAmountUsdValue(perpSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
+	const perpRiskStates = usesSharedQuoteBalance
+		? selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({
+				collateralToken: collateralTokenByDex.get(dex) ?? null,
+				marginSummary: state.crossMarginSummary,
+				crossMaintenanceMarginUsed: state.crossMaintenanceMarginUsed,
+				assetPositions: state.assetPositions,
+			}))
+		: [
+				{
+					collateralToken: selectedCollateralToken,
+					marginSummary: summaryBalances.perpSummary,
+					crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+					assetPositions: summaryBalances.perpPositions,
+				},
+			];
+	const riskSummary = getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices);
 	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
 	const maintenanceMarginRatio =
 		accountAbstraction === "unifiedAccount"
@@ -114,35 +119,65 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					spotBalances: summaryBalances.spotBalances,
 				})
 			: accountAbstraction === "portfolioMargin"
-				? null
+				? summaryBalances.portfolioMarginRatio
 				: getToolbarAccountMarginRatio({
-						crossMaintenanceMarginUsed: riskSummary.crossMaintenanceMarginUsed,
-						accountEquity: accountEquityValue,
+						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+						accountEquity: summaryBalances.perpSummary?.accountValue ?? "0",
 					});
+	const requiresUsdPrices = accountOverviewNeedsTokenUsdPrices({
+		accountValues: usesSharedQuoteBalance
+			? []
+			: [
+					{ token: selectedCollateralToken, value: marginSummary?.accountValue },
+					{ token: selectedCollateralToken, value: perpSummary?.accountValue },
+				],
+		spotBalances: usesSharedQuoteBalance ? spotBalances : [],
+		perpRiskStates,
+	});
 	const accountSummaryReady =
 		isConnected &&
 		accountModeReady &&
-		!summaryBalances.hasError &&
-		!summaryBalances.isDataStale &&
 		summaryBalances.perpStateStatus === "success" &&
-		summaryBalances.hasAllDexsSnapshot &&
-		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success") &&
+		!summaryBalances.isPerpStateStale &&
+		(!requiresUsdPrices || tokenUsdPriceState.status === "success") &&
 		(!usesSharedQuoteBalance ||
-			(summaryBalances.spotStateStatus === "success" && summaryBalances.hasSpotStateSnapshot));
+			(!summaryBalances.hasError &&
+				!summaryBalances.isDataStale &&
+				summaryBalances.hasAllDexsSnapshot &&
+				summaryBalances.spotStateStatus === "success" &&
+				summaryBalances.hasSpotStateSnapshot));
 	const fundsActionsReady =
 		accountModeReady &&
-		!selectedBalances.hasError &&
-		selectedBalances.perpStateStatus === "success" &&
-		selectedBalances.spotStateStatus === "success";
-	const accountRisk = getToolbarAccountRiskPresentation(accountSummaryReady ? maintenanceMarginRatio : null);
-	const crossLeverage = accountSummaryReady
-		? getToolbarAccountLeverage({
-				totalNtlPos: riskSummary.totalNtlPos,
-				accountEquity: accountEquityValue,
-			})
-		: null;
-	const unrealizedPnlTone = getToolbarSignedValueTone(riskSummary.unrealizedPnl);
-	const metricLoading = isLoading || accountAbstraction === null;
+		!defaultBalances.hasError &&
+		!defaultBalances.isDataStale &&
+		defaultBalances.perpStateStatus === "success" &&
+		defaultBalances.spotStateStatus === "success";
+	const marginRatioReady = accountSummaryReady && maintenanceMarginRatio !== null;
+	const accountRisk = getToolbarAccountRiskPresentation(marginRatioReady ? maintenanceMarginRatio : null);
+	const crossLeverage =
+		accountSummaryReady && riskSummary && crossAccountEquityValue
+			? getToolbarAccountLeverage({
+					totalNtlPos: riskSummary.totalNtlPos,
+					accountEquity: crossAccountEquityValue,
+				})
+			: null;
+	const unrealizedPnlTone =
+		accountSummaryReady && riskSummary ? getToolbarSignedValueTone(riskSummary.unrealizedPnl) : "neutral";
+	const metricLoading =
+		accountAbstraction === null ||
+		summaryBalances.perpStateStatus === "loading" ||
+		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "loading") ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "loading");
+	const metricsHaveError =
+		summaryBalances.perpStateStatus === "error" ||
+		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "error") ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "error");
+	const metricsAreStale =
+		summaryBalances.isPerpStateStale ||
+		(usesSharedQuoteBalance && summaryBalances.isSpotStateStale) ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "stale");
+	const valuationUnavailable =
+		accountSummaryReady && (accountEquityValue === null || riskSummary === null || maintenanceMarginRatio === null);
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
@@ -164,6 +199,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					: t`Select mode`;
 	const showSpotFundsNotice =
 		accountSummaryReady &&
+		summaryBalances.spotStateStatus === "success" &&
+		!summaryBalances.isSpotStateStale &&
 		!accountSummary.usesSpotStateForPerps &&
 		selectedBalances.dex === "" &&
 		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
@@ -171,11 +208,18 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		? t`Connect the owner wallet before moving funds.`
 		: !accountModeReady
 			? t`Select a supported account mode before moving funds.`
+			: usesSharedQuoteBalance
+				? t`Transfers between Spot and Perps are unavailable in shared-balance account modes.`
+				: !fundsActionsReady
+					? t`Balance data is unavailable. Try again after the connection recovers.`
+					: null;
+	const withdrawDisabledReason = !hasWalletAccess
+		? t`Connect the owner wallet before moving funds.`
+		: !accountModeReady
+			? t`Select a supported account mode before moving funds.`
 			: !fundsActionsReady
 				? t`Balance data is unavailable. Try again after the connection recovers.`
-				: usesSharedQuoteBalance
-					? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-					: null;
+				: null;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
@@ -226,14 +270,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		);
 	}
 
-	const marginRatioLabel =
-		accountSummaryReady && maintenanceMarginRatio !== null ? formatPercent(maintenanceMarginRatio) : "—";
+	const marginRatioLabel = marginRatioReady ? formatPercent(maintenanceMarginRatio, { signDisplay: "never" }) : "—";
 	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
+	const accountValueLabel = usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`;
+	const crossMaintenanceMarginLabel = t`Cross Maintenance Margin`;
 
 	return (
 		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
 			<div className="flex min-h-full flex-col gap-3 p-3">
-				{hasError ? (
+				{metricsHaveError ? (
 					<div
 						role="alert"
 						className="flex items-center gap-2 rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2 text-xs text-error"
@@ -242,10 +287,20 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<span>{t`Failed to load balances.`}</span>
 					</div>
 				) : null}
-				{isDataStale && !hasError ? (
+				{metricsAreStale && !metricsHaveError ? (
 					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
 						<WarningCircleIcon className="size-4 shrink-0" />
-						<span>{t`Balance data is stale. Actions are temporarily unavailable.`}</span>
+						<span>
+							{fundsActionsReady
+								? t`Balance data is stale.`
+								: t`Balance data is stale. Actions are temporarily unavailable.`}
+						</span>
+					</output>
+				) : null}
+				{valuationUnavailable && !metricsHaveError && !metricsAreStale ? (
+					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+						<WarningCircleIcon className="size-4 shrink-0" />
+						<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
 					</output>
 				) : null}
 
@@ -261,7 +316,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							<Badge tone="neutral" size="sm">
 								{accountModeLabel}
 							</Badge>
-							{isSpotStateStale && !hasError ? (
+							{metricsAreStale && !metricsHaveError ? (
 								<WarningCircleIcon className="size-3.5 text-warning" aria-label={t`Balance data is stale.`} />
 							) : null}
 						</div>
@@ -278,29 +333,39 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							aria-valuetext={marginRatioLabel}
 							className="h-1.5 overflow-hidden rounded-full bg-fill-weak"
 						>
-							<div
-								className={cn(
-									"h-full rounded-full transition-[width] duration-200 motion-reduce:transition-none",
-									accountRisk.tone === "danger"
-										? "bg-error"
-										: accountRisk.tone === "warning"
-											? "bg-warning"
-											: "bg-success",
-								)}
-								style={{ width: `${accountRisk.progressPercent ?? 0}%` }}
-							/>
+							{marginRatioReady ? (
+								<div
+									className={cn(
+										"h-full rounded-full transition-[width] duration-200 motion-reduce:transition-none",
+										accountRisk.tone === "danger"
+											? "bg-error"
+											: accountRisk.tone === "warning"
+												? "bg-warning"
+												: "bg-success",
+									)}
+									style={{ width: `${accountRisk.progressPercent ?? 0}%` }}
+								/>
+							) : null}
 						</div>
 					</div>
 
 					<div className="divide-y divide-stroke-weak/60 border-t border-stroke-weak/60">
 						<MetricRow
-							label={t`Portfolio Value`}
-							value={accountSummaryReady ? formatUSD(accountEquityValue, { compact: false }) : "—"}
+							label={accountValueLabel}
+							value={
+								accountSummaryReady && accountEquityValue !== null
+									? formatUSD(accountEquityValue, { compact: false })
+									: "—"
+							}
 							loading={metricLoading}
 						/>
 						<MetricRow
 							label={t`Unrealized PNL`}
-							value={accountSummaryReady ? formatUSD(riskSummary.unrealizedPnl, { compact: false }) : "—"}
+							value={
+								accountSummaryReady && riskSummary
+									? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
+									: "—"
+							}
 							valueClassName={
 								unrealizedPnlTone === "positive"
 									? "text-success"
@@ -311,8 +376,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							loading={metricLoading}
 						/>
 						<MetricRow
-							label={t`Maintenance Margin`}
-							value={accountSummaryReady ? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false }) : "—"}
+							label={crossMaintenanceMarginLabel}
+							value={
+								accountSummaryReady && riskSummary
+									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
+									: "—"
+							}
 							loading={metricLoading}
 						/>
 						<MetricRow label={t`Cross Account Leverage`} value={crossLeverageLabel} loading={metricLoading} />
@@ -361,6 +430,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 							</Button>
 							<div className="grid grid-cols-2 gap-2">
+								{internalTransferDisabledReason ? (
+									<span id={transferUnavailableId} className="sr-only">
+										{internalTransferDisabledReason}
+									</span>
+								) : null}
+								{withdrawDisabledReason ? (
+									<span id={withdrawUnavailableId} className="sr-only">
+										{withdrawDisabledReason}
+									</span>
+								) : null}
 								<Tooltip content={internalTransferDisabledReason} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -370,23 +449,31 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											onClick={() => openTransferModal("toPerp")}
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 											disabled={!!internalTransferDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={internalTransferDisabledReason ? transferUnavailableId : undefined}
 											className="min-h-11 w-full"
 										>
 											{t`Perps / Spot`}
 										</Button>
 									</span>
 								</Tooltip>
-								<Button
-									variant="outline"
-									intent="neutral"
-									size="md"
-									disabled={!hasWalletAccess || !fundsActionsReady}
-									onClick={() => openDepositModal("withdraw")}
-									iconLeft={<UploadSimpleIcon className="size-4" />}
-									className="min-h-11"
-								>
-									{t`Withdraw`}
-								</Button>
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="md"
+											disabled={!!withdrawDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={() => openDepositModal("withdraw")}
+											iconLeft={<UploadSimpleIcon className="size-4" />}
+											className="min-h-11 w-full"
+										>
+											{t`Withdraw`}
+										</Button>
+									</span>
+								</Tooltip>
 							</div>
 							{hasWalletAccess && showBridgeEntry ? (
 								<Button

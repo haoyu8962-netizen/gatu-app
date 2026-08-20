@@ -26,6 +26,7 @@ const zhTranslations: Record<string, string> = {
 	Size: "数量",
 	Total: "合计",
 	"Portfolio Value": "投资组合价值",
+	"Cross Maintenance Margin": "全仓维持保证金",
 	Withdraw: "提款",
 	Language: "语言",
 	"Language and number format": "语言和数字格式",
@@ -61,6 +62,7 @@ function activateLocale(locale: "en" | "zh") {
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useMarkets: () => ({ builderPerp: [], getToken: () => ({ index: 0 }) }),
 	useSelectedMarketInfo: () => ({
 		data: { kind: "perp", markPx: "70", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	}),
@@ -95,8 +97,14 @@ const balanceSnapshot = {
 	accountAbstraction: "unifiedAccount",
 	allDexClearinghouseStates: [],
 	dex: "",
+	hasAllDexsSnapshot: true,
+	hasSpotStateSnapshot: true,
+	isLoading: false,
 	marginSummary: { accountValue: "100" },
 	perpSummary: { accountValue: "100" },
+	perpPositions: [],
+	crossMaintenanceMarginUsed: "0",
+	portfolioMarginRatio: null,
 	spotAvailableAfterMaintenance: 0,
 	spotBalances: [],
 	withdrawable: "100",
@@ -120,8 +128,25 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
-	getAccountBalanceSummary: () => ({ accountEquity: 150000 }),
+	accountOverviewNeedsTokenUsdPrices: () => false,
+	getAccountBalanceSummary: () => ({ accountEquity: 150000, mode: "unified" }),
+	getAccountEquityValue: () => "150000",
+	getSpotAccountValueUsdValue: () => "150000",
+	getTokenAmountUsdValue: () => "150000",
 	getPerpRiskSummary: () => ({ crossMaintenanceMarginUsed: 12000, totalNtlPos: 200000, unrealizedPnl: 20000 }),
+	getPerpRiskSummaryValue: () => ({
+		crossMaintenanceMarginUsed: "12000",
+		totalMarginUsed: "12000",
+		totalNtlPos: "200000",
+		unrealizedPnl: "20000",
+	}),
+	getPerpRiskSummaryUsdValue: () => ({
+		crossMaintenanceMarginUsed: "12000",
+		totalMarginUsed: "12000",
+		totalNtlPos: "200000",
+		unrealizedPnl: "20000",
+	}),
+	getUnifiedAccountMarginRatioValue: () => "0.08",
 	isQuoteBalanceSharedWithPerps: () => true,
 }));
 
@@ -281,6 +306,7 @@ describe("language hot switching", () => {
 		expect(container.textContent).toContain("数量");
 		expect(container.textContent).toContain("合计");
 		expect(container.textContent).toContain("投资组合价值");
+		expect(container.textContent).toContain("全仓维持保证金");
 		expect(container.querySelector('[aria-label="订单簿"]')).not.toBeNull();
 		expect(container.querySelector('[aria-label="提款"]')).not.toBeNull();
 		const localizedMobileNav = container.querySelector<HTMLElement>('[aria-label="主导航"]');

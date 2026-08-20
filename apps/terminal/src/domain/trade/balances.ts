@@ -132,6 +132,42 @@ function getSpotUsdValue(balance: SpotBalance, tokenUsdPrices?: TokenUsdPrices):
 	return balance.entryNtl ?? "0";
 }
 
+function getTokenUsdPrice(token: string | null | undefined, tokenUsdPrices?: TokenUsdPrices): Big | null {
+	if (token === DEFAULT_QUOTE_TOKEN) return Big(1);
+	const price = token ? toBig(tokenUsdPrices?.[token]) : null;
+	return price?.gt(0) ? price : null;
+}
+
+/** Converts a collateral-denominated amount to USD without inventing a price. */
+export function getTokenAmountUsdValue(
+	value: string | number | null | undefined,
+	token: string | null | undefined,
+	tokenUsdPrices?: TokenUsdPrices,
+): string | null {
+	const amount = toBig(value);
+	if (!amount) return null;
+	if (amount.eq(0)) return "0";
+	const price = getTokenUsdPrice(token, tokenUsdPrices);
+	return price ? amount.times(price).toString() : null;
+}
+
+/** Returns the current USD value only when every non-zero spot balance has a current price. */
+export function getSpotAccountValueUsdValue(
+	spotBalances: SpotBalance[] | null | undefined,
+	tokenUsdPrices?: TokenUsdPrices,
+): string | null {
+	let totalUsd = Big(0);
+	for (const balance of spotBalances ?? []) {
+		const total = toBig(balance.total);
+		if (!total) return null;
+		if (total.eq(0)) continue;
+		const price = getTokenUsdPrice(balance.coin, tokenUsdPrices);
+		if (!price) return null;
+		totalUsd = totalUsd.plus(total.times(price));
+	}
+	return totalUsd.toString();
+}
+
 export function isQuoteBalanceSharedWithPerps(accountAbstraction: AccountAbstraction | null | undefined): boolean {
 	return accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin";
 }
@@ -178,6 +214,43 @@ interface PerpRiskState {
 	assetPositions?: PerpPosition[] | null;
 }
 
+export interface PerpRiskUsdState extends PerpRiskState {
+	collateralToken: string | null | undefined;
+}
+
+export function accountOverviewNeedsTokenUsdPrices({
+	accountValues = [],
+	spotBalances = [],
+	perpRiskStates = [],
+}: {
+	accountValues?: readonly { token: string | null | undefined; value: string | number | null | undefined }[];
+	spotBalances?: readonly SpotBalance[];
+	perpRiskStates?: readonly PerpRiskUsdState[];
+}): boolean {
+	for (const { token, value } of accountValues) {
+		if (token && token !== DEFAULT_QUOTE_TOKEN && toBig(value)?.eq(0) === false) return true;
+	}
+
+	for (const balance of spotBalances) {
+		if (balance.coin !== DEFAULT_QUOTE_TOKEN && toBig(balance.total)?.eq(0) === false) return true;
+	}
+
+	for (const state of perpRiskStates) {
+		if (!state.collateralToken || state.collateralToken === DEFAULT_QUOTE_TOKEN) continue;
+		if (
+			[
+				state.marginSummary?.totalNtlPos,
+				state.marginSummary?.totalMarginUsed,
+				state.crossMaintenanceMarginUsed,
+				...(state.assetPositions ?? []).map((position) => position.position.unrealizedPnl),
+			].some((value) => toBig(value)?.eq(0) === false)
+		)
+			return true;
+	}
+
+	return false;
+}
+
 interface PerpDexRiskState extends PerpRiskState {
 	dex: string;
 }
@@ -207,6 +280,52 @@ export function getPerpRiskSummaryValue(states: PerpRiskState[]): PerpRiskSummar
 		for (const pos of state.assetPositions ?? []) {
 			unrealizedPnl = unrealizedPnl.plus(toSafeBig(pos.position.unrealizedPnl));
 		}
+	}
+
+	return {
+		totalNtlPos: totalNtlPos.toString(),
+		totalMarginUsed: totalMarginUsed.toString(),
+		crossMaintenanceMarginUsed: crossMaintenanceMarginUsed.toString(),
+		unrealizedPnl: unrealizedPnl.toString(),
+	};
+}
+
+/** Aggregates perp risk after converting each DEX from its collateral token into USD. */
+export function getPerpRiskSummaryUsdValue(
+	states: readonly PerpRiskUsdState[],
+	tokenUsdPrices?: TokenUsdPrices,
+): PerpRiskSummaryValue | null {
+	let totalNtlPos = Big(0);
+	let totalMarginUsed = Big(0);
+	let crossMaintenanceMarginUsed = Big(0);
+	let unrealizedPnl = Big(0);
+
+	for (const state of states) {
+		const stateTotalNtlPos = toBig(state.marginSummary?.totalNtlPos);
+		const stateTotalMarginUsed = toBig(state.marginSummary?.totalMarginUsed);
+		const stateCrossMaintenance = toBig(state.crossMaintenanceMarginUsed);
+		if (!stateTotalNtlPos || !stateTotalMarginUsed || !stateCrossMaintenance) return null;
+
+		let stateUnrealizedPnl = Big(0);
+		for (const position of state.assetPositions ?? []) {
+			const positionPnl = toBig(position.position.unrealizedPnl);
+			if (!positionPnl) return null;
+			stateUnrealizedPnl = stateUnrealizedPnl.plus(positionPnl);
+		}
+
+		const hasValue =
+			!stateTotalNtlPos.eq(0) ||
+			!stateTotalMarginUsed.eq(0) ||
+			!stateCrossMaintenance.eq(0) ||
+			!stateUnrealizedPnl.eq(0);
+		if (!hasValue) continue;
+
+		const price = getTokenUsdPrice(state.collateralToken, tokenUsdPrices);
+		if (!price) return null;
+		totalNtlPos = totalNtlPos.plus(stateTotalNtlPos.times(price));
+		totalMarginUsed = totalMarginUsed.plus(stateTotalMarginUsed.times(price));
+		crossMaintenanceMarginUsed = crossMaintenanceMarginUsed.plus(stateCrossMaintenance.times(price));
+		unrealizedPnl = unrealizedPnl.plus(stateUnrealizedPnl.times(price));
 	}
 
 	return {

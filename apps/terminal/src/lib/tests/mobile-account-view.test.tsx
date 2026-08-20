@@ -17,6 +17,7 @@ const balanceSnapshot = {
 			"",
 			{
 				marginSummary: { totalMarginUsed: "170.25", totalNtlPos: "1702.5" },
+				crossMarginSummary: { accountValue: "115.75", totalMarginUsed: "170.25", totalNtlPos: "1702.5" },
 				crossMaintenanceMarginUsed: "85.125",
 				assetPositions: [{ position: { leverage: { type: "cross" }, marginUsed: "170.25", unrealizedPnl: "-64.5" } }],
 			},
@@ -25,6 +26,7 @@ const balanceSnapshot = {
 			"xyz",
 			{
 				marginSummary: { totalMarginUsed: "290.75", totalNtlPos: "8722.5" },
+				crossMarginSummary: { accountValue: "237.75", totalMarginUsed: "290.75", totalNtlPos: "8722.5" },
 				crossMaintenanceMarginUsed: "145.375",
 				assetPositions: [{ position: { leverage: { type: "cross" }, marginUsed: "290.75", unrealizedPnl: "120.5" } }],
 			},
@@ -55,6 +57,7 @@ const balanceSnapshot = {
 	},
 	perpPositions: [{ position: { leverage: { type: "cross" }, marginUsed: "170.25", unrealizedPnl: "-64.5" } }],
 	crossMaintenanceMarginUsed: "85.125",
+	portfolioMarginRatio: "0.42",
 	spotAvailableAfterMaintenance: [[0, "122.75"]],
 	spotBalances: [{ coin: "USDC", token: 0, total: "353.5", hold: "353.5", entryNtl: "0" }],
 	withdrawable: "0",
@@ -64,7 +67,11 @@ const testState = {
 	accountAbstraction: "unifiedAccount",
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
+	hasError: false,
+	hasWalletAccess: true,
+	isConnected: true,
 	isDataStale: false,
+	isLoading: false,
 	perpStateStatus: "success",
 	snapshotsReady: true,
 	spotStateStatus: "success",
@@ -88,6 +95,8 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		hasAllDexsSnapshot: testState.snapshotsReady,
 		hasSpotStateSnapshot: testState.snapshotsReady,
 		isDataStale: testState.isDataStale,
+		hasError: testState.hasError,
+		isLoading: testState.isLoading,
 		isPerpStateStale: testState.perpStateStatus === "stale",
 		isSpotStateStale: testState.spotStateStatus === "stale",
 		perpStateStatus: testState.perpStateStatus,
@@ -99,6 +108,8 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		hasAllDexsSnapshot: testState.snapshotsReady,
 		hasSpotStateSnapshot: testState.snapshotsReady,
 		isDataStale: testState.isDataStale,
+		hasError: testState.hasError,
+		isLoading: testState.isLoading,
 		isPerpStateStale: testState.perpStateStatus === "stale",
 		isSpotStateStale: testState.spotStateStatus === "stale",
 		perpStateStatus: testState.perpStateStatus,
@@ -113,7 +124,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
-		builderPerp: [{ dex: "xyz", quoteToken: { index: 0 } }],
+		builderPerp: [{ dex: "xyz", quoteToken: { index: 0, name: "USDC" } }],
 		getToken: () => ({ index: 0 }),
 	}),
 }));
@@ -124,8 +135,8 @@ vi.mock("@/hooks/use-geo-restriction", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		hasWalletAccess: true,
-		isConnected: true,
+		hasWalletAccess: testState.hasWalletAccess,
+		isConnected: testState.isConnected,
 		sessionMode: "wallet",
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
@@ -165,7 +176,11 @@ describe("mobile account view", () => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
+		testState.hasError = false;
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
 		testState.isDataStale = false;
+		testState.isLoading = false;
 		testState.perpStateStatus = "success";
 		testState.snapshotsReady = true;
 		testState.spotStateStatus = "success";
@@ -202,12 +217,12 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Maintenance Margin")).toContain("$230.50");
+		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$230.50");
 		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
 		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
 	});
 
-	it("does not invent a maintenance ratio for portfolio margin", () => {
+	it("uses the SDK portfolio margin ratio when the account is in portfolio margin mode", () => {
 		testState.accountAbstraction = "portfolioMargin";
 
 		act(() => {
@@ -219,7 +234,7 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("—");
+		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("42.00%");
 	});
 
 	it("shows unavailable metrics instead of false zeroes before complete snapshots arrive", () => {
@@ -254,8 +269,8 @@ describe("mobile account view", () => {
 		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
-		expect(buttons.find((button) => button.textContent === "Perps / Spot")?.disabled).toBe(true);
-		expect(buttons.find((button) => button.textContent === "Withdraw")?.disabled).toBe(true);
+		expect(buttons.find((button) => button.textContent === "Perps / Spot")?.getAttribute("aria-disabled")).toBe("true");
+		expect(buttons.find((button) => button.textContent === "Withdraw")?.getAttribute("aria-disabled")).toBe("true");
 	});
 
 	it("hides the mobile bridge entry while creation is gated and restores it for an existing execution", () => {
@@ -302,6 +317,26 @@ describe("mobile account view", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
 		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("keeps standard perp metrics available during an unrelated Spot-only failure", () => {
+		testState.accountAbstraction = "disabled";
+		testState.hasError = true;
+		testState.spotStateStatus = "error";
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(getMetricRowText(container, "Account Value")).toContain("$115.75");
+		const withdraw = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Withdraw",
+		);
+		expect(withdraw?.getAttribute("aria-disabled")).toBe("true");
 	});
 
 	it("keeps an unavailable Deposit action inert and shows the release reason", () => {

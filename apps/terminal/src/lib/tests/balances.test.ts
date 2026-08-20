@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+	accountOverviewNeedsTokenUsdPrices,
 	addSpotMarketPriceAliases,
 	getAccountBalanceSummary,
 	getAccountEquityValue,
 	getAvailableFromTotals,
 	getBalanceRowDisplayAvailable,
 	getPerpBalanceRows,
+	getPerpRiskSummaryUsdValue,
 	getPerpRiskSummaryValue,
+	getSpotAccountValueUsdValue,
 	getSpotAvailable,
 	getSpotAvailableValue,
 	getSpotBalanceData,
 	getSpotBalanceRows,
 	getSpotTransferable,
 	getSpotTransferableValue,
+	getTokenAmountUsdValue,
 	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
@@ -411,6 +415,72 @@ describe("trade balances", () => {
 			crossMaintenanceMarginUsed: "0.05",
 			unrealizedPnl: "0.075",
 		});
+	});
+
+	it("converts each perp DEX from its collateral token before aggregating risk", () => {
+		const summary = getPerpRiskSummaryUsdValue(
+			[
+				{
+					collateralToken: "USDC",
+					marginSummary: { totalNtlPos: "100", totalMarginUsed: "10" } as never,
+					crossMaintenanceMarginUsed: "5",
+					assetPositions: [{ position: { unrealizedPnl: "2" } }] as never,
+				},
+				{
+					collateralToken: "HYPE",
+					marginSummary: { totalNtlPos: "10", totalMarginUsed: "1" } as never,
+					crossMaintenanceMarginUsed: "0.5",
+					assetPositions: [{ position: { unrealizedPnl: "-0.25" } }] as never,
+				},
+			],
+			{ HYPE: "30" },
+		);
+
+		expect(summary).toEqual({
+			totalNtlPos: "400",
+			totalMarginUsed: "40",
+			crossMaintenanceMarginUsed: "20",
+			unrealizedPnl: "-5.5",
+		});
+	});
+
+	it("fails closed instead of treating entry notional as a current account valuation", () => {
+		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
+
+		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance], { HYPE: "30" })).toBe("867.680532");
+		expect(getSpotAccountValueUsdValue([settledSpotUsdcBalance, hypeBalance])).toBeNull();
+		expect(getTokenAmountUsdValue("10", "HYPE", { HYPE: "30" })).toBe("300");
+		expect(getTokenAmountUsdValue("10", "HYPE", {})).toBeNull();
+		expect(
+			getPerpRiskSummaryUsdValue(
+				[
+					{
+						collateralToken: "UNKNOWN",
+						marginSummary: { totalNtlPos: "1", totalMarginUsed: "0" } as never,
+					},
+				],
+				{},
+			),
+		).toBeNull();
+	});
+
+	it("requires the price stream only when non-USDC account values actually need conversion", () => {
+		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
+		const hypeRisk = {
+			collateralToken: "HYPE",
+			marginSummary: { totalNtlPos: "1", totalMarginUsed: "0" } as never,
+			crossMaintenanceMarginUsed: "0",
+		};
+
+		expect(
+			accountOverviewNeedsTokenUsdPrices({
+				accountValues: [{ token: "USDC", value: "100" }],
+				spotBalances: [settledSpotUsdcBalance],
+			}),
+		).toBe(false);
+		expect(accountOverviewNeedsTokenUsdPrices({ spotBalances: [{ ...hypeBalance, total: "0" }] })).toBe(false);
+		expect(accountOverviewNeedsTokenUsdPrices({ spotBalances: [hypeBalance] })).toBe(true);
+		expect(accountOverviewNeedsTokenUsdPrices({ perpRiskStates: [hypeRisk] })).toBe(true);
 	});
 
 	it("computes the official unified-account ratio per collateral token", () => {

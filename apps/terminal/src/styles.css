@@ -1135,4 +1135,18 @@
     container-type: inline-size;
     border-color: var(--stroke-weak);
   }
+
+  .account-panel-container {
+    container-name: account-panel;
+  }
+
+  @container account-panel (max-width: 15rem) {
+    .account-panel-secondary-actions {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .account-panel-risk-bar {
+      display: none;
+    }
+  }
 }

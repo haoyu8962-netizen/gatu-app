@@ -111,6 +111,16 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useIsMobile");
 	});
 
+	it("lets the account panel adapt its actions to the compact desktop column", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("account-panel-container desktop-grid-panel");
+		expect(TERMINAL_STYLES).toContain("container-name: account-panel");
+		const compactRule = readCssBlock(TERMINAL_STYLES, "@container account-panel (max-width: 15rem)");
+		expect(compactRule).toContain(".account-panel-secondary-actions");
+		expect(compactRule).toContain("grid-template-columns: minmax(0, 1fr) !important");
+		expect(compactRule).toContain(".account-panel-risk-bar");
+		expect(compactRule).toContain("display: none");
+	});
+
 	it("starts the primary lazy panel imports when the terminal module is evaluated", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("preloadPrimaryWorkspacePanels();");
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useEffect(preloadPrimaryWorkspacePanels");

@@ -1,10 +1,31 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import {
+	ArrowsLeftRightIcon,
+	DownloadSimpleIcon,
+	UploadSimpleIcon,
+	WalletIcon,
+	WarningCircleIcon,
+} from "@phosphor-icons/react";
+import { type ReactNode, Suspense, useId, useState } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
+import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
-import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import {
+	accountOverviewNeedsTokenUsdPrices,
+	getPerpRiskSummaryUsdValue,
+	getSpotAccountValueUsdValue,
+	getTokenAmountUsdValue,
+	getUnifiedAccountMarginRatioValue,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
+import {
+	getToolbarAccountLeverage,
+	getToolbarAccountMarginRatio,
+	getToolbarAccountRiskPresentation,
+	getToolbarSignedValueTone,
+} from "@/domain/trade/trading-toolbar-metrics";
 import {
 	isSupportedAccountAbstraction,
 	useDefaultDexBalances,
@@ -15,32 +36,35 @@ import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-pric
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
+import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
+import { useMarkets } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
 type SummaryRow = {
-	label: string;
+	key: string;
+	label: ReactNode;
 	value: ReactNode;
 	valueClassName?: string;
 };
 
-function getMarginRatioTone(ratio: number): { text: string; bar: string } {
-	if (ratio >= 0.75) return { text: "text-trading-panel-error", bar: "bg-trading-panel-error" };
-	if (ratio >= 0.5) return { text: "text-trading-panel-warning", bar: "bg-trading-panel-warning" };
-	return { text: "text-trading-panel-success", bar: "bg-trading-panel-success" };
-}
-
 export function AccountPanel() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
+	const overviewTitleId = useId();
+	const transferUnavailableId = useId();
+	const withdrawUnavailableId = useId();
+	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
+	const markets = useMarkets();
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
@@ -49,164 +73,360 @@ export function AccountPanel() {
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
 	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
 	const tokenUsdPrices = tokenUsdPriceState.prices;
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary: summaryBalances.marginSummary,
-		perpSummary: summaryBalances.perpSummary,
-		withdrawable: summaryBalances.withdrawable,
-		spotBalances: summaryBalances.spotBalances,
-		spotAvailableAfterMaintenance: summaryBalances.spotAvailableAfterMaintenance,
-		tokenUsdPrices,
+	const collateralTokenByDex = new Map<string, string>([
+		["", DEFAULT_QUOTE_TOKEN],
+		...markets.builderPerp.flatMap(
+			(market): Array<[string, string]> => (market.quoteToken ? [[market.dex, market.quoteToken.name]] : []),
+		),
+	]);
+	const selectedCollateralToken = collateralTokenByDex.get(summaryBalances.dex) ?? null;
+	const accountEquityValue = usesSharedQuoteBalance
+		? getSpotAccountValueUsdValue(summaryBalances.spotBalances, tokenUsdPrices)
+		: getTokenAmountUsdValue(summaryBalances.marginSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
+	const crossAccountEquityValue = usesSharedQuoteBalance
+		? accountEquityValue
+		: getTokenAmountUsdValue(summaryBalances.perpSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
+	const perpRiskStates = usesSharedQuoteBalance
+		? selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({
+				collateralToken: collateralTokenByDex.get(dex) ?? null,
+				marginSummary: state.crossMarginSummary,
+				crossMaintenanceMarginUsed: state.crossMaintenanceMarginUsed,
+				assetPositions: state.assetPositions,
+			}))
+		: [
+				{
+					collateralToken: selectedCollateralToken,
+					marginSummary: summaryBalances.perpSummary,
+					crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+					assetPositions: summaryBalances.perpPositions,
+				},
+			];
+	const riskSummary = getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices);
+	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
+	const maintenanceMarginRatio =
+		accountAbstraction === "unifiedAccount"
+			? getUnifiedAccountMarginRatioValue({
+					states: selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({ dex, ...state })),
+					collaterals: [
+						...(defaultCollateralToken ? [{ dex: "", token: defaultCollateralToken.index }] : []),
+						...markets.builderPerp.flatMap((market) =>
+							market.quoteToken ? [{ dex: market.dex, token: market.quoteToken.index }] : [],
+						),
+					],
+					spotBalances: summaryBalances.spotBalances,
+				})
+			: accountAbstraction === "portfolioMargin"
+				? summaryBalances.portfolioMarginRatio
+				: getToolbarAccountMarginRatio({
+						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+						accountEquity: summaryBalances.perpSummary?.accountValue ?? "0",
+					});
+	const requiresUsdPrices = accountOverviewNeedsTokenUsdPrices({
+		accountValues: usesSharedQuoteBalance
+			? []
+			: [
+					{ token: selectedCollateralToken, value: summaryBalances.marginSummary?.accountValue },
+					{ token: selectedCollateralToken, value: summaryBalances.perpSummary?.accountValue },
+				],
+		spotBalances: usesSharedQuoteBalance ? summaryBalances.spotBalances : [],
+		perpRiskStates,
 	});
-
-	let perpMetrics = null;
-	if (summaryBalances.marginSummary || accountSummary.accountEquity > 0) {
-		const accountValue = accountSummary.accountEquity;
-		const riskSummary = usesSharedQuoteBalance
-			? getPerpRiskSummary(selectedBalances.allDexClearinghouseStates.map(([, state]) => state))
-			: getPerpRiskSummary([summaryBalances]);
-		const totalNtlPos = riskSummary.totalNtlPos;
-		const maintenanceMargin = riskSummary.crossMaintenanceMarginUsed;
-
-		const marginRatio = accountValue > 0 ? maintenanceMargin / accountValue : 0;
-		const crossLeverage = accountValue > 0 ? Math.abs(totalNtlPos) / accountValue : 0;
-
-		perpMetrics = {
-			accountValue,
-			unrealizedPnl: riskSummary.unrealizedPnl,
-			marginRatio,
-			crossLeverage,
-			maintenanceMargin,
-		};
-	}
-
-	const hasPerpData =
+	const balanceSnapshotReady =
 		isConnected &&
 		accountModeReady &&
-		perpMetrics !== null &&
-		!summaryBalances.isDataStale &&
 		summaryBalances.perpStateStatus === "success" &&
-		(!usesSharedQuoteBalance || tokenUsdPriceState.status === "success");
+		!summaryBalances.isPerpStateStale &&
+		(!requiresUsdPrices || tokenUsdPriceState.status === "success") &&
+		(!usesSharedQuoteBalance ||
+			(!summaryBalances.hasError &&
+				!summaryBalances.isDataStale &&
+				summaryBalances.hasAllDexsSnapshot &&
+				summaryBalances.spotStateStatus === "success" &&
+				summaryBalances.hasSpotStateSnapshot));
 	const fundsActionsReady =
 		accountModeReady &&
-		!selectedBalances.hasError &&
-		!selectedBalances.isDataStale &&
-		selectedBalances.perpStateStatus === "success" &&
-		selectedBalances.spotStateStatus === "success";
+		!defaultBalances.hasError &&
+		!defaultBalances.isDataStale &&
+		defaultBalances.perpStateStatus === "success" &&
+		defaultBalances.spotStateStatus === "success";
+	const marginRatioReady = balanceSnapshotReady && maintenanceMarginRatio !== null;
+	const accountRisk = getToolbarAccountRiskPresentation(marginRatioReady ? maintenanceMarginRatio : null);
+	const crossLeverage =
+		balanceSnapshotReady && riskSummary && crossAccountEquityValue
+			? getToolbarAccountLeverage({
+					totalNtlPos: riskSummary.totalNtlPos,
+					accountEquity: crossAccountEquityValue,
+				})
+			: null;
+	const unrealizedPnlTone =
+		balanceSnapshotReady && riskSummary ? getToolbarSignedValueTone(riskSummary.unrealizedPnl) : "neutral";
+	const metricLoading =
+		accountAbstraction === null ||
+		summaryBalances.perpStateStatus === "loading" ||
+		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "loading") ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "loading");
+	const metricsHaveError =
+		(!accountModeReady && summaryBalances.hasError) ||
+		summaryBalances.perpStateStatus === "error" ||
+		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "error") ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "error");
+	const metricsAreStale =
+		summaryBalances.isPerpStateStale ||
+		(usesSharedQuoteBalance && summaryBalances.isSpotStateStale) ||
+		(requiresUsdPrices && tokenUsdPriceState.status === "stale");
+	const valuationUnavailable =
+		balanceSnapshotReady && (accountEquityValue === null || riskSummary === null || maintenanceMarginRatio === null);
+	const marginRatioLabel = marginRatioReady
+		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
+		: "—";
+	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
+	const accountValueLabel = usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`;
+	const crossMaintenanceMarginLabel = t`Cross Maintenance Margin`;
+	const accountModeLabel =
+		accountAbstraction === "unifiedAccount"
+			? t`Unified Account`
+			: accountAbstraction === "portfolioMargin"
+				? t`Portfolio Margin`
+				: accountAbstraction === "disabled"
+					? t`Separate Accounts`
+					: t`Select mode`;
+
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeEntry = shouldShowLiFiBridgeTab({
 		isEmbeddedDeposit: false,
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const internalTransferDisabledReason = !hasWalletAccess
+	const withdrawDisabledReason = !hasWalletAccess
 		? t`Connect the owner wallet before moving funds.`
 		: !accountModeReady
 			? t`Select a supported account mode before moving funds.`
 			: !fundsActionsReady
 				? t`Balance data is unavailable. Try again after the connection recovers.`
-				: isQuoteBalanceSharedWithPerps(accountAbstraction)
-					? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+				: null;
+	const internalTransferDisabledReason = !hasWalletAccess
+		? t`Connect the owner wallet before moving funds.`
+		: !accountModeReady
+			? t`Select a supported account mode before moving funds.`
+			: usesSharedQuoteBalance
+				? t`Transfers between Spot and Perps are unavailable in shared-balance account modes.`
+				: !fundsActionsReady
+					? t`Balance data is unavailable. Try again after the connection recovers.`
 					: null;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 
-	const marginRatioTone = perpMetrics ? getMarginRatioTone(perpMetrics.marginRatio) : null;
-	const perpRows: SummaryRow[] = perpMetrics
-		? [
-				{
-					label: t`Portfolio Value`,
-					value: formatUSD(perpMetrics.accountValue, { compact: false }),
-					valueClassName: "tabular-nums",
-				},
-				{
-					label: t`Unrealized PNL`,
-					value: formatUSD(perpMetrics.unrealizedPnl, { compact: false, signDisplay: "exceptZero" }),
-					valueClassName: cn("tabular-nums", getValueColorClass(perpMetrics.unrealizedPnl)),
-				},
-				{
-					label: t`Cross Margin Ratio`,
-					value: (
-						<span className="inline-flex items-center gap-1.5">
-							<span className="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-trading-panel-stroke-card">
-								<span
-									className={cn("block h-full rounded-full", marginRatioTone?.bar)}
-									style={{ width: `${Math.min(100, Math.max(0, perpMetrics.marginRatio * 100))}%` }}
-								/>
-							</span>
-							<span className={cn("font-bold", marginRatioTone?.text)}>
-								{formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 })}
-							</span>
-						</span>
-					),
-					valueClassName: "tabular-nums",
-				},
-				{
-					label: t`Maintenance Margin`,
-					value: formatUSD(perpMetrics.maintenanceMargin, { compact: false }),
-					valueClassName: "tabular-nums",
-				},
-				{
-					label: t`Cross Account Leverage`,
-					value: `${perpMetrics.crossLeverage.toFixed(2)}x`,
-					valueClassName: "tabular-nums",
-				},
-			]
-		: [];
+	function renderMetricValue(value: ReactNode) {
+		return (
+			<Skeleton
+				name="desktop-account-overview-metric"
+				loading={metricLoading}
+				fallback={<SkeletonValue className="w-16" />}
+			>
+				<span>{value}</span>
+			</Skeleton>
+		);
+	}
+
+	const summaryRows: SummaryRow[] = [
+		{
+			key: "portfolio-value",
+			label: accountValueLabel,
+			value: renderMetricValue(
+				balanceSnapshotReady && accountEquityValue !== null ? formatUSD(accountEquityValue, { compact: false }) : "—",
+			),
+		},
+		{
+			key: "unrealized-pnl",
+			label: t`Unrealized PNL`,
+			value: renderMetricValue(
+				balanceSnapshotReady && riskSummary
+					? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
+					: "—",
+			),
+			valueClassName:
+				unrealizedPnlTone === "positive" ? "text-success" : unrealizedPnlTone === "negative" ? "text-error" : undefined,
+		},
+		{
+			key: "margin-ratio",
+			label: t`Account Margin Ratio`,
+			value: renderMetricValue(
+				<span
+					role="progressbar"
+					aria-label={t`Account Margin Ratio`}
+					aria-valuemin={0}
+					aria-valuemax={100}
+					aria-valuenow={accountRisk.progressPercent === null ? undefined : Number(accountRisk.progressPercent)}
+					aria-valuetext={marginRatioLabel}
+					className="inline-flex items-center gap-1.5"
+				>
+					<span className="account-panel-risk-bar h-1 w-14 shrink-0 overflow-hidden rounded-full bg-trading-panel-stroke-card">
+						{marginRatioReady ? (
+							<span
+								className={cn(
+									"block h-full rounded-full",
+									accountRisk.tone === "danger"
+										? "bg-trading-panel-error"
+										: accountRisk.tone === "warning"
+											? "bg-trading-panel-warning"
+											: "bg-trading-panel-success",
+								)}
+								style={{ width: `${accountRisk.progressPercent ?? 0}%` }}
+							/>
+						) : null}
+					</span>
+					<span
+						className={cn(
+							"font-bold",
+							!marginRatioReady
+								? "text-trading-panel-muted"
+								: accountRisk.tone === "danger"
+									? "text-trading-panel-error"
+									: accountRisk.tone === "warning"
+										? "text-trading-panel-warning"
+										: "text-trading-panel-success",
+						)}
+					>
+						{marginRatioLabel}
+					</span>
+				</span>,
+			),
+		},
+		{
+			key: "cross-maintenance-margin",
+			label: crossMaintenanceMarginLabel,
+			value: renderMetricValue(
+				balanceSnapshotReady && riskSummary
+					? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
+					: "—",
+			),
+		},
+		{
+			key: "cross-account-leverage",
+			label: t`Cross Account Leverage`,
+			value: renderMetricValue(crossLeverageLabel),
+		},
+	];
+
+	const showsEmailDeposit = !isConnected && depositAvailability.path === "sponsored";
 
 	return (
-		<div className="flex flex-col bg-surface border-t border-stroke-weak pb-6">
-			<div className="px-2 py-2 border-b border-trading-panel-stroke-card">
-				<span className="text-2sm font-bold text-trading-panel-fg">{t`Account`}</span>
+		<div className="flex min-h-[459px] min-w-0 flex-col border-t border-stroke-weak bg-surface">
+			<div className="border-b border-trading-panel-stroke-card px-2 py-2">
+				<h2 className="text-2sm font-bold text-trading-panel-fg">{t`Account`}</h2>
 			</div>
 
 			{!isConnected ? (
-				<div className="flex-1 text-xs text-fg-muted text-center py-4">{t`Connect wallet to view account`}</div>
+				<>
+					<div
+						data-slot="account-panel-empty"
+						className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center"
+					>
+						<div className="flex size-12 items-center justify-center rounded-full bg-fill-weak">
+							<WalletIcon className="size-6 text-fg-muted" />
+						</div>
+						<div className="max-w-64 space-y-1.5">
+							<h3 className="text-sm font-semibold text-fg">
+								{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}
+							</h3>
+							<p className="text-xs leading-5 text-fg-muted">
+								{showsEmailDeposit
+									? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
+									: t`Connect your wallet to view your account, positions, and start trading.`}
+							</p>
+						</div>
+						<Button
+							variant="outline"
+							intent="brand"
+							size="sm"
+							disabled={showsEmailDeposit && !depositAvailability.available}
+							onClick={
+								showsEmailDeposit
+									? depositAvailability.available
+										? () => openDepositModal("deposit")
+										: undefined
+									: () => setWalletModalOpen(true)
+							}
+							title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
+						>
+							{showsEmailDeposit
+								? depositAvailability.available
+									? t`Deposit`
+									: depositAvailability.unavailableLabel
+								: t`Connect Wallet`}
+						</Button>
+					</div>
+					{walletModalOpen ? (
+						<Suspense fallback={null}>
+							<WalletModal open onOpenChange={setWalletModalOpen} />
+						</Suspense>
+					) : null}
+				</>
 			) : (
-				<div className="p-2">
-					{hasPerpData && (
-						<>
-							<p className="text-2sm font-bold text-trading-panel-fg mb-1">{t`Perps Overview`}</p>
-							<InfoRowGroup className="divide-y-0 tracking-normal">
-								{perpRows.map((row) => (
-									<InfoRow
-										key={row.label}
-										label={row.label}
-										value={row.value}
-										labelClassName="min-w-0 truncate text-trading-panel-muted"
-										valueClassName={cn(
-											"shrink-0 whitespace-nowrap font-semibold text-trading-panel-fg",
-											row.valueClassName,
-										)}
-									/>
-								))}
-							</InfoRowGroup>
-						</>
-					)}
+				<div className="flex flex-1 flex-col p-2 pb-3">
+					{metricsHaveError ? (
+						<div
+							role="alert"
+							className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-error-weak bg-error-soft px-2.5 py-2 text-xs text-error"
+						>
+							<WarningCircleIcon className="size-4 shrink-0" />
+							<span>{t`Failed to load balances.`}</span>
+						</div>
+					) : null}
+					{metricsAreStale && !metricsHaveError ? (
+						<output className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-2.5 py-2 text-xs text-warning">
+							<WarningCircleIcon className="size-4 shrink-0" />
+							<span>
+								{fundsActionsReady
+									? t`Balance data is stale.`
+									: t`Balance data is stale. Actions are temporarily unavailable.`}
+							</span>
+						</output>
+					) : null}
+					{valuationUnavailable && !metricsHaveError && !metricsAreStale ? (
+						<output className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-2.5 py-2 text-xs text-warning">
+							<WarningCircleIcon className="size-4 shrink-0" />
+							<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
+						</output>
+					) : null}
+					{metricLoading ? <output className="sr-only">{t`Loading...`}</output> : null}
+
+					<section aria-labelledby={overviewTitleId}>
+						<h3
+							id={overviewTitleId}
+							className="mb-1 truncate text-2sm font-bold text-trading-panel-fg"
+							title={accountModeLabel}
+						>
+							{accountModeLabel} · {t`Overview`}
+						</h3>
+						<InfoRowGroup className="divide-y-0 tracking-normal">
+							{summaryRows.map((row) => (
+								<InfoRow
+									key={row.key}
+									label={row.label}
+									value={row.value}
+									labelClassName="min-w-0 truncate text-trading-panel-muted"
+									valueClassName={cn(
+										"shrink-0 whitespace-nowrap font-semibold text-trading-panel-fg tabular-nums",
+										row.valueClassName,
+									)}
+								/>
+							))}
+						</InfoRowGroup>
+					</section>
 
 					{depositGeoBlocked ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</p>
 					) : tradeRestricted || !showsFundsActions ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
-						<div className="grid grid-cols-2 gap-2 mt-4">
+						<div data-slot="account-panel-actions" className="mt-auto space-y-2 pt-4">
 							{depositAvailability.unavailableReason ? (
-								<output className="col-span-2 text-center text-xs text-fg-muted">
+								<output className="block text-center text-xs text-fg-muted">
 									{depositAvailability.unavailableReason}
 								</output>
 							) : null}
-							<Button
-								variant="outline"
-								intent="neutral"
-								disabled={!hasWalletAccess || !fundsActionsReady}
-								onClick={() => openDepositModal("withdraw")}
-								aria-label={t`Withdraw`}
-								iconLeft={<UploadSimpleIcon className="size-4" />}
-								className="rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
-							>
-								{t`Withdraw`}
-							</Button>
 							<Tooltip content={depositAvailability.unavailableReason} side="top">
 								<span className="inline-flex w-full">
 									<Button
@@ -217,27 +437,58 @@ export function AccountPanel() {
 										aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 										title={depositAvailability.unavailableReason ?? undefined}
 										iconLeft={<DownloadSimpleIcon className="size-4" />}
-										className="w-full rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
+										className="w-full min-w-0 rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
 									>
 										{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 									</Button>
 								</span>
 							</Tooltip>
-							<Tooltip content={internalTransferDisabledReason} side="top">
-								<span className="inline-flex w-full">
-									<Button
-										variant="outline"
-										intent="neutral"
-										onClick={() => openTransferModal("toPerp")}
-										aria-label={t`Transfer between Perps and Spot`}
-										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-										disabled={!!internalTransferDisabledReason}
-										className="w-full rounded-[8px] border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
-									>
-										{t`Perps / Spot`}
-									</Button>
-								</span>
-							</Tooltip>
+							<div className="account-panel-secondary-actions grid grid-cols-2 gap-2">
+								{internalTransferDisabledReason ? (
+									<span id={transferUnavailableId} className="sr-only">
+										{internalTransferDisabledReason}
+									</span>
+								) : null}
+								{withdrawDisabledReason ? (
+									<span id={withdrawUnavailableId} className="sr-only">
+										{withdrawDisabledReason}
+									</span>
+								) : null}
+								<Tooltip content={internalTransferDisabledReason} side="top">
+									<span className="inline-flex min-w-0 w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											onClick={() => openTransferModal("toPerp")}
+											aria-label={t`Transfer between Perps and Spot`}
+											aria-describedby={internalTransferDisabledReason ? transferUnavailableId : undefined}
+											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+											disabled={!!internalTransferDisabledReason}
+											focusableWhenDisabled
+											className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
+										>
+											{t`Perps / Spot`}
+										</Button>
+									</span>
+								</Tooltip>
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex min-w-0 w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											disabled={!!withdrawDisabledReason}
+											focusableWhenDisabled
+											onClick={() => openDepositModal("withdraw")}
+											aria-label={t`Withdraw`}
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											iconLeft={<UploadSimpleIcon className="size-4" />}
+											className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+										>
+											{t`Withdraw`}
+										</Button>
+									</span>
+								</Tooltip>
+							</div>
 							{hasWalletAccess && showBridgeEntry ? (
 								<Button
 									variant="outline"
@@ -245,7 +496,7 @@ export function AccountPanel() {
 									onClick={() => openDepositModal("bridge")}
 									aria-label={t`Bridge`}
 									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-									className="rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+									className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
 								>
 									{t`Bridge`}
 								</Button>

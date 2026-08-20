@@ -18,7 +18,7 @@ export const DESKTOP_GRID_COLS = {
 
 export const DESKTOP_GRID_ROW_HEIGHT_PX = 30;
 export const DESKTOP_GRID_GAP_PX = 3;
-export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v9";
+export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v10";
 const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
 	"trade-desktop-grid-layout-v1",
 	"trade-desktop-grid-layout-v2",
@@ -28,6 +28,7 @@ const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
 	"trade-desktop-grid-layout-v6",
 	"trade-desktop-grid-layout-v7",
 	"trade-desktop-grid-layout-v8",
+	"trade-desktop-grid-layout-v9",
 ] as const;
 const GRID_GEOMETRY_EPSILON = 1e-9;
 
@@ -91,7 +92,7 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			y: 20.4,
 			w: 3,
 			h: 14,
-			minH: 5,
+			minH: 14,
 			minW: 3,
 			isDraggable: false,
 			resizeHandles: ["w"],
@@ -151,7 +152,7 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			y: 20.6,
 			w: 3,
 			h: 14,
-			minH: 5,
+			minH: 14,
 			minW: 3,
 			isDraggable: false,
 			resizeHandles: ["w"],

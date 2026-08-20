@@ -143,7 +143,11 @@ export function MainWorkspace() {
 						</Suspense>
 					</div>
 
-					<div key="accountInfo" data-panel-id="accountInfo" className="desktop-grid-panel overflow-hidden bg-surface">
+					<div
+						key="accountInfo"
+						data-panel-id="accountInfo"
+						className="account-panel-container desktop-grid-panel overflow-hidden bg-surface"
+					>
 						<Suspense fallback={panelFallback}>
 							<div ref={accountContentRef}>
 								<AccountPanel />

@@ -38,6 +38,7 @@ export interface AccountBalances {
 	perpPositions: PerpPosition[];
 	spotBalances: SpotBalance[];
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
+	portfolioMarginRatio: string | null;
 	accountAbstraction: AccountAbstraction;
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
@@ -104,6 +105,7 @@ export interface AllDexsAccountState {
 	hasSpotStateSnapshot: boolean;
 	spotBalances: SpotBalance[];
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
+	portfolioMarginRatio: string | null;
 	accountAbstraction: AccountAbstraction;
 	spotStateStatus: AssetAvailabilityStatus;
 	perpStateStatus: AssetAvailabilityStatus;
@@ -152,6 +154,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		},
 	);
 	const spotState = spotEvent?.spotState;
+	const portfolioMarginRatio = spotState?.portfolioMarginRatio ?? null;
 	const spotAvailableAfterMaintenance = useMemo(
 		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 		[spotState?.tokenToAvailableAfterMaintenance],
@@ -165,6 +168,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 			hasSpotStateSnapshot: false,
 			spotBalances: EMPTY_SPOT_BALANCES,
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
+			portfolioMarginRatio: null,
 			accountAbstraction: null,
 			spotStateStatus: "idle",
 			perpStateStatus: "idle",
@@ -208,6 +212,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		hasSpotStateSnapshot: spotEvent !== undefined,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		portfolioMarginRatio,
 		accountAbstraction,
 		spotStateStatus,
 		perpStateStatus,
@@ -228,6 +233,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		hasSpotStateSnapshot,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		portfolioMarginRatio,
 		accountAbstraction,
 		spotStateStatus,
 		perpStateStatus,
@@ -267,6 +273,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		perpPositions,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		portfolioMarginRatio,
 		accountAbstraction,
 		withdrawable,
 		crossMaintenanceMarginUsed,
