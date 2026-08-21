@@ -138,8 +138,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} सेकंड"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
+#~ msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+#~ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
@@ -1115,6 +1115,7 @@ msgstr "उधार लें"
 #~ msgstr "ब्रेडक्रम्ब"
 
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2539,6 +2540,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -3112,6 +3114,8 @@ msgstr "अनु. शुल्क"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "लिमिट पर अनुमानित P&L"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Slippage"
 msgstr "अनु. स्लिपेज"
@@ -3165,7 +3169,9 @@ msgstr "अनुमानित समय"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "एथेरियम स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए एक प्रोग्राम योग्य ब्लॉकचेन है।"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
 
@@ -3189,6 +3195,10 @@ msgstr "निष्पादित आकार"
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Execution"
 msgstr "निष्पादन"
+
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Execution Interval"
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3640,6 +3650,7 @@ msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबम�
 msgid "Forwarding deposit"
 msgstr "जमा फ़ॉरवर्ड किया जा रहा है"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "आवृत्ति"
@@ -4336,6 +4347,7 @@ msgstr ""
 #~ msgid "Liq"
 #~ msgstr "लिक्विडेशन"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -4424,6 +4436,8 @@ msgid "Loading leaderboard"
 msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 msgid "Loading markets..."
 msgstr "बाज़ार लोड हो रहे हैं..."
 
@@ -4855,6 +4869,7 @@ msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
@@ -5524,10 +5539,8 @@ msgstr "नंबर फ़ॉर्मेट"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "ऑर्डर की संख्या"
@@ -6684,6 +6697,8 @@ msgstr "ब्रिज वॉलेट फिर से कनेक्ट क�
 msgid "Reconnect the trading account before modifying this order."
 msgstr "इस ऑर्डर को संशोधित करने से पहले ट्रेडिंग खाता दोबारा कनेक्ट करें।"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7223,10 +7238,13 @@ msgstr ""
 msgid "Running"
 msgstr "चल रहा है"
 
-#. placeholder {0}: TWAP_MINUTES_MAX / 60
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
+#~ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+#~ msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -7514,6 +7532,7 @@ msgstr "स्वैप करने के लिए टोकन चुने�
 msgid "selected"
 msgstr "चयनित"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/format.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -7858,8 +7877,8 @@ msgstr "साइज़ ऑर्डर के शेष साइज़ से 
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Size per Suborder"
-msgstr "प्रति सबऑर्डर साइज़"
+#~ msgid "Size per Suborder"
+#~ msgstr "प्रति सबऑर्डर साइज़"
 
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
@@ -7915,6 +7934,7 @@ msgstr "स्लिपेज"
 msgid "Slippage tolerance"
 msgstr "Slippage सहनशीलता"
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8268,8 +8288,8 @@ msgid "Submitting..."
 msgstr "सबमिट किया जा रहा है..."
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Suborder Frequency"
-msgstr "सबऑर्डर आवृत्ति"
+#~ msgid "Suborder Frequency"
+#~ msgstr "सबऑर्डर आवृत्ति"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -8919,6 +8939,7 @@ msgid "This account already has a referral code and cannot apply another one."
 msgstr "इस खाते पर पहले से रेफ़रल कोड लागू है और दूसरा कोड लागू नहीं किया जा सकता।"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/lib/errors/format.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "इस खाते को अभी Hyperliquid पर ट्रेडिंग कार्रवाई करने की अनुमति नहीं है।"
 
@@ -9769,8 +9790,12 @@ msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP ऑर्डर की स्थिति अभी लोड हो रही है। कृपया कुछ देर बाद फिर प्रयास करें।"
 
 #: src/lib/errors/definitions/twap.ts
-msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
-msgstr "TWAP ऑर्डर मूल्य बहुत छोटा है। न्यूनतम ${min} है, जो प्रति मिनट ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} है।"
+msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
+msgstr ""
+
+#: src/lib/errors/definitions/twap.ts
+#~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+#~ msgstr "TWAP ऑर्डर मूल्य बहुत छोटा है। न्यूनतम ${min} है, जो प्रति मिनट ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} है।"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #~ msgid "TWAP Orders"
@@ -9864,11 +9889,14 @@ msgid "Unable to verify regional availability. This deposit was not submitted."
 msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "आपके क्षेत्र में उपलब्धता सत्यापित नहीं की जा सकी। यह धन संबंधी कार्रवाई सबमिट नहीं की गई।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
+#: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr ""
 
@@ -10438,6 +10466,7 @@ msgstr "वॉलेट ने ट्रांज़ैक्शन हैश �
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "वॉलेट {0} से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
@@ -10519,6 +10548,7 @@ msgstr "{0} में पहुँचेगा"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
