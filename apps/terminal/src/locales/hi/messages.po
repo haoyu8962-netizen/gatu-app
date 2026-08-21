@@ -138,8 +138,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} सेकंड"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-#~ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
+msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
@@ -352,8 +352,6 @@ msgstr "खाता इक्विटी"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
 
@@ -396,8 +394,6 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Value"
 msgstr "खाता मूल्य"
 
@@ -1054,8 +1050,6 @@ msgid "Balance available to trade"
 msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "शेष राशि का डेटा पुराना है।"
 
@@ -1063,14 +1057,10 @@ msgstr "शेष राशि का डेटा पुराना है।"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "शेष राशि का डेटा पुराना है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1078,11 +1068,10 @@ msgstr "शेष राशि का डेटा पुराना है। 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "शेष राशि का डेटा उपलब्ध नहीं है। कनेक्शन बहाल होने के बाद फिर से कोशिश करें।"
 
@@ -1377,10 +1366,6 @@ msgstr ""
 
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Checking regional availability. Funds actions are temporarily unavailable."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1946,11 +1931,7 @@ msgid "Connect the exact owner wallet before continuing."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Connect the owner wallet before moving funds."
 msgstr ""
 
@@ -2013,16 +1994,14 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "वॉलेट कनेक्ट करें"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Connect wallet to view account"
-#~ msgstr "खाता देखने के लिए वॉलेट कनेक्ट करें"
+msgid "Connect wallet to view account"
+msgstr "खाता देखने के लिए वॉलेट कनेक्ट करें"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
@@ -2127,7 +2106,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "TWAP ऑर्डर देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
 
@@ -2367,22 +2345,22 @@ msgstr "क्रॉस"
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
 
-#: src/config/ui-text.ts
-msgid "Cross Leverage"
-msgstr "क्रॉस लीवरेज"
-
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Maintenance Margin"
 msgstr "क्रॉस मेंटेनेंस मार्जिन"
+
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "क्रॉस लीवरेज"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Cross Margin"
 #~ msgstr "क्रॉस मार्जिन"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Cross Margin Ratio"
-#~ msgstr "क्रॉस मार्जिन अनुपात"
+msgid "Cross Margin Ratio"
+msgstr "क्रॉस मार्जिन अनुपात"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -2562,7 +2540,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2660,7 +2637,6 @@ msgid "Deposit unavailable"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr ""
 
@@ -2913,12 +2889,6 @@ msgstr ""
 #~ msgid "Duration (Minutes)"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Dynamic (minimum {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} seconds)"
-msgstr "गतिशील (न्यूनतम {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} सेकंड)"
-
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "प्रत्येक पोज़िशन केवल अपने आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुंच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन को अलग-अलग जोड़ा या हटाया जा सकता है।"
@@ -3134,8 +3104,6 @@ msgstr "अनु. शुल्क"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "लिमिट पर अनुमानित P&L"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Slippage"
 msgstr "अनु. स्लिपेज"
@@ -3189,12 +3157,11 @@ msgstr "अनुमानित समय"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "एथेरियम स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए एक प्रोग्राम योग्य ब्लॉकचेन है।"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-#~ msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
+msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -3215,10 +3182,6 @@ msgstr "निष्पादित आकार"
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Execution"
 msgstr "निष्पादन"
-
-#: src/components/trade/positions/twap-tab.tsx
-msgid "Execution Interval"
-msgstr "निष्पादन अंतराल"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3405,7 +3368,6 @@ msgstr "बैलेंस लोड करने में विफल"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/trade/use-button-content.ts
@@ -3670,7 +3632,6 @@ msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबम�
 msgid "Forwarding deposit"
 msgstr "जमा फ़ॉरवर्ड किया जा रहा है"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "आवृत्ति"
@@ -3732,18 +3693,6 @@ msgstr "प्रदर्शित फंडिंग"
 msgid "Funds action progress"
 msgstr ""
 
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are not available in your region."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are not available in your region. This funds action was not submitted."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are unavailable for this account."
-msgstr ""
-
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
@@ -3789,12 +3738,6 @@ msgstr "इस नेटवर्क के लिए गैस-प्राय�
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
 #~ msgstr "गैस:"
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-#~ msgid "GATU fee"
-#~ msgstr "GATU शुल्क"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Gatu invitation link"
@@ -3968,12 +3911,6 @@ msgstr "Hyperliquid अभी इस खाते को रेफ़रल क�
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-#~ msgid "Hyperliquid fee"
-#~ msgstr "Hyperliquid शुल्क"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
@@ -4379,7 +4316,6 @@ msgstr ""
 #~ msgid "Liq"
 #~ msgstr "लिक्विडेशन"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -4557,7 +4493,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -4638,8 +4573,8 @@ msgstr "Mainnet"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Maintenance Margin"
-#~ msgstr "मेंटेनेंस Margin"
+msgid "Maintenance Margin"
+msgstr "मेंटेनेंस Margin"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Maintenance Margin Ratio"
@@ -4891,7 +4826,6 @@ msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
@@ -4972,6 +4906,7 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -5561,8 +5496,10 @@ msgstr "नंबर फ़ॉर्मेट"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "ऑर्डर की संख्या"
@@ -5671,7 +5608,6 @@ msgstr "कमांड मेन्यू खोलें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr ""
 
@@ -5953,7 +5889,6 @@ msgstr "अन्य लेजर अपडेट"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Overview"
 msgstr "अवलोकन"
 
@@ -6132,8 +6067,8 @@ msgstr "परपेचुअल खाते की इक्विटी"
 #~ msgstr "Perps इक्विटी"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Perps Overview"
-#~ msgstr "Perps अवलोकन"
+msgid "Perps Overview"
+msgstr "Perps अवलोकन"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
@@ -6283,7 +6218,6 @@ msgid "Portfolio margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
@@ -6428,7 +6362,6 @@ msgstr ""
 msgid "Previous Vault page"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -7263,13 +7196,10 @@ msgstr ""
 msgid "Running"
 msgstr "चल रहा है"
 
+#. placeholder {0}: TWAP_MINUTES_MAX / 60
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#~ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-#~ msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
-
-#: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
-msgstr "चलने का समय ({TWAP_MINUTES_MIN} मिनट - {DAYS_MAX} दिन)"
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -7484,13 +7414,12 @@ msgstr "सुरक्षित रैंडमनेस उपलब्ध न
 msgid "Select {displayName} market"
 msgstr "{displayName} मार्केट चुनें"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Select a supported account mode before moving funds."
 msgstr "धनराशि स्थानांतरित करने से पहले कोई समर्थित खाता मोड चुनें।"
 
@@ -7533,7 +7462,6 @@ msgid "Select market"
 msgstr "मार्केट चुनें"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Select mode"
 msgstr "मोड चुनें"
@@ -7658,7 +7586,6 @@ msgstr "अलग"
 #~ msgstr "अलग खातों की शेष राशि"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Accounts"
 msgstr "अलग खाते"
 
@@ -7908,8 +7835,8 @@ msgstr "साइज़ ऑर्डर के शेष साइज़ से 
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "Size per Suborder"
-#~ msgstr "प्रति सबऑर्डर साइज़"
+msgid "Size per Suborder"
+msgstr "प्रति सबऑर्डर साइज़"
 
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
@@ -8318,8 +8245,8 @@ msgid "Submitting..."
 msgstr "सबमिट किया जा रहा है..."
 
 #: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Suborder Frequency"
-#~ msgstr "सबऑर्डर आवृत्ति"
+msgid "Suborder Frequency"
+msgstr "सबऑर्डर आवृत्ति"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -9664,16 +9591,17 @@ msgstr "USDC ट्रांसफ़र करें"
 msgid "Transferring..."
 msgstr "ट्रांसफ़र किया जा रहा है..."
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "यूनिफाइड अकाउंट मोड में Spot और Perps के बीच ट्रांसफर उपलब्ध नहीं हैं।"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
 msgstr "साझा-बैलेंस खाता मोड में Spot और Perps के बीच ट्रांसफ़र उपलब्ध नहीं हैं।"
-
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#~ msgid "Transfers between Spot and Perps are unavailable in unified account mode."
-#~ msgstr "यूनिफाइड अकाउंट मोड में Spot और Perps के बीच ट्रांसफर उपलब्ध नहीं हैं।"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Transfers HYPE from your Spot balance to your available staking balance."
@@ -9819,12 +9747,8 @@ msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP ऑर्डर की स्थिति अभी लोड हो रही है। कृपया कुछ देर बाद फिर प्रयास करें।"
 
 #: src/lib/errors/definitions/twap.ts
-msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
-msgstr "TWAP ऑर्डर का मूल्य कम से कम ${TWAP_MIN_NOTIONAL_USD} होना चाहिए।"
-
-#: src/lib/errors/definitions/twap.ts
-#~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
-#~ msgstr "TWAP ऑर्डर मूल्य बहुत छोटा है। न्यूनतम ${min} है, जो प्रति मिनट ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} है।"
+msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgstr "TWAP ऑर्डर मूल्य बहुत छोटा है। न्यूनतम ${min} है, जो प्रति मिनट ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} है।"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #~ msgid "TWAP Orders"
@@ -9909,16 +9833,8 @@ msgstr "उपलब्ध शेष राशि सत्यापित न�
 msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
 msgstr ""
 
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
-msgstr ""
-
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -10035,7 +9951,6 @@ msgid "Unified account"
 msgstr "एकीकृत खाता"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Unified Account"
 msgstr "एकीकृत खाता"
 
@@ -10102,6 +10017,7 @@ msgstr "अपडेट विफल रहा"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "अपडेट किया गया"

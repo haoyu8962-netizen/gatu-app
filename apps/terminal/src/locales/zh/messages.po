@@ -134,8 +134,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} 秒"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-#~ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
+msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
@@ -336,8 +336,6 @@ msgstr "账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Margin Ratio"
 msgstr "账户保证金率"
 
@@ -380,8 +378,6 @@ msgstr "账户价值"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Value"
 msgstr "账户价值"
 
@@ -991,8 +987,6 @@ msgid "Balance available to trade"
 msgstr "可用于交易的余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "余额数据已过期。"
 
@@ -1000,14 +994,10 @@ msgstr "余额数据已过期。"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "余额数据已过期，相关操作暂时不可用。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1015,11 +1005,10 @@ msgstr "余额数据已过期，相关操作暂时不可用。"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "余额数据不可用。请等待连接恢复后重试。"
 
@@ -1259,10 +1248,6 @@ msgstr "正在检查最新的 API 钱包数据…"
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
 msgstr "正在检查地区可用性，存款暂时不可用。"
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Checking regional availability. Funds actions are temporarily unavailable."
-msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -1827,11 +1812,7 @@ msgid "Connect the exact owner wallet before continuing."
 msgstr "继续前，请连接完全匹配的所有者钱包。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Connect the owner wallet before moving funds."
 msgstr "请先连接所有者钱包，再进行资金操作。"
 
@@ -1894,16 +1875,14 @@ msgstr "连接钱包"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "连接钱包"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Connect wallet to view account"
-#~ msgstr "连接钱包查看账户"
+msgid "Connect wallet to view account"
+msgstr "连接钱包查看账户"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
@@ -2000,7 +1979,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "连接钱包查看 TWAP 订单。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "连接钱包以查看账户、仓位并开始交易。"
 
@@ -2227,22 +2205,22 @@ msgstr "全仓"
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
 
-#: src/config/ui-text.ts
-msgid "Cross Leverage"
-msgstr "全仓杠杆"
-
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
+
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "全仓杠杆"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Cross Margin"
 #~ msgstr "全仓保证金"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Cross Margin Ratio"
-#~ msgstr "全仓保证金率"
+msgid "Cross Margin Ratio"
+msgstr "全仓保证金率"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -2406,7 +2384,6 @@ msgstr "部署者"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2496,7 +2473,6 @@ msgid "Deposit unavailable"
 msgstr "存款不可用"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr "存入 USDC"
 
@@ -2733,12 +2709,6 @@ msgstr "请立即下载凭据，并将其转移到安全位置。关闭此窗口
 msgid "Downloaded"
 msgstr "已下载"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Dynamic (minimum {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} seconds)"
-msgstr "动态（最短 {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} 秒）"
-
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%，该仓位将被强制平仓。保证金可单独增减。"
@@ -2941,8 +2911,6 @@ msgstr "预估费用"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "限价预估盈亏"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Slippage"
 msgstr "预估滑点"
@@ -2992,12 +2960,11 @@ msgstr "预计时间"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "Ethereum 是一个用于智能合约和去中心化应用的可编程区块链。"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-#~ msgstr "每 {TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
+msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "每 {TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -3018,10 +2985,6 @@ msgstr "执行大小"
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Execution"
 msgstr "执行"
-
-#: src/components/trade/positions/twap-tab.tsx
-msgid "Execution Interval"
-msgstr "执行间隔"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3200,7 +3163,6 @@ msgstr "加载余额失败"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/trade/use-button-content.ts
@@ -3437,7 +3399,6 @@ msgstr "转发交易已提交"
 msgid "Forwarding deposit"
 msgstr "正在转发充值"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "频率"
@@ -3495,18 +3456,6 @@ msgstr "当前显示资金费"
 msgid "Funds action progress"
 msgstr "资金操作进度"
 
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are not available in your region."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are not available in your region. This funds action was not submitted."
-msgstr ""
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Funds actions are unavailable for this account."
-msgstr ""
-
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
@@ -3556,12 +3505,6 @@ msgstr "当前网络尚未启用 Gas 代付的 CCTP 充值。"
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
 #~ msgstr "Gas:"
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-#~ msgid "GATU fee"
-#~ msgstr "GATU 费用"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Gatu invitation link"
@@ -3735,12 +3678,6 @@ msgstr "Hyperliquid 当前未将此账户标记为符合创建推荐码的条件
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
-
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/components/trade/components/order-fee-summary-value.tsx
-#: src/domain/trade/order-confirmation.ts
-#~ msgid "Hyperliquid fee"
-#~ msgstr "Hyperliquid 费用"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
@@ -4109,7 +4046,6 @@ msgstr "已关联质押账户：{0}。"
 #~ msgid "Liq"
 #~ msgstr "清算"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -4287,7 +4223,6 @@ msgstr "加载钱包中..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -4356,8 +4291,8 @@ msgstr "主网"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Maintenance Margin"
-#~ msgstr "维持保证金"
+msgid "Maintenance Margin"
+msgstr "维持保证金"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Maintenance Margin Ratio"
@@ -4582,7 +4517,6 @@ msgstr "主钱包已验证"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
@@ -4647,6 +4581,7 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "中间价"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -5198,8 +5133,10 @@ msgid "Number format"
 msgstr "数字格式"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "委托数量"
@@ -5291,7 +5228,6 @@ msgstr "打开命令菜单"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr "打开存款功能以准备您的邮箱钱包。"
 
@@ -5531,7 +5467,6 @@ msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Overview"
 msgstr "概览"
 
@@ -5700,8 +5635,8 @@ msgstr "合约账户权益"
 #~ msgstr "永续权益"
 
 #: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Perps Overview"
-#~ msgstr "合约概览"
+msgid "Perps Overview"
+msgstr "合约概览"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
@@ -5838,7 +5773,6 @@ msgid "Portfolio margin"
 msgstr "投资组合保证金"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
 
@@ -5974,7 +5908,6 @@ msgstr "上一页"
 msgid "Previous Vault page"
 msgstr "上一页金库"
 
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6762,13 +6695,10 @@ msgstr "每页行数"
 msgid "Running"
 msgstr "运行中"
 
+#. placeholder {0}: TWAP_MINUTES_MAX / 60
 #: src/components/trade/tradebox/trade-form-twap.tsx
-#~ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-#~ msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
-
-#: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
-msgstr "运行时长（{TWAP_MINUTES_MIN} 分钟 - {DAYS_MAX} 天）"
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -6945,13 +6875,12 @@ msgstr "安全随机数不可用。充值未提交。"
 msgid "Select {displayName} market"
 msgstr "选择{displayName}市场"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Select a supported account mode before moving funds."
 msgstr "请先选择受支持的账户模式，再转移资金。"
 
@@ -6986,7 +6915,6 @@ msgid "Select market"
 msgstr "选择市场"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Select mode"
 msgstr "选择模式"
@@ -7103,7 +7031,6 @@ msgstr "分离"
 #~ msgstr "分账户余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Accounts"
 msgstr "分账户"
 
@@ -7313,8 +7240,8 @@ msgstr "数量不能超过委托的剩余数量。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
-#~ msgid "Size per Suborder"
-#~ msgstr "每笔子订单数量"
+msgid "Size per Suborder"
+msgstr "每笔子订单数量"
 
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
@@ -7702,8 +7629,8 @@ msgid "Submitting..."
 msgstr "提交中..."
 
 #: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Suborder Frequency"
-#~ msgstr "子单频率"
+msgid "Suborder Frequency"
+msgstr "子单频率"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -8984,16 +8911,17 @@ msgstr "划转 USDC"
 msgid "Transferring..."
 msgstr "划转中..."
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "启用统一账户后，现货与合约之间的划转不可用。"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
 msgstr "共享余额账户模式下无法在现货与永续之间划转。"
-
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#~ msgid "Transfers between Spot and Perps are unavailable in unified account mode."
-#~ msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Transfers HYPE from your Spot balance to your available staking balance."
@@ -9135,12 +9063,8 @@ msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP 订单状态仍在加载中，请稍后重试。"
 
 #: src/lib/errors/definitions/twap.ts
-msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
-msgstr "TWAP 订单价值必须至少为 ${TWAP_MIN_NOTIONAL_USD}。"
-
-#: src/lib/errors/definitions/twap.ts
-#~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
-#~ msgstr "TWAP 订单价值过小。最小为 ${min}，即每分钟 ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD}。"
+msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgstr "TWAP 订单价值过小。最小为 ${min}，即每分钟 ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD}。"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #~ msgid "TWAP Orders"
@@ -9224,17 +9148,9 @@ msgstr "无法验证可用余额"
 msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
 msgstr "无法验证地区可用性，存款暂时不可用。"
 
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
-msgstr ""
-
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
 msgstr "无法验证地区可用性，本次存款未提交。"
-
-#: src/hooks/trade/use-funds-action-availability.ts
-msgid "Unable to verify regional availability. This funds action was not submitted."
-msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -9350,7 +9266,6 @@ msgid "Unified account"
 msgstr "统一账户"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Unified Account"
 msgstr "统一账户"
 
@@ -9417,6 +9332,7 @@ msgstr "更新失败"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "已更新"
