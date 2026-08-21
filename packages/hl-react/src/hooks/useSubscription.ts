@@ -1,7 +1,6 @@
 import type { ISubscription, SubscriptionClient } from "@nktkas/hyperliquid";
 import { useRef } from "react";
 import { RingBuffer } from "../internal/circular-buffer/ring-buffer";
-import { useHyperliquid } from "../provider";
 import { serializeKey, subscriptionKeys } from "../query/keys";
 import {
 	createSubscriptionEventAccumulator,
@@ -9,6 +8,7 @@ import {
 	getDefaultThrottle,
 	shouldAcceptSubscriptionEvent,
 } from "../registries/subscription";
+import { useHyperliquidTransport } from "../transport-provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import type { SubEvent, SubMethod, SubParams } from "../types/clients";
 import { useSub } from "./utils/useSub";
@@ -18,7 +18,7 @@ export function useSubscription<M extends SubMethod>(
 	params: SubParams<M>,
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<SubEvent<M>> {
-	const { subscription } = useHyperliquid();
+	const { subscription } = useHyperliquidTransport();
 	const { refreshKey, ...subscriptionOptions } = options;
 	const baseKey = subscriptionKeys.method(method, params);
 	const key =

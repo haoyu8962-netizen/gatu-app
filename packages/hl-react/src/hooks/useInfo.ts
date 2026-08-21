@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { useHyperliquid } from "../provider";
 import { infoQueryOptions } from "../query/info";
+import { useHyperliquidTransport } from "../transport-provider";
 import type { HyperliquidQueryError, QueryParameter } from "../types";
 import type { InfoMethod, InfoParams, InfoResponse } from "../types/clients";
 
@@ -28,7 +28,7 @@ export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
 	params: InfoParams<M>,
 	options: UseInfoOptions<InfoResponse<M>, TData> = {},
 ): UseQueryResult<TData, HyperliquidQueryError> {
-	const { env, info } = useHyperliquid();
+	const { env, info } = useHyperliquidTransport();
 
 	const { persist, requestTimeoutMs, ...queryOptions } = options;
 	const requestOptions = infoQueryOptions(info, method, params, env, { persist, requestTimeoutMs });

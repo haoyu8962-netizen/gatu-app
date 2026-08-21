@@ -1,7 +1,12 @@
 import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import type { ReactNode } from "react";
-import { useContext } from "react";
-import { HyperliquidContext, type HyperliquidContextValue } from "./provider";
+import {
+	HyperliquidContext,
+	type HyperliquidContextValue,
+	HyperliquidSessionContext,
+	HyperliquidTransportContext,
+	useHyperliquidOptional,
+} from "./provider";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
 
 export interface MockHyperliquidProviderProps {
@@ -37,12 +42,32 @@ export function MockHyperliquidProvider({ children, value = {} }: MockHyperliqui
 		enforceLegalActions: false,
 		...value,
 	};
+	const transportValue = {
+		info: mockValue.info,
+		subscription: mockValue.subscription,
+		env: mockValue.env,
+		isTestnet: mockValue.isTestnet,
+	};
+	const sessionValue = {
+		clientKey: mockValue.clientKey,
+		sessionMode: mockValue.sessionMode,
+		agentName: mockValue.agentName,
+		builderConfig: mockValue.builderConfig,
+		exchangeLifecycle: mockValue.exchangeLifecycle,
+		enforceLegalActions: mockValue.enforceLegalActions,
+	};
 
-	return <HyperliquidContext.Provider value={mockValue}>{children}</HyperliquidContext.Provider>;
+	return (
+		<HyperliquidTransportContext.Provider value={transportValue}>
+			<HyperliquidSessionContext.Provider value={sessionValue}>
+				<HyperliquidContext.Provider value={mockValue}>{children}</HyperliquidContext.Provider>
+			</HyperliquidSessionContext.Provider>
+		</HyperliquidTransportContext.Provider>
+	);
 }
 
 export function useMockHyperliquid(): HyperliquidContextValue {
-	const context = useContext(HyperliquidContext);
+	const context = useHyperliquidOptional();
 	if (!context) {
 		throw new Error("useMockHyperliquid must be used within a MockHyperliquidProvider");
 	}

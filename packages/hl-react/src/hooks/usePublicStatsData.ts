@@ -1,5 +1,4 @@
 import { type UseQueryOptions, type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { useHyperliquid } from "../provider";
 import {
 	fetchPublicLeaderboard,
 	fetchPublicVaults,
@@ -8,6 +7,7 @@ import {
 	type PublicVaultRow,
 } from "../public-stats-data";
 import type { HyperliquidEnv } from "../signing/types";
+import { useHyperliquidTransport } from "../transport-provider";
 
 export const publicStatsDataKeys = {
 	leaderboard: (env: HyperliquidEnv) => ["hl", "public-stats", "leaderboard", env] as const,
@@ -32,7 +32,7 @@ export type UsePublicVaultsOptions<TData = readonly PublicVaultRow[]> = PublicSt
 export function usePublicLeaderboard<TData = readonly PublicLeaderboardRow[]>(
 	options: UsePublicLeaderboardOptions<TData> = {},
 ): UseQueryResult<TData, PublicStatsDataError> {
-	const { env } = useHyperliquid();
+	const { env } = useHyperliquidTransport();
 	return useQuery({
 		gcTime: 0,
 		staleTime: Number.POSITIVE_INFINITY,
@@ -51,7 +51,7 @@ export function usePublicLeaderboard<TData = readonly PublicLeaderboardRow[]>(
 export function usePublicVaults<TData = readonly PublicVaultRow[]>(
 	options: UsePublicVaultsOptions<TData> = {},
 ): UseQueryResult<TData, PublicStatsDataError> {
-	const { env } = useHyperliquid();
+	const { env } = useHyperliquidTransport();
 	return useQuery({
 		gcTime: 0,
 		staleTime: Number.POSITIVE_INFINITY,

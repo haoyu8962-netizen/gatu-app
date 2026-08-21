@@ -504,6 +504,63 @@ describe("useSub hook surface", () => {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	});
 
+	it("shares one public market subscription group across consumers", async () => {
+		const allDexsAssetCtxsUnsubscribe = vi.fn(async () => {});
+		const spotAssetCtxsUnsubscribe = vi.fn(async () => {});
+		const fastAssetCtxsUnsubscribe = vi.fn(async () => {});
+		const allDexsAssetCtxs = vi.fn(async () => ({ unsubscribe: allDexsAssetCtxsUnsubscribe }));
+		const spotAssetCtxs = vi.fn(async () => ({ unsubscribe: spotAssetCtxsUnsubscribe }));
+		const fastAssetCtxs = vi.fn(async () => ({ unsubscribe: fastAssetCtxsUnsubscribe }));
+		const subscription = {
+			allDexsAssetCtxs,
+			spotAssetCtxs,
+			fastAssetCtxs,
+		} as unknown as SubscriptionClient;
+		const methods = ["allDexsAssetCtxs", "spotAssetCtxs", "fastAssetCtxs"] as const;
+		const keys = methods.map((method) => JSON.stringify(["hl", "subscription", method, {}]));
+
+		function MarketSubscriptions() {
+			useSubscription("allDexsAssetCtxs", undefined);
+			useSubscription("spotAssetCtxs", undefined);
+			useSubscription("fastAssetCtxs", undefined);
+			return null;
+		}
+
+		function Consumers({ first, second }: { first: boolean; second: boolean }) {
+			return (
+				<FullWrapper subscription={subscription}>
+					{first ? <MarketSubscriptions key="first" /> : null}
+					{second ? <MarketSubscriptions key="second" /> : null}
+				</FullWrapper>
+			);
+		}
+
+		act(() => root.render(<Consumers first second />));
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(allDexsAssetCtxs).toHaveBeenCalledOnce();
+		expect(spotAssetCtxs).toHaveBeenCalledOnce();
+		expect(fastAssetCtxs).toHaveBeenCalledOnce();
+		const runtime = getStoreInternals(store).subscriptionRuntime;
+		for (const key of keys) expect(runtime.get(key)?.refCount).toBe(2);
+
+		act(() => root.render(<Consumers first={false} second />));
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(allDexsAssetCtxsUnsubscribe).not.toHaveBeenCalled();
+		expect(spotAssetCtxsUnsubscribe).not.toHaveBeenCalled();
+		expect(fastAssetCtxsUnsubscribe).not.toHaveBeenCalled();
+		for (const key of keys) expect(runtime.get(key)?.refCount).toBe(1);
+
+		act(() => root.render(<Consumers first={false} second={false} />));
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(allDexsAssetCtxsUnsubscribe).toHaveBeenCalledOnce();
+		expect(spotAssetCtxsUnsubscribe).toHaveBeenCalledOnce();
+		expect(fastAssetCtxsUnsubscribe).toHaveBeenCalledOnce();
+		for (const key of keys) expect(runtime.has(key)).toBe(false);
+	});
+
 	it("filters SDK l2Book channel cross-talk before it reaches the shared store", async () => {
 		let emit: ((event: L2BookWsEvent) => void) | undefined;
 		let captured: L2BookWsEvent | undefined;

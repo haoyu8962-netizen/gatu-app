@@ -632,6 +632,46 @@ CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/
 2. 让 Markets/MarketsInfo 只依赖 transport，并证明全应用始终只有一个 store 和一组公共订阅；
 3. 最后才调整 root/client-root，让公共 transport 与钱包 bundle 并行；钱包子树继续严格保持 Privy → SmartWallets → PersistQuery → Wagmi → signing session。
 
+#### 阶段 2 step 1/2 实施结果（2026-08-21）
+
+本轮只完成兼容拆缝和 transport-only 消费迁移，没有执行上面的 step 3，也没有改变 `root.tsx`、`client-root.tsx`、Provider 挂载顺序或首屏 chunk 边界：
+
+- `HyperliquidTransportProvider` 现在拥有 `env`、`isTestnet`、`info`、`subscription`、唯一 store 及 `initRef/storeRef`。它没有 Effect，仍显式向 `createHyperliquidConfig` 注入 `getWsTransport(isTestnet)`；不存在会触发 SDK fallback 第二条 WebSocket 的路径；
+- `HyperliquidSessionProvider` 拥有 `clientKey`、`sessionMode`、`agentName`、`builderConfig` 和 `exchangeLifecycle`。原 lifecycle、exchange-request identity、Agent registration/cleanup 三个 layout Effect 按原顺序、依赖和 guard 迁入；`clientKey === "disconnected"` 时仍保留最后确认的 `previousRegistrationIdentityRef`，不会把 signer 短暂缺失当成删除 Agent 的理由；
+- 原 `HyperliquidProvider` 只组合上述两个 Provider，并保留完整 legacy context bridge。`useHyperliquid()`、`useHyperliquidOptional()` 和直接 provider subpath 的完整对象及引用稳定性保持兼容；新增 `useHyperliquidTransport()` 可在没有 signing session 时使用，缺 transport 时仍明确抛错；
+- `HyperliquidExchangePolicyProvider` 仍是第三个独立 context，本轮没有移动。它控制 exchange 请求策略而非公开 market transport，step 3 应把它保留在钱包/signing session 侧；
+- `useInfo`、`useSubscription`、`useSub`、`useL2BookSubscription`、`useTransport`、public stats 与 `useMarketsInfoInternal` 已改读 transport；`MarketsProvider` 通过这些 hook 已成为 transport-only。`useApiStatus` 直接使用 transport 的 `info`，不再为了 `allMids()` 健康检查加载 `useHyperliquidClients`、session 与 Wagmi；
+- Markets 仍位于 `PersistQueryClientProvider` 下方，`useIsRestoring + persist:true` 契约、Privy → SmartWallets → PersistQuery → Wagmi → signing session 顺序和 signing fail-closed 均未改变。`client-root.tsx` 顶层的 legacy metadata 删除及 locale 读取信号源没有移动，测量 schema 仍为 v2。
+
+新增的契约守卫递归检查 transport provider 的运行时静态 import 闭包，禁止 `wagmi`、`@wagmi/*` 和 `@privy-io/*`；源码计数同时固定全应用只有一个 `HyperliquidProvider`、一个 `MarketsProvider`、一个 `MarketsInfoProvider` 和一个 store 创建点。运行时测试证明两个消费者共享同一 store 内的三条公开市场订阅，底层订阅计数为每类一次，refCount 按 `2 → 1 → 0` 释放；真实 Provider 的地址切换、transient disconnect、Agent cleanup failure 和 lifecycle 测试保持原断言全绿。
+
+##### step 1/2 clean production 时序复核
+
+最终 production `.output` 使用 Node `22.18.0` 构建一次后复用于 schema v2 完整矩阵。下表仍为每组 3 个样本的 median（ms）：
+
+| 网络 | 缓存 | 路由 | hydration | ClientRuntime | TopNav | MainWorkspace |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| 正常 | 冷 | `/` | 154.7 | 462.1 | 459.3 | 675.8 |
+| 正常 | 冷 | `/trade/BTC` | 150.4 | 458.8 | 456.5 | 635.7 |
+| 正常 | 冷 | `/trade/xyz%3ACXMT` | 151.5 | 460.1 | 458.4 | 624.2 |
+| 正常 | 热 | `/` | 73.8 | 378.3 | 377.5 | 377.5 |
+| 正常 | 热 | `/trade/BTC` | 69.0 | 374.3 | 372.4 | 372.5 |
+| 正常 | 热 | `/trade/xyz%3ACXMT` | 68.5 | 372.6 | 371.7 | 371.7 |
+| Slow 4G | 冷 | `/` | 4988.7 | 9531.0 | 9529.4 | 9529.4 |
+| Slow 4G | 冷 | `/trade/BTC` | 4803.3 | 9335.4 | 9333.9 | 9333.9 |
+| Slow 4G | 冷 | `/trade/xyz%3ACXMT` | 4815.9 | 9350.4 | 9348.8 | 9348.8 |
+| Slow 4G | 热 | `/` | 941.9 | 1245.9 | 1244.9 | 1245.0 |
+| Slow 4G | 热 | `/trade/BTC` | 719.4 | 1023.0 | 1022.0 | 1022.0 |
+| Slow 4G | 热 | `/trade/xyz%3ACXMT` | 728.2 | 1031.9 | 1030.9 | 1031.0 |
+
+与阶段 1 clean baseline 相比，normal-cold 的四个里程碑各路由 median 变化都在 `±15 ms` 内；全部 12 组的 median 变化在 `±98 ms` 内，属于本机生产采样方差。normal-cold 9 个样本的 `hydration → ClientRuntime ready` 为 `306.3 / 308.3 / 311.3 ms`（min/median/max），占 `navigation → TopNav` 的 `66.24% / 67.32% / 68.07%`；阶段 1 median 分别为 `306.5 ms` 和 `67.45%`。本轮不改善任何时序指标是预期结果，约 `306–308 ms` 固定激活成本不是 step 1/2 的目标，也不得作为 step 3 的成败判据。
+
+矩阵的 36/36 次 navigation 均为 `ok`，恰好只构造 1 条 Hyperliquid WebSocket，峰值并发也是 1；24 次 BTC 路由首订阅均为 `activeAssetCtx:BTC`，`xyz:CXMT` 的 12/12 次均为 `activeAssetCtx:xyz:CXMT`。10 次实际观察到 loading workspace，10/10 都先移除 loading 再出现 MainWorkspace，36/36 没有 loading/ready workspace 共存；ready-only null/portal 组件继续由组件契约测试守卫。没有 page error；本轮 9 次 Slow 4G hot timed navigation 各记录两条无 stack 的 `TypeError: Failed to fetch`，warm-up 为 0。阶段 1 也记录了 18 条相同文本，但当时的 listener 混合 warm-up 与 timed navigation，因此只能说总量模式相同，不能把阶段 1 的错误归因到 timed navigation。Slow 4G hot 的 `xyz:CXMT` 有一次 MainWorkspace `4447.5 ms` 离群值，但该组 median 为 `1031.0 ms`，同次仍保持单 WebSocket、正确首订阅和 gate 互斥。
+
+production client、SSR、Nitro 产物均生成，356 个 client chunk 无静态循环；startup gzip 为 `531,107 B`（相对预算基线 `+5,198 B`），各页面预算也通过。总 client gzip 为 `3,088,782 B`，相对 `3,073,703 B` 基线累计增加 `15,079 B`，超过允许增量 `5,079 B`。这符合 `f83ff963` 后已知的累计超预算预案；本轮没有修改 `check-client-bundle-budget.mjs` 常量。应参照 `24d6a445` 的先例另立 re-baseline 决策，不能把预算重置混入 Provider 拆分。
+
+此前 `64.14%` 是钱包五组在旧 client-root 必需闭包中的去重 inclusive 上界，不等于 step 3 一定能剥离的字节。它包含钱包与 `@gatu/hl-react`、router、UI 及未来 public shell 共享的重叠模块。完成 step 3 后必须在新构建图上重跑 `analyze-client-root-deps.mjs`，分别报告 wallet union、transport/public-shell union、二者交集，以及真正从首屏必需静态闭包移除的 gzip；step 3 应以实际关键链字节和 Slow 4G 下载尾部为主要判据，而不是要求上述约 306 ms 固定激活成本消失。
+
 禁止使用以下快捷方式：
 
 - 两个 `HyperliquidProvider`；
@@ -643,6 +683,6 @@ CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/
 
 ## 最终决策
 
-阶段 0 和阶段 1 已完成，阶段 1 后 clean production 的 schema v2 完整基线已取代早期 1/12 场景 smoke。阶段 1 将 normal-cold TopNav pooled median 提前了 218 ms，并保持单一 WebSocket、精确 `xyz:CXMT` 订阅与 loading/ready 互斥，但没有改变 client-root/runtime 依赖链。
+阶段 0、阶段 1 以及阶段 2 step 1/2 已完成。阶段 1 后 clean production 的 schema v2 完整基线已取代早期 1/12 场景 smoke；step 1/2 的完整复核继续保持单一 WebSocket、精确 `xyz:CXMT` 订阅与 loading/ready 互斥，并在本轮采样方差内未检测到时序回归。
 
-静态闭包、Slow 4G 瀑布和 CPU profile 给出了相互一致的结论：正常网络的约 306 ms 固定成本主要是 React concurrent 激活/调度等待，而 Slow 4G 的约 5.7 秒窗口主要是包含钱包子树的静态闭包下载，不是市场符号解析或长时间 JavaScript 求值。因此正式决策从“继续观察”更新为“启动 Provider transport/session 兼容拆分的独立设计与实施任务”。本轮仅建立证据和触发决策，未修改任何运行时 Provider 结构。
+静态闭包、Slow 4G 瀑布和 CPU profile 给出了相互一致的结论：正常网络的约 306 ms 固定成本主要是 React concurrent 激活/调度等待，而 Slow 4G 的约 5.7 秒窗口主要是包含钱包子树的静态闭包下载，不是市场符号解析或长时间 JavaScript 求值。Provider transport/session 兼容拆分及 Markets transport-only 迁移现已完成，完整矩阵支持行为不变量保持且在采样方差内无时序回归；下一步才是独立实施 step 3，重排 root/client-root 边界并用新的构建图量化实际可剥离字节。

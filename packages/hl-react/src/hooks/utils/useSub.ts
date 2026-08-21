@@ -10,8 +10,8 @@ import {
 	getSubscriptionMethodForKey,
 	shouldDropOversizedPayloadForSubscriptionKey,
 } from "../../internal/websocket/reliability";
-import { useHyperliquidStoreApi } from "../../provider";
 import { getStoreInternals } from "../../store";
+import { useHyperliquidStoreApi } from "../../transport-provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../../types";
 
 export function useSub<TData>(

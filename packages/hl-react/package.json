@@ -9,6 +9,8 @@
 		".": "./src/index.ts",
 		"./store": "./src/store.ts",
 		"./provider": "./src/provider.tsx",
+		"./session-provider": "./src/session-provider.tsx",
+		"./transport-provider": "./src/transport-provider.tsx",
 		"./exchange-policy": "./src/exchange-policy.tsx",
 		"./clients": "./src/clients.ts",
 		"./create-config": "./src/create-config.ts",

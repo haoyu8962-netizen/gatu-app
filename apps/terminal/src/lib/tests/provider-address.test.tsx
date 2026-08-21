@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -14,6 +14,9 @@ const sessionMocks = vi.hoisted(() => ({
 const schedulerMocks = vi.hoisted(() => ({
 	invalidateIdentity: vi.fn(),
 	invalidateLifecycle: vi.fn(),
+}));
+const storeMocks = vi.hoisted(() => ({
+	create: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/internal/websocket/chaos", () => ({
@@ -45,7 +48,10 @@ vi.mock("@gatu/hl-react/create-config", () => ({
 vi.mock("@gatu/hl-react/store", async () => {
 	const { createStore } = await vi.importActual<typeof import("zustand")>("zustand");
 	return {
-		createHyperliquidStore: () => createStore(() => ({ config: {} })),
+		createHyperliquidStore: (...args: unknown[]) => {
+			storeMocks.create(...args);
+			return createStore(() => ({ config: {} }));
+		},
 	};
 });
 vi.mock("@gatu/hl-react/signing/agent-registration-session", () => ({
@@ -63,6 +69,151 @@ describe("HyperliquidProvider userAddress prop", () => {
 		sessionMocks.closeAndRemove.mockResolvedValue({
 			status: "closed",
 			epoch: { env: "Testnet", owner: ADDRESS_A, epoch: "cleanup-epoch" },
+		});
+		storeMocks.create.mockReset();
+	});
+
+	it("allows transport consumers without a signing session", async () => {
+		const { HyperliquidTransportProvider, useHyperliquidOptional, useHyperliquidStoreApi, useHyperliquidTransport } =
+			await import("@gatu/hl-react/provider");
+
+		let capturedEnv: string | undefined;
+		let hasStore = false;
+		let optionalContext: ReturnType<typeof useHyperliquidOptional> | undefined;
+		function Consumer() {
+			capturedEnv = useHyperliquidTransport().env;
+			hasStore = Boolean(useHyperliquidStoreApi());
+			optionalContext = useHyperliquidOptional();
+			return null;
+		}
+
+		const container = document.createElement("div");
+		const root = createRoot(container);
+		act(() => {
+			root.render(
+				<HyperliquidTransportProvider env="Testnet">
+					<Consumer />
+				</HyperliquidTransportProvider>,
+			);
+		});
+
+		expect(capturedEnv).toBe("Testnet");
+		expect(hasStore).toBe(true);
+		expect(optionalContext).toBeNull();
+		expect(storeMocks.create).toHaveBeenCalledOnce();
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
+		});
+	});
+
+	it("throws when a transport consumer has no transport provider", async () => {
+		const { useHyperliquidTransport } = await import("@gatu/hl-react/provider");
+		function Consumer() {
+			useHyperliquidTransport();
+			return null;
+		}
+
+		const container = document.createElement("div");
+		const root = createRoot(container);
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		try {
+			expect(() => {
+				act(() => root.render(<Consumer />));
+			}).toThrow(/useHyperliquidTransport/);
+		} finally {
+			consoleError.mockRestore();
+			act(() => root.unmount());
+		}
+	});
+
+	it("composes transport and session contexts around one store", async () => {
+		const { HyperliquidProvider, useHyperliquid, useHyperliquidStoreApi, useHyperliquidTransport } = await import(
+			"@gatu/hl-react/provider"
+		);
+		const stores = new Set<unknown>();
+		let contextsShareTransport = false;
+		let capturesLegalEnforcement = false;
+		function Consumer() {
+			const transport = useHyperliquidTransport();
+			const combined = useHyperliquid();
+			stores.add(useHyperliquidStoreApi());
+			contextsShareTransport = combined.info === transport.info && combined.subscription === transport.subscription;
+			capturesLegalEnforcement = combined.enforceLegalActions;
+			return null;
+		}
+
+		const container = document.createElement("div");
+		const root = createRoot(container);
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider
+					env="Testnet"
+					userAddress={ADDRESS_A}
+					builderConfig={TEST_BUILDER_CONFIG}
+					enforceLegalActions
+				>
+					<Consumer />
+				</HyperliquidProvider>,
+			);
+			await Promise.resolve();
+		});
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider
+					env="Testnet"
+					userAddress={ADDRESS_B}
+					builderConfig={TEST_BUILDER_CONFIG}
+					enforceLegalActions
+				>
+					<Consumer />
+				</HyperliquidProvider>,
+			);
+			await Promise.resolve();
+		});
+
+		expect(contextsShareTransport).toBe(true);
+		expect(capturesLegalEnforcement).toBe(true);
+		expect(stores.size).toBe(1);
+		expect(storeMocks.create).toHaveBeenCalledOnce();
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
+		});
+	});
+
+	it("preserves the full context reference across consumer-only rerenders", async () => {
+		const { HyperliquidProvider, useHyperliquid, useHyperliquidOptional } = await import("@gatu/hl-react/provider");
+		const requiredContexts: ReturnType<typeof useHyperliquid>[] = [];
+		const optionalContexts: ReturnType<typeof useHyperliquidOptional>[] = [];
+		let rerenderConsumer = () => {};
+		function Consumer() {
+			const [, setRevision] = useState(0);
+			rerenderConsumer = () => setRevision((revision) => revision + 1);
+			requiredContexts.push(useHyperliquid());
+			optionalContexts.push(useHyperliquidOptional());
+			return null;
+		}
+
+		const container = document.createElement("div");
+		const root = createRoot(container);
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={ADDRESS_A} builderConfig={TEST_BUILDER_CONFIG}>
+					<Consumer />
+				</HyperliquidProvider>,
+			);
+		});
+		act(() => rerenderConsumer());
+
+		expect(requiredContexts).toHaveLength(2);
+		expect(requiredContexts[1]).toBe(requiredContexts[0]);
+		expect(optionalContexts[0]).toBe(requiredContexts[0]);
+		expect(optionalContexts[1]).toBe(requiredContexts[0]);
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
 		});
 	});
 

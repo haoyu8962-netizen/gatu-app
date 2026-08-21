@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/hl-react", () => ({
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
 		return { data: undefined, status: "idle", error: null, isStale: false, lastMessageAt: undefined };
@@ -62,6 +62,7 @@ describe("useMarketsInfoInternal subscription gate", () => {
 	}
 
 	function expectLatestSubscriptionState(enabled: boolean) {
+		expect(mocks.useSubscription).toHaveBeenCalledTimes(3);
 		expect(mocks.useSubscription).toHaveBeenCalledWith("allDexsAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
 		expect(mocks.useSubscription).toHaveBeenCalledWith("spotAssetCtxs", undefined, { enabled, throttleMs: 5_000 });
 		expect(mocks.useSubscription).toHaveBeenCalledWith("fastAssetCtxs", undefined, {
@@ -69,6 +70,17 @@ describe("useMarketsInfoInternal subscription gate", () => {
 			maxStaleMs: 10_000,
 		});
 	}
+
+	it("mounts exactly one group of public market subscriptions", () => {
+		renderProbe(true);
+
+		expectLatestSubscriptionState(true);
+		expect(mocks.useSubscription.mock.calls.map(([method]) => method)).toEqual([
+			"allDexsAssetCtxs",
+			"spotAssetCtxs",
+			"fastAssetCtxs",
+		]);
+	});
 
 	it("stops both market feeds immediately when the route-level gate closes", () => {
 		renderProbe(false);

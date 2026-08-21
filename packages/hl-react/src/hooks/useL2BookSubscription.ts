@@ -1,7 +1,6 @@
 import type { ISubscription, ISubscriptionTransport } from "@nktkas/hyperliquid";
 import { MissingTransportError } from "../errors";
 import { getNetworkState, subscribeNetworkStatus } from "../internal/websocket/network-status";
-import { useConfig } from "../provider";
 import { serializeKey, subscriptionKeys } from "../query/keys";
 import {
 	buildL2SubscriptionPayload,
@@ -16,6 +15,7 @@ import {
 	acquireL2SubscriptionGate,
 	resetL2SubscriptionGateAfterDisconnect,
 } from "../subscriptions/l2-subscription-gate";
+import { useConfig } from "../transport-provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import { useSub } from "./utils/useSub";
 

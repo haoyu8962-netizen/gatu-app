@@ -123,8 +123,25 @@ export type {
 	SpotToken as MarketSpotToken,
 	UnifiedMarket,
 } from "./markets/types";
-export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provider";
-export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
+export type {
+	HyperliquidContextValue,
+	HyperliquidProviderProps,
+	HyperliquidSessionContextValue,
+	HyperliquidSessionProviderProps,
+	HyperliquidTransportContextValue,
+	HyperliquidTransportProviderProps,
+} from "./provider";
+export {
+	HyperliquidProvider,
+	HyperliquidSessionContext,
+	HyperliquidSessionProvider,
+	HyperliquidTransportContext,
+	HyperliquidTransportProvider,
+	useConfig,
+	useHyperliquid,
+	useHyperliquidOptional,
+	useHyperliquidTransport,
+} from "./provider";
 export {
 	clearPublicStatsDataCacheForTests,
 	fetchPublicLeaderboard,

@@ -2,7 +2,7 @@ import {
 	type BuilderPerpMarket,
 	type PerpMarket,
 	type SpotMarket,
-	useHyperliquid,
+	useHyperliquidTransport,
 	useSubscription,
 } from "@gatu/hl-react";
 import { getFastAssetCtxFieldReceivedAt } from "@gatu/hl-react/registries/subscription";
@@ -186,7 +186,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		alwaysSubscribeAll = false,
 		subscriptionsEnabled = true,
 	} = options;
-	const { env } = useHyperliquid();
+	const { env } = useHyperliquidTransport();
 	const { scope } = useExchangeScope();
 
 	const needsPerp = alwaysSubscribeAll || scope === "all" || scope === "perp" || scope === "builders-perp";
