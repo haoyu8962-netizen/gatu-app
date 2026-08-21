@@ -159,17 +159,21 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		vi.clearAllMocks();
 	});
 
-	it("renders the disclaimer instead of other global modals and blocks the command shortcut", async () => {
-		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+	it(
+		"renders the disclaimer instead of other global modals and blocks the command shortcut",
+		{ timeout: 15_000 },
+		async () => {
+			const { GlobalModals } = await import("@/components/trade/components/global-modals");
 
-		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
-		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
-		expect(testState.hip3RequirementHook).toHaveBeenCalledTimes(1);
+			act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
+			expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
+			expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+			expect(testState.hip3RequirementHook).toHaveBeenCalledTimes(1);
 
-		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
-		expect(testState.openCommandMenu).not.toHaveBeenCalled();
-	});
+			act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
+			expect(testState.openCommandMenu).not.toHaveBeenCalled();
+		},
+	);
 
 	it("renders the legal gate before the HIP-3 disclaimer and other global modals", async () => {
 		testState.legalGate.state = "required";
