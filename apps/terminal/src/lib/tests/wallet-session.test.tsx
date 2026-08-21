@@ -34,6 +34,7 @@ const testState = vi.hoisted(() => ({
 	walletAddress: undefined as string | undefined,
 	walletConnected: false,
 	walletConnecting: false,
+	walletReconnecting: false,
 	authenticated: true,
 	ready: true,
 	userId: "did:privy:test-user",
@@ -69,6 +70,7 @@ vi.mock("wagmi", () => ({
 		address: testState.walletAddress,
 		isConnected: testState.walletConnected,
 		isConnecting: testState.walletConnecting,
+		isReconnecting: testState.walletReconnecting,
 	}),
 	useDisconnect: () => ({
 		isPending: false,
@@ -115,13 +117,16 @@ function DisconnectButton() {
 }
 
 function SessionProbe() {
-	const { displayAddress, hasWalletAccess, isConnected, ready } = useWalletSession();
+	const { authenticationReady, displayAddress, hasWalletAccess, isConnected, ready, walletDirectoryReady } =
+		useWalletSession();
 
 	return createElement("output", {
+		"data-authentication-ready": String(authenticationReady),
 		"data-display-address": displayAddress ?? "",
 		"data-has-wallet-access": String(hasWalletAccess),
 		"data-is-connected": String(isConnected),
 		"data-ready": String(ready),
+		"data-wallet-directory-ready": String(walletDirectoryReady),
 	});
 }
 
@@ -155,6 +160,7 @@ describe("useDisconnectWallet", () => {
 		testState.walletAddress = USER_ADDRESS;
 		testState.walletConnected = true;
 		testState.walletConnecting = false;
+		testState.walletReconnecting = false;
 		testState.authenticated = true;
 		testState.ready = true;
 		testState.userId = "did:privy:test-user";
@@ -636,7 +642,9 @@ describe("useDisconnectWallet", () => {
 		});
 
 		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-authentication-ready")).toBe("true");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-wallet-directory-ready")).toBe("false");
 		expect(probe?.getAttribute("data-display-address")).toBe("");
 		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
@@ -654,7 +662,9 @@ describe("useDisconnectWallet", () => {
 		});
 
 		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-authentication-ready")).toBe("false");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-wallet-directory-ready")).toBe("true");
 		expect(probe?.getAttribute("data-display-address")).toBe("");
 		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
@@ -682,6 +692,23 @@ describe("useDisconnectWallet", () => {
 		testState.selectedWallet = { address: USER_ADDRESS };
 		testState.wallets = [testState.selectedWallet];
 		testState.walletConnecting = true;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("fails closed while wagmi is reconnecting the exact signer", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = { address: USER_ADDRESS };
+		testState.wallets = [testState.selectedWallet];
+		testState.walletReconnecting = true;
 
 		act(() => {
 			root.render(createElement(SessionProbe));

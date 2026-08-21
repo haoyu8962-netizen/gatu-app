@@ -57,10 +57,15 @@ export function clearVerifiedExternalWalletOwner(): void {
 export function useWalletSession() {
 	const { ready, authenticated, login, logout, user } = usePrivy();
 	const { ready: walletsReady, wallets } = useWallets();
-	const { address: connectedWalletAddress, isConnected: walletConnected, isConnecting } = useConnection();
+	const {
+		address: connectedWalletAddress,
+		isConnected: walletConnected,
+		isConnecting,
+		isReconnecting,
+	} = useConnection();
 	const hyperliquid = useHyperliquidOptional();
 	const sessionReady = ready && walletsReady;
-	const signerReady = sessionReady && walletConnected && !isConnecting;
+	const signerReady = sessionReady && walletConnected && !isConnecting && !isReconnecting;
 	const loginIntent = usePrivyLoginIntent(sessionReady && authenticated ? user?.id : undefined);
 	const walletIntent = sessionReady && authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
 
@@ -92,6 +97,8 @@ export function useWalletSession() {
 
 	return {
 		ready: sessionReady,
+		authenticationReady: ready,
+		walletDirectoryReady: walletsReady,
 		authenticated,
 		login,
 		logout,
@@ -105,6 +112,7 @@ export function useWalletSession() {
 		walletIntent,
 		isConnected: !!address,
 		isConnecting,
+		isReconnecting,
 		sessionMode,
 		hasWalletAccess: sessionMode === "wallet" && hasWalletSession,
 	};

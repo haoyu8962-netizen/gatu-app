@@ -16,8 +16,10 @@ export type LegalGateState =
 
 interface LegalGateInput {
 	hasSession: boolean;
+	isSessionPending: boolean;
 	hasOwnerIdentity: boolean;
 	hasWalletAccess: boolean;
+	hasStatusError: boolean;
 	isPending: boolean;
 	isSubmitting: boolean;
 	acceptedTerms: boolean | undefined;
@@ -27,17 +29,21 @@ interface LegalGateInput {
 
 export function deriveLegalGateState({
 	hasSession,
+	isSessionPending,
 	hasOwnerIdentity,
 	hasWalletAccess,
+	hasStatusError,
 	isPending,
 	isSubmitting,
 	acceptedTerms,
 	userAllowed,
 	canPerformActions,
 }: LegalGateInput): LegalGateState {
+	if (isSessionPending) return "checking";
 	if (!hasSession) return "inactive";
 	if (!hasOwnerIdentity) return "wallet_required";
 	if (isPending && acceptedTerms === undefined) return "checking";
+	if (hasStatusError) return "error";
 	if (acceptedTerms === undefined) return "error";
 	if (!userAllowed || !canPerformActions) return "blocked";
 	if (!acceptedTerms && !hasWalletAccess) return "wallet_required";
@@ -45,11 +51,64 @@ export function deriveLegalGateState({
 	return acceptedTerms ? "accepted" : "required";
 }
 
+interface LegalGateSessionInput {
+	authenticationReady: boolean;
+	authenticated: boolean;
+	walletDirectoryReady: boolean;
+	isConnecting: boolean;
+	isReconnecting: boolean;
+	isConnected: boolean;
+	sessionMode: "wallet" | "agent-only" | "disconnected";
+}
+
+export function deriveLegalGateSession({
+	authenticationReady,
+	authenticated,
+	walletDirectoryReady,
+	isConnecting,
+	isReconnecting,
+	isConnected,
+	sessionMode,
+}: LegalGateSessionInput): Pick<LegalGateInput, "hasSession" | "isSessionPending"> {
+	if (!authenticationReady || !walletDirectoryReady) {
+		return { hasSession: false, isSessionPending: true };
+	}
+	if (sessionMode === "agent-only" && isConnected) {
+		return { hasSession: true, isSessionPending: false };
+	}
+	if (!authenticated) {
+		return { hasSession: false, isSessionPending: false };
+	}
+	if (isConnecting || isReconnecting) {
+		return { hasSession: false, isSessionPending: true };
+	}
+	return { hasSession: true, isSessionPending: false };
+}
+
 export function useLegalGate() {
-	const { address, authenticated, hasWalletAccess, isConnected, ready } = useWalletSession();
+	const {
+		address,
+		authenticated,
+		authenticationReady,
+		hasWalletAccess,
+		isConnected,
+		isConnecting,
+		isReconnecting,
+		sessionMode,
+		walletDirectoryReady,
+	} = useWalletSession();
 	const legalStatus = useLegalStatus();
 	const acceptance = useExplicitTermsAcceptance();
 	const legalErrorReason = legalStatus.error ? classifyLegalStatusError(legalStatus.error) : undefined;
+	const session = deriveLegalGateSession({
+		authenticationReady,
+		authenticated,
+		walletDirectoryReady,
+		isConnecting,
+		isReconnecting,
+		isConnected,
+		sessionMode,
+	});
 
 	useEffect(() => {
 		if (!legalStatus.error || !legalErrorReason || legalErrorReason === "aborted") return;
@@ -57,9 +116,10 @@ export function useLegalGate() {
 	}, [legalErrorReason, legalStatus.error]);
 
 	const state = deriveLegalGateState({
-		hasSession: isConnected || (ready && authenticated),
+		...session,
 		hasOwnerIdentity: !!address,
 		hasWalletAccess,
+		hasStatusError: legalStatus.isError,
 		isPending: legalStatus.isPending,
 		isSubmitting: acceptance.isPending,
 		acceptedTerms: legalStatus.data?.acceptedTerms,
