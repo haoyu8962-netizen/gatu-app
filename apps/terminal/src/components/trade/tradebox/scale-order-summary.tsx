@@ -1,9 +1,11 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
@@ -13,8 +15,7 @@ interface Props {
 	scaleSkew: number | null;
 	orderValue: number;
 	marginRequired: number;
-	estimatedFee: number;
-	feeRatePercent: string;
+	feeQuote: OrderFeeQuote;
 	szDecimals: number | undefined;
 	marketKind?: MarketKind;
 }
@@ -26,8 +27,7 @@ export function ScaleOrderSummary({
 	scaleSkew,
 	orderValue,
 	marginRequired,
-	estimatedFee,
-	feeRatePercent,
+	feeQuote,
 	szDecimals,
 	marketKind = "perp",
 }: Props) {
@@ -85,9 +85,7 @@ export function ScaleOrderSummary({
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Est. Fee`}>
-				<span className="whitespace-nowrap font-normal text-trading-panel-muted">
-					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-				</span>
+				<OrderFeeSummaryValue quote={feeQuote} />
 			</SummaryRow>
 		</div>
 	);

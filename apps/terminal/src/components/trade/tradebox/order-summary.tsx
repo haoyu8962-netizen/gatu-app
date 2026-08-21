@@ -3,10 +3,12 @@ import { PencilIcon } from "@phosphor-icons/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { OrderType } from "@/config/trade";
 import type { MarketSlippageEstimate } from "@/domain/trade/order/slippage";
+import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatSlippageBps, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { OrderFeeRatePairValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
@@ -14,8 +16,8 @@ interface Props {
 	liqWarning: boolean;
 	orderValue: number;
 	marginRequired: number;
-	takerFeePercent: string;
-	makerFeePercent: string;
+	takerFeeQuote: OrderFeeQuote;
+	makerFeeQuote: OrderFeeQuote;
 	slippagePercent: number;
 	estimatedSlippage?: MarketSlippageEstimate | null;
 	szDecimals: number | undefined;
@@ -29,8 +31,8 @@ export function OrderSummary({
 	liqWarning,
 	orderValue,
 	marginRequired,
-	takerFeePercent,
-	makerFeePercent,
+	takerFeeQuote,
+	makerFeeQuote,
 	slippagePercent,
 	estimatedSlippage,
 	szDecimals,
@@ -96,7 +98,7 @@ export function OrderSummary({
 					title={`${t`Taker`} / ${t`Maker`}`}
 					className="cursor-help whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control font-normal text-trading-panel-muted"
 				>
-					{takerFeePercent} / {makerFeePercent}
+					<OrderFeeRatePairValue takerQuote={takerFeeQuote} makerQuote={makerFeeQuote} />
 				</span>
 			</SummaryRow>
 		</div>

@@ -1,12 +1,23 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+	type ChangeEvent,
+	type ReactNode,
+	Suspense,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
@@ -14,31 +25,38 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getLiquidationInfo } from "@/domain/trade/order/metrics";
+import {
+	canEstimateProspectiveLiquidationDraft,
+	estimateProspectiveLiquidation,
+} from "@/domain/trade/order/liquidation";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
+import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
-import { formatTwapPriceInput, getTwapSuborderCount } from "@/domain/trade/twap-details";
+import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
 import { useLingeringValidation } from "@/hooks/ui/use-lingering-validation";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDuration, formatNumber, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatDuration, formatNumber, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useAgentStatus,
@@ -55,7 +73,6 @@ import {
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
-	isTakerOrderType,
 	isTriggerOrderType,
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
@@ -98,6 +115,7 @@ import {
 	useSelectedPrice,
 } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
+import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
 import { TradeFormScale } from "../tradebox/trade-form-scale";
@@ -134,6 +152,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
+	const crossMarginSnapshot = useProspectiveCrossMarginAccount(market);
 	const userPositions = useUserPositions();
 	const navigateToMarket = useMarketNavigation();
 
@@ -198,7 +217,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const isTriggerOrder = isTriggerOrderType(orderType);
-	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
 	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
 	const markPriceStatus = market?.markPriceStatus ?? "loading";
@@ -211,12 +229,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
-	const spotBuyTwapOrder = twapOrder && market?.kind === "spot" && side === "buy";
-	const requiresLiveMarkPrice =
-		orderType === "market" ||
-		isTriggerOrder ||
-		spotBuyTwapOrder ||
-		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
+	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder || twapOrder;
 	const { midPx } = useOrderbookMidPrice(
 		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
 	);
@@ -289,6 +302,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		sizeInput,
 		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
 		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
+	});
+	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
+	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
+		lowerBound: slippageEstimate?.exceedsVisibleDepth,
 	});
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
@@ -372,17 +389,48 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const validatedPositionSize =
 		userPositions.isLoading || userPositions.hasError || userPositions.isStale ? null : positionSize;
 	const { takerRate, makerRate } = useMarketFeeRates(market);
-	const feeRate = isMarketExecution ? takerRate : makerRate;
-	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
-	const estimatedFee = orderValue * feeRate;
+	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
+	const feeRate = resolveEstimatedProtocolRate({ orderType, tif, takerRate, makerRate });
+	const feeQuote = buildOrderFeeQuote({
+		orderValue,
+		protocolRate: feeRate,
+		builderFeeTenthsBps,
+		marketKind: isSpotMarket ? "spot" : "perp",
+		side,
+		execution: twapOrder ? "twap" : "order",
+	});
 	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
+	const isolatedExistingPosition = position
+		? {
+				signedSize: position.szi,
+				positionValue: position.positionValue,
+				marginUsed: position.marginUsed,
+				marginMode: position.leverage.type,
+				leverage: position.leverage.value,
+			}
+		: null;
+	const prospectiveExistingPosition =
+		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
-	const liquidationInfo = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }) : null;
-	const liqPrice = liquidationInfo?.liqPrice ?? null;
-	const liqWarning = liquidationInfo?.liqWarning ?? false;
-	const twapSuborderCount = getTwapSuborderCount(twapMinutesNum);
-	const twapSizePerSuborder = twapSuborderCount > 0 ? sizeValue / twapSuborderCount : 0;
-
+	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
+		price,
+		orderSize: sizeValue,
+		leverage,
+		side,
+		marginMode,
+		accountMode: accountAbstraction,
+		marginTiers: market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null,
+		dataReady:
+			(orderType === "market" || orderType === "limit") &&
+			positionStateReady &&
+			market?.marginMetadataReady === true &&
+			isLiveMarkPriceReady(markPriceStatus, market?.markPx, market?.markPriceReceivedAt) &&
+			canEstimateProspectiveLiquidationDraft({ marginMode, orderSize: sizeValue, maxOrderSize: maxSize }),
+		reduceOnly,
+		existingPosition: prospectiveExistingPosition,
+		crossMarginAccount: crossMarginSnapshot.account,
+		executionFee: feeQuote.totalAmount,
+	});
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,
 		szDecimals: market?.szDecimals ?? 0,
@@ -603,8 +651,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			leverage,
 			marginMode,
 			marginRequired,
-			estimatedFee,
-			feeRatePercent,
+			feeQuote,
 			liqPrice,
 			liqWarning,
 			slippagePercent,
@@ -941,22 +988,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{twapOrder && (
 							<>
 								<SummaryRow
+									label={t`Frequency`}
+									value={t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
+									valueClass="max-w-[60%] whitespace-normal leading-tight text-trading-panel-fg"
+									compact={embedded}
+								/>
+								<SummaryRow
 									label={t`Runtime`}
 									value={twapMinutesNum > 0 ? formatDuration(twapMinutesNum) : FALLBACK_VALUE_PLACEHOLDER}
-									compact={embedded}
-								/>
-								<SummaryRow
-									label={t`Number of Orders`}
-									value={formatSummaryCount(twapSuborderCount)}
-									compact={embedded}
-								/>
-								<SummaryRow
-									label={t`Size per Suborder`}
-									value={
-										twapSizePerSuborder > 0
-											? formatToken(twapSizePerSuborder, { decimals: szDecimals, symbol: baseToken })
-											: FALLBACK_VALUE_PLACEHOLDER
-									}
 									compact={embedded}
 								/>
 								{isPositive(twapTriggerPriceNum) && (
@@ -991,6 +1030,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								<SummaryRow label={t`Size Skew`} value={formatSummaryCount(scaleSkewNum)} compact={embedded} />
 							</>
 						)}
+						{capabilities.isLeveraged && (orderType === "market" || orderType === "limit") && (
+							<SummaryRow
+								label={t`Liq. Price`}
+								value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
+								valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
+								compact={embedded}
+							/>
+						)}
 						<SummaryRow
 							label={t`Order Value`}
 							value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
@@ -1008,21 +1055,31 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 								className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
 							>
 								<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-								<button
-									type="button"
-									onClick={openSettingsDialog}
-									aria-label={t`Slippage`}
-									className="relative inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-								>
-									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-								</button>
+								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
+									<span title={t`Est. Slippage`} className="text-trading-panel-muted">
+										<span className="sr-only">{t`Est. Slippage`}: </span>
+										{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+									</span>
+									<span aria-hidden="true" className="text-trading-panel-subtle">
+										/
+									</span>
+									<button
+										type="button"
+										onClick={openSettingsDialog}
+										aria-label={t`Slippage`}
+										className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+									>
+										<span className="text-trading-panel-muted">{t`Max`}</span>
+										<span className="text-trading-panel-error">{slippagePercent}%</span>
+										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+									</button>
+								</span>
 							</div>
 						)}
 						<SummaryRow
 							label={t`Est. Fee`}
-							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-							valueClass="text-trading-panel-muted"
+							value={<OrderFeeSummaryValue quote={feeQuote} />}
+							valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
 							compact={embedded}
 						/>
 					</div>
@@ -1096,7 +1153,7 @@ function SummaryRow({
 	compact,
 }: {
 	label: string;
-	value: string;
+	value: ReactNode;
 	valueClass?: string;
 	compact?: boolean;
 }) {
@@ -1113,6 +1170,12 @@ function SummaryRow({
 			</span>
 		</div>
 	);
+}
+
+function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boolean): string | undefined {
+	if (!liqPrice) return "text-trading-panel-muted";
+	if (liqWarning) return "text-trading-panel-error";
+	return undefined;
 }
 
 function formatSummaryPrice(value: number | null, szDecimals: number | undefined, marketType: "perp" | "spot"): string {

@@ -14,21 +14,28 @@ import {
 	assertEntryTwapExecutionAllowed,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
-import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
+import {
+	canEstimateProspectiveLiquidationDraft,
+	estimateProspectiveLiquidation,
+} from "@/domain/trade/order/liquidation";
+import { getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
+import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
 import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
+import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -42,13 +49,12 @@ import {
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
-	isTakerOrderType,
 	isTriggerOrderType,
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
@@ -116,6 +122,7 @@ export function TradePanel() {
 
 	const { data: market } = useSelectedMarketInfo();
 	const { spotMarkets, isLoading: isMarketCatalogLoading, error: marketCatalogError } = useMarketsInfo();
+	const crossMarginSnapshot = useProspectiveCrossMarginAccount(market);
 
 	const userPositions = useUserPositions();
 
@@ -241,6 +248,7 @@ export function TradePanel() {
 	}, []);
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
+	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
 	const selectedPrice = useSelectedPrice();
 	const reduceOnlyChecked = useReduceOnly();
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
@@ -268,12 +276,7 @@ export function TradePanel() {
 	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
 	const twapTriggerPriceNum = toNumber(twapTriggerPx);
 	const twapStopPriceNum = toNumber(twapStopPx);
-	const spotBuyTwapOrder = twapOrder && market?.kind === "spot" && side === "buy";
-	const requiresLiveMarkPrice =
-		orderType === "market" ||
-		triggerOrder ||
-		spotBuyTwapOrder ||
-		(twapOrder && (isPositive(twapTriggerPriceNum) || isPositive(twapStopPriceNum)));
+	const requiresLiveMarkPrice = orderType === "market" || triggerOrder || twapOrder;
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -328,13 +331,51 @@ export function TradePanel() {
 		scaleEndPriceInput,
 	);
 
-	const feeRate = isTakerOrderType(orderType) ? takerRate : makerRate;
-	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
-	const takerFeePercent = `${(takerRate * 100).toFixed(4)}%`;
-	const makerFeePercent = `${(makerRate * 100).toFixed(4)}%`;
+	const feeRate = resolveEstimatedProtocolRate({ orderType, tif, takerRate, makerRate });
+	const feeMarketKind = market?.kind === "spot" ? "spot" : "perp";
+	const feeExecution = twapOrder ? "twap" : "order";
+	const feeQuoteInput = {
+		orderValue,
+		builderFeeTenthsBps,
+		marketKind: feeMarketKind,
+		side,
+		execution: feeExecution,
+	} as const;
+	const feeQuote = buildOrderFeeQuote({ ...feeQuoteInput, protocolRate: feeRate });
+	const takerFeeQuote = buildOrderFeeQuote({ ...feeQuoteInput, protocolRate: takerRate });
+	const makerFeeQuote = buildOrderFeeQuote({ ...feeQuoteInput, protocolRate: makerRate });
+	const isolatedExistingPosition = position
+		? {
+				signedSize: position.szi,
+				positionValue: position.positionValue,
+				marginUsed: position.marginUsed,
+				marginMode: position.leverage.type,
+				leverage: position.leverage.value,
+			}
+		: null;
+	const prospectiveExistingPosition =
+		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
-	const { marginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
-	const { liqPrice, liqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
+	const { marginRequired } = getOrderMetrics({ sizeValue, price, leverage });
+	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
+		price,
+		orderSize: sizeValue,
+		leverage,
+		side,
+		marginMode,
+		accountMode: accountAbstraction,
+		marginTiers: market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null,
+		dataReady:
+			(orderType === "market" || orderType === "limit") &&
+			positionStateReady &&
+			market?.marginMetadataReady === true &&
+			isLiveMarkPriceReady(markPriceStatus, market?.markPx, market?.markPriceReceivedAt) &&
+			canEstimateProspectiveLiquidationDraft({ marginMode, orderSize: sizeValue, maxOrderSize: maxSize }),
+		reduceOnly,
+		existingPosition: prospectiveExistingPosition,
+		crossMarginAccount: crossMarginSnapshot.account,
+		executionFee: feeQuote.totalAmount,
+	});
 
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
@@ -520,8 +561,7 @@ export function TradePanel() {
 			leverage,
 			marginMode,
 			marginRequired,
-			estimatedFee,
-			feeRatePercent,
+			feeQuote,
 			liqPrice,
 			liqWarning,
 			slippagePercent,
@@ -602,11 +642,7 @@ export function TradePanel() {
 					twapTriggerPriceNum={twapTriggerPriceNum}
 					twapStopPriceNum={twapStopPriceNum}
 					side={side}
-					sizeValue={sizeValue}
-					orderValue={orderValue}
-					estimatedFee={estimatedFee}
-					feeRatePercent={feeRatePercent}
-					baseToken={baseToken}
+					feeQuote={feeQuote}
 					szDecimals={market?.szDecimals}
 				/>
 			);
@@ -620,8 +656,7 @@ export function TradePanel() {
 					scaleSkew={scaleSkewNum}
 					orderValue={orderValue}
 					marginRequired={marginRequired}
-					estimatedFee={estimatedFee}
-					feeRatePercent={feeRatePercent}
+					feeQuote={feeQuote}
 					szDecimals={market?.szDecimals}
 					marketKind={market?.kind}
 				/>
@@ -633,8 +668,8 @@ export function TradePanel() {
 				liqWarning={liqWarning}
 				orderValue={orderValue}
 				marginRequired={marginRequired}
-				takerFeePercent={takerFeePercent}
-				makerFeePercent={makerFeePercent}
+				takerFeeQuote={takerFeeQuote}
+				makerFeeQuote={makerFeeQuote}
 				slippagePercent={slippagePercent}
 				estimatedSlippage={slippageEstimate}
 				szDecimals={market?.szDecimals}

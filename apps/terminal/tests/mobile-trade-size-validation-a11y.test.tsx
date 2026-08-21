@@ -146,6 +146,10 @@ vi.mock("@/hooks/trade/use-order-submit", () => ({
 	useOrderSubmit: () => ({ handleSubmit: vi.fn(), isSubmitting: false }),
 }));
 
+vi.mock("@/hooks/trade/use-prospective-cross-margin-account", () => ({
+	useProspectiveCrossMarginAccount: () => ({ account: null, existingPosition: null }),
+}));
+
 vi.mock("@/hooks/trade/use-orderbook-mid-price", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/hooks/trade/use-orderbook-mid-price")>()),
 	useOrderbookMidPrice: () => ({ midPx: undefined }),

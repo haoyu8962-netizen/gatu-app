@@ -21,8 +21,6 @@ export const SIZE_PERCENT_OPTIONS = [0, 25, 50, 75, 100] as const;
 export const QUOTE_SIZE_INPUT_MAX_DECIMALS = 2;
 export const ORDER_LEVERAGE_STEPS = [1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200] as const;
 
-/** Liquidation-distance safety multiplier applied to the 1/leverage price buffer. */
-export const LIQUIDATION_BUFFER_FACTOR = 0.9;
 /** Distance ratio below which the estimated liquidation price is flagged as too close. */
 export const LIQ_WARNING_THRESHOLD = 0.05;
 export const BPS_PER_UNIT = 10000;

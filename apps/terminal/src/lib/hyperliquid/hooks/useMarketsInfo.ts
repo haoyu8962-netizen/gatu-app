@@ -27,6 +27,7 @@ interface LiveMarketPriceFields {
 	markPriceStatus: MarkPriceStatus;
 	markPriceReceivedAt: number | undefined;
 	midPriceReceivedAt: number | undefined;
+	marginMetadataReady?: boolean;
 }
 
 export type PerpMarketInfo = PerpMarket & Partial<DexAssetCtx> & LiveMarketPriceFields;
@@ -225,6 +226,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 
 	const result = useMemo((): MarketsInfoResult => {
 		const perpCtxs = getDexCtxs(allDexsCtxs, "");
+		const catalogMetadataReady = markets.catalogState?.status === "ready" && !markets.catalogState.isStale;
 		const withLivePrice = <T extends PerpMarket | SpotMarket | BuilderPerpMarket, C extends object | undefined>(
 			market: T,
 			context: C,
@@ -250,6 +252,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 				markPriceStatus: price.status,
 				markPriceReceivedAt: price.receivedAt,
 				midPriceReceivedAt: price.midReceivedAt,
+				marginMetadataReady: market.kind !== "spot" && catalogMetadataReady && market.marginTiers !== undefined,
 			} as T & C & LiveMarketPriceFields;
 		};
 
@@ -285,6 +288,8 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		markets.perp,
 		markets.spot,
 		markets.builderPerp,
+		markets.catalogState?.status,
+		markets.catalogState?.isStale,
 		allDexsCtxs,
 		spotCtxs,
 		fastPriceSubscriptionEnabled,

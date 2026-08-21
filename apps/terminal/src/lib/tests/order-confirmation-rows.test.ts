@@ -5,6 +5,7 @@ import {
 	type OrderConfirmationDraft,
 	type OrderConfirmationRow,
 } from "@/domain/trade/order-confirmation";
+import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 
 const BASE_DRAFT: OrderConfirmationDraft = {
 	assetId: 0,
@@ -36,8 +37,14 @@ const BASE_DRAFT: OrderConfirmationDraft = {
 	leverage: 10,
 	marginMode: "cross",
 	marginRequired: 5_000,
-	estimatedFee: 22.5,
-	feeRatePercent: "0.0450%",
+	feeQuote: buildOrderFeeQuote({
+		orderValue: 50_000,
+		protocolRate: 0.00045,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "order",
+	}),
 	liqPrice: 90_000,
 	liqWarning: false,
 	slippagePercent: 2.5,
@@ -75,7 +82,9 @@ describe("buildOrderConfirmationRows", () => {
 		expect(byKey(rows, "size")?.value).toBe("0.5000 BTC ($50,000.00)");
 		expect(byKey(rows, "leverage")?.value).toBe("Cross · 10x");
 		expect(byKey(rows, "marginRequired")?.value).toBe("$5,000.00");
-		expect(byKey(rows, "fee")?.value).toBe("0.0450% ($22.50)");
+		expect(byKey(rows, "fee")?.value).toBe("0.0550% ($27.50)");
+		expect(byKey(rows, "protocolFee")).toBeUndefined();
+		expect(byKey(rows, "gatuFee")).toBeUndefined();
 	});
 
 	it("colors the side row by direction", () => {
@@ -204,13 +213,28 @@ describe("buildOrderConfirmationRows", () => {
 
 	it("falls back to placeholders and the bare fee rate for an empty draft", () => {
 		const rows = buildOrderConfirmationRows(
-			draft({ sizeValue: 0, orderValue: 0, marginRequired: 0, estimatedFee: 0, leverage: 0 }),
+			draft({
+				sizeValue: 0,
+				orderValue: 0,
+				marginRequired: 0,
+				leverage: 0,
+				feeQuote: buildOrderFeeQuote({
+					orderValue: 0,
+					protocolRate: 0.00045,
+					builderFeeTenthsBps: 10,
+					marketKind: "perp",
+					side: "buy",
+					execution: "order",
+				}),
+			}),
 		);
 
 		expect(byKey(rows, "size")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
 		expect(byKey(rows, "orderValue")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
 		expect(byKey(rows, "marginRequired")?.value).toBe(FALLBACK_VALUE_PLACEHOLDER);
 		expect(byKey(rows, "leverage")?.value).toBe(`Cross · ${FALLBACK_VALUE_PLACEHOLDER}`);
-		expect(byKey(rows, "fee")?.value).toBe("0.0450%");
+		expect(byKey(rows, "fee")?.value).toBe("0.0550%");
+		expect(byKey(rows, "protocolFee")).toBeUndefined();
+		expect(byKey(rows, "gatuFee")).toBeUndefined();
 	});
 });

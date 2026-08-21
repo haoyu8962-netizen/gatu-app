@@ -8,6 +8,7 @@ import {
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
+import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 
@@ -60,8 +61,14 @@ const DRAFT: OrderConfirmationDraft = {
 	leverage: 10,
 	marginMode: "cross",
 	marginRequired: 5_000,
-	estimatedFee: 22.5,
-	feeRatePercent: "0.0450%",
+	feeQuote: buildOrderFeeQuote({
+		orderValue: 50_000,
+		protocolRate: 0.00045,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "order",
+	}),
 	liqPrice: 90_000,
 	liqWarning: false,
 	slippagePercent: 2.5,

@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { ScaleOrderSummary } from "@/components/trade/tradebox/scale-order-summary";
+import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -14,8 +15,22 @@ const baseProps = {
 	liqWarning: false,
 	orderValue: 150_000,
 	marginRequired: 12_000,
-	takerFeePercent: "0.0090%",
-	makerFeePercent: "0.0030%",
+	takerFeeQuote: buildOrderFeeQuote({
+		orderValue: 150_000,
+		protocolRate: 0.00009,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "order",
+	}),
+	makerFeeQuote: buildOrderFeeQuote({
+		orderValue: 150_000,
+		protocolRate: 0.00003,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "order",
+	}),
 	slippagePercent: 1.4,
 	estimatedSlippage: { avgPx: 100.37, exceedsVisibleDepth: false, refPx: 100, slippageBps: 37 },
 	szDecimals: 2,
@@ -47,7 +62,7 @@ describe("OrderSummary information rows", () => {
 		vi.clearAllMocks();
 	});
 
-	it("restores liquidation and estimated slippage without restoring builder fees for market orders", () => {
+	it("shows liquidation, estimated slippage, and the total fee pair for market orders", () => {
 		const onSlippageClick = vi.fn();
 		act(() => root.render(<OrderSummary {...baseProps} orderType="market" onSlippageClick={onSlippageClick} />));
 
@@ -62,8 +77,9 @@ describe("OrderSummary information rows", () => {
 		expect(getRowValue(container, "Liq. Price")).toBe("$65");
 		expect(getRowValue(container, "Est. Slippage")).toBe("0.37%");
 		expect(container.textContent).toContain("1.4%");
-		expect(container.textContent).toContain("0.0090% / 0.0030%");
-		expect(container.textContent).not.toContain("Builder Fee");
+		expect(getRowValue(container, "Fees")).toBe("0.0190% / 0.0130%");
+		expect(container.textContent).not.toContain("Hyperliquid fee");
+		expect(container.textContent).not.toContain("GATU fee");
 
 		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 		expect(onSlippageClick).toHaveBeenCalledTimes(1);
@@ -75,19 +91,38 @@ describe("OrderSummary information rows", () => {
 		expect(getRowLabels(container)).toEqual(["Liq. Price", "Order Value", "Margin Req.", "Fees"]);
 		expect(container.textContent).not.toContain("Est. Slippage");
 		expect(container.querySelector("button")).toBeNull();
-		expect(container.textContent).toContain("0.0090% / 0.0030%");
+		expect(getRowValue(container, "Fees")).toBe("0.0190% / 0.0130%");
 	});
 
 	it("shows estimated slippage without liquidation or margin rows for spot market orders", () => {
-		act(() => root.render(<OrderSummary {...baseProps} marketKind="spot" orderType="market" />));
+		const spotFeeInput = {
+			orderValue: 150_000,
+			builderFeeTenthsBps: 10,
+			marketKind: "spot",
+			side: "buy",
+			execution: "order",
+		} as const;
+		act(() =>
+			root.render(
+				<OrderSummary
+					{...baseProps}
+					marketKind="spot"
+					orderType="market"
+					takerFeeQuote={buildOrderFeeQuote({ ...spotFeeInput, protocolRate: 0.00009 })}
+					makerFeeQuote={buildOrderFeeQuote({ ...spotFeeInput, protocolRate: 0.00003 })}
+				/>,
+			),
+		);
 
 		expect(getRowLabels(container)).toEqual(["Order Value", "Est. Slippage", "Slippage", "Fees"]);
 		expect(getRowValue(container, "Est. Slippage")).toBe("0.37%");
 		expect(container.textContent).not.toContain("Liq. Price");
 		expect(container.textContent).not.toContain("Margin Req.");
+		expect(getRowValue(container, "Fees")).toBe("0.0090% / 0.0030%");
+		expect(container.textContent).not.toContain("GATU fee");
 	});
 
-	it("removes the builder fee row from the desktop scale summary", () => {
+	it("includes the builder amount in the desktop scale fee", () => {
 		act(() =>
 			root.render(
 				<ScaleOrderSummary
@@ -97,14 +132,21 @@ describe("OrderSummary information rows", () => {
 					scaleSkew={1}
 					orderValue={400}
 					marginRequired={40}
-					estimatedFee={0.036}
-					feeRatePercent="0.0090%"
+					feeQuote={buildOrderFeeQuote({
+						orderValue: 400,
+						protocolRate: 0.00009,
+						builderFeeTenthsBps: 10,
+						marketKind: "perp",
+						side: "buy",
+						execution: "order",
+					})}
 					szDecimals={2}
 				/>,
 			),
 		);
 
-		expect(getRowLabels(container)).not.toContain("Builder Fee");
-		expect(container.textContent).toContain("0.0090%");
+		expect(container.textContent).toContain("0.0190% ($0.08)");
+		expect(container.textContent).not.toContain("Hyperliquid fee");
+		expect(container.textContent).not.toContain("GATU fee");
 	});
 });

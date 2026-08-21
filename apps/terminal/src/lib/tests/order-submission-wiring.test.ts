@@ -44,7 +44,7 @@ describe("order submission wiring", () => {
 		);
 	});
 
-	it("tick-rounds TWAP prices once and requires a live mark for spot buys or price-bearing TWAPs", () => {
+	it("tick-rounds TWAP prices once and requires a live mark to value every TWAP", () => {
 		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
 
 		expect(orderSubmit).toContain("const details = buildTwapOrderDetails({");
@@ -59,9 +59,9 @@ describe("order submission wiring", () => {
 			expect(source).toContain("const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);");
 			expect(source).toContain("const twapTriggerPriceNum = toNumber(twapTriggerPx);");
 			expect(source).toContain("const twapStopPriceNum = toNumber(twapStopPx);");
-			expect(source).toContain('const spotBuyTwapOrder = twapOrder && market?.kind === "spot" && side === "buy";');
+			expect(source).not.toContain("spotBuyTwapOrder");
 			expect(source).toMatch(
-				/const requiresLiveMarkPrice =\s*orderType === "market" \|\|\s*(?:is)?[Tt]riggerOrder \|\|\s*spotBuyTwapOrder \|\|\s*\(twapOrder && \(isPositive\(twapTriggerPriceNum\) \|\| isPositive\(twapStopPriceNum\)\)\);/,
+				/const requiresLiveMarkPrice = orderType === "market" \|\| (?:is)?[Tt]riggerOrder \|\| twapOrder;/,
 			);
 		}
 	});

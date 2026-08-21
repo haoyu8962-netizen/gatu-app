@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { LimitTif, OrderType } from "@/config/trade";
+import { formatOrderFeeRatePercent, type OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { formatDuration, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive } from "@/lib/trade/numbers";
@@ -54,8 +55,7 @@ export interface OrderConfirmationDraft {
 	leverage: number | null;
 	marginMode: MarginMode;
 	marginRequired: number;
-	estimatedFee: number;
-	feeRatePercent: string;
+	feeQuote: OrderFeeQuote;
 	liqPrice: number | null;
 	liqWarning: boolean;
 	slippagePercent: number;
@@ -73,7 +73,7 @@ export function buildOrderConfirmationRows(draft: OrderConfirmationDraft): Order
 		...getLeverageRows(draft),
 		{ key: "orderValue", label: t`Order Value`, value: formatAmount(draft.orderValue) },
 		...getMarginRows(draft),
-		{ key: "fee", label: t`Est. Fee`, value: getFeeValue(draft) },
+		...getFeeRows(draft),
 	];
 }
 
@@ -208,9 +208,14 @@ function getMarginRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
 	];
 }
 
-function getFeeValue(draft: OrderConfirmationDraft): string {
-	if (!isPositive(draft.orderValue)) return draft.feeRatePercent;
-	return `${draft.feeRatePercent} (${formatUSD(draft.estimatedFee)})`;
+function getFeeRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+	return [{ key: "fee", label: t`Est. Fee`, value: getTotalFeeValue(draft) }];
+}
+
+function getTotalFeeValue(draft: OrderConfirmationDraft): string {
+	const rate = formatOrderFeeRatePercent(draft.feeQuote.totalRate);
+	if (!isPositive(draft.feeQuote.orderValue)) return rate;
+	return `${rate} (${formatUSD(draft.feeQuote.totalAmount)})`;
 }
 
 function getRuntimeValue(minutes: number | null): string {

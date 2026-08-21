@@ -12,6 +12,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
+import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 
 const zhTranslations: Record<string, string> = {
@@ -182,7 +183,14 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useTransferModalActions: () => ({ open: vi.fn() }),
 }));
 
-Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+Object.assign(globalThis, {
+	IS_REACT_ACT_ENVIRONMENT: true,
+	ResizeObserver: class ResizeObserverMock {
+		disconnect() {}
+		observe() {}
+		unobserve() {}
+	},
+});
 
 function TestSurface() {
 	const [reduceOnly, setReduceOnly] = useState(false);
@@ -200,8 +208,22 @@ function TestSurface() {
 				liqWarning={false}
 				orderValue={150000}
 				marginRequired={12000}
-				takerFeePercent="0.0500%"
-				makerFeePercent="0.0150%"
+				takerFeeQuote={buildOrderFeeQuote({
+					orderValue: 150000,
+					protocolRate: 0.0005,
+					builderFeeTenthsBps: 10,
+					marketKind: "perp",
+					side: "buy",
+					execution: "order",
+				})}
+				makerFeeQuote={buildOrderFeeQuote({
+					orderValue: 150000,
+					protocolRate: 0.00015,
+					builderFeeTenthsBps: 10,
+					marketKind: "perp",
+					side: "buy",
+					execution: "order",
+				})}
 				slippagePercent={2.5}
 				estimatedSlippage={{ avgPx: 100.37, exceedsVisibleDepth: false, refPx: 100, slippageBps: 37 }}
 				szDecimals={2}
@@ -253,6 +275,14 @@ describe("language hot switching", () => {
 	beforeEach(() => {
 		activateLocale("en");
 		bridgeEntryState.hasExistingExecution = false;
+		Object.defineProperty(window, "matchMedia", {
+			configurable: true,
+			value: vi.fn().mockReturnValue({
+				addEventListener: vi.fn(),
+				matches: false,
+				removeEventListener: vi.fn(),
+			}),
+		});
 		window.history.replaceState({}, "", "/trade/HYPE");
 		container = document.createElement("div");
 		document.body.appendChild(container);

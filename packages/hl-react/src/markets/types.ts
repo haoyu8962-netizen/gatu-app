@@ -1,6 +1,7 @@
 import type { MetaResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 
 export type PerpAsset = MetaResponse["universe"][number];
+export type MarketMarginTier = MetaResponse["marginTables"][number][1]["marginTiers"][number];
 export type SpotPair = SpotMetaResponse["universe"][number];
 export type SpotToken = SpotMetaResponse["tokens"][number] & {
 	displayName: string;
@@ -23,6 +24,7 @@ interface BaseMarket {
 
 export interface PerpMarket extends PerpAsset, BaseMarket {
 	kind: "perp";
+	marginTiers?: readonly MarketMarginTier[];
 }
 
 export interface SpotMarket extends SpotPair, BaseMarket {
@@ -34,6 +36,7 @@ export interface SpotMarket extends SpotPair, BaseMarket {
 
 export interface BuilderPerpMarket extends PerpAsset, BaseMarket {
 	kind: "builderPerp";
+	marginTiers?: readonly MarketMarginTier[];
 	dex: string;
 	dexIndex: number;
 	deployerFeeScale: string;

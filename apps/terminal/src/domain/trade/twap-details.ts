@@ -1,4 +1,3 @@
-import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 
@@ -28,11 +27,6 @@ export function formatTwapPriceInput(input: string, { assetId, szDecimals }: Twa
 
 export function getTwapRuntimeMinutes(minutes: number | null): number {
 	return Math.max(0, Math.round(minutes ?? 0));
-}
-
-export function getTwapSuborderCount(minutes: number | null): number {
-	const runtime = getTwapRuntimeMinutes(minutes);
-	return runtime > 0 ? Math.floor((runtime * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1 : 0;
 }
 
 export function getTwapTriggerDirection(triggerPx: Numeric, markPx: Numeric): TwapTriggerDirection | null {

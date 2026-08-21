@@ -88,9 +88,9 @@ describe("mobile order safety contract", () => {
 		);
 	});
 
-	it("removes only the read-only liquidation, estimated slippage, and builder fee rows", () => {
-		expect(mobileTradeView).not.toContain("t`Liq. Price`");
-		expect(mobileTradeView).not.toContain("t`Est. Slippage`");
+	it("restores mobile risk context without reviving a separate builder-fee row", () => {
+		expect(mobileTradeView).toContain("t`Liq. Price`");
+		expect(mobileTradeView).toContain("t`Est. Slippage`");
 		expect(mobileTradeView).not.toContain("t`Builder Fee`");
 		expect(mobileTradeView).toContain("t`Order Value`");
 		expect(mobileTradeView).toContain("t`Margin Req.`");

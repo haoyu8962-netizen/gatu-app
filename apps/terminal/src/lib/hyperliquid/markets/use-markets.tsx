@@ -12,6 +12,7 @@ import { useIsRestoring } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
+import { resolveMarketMarginTiers } from "@/domain/trade/order/liquidation";
 import {
 	getBuilderPerpAssetId,
 	getBuilderPerpDisplayName,
@@ -63,8 +64,14 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 		for (let i = 0; i < perpMeta.universe.length; i++) {
 			const market = perpMeta.universe[i];
 			if (market.isDelisted) continue;
+			const marginTiers = resolveMarketMarginTiers({
+				marginTableId: market.marginTableId,
+				maxLeverage: market.maxLeverage,
+				marginTables: perpMeta.marginTables,
+			});
 			perpMarkets.push({
 				...market,
+				...(marginTiers ? { marginTiers } : null),
 				kind: "perp",
 				shortName: market.name,
 				pairName: getPerpDisplayName(market.name),
@@ -139,9 +146,15 @@ export function createMarkets(params: CreateMarketsParams): MarketsWithExactLook
 			for (let assetIndex = 0; assetIndex < meta.universe.length; assetIndex++) {
 				const asset = meta.universe[assetIndex];
 				if (asset.isDelisted) continue;
+				const marginTiers = resolveMarketMarginTiers({
+					marginTableId: asset.marginTableId,
+					maxLeverage: asset.maxLeverage,
+					marginTables: meta.marginTables,
+				});
 
 				builderPerpMarkets.push({
 					...asset,
+					...(marginTiers ? { marginTiers } : null),
 					kind: "builderPerp",
 					shortName: getBuilderPerpShortName(asset.name),
 					pairName: getBuilderPerpDisplayName(asset.name, quoteToken?.displayName),

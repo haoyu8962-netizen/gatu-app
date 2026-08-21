@@ -4,6 +4,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TwapOrderSummary } from "@/components/trade/tradebox/twap-order-summary";
+import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { createI18nRoot } from "./harness/react";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -13,11 +14,14 @@ const baseProps = {
 	twapTriggerPriceNum: null,
 	twapStopPriceNum: null,
 	side: "buy",
-	sizeValue: 1,
-	orderValue: 100,
-	estimatedFee: 0.045,
-	feeRatePercent: "0.0450%",
-	baseToken: "BTC",
+	feeQuote: buildOrderFeeQuote({
+		orderValue: 100,
+		protocolRate: 0.00045,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "twap",
+	}),
 	szDecimals: 5,
 } as const;
 
@@ -44,9 +48,23 @@ describe("TwapOrderSummary trigger and stop rows", () => {
 		act(() => root.render(<TwapOrderSummary {...baseProps} />));
 
 		const labels = getRowLabels(container);
+		expect(container.textContent).toContain("Every 30 seconds");
+		expect(labels).toContain("Frequency");
+		expect(labels).toContain("Runtime");
+		expect(labels).not.toContain("Number of Orders");
+		expect(labels).not.toContain("Size per Suborder");
 		expect(labels).not.toContain("Trigger Price");
 		expect(labels).not.toContain("Max Price");
 		expect(labels).not.toContain("Min Price");
+		expect(container.textContent).toContain("0.0450% ($0.05)");
+		expect(container.textContent).not.toContain("Hyperliquid fee");
+		expect(container.textContent).not.toContain("GATU fee");
+	});
+
+	it("keeps the documented 30-second cadence for a multi-day order", () => {
+		act(() => root.render(<TwapOrderSummary {...baseProps} twapMinutesNum={4 * 24 * 60} />));
+
+		expect(container.textContent).toContain("Every 30 seconds");
 	});
 
 	it("shows the trigger row and labels the stop as max price for a buy TWAP", () => {
