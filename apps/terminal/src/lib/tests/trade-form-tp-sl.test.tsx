@@ -4,7 +4,7 @@ import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TradeFormTpSl } from "@/components/trade/tradebox/trade-form-tp-sl";
-import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { useOrderEntryActions, useTpReturnInvalid } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
 function findInput(container: HTMLElement, ariaLabel: string): HTMLInputElement {
@@ -25,9 +25,11 @@ describe("TradeFormTpSl linked return inputs", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	let orderActions!: ReturnType<typeof useOrderEntryActions>;
+	let tpReturnInvalidState = false;
 
 	function ActionsProbe() {
 		orderActions = useOrderEntryActions();
+		tpReturnInvalidState = useTpReturnInvalid();
 		return null;
 	}
 
@@ -112,7 +114,7 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(container.textContent).toContain("Invalid amount");
 	});
 
-	it("clears a stale take-profit price when the return draft is incomplete", () => {
+	it("keeps intermediate return drafts quiet while preventing a stale take-profit price", () => {
 		resetPrices({ referencePrice: 80 });
 		const tpReturn = findInput(container, "Take profit return");
 		changeInput(tpReturn, "50");
@@ -121,7 +123,34 @@ describe("TradeFormTpSl linked return inputs", () => {
 		changeInput(tpReturn, ".");
 		expect(tpReturn.value).toBe(".");
 		expect(findInput(container, "Take Profit").value).toBe("");
+		expect(tpReturnInvalidState).toBe(false);
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+		expect(container.textContent).not.toContain("Invalid amount");
+
+		act(() => tpReturn.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		expect(tpReturnInvalidState).toBe(true);
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("true");
 		expect(container.textContent).toContain("Invalid amount");
+	});
+
+	it("lets the user type zero-prefixed decimal returns without flashing an error", () => {
+		resetPrices({ referencePrice: 80 });
+		const tpReturn = findInput(container, "Take profit return");
+
+		for (const value of ["0", "0."]) {
+			changeInput(tpReturn, value);
+			expect(tpReturn.value).toBe(value);
+			expect(tpReturnInvalidState).toBe(false);
+			expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+			expect(container.textContent).not.toContain("Invalid amount");
+			expect(findInput(container, "Take Profit").value).toBe("");
+		}
+
+		changeInput(tpReturn, "0.5");
+		expect(tpReturnInvalidState).toBe(false);
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+		expect(container.textContent).not.toContain("Invalid amount");
+		expect(findInput(container, "Take Profit").value).toBe("80.04");
 	});
 
 	it("keeps the typed return as the source and re-derives the price when the entry reference moves", () => {

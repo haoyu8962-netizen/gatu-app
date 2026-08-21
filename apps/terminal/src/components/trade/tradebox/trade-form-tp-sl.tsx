@@ -42,23 +42,33 @@ interface ReturnDraft {
 	value: string;
 }
 
+type ReturnDraftState = "inactive" | "empty" | "intermediate" | "valid" | "unrepresentable";
+
 interface SyncLinkedPriceParams {
 	draft: string | null;
 	target: string | null | undefined;
 	currentPrice: string;
+	invalid: boolean;
 	setPrice: (price: string) => void;
 	setInvalid: (invalid: boolean) => void;
 }
 
-function syncLinkedPrice({ draft, target, currentPrice, setPrice, setInvalid }: SyncLinkedPriceParams) {
+function syncLinkedPrice({ draft, target, currentPrice, invalid, setPrice, setInvalid }: SyncLinkedPriceParams) {
 	if (draft === null) return;
 	if (target === null || target === undefined) {
 		if (currentPrice !== "") setPrice("");
-		setInvalid(draft !== "");
+		setInvalid(invalid);
 		return;
 	}
 	if (!toBig(currentPrice)?.eq(target)) setPrice(target);
 	setInvalid(false);
+}
+
+function getReturnDraftState(draft: string | null, target: string | null | undefined): ReturnDraftState {
+	if (draft === null) return "inactive";
+	if (draft === "") return "empty";
+	if (/^\d*\.?\d*$/.test(draft) && !(toBig(draft)?.gt(0) ?? false)) return "intermediate";
+	return target === null ? "unrepresentable" : "valid";
 }
 
 export function TradeFormTpSl(props: Props) {
@@ -91,6 +101,8 @@ function TradeFormTpSlFields({
 	const [slUnit, setSlUnit] = useState<ReturnUnit>("roe");
 	const [tpReturnDraft, setTpReturnDraft] = useState<ReturnDraft | null>(null);
 	const [slReturnDraft, setSlReturnDraft] = useState<ReturnDraft | null>(null);
+	const [tpIntermediateErrorRevealed, setTpIntermediateErrorRevealed] = useState(false);
+	const [slIntermediateErrorRevealed, setSlIntermediateErrorRevealed] = useState(false);
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals);
 	const normalizedReferencePrice = normalizePrice(referencePrice);
@@ -183,12 +195,19 @@ function TradeFormTpSlFields({
 	const slDraftValue = getCurrentDraft("sl");
 	const tpDraftTarget = getDraftTarget("tp", tpDraftValue);
 	const slDraftTarget = getDraftTarget("sl", slDraftValue);
+	const tpDraftState = getReturnDraftState(tpDraftValue, tpDraftTarget);
+	const slDraftState = getReturnDraftState(slDraftValue, slDraftTarget);
+	const tpReturnErrorVisible =
+		tpDraftState === "unrepresentable" || (tpDraftState === "intermediate" && tpIntermediateErrorRevealed);
+	const slReturnErrorVisible =
+		slDraftState === "unrepresentable" || (slDraftState === "intermediate" && slIntermediateErrorRevealed);
 
 	useEffect(() => {
 		syncLinkedPrice({
 			draft: tpDraftValue,
 			target: tpDraftTarget,
 			currentPrice: tpPriceInput,
+			invalid: tpDraftState === "unrepresentable" || (tpDraftState === "intermediate" && tpIntermediateErrorRevealed),
 			setPrice: setTpPrice,
 			setInvalid: setTpReturnInvalid,
 		});
@@ -196,18 +215,23 @@ function TradeFormTpSlFields({
 			draft: slDraftValue,
 			target: slDraftTarget,
 			currentPrice: slPriceInput,
+			invalid: slDraftState === "unrepresentable" || (slDraftState === "intermediate" && slIntermediateErrorRevealed),
 			setPrice: setSlPrice,
 			setInvalid: setSlReturnInvalid,
 		});
 	}, [
 		tpDraftValue,
 		tpDraftTarget,
+		tpDraftState,
 		tpPriceInput,
+		tpIntermediateErrorRevealed,
 		setTpPrice,
 		setTpReturnInvalid,
 		slDraftValue,
 		slDraftTarget,
+		slDraftState,
 		slPriceInput,
+		slIntermediateErrorRevealed,
 		setSlPrice,
 		setSlReturnInvalid,
 	]);
@@ -224,21 +248,49 @@ function TradeFormTpSlFields({
 		const setDraft = kind === "tp" ? setTpReturnDraft : setSlReturnDraft;
 		const setPrice = kind === "tp" ? setTpPrice : setSlPrice;
 		const setInvalid = kind === "tp" ? setTpReturnInvalid : setSlReturnInvalid;
+		const setIntermediateErrorRevealed =
+			kind === "tp" ? setTpIntermediateErrorRevealed : setSlIntermediateErrorRevealed;
 		const currentPrice = kind === "tp" ? tpPriceInput : slPriceInput;
+		const target = getDraftTarget(kind, value);
+		const draftState = getReturnDraftState(value, target);
 		setDraft({ contextKey: returnContextKey, value });
+		setIntermediateErrorRevealed(false);
 		syncLinkedPrice({
 			draft: value,
-			target: getDraftTarget(kind, value),
+			target,
 			currentPrice,
+			invalid: draftState === "unrepresentable",
 			setPrice,
 			setInvalid,
 		});
 	}
 
 	function handleReturnBlur(kind: TpSlKind) {
-		if (kind === "tp" ? tpReturnInvalid : slReturnInvalid) return;
-		if (kind === "tp") setTpReturnDraft(null);
-		else setSlReturnDraft(null);
+		if (kind === "tp") {
+			if (tpDraftState === "intermediate") {
+				setTpReturnInvalid(true);
+				setTpIntermediateErrorRevealed(true);
+				return;
+			}
+			if (tpReturnInvalid) {
+				setTpIntermediateErrorRevealed(true);
+				return;
+			}
+			setTpIntermediateErrorRevealed(false);
+			setTpReturnDraft(null);
+			return;
+		}
+		if (slDraftState === "intermediate") {
+			setSlReturnInvalid(true);
+			setSlIntermediateErrorRevealed(true);
+			return;
+		}
+		if (slReturnInvalid) {
+			setSlIntermediateErrorRevealed(true);
+			return;
+		}
+		setSlIntermediateErrorRevealed(false);
+		setSlReturnDraft(null);
 	}
 
 	function handleUnitToggle(kind: TpSlKind) {
@@ -247,20 +299,24 @@ function TradeFormTpSlFields({
 			setTpUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setTpReturnDraft(null);
 			setTpReturnInvalid(false);
+			setTpIntermediateErrorRevealed(false);
 		} else {
 			setSlUnit((current) => (current === "roe" ? "collateral" : "roe"));
 			setSlReturnDraft(null);
 			setSlReturnInvalid(false);
+			setSlIntermediateErrorRevealed(false);
 		}
 	}
 
 	function handleTpPriceChange(value: string) {
 		setTpReturnDraft(null);
+		setTpIntermediateErrorRevealed(false);
 		setTpPrice(value);
 	}
 
 	function handleSlPriceChange(value: string) {
 		setSlReturnDraft(null);
+		setSlIntermediateErrorRevealed(false);
 		setSlPrice(value);
 	}
 
@@ -311,7 +367,7 @@ function TradeFormTpSlFields({
 					ariaLabel: t`Take profit return`,
 					placeholder: t`Profit`,
 					value: getReturnValue("tp"),
-					error: tpReturnInvalid && tpDraftValue !== null ? t`Invalid amount` : null,
+					error: tpReturnInvalid && tpReturnErrorVisible && tpDraftValue !== null ? t`Invalid amount` : null,
 					unitLabel: getUnitLabel("tp"),
 					onUnitToggle: () => handleUnitToggle("tp"),
 					unitToggleDisabled: quoteSymbol === null && getUnit("tp") === "roe",
@@ -323,7 +379,7 @@ function TradeFormTpSlFields({
 					ariaLabel: t`Stop loss return`,
 					placeholder: t`Loss`,
 					value: getReturnValue("sl"),
-					error: slReturnInvalid && slDraftValue !== null ? t`Invalid amount` : null,
+					error: slReturnInvalid && slReturnErrorVisible && slDraftValue !== null ? t`Invalid amount` : null,
 					unitLabel: getUnitLabel("sl"),
 					onUnitToggle: () => handleUnitToggle("sl"),
 					unitToggleDisabled: quoteSymbol === null && getUnit("sl") === "roe",
