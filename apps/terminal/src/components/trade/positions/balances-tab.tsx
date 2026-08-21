@@ -8,6 +8,8 @@ import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar"
 import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -46,6 +48,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	const { setHideSmallBalances } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
+	const { hasWalletAccess } = useWalletSession();
 	const { open: openSwapModal } = useSwapModalActions();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -78,6 +81,13 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		showBalanceAccountType,
 		spotBalanceRows,
 	} = useBalanceRows();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: accountDataReady && !isDataStale,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled,
+	});
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -117,13 +127,15 @@ export function BalancesTab({ toolbarTarget }: Props) {
 		const hasTransferableBalance = isTradingToolbarBalancePositive(row.transferable);
 		const fundsActionsEnabled = row.type === "spot" || perpFundsActionsEnabled;
 		const canTransfer =
-			fundsActionsEnabled && internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasTransferableBalance;
+			fundsActionAvailability.internalTransfer.available &&
+			fundsActionsEnabled &&
+			row.asset === DEFAULT_QUOTE_TOKEN &&
+			hasTransferableBalance;
 		const canSwap =
 			accountDataReady && accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
 		const canWithdraw =
-			accountDataReady &&
+			fundsActionAvailability.withdrawal.available &&
 			fundsActionsEnabled &&
-			accountModeReady &&
 			row.asset === DEFAULT_QUOTE_TOKEN &&
 			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;

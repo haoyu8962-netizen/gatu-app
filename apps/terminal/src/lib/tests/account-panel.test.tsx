@@ -56,6 +56,7 @@ const testState = {
 	builderCollateral: "USDC",
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
+	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
 	hasWalletAccess: true,
 	isConnected: true,
@@ -118,7 +119,18 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
+	useGeoRestriction: () => ({
+		actionsBlocked: testState.geoStatus !== "allowed",
+		country: testState.geoStatus === "unresolved" ? null : "GB",
+		isError: false,
+		isResolved: testState.geoStatus !== "unresolved",
+		proxy: false,
+		retry: vi.fn().mockResolvedValue({
+			data: { country: "GB", proxy: false, tradeRestricted: testState.geoStatus === "restricted" },
+			isError: false,
+		}),
+		tradeRestricted: testState.geoStatus === "restricted",
+	}),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -130,13 +142,17 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({
-	useDepositAvailability: () => ({
-		available: testState.depositAvailable,
-		path: "external",
-		reason: testState.depositAvailable ? null : "external-deposit-disabled",
-		unavailableLabel: "Deposit unavailable",
-		unavailableReason: testState.depositUnavailableReason,
-	}),
+	useDepositAvailability: () => {
+		const geoReason = testState.geoStatus === "allowed" ? null : `geo-${testState.geoStatus}`;
+		return {
+			available: testState.depositAvailable && geoReason === null,
+			path: "external",
+			reason: geoReason ?? (testState.depositAvailable ? null : "external-deposit-disabled"),
+			unavailableLabel: "Deposit unavailable",
+			unavailableReason:
+				geoReason === null ? testState.depositUnavailableReason : "Funds actions are unavailable in this region.",
+		};
+	},
 }));
 
 vi.mock("@/lib/lifi/bridge-execution-state", () => ({
@@ -172,6 +188,7 @@ describe("desktop account panel", () => {
 		testState.builderCollateral = "USDC";
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
+		testState.geoStatus = "allowed";
 		testState.hasError = false;
 		testState.hasWalletAccess = true;
 		testState.isConnected = true;
@@ -347,4 +364,22 @@ describe("desktop account panel", () => {
 			expect(document.getElementById(describedBy ?? "")?.textContent).toContain("Balance data is unavailable");
 		}
 	});
+
+	it.each(["restricted", "unresolved"] as const)(
+		"removes withdrawal and internal transfer entries when geo is %s",
+		(geoStatus) => {
+			testState.geoStatus = geoStatus;
+			renderPanel();
+
+			const labels = Array.from(
+				container.querySelectorAll<HTMLButtonElement>("button"),
+				(button) => button.textContent,
+			);
+			expect(labels).not.toContain("Perps / Spot");
+			expect(labels).not.toContain("Withdraw");
+			expect(container.textContent).toContain("Funds actions are unavailable in this region.");
+			expect(modalActions.openTransfer).not.toHaveBeenCalled();
+			expect(modalActions.openDeposit).not.toHaveBeenCalledWith("withdraw");
+		},
+	);
 });

@@ -7,6 +7,8 @@ import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar"
 import { getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -22,11 +24,13 @@ export function MobileBalancesTab() {
 	const { getToken } = useSpotTokens();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
+	const { hasWalletAccess } = useWalletSession();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
 		direction: TransferDirection;
 	}>({ open: false, direction: "toSpot" });
 	const {
+		accountDataReady,
 		accountModeReady,
 		balances,
 		hasError,
@@ -37,6 +41,13 @@ export function MobileBalancesTab() {
 		perpFundsActionsEnabled,
 		showBalanceAccountType,
 	} = useBalanceRows();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: accountDataReady && !isDataStale,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled,
+	});
 
 	function handleTransfer(rowType: "perp" | "spot") {
 		setTransferState({
@@ -83,8 +94,8 @@ export function MobileBalancesTab() {
 						const decimals = row.type === "perp" ? 2 : (getToken(row.asset)?.szDecimals ?? 2);
 						const displayAvailable = getBalanceRowDisplayAvailable(row);
 						const canTransfer =
+							fundsActionAvailability.internalTransfer.available &&
 							(row.type === "spot" || perpFundsActionsEnabled) &&
-							internalTransfersEnabled &&
 							row.asset === DEFAULT_QUOTE_TOKEN &&
 							isTradingToolbarBalancePositive(row.transferable);
 

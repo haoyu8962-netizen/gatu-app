@@ -9,35 +9,13 @@ import {
 } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
-import {
-	accountOverviewNeedsTokenUsdPrices,
-	getAccountBalanceSummary,
-	getPerpRiskSummaryUsdValue,
-	getSpotAccountValueUsdValue,
-	getTokenAmountUsdValue,
-	getUnifiedAccountMarginRatioValue,
-	isQuoteBalanceSharedWithPerps,
-} from "@/domain/trade/balances";
-import {
-	getToolbarAccountLeverage,
-	getToolbarAccountMarginRatio,
-	getToolbarAccountRiskPresentation,
-	getToolbarSignedValueTone,
-} from "@/domain/trade/trading-toolbar-metrics";
-import {
-	isSupportedAccountAbstraction,
-	useDefaultDexBalances,
-	useSelectedDexBalances,
-} from "@/hooks/trade/use-account-balances";
+import { useAccountOverview } from "@/hooks/trade/use-account-overview";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
-import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -57,132 +35,38 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const withdrawUnavailableId = useId();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
-	const markets = useMarkets();
-	const selectedBalances = useSelectedDexBalances();
-	const defaultBalances = useDefaultDexBalances();
-	const accountAbstraction = selectedBalances.accountAbstraction;
-	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
-	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable } = summaryBalances;
-	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
-	const tokenUsdPrices = tokenUsdPriceState.prices;
-	const collateralTokenByDex = new Map<string, string>([
-		["", DEFAULT_QUOTE_TOKEN],
-		...markets.builderPerp.flatMap(
-			(market): Array<[string, string]> => (market.quoteToken ? [[market.dex, market.quoteToken.name]] : []),
-		),
-	]);
-	const selectedCollateralToken = collateralTokenByDex.get(summaryBalances.dex) ?? null;
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		tokenUsdPrices,
-	});
-	const accountEquityValue = usesSharedQuoteBalance
-		? getSpotAccountValueUsdValue(spotBalances, tokenUsdPrices)
-		: getTokenAmountUsdValue(marginSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
-	const crossAccountEquityValue = usesSharedQuoteBalance
-		? accountEquityValue
-		: getTokenAmountUsdValue(perpSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
-	const perpRiskStates = usesSharedQuoteBalance
-		? selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({
-				collateralToken: collateralTokenByDex.get(dex) ?? null,
-				marginSummary: state.crossMarginSummary,
-				crossMaintenanceMarginUsed: state.crossMaintenanceMarginUsed,
-				assetPositions: state.assetPositions,
-			}))
-		: [
-				{
-					collateralToken: selectedCollateralToken,
-					marginSummary: summaryBalances.perpSummary,
-					crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-					assetPositions: summaryBalances.perpPositions,
-				},
-			];
-	const riskSummary = getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices);
-	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
-	const maintenanceMarginRatio =
-		accountAbstraction === "unifiedAccount"
-			? getUnifiedAccountMarginRatioValue({
-					states: selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({ dex, ...state })),
-					collaterals: [
-						...(defaultCollateralToken ? [{ dex: "", token: defaultCollateralToken.index }] : []),
-						...markets.builderPerp.flatMap((market) =>
-							market.quoteToken ? [{ dex: market.dex, token: market.quoteToken.index }] : [],
-						),
-					],
-					spotBalances: summaryBalances.spotBalances,
-				})
-			: accountAbstraction === "portfolioMargin"
-				? summaryBalances.portfolioMarginRatio
-				: getToolbarAccountMarginRatio({
-						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-						accountEquity: summaryBalances.perpSummary?.accountValue ?? "0",
-					});
-	const requiresUsdPrices = accountOverviewNeedsTokenUsdPrices({
-		accountValues: usesSharedQuoteBalance
-			? []
-			: [
-					{ token: selectedCollateralToken, value: marginSummary?.accountValue },
-					{ token: selectedCollateralToken, value: perpSummary?.accountValue },
-				],
-		spotBalances: usesSharedQuoteBalance ? spotBalances : [],
-		perpRiskStates,
-	});
-	const accountSummaryReady =
-		isConnected &&
-		accountModeReady &&
-		summaryBalances.perpStateStatus === "success" &&
-		!summaryBalances.isPerpStateStale &&
-		(!requiresUsdPrices || tokenUsdPriceState.status === "success") &&
-		(!usesSharedQuoteBalance ||
-			(!summaryBalances.hasError &&
-				!summaryBalances.isDataStale &&
-				summaryBalances.hasAllDexsSnapshot &&
-				summaryBalances.spotStateStatus === "success" &&
-				summaryBalances.hasSpotStateSnapshot));
-	const fundsActionsReady =
-		accountModeReady &&
-		!defaultBalances.hasError &&
-		!defaultBalances.isDataStale &&
-		defaultBalances.perpStateStatus === "success" &&
-		defaultBalances.spotStateStatus === "success";
-	const marginRatioReady = accountSummaryReady && maintenanceMarginRatio !== null;
-	const accountRisk = getToolbarAccountRiskPresentation(marginRatioReady ? maintenanceMarginRatio : null);
-	const crossLeverage =
-		accountSummaryReady && riskSummary && crossAccountEquityValue
-			? getToolbarAccountLeverage({
-					totalNtlPos: riskSummary.totalNtlPos,
-					accountEquity: crossAccountEquityValue,
-				})
-			: null;
-	const unrealizedPnlTone =
-		accountSummaryReady && riskSummary ? getToolbarSignedValueTone(riskSummary.unrealizedPnl) : "neutral";
-	const metricLoading =
-		accountAbstraction === null ||
-		summaryBalances.perpStateStatus === "loading" ||
-		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "loading") ||
-		(requiresUsdPrices && tokenUsdPriceState.status === "loading");
-	const metricsHaveError =
-		summaryBalances.perpStateStatus === "error" ||
-		(usesSharedQuoteBalance && summaryBalances.spotStateStatus === "error") ||
-		(requiresUsdPrices && tokenUsdPriceState.status === "error");
-	const metricsAreStale =
-		summaryBalances.isPerpStateStale ||
-		(usesSharedQuoteBalance && summaryBalances.isSpotStateStale) ||
-		(requiresUsdPrices && tokenUsdPriceState.status === "stale");
-	const valuationUnavailable =
-		accountSummaryReady && (accountEquityValue === null || riskSummary === null || maintenanceMarginRatio === null);
+	const {
+		accountEquityValue,
+		accountMode,
+		accountModeReady,
+		accountRisk,
+		crossLeverage,
+		fundsActionsReady,
+		maintenanceMarginRatio,
+		marginRatioReady,
+		riskSummary,
+		showSpotFundsNotice,
+		snapshotReady: accountSummaryReady,
+		spotFundsAvailable,
+		status: accountOverviewStatus,
+		unrealizedPnlTone,
+		usesSharedQuoteBalance,
+		valuationUnavailable,
+	} = useAccountOverview();
+	const metricLoading = accountOverviewStatus === "loading";
+	const metricsHaveError = accountOverviewStatus === "error";
+	const metricsAreStale = accountOverviewStatus === "stale";
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: fundsActionsReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !usesSharedQuoteBalance,
+	});
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeEntry = shouldShowLiFiBridgeTab({
 		isEmbeddedDeposit: false,
@@ -190,36 +74,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
 	const accountModeLabel =
-		accountSummary.mode === "unified"
+		accountMode === "unified"
 			? t`Unified Account`
-			: accountSummary.mode === "portfolioMargin"
+			: accountMode === "portfolioMargin"
 				? t`Portfolio Margin`
-				: accountSummary.mode === "separate"
+				: accountMode === "separate"
 					? t`Separate Accounts`
 					: t`Select mode`;
-	const showSpotFundsNotice =
-		accountSummaryReady &&
-		summaryBalances.spotStateStatus === "success" &&
-		!summaryBalances.isSpotStateStale &&
-		!accountSummary.usesSpotStateForPerps &&
-		selectedBalances.dex === "" &&
-		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
-	const internalTransferDisabledReason = !hasWalletAccess
-		? t`Connect the owner wallet before moving funds.`
-		: !accountModeReady
-			? t`Select a supported account mode before moving funds.`
-			: usesSharedQuoteBalance
-				? t`Transfers between Spot and Perps are unavailable in shared-balance account modes.`
-				: !fundsActionsReady
-					? t`Balance data is unavailable. Try again after the connection recovers.`
-					: null;
-	const withdrawDisabledReason = !hasWalletAccess
-		? t`Connect the owner wallet before moving funds.`
-		: !accountModeReady
-			? t`Select a supported account mode before moving funds.`
-			: !fundsActionsReady
-				? t`Balance data is unavailable. Try again after the connection recovers.`
-				: null;
+	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
@@ -391,7 +254,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				{showSpotFundsNotice ? (
 					<div className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning">
 						<div className="tabular-nums">
-							{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable, { compact: false })}
+							{t`Available funds are in Spot`}:{" "}
+							{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
 						</div>
 						{hasWalletAccess ? (
 							<Button
@@ -399,7 +263,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								intent="brand"
 								size="xs"
 								className="mt-1 h-auto p-0"
-								onClick={() => openTransferModal("toPerp")}
+								disabled={!fundsActionAvailability.internalTransfer.available}
+								focusableWhenDisabled
+								title={internalTransferDisabledReason ?? undefined}
+								onClick={
+									fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
+								}
 							>
 								{t`Perps / Spot`}
 							</Button>
@@ -410,7 +279,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
 					{depositGeoBlocked ? (
 						<p className="text-center text-sm text-fg-muted">{depositAvailability.unavailableReason}</p>
-					) : tradeRestricted || !showsFundsActions ? (
+					) : !showsFundsActions ? (
 						<p className="text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
 						<div className="space-y-2">
@@ -446,7 +315,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											variant="outline"
 											intent="neutral"
 											size="md"
-											onClick={() => openTransferModal("toPerp")}
+											onClick={
+												fundsActionAvailability.internalTransfer.available
+													? () => openTransferModal("toPerp")
+													: undefined
+											}
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 											disabled={!!internalTransferDisabledReason}
 											focusableWhenDisabled
@@ -466,7 +339,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											disabled={!!withdrawDisabledReason}
 											focusableWhenDisabled
 											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-											onClick={() => openDepositModal("withdraw")}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
 											iconLeft={<UploadSimpleIcon className="size-4" />}
 											className="min-h-11 w-full"
 										>

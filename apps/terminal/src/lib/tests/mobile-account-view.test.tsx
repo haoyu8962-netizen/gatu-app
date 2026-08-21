@@ -67,6 +67,7 @@ const testState = {
 	accountAbstraction: "unifiedAccount",
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
+	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
 	hasWalletAccess: true,
 	isConnected: true,
@@ -130,7 +131,18 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
-	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
+	useGeoRestriction: () => ({
+		actionsBlocked: testState.geoStatus !== "allowed",
+		country: testState.geoStatus === "unresolved" ? null : "GB",
+		isError: false,
+		isResolved: testState.geoStatus !== "unresolved",
+		proxy: false,
+		retry: vi.fn().mockResolvedValue({
+			data: { country: "GB", proxy: false, tradeRestricted: testState.geoStatus === "restricted" },
+			isError: false,
+		}),
+		tradeRestricted: testState.geoStatus === "restricted",
+	}),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -143,13 +155,17 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({
-	useDepositAvailability: () => ({
-		available: testState.depositAvailable,
-		path: "external",
-		reason: testState.depositAvailable ? null : "external-deposit-disabled",
-		unavailableLabel: "Deposit unavailable",
-		unavailableReason: testState.depositUnavailableReason,
-	}),
+	useDepositAvailability: () => {
+		const geoReason = testState.geoStatus === "allowed" ? null : `geo-${testState.geoStatus}`;
+		return {
+			available: testState.depositAvailable && geoReason === null,
+			path: "external",
+			reason: geoReason ?? (testState.depositAvailable ? null : "external-deposit-disabled"),
+			unavailableLabel: "Deposit unavailable",
+			unavailableReason:
+				geoReason === null ? testState.depositUnavailableReason : "Funds actions are unavailable in this region.",
+		};
+	},
 }));
 
 vi.mock("@/lib/lifi/bridge-execution-state", () => ({
@@ -176,6 +192,7 @@ describe("mobile account view", () => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
+		testState.geoStatus = "allowed";
 		testState.hasError = false;
 		testState.hasWalletAccess = true;
 		testState.isConnected = true;
@@ -372,4 +389,36 @@ describe("mobile account view", () => {
 		expect(container.textContent).not.toContain("0x1111");
 		expect(container.querySelector('button[aria-label="Disconnect wallet"]')).toBeNull();
 	});
+
+	it.each(["restricted", "unresolved"] as const)(
+		"blocks every Perps / Spot entry and withdrawal when geo is %s",
+		(geoStatus) => {
+			testState.accountAbstraction = "disabled";
+			testState.geoStatus = geoStatus;
+			act(() => {
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<MobileAccountView />
+					</I18nProvider>,
+				);
+			});
+
+			const transferButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
+				(button) => button.textContent === "Perps / Spot",
+			);
+			expect(transferButtons).toHaveLength(1);
+			for (const button of transferButtons) {
+				expect(button.getAttribute("aria-disabled")).toBe("true");
+				act(() => button.click());
+			}
+			const withdraw = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Withdraw",
+			);
+			expect(withdraw).toBeUndefined();
+			act(() => withdraw?.click());
+
+			expect(modalActions.openTransfer).not.toHaveBeenCalled();
+			expect(modalActions.openDeposit).not.toHaveBeenCalledWith("withdraw");
+		},
+	);
 });

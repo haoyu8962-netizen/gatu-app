@@ -11,7 +11,7 @@ import {
 } from "@/hooks/trade/use-account-abstraction-control";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -43,24 +43,35 @@ export function PortfolioPage() {
 	const { hasWalletAccess, isConnected } = useWalletSession();
 	const { reconnectWallet } = useReconnectWallet();
 	const depositAvailability = useDepositAvailability();
-	const { actionsBlocked: tradeRestricted } = useGeoRestriction();
-	const { accountAbstraction } = useDefaultDexBalances();
+	const defaultBalances = useDefaultDexBalances();
+	const { accountAbstraction } = defaultBalances;
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 	const [accountModeModalOpen, setAccountModeModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const { open: openSendModal } = useSendModalActions();
 	const { openStablecoins: openStablecoinSwapModal } = useSwapModalActions();
-	const fundsActionsDisabled = !hasWalletAccess || tradeRestricted;
-	const depositDisabled = !depositAvailability.available;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const accountDataReady =
+		defaultBalances.spotStateStatus === "success" &&
+		defaultBalances.perpStateStatus === "success" &&
+		!defaultBalances.isDataStale &&
+		!defaultBalances.hasError;
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
+	const geoBlocked =
+		fundsActionAvailability.withdrawal.reason === "geo-restricted" ||
+		fundsActionAvailability.withdrawal.reason === "geo-unresolved";
+	const fundsActionsDisabled = !hasWalletAccess || geoBlocked;
+	const depositDisabled = !depositAvailability.available;
 	const modeDependentFundsActionsDisabled = fundsActionsDisabled || !accountModeReady;
-	const internalTransferDisabledReason = !accountModeReady
-		? t`Select a supported account mode before moving funds.`
-		: isQuoteBalanceSharedWithPerps(accountAbstraction)
-			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-			: null;
-	const transferDisabled = fundsActionsDisabled || !!internalTransferDisabledReason;
+	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const transferDisabled = !fundsActionAvailability.internalTransfer.available;
 	const handleAccountModeChange = useCallback(
 		async (nextMode: SelectableAccountAbstraction) => {
 			const didUpdate = await accountModeControl.setAccountAbstraction(nextMode);
@@ -114,7 +125,9 @@ export function PortfolioPage() {
 										intent="brand"
 										size="sm"
 										disabled={transferDisabled}
-										onClick={() => openTransferModal("toPerp")}
+										onClick={
+											fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
+										}
 										iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
 									>
 										<Trans>Perps / Spot</Trans>
@@ -131,16 +144,22 @@ export function PortfolioPage() {
 							>
 								<Trans>Send</Trans>
 							</Button>
-							<Button
-								variant="outline"
-								intent="brand"
-								size="sm"
-								disabled={modeDependentFundsActionsDisabled}
-								onClick={() => openDepositModal("withdraw")}
-								iconLeft={<UploadSimpleIcon className="size-3.5" />}
-							>
-								<Trans>Withdraw</Trans>
-							</Button>
+							<Tooltip content={fundsActionAvailability.withdrawal.unavailableReason} side="top">
+								<span className="inline-flex">
+									<Button
+										variant="outline"
+										intent="brand"
+										size="sm"
+										disabled={!fundsActionAvailability.withdrawal.available}
+										onClick={
+											fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+										}
+										iconLeft={<UploadSimpleIcon className="size-3.5" />}
+									>
+										<Trans>Withdraw</Trans>
+									</Button>
+								</span>
+							</Tooltip>
 							<Tooltip content={depositAvailability.unavailableReason} side="top">
 								<span className="inline-flex">
 									<Button

@@ -352,6 +352,8 @@ msgstr "Patrimonio de la cuenta"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Margin Ratio"
 msgstr "Ratio de margen de la cuenta"
 
@@ -394,6 +396,8 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Value"
 msgstr "Valor de la cuenta"
 
@@ -1050,6 +1054,8 @@ msgid "Balance available to trade"
 msgstr "Saldo disponible para operar"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "Los datos de saldo están desactualizados."
 
@@ -1057,6 +1063,7 @@ msgstr "Los datos de saldo están desactualizados."
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "Los datos de saldo están desactualizados. Las acciones no están disponibles temporalmente."
 
@@ -1068,10 +1075,9 @@ msgstr "Los datos de saldo están desactualizados. Las acciones no están dispon
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "Los datos de saldo no están disponibles. Inténtalo de nuevo cuando se restablezca la conexión."
 
@@ -1366,6 +1372,10 @@ msgstr ""
 
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
+msgstr ""
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Checking regional availability. Funds actions are temporarily unavailable."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1930,8 +1940,7 @@ msgstr ""
 msgid "Connect the exact owner wallet before continuing."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Connect the owner wallet before moving funds."
 msgstr ""
 
@@ -1994,14 +2003,16 @@ msgstr "Conectar monedero"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Conectar billetera"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Connect wallet to view account"
-msgstr "Conecta billetera para ver cuenta"
+#~ msgid "Connect wallet to view account"
+#~ msgstr "Conecta billetera para ver cuenta"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
@@ -2106,6 +2117,7 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "Conecta tu billetera para ver órdenes TWAP."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "Conecta tu monedero para ver tu cuenta, posiciones y empezar a operar."
 
@@ -2345,22 +2357,22 @@ msgstr "Cruzado"
 msgid "Cross Account Leverage"
 msgstr "Apalancamiento de cuenta cruzada"
 
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "Apalancamiento cruzado"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Maintenance Margin"
 msgstr "Margen de mantenimiento cruzado"
-
-#: src/config/ui-text.ts
-msgid "Cross Leverage"
-msgstr "Apalancamiento cruzado"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Cross Margin"
 #~ msgstr "Margen cruzado"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Cross Margin Ratio"
-msgstr "Ratio de margen cruzado"
+#~ msgid "Cross Margin Ratio"
+#~ msgstr "Ratio de margen cruzado"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -2540,6 +2552,7 @@ msgstr "Desplegador"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2637,6 +2650,7 @@ msgid "Deposit unavailable"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr ""
 
@@ -3161,7 +3175,6 @@ msgstr "Ethereum es una cadena de bloques programable para contratos inteligente
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "Cada {TWAP_SUBORDER_INTERVAL_SECONDS} segundos"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -3368,6 +3381,7 @@ msgstr "No se pudieron cargar los saldos"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/trade/use-button-content.ts
@@ -3691,6 +3705,18 @@ msgstr "Financiamiento mostrado"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
+msgstr ""
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are not available in your region."
+msgstr ""
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are not available in your region. This funds action was not submitted."
+msgstr ""
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are unavailable for this account."
 msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -4488,11 +4514,17 @@ msgstr "Cargando billetera..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -4573,8 +4605,8 @@ msgstr "Mainnet"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Maintenance Margin"
-msgstr "Margen de mantenimiento"
+#~ msgid "Maintenance Margin"
+#~ msgstr "Margen de mantenimiento"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Maintenance Margin Ratio"
@@ -4688,7 +4720,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "El precio de marca se deriva de los precios de oráculo y se usa para calcular el PnL no realizado y la liquidación."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "El precio de marca no está disponible. Espera los datos del mercado y vuelve a intentarlo."
@@ -4906,7 +4941,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -5608,6 +5642,7 @@ msgstr "Abrir menú de comandos"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr ""
 
@@ -5889,6 +5924,7 @@ msgstr "Otra actualización del registro"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Overview"
 msgstr "Resumen"
 
@@ -6067,8 +6103,8 @@ msgstr "Patrimonio de la cuenta de perpetuos"
 #~ msgstr "Equidad de perpetuos"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps Overview"
-msgstr "Resumen de Perps"
+#~ msgid "Perps Overview"
+#~ msgstr "Resumen de Perps"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
@@ -6218,6 +6254,7 @@ msgid "Portfolio margin"
 msgstr "Margen de cartera"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Margin"
 msgstr "Margen de cartera"
 
@@ -6362,6 +6399,7 @@ msgstr ""
 msgid "Previous Vault page"
 msgstr ""
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -7414,12 +7452,8 @@ msgstr "No hay una fuente segura de aleatoriedad disponible. El depósito no se 
 msgid "Select {displayName} market"
 msgstr "Seleccionar mercado {displayName}"
 
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Select a supported account mode before moving funds."
 msgstr "Selecciona un modo de cuenta compatible antes de mover fondos."
 
@@ -7462,6 +7496,7 @@ msgid "Select market"
 msgstr "Seleccionar mercado"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Select mode"
 msgstr "Seleccionar modo"
@@ -7586,6 +7621,7 @@ msgstr "Separada"
 #~ msgstr "Saldos de cuentas separadas"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Accounts"
 msgstr "Cuentas separadas"
 
@@ -9591,17 +9627,16 @@ msgstr "Transferir USDC"
 msgid "Transferring..."
 msgstr "Transfiriendo..."
 
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
+msgstr "Las transferencias entre Spot y Perps no están disponibles en los modos de cuenta con saldo compartido."
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Transfers between Spot and Perps are unavailable in unified account mode."
-msgstr "Las transferencias entre Spot y Perps no están disponibles en el modo de cuenta unificada."
-
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
-msgstr "Las transferencias entre Spot y Perps no están disponibles en los modos de cuenta con saldo compartido."
+#~ msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+#~ msgstr "Las transferencias entre Spot y Perps no están disponibles en el modo de cuenta unificada."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Transfers HYPE from your Spot balance to your available staking balance."
@@ -9833,8 +9868,16 @@ msgstr "No se pudo verificar el saldo disponible"
 msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
 msgstr ""
 
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
+msgstr ""
+
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
+msgstr ""
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -9951,6 +9994,7 @@ msgid "Unified account"
 msgstr "Cuenta unificada"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Unified Account"
 msgstr "Cuenta unificada"
 
@@ -10017,7 +10061,6 @@ msgstr "Error al actualizar"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Actualizado"

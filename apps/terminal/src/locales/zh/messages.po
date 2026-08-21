@@ -336,6 +336,8 @@ msgstr "账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Margin Ratio"
 msgstr "账户保证金率"
 
@@ -378,6 +380,8 @@ msgstr "账户价值"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Value"
 msgstr "账户价值"
 
@@ -987,6 +991,8 @@ msgid "Balance available to trade"
 msgstr "可用于交易的余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "余额数据已过期。"
 
@@ -994,6 +1000,7 @@ msgstr "余额数据已过期。"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "余额数据已过期，相关操作暂时不可用。"
 
@@ -1005,10 +1012,9 @@ msgstr "余额数据已过期，相关操作暂时不可用。"
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "余额数据不可用。请等待连接恢复后重试。"
 
@@ -1248,6 +1254,10 @@ msgstr "正在检查最新的 API 钱包数据…"
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Checking regional availability. Deposits are temporarily unavailable."
 msgstr "正在检查地区可用性，存款暂时不可用。"
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Checking regional availability. Funds actions are temporarily unavailable."
+msgstr "正在检查地区可用性，资金操作暂时不可用。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -1811,8 +1821,7 @@ msgstr "连接或恢复已验证的所有者账户，以使用账户专属的金
 msgid "Connect the exact owner wallet before continuing."
 msgstr "继续前，请连接完全匹配的所有者钱包。"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Connect the owner wallet before moving funds."
 msgstr "请先连接所有者钱包，再进行资金操作。"
 
@@ -1875,14 +1884,16 @@ msgstr "连接钱包"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "连接钱包"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Connect wallet to view account"
-msgstr "连接钱包查看账户"
+#~ msgid "Connect wallet to view account"
+#~ msgstr "连接钱包查看账户"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
@@ -1979,6 +1990,7 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "连接钱包查看 TWAP 订单。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "连接钱包以查看账户、仓位并开始交易。"
 
@@ -2205,22 +2217,22 @@ msgstr "全仓"
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
 
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "全仓杠杆"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
-
-#: src/config/ui-text.ts
-msgid "Cross Leverage"
-msgstr "全仓杠杆"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #~ msgid "Cross Margin"
 #~ msgstr "全仓保证金"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Cross Margin Ratio"
-msgstr "全仓保证金率"
+#~ msgid "Cross Margin Ratio"
+#~ msgstr "全仓保证金率"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Crypto"
@@ -2384,6 +2396,7 @@ msgstr "部署者"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2473,6 +2486,7 @@ msgid "Deposit unavailable"
 msgstr "存款不可用"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr "存入 USDC"
 
@@ -2964,7 +2978,6 @@ msgstr "Ethereum 是一个用于智能合约和去中心化应用的可编程区
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "每 {TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
@@ -3163,6 +3176,7 @@ msgstr "加载余额失败"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/trade/use-button-content.ts
@@ -3455,6 +3469,18 @@ msgstr "当前显示资金费"
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
 msgstr "资金操作进度"
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are not available in your region."
+msgstr "您所在的地区不支持资金操作。"
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are not available in your region. This funds action was not submitted."
+msgstr "您所在的地区不支持资金操作，本次资金操作未提交。"
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Funds actions are unavailable for this account."
+msgstr "此账户不支持资金操作。"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
@@ -4218,11 +4244,17 @@ msgstr "加载钱包中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -4291,8 +4323,8 @@ msgstr "主网"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Maintenance Margin"
-msgstr "维持保证金"
+#~ msgid "Maintenance Margin"
+#~ msgstr "维持保证金"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Maintenance Margin Ratio"
@@ -4390,7 +4422,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "标记价格由预言机价格推导，用于计算未实现盈亏和强平。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "标记价格不可用。请等待行情更新后重试。"
@@ -4581,7 +4616,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "中间价"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -5228,6 +5262,7 @@ msgstr "打开命令菜单"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr "打开存款功能以准备您的邮箱钱包。"
 
@@ -5467,6 +5502,7 @@ msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Overview"
 msgstr "概览"
 
@@ -5635,8 +5671,8 @@ msgstr "合约账户权益"
 #~ msgstr "永续权益"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps Overview"
-msgstr "合约概览"
+#~ msgid "Perps Overview"
+#~ msgstr "合约概览"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
@@ -5773,6 +5809,7 @@ msgid "Portfolio margin"
 msgstr "投资组合保证金"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
 
@@ -5908,6 +5945,7 @@ msgstr "上一页"
 msgid "Previous Vault page"
 msgstr "上一页金库"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6875,12 +6913,8 @@ msgstr "安全随机数不可用。充值未提交。"
 msgid "Select {displayName} market"
 msgstr "选择{displayName}市场"
 
-#: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/hooks/trade/use-funds-action-availability.ts
 msgid "Select a supported account mode before moving funds."
 msgstr "请先选择受支持的账户模式，再转移资金。"
 
@@ -6915,6 +6949,7 @@ msgid "Select market"
 msgstr "选择市场"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Select mode"
 msgstr "选择模式"
@@ -7031,6 +7066,7 @@ msgstr "分离"
 #~ msgstr "分账户余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Accounts"
 msgstr "分账户"
 
@@ -8911,17 +8947,16 @@ msgstr "划转 USDC"
 msgid "Transferring..."
 msgstr "划转中..."
 
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
+msgstr "共享余额账户模式下无法在现货与永续之间划转。"
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Transfers between Spot and Perps are unavailable in unified account mode."
-msgstr "启用统一账户后，现货与合约之间的划转不可用。"
-
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-msgid "Transfers between Spot and Perps are unavailable in shared-balance account modes."
-msgstr "共享余额账户模式下无法在现货与永续之间划转。"
+#~ msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+#~ msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Transfers HYPE from your Spot balance to your available staking balance."
@@ -9148,9 +9183,17 @@ msgstr "无法验证可用余额"
 msgid "Unable to verify regional availability. Deposits are temporarily unavailable."
 msgstr "无法验证地区可用性，存款暂时不可用。"
 
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
+msgstr "无法验证地区可用性，资金操作暂时不可用。"
+
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
 msgstr "无法验证地区可用性，本次存款未提交。"
+
+#: src/hooks/trade/use-funds-action-availability.ts
+msgid "Unable to verify regional availability. This funds action was not submitted."
+msgstr "无法验证地区可用性，本次资金操作未提交。"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -9266,6 +9309,7 @@ msgid "Unified account"
 msgstr "统一账户"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 msgid "Unified Account"
 msgstr "统一账户"
 
@@ -9332,7 +9376,6 @@ msgstr "更新失败"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "已更新"

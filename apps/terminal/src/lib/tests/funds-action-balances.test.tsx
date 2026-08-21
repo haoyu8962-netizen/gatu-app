@@ -44,6 +44,7 @@ const testState = vi.hoisted(() => ({
 	},
 	exchangeGuards: new Map<string, (_params: unknown, signal: AbortSignal) => Promise<void>>(),
 	assertAccountAbstraction: vi.fn(),
+	assertFreshGeoAllowed: vi.fn(),
 }));
 
 function renderChildren(children: ReactNode) {
@@ -112,6 +113,21 @@ vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
 	useAccountAbstractionPreExecutionGuard: () => testState.assertAccountAbstraction,
 }));
 
+vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
+	useFundsActionAvailability: ({ accountModeReady }: { accountModeReady: boolean }) => {
+		const unavailableReason = accountModeReady ? null : "Select a supported account mode before moving funds.";
+		return {
+			assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
+			internalTransfer: {
+				available: accountModeReady,
+				reason: accountModeReady ? null : "account-mode-unavailable",
+				unavailableReason,
+			},
+			withdrawal: { available: true, reason: null, unavailableReason: null },
+		};
+	},
+}));
+
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		address: "0x1111111111111111111111111111111111111111",
@@ -178,6 +194,8 @@ describe("funds action balance wiring", () => {
 		testState.exchangeGuards.clear();
 		testState.assertAccountAbstraction.mockReset();
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
+		testState.assertFreshGeoAllowed.mockReset();
+		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -285,6 +303,22 @@ describe("funds action balance wiring", () => {
 		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
 		await testState.exchangeGuards.get("usdClassTransfer")?.({ amount: "1", toPerp: false }, signal);
 		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(3, signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
+	});
+
+	it("fails the internal-transfer SDK boundary closed when fresh geo cannot be verified", async () => {
+		testState.assertFreshGeoAllowed.mockRejectedValueOnce(
+			new Error("Unable to verify regional availability. This funds action was not submitted."),
+		);
+		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+
+		const signal = new AbortController().signal;
+		await expect(
+			testState.exchangeGuards.get("usdClassTransfer")?.({ amount: "1", toPerp: false }, signal),
+		).rejects.toThrow("Unable to verify regional availability");
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
+		expect(testState.exchangeMutations.usdClassTransfer).not.toHaveBeenCalled();
 	});
 
 	it("rechecks the exact balance after an async account preflight", async () => {

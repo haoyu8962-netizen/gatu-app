@@ -34,6 +34,10 @@ const testState = vi.hoisted(() => ({
 	fetchFreshRouting: vi.fn(),
 	freshRoutingError: null as Error | null,
 	freshRoutingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
+	fundsActionAvailable: true,
+	fundsActionUnavailableReason: null as string | null,
+	assertFreshGeoAllowed: vi.fn(),
+	balanceStale: false,
 	infoQueryCalls: [] as Array<{ enabled: boolean; method: string; params: unknown }>,
 	modalOpen: false,
 	preTransferFresh: {
@@ -80,8 +84,9 @@ vi.mock("@gatu/ui", () => ({
 vi.mock("@/domain/trade/balances", () => ({
 	getSpotBalance: () => null,
 	getSpotTransferableValue: () => "0",
+	isQuoteBalanceSharedWithPerps: () => false,
 	getAccountBalanceSummary: () => ({
-		hasSpotFundsWhenPerpWithdrawableZero: false,
+		hasSpotFundsWhenPerpWithdrawableZero: true,
 		isAvailable: true,
 		usesSpotStateForPerps: false,
 		spotUsdcAvailable: 0,
@@ -94,6 +99,8 @@ vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useDefaultDexBalances: () => ({
 		accountAbstraction: "disabled",
 		marginSummary: null,
@@ -105,7 +112,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		perpStateStatus: "success",
 		spotStateReceivedAt: Date.now(),
 		perpStateReceivedAt: Date.now(),
-		isDataStale: false,
+		isDataStale: testState.balanceStale,
 		hasError: false,
 	}),
 }));
@@ -167,6 +174,18 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 		signerReady: true,
 		unavailableLabel: "Deposit unavailable",
 		unavailableReason: testState.depositUnavailableReason,
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
+	useFundsActionAvailability: () => ({
+		assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
+		internalTransfer: { available: true, reason: null, unavailableReason: null },
+		withdrawal: {
+			available: testState.fundsActionAvailable,
+			reason: testState.fundsActionAvailable ? null : "geo-unresolved",
+			unavailableReason: testState.fundsActionUnavailableReason,
+		},
 	}),
 }));
 
@@ -404,6 +423,7 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onRetryPrerequisites,
 		onSubmit,
 		routingStatus,
+		showSpotFundsNotice,
 	}: {
 		activationFee: string;
 		maxAmount: string;
@@ -411,12 +431,14 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onRetryPrerequisites: () => void;
 		onSubmit: () => void;
 		routingStatus: string;
+		showSpotFundsNotice: boolean;
 	}) =>
 		createElement(
 			"div",
 			{
 				"data-activation-fee": activationFee,
 				"data-max-amount": maxAmount,
+				"data-show-spot-funds-notice": showSpotFundsNotice,
 				"data-testid": "withdraw-routing-status",
 				"data-status": routingStatus,
 			},
@@ -443,8 +465,13 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.exchangeSignal = new AbortController().signal;
 		testState.accountGuard.mockReset();
 		testState.accountGuard.mockResolvedValue(undefined);
+		testState.assertFreshGeoAllowed.mockReset();
+		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
+		testState.balanceStale = false;
 		testState.freshRoutingError = null;
 		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.fundsActionAvailable = true;
+		testState.fundsActionUnavailableReason = null;
 		testState.infoQueryCalls.length = 0;
 		testState.activeTab = "deposit";
 		testState.modalOpen = false;
@@ -567,8 +594,35 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.preTransferInfo).toHaveBeenCalledWith(expectedParams, signal);
 		expect(testState.fetchFreshRouting).toHaveBeenCalledWith(signal);
 		expect(testState.accountGuard).toHaveBeenCalledWith(signal);
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
+	});
+
+	it("fails the withdrawal SDK boundary closed when the fresh geo check is unavailable", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.assertFreshGeoAllowed.mockRejectedValueOnce(
+			new Error("Unable to verify regional availability. This funds action was not submitted."),
+		);
+
+		await submitWithdrawal();
+
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+	});
+
+	it("does not expose cached Spot funds when the balance snapshot is stale", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.balanceStale = true;
+
+		await rerender();
+
+		expect(
+			container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-show-spot-funds-notice"),
+		).toBe("false");
 	});
 
 	it("keeps activation fees and pre-transfer checks out of the legacy withdrawal route", async () => {
@@ -587,6 +641,22 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.preTransferInfo).not.toHaveBeenCalled();
 		expect(testState.exchangeSdkCalls.get("withdraw3")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+	});
+
+	it("fails the legacy withdrawal SDK boundary closed when the fresh geo check is unavailable", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "bridge" };
+		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "bridge" };
+		testState.assertFreshGeoAllowed.mockRejectedValueOnce(
+			new Error("Unable to verify regional availability. This funds action was not submitted."),
+		);
+
+		await submitWithdrawal();
+
+		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
+		expect(testState.exchangeMutations.get("withdraw3")).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
 	});
 
 	it("rejects a queue-boundary activation fee change before calling the exchange SDK", async () => {

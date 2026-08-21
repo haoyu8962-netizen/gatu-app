@@ -1,20 +1,11 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@gatu/ui";
-import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
-import {
-	accountOverviewNeedsTokenUsdPrices,
-	getPerpRiskSummaryUsdValue,
-	getSpotAccountValueUsdValue,
-	getTokenAmountUsdValue,
-	getUnifiedAccountMarginRatioValue,
-	isQuoteBalanceSharedWithPerps,
-} from "@/domain/trade/balances";
 import {
 	ALL_POSITION_MARKETS,
 	getReadyItemCount,
@@ -22,14 +13,9 @@ import {
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
-import { getToolbarAccountMarginRatio } from "@/domain/trade/trading-toolbar-metrics";
-import {
-	isSupportedAccountAbstraction,
-	useDefaultDexBalances,
-	useSelectedDexBalances,
-} from "@/hooks/trade/use-account-balances";
+import { useAccountOverview } from "@/hooks/trade/use-account-overview";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
-import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -89,8 +75,22 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
 	const markets = useMarkets();
-	const defaultBalances = useDefaultDexBalances();
-	const selectedBalances = useSelectedDexBalances();
+	const {
+		accountEquityValue: accountEquity,
+		accountModeReady,
+		defaultBalances,
+		fundsActionsReady,
+		maintenanceMarginRatio,
+		riskSummary,
+		summaryReady: accountSummaryReady,
+	} = useAccountOverview();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: fundsActionsReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: false,
+	});
 	const {
 		perpSummary,
 		spotBalances,
@@ -98,92 +98,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		hasSpotStateSnapshot,
 		hasError: balancesError,
 	} = defaultBalances;
-	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
-	const tokenUsdPrices = tokenUsdPriceState.prices;
-	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(selectedBalances.accountAbstraction);
-	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const collateralTokenByDex = new Map<string, string>([
-		["", DEFAULT_QUOTE_TOKEN],
-		...markets.builderPerp.flatMap(
-			(market): Array<[string, string]> => (market.quoteToken ? [[market.dex, market.quoteToken.name]] : []),
-		),
-	]);
-	const selectedCollateralToken = collateralTokenByDex.get(summaryBalances.dex) ?? null;
-	const accountEquity = usesSharedQuoteBalance
-		? getSpotAccountValueUsdValue(summaryBalances.spotBalances, tokenUsdPrices)
-		: getTokenAmountUsdValue(summaryBalances.marginSummary?.accountValue, selectedCollateralToken, tokenUsdPrices);
-	const perpRiskStates = usesSharedQuoteBalance
-		? selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({
-				collateralToken: collateralTokenByDex.get(dex) ?? null,
-				marginSummary: state.crossMarginSummary,
-				crossMaintenanceMarginUsed: state.crossMaintenanceMarginUsed,
-				assetPositions: state.assetPositions,
-			}))
-		: [
-				{
-					collateralToken: selectedCollateralToken,
-					marginSummary: summaryBalances.perpSummary,
-					crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-					assetPositions: summaryBalances.perpPositions,
-				},
-			];
-	const riskSummary = getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices);
-	const accountAbstraction = selectedBalances.accountAbstraction;
-	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
-	const maintenanceMarginRatio =
-		accountAbstraction === "unifiedAccount"
-			? getUnifiedAccountMarginRatioValue({
-					states: selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({ dex, ...state })),
-					collaterals: [
-						...(defaultCollateralToken ? [{ dex: "", token: defaultCollateralToken.index }] : []),
-						...markets.builderPerp.flatMap((market) =>
-							market.quoteToken ? [{ dex: market.dex, token: market.quoteToken.index }] : [],
-						),
-					],
-					spotBalances: summaryBalances.spotBalances,
-				})
-			: accountAbstraction === "portfolioMargin"
-				? summaryBalances.portfolioMarginRatio
-				: getToolbarAccountMarginRatio({
-						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
-						accountEquity: summaryBalances.perpSummary?.accountValue ?? "0",
-					});
-	const requiresUsdPrices = accountOverviewNeedsTokenUsdPrices({
-		accountValues: usesSharedQuoteBalance
-			? []
-			: [{ token: selectedCollateralToken, value: summaryBalances.marginSummary?.accountValue }],
-		spotBalances: usesSharedQuoteBalance ? summaryBalances.spotBalances : [],
-		perpRiskStates,
-	});
-	const accountSummaryReady =
-		isConnected &&
-		accountModeReady &&
-		summaryBalances.perpStateStatus === "success" &&
-		!summaryBalances.isPerpStateStale &&
-		(!requiresUsdPrices || tokenUsdPriceState.status === "success") &&
-		(!usesSharedQuoteBalance ||
-			(!summaryBalances.hasError &&
-				!summaryBalances.isDataStale &&
-				summaryBalances.hasAllDexsSnapshot &&
-				summaryBalances.spotStateStatus === "success" &&
-				summaryBalances.hasSpotStateSnapshot)) &&
-		accountEquity !== null &&
-		riskSummary !== null;
-	const fundsActionsReady =
-		hasWalletAccess &&
-		accountModeReady &&
-		!defaultBalances.hasError &&
-		!defaultBalances.isDataStale &&
-		defaultBalances.perpStateStatus === "success" &&
-		defaultBalances.spotStateStatus === "success";
-	const withdrawDisabledReason = !hasWalletAccess
-		? _(msg`Connect the owner wallet before moving funds.`)
-		: !accountModeReady
-			? _(msg`Select a supported account mode before moving funds.`)
-			: !fundsActionsReady
-				? _(msg`Balance data is unavailable. Try again after the connection recovers.`)
-				: null;
+	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
 	const {
 		positions,
 		isLoading: positionsLoading,
@@ -262,6 +177,14 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
 		count: openOrders?.length ?? 0,
 	});
+	const positionsAccountSummary =
+		accountSummaryReady && accountEquity !== null && riskSummary
+			? {
+					accountEquity,
+					unrealizedPnl: riskSummary.unrealizedPnl,
+					maintenanceMarginRatio,
+				}
+			: null;
 
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
 	const showsFundsActions = includeTransfers && activeTab === PORTFOLIO_TRANSFERS_TAB.value;
@@ -417,7 +340,9 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 											disabled={!!withdrawDisabledReason}
 											focusableWhenDisabled
 											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-											onClick={() => openDepositModal("withdraw")}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
 											className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 										>
 											<Trans context="Trading toolbar action">Withdraw</Trans>
@@ -448,15 +373,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 							directionFilter={positionDirectionFilter}
 							marketFilter={positionMarketFilter}
 							currentMarket={currentPositionMarket}
-							accountSummary={
-								accountSummaryReady
-									? {
-											accountEquity,
-											unrealizedPnl: riskSummary.unrealizedPnl,
-											maintenanceMarginRatio,
-										}
-									: null
-							}
+							accountSummary={positionsAccountSummary}
 						/>
 					</Suspense>
 				</TabsContent>

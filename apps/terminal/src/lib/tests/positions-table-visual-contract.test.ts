@@ -83,8 +83,8 @@ describe("positions table visual contract", () => {
 
 	it("shows the production-scoped account summary without deriving finance in the row component", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain('data-testid="positions-summary-bar"');
-		expect(POSITIONS_TAB_SOURCE).toContain("getTotalPositionUnrealizedPnl(positions)");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl(filteredPositions)");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl");
+		expect(POSITIONS_TAB_SOURCE).toContain("accountSummary?.unrealizedPnl ?? null");
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Unrealized PNL`}");
 		expect(POSITIONS_TAB_SOURCE).toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).toContain("Maintenance Margin Ratio");

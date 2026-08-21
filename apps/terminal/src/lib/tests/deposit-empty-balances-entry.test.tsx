@@ -2,35 +2,61 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileBalancesTab } from "@/components/trade/mobile/mobile-balances-tab";
 import { BalancesTab } from "@/components/trade/positions/balances-tab";
 
+vi.mock("@/components/trade/components/asset-display", () => ({
+	AssetDisplay: ({ coin }: { coin: string }) => <span>{coin}</span>,
+}));
+
+vi.mock("@/components/ui/scroll-area", () => ({
+	ScrollArea: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+
 const testState = vi.hoisted(() => ({
 	depositAvailable: true,
 	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
+	fundsActionAvailable: true,
+	hasBalance: false,
 	isConnected: true,
 	openDeposit: vi.fn(),
 }));
 
 vi.mock("@/hooks/trade/use-balance-rows", () => ({
-	useBalanceRows: () => ({
-		accountDataReady: true,
-		accountModeReady: true,
-		balances: [],
-		hasError: false,
-		internalTransfersEnabled: true,
-		isConnected: testState.isConnected,
-		isDataStale: false,
-		isLoading: false,
-		perpBalances: [],
-		perpFundsActionsEnabled: true,
-		showBalanceAccountType: false,
-		spotBalanceRows: [],
-	}),
+	useBalanceRows: () => {
+		const rows = testState.hasBalance
+			? [
+					{
+						asset: "USDC",
+						available: "10",
+						entryNtl: "0",
+						inOrder: "0",
+						total: "10",
+						transferable: "10",
+						type: "spot" as const,
+						usdValue: "10",
+					},
+				]
+			: [];
+		return {
+			accountDataReady: true,
+			accountModeReady: true,
+			balances: rows,
+			hasError: false,
+			internalTransfersEnabled: true,
+			isConnected: testState.isConnected,
+			isDataStale: false,
+			isLoading: false,
+			perpBalances: [],
+			perpFundsActionsEnabled: true,
+			showBalanceAccountType: false,
+			spotBalanceRows: rows,
+		};
+	},
 }));
 
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({
@@ -40,6 +66,26 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 		unavailableLabel: "Deposit unavailable",
 		unavailableReason: testState.depositUnavailableReason,
 	}),
+}));
+
+vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
+	useFundsActionAvailability: () => ({
+		assertFreshGeoAllowed: vi.fn(),
+		internalTransfer: {
+			available: testState.fundsActionAvailable,
+			reason: testState.fundsActionAvailable ? null : "geo-unresolved",
+			unavailableReason: testState.fundsActionAvailable ? null : "Regional availability is unavailable.",
+		},
+		withdrawal: {
+			available: testState.fundsActionAvailable,
+			reason: testState.fundsActionAvailable ? null : "geo-unresolved",
+			unavailableReason: testState.fundsActionAvailable ? null : "Regional availability is unavailable.",
+		},
+	}),
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ hasWalletAccess: testState.isConnected }),
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
@@ -56,6 +102,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => "en-US",
 	useGlobalSettingsActions: () => ({ setHideSmallBalances: vi.fn() }),
 	useHideSmallBalances: () => true,
 }));
@@ -73,6 +120,8 @@ describe("empty balance Deposit entries", () => {
 		testState.depositAvailable = true;
 		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
+		testState.fundsActionAvailable = true;
+		testState.hasBalance = false;
 		testState.isConnected = true;
 		testState.openDeposit.mockReset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -138,5 +187,16 @@ describe("empty balance Deposit entries", () => {
 		expect(buttons).toHaveLength(2);
 		for (const button of buttons) act(() => button.click());
 		expect(testState.openDeposit).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not expose transfer or withdrawal entries while funds actions are blocked", () => {
+		testState.fundsActionAvailable = false;
+		testState.hasBalance = true;
+		renderEntries();
+
+		const labels = Array.from(container.querySelectorAll<HTMLButtonElement>("button"), (button) => button.textContent);
+		expect(labels).not.toContain("Transfer");
+		expect(labels).not.toContain("To Perp");
+		expect(labels).not.toContain("Withdraw");
 	});
 });

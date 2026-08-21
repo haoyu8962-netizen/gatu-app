@@ -15,7 +15,12 @@ import {
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
-import { getAccountBalanceSummary, getSpotBalance, getSpotTransferableValue } from "@/domain/trade/balances";
+import {
+	getAccountBalanceSummary,
+	getSpotBalance,
+	getSpotTransferableValue,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
 import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
@@ -25,11 +30,12 @@ import {
 } from "@/domain/trade/pre-transfer-check";
 import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { executeWithFreshWithdrawalRoute, useFreshUsdcRouting, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
@@ -258,6 +264,13 @@ export function DepositModal() {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: withdrawalBalanceReady,
+		accountModeReady: isSupportedAccountAbstraction(accountAbstraction),
+		fundsActionsEnabled: accountSummary.isAvailable,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
 	const withdrawable = withdrawalBalanceReady ? String(accountSummary.withdrawable) : "0";
 	const exactWithdrawable = withdrawalBalanceReady
 		? accountSummary.usesSpotStateForPerps
@@ -277,7 +290,9 @@ export function DepositModal() {
 			: defaultBalances.perpStateReceivedAt,
 	};
 	const showSpotFundsNotice =
-		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+		withdrawalBalanceReady &&
+		!accountSummary.usesSpotStateForPerps &&
+		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	const reviewedDepositAmount = isEmbeddedDeposit ? maxDepositAmount : depositAmount;
 	const reviewedDepositAmountRaw = isEmbeddedDeposit ? maxDepositRaw : depositAmountRaw;
@@ -359,9 +374,7 @@ export function DepositModal() {
 	const withdrawalQueriesEnabled =
 		open &&
 		visibleTab === "withdraw" &&
-		canUseFundsActions &&
-		withdrawalBalanceReady &&
-		accountSummary.isAvailable &&
+		fundsActionAvailability.withdrawal.available &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute;
 	const cctpWithdrawalQueriesEnabled = withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp";
@@ -434,10 +447,8 @@ export function DepositModal() {
 			(spotMetaQuery.isFetching || preTransferCheckQuery.isFetching || cctpFeeQuery.isFetching));
 	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
 	let withdrawalPrerequisiteError: string | null = null;
-	if (!withdrawalBalanceReady) {
-		withdrawalPrerequisiteError = t`Balance data is unavailable. Try again after the connection recovers.`;
-	} else if (!accountSummary.isAvailable) {
-		withdrawalPrerequisiteError = t`Select a supported account mode before moving funds.`;
+	if (!fundsActionAvailability.withdrawal.available) {
+		withdrawalPrerequisiteError = fundsActionAvailability.withdrawal.unavailableReason;
 	} else if (
 		withdrawalRoutingStatus === "ready" &&
 		withdrawalRoute === "arbitrum-cctp" &&
@@ -460,8 +471,7 @@ export function DepositModal() {
 		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
 	}
 	const withdrawalPrerequisitesReady =
-		withdrawalBalanceReady &&
-		accountSummary.isAvailable &&
+		fundsActionAvailability.withdrawal.available &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute &&
 		(withdrawalRoute === "arbitrum-legacy" ||
@@ -547,7 +557,11 @@ export function DepositModal() {
 			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
 		};
 		assertCurrentBalance();
-		const guards = [assertFreshWithdrawalRoute(expectedRoute, signal), assertAccountAbstraction(signal)];
+		const guards = [
+			assertFreshWithdrawalRoute(expectedRoute, signal),
+			assertAccountAbstraction(signal),
+			fundsActionAvailability.assertFreshGeoAllowed(signal),
+		];
 		if (expectedRoute === "arbitrum-cctp") guards.push(assertFreshCctpPreTransferCheck(signal));
 		await Promise.all(guards);
 		signal.throwIfAborted();
@@ -1223,7 +1237,9 @@ export function DepositModal() {
 								onSubmit={handleWithdrawSubmit}
 								spotAvailable={accountSummary.spotUsdcAvailable}
 								showSpotFundsNotice={showSpotFundsNotice}
-								onTransferClick={handlePerpsSpotTransferClick}
+								onTransferClick={
+									fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
+								}
 							/>
 						))}
 

@@ -11,6 +11,7 @@ const testState = vi.hoisted(() => ({
 	activeTab: "positions",
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
+	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	openDepositModal: vi.fn(),
 	setPositionsActiveTab: vi.fn(),
 }));
@@ -19,9 +20,10 @@ const accountBalances = {
 	accountAbstraction: "disabled" as const,
 	allDexClearinghouseStates: [],
 	crossMaintenanceMarginUsed: "2",
-	marginSummary: { accountValue: "100", totalNtlPos: "0", totalMarginUsed: "0" },
+	dex: "",
+	marginSummary: { accountValue: "100", totalNtlPos: "0", totalMarginUsed: "0", totalRawUsd: "100" },
 	perpPositions: [],
-	perpSummary: { accountValue: "100" },
+	perpSummary: { accountValue: "100", totalMarginUsed: "0", totalNtlPos: "0", totalRawUsd: "100" },
 	spotBalances: [{ total: "2" }],
 	spotAvailableAfterMaintenance: [],
 	withdrawable: "100",
@@ -29,10 +31,14 @@ const accountBalances = {
 	hasSpotStateSnapshot: true,
 	hasError: false,
 	isDataStale: false,
+	isLoading: false,
+	isPerpStateStale: false,
+	isSpotStateStale: false,
 	perpStateStatus: "success",
 	perpStateReceivedAt: Date.now(),
 	spotStateStatus: "success",
 	spotStateReceivedAt: Date.now(),
+	portfolioMarginRatio: null,
 };
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
@@ -53,9 +59,27 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 	useDepositAvailability: () => ({
-		available: testState.depositAvailable,
+		available: testState.depositAvailable && testState.geoStatus === "allowed",
 		unavailableLabel: "Deposit unavailable",
-		unavailableReason: testState.depositUnavailableReason,
+		unavailableReason:
+			testState.geoStatus === "allowed"
+				? testState.depositUnavailableReason
+				: "Funds actions are unavailable in this region.",
+	}),
+}));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({
+		actionsBlocked: testState.geoStatus !== "allowed",
+		country: testState.geoStatus === "unresolved" ? null : "GB",
+		isError: false,
+		isResolved: testState.geoStatus !== "unresolved",
+		proxy: false,
+		retry: vi.fn().mockResolvedValue({
+			data: { country: "GB", proxy: false, tradeRestricted: testState.geoStatus === "restricted" },
+			isError: false,
+		}),
+		tradeRestricted: testState.geoStatus === "restricted",
 	}),
 }));
 
@@ -110,6 +134,7 @@ describe("desktop positions panel shell", () => {
 		testState.activeTab = "positions";
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
+		testState.geoStatus = "allowed";
 		testState.openDepositModal.mockReset();
 		testState.setPositionsActiveTab.mockReset();
 		i18n.load("en", {});
@@ -290,6 +315,22 @@ describe("desktop positions panel shell", () => {
 		expect(testState.openDepositModal).toHaveBeenNthCalledWith(1, "deposit");
 		expect(testState.openDepositModal).toHaveBeenNthCalledWith(2, "withdraw");
 	});
+
+	it.each(["restricted", "unresolved"] as const)(
+		"keeps the transfers-tab withdrawal inert when geo is %s",
+		(geoStatus) => {
+			testState.activeTab = "transfers";
+			testState.geoStatus = geoStatus;
+			render(true);
+
+			const withdrawButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Withdraw",
+			);
+			expect(withdrawButton?.getAttribute("aria-disabled")).toBe("true");
+			act(() => withdrawButton?.click());
+			expect(testState.openDepositModal).not.toHaveBeenCalledWith("withdraw");
+		},
+	);
 
 	it("keeps the transfers Deposit entry inert with an explicit reason when its path is unavailable", () => {
 		testState.activeTab = "transfers";

@@ -11,7 +11,6 @@ import {
 } from "@/domain/trade/position-close-all";
 import {
 	filterPositions,
-	getTotalPositionUnrealizedPnl,
 	type PositionDirectionFilter,
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
@@ -122,8 +121,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
-	const totalUnrealizedPnl = getTotalPositionUnrealizedPnl(positions);
-	const summaryUnrealizedPnl = positionsStale ? null : (accountSummary?.unrealizedPnl ?? totalUnrealizedPnl);
+	const summaryUnrealizedPnl = positionsStale ? null : (accountSummary?.unrealizedPnl ?? null);
 	const accountRisk = getToolbarAccountRiskPresentation(
 		positionsStale ? null : (accountSummary?.maintenanceMarginRatio ?? null),
 	);

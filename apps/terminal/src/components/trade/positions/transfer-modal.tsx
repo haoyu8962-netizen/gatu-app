@@ -15,6 +15,7 @@ import {
 import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
@@ -69,6 +70,14 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	} = useDefaultDexBalances();
 	const accountDataReady =
 		spotStateStatus === "success" && perpStateStatus === "success" && !isDataStale && !hasBalanceError;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
 	const accountDataReadyRef = useRef(accountDataReady);
 	accountDataReadyRef.current = accountDataReady;
 	const availableBalanceRef = useRef({ value: "0", receivedAt: undefined as number | undefined, direction });
@@ -85,7 +94,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 				assertFreshFundsAmount(params.amount, current.value, current.receivedAt);
 			};
 			assertCurrentBalance();
-			await assertAccountAbstraction(signal);
+			await Promise.all([assertAccountAbstraction(signal), fundsActionAvailability.assertFreshGeoAllowed(signal)]);
 			signal.throwIfAborted();
 			assertCurrentBalance();
 		},
@@ -100,14 +109,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
-	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
-	const internalTransfersDisabledReason = !accountModeReady
-		? t`Select a supported account mode before moving funds.`
-		: !accountDataReady
-			? t`Balance data is unavailable. Try again after the connection recovers.`
-			: isQuoteBalanceSharedWithPerps(accountAbstraction)
-				? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-				: null;
+	const internalTransfersDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
 	const availableBalanceValue =
 		accountModeReady && accountDataReady
 			? direction === "toSpot"
@@ -127,7 +129,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	};
 
 	const isValidAmount =
-		!internalTransfersDisabledReason &&
+		fundsActionAvailability.internalTransfer.available &&
 		isAmountWithinBalance(amount, availableBalanceValue) &&
 		hasWalletAccess &&
 		!!walletAddress;
