@@ -12,6 +12,7 @@ import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
+import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -35,6 +36,7 @@ export function AccountPanel() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
+	const transferDescriptionId = useId();
 	const transferUnavailableId = useId();
 	const withdrawUnavailableId = useId();
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
@@ -43,8 +45,8 @@ export function AccountPanel() {
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const {
-		accountAbstraction,
 		accountEquityValue,
+		accountMode,
 		accountModeReady,
 		accountRisk,
 		crossLeverage,
@@ -52,12 +54,15 @@ export function AccountPanel() {
 		maintenanceMarginRatio,
 		marginRatioReady,
 		riskSummary,
+		showSpotFundsNotice,
 		snapshotReady: balanceSnapshotReady,
+		spotFundsAvailable,
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
 		valuationUnavailable,
 	} = useAccountOverview();
+	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
 		accountModeReady,
@@ -72,16 +77,6 @@ export function AccountPanel() {
 		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
 		: "—";
 	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
-	const accountValueLabel = usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`;
-	const crossMaintenanceMarginLabel = t`Cross Maintenance Margin`;
-	const accountModeLabel =
-		accountAbstraction === "unifiedAccount"
-			? t`Unified Account`
-			: accountAbstraction === "portfolioMargin"
-				? t`Portfolio Margin`
-				: accountAbstraction === "disabled"
-					? t`Separate Accounts`
-					: t`Select mode`;
 
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeEntry = shouldShowLiFiBridgeTab({
@@ -91,9 +86,14 @@ export function AccountPanel() {
 	});
 	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
 	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const transferDescriptionIds = internalTransferDisabledReason
+		? `${transferDescriptionId} ${transferUnavailableId}`
+		: transferDescriptionId;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
+	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	function renderMetricValue(value: ReactNode) {
 		return (
@@ -110,14 +110,14 @@ export function AccountPanel() {
 	const summaryRows: SummaryRow[] = [
 		{
 			key: "portfolio-value",
-			label: accountValueLabel,
+			label: overviewLabels.accountValue,
 			value: renderMetricValue(
 				balanceSnapshotReady && accountEquityValue !== null ? formatUSD(accountEquityValue, { compact: false }) : "—",
 			),
 		},
 		{
 			key: "unrealized-pnl",
-			label: t`Unrealized PNL`,
+			label: overviewLabels.unrealizedPnl,
 			value: renderMetricValue(
 				balanceSnapshotReady && riskSummary
 					? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
@@ -128,11 +128,11 @@ export function AccountPanel() {
 		},
 		{
 			key: "margin-ratio",
-			label: t`Account Margin Ratio`,
+			label: overviewLabels.accountMarginRatio,
 			value: renderMetricValue(
 				<span
 					role="progressbar"
-					aria-label={t`Account Margin Ratio`}
+					aria-label={overviewLabels.accountMarginRatio}
 					aria-valuemin={0}
 					aria-valuemax={100}
 					aria-valuenow={accountRisk.progressPercent === null ? undefined : Number(accountRisk.progressPercent)}
@@ -173,7 +173,7 @@ export function AccountPanel() {
 		},
 		{
 			key: "cross-maintenance-margin",
-			label: crossMaintenanceMarginLabel,
+			label: overviewLabels.crossMaintenanceMargin,
 			value: renderMetricValue(
 				balanceSnapshotReady && riskSummary
 					? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
@@ -182,7 +182,7 @@ export function AccountPanel() {
 		},
 		{
 			key: "cross-account-leverage",
-			label: t`Cross Account Leverage`,
+			label: overviewLabels.crossAccountLeverage,
 			value: renderMetricValue(crossLeverageLabel),
 		},
 	];
@@ -268,15 +268,30 @@ export function AccountPanel() {
 							<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
 						</output>
 					) : null}
-					{metricLoading ? <output className="sr-only">{t`Loading...`}</output> : null}
+					{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
+					{showsTransferEntry ? (
+						<span id={transferDescriptionId} className="sr-only">
+							{overviewLabels.transferBetweenPerpsAndSpot}
+						</span>
+					) : null}
+					{showsTransferEntry && internalTransferDisabledReason ? (
+						<span id={transferUnavailableId} className="sr-only">
+							{internalTransferDisabledReason}
+						</span>
+					) : null}
+					{showsSecondaryFundsActions && withdrawDisabledReason ? (
+						<span id={withdrawUnavailableId} className="sr-only">
+							{withdrawDisabledReason}
+						</span>
+					) : null}
 
 					<section aria-labelledby={overviewTitleId}>
 						<h3
 							id={overviewTitleId}
 							className="mb-1 truncate text-2sm font-bold text-trading-panel-fg"
-							title={accountModeLabel}
+							title={overviewLabels.accountMode}
 						>
-							{accountModeLabel} · {t`Overview`}
+							{overviewLabels.accountMode} · {overviewLabels.overview}
 						</h3>
 						<InfoRowGroup className="divide-y-0 tracking-normal">
 							{summaryRows.map((row) => (
@@ -293,6 +308,35 @@ export function AccountPanel() {
 							))}
 						</InfoRowGroup>
 					</section>
+
+					{showSpotFundsNotice ? (
+						<div
+							data-slot="account-spot-funds-notice"
+							className="mt-3 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2 text-xs text-warning"
+						>
+							<div className="tabular-nums">
+								{overviewLabels.availableFundsInSpot}:{" "}
+								{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
+							</div>
+							{hasWalletAccess ? (
+								<Button
+									variant="link"
+									intent="brand"
+									size="xs"
+									className="mt-1 h-auto p-0"
+									disabled={!fundsActionAvailability.internalTransfer.available}
+									focusableWhenDisabled
+									aria-describedby={transferDescriptionIds}
+									title={internalTransferDisabledReason ?? undefined}
+									onClick={
+										fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
+									}
+								>
+									{overviewLabels.perpsSpot}
+								</Button>
+							) : null}
+						</div>
+					) : null}
 
 					{depositGeoBlocked ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</p>
@@ -322,16 +366,6 @@ export function AccountPanel() {
 								</span>
 							</Tooltip>
 							<div className="account-panel-secondary-actions grid grid-cols-2 gap-2">
-								{internalTransferDisabledReason ? (
-									<span id={transferUnavailableId} className="sr-only">
-										{internalTransferDisabledReason}
-									</span>
-								) : null}
-								{withdrawDisabledReason ? (
-									<span id={withdrawUnavailableId} className="sr-only">
-										{withdrawDisabledReason}
-									</span>
-								) : null}
 								<Tooltip content={internalTransferDisabledReason} side="top">
 									<span className="inline-flex min-w-0 w-full">
 										<Button
@@ -342,14 +376,13 @@ export function AccountPanel() {
 													? () => openTransferModal("toPerp")
 													: undefined
 											}
-											aria-label={t`Transfer between Perps and Spot`}
-											aria-describedby={internalTransferDisabledReason ? transferUnavailableId : undefined}
+											aria-describedby={transferDescriptionIds}
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 											disabled={!!internalTransferDisabledReason}
 											focusableWhenDisabled
 											className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
 										>
-											{t`Perps / Spot`}
+											{overviewLabels.perpsSpot}
 										</Button>
 									</span>
 								</Tooltip>

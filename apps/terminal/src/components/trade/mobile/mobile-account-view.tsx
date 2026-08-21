@@ -11,6 +11,7 @@ import { Suspense, useId, useState } from "react";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
+import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -31,6 +32,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
+	const transferDescriptionId = useId();
 	const transferUnavailableId = useId();
 	const withdrawUnavailableId = useId();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
@@ -53,6 +55,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		usesSharedQuoteBalance,
 		valuationUnavailable,
 	} = useAccountOverview();
+	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const metricLoading = accountOverviewStatus === "loading";
 	const metricsHaveError = accountOverviewStatus === "error";
 	const metricsAreStale = accountOverviewStatus === "stale";
@@ -73,19 +76,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const accountModeLabel =
-		accountMode === "unified"
-			? t`Unified Account`
-			: accountMode === "portfolioMargin"
-				? t`Portfolio Margin`
-				: accountMode === "separate"
-					? t`Separate Accounts`
-					: t`Select mode`;
 	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
 	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
+	const transferDescriptionIds = internalTransferDisabledReason
+		? `${transferDescriptionId} ${transferUnavailableId}`
+		: transferDescriptionId;
 	const depositGeoBlocked =
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
+	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	if (!isConnected) {
 		const showsEmailDeposit = depositAvailability.path === "sponsored";
@@ -133,10 +133,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		);
 	}
 
-	const marginRatioLabel = marginRatioReady ? formatPercent(maintenanceMarginRatio, { signDisplay: "never" }) : "—";
+	const marginRatioLabel = marginRatioReady
+		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
+		: "—";
 	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
-	const accountValueLabel = usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`;
-	const crossMaintenanceMarginLabel = t`Cross Maintenance Margin`;
 
 	return (
 		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
@@ -166,18 +166,34 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
 					</output>
 				) : null}
+				{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
+				{showsTransferEntry ? (
+					<span id={transferDescriptionId} className="sr-only">
+						{overviewLabels.transferBetweenPerpsAndSpot}
+					</span>
+				) : null}
+				{showsTransferEntry && internalTransferDisabledReason ? (
+					<span id={transferUnavailableId} className="sr-only">
+						{internalTransferDisabledReason}
+					</span>
+				) : null}
+				{showsSecondaryFundsActions && withdrawDisabledReason ? (
+					<span id={withdrawUnavailableId} className="sr-only">
+						{withdrawDisabledReason}
+					</span>
+				) : null}
 
 				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId}>
 					<div className="mb-4 flex items-start justify-between gap-3">
 						<div className="min-w-0">
 							<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
-								{accountModeLabel} · {t`Overview`}
+								{overviewLabels.accountMode} · {overviewLabels.overview}
 							</h2>
-							<p className="mt-1 text-xs text-fg-muted">{t`Margin and account risk at a glance`}</p>
+							<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
 						</div>
 						<div className="flex shrink-0 items-center gap-1.5">
 							<Badge tone="neutral" size="sm">
-								{accountModeLabel}
+								{overviewLabels.accountMode}
 							</Badge>
 							{metricsAreStale && !metricsHaveError ? (
 								<WarningCircleIcon className="size-3.5 text-warning" aria-label={t`Balance data is stale.`} />
@@ -186,10 +202,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</div>
 
 					<div className="space-y-2 pb-4">
-						<MetricRow label={t`Account Margin Ratio`} value={marginRatioLabel} loading={metricLoading} emphasized />
+						<MetricRow
+							label={overviewLabels.accountMarginRatio}
+							value={marginRatioLabel}
+							loading={metricLoading}
+							emphasized
+						/>
 						<div
 							role="progressbar"
-							aria-label={t`Account Margin Ratio`}
+							aria-label={overviewLabels.accountMarginRatio}
 							aria-valuemin={0}
 							aria-valuemax={100}
 							aria-valuenow={accountRisk.progressPercent === null ? undefined : Number(accountRisk.progressPercent)}
@@ -214,7 +235,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 					<div className="divide-y divide-stroke-weak/60 border-t border-stroke-weak/60">
 						<MetricRow
-							label={accountValueLabel}
+							label={overviewLabels.accountValue}
 							value={
 								accountSummaryReady && accountEquityValue !== null
 									? formatUSD(accountEquityValue, { compact: false })
@@ -223,7 +244,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							loading={metricLoading}
 						/>
 						<MetricRow
-							label={t`Unrealized PNL`}
+							label={overviewLabels.unrealizedPnl}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
@@ -239,7 +260,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							loading={metricLoading}
 						/>
 						<MetricRow
-							label={crossMaintenanceMarginLabel}
+							label={overviewLabels.crossMaintenanceMargin}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
@@ -247,14 +268,17 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							}
 							loading={metricLoading}
 						/>
-						<MetricRow label={t`Cross Account Leverage`} value={crossLeverageLabel} loading={metricLoading} />
+						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} loading={metricLoading} />
 					</div>
 				</section>
 
 				{showSpotFundsNotice ? (
-					<div className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning">
+					<div
+						data-slot="account-spot-funds-notice"
+						className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning"
+					>
 						<div className="tabular-nums">
-							{t`Available funds are in Spot`}:{" "}
+							{overviewLabels.availableFundsInSpot}:{" "}
 							{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
 						</div>
 						{hasWalletAccess ? (
@@ -265,12 +289,13 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								className="mt-1 h-auto p-0"
 								disabled={!fundsActionAvailability.internalTransfer.available}
 								focusableWhenDisabled
+								aria-describedby={transferDescriptionIds}
 								title={internalTransferDisabledReason ?? undefined}
 								onClick={
 									fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
 								}
 							>
-								{t`Perps / Spot`}
+								{overviewLabels.perpsSpot}
 							</Button>
 						) : null}
 					</div>
@@ -292,6 +317,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								size="md"
 								disabled={!depositAvailability.available}
 								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+								aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 								title={depositAvailability.unavailableReason ?? undefined}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 								className="min-h-11 w-full"
@@ -299,16 +325,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 							</Button>
 							<div className="grid grid-cols-2 gap-2">
-								{internalTransferDisabledReason ? (
-									<span id={transferUnavailableId} className="sr-only">
-										{internalTransferDisabledReason}
-									</span>
-								) : null}
-								{withdrawDisabledReason ? (
-									<span id={withdrawUnavailableId} className="sr-only">
-										{withdrawDisabledReason}
-									</span>
-								) : null}
 								<Tooltip content={internalTransferDisabledReason} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -323,10 +339,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 											disabled={!!internalTransferDisabledReason}
 											focusableWhenDisabled
-											aria-describedby={internalTransferDisabledReason ? transferUnavailableId : undefined}
+											aria-describedby={transferDescriptionIds}
 											className="min-h-11 w-full"
 										>
-											{t`Perps / Spot`}
+											{overviewLabels.perpsSpot}
 										</Button>
 									</span>
 								</Tooltip>
@@ -342,6 +358,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											onClick={
 												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
 											}
+											aria-label={t`Withdraw`}
 											iconLeft={<UploadSimpleIcon className="size-4" />}
 											className="min-h-11 w-full"
 										>
@@ -356,6 +373,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									intent="neutral"
 									size="md"
 									onClick={() => openDepositModal("bridge")}
+									aria-label={t`Bridge`}
 									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 									className="min-h-11 w-full"
 								>

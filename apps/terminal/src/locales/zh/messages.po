@@ -334,10 +334,7 @@ msgstr "账户数据不可用"
 msgid "Account Equity"
 msgstr "账户权益"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "账户保证金率"
 
@@ -380,8 +377,7 @@ msgstr "账户价值"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Value"
 msgstr "账户价值"
 
@@ -925,7 +921,7 @@ msgstr "可用金额未经验证"
 msgid "Available for delegation"
 msgstr "可用于委托"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Available funds are in Spot"
 msgstr "可用资金在现货账户"
 
@@ -2212,8 +2208,7 @@ msgstr "正在创建你的钱包，请稍候..."
 msgid "Cross"
 msgstr "全仓"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
 
@@ -2221,8 +2216,7 @@ msgstr "全仓账户杠杆"
 msgid "Cross Leverage"
 msgstr "全仓杠杆"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
 
@@ -4254,12 +4248,12 @@ msgstr "加载钱包中..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -4370,7 +4364,7 @@ msgstr "保证金"
 msgid "Margin amount"
 msgstr "保证金金额"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "保证金与账户风险一览"
 
@@ -5501,8 +5495,7 @@ msgstr "其他"
 msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "概览"
 
@@ -5647,10 +5640,8 @@ msgid "Perps"
 msgstr "永续合约"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
 msgstr "合约 / 现货"
 
@@ -5808,8 +5799,7 @@ msgstr "投资组合历史图表"
 msgid "Portfolio margin"
 msgstr "投资组合保证金"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Margin"
 msgstr "组合保证金"
 
@@ -5821,8 +5811,7 @@ msgstr "投资组合表现"
 msgid "Portfolio summary"
 msgstr "投资组合摘要"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "投资组合价值"
 
@@ -6948,9 +6937,8 @@ msgstr "选择收藏市场"
 msgid "Select market"
 msgstr "选择市场"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "选择模式"
 
@@ -7065,8 +7053,7 @@ msgstr "分离"
 #~ msgid "Separate Account Balances"
 #~ msgstr "分账户余额"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Separate Accounts"
 msgstr "分账户"
 
@@ -8927,7 +8914,7 @@ msgstr "交易被拒绝"
 msgid "Transfer"
 msgstr "划转"
 
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "在永续与现货之间划转"
 
@@ -9308,8 +9295,7 @@ msgstr "统一"
 msgid "Unified account"
 msgstr "统一账户"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unified Account"
 msgstr "统一账户"
 
@@ -9341,10 +9327,9 @@ msgstr "请解锁钱包后重试。"
 msgid "Unrealized P&L"
 msgstr "未实现盈亏"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
 msgstr "未实现盈亏"
 

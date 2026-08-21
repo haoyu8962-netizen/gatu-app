@@ -23,8 +23,11 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/positions/position-pnl-share-modal.tsx",
 	"components/trade/positions/position-row.tsx",
 	"components/trade/positions/twap-tab.tsx",
+	"components/trade/tradebox/account-panel.tsx",
 	"components/trade/tradebox/order-toast.tsx",
 	"components/trade/tradebox/trade-header.tsx",
+	"hooks/trade/use-account-overview-labels.ts",
+	"hooks/trade/use-funds-action-availability.ts",
 	"hooks/trade/use-order-entry-data.ts",
 	"hooks/trade/use-order-display-labels.ts",
 ];

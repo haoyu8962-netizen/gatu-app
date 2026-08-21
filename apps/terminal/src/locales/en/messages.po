@@ -354,10 +354,7 @@ msgstr "Account data unavailable"
 msgid "Account Equity"
 msgstr "Account Equity"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
 
@@ -400,8 +397,7 @@ msgstr "Account value"
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Value"
 msgstr "Account Value"
 
@@ -981,7 +977,7 @@ msgstr "Available amount is not verified"
 msgid "Available for delegation"
 msgstr "Available for delegation"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Available funds are in Spot"
 msgstr "Available funds are in Spot"
 
@@ -2365,8 +2361,7 @@ msgstr "Creating your wallet. Please wait..."
 msgid "Cross"
 msgstr "Cross"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "Cross Account Leverage"
 
@@ -2374,8 +2369,7 @@ msgstr "Cross Account Leverage"
 msgid "Cross Leverage"
 msgstr "Cross Leverage"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "Cross Maintenance Margin"
 
@@ -4541,12 +4535,12 @@ msgstr "Loading wallet..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -4681,7 +4675,7 @@ msgstr "Margin"
 msgid "Margin amount"
 msgstr "Margin amount"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "Margin and account risk at a glance"
 
@@ -5944,8 +5938,7 @@ msgstr "Other Ledger Update"
 #~ msgid "Other Options"
 #~ msgstr "Other Options"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "Overview"
 
@@ -6100,10 +6093,8 @@ msgid "Perps"
 msgstr "Perps"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
 
@@ -6274,8 +6265,7 @@ msgstr "Portfolio history chart"
 msgid "Portfolio margin"
 msgstr "Portfolio margin"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Margin"
 msgstr "Portfolio Margin"
 
@@ -6287,8 +6277,7 @@ msgstr "Portfolio performance"
 msgid "Portfolio summary"
 msgstr "Portfolio summary"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "Portfolio Value"
 
@@ -7516,9 +7505,8 @@ msgstr "Select favorite markets"
 msgid "Select market"
 msgstr "Select market"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "Select mode"
 
@@ -7641,8 +7629,7 @@ msgstr "Separate"
 #~ msgid "Separate Account Balances"
 #~ msgstr "Separate Account Balances"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Separate Accounts"
 msgstr "Separate Accounts"
 
@@ -9632,7 +9619,7 @@ msgstr "Transaction was rejected"
 msgid "Transfer"
 msgstr "Transfer"
 
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "Transfer between Perps and Spot"
 
@@ -10018,8 +10005,7 @@ msgstr "Unified"
 msgid "Unified account"
 msgstr "Unified account"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unified Account"
 msgstr "Unified Account"
 
@@ -10051,10 +10037,9 @@ msgstr "Unlock your wallet and try again."
 msgid "Unrealized P&L"
 msgstr "Unrealized P&L"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
 msgstr "Unrealized PNL"
 

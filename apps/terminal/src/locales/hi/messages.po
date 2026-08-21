@@ -350,10 +350,7 @@ msgstr ""
 msgid "Account Equity"
 msgstr "खाता इक्विटी"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
 
@@ -396,8 +393,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Value"
 msgstr "खाता मूल्य"
 
@@ -977,7 +973,7 @@ msgstr ""
 msgid "Available for delegation"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Available funds are in Spot"
 msgstr "उपलब्ध धन Spot में है"
 
@@ -1376,7 +1372,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Checking regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "आपके क्षेत्र में उपलब्धता की जाँच की जा रही है। धन संबंधी कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -2352,8 +2348,7 @@ msgstr "आपका वॉलेट बनाया जा रहा है। 
 msgid "Cross"
 msgstr "क्रॉस"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
 
@@ -2361,8 +2356,7 @@ msgstr "क्रॉस खाता लेवरेज"
 msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "क्रॉस मेंटेनेंस मार्जिन"
 
@@ -3709,15 +3703,15 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region."
-msgstr ""
+msgstr "आपके क्षेत्र में धन संबंधी कार्रवाइयाँ उपलब्ध नहीं हैं।"
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region. This funds action was not submitted."
-msgstr ""
+msgstr "आपके क्षेत्र में धन संबंधी कार्रवाइयाँ उपलब्ध नहीं हैं। यह धन संबंधी कार्रवाई सबमिट नहीं की गई।"
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are unavailable for this account."
-msgstr ""
+msgstr "इस खाते के लिए धन संबंधी कार्रवाइयाँ उपलब्ध नहीं हैं।"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
@@ -4524,12 +4518,12 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -4664,7 +4658,7 @@ msgstr "Margin"
 msgid "Margin amount"
 msgstr "मार्जिन राशि"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "मार्जिन और खाता जोखिम एक नज़र में"
 
@@ -5923,8 +5917,7 @@ msgstr "अन्य लेजर अपडेट"
 #~ msgid "Other Options"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "अवलोकन"
 
@@ -6079,10 +6072,8 @@ msgid "Perps"
 msgstr "परप्स"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
 
@@ -6253,8 +6244,7 @@ msgstr "पोर्टफोलियो इतिहास चार्ट"
 msgid "Portfolio margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
@@ -6266,8 +6256,7 @@ msgstr "पोर्टफोलियो प्रदर्शन"
 msgid "Portfolio summary"
 msgstr "पोर्टफोलियो सारांश"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
 
@@ -7495,9 +7484,8 @@ msgstr "पसंदीदा बाज़ार चुनें"
 msgid "Select market"
 msgstr "मार्केट चुनें"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "मोड चुनें"
 
@@ -7620,8 +7608,7 @@ msgstr "अलग"
 #~ msgid "Separate Account Balances"
 #~ msgstr "अलग खातों की शेष राशि"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Separate Accounts"
 msgstr "अलग खाते"
 
@@ -9607,7 +9594,7 @@ msgstr "लेन-देन अस्वीकार कर दिया गय�
 msgid "Transfer"
 msgstr "ट्रांसफ़र"
 
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "परपेचुअल और स्पॉट के बीच ट्रांसफ़र करें"
 
@@ -9870,7 +9857,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "आपके क्षेत्र में उपलब्धता सत्यापित नहीं की जा सकी। धन संबंधी कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
@@ -9878,7 +9865,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
-msgstr ""
+msgstr "आपके क्षेत्र में उपलब्धता सत्यापित नहीं की जा सकी। यह धन संबंधी कार्रवाई सबमिट नहीं की गई।"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -9993,8 +9980,7 @@ msgstr "एकीकृत"
 msgid "Unified account"
 msgstr "एकीकृत खाता"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unified Account"
 msgstr "एकीकृत खाता"
 
@@ -10026,10 +10012,9 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
 msgstr "अवास्तविक PNL"
 

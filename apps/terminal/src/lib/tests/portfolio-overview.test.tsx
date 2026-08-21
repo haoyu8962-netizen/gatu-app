@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
 		hasAllDexsSnapshot: true,
 		hasSpotStateSnapshot: true,
 	},
-	builderPerpMarkets: [] as Array<{ dex: string; quoteToken?: { name: string } }>,
+	builderPerpMarkets: [] as Array<{ dex: string; quoteToken?: { index: number; name: string } }>,
 	tokenUsdPrices: undefined as Record<string, string> | undefined,
 	auxiliaryDataAvailable: true,
 	feesData: undefined as
@@ -71,7 +71,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useMarkets: () => ({ builderPerp: mocks.builderPerpMarkets }),
+	useMarkets: () => ({
+		builderPerp: mocks.builderPerpMarkets,
+		getToken: (name: string) => (name === "USDC" ? { index: 0, name } : undefined),
+	}),
 	useInfo: (method: string) => {
 		if (method === "portfolio") {
 			return {
@@ -214,7 +217,7 @@ describe("PortfolioOverview", () => {
 			hasAllDexsSnapshot: true,
 			hasSpotStateSnapshot: true,
 		};
-		mocks.builderPerpMarkets = [{ dex: "xyz", quoteToken: { name: "USDH" } }];
+		mocks.builderPerpMarkets = [{ dex: "xyz", quoteToken: { index: 150, name: "USDH" } }];
 		mocks.tokenUsdPrices = { USDH: "0.99" };
 		renderOverview(root);
 

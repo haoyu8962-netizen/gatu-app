@@ -350,10 +350,7 @@ msgstr ""
 msgid "Account Equity"
 msgstr "حقوق ملكية الحساب"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "نسبة هامش الحساب"
 
@@ -396,8 +393,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Value"
 msgstr "قيمة الحساب"
 
@@ -977,7 +973,7 @@ msgstr ""
 msgid "Available for delegation"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Available funds are in Spot"
 msgstr "الأموال المتاحة في Spot"
 
@@ -1376,7 +1372,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Checking regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "جارٍ التحقق من التوفر في منطقتك. عمليات إدارة الأموال غير متاحة مؤقتًا."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -2352,8 +2348,7 @@ msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 msgid "Cross"
 msgstr "متقاطع"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "رافعة هامش المحفظة"
 
@@ -2361,8 +2356,7 @@ msgstr "رافعة هامش المحفظة"
 msgid "Cross Leverage"
 msgstr "الرافعة المتقاطعة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "هامش الصيانة المتقاطع"
 
@@ -3709,15 +3703,15 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region."
-msgstr ""
+msgstr "عمليات إدارة الأموال غير متاحة في منطقتك."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region. This funds action was not submitted."
-msgstr ""
+msgstr "عمليات إدارة الأموال غير متاحة في منطقتك. لم يتم إرسال هذه العملية."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are unavailable for this account."
-msgstr ""
+msgstr "عمليات إدارة الأموال غير متاحة لهذا الحساب."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
@@ -4524,12 +4518,12 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -4664,7 +4658,7 @@ msgstr "الهامش"
 msgid "Margin amount"
 msgstr "مبلغ الهامش"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "نظرة سريعة على الهامش ومخاطر الحساب"
 
@@ -5923,8 +5917,7 @@ msgstr "تحديث آخر في دفتر الحسابات"
 #~ msgid "Other Options"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "نظرة عامة"
 
@@ -6079,10 +6072,8 @@ msgid "Perps"
 msgstr "العقود الدائمة"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
 
@@ -6253,8 +6244,7 @@ msgstr "مخطط سجل المحفظة الاستثمارية"
 msgid "Portfolio margin"
 msgstr "هامش المحفظة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Margin"
 msgstr "هامش المحفظة"
 
@@ -6266,8 +6256,7 @@ msgstr "أداء المحفظة الاستثمارية"
 msgid "Portfolio summary"
 msgstr "ملخص المحفظة الاستثمارية"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "قيمة المحفظة"
 
@@ -7495,9 +7484,8 @@ msgstr "اختر الأسواق المفضلة"
 msgid "Select market"
 msgstr "اختر السوق"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "اختيار الوضع"
 
@@ -7620,8 +7608,7 @@ msgstr "منفصل"
 #~ msgid "Separate Account Balances"
 #~ msgstr "أرصدة الحسابات المنفصلة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Separate Accounts"
 msgstr "حسابات منفصلة"
 
@@ -9607,7 +9594,7 @@ msgstr "تم رفض المعاملة"
 msgid "Transfer"
 msgstr "تحويل"
 
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "التحويل بين العقود الدائمة والتداول الفوري"
 
@@ -9870,7 +9857,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "تعذّر التحقق من التوفر في منطقتك. عمليات إدارة الأموال غير متاحة مؤقتًا."
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
@@ -9878,7 +9865,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
-msgstr ""
+msgstr "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -9993,8 +9980,7 @@ msgstr "موحد"
 msgid "Unified account"
 msgstr "الحساب الموحد"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unified Account"
 msgstr "حساب موحّد"
 
@@ -10026,10 +10012,9 @@ msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 msgid "Unrealized P&L"
 msgstr "الأرباح والخسائر غير المحققة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
 msgstr "الربح والخسارة غير المحققة"
 

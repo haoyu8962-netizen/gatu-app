@@ -350,10 +350,7 @@ msgstr ""
 msgid "Account Equity"
 msgstr "Patrimonio de la cuenta"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "Ratio de margen de la cuenta"
 
@@ -396,8 +393,7 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Value"
 msgstr "Valor de la cuenta"
 
@@ -977,7 +973,7 @@ msgstr ""
 msgid "Available for delegation"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Available funds are in Spot"
 msgstr "Fondos disponibles en Spot"
 
@@ -1376,7 +1372,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Checking regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "Comprobando la disponibilidad en tu región. Las operaciones con fondos no están disponibles temporalmente."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -2352,8 +2348,7 @@ msgstr "Creando tu billetera. Espera..."
 msgid "Cross"
 msgstr "Cruzado"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "Apalancamiento de cuenta cruzada"
 
@@ -2361,8 +2356,7 @@ msgstr "Apalancamiento de cuenta cruzada"
 msgid "Cross Leverage"
 msgstr "Apalancamiento cruzado"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "Margen de mantenimiento cruzado"
 
@@ -3709,15 +3703,15 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region."
-msgstr ""
+msgstr "Las operaciones con fondos no están disponibles en tu región."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are not available in your region. This funds action was not submitted."
-msgstr ""
+msgstr "Las operaciones con fondos no están disponibles en tu región. Esta operación con fondos no se envió."
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Funds actions are unavailable for this account."
-msgstr ""
+msgstr "Las operaciones con fondos no están disponibles para esta cuenta."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
@@ -4524,12 +4518,12 @@ msgstr "Cargando billetera..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -4664,7 +4658,7 @@ msgstr "Margen"
 msgid "Margin amount"
 msgstr "Importe del margen"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Margin and account risk at a glance"
 msgstr "Margen y riesgo de la cuenta de un vistazo"
 
@@ -5923,8 +5917,7 @@ msgstr "Otra actualización del registro"
 #~ msgid "Other Options"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "Resumen"
 
@@ -6079,10 +6072,8 @@ msgid "Perps"
 msgstr "Perpetuos"
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
 
@@ -6253,8 +6244,7 @@ msgstr "Gráfico del historial de la cartera"
 msgid "Portfolio margin"
 msgstr "Margen de cartera"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Margin"
 msgstr "Margen de cartera"
 
@@ -6266,8 +6256,7 @@ msgstr "Rendimiento de la cartera"
 msgid "Portfolio summary"
 msgstr "Resumen de la cartera"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "Valor de la cartera"
 
@@ -7495,9 +7484,8 @@ msgstr "Seleccionar mercados favoritos"
 msgid "Select market"
 msgstr "Seleccionar mercado"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "Seleccionar modo"
 
@@ -7620,8 +7608,7 @@ msgstr "Separada"
 #~ msgid "Separate Account Balances"
 #~ msgstr "Saldos de cuentas separadas"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Separate Accounts"
 msgstr "Cuentas separadas"
 
@@ -9607,7 +9594,7 @@ msgstr "La transacción fue rechazada"
 msgid "Transfer"
 msgstr "Transferir"
 
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Transfer between Perps and Spot"
 msgstr "Transferir entre perpetuos y spot"
 
@@ -9870,7 +9857,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. Funds actions are temporarily unavailable."
-msgstr ""
+msgstr "No se ha podido verificar la disponibilidad en tu región. Las operaciones con fondos no están disponibles temporalmente."
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify regional availability. This deposit was not submitted."
@@ -9878,7 +9865,7 @@ msgstr ""
 
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
-msgstr ""
+msgstr "No se ha podido verificar la disponibilidad en tu región. Esta operación con fondos no se envió."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -9993,8 +9980,7 @@ msgstr "Unificada"
 msgid "Unified account"
 msgstr "Cuenta unificada"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unified Account"
 msgstr "Cuenta unificada"
 
@@ -10026,10 +10012,9 @@ msgstr "Desbloquea tu billetera y vuelve a intentarlo."
 msgid "Unrealized P&L"
 msgstr "P&L no realizado"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
 msgstr "PNL no realizado"
 

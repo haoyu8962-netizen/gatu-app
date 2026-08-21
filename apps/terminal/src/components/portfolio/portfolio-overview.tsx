@@ -16,12 +16,11 @@ import {
 } from "@/domain/portfolio";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useSpotTokenUsdPriceState } from "@/hooks/trade/use-spot-token-usd-prices";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { isSupportedAccountAbstraction } from "@/hooks/trade/use-account-balances";
+import { useDefaultAccountSnapshot } from "@/hooks/trade/use-default-account-snapshot";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useInfo, useMarkets } from "@/lib/hyperliquid";
+import { useInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { PortfolioPerformanceChart } from "./portfolio-performance-chart";
 
@@ -32,7 +31,14 @@ const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 export function PortfolioOverview() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { address, isConnected } = useWalletSession();
+	const {
+		address,
+		collaterals,
+		defaultBalances: balances,
+		isConnected,
+		tokenUsdPrices,
+		tokenUsdPriceStatus,
+	} = useDefaultAccountSnapshot();
 	const [scope, setScope] = useState<PortfolioScope>("combined");
 	const [period, setPeriod] = useState<PortfolioPeriod>("month");
 	const [feeMarket, setFeeMarket] = useState<FeeMarket>("perps");
@@ -49,11 +55,6 @@ export function PortfolioOverview() {
 	const vaultsQuery = useInfo("userVaultEquities", { user }, queryOptions);
 	const borrowLendQuery = useInfo("borrowLendUserState", { user }, queryOptions);
 	const reserveStatesQuery = useInfo("allBorrowLendReserveStates", undefined, queryOptions);
-	const balances = useDefaultDexBalances();
-	const markets = useMarkets();
-	const tokenUsdPriceState = useSpotTokenUsdPriceState(isConnected);
-	const tokenUsdPrices = tokenUsdPriceState.prices;
-
 	const accountSummary = useMemo(
 		() =>
 			getAccountBalanceSummary({
@@ -91,9 +92,9 @@ export function PortfolioOverview() {
 							dex,
 							accountValue: state.marginSummary.accountValue,
 						})),
-						collaterals: markets.builderPerp.map((market) => ({
-							dex: market.dex,
-							collateralToken: market.quoteToken?.name,
+						collaterals: collaterals.map((collateral) => ({
+							dex: collateral.dex,
+							collateralToken: collateral.tokenName,
 						})),
 						tokenUsdPrices,
 					})
@@ -108,7 +109,7 @@ export function PortfolioOverview() {
 		isConnected &&
 		accountModeReady &&
 		!balances.isDataStale &&
-		tokenUsdPriceState.status === "success" &&
+		tokenUsdPriceStatus === "success" &&
 		balances.hasSpotStateSnapshot &&
 		(accountSummary.usesSpotStateForPerps || (balances.hasAllDexsSnapshot && perpAccountEquity !== null));
 	const currentEquitySourcesAvailable =

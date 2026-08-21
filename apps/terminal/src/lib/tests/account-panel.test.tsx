@@ -179,6 +179,13 @@ function findButton(container: HTMLElement, text: string): HTMLButtonElement {
 	return button;
 }
 
+function getDescriptionText(button: HTMLButtonElement): string {
+	return (button.getAttribute("aria-describedby") ?? "")
+		.split(/\s+/)
+		.flatMap((id) => (id ? [document.getElementById(id)?.textContent ?? ""] : []))
+		.join(" ");
+}
+
 describe("desktop account panel", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -255,12 +262,38 @@ describe("desktop account panel", () => {
 		const deposit = findButton(container, "Deposit");
 		const transfer = findButton(container, "Perps / Spot");
 		const withdraw = findButton(container, "Withdraw");
+		expect(deposit.getAttribute("aria-label")).toBe(deposit.textContent);
+		expect(transfer.getAttribute("aria-label")).toBeNull();
+		expect(withdraw.getAttribute("aria-label")).toBe(withdraw.textContent);
 		act(() => deposit.click());
 		act(() => transfer.click());
 		act(() => withdraw.click());
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
 		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("renders current Spot funds on desktop and gates the transfer entry with shared availability", () => {
+		renderPanel();
+
+		const notice = container.querySelector('[data-slot="account-spot-funds-notice"]');
+		expect(notice?.textContent).toContain("Available funds are in Spot: $122.75");
+		const transfer = notice?.querySelector<HTMLButtonElement>("button");
+		expect(transfer?.textContent).toBe("Perps / Spot");
+		expect(transfer?.getAttribute("aria-label")).toBeNull();
+		expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
+
+		testState.geoStatus = "restricted";
+		renderPanel();
+		const blockedTransfer = container.querySelector<HTMLButtonElement>(
+			'[data-slot="account-spot-funds-notice"] button',
+		);
+		expect(blockedTransfer?.getAttribute("aria-disabled")).toBe("true");
+		expect(blockedTransfer ? getDescriptionText(blockedTransfer) : "").toContain(
+			"Funds actions are not available in your region.",
+		);
+		act(() => blockedTransfer?.click());
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 
 	it("uses the official unified ratio and USD-normalized multi-DEX risk", () => {
@@ -278,7 +311,9 @@ describe("desktop account panel", () => {
 		expect(transfer.disabled).toBe(false);
 		const describedBy = transfer.getAttribute("aria-describedby");
 		expect(describedBy).not.toBeNull();
-		expect(document.getElementById(describedBy ?? "")?.textContent).toContain("shared-balance account modes");
+		expect(transfer.getAttribute("aria-label")).toBeNull();
+		expect(getDescriptionText(transfer)).toContain("Transfer between Perps and Spot");
+		expect(getDescriptionText(transfer)).toContain("shared-balance account modes");
 		act(() => transfer.click());
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
@@ -360,13 +395,12 @@ describe("desktop account panel", () => {
 			expect(button.disabled).toBe(false);
 			expect(button.getAttribute("aria-disabled")).toBe("true");
 			expect(button.tabIndex).toBe(0);
-			const describedBy = button.getAttribute("aria-describedby");
-			expect(document.getElementById(describedBy ?? "")?.textContent).toContain("Balance data is unavailable");
+			expect(getDescriptionText(button)).toContain("Balance data is unavailable");
 		}
 	});
 
 	it.each(["restricted", "unresolved"] as const)(
-		"removes withdrawal and internal transfer entries when geo is %s",
+		"removes account action entries and gates the Spot notice transfer when geo is %s",
 		(geoStatus) => {
 			testState.geoStatus = geoStatus;
 			renderPanel();
@@ -375,8 +409,9 @@ describe("desktop account panel", () => {
 				container.querySelectorAll<HTMLButtonElement>("button"),
 				(button) => button.textContent,
 			);
-			expect(labels).not.toContain("Perps / Spot");
+			expect(labels.filter((label) => label === "Perps / Spot")).toHaveLength(1);
 			expect(labels).not.toContain("Withdraw");
+			expect(findButton(container, "Perps / Spot").getAttribute("aria-disabled")).toBe("true");
 			expect(container.textContent).toContain("Funds actions are unavailable in this region.");
 			expect(modalActions.openTransfer).not.toHaveBeenCalled();
 			expect(modalActions.openDeposit).not.toHaveBeenCalledWith("withdraw");

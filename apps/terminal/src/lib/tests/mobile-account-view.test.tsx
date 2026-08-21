@@ -184,6 +184,13 @@ function getMetricRowText(container: HTMLElement, label: string): string | null 
 	return labelElement?.parentElement?.textContent ?? null;
 }
 
+function getDescriptionText(button: HTMLButtonElement): string {
+	return (button.getAttribute("aria-describedby") ?? "")
+		.split(/\s+/)
+		.flatMap((id) => (id ? [document.getElementById(id)?.textContent ?? ""] : []))
+		.join(" ");
+}
+
 describe("mobile account view", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -269,6 +276,21 @@ describe("mobile account view", () => {
 		expect(getMetricRowText(container, "Account Margin Ratio")).not.toContain("0.00%");
 	});
 
+	it("announces the account summary loading state without replacing visible metric skeletons", () => {
+		testState.isLoading = true;
+		testState.perpStateStatus = "loading";
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+
+		const loadingStatus = container.querySelector("output.sr-only");
+		expect(loadingStatus?.textContent).toBe("Loading...");
+	});
+
 	it("keeps stale balances visible but hides risk metrics and disables funds actions", () => {
 		testState.isDataStale = true;
 		testState.perpStateStatus = "stale";
@@ -286,7 +308,11 @@ describe("mobile account view", () => {
 		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
-		expect(buttons.find((button) => button.textContent === "Perps / Spot")?.getAttribute("aria-disabled")).toBe("true");
+		const transfer = buttons.find((button) => button.textContent === "Perps / Spot");
+		expect(transfer?.getAttribute("aria-disabled")).toBe("true");
+		expect(transfer?.getAttribute("aria-label")).toBeNull();
+		expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
+		expect(transfer ? getDescriptionText(transfer) : "").toContain("Balance data is unavailable");
 		expect(buttons.find((button) => button.textContent === "Withdraw")?.getAttribute("aria-disabled")).toBe("true");
 	});
 
@@ -310,7 +336,9 @@ describe("mobile account view", () => {
 				</I18nProvider>,
 			);
 		});
-		expect(getBridgeButton()).toBeDefined();
+		const bridgeButton = getBridgeButton();
+		expect(bridgeButton).toBeDefined();
+		expect(bridgeButton?.getAttribute("aria-label")).toBe(bridgeButton?.textContent);
 	});
 
 	it("places the primary deposit action first and keeps each action wired to its existing store route", () => {
@@ -327,6 +355,9 @@ describe("mobile account view", () => {
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
 		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Perps / Spot", "Withdraw"]);
+		expect(buttons[0]?.getAttribute("aria-label")).toBe(buttons[0]?.textContent);
+		expect(buttons[1]?.getAttribute("aria-label")).toBeNull();
+		expect(buttons[2]?.getAttribute("aria-label")).toBe(buttons[2]?.textContent);
 
 		act(() => buttons[0]?.click());
 		act(() => buttons[1]?.click());
