@@ -141,31 +141,6 @@ export function LeverageEditor({
 					}))}
 				/>
 			</div>
-			<div
-				dir="ltr"
-				className="grid h-11 items-center text-2xs tabular-nums"
-				style={{ gridTemplateColumns: `repeat(${stops.length}, minmax(44px, 1fr))` }}
-			>
-				{stops.map((stop, index) => {
-					return (
-						<button
-							key={stop}
-							type="button"
-							disabled={disabled}
-							onClick={() => handlePick(stop)}
-							style={{ gridColumn: direction === "rtl" ? stops.length - index : index + 1 }}
-							className={cn(
-								"grid size-11 cursor-pointer place-items-center justify-self-center whitespace-nowrap p-0 disabled:cursor-not-allowed",
-								value === stop
-									? "font-bold text-trading-panel-fg"
-									: "text-trading-panel-subtle hover:text-trading-panel-fg",
-							)}
-						>
-							{stop}x
-						</button>
-					);
-				})}
-			</div>
 			<div className={cn(tradingInputFrameClass, disabled && "opacity-50")}>
 				<NumberInput
 					aria-label={t`Leverage`}

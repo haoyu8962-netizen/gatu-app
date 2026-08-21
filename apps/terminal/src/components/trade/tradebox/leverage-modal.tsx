@@ -142,12 +142,7 @@ function LeverageModalContent({
 		<>
 			<ModalHeader>
 				<ModalTitle>
-					<span className="flex w-full min-w-0 items-baseline justify-between gap-2 pr-6">
-						<span className="min-w-0 truncate">
-							<Trans>Adjust leverage</Trans>
-						</span>
-						<span className="shrink-0 text-sm font-bold tabular-nums text-trading-panel-fg">{displayLeverage}x</span>
-					</span>
+					<Trans>Adjust leverage</Trans>
 				</ModalTitle>
 			</ModalHeader>
 			<ModalContent className="space-y-4">

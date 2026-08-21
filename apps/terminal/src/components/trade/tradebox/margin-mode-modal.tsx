@@ -340,18 +340,12 @@ export const MarginModeModal = memo(MarginModeModalComponent);
 
 function MobileLeverageDrawerContent(props: FormProps) {
 	const [leverageDraft, setLeverageDraft] = useState<number | null>(null);
-	const displayLeverage = props.committedLeverage ?? leverageDraft ?? props.pendingLeverage ?? props.currentLeverage;
 
 	return (
 		<>
 			<ModalHeader divider={false} className="px-4 pt-7 pb-2 pr-4">
 				<ModalTitle className="text-trading-panel-fg">
-					<span className="flex w-full min-w-0 items-baseline justify-between gap-2">
-						<span className="min-w-0 truncate">
-							<Trans>Adjust leverage</Trans>
-						</span>
-						<span className="shrink-0 text-sm font-bold tabular-nums text-trading-panel-fg">{displayLeverage}x</span>
-					</span>
+					<Trans>Adjust leverage</Trans>
 				</ModalTitle>
 			</ModalHeader>
 			<MarginModeForm

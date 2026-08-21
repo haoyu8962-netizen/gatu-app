@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
 
-import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { act, createElement, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -245,35 +244,5 @@ describe("LeverageEditor", () => {
 		expect(input.getAttribute("aria-invalid")).toBe("true");
 		expect(onInputValidityChange).toHaveBeenLastCalledWith(false);
 		expect(onChange).not.toHaveBeenCalled();
-	});
-
-	it("gives every quick leverage action a non-overlapping 44px grid cell", () => {
-		renderEditor(vi.fn(), vi.fn());
-
-		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
-		expect(buttons).toHaveLength(5);
-		for (const [index, button] of buttons.entries()) {
-			expect(button.className).toContain("size-11");
-			expect(button.style.gridColumn).toBe(String(index + 1));
-		}
-		expect(buttons[0]?.parentElement?.getAttribute("style")).toContain("minmax(44px, 1fr)");
-	});
-
-	it("mirrors tick labels and positions in RTL", () => {
-		act(() => {
-			root.render(
-				<DirectionProvider direction="rtl">
-					<LeverageEditor value={5} max={20} disabled={false} onChange={vi.fn()} onDraftChange={vi.fn()} />
-				</DirectionProvider>,
-			);
-		});
-
-		const buttons = [...container.querySelectorAll("button")];
-		const minimum = buttons.find((button) => button.textContent === "1x");
-		const maximum = buttons.find((button) => button.textContent === "20x");
-		const quarter = buttons.find((button) => button.textContent === "6x");
-		expect(minimum?.style.gridColumn).toBe("5");
-		expect(maximum?.style.gridColumn).toBe("1");
-		expect(quarter?.style.gridColumn).toBe("4");
 	});
 });
