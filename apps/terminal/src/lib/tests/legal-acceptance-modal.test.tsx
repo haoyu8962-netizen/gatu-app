@@ -8,7 +8,9 @@ import { createI18nRoot } from "./harness/react";
 const testState = vi.hoisted(() => ({
 	disconnectWallet: vi.fn(),
 	isDisconnecting: false,
+	isReconnecting: false,
 	isMobile: false,
+	reconnectWallet: vi.fn(),
 }));
 
 function renderChildren(children: ReactNode) {
@@ -32,6 +34,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useDisconnectWallet: () => ({
 		disconnectWallet: testState.disconnectWallet,
 		isDisconnecting: testState.isDisconnecting,
+	}),
+	useReconnectWallet: () => ({
+		isReconnecting: testState.isReconnecting,
+		reconnectWallet: testState.reconnectWallet,
 	}),
 }));
 
@@ -156,7 +162,10 @@ describe("LegalAcceptanceModal", () => {
 		testState.disconnectWallet.mockReset();
 		testState.disconnectWallet.mockResolvedValue(undefined);
 		testState.isDisconnecting = false;
+		testState.isReconnecting = false;
 		testState.isMobile = false;
+		testState.reconnectWallet.mockReset();
+		testState.reconnectWallet.mockResolvedValue(undefined);
 	});
 
 	afterEach(() => {
@@ -320,6 +329,26 @@ describe("LegalAcceptanceModal", () => {
 
 		expect(container.textContent).toContain("Referral access is unavailable for this account.");
 		expect(container.textContent).not.toContain("perform trading actions");
+	});
+
+	it("requires the exact master wallet before an agent-only session can accept terms", async () => {
+		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+
+		act(() => {
+			root.render(
+				createElement(LegalAcceptanceModal, {
+					state: "wallet_required",
+					acceptanceError: null,
+					onAccept,
+					onRetryStatus,
+					onResetAcceptance,
+				}),
+			);
+		});
+
+		act(() => findButton(container, "Reconnect wallet").click());
+		expect(testState.reconnectWallet).toHaveBeenCalledOnce();
+		expect(onAccept).not.toHaveBeenCalled();
 	});
 
 	it("resets the failed acceptance before retrying legal status", async () => {

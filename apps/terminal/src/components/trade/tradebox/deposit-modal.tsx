@@ -60,7 +60,7 @@ import {
 	validateWithdrawal,
 	type WithdrawalRoute,
 } from "@/lib/trade/withdrawal";
-import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
 	useDepositModalOpen,
@@ -141,7 +141,7 @@ export function DepositModal() {
 	const cctpExternalDepositEnabled = isCctpExternalDepositEnabled(isTestnet);
 	const cctpSponsoredDepositEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 
-	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
+	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress, walletIntent } = useWalletSession();
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const {
 		emailAddress: emailWalletAddress,
@@ -154,7 +154,8 @@ export function DepositModal() {
 	} = useEmailEmbeddedWallet();
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
-	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
+	const walletIdentityResolved = walletIntent === "embedded" || walletIntent === "external";
+	const isEmbeddedDeposit = !!emailAddress && walletIntent === "embedded" && shouldUseEmailEmbeddedWallet;
 	const depositMode = isEmbeddedDeposit ? "smart" : "wallet";
 	let depositAmountRaw: bigint | undefined;
 	try {
@@ -169,7 +170,7 @@ export function DepositModal() {
 			depositAvailability.available &&
 			depositRouteReady &&
 			selectedDepositRoute === "cctp" &&
-			!isEmbeddedDeposit &&
+			walletIntent === "external" &&
 			cctpExternalDepositEnabled,
 		isTestnet,
 	});
@@ -201,7 +202,7 @@ export function DepositModal() {
 		sponsoredCctpEnabled,
 		sponsoredCctpReadiness,
 	} = useDeposit({
-		balanceEnabled: open,
+		balanceEnabled: open && walletIdentityResolved,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
 		mode: depositMode,
 		depositRoute: selectedDepositRoute,
@@ -329,39 +330,44 @@ export function DepositModal() {
 					reviewedDepositAmountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC
 				? t`Circle testnet deposits are limited to 1,000 USDC per transfer.`
 				: null;
-	const depositValidation = !depositRouteReady
-		? { valid: false, error: null }
-		: !depositAvailability.available
-			? { valid: false, error: depositAvailability.unavailableReason }
-			: embeddedWalletValidationError
-				? { valid: false, error: embeddedWalletValidationError }
-				: selectedDepositRoute === "bridge"
-					? {
-							valid: false,
-							error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
-						}
-					: !isEmbeddedDeposit && !cctpExternalDepositEnabled
+	const unresolvedWalletValidation = walletIdentityResolved
+		? null
+		: { valid: false, error: depositAvailability.unavailableReason };
+	const depositValidation =
+		unresolvedWalletValidation ??
+		(!depositRouteReady
+			? { valid: false, error: null }
+			: !depositAvailability.available
+				? { valid: false, error: depositAvailability.unavailableReason }
+				: embeddedWalletValidationError
+					? { valid: false, error: embeddedWalletValidationError }
+					: selectedDepositRoute === "bridge"
 						? {
 								valid: false,
-								error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+								error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
 							}
-						: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
-							? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
-							: isEmbeddedDeposit && sponsoredCctpReadiness.status !== "ready"
-								? { valid: false, error: null }
-								: cctpDepositAmountLimitError
-									? { valid: false, error: cctpDepositAmountLimitError }
-									: cctpDepositFeeUnavailable
-										? {
-												valid: false,
-												error: displayedCctpDepositFeeQuery.isError
-													? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-													: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
-														? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
-														: null,
-											}
-										: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error };
-	const canUseFundsActions = hasWalletAccess && !!walletAddress;
+						: !isEmbeddedDeposit && !cctpExternalDepositEnabled
+							? {
+									valid: false,
+									error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+								}
+							: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
+								? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
+								: isEmbeddedDeposit && sponsoredCctpReadiness.status !== "ready"
+									? { valid: false, error: null }
+									: cctpDepositAmountLimitError
+										? { valid: false, error: cctpDepositAmountLimitError }
+										: cctpDepositFeeUnavailable
+											? {
+													valid: false,
+													error: displayedCctpDepositFeeQuery.isError
+														? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+														: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
+															? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+															: null,
+												}
+											: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error });
+	const canUseFundsActions = walletIdentityResolved && hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeTab = shouldShowLiFiBridgeTab({

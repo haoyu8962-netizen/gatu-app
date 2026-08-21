@@ -1,12 +1,31 @@
 import { privateKeyToAccount } from "viem/accounts";
 import { describe, expect, it, vi } from "vitest";
-import { acceptHyperliquidTerms, parseLegalStatus } from "../../../../../packages/hl-react/src/legal";
+import {
+	acceptHyperliquidTerms,
+	LEGAL_STATUS_HTTP_TIMEOUT_MS,
+	parseLegalStatus,
+	runWithLegalRequestTimeout,
+} from "../../../../../packages/hl-react/src/legal";
 
 const USER = "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a" as const;
 const OTHER_USER = "0x0000000000000000000000000000000000000001" as const;
 const PRIVATE_KEY = `0x${"11".repeat(32)}` as const;
 
 describe("Hyperliquid legal acceptance", () => {
+	it("rejects a legal request that ignores abort after the bounded deadline", async () => {
+		vi.useFakeTimers();
+		try {
+			const request = runWithLegalRequestTimeout(() => new Promise<never>(() => {}));
+			const rejection = request.catch((error: unknown) => error);
+
+			await vi.advanceTimersByTimeAsync(LEGAL_STATUS_HTTP_TIMEOUT_MS);
+
+			await expect(rejection).resolves.toMatchObject({ name: "TimeoutError" });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it.each([
 		["n", true, true, true],
 		["a", false, true, true],
@@ -46,6 +65,7 @@ describe("Hyperliquid legal acceptance", () => {
 			transport,
 			env: "Mainnet",
 			user: USER,
+			beforeSubmit: () => {},
 			time: 1_722_000_000_000,
 		});
 
@@ -60,7 +80,7 @@ describe("Hyperliquid legal acceptance", () => {
 				v: expect.toBeOneOf([27, 28]),
 			},
 		});
-		expect(request).toHaveBeenCalledWith("info", payload);
+		expect(request).toHaveBeenCalledWith("info", payload, expect.any(AbortSignal));
 	});
 
 	it("rejects a mismatched wallet before submitting", async () => {
@@ -72,6 +92,7 @@ describe("Hyperliquid legal acceptance", () => {
 				transport: { isTestnet: false, request },
 				env: "Mainnet",
 				user: OTHER_USER,
+				beforeSubmit: () => {},
 			}),
 		).rejects.toThrow("Selected wallet does not match the connected account");
 		expect(request).not.toHaveBeenCalled();

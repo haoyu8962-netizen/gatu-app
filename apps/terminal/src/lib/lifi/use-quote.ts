@@ -157,7 +157,7 @@ export function useBridgeQuote(params: QuoteParams | null) {
 				toChain: HYPERCORE_CHAIN_ID,
 				toToken: HYPERCORE_USDC_ADDRESS,
 				toAddress: p.fromAddress,
-				executionType: "all",
+				executionType: "transaction",
 			});
 			return transformQuote(step);
 		},

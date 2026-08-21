@@ -1,7 +1,16 @@
 import type { RouteExtended } from "@lifi/sdk";
-import { convertQuoteToRoute, executeRoute, resumeRoute, updateRouteExecution } from "@lifi/sdk";
+import {
+	convertQuoteToRoute,
+	executeRoute,
+	isGaslessStep,
+	isRelayerStep,
+	resumeRoute,
+	updateRouteExecution,
+} from "@lifi/sdk";
 import { t } from "@lingui/core/macro";
+import { useCallback } from "react";
 import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
+import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-guard";
 import { isSafeHttpUrl } from "@/lib/safe-url";
 import {
 	type BridgeRouteIdentity,
@@ -27,8 +36,70 @@ export type { ProcessDetail } from "./bridge-execution-state";
 
 export type BridgeOutcome = "success" | "error" | "rejected" | "disabled";
 export type BridgeRetryMode = "retry" | "track";
+export type BridgeLegalActionGuard = () => Promise<void>;
 
 let bridgeExecutionEpoch = 0;
+
+const MISSING_LEGAL_ACTION_GUARD: BridgeLegalActionGuard = () => Promise.reject(new Error("Legal guard unavailable"));
+const UNSUPPORTED_MESSAGE_SIGNING_ERROR =
+	"This bridge route requires unsupported message signing and was not submitted.";
+
+function requiresUnsupportedMessageSigning(route: RouteExtended): boolean {
+	return route.steps.some((step) => {
+		if (isGaslessStep(step) || isRelayerStep(step)) return true;
+		return (
+			step.execution?.process.some(
+				(process) =>
+					process.type === "PERMIT" ||
+					process.status === "MESSAGE_REQUIRED" ||
+					(Array.isArray(process.signedTypedData) && process.signedTypedData.length > 0),
+			) ?? false
+		);
+	});
+}
+
+function assertBridgeRouteDoesNotRequireMessageSigning(
+	route: RouteExtended,
+	options: { allowCommittedTracking?: boolean } = {},
+): void {
+	if (!requiresUnsupportedMessageSigning(route)) return;
+	if (options.allowCommittedTracking && hasCommittedBridgeFunds(route)) return;
+	throw new Error(UNSUPPORTED_MESSAGE_SIGNING_ERROR);
+}
+
+async function assertBridgeWriteAllowed(guard: BridgeLegalActionGuard, identity: BridgeRouteIdentity): Promise<void> {
+	try {
+		await guard();
+	} catch {
+		throw new Error(t`Unable to verify regional availability. This funds action was not submitted.`);
+	}
+
+	if (!hasSameAddress(getActiveLiFiWalletAddress(), identity.sourceAddress)) {
+		throw new Error("The active wallet does not match this bridge route.");
+	}
+}
+
+async function verifyBridgeWriteAllowed(
+	guard: BridgeLegalActionGuard,
+	identity: BridgeRouteIdentity,
+): Promise<boolean> {
+	try {
+		await assertBridgeWriteAllowed(guard, identity);
+	} catch (error) {
+		useBridgeExecutionState.setState({
+			status: "error",
+			error:
+				error instanceof Error
+					? error.message
+					: t`Unable to verify regional availability. This funds action was not submitted.`,
+			endTime: Date.now(),
+			canAbandon: true,
+			isBackgrounded: false,
+		});
+		return false;
+	}
+	return true;
+}
 
 function getProcessStatusText(route: RouteExtended): string {
 	for (const step of route.steps) {
@@ -179,11 +250,27 @@ async function runBridgeRoute(
 	identity: BridgeRouteIdentity,
 	executionEpoch: number,
 	resetOnUserRejection: boolean,
+	legalActionGuard?: BridgeLegalActionGuard,
 ): Promise<BridgeOutcome> {
 	try {
+		if (legalActionGuard) assertBridgeRouteDoesNotRequireMessageSigning(route);
 		const result = await runWithLiFiExecutionWallet(identity.sourceAddress, identity.sourceChainId, () =>
 			runner(route, {
-				updateRouteHook: (updatedRoute) => updateBridgeRoute(updatedRoute, identity, executionEpoch),
+				disableMessageSigning: true,
+				updateRouteHook: (updatedRoute) => {
+					if (legalActionGuard) {
+						assertBridgeRouteDoesNotRequireMessageSigning(updatedRoute, { allowCommittedTracking: true });
+					}
+					updateBridgeRoute(updatedRoute, identity, executionEpoch);
+				},
+				...(legalActionGuard
+					? {
+							updateTransactionRequestHook: async (transactionRequest) => {
+								await assertBridgeWriteAllowed(legalActionGuard, identity);
+								return transactionRequest;
+							},
+						}
+					: {}),
 			}),
 		);
 		if (executionEpoch !== bridgeExecutionEpoch) return "error";
@@ -239,7 +326,10 @@ async function runBridgeRoute(
 	}
 }
 
-export async function executeBridgeQuote(quote: BridgeQuote): Promise<BridgeOutcome> {
+export async function executeBridgeQuote(
+	quote: BridgeQuote,
+	legalActionGuard: BridgeLegalActionGuard = MISSING_LEGAL_ACTION_GUARD,
+): Promise<BridgeOutcome> {
 	if (!LIFI_BRIDGE_FEATURES.createNewRoute) return "disabled";
 	if (useBridgeExecutionState.getState().status !== "idle") return "error";
 	if (!isBridgeRecoveryStorageAvailable()) {
@@ -277,11 +367,19 @@ export async function executeBridgeQuote(quote: BridgeQuote): Promise<BridgeOutc
 		});
 		return "error";
 	}
-
-	clearPersistedBridgeExecution();
+	try {
+		assertBridgeRouteDoesNotRequireMessageSigning(route);
+	} catch (error) {
+		useBridgeExecutionState.setState({
+			status: "error",
+			error: error instanceof Error ? error.message : UNSUPPORTED_MESSAGE_SIGNING_ERROR,
+			endTime: Date.now(),
+		});
+		return "error";
+	}
 	useBridgeExecutionState.setState({
 		status: "executing",
-		statusText: "Preparing transaction...",
+		statusText: "Verifying access...",
 		error: null,
 		txHash: null,
 		receivedAmount: null,
@@ -297,9 +395,12 @@ export async function executeBridgeQuote(quote: BridgeQuote): Promise<BridgeOutc
 		isBackgrounded: false,
 		recoveryWarning: null,
 	});
+	if (!(await verifyBridgeWriteAllowed(legalActionGuard, identity))) return "error";
+	clearPersistedBridgeExecution();
+	useBridgeExecutionState.setState({ statusText: "Preparing transaction..." });
 
 	const executionEpoch = ++bridgeExecutionEpoch;
-	return runBridgeRoute(route, executeRoute, identity, executionEpoch, true);
+	return runBridgeRoute(route, executeRoute, identity, executionEpoch, true, legalActionGuard);
 }
 
 function getBridgeRetryMode(state: BridgeState): BridgeRetryMode | null {
@@ -310,7 +411,9 @@ function getBridgeRetryMode(state: BridgeState): BridgeRetryMode | null {
 	return LIFI_BRIDGE_FEATURES.createNewRoute ? "retry" : null;
 }
 
-export async function retryBridgeExecution(): Promise<BridgeOutcome> {
+export async function retryBridgeExecution(
+	legalActionGuard: BridgeLegalActionGuard = MISSING_LEGAL_ACTION_GUARD,
+): Promise<BridgeOutcome> {
 	const current = useBridgeExecutionState.getState();
 	if (current.status !== "error" || !current.latestRoute || !current.routeIdentity) return "error";
 	const identity = getBridgeRouteIdentity(current.latestRoute);
@@ -325,6 +428,19 @@ export async function retryBridgeExecution(): Promise<BridgeOutcome> {
 	}
 
 	const hasCommittedTransaction = hasCommittedBridgeFunds(current.latestRoute);
+	if (!hasCommittedTransaction) {
+		try {
+			assertBridgeRouteDoesNotRequireMessageSigning(current.latestRoute);
+		} catch (error) {
+			useBridgeExecutionState.setState({
+				error: error instanceof Error ? error.message : UNSUPPORTED_MESSAGE_SIGNING_ERROR,
+				endTime: Date.now(),
+				canAbandon: true,
+				isBackgrounded: false,
+			});
+			return "error";
+		}
+	}
 	if (!LIFI_BRIDGE_FEATURES.createNewRoute && !hasCommittedTransaction) {
 		useBridgeExecutionState.setState({
 			error: "Bridge creation is paused. This route did not submit a source transaction and cannot be retried.",
@@ -332,7 +448,6 @@ export async function retryBridgeExecution(): Promise<BridgeOutcome> {
 		});
 		return "disabled";
 	}
-
 	const route = hasCommittedTransaction
 		? prepareCommittedBridgeRouteForTracking(current.latestRoute)
 		: current.latestRoute;
@@ -346,15 +461,26 @@ export async function retryBridgeExecution(): Promise<BridgeOutcome> {
 
 	useBridgeExecutionState.setState({
 		status: "executing",
-		statusText: hasCommittedTransaction ? "Checking the submitted bridge transaction..." : getProcessStatusText(route),
+		statusText: hasCommittedTransaction ? "Checking the submitted bridge transaction..." : "Verifying access...",
 		error: null,
 		endTime: null,
 		latestRoute: route,
 		isBackgrounded: false,
 	});
+	if (!hasCommittedTransaction && !(await verifyBridgeWriteAllowed(legalActionGuard, current.routeIdentity))) {
+		return "error";
+	}
+	if (!hasCommittedTransaction) useBridgeExecutionState.setState({ statusText: getProcessStatusText(route) });
 
 	const executionEpoch = ++bridgeExecutionEpoch;
-	return runBridgeRoute(route, resumeRoute, current.routeIdentity, executionEpoch, false);
+	return runBridgeRoute(
+		route,
+		resumeRoute,
+		current.routeIdentity,
+		executionEpoch,
+		false,
+		hasCommittedTransaction ? undefined : legalActionGuard,
+	);
 }
 
 export function resetBridgeExecution(): boolean {
@@ -376,7 +502,9 @@ export function continueBridgeInBackground(): boolean {
 	return true;
 }
 
-export function restoreBridgeInForeground(): boolean {
+export function restoreBridgeInForeground(
+	legalActionGuard: BridgeLegalActionGuard = MISSING_LEGAL_ACTION_GUARD,
+): boolean {
 	const current = useBridgeExecutionState.getState();
 	if (!current.isBackgrounded || !current.latestRoute || !current.routeIdentity) return false;
 	if (!hasSameAddress(getActiveLiFiWalletAddress(), current.sourceAddress)) return false;
@@ -390,18 +518,24 @@ export function restoreBridgeInForeground(): boolean {
 	if (current.status !== "error") return false;
 
 	useBridgeExecutionState.setState({ isBackgrounded: false });
-	void retryBridgeExecution();
+	void retryBridgeExecution(legalActionGuard);
 	return true;
 }
 
 export function useBridgeExecutor() {
 	const state = useBridgeExecutionState();
+	const { env, verify: verifyFreshLegalAction } = useFreshLegalActionGuard();
+	const legalActionGuard = useCallback(() => verifyFreshLegalAction({ env }), [env, verifyFreshLegalAction]);
+	const execute = useCallback((quote: BridgeQuote) => executeBridgeQuote(quote, legalActionGuard), [legalActionGuard]);
+	const retry = useCallback(() => retryBridgeExecution(legalActionGuard), [legalActionGuard]);
+	const restoreInForeground = useCallback(() => restoreBridgeInForeground(legalActionGuard), [legalActionGuard]);
 	return {
 		...state,
 		retryMode: getBridgeRetryMode(state),
-		execute: executeBridgeQuote,
-		retry: retryBridgeExecution,
+		execute,
+		retry,
 		reset: resetBridgeExecution,
 		continueInBackground: continueBridgeInBackground,
+		restoreInForeground,
 	};
 }

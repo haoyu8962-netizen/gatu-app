@@ -252,7 +252,7 @@ export function hasCommittedBridgeFunds(route: unknown): route is RouteExtended 
 	if (!Array.isArray(step.execution.process) || step.execution.process.length === 0) return false;
 	if (step.execution.process.length > MAX_PROCESSES) return false;
 
-	let hasCommittedCrossChainProcess = false;
+	let hasCommittedFundsProcess = false;
 	const processTypes = new Set<string>();
 	for (const process of step.execution.process) {
 		if (!isRecord(process) || !PROCESS_STATUSES.has(String(process.status))) return false;
@@ -260,15 +260,15 @@ export function hasCommittedBridgeFunds(route: unknown): route is RouteExtended 
 		if (!Number.isSafeInteger(process.startedAt) || Number(process.startedAt) <= 0) return false;
 		if (processTypes.has(String(process.type))) return false;
 		processTypes.add(String(process.type));
-		if (process.type === "CROSS_CHAIN") {
+		if (process.type === "SWAP" || process.type === "CROSS_CHAIN") {
 			if (process.chainId !== identity.sourceChainId) return false;
 			if (isCommittedProcessIdentifier(process.txHash) || isCommittedProcessIdentifier(process.taskId)) {
-				hasCommittedCrossChainProcess = true;
+				hasCommittedFundsProcess = true;
 			}
 		}
 	}
 
-	return hasCommittedCrossChainProcess;
+	return hasCommittedFundsProcess;
 }
 
 function hasOnlySafeRouteValues(value: unknown): boolean {
@@ -345,7 +345,7 @@ export function prepareCommittedBridgeRouteForTracking(route: RouteExtended): Ro
 
 	const committedProcess = step.execution.process.find(
 		(process) =>
-			process.type === "CROSS_CHAIN" &&
+			(process.type === "SWAP" || process.type === "CROSS_CHAIN") &&
 			(isCommittedProcessIdentifier(process.txHash) || isCommittedProcessIdentifier(process.taskId)),
 	);
 	if (!committedProcess) return null;

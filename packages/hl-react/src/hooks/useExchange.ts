@@ -1,8 +1,9 @@
 import type { ExchangeClient } from "@nktkas/hyperliquid";
-import { type UseMutationResult, useMutation } from "@tanstack/react-query";
+import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import { assertExchange, WalletAccountMismatchError } from "../errors";
 import { assertExchangeMutationAllowed, usePortfolioMarginActivationPolicy } from "../exchange-policy";
 import { requiresFundsActionLock, runWithFundsActionLock } from "../internal/exchange/funds-action-lock";
+import { getExchangeLegalCapability, verifyLegalActionAllowed } from "../internal/exchange/legal-execution";
 import {
 	captureExchangeRequestGeneration,
 	ExchangeRequestInvalidatedError,
@@ -13,6 +14,7 @@ import {
 import { useHyperliquid } from "../provider";
 import { getExchangeMethodConfig } from "../registries/exchange";
 import {
+	type AgentRegistrationPreExecutionGuard,
 	captureAgentRegistrationExecutionLease,
 	startAgentRegistrationExecution,
 } from "../signing/agent-registration-session";
@@ -86,7 +88,8 @@ export function useExchange<M extends ExchangeMethod>(
 	options: ExchangeMutationOptions<M> = {},
 ): UseMutationResult<ExchangeResponse<M>, HyperliquidQueryError, ExchangeParams<M>> {
 	const { agentPublicKey, trading, user, userWalletMismatch } = useHyperliquidClients();
-	const { builderConfig, clientKey, env, exchangeLifecycle, sessionMode } = useHyperliquid();
+	const { builderConfig, clientKey, enforceLegalActions, env, exchangeLifecycle, info, sessionMode } = useHyperliquid();
+	const queryClient = useQueryClient();
 	const portfolioMarginActivationEnabled = usePortfolioMarginActivationPolicy();
 	const { executionGuard, preExecutionGuard, ...mutationOptions } = options;
 
@@ -127,14 +130,53 @@ export function useExchange<M extends ExchangeMethod>(
 		});
 		const fn = (exchange as ExchangeClient)[method] as (...args: unknown[]) => Promise<ExchangeResponse<M>>;
 		const priority = getExchangeRequestPriority(method, requestParams);
-		const startWithSessionLease: ExchangeRequestStartGate = async (start) => {
+		const defaultPreExecutionGuard: AgentRegistrationPreExecutionGuard | undefined = preExecutionGuard
+			? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal)
+			: undefined;
+		const verifyLegalAccess = async (forceFresh: boolean) => {
+			if (!enforceLegalActions) return;
+			await verifyLegalActionAllowed({
+				queryClient,
+				info,
+				env,
+				owner: clientKey as `0x${string}`,
+				capability: getExchangeLegalCapability(method),
+				forceFresh,
+			});
+		};
+		const startWithSessionLease = async (
+			start: Parameters<ExchangeRequestStartGate>[0],
+			guard: AgentRegistrationPreExecutionGuard | undefined = defaultPreExecutionGuard,
+		) => {
 			const guarded = await startAgentRegistrationExecution(
 				registrationLease,
 				() => exchangeLifecycle.active,
 				() => Promise.resolve(start()),
-				preExecutionGuard ? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal) : undefined,
+				guard,
 			);
 			return guarded.status === "started" ? await guarded.execution : { status: "invalidated" as const };
+		};
+		const startWithLegalGate: ExchangeRequestStartGate = async (start) => {
+			if (!fundsAction) {
+				await verifyLegalAccess(false);
+				return startWithSessionLease(start);
+			}
+			return runWithFundsActionLock(env, clientKey, async () => {
+				let fundsPreExecutionGuard: AgentRegistrationPreExecutionGuard | undefined;
+				if (config.client === "user") {
+					fundsPreExecutionGuard = async (signal) => {
+						await defaultPreExecutionGuard?.(signal);
+						await verifyLegalAccess(true);
+					};
+				} else {
+					await verifyLegalAccess(true);
+				}
+
+				const started = await startWithSessionLease(start, fundsPreExecutionGuard);
+				if (started.status === "invalidated") return started;
+				const response = await started.execution;
+				return { status: "started", execution: Promise.resolve(response) };
+			});
 		};
 		return scheduleExchangeRequest(
 			exchange,
@@ -145,15 +187,7 @@ export function useExchange<M extends ExchangeMethod>(
 				return requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange);
 			},
 			requestGeneration,
-			fundsAction
-				? (start) =>
-						runWithFundsActionLock(env, clientKey, async () => {
-							const started = await startWithSessionLease(start);
-							if (started.status === "invalidated") return started;
-							const response = await started.execution;
-							return { status: "started", execution: Promise.resolve(response) };
-						})
-				: startWithSessionLease,
+			startWithLegalGate,
 		);
 	};
 

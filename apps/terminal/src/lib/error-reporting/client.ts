@@ -54,17 +54,25 @@ export function reportClientError(error: unknown, options: ReportClientErrorOpti
 		origin: window.location.origin,
 		componentStack: options.componentStack,
 	};
-	const report =
-		options.kind === "orderbook_l2_fallback"
-			? createClientErrorReport(error, {
-					...sharedReportOptions,
-					kind: options.kind,
-					fallbackReason: options.fallbackReason,
-				})
-			: createClientErrorReport(error, {
-					...sharedReportOptions,
-					kind: options.kind,
-				});
+	let report: ReturnType<typeof createClientErrorReport>;
+	if (options.kind === "orderbook_l2_fallback") {
+		report = createClientErrorReport(error, {
+			...sharedReportOptions,
+			kind: options.kind,
+			fallbackReason: options.fallbackReason,
+		});
+	} else if (options.kind === "legal_status_check") {
+		report = createClientErrorReport(error, {
+			...sharedReportOptions,
+			kind: options.kind,
+			legalReason: options.legalReason,
+		});
+	} else {
+		report = createClientErrorReport(error, {
+			...sharedReportOptions,
+			kind: options.kind,
+		});
+	}
 	const body = JSON.stringify(report);
 	if (new TextEncoder().encode(body).byteLength > CLIENT_ERROR_REPORT_MAX_BYTES) return false;
 

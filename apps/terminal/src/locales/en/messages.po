@@ -142,8 +142,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} seconds"
 
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+#~ msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+#~ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
@@ -1119,6 +1119,7 @@ msgstr "Borrow"
 #~ msgstr "Breadcrumb"
 
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2552,6 +2553,7 @@ msgstr "Deployer"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -2910,6 +2912,12 @@ msgstr "Downloaded"
 #~ msgid "Duration (Minutes)"
 #~ msgstr "Duration (Minutes)"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Dynamic (minimum {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} seconds)"
+msgstr "Dynamic (minimum {TWAP_SUBORDER_MIN_INTERVAL_SECONDS} seconds)"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
@@ -3125,6 +3133,8 @@ msgstr "Est. Fee"
 #~ msgid "Est. P&L at Limit"
 #~ msgstr "Est. P&L at Limit"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Slippage"
 msgstr "Est. Slippage"
@@ -3178,9 +3188,11 @@ msgstr "Estimated time"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
-msgstr "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+#: src/components/trade/tradebox/twap-order-summary.tsx
+#~ msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+#~ msgstr "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
@@ -3202,6 +3214,10 @@ msgstr "Executed Size"
 #: src/components/trade/components/historical-order-price.tsx
 msgid "Execution"
 msgstr "Execution"
+
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Execution Interval"
+msgstr "Execution Interval"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3653,6 +3669,7 @@ msgstr "Forward transaction submitted"
 msgid "Forwarding deposit"
 msgstr "Forwarding deposit"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "Frequency"
@@ -3775,6 +3792,12 @@ msgstr "Gas-sponsored CCTP deposits are not enabled for this network."
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
 #~ msgstr "Gas:"
+
+#: src/components/trade/components/order-fee-summary-value.tsx
+#: src/components/trade/components/order-fee-summary-value.tsx
+#: src/domain/trade/order-confirmation.ts
+#~ msgid "GATU fee"
+#~ msgstr "GATU fee"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Gatu invitation link"
@@ -3948,6 +3971,12 @@ msgstr "Hyperliquid does not currently show this account as eligible to create a
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid does not support pausing active TWAP orders."
+
+#: src/components/trade/components/order-fee-summary-value.tsx
+#: src/components/trade/components/order-fee-summary-value.tsx
+#: src/domain/trade/order-confirmation.ts
+#~ msgid "Hyperliquid fee"
+#~ msgstr "Hyperliquid fee"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
@@ -4353,6 +4382,7 @@ msgstr "Linked staking account: {0}."
 #~ msgid "Liq"
 #~ msgstr "Liq"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 #: src/domain/trade/order-confirmation.ts
@@ -4441,6 +4471,8 @@ msgid "Loading leaderboard"
 msgstr "Loading leaderboard"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/layout/terminal-loading-workspace.tsx
+#: src/components/trade/mobile/mobile-loading-fallback.tsx
 msgid "Loading markets..."
 msgstr "Loading markets..."
 
@@ -4525,12 +4557,7 @@ msgstr "Loading wallet..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4731,10 +4758,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "Mark price is unavailable. Wait for market data and try again."
@@ -4872,6 +4896,7 @@ msgstr "Master wallet verified"
 
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
@@ -5545,10 +5570,8 @@ msgstr "Number format"
 #~ msgstr "Number Format"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Number of Orders"
 msgstr "Number of Orders"
@@ -6705,6 +6728,8 @@ msgstr "Reconnect the bridge wallet"
 msgid "Reconnect the trading account before modifying this order."
 msgstr "Reconnect the trading account before modifying this order."
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7244,10 +7269,13 @@ msgstr "Rows per page"
 msgid "Running"
 msgstr "Running"
 
-#. placeholder {0}: TWAP_MINUTES_MAX / 60
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
-msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+#~ msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+#~ msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
+msgstr "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -7535,6 +7563,7 @@ msgstr "Select tokens to swap"
 msgid "selected"
 msgstr "selected"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/lib/errors/format.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -7879,8 +7908,8 @@ msgstr "Size cannot exceed the order's remaining size."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
-msgid "Size per Suborder"
-msgstr "Size per Suborder"
+#~ msgid "Size per Suborder"
+#~ msgstr "Size per Suborder"
 
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Size precision must be a non-negative integer"
@@ -7936,6 +7965,7 @@ msgstr "Slippage"
 msgid "Slippage tolerance"
 msgstr "Slippage tolerance"
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8289,8 +8319,8 @@ msgid "Submitting..."
 msgstr "Submitting..."
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Suborder Frequency"
-msgstr "Suborder Frequency"
+#~ msgid "Suborder Frequency"
+#~ msgstr "Suborder Frequency"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
@@ -8940,6 +8970,7 @@ msgid "This account already has a referral code and cannot apply another one."
 msgstr "This account already has a referral code and cannot apply another one."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+#: src/lib/errors/format.ts
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "This account is not currently permitted to perform trading actions on Hyperliquid."
 
@@ -9644,9 +9675,7 @@ msgid "Transfers between Spot and Perps are unavailable in shared-balance accoun
 msgstr "Transfers between Spot and Perps are unavailable in shared-balance account modes."
 
 #: src/components/portfolio/portfolio-page.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 #~ msgstr "Transfers between Spot and Perps are unavailable in unified account mode."
 
@@ -9794,8 +9823,12 @@ msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP order state is still loading. Please retry in a moment."
 
 #: src/lib/errors/definitions/twap.ts
-msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
-msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
+msgstr "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
+
+#: src/lib/errors/definitions/twap.ts
+#~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+#~ msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #~ msgid "TWAP Orders"
@@ -9889,11 +9922,14 @@ msgid "Unable to verify regional availability. This deposit was not submitted."
 msgstr "Unable to verify regional availability. This deposit was not submitted."
 
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/lifi/use-bridge.ts
+#: src/lib/lifi/use-bridge.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "Unable to verify regional availability. This funds action was not submitted."
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
+#: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "Unable to verify regional availability. Trading is temporarily unavailable."
 
@@ -10463,6 +10499,7 @@ msgstr "Wallet did not return a transaction hash. Check your wallet activity bef
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry."
 
@@ -10544,6 +10581,7 @@ msgstr "will arrive in {0}"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx

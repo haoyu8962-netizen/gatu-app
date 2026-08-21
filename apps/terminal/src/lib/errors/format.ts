@@ -6,6 +6,14 @@ const SMART_WALLET_NONCE_CONFLICT_PATTERN = /\bAA25\b(?: invalid account nonce)?
 
 const ERROR_PATTERNS = [
 	{
+		pattern: /hyperliquid access could not be verified before this action/i,
+		message: () => t`Unable to verify regional availability. Trading is temporarily unavailable.`,
+	},
+	{
+		pattern: /this account is not permitted to perform this hyperliquid action/i,
+		message: () => t`This account is not currently permitted to perform trading actions on Hyperliquid.`,
+	},
+	{
 		pattern: /referral request was submitted but its final status could not be confirmed/i,
 		message: () =>
 			t`The request was submitted, but its final status is still updating. Check referral data and claim history before retrying.`,

@@ -63,6 +63,7 @@ describe("fastAssetCtxs subscription", () => {
 			clientKey: "disconnected",
 			sessionMode: "wallet",
 			exchangeLifecycle: { id: Symbol("fast-asset-ctxs-test"), active: true },
+			enforceLegalActions: false,
 		};
 
 		return (

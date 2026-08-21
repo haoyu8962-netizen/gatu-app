@@ -119,6 +119,11 @@ Backing store tracks `status` (`idle | subscribing | active | error`) per key, r
 
 Wraps `ExchangeClient` methods (`order`, `cancel`, `modify`, `approveAgent`, `approveBuilderFee`, `withdraw3`, `sendToEvmWithData`, …). Returns a TanStack Query mutation. Signing comes from either the agent wallet (default, fast-path L1 trading actions) or the connected user wallet (EIP-712/user-signed actions) — `registries/exchange.ts` decides.
 
+When `HyperliquidProvider` enables `enforceLegalActions`, every method checks
+the exact master owner through the short-lived `legalCheck` cache immediately
+before entering the signing/SDK boundary. Missing terms, restrictions, stale
+failed queries, offline state, and unknown response contracts fail closed.
+
 User-wallet routed methods currently include:
 
 ```text
@@ -149,7 +154,7 @@ withdraw3
 | `useAgentWallet` | Returns `{ data, signer, address, isReady }` — the cached `PrivateKeyAccount` used for trading signatures. |
 | `useBuilderFeeApproval` | Requests and verifies `approveBuilderFee` independently from Agent registration. |
 | `useTradingAuthorization` | Composes Agent registration and builder-fee approval for an action that requires both. |
-| `useLegalStatus` / `useTermsAcceptance` | Reads `legalCheck` and signs/submits `acceptTerms2` with the matching owner wallet. |
+| `useLegalStatus` / `useTermsAcceptance` | Reads the strictly validated `legalCheck` contract and signs/submits `acceptTerms2` with the matching owner wallet. These frontend endpoints are not part of Hyperliquid's currently documented public API and remain version-locked. |
 
 Agent keys use `hyperliquid_agent_{env}_{userAddress}` with Zod validation.
 Session-only records live in `sessionStorage`; persistent records live in

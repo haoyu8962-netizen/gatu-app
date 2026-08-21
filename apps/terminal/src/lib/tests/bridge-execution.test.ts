@@ -5,6 +5,9 @@ import type { BridgeQuote } from "@/lib/lifi/use-quote";
 const sdk = vi.hoisted(() => ({
 	convertQuoteToRoute: vi.fn(),
 	executeRoute: vi.fn(),
+	isGaslessStep: (step: { typedData?: Array<{ primaryType?: string }> }) =>
+		step.typedData?.some((typedData) => typedData.primaryType === "PermitWitnessTransferFrom") === true,
+	isRelayerStep: (step: { typedData?: unknown[] }) => (step.typedData?.length ?? 0) > 0,
 	resumeRoute: vi.fn(),
 	updateRouteExecution: vi.fn(),
 }));
@@ -42,19 +45,38 @@ vi.mock("@/lib/lifi/bridge-execution-persistence", async (importOriginal) => {
 import { INITIAL_BRIDGE_STATE, useBridgeExecutionState } from "@/lib/lifi/bridge-execution-state";
 import {
 	continueBridgeInBackground,
-	executeBridgeQuote,
+	executeBridgeQuote as executeBridgeQuoteWithGuard,
 	resetBridgeExecution,
-	restoreBridgeInForeground,
-	retryBridgeExecution,
+	restoreBridgeInForeground as restoreBridgeInForegroundWithGuard,
+	retryBridgeExecution as retryBridgeExecutionWithGuard,
 } from "@/lib/lifi/use-bridge";
 
 interface ExecutionOptions {
+	disableMessageSigning?: boolean;
 	updateRouteHook?: (route: RouteExtended) => void;
+	updateTransactionRequestHook?: (request: Record<string, unknown>) => Promise<Record<string, unknown>>;
 }
 
 const SOURCE_ADDRESS = "0x1111111111111111111111111111111111111111";
 const HYPERCORE_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 const TX_HASH = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const legalActionGuard = vi.fn<() => Promise<void>>();
+
+function executeBridgeQuote(quote: BridgeQuote) {
+	return executeBridgeQuoteWithGuard(quote, legalActionGuard);
+}
+
+function retryBridgeExecution() {
+	return retryBridgeExecutionWithGuard(legalActionGuard);
+}
+
+function restoreBridgeInForeground() {
+	return restoreBridgeInForegroundWithGuard(legalActionGuard);
+}
+
+async function waitForBridgeExecutionStart() {
+	await vi.waitFor(() => expect(useBridgeExecutionState.getState().status).toBe("executing"));
+}
 
 function createRoute(
 	process: Array<Record<string, unknown>> = [],
@@ -120,6 +142,20 @@ function createQuote(): BridgeQuote {
 	};
 }
 
+function addMessageSigningData(route: RouteExtended, primaryType = "PermitWitnessTransferFrom"): RouteExtended {
+	const step = route.steps[0];
+	if (!step) throw new Error("Missing route step");
+	(step as unknown as { typedData: Array<Record<string, unknown>> }).typedData = [
+		{
+			primaryType,
+			domain: {},
+			types: {},
+			message: {},
+		},
+	];
+	return route;
+}
+
 function createCrossChainProcess(status: "PENDING" | "FAILED" | "DONE") {
 	return {
 		type: "CROSS_CHAIN",
@@ -145,6 +181,8 @@ describe("LI.FI bridge execution", () => {
 		sdk.resumeRoute.mockReset();
 		sdk.updateRouteExecution.mockReset();
 		sdk.convertQuoteToRoute.mockReturnValue(createRoute());
+		legalActionGuard.mockReset();
+		legalActionGuard.mockResolvedValue(undefined);
 	});
 
 	it("blocks a new route at the final execution boundary when the gate is closed", async () => {
@@ -163,6 +201,127 @@ describe("LI.FI bridge execution", () => {
 
 		expect(sdk.convertQuoteToRoute).not.toHaveBeenCalled();
 		expect(sdk.executeRoute).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when a new route has no funds-write legal guard", async () => {
+		await expect(executeBridgeQuoteWithGuard(createQuote())).resolves.toBe("error");
+
+		expect(sdk.executeRoute).not.toHaveBeenCalled();
+		expect(useBridgeExecutionState.getState()).toMatchObject({
+			status: "error",
+			error: "Unable to verify regional availability. This funds action was not submitted.",
+		});
+	});
+
+	it("does not leak a legal preflight failure or execute the route", async () => {
+		legalActionGuard.mockRejectedValue(new Error("sensitive upstream response body"));
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+
+		expect(sdk.executeRoute).not.toHaveBeenCalled();
+		expect(executionSecurity.clearPersistedBridgeExecution).not.toHaveBeenCalled();
+		expect(useBridgeExecutionState.getState().error).toBe(
+			"Unable to verify regional availability. This funds action was not submitted.",
+		);
+		expect(useBridgeExecutionState.getState().error).not.toContain("sensitive");
+	});
+
+	it("rechecks the exact source wallet after the legal request completes", async () => {
+		let releaseLegalCheck: (() => void) | undefined;
+		legalActionGuard.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					releaseLegalCheck = resolve;
+				}),
+		);
+
+		const outcome = executeBridgeQuote(createQuote());
+		await vi.waitFor(() => expect(legalActionGuard).toHaveBeenCalledOnce());
+		executionSecurity.activeWalletAddress = "0x2222222222222222222222222222222222222222";
+		releaseLegalCheck?.();
+
+		await expect(outcome).resolves.toBe("error");
+		expect(sdk.executeRoute).not.toHaveBeenCalled();
+		expect(useBridgeExecutionState.getState().error).toBe("The active wallet does not match this bridge route.");
+	});
+
+	it("claims the execution state before awaiting the legal request", async () => {
+		let releaseLegalCheck: (() => void) | undefined;
+		legalActionGuard.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					releaseLegalCheck = resolve;
+				}),
+		);
+		sdk.executeRoute.mockResolvedValue(createRoute([createCrossChainProcess("DONE")], "DONE"));
+
+		const first = executeBridgeQuote(createQuote());
+		await vi.waitFor(() => expect(legalActionGuard).toHaveBeenCalledOnce());
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+		releaseLegalCheck?.();
+
+		await expect(first).resolves.toBe("success");
+		expect(legalActionGuard).toHaveBeenCalledOnce();
+		expect(sdk.executeRoute).toHaveBeenCalledOnce();
+	});
+
+	it("revalidates legal access immediately before every LI.FI transaction request", async () => {
+		const transactionRequest = { to: "0x3333333333333333333333333333333333333333" };
+		sdk.executeRoute.mockImplementation(async (_route: RouteExtended, options: ExecutionOptions) => {
+			expect(options.disableMessageSigning).toBe(true);
+			await expect(options.updateTransactionRequestHook?.(transactionRequest)).resolves.toBe(transactionRequest);
+			await expect(options.updateTransactionRequestHook?.(transactionRequest)).resolves.toBe(transactionRequest);
+			return createRoute([createCrossChainProcess("DONE")], "DONE");
+		});
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("success");
+
+		expect(legalActionGuard).toHaveBeenCalledTimes(3);
+	});
+
+	it.each(["PermitWitnessTransferFrom", "CustomRelayerIntent"])(
+		"rejects a new LI.FI route that requires %s message signing",
+		async (primaryType) => {
+			sdk.convertQuoteToRoute.mockReturnValue(addMessageSigningData(createRoute(), primaryType));
+
+			await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+
+			expect(legalActionGuard).not.toHaveBeenCalled();
+			expect(sdk.executeRoute).not.toHaveBeenCalled();
+			expect(useBridgeExecutionState.getState().error).toBe(
+				"This bridge route requires unsupported message signing and was not submitted.",
+			);
+		},
+	);
+
+	it("aborts when LI.FI introduces relayer typed data while preparing an uncommitted route", async () => {
+		sdk.executeRoute.mockImplementation(async (_route: RouteExtended, options: ExecutionOptions) => {
+			expect(options.disableMessageSigning).toBe(true);
+			options.updateRouteHook?.(addMessageSigningData(createRoute(), "DynamicRelayerIntent"));
+			throw new Error("Message signing policy did not stop route preparation");
+		});
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+
+		expect(legalActionGuard).toHaveBeenCalledOnce();
+		expect(useBridgeExecutionState.getState().error).toBe(
+			"This bridge route requires unsupported message signing and was not submitted.",
+		);
+	});
+
+	it("refuses to resume an uncommitted route that retained message-signing state", async () => {
+		sdk.executeRoute.mockRejectedValueOnce(new Error("RPC unavailable before submission"));
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+
+		useBridgeExecutionState.setState({ latestRoute: addMessageSigningData(createRoute(), "RetainedIntent") });
+		legalActionGuard.mockClear();
+		await expect(retryBridgeExecution()).resolves.toBe("error");
+
+		expect(legalActionGuard).not.toHaveBeenCalled();
+		expect(sdk.resumeRoute).not.toHaveBeenCalled();
+		expect(useBridgeExecutionState.getState().error).toBe(
+			"This bridge route requires unsupported message signing and was not submitted.",
+		);
 	});
 
 	afterEach(() => {
@@ -186,11 +345,14 @@ describe("LI.FI bridge execution", () => {
 		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
 		expect(resetBridgeExecution()).toBe(false);
 		featureState.createNewRoute = false;
+		legalActionGuard.mockReset();
+		legalActionGuard.mockRejectedValue(new Error("Legal endpoint unavailable"));
 		await expect(retryBridgeExecution()).resolves.toBe("success");
 
 		expect(sdk.convertQuoteToRoute).toHaveBeenCalledOnce();
 		expect(sdk.executeRoute).toHaveBeenCalledOnce();
 		expect(sdk.resumeRoute).toHaveBeenCalledOnce();
+		expect(legalActionGuard).not.toHaveBeenCalled();
 		expect(executionSecurity.persistCommittedBridgeExecution).toHaveBeenCalledWith(
 			expect.objectContaining({
 				route: pendingRoute,
@@ -241,6 +403,44 @@ describe("LI.FI bridge execution", () => {
 			}),
 			expect.any(Object),
 		);
+	});
+
+	it("resumes a committed source swap without blocking recovery on a new legal request", async () => {
+		const failedSwapRoute = addMessageSigningData(
+			createRoute(
+				[
+					{
+						type: "SWAP",
+						status: "FAILED",
+						chainId: 42161,
+						txHash: TX_HASH,
+						startedAt: 1,
+					},
+				],
+				"FAILED",
+			),
+		);
+		const doneRoute = createRoute([createCrossChainProcess("DONE")], "DONE");
+		sdk.executeRoute.mockImplementation(async (_route: RouteExtended, options: ExecutionOptions) => {
+			options.updateRouteHook?.(failedSwapRoute);
+			throw new Error("Source swap receipt temporarily unavailable");
+		});
+		sdk.resumeRoute.mockImplementation(async (route: RouteExtended, options: ExecutionOptions) => {
+			expect(options.disableMessageSigning).toBe(true);
+			expect(route.steps[0]).not.toHaveProperty("typedData");
+			return doneRoute;
+		});
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+		legalActionGuard.mockReset();
+		legalActionGuard.mockRejectedValue(new Error("Legal endpoint unavailable"));
+		await expect(retryBridgeExecution()).resolves.toBe("success");
+
+		expect(executionSecurity.persistCommittedBridgeExecution).toHaveBeenCalledWith(
+			expect.objectContaining({ route: failedSwapRoute }),
+		);
+		expect(legalActionGuard).not.toHaveBeenCalled();
+		expect(sdk.resumeRoute).toHaveBeenCalledOnce();
 	});
 
 	it("tracks a failed source process by its existing transaction without passing a failed process to resumeRoute", async () => {
@@ -356,6 +556,21 @@ describe("LI.FI bridge execution", () => {
 		});
 	});
 
+	it("requires a new legal preflight before retrying an uncommitted route", async () => {
+		sdk.executeRoute.mockRejectedValueOnce(new Error("RPC unavailable before submission"));
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+		legalActionGuard.mockReset();
+		legalActionGuard.mockRejectedValue(new Error("sensitive legal response"));
+		await expect(retryBridgeExecution()).resolves.toBe("error");
+
+		expect(legalActionGuard).toHaveBeenCalledOnce();
+		expect(sdk.resumeRoute).not.toHaveBeenCalled();
+		expect(useBridgeExecutionState.getState().error).toBe(
+			"Unable to verify regional availability. This funds action was not submitted.",
+		);
+	});
+
 	it("does not resume an uncommitted attempt after the creation gate closes", async () => {
 		sdk.executeRoute.mockRejectedValue(new Error("RPC unavailable before submission"));
 
@@ -377,6 +592,7 @@ describe("LI.FI bridge execution", () => {
 		sdk.executeRoute.mockReturnValue(executionPromise);
 
 		const outcomePromise = executeBridgeQuote(createQuote());
+		await waitForBridgeExecutionStart();
 		featureState.createNewRoute = false;
 		expect(continueBridgeInBackground()).toBe(true);
 		expect(sdk.updateRouteExecution).toHaveBeenCalledWith(expect.objectContaining({ id: "route-1" }), {
@@ -401,6 +617,7 @@ describe("LI.FI bridge execution", () => {
 		sdk.resumeRoute.mockResolvedValue(createRoute([createCrossChainProcess("DONE")], "DONE"));
 
 		const outcomePromise = executeBridgeQuote(createQuote());
+		await waitForBridgeExecutionStart();
 		expect(continueBridgeInBackground()).toBe(true);
 		resolveExecution?.(createRoute());
 		await expect(outcomePromise).resolves.toBe("error");
@@ -419,6 +636,7 @@ describe("LI.FI bridge execution", () => {
 		sdk.executeRoute.mockReturnValue(executionPromise);
 
 		const outcomePromise = executeBridgeQuote(createQuote());
+		await waitForBridgeExecutionStart();
 		expect(continueBridgeInBackground()).toBe(true);
 		rejectExecution?.(new Error("RPC unavailable before submission"));
 		await expect(outcomePromise).resolves.toBe("error");
@@ -441,11 +659,13 @@ describe("LI.FI bridge execution", () => {
 		});
 
 		const outcomePromise = executeBridgeQuote(createQuote());
-		expect(useBridgeExecutionState.getState()).toMatchObject({
-			status: "executing",
-			canAbandon: false,
-			recoveryWarning: "Reload recovery could not be saved. Keep this tab open until the bridge completes.",
-		});
+		await vi.waitFor(() =>
+			expect(useBridgeExecutionState.getState()).toMatchObject({
+				status: "executing",
+				canAbandon: false,
+				recoveryWarning: "Reload recovery could not be saved. Keep this tab open until the bridge completes.",
+			}),
+		);
 
 		resolveExecution?.(createRoute([createCrossChainProcess("DONE")], "DONE"));
 		await expect(outcomePromise).resolves.toBe("success");

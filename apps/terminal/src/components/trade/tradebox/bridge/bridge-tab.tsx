@@ -3,7 +3,7 @@ import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { initLiFi } from "@/lib/lifi/config";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
-import { continueBridgeInBackground, restoreBridgeInForeground, useBridgeExecutor } from "@/lib/lifi/use-bridge";
+import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
 import type { BridgeQuote } from "@/lib/lifi/use-quote";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { AmountEntryScreen } from "./amount-entry-screen";
@@ -23,14 +23,15 @@ export function BridgeTab() {
 	const [tokenAmount, setTokenAmount] = useState("");
 	const bridge = useBridgeExecutor();
 	const { close: closeDepositModal } = useDepositModalActions();
+	const { continueInBackground, restoreInForeground } = bridge;
 
 	useEffect(() => {
 		initLiFi();
-		restoreBridgeInForeground();
+		restoreInForeground();
 		return () => {
-			continueBridgeInBackground();
+			continueInBackground();
 		};
-	}, []);
+	}, [continueInBackground, restoreInForeground]);
 
 	function handleTokenSelect(token: BridgeToken) {
 		setSelectedToken(token);

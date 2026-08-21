@@ -1,3 +1,4 @@
+import { ExchangeClient, type IRequestTransport } from "@nktkas/hyperliquid";
 import { ApproveAgentTypes } from "@nktkas/hyperliquid/api/exchange";
 import { getWalletChainId, signUserSignedAction } from "@nktkas/hyperliquid/signing";
 import { describe, expect, it, vi } from "vitest";
@@ -5,6 +6,19 @@ import { createPrivyAgentSigner } from "@/lib/wallet/privy-agent-signer";
 
 const EXPECTED_ADDRESS = "0x1111111111111111111111111111111111111111";
 const OTHER_ADDRESS = "0x2222222222222222222222222222222222222222";
+
+interface Deferred<T> {
+	promise: Promise<T>;
+	resolve: (value: T) => void;
+}
+
+function createDeferred<T>(): Deferred<T> {
+	let resolve = (_value: T) => {};
+	const promise = new Promise<T>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+	return { promise, resolve };
+}
 
 const typedData = {
 	domain: {
@@ -35,6 +49,7 @@ describe("createPrivyAgentSigner", () => {
 			embeddedWalletAddress: EXPECTED_ADDRESS,
 			chainId: 42161,
 			signTypedData,
+			beforeSubmit: vi.fn(),
 		});
 
 		await signer.signTypedData(typedData);
@@ -62,6 +77,7 @@ describe("createPrivyAgentSigner", () => {
 			embeddedWalletAddress: EXPECTED_ADDRESS,
 			chainId: 42161,
 			signTypedData,
+			beforeSubmit: vi.fn(),
 		});
 
 		expect(signer.signTypedData.length).toBe(1);
@@ -101,6 +117,71 @@ describe("createPrivyAgentSigner", () => {
 		);
 	});
 
+	it("revalidates after Privy signs and prevents the real SDK boundary from submitting a stale owner", async () => {
+		const rawSignature = `0x${"11".repeat(64)}1b` as const;
+		const signature = createDeferred<{ signature: typeof rawSignature }>();
+		const signTypedData = vi.fn(async (_typedData: unknown) => signature.promise);
+		let activeOwner = EXPECTED_ADDRESS;
+		const beforeSubmit = vi.fn(() => {
+			if (activeOwner !== EXPECTED_ADDRESS) throw new Error("Approval owner changed after signing");
+		});
+		const signer = createPrivyAgentSigner({
+			expectedAddress: EXPECTED_ADDRESS,
+			activeAddress: EXPECTED_ADDRESS,
+			embeddedWalletAddress: EXPECTED_ADDRESS,
+			chainId: 42161,
+			signTypedData,
+			beforeSubmit,
+		});
+		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
+		const client = new ExchangeClient({
+			transport: { isTestnet: false, request } as IRequestTransport,
+			wallet: signer,
+			nonceManager: () => 1_722_000_000_000,
+		});
+
+		const approval = client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" });
+		await vi.waitFor(() => expect(signTypedData).toHaveBeenCalledOnce());
+		activeOwner = OTHER_ADDRESS;
+		signature.resolve({ signature: rawSignature });
+
+		await expect(approval).rejects.toMatchObject({
+			message: "Failed to sign the typed data using the wallet",
+			cause: expect.objectContaining({ message: "Approval owner changed after signing" }),
+		});
+		expect(beforeSubmit).toHaveBeenCalledOnce();
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it("prevents the real SDK transport when the post-signature legal check fails", async () => {
+		const rawSignature = `0x${"11".repeat(64)}1b` as const;
+		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });
+		const beforeSubmit = vi.fn().mockRejectedValue(new Error("Legal access changed after signing"));
+		const signer = createPrivyAgentSigner({
+			expectedAddress: EXPECTED_ADDRESS,
+			activeAddress: EXPECTED_ADDRESS,
+			embeddedWalletAddress: EXPECTED_ADDRESS,
+			chainId: 42161,
+			signTypedData,
+			beforeSubmit,
+		});
+		const request = vi.fn().mockResolvedValue({ status: "ok", response: { type: "default" } });
+		const client = new ExchangeClient({
+			transport: { isTestnet: false, request } as IRequestTransport,
+			wallet: signer,
+			nonceManager: () => 1_722_000_000_001,
+		});
+
+		await expect(client.approveAgent({ agentAddress: OTHER_ADDRESS, agentName: "Mobile" })).rejects.toMatchObject({
+			message: "Failed to sign the typed data using the wallet",
+			cause: expect.objectContaining({ message: "Legal access changed after signing" }),
+		});
+		expect(signTypedData).toHaveBeenCalledOnce();
+		expect(beforeSubmit).toHaveBeenCalledOnce();
+		expect(signTypedData.mock.invocationCallOrder[0]).toBeLessThan(beforeSubmit.mock.invocationCallOrder[0] ?? 0);
+		expect(request).not.toHaveBeenCalled();
+	});
+
 	it("fails closed when the active wallet does not match", () => {
 		expect(() =>
 			createPrivyAgentSigner({
@@ -109,6 +190,7 @@ describe("createPrivyAgentSigner", () => {
 				embeddedWalletAddress: EXPECTED_ADDRESS,
 				chainId: 42161,
 				signTypedData: vi.fn(),
+				beforeSubmit: vi.fn(),
 			}),
 		).toThrow(/does not match/);
 	});
@@ -121,6 +203,7 @@ describe("createPrivyAgentSigner", () => {
 				embeddedWalletAddress: undefined,
 				chainId: 42161,
 				signTypedData: vi.fn(),
+				beforeSubmit: vi.fn(),
 			}),
 		).toThrow(/does not match/);
 	});

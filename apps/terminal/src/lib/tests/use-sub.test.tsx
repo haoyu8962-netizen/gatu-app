@@ -53,6 +53,7 @@ describe("useSub hook surface", () => {
 			clientKey: "0x0000000000000000000000000000000000000000",
 			sessionMode: "wallet",
 			exchangeLifecycle: { id: Symbol("use-sub-test-provider"), active: true },
+			enforceLegalActions: false,
 		};
 
 		return createElement(

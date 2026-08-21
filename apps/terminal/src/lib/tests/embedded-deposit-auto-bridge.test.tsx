@@ -33,6 +33,7 @@ const testState = vi.hoisted(() => ({
 	useDepositOptions: null as null | Record<string, unknown>,
 	trackingOptions: null as null | Record<string, unknown>,
 	trackingRecoveryRecord: null as null | { sourceHash: `0x${string}` },
+	walletIntent: "embedded" as "ambiguous" | "embedded" | "external" | "unavailable",
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -97,12 +98,12 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		user: { email: { address: "user@example.com" } },
 		embeddedWalletAddress: USER_ADDRESS,
+		walletIntent: testState.walletIntent,
 	}),
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => "user@example.com",
-	shouldUsePrivyEmbeddedWallet: () => true,
 }));
 
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
@@ -154,6 +155,7 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.useDepositOptions = null;
 		testState.trackingOptions = null;
 		testState.trackingRecoveryRecord = null;
+		testState.walletIntent = "embedded";
 		Object.defineProperty(navigator, "locks", { configurable: true, value: undefined });
 	});
 
@@ -329,6 +331,29 @@ describe("EmbeddedDepositAutoBridge", () => {
 
 		expect(testState.refreshBalance).toHaveBeenCalledTimes(1);
 		expect(testState.deposit).toHaveBeenCalledWith("6");
+	});
+
+	it("aborts an in-flight automatic deposit when the Privy wallet intent becomes ambiguous", async () => {
+		let resolveBalance: ((balance: bigint) => void) | undefined;
+		testState.refreshBalance.mockReturnValueOnce(
+			new Promise<bigint>((resolve) => {
+				resolveBalance = resolve;
+			}),
+		);
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		testState.walletIntent = "ambiguous";
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		await act(async () => {
+			resolveBalance?.(9_000_000n);
+			await Promise.resolve();
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
 	it("skips an automatic deposit when the refreshed balance is below the minimum", async () => {

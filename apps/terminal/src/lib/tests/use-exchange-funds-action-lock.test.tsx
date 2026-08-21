@@ -29,7 +29,10 @@ const clients = vi.hoisted(() => {
 });
 
 const providerState = vi.hoisted(() => ({
+	enforceLegalActions: false,
 	exchangeLifecycle: { id: Symbol("funds-lock-integration-test"), active: true },
+	legalCheck: vi.fn(),
+	preExecutionGuard: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/hooks/useClients", () => ({
@@ -52,8 +55,10 @@ vi.mock("@gatu/hl-react/provider", () => ({
 	useHyperliquid: () => ({
 		builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
 		clientKey: OWNER,
+		enforceLegalActions: providerState.enforceLegalActions,
 		env: "Mainnet",
 		exchangeLifecycle: providerState.exchangeLifecycle,
+		info: { legalCheck: providerState.legalCheck },
 		sessionMode: "wallet",
 	}),
 }));
@@ -79,7 +84,7 @@ function setLockManager(manager: LockManager | undefined): void {
 	});
 }
 
-function installExclusiveLockManager(): void {
+function installExclusiveLockManager(onAcquire?: () => void): void {
 	const active = new Set<string>();
 	const pending: PendingLockRequest[] = [];
 
@@ -96,6 +101,7 @@ function installExclusiveLockManager(): void {
 		}
 
 		active.add(name);
+		onAcquire?.();
 		void Promise.resolve(entry.callback({ name, mode: "exclusive" } as Lock))
 			.then(entry.resolve, entry.reject)
 			.finally(() => {
@@ -170,7 +176,12 @@ describe("useExchange funds action lock integration", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		clients.hookCallCount = 0;
+		providerState.enforceLegalActions = false;
 		providerState.exchangeLifecycle.active = true;
+		providerState.legalCheck.mockReset();
+		providerState.legalCheck.mockResolvedValue({ acceptedTerms: true, userAllowed: true, restrictions: "n" });
+		providerState.preExecutionGuard.mockReset();
+		providerState.preExecutionGuard.mockResolvedValue(undefined);
 		window.localStorage.clear();
 		window.localStorage.setItem(
 			SESSION_STORAGE_KEY,
@@ -197,7 +208,11 @@ describe("useExchange funds action lock integration", () => {
 	});
 
 	function Probe() {
-		const first = useExchange("withdraw3", { retry: 3, retryDelay: 0 });
+		const first = useExchange("withdraw3", {
+			preExecutionGuard: providerState.preExecutionGuard,
+			retry: 3,
+			retryDelay: 0,
+		});
 		const second = useExchange("withdraw3", { retry: 3, retryDelay: 0 });
 		const tokenDelegate = useExchange("tokenDelegate", { retry: 3, retryDelay: 0 });
 		capturedMutations = {
@@ -249,6 +264,45 @@ describe("useExchange funds action lock integration", () => {
 			await expect(secondRequest).resolves.toEqual(clients.response);
 		});
 		expect(clients.secondWithdraw).toHaveBeenCalledTimes(1);
+	});
+
+	it("forces fresh legal access inside the funds lock after the action preflight", async () => {
+		const lockAcquired = vi.fn();
+		installExclusiveLockManager(lockAcquired);
+		providerState.enforceLegalActions = true;
+		const mutations = renderProbe();
+
+		await act(async () => {
+			await expect(mutations.first({ destination: OWNER, amount: "10" })).resolves.toEqual(clients.response);
+			await expect(mutations.first({ destination: OWNER, amount: "11" })).resolves.toEqual(clients.response);
+		});
+
+		expect(providerState.legalCheck).toHaveBeenCalledTimes(2);
+		expect(providerState.legalCheck).toHaveBeenNthCalledWith(1, { user: OWNER }, expect.any(AbortSignal));
+		expect(lockAcquired.mock.invocationCallOrder[0]).toBeLessThan(
+			providerState.preExecutionGuard.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+		expect(providerState.preExecutionGuard.mock.invocationCallOrder[0]).toBeLessThan(
+			providerState.legalCheck.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+		expect(providerState.legalCheck.mock.invocationCallOrder[0]).toBeLessThan(
+			clients.firstWithdraw.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+	});
+
+	it("fails closed before the SDK write when legal access cannot be verified", async () => {
+		installExclusiveLockManager();
+		providerState.enforceLegalActions = true;
+		providerState.legalCheck.mockResolvedValue({ acceptedTerms: "yes", userAllowed: true, restrictions: "n" });
+		const mutations = renderProbe();
+
+		await act(async () => {
+			await expect(mutations.first({ destination: OWNER, amount: "10" })).rejects.toThrow(
+				"Hyperliquid access could not be verified",
+			);
+		});
+
+		expect(clients.firstWithdraw).not.toHaveBeenCalled();
 	});
 
 	it("fails closed without Web Locks and does not retry or call either SDK client", async () => {

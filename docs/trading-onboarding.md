@@ -19,6 +19,18 @@ loading, or deposit behavior changes.
 - [Circle: USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)
 - [Privy React setup](https://docs.privy.io/basics/react/setup)
 - [Privy connected-wallet lifecycle](https://docs.privy.io/wallets/wallets/get-a-wallet/get-connected-wallet)
+- [Privy login callbacks](https://docs.privy.io/authentication/user-authentication/ui-component)
+- [Privy embedded-wallet confirmation UI](https://docs.privy.io/recipes/react/manage-wallet-UIs)
+- [TanStack Query `useQuery` status contract](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery)
+- [TanStack Query focus refetching](https://tanstack.com/query/latest/docs/framework/react/guides/window-focus-refetching)
+- [WebKit page cache lifecycle](https://webkit.org/blog/516/webkit-page-cache-ii-the-unload-event/)
+
+Hyperliquid's public API documentation does not currently describe
+`legalCheck` or `acceptTerms2`. The pinned SDK exposes `legalCheck`, while the
+application maintains the typed `acceptTerms2` adapter. Treat both as a
+version-locked frontend contract: validate every response strictly, fail
+closed on unknown restriction codes or schema changes, and run contract
+checks whenever the SDK is upgraded.
 
 ## Required Sequence
 
@@ -28,10 +40,17 @@ The terminal must preserve this ordering:
    provider owns the wallet connection and authentication prompts.
 2. **Verify legal status.** Query Hyperliquid `legalCheck` for the selected
    owner. Unknown, failed, or restricted responses fail closed and must not
-   fall through to trading setup.
+   fall through to trading setup. The dialog is presentation only: every
+   `ExchangeClient` write revalidates the exact master owner at the shared SDK
+   execution boundary, including Agent-only sessions and direct embedded-wallet
+   Agent approval.
 3. **Accept required policies.** The blocking legal dialog requires both
    policy acknowledgements. Acceptance signs and submits Hyperliquid's
    `acceptTerms2` request, then re-queries `legalCheck` before continuing.
+   Email sessions sign through Privy's exact embedded-wallet address with the
+   per-call confirmation UI enabled. Identity and environment are rechecked
+   before signing, after signing, after server confirmation, and before the
+   legal cache is updated.
 4. **Establish the trading connection.** Only a completed `extraAgents`
    response may establish that no locally available Agent is approved for
    this exact owner and environment. Loading, refreshing, absent, and failed
@@ -94,8 +113,8 @@ instead of falling back to stale data, and reads never cross owners or
 environments.
 
 The persistent choice does not synchronize an Agent private key between
-origins, browser profiles, or devices. The owner Smart Wallet authorizes the
-Agent but cannot reconstruct its locally generated private key. Runtime
+origins, browser profiles, or devices. The matching owner/master EOA authorizes
+the Agent but cannot reconstruct its locally generated private key. Runtime
 verification must therefore match both the stored public key and the exact
 deployment Agent name returned by `extraAgents`.
 
@@ -129,6 +148,23 @@ transient state also must not delete the last confirmed owner's Agent. Agent
 cleanup belongs to verified explicit logout, confirmed owner replacement, or
 an explicit security reset.
 
+Login intent is recorded only from Privy's public login callback in an
+application-owned, `user.id`-bound `sessionStorage` record. Do not read or scan
+Privy's private storage keys. A record for another user or an unknown login
+method is ignored, and wallet selection still requires the exact address in
+Privy's connected-wallet directory.
+
+Legal query data uses a short successful-result TTL. A background refetch
+failure may retain the last successful result for read-only presentation, but
+it never authorizes a write: the execution guard forces a fresh check after a
+failed or paused query. Focus and network reconnect revalidate normally. A
+persisted `pageshow` (Safari/iOS BFCache restore) invalidates every in-memory
+owner/environment legal query immediately so a wallet event delivered after
+resume cannot expose an authorization captured before suspension.
+Legal-status queries, pre-submit checks, and terms requests each enforce a
+dedicated ten-second deadline without changing the shared HTTP transport;
+only network, timeout, 408, 429, and 5xx failures receive bounded retries.
+
 ## State Boundaries
 
 - Wallet connection, legal acceptance, Agent approval, local Agent key,
@@ -136,6 +172,9 @@ an explicit security reset.
 - Agent/API wallet keys can trade but cannot withdraw. Withdrawals and other
   user-signed actions continue to require the matching owner wallet.
 - A legal-status error is not equivalent to unaccepted terms.
+- A previous successful legal response is read-only after a refetch failure,
+  offline pause, or BFCache invalidation; it must not authorize an Exchange
+  write until a new check succeeds.
 - A balance-loading or balance-error state is not equivalent to an empty
   account.
 - A successful `approveAgent` response is not enough by itself; post-write
@@ -185,6 +224,19 @@ an explicit security reset.
   invalid or incomplete IPdata data, proxy signals, or a restricted verdict.
   IPdata parsing is strict; region-scoped countries such as Canada do not pass
   without a valid region.
+- A new CCTP source transaction revalidates the selected Hyperliquid owner's
+  legal status after its authorization signature and immediately before the
+  exact source wallet submits the transaction. LI.FI creation and uncommitted
+  retries do the same before every transaction request. Once a source swap or
+  cross-chain transaction is committed, recovery and status tracking must
+  remain available even if a later legal-status request is unavailable; this
+  does not authorize a new write.
+- LI.FI gasless, relayer, Permit, and other message-signing execution paths are
+  intentionally unsupported. New routes, dynamically updated routes, and
+  uncommitted retries fail closed if they require typed-data signing, and every
+  SDK execution disables message signing. A sanitized route with an already
+  committed source transaction may still resume read-only receipt and
+  destination tracking without a new legal gate or signing request.
 - Account-mode changes and mode-dependent funds actions acquire one Web Lock
   scoped by Hyperliquid environment and owner. The lock is held until the SDK
   request settles. Lock acquisition times out after ten seconds; an acquired
@@ -198,8 +250,11 @@ an explicit security reset.
 | Wallet/agent-only identity bridge | `apps/terminal/src/providers/root.tsx`, `packages/hl-react/src/provider.tsx` |
 | Legal API contract | `packages/hl-react/src/legal.ts` |
 | Legal query and acceptance hooks | `packages/hl-react/src/signing/use-legal-status.ts`, `use-terms-acceptance.ts` |
+| Final legal execution guard | `packages/hl-react/src/internal/exchange/legal-execution.ts`, `hooks/useExchange.ts` |
 | Legal UI state | `apps/terminal/src/hooks/trade/use-legal-gate.ts` |
 | Blocking policy dialog | `apps/terminal/src/components/trade/components/legal-acceptance-modal.tsx` |
+| Privy login intent | `apps/terminal/src/lib/wallet/privy-login-method.ts`, `providers/privy-login-method-observer.tsx` |
+| Email terms signer | `apps/terminal/src/hooks/wallet/use-explicit-terms-acceptance.ts`, `lib/wallet/privy-legal-signer.ts` |
 | Agent storage and preference | `packages/hl-react/src/signing/agent-storage.ts` |
 | Agent registration | `packages/hl-react/src/signing/use-agent-registration.ts` |
 | Builder-fee approval | `packages/hl-react/src/signing/use-builder-fee-approval.ts` |
@@ -209,9 +264,11 @@ an explicit security reset.
 | Geo parsing and fail-closed query | `apps/terminal/src/lib/geo/ipdata-geo.ts`, `get-geo.ts`, `apps/terminal/src/hooks/use-geo-restriction.ts` |
 | USDC routing validation | `apps/terminal/src/domain/trade/usdc-routing.ts` |
 | USDC routing query and pre-submit guard | `apps/terminal/src/hooks/trade/use-usdc-routing.ts` |
+| Fresh funds-write legal guard | `apps/terminal/src/hooks/trade/use-fresh-legal-action-guard.ts` |
 | Runtime flow orchestration | `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx` |
 | Manual deposit and withdrawal surface | `apps/terminal/src/components/trade/tradebox/deposit-modal.tsx` |
 | Circle CCTP construction and recovery | `apps/terminal/src/lib/trade/cctp-deposit.ts`, `cctp-deposit-tracking.ts` |
+| LI.FI per-transaction guard and committed-route recovery | `apps/terminal/src/lib/lifi/use-bridge.ts`, `bridge-execution-persistence.ts` |
 | Cross-tab funds serialization | `packages/hl-react/src/internal/exchange/funds-action-lock.ts` |
 | Automatic embedded-wallet deposit | `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx` |
 | Session-scoped prompt dismissal | `apps/terminal/src/stores/use-trading-onboarding-store.ts` |
@@ -221,8 +278,13 @@ an explicit security reset.
 
 At minimum, changes to this flow must cover:
 
-- legal status: inactive, checking, required, submitting, blocked, error, and
-  accepted;
+- legal status: inactive, checking, required, submitting, blocked,
+  wallet-required, error, and accepted;
+- initial legal failure, background refetch failure with retained read-only
+  data, offline action rejection, focus/reconnect refresh, BFCache invalidation,
+  schema drift, bounded retry, and exact-owner Exchange write enforcement;
+- email and external login intent, cross-user session isolation, exact embedded
+  wallet selection, and per-call Privy terms confirmation;
 - both policy checkboxes and the non-dismissible blocking dialog;
 - an existing approved Agent without a redundant signature;
 - new Agent verification using the newly generated address;

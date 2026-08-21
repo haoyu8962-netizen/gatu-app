@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { type Address, isAddress, zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { closeAgentRegistrationSessionAndRemove, useHyperliquid, useHyperliquidOptional } from "@/lib/hyperliquid";
+import { clearPrivyLoginMethod, usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
+	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
 	hasSameWalletAddress,
+	resolvePrivyWalletIntent,
 	selectPrivyWagmiWallet,
-	shouldUsePrivyEmbeddedWallet,
 } from "@/lib/wallet/privy-wagmi";
 
 interface VerifiedExternalWalletOwner {
@@ -59,19 +61,23 @@ export function useWalletSession() {
 	const hyperliquid = useHyperliquidOptional();
 	const sessionReady = ready && walletsReady;
 	const signerReady = sessionReady && walletConnected && !isConnecting;
+	const loginIntent = usePrivyLoginIntent(sessionReady && authenticated ? user?.id : undefined);
+	const walletIntent = sessionReady && authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
 
 	const embeddedWalletAddress = sessionReady && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
-	const shouldUseEmbeddedWallet = sessionReady && authenticated && shouldUsePrivyEmbeddedWallet(user);
-	const connectedPrivyWallet =
-		shouldUseEmbeddedWallet && sessionReady ? selectPrivyWagmiWallet({ wallets, user }) : undefined;
+	const selectedPrivyWallet =
+		sessionReady && (walletIntent === "embedded" || walletIntent === "external")
+			? selectPrivyWagmiWallet({ loginIntent, wallets, user })
+			: undefined;
+	const selectedWalletIsActive =
+		signerReady && !!selectedPrivyWallet && hasSameWalletAddress(selectedPrivyWallet.address, connectedWalletAddress);
 	const embeddedWalletIsActive =
-		signerReady &&
-		!!connectedPrivyWallet &&
-		hasSameWalletAddress(connectedPrivyWallet.address, embeddedWalletAddress) &&
-		hasSameWalletAddress(embeddedWalletAddress, connectedWalletAddress);
+		selectedWalletIsActive && hasSameWalletAddress(selectedPrivyWallet?.address, embeddedWalletAddress);
+	const externalWalletIsActive = walletIntent === "external" && selectedWalletIsActive;
 	const walletAddress = resolveSessionWalletAddress({
-		shouldUseEmbeddedWallet,
+		walletIntent,
 		embeddedWalletIsActive,
+		externalWalletIsActive,
 		embeddedWalletAddress,
 		connectedWalletAddress,
 	});
@@ -96,6 +102,7 @@ export function useWalletSession() {
 		connectedWalletAddress,
 		embeddedWalletAddress,
 		walletConnected,
+		walletIntent,
 		isConnected: !!address,
 		isConnecting,
 		sessionMode,
@@ -104,18 +111,20 @@ export function useWalletSession() {
 }
 
 function resolveSessionWalletAddress({
-	shouldUseEmbeddedWallet,
+	walletIntent,
 	embeddedWalletIsActive,
+	externalWalletIsActive,
 	embeddedWalletAddress,
 	connectedWalletAddress,
 }: {
-	shouldUseEmbeddedWallet: boolean;
+	walletIntent: ReturnType<typeof resolvePrivyWalletIntent>;
 	embeddedWalletIsActive: boolean;
+	externalWalletIsActive: boolean;
 	embeddedWalletAddress: `0x${string}` | undefined;
 	connectedWalletAddress: `0x${string}` | undefined;
 }): `0x${string}` | undefined {
-	if (!shouldUseEmbeddedWallet) return connectedWalletAddress;
-	return embeddedWalletIsActive ? embeddedWalletAddress : undefined;
+	if (walletIntent === "embedded") return embeddedWalletIsActive ? embeddedWalletAddress : undefined;
+	return walletIntent === "external" && externalWalletIsActive ? connectedWalletAddress : undefined;
 }
 
 export function useReconnectWallet() {
@@ -124,6 +133,8 @@ export function useReconnectWallet() {
 	const { connectWallet } = useConnectWallet();
 	const { setActiveWallet } = useSetActiveWallet();
 	const [isReconnecting, setIsReconnecting] = useState(false);
+	const loginIntent = usePrivyLoginIntent(authenticated ? user?.id : undefined);
+	const walletIntent = authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
 
 	const reconnectWallet = useCallback(async () => {
 		if (isReconnecting || !walletsReady) return;
@@ -135,12 +146,18 @@ export function useReconnectWallet() {
 				return;
 			}
 
-			const preferredWallet = selectPrivyWagmiWallet({ wallets, user });
+			if (walletIntent === "ambiguous" || walletIntent === "unavailable") {
+				if (getPrivyEmailAddress(user)) notifyEmailWalletUnavailable();
+				else notifyWalletConnectionFailure();
+				return;
+			}
+
+			const preferredWallet = selectPrivyWagmiWallet({ loginIntent, wallets, user });
 			if (preferredWallet) {
 				await setActiveWallet(preferredWallet);
 				return;
 			}
-			if (shouldUsePrivyEmbeddedWallet(user)) {
+			if (walletIntent === "embedded") {
 				// An email session must never fall back to an arbitrary
 				// external wallet while its exact embedded signer is absent
 				// or ambiguous.
@@ -150,10 +167,13 @@ export function useReconnectWallet() {
 
 			connectWallet({
 				walletChainType: "ethereum-only",
-				suggestedAddress: user?.wallet?.address,
+				suggestedAddress:
+					loginIntent?.method === "wallet" && loginIntent.walletAddress
+						? loginIntent.walletAddress
+						: user?.wallet?.address,
 			});
 		} catch {
-			if (shouldUsePrivyEmbeddedWallet(user)) {
+			if (walletIntent === "embedded" || (walletIntent === "ambiguous" && !!getPrivyEmailAddress(user))) {
 				notifyEmailWalletUnavailable();
 			} else {
 				notifyWalletConnectionFailure();
@@ -161,17 +181,28 @@ export function useReconnectWallet() {
 		} finally {
 			setIsReconnecting(false);
 		}
-	}, [authenticated, connectWallet, isReconnecting, login, setActiveWallet, user, wallets, walletsReady]);
+	}, [
+		authenticated,
+		connectWallet,
+		isReconnecting,
+		login,
+		loginIntent,
+		setActiveWallet,
+		user,
+		walletIntent,
+		wallets,
+		walletsReady,
+	]);
 
 	return { reconnectWallet, walletsReady, isReconnecting };
 }
 
 export function useDisconnectWallet() {
 	const { authenticated, logout, user } = usePrivy();
-	const { embeddedWalletAddress, walletAddress } = useWalletSession();
+	const { embeddedWalletAddress, walletAddress, walletIntent } = useWalletSession();
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const [isDisconnecting, setIsDisconnecting] = useState(false);
-	const embeddedSession = shouldUsePrivyEmbeddedWallet(user);
+	const embeddedSession = walletIntent === "embedded";
 	const privyUserId = authenticated ? user?.id : undefined;
 
 	useEffect(() => {
@@ -185,6 +216,10 @@ export function useDisconnectWallet() {
 		) {
 			clearVerifiedExternalWalletOwner();
 		}
+		if (walletIntent === "ambiguous") {
+			clearVerifiedExternalWalletOwner();
+			return;
+		}
 		if (embeddedSession || sessionMode !== "wallet") return;
 
 		const exactWallet = normalizeEvmAddress(walletAddress);
@@ -192,7 +227,7 @@ export function useDisconnectWallet() {
 		if (exactWallet && activeClient && hasSameWalletAddress(exactWallet, activeClient)) {
 			rememberVerifiedExternalWalletOwner({ privyUserId, env, address: exactWallet });
 		}
-	}, [authenticated, clientKey, embeddedSession, env, privyUserId, sessionMode, walletAddress]);
+	}, [authenticated, clientKey, embeddedSession, env, privyUserId, sessionMode, walletAddress, walletIntent]);
 
 	async function disconnectWallet() {
 		if (isDisconnecting) return;
@@ -207,6 +242,7 @@ export function useDisconnectWallet() {
 				privyUserId,
 				sessionMode,
 				walletAddress,
+				walletIntent,
 			});
 			if (!ownerAddress) {
 				toast.error(
@@ -239,6 +275,7 @@ export function useDisconnectWallet() {
 			}
 			try {
 				await logout();
+				clearPrivyLoginMethod(privyUserId);
 			} catch {
 				toast.error(
 					t`The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet.`,
@@ -271,6 +308,7 @@ function resolveDisconnectOwner({
 	privyUserId,
 	sessionMode,
 	walletAddress,
+	walletIntent,
 }: {
 	authenticated: boolean;
 	clientKey: string;
@@ -280,12 +318,14 @@ function resolveDisconnectOwner({
 	privyUserId: string | undefined;
 	sessionMode: "wallet" | "agent-only" | "disconnected";
 	walletAddress: Address | undefined;
+	walletIntent: ReturnType<typeof resolvePrivyWalletIntent>;
 }): Address | undefined {
 	const activeClient = normalizeEvmAddress(clientKey === "disconnected" ? undefined : clientKey);
 
 	if (sessionMode === "agent-only") {
 		return activeClient;
 	}
+	if (walletIntent === "ambiguous" || walletIntent === "unavailable") return undefined;
 
 	const exactWallet = normalizeEvmAddress(walletAddress);
 	if (sessionMode === "wallet") {

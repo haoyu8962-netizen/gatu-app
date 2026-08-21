@@ -5,6 +5,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
+import { recordPrivyLoginMethod } from "@/lib/wallet/privy-login-method";
 
 const EMBEDDED_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const SECOND_EMBEDDED_WALLET_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
@@ -70,12 +71,14 @@ describe("useEmailEmbeddedWallet", () => {
 		testState.user = emailUser();
 		testState.createWallet.mockReset();
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 		vi.clearAllMocks();
 	});
 
@@ -107,6 +110,36 @@ describe("useEmailEmbeddedWallet", () => {
 		expect(hook.embeddedWalletError).toBeNull();
 		expect(hook.isCreatingEmbeddedWallet).toBe(false);
 		expect(testState.createWallet).toHaveBeenCalledOnce();
+	});
+
+	it("creates an embedded wallet for the same user after an observed email login", async () => {
+		testState.user = {
+			...emailUser(),
+			wallet: {
+				address: "0x3333333333333333333333333333333333333333",
+				chainType: "ethereum",
+				connectorType: "injected",
+				walletClientType: "metamask",
+			},
+		} as User;
+		testState.createWallet.mockResolvedValueOnce({ address: EMBEDDED_WALLET_ADDRESS });
+		let hook = renderHook();
+
+		expect(hook.walletIntent).toBe("ambiguous");
+		expect(hook.shouldUseEmbeddedWallet).toBe(false);
+		expect(hook.needsEmbeddedWallet).toBe(false);
+		act(() => {
+			recordPrivyLoginMethod("did:privy:test-user", "email");
+		});
+		hook = hookValue ?? hook;
+
+		expect(hook.walletIntent).toBe("embedded");
+		expect(hook.shouldUseEmbeddedWallet).toBe(true);
+		expect(hook.needsEmbeddedWallet).toBe(true);
+		await act(async () => {
+			await expect(hook.ensureEmailEmbeddedWallet()).resolves.toBe(EMBEDDED_WALLET_ADDRESS);
+		});
+		expect(hookValue?.embeddedWalletAddress).toBe(EMBEDDED_WALLET_ADDRESS);
 	});
 
 	it("recovers from a synchronous Privy wallet-creation failure", async () => {

@@ -31,6 +31,7 @@
 		"./signing/agent-session": "./src/signing/agent-session.ts",
 		"./signing/agent-storage": "./src/signing/agent-storage.ts",
 		"./signing/agent-registration-session": "./src/signing/agent-registration-session.ts",
+		"./signing/agent-approval-provider": "./src/signing/agent-approval-provider.tsx",
 		"./signing/agent-signer-cache": "./src/signing/agent-signer-cache.ts",
 		"./signing/l1-agent-wallet": "./src/signing/l1-agent-wallet.ts",
 		"./signing/mobile-agent": "./src/signing/mobile-agent.ts",

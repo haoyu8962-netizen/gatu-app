@@ -9,6 +9,7 @@ import {
 	useReconnectWallet,
 	useWalletSession,
 } from "@/hooks/wallet/use-wallet-session";
+import { getPrivyLoginIntentStorageKey, recordPrivyLoginMethod } from "@/lib/wallet/privy-login-method";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_STORAGE_KEY = `hyperliquid_agent_Mainnet_${USER_ADDRESS}`;
@@ -28,6 +29,8 @@ const testState = vi.hoisted(() => ({
 	selectedWallet: undefined as { address: string } | undefined,
 	embeddedWalletAddress: undefined as string | undefined,
 	shouldUseEmbeddedWallet: false,
+	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
+	emailAddress: undefined as string | undefined,
 	walletAddress: undefined as string | undefined,
 	walletConnected: false,
 	walletConnecting: false,
@@ -94,10 +97,14 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
+	getPrivyEmailAddress: () => testState.emailAddress,
 	getPrivyEmbeddedWalletAddress: () => testState.embeddedWalletAddress,
 	hasSameWalletAddress: (a: string | undefined, b: string | undefined) =>
 		!!a && !!b && a.toLowerCase() === b.toLowerCase(),
 	selectPrivyWagmiWallet: () => testState.selectedWallet,
+	resolvePrivyWalletIntent: (_user: unknown, loginIntent?: { method?: string }) =>
+		testState.walletIntentOverride ??
+		(loginIntent?.method === "email" || testState.shouldUseEmbeddedWallet ? "embedded" : "external"),
 	shouldUsePrivyEmbeddedWallet: () => testState.shouldUseEmbeddedWallet,
 }));
 
@@ -139,6 +146,7 @@ describe("useDisconnectWallet", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 		window.localStorage.setItem(AGENT_STORAGE_KEY, AGENT_STORAGE_VALUE);
 		window.localStorage.setItem(
 			"hyperliquid_active_agent_owner",
@@ -153,12 +161,15 @@ describe("useDisconnectWallet", () => {
 		testState.userWalletAddress = USER_ADDRESS;
 		testState.embeddedWalletAddress = undefined;
 		testState.shouldUseEmbeddedWallet = false;
+		testState.walletIntentOverride = undefined;
+		testState.emailAddress = undefined;
 		testState.sessionMode = "wallet";
 		testState.env = "Mainnet";
 		testState.clientKey = USER_ADDRESS;
-		testState.wallets = [];
+		const exactPrivyWallet = { address: USER_ADDRESS };
+		testState.wallets = [exactPrivyWallet];
 		testState.walletsReady = true;
-		testState.selectedWallet = undefined;
+		testState.selectedWallet = exactPrivyWallet;
 		testState.disconnect.mockReset();
 		testState.disconnect.mockResolvedValue(undefined);
 		testState.logout.mockReset();
@@ -191,6 +202,7 @@ describe("useDisconnectWallet", () => {
 		act(() => root.unmount());
 		container.remove();
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 		clearVerifiedExternalWalletOwner();
 		vi.clearAllMocks();
 	});
@@ -312,6 +324,8 @@ describe("useDisconnectWallet", () => {
 		const connectedOwner = "0x3333333333333333333333333333333333333333";
 		testState.walletAddress = connectedOwner;
 		testState.clientKey = connectedOwner;
+		testState.selectedWallet = { address: connectedOwner };
+		testState.wallets = [testState.selectedWallet];
 
 		act(() => {
 			root.render(createElement(DisconnectButton));
@@ -329,6 +343,8 @@ describe("useDisconnectWallet", () => {
 		const connectedOwner = "0x3333333333333333333333333333333333333333";
 		testState.walletAddress = connectedOwner;
 		testState.clientKey = connectedOwner;
+		testState.selectedWallet = { address: connectedOwner };
+		testState.wallets = [testState.selectedWallet];
 
 		act(() => {
 			root.render(createElement(DisconnectButton));
@@ -356,6 +372,8 @@ describe("useDisconnectWallet", () => {
 		const connectedOwner = "0x3333333333333333333333333333333333333333";
 		testState.walletAddress = connectedOwner;
 		testState.clientKey = connectedOwner;
+		testState.selectedWallet = { address: connectedOwner };
+		testState.wallets = [testState.selectedWallet];
 
 		act(() => {
 			root.render(createElement(DisconnectButton));
@@ -500,6 +518,86 @@ describe("useDisconnectWallet", () => {
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
 	});
 
+	it("does not expose the wrong active external wallet for the recorded Privy login", () => {
+		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("does not let another tab's legacy localStorage intent switch the active wallet", () => {
+		testState.embeddedWalletAddress = "0x2222222222222222222222222222222222222222";
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+		expect(container.querySelector("output")?.getAttribute("data-has-wallet-access")).toBe("true");
+
+		const key = getPrivyLoginIntentStorageKey(testState.userId);
+		const value = JSON.stringify({
+			method: "email",
+			userId: testState.userId,
+		});
+		window.localStorage.setItem(key, value);
+		act(() => {
+			window.dispatchEvent(new StorageEvent("storage", { key, newValue: value, storageArea: window.localStorage }));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe(USER_ADDRESS);
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("true");
+		expect(probe?.getAttribute("data-is-connected")).toBe("true");
+	});
+
+	it("fails closed immediately when this tab's login intent targets a different wallet kind", () => {
+		testState.embeddedWalletAddress = "0x2222222222222222222222222222222222222222";
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+		expect(container.querySelector("output")?.getAttribute("data-has-wallet-access")).toBe("true");
+
+		act(() => {
+			recordPrivyLoginMethod(testState.userId, "email");
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("fails closed when restored Privy identity does not reveal whether email or wallet login was used", async () => {
+		testState.walletIntentOverride = "ambiguous";
+		testState.emailAddress = "trader@example.com";
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.setActiveWallet).not.toHaveBeenCalled();
+		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+		);
+	});
+
 	it("does not trust a lingering wagmi address after its connection is no longer active", () => {
 		testState.walletConnected = false;
 
@@ -565,6 +663,8 @@ describe("useDisconnectWallet", () => {
 	it("does not expose a linked email wallet that is absent from Privy's connected-wallet directory", () => {
 		testState.embeddedWalletAddress = USER_ADDRESS;
 		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = undefined;
+		testState.wallets = [];
 
 		act(() => {
 			root.render(createElement(SessionProbe));
@@ -642,6 +742,8 @@ describe("useDisconnectWallet", () => {
 	});
 
 	it("opens Privy's EVM wallet connector when no connected wallet can be restored", async () => {
+		testState.selectedWallet = undefined;
+		testState.wallets = [];
 		act(() => {
 			root.render(createElement(ReconnectButton));
 		});
@@ -659,6 +761,8 @@ describe("useDisconnectWallet", () => {
 
 	it("does not open an external connector for an email session with no exact embedded wallet", async () => {
 		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = undefined;
+		testState.wallets = [];
 
 		act(() => {
 			root.render(createElement(ReconnectButton));

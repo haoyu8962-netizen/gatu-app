@@ -1,3 +1,4 @@
+import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@gatu/hl-react";
 import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@gatu/hl-react/subscriptions/l2";
 
 export const CLIENT_ERROR_REPORT_ENDPOINT = "/client-error-report";
@@ -10,9 +11,16 @@ export const CLIENT_ERROR_KINDS = [
 	"react_uncaught",
 	"react_recoverable",
 	"orderbook_l2_fallback",
+	"legal_status_check",
 	"window_error",
 	"unhandled_rejection",
 ] as const;
+
+export type LegalStatusCheckReason = Exclude<LegalStatusErrorReason, "aborted">;
+
+export const LEGAL_STATUS_CHECK_REASONS = Object.freeze(
+	LEGAL_STATUS_ERROR_REASONS.filter((reason): reason is LegalStatusCheckReason => reason !== "aborted"),
+);
 
 export const CLIENT_ERROR_CATEGORIES = [
 	"chunk_load",
@@ -63,6 +71,7 @@ export interface ClientErrorReport {
 	schema: 1;
 	kind: ClientErrorKind;
 	fallbackReason?: L2BookStreamErrorCode;
+	legalReason?: LegalStatusCheckReason;
 	category: ClientErrorCategory;
 	errorName: ClientErrorName;
 	route: ClientErrorRoute;
@@ -81,15 +90,23 @@ export type CreateClientErrorReportOptions = CreateClientErrorReportBaseOptions 
 		| {
 				kind: "orderbook_l2_fallback";
 				fallbackReason: L2BookStreamErrorCode;
+				legalReason?: never;
 		  }
 		| {
-				kind: Exclude<ClientErrorKind, "orderbook_l2_fallback">;
+				kind: "legal_status_check";
 				fallbackReason?: never;
+				legalReason: LegalStatusCheckReason;
+		  }
+		| {
+				kind: Exclude<ClientErrorKind, "orderbook_l2_fallback" | "legal_status_check">;
+				fallbackReason?: never;
+				legalReason?: never;
 		  }
 	);
 
 const CLIENT_ERROR_KIND_SET = new Set<string>(CLIENT_ERROR_KINDS);
 const L2_FALLBACK_REASON_SET = new Set<string>(L2_BOOK_STREAM_ERROR_CODES);
+const LEGAL_STATUS_CHECK_REASON_SET = new Set<string>(LEGAL_STATUS_CHECK_REASONS);
 const CLIENT_ERROR_CATEGORY_SET = new Set<string>(CLIENT_ERROR_CATEGORIES);
 const CLIENT_ERROR_ROUTE_SET = new Set<string>(CLIENT_ERROR_ROUTES);
 const CLIENT_ERROR_NAME_SET = new Set<string>(CLIENT_ERROR_NAMES);
@@ -97,6 +114,7 @@ const REPORT_KEYS = new Set([
 	"schema",
 	"kind",
 	"fallbackReason",
+	"legalReason",
 	"category",
 	"errorName",
 	"route",
@@ -115,6 +133,7 @@ export function createClientErrorReport(error: unknown, options: CreateClientErr
 		schema: 1,
 		kind: options.kind,
 		...(options.kind === "orderbook_l2_fallback" ? { fallbackReason: options.fallbackReason } : {}),
+		...(options.kind === "legal_status_check" ? { legalReason: options.legalReason } : {}),
 		category: classifyError(details.name, details.message),
 		errorName: normalizeErrorName(details.name),
 		route: classifyRoute(options.pathname),
@@ -132,6 +151,11 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 	} else if (value.fallbackReason !== undefined) {
 		return null;
 	}
+	if (value.kind === "legal_status_check") {
+		if (!isEnumValue(value.legalReason, LEGAL_STATUS_CHECK_REASON_SET)) return null;
+	} else if (value.legalReason !== undefined) {
+		return null;
+	}
 	if (!isEnumValue(value.category, CLIENT_ERROR_CATEGORY_SET)) return null;
 	if (!isEnumValue(value.errorName, CLIENT_ERROR_NAME_SET)) return null;
 	if (!isEnumValue(value.route, CLIENT_ERROR_ROUTE_SET)) return null;
@@ -143,6 +167,7 @@ export function parseClientErrorReport(value: unknown): ClientErrorReport | null
 		...(value.kind === "orderbook_l2_fallback"
 			? { fallbackReason: value.fallbackReason as L2BookStreamErrorCode }
 			: {}),
+		...(value.kind === "legal_status_check" ? { legalReason: value.legalReason as LegalStatusCheckReason } : {}),
 		category: value.category as ClientErrorCategory,
 		errorName: value.errorName as ClientErrorName,
 		route: value.route as ClientErrorRoute,

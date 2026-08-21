@@ -81,6 +81,31 @@ describe("client error report endpoint", () => {
 		expect(write).not.toHaveBeenCalled();
 	});
 
+	it("accepts only allowlisted legal status reasons", async () => {
+		const write = vi.fn();
+		const legalReport: ClientErrorReport = {
+			...VALID_REPORT,
+			kind: "legal_status_check",
+			legalReason: "network",
+		};
+		const validResponse = await handleClientErrorReport(createReportRequest(JSON.stringify(legalReport)), {
+			rateLimiter: createErrorReportRateLimiter(5, 60_000),
+			write,
+		});
+		const invalidResponse = await handleClientErrorReport(
+			createReportRequest(JSON.stringify({ ...legalReport, legalReason: "private_upstream_message" })),
+			{
+				rateLimiter: createErrorReportRateLimiter(5, 60_000),
+				write,
+			},
+		);
+
+		expect(validResponse.status).toBe(202);
+		expect(invalidResponse.status).toBe(400);
+		expect(write).toHaveBeenCalledOnce();
+		expect(write).toHaveBeenCalledWith(expect.objectContaining(legalReport));
+	});
+
 	it("rejects oversized streamed and declared bodies", async () => {
 		const oversizedBody = "x".repeat(CLIENT_ERROR_REPORT_MAX_BYTES + 1);
 		const streamed = await handleClientErrorReport(createReportRequest(oversizedBody), {

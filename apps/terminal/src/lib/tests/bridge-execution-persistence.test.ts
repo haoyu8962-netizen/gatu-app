@@ -180,6 +180,33 @@ describe("LI.FI bridge execution persistence", () => {
 		expect(storage.getItem(BRIDGE_EXECUTION_STORAGE_KEY)).toBeNull();
 	});
 
+	it("persists and resumes a source swap that committed before the cross-chain transaction", () => {
+		const route = createCommittedRoute();
+		const step = route.steps[0];
+		if (!step?.execution) throw new Error("Missing execution");
+		step.execution.status = "FAILED";
+		step.execution.process = [
+			{
+				type: "SWAP",
+				status: "FAILED",
+				chainId: 42161,
+				txHash: TX_HASH,
+				startedAt: NOW - 1_000,
+				doneAt: NOW,
+			},
+		];
+
+		expect(
+			persistCommittedBridgeExecution({ route, expectedToAmount: "997500", startTime: NOW - 2_000 }, storage, NOW),
+		).toBe(true);
+		const restored = loadPersistedBridgeExecution(SOURCE_ADDRESS, storage, NOW);
+		const trackingRoute = restored ? prepareCommittedBridgeRouteForTracking(restored.route) : null;
+		expect(trackingRoute?.steps[0]?.execution).toMatchObject({
+			status: "PENDING",
+			process: [expect.objectContaining({ type: "SWAP", status: "PENDING", txHash: TX_HASH })],
+		});
+	});
+
 	it("rejects duplicate source processes that could make the SDK select an uncommitted process", () => {
 		const route = createCommittedRoute();
 		const step = route.steps[0];

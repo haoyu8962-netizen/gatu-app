@@ -24,6 +24,15 @@ describe("errors", () => {
 			"supported browser",
 		);
 	});
+
+	it("maps fail-closed legal execution errors to actionable product messages", () => {
+		expect(formatTransferError(new Error("Hyperliquid access could not be verified before this action"))).toBe(
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		);
+		expect(formatTransferError(new Error("This account is not permitted to perform this Hyperliquid action"))).toBe(
+			"This account is not currently permitted to perform trading actions on Hyperliquid.",
+		);
+	});
 	it("formats nested error details for display", () => {
 		const error = new Error("Base error");
 		(error as { shortMessage?: string }).shortMessage = "Short";

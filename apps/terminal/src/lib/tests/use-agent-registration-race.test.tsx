@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { HyperliquidAgentApprovalProvider } from "@gatu/hl-react/signing/agent-approval-provider";
 import {
 	activateAgentRegistrationSession,
 	captureAgentRegistrationEpoch,
@@ -22,6 +23,7 @@ const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	approveBuilderFee: vi.fn(),
 	refetchAgent: vi.fn(),
+	useExchangeHook: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/provider", () => ({
@@ -34,9 +36,12 @@ vi.mock("@gatu/hl-react/provider", () => ({
 }));
 
 vi.mock("@gatu/hl-react/hooks/useExchange", () => ({
-	useExchange: (method: string) => ({
-		mutateAsync: method === "approveAgent" ? testState.approveAgent : testState.approveBuilderFee,
-	}),
+	useExchange: (method: string) => {
+		testState.useExchangeHook(method);
+		return {
+			mutateAsync: method === "approveAgent" ? testState.approveAgent : testState.approveBuilderFee,
+		};
+	},
 }));
 
 vi.mock("@gatu/hl-react/signing/use-agent-status", () => ({
@@ -151,6 +156,7 @@ describe("useAgentRegistration logout races", () => {
 		testState.approveBuilderFee.mockReset();
 		testState.approveBuilderFee.mockResolvedValue(undefined);
 		testState.refetchAgent.mockReset();
+		testState.useExchangeHook.mockReset();
 		testState.refetchAgent.mockImplementation(async (agentAddressOverride?: Address) => ({
 			isAgentReady: !!agentAddressOverride,
 			isBuilderFeeReady: true,
@@ -176,6 +182,7 @@ describe("useAgentRegistration logout races", () => {
 	});
 
 	it("stores a successfully approved Agent through the verified epoch path", async () => {
+		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 
 		await act(async () => {
@@ -200,6 +207,44 @@ describe("useAgentRegistration logout races", () => {
 		});
 	});
 
+	it("uses the nearest Agent approval override while retaining the default fallback hook", async () => {
+		const outerApproval = vi.fn().mockResolvedValue(undefined);
+		const innerApproval = vi.fn().mockResolvedValue(undefined);
+		testState.approveAgent.mockResolvedValue(undefined);
+
+		await act(async () => {
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(
+						HyperliquidAgentApprovalProvider,
+						{ mutateAsync: outerApproval },
+						createElement(
+							HyperliquidAgentApprovalProvider,
+							{ mutateAsync: innerApproval },
+							createElement(RegistrationButton),
+						),
+					),
+				),
+			);
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		if (!registrationPromise) throw new Error("Expected registration promise");
+		const registeredAddress = await registrationPromise;
+		expect(innerApproval).toHaveBeenCalledWith({
+			agentAddress: registeredAddress,
+			agentName: "HypeTerminal",
+		});
+		expect(outerApproval).not.toHaveBeenCalled();
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(testState.useExchangeHook).toHaveBeenCalledWith("approveAgent");
+	});
+
 	it("does not sign when the initial Agent status cannot be loaded", async () => {
 		testState.refetchAgent.mockRejectedValue(new Error("Could not load agent status"));
 
@@ -217,6 +262,7 @@ describe("useAgentRegistration logout races", () => {
 	});
 
 	it("does not report success until extraAgents confirms the newly generated public key", async () => {
+		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.refetchAgent.mockResolvedValue({
 			isAgentReady: false,
@@ -245,6 +291,7 @@ describe("useAgentRegistration logout races", () => {
 	});
 
 	it("keeps an approved key inert when post-approval verification is temporarily unavailable", async () => {
+		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.refetchAgent.mockImplementation(async (agentAddressOverride?: Address) => {
 			if (agentAddressOverride) throw new Error("Could not load agent status");
@@ -293,6 +340,7 @@ describe("useAgentRegistration logout races", () => {
 	});
 
 	it("explicit reset removes the key and restores only its exact closing generation", async () => {
+		registrationOptions = { persistConnection: true };
 		testState.approveAgent.mockResolvedValue(undefined);
 
 		await act(async () => {

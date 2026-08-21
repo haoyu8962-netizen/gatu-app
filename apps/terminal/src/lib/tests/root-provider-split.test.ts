@@ -100,6 +100,15 @@ describe("root provider startup split", () => {
 		expect(indexes).toEqual([...indexes].sort((left, right) => left - right));
 		expect(clientRootProviderSource).toContain("setActiveWalletForWagmi={selectPrivyWagmiWallet}");
 		expect(clientRootProviderSource).toContain("allowAgentOnlySession={ready && !authenticated}");
+		const hyperliquidBridgeBody = clientRootProviderSource.slice(
+			clientRootProviderSource.indexOf("function HyperliquidBridge"),
+			clientRootProviderSource.indexOf("function HyperliquidAgentApprovalBridge"),
+		);
+		const hyperliquidProviderIndex = hyperliquidBridgeBody.indexOf("<HyperliquidProvider");
+		const agentApprovalBridgeIndex = hyperliquidBridgeBody.indexOf("<HyperliquidAgentApprovalBridge>");
+		expect(hyperliquidProviderIndex).toBeGreaterThanOrEqual(0);
+		expect(agentApprovalBridgeIndex).toBeGreaterThan(hyperliquidProviderIndex);
+		expect(clientRootProviderSource).toContain("<HyperliquidAgentApprovalProvider mutateAsync={approval.mutateAsync}>");
 		expect(clientRootProviderSource).toContain("<EmbeddedDepositAutoBridge />");
 		expect(clientRootProviderSource).toContain("<OrderReconciliation />");
 		expect(clientRootProviderSource).toContain("<TwapReconciliation />");

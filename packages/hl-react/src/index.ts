@@ -87,6 +87,7 @@ export {
 export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
+export { verifyLegalActionAllowed } from "./internal/exchange/legal-execution";
 export { enableHyperliquidDebug } from "./internal/websocket/debug";
 export {
 	createHealthReport,
@@ -98,9 +99,20 @@ export { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "./internal/websocket
 export {
 	type AcceptTermsRequest,
 	acceptHyperliquidTerms,
+	assertLegalStatusAllows,
+	classifyLegalStatusError,
+	getLegalStatusRetryDelayMs,
+	LEGAL_STATUS_ERROR_REASONS,
+	LEGAL_STATUS_HTTP_TIMEOUT_MS,
+	LEGAL_STATUS_STALE_TIME_MS,
+	type LegalActionBlockReason,
+	type LegalActionCapability,
+	LegalActionNotAllowedError,
 	type LegalRestriction,
 	type LegalStatus,
+	type LegalStatusErrorReason,
 	parseLegalStatus,
+	shouldRetryLegalStatus,
 } from "./legal";
 export type {
 	BuilderPerpMarket,
@@ -132,6 +144,12 @@ export {
 	type PublicVaultRow,
 } from "./public-stats-data";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
+export {
+	type AgentApprovalMutateAsync,
+	HyperliquidAgentApprovalProvider,
+	type HyperliquidAgentApprovalProviderProps,
+	useAgentApprovalOverride,
+} from "./signing/agent-approval-provider";
 export {
 	type AgentRegistrationCleanupResult,
 	type AgentRegistrationCleanupTarget,
@@ -230,6 +248,7 @@ export type {
 export {
 	type AgentRegistrationOptions,
 	type RegistrationStep,
+	resolveAgentRegistrationStorageScope,
 	type UseAgentRegistrationResult,
 	useAgentRegistration,
 } from "./signing/use-agent-registration";
@@ -248,7 +267,13 @@ export {
 	useBuilderFeeApproval,
 } from "./signing/use-builder-fee-approval";
 export { useLegalStatus } from "./signing/use-legal-status";
-export { useTermsAcceptance } from "./signing/use-terms-acceptance";
+export { useLegalStatusLifecycle } from "./signing/use-legal-status-lifecycle";
+export {
+	type TermsAcceptanceWalletContext,
+	type TermsAcceptanceWalletResolver,
+	type UseTermsAcceptanceOptions,
+	useTermsAcceptance,
+} from "./signing/use-terms-acceptance";
 export {
 	type UseTradingAuthorizationResult,
 	useTradingAuthorization,

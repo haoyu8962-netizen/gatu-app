@@ -125,6 +125,7 @@ const testState = vi.hoisted(() => {
 		},
 		routingError: null as Error | null,
 		routingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
+		selectedOwner: "0x1111111111111111111111111111111111111111",
 		sponsoredEnabled: true,
 		smartSendTransaction: vi.fn(),
 		wallet: {
@@ -135,6 +136,7 @@ const testState = vi.hoisted(() => {
 			switchChain: vi.fn(),
 		},
 		walletWriteContract: vi.fn(),
+		verifyLegalAction: vi.fn(),
 	};
 });
 
@@ -148,10 +150,13 @@ vi.mock("@gatu/hl-react", () => ({
 		queryKey: ["hyperliquid", env, "info", method, params],
 	}),
 	useHyperliquid: () => ({
+		clientKey: testState.selectedOwner,
 		env: testState.isTestnet ? "Testnet" : "Mainnet",
-		info: { usdcRouting: testState.fetchRouting },
+		info: { legalCheck: vi.fn(), usdcRouting: testState.fetchRouting },
+		sessionMode: "wallet",
 	}),
 	useInfo: vi.fn(),
+	verifyLegalActionAllowed: (options: unknown) => testState.verifyLegalAction(options),
 }));
 
 vi.mock("@privy-io/react-auth", () => ({
@@ -226,6 +231,7 @@ describe("useDeposit fresh USDC route guard", () => {
 		root = createRoot(container);
 		testState.routingError = null;
 		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.selectedOwner = WALLET_ADDRESS;
 		testState.sponsoredEnabled = true;
 		testState.wallet.address = WALLET_ADDRESS;
 		testState.wallet.connectorType = "embedded";
@@ -252,6 +258,7 @@ describe("useDeposit fresh USDC route guard", () => {
 		testState.permitSign.mockResolvedValue(PERMIT_SIGNATURE);
 		testState.smartSendTransaction.mockRejectedValue(new Error("smart transaction boundary reached"));
 		testState.walletWriteContract.mockRejectedValue(new Error("wallet transaction boundary reached"));
+		testState.verifyLegalAction.mockResolvedValue({ canPerformActions: true });
 		testState.createWalletClient.mockReturnValue({
 			signTypedData: testState.permitSign,
 			writeContract: testState.walletWriteContract,
@@ -632,6 +639,58 @@ describe("useDeposit fresh USDC route guard", () => {
 		);
 		expect(testState.smartSendTransaction).not.toHaveBeenCalled();
 	});
+
+	it.each(["smart", "wallet"] as const)(
+		"forces a fresh selected-owner legal check before the %s CCTP funds write",
+		async (mode) => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			testState.verifyLegalAction.mockRejectedValue(
+				new Error("Hyperliquid access could not be verified before this action"),
+			);
+
+			await submit(mode, "cctp");
+
+			expect(testState.verifyLegalAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					env: "Mainnet",
+					forceFresh: true,
+					owner: WALLET_ADDRESS,
+				}),
+			);
+			expect(testState.permitSign).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toBe("Hyperliquid access could not be verified before this action");
+		},
+	);
+
+	it.each(["smart", "wallet"] as const)(
+		"rechecks the exact %s CCTP source account after the legal request",
+		async (mode) => {
+			testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+			stubSuccessfulCctpCapacity();
+			let legalRequestCompleted = false;
+			testState.verifyLegalAction.mockImplementation(async () => {
+				legalRequestCompleted = true;
+				return { canPerformActions: true };
+			});
+			testState.providerRequest.mockImplementation(async ({ method }: { method: string }) => {
+				if (method === "eth_chainId") return "0xa4b1";
+				if (method === "eth_accounts" || method === "eth_requestAccounts") {
+					return [legalRequestCompleted ? SECOND_WALLET_ADDRESS : WALLET_ADDRESS];
+				}
+				throw new Error(`Unexpected provider method: ${method}`);
+			});
+
+			await submit(mode, "cctp");
+
+			expect(testState.verifyLegalAction).toHaveBeenCalledOnce();
+			expect(testState.smartSendTransaction).not.toHaveBeenCalled();
+			expect(testState.walletWriteContract).not.toHaveBeenCalled();
+			expect(capturedDeposit?.error?.message).toContain("Selected wallet does not match");
+		},
+	);
 
 	it("fails closed before CCTP signing or broadcast when cross-tab Web Locks are unavailable", async () => {
 		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };

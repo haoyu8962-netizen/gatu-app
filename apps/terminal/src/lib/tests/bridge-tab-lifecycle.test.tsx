@@ -18,14 +18,13 @@ vi.mock("@/config/lifi-bridge", () => ({
 	LIFI_BRIDGE_FEATURES: { createNewRoute: true },
 }));
 vi.mock("@/lib/lifi/use-bridge", () => ({
-	continueBridgeInBackground: testState.continueBridgeInBackground,
-	restoreBridgeInForeground: testState.restoreBridgeInForeground,
 	useBridgeExecutor: () => ({
 		status: "idle",
 		execute: vi.fn(),
 		retry: vi.fn(),
 		reset: vi.fn(),
 		continueInBackground: testState.continueBridgeInBackground,
+		restoreInForeground: testState.restoreBridgeInForeground,
 	}),
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({

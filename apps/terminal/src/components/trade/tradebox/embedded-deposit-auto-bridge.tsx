@@ -13,7 +13,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/format";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { runWithExclusiveBrowserLock } from "@/lib/wallet/exclusive-browser-lock";
-import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useDepositModalOpen } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
@@ -26,7 +26,7 @@ export function EmbeddedDepositAutoBridge() {
 	const depositModalOpen = useDepositModalOpen();
 	const sponsoredCctpReleaseEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 	const automaticDepositEnabled = isTestnet && sponsoredCctpReleaseEnabled;
-	const { user, embeddedWalletAddress } = useWalletSession();
+	const { user, embeddedWalletAddress, walletIntent } = useWalletSession();
 	const {
 		emailAddress: emailWalletAddress,
 		embeddedWalletAddress: ensuredEmbeddedWalletAddress,
@@ -38,7 +38,7 @@ export function EmbeddedDepositAutoBridge() {
 	} = useEmailEmbeddedWallet();
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
-	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
+	const isEmbeddedDeposit = !!emailAddress && walletIntent === "embedded" && shouldUseEmailEmbeddedWallet;
 	const cctpTrackingEnv = isTestnet ? "Testnet" : "Mainnet";
 	const cctpDepositTracking = useCctpDepositTracking({
 		enabled: isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
@@ -109,9 +109,10 @@ export function EmbeddedDepositAutoBridge() {
 			? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}:${maxDepositRaw.toString()}`
 			: null;
 	const eligibleDepositKey = balanceEligibleKey && autoCctpRouteAvailable ? balanceEligibleKey : null;
-	const depositIdentityKey = depositEmbeddedWalletAddress
-		? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}`
-		: null;
+	const depositIdentityKey =
+		isEmbeddedDeposit && depositEmbeddedWalletAddress
+			? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}`
+			: null;
 
 	useEffect(() => {
 		return () => {

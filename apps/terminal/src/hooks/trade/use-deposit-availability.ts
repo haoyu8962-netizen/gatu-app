@@ -3,7 +3,7 @@ import { CCTP_DEPOSIT_FEATURES } from "@/config/cctp-deposit";
 import { type DepositAvailability, getDepositAvailability } from "@/domain/trade/deposit-availability";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 export type DepositAvailabilityPresentation = DepositAvailability & {
@@ -14,15 +14,16 @@ export type DepositAvailabilityPresentation = DepositAvailability & {
 
 export function useDepositAvailability(): DepositAvailabilityPresentation {
 	const { t } = useLingui();
-	const { authenticated, hasWalletAccess, ready, sessionMode, user } = useWalletSession();
+	const { authenticated, hasWalletAccess, ready, sessionMode, user, walletIntent } = useWalletSession();
 	const isTestnet = useIsTestnet();
 	const { isError: geoError, isResolved: geoResolved, tradeRestricted } = useGeoRestriction();
 	const network = isTestnet ? "testnet" : "mainnet";
-	const isEmbeddedWallet = ready && authenticated && !!getPrivyEmailAddress(user) && shouldUsePrivyEmbeddedWallet(user);
+	const walletIdentityResolved = walletIntent === "embedded" || walletIntent === "external";
+	const isEmbeddedWallet = ready && authenticated && !!getPrivyEmailAddress(user) && walletIntent === "embedded";
 	const availability = getDepositAvailability({
 		featureFlags: CCTP_DEPOSIT_FEATURES,
 		geoStatus: !geoResolved ? "unresolved" : tradeRestricted ? "restricted" : "allowed",
-		hasWalletAccess,
+		hasWalletAccess: walletIdentityResolved && hasWalletAccess,
 		isEmbeddedWallet,
 		network,
 		sessionMode,

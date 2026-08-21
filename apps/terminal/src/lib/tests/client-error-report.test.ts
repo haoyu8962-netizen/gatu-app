@@ -6,6 +6,7 @@ import {
 	CLIENT_ERROR_REPORT_ENDPOINT,
 	CLIENT_ERROR_REPORT_MAX_BYTES,
 	createClientErrorReport,
+	LEGAL_STATUS_CHECK_REASONS,
 	parseClientErrorReport,
 } from "@/lib/error-reporting/report";
 
@@ -71,6 +72,37 @@ describe("client error report privacy", () => {
 		expect(parseClientErrorReport(report)).toEqual(report);
 		expect(parseClientErrorReport({ ...report, fallbackReason: "raw_private_payload" })).toBeNull();
 		expect(parseClientErrorReport({ ...report, kind: "window_error" })).toBeNull();
+	});
+
+	it("accepts only allowlisted reasons on legal status reports", () => {
+		const report = createClientErrorReport(new Error(`wallet=${WALLET_ADDRESS} privateKey=${PRIVATE_KEY}`), {
+			kind: "legal_status_check",
+			legalReason: "timeout",
+			pathname: "/trade/BTC",
+			origin: "https://gatu.ai",
+		});
+		const serialized = JSON.stringify(report);
+
+		expect(report.legalReason).toBe("timeout");
+		expect(parseClientErrorReport(report)).toEqual(report);
+		expect(parseClientErrorReport({ ...report, legalReason: "aborted" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, legalReason: "private_upstream_message" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, kind: "window_error" })).toBeNull();
+		expect(parseClientErrorReport({ ...report, fallbackReason: "snapshot_timeout" })).toBeNull();
+		expect(serialized).not.toContain(WALLET_ADDRESS);
+		expect(serialized).not.toContain(PRIVATE_KEY);
+	});
+
+	it("keeps the legal status reason vocabulary explicit and bounded", () => {
+		expect(LEGAL_STATUS_CHECK_REASONS).toEqual([
+			"invalid_response",
+			"network",
+			"rate_limited",
+			"request_rejected",
+			"service_unavailable",
+			"timeout",
+			"unknown",
+		]);
 	});
 });
 
@@ -139,16 +171,36 @@ describe("client error transport", () => {
 		expect(body).not.toContain(PRIVATE_KEY);
 	});
 
+	it("sends only the allowlisted legal status reason", async () => {
+		const { reportClientError } = await import("@/lib/error-reporting/client");
+
+		reportClientError(new Error(`wallet=${WALLET_ADDRESS} privateKey=${PRIVATE_KEY}`), {
+			kind: "legal_status_check",
+			legalReason: "service_unavailable",
+		});
+
+		const body = String(vi.mocked(fetch).mock.calls[0]?.[1]?.body);
+		expect(JSON.parse(body)).toMatchObject({
+			kind: "legal_status_check",
+			legalReason: "service_unavailable",
+		});
+		expect(body).not.toContain(WALLET_ADDRESS);
+		expect(body).not.toContain(PRIVATE_KEY);
+	});
+
 	it("limits client reports to five per minute", async () => {
 		const { reportClientError } = await import("@/lib/error-reporting/client");
 
 		for (const [index, kind] of CLIENT_ERROR_KINDS.entries()) {
 			const error = new Error("failure");
 			error.stack = `Error\n    at task (${window.location.origin}/assets/app.js:${index + 1}:1)`;
-			reportClientError(
-				error,
-				kind === "orderbook_l2_fallback" ? { kind, fallbackReason: "snapshot_timeout" } : { kind },
-			);
+			if (kind === "orderbook_l2_fallback") {
+				reportClientError(error, { kind, fallbackReason: "snapshot_timeout" });
+			} else if (kind === "legal_status_check") {
+				reportClientError(error, { kind, legalReason: "network" });
+			} else {
+				reportClientError(error, { kind });
+			}
 		}
 
 		expect(fetch).toHaveBeenCalledTimes(5);

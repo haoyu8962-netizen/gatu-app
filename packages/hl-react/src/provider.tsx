@@ -46,6 +46,7 @@ export interface HyperliquidContextValue {
 	clientKey: string;
 	sessionMode: SessionMode;
 	exchangeLifecycle: ExchangeProviderLifecycleLease;
+	enforceLegalActions: boolean;
 }
 
 export const HyperliquidContext = createContext<HyperliquidContextValue | null>(null);
@@ -58,6 +59,7 @@ export interface HyperliquidProviderProps {
 	allowAgentOnlySession?: boolean;
 	builderConfig: BuilderConfig;
 	agentName?: string;
+	enforceLegalActions?: boolean;
 	onAgentCleanupFailure?: (failure: { env: HyperliquidEnv; owner: `0x${string}`; reason: string }) => void;
 }
 
@@ -90,6 +92,7 @@ export function HyperliquidProvider({
 	allowAgentOnlySession = true,
 	builderConfig,
 	agentName = "app",
+	enforceLegalActions = false,
 	onAgentCleanupFailure,
 }: HyperliquidProviderProps) {
 	const isTestnet = env === "Testnet";
@@ -210,6 +213,7 @@ export function HyperliquidProvider({
 		clientKey,
 		sessionMode,
 		exchangeLifecycle,
+		enforceLegalActions,
 	};
 
 	return (

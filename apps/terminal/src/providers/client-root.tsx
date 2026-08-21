@@ -1,4 +1,9 @@
-import { HyperliquidExchangePolicyProvider, HyperliquidProvider } from "@gatu/hl-react";
+import {
+	HyperliquidAgentApprovalProvider,
+	HyperliquidExchangePolicyProvider,
+	HyperliquidProvider,
+	useLegalStatusLifecycle,
+} from "@gatu/hl-react";
 import { i18n } from "@lingui/core";
 import { t } from "@lingui/core/macro";
 import { I18nProvider } from "@lingui/react";
@@ -19,6 +24,7 @@ import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { TRADING_AGENT_NAME } from "@/config/trading-agent";
 import { config } from "@/config/wagmi";
+import { useExplicitAgentApproval } from "@/hooks/wallet/use-explicit-agent-approval";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
@@ -26,6 +32,7 @@ import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
 import { ClientRuntimeProvider } from "@/providers/client-runtime";
+import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
 import { useTheme } from "@/stores/use-global-settings-store";
 
@@ -55,6 +62,7 @@ function HyperliquidBridge({ children }: { children: ReactNode }) {
 				env={env}
 				userAddress={address}
 				allowAgentOnlySession={ready && !authenticated}
+				enforceLegalActions
 				builderConfig={DEFAULT_BUILDER_CONFIG}
 				agentName={TRADING_AGENT_NAME}
 				onAgentCleanupFailure={() => {
@@ -63,10 +71,25 @@ function HyperliquidBridge({ children }: { children: ReactNode }) {
 					);
 				}}
 			>
-				<MarketsProvider>{children}</MarketsProvider>
+				<HyperliquidAgentApprovalBridge>
+					<HyperliquidLegalLifecycle />
+					<MarketsProvider>{children}</MarketsProvider>
+				</HyperliquidAgentApprovalBridge>
 			</HyperliquidProvider>
 		</HyperliquidExchangePolicyProvider>
 	);
+}
+
+function HyperliquidAgentApprovalBridge({ children }: { children: ReactNode }) {
+	const approval = useExplicitAgentApproval();
+	return (
+		<HyperliquidAgentApprovalProvider mutateAsync={approval.mutateAsync}>{children}</HyperliquidAgentApprovalProvider>
+	);
+}
+
+function HyperliquidLegalLifecycle() {
+	useLegalStatusLifecycle();
+	return null;
 }
 
 export function ClientRootProvider({ children, queryClient }: Props) {
@@ -76,6 +99,7 @@ export function ClientRootProvider({ children, queryClient }: Props) {
 	return (
 		<PwaInstallProvider>
 			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
+				<PrivyLoginMethodObserver />
 				<SmartWalletsProvider>
 					<PersistQueryClientProvider
 						client={queryClient}

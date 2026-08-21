@@ -13,7 +13,7 @@ import { Link } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
 import type { LegalGateState } from "@/hooks/trade/use-legal-gate";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useDisconnectWallet } from "@/hooks/wallet/use-wallet-session";
+import { useDisconnectWallet, useReconnectWallet } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { LegalStatusMessage } from "./legal-status-message";
 
@@ -45,6 +45,7 @@ export function LegalAcceptanceModal({
 }: Props) {
 	const isMobile = useIsMobile();
 	const { disconnectWallet, isDisconnecting } = useDisconnectWallet();
+	const { reconnectWallet, isReconnecting } = useReconnectWallet();
 	const [acceptedPolicies, setAcceptedPolicies] = useState(false);
 	const [acceptedCookies, setAcceptedCookies] = useState(false);
 	const isSubmitting = state === "submitting";
@@ -66,7 +67,19 @@ export function LegalAcceptanceModal({
 	}
 
 	let content: ReactNode;
-	if (state === "blocked") {
+	if (state === "wallet_required") {
+		content = (
+			<LegalStatusMessage
+				title={<Trans>Reconnect wallet</Trans>}
+				description={
+					<Trans>Selected wallet does not match the connected account. Reconnect your wallet and try again.</Trans>
+				}
+				actionLabel={<Trans>Reconnect wallet</Trans>}
+				actionDisabled={isReconnecting}
+				onAction={() => void reconnectWallet()}
+			/>
+		);
+	} else if (state === "blocked") {
 		content = (
 			<LegalStatusMessage
 				title={<Trans>Access restricted</Trans>}

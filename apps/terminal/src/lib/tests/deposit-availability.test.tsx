@@ -34,6 +34,7 @@ const hookState = vi.hoisted(() => ({
 	ready: true,
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
 	tradeRestricted: false,
+	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
 }));
 
 vi.mock("@/config/cctp-deposit", () => ({
@@ -60,12 +61,12 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		ready: hookState.ready,
 		sessionMode: hookState.sessionMode,
 		user: hookState.embedded ? { id: "email-user" } : { id: "wallet-user" },
+		walletIntent: hookState.walletIntentOverride ?? (hookState.embedded ? "embedded" : "external"),
 	}),
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => (hookState.embedded ? "user@example.com" : undefined),
-	shouldUsePrivyEmbeddedWallet: () => hookState.embedded,
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -179,6 +180,7 @@ describe("useDepositAvailability", () => {
 		hookState.ready = true;
 		hookState.sessionMode = "wallet";
 		hookState.tradeRestricted = false;
+		hookState.walletIntentOverride = undefined;
 		i18n.loadAndActivate({
 			locale: "en",
 			messages: {
@@ -261,6 +263,17 @@ describe("useDepositAvailability", () => {
 			available: false,
 			path: "external",
 			reason: "wallet-session-required",
+		});
+	});
+
+	it("prevents an ambiguous Privy wallet identity from enabling an external deposit", () => {
+		hookState.hasWalletAccess = true;
+		hookState.walletIntentOverride = "ambiguous";
+
+		expect(renderHook()).toMatchObject({
+			available: false,
+			reason: "wallet-session-required",
+			signerReady: false,
 		});
 	});
 });

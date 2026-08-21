@@ -32,6 +32,7 @@ import {
 	DEPOSIT_POLL_INTERVAL_MS,
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
+import { useFreshLegalActionGuard } from "@/hooks/trade/use-fresh-legal-action-guard";
 import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -439,6 +440,16 @@ async function ensureProviderAccount(provider: Eip1193Provider, address: `0x${st
 	assertConnectedAccount(accounts, address);
 }
 
+async function assertProviderAccountStillActive(provider: Eip1193Provider, address: `0x${string}`) {
+	let accounts: unknown;
+	try {
+		accounts = await provider.request({ method: "eth_accounts" });
+	} catch (error) {
+		throw createWalletConnectionError(error);
+	}
+	assertConnectedAccount(accounts, address);
+}
+
 async function getProviderChainId(provider: Eip1193Provider): Promise<string> {
 	try {
 		const chainId = await provider.request({ method: "eth_chainId" });
@@ -501,6 +512,12 @@ async function ensureDepositChain(provider: Eip1193Provider, config: DepositChai
 
 	const nextChainId = await getProviderChainId(provider);
 	if (nextChainId !== chainId) {
+		throw new Error(t`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`);
+	}
+}
+
+async function assertDepositChainStillActive(provider: Eip1193Provider, config: DepositChainConfig) {
+	if ((await getProviderChainId(provider)) !== toChainHex(config.chainId)) {
 		throw new Error(t`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`);
 	}
 }
@@ -1097,6 +1114,7 @@ export function useDeposit({
 	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const state = useDepositExecutionState(executionKey);
 	const assertFreshSelectedDepositRoute = useAssertFreshDepositRoute(depositRoute);
+	const { verify: verifyFreshLegalAction } = useFreshLegalActionGuard();
 	const { retry: refreshGeoRestriction } = useGeoRestriction();
 
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
@@ -1290,6 +1308,11 @@ export function useDeposit({
 						if (!smartClient) throw new Error(t`Smart wallet client not ready`);
 						await assertFreshSelectedDepositRoute();
 						await assertReviewedBalanceUnchanged();
+						await verifyFreshLegalAction({ env: cctpTrackingEnv });
+						await assertProviderAccountStillActive(ready.provider, ready.address);
+						if (getClientChainId(smartClient) !== cctpDepositConfig.chainId || !smartClient.paymaster) {
+							throw new Error(t`Smart wallet client not ready`);
+						}
 						saveCctpSponsoredAuthorizationIntent({
 							env: cctpTrackingEnv,
 							owner: ready.address,
@@ -1325,6 +1348,9 @@ export function useDeposit({
 							throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
 						}
 						await assertFreshSelectedDepositRoute();
+						await verifyFreshLegalAction({ env: cctpTrackingEnv });
+						await assertProviderAccountStillActive(ready.provider, ready.address);
+						await assertDepositChainStillActive(ready.provider, depositConfig);
 						sourceHash = await waitForWalletTransactionHash(
 							ready.walletClient.writeContract({
 								account: ready.address,
@@ -1470,6 +1496,7 @@ export function useDeposit({
 			publicClient,
 			refetch,
 			refreshGeoRestriction,
+			verifyFreshLegalAction,
 			walletAddress,
 		],
 	);

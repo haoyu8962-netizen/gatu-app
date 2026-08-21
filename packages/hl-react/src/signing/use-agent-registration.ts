@@ -5,6 +5,7 @@ import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
+import { useAgentApprovalOverride } from "./agent-approval-provider";
 import {
 	activateAgentRegistrationSession,
 	cancelAgentRegistrationEpochAndRemove,
@@ -14,6 +15,7 @@ import {
 	persistAgentForRegistration,
 	verifyAgentRegistrationOrRemove,
 } from "./agent-registration-session";
+import type { AgentStorageScope } from "./agent-storage";
 import type { RegistrationStatus } from "./types";
 import { useAgentStatus } from "./use-agent-status";
 import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
@@ -30,6 +32,10 @@ export interface UseAgentRegistrationResult {
 	currentStep: RegistrationStep;
 	error: Error | null;
 	reset: () => void;
+}
+
+export function resolveAgentRegistrationStorageScope(options?: AgentRegistrationOptions): AgentStorageScope {
+	return options?.persistConnection === true ? "local" : "session";
 }
 
 function deriveRegistrationStatus(
@@ -59,7 +65,8 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	}, []);
 
 	const agentStatus = useAgentStatus();
-	const approveAgent = useExchange("approveAgent");
+	const fallbackApproveAgent = useExchange("approveAgent");
+	const approveAgentOverride = useAgentApprovalOverride();
 
 	function safeSetStep(step: RegistrationStep) {
 		if (mountedRef.current) setCurrentStep(step);
@@ -118,7 +125,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					}
 				}
 
-				const storageScope = options?.persistConnection === false ? "session" : "local";
+				const storageScope = resolveAgentRegistrationStorageScope(options);
 
 				async function persistAndVerifyAgent(privateKey: `0x${string}`, publicKey: Address) {
 					await assertRegistrationCurrent();
@@ -155,7 +162,10 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					const account = privateKeyToAccount(privateKey);
 					const publicKey = account.address;
 
-					const approveAgentPromise = approveAgent.mutateAsync({ agentAddress: publicKey, agentName });
+					const approveAgentPromise = (approveAgentOverride ?? fallbackApproveAgent.mutateAsync)({
+						agentAddress: publicKey,
+						agentName,
+					});
 					try {
 						await withWalletApprovalTimeout(approveAgentPromise);
 					} catch (error) {

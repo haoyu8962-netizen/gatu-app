@@ -69,6 +69,8 @@ const testState = vi.hoisted(() => ({
 		universe: [],
 	},
 	spotMetaRefetch: vi.fn(),
+	useDepositOptions: null as Record<string, unknown> | null,
+	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -230,6 +232,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		hasWalletAccess: true,
 		user: testState.emailAddress ? {} : null,
 		walletAddress: "0x1111111111111111111111111111111111111111",
+		walletIntent: testState.walletIntentOverride ?? (testState.emailAddress ? "embedded" : "external"),
 	}),
 }));
 
@@ -294,37 +297,40 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
-	useDeposit: () => ({
-		balance: "0",
-		balanceError: null,
-		balanceStatus: "idle",
-		deposit: testState.deposit,
-		error: testState.depositError,
-		executionAmount: null,
-		executionRoute: testState.depositExecutionRoute,
-		hash: testState.depositHash,
-		isArbitrum: true,
-		isSwitching: false,
-		maxAmount: "10",
-		maxDepositRaw: testState.depositMaxRaw,
-		networkName: "Arbitrum",
-		reset: vi.fn(),
-		sponsoredCctpEnabled: true,
-		sponsoredCctpReadiness: {
-			failure: testState.sponsoredReadinessFailure,
-			retry: testState.sponsoredReadinessRetry,
-			status: testState.sponsoredReadinessStatus,
-		},
-		status: testState.depositStatus,
-		switchError: null,
-		switchToArbitrum: vi.fn(),
-		validate: () => ({ error: null, valid: true }),
-		walletProviderError: null,
-		walletProviderStatus: "idle",
-		walletResponseDelayed: false,
-		cctpRecoveryUnavailable: false,
-		submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
-	}),
+	useDeposit: (options: Record<string, unknown>) => {
+		testState.useDepositOptions = options;
+		return {
+			balance: "0",
+			balanceError: null,
+			balanceStatus: "idle",
+			deposit: testState.deposit,
+			error: testState.depositError,
+			executionAmount: null,
+			executionRoute: testState.depositExecutionRoute,
+			hash: testState.depositHash,
+			isArbitrum: true,
+			isSwitching: false,
+			maxAmount: "10",
+			maxDepositRaw: testState.depositMaxRaw,
+			networkName: "Arbitrum",
+			reset: vi.fn(),
+			sponsoredCctpEnabled: true,
+			sponsoredCctpReadiness: {
+				failure: testState.sponsoredReadinessFailure,
+				retry: testState.sponsoredReadinessRetry,
+				status: testState.sponsoredReadinessStatus,
+			},
+			status: testState.depositStatus,
+			switchError: null,
+			switchToArbitrum: vi.fn(),
+			validate: () => ({ error: null, valid: true }),
+			walletProviderError: null,
+			walletProviderStatus: "idle",
+			walletResponseDelayed: false,
+			cctpRecoveryUnavailable: false,
+			submissionOutcomeUnknown: testState.submissionOutcomeUnknown,
+		};
+	},
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -337,7 +343,6 @@ vi.mock("@/lib/lifi/bridge-execution-state", () => ({
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
-	shouldUsePrivyEmbeddedWallet: () => testState.emailAddress !== null,
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -520,6 +525,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			universe: [],
 		};
 		testState.spotMetaRefetch.mockReset();
+		testState.useDepositOptions = null;
+		testState.walletIntentOverride = undefined;
 		testState.spotMetaRefetch.mockImplementation(async () => ({ data: testState.spotMeta, isError: false }));
 		testState.fetchFreshRouting.mockImplementation(async () => {
 			if (testState.freshRoutingError) throw testState.freshRoutingError;
@@ -597,6 +604,20 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledWith(signal);
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
+	});
+
+	it("keeps an ambiguous Privy identity out of both embedded and external deposit execution", async () => {
+		testState.modalOpen = true;
+		testState.emailAddress = "trader@example.com";
+		testState.walletIntentOverride = "ambiguous";
+		testState.depositAvailable = true;
+
+		await rerender();
+		expect(testState.useDepositOptions).toMatchObject({ balanceEnabled: false });
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Submit deposit")).toBe(
+			false,
+		);
+		expect(testState.deposit).not.toHaveBeenCalled();
 	});
 
 	it("fails the withdrawal SDK boundary closed when the fresh geo check is unavailable", async () => {

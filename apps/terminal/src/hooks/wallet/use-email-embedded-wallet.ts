@@ -1,10 +1,10 @@
 import { useCreateWallet, usePrivy } from "@privy-io/react-auth";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { usePrivyLoginIntent } from "@/lib/wallet/privy-login-method";
 import {
 	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
-	getPrivyRecentLoginMethod,
-	shouldUsePrivyEmbeddedWallet,
+	resolvePrivyWalletIntent,
 } from "@/lib/wallet/privy-wagmi";
 
 const EMBEDDED_WALLET_CREATE_TIMEOUT_MS = 20_000;
@@ -52,10 +52,11 @@ export function useEmailEmbeddedWallet() {
 	const [creationState, setCreationState] = useState<SessionCreationState | null>(null);
 
 	const userId = user?.id;
+	const loginIntent = usePrivyLoginIntent(ready && authenticated ? userId : undefined);
+	const walletIntent = ready && authenticated ? resolvePrivyWalletIntent(user, loginIntent) : "unavailable";
 	const emailAddress = getPrivyEmailAddress(user);
 	const userEmbeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
-	const shouldUseEmbeddedWallet =
-		shouldUsePrivyEmbeddedWallet(user) || (getPrivyRecentLoginMethod() === "email" && !!emailAddress);
+	const shouldUseEmbeddedWallet = walletIntent === "embedded";
 	const sessionIdentity =
 		ready && authenticated && userId && emailAddress && shouldUseEmbeddedWallet
 			? `${userId}\u0000${emailAddress.toLowerCase()}`
@@ -126,6 +127,7 @@ export function useEmailEmbeddedWallet() {
 	return {
 		emailAddress,
 		embeddedWalletAddress,
+		walletIntent,
 		shouldUseEmbeddedWallet,
 		needsEmbeddedWallet,
 		isCreatingEmbeddedWallet: embeddedWalletAddress ? false : isCreatingEmbeddedWallet,

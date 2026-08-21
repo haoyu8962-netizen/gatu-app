@@ -23,6 +23,7 @@ interface CreatePrivyAgentSignerOptions {
 	embeddedWalletAddress: `0x${string}` | undefined;
 	chainId: number;
 	signTypedData: PrivySignTypedData;
+	beforeSubmit: () => void | Promise<void>;
 }
 
 interface HyperliquidTypedData {
@@ -48,6 +49,7 @@ export function createPrivyAgentSigner({
 	embeddedWalletAddress,
 	chainId,
 	signTypedData,
+	beforeSubmit,
 }: CreatePrivyAgentSignerOptions) {
 	if (
 		!hasSameWalletAddress(expectedAddress, activeAddress) ||
@@ -71,6 +73,7 @@ export function createPrivyAgentSigner({
 					isCancellable: true,
 				},
 			});
+			await beforeSubmit();
 			return result.signature as `0x${string}`;
 		},
 		async getAddresses(): Promise<`0x${string}`[]> {
