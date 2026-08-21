@@ -403,6 +403,7 @@ function FramedTpSlRow({
 				<div
 					className={cn(
 						framedFrameClass,
+						mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 						!disabled &&
 							"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
 						!!error &&
@@ -416,10 +417,11 @@ function FramedTpSlRow({
 						aria-describedby={error ? errorId : undefined}
 						aria-invalid={Boolean(error)}
 						placeholder={pricePlaceholder}
+						mobileSafe={mobileSafe}
 						value={priceValue}
 						onChange={(e) => onPriceChange(e.target.value)}
 						onBlur={onPriceBlur}
-						className={framedInputClass}
+						className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
 						disabled={disabled}
 					/>
 				</div>
@@ -427,6 +429,7 @@ function FramedTpSlRow({
 					<div
 						className={cn(
 							framedFrameClass,
+							mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 							!returnDisabled &&
 								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
 							!!returnError &&
@@ -439,10 +442,11 @@ function FramedTpSlRow({
 							aria-describedby={returnError ? errorId : undefined}
 							aria-invalid={Boolean(returnError)}
 							placeholder={returnInput.placeholder}
+							mobileSafe={mobileSafe}
 							value={returnInput.value}
 							onChange={(e) => returnInput.onChange(e.target.value)}
 							onBlur={returnInput.onBlur}
-							className={framedInputClass}
+							className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
 							disabled={returnDisabled}
 						/>
 						{returnInput.onUnitToggle && (
@@ -455,7 +459,7 @@ function FramedTpSlRow({
 								className={cn(
 									"relative inline-flex flex-none cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
 									mobileSafe &&
-										"max-[1000px]:before:absolute max-[1000px]:before:-inset-x-2.5 max-[1000px]:before:-inset-y-3 max-[1000px]:before:content-['']",
+										"max-[1000px]:min-h-11 max-[1000px]:text-base max-[1000px]:before:absolute max-[1000px]:before:-inset-x-2.5 max-[1000px]:before:-inset-y-3 max-[1000px]:before:content-['']",
 								)}
 							>
 								{returnInput.unitLabel}

@@ -158,7 +158,7 @@ describe("TpSlSection position ROE shortcuts", () => {
 		expect(onUnitToggle).toHaveBeenCalledOnce();
 	});
 
-	it("keeps framed mobile inputs at the fixed field size and associates errors", () => {
+	it("restores the touch-safe framed field size and iOS-safe text on mobile", () => {
 		act(() => {
 			root.render(
 				createElement(TpSlSection, {
@@ -187,18 +187,22 @@ describe("TpSlSection position ROE shortcuts", () => {
 		const toggles = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]');
 		expect(priceInput?.parentElement?.className).toContain("h-8.25");
 		expect(returnInput?.parentElement?.className).toContain("h-8.25");
+		expect(priceInput?.parentElement?.className).toContain("max-[1000px]:h-11");
+		expect(returnInput?.parentElement?.className).toContain("max-[1000px]:h-11");
 		expect(priceInput?.className).toContain("text-xs");
 		expect(returnInput?.className).toContain("text-xs");
-		expect(priceInput?.className).not.toContain("max-[1000px]:h-11");
-		expect(returnInput?.className).not.toContain("max-[1000px]:h-11");
-		expect(priceInput?.className).not.toContain("max-[1000px]:text-base");
-		expect(returnInput?.className).not.toContain("max-[1000px]:text-base");
+		expect(priceInput?.className).toContain("max-[1000px]:h-11");
+		expect(returnInput?.className).toContain("max-[1000px]:h-11");
+		expect(priceInput?.className).toContain("max-[1000px]:text-base");
+		expect(returnInput?.className).toContain("max-[1000px]:text-base");
 		expect(priceInput?.getAttribute("aria-invalid")).toBe("true");
 		expect(returnInput?.getAttribute("aria-invalid")).toBe("false");
 		expect(returnInput?.getAttribute("aria-describedby")).toBeNull();
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");
 		expect(toggles).toHaveLength(2);
 		for (const toggle of toggles) {
+			expect(toggle.className).toContain("max-[1000px]:min-h-11");
+			expect(toggle.className).toContain("max-[1000px]:text-base");
 			expect(toggle.className).toContain("max-[1000px]:before:absolute");
 			expect(toggle.className).toContain("max-[1000px]:before:-inset-x-2.5");
 			expect(toggle.className).toContain("max-[1000px]:before:-inset-y-3");
