@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function UnitDepositInfo({ cctpFee, cctpFeeLoading = false, cctpFeeError = false }: Props) {
+	useNumberFormatRevision();
 	const fee = cctpFee ? (
 		formatUSD(cctpFee, { compact: false })
 	) : cctpFeeLoading ? (

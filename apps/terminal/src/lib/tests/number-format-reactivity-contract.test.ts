@@ -143,12 +143,24 @@ function isFunctionLikeDeclaration(node: ts.Node): node is ts.FunctionLikeDeclar
 
 function hasDirectNumberFormatSubscription(component: ts.FunctionLikeDeclaration): boolean {
 	if (!component.body || !ts.isBlock(component.body)) return false;
-	return component.body.statements.some(
-		(statement) =>
-			ts.isExpressionStatement(statement) &&
-			ts.isCallExpression(statement.expression) &&
-			ts.isIdentifier(statement.expression.expression) &&
-			statement.expression.expression.text === "useNumberFormatRevision" &&
-			statement.expression.arguments.length === 0,
+	return component.body.statements.some((statement) =>
+		getStatementExpressions(statement).some(isNumberFormatRevisionCall),
+	);
+}
+
+function getStatementExpressions(statement: ts.Statement): ts.Expression[] {
+	if (ts.isExpressionStatement(statement)) return [statement.expression];
+	if (!ts.isVariableStatement(statement)) return [];
+	return statement.declarationList.declarations.flatMap((declaration) =>
+		declaration.initializer ? [declaration.initializer] : [],
+	);
+}
+
+function isNumberFormatRevisionCall(expression: ts.Expression): boolean {
+	return (
+		ts.isCallExpression(expression) &&
+		ts.isIdentifier(expression.expression) &&
+		expression.expression.text === "useNumberFormatRevision" &&
+		expression.arguments.length === 0
 	);
 }
