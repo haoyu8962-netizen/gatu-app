@@ -260,6 +260,78 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 
 分别测试冷/热缓存、正常网络和 Slow 4G，不能用 dev server 的时间判断是否需要 Provider 架构拆分。
 
+#### 阶段 0 执行结果（2026-08-21）
+
+阶段 0 已完成。正式矩阵共 `3 routes × 2 cache modes × 2 network modes × 3 samples = 36` 个 timed runs，36/36 的必需字段均采集完整，并通过首订阅市场身份校验；所有样本的 page errors 也均为空。所有样本复用同一份 `.output`，`/build-meta.json` 为：
+
+```json
+{
+  "name": "gatu",
+  "version": "0.1.0",
+  "commit": "fee5e594d8b0d8df29bb601dc8a3fc4b42594181",
+  "release": "local",
+  "builtAt": "2026-08-21T03:46:33.151Z"
+}
+```
+
+测量环境与定义：
+
+- Chromium `139.0.7258.5`，视口 `1440 × 900`、DPR `2`，不做 CPU 降速；
+- 生产 Nitro 服务运行在 `http://127.0.0.1:3016`，避免误用当时占用 3006 的 Vite dev server；
+- Slow 4G 固定为 `150 ms` latency、`1.6 Mbps` download、`750 Kbps` upload；
+- 每个样本使用独立 browser context；冷缓存显式清空并禁用 HTTP cache；热缓存先在同一 context 完整访问同一路由，等待 ready 后再等 2 秒，然后执行新的 document navigation，因此热缓存同时包含 HTTP cache 与 origin persisted catalog；
+- 首次导航统一启用 `terminal_perf=1`，并在 init script 写入同一受支持的 profiling storage key。根路径的生产 307 会丢掉 query，因此该 storage fallback 是 `/` 可采集 commit 的必要条件；
+- 为了让 locale ready 可从页面外部辨认，所有 context 预置非默认 `locale-v1=zh`，以首次观察到 `<html lang="zh">` 为准；
+- HTML、FP/FCP、locale DOM、commit hook 和 WebSocket wire payload 是直接观测；hydration 是 Playwright-only React DevTools hook 观察到的首个主 root commit；`client-root` 完成是其模块顶层唯一 `removeItem("hl-markets-meta-v1")` 信号；`ClientRuntime ready` 是 runtime 边界后的 locale read 所对应的首个 root commit；
+- market catalog 没有公开 mark，表中的 `route resolved-by` 是真实 TopNav 首次 commit 的可信上界，不应解释成 `getMarketByName` 的精确内部时刻；
+- 每组只有 3 个样本，以下只报告 median。min/max 和逐次原始记录位于本地未提交产物 `scripts/measure/out/boot-timing-phase0-baseline-20260821.json`，可用同一脚本和 tag 重建；不把这些结果表述成稳定 p75。
+
+浏览器、runtime 与语言里程碑如下，单位均为从本次 document navigation 起算的毫秒：
+
+| 网络 | 缓存 | 路由 | HTML responseEnd | FCP | hydration | client-root | ClientRuntime | locale |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 正常 | 冷 | `/` | 4.5 | 32.0 | 162.3 | 146.2 | 468.5 | 74.9 |
+| 正常 | 冷 | `/trade/BTC` | 3.0 | 32.0 | 153.3 | 144.0 | 464.1 | 76.7 |
+| 正常 | 冷 | `/trade/xyz:CXMT` | 3.6 | 28.0 | 149.2 | 135.1 | 456.0 | 67.6 |
+| 正常 | 热 | `/` | 12.6 | 64.0 | 146.5 | 189.5 | 451.0 | 131.8 |
+| 正常 | 热 | `/trade/BTC` | 3.9 | 32.0 | 74.2 | 100.5 | 377.0 | 61.0 |
+| 正常 | 热 | `/trade/xyz:CXMT` | 4.2 | 40.0 | 67.8 | 92.9 | 372.7 | 54.5 |
+| Slow 4G | 冷 | `/` | 383.2 | 1324.0 | 4970.6 | 9524.3 | 9561.7 | 4809.6 |
+| Slow 4G | 冷 | `/trade/BTC` | 226.0 | 1160.0 | 4824.5 | 9372.0 | 9407.7 | 4661.0 |
+| Slow 4G | 冷 | `/trade/xyz:CXMT` | 225.5 | 1172.0 | 4818.6 | 9402.8 | 9449.0 | 4660.6 |
+| Slow 4G | 热 | `/` | 1019.7 | 1000.0 | 1056.4 | 1083.8 | 1360.2 | 1038.3 |
+| Slow 4G | 热 | `/trade/BTC` | 557.7 | 560.0 | 587.3 | 611.1 | 891.1 | 573.0 |
+| Slow 4G | 热 | `/trade/xyz:CXMT` | 671.5 | 656.0 | 699.1 | 732.6 | 1003.3 | 686.2 |
+
+市场与真实终端挂载里程碑：
+
+| 网络 | 缓存 | 路由 | route resolved-by | TopNav | MainWorkspace | 首市场订阅 | HL WS |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 正常 | 冷 | `/` | 626.3 | 626.3 | 626.3 | 626.5 | 1 |
+| 正常 | 冷 | `/trade/BTC` | 708.5 | 708.5 | 708.5 | 708.7 | 1 |
+| 正常 | 冷 | `/trade/xyz:CXMT` | 672.2 | 672.2 | 672.2 | 672.4 | 1 |
+| 正常 | 热 | `/` | 449.9 | 449.9 | 450.0 | 531.3 | 1 |
+| 正常 | 热 | `/trade/BTC` | 376.1 | 376.1 | 376.1 | 428.2 | 1 |
+| 正常 | 热 | `/trade/xyz:CXMT` | 371.7 | 371.7 | 371.7 | 426.8 | 1 |
+| Slow 4G | 冷 | `/` | 9560.2 | 9560.2 | 9560.2 | 9907.4 | 1 |
+| Slow 4G | 冷 | `/trade/BTC` | 9406.0 | 9406.0 | 9406.0 | 9738.4 | 1 |
+| Slow 4G | 冷 | `/trade/xyz:CXMT` | 9447.1 | 9447.1 | 9447.2 | 9794.7 | 1 |
+| Slow 4G | 热 | `/` | 1359.3 | 1359.3 | 1359.3 | 1449.1 | 1 |
+| Slow 4G | 热 | `/trade/BTC` | 890.3 | 890.3 | 890.3 | 943.5 | 1 |
+| Slow 4G | 热 | `/trade/xyz:CXMT` | 1002.1 | 1002.1 | 1002.1 | 1069.1 | 1 |
+
+结果解释：
+
+- 正常网络冷缓存中，逐样本计算后 `ClientRuntime → TopNav` 的 median 约为 `171–248 ms`。阶段 1 能缩短和改善这一小段市场 gate 的视觉语义，但不会改变此前的 runtime 关键链；
+- Slow 4G 冷缓存中，FCP 已在约 `1.16–1.32 s` 出现，真实 TopNav/MainWorkspace 却要到约 `9.41–9.56 s`。用户会在已绘制骨架上再等待约 8.2 秒；
+- 同一组 Slow 4G 冷缓存里，`client-root` 资产本身约在 `3.56–3.72 s` 下载完成，模块顶层代理信号却到 `9.37–9.52 s`，首个 Hyperliquid WebSocket 构造为 `9.38–9.53 s`。这将主要未解释区间定位到 client-root 静态模块图加载、排队、解析与执行的上界关键链，而不是 `xyz:CXMT` 字符串解析；具体 chunk 和因果仍需下一轮 dependency trace；
+- TopNav 与 MainWorkspace 在所有场景都处于同一个 React commit。除 Slow 4G 冷缓存根路径的一个样本外，热缓存和 Slow 4G 冷缓存里的 ClientRuntime commit 与它们也基本是同一次 commit；layout effect 与 DevTools commit callback 可有约 1–2 ms 的记录顺序差，不代表 UI 早于 runtime；
+- main frame 探针在 36 个样本中都只观察到 1 条 `wss://api.hyperliquid.xyz/ws`，峰值并发为 1。首个带市场身份的 wire payload 全部是 `activeAssetCtx`，`/` 与 `/trade/BTC` 均为 BTC，`/trade/xyz:CXMT` 始终为 `xyz:CXMT`，没有观察到默认市场回退或 main-frame 重复 socket；
+- `/` 的最终 URL 在全部样本中都是 `/trade/BTC?scope=all`，`redirectCount=1`；两个显式 trade route 均无文档重定向。Slow 4G 热缓存下根路径比直达 BTC 多约 470 ms，符合额外 307 往返的成本；
+- 这批数据出现了值得继续归因的强烈数值信号：Slow 4G 冷缓存的 `hydration → ClientRuntime` 约 4.5 秒，约占 `navigation → TopNav` 的一半。但它还不是阶段 1 后的 clean production p75，也没有 dependency trace，因此尚未正式满足阶段 2 的 Provider 拆分触发线。下一步应启动“依赖资源归因”调查，而不是直接拆 Provider。
+
+构建 caveat：本次 `pnpm build` 完整生成了 client、SSR 和 Nitro `.output`，chunk-cycle 检查通过，但最后的 bundle-budget 检查失败：当前共享脏工作区相对预算基线增加 `13,945 gzip bytes`，允许值为 `10,000`。产物包含其他会话尚未提交的交易功能改动，且构建使用的 Node `v22.13.0` 低于项目声明的 `>=22.15.0`，因此这些数字是“2026-08-21 共享工作区快照基线”，不是 clean-HEAD 发布基线。其他改动合并或清理后，应以相同脚本再跑一次，才适合用于长期回归阈值。
+
 ### 阶段 1：缩小市场 gate，保持 Provider 不变
 
 第一阶段只改变 `ClientRuntime + i18n` 已就绪之后的桌面市场加载表面。
@@ -437,6 +509,6 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 
 ## 最终决策
 
-本轮建议先实施阶段 0 和阶段 1。它们直接解决截图中“假导航骨架覆盖已经可用页面外框”的问题，同时保留 SSR、i18n、精确市场和钱包安全门槛。
+阶段 0 已完成。阶段 1 仍值得实施，因为它能修正“runtime 已可用后仍显示假导航”的视觉语义，同时保留 SSR、i18n、精确市场和钱包安全门槛；但基线表明它在正常网络冷缓存中只覆盖约 171–248 ms，在 Slow 4G 冷缓存中基本与 ClientRuntime 同 commit，不能单独解决约 9.4 秒才出现真实导航的问题。
 
-阶段 2 只在生产性能数据证明 client runtime 是主要瓶颈时启动。Hyperliquid 官方站证明了钱包不应阻塞公共页面外框，但它自己的空白首屏和资源关键链也证明：架构并行不等于首屏体验已经优秀。
+阶段 2 的 Provider 拆分触发线尚未正式满足。下一步应先做 client-root 静态依赖图和资源关键链归因，并在阶段 1 后以 clean production p75 复测，再决定是预加载/拆 chunk，还是设计 transport/session Provider 边界；本轮数据不授权直接改 Provider。Hyperliquid 官方站证明了钱包不应阻塞公共页面外框，但它自己的空白首屏和资源关键链也证明：架构并行不等于首屏体验已经优秀。

@@ -10,6 +10,7 @@ import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
+import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { DesktopUtilitiesMenu } from "./desktop-utilities-menu";
@@ -19,6 +20,7 @@ import { ThemeToggle } from "./theme-toggle";
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
 export function TopNav() {
+	useRenderCommitTrack("top-nav");
 	const { t } = useLingui();
 	const navigate = useNavigate();
 	const { pathname } = useLocation();

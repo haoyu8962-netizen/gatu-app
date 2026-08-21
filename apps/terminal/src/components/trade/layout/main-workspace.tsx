@@ -15,6 +15,7 @@ import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
+import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
@@ -54,6 +55,7 @@ function DesktopWorkspaceSkeleton() {
 }
 
 export function MainWorkspace() {
+	useRenderCommitTrack("main-workspace");
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
 	const activeBreakpoint = getDesktopGridBreakpoint(width);
