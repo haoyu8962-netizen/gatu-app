@@ -166,13 +166,25 @@ async function measureRun(
 	const page = await context.newPage();
 	const cdp = await context.newCDPSession(page);
 	const pageErrors = [];
+	const consoleMessages = [];
 	page.on("pageerror", (error) => pageErrors.push(String(error?.message ?? error).slice(0, 500)));
+	page.on("console", (message) => {
+		if (message.type() === "error" || message.type() === "warning") {
+			consoleMessages.push({ type: message.type(), text: message.text().slice(0, 1_000) });
+		}
+	});
 
 	try {
 		await configureNetwork(cdp, networkMode, cacheMode);
 		if (cacheMode === "hot") {
 			await navigateAndWait(page, result.requestedUrl, runTimeout);
 			await page.waitForTimeout(2_000);
+			result.warmupDiagnostics = {
+				pageErrors: [...pageErrors],
+				consoleMessages: [...consoleMessages],
+			};
+			pageErrors.length = 0;
+			consoleMessages.length = 0;
 		}
 
 		await page.goto(result.requestedUrl, { waitUntil: "domcontentloaded", timeout: runTimeout });
@@ -191,11 +203,13 @@ async function measureRun(
 		result.profiling = snapshot.profiling;
 		result.probe = snapshot.probe;
 		result.pageErrors = pageErrors;
+		result.consoleMessages = consoleMessages;
 		if (result.status !== "ok") result.error = describeMissing(snapshot);
 	} catch (error) {
 		result.finalUrl = page.url();
 		result.error = error instanceof Error ? error.message : String(error);
 		result.pageErrors = pageErrors;
+		result.consoleMessages = consoleMessages;
 		result.partial = await collectSnapshot(page).catch(() => null);
 	} finally {
 		await cdp.detach().catch(() => {});
@@ -295,6 +309,9 @@ async function collectSnapshot(page) {
 				topNavDomMs: round(probe.dom?.topNavAt),
 				mainWorkspaceDomMs: round(probe.dom?.mainWorkspaceAt),
 				measuredGridDomMs: round(probe.dom?.measuredGridAt),
+				loadingWorkspaceDomMs: round(probe.dom?.loadingWorkspaceAt),
+				loadingWorkspaceRemovedMs: round(probe.dom?.loadingWorkspaceRemovedAt),
+				readyWorkspaceWhileLoadingMs: round(probe.dom?.readyWorkspaceWhileLoadingAt),
 				clientRootResourceEndMs: round(probe.clientRootResourceEndAt ?? clientRootResource?.responseEnd),
 				catalogCacheReadMs: round(probe.catalogCacheReadAt),
 			},
@@ -345,6 +362,14 @@ async function collectSnapshot(page) {
 				reactCommits: probe.reactCommits ?? [],
 				skeletonTransitions: probe.skeletonTransitions ?? [],
 			},
+			diagnostics: {
+				htmlLang: document.documentElement.lang,
+				bodyText: document.body?.innerText.slice(0, 2_000) ?? "",
+				testIds: [...document.querySelectorAll("[data-testid]")]
+					.map((element) => element.getAttribute("data-testid"))
+					.filter(Boolean)
+					.slice(0, 100),
+			},
 		};
 	});
 }
@@ -365,8 +390,22 @@ function validateSnapshot(snapshot, expectedMarket) {
 	];
 	if (!snapshot.profiling.enabled) return "incomplete";
 	if (required.some((key) => !Number.isFinite(milestones[key]))) return "incomplete";
-	if (snapshot.webSocket.hyperliquidCount < 1 || !snapshot.webSocket.firstMarketSubscription) return "incomplete";
+	if (
+		snapshot.webSocket.hyperliquidCount !== 1 ||
+		snapshot.webSocket.hyperliquidPeakConcurrentOpen !== 1 ||
+		!snapshot.webSocket.firstMarketSubscription
+	) {
+		return "incomplete";
+	}
 	if (snapshot.webSocket.firstMarketSubscription.subscription?.coin !== expectedMarket) return "incomplete";
+	if (
+		Number.isFinite(snapshot.crossChecks.loadingWorkspaceDomMs) &&
+		!Number.isFinite(snapshot.crossChecks.loadingWorkspaceRemovedMs)
+	) {
+		return "incomplete";
+	}
+	if (Number.isFinite(snapshot.crossChecks.readyWorkspaceWhileLoadingMs)) return "incomplete";
+	if (snapshot.crossChecks.mainWorkspaceDomMs < snapshot.crossChecks.loadingWorkspaceRemovedMs) return "incomplete";
 	return "ok";
 }
 
@@ -375,7 +414,14 @@ function describeMissing(snapshot) {
 		.filter(([, value]) => !Number.isFinite(value))
 		.map(([key]) => key);
 	if (!snapshot.profiling.enabled) missing.push("profiling.enabled");
-	if (snapshot.webSocket.hyperliquidCount < 1) missing.push("webSocket.hyperliquidCount");
+	if (snapshot.webSocket.hyperliquidCount !== 1) {
+		missing.push(`webSocket.hyperliquidCount=${snapshot.webSocket.hyperliquidCount} (expected 1)`);
+	}
+	if (snapshot.webSocket.hyperliquidPeakConcurrentOpen !== 1) {
+		missing.push(
+			`webSocket.hyperliquidPeakConcurrentOpen=${snapshot.webSocket.hyperliquidPeakConcurrentOpen} (expected 1)`,
+		);
+	}
 	if (!snapshot.webSocket.firstMarketSubscription) missing.push("webSocket.firstMarketSubscription");
 	if (
 		snapshot.webSocket.firstMarketSubscription &&
@@ -384,6 +430,18 @@ function describeMissing(snapshot) {
 		missing.push(
 			`webSocket.firstMarketSubscription.coin=${snapshot.webSocket.firstMarketSubscription.subscription?.coin ?? "null"} (expected ${snapshot.probe.expectedMarket})`,
 		);
+	}
+	if (
+		Number.isFinite(snapshot.crossChecks.loadingWorkspaceDomMs) &&
+		!Number.isFinite(snapshot.crossChecks.loadingWorkspaceRemovedMs)
+	) {
+		missing.push("loadingWorkspaceRemovedMs");
+	}
+	if (Number.isFinite(snapshot.crossChecks.readyWorkspaceWhileLoadingMs)) {
+		missing.push(`readyWorkspaceWhileLoadingMs=${snapshot.crossChecks.readyWorkspaceWhileLoadingMs}`);
+	}
+	if (snapshot.crossChecks.mainWorkspaceDomMs < snapshot.crossChecks.loadingWorkspaceRemovedMs) {
+		missing.push("mainWorkspaceDomMs precedes loadingWorkspaceRemovedMs");
 	}
 	return `missing required measurements: ${missing.join(", ")}`;
 }
@@ -643,7 +701,14 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 		localeReads: [],
 		reactCommits: [],
 		skeletonTransitions: [],
-		dom: { topNavAt: null, mainWorkspaceAt: null, measuredGridAt: null },
+		dom: {
+			topNavAt: null,
+			mainWorkspaceAt: null,
+			measuredGridAt: null,
+			loadingWorkspaceAt: null,
+			loadingWorkspaceRemovedAt: null,
+			readyWorkspaceWhileLoadingAt: null,
+		},
 		webSocket: {
 			totalCount: 0,
 			hyperliquidCount: 0,
@@ -827,6 +892,7 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 	function installDomProbe(target, clock) {
 		let originalSkeleton = null;
 		let previousSkeleton = null;
+		let loadingWorkspace = null;
 
 		const inspect = () => {
 			const at = clock();
@@ -849,7 +915,27 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 			if (target.dom.topNavAt === null && document.querySelector('header a[aria-label="gatu"]')) {
 				target.dom.topNavAt = at;
 			}
-			if (target.dom.mainWorkspaceAt === null && document.querySelector("[data-main-workspace]")) {
+			const currentLoadingWorkspace = document.querySelector("[data-terminal-loading-workspace]");
+			if (!loadingWorkspace && currentLoadingWorkspace) {
+				loadingWorkspace = currentLoadingWorkspace;
+				target.dom.loadingWorkspaceAt = at;
+			}
+			if (
+				loadingWorkspace &&
+				!loadingWorkspace.isConnected &&
+				target.dom.loadingWorkspaceRemovedAt === null
+			) {
+				target.dom.loadingWorkspaceRemovedAt = at;
+			}
+			const mainWorkspace = document.querySelector("[data-main-workspace]");
+			if (
+				mainWorkspace &&
+				currentLoadingWorkspace &&
+				target.dom.readyWorkspaceWhileLoadingAt === null
+			) {
+				target.dom.readyWorkspaceWhileLoadingAt = at;
+			}
+			if (target.dom.mainWorkspaceAt === null && mainWorkspace) {
 				target.dom.mainWorkspaceAt = at;
 			}
 			if (target.dom.measuredGridAt === null && document.querySelector(".desktop-terminal-grid")) {

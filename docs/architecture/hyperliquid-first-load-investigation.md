@@ -486,14 +486,57 @@ SSR 前的状态文案要在实现时专门验证语言与 hydration 行为，�
 
 阶段 1 已按上述边界完成：桌面 `loading/redirecting/ready` 共用同一个 `DesktopTerminalSurface`，TopNav、Footer 和 UserMenu 跨市场 gate 保持身份；只有 workspace 与 ready-only synchronizers/overlays 切换。移动端 ready terminal、gate、断点和业务组件未改动，loading fallback 只更新静态与 ARIA 语义；Provider 层、市场解析/canonical 算法和桌面网格几何也保持不变。
 
-验证结果：
+实现验证已通过 Biome、terminal typecheck、14 个相关 Vitest 文件的 126 项测试及 production build 的 client/SSR/Nitro 生成和 356 个 client chunk 循环检查。`mobile-app-shell-skeleton.test.tsx` 中遗留的 `1554px` 旧期望已按现行 `34.6 × 30 + 33.6 × 3 + 6 = 1144.8px` 修正；当前 GitHub Actions 没有显式运行该文件，只有本地全量 Vitest 会自动覆盖它。
 
-- Biome、测量脚本语法检查通过；terminal typecheck 通过；
-- 14 个相关 Vitest 文件、126 项测试通过，覆盖 canonical、pair-name、裸 `/trade`、`xyz:CXMT` 精确同步、钱包 UI 身份、pending fallback、1000/1001 契约和 SSR hydration；
-- production client、SSR、Nitro 产物均生成，356 个 client chunk 无静态循环；最终 bundle-budget 在共享脏工作区失败：总 client gzip 相对基线 `+17,407 B`（上限 `+10,000 B`），trade terminal chunk `+4,376 B`（上限 `+4,000 B`）。没有修改预算阈值；需在其他会话改动落盘后用 clean worktree 重跑；
-- 生产浏览器的 Slow 4G + 4× CPU 冷启动探针中，AppShell 约 `763 ms` 出现，真实 TopNav、Footer 与 busy workspace 同在约 `1,634 ms` 出现，MainWorkspace 约 `3,585 ms` 出现；loading 期间未出现 BTC/HYPE，首个市场订阅为 `xyz:CXMT`，Hyperliquid WebSocket 数为 1；
-- 1000px 走移动终端、1001px 走桌面终端；一次 Slow 4G trace 的 CLS 为 `0.00`，浏览器控制台无 error/warn；
-- schema v2 的三次 normal/cold `xyz:CXMT` smoke 均成功：TopNav commit median `493.1 ms`，MainWorkspace/route-resolved 上界 median `783.9 ms`，3/3 首订阅均为 `xyz:CXMT` 且各只有一个 Hyperliquid WebSocket。该 smoke 只验证新探针语义，不是 clean production p75，也不替代完整阶段后基线。
+#### 阶段 1 后 clean production 基线
+
+下表取自独立 clean worktree，HEAD `9d8f79c4ac779ab3bde685bd7a4fed0a95746b83`，Node `22.18.0`、pnpm `10.21.0`、Chromium `139.0.7258.5`。同一份 production `.output`（`builtAt=2026-08-21T07:29:36.014Z`）复用于 `3 routes × 2 cache modes × 2 networks × 3 samples = 36` 次 document navigation，所有样本 status 均为 `ok`。测量定义、视口和 Slow 4G 参数与阶段 0 一致；每组仅 3 个样本，以下报告 median，不冒充 p75。可重建的原始记录为已忽略的 `scripts/measure/out/boot-timing-post-phase1-clean-20260821.json`。
+
+启动与 runtime 里程碑（ms）：
+
+| 网络 | 缓存 | 路由 | HTML | FP/FCP | hydration | client-root | ClientRuntime | locale |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 正常 | 冷 | `/` | 4.1 | 44 | 155.5 | 141.3 | 462.4 | 73.6 |
+| 正常 | 冷 | `/trade/BTC` | 2.5 | 40 | 150.5 | 137.9 | 456.7 | 70.4 |
+| 正常 | 冷 | `/trade/xyz%3ACXMT` | 2.3 | 28 | 147.3 | 135.5 | 456.1 | 67.3 |
+| 正常 | 热 | `/` | 4.1 | 32 | 63.0 | 86.2 | 366.9 | 48.8 |
+| 正常 | 热 | `/trade/BTC` | 2.9 | 44 | 62.9 | 87.1 | 367.1 | 49.4 |
+| 正常 | 热 | `/trade/xyz%3ACXMT` | 3.7 | 56 | 68.6 | 98.1 | 373.2 | 53.9 |
+| Slow 4G | 冷 | `/` | 383.6 | 1320 | 4962.8 | 9429.2 | 9471.3 | 4802.0 |
+| Slow 4G | 冷 | `/trade/BTC` | 225.7 | 1172 | 4829.5 | 9260.6 | 9304.3 | 4660.6 |
+| Slow 4G | 冷 | `/trade/xyz%3ACXMT` | 225.6 | 1128 | 4839.6 | 9289.2 | 9330.5 | 4663.5 |
+| Slow 4G | 热 | `/` | 1011.2 | 988 | 1039.6 | 1059.2 | 1343.1 | 1025.0 |
+| Slow 4G | 热 | `/trade/BTC` | 668.8 | 644 | 694.5 | 714.1 | 997.8 | 681.6 |
+| Slow 4G | 热 | `/trade/xyz%3ACXMT` | 686.0 | 656/672 | 712.4 | 731.1 | 1018.3 | 699.7 |
+
+真实终端与订阅里程碑（ms）：
+
+| 网络 | 缓存 | 路由 | TopNav | MainWorkspace / route ready 上界 | 首市场订阅 | HL WS |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| 正常 | 冷 | `/` | 460.3 | 676.5 | 676.8 | 1 |
+| 正常 | 冷 | `/trade/BTC` | 455.1 | 647.9 | 648.2 | 1 |
+| 正常 | 冷 | `/trade/xyz%3ACXMT` | 454.3 | 609.3 | 609.6 | 1 |
+| 正常 | 热 | `/` | 366.1 | 366.1 | 440.8 | 1 |
+| 正常 | 热 | `/trade/BTC` | 366.0 | 366.0 | 415.3 | 1 |
+| 正常 | 热 | `/trade/xyz%3ACXMT` | 372.3 | 372.4 | 421.6 | 1 |
+| Slow 4G | 冷 | `/` | 9469.7 | 9469.7 | 9802.6 | 1 |
+| Slow 4G | 冷 | `/trade/BTC` | 9302.6 | 9302.7 | 9630.1 | 1 |
+| Slow 4G | 冷 | `/trade/xyz%3ACXMT` | 9328.7 | 9328.8 | 9652.4 | 1 |
+| Slow 4G | 热 | `/` | 1342.1 | 1342.2 | 1391.3 | 1 |
+| Slow 4G | 热 | `/trade/BTC` | 997.0 | 997.0 | 1045.0 | 1 |
+| Slow 4G | 热 | `/trade/xyz%3ACXMT` | 1016.6 | 1016.6 | 1088.5 | 1 |
+
+基线校验结果：
+
+- 36/36 都只构造 1 条 `wss://api.hyperliquid.xyz/ws`，峰值并发也为 1；首个市场 payload 全部为 `activeAssetCtx`，`/` 和 `/trade/BTC` 为 BTC，`/trade/xyz%3ACXMT` 的 12/12 次均精确为 `xyz:CXMT`；
+- 36/36 都出现真实 `MainWorkspace`。其中 10 次实际观察到 loading workspace，10/10 均在同一 MutationObserver 时刻先移除 loading 再出现 MainWorkspace，没有共存；其余 26 次因目录已可解析而 direct-ready。浏览器侧直接证明 workspace 与市场订阅没有越过 loading gate；`RouteMarketSync`/`TabTitleSync`/`OrderToast`/`GlobalModals` 本身无稳定 DOM，它们的 ready-only 挂载由阶段 1 组件契约测试覆盖，不把 DOM 探针说成对这些 null/portal 组件的直接观测；
+- 36/36 无 page error。完整矩阵不是 console-clean：热缓存的 9 次 Slow 4G 样本共记录 18 条 `TypeError: Failed to fetch`，本次产物的 listener 覆盖预热到二次 document navigation，因此这是整个 hot context 的诊断而不是对 timed navigation 的单独归因；无 stack 也不能把来源归因给某个应用请求。另有 2 条 Google Analytics CSP 拒绝。它们没有使必需里程碑或订阅校验失败，但不应沿用早期单次 trace 的“控制台无错误”结论。测量脚本已在矩阵后将 warm-up 的 page/console diagnostics 单列为 `warmupDiagnostics` 并在 timed navigation 前清空数组，后续重跑不会再混合两次导航；
+
+与阶段 0 schema v1 比较时只使用两个未改变语义的原始字段。normal-cold 三路由合并 median 中，TopNav 从 `673.1 ms` 提前到 `455.1 ms`（`-218.0 ms`，`-32.39%`），MainWorkspace 从 `673.2 ms` 到 `647.9 ms`（`-25.3 ms`，`-3.76%`）。单路由 normal-cold TopNav 分别改善 `166.0/253.4/217.9 ms`；MainWorkspace 的三次 median 为 `+50.2/-60.6/-62.9 ms`，每组样本少，不将它解读成稳定 workspace 性能改善。
+
+normal-cold 的 9 个阶段 1 样本中，`hydration → ClientRuntime ready` 为 `305.4 / 306.5 / 351.0 ms`（min/median/max），约占 `navigation → TopNav` 的 `64.96% / 67.45% / 77.23%`。阶段 0 同口径的 pooled median 为 `306.4 ms` 和 `45.64%`（占比范围 `39.37–51.65%`）：绝对成本没有随 TopNav 提前而消失，其相对占比反而更明显。因此阶段 2 触发线 (a) 的 `>500 ms` 分支为假，但 `>25%` 分支在 9/9 样本中为真，触发线 (a) 正式命中。
+
+干净构建的 production 产物和循环检查均生成成功，但并非两个总预算都通过：总 client gzip 为 `3,087,952 B`，相对 `3,073,703 B` 基线增长 `14,249 B`，允许值为 `10,000 B`，超出 `4,249 B`；startup gzip 为 `530,597 B`，增长 `4,688 B`，通过。trade terminal 等全部页面预算也通过。这是预算常量之后多个已存在变更的累积结果，而阶段 1 自身的 client delta 约 1 KB；本轮没有修改 `check-client-bundle-budget.mjs` 基线常量，也不把这次 total budget 红线错归因给市场 gate 改动。
 
 ### 阶段 2：仅在生产数据证明必要时拆运行时
 
@@ -505,13 +548,82 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 
 `HyperliquidProvider` 同时拥有公开 transport/store 与签名 session/Agent 生命周期。直接把 `MarketsProvider` 提到钱包外，容易产生双 store、重复 WebSocket、钱包 ready 后 remount、Agent cleanup 竞态和 Query 恢复竞态。
 
-因此 Provider 拆分必须是独立任务。建议触发线（属于 Gatu 的规划预算，不是官方指标）：
+#### client-root 静态依赖闭包
 
-- 第一阶段后，生产冷缓存 p75 中 `hydration → ClientRuntime ready` 仍超过约 500 ms，或占 `navigation → TopNav commit` 的 25% 以上；或
-- Slow 4G 下公开 market bootstrap 已开始甚至完成，但钱包/Privy chunk 仍让真实页面外框延迟超过约 3 秒；并且
-- bundle/network trace 明确证明 Privy、SmartWallets、Wagmi 位于公共页面外框的关键链，预加载和 chunk 调整不足以解决。
+`analyze-client-root-deps.mjs` 从 production 输出的 `client-root-*.js` 出发，解析本地静态 ESM import（故意排除 `import()`）并对实际 chunk 做 `gzipSync`。正式 production 闭包为 15 个 chunk、44 条边、`1,197,652 B` gzip。为获得模块级归因，同源 analyze build 产物为 `1,198,272 B`，只因 source-map/build metadata 相差 `620 B`（`0.052%`）。
 
-若达到触发线，再分步设计：
+归因将每个 chunk 的实际 gzip 按 visualizer 的单模块 gzip 权重分配，并用 largest-remainder 在每个 chunk 内精确回收到实际字节数；15/15 chunk 均命中，最终 `1,198,272 / 1,198,272 B` 对账，无 unallocated 或 warning。`direct` 只计包自身模块，`inclusive` 还计其闭包内静态子依赖；子树共享 viem、router、UI 等模块，所以各行不能相加。
+
+| 子树 | direct gzip | direct 占比 | inclusive gzip | inclusive 占比 |
+| --- | ---: | ---: | ---: | ---: |
+| `@privy-io/react-auth` | 90,606 B | 7.56% | 744,577 B | 62.14% |
+| smart-wallets | 494 B | 0.04% | 337,483 B | 28.16% |
+| `@privy-io/wagmi` | 946 B | 0.08% | 731,126 B | 61.02% |
+| WalletConnect | 67,349 B | 5.62% | 138,347 B | 11.55% |
+| 密码学库集合 | 34,382 B | 2.87% | 34,569 B | 2.88% |
+| `@gatu/hl-react` | 24,062 B | 2.01% | 265,158 B | 22.13% |
+| 钱包五组去重并集 | — | — | 768,615 B | 64.14% |
+
+钱包五组 inclusive 朴素相加为 `1,986,102 B`，去重后只有 `768,615 B`；实际决策使用后者。闭包的两个大块是 `pwa-install-*.js` `583,168 B` gzip（48.67%）和 `vendor-tanstack-router-*.js` `360,056 B`（30.05%）。前者名称只是 Rollup 选的 chunk 名，不代表 583 KB 都属于 PWA 业务；模块归因显示其中 `577,931 B`（99.10%）属于上述去重钱包依赖并集。
+
+分析工具还暴露了一个可复现的 tooling 问题：`package.json` 当前的 `ANALYZE=true lingui compile && ... vite build` 只把 `ANALYZE` 传给了 Lingui，Vite 看不到该变量；即使手动把变量传给 Vite，顶层 visualizer 报告也会被后续 Nitro/server build 覆写。本轮仅在干净 worktree 中临时将 visualizer 限定到 Vite `client` environment 获取证据，随后回退该临时配置；没有把分析开关或 source map 带进 production bundle。后续应单独修复 `build:analyze`，不应把这个 tooling 修复与 Provider 重构混合。
+
+#### Slow 4G 冷缓存资源瀑布
+
+CDP 对 `/trade/xyz%3ACXMT` 的一次 production slow4g-cold 采样捕获了 15/15 个闭包 chunk，按 `Network.loadingFinished` 排序如下。“传输字节”是 CDP `encodedDataLength`，与构建期 gzip 口径不同。
+
+| 完成 ms | chunk | 传输字节 |
+| ---: | --- | ---: |
+| 682.10 | `vendor-tanstack-query-*` | 13,070 |
+| 1,457.45 | `vendor-icons-*` | 40,757 |
+| 2,218.53 | `vendor-base-ui-*` | 94,082 |
+| 3,164.12 | `vendor-tanstack-router-*` | 281,264 |
+| 3,487.39 | `deposit-execution-state-*` | 4,287 |
+| 3,493.26 | `use-mobile-*` | 3,442 |
+| 3,562.16 | `client-root-*` | 8,789 |
+| 3,652.48 | `use-global-settings-store-*` | 12,894 |
+| 3,808.53 | `use-pending-order-store-*` | 7,362 |
+| 3,862.17 | `use-pending-twap-store-*` | 4,536 |
+| 3,876.79 | `bundler-*` | 10,125 |
+| 3,907.27 | `portfolio-margin-*` | 3,496 |
+| 4,073.77 | `use-email-embedded-wallet-*` | 36,664 |
+| 4,116.92 | `wagmi-*` | 8,038 |
+| 9,193.64 | `pwa-install-*` | 418,534 |
+
+15 个 chunk 合计传输 `947,340 B`，15/15 的 `isLinkPreload` 都是 false。`client-root` 文件在 `3,562.16 ms` 完成，其闭包最后的钱包主导 chunk 在 `9,193.64 ms` 才完成，之后 client-root 模块信号为 `9,261.60 ms`、ClientRuntime ready 为 `9,303.40 ms`。因此 phase-0 看到的约 5.7 秒窗口可分成：
+
+- 必需静态依赖下载尾部 `5,631.48 ms`；
+- 全部下载后到 client-root 模块信号仅 `67.96 ms`，其中 renderer-main busy `57.01 ms`（83.89%），主要 `EvaluateModule` 片段为 `52.37 ms`。
+
+这是明确的下载受限，不是 5.7 秒的 JavaScript 连续解析/求值。`pwa-install-*` 自身占观察闭包传输字节的 44.18% 并决定下载尾部。为它增加 modulepreload 可能改变排队顺序，但在同一 1.6 Mbps 预算下不会删除这 418 KB，还可能抢占 hydration/router 带宽；只改 chunk 名或 manualChunks 而保留同一静态 import 边，也不会缩短必需字节关键链。
+
+#### normal-cold 固定激活成本
+
+一次带 source map 的 normal-cold CPU profile 使用同一 `/trade/xyz%3ACXMT` 启动路径。探针观察到的原始 `hydration → ClientRuntime ready` 为 `367.10 ms`，其中 React DevTools commit 探针自身占 `57.25 ms`；扣除后为 `309.79 ms`，与正式矩阵 `306.5 ms` median 一致。该 `309.79 ms` 中 `243.63 ms`（78.64%）是 V8 idle/scheduler/async wait，应用活跃 CPU 只有 `66.17 ms`，其中 78.78% 可映射回源码。
+
+| 活跃 CPU 归属 | self time | 占应用活跃 CPU |
+| --- | ---: | ---: |
+| mapped other | 19.38 ms | 29.28% |
+| React reconciliation | 17.84 ms | 26.95% |
+| Hyperliquid + Markets | 8.25 ms | 12.47% |
+| V8 program/root | 7.46 ms | 11.27% |
+| TanStack 其他路径 | 4.46 ms | 6.74% |
+| Privy react-auth | 1.46 ms | 2.20% |
+| client-root orchestration | 0.75 ms | 1.13% |
+
+`hl-rq-cache-v1` 在该次启动前后各读取一次，值均为空且观测 duration 均为 `0 ms`，没有 PersistQuery 恢复主导 300 ms 的证据。钱包归属中只有 Privy react-auth 获得 `1.46 ms`（2.20%）leaf sample，Wagmi 和 smart-wallets 在本次 500 µs 采样中没有 leaf sample；“没有样本”不等于严格的零成本，但足以否定它们主导这 300 ms 窗口的说法。它主要是整棵 provider + route 树的 React concurrent 激活与调度等待；profile 能将一部分活跃成本定位到 reconciliation，但不能把“provider 树深度”单独从其中分离为一个可加数字。
+
+#### 修订后的触发线与判定
+
+以下是 Gatu 内部规划预算，不是 Web 官方指标：
+
+1. **(a) 固定激活占比**：阶段 1 后 normal-cold 的 `hydration → ClientRuntime ready` 超过 500 ms，或占 `navigation → TopNav commit` 25% 以上。判定：**命中**。绝对值约 306.5 ms 未命中，但 9/9 正常冷缓存样本的占比都为 64.96–77.23%；
+2. **(b) 钱包字节关键链**：去重钱包依赖子树达到 client-root 必需静态闭包 gzip 的 40%，或钱包主导 chunk 达到 Slow 4G 观察闭包传输字节的 40%。判定：**命中**，两个值分别为 64.14% 和 44.18%。旧措辞“公开 bootstrap 已开始，但钱包 chunk 拖住外框”已删除：当前 `MarketsProvider` 就在 client-root 内，market bootstrap 与外框被同一静态链共同延迟，无法观测前者先于钱包链开始；
+3. **(c) 预加载/chunk 不足**：Slow 4G 下 client-root 文件完成后的必需下载尾部超过 3 秒，且必需窗口中下载占比超过 80%，同时静态图证明钱包字节仍是必需 import。判定：**命中**，下载尾部为 5.63 秒，占 `client-root file finish → module complete` 的 98.81%，钱包去重并集占闭包 64.14%。
+
+三条触发线现均正式命中。结论是启动阶段 2 的 Provider 兼容拆分设计，而不是先单独上 preload 或只改 manualChunks。preload 可以作为后续边界完成后的对照实验，chunk 切分也应用来确保钱包字节真正从 public shell 必需链上消失，而不是只更换输出文件名。
+
+实施仍必须是独立任务，并按以下顺序：
 
 1. 在 `@gatu/hl-react` 内拆兼容上下文：
    - `HyperliquidTransportContext`：env、info、subscription、唯一 store；
@@ -531,6 +643,6 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 
 ## 最终决策
 
-阶段 0 与阶段 1 已完成。阶段 1 修正了“runtime 已可用后仍显示假导航”的视觉语义，同时保留 SSR、i18n、精确市场和钱包安全门槛；schema v2 smoke 也确认 TopNav 已早于 MainWorkspace 提交。但它没有改变 client-root/runtime 的依赖关键链，不能单独解决 Slow 4G 下真实外框整体出现仍偏晚的问题。
+阶段 0 和阶段 1 已完成，阶段 1 后 clean production 的 schema v2 完整基线已取代早期 1/12 场景 smoke。阶段 1 将 normal-cold TopNav pooled median 提前了 218 ms，并保持单一 WebSocket、精确 `xyz:CXMT` 订阅与 loading/ready 互斥，但没有改变 client-root/runtime 依赖链。
 
-阶段 2 的 Provider 拆分触发线尚未正式满足。下一步应先做 client-root 静态依赖图和资源关键链归因，并在阶段 1 后以 clean production p75 复测，再决定是预加载/拆 chunk，还是设计 transport/session Provider 边界；本轮数据不授权直接改 Provider。Hyperliquid 官方站证明了钱包不应阻塞公共页面外框，但它自己的空白首屏和资源关键链也证明：架构并行不等于首屏体验已经优秀。
+静态闭包、Slow 4G 瀑布和 CPU profile 给出了相互一致的结论：正常网络的约 306 ms 固定成本主要是 React concurrent 激活/调度等待，而 Slow 4G 的约 5.7 秒窗口主要是包含钱包子树的静态闭包下载，不是市场符号解析或长时间 JavaScript 求值。因此正式决策从“继续观察”更新为“启动 Provider transport/session 兼容拆分的独立设计与实施任务”。本轮仅建立证据和触发决策，未修改任何运行时 Provider 结构。
