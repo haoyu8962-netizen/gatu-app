@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
 import { createHistoryRecoveryController } from "@/lib/chart/history-recovery";
@@ -13,6 +13,7 @@ import {
 	getChartSymbolInfo,
 	isChartMarketSymbol,
 } from "@/lib/chart/market-symbol";
+import { coinFromSymbolName } from "@/lib/chart/symbol";
 import {
 	buildChartOverrides,
 	colorToHex,
@@ -45,7 +46,7 @@ import {
 	DEFAULT_CHART_THEME,
 	TIMEZONE,
 } from "./constants";
-import { type ChartDatafeed, createDatafeed } from "./datafeed";
+import { type ChartDatafeed, createDatafeed, type HistoryRequestIdentity } from "./datafeed";
 import { useTradingViewOverlayLines } from "./use-tradingview-overlay-lines";
 
 const CHART_READY_TIMEOUT_MS = 15_000;
@@ -54,6 +55,11 @@ const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
 const SYMBOL_SWITCH_MAX_RETRIES = 1;
 const THEME_SWITCH_TIMEOUT_MS = 5_000;
 const LOCALE_STATE_SAVE_TIMEOUT_MS = 2_000;
+
+interface HistoryRateLimitState extends HistoryRequestIdentity {
+	phase: "recovering" | "waiting";
+	retryAt: number;
+}
 
 function cloneChartState(state: object): object | null {
 	try {
@@ -118,6 +124,10 @@ export function TradingViewChart({
 	const pendingRealtimeResetRef = useRef(false);
 	const failedHistoryStreamKeyRef = useRef<string | null>(null);
 	const hasLoadedHistoryRef = useRef(false);
+	const historyRecoveryExhaustedRef = useRef(false);
+	const historyTargetKeyRef = useRef(`${widgetSymbol}\u0000${interval}`);
+	const historyTargetGenerationRef = useRef(0);
+	const latestHistoryRequestRef = useRef<HistoryRequestIdentity | null>(null);
 	const wsReconnectGenerationRef = useRef(0);
 	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const targetSymbolRef = useRef(symbol);
@@ -165,6 +175,7 @@ export function TradingViewChart({
 		targetInterval: string;
 		intervalSequence: number;
 		historyRebuild: boolean;
+		historyTargetGeneration: number | null;
 		localeRebuild: boolean;
 		overlayRebuild: boolean;
 		themeRebuild: boolean;
@@ -204,16 +215,59 @@ export function TradingViewChart({
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [retryNonce, setRetryNonce] = useState(0);
 	const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+	const [historyRateLimit, setHistoryRateLimit] = useState<HistoryRateLimitState | null>(null);
+	const historyRateLimitRef = useRef<HistoryRateLimitState | null>(null);
 	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
-	targetSymbolRef.current = widgetSymbol;
-	targetThemeRef.current = theme;
-	activeRef.current = active;
-	overlayLinesRef.current = overlayLines;
-	if (market) {
-		for (const key of getChartMarketKeys(market)) {
-			marketBySymbolRef.current.set(getChartMarketLookupKey(key), market);
+
+	useLayoutEffect(() => {
+		targetThemeRef.current = theme;
+		activeRef.current = active;
+		overlayLinesRef.current = overlayLines;
+	}, [theme, active, overlayLines]);
+
+	function classifyHistoryRequest(
+		historyStreamKey?: string,
+		identity?: HistoryRequestIdentity,
+	): "current" | "superseded" | "stale" {
+		if (!identity) return "current";
+		if (identity.targetGeneration !== historyTargetGenerationRef.current) return "stale";
+		if (historyStreamKey && identity.streamKey !== historyStreamKey) return "stale";
+
+		const latest = latestHistoryRequestRef.current;
+		if (latest) {
+			if (identity.streamGeneration < latest.streamGeneration) return "stale";
+			if (identity.streamGeneration === latest.streamGeneration) {
+				if (identity.streamKey !== latest.streamKey) return "stale";
+				if (identity.requestId < latest.requestId) return "superseded";
+			}
+			if (identity.streamGeneration > latest.streamGeneration) {
+				failedHistoryStreamKeyRef.current = null;
+				hasLoadedHistoryRef.current = false;
+				historyRateLimitRef.current = null;
+				setHistoryRateLimit(null);
+				resetHistoryRecoveryRef.current();
+				resumeReadyWatchdogRef.current();
+			}
 		}
+
+		latestHistoryRequestRef.current = identity;
+		return "current";
 	}
+
+	const activateHistoryTarget = useCallback((nextSymbol: string, nextInterval: string) => {
+		const nextTargetKey = `${nextSymbol}\u0000${nextInterval}`;
+		if (historyTargetKeyRef.current === nextTargetKey) return;
+		historyTargetKeyRef.current = nextTargetKey;
+		historyTargetGenerationRef.current += 1;
+		latestHistoryRequestRef.current = null;
+		failedHistoryStreamKeyRef.current = null;
+		hasLoadedHistoryRef.current = false;
+		historyRateLimitRef.current = null;
+		setHistoryRateLimit(null);
+		resetHistoryRecoveryRef.current();
+		datafeedRef.current?.invalidateHistoryRequests?.();
+		resumeReadyWatchdogRef.current();
+	}, []);
 
 	const clearSymbolSwitchTimeout = () => {
 		if (symbolSwitchTimeoutRef.current) {
@@ -671,7 +725,7 @@ export function TradingViewChart({
 			return;
 		}
 		const shouldRebuild =
-			request.historyRebuild ||
+			(request.historyRebuild && request.historyTargetGeneration === historyTargetGenerationRef.current) ||
 			request.overlayRebuild ||
 			request.themeRebuild ||
 			(request.localeRebuild && targetLocaleRef.current !== appliedLocaleRef.current);
@@ -689,7 +743,7 @@ export function TradingViewChart({
 		pendingChartStateRef.current = state && sourceMatchesTarget ? cloneChartState(state) : null;
 		pendingChartStateSymbolRef.current = pendingChartStateRef.current ? (request.sourceSymbol ?? null) : null;
 		pendingChartIntervalRef.current = currentInterval;
-		if (request.historyRebuild) {
+		if (request.historyRebuild && request.historyTargetGeneration === historyTargetGenerationRef.current) {
 			retryHistoryWidgetRef.current();
 			return;
 		}
@@ -733,7 +787,10 @@ export function TradingViewChart({
 		if (widgetRef.current !== widget) return;
 		const pendingRequest = stateSaveRef.current;
 		if (pendingRequest?.widget === widget) {
-			if (reason === "history") pendingRequest.historyRebuild = true;
+			if (reason === "history") {
+				pendingRequest.historyRebuild = true;
+				pendingRequest.historyTargetGeneration = historyTargetGenerationRef.current;
+			}
 			if (reason === "locale") pendingRequest.localeRebuild = true;
 			if (reason === "overlay") pendingRequest.overlayRebuild = true;
 			if (reason === "theme") pendingRequest.themeRebuild = true;
@@ -751,6 +808,7 @@ export function TradingViewChart({
 			targetInterval: targetIntervalRef.current,
 			intervalSequence: intervalSequenceRef.current,
 			historyRebuild: reason === "history",
+			historyTargetGeneration: reason === "history" ? historyTargetGenerationRef.current : null,
 			localeRebuild: reason === "locale",
 			overlayRebuild: reason === "overlay",
 			themeRebuild: reason === "theme",
@@ -774,7 +832,9 @@ export function TradingViewChart({
 			const request = stateSaveRef.current;
 			if (request) {
 				request.localeRebuild = false;
-				if (!request.overlayRebuild && !request.themeRebuild) clearStateSave(request.widget, request.sequence);
+				if (!request.historyRebuild && !request.overlayRebuild && !request.themeRebuild) {
+					clearStateSave(request.widget, request.sequence);
+				}
 			}
 			return;
 		}
@@ -867,6 +927,7 @@ export function TradingViewChart({
 					callback: (sourceId: EntityId, eventType: DrawingEventType) => void;
 			  }
 			| undefined;
+		let intervalChangeSubscriptionCleanup: (() => void) | undefined;
 		chartReadyRef.current = false;
 
 		const clearReadyWatchdog = () => {
@@ -906,6 +967,40 @@ export function TradingViewChart({
 			if (!subscription) return;
 			try {
 				subscription.widget.unsubscribe("drawing_event", subscription.callback);
+			} catch {}
+		};
+
+		const clearIntervalChangeSubscription = () => {
+			const cleanup = intervalChangeSubscriptionCleanup;
+			intervalChangeSubscriptionCleanup = undefined;
+			try {
+				cleanup?.();
+			} catch {}
+		};
+
+		const subscribeToIntervalChanges = (widget: IChartingLibraryWidget) => {
+			clearIntervalChangeSubscription();
+			try {
+				const subscription = widget.activeChart().onIntervalChanged();
+				const callback = (nextInterval: ResolutionString) => {
+					if (
+						disposed ||
+						widgetEpochRef.current !== widgetEpoch ||
+						widgetRef.current !== widget ||
+						!isChartSymbolApplied(getActiveChartSymbol(widget), targetSymbolRef.current)
+					) {
+						return;
+					}
+					const intervalValue = String(nextInterval);
+					if (targetIntervalRef.current === intervalValue) return;
+					targetIntervalRef.current = intervalValue;
+					appliedIntervalRef.current = intervalValue;
+					intervalSequenceRef.current += 1;
+					pendingChartIntervalRef.current = null;
+					activateHistoryTarget(targetSymbolRef.current, intervalValue);
+				};
+				subscription.subscribe(null, callback);
+				intervalChangeSubscriptionCleanup = () => subscription.unsubscribe(null, callback);
 			} catch {}
 		};
 
@@ -952,6 +1047,7 @@ export function TradingViewChart({
 				overlayDisableNextWidgetRef.current = true;
 			}
 			clearDrawingEventSubscription();
+			clearIntervalChangeSubscription();
 			overlayControllerRef.current?.dispose();
 			clearOverlayRetry();
 			const datafeed = datafeedRef.current;
@@ -970,6 +1066,9 @@ export function TradingViewChart({
 			pendingRealtimeResetRef.current = false;
 			failedHistoryStreamKeyRef.current = null;
 			hasLoadedHistoryRef.current = false;
+			latestHistoryRequestRef.current = null;
+			historyRateLimitRef.current = null;
+			if (!disposed) setHistoryRateLimit(null);
 			if (resetHistoryRecovery) resetHistoryRecoveryRef.current();
 			scheduledDataResetWidgetRef.current = null;
 			appliedSymbolRef.current = null;
@@ -1005,7 +1104,15 @@ export function TradingViewChart({
 				chartReadyRef.current &&
 				canRunRealtimeReset(),
 			onExhausted: () => {
-				if (!hasLoadedHistoryRef.current) handleFinalFailure("history-recovery-exhausted");
+				historyRecoveryExhaustedRef.current = true;
+				if (!hasLoadedHistoryRef.current) {
+					handleFinalFailure("history-recovery-exhausted");
+					return;
+				}
+				pendingDataResetRef.current = false;
+				historyRateLimitRef.current = null;
+				setHistoryRateLimit(null);
+				resumeReadyWatchdogRef.current();
 			},
 			onRetry: () => {
 				pendingDataResetRef.current = false;
@@ -1021,13 +1128,17 @@ export function TradingViewChart({
 		});
 		flushHistoryRecoveryRef.current = historyRecovery.flush;
 		reportDataResetFailureRef.current = historyRecovery.handleFailure;
-		resetHistoryRecoveryRef.current = historyRecovery.reset;
+		resetHistoryRecoveryRef.current = () => {
+			historyRecoveryExhaustedRef.current = false;
+			historyRecovery.reset();
+		};
 		retryHistoryWidgetRef.current = () => void initWidget(0, true);
 
 		const shouldPauseReadyWatchdog = () =>
 			!activeRef.current ||
 			document.visibilityState === "hidden" ||
 			!navigator.onLine ||
+			historyRateLimitRef.current !== null ||
 			getCandleGateRetryAt() !== null;
 
 		const retryOrFail = (reason: string, automaticRetryCount: number) => {
@@ -1132,7 +1243,6 @@ export function TradingViewChart({
 			}
 			const retryAt = getCandleGateRetryAt();
 			if (retryAt !== null) {
-				pendingDataResetRef.current = true;
 				candleGateResumeTimer = setTimeout(
 					() => {
 						candleGateResumeTimer = null;
@@ -1174,7 +1284,10 @@ export function TradingViewChart({
 				const initialSymbol = targetSymbolRef.current;
 				const restoredInterval = pendingChartIntervalRef.current;
 				const initialInterval = restoredInterval ?? targetIntervalRef.current;
-				if (restoredInterval) targetIntervalRef.current = restoredInterval;
+				if (restoredInterval) {
+					targetIntervalRef.current = restoredInterval;
+					activateHistoryTarget(initialSymbol, restoredInterval);
+				}
 				const savedChartState =
 					pendingChartStateRef.current &&
 					pendingChartStateSymbolRef.current !== null &&
@@ -1187,25 +1300,85 @@ export function TradingViewChart({
 					getPriceScale: getSelectedMarketPriceScale,
 					getSymbolInfo: getSelectedMarketSymbolInfo,
 					isKnownCoin: isSelectedMarketCoin,
+					getHistoryTargetGeneration: () => historyTargetGenerationRef.current,
+					getHistoryTarget: () => {
+						const targetSymbol = targetSymbolRef.current;
+						const targetMarket = getMarketForChartSymbol(targetSymbol, targetSymbol);
+						return {
+							coin: targetMarket?.name ?? coinFromSymbolName(targetSymbol),
+							resolution: targetIntervalRef.current as ResolutionString,
+						};
+					},
 					onRealtimeReset: () => requestDataResetRef.current(),
 					requestRealtimeReset: () => requestRealtimeResetRef.current(),
-					onHistoryError: (_error, historyStreamKey) => {
+					onHistoryError: (_error, historyStreamKey, identity) => {
 						if (datafeedRef.current !== datafeed) return;
+						if (classifyHistoryRequest(historyStreamKey, identity) !== "current") return;
+						if (historyRecoveryExhaustedRef.current) resetHistoryRecoveryRef.current();
 						failedHistoryStreamKeyRef.current = historyStreamKey ?? null;
-						if (getCandleGateRetryAt() !== null) {
+						const limitedRequest = historyRateLimitRef.current;
+						if (
+							identity &&
+							limitedRequest &&
+							limitedRequest.targetGeneration === identity.targetGeneration &&
+							limitedRequest.streamGeneration === identity.streamGeneration &&
+							limitedRequest.streamKey === identity.streamKey &&
+							identity.requestId >= limitedRequest.requestId
+						) {
+							const recoveringState = {
+								...limitedRequest,
+								requestId: identity.requestId,
+								phase: "recovering" as const,
+							};
+							historyRateLimitRef.current = recoveringState;
+							setHistoryRateLimit(recoveringState);
 							pendingDataResetRef.current = true;
-							historyRecovery.handleFailure();
-							return;
 						}
 						historyRecovery.handleFailure();
 					},
-					onHistorySuccess: (historyStreamKey) => {
+					onHistoryRateLimit: (error, historyStreamKey, identity) => {
 						if (datafeedRef.current !== datafeed) return;
+						if (classifyHistoryRequest(historyStreamKey, identity) !== "current") return;
+						if (historyRecoveryExhaustedRef.current) resetHistoryRecoveryRef.current();
+						const limitedRequest = historyRateLimitRef.current;
+						if (
+							limitedRequest &&
+							limitedRequest.targetGeneration === identity.targetGeneration &&
+							limitedRequest.streamGeneration === identity.streamGeneration &&
+							limitedRequest.streamKey === identity.streamKey &&
+							limitedRequest.requestId > identity.requestId
+						) {
+							return;
+						}
+						const waitingState = { ...identity, phase: "waiting" as const, retryAt: error.retryAt };
+						historyRateLimitRef.current = waitingState;
+						setHistoryRateLimit(waitingState);
+						pauseReadyWatchdog();
+					},
+					onHistorySuccess: (historyStreamKey, identity) => {
+						if (datafeedRef.current !== datafeed) return;
+						const requestState = classifyHistoryRequest(historyStreamKey, identity);
+						if (requestState === "stale") return;
 						hasLoadedHistoryRef.current = true;
+						if (requestState === "superseded") return;
+						const limitedRequest = historyRateLimitRef.current;
+						if (
+							identity &&
+							limitedRequest &&
+							limitedRequest.targetGeneration === identity.targetGeneration &&
+							limitedRequest.streamGeneration === identity.streamGeneration &&
+							limitedRequest.streamKey === identity.streamKey &&
+							identity.requestId >= limitedRequest.requestId
+						) {
+							historyRateLimitRef.current = null;
+							setHistoryRateLimit(null);
+							handlePageLifecycleChange();
+						}
 						if (failedHistoryStreamKeyRef.current !== null && historyStreamKey !== failedHistoryStreamKeyRef.current) {
 							return;
 						}
 						failedHistoryStreamKeyRef.current = null;
+						historyRecoveryExhaustedRef.current = false;
 						historyRecovery.handleSuccess();
 					},
 				});
@@ -1237,7 +1410,6 @@ export function TradingViewChart({
 					...(savedChartState ? { saved_data: savedChartState } : {}),
 				});
 				widgetRef.current = widget;
-				if (getCandleGateRetryAt() !== null) pendingDataResetRef.current = true;
 				if (overlayDisableNextWidgetRef.current) {
 					overlayDisableNextWidgetRef.current = false;
 					overlayDisabledWidgetRef.current = widget;
@@ -1270,6 +1442,7 @@ export function TradingViewChart({
 					pendingChartIntervalRef.current = null;
 					setIsInitializing(false);
 					setInitError(null);
+					subscribeToIntervalChanges(widget);
 					subscribeToDrawingEvents(widget);
 					const activeSymbol = getActiveChartSymbol(widget);
 					if (isChartSymbolApplied(activeSymbol, targetSymbolRef.current)) {
@@ -1317,16 +1490,26 @@ export function TradingViewChart({
 	}, [retryNonce]);
 
 	useLayoutEffect(() => {
-		if (intervalPropRef.current === interval) return;
-		intervalPropRef.current = interval;
-		targetIntervalRef.current = interval;
-		intervalSequenceRef.current += 1;
-		pendingChartIntervalRef.current = null;
-		applySymbolRef.current();
-	}, [interval]);
+		const symbolChanged = targetSymbolRef.current !== widgetSymbol;
+		targetSymbolRef.current = widgetSymbol;
+		if (market) {
+			for (const key of getChartMarketKeys(market)) {
+				marketBySymbolRef.current.set(getChartMarketLookupKey(key), market);
+			}
+		}
+		const intervalChanged = intervalPropRef.current !== interval;
+		if (intervalChanged) {
+			intervalPropRef.current = interval;
+			targetIntervalRef.current = interval;
+			intervalSequenceRef.current += 1;
+			pendingChartIntervalRef.current = null;
+		}
+		activateHistoryTarget(widgetSymbol, targetIntervalRef.current);
+		if (intervalChanged && !symbolChanged) applySymbolRef.current();
+	}, [widgetSymbol, market, interval, activateHistoryTarget]);
 
 	useEffect(() => {
-		targetSymbolRef.current = widgetSymbol;
+		if (targetSymbolRef.current !== widgetSymbol) return;
 		if (!active) {
 			pauseReadyWatchdogRef.current();
 			// A cancelled in-flight setSymbol may still land inside the hidden iframe, so the
@@ -1351,7 +1534,6 @@ export function TradingViewChart({
 	});
 
 	useLayoutEffect(() => {
-		targetThemeRef.current = theme;
 		applyThemeRef.current(theme);
 	}, [theme]);
 
@@ -1387,12 +1569,20 @@ export function TradingViewChart({
 					{t`Loading...`}
 				</output>
 			)}
-			{rateLimitedUntil !== null && !isInitializing && !initError && (
+			{(rateLimitedUntil !== null || historyRateLimit !== null) && !isInitializing && !initError && (
 				<output
 					data-chart-rate-limited
 					aria-live="polite"
-					className="pointer-events-none absolute bottom-2 left-2 z-20 rounded-xs border border-stroke-weak bg-overlay px-2 py-1 text-2xs font-medium text-fg-muted"
+					className={cn(
+						"pointer-events-none absolute z-20 text-xs font-medium text-fg-muted",
+						historyRateLimit?.phase === "recovering" || !hasLoadedHistoryRef.current
+							? "inset-0 flex items-center justify-center gap-2 bg-background px-4 text-center"
+							: "bottom-2 left-2 rounded-xs border border-stroke-weak bg-overlay px-2 py-1 text-2xs",
+					)}
 				>
+					{(historyRateLimit?.phase === "recovering" || !hasLoadedHistoryRef.current) && (
+						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
+					)}
 					{t`Live chart data is rate limited. Retrying shortly.`}
 				</output>
 			)}

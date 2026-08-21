@@ -2,7 +2,7 @@ import type { CandleWsEvent } from "@nktkas/hyperliquid";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDatafeed } from "@/components/trade/chart/datafeed";
 import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
-import { resetCandleGates } from "@/lib/chart/candle-gate";
+import { CANDLE_GATE_BACKOFF_MS, resetCandleGates } from "@/lib/chart/candle-gate";
 import { getChartMarketKeys, getChartMarketLookupKey, getChartSymbolInfo } from "@/lib/chart/market-symbol";
 import { resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore } from "@/lib/chart/store";
@@ -282,12 +282,12 @@ describe("TradingView datafeed", () => {
 		expect(subscriptionClient.candle).not.toHaveBeenCalled();
 	});
 
-	it("returns older bars when the requested range is empty but older candles exist", async () => {
+	it("widens one request to prioritize countBack when the requested range is empty", async () => {
 		const recentFromSeconds = Date.UTC(2026, 5, 27) / 1000;
 		const recentToSeconds = Date.UTC(2026, 5, 28) / 1000;
 		const olderBarTime = recentFromSeconds * 1_000 - 2 * 60 * 60 * 1_000;
 		const previousBarTime = recentFromSeconds * 1_000 - 60 * 60 * 1_000;
-		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([
+		infoClient.candleSnapshot.mockResolvedValueOnce([
 			{
 				T: olderBarTime + 3_599_999,
 				c: "2100.1",
@@ -327,7 +327,7 @@ describe("TradingView datafeed", () => {
 			datafeed.getBars(
 				symbol,
 				"60" as ResolutionString,
-				{ countBack: 1, firstDataRequest: true, from: recentFromSeconds, to: recentToSeconds },
+				{ countBack: 26, firstDataRequest: true, from: recentFromSeconds, to: recentToSeconds },
 				(bars, meta) => resolve({ bars, meta }),
 				reject,
 			);
@@ -335,117 +335,94 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 		const result = await resultPromise;
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			1,
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
 			expect.objectContaining({
 				coin: "@235",
 				interval: "1h",
-				startTime: recentFromSeconds * 1000,
+				startTime: olderBarTime,
 				endTime: recentToSeconds * 1000,
 			}),
 		);
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({
-				coin: "@235",
-				interval: "1h",
-				startTime: recentFromSeconds * 1000 - 100 * 60 * 60 * 1_000,
-				endTime: recentFromSeconds * 1000,
-			}),
-		);
-		expect(result.bars).toEqual([expect.objectContaining({ close: 2110.1, time: previousBarTime })]);
+		expect(result.bars).toEqual([
+			expect.objectContaining({ close: 2100.1, time: olderBarTime }),
+			expect.objectContaining({ close: 2110.1, time: previousBarTime }),
+		]);
 		expect(result.meta).toEqual({ noData: false });
 
 		vi.useRealTimers();
 	});
 
-	it("backfills a partial non-initial response, deduplicates by time, and keeps the latest countBack bars", async () => {
-		const dayMs = 24 * 60 * 60 * 1000;
+	it("returns a deduplicated countBack window from one widened request", async () => {
+		const hourMs = 60 * 60 * 1000;
 		const nowMs = Date.UTC(2026, 5, 28);
-		const fromMs = nowMs - dayMs;
-		const oldestTime = fromMs - 3 * dayMs;
-		const duplicateTime = fromMs - 2 * dayMs;
-		const previousTime = fromMs - dayMs;
-		const currentTimeA = fromMs + 12 * 60 * 60 * 1000;
-		const currentTimeB = currentTimeA + 60 * 60 * 1000;
-		infoClient.candleSnapshot
-			.mockResolvedValueOnce([
-				{
-					T: currentTimeA + 3_599_999,
-					c: "20",
-					h: "20",
-					i: "1h",
-					l: "20",
-					n: 1,
-					o: "20",
-					s: "PARTIAL",
-					t: currentTimeA,
-					v: "1",
-				},
-				{
-					T: currentTimeB + 3_599_999,
-					c: "21",
-					h: "21",
-					i: "1h",
-					l: "21",
-					n: 1,
-					o: "21",
-					s: "PARTIAL",
-					t: currentTimeB,
-					v: "1",
-				},
-			])
-			.mockResolvedValueOnce([
-				{
-					T: oldestTime + 3_599_999,
-					c: "9",
-					h: "9",
-					i: "1h",
-					l: "9",
-					n: 1,
-					o: "9",
-					s: "PARTIAL",
-					t: oldestTime,
-					v: "1",
-				},
-				{
-					T: duplicateTime + 3_599_999,
-					c: "10",
-					h: "10",
-					i: "1h",
-					l: "10",
-					n: 1,
-					o: "10",
-					s: "PARTIAL",
-					t: duplicateTime,
-					v: "1",
-				},
-				{
-					T: duplicateTime + 3_599_999,
-					c: "11",
-					h: "11",
-					i: "1h",
-					l: "11",
-					n: 1,
-					o: "11",
-					s: "PARTIAL",
-					t: duplicateTime,
-					v: "1",
-				},
-				{
-					T: previousTime + 3_599_999,
-					c: "12",
-					h: "12",
-					i: "1h",
-					l: "12",
-					n: 1,
-					o: "12",
-					s: "PARTIAL",
-					t: previousTime,
-					v: "1",
-				},
-			]);
+		const fromMs = nowMs - 2 * hourMs;
+		const oldestTime = nowMs - 4 * hourMs;
+		const duplicateTime = nowMs - 3 * hourMs;
+		const currentTimeA = fromMs;
+		const currentTimeB = fromMs + hourMs;
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: oldestTime + 3_599_999,
+				c: "9",
+				h: "9",
+				i: "1h",
+				l: "9",
+				n: 1,
+				o: "9",
+				s: "PARTIAL",
+				t: oldestTime,
+				v: "1",
+			},
+			{
+				T: duplicateTime + 3_599_999,
+				c: "10",
+				h: "10",
+				i: "1h",
+				l: "10",
+				n: 1,
+				o: "10",
+				s: "PARTIAL",
+				t: duplicateTime,
+				v: "1",
+			},
+			{
+				T: duplicateTime + 3_599_999,
+				c: "11",
+				h: "11",
+				i: "1h",
+				l: "11",
+				n: 1,
+				o: "11",
+				s: "PARTIAL",
+				t: duplicateTime,
+				v: "1",
+			},
+			{
+				T: currentTimeA + 3_599_999,
+				c: "20",
+				h: "20",
+				i: "1h",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "PARTIAL",
+				t: currentTimeA,
+				v: "1",
+			},
+			{
+				T: currentTimeB + 3_599_999,
+				c: "21",
+				h: "21",
+				i: "1h",
+				l: "21",
+				n: 1,
+				o: "21",
+				s: "PARTIAL",
+				t: currentTimeB,
+				v: "1",
+			},
+		]);
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
 				coin === "PARTIAL"
@@ -466,14 +443,12 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 		const bars = await resultPromise;
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({ startTime: fromMs - 100 * 60 * 60 * 1_000, endTime: fromMs }),
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({ startTime: oldestTime, endTime: nowMs }),
 		);
-		expect(bars.map((bar) => bar.time)).toEqual([duplicateTime, previousTime, currentTimeA, currentTimeB]);
-		expect(bars.some((bar) => bar.time === oldestTime)).toBe(false);
-		expect(bars[0]?.close).toBe(11);
+		expect(bars.map((bar) => bar.time)).toEqual([oldestTime, duplicateTime, currentTimeA, currentTimeB]);
+		expect(bars[1]?.close).toBe(11);
 		getCandleStore().getState().clearLastBar("PARTIAL:60");
 		datafeed.destroy();
 	});
@@ -521,10 +496,25 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
-	it("proves exhaustion before setting noData on a non-initial historical request", async () => {
+	it("uses one bounded probe to recover older bars across an empty history window", async () => {
 		const oldFromSeconds = Date.UTC(2026, 4, 1) / 1000;
 		const oldToSeconds = Date.UTC(2026, 4, 2) / 1000;
-		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+		const requestFromMs = oldToSeconds * 1_000 - 100 * 60 * 60 * 1_000;
+		const olderBarTime = requestFromMs - 60 * 60 * 1_000;
+		infoClient.candleSnapshot.mockResolvedValueOnce([]).mockResolvedValueOnce([
+			{
+				T: olderBarTime + 3_599_999,
+				c: "20",
+				h: "20",
+				i: "1h",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "@235",
+				t: olderBarTime,
+				v: "1",
+			},
+		]);
 
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
@@ -547,23 +537,20 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 		const result = await resultPromise;
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(3);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				startTime: requestFromMs,
+				endTime: oldToSeconds * 1_000,
+			}),
+		);
 		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
 			2,
-			expect.objectContaining({
-				startTime: oldFromSeconds * 1_000 - 200 * 60 * 60 * 1_000,
-				endTime: oldFromSeconds * 1_000,
-			}),
+			expect.objectContaining({ startTime: 0, endTime: requestFromMs }),
 		);
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			3,
-			expect.objectContaining({
-				startTime: 0,
-				endTime: oldFromSeconds * 1_000,
-			}),
-		);
-		expect(result.bars).toEqual([]);
-		expect(result.meta).toEqual({ noData: true });
+		expect(result.bars).toEqual([expect.objectContaining({ time: olderBarTime })]);
+		expect(result.meta).toEqual({ noData: false });
 
 		vi.useRealTimers();
 	});
@@ -671,67 +658,24 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
-	it("shares one timeout budget with the previous-bars fallback", async () => {
-		const datafeed = createDatafeed({
-			getSymbolInfo: (_symbolName, coin) =>
-				coin === "HYPE" ? { name: "HYPE-USDC", ticker: "HYPE", description: "HYPE-USDC", pricescale: 100 } : undefined,
-		});
-		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
-		vi.useFakeTimers({ now: Date.UTC(2026, 5, 28) });
-		infoClient.candleSnapshot
-			.mockImplementationOnce(
-				() => new Promise<[]>((resolve) => setTimeout(() => resolve([]), CHART_HISTORY_REQUEST_TIMEOUT_MS - 2_000)),
-			)
-			.mockReturnValueOnce(new Promise<[]>(() => {}));
-		const onResult = vi.fn();
-		const onError = vi.fn();
-
-		datafeed.getBars(
-			symbol,
-			"60" as ResolutionString,
-			{
-				countBack: 100,
-				firstDataRequest: true,
-				from: Date.UTC(2026, 5, 27) / 1_000,
-				to: Date.UTC(2026, 5, 28) / 1_000,
-			},
-			onResult,
-			onError,
-		);
-
-		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS - 2_000);
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
-		expect(onError).not.toHaveBeenCalled();
-
-		await vi.advanceTimersByTimeAsync(1_999);
-		expect(onError).not.toHaveBeenCalled();
-
-		await vi.advanceTimersByTimeAsync(1);
-		await vi.advanceTimersByTimeAsync(1);
-		expect(onError).toHaveBeenCalledWith("Chart history request timed out");
-		expect(onResult).not.toHaveBeenCalled();
-	});
-
-	it("returns partial main-range bars when the single fallback times out", async () => {
+	it("returns partial bars from the single countBack-prioritized request", async () => {
 		const nowMs = Date.UTC(2026, 5, 28);
-		const fromMs = nowMs - 24 * 60 * 60 * 1000;
+		const fromMs = nowMs - 2 * 60 * 60 * 1000;
 		const mainBarTime = fromMs + 60 * 60 * 1000;
-		infoClient.candleSnapshot
-			.mockResolvedValueOnce([
-				{
-					T: mainBarTime + 3_599_999,
-					c: "20",
-					h: "20",
-					i: "1h",
-					l: "20",
-					n: 1,
-					o: "20",
-					s: "PARTIALTIMEOUT",
-					t: mainBarTime,
-					v: "1",
-				},
-			])
-			.mockReturnValueOnce(new Promise<[]>(() => {}));
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: mainBarTime + 3_599_999,
+				c: "20",
+				h: "20",
+				i: "1h",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "PARTIALTIMEOUT",
+				t: mainBarTime,
+				v: "1",
+			},
+		]);
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
 				coin === "PARTIALTIMEOUT"
@@ -755,13 +699,21 @@ describe("TradingView datafeed", () => {
 			onResult,
 			onError,
 		);
-		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({
+				startTime: nowMs - 10 * 60 * 60 * 1000,
+				endTime: nowMs,
+			}),
+		);
 		expect(onResult).toHaveBeenCalledWith([expect.objectContaining({ time: mainBarTime, close: 20 })], {
 			noData: false,
 		});
+		expect(onError).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS);
+		expect(onResult).toHaveBeenCalledTimes(1);
 		expect(onError).not.toHaveBeenCalled();
 		getCandleStore().getState().clearLastBar("PARTIALTIMEOUT:60");
 		datafeed.destroy();
@@ -905,6 +857,53 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(5_000);
 	});
 
+	it("ignores stale realtime reset callbacks after the chart target changes", async () => {
+		let target = { coin: "OLD", resolution: "60" as ResolutionString };
+		const requestRealtimeReset = vi.fn();
+		const onRealtimeReset = vi.fn();
+		const oldReset = vi.fn();
+		const newReset = vi.fn();
+		const datafeed = createDatafeed({
+			getHistoryTarget: () => target,
+			requestRealtimeReset,
+			onRealtimeReset,
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "OLD" || coin === "NEW"
+					? { name: `${coin}-USDC`, ticker: coin, description: `${coin}-USDC`, pricescale: 100 }
+					: undefined,
+		});
+		const oldSymbol = await resolveDatafeedSymbol(datafeed, "OLD");
+		const newSymbol = await resolveDatafeedSymbol(datafeed, "NEW");
+		vi.useFakeTimers();
+
+		datafeed.subscribeBars(oldSymbol, "60" as ResolutionString, vi.fn(), "old-listener", oldReset);
+		await Promise.resolve();
+		await Promise.resolve();
+		const oldRecoveryReset = getCandleStore().getState().streams["OLD:1h"]?.listeners.get("old-listener")?.onResetCache;
+		expect(oldRecoveryReset).toBeTypeOf("function");
+
+		target = { coin: "NEW", resolution: "5" as ResolutionString };
+		oldRecoveryReset?.();
+		expect(datafeed.resetRealtimeCache()).toBe(false);
+		expect(requestRealtimeReset).not.toHaveBeenCalled();
+		expect(oldReset).not.toHaveBeenCalled();
+		expect(onRealtimeReset).not.toHaveBeenCalled();
+
+		datafeed.subscribeBars(newSymbol, "5" as ResolutionString, vi.fn(), "new-listener", newReset);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(datafeed.resetRealtimeCache()).toBe(true);
+		expect(newReset).toHaveBeenCalledOnce();
+		expect(oldReset).not.toHaveBeenCalled();
+		expect(onRealtimeReset).toHaveBeenCalledOnce();
+
+		datafeed.unsubscribeBars("old-listener");
+		datafeed.unsubscribeBars("new-listener");
+		await vi.advanceTimersByTimeAsync(5_000);
+		datafeed.destroy();
+	});
+
 	it("reports when TradingView has no realtime cache callback to reset", () => {
 		const onRealtimeReset = vi.fn();
 		const datafeed = createDatafeed({ onRealtimeReset });
@@ -914,7 +913,7 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
-	it("tries a bounded window before one exhaustive fallback when the first range is empty", async () => {
+	it("probes an empty window once and caches the confirmed history boundary", async () => {
 		const nowMs = Date.UTC(2026, 7, 11, 12);
 		const fromMs = nowMs - 60_000;
 		const datafeed = createDatafeed({
@@ -937,13 +936,13 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(3);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
 		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({ startTime: fromMs - 100 * 60_000, endTime: fromMs }),
+			1,
+			expect.objectContaining({ startTime: fromMs, endTime: nowMs }),
 		);
 		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			3,
+			2,
 			expect.objectContaining({ startTime: 0, endTime: fromMs }),
 		);
 		expect(onResult).toHaveBeenCalledWith([], { noData: true });
@@ -958,13 +957,13 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(3);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
 		expect(onResult).toHaveBeenLastCalledWith([], { noData: true });
 		expect(onError).not.toHaveBeenCalled();
 		datafeed.destroy();
 	});
 
-	it("sets noData only after an empty fallback reaches the start of history", async () => {
+	it("sets noData when the empty bounded request already reaches the start of history", async () => {
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
 				coin === "EMPTY"
@@ -984,15 +983,51 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			2,
-			expect.objectContaining({ startTime: 0, endTime: 30_000 }),
-		);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(expect.objectContaining({ startTime: 0, endTime: 60_000 }));
 		expect(onResult).toHaveBeenCalledWith([], { noData: true });
 	});
 
-	it("caps a countBack fallback at Hyperliquid's 5,000-candle history limit", async () => {
+	it("does not claim exhaustion when a raw candle falls on the exclusive request end", async () => {
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: 119_999,
+				c: "20",
+				h: "20",
+				i: "1m",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "EMPTY",
+				t: 60_000,
+				v: "1",
+			},
+		]);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "EMPTY"
+					? { name: "EMPTY-USDC", ticker: "EMPTY", description: "EMPTY-USDC", pricescale: 100 }
+					: undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "EMPTY");
+		vi.useFakeTimers();
+		const onResult = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"1" as ResolutionString,
+			{ countBack: 1, firstDataRequest: false, from: 30, to: 60 },
+			onResult,
+			vi.fn(),
+		);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(onResult).toHaveBeenCalledWith([], { noData: false });
+		datafeed.destroy();
+	});
+
+	it("caps the single countBack request at Hyperliquid's 5,000-candle history limit", async () => {
 		const nowMs = Date.UTC(2026, 7, 11, 12);
 		const mainBarTime = nowMs - 30_000;
 		infoClient.candleSnapshot.mockResolvedValueOnce([
@@ -1027,11 +1062,11 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
-			2,
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
 			expect.objectContaining({
-				startTime: nowMs - 60_000 - 4_999 * 60_000,
-				endTime: nowMs - 60_000,
+				startTime: nowMs - 4_999 * 60_000,
+				endTime: nowMs + 60_000,
 			}),
 		);
 	});
@@ -1076,6 +1111,67 @@ describe("TradingView datafeed", () => {
 		expect(cachedBar?.close).toBe(12);
 		expect(cachedBar).not.toBe(callbackBar);
 		getCandleStore().getState().clearLastBar("COPYHIST:60");
+		datafeed.destroy();
+	});
+
+	it("does not move the realtime cache backward when loading older history", async () => {
+		const hourMs = 60 * 60 * 1_000;
+		const olderTime = Date.UTC(2026, 7, 11, 10);
+		const latestTime = olderTime + 2 * hourMs;
+		infoClient.candleSnapshot
+			.mockResolvedValueOnce([
+				{
+					T: latestTime + hourMs - 1,
+					c: "20",
+					h: "20",
+					i: "1h",
+					l: "20",
+					n: 1,
+					o: "20",
+					s: "MONOTONIC",
+					t: latestTime,
+					v: "1",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					T: olderTime + hourMs - 1,
+					c: "10",
+					h: "10",
+					i: "1h",
+					l: "10",
+					n: 1,
+					o: "10",
+					s: "MONOTONIC",
+					t: olderTime,
+					v: "1",
+				},
+			]);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "MONOTONIC"
+					? { name: "MONOTONIC-USDC", ticker: "MONOTONIC", description: "MONOTONIC-USDC", pricescale: 100 }
+					: undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "MONOTONIC");
+		const requestBars = (fromMs: number) =>
+			new Promise<void>((resolve, reject) => {
+				datafeed.getBars(
+					symbol,
+					"60" as ResolutionString,
+					{ countBack: 1, firstDataRequest: false, from: fromMs / 1_000, to: (fromMs + hourMs) / 1_000 },
+					() => resolve(),
+					reject,
+				);
+			});
+
+		await requestBars(latestTime);
+		await requestBars(olderTime);
+
+		expect(getCandleStore().getState().getLastBar("MONOTONIC:60")).toEqual(
+			expect.objectContaining({ time: latestTime, close: 20 }),
+		);
+		getCandleStore().getState().clearLastBar("MONOTONIC:60");
 		datafeed.destroy();
 	});
 
@@ -1197,19 +1293,26 @@ describe("TradingView datafeed", () => {
 		datafeed.destroy();
 	});
 
-	it("maps a rate limited history request to a friendly error and gates the next request", async () => {
+	it("waits for the candle gate and transparently recovers the first rate-limited history request", async () => {
+		const nowMs = Date.UTC(2026, 5, 28);
 		const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
 			response: { status: 429, headers: { get: () => null } },
 		});
-		infoClient.candleSnapshot.mockRejectedValueOnce(rateLimitError);
+		infoClient.candleSnapshot.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce([]);
+		const onHistoryError = vi.fn();
+		const onHistoryRateLimit = vi.fn();
+		const onHistorySuccess = vi.fn();
 		const datafeed = createDatafeed({
 			getSymbolInfo: (_symbolName, coin) =>
 				coin === "LIMITED"
 					? { name: "LIMITED-USDC", ticker: "LIMITED", description: "LIMITED-USDC", pricescale: 100 }
 					: undefined,
+			onHistoryError,
+			onHistoryRateLimit,
+			onHistorySuccess,
 		});
 		const symbol = await resolveDatafeedSymbol(datafeed, "LIMITED");
-		vi.useFakeTimers();
+		vi.useFakeTimers({ now: nowMs });
 		const onResult = vi.fn();
 		const onError = vi.fn();
 
@@ -1222,8 +1325,65 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(onError).toHaveBeenCalledWith("Chart data is temporarily rate limited");
+		expect(onHistoryRateLimit).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "CandleRateLimitError", retryAt: nowMs + CANDLE_GATE_BACKOFF_MS[0] }),
+			"LIMITED:1h",
+			{
+				requestId: 1,
+				streamGeneration: 1,
+				streamKey: "LIMITED:1h",
+				targetGeneration: 0,
+			},
+		);
+		expect(onResult).not.toHaveBeenCalled();
+		expect(onError).not.toHaveBeenCalled();
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+
+		await vi.advanceTimersByTimeAsync(CANDLE_GATE_BACKOFF_MS[0]);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(onHistoryRateLimit).toHaveBeenCalledTimes(1);
+		expect(onHistoryError).not.toHaveBeenCalled();
+		expect(onHistorySuccess).toHaveBeenCalledWith("LIMITED:1h", {
+			requestId: 1,
+			streamGeneration: 1,
+			streamKey: "LIMITED:1h",
+			targetGeneration: 0,
+		});
+		expect(onResult).toHaveBeenCalledTimes(1);
+		expect(onError).not.toHaveBeenCalled();
+		datafeed.destroy();
+	});
+
+	it("reports one terminal error when Retry-After exceeds the inline recovery budget", async () => {
+		const nowMs = Date.UTC(2026, 5, 28);
+		const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
+			response: {
+				status: 429,
+				headers: { get: (name: string) => (name === "retry-after" ? "30" : null) },
+			},
+		});
+		infoClient.candleSnapshot.mockRejectedValueOnce(rateLimitError);
+		const onHistoryError = vi.fn();
+		const onHistoryRateLimit = vi.fn();
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "LONG-LIMITED"
+					? {
+							name: "LONG-LIMITED-USDC",
+							ticker: "LONG-LIMITED",
+							description: "LONG-LIMITED-USDC",
+							pricescale: 100,
+						}
+					: undefined,
+			onHistoryError,
+			onHistoryRateLimit,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "LONG-LIMITED");
+		vi.useFakeTimers({ now: nowMs });
+		const onResult = vi.fn();
+		const onError = vi.fn();
 
 		datafeed.getBars(
 			symbol,
@@ -1234,11 +1394,254 @@ describe("TradingView datafeed", () => {
 		);
 		await vi.advanceTimersByTimeAsync(1);
 
-		expect(onError).toHaveBeenCalledTimes(2);
-		expect(onError).toHaveBeenLastCalledWith("Chart data is temporarily rate limited");
+		const identity = {
+			requestId: 1,
+			streamGeneration: 1,
+			streamKey: "LONG-LIMITED:1h",
+			targetGeneration: 0,
+		};
+		expect(onHistoryRateLimit).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "CandleRateLimitError", retryAt: nowMs + 30_000 }),
+			"LONG-LIMITED:1h",
+			identity,
+		);
+		expect(onHistoryError).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "CandleRateLimitError", retryAt: nowMs + 30_000 }),
+			"LONG-LIMITED:1h",
+			identity,
+		);
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
 		expect(onResult).not.toHaveBeenCalled();
+		expect(onError).toHaveBeenCalledOnce();
+		expect(onError).toHaveBeenCalledWith("Chart data is temporarily rate limited");
 		datafeed.destroy();
+	});
+
+	it("cancels an inline rate-limit wait when the history target changes", async () => {
+		const nowMs = Date.UTC(2026, 5, 28);
+		const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
+			response: { status: 429, headers: { get: () => null } },
+		});
+		infoClient.candleSnapshot.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce([]);
+		let targetGeneration = 0;
+		const onHistoryError = vi.fn();
+		const onHistoryRateLimit = vi.fn();
+		const onHistorySuccess = vi.fn();
+		const datafeed = createDatafeed({
+			getHistoryTargetGeneration: () => targetGeneration,
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "OLD-MARKET"
+					? {
+							name: "OLD-MARKET-USDC",
+							ticker: "OLD-MARKET",
+							description: "OLD-MARKET-USDC",
+							pricescale: 100,
+						}
+					: undefined,
+			onHistoryError,
+			onHistoryRateLimit,
+			onHistorySuccess,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "OLD-MARKET");
+		vi.useFakeTimers({ now: nowMs });
+		const onResult = vi.fn();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 1, firstDataRequest: true, from: 1, to: 2 },
+			onResult,
+			onError,
+		);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onHistoryRateLimit).toHaveBeenCalledOnce();
+
+		targetGeneration += 1;
+		datafeed.invalidateHistoryRequests();
+		await vi.advanceTimersByTimeAsync(CANDLE_GATE_BACKOFF_MS[0] + 25_000);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(onHistoryRateLimit).toHaveBeenCalledTimes(1);
+		expect(onHistoryError).not.toHaveBeenCalled();
+		expect(onHistorySuccess).not.toHaveBeenCalled();
+		expect(onResult).toHaveBeenCalledOnce();
+		expect(onResult).toHaveBeenCalledWith([], { noData: false });
+		expect(onError).not.toHaveBeenCalled();
+		datafeed.destroy();
+	});
+
+	it("settles a superseded market request without publishing its late history state", async () => {
+		let resolveOldSnapshot: ((value: []) => void) | undefined;
+		infoClient.candleSnapshot
+			.mockImplementationOnce(
+				() =>
+					new Promise<[]>((resolve) => {
+						resolveOldSnapshot = resolve;
+					}),
+			)
+			.mockResolvedValueOnce([]);
+		let targetGeneration = 0;
+		const onHistoryError = vi.fn();
+		const onHistorySuccess = vi.fn();
+		const datafeed = createDatafeed({
+			getHistoryTargetGeneration: () => targetGeneration,
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "OLD" || coin === "NEW"
+					? { name: `${coin}-USDC`, ticker: coin, description: `${coin}-USDC`, pricescale: 100 }
+					: undefined,
+			onHistoryError,
+			onHistorySuccess,
+		});
+		const oldSymbol = await resolveDatafeedSymbol(datafeed, "OLD");
+		const newSymbol = await resolveDatafeedSymbol(datafeed, "NEW");
+		vi.useFakeTimers();
+		const oldResult = vi.fn();
+		const oldError = vi.fn();
+		const newResult = vi.fn();
+		const newError = vi.fn();
+		const periodParams = { countBack: 1, firstDataRequest: true, from: 1, to: 2 };
+
+		datafeed.getBars(oldSymbol, "60" as ResolutionString, periodParams, oldResult, oldError);
+		await vi.advanceTimersByTimeAsync(1);
+
+		targetGeneration += 1;
+		datafeed.invalidateHistoryRequests();
+		datafeed.getBars(newSymbol, "60" as ResolutionString, periodParams, newResult, newError);
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(oldResult).toHaveBeenCalledOnce();
+		expect(oldResult).toHaveBeenCalledWith([], { noData: false });
+		expect(oldError).not.toHaveBeenCalled();
+		expect(newResult).toHaveBeenCalledWith([], { noData: true });
+		expect(newError).not.toHaveBeenCalled();
+		expect(onHistoryError).not.toHaveBeenCalled();
+		expect(onHistorySuccess).toHaveBeenCalledOnce();
+		expect(onHistorySuccess).toHaveBeenCalledWith("NEW:1h", {
+			requestId: 2,
+			streamGeneration: 2,
+			streamKey: "NEW:1h",
+			targetGeneration: 1,
+		});
+
+		resolveOldSnapshot?.([]);
+		await Promise.resolve();
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(oldResult).toHaveBeenCalledTimes(1);
+		expect(onHistorySuccess).toHaveBeenCalledTimes(1);
+		datafeed.destroy();
+	});
+
+	it("rejects old symbol and resolution requests that start after the target changes", async () => {
+		const barTime = 60_000;
+		infoClient.candleSnapshot.mockResolvedValueOnce([
+			{
+				T: barTime + 299_999,
+				c: "20",
+				h: "20",
+				i: "5m",
+				l: "20",
+				n: 1,
+				o: "20",
+				s: "NEW",
+				t: barTime,
+				v: "1",
+			},
+		]);
+		let targetGeneration = 0;
+		let target = { coin: "OLD", resolution: "60" as ResolutionString };
+		const onHistoryError = vi.fn();
+		const onHistorySuccess = vi.fn();
+		const datafeed = createDatafeed({
+			getHistoryTargetGeneration: () => targetGeneration,
+			getHistoryTarget: () => target,
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "OLD" || coin === "NEW"
+					? { name: `${coin}-USDC`, ticker: coin, description: `${coin}-USDC`, pricescale: 100 }
+					: undefined,
+			onHistoryError,
+			onHistorySuccess,
+		});
+		const oldSymbol = await resolveDatafeedSymbol(datafeed, "OLD");
+		const newSymbol = await resolveDatafeedSymbol(datafeed, "NEW");
+		vi.useFakeTimers();
+		const oldSymbolResult = vi.fn();
+		const oldResolutionResult = vi.fn();
+		const currentResult = vi.fn();
+		const periodParams = { countBack: 1, firstDataRequest: true, from: 60, to: 360 };
+
+		targetGeneration += 1;
+		target = { coin: "NEW", resolution: "5" as ResolutionString };
+		datafeed.invalidateHistoryRequests();
+		datafeed.getBars(oldSymbol, "60" as ResolutionString, periodParams, oldSymbolResult, vi.fn());
+		datafeed.getBars(newSymbol, "60" as ResolutionString, periodParams, oldResolutionResult, vi.fn());
+		datafeed.getBars(newSymbol, "5" as ResolutionString, periodParams, currentResult, vi.fn());
+		await vi.advanceTimersByTimeAsync(1);
+
+		expect(oldSymbolResult).toHaveBeenCalledWith([], { noData: false });
+		expect(oldResolutionResult).toHaveBeenCalledWith([], { noData: false });
+		expect(infoClient.candleSnapshot).toHaveBeenCalledOnce();
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(expect.objectContaining({ coin: "NEW", interval: "5m" }));
+		expect(currentResult).toHaveBeenCalledWith([expect.objectContaining({ time: barTime })], { noData: false });
+		expect(onHistoryError).not.toHaveBeenCalled();
+		expect(onHistorySuccess).toHaveBeenCalledWith("NEW:5m", {
+			requestId: 1,
+			streamGeneration: 1,
+			streamKey: "NEW:5m",
+			targetGeneration: 1,
+		});
+		datafeed.destroy();
+	});
+
+	it("destroy cancels an inline rate-limit wait without dispatching a history callback", async () => {
+		const nowMs = Date.UTC(2026, 5, 28);
+		const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
+			response: { status: 429, headers: { get: () => null } },
+		});
+		infoClient.candleSnapshot.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce([]);
+		const onHistoryError = vi.fn();
+		const onHistoryRateLimit = vi.fn();
+		const onHistorySuccess = vi.fn();
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "DESTROY-LIMITED"
+					? {
+							name: "DESTROY-LIMITED-USDC",
+							ticker: "DESTROY-LIMITED",
+							description: "DESTROY-LIMITED-USDC",
+							pricescale: 100,
+						}
+					: undefined,
+			onHistoryError,
+			onHistoryRateLimit,
+			onHistorySuccess,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "DESTROY-LIMITED");
+		vi.useFakeTimers({ now: nowMs });
+		const onResult = vi.fn();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 1, firstDataRequest: true, from: 1, to: 2 },
+			onResult,
+			onError,
+		);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onHistoryRateLimit).toHaveBeenCalledOnce();
+
+		datafeed.destroy();
+		await vi.advanceTimersByTimeAsync(CANDLE_GATE_BACKOFF_MS[0] + 25_000);
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
+		expect(onHistoryError).not.toHaveBeenCalled();
+		expect(onHistorySuccess).not.toHaveBeenCalled();
+		expect(onResult).not.toHaveBeenCalled();
+		expect(onError).not.toHaveBeenCalled();
+		expect(vi.getTimerCount()).toBe(0);
 	});
 
 	it("reports a non-rate-limited history failure to the recovery callback", async () => {
@@ -1268,7 +1671,12 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(1);
 
 		expect(onHistoryError).toHaveBeenCalledOnce();
-		expect(onHistoryError).toHaveBeenCalledWith(historyError, "RECOVERY:1h");
+		expect(onHistoryError).toHaveBeenCalledWith(historyError, "RECOVERY:1h", {
+			requestId: 1,
+			streamGeneration: 1,
+			streamKey: "RECOVERY:1h",
+			targetGeneration: 0,
+		});
 		expect(onHistorySuccess).not.toHaveBeenCalled();
 		expect(onError).toHaveBeenCalledWith("network down");
 		datafeed.destroy();

@@ -4,11 +4,13 @@ import { i18n } from "@lingui/core";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { HistoryRequestIdentity } from "@/components/trade/chart/datafeed";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
 import { CHART_HISTORY_RECOVERY_DELAYS_MS } from "@/lib/chart/history-recovery";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import { TradingViewOverlayController } from "@/lib/chart/tradingview-overlays";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+import type { ResolutionString } from "@/types/charting_library";
 
 const testState = vi.hoisted(() => ({
 	datafeedDestroys: [] as ReturnType<typeof vi.fn>[],
@@ -18,6 +20,37 @@ const testState = vi.hoisted(() => ({
 	gateRetryAt: null as number | null,
 	gateListeners: new Set<() => void>(),
 }));
+
+type MockDatafeedOptions = {
+	getHistoryTargetGeneration?: () => number;
+	getHistoryTarget?: () => { coin: string; resolution: string };
+	onHistoryError?: (error: unknown, historyStreamKey?: string, identity?: HistoryRequestIdentity) => void;
+	onHistoryRateLimit?: (error: { retryAt: number }, historyStreamKey: string, identity: HistoryRequestIdentity) => void;
+	onHistorySuccess?: (historyStreamKey?: string, identity?: HistoryRequestIdentity) => void;
+	onRealtimeReset?: () => void;
+	requestRealtimeReset?: () => void;
+	getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
+};
+
+function getHistoryTargetGeneration(options: MockDatafeedOptions): number {
+	const generation = options.getHistoryTargetGeneration?.();
+	if (generation === undefined) throw new Error("TradingViewChart did not provide a history target generation");
+	return generation;
+}
+
+function historyRequestIdentity(
+	options: MockDatafeedOptions,
+	streamKey: string,
+	overrides: Partial<Omit<HistoryRequestIdentity, "streamKey">> = {},
+): HistoryRequestIdentity {
+	return {
+		targetGeneration: getHistoryTargetGeneration(options),
+		streamGeneration: 1,
+		requestId: 1,
+		streamKey,
+		...overrides,
+	};
+}
 
 vi.mock("@/lib/hyperliquid", () => ({
 	subscribeWsReconnect: (listener: (generation: number) => void) => {
@@ -57,12 +90,7 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 }));
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
-	createDatafeed: (options: {
-		onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
-		onHistorySuccess?: (historyStreamKey?: string) => void;
-		onRealtimeReset?: () => void;
-		getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
-	}) => {
+	createDatafeed: (options: MockDatafeedOptions) => {
 		testState.datafeedOptions.push(options);
 		const destroy = vi.fn();
 		const resetRealtimeCache = vi.fn(() => {
@@ -77,6 +105,7 @@ vi.mock("@/components/trade/chart/datafeed", () => ({
 
 type MockWidget = {
 	__emitDrawingEvent: (sourceId: string, eventType: MockDrawingEventType) => void;
+	__emitIntervalChanged: (interval: string) => void;
 	__setActiveSymbol: (symbol: string) => void;
 	__getTheme: () => "light" | "dark";
 	__setTheme: (theme: "light" | "dark") => void;
@@ -98,21 +127,21 @@ type MockWidget = {
 type MockDrawingEventType = "click" | "move" | "remove";
 type MockDrawingEventCallback = (sourceId: string, eventType: MockDrawingEventType) => void;
 
-function createMockSubscription() {
-	const callbacks: Array<() => void> = [];
+function createMockSubscription<Args extends unknown[] = []>() {
+	const callbacks: Array<(...args: Args) => void> = [];
 	return {
 		callbacks,
-		subscribe: vi.fn((_obj: object | null, callback: () => void, singleshot?: boolean) => {
+		subscribe: vi.fn((_obj: object | null, callback: (...args: Args) => void, singleshot?: boolean) => {
 			const wrapped = singleshot
-				? () => {
+				? (...args: Args) => {
 						const index = callbacks.indexOf(wrapped);
 						if (index >= 0) callbacks.splice(index, 1);
-						callback();
+						callback(...args);
 					}
 				: callback;
 			callbacks.push(wrapped);
 		}),
-		unsubscribe: vi.fn((_obj: object | null, callback: () => void) => {
+		unsubscribe: vi.fn((_obj: object | null, callback: (...args: Args) => void) => {
 			const index = callbacks.indexOf(callback);
 			if (index >= 0) callbacks.splice(index, 1);
 		}),
@@ -123,6 +152,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 	let currentTheme = options.theme ?? "dark";
 	let currentSymbol = (options as { symbol?: string }).symbol ?? "BTC";
 	const symbolChanged = createMockSubscription();
+	const intervalChanged = createMockSubscription<[ResolutionString, { timeframe?: unknown }]>();
 	const drawingEventCallbacks = new Set<MockDrawingEventCallback>();
 	const resetData = vi.fn();
 	let currentInterval = (options as { interval?: string }).interval ?? "60";
@@ -130,6 +160,12 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 	return {
 		__emitDrawingEvent: (sourceId, eventType) => {
 			for (const callback of drawingEventCallbacks) callback(sourceId, eventType);
+		},
+		__emitIntervalChanged: (interval) => {
+			currentInterval = interval;
+			for (const callback of [...intervalChanged.callbacks]) {
+				callback(interval as ResolutionString, {});
+			}
 		},
 		__setActiveSymbol: (symbol: string) => {
 			currentSymbol = symbol;
@@ -139,6 +175,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 			currentTheme = theme;
 		},
 		activeChart: vi.fn(() => ({
+			onIntervalChanged: vi.fn(() => intervalChanged),
 			onSymbolChanged: vi.fn(() => symbolChanged),
 			resetData,
 			resolution: vi.fn(() => currentInterval),
@@ -245,6 +282,40 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("binds history requests to the selected symbol and the chart's active interval", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const initialGeneration = getHistoryTargetGeneration(options);
+
+		expect(options.getHistoryTarget?.()).toEqual({ coin: "BTC", resolution: "60" });
+
+		act(() => widgets[0]?.__emitIntervalChanged("5"));
+		await flushChartEffects();
+
+		expect(options.getHistoryTarget?.()).toEqual({ coin: "BTC", resolution: "5" });
+		expect(getHistoryTargetGeneration(options)).toBe(initialGeneration + 1);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(options.getHistoryTarget?.()).toEqual({ coin: "ETH", resolution: "5" });
+		expect(widgets[0]?.setSymbol).toHaveBeenLastCalledWith("ETH", "5", expect.any(Function));
+		expect(getHistoryTargetGeneration(options)).toBe(initialGeneration + 2);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "240", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(options.getHistoryTarget?.()).toEqual({ coin: "ETH", resolution: "240" });
+		expect(getHistoryTargetGeneration(options)).toBe(initialGeneration + 3);
 	});
 
 	it("rebuilds the widget instead of switching symbols when an old overlay cannot be removed", async () => {
@@ -987,17 +1058,187 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 	});
 
+	it("keeps transparent rate-limit waiting passive until the matching history request succeeds", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const loadedIdentity = historyRequestIdentity(options, "HYPE:1h");
+		const waitingIdentity = historyRequestIdentity(options, "HYPE:1h", { requestId: 2 });
+		const retryAt = Date.now() + 10_000;
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", loadedIdentity));
+		act(() => {
+			testState.gateRetryAt = retryAt;
+			for (const listener of [...testState.gateListeners]) listener();
+			options.onHistoryRateLimit?.({ retryAt }, "HYPE:1h", waitingIdentity);
+		});
+		await flushChartEffects();
+
+		const waitingNotice = container.querySelector<HTMLOutputElement>("[data-chart-rate-limited]");
+		expect(waitingNotice).not.toBeNull();
+		expect(waitingNotice?.classList.contains("inset-0")).toBe(false);
+		expect(waitingNotice?.classList.contains("bottom-2")).toBe(true);
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => {
+			testState.gateRetryAt = null;
+			for (const listener of [...testState.gateListeners]) listener();
+		});
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", waitingIdentity));
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+	});
+
+	it("uses a full chart layer for initial waiting and final recovery but not loaded-history waiting", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const initialIdentity = historyRequestIdentity(options, "HYPE:1h");
+		const initialRetryAt = Date.now() + 10_000;
+
+		act(() => options.onHistoryRateLimit?.({ retryAt: initialRetryAt }, "HYPE:1h", initialIdentity));
+		await flushChartEffects();
+
+		const initialNotice = container.querySelector<HTMLOutputElement>("[data-chart-rate-limited]");
+		expect(initialNotice?.classList.contains("inset-0")).toBe(true);
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", initialIdentity));
+		const loadedIdentity = historyRequestIdentity(options, "HYPE:1h", { requestId: 2 });
+		act(() => options.onHistoryRateLimit?.({ retryAt: initialRetryAt + 10_000 }, "HYPE:1h", loadedIdentity));
+		await flushChartEffects();
+
+		const loadedNotice = container.querySelector<HTMLOutputElement>("[data-chart-rate-limited]");
+		expect(loadedNotice?.classList.contains("inset-0")).toBe(false);
+		expect(loadedNotice?.classList.contains("bottom-2")).toBe(true);
+
+		act(() => options.onHistoryError?.(new Error("rate limit recovery exhausted"), "HYPE:1h", loadedIdentity));
+		await flushChartEffects();
+
+		const recoveringNotice = container.querySelector<HTMLOutputElement>("[data-chart-rate-limited]");
+		expect(recoveringNotice?.classList.contains("inset-0")).toBe(true);
+		expect(recoveringNotice?.classList.contains("bottom-2")).toBe(false);
+	});
+
+	it("removes the blocking rate-limit layer when loaded-history recovery is exhausted", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const loadedIdentity = historyRequestIdentity(options, "HYPE:1h");
+		const limitedIdentity = historyRequestIdentity(options, "HYPE:1h", { requestId: 2 });
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", loadedIdentity));
+		act(() => {
+			options.onHistoryRateLimit?.({ retryAt: Date.now() + 10_000 }, "HYPE:1h", limitedIdentity);
+			options.onHistoryError?.(new Error("rate limited"), "HYPE:1h", limitedIdentity);
+		});
+
+		for (const [index, delayMs] of CHART_HISTORY_RECOVERY_DELAYS_MS.entries()) {
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(delayMs);
+			});
+			await flushChartEffects();
+			act(() =>
+				options.onHistoryError?.(
+					new Error("rate limited"),
+					"HYPE:1h",
+					historyRequestIdentity(options, "HYPE:1h", { requestId: index + 3 }),
+				),
+			);
+		}
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(CHART_HISTORY_RECOVERY_DELAYS_MS.length);
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("does not let an older history success clear a newer request's rate-limit notice", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const initialIdentity = historyRequestIdentity(options, "HYPE:1h");
+		const limitedIdentity = historyRequestIdentity(options, "HYPE:1h", { requestId: 3 });
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", initialIdentity));
+		act(() => options.onHistoryRateLimit?.({ retryAt: Date.now() + 10_000 }, "HYPE:1h", limitedIdentity));
+		await flushChartEffects();
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", historyRequestIdentity(options, "HYPE:1h", { requestId: 2 })));
+		await flushChartEffects();
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+
+		act(() => options.onHistorySuccess?.("HYPE:1h", limitedIdentity));
+		await flushChartEffects();
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+	});
+
+	it("ignores a late rate limit from the previous market", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const btcTargetGeneration = getHistoryTargetGeneration(options);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const ethIdentity = historyRequestIdentity(options, "ETH:1h", { requestId: 2, streamGeneration: 2 });
+		act(() => options.onHistoryRateLimit?.({ retryAt: Date.now() + 10_000 }, "ETH:1h", ethIdentity));
+		await flushChartEffects();
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+
+		act(() =>
+			options.onHistoryRateLimit?.(
+				{ retryAt: Date.now() + 20_000 },
+				"BTC:1h",
+				historyRequestIdentity(options, "BTC:1h", {
+					requestId: 3,
+					targetGeneration: btcTargetGeneration,
+				}),
+			),
+		);
+		act(() => options.onHistorySuccess?.("ETH:1h", ethIdentity));
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+		expect(testState.datafeedResets[0]).not.toHaveBeenCalled();
+		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
+	});
+
 	it("recovers a widget that mounted while the candle gate was already open", async () => {
 		testState.gateRetryAt = Date.now() + 10_000;
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
-		const options = testState.datafeedOptions[0] as {
-			onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
-		};
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
 		testState.datafeedResets[0]?.mockReturnValueOnce(false);
-		act(() => options.onHistoryError?.(new Error("rate limited"), "HYPE:1h"));
+		act(() =>
+			options.onHistoryError?.(new Error("rate limited"), "HYPE:1h", historyRequestIdentity(options, "HYPE:1h")),
+		);
 
 		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
 		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
@@ -1019,8 +1260,10 @@ describe("TradingViewChart", () => {
 		});
 		await flushChartEffects();
 
-		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
-		act(() => options.onHistoryError?.(new Error("network down")));
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		act(() =>
+			options.onHistoryError?.(new Error("network down"), "HYPE:1h", historyRequestIdentity(options, "HYPE:1h")),
+		);
 		expect(widgets[0]?.resetData).not.toHaveBeenCalled();
 
 		act(() => {
@@ -1037,12 +1280,11 @@ describe("TradingViewChart", () => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
-		const options = testState.datafeedOptions[0] as {
-			onHistoryError?: (error: unknown) => void;
-			onHistorySuccess?: () => void;
-		};
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
 
-		act(() => options.onHistoryError?.(new Error("network down")));
+		act(() =>
+			options.onHistoryError?.(new Error("network down"), "HYPE:1h", historyRequestIdentity(options, "HYPE:1h")),
+		);
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0] - 1);
 		});
@@ -1054,8 +1296,14 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
 
-		act(() => options.onHistorySuccess?.());
-		act(() => options.onHistoryError?.(new Error("network down again")));
+		act(() => options.onHistorySuccess?.("HYPE:1h", historyRequestIdentity(options, "HYPE:1h", { requestId: 2 })));
+		act(() =>
+			options.onHistoryError?.(
+				new Error("network down again"),
+				"HYPE:1h",
+				historyRequestIdentity(options, "HYPE:1h", { requestId: 3 }),
+			),
+		);
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
 		});
@@ -1064,18 +1312,174 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(2);
 	});
 
+	it("does not let a stale market failure overwrite the current market recovery stream", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const btcTargetGeneration = getHistoryTargetGeneration(options);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history failed"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { streamGeneration: 2 }),
+			),
+		);
+		act(() =>
+			options.onHistoryError?.(
+				new Error("stale BTC history failed"),
+				"BTC:1h",
+				historyRequestIdentity(options, "BTC:1h", { targetGeneration: btcTargetGeneration }),
+			),
+		);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+		expect(testState.datafeedResets[0]).toHaveBeenCalledWith("ETH:1h");
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+	});
+
+	it("ignores a stale market success while the current market recovery is in flight", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const btcTargetGeneration = getHistoryTargetGeneration(options);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history failed"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { streamGeneration: 2 }),
+			),
+		);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+
+		act(() =>
+			options.onHistorySuccess?.(
+				"BTC:1h",
+				historyRequestIdentity(options, "BTC:1h", {
+					requestId: 2,
+					targetGeneration: btcTargetGeneration,
+				}),
+			),
+		);
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history failed again"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { requestId: 2, streamGeneration: 2 }),
+			),
+		);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[1]);
+		});
+		await flushChartEffects();
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(2);
+
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history still failed"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { requestId: 3, streamGeneration: 2 }),
+			),
+		);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[2]);
+		});
+		await flushChartEffects();
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(3);
+
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history recovery exhausted"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { requestId: 4, streamGeneration: 2 }),
+			),
+		);
+
+		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.textContent).toContain("Retry");
+	});
+
+	it("does not carry loaded-history state into a newly selected market", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+
+		act(() => options.onHistorySuccess?.("BTC:1h", historyRequestIdentity(options, "BTC:1h")));
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		for (const [index, delayMs] of CHART_HISTORY_RECOVERY_DELAYS_MS.entries()) {
+			act(() =>
+				options.onHistoryError?.(
+					new Error("ETH history failed"),
+					"ETH:1h",
+					historyRequestIdentity(options, "ETH:1h", {
+						requestId: index + 1,
+						streamGeneration: 2,
+					}),
+				),
+			);
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(delayMs);
+			});
+			await flushChartEffects();
+		}
+		act(() =>
+			options.onHistoryError?.(
+				new Error("ETH history recovery exhausted"),
+				"ETH:1h",
+				historyRequestIdentity(options, "ETH:1h", { requestId: 4, streamGeneration: 2 }),
+			),
+		);
+
+		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.textContent).toContain("Retry");
+	});
+
 	it("rebuilds the widget when history fails before a realtime cache callback exists", async () => {
 		vi.useFakeTimers();
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
-		const options = testState.datafeedOptions[0] as {
-			onHistoryError?: (error: unknown, historyStreamKey?: string) => void;
-		};
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
 		testState.datafeedResets[0]?.mockReturnValueOnce(false);
 
-		act(() => options.onHistoryError?.(new Error("network down"), "HYPE:5m"));
+		act(() =>
+			options.onHistoryError?.(new Error("network down"), "HYPE:5m", historyRequestIdentity(options, "HYPE:5m")),
+		);
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
 		});
@@ -1088,18 +1492,96 @@ describe("TradingViewChart", () => {
 		expect(testState.datafeedOptions).toHaveLength(2);
 	});
 
+	it("keeps a pending history rebuild when a locale change is reverted", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
+		testState.datafeedResets[0]?.mockReturnValueOnce(false);
+		let finishSave: ((state: object) => void) | undefined;
+		widgets[0]?.save.mockImplementation((callback: (state: object) => void) => {
+			finishSave = callback;
+		});
+
+		act(() =>
+			options.onHistoryError?.(new Error("network down"), "HYPE:1h", historyRequestIdentity(options, "HYPE:1h")),
+		);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+		expect(widgets[0]?.save).toHaveBeenCalledOnce();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark", locale: "zh" }));
+		});
+		await flushChartEffects();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark", locale: "en" }));
+		});
+		await flushChartEffects();
+
+		act(() => finishSave?.({ charts: ["preserved history state"] }));
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgetConstructor).toHaveBeenLastCalledWith(
+			expect.objectContaining({ locale: "en", saved_data: { charts: ["preserved history state"] } }),
+		);
+	});
+
+	it("clears an old rate-limit request identity when rebuilding the datafeed", async () => {
+		vi.useFakeTimers();
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		const oldOptions = testState.datafeedOptions[0] as MockDatafeedOptions;
+		const oldIdentity = historyRequestIdentity(oldOptions, "HYPE:1h", {
+			requestId: 7,
+			streamGeneration: 3,
+		});
+		testState.datafeedResets[0]?.mockReturnValueOnce(false);
+
+		act(() => {
+			oldOptions.onHistoryRateLimit?.({ retryAt: Date.now() + 10_000 }, "HYPE:1h", oldIdentity);
+			oldOptions.onHistoryError?.(new Error("rate limit recovery exhausted"), "HYPE:1h", oldIdentity);
+		});
+		expect(container.querySelector("[data-chart-rate-limited]")).not.toBeNull();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(testState.datafeedOptions).toHaveLength(2);
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+
+		const newOptions = testState.datafeedOptions[1] as MockDatafeedOptions;
+		act(() => newOptions.onHistorySuccess?.("HYPE:1h", historyRequestIdentity(newOptions, "HYPE:1h")));
+		await flushChartEffects();
+
+		expect(container.querySelector("[data-chart-rate-limited]")).toBeNull();
+	});
+
 	it("continues bounded recovery when TradingView rejects a data reset", async () => {
 		vi.useFakeTimers();
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
-		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
 		widgets[0]?.resetData.mockImplementation(() => {
 			throw new Error("reset failed");
 		});
 
-		act(() => options.onHistoryError?.(new Error("network down")));
+		act(() =>
+			options.onHistoryError?.(new Error("network down"), "HYPE:1h", historyRequestIdentity(options, "HYPE:1h")),
+		);
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(CHART_HISTORY_RECOVERY_DELAYS_MS[0]);
 		});
@@ -1120,16 +1602,30 @@ describe("TradingViewChart", () => {
 			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
 		});
 		await flushChartEffects();
-		const options = testState.datafeedOptions[0] as { onHistoryError?: (error: unknown) => void };
+		const options = testState.datafeedOptions[0] as MockDatafeedOptions;
 
-		for (const delayMs of CHART_HISTORY_RECOVERY_DELAYS_MS) {
-			act(() => options.onHistoryError?.(new Error("network down")));
+		for (const [index, delayMs] of CHART_HISTORY_RECOVERY_DELAYS_MS.entries()) {
+			act(() =>
+				options.onHistoryError?.(
+					new Error("network down"),
+					"HYPE:1h",
+					historyRequestIdentity(options, "HYPE:1h", {
+						requestId: index + 1,
+					}),
+				),
+			);
 			await act(async () => {
 				await vi.advanceTimersByTimeAsync(delayMs);
 			});
 			await flushChartEffects();
 		}
-		act(() => options.onHistoryError?.(new Error("network down")));
+		act(() =>
+			options.onHistoryError?.(
+				new Error("network down"),
+				"HYPE:1h",
+				historyRequestIdentity(options, "HYPE:1h", { requestId: 4 }),
+			),
+		);
 
 		expect(container.querySelector('[role="alert"]')).not.toBeNull();
 		expect(container.textContent).toContain("Retry");
