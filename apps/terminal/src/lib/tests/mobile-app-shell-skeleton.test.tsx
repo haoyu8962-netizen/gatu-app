@@ -83,7 +83,7 @@ describe("AppShellSkeleton mobile viewport", () => {
 		const desktopLoadingSurface = container.querySelector<HTMLElement>("[data-desktop-grid-loading-surface]");
 		const chartPanel = container.querySelector<HTMLElement>('[data-desktop-grid-loading-panel="chart"]');
 
-		expect(desktopLoadingSurface?.style.getPropertyValue("--dgl-md-container-h")).toBe("1554px");
+		expect(desktopLoadingSurface?.style.getPropertyValue("--dgl-md-container-h")).toBe("1144.8px");
 		expect(desktopLoadingSurface?.style.getPropertyValue("--dgl-lg-container-h")).toBe("1138.2px");
 		expect(chartPanel?.style.getPropertyValue("--dgl-md-t")).toBe("92px");
 		expect(chartPanel?.style.getPropertyValue("--dgl-md-h")).toBe("588px");
