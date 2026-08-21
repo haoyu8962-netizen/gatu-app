@@ -38,7 +38,9 @@ const compactFrameClass = "h-8 px-2.5";
 const compactDurationLabelClass = "mr-1.5 text-2xs";
 const compactPriceLabelClass = "mr-1.5 min-w-0 shrink truncate text-2xs";
 const compactInputClass = "h-7";
+const MINUTES_PER_DAY = 24 * 60;
 const HOURS_MAX = Math.floor(TWAP_MINUTES_MAX / 60);
+const DAYS_MAX = Math.floor(TWAP_MINUTES_MAX / MINUTES_PER_DAY);
 const MINUTES_PER_INPUT_MAX = 59;
 
 function displayValue(n: number): string {
@@ -95,7 +97,7 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 	return (
 		<>
 			<div className="flex flex-col gap-1.5">
-				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${TWAP_MINUTES_MAX / 60}h)`}</span>
+				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${DAYS_MAX}d)`}</span>
 				<div className="flex gap-2">
 					<div className={cn(durationFrameClass, disabled && "opacity-50")}>
 						<span className={durationTextClass}>{compact ? t`Hrs` : hoursLabel}</span>

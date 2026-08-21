@@ -78,10 +78,21 @@ describe("TradeFormTwap trigger and stop prices", () => {
 	it("renders optional trigger and max price inputs for a buy TWAP", () => {
 		act(() => root.render(<TradeFormTwap {...defaultProps} />));
 
+		expect(container.textContent).toContain("Running Time (5m - 7d)");
 		expect(getPriceLabelTexts(container)).toEqual(["Trigger Price (USDC)", "Max Price (USDC)"]);
 		expect(getInputByLabel(container, "Trigger Price").value).toBe("");
 		expect(getInputByLabel(container, "Max Price").value).toBe("");
 		expect(container.textContent).not.toContain("Activates when mark");
+	});
+
+	it("allows the official seven-day runtime through the hour input", () => {
+		act(() => root.render(<TradeFormTwap {...defaultProps} />));
+		const hours = container.querySelector<HTMLInputElement>('input[aria-label="Hour(s)"]');
+		if (!hours) throw new Error("Missing TWAP hours input");
+
+		act(() => changeInput(hours, "168"));
+
+		expect(mocks.setTwapMinutes).toHaveBeenCalledWith(10_080);
 	});
 
 	it("labels the stop price as min price for a sell TWAP", () => {

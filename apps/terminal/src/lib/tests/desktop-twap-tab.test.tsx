@@ -202,7 +202,7 @@ describe("desktop TWAP toolbar", () => {
 			"Direction",
 			"Execution Progress",
 			"Average Fill Price",
-			"Suborder Frequency",
+			"Execution Interval",
 			"Remaining Time",
 			"Actions",
 		]);

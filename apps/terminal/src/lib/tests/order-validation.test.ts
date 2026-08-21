@@ -209,6 +209,26 @@ describe("spot advanced order validation", () => {
 		expect(result.errors.map((error) => error.code)).toContain("TWAP_001");
 	});
 
+	it("accepts the official seven-day maximum and rejects one minute beyond it", () => {
+		const maximum = validateSpotOrder(spotContext({ twapOrder: true, twapMinutesNum: 10_080, orderValue: 100 }));
+		const beyondMaximum = validateSpotOrder(spotContext({ twapOrder: true, twapMinutesNum: 10_081, orderValue: 100 }));
+
+		expect(maximum.errors.map((error) => error.code)).not.toContain("TWAP_001");
+		expect(beyondMaximum.errors.map((error) => error.code)).toContain("TWAP_001");
+	});
+
+	it("uses the official fixed $100 total minimum regardless of runtime", () => {
+		const longRunning = validateSpotOrder(spotContext({ twapOrder: true, twapMinutesNum: 240, orderValue: 500 }));
+		const belowMinimum = validateSpotOrder(spotContext({ twapOrder: true, twapMinutesNum: 5, orderValue: 99.99 }));
+		const exactMinimum = validateSpotOrder(spotContext({ twapOrder: true, twapMinutesNum: 5, orderValue: 100 }));
+
+		expect(longRunning.errors.map((error) => error.code)).not.toContain("TWAP_002");
+		expect(belowMinimum.errors.find((error) => error.code === "TWAP_002")?.message).toBe(
+			"TWAP order value must be at least $100.",
+		);
+		expect(exactMinimum.errors.map((error) => error.code)).not.toContain("TWAP_002");
+	});
+
 	it("accepts a valid spot TWAP", () => {
 		const result = validateSpotOrder(
 			spotContext({

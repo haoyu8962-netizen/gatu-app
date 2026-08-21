@@ -320,7 +320,7 @@ describe("entry TWAP SDK execution guard", () => {
 		);
 	});
 
-	it("uses exact base availability for a spot sell TWAP without requiring a mark", () => {
+	it("uses exact base availability for a spot sell TWAP after checking a fresh mark", () => {
 		const spotParams = { twap: { ...params.twap, a: 10_000, b: false, s: "2.000000000000000001" } };
 		const spotState = executionState({
 			assetId: 10_000,
@@ -329,9 +329,6 @@ describe("entry TWAP SDK execution guard", () => {
 				baseAvailable: "2.000000000000000001",
 				quoteAvailable: "0",
 			},
-			markPriceStatus: "loading",
-			markPx: undefined,
-			markPriceReceivedAt: undefined,
 		});
 
 		expect(() => assertEntryTwapExecutionAllowed(spotParams, spotState, 1_001)).not.toThrow();
@@ -351,17 +348,41 @@ describe("entry TWAP SDK execution guard", () => {
 		).toThrow("Trading availability changed");
 	});
 
-	it("does not require a live mark for a plain TWAP or one whose details are both null", () => {
+	it("requires a fresh mark for every TWAP so the formatted total can be valued", () => {
 		const stale = executionState({ markPriceStatus: "loading", markPx: undefined, markPriceReceivedAt: undefined });
-		expect(() => assertEntryTwapExecutionAllowed(params, stale, 1_001)).not.toThrow();
-		expect(() =>
-			assertEntryTwapExecutionAllowed({ ...params, details: { t: null, s: null } }, stale, 1_001),
-		).not.toThrow();
+		expect(() => assertEntryTwapExecutionAllowed(params, stale, 1_001)).toThrow("Live mark price is unavailable");
+		expect(() => assertEntryTwapExecutionAllowed({ ...params, details: { t: null, s: null } }, stale, 1_001)).toThrow(
+			"Live mark price is unavailable",
+		);
+	});
+
+	it("enforces the official duration and exact formatted-size notional at the SDK boundary", () => {
+		const sevenDays = { twap: { ...params.twap, m: 10_080 } };
+		const sevenDaysAsSdkInput = { twap: { ...params.twap, m: "10080" } };
+		const tooLong = { twap: { ...params.twap, m: 10_081 } };
+		const tooShort = { twap: { ...params.twap, m: 4 } };
+		const invalidDuration = { twap: { ...params.twap, m: "not-a-duration" } };
+		const belowMinimum = { twap: { ...params.twap, s: "0.999999999999999999" } };
+
+		expect(() => assertEntryTwapExecutionAllowed(sevenDays, executionState(), 1_001)).not.toThrow();
+		expect(() => assertEntryTwapExecutionAllowed(sevenDaysAsSdkInput, executionState(), 1_001)).not.toThrow();
+		expect(() => assertEntryTwapExecutionAllowed(tooLong, executionState(), 1_001)).toThrow(
+			"TWAP duration must be 5-10080 minutes",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(tooShort, executionState(), 1_001)).toThrow(
+			"TWAP duration must be 5-10080 minutes",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(invalidDuration, executionState(), 1_001)).toThrow(
+			"TWAP duration must be 5-10080 minutes",
+		);
+		expect(() => assertEntryTwapExecutionAllowed(belowMinimum, executionState(), 1_001)).toThrow(
+			"TWAP order value must be at least $100",
+		);
 	});
 
 	it("re-validates the trigger direction against the live mark when the request fires", () => {
-		const above = { ...params, details: { t: { p: "105", a: true }, s: null } };
-		const below = { ...params, details: { t: { p: "95", a: false }, s: null } };
+		const above = { twap: { ...params.twap, s: "2" }, details: { t: { p: "105", a: true }, s: null } };
+		const below = { twap: { ...params.twap, s: "2" }, details: { t: { p: "95", a: false }, s: null } };
 		expect(() => assertEntryTwapExecutionAllowed(above, executionState(), 1_001)).not.toThrow();
 		expect(() => assertEntryTwapExecutionAllowed(below, executionState(), 1_001)).not.toThrow();
 
@@ -388,8 +409,8 @@ describe("entry TWAP SDK execution guard", () => {
 	});
 
 	it("re-validates the stop side against the live mark for buys and sells", () => {
-		const buyStop = { ...params, details: { t: null, s: "110" } };
-		const sellStop = { twap: { ...params.twap, b: false }, details: { t: null, s: "90" } };
+		const buyStop = { twap: { ...params.twap, s: "2" }, details: { t: null, s: "110" } };
+		const sellStop = { twap: { ...params.twap, b: false, s: "2" }, details: { t: null, s: "90" } };
 		expect(() => assertEntryTwapExecutionAllowed(buyStop, executionState(), 1_001)).not.toThrow();
 		expect(() => assertEntryTwapExecutionAllowed(sellStop, executionState(), 1_001)).not.toThrow();
 

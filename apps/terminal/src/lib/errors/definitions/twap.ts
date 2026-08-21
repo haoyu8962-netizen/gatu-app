@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
-import { TWAP_MIN_NOTIONAL_PER_MINUTE_USD, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
-import { isPositive } from "@/lib/trade/numbers";
+import { TWAP_MIN_NOTIONAL_USD, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
+import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { createValidator, type Validator } from "../types";
 
@@ -34,17 +34,12 @@ export const twapMinNotionalValidator: Validator<TwapContext> = createValidator(
 	code: "TWAP_002",
 	category: "twap",
 	priority: 51,
-	getMessage: (ctx) => {
-		const minutes = ctx.twapMinutesNum ?? 0;
-		const min = minutes * TWAP_MIN_NOTIONAL_PER_MINUTE_USD;
-		return t`TWAP order value too small. Min is $${min}, which is $${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute.`;
-	},
+	getMessage: () => t`TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}.`,
 	validate: (ctx) => {
 		if (!ctx.twapOrder) return true;
-		if (ctx.orderValue <= 0) return true;
-		const minutes = ctx.twapMinutesNum;
-		if (minutes === null || !Number.isSafeInteger(minutes) || minutes < TWAP_MINUTES_MIN) return true;
-		return ctx.orderValue >= minutes * TWAP_MIN_NOTIONAL_PER_MINUTE_USD;
+		const orderValue = toBig(ctx.orderValue);
+		if (!orderValue?.gt(0)) return true;
+		return orderValue.gte(TWAP_MIN_NOTIONAL_USD);
 	},
 });
 

@@ -9,6 +9,9 @@ overrides:
   '@tanstack/query-core': 5.90.16
 
 patchedDependencies:
+  '@nktkas/hyperliquid':
+    hash: 62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29
+    path: patches/@nktkas__hyperliquid.patch
   sonner@2.0.7:
     hash: 302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5
     path: patches/sonner@2.0.7.patch
@@ -67,7 +70,7 @@ importers:
         version: 5.7.0(@lingui/babel-plugin-lingui-macro@5.7.0(babel-plugin-macros@3.1.0)(typescript@5.7.2))(babel-plugin-macros@3.1.0)(react@19.2.0)
       '@nktkas/hyperliquid':
         specifier: 0.33.3
-        version: 0.33.3(typescript@5.7.2)
+        version: 0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.7.2)
       '@phosphor-icons/react':
         specifier: 2.1.10
         version: 2.1.10(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -263,7 +266,7 @@ importers:
     dependencies:
       '@nktkas/hyperliquid':
         specifier: 0.33.3
-        version: 0.33.3(typescript@5.9.3)
+        version: 0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.9.3)
       '@tanstack/react-query':
         specifier: '>=5.90.16 <6'
         version: 5.90.16(react@19.2.0)
@@ -9606,7 +9609,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nktkas/hyperliquid@0.33.3(typescript@5.7.2)':
+  '@nktkas/hyperliquid@0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.7.2)':
     dependencies:
       '@nktkas/rews': 4.1.0
       '@noble/hashes': 1.8.0
@@ -9615,7 +9618,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@nktkas/hyperliquid@0.33.3(typescript@5.9.3)':
+  '@nktkas/hyperliquid@0.33.3(patch_hash=62816c06be8be0e27c24f434d3141630257dc1f416f67d886cc0b126e8e7cb29)(typescript@5.9.3)':
     dependencies:
       '@nktkas/rews': 4.1.0
       '@noble/hashes': 1.8.0

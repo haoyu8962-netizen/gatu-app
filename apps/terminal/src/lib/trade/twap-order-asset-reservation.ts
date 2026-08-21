@@ -1,6 +1,6 @@
 import {
+	TWAP_ACTIVE_RESERVATION_MAX_AGE_MS,
 	TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS,
-	TWAP_RECONCILIATION_MAX_AGE_MS,
 	type TwapIntent,
 } from "@/domain/trade/twap";
 import {
@@ -94,15 +94,15 @@ export async function releaseActiveTwapOrderAssetReservation(
 	return releaseOrderAssetReservations(identity, getActiveTwapReservationId(twapId));
 }
 
-function getActiveTwapReservationExpiry(startedAt: number, minutes: number, now: number): number {
+export function getActiveTwapReservationExpiry(startedAt: number, minutes: number, now: number): number {
 	const normalizedStartedAt = normalizeStartedAt(startedAt, now);
 	const durationMs =
 		Number.isSafeInteger(minutes) && minutes > 0
-			? Math.min(minutes * 60_000, TWAP_RECONCILIATION_MAX_AGE_MS)
-			: TWAP_RECONCILIATION_MAX_AGE_MS;
+			? Math.min(minutes * 60_000, TWAP_ACTIVE_RESERVATION_MAX_AGE_MS)
+			: TWAP_ACTIVE_RESERVATION_MAX_AGE_MS;
 	const estimatedExpiry = normalizedStartedAt + durationMs + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS;
 	const minimumExpiry = now + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS;
-	const maximumExpiry = now + TWAP_RECONCILIATION_MAX_AGE_MS + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS;
+	const maximumExpiry = now + TWAP_ACTIVE_RESERVATION_MAX_AGE_MS + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS;
 	return Math.min(Math.max(estimatedExpiry, minimumExpiry), maximumExpiry);
 }
 

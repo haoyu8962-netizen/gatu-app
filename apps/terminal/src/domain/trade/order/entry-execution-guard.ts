@@ -1,6 +1,11 @@
 import type { OrderParameters, TwapOrderParameters } from "@nktkas/hyperliquid";
 import Big from "big.js";
-import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT } from "@/config/trade";
+import {
+	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
+	TWAP_MIN_NOTIONAL_USD,
+	TWAP_MINUTES_MAX,
+	TWAP_MINUTES_MIN,
+} from "@/config/trade";
 import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/market-price";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
@@ -210,7 +215,7 @@ function assertTwapDetailsStillValid(params: TwapOrderParameters, state: EntryOr
 function assertTwapSizeWithinCurrentAvailability(
 	params: TwapOrderParameters,
 	state: EntryOrderExecutionState,
-	now: number,
+	markPx: Big,
 ): void {
 	const size = new Big(params.twap.s);
 	if (!size.gt(0)) throw new Error("Trading availability changed before submission");
@@ -231,12 +236,28 @@ function assertTwapSizeWithinCurrentAvailability(
 		return;
 	}
 
-	const markPx = state.markPx;
-	if (!isLiveMarkPriceReady(state.markPriceStatus, markPx, state.markPriceReceivedAt, now) || !markPx) {
-		throw new Error("Live mark price is unavailable");
-	}
 	if (new Big(state.availability.quoteAvailable).lt(size.times(markPx))) {
 		throw new Error("Trading availability changed before submission");
+	}
+}
+
+function getFreshTwapMark(state: EntryOrderExecutionState, now: number): Big {
+	if (!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now) || !state.markPx) {
+		throw new Error("Live mark price is unavailable");
+	}
+	const mark = new Big(state.markPx);
+	if (!mark.gt(0)) throw new Error("Live mark price is unavailable");
+	return mark;
+}
+
+function assertTwapProtocolLimits(params: TwapOrderParameters, markPx: Big): void {
+	const minutes = Number(params.twap.m);
+	if (!Number.isSafeInteger(minutes) || minutes < TWAP_MINUTES_MIN || minutes > TWAP_MINUTES_MAX) {
+		throw new Error(`TWAP duration must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX} minutes`);
+	}
+	const size = new Big(params.twap.s);
+	if (!size.gt(0) || size.times(markPx).lt(TWAP_MIN_NOTIONAL_USD)) {
+		throw new Error(`TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}`);
 	}
 }
 
@@ -259,6 +280,8 @@ export function assertEntryTwapExecutionAllowed(
 	) {
 		throw new Error("Trading availability data is unavailable");
 	}
-	assertTwapSizeWithinCurrentAvailability(params, state, now);
+	const markPx = getFreshTwapMark(state, now);
+	assertTwapProtocolLimits(params, markPx);
+	assertTwapSizeWithinCurrentAvailability(params, state, markPx);
 	assertTwapDetailsStillValid(params, state, now);
 }

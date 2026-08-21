@@ -144,7 +144,7 @@ export function TwapTab() {
 													{t`Average Fill Price`}
 												</th>
 												<th scope="col" className="p-0 text-right font-semibold">
-													{t`Suborder Frequency`}
+													{t`Execution Interval`}
 												</th>
 												<th scope="col" className="p-0 text-right font-semibold">
 													{t`Remaining Time`}
@@ -236,7 +236,7 @@ export function TwapTab() {
 																marketType: market?.kind === "spot" ? "spot" : "perp",
 															})}
 														</td>
-														<td className="p-0 whitespace-nowrap text-right text-xs text-market-close-muted tabular-nums">
+														<td className="p-0 text-right text-xs leading-tight text-market-close-muted tabular-nums">
 															{t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
 														</td>
 														<td className="p-0 whitespace-nowrap text-right text-[13px] text-market-close-fg tabular-nums">
