@@ -12,7 +12,7 @@ dist-ssr/
 coverage/
 playwright-report/
 test-results/
-scripts/measure/out/
+scripts/measure/**/out/
 *.tsbuildinfo
 *.tgz
 
@@ -51,6 +51,8 @@ apps/terminal/src/locales/**/messages.js
 count.txt
 todos.json
 .ralph/.env
+designs/**/uploads/
+designs/**/.thumbnail
 
 # Auto-generated boneyard skeleton registry (built from dev server)
 apps/terminal/src/bones/registry.ts
