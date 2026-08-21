@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
-import { act, createElement, type ReactNode } from "react";
+import { act, createElement, type ReactNode, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TopNav } from "@/components/trade/header/top-nav";
+import { TopNav, type TopNavMode } from "@/components/trade/header/top-nav";
 import { HYPERSCREENER_URL } from "@/config/nav";
 import { createI18nRoot } from "./harness/react";
 
@@ -18,8 +18,11 @@ const testState = vi.hoisted(() => ({
 	openDepositModal: vi.fn(),
 	openSettingsDialog: vi.fn(),
 	pathname: "/trade/HYPE",
+	privyPopupOpen: false,
 	tradeHomePath: "/trade/HYPE",
 	tradeRestricted: false,
+	userMenuMounts: 0,
+	userMenuUnmounts: 0,
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -42,12 +45,16 @@ vi.mock("@gatu/ui", () => ({
 	ButtonIcon: ({
 		"aria-label": ariaLabel,
 		children,
+		className,
+		disabled,
 		onClick,
 	}: {
 		"aria-label"?: string;
 		children: ReactNode;
+		className?: string;
+		disabled?: boolean;
 		onClick?: () => void;
-	}) => createElement("button", { "aria-label": ariaLabel, onClick, type: "button" }, children),
+	}) => createElement("button", { "aria-label": ariaLabel, className, disabled, onClick, type: "button" }, children),
 	Divider: () => createElement("hr"),
 	Dropdown: ({
 		className,
@@ -174,8 +181,34 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/lazy", () => ({
-	createLazyComponent: (_loader: unknown, exportName: string) => () =>
-		createElement("div", { "data-testid": exportName }),
+	createLazyComponent: (_loader: unknown, exportName: string) => {
+		if (exportName !== "UserMenu") {
+			return () => createElement("div", { "data-testid": exportName });
+		}
+
+		return function StatefulUserMenuProbe() {
+			const [privyPopupOpen, setPrivyPopupOpen] = useState(false);
+
+			useEffect(() => {
+				testState.userMenuMounts += 1;
+				return () => {
+					testState.userMenuUnmounts += 1;
+				};
+			}, []);
+
+			testState.privyPopupOpen = privyPopupOpen;
+			return createElement(
+				"div",
+				{ "data-testid": "UserMenu" },
+				createElement(
+					"button",
+					{ "aria-label": "Open Privy", onClick: () => setPrivyPopupOpen(true), type: "button" },
+					"Connect Wallet",
+				),
+				privyPopupOpen ? createElement("div", { "data-testid": "privy-popup" }, "Privy") : null,
+			);
+		};
+	},
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -202,8 +235,11 @@ describe("TopNav", () => {
 		testState.depositUnavailableReason = null;
 		testState.isTestnet = false;
 		testState.pathname = "/trade/HYPE";
+		testState.privyPopupOpen = false;
 		testState.tradeHomePath = "/trade/HYPE";
 		testState.tradeRestricted = false;
+		testState.userMenuMounts = 0;
+		testState.userMenuUnmounts = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -214,8 +250,8 @@ describe("TopNav", () => {
 		container.remove();
 	});
 
-	function renderNav() {
-		act(() => root.render(<TopNav />));
+	function renderNav(mode?: TopNavMode) {
+		act(() => root.render(<TopNav mode={mode} />));
 	}
 
 	function findButton(label: string) {
@@ -226,6 +262,12 @@ describe("TopNav", () => {
 
 	function findLink(label: string) {
 		return [...container.querySelectorAll<HTMLAnchorElement>("a")].find((link) => link.textContent?.trim() === label);
+	}
+
+	function findDesktopUtilitiesButton() {
+		return [...container.querySelectorAll<HTMLButtonElement>('button[aria-label="More"]')].find((button) =>
+			button.className.includes("max-[1181px]:inline-flex"),
+		);
 	}
 
 	it.each([
@@ -389,6 +431,56 @@ describe("TopNav", () => {
 		expect(testState.openDepositModal).toHaveBeenCalledWith("deposit");
 	});
 
+	it("keeps public navigation usable while disabling modal-backed controls during market loading", () => {
+		renderNav("market-loading");
+
+		const depositButton = findButton("Deposit");
+		const settingsButton = container.querySelector<HTMLButtonElement>('button[aria-label="Settings"]');
+		const desktopUtilitiesButton = findDesktopUtilitiesButton();
+		expect(depositButton?.disabled).toBe(true);
+		expect(settingsButton?.disabled).toBe(true);
+		expect(desktopUtilitiesButton?.disabled).toBe(true);
+
+		act(() => {
+			depositButton?.focus();
+			settingsButton?.focus();
+			desktopUtilitiesButton?.focus();
+			depositButton?.click();
+			settingsButton?.click();
+			desktopUtilitiesButton?.click();
+		});
+		expect(document.activeElement).not.toBe(depositButton);
+		expect(document.activeElement).not.toBe(settingsButton);
+		expect(document.activeElement).not.toBe(desktopUtilitiesButton);
+		expect(testState.openDepositModal).not.toHaveBeenCalled();
+		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
+
+		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="gatu"]')).not.toBeNull();
+		expect(findLink("Trade")).not.toBeUndefined();
+		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
+		expect(moreTriggers).toHaveLength(2);
+		for (const trigger of moreTriggers) expect(trigger.disabled).toBe(false);
+		expect(container.querySelector('[data-testid="theme-toggle"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="language-switcher"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="UserMenu"]')).not.toBeNull();
+	});
+
+	it("preserves the lazy UserMenu and its open Privy popup when market loading becomes ready", () => {
+		renderNav("market-loading");
+		expect(testState.userMenuMounts).toBe(1);
+		expect(testState.userMenuUnmounts).toBe(0);
+
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open Privy"]')?.click());
+		expect(testState.privyPopupOpen).toBe(true);
+		expect(container.querySelector('[data-testid="privy-popup"]')).not.toBeNull();
+
+		renderNav();
+		expect(testState.userMenuMounts).toBe(1);
+		expect(testState.userMenuUnmounts).toBe(0);
+		expect(testState.privyPopupOpen).toBe(true);
+		expect(container.querySelector('[data-testid="privy-popup"]')).not.toBeNull();
+	});
+
 	it("keeps account, theme, language, and settings controls mounted", () => {
 		renderNav();
 
@@ -397,6 +489,8 @@ describe("TopNav", () => {
 		expect(container.querySelector('[data-testid="language-switcher"]')).not.toBeNull();
 		const settingsButton = container.querySelector<HTMLButtonElement>('button[aria-label="Settings"]');
 		expect(settingsButton).not.toBeNull();
+		expect(settingsButton?.disabled).toBe(false);
+		expect(findDesktopUtilitiesButton()?.disabled).toBe(false);
 
 		act(() => settingsButton?.click());
 		expect(testState.openSettingsDialog).toHaveBeenCalledOnce();

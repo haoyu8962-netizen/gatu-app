@@ -283,7 +283,7 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 - 首次导航统一启用 `terminal_perf=1`，并在 init script 写入同一受支持的 profiling storage key。根路径的生产 307 会丢掉 query，因此该 storage fallback 是 `/` 可采集 commit 的必要条件；
 - 为了让 locale ready 可从页面外部辨认，所有 context 预置非默认 `locale-v1=zh`，以首次观察到 `<html lang="zh">` 为准；
 - HTML、FP/FCP、locale DOM、commit hook 和 WebSocket wire payload 是直接观测；hydration 是 Playwright-only React DevTools hook 观察到的首个主 root commit；`client-root` 完成是其模块顶层唯一 `removeItem("hl-markets-meta-v1")` 信号；`ClientRuntime ready` 是 runtime 边界后的 locale read 所对应的首个 root commit；
-- market catalog 没有公开 mark，表中的 `route resolved-by` 是真实 TopNav 首次 commit 的可信上界，不应解释成 `getMarketByName` 的精确内部时刻；
+- market catalog 没有公开 mark；阶段 0 的 schema v1 表中，`route resolved-by` 是真实 TopNav 首次 commit 的可信上界，不应解释成 `getMarketByName` 的精确内部时刻。阶段 1 后 TopNav 会提前，因此测量脚本升为 schema v2，并改用 ready-only MainWorkspace commit；
 - 每组只有 3 个样本，以下只报告 median。min/max 和逐次原始记录位于本地未提交产物 `scripts/measure/out/boot-timing-phase0-baseline-20260821.json`，可用同一脚本和 tag 重建；不把这些结果表述成稳定 p75。
 
 浏览器、runtime 与语言里程碑如下，单位均为从本次 document navigation 起算的毫秒：
@@ -340,14 +340,17 @@ HTML 明示的首批 50 个 JS/CSS 资源：
 
 ```text
 TradeTerminalPage
-└── DesktopTerminalSurface              loading/redirecting/ready 共用同一实例
-    ├── TestnetBanner
-    ├── TopNav mode="market-loading | default"
-    ├── GeoRestrictionBanner
-    ├── TerminalLoadingWorkspace        market-loading 时
-    │   └── DesktopGridLoadingSurface
-    ├── MainWorkspace                   ready 时
-    └── FooterBar mode="market-loading | default"
+├── MarketReadySynchronizers            ready 时才挂 RouteMarketSync/TabTitleSync
+├── DesktopTerminalSurface              loading/redirecting/ready 共用同一实例
+│   └── 原 offset/testnet/pb-8 包装
+│       ├── TestnetBanner
+│       ├── TopNav mode="market-loading | default"
+│       ├── GeoRestrictionBanner
+│       ├── TerminalLoadingWorkspace    market-loading 时
+│       │   └── DesktopGridLoadingSurface
+│       ├── MainWorkspace               ready 时
+│       └── FooterBar mode="market-loading | default"
+└── MarketReadyOverlays                 ready 时才挂 OrderToast/GlobalModals
 ```
 
 实现要求：
@@ -356,7 +359,8 @@ TradeTerminalPage
 - TopNav 只切换显式 `mode` prop，不能复制第二套 PublicTopNav；
 - 品牌、主导航、More、主题、语言和 `UserMenu` 可用；`UserMenu` 自己拥有 WalletModal，并已处理 Privy 尚未 ready 的状态；
 - `mode` 切换不能在 `UserMenu` 前插入或删除无 key 的兄弟节点；Deposit 等槽位应保持稳定或显式 keyed，确保已打开的 WalletModal 不被 React reconciliation 重建；
-- Deposit、Settings、DesktopUtilities 和 Footer Command Menu 依赖尚未挂载的 global modal host，`market-loading` 时必须禁用或隐藏并保留所需布局，不进入键盘焦点，也不能调用 modal store；
+- Deposit、Settings、DesktopUtilities 和 Footer Command Menu 依赖尚未挂载的 global modal host，`market-loading` 时必须禁用或隐藏并保留所需布局，不进入键盘焦点，也不能调用 modal store；禁用的原因是避免动作延迟到 host 挂载后意外弹出，而不是防止 store 崩溃；
+- Footer 的真实 API 状态继续挂载，因此市场加载期允许显示 `Connecting`；
 - 不为 boot 提前挂载简化版 `GlobalModals`，避免绕过 legal/onboarding/HIP-3 等既定顺序；
 - loading workspace 仅包含静态 `DesktopGridLoadingSurface`，不挂载任何市场业务组件；
 - ready 后在原位替换为唯一 `MainWorkspace`；
@@ -379,10 +383,11 @@ TradeTerminalPage
 
 `AppShellSkeleton` 仍服务于 SSR、hydration、client runtime 和 locale gate，但应变成“诚实的品牌静态壳”：
 
+- 首页、trade、perp、spot 与 builders-perp 两条子路由的 `pendingComponent` 继续直接复用它，避免 lazy route chunk 期间闪回旧的假导航；
 - 保留深浅主题、header 高度、桌面网格几何和移动端安全区，避免白屏与大幅布局跳动；
 - 删除或弱化模拟真实导航/按钮的无意义灰块；
 - 装饰结构单独 `aria-hidden`，不要隐藏整个 loading surface；
-- 外层设置 `aria-busy="true"`，提供一个稳定的 `role="status"` 启动文案；
+- 外层设置 `aria-busy="true"`，提供一个具有隐式 status 语义的稳定 `<output>` 启动文案；
 - runtime/i18n 后的 `TerminalLoadingWorkspace` 只把 workspace 标记为 busy，真实 nav/footer 仍正常可访问；
 - 使用 Lingui 翻译市场加载状态，并确保任何时刻只有一个 live status；
 - ready 后移除 busy/status，不主动移动焦点。
@@ -394,8 +399,8 @@ SSR 前的状态文案要在实现时专门验证语言与 hydration 行为，�
 保持 `getTradeTerminalBootStatus` 的现有优先级：
 
 1. malformed trade URL 立即 404；
-2. `getMarketByName("xyz:CXMT")` 精确命中才可 ready；
-3. 只有唯一大小写或 pair-name canonical 匹配才 replace redirect；
+2. `routeMarket = getMarketByName(name) ?? getMarketInfo(name)`；名称或 `byPairName` 能解析时直接 ready，裸 `/trade` 也直接 ready；
+3. 只有尚未被上述查询解析、但存在唯一 canonical 匹配时才 replace redirect；
 4. catalog 正在 restoring/loading/refreshing 时显示真实页面外框 + busy workspace；
 5. 只有新鲜完整目录的 `canResolveNotFound` 才判定 404；
 6. paused 与 error 继续 fail-visible。
@@ -424,8 +429,12 @@ SSR 前的状态文案要在实现时专门验证语言与 hydration 行为，�
 
 - `apps/terminal/src/components/trade/trade-terminal-page.tsx`；
 - `apps/terminal/src/components/trade/header/top-nav.tsx`；
+- `apps/terminal/src/components/trade/header/desktop-utilities-menu.tsx`；
 - `apps/terminal/src/components/trade/footer/footer-bar.tsx`；
 - `apps/terminal/src/components/trade/layout/app-shell-skeleton.tsx`；
+- `apps/terminal/src/components/trade/layout/main-workspace.tsx`，仅增加测量用的稳定 DOM 标记；
+- `apps/terminal/src/components/trade/mobile/mobile-loading-fallback.tsx`；
+- `scripts/measure/measure-boot-timing.mjs`，将 route-resolvable 上界从提前出现的 TopNav 改为 ready-only MainWorkspace commit；
 - 对应启动、导航、footer 与占位测试。
 
 第一阶段不修改：
@@ -473,6 +482,19 @@ SSR 前的状态文案要在实现时专门验证语言与 hydration 行为，�
 
 按项目约束至少执行 Biome、terminal typecheck、相关 Vitest 和 production build；视觉检查需同时覆盖桌面、紧凑桌面和移动端。
 
+### 阶段 1 实施结果（2026-08-21）
+
+阶段 1 已按上述边界完成：桌面 `loading/redirecting/ready` 共用同一个 `DesktopTerminalSurface`，TopNav、Footer 和 UserMenu 跨市场 gate 保持身份；只有 workspace 与 ready-only synchronizers/overlays 切换。移动端 ready terminal、gate、断点和业务组件未改动，loading fallback 只更新静态与 ARIA 语义；Provider 层、市场解析/canonical 算法和桌面网格几何也保持不变。
+
+验证结果：
+
+- Biome、测量脚本语法检查通过；terminal typecheck 通过；
+- 14 个相关 Vitest 文件、126 项测试通过，覆盖 canonical、pair-name、裸 `/trade`、`xyz:CXMT` 精确同步、钱包 UI 身份、pending fallback、1000/1001 契约和 SSR hydration；
+- production client、SSR、Nitro 产物均生成，356 个 client chunk 无静态循环；最终 bundle-budget 在共享脏工作区失败：总 client gzip 相对基线 `+17,407 B`（上限 `+10,000 B`），trade terminal chunk `+4,376 B`（上限 `+4,000 B`）。没有修改预算阈值；需在其他会话改动落盘后用 clean worktree 重跑；
+- 生产浏览器的 Slow 4G + 4× CPU 冷启动探针中，AppShell 约 `763 ms` 出现，真实 TopNav、Footer 与 busy workspace 同在约 `1,634 ms` 出现，MainWorkspace 约 `3,585 ms` 出现；loading 期间未出现 BTC/HYPE，首个市场订阅为 `xyz:CXMT`，Hyperliquid WebSocket 数为 1；
+- 1000px 走移动终端、1001px 走桌面终端；一次 Slow 4G trace 的 CLS 为 `0.00`，浏览器控制台无 error/warn；
+- schema v2 的三次 normal/cold `xyz:CXMT` smoke 均成功：TopNav commit median `493.1 ms`，MainWorkspace/route-resolved 上界 median `783.9 ms`，3/3 首订阅均为 `xyz:CXMT` 且各只有一个 Hyperliquid WebSocket。该 smoke 只验证新探针语义，不是 clean production p75，也不替代完整阶段后基线。
+
 ### 阶段 2：仅在生产数据证明必要时拆运行时
 
 当前 `client-root.tsx` 固定维护：
@@ -509,6 +531,6 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 
 ## 最终决策
 
-阶段 0 已完成。阶段 1 仍值得实施，因为它能修正“runtime 已可用后仍显示假导航”的视觉语义，同时保留 SSR、i18n、精确市场和钱包安全门槛；但基线表明它在正常网络冷缓存中只覆盖约 171–248 ms，在 Slow 4G 冷缓存中基本与 ClientRuntime 同 commit，不能单独解决约 9.4 秒才出现真实导航的问题。
+阶段 0 与阶段 1 已完成。阶段 1 修正了“runtime 已可用后仍显示假导航”的视觉语义，同时保留 SSR、i18n、精确市场和钱包安全门槛；schema v2 smoke 也确认 TopNav 已早于 MainWorkspace 提交。但它没有改变 client-root/runtime 的依赖关键链，不能单独解决 Slow 4G 下真实外框整体出现仍偏晚的问题。
 
 阶段 2 的 Provider 拆分触发线尚未正式满足。下一步应先做 client-root 静态依赖图和资源关键链归因，并在阶段 1 后以 clean production p75 复测，再决定是预加载/拆 chunk，还是设计 transport/session Provider 边界；本轮数据不授权直接改 Provider。Hyperliquid 官方站证明了钱包不应阻塞公共页面外框，但它自己的空白首屏和资源关键链也证明：架构并行不等于首屏体验已经优秀。

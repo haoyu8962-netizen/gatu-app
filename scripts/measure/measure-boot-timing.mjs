@@ -88,7 +88,7 @@ try {
 }
 
 const payload = {
-	schemaVersion: 1,
+	schemaVersion: 2,
 	generatedAt: new Date().toISOString(),
 	config: {
 		baseUrl,
@@ -120,7 +120,7 @@ const payload = {
 			"First React root commit after AppRuntime's post-client-root locale-v1 read; render signal and commit are both retained",
 		persistedLocaleReadyMs: "First time <html lang> equals the seeded persisted locale",
 		marketCatalogRouteResolvableMs:
-			"Upper bound: TopNav's first gated commit. Exact getMarketByName state is not externally observable without adding an application mark",
+			"Upper bound: MainWorkspace's first ready-only commit, intentionally equal to mainWorkspaceCommitMs in schema v2. Exact route resolution remains internal to the market gate",
 		topNavCommitMs: "First top-nav useRenderCommitTrack sample",
 		mainWorkspaceCommitMs: "First main-workspace useRenderCommitTrack sample, before its measured-grid follow-up commit",
 		webSocket:
@@ -275,7 +275,7 @@ async function collectSnapshot(page) {
 				clientRootModuleCompleteMs: round(probe.clientRootModuleCompleteAt),
 				clientRuntimeReadyMs: round(probe.clientRuntimeReadyCommitAt),
 				persistedLocaleReadyMs: round(probe.persistedLocaleReadyAt),
-				marketCatalogRouteResolvableMs: round(topNavCommit),
+				marketCatalogRouteResolvableMs: round(mainWorkspaceCommit),
 				topNavCommitMs: round(topNavCommit),
 				mainWorkspaceCommitMs: round(mainWorkspaceCommit),
 			},
@@ -849,13 +849,8 @@ function installBootProbe({ expectedOrigin, expectedLocale, expectedMarket }) {
 			if (target.dom.topNavAt === null && document.querySelector('header a[aria-label="gatu"]')) {
 				target.dom.topNavAt = at;
 			}
-			if (target.dom.mainWorkspaceAt === null) {
-				const workspaceLoadingSurface = [...document.querySelectorAll("[data-desktop-grid-loading-surface]")].find(
-					(surface) => !surface.querySelector("[data-shell-panel]"),
-				);
-				if (workspaceLoadingSurface || document.querySelector(".desktop-terminal-grid")) {
-					target.dom.mainWorkspaceAt = at;
-				}
+			if (target.dom.mainWorkspaceAt === null && document.querySelector("[data-main-workspace]")) {
+				target.dom.mainWorkspaceAt = at;
 			}
 			if (target.dom.measuredGridAt === null && document.querySelector(".desktop-terminal-grid")) {
 				target.dom.measuredGridAt = at;

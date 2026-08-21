@@ -19,7 +19,13 @@ import { ThemeToggle } from "./theme-toggle";
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
-export function TopNav() {
+export type TopNavMode = "default" | "market-loading";
+
+interface Props {
+	mode?: TopNavMode;
+}
+
+export function TopNav({ mode = "default" }: Props) {
 	useRenderCommitTrack("top-nav");
 	const { t } = useLingui();
 	const navigate = useNavigate();
@@ -31,6 +37,7 @@ export function TopNav() {
 	const isTestnet = useIsTestnet();
 	const tradeHomePath = useTradeHomePath();
 	const showsDepositEntry = hasWalletAccess || depositAvailability.path === "sponsored";
+	const isMarketLoading = mode === "market-loading";
 
 	const tradeActive = isTradeRoutePath(pathname);
 	const portfolioActive = pathname === "/portfolio";
@@ -215,11 +222,12 @@ export function TopNav() {
 			<div className="ml-auto flex min-h-[34px] items-center gap-2">
 				{showsDepositEntry && (
 					<Button
+						key="deposit"
 						variant="filled"
 						intent="brand"
 						size="sm"
-						disabled={!depositAvailability.available}
-						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+						disabled={isMarketLoading || !depositAvailability.available}
+						onClick={!isMarketLoading && depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 						aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 						title={depositAvailability.unavailableReason ?? undefined}
 						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
@@ -233,10 +241,10 @@ export function TopNav() {
 						</span>
 					</Button>
 				)}
-				<Suspense fallback={<UserMenuSkeleton />}>
+				<Suspense key="user-menu" fallback={<UserMenuSkeleton />}>
 					<UserMenu variant="desktop-nav" />
 				</Suspense>
-				<div className={cn("contents", hasWalletAccess && "max-[1181px]:hidden")}>
+				<div className={cn("contents", hasWalletAccess && !isMarketLoading && "max-[1181px]:hidden")}>
 					<ThemeToggle
 						className="size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
 						iconClassName="size-[18px]"
@@ -250,14 +258,19 @@ export function TopNav() {
 						variant="ghost"
 						intent="neutral"
 						className="size-[34px] shrink-0 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
-						onClick={openSettingsDialog}
+						disabled={isMarketLoading}
+						onClick={isMarketLoading ? undefined : openSettingsDialog}
 						aria-label={t`Settings`}
 					>
 						<SlidersHorizontalIcon className="size-[18px]" />
 					</ButtonIcon>
 				</div>
 				{hasWalletAccess && (
-					<DesktopUtilitiesMenu className="hidden max-[1181px]:inline-flex" onOpenSettings={openSettingsDialog} />
+					<DesktopUtilitiesMenu
+						className="hidden max-[1181px]:inline-flex"
+						disabled={isMarketLoading}
+						onOpenSettings={openSettingsDialog}
+					/>
 				)}
 			</div>
 		</header>

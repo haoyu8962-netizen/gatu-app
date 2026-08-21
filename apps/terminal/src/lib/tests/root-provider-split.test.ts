@@ -47,6 +47,21 @@ describe("root provider startup split", () => {
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
+	it("retains the client-runtime and persisted-locale gates before mounting route content", () => {
+		const appRuntimeSource = rootRouteSource.slice(
+			rootRouteSource.indexOf("function AppRuntime"),
+			rootRouteSource.indexOf("// Gates first render"),
+		);
+
+		expect(appRuntimeSource).toContain("const clientRuntimeReady = useClientRuntimeReady()");
+		expect(appRuntimeSource).toContain("if (!clientRuntimeReady) return <AppShellSkeleton />");
+		expect(appRuntimeSource).toContain("<I18nReadyGate fallback={<AppShellSkeleton />}");
+		expect(appRuntimeSource).toContain("<Outlet />");
+		expect(rootRouteSource).toContain("i18n.locale === getPersistedLocale()");
+		expect(rootRouteSource).toContain("i18nReady.finally(() =>");
+		expect(rootRouteSource).toContain("return <>{ready ? children : fallback}</>");
+	});
+
 	it("mounts the route-aware provider inside router context and the fatal boundary inside body", () => {
 		expect(routerSource).not.toContain("ApplicationErrorBoundary");
 		expect(routerSource).toContain("InnerWrap:");

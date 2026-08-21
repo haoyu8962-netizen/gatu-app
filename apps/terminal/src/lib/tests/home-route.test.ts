@@ -18,6 +18,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 vi.mock("@/lib/seo", () => ({ buildPageHead: () => ({}) }));
 
+import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { Route as BuildersPerpRoute } from "@/routes/builders-perp";
 import { Route as BuildersPerpDexRoute } from "@/routes/builders-perp.$dex";
 import { Route as BuildersPerpIndexRoute } from "@/routes/builders-perp.index";
@@ -67,11 +68,11 @@ describe("home route boot contract", () => {
 		expect(result.options).toMatchObject({ to: "/trade/xyz:GOOGL", replace: true });
 	});
 
-	it("uses the same zero-minimum skeleton contract for home and trade", () => {
-		expect(HomeRoute.options.pendingMinMs).toBe(0);
-		expect(TradeRoute.options.pendingMinMs).toBe(0);
-		expect(HomeRoute.options.pendingComponent).toBeDefined();
-		expect(TradeRoute.options.pendingComponent).toBe(HomeRoute.options.pendingComponent);
+	it("uses AppShellSkeleton directly with no artificial minimum for every pending terminal route", () => {
+		for (const route of [HomeRoute, TradeRoute, PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
+			expect(route.options.pendingMinMs).toBe(0);
+			expect(route.options.pendingComponent).toBe(AppShellSkeleton);
+		}
 	});
 
 	it("starts the market catalog before the home redirect and direct trade route mount", () => {
@@ -95,7 +96,7 @@ describe("home route boot contract", () => {
 		expect(testState.bootstrap).toHaveBeenCalledTimes(5);
 		for (const route of [PerpRoute, SpotRoute, BuildersPerpIndexRoute, BuildersPerpDexRoute]) {
 			expect(route.options.pendingMinMs).toBe(0);
-			expect(route.options.pendingComponent).toBe(HomeRoute.options.pendingComponent);
+			expect(route.options.pendingComponent).toBe(AppShellSkeleton);
 			expect((route.options.component as { preload: () => Promise<void> }).preload).toHaveBeenCalledOnce();
 		}
 	});

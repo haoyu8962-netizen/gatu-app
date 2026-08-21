@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { MarketCatalogState } from "@/lib/hyperliquid/markets/market-catalog-state";
 import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
 
-function catalogState(overrides: Partial<MarketCatalogState> = {}): MarketCatalogState {
+type TestCatalogState = {
+	status: MarketCatalogState["status"];
+	canResolveNotFound: boolean;
+	isRefreshing: boolean;
+	isRestoring: boolean;
+	isPaused: boolean;
+	isStale: boolean;
+	error: Error | null;
+};
+
+function catalogState(overrides: Partial<TestCatalogState> = {}): MarketCatalogState {
 	return {
 		status: "ready",
 		canResolveNotFound: false,
@@ -38,6 +48,62 @@ function bootStatus({
 }
 
 describe("trade terminal boot state", () => {
+	const priorityCases: Array<{
+		name: string;
+		params: Parameters<typeof bootStatus>[0];
+		expected: ReturnType<typeof bootStatus>;
+	}> = [
+		{
+			name: "malformed routes win over every resolved or canonical signal",
+			params: {
+				hasMalformedRouteMarket: true,
+				hasResolvedMarket: true,
+				hasCanonicalMarket: true,
+				state: catalogState({ status: "loading", isRefreshing: true }),
+			},
+			expected: "notFound",
+		},
+		{
+			name: "resolved markets win over background refresh and errors",
+			params: {
+				hasResolvedMarket: true,
+				state: catalogState({ status: "error", isRefreshing: true, error: new Error("background") }),
+			},
+			expected: "ready",
+		},
+		{
+			name: "canonical matches redirect before loading or fresh not-found",
+			params: {
+				hasCanonicalMarket: true,
+				state: catalogState({ status: "loading", canResolveNotFound: true }),
+			},
+			expected: "redirecting",
+		},
+		{
+			name: "catalog activity wins over fresh not-found",
+			params: {
+				state: catalogState({ status: "loading", isRestoring: true, isRefreshing: true, canResolveNotFound: true }),
+			},
+			expected: "loading",
+		},
+		{
+			name: "fresh authoritative not-found wins over paused or error",
+			params: {
+				state: catalogState({
+					status: "paused",
+					isPaused: true,
+					canResolveNotFound: true,
+					error: new Error("offline"),
+				}),
+			},
+			expected: "notFound",
+		},
+	];
+
+	it.each(priorityCases)("preserves priority: $name", ({ params, expected }) => {
+		expect(bootStatus(params)).toBe(expected);
+	});
+
 	it("commits the shell as soon as the current market can be resolved", () => {
 		expect(bootStatus({ hasResolvedMarket: true, state: catalogState({ isRefreshing: true }) })).toBe("ready");
 		expect(bootStatus({ hasRouteMarketName: false })).toBe("ready");

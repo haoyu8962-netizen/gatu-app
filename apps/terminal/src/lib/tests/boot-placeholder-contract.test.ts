@@ -9,9 +9,20 @@ const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 const BOOT_PLACEHOLDER_SOURCES = [
 	"trade/layout/app-shell-skeleton.tsx",
 	"trade/layout/desktop-grid-loading-surface.tsx",
+	"trade/layout/desktop-terminal-surface.tsx",
 	"trade/layout/main-workspace.tsx",
+	"trade/layout/terminal-loading-workspace.tsx",
+	"trade/mobile/mobile-loading-fallback.tsx",
 	"trade/chart/chart-panel.tsx",
 	"trade/header/top-nav.tsx",
+];
+
+const PHASE_ONE_LOADING_SOURCES = [
+	"trade/layout/app-shell-skeleton.tsx",
+	"trade/layout/desktop-terminal-surface.tsx",
+	"trade/layout/terminal-loading-workspace.tsx",
+	"trade/mobile/mobile-loading-fallback.tsx",
+	"trade/trade-terminal-page.tsx",
 ];
 
 function readComponent(relativePath: string): string {
@@ -25,6 +36,27 @@ describe("boot placeholder contract", () => {
 			expect(source, relativePath).not.toContain("animate-pulse");
 			expect(source, relativePath).not.toContain("animate-spin");
 		}
+	});
+
+	it("keeps the phase-one loading transition derived from state without clocks or animation frames", () => {
+		for (const relativePath of PHASE_ONE_LOADING_SOURCES) {
+			const source = readComponent(relativePath);
+			expect(source, relativePath).not.toMatch(/\bset(?:Timeout|Interval)\s*\(/);
+			expect(source, relativePath).not.toMatch(/\brequestAnimationFrame\s*\(/);
+			expect(source, relativePath).not.toMatch(/\banimate-(?:pulse|spin)\b/);
+		}
+	});
+
+	it("keeps the pre-runtime AppShell an honest branded frame instead of a fake application nav", () => {
+		const shell = readComponent("trade/layout/app-shell-skeleton.tsx");
+
+		expect(shell).toContain('aria-busy="true"');
+		expect(shell).toContain('<output className="sr-only">');
+		expect(shell).toContain("<MobileShellSkeleton />");
+		expect(shell).toContain("<DesktopGridLoadingSurface");
+		expect(shell).not.toContain("TopNav");
+		expect(shell).not.toContain("<nav");
+		expect(shell).not.toContain("<button");
 	});
 
 	it("renders lazy workspace panels on the same surface as the shell skeleton", () => {

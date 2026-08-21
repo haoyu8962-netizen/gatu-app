@@ -9,24 +9,31 @@ import { ThemeToggle } from "./theme-toggle";
 
 interface Props {
 	className?: string;
+	disabled?: boolean;
 	onOpenSettings: () => void;
 }
 
-export function DesktopUtilitiesMenu({ className, onOpenSettings }: Props) {
+export function DesktopUtilitiesMenu({ className, disabled = false, onOpenSettings }: Props) {
 	const { t } = useLingui();
 	const [open, setOpen] = useState(false);
 
 	function handleOpenSettings() {
+		if (disabled) return;
 		setOpen(false);
 		onOpenSettings();
 	}
 
+	function handleOpenChange(nextOpen: boolean) {
+		if (!disabled) setOpen(nextOpen);
+	}
+
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={disabled ? false : open} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
 				<ButtonIcon
 					variant="ghost"
 					intent="neutral"
+					disabled={disabled}
 					className={cn(
 						"size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg",
 						className,
@@ -60,8 +67,9 @@ export function DesktopUtilitiesMenu({ className, onOpenSettings }: Props) {
 					variant="ghost"
 					intent="neutral"
 					size="sm"
+					disabled={disabled}
 					className="h-9 w-full justify-start rounded-[8px] px-3 font-market-close text-[13px] leading-[18px] font-medium text-market-close-fg shadow-none hover:bg-market-close-hover"
-					onClick={handleOpenSettings}
+					onClick={disabled ? undefined : handleOpenSettings}
 					iconLeft={<SlidersHorizontalIcon className="size-[18px] text-market-close-muted" />}
 				>
 					<Trans>Settings</Trans>

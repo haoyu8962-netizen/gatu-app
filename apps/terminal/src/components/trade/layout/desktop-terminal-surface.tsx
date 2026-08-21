@@ -1,0 +1,40 @@
+import { Suspense } from "react";
+import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
+import { cn } from "@/lib/cn";
+import { createLazyComponent } from "@/lib/lazy";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
+import { TopNav } from "../header/top-nav";
+import { TestnetBanner } from "../testnet-banner";
+import { MainWorkspace } from "./main-workspace";
+import { TerminalLoadingWorkspace } from "./terminal-loading-workspace";
+
+const FooterBar = createLazyComponent(() => import("../footer/footer-bar"), "FooterBar");
+
+interface Props {
+	marketReady: boolean;
+}
+
+export function DesktopTerminalSurface({ marketReady }: Props) {
+	const isTestnet = useIsTestnet();
+	const mode = marketReady ? "default" : "market-loading";
+
+	return (
+		<div
+			data-testid="desktop-terminal-surface"
+			className={cn(
+				"bg-background text-fg min-h-dvh w-full flex flex-col overflow-x-hidden font-sans pb-8",
+				isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS,
+				isTestnet && "testnet-bg",
+			)}
+		>
+			<TestnetBanner />
+			<TopNav mode={mode} />
+			<GeoRestrictionBanner />
+			{marketReady ? <MainWorkspace /> : <TerminalLoadingWorkspace />}
+			<Suspense fallback={null}>
+				<FooterBar mode={mode} />
+			</Suspense>
+		</div>
+	);
+}

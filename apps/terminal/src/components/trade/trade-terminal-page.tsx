@@ -1,11 +1,8 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
-import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
-import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/cn";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import {
 	findCanonicalMarketForRoute,
@@ -16,19 +13,14 @@ import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperl
 import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
-import { GeoRestrictionBanner } from "./geo/geo-restriction-banner";
-import { TopNav } from "./header/top-nav";
-import { MainWorkspace } from "./layout/main-workspace";
+import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
 import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
 import { MobileTerminal } from "./mobile/mobile-terminal";
-import { TestnetBanner } from "./testnet-banner";
 import { OrderToast } from "./tradebox/order-toast";
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
-const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
 export function TradeTerminalPage() {
 	const navigate = useNavigate();
@@ -59,44 +51,56 @@ export function TradeTerminalPage() {
 		});
 	}, [canonicalMarket, navigate, routeScope]);
 
-	if (bootStatus !== "ready") {
-		if (bootStatus === "loading" || bootStatus === "redirecting") return <AppShellSkeleton />;
+	if (bootStatus !== "ready" && bootStatus !== "loading" && bootStatus !== "redirecting") {
 		if (bootStatus === "notFound") return <NotFoundPage />;
 		return <TerminalBootError isPaused={bootStatus === "paused"} onRetry={() => void retryMarketCatalog()} />;
 	}
 
-	return <TradeTerminalContent />;
+	return <TradeTerminalContent marketReady={bootStatus === "ready"} />;
 }
 
-function TradeTerminalContent() {
+interface Props {
+	marketReady: boolean;
+}
+
+function TradeTerminalContent({ marketReady }: Props) {
 	const isMobile = useIsMobile();
-	const isTestnet = useIsTestnet();
+
+	return (
+		<>
+			<MarketReadySynchronizers marketReady={marketReady} />
+			{isMobile ? (
+				marketReady ? (
+					<Suspense fallback={<MobileLoadingFallback />}>
+						<MobileTerminal />
+					</Suspense>
+				) : (
+					<MobileLoadingFallback />
+				)
+			) : (
+				<DesktopTerminalSurface marketReady={marketReady} />
+			)}
+			<MarketReadyOverlays marketReady={marketReady} />
+		</>
+	);
+}
+
+function MarketReadySynchronizers({ marketReady }: Props) {
+	if (!marketReady) return null;
 
 	return (
 		<>
 			<RouteMarketSync />
 			<TabTitleSync />
-			{isMobile ? (
-				<Suspense fallback={<MobileLoadingFallback />}>
-					<MobileTerminal />
-				</Suspense>
-			) : (
-				<div
-					className={cn(
-						"bg-background text-fg min-h-dvh w-full flex flex-col overflow-x-hidden font-sans pb-8",
-						isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS,
-						isTestnet && "testnet-bg",
-					)}
-				>
-					<TestnetBanner />
-					<TopNav />
-					<GeoRestrictionBanner />
-					<MainWorkspace />
-					<Suspense fallback={null}>
-						<FooterBar />
-					</Suspense>
-				</div>
-			)}
+		</>
+	);
+}
+
+function MarketReadyOverlays({ marketReady }: Props) {
+	if (!marketReady) return null;
+
+	return (
+		<>
 			<OrderToast />
 			<Suspense fallback={null}>
 				<GlobalModals enableHip3Disclaimer enableLegalGate enablePositionMarketClose enableTradingOnboarding />
