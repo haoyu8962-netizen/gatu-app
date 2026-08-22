@@ -53,7 +53,7 @@ SDK 的 HTTP transport 默认 10 秒超时(`packages/hl-react/src/clients.ts:33`
 
 同时 feature flag / kill switch / maintenance mode 全仓零命中。运行期变量只有 `PORT` / `HOST` / `IPDATA_API_KEY`,没有一个能影响业务行为。要临时关掉下单或桥接,唯一路径是改代码 → push → 在 EC2 上跑一次 8GB heap 的完整构建 → 重启。
 
-故障发现完全依赖用户邮件到 `support@gatu.ai`,而该邮箱的目标首次响应是 1-2 个工作日。MTTD 以小时到天计。 
+故障发现完全依赖用户邮件到 `support@gatu.ai`,而该邮箱的目标首次响应是 1-2 个工作日。MTTD 以小时到天计。
 
 - [ ] ### B4. Transfer / Send 的可用余额算法错误,同屏两个数字打架
 

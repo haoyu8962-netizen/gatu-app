@@ -623,8 +623,6 @@ async function loadRunnerCommon() {
 			loadPlaywright() {
 				const candidates = [
 					"playwright",
-					"/Users/zhixing/.nvm/versions/node/v22.18.0/lib/node_modules/playwright",
-					"/Users/zhixing/.nvm/versions/node/v24.15.0/lib/node_modules/playwright",
 					process.env.PLAYWRIGHT_PATH,
 				].filter(Boolean);
 				for (const id of candidates) {
