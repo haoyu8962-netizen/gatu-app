@@ -235,6 +235,12 @@ describe("MobilePositionsView tabs", () => {
 		storeState.snapshotsReady = false;
 		render();
 
+		const loadingSlots = Array.from(container.querySelectorAll<HTMLElement>("[data-mobile-position-tab-count]"));
+		expect(loadingSlots).toHaveLength(4);
+		for (const slot of loadingSlots) {
+			expect(slot.className).toContain("min-w-[3ch]");
+			expect(slot.querySelector('[role="status"]')).not.toBeNull();
+		}
 		const loadingLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
 			(tab) => tab.textContent,
 		);
@@ -242,6 +248,12 @@ describe("MobilePositionsView tabs", () => {
 
 		storeState.snapshotsReady = true;
 		render();
+		const readySlots = Array.from(container.querySelectorAll<HTMLElement>("[data-mobile-position-tab-count]"));
+		expect(readySlots).toHaveLength(4);
+		for (let index = 0; index < readySlots.length; index += 1) {
+			expect(readySlots[index]).toBe(loadingSlots[index]);
+			expect(readySlots[index]?.querySelector('[role="status"]')).toBeNull();
+		}
 		const readyLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
 			(tab) => tab.textContent,
 		);

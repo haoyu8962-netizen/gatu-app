@@ -29,6 +29,7 @@ import type { PositionMarketOption } from "./position-market-filter";
 
 const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
 const CONTEXTUAL_TOOLBAR_TABS = new Set(["balances", "orders", "funding", "orders-history"]);
+const COUNTED_POSITION_TABS = new Set(["balances", "positions", "orders", "twap"]);
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
 const AccountTransfersTab = createLazyComponent(() => import("./account-transfers-tab"), "AccountTransfersTab");
@@ -288,6 +289,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 						>
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
+								const showCountSlot = isConnected && COUNTED_POSITION_TABS.has(tab.value);
 
 								return (
 									<TabsTrigger
@@ -297,7 +299,14 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
-										{typeof count === "number" ? <span className="tabular-nums">({count})</span> : null}
+										{showCountSlot ? (
+											<span
+												data-position-tab-count={tab.value}
+												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
+											>
+												{typeof count === "number" ? `(${count})` : null}
+											</span>
+										) : null}
 									</TabsTrigger>
 								);
 							})}

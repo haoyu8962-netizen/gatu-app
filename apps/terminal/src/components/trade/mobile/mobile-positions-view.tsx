@@ -29,6 +29,7 @@ export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
+const COUNTED_MOBILE_POSITION_TABS = new Set<TabValue>(["balances", "positions", "orders", "twap"]);
 const MOBILE_TAB_PREFERENCE_DELAY_MS = 120;
 const MOBILE_TAB_EDGE_FADE_WIDTH_PX = 28;
 
@@ -285,6 +286,7 @@ export function MobilePositionsView({
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
 								const loading = isTabLoading(tab.value);
+								const showCountSlot = isConnected && COUNTED_MOBILE_POSITION_TABS.has(tab.value);
 
 								return (
 									<TabsTrigger
@@ -294,10 +296,17 @@ export function MobilePositionsView({
 										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
-										{loading ? (
-											<Spinner className="size-3 shrink-0" />
-										) : typeof count === "number" ? (
-											<span className="shrink-0 tabular-nums">({count})</span>
+										{showCountSlot ? (
+											<span
+												data-mobile-position-tab-count={tab.value}
+												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
+											>
+												{loading ? (
+													<Spinner className="size-3 shrink-0" />
+												) : typeof count === "number" ? (
+													`(${count})`
+												) : null}
+											</span>
 										) : null}
 									</TabsTrigger>
 								);
