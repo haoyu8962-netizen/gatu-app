@@ -136,6 +136,7 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 	TradingActionButton: ({
 		children,
 		containerClassName: _containerClassName,
+		requiresBuilderFee: _requiresBuilderFee,
 		...props
 	}: {
 		children: ReactNode;

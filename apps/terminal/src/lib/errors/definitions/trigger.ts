@@ -81,7 +81,7 @@ export const triggerPositionExistsValidator: Validator<TriggerContext> = createV
 	category: "trigger",
 	priority: 304,
 	getMessage: () => t`Open a position before placing a trigger order`,
-	validate: (ctx) => !isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize !== 0,
+	validate: (ctx) => !isReduceOnlyTrigger(ctx) || (ctx.positionSize !== null && ctx.positionSize !== 0),
 });
 
 export const triggerPositionDirectionValidator: Validator<TriggerContext> = createValidator({

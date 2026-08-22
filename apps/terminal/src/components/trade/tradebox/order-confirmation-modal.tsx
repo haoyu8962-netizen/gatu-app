@@ -18,6 +18,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { isTwapOrderType } from "@/lib/trade/order-types";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { TradingActionButton } from "../components/trading-action-button";
 
@@ -114,6 +115,7 @@ export function OrderConfirmationModal({
 					{t`Cancel`}
 				</Button>
 				<TradingActionButton
+					requiresBuilderFee={!isTwapOrderType(draft.orderType)}
 					onClick={onConfirm}
 					disabled={isSubmitting}
 					intent={getTradingCtaIntent(draft.side)}

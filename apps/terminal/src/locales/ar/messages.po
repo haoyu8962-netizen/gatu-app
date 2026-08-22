@@ -9550,6 +9550,8 @@ msgstr "تغيّرت بيانات التداول قبل التمكن من إرس
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "تغيرت بيانات التداول أثناء فتح مربع الحوار هذا. أغلقه وأعد فتحه قبل الإرسال."

@@ -366,6 +366,24 @@ describe("reduce-only trigger validation", () => {
 		expect(result.errors.map((error) => error.code)).toContain("TRG_005");
 	});
 
+	it("blocks a reduce-only trigger order when the position snapshot is unavailable", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				orderType: "stopMarket",
+				usesLimitPrice: false,
+				usesTriggerPrice: true,
+				triggerPriceNum: 95,
+				side: "sell",
+				stopOrder: true,
+				positionSize: null,
+				reduceOnly: true,
+			}),
+		);
+
+		expect(result.errors.map((error) => error.code)).toContain("TRG_005");
+		expect(result.canSubmit).toBe(false);
+	});
+
 	it("requires a reduce-only trigger side to reduce the current position", () => {
 		const result = validatePerpOrder(
 			perpContext({

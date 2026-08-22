@@ -14,8 +14,11 @@ const BUILDER = "0x2222222222222222222222222222222222222222" as const;
 const testState = vi.hoisted(() => ({
 	agentAddress: null as `0x${string}` | null,
 	approveBuilderFee: vi.fn(),
+	builderError: null as Error | null,
+	builderStatus: "idle" as "idle" | "approving_fee" | "error",
 	registerAgent: vi.fn(),
 	refetch: vi.fn(),
+	refetchAgent: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/signing/use-agent-status", async (importOriginal) => {
@@ -25,6 +28,7 @@ vi.mock("@gatu/hl-react/signing/use-agent-status", async (importOriginal) => {
 		useAgentStatus: () => ({
 			agentAddress: testState.agentAddress,
 			refetch: testState.refetch,
+			refetchAgent: testState.refetchAgent,
 		}),
 	};
 });
@@ -40,8 +44,8 @@ vi.mock("@gatu/hl-react/signing/use-agent-registration", () => ({
 vi.mock("@gatu/hl-react/signing/use-builder-fee-approval", () => ({
 	useBuilderFeeApproval: () => ({
 		approve: testState.approveBuilderFee,
-		error: null,
-		status: "idle",
+		error: testState.builderError,
+		status: testState.builderStatus,
 	}),
 }));
 
@@ -49,8 +53,8 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let hookValue: ReturnType<typeof useTradingAuthorization> | null = null;
 
-function Probe() {
-	hookValue = useTradingAuthorization();
+function Probe({ requiresBuilderFee = true }: { requiresBuilderFee?: boolean }) {
+	hookValue = useTradingAuthorization({ requiresBuilderFee });
 	return null;
 }
 
@@ -84,9 +88,12 @@ describe("trading authorization contracts", () => {
 		testState.agentAddress = null;
 		testState.approveBuilderFee.mockReset();
 		testState.approveBuilderFee.mockResolvedValue(undefined);
+		testState.builderError = null;
+		testState.builderStatus = "idle";
 		testState.registerAgent.mockReset();
 		testState.registerAgent.mockResolvedValue(AGENT);
 		testState.refetch.mockReset();
+		testState.refetchAgent.mockReset();
 		localStorage.removeItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY);
 	});
 
@@ -97,9 +104,11 @@ describe("trading authorization contracts", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderHook() {
+	function renderHook(requiresBuilderFee = true) {
 		act(() => {
-			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(Probe)));
+			root.render(
+				createElement(QueryClientProvider, { client: queryClient }, createElement(Probe, { requiresBuilderFee })),
+			);
 		});
 		if (!hookValue) throw new Error("Missing trading authorization hook value");
 		return hookValue;
@@ -168,6 +177,26 @@ describe("trading authorization contracts", () => {
 
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
 		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({ persistConnection: true });
+	});
+
+	it("does not request builder approval for an Agent-only trading action", async () => {
+		testState.agentAddress = AGENT;
+		testState.builderError = new Error("Stale builder approval error");
+		testState.builderStatus = "error";
+		testState.refetch.mockRejectedValue(new Error("Builder fee status unavailable"));
+		testState.refetchAgent.mockResolvedValue(requirements(true, false));
+		const hook = renderHook(false);
+		expect(hook.status).toBe("idle");
+		expect(hook.error).toBeNull();
+
+		await act(async () => {
+			await expect(hook.authorize()).resolves.toBe(AGENT);
+		});
+
+		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
+		expect(testState.registerAgent).not.toHaveBeenCalled();
+		expect(testState.refetch).not.toHaveBeenCalled();
+		expect(testState.refetchAgent).toHaveBeenCalledTimes(2);
 	});
 
 	it("fails closed when the final server state is not fully authorized", async () => {
