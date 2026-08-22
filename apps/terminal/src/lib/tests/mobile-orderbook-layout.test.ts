@@ -40,8 +40,9 @@ describe("mobile orderbook ladder layout", () => {
 		expect(COMPACT_ORDERBOOK_MIN_SLOT_COUNT).toBe(3);
 		expect(COMPACT_ORDERBOOK_MAX_SLOT_COUNT).toBe(19);
 		expect(getCompactOrderbookSlotCount(304)).toBe(11);
-		expect(getCompactOrderbookSlotCount(378)).toBe(13);
+		expect(getCompactOrderbookSlotCount(359)).toBe(11);
 		expect(getCompactOrderbookSlotCount(360)).toBe(13);
+		expect(getCompactOrderbookSlotCount(378)).toBe(13);
 		expect(getCompactOrderbookSlotCount(1)).toBe(3);
 		expect(getCompactOrderbookSlotCount(10_000)).toBe(19);
 		expect(getCompactOrderbookSlotCount(0)).toBeNull();

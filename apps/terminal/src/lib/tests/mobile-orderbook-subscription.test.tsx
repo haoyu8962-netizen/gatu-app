@@ -282,6 +282,63 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(observedElement?.tagName).toBe("FIELDSET");
 	});
 
+	it("attaches the compact observer during an initial error and keeps it through recovery", () => {
+		let resizeObserverCount = 0;
+		let observedElement: Element | undefined;
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				constructor() {
+					resizeObserverCount += 1;
+				}
+
+				disconnect() {}
+				observe(element: Element) {
+					observedElement = element;
+				}
+				unobserve() {}
+			},
+		);
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+			bottom: 304,
+			height: 304,
+			left: 0,
+			right: 200,
+			top: 0,
+			width: 200,
+			x: 0,
+			y: 0,
+			toJSON: () => ({}),
+		});
+		setSubscriptionState({
+			data: undefined,
+			error: new Error("order book unavailable"),
+			isStale: false,
+			status: "error",
+		});
+		render({ compact: true });
+		const initialFieldset = container.querySelector("fieldset");
+
+		expect(initialFieldset).toBe(observedElement);
+		expect(resizeObserverCount).toBe(1);
+		expect(container.querySelector('[role="alert"]')?.className).toContain("text-xs");
+		expect(container.querySelector('[aria-label="Price precision"]')).not.toBeNull();
+		expect(container.querySelectorAll("button[data-mode]")).toHaveLength(3);
+
+		setSubscriptionState({
+			data: createBook(mocks.market.name, Date.now(), true, 20),
+			isStale: false,
+			status: "active",
+		});
+		render({ compact: true });
+
+		expect(container.querySelector("fieldset")).toBe(initialFieldset);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.querySelectorAll('button[aria-label^="Ask,"]')).toHaveLength(5);
+		expect(container.querySelectorAll('button[aria-label^="Bid,"]')).toHaveLength(5);
+		expect(resizeObserverCount).toBe(1);
+	});
+
 	it("fails over immediately to the public fast feed without reusing the incremental snapshot", () => {
 		setSubscriptionState({
 			data: createBook(mocks.market.name, Date.now(), false, 6),

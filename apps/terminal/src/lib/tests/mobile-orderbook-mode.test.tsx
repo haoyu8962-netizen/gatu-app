@@ -24,10 +24,16 @@ const BIDS = Array.from({ length: 20 }, (_, index) => ({
 function CompactOrderbookHarness({
 	asks = ASKS,
 	bids = BIDS,
+	bookStatus = "active",
+	hasSnapshot = true,
+	isInteractive = true,
 	showOrderbookInQuote = false,
 }: {
 	asks?: typeof ASKS;
 	bids?: typeof BIDS;
+	bookStatus?: string;
+	hasSnapshot?: boolean;
+	isInteractive?: boolean;
 	showOrderbookInQuote?: boolean;
 }) {
 	const [mode, setMode] = useState<CompactOrderbookMode>("both");
@@ -37,10 +43,10 @@ function CompactOrderbookHarness({
 			asks={asks}
 			baseToken="HYPE"
 			bids={bids}
-			bookStatus="active"
+			bookStatus={bookStatus}
 			flashResetKey="HYPE:0.1"
-			hasSnapshot
-			isInteractive
+			hasSnapshot={hasSnapshot}
+			isInteractive={isInteractive}
 			isTransitioning={false}
 			marketName="HYPE"
 			priceDecimals={1}
@@ -160,13 +166,28 @@ describe("compact mobile orderbook modes", () => {
 	it("grows from eleven to thirteen slots when the shared fieldset grows", () => {
 		expect(getLadder("asks").children).toHaveLength(5);
 		expect(getLadder("bids").children).toHaveLength(5);
+		resizeBook(359);
+		expect(getLadder("asks").children).toHaveLength(5);
+		expect(getLadder("bids").children).toHaveLength(5);
 
-		resizeBook(378);
+		resizeBook(360);
 
 		expect(getLadder("asks").children).toHaveLength(6);
 		expect(getLadder("bids").children).toHaveLength(6);
 		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
 		expect(getLadder("asks").children).toHaveLength(13);
+	});
+
+	it("keeps four-pixel row gaps and leaves surplus height away from the midpoint", () => {
+		const asks = getLadder("asks");
+		const bids = getLadder("bids");
+
+		expect(asks.className).toContain("justify-end");
+		expect(bids.className).toContain("justify-start");
+		expect(asks.className).toContain("gap-[4px]");
+		expect(bids.className).toContain("gap-[4px]");
+		expect(asks.className).not.toContain("justify-between");
+		expect(bids.className).not.toContain("justify-between");
 	});
 
 	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {
@@ -182,6 +203,52 @@ describe("compact mobile orderbook modes", () => {
 		expect(spread?.className).not.toContain("sr-only");
 		expect(container.textContent).toContain("Price (USDC)");
 		expect(container.textContent).toContain("Size (HYPE)");
+		expect(container.firstElementChild?.className).toContain("orderbook-panel-container");
+		expect(container.querySelector('[data-slot="compact-orderbook-price-token"]')?.className).toContain(
+			"orderbook-asset-heading",
+		);
+		expect(container.querySelector('[data-slot="compact-orderbook-size-token"]')?.className).toContain(
+			"orderbook-asset-heading",
+		);
+		expect(container.innerHTML).not.toContain("max-[339px]:hidden");
+	});
+
+	it("uses the order book palette for every compact view icon", () => {
+		const colors = [...container.querySelectorAll<HTMLButtonElement>("button[data-mode]")].map((button) =>
+			[...button.querySelectorAll<HTMLElement>("[aria-hidden='true'] > span")].map((bar) =>
+				bar.style.getPropertyValue("background-color"),
+			),
+		);
+
+		expect(colors).toEqual([
+			["var(--orderbook-depth-ask)", "var(--orderbook-depth-bid)"],
+			["var(--orderbook-depth-ask)", "var(--orderbook-depth-ask)"],
+			["var(--orderbook-depth-bid)", "var(--orderbook-depth-bid)"],
+		]);
+	});
+
+	it("keeps compact chrome and typography in the error state", () => {
+		const initialFieldset = observedElement;
+
+		act(() =>
+			root.render(
+				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="error" hasSnapshot={false} isInteractive={false} />,
+			),
+		);
+
+		const alert = container.querySelector<HTMLElement>('[role="alert"]');
+		const currentFieldset = container.querySelector("fieldset");
+		expect(container.firstElementChild?.className).toContain("font-market-close");
+		expect(currentFieldset).toBe(initialFieldset);
+		expect(alert?.className).toContain("text-xs");
+		expect(alert?.className).toContain("text-trading-panel-error");
+		expect(currentFieldset?.contains(alert ?? null)).toBe(true);
+		expect(container.querySelector('[data-slot="compact-orderbook-price-token"]')).not.toBeNull();
+		expect(container.querySelector('[data-slot="compact-orderbook-size-token"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Price precision"]')).not.toBeNull();
+		expect(container.querySelectorAll("button[data-mode]")).toHaveLength(3);
+		expect(container.querySelector('button[aria-label^="Ask,"]')).toBeNull();
+		expect(container.querySelector('button[aria-label^="Bid,"]')).toBeNull();
 	});
 
 	it("uses the controlled quote unit for the header and displayed sizes", () => {

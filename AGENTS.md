@@ -50,7 +50,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 ## Order book contract
 
-- Bid depth uses `#1FA67D`; ask depth uses `#ED7088`. Depth bars are solid fills at `0.15` opacity, not gradients.
+- Order-book prices, depth bars, and view-mode icons use the shared `--orderbook-depth-bid` and `--orderbook-depth-ask` tokens. The dark theme resolves them to `#1FA67D` and `#ED7088`; the light theme resolves them to the WCAG-AA `--text-success` (`#067A57`) and `--text-error` (`#C73A3A`) colors. Depth bars are solid fills at `0.15` opacity, not gradients.
 - A row's depth width is its cumulative total divided by the largest visible cumulative total on that side. Bid and ask rows must therefore have independently varying lengths.
 - Desktop and compact depth bars are left-aligned. Preserve the existing mirrored direction in the mobile split layout.
 - Size-change feedback is a one-shot `1.8s ease` color fade: increases start at `#0A9981`, decreases start at `#ED7088`, then return to the normal text color. It must restart for every qualifying value update and must not loop.
@@ -59,7 +59,8 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Preserve WebSocket `px` and `sz` values as decimal strings. Use Big.js outside React components for cumulative base size and cumulative quote notional; quote `Total` is the running sum of each level's `size * price`, not cumulative base size multiplied by the current row price.
 - Compact order books derive one shared odd slot count from the measured ladder height: both-side mode uses half for asks, one slot for the mid price, and half for bids; single-side modes reuse every slot and omit the mid price. Keep the twenty-level incremental `l2` feed primary and the public five-level `l2Book + fast` stream as the feature-gated and automatic fallback; full books continue using the default `l2Book` feed. Fill sparse snapshots with non-interactive placeholders so the footer stays fixed, and filter same-coin fast/full cross-talk before writing subscription state because the pinned SDK does not distinguish those callbacks itself.
 - Error, stale, cached, or market/grouping-mismatched snapshots must never be interactive. Cache identity includes network, market, grouping, and the actual feed source (`l2`, fast `l2Book`, or full `l2Book`), and cache expiry uses local receipt time rather than comparing the user's wall clock with exchange timestamps.
-- Full-width order-book rows use a `23px` row height and a `2px` gap. The compact split mobile book uses a `24px` row height and a `4px` gap. If any value changes, update every real, skeleton, placeholder, visible-row, and panel-height formula that depends on it in the same change.
+- Full-width order-book rows use a `23px` row height and a `2px` gap. The compact split mobile book uses a `24px` row height and a `4px` gap; keep surplus ladder height at the far edge instead of distributing it between rows. If any value changes, update every real, skeleton, placeholder, visible-row, and panel-height formula that depends on it in the same change.
+- Compact order-book headers respond to the order-book container width, not the page viewport, when deciding whether asset unit labels fit.
 - Desktop resizing uses react-grid-layout grid units. Preserve panel min/max constraints and container-aware compact order-book behavior so manual resizing cannot reintroduce overlap.
 
 ## Recent trades contract

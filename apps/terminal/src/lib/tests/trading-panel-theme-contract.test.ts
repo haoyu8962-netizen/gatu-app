@@ -12,6 +12,8 @@ describe("trading panel theme contract", () => {
 	it("keeps light order book colors semantic and dark on the measured Hyperliquid palette", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-depth-bid")).toBe("var(--text-success)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-depth-ask")).toBe("var(--text-error)");
+		expect(resolveCssColor(":root", "--orderbook-depth-bid")).toBe("#067a57");
+		expect(resolveCssColor(":root", "--orderbook-depth-ask")).toBe("#c73a3a");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-depth-bid")).toBe("#1fa67d");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-depth-ask")).toBe("#ed7088");
 	});

@@ -485,22 +485,18 @@ export function CompactOrderbook({
 	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
 	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
 
-	if (showError) {
-		return <OrderbookStatus bookStatus={bookStatus} />;
-	}
-
 	return (
-		<div className="flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
+		<div className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
 			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal text-trading-panel-subtle uppercase">
 				<div className="min-w-0 truncate" title={`${t`Price`} (${priceToken})`}>
 					{t`Price`}{" "}
-					<span data-slot="compact-orderbook-price-token" className="normal-case max-[339px]:hidden">
+					<span data-slot="compact-orderbook-price-token" className="orderbook-asset-heading normal-case">
 						({priceToken})
 					</span>
 				</div>
 				<div className="min-w-0 truncate text-right" title={`${t`Size`} (${sizeToken})`}>
 					{t`Size`}{" "}
-					<span data-slot="compact-orderbook-size-token" className="normal-case max-[339px]:hidden">
+					<span data-slot="compact-orderbook-size-token" className="orderbook-asset-heading normal-case">
 						({sizeToken})
 					</span>
 				</div>
@@ -515,116 +511,122 @@ export function CompactOrderbook({
 					!isInteractive && "pointer-events-none",
 				)}
 			>
-				<div
-					data-slot="compact-orderbook-asks"
-					className={cn(
-						"flex-1 min-h-0 flex flex-col justify-between gap-[4px] overflow-hidden",
-						!showAsks && "hidden",
-					)}
-				>
-					{hasAsks ? (
-						<>
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - visibleAsks.length)).map((key) => (
-								<OrderbookPlaceholderRow key={`ask-${key}`} compact />
-							))}
-							{visibleAsks
-								.slice()
-								.reverse()
-								.map((level) => (
-									<OrderbookRow
-										key={`ask-${level.price}`}
-										disabled={!isInteractive}
-										flashResetKey={flashResetKey}
-										level={level}
-										marketName={marketName}
-										side="ask"
-										maxTotal={askMaxTotal}
-										priceDecimals={priceDecimals}
-										showInQuote={showOrderbookInQuote}
-										szDecimals={szDecimals}
-										baseAsset={baseToken}
-										quoteAsset={quoteToken}
-										compact
-									/>
-								))}
-						</>
-					) : hasSnapshot ? (
-						PLACEHOLDER_ROW_KEYS.slice(0, askLevelCount).map((key) => (
-							<OrderbookPlaceholderRow key={`ask-${key}`} compact />
-						))
-					) : (
-						<OrderbookSkeletonRows rows={askLevelCount} align="end" compact />
-					)}
-				</div>
-
-				{mode === "both" && (
-					<div
-						data-slot="compact-orderbook-mid"
-						data-direction={midDirection}
-						title={`${t`Spread`}: ${spreadText}`}
-						className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
-					>
-						<span
-							data-slot="compact-orderbook-mid-price"
+				{showError ? (
+					<OrderbookStatus bookStatus={bookStatus} compact />
+				) : (
+					<>
+						<div
+							data-slot="compact-orderbook-asks"
 							className={cn(
-								"shrink-0 tabular-nums text-base",
-								midDirection === "up" && "text-trading-panel-success",
-								midDirection === "down" && "text-trading-panel-error",
-								midDirection === "flat" && "text-trading-panel-fg",
+								"flex-1 min-h-0 flex flex-col justify-end gap-[4px] overflow-hidden",
+								!showAsks && "hidden",
 							)}
 						>
-							{mid ? `$${formatNumber(mid, priceDecimals)}` : FALLBACK_VALUE_PLACEHOLDER}
-						</span>
-						<span
-							data-slot="compact-orderbook-spread"
-							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums text-trading-panel-subtle"
-						>
-							{spreadText}
-						</span>
-					</div>
-				)}
+							{hasAsks ? (
+								<>
+									{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - visibleAsks.length)).map((key) => (
+										<OrderbookPlaceholderRow key={`ask-${key}`} compact />
+									))}
+									{visibleAsks
+										.slice()
+										.reverse()
+										.map((level) => (
+											<OrderbookRow
+												key={`ask-${level.price}`}
+												disabled={!isInteractive}
+												flashResetKey={flashResetKey}
+												level={level}
+												marketName={marketName}
+												side="ask"
+												maxTotal={askMaxTotal}
+												priceDecimals={priceDecimals}
+												showInQuote={showOrderbookInQuote}
+												szDecimals={szDecimals}
+												baseAsset={baseToken}
+												quoteAsset={quoteToken}
+												compact
+											/>
+										))}
+								</>
+							) : hasSnapshot ? (
+								PLACEHOLDER_ROW_KEYS.slice(0, askLevelCount).map((key) => (
+									<OrderbookPlaceholderRow key={`ask-${key}`} compact />
+								))
+							) : (
+								<OrderbookSkeletonRows rows={askLevelCount} align="end" compact />
+							)}
+						</div>
 
-				<div
-					data-slot="compact-orderbook-bids"
-					className={cn(
-						"flex-1 min-h-0 flex flex-col justify-between gap-[4px] overflow-hidden",
-						!showBids && "hidden",
-					)}
-				>
-					{hasBids ? (
-						<>
-							{visibleBids.map((level) => (
-								<OrderbookRow
-									key={`bid-${level.price}`}
-									disabled={!isInteractive}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={marketName}
-									side="bid"
-									maxTotal={bidMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-									baseAsset={baseToken}
-									quoteAsset={quoteToken}
-									compact
-								/>
-							))}
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - visibleBids.length)).map((key) => (
-								<OrderbookPlaceholderRow key={`bid-${key}`} compact />
-							))}
-						</>
-					) : hasSnapshot ? (
-						PLACEHOLDER_ROW_KEYS.slice(0, bidLevelCount).map((key) => (
-							<OrderbookPlaceholderRow key={`bid-${key}`} compact />
-						))
-					) : (
-						<OrderbookSkeletonRows rows={bidLevelCount} compact />
-					)}
-				</div>
-				{isTransitioning && hasSnapshot && <OrderbookBusyOverlay />}
+						{mode === "both" && (
+							<div
+								data-slot="compact-orderbook-mid"
+								data-direction={midDirection}
+								title={`${t`Spread`}: ${spreadText}`}
+								className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
+							>
+								<span
+									data-slot="compact-orderbook-mid-price"
+									className={cn(
+										"shrink-0 tabular-nums text-base",
+										midDirection === "up" && "text-trading-panel-success",
+										midDirection === "down" && "text-trading-panel-error",
+										midDirection === "flat" && "text-trading-panel-fg",
+									)}
+								>
+									{mid ? `$${formatNumber(mid, priceDecimals)}` : FALLBACK_VALUE_PLACEHOLDER}
+								</span>
+								<span
+									data-slot="compact-orderbook-spread"
+									className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums text-trading-panel-subtle"
+								>
+									{spreadText}
+								</span>
+							</div>
+						)}
+
+						<div
+							data-slot="compact-orderbook-bids"
+							className={cn(
+								"flex-1 min-h-0 flex flex-col justify-start gap-[4px] overflow-hidden",
+								!showBids && "hidden",
+							)}
+						>
+							{hasBids ? (
+								<>
+									{visibleBids.map((level) => (
+										<OrderbookRow
+											key={`bid-${level.price}`}
+											disabled={!isInteractive}
+											flashResetKey={flashResetKey}
+											level={level}
+											marketName={marketName}
+											side="bid"
+											maxTotal={bidMaxTotal}
+											priceDecimals={priceDecimals}
+											showInQuote={showOrderbookInQuote}
+											szDecimals={szDecimals}
+											baseAsset={baseToken}
+											quoteAsset={quoteToken}
+											compact
+										/>
+									))}
+									{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - visibleBids.length)).map((key) => (
+										<OrderbookPlaceholderRow key={`bid-${key}`} compact />
+									))}
+								</>
+							) : hasSnapshot ? (
+								PLACEHOLDER_ROW_KEYS.slice(0, bidLevelCount).map((key) => (
+									<OrderbookPlaceholderRow key={`bid-${key}`} compact />
+								))
+							) : (
+								<OrderbookSkeletonRows rows={bidLevelCount} compact />
+							)}
+						</div>
+						{isTransitioning && hasSnapshot && <OrderbookBusyOverlay />}
+					</>
+				)}
 			</fieldset>
-			{isTransitioning && <OrderbookLoadingAnnouncement />}
+			{!showError && isTransitioning && <OrderbookLoadingAnnouncement />}
 
 			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1">
 				<Dropdown
@@ -700,12 +702,12 @@ function OrderbookModeIcon({ bars }: { bars: Array<"ask" | "bid"> }) {
 		<span className="grid size-3 grid-rows-2 overflow-hidden rounded-[3px]" aria-hidden="true">
 			<span
 				style={{
-					backgroundColor: bars[0] === "ask" ? "var(--trading-panel-error)" : "var(--trading-panel-success)",
+					backgroundColor: bars[0] === "ask" ? "var(--orderbook-depth-ask)" : "var(--orderbook-depth-bid)",
 				}}
 			/>
 			<span
 				style={{
-					backgroundColor: bars[1] === "ask" ? "var(--trading-panel-error)" : "var(--trading-panel-success)",
+					backgroundColor: bars[1] === "ask" ? "var(--orderbook-depth-ask)" : "var(--orderbook-depth-bid)",
 				}}
 			/>
 		</span>
@@ -841,13 +843,13 @@ function SplitOrderbook({
 	);
 }
 
-function OrderbookStatus({ bookStatus }: { bookStatus: string }) {
+function OrderbookStatus({ bookStatus, compact = false }: { bookStatus: string; compact?: boolean }) {
 	const { t } = useLingui();
 
 	return (
 		<div className="flex-1 flex items-center justify-center">
 			{bookStatus === "error" ? (
-				<div role="alert" className="text-sm text-error">
+				<div role="alert" className={cn(compact ? "text-xs text-trading-panel-error" : "text-sm text-error")}>
 					{t`Failed to load order book.`}
 				</div>
 			) : (
