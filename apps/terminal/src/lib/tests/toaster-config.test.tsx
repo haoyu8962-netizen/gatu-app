@@ -41,6 +41,8 @@ describe("Toaster configuration", () => {
 			`${MOBILE_BOTTOM_NAV_HEIGHT_PX}px + 12px`,
 		);
 		expect(toaster?.style.getPropertyValue("--mobile-offset-bottom")).toContain("safe-area-inset-bottom");
+		expect(toaster?.style.getPropertyValue("--mobile-offset-left")).toBe("max(16px, var(--sal), var(--sar))");
+		expect(toaster?.style.getPropertyValue("--mobile-offset-right")).toBe("max(16px, var(--sal), var(--sar))");
 	});
 
 	it("renders semantic variants with rich token colors", async () => {

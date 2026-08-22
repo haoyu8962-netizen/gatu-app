@@ -22,6 +22,8 @@ describe("modal surface contract", () => {
 	it("uses the dedicated modal surface for blocking overlays", () => {
 		expect(modalPopupVariants()).toContain("bg-modal");
 		expect(drawerContentVariants({ side: "right" })).toContain("bg-modal");
+		expect(drawerContentVariants({ side: "top" })).toContain("left-[env(safe-area-inset-left)]");
+		expect(drawerContentVariants({ side: "bottom" })).toContain("right-[env(safe-area-inset-right)]");
 	});
 
 	it("keeps lightweight overlays on the raised overlay surface", () => {

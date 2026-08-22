@@ -13,7 +13,8 @@ const ORDER_TOAST_MOBILE_GAP_PX = 12;
 const ORDER_TOAST_MOBILE_BOTTOM = `calc(env(safe-area-inset-bottom) + ${
 	MOBILE_BOTTOM_NAV_HEIGHT_PX + ORDER_TOAST_MOBILE_GAP_PX
 }px)`;
-const ORDER_TOAST_WIDTH = "left-4 right-4 w-auto min-[1001px]:left-auto min-[1001px]:right-6 min-[1001px]:w-80";
+const ORDER_TOAST_WIDTH =
+	"left-[max(1rem,var(--sal))] right-[max(1rem,var(--sar))] w-auto min-[1001px]:left-auto min-[1001px]:right-6 min-[1001px]:w-80";
 const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-[min(18rem,40dvh)]";
 
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {

@@ -48,15 +48,18 @@ export function UserMenu({ variant = "default" }: Props) {
 				size="sm"
 				className={cn(
 					APP_BAR_BUTTON_HEIGHT_CLASS,
-					USER_MENU_BUTTON_MIN_WIDTH,
-					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+					isDesktopNav && USER_MENU_BUTTON_MIN_WIDTH,
+					isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
+					"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav &&
 						"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
 				)}
 				disabled
 			>
 				<SpinnerGapIcon className="size-3.5 animate-spin" />
-				<Trans>Connecting...</Trans>
+				<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
+					<Trans>Connecting...</Trans>
+				</span>
 			</Button>
 		);
 	}
@@ -72,12 +75,15 @@ export function UserMenu({ variant = "default" }: Props) {
 					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
-						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+						isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
+						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
 						isDesktopNav &&
 							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
 					)}
 				>
-					<Trans>Connect Wallet</Trans>
+					<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
+						<Trans>Connect Wallet</Trans>
+					</span>
 				</Button>
 				{walletModalOpen && <WalletModal open onOpenChange={setWalletModalOpen} />}
 			</>
@@ -86,7 +92,7 @@ export function UserMenu({ variant = "default" }: Props) {
 
 	if (authenticated && sessionMode !== "agent-only" && !hasWalletAccess) {
 		return (
-			<div className="flex shrink-0 items-center gap-1">
+			<div className={cn("flex items-center", isDesktopNav ? "shrink-0 gap-1" : "min-w-0 max-w-full gap-2")}>
 				<Button
 					variant={isDesktopNav ? "filled" : "outline"}
 					intent="neutral"
@@ -95,12 +101,15 @@ export function UserMenu({ variant = "default" }: Props) {
 					iconLeft={<WalletIcon className="size-3.5" />}
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
-						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+						isDesktopNav ? "shrink-0" : "min-w-0 flex-1",
+						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
 						isDesktopNav &&
 							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
 					)}
 				>
-					<Trans>Reconnect wallet</Trans>
+					<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
+						<Trans>Reconnect wallet</Trans>
+					</span>
 				</Button>
 				<ButtonIcon
 					variant="ghost"
@@ -153,15 +162,16 @@ export function UserMenu({ variant = "default" }: Props) {
 				align="end"
 				size="sm"
 				triggerVariant="minimal"
-				className="flex shrink-0 items-center"
+				className={cn("flex items-center", isDesktopNav ? "shrink-0" : "min-w-0 max-w-full")}
 				triggerClassName={cn(
 					APP_BAR_BUTTON_HEIGHT_CLASS,
-					"max-h-8 shrink-0 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
+					"max-h-8 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
 					"!py-0 text-xs gap-1.5",
 					"items-center justify-start font-semibold text-fg",
 					"hover:bg-fill-hover active:bg-fill-press",
 					"data-[popup-open]:border-stroke-brand-strong/40 data-[popup-open]:bg-fill-hover",
 					"transition-[color,background-color,border-color] duration-150 ease-out",
+					isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
 					isDesktopNav &&
 						"h-[34px] min-h-[34px] max-h-[34px] !rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
 				)}

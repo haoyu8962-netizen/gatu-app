@@ -79,7 +79,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 			/>
 			<div
 				className={cn(
-					"fixed inset-0 overflow-y-auto p-6",
+					"fixed inset-0 overflow-y-auto py-6 pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
 					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-50",
 				)}
 			>

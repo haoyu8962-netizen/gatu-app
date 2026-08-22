@@ -38,11 +38,15 @@ describe("MobileBottomNav", () => {
 		const marketsButton = container.querySelector<HTMLButtonElement>('button[aria-label="Markets"]');
 		const tradeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Trade"]');
 		const navigation = container.querySelector("nav");
+		const navigationItems = navigation?.firstElementChild;
 		expect(navigation?.className).toContain("relative");
 		expect(navigation?.className).toContain("shrink-0");
 		expect(navigation?.className).toContain("[touch-action:pan-x_pinch-zoom]");
 		expect(navigation?.className).not.toContain("fixed");
 		expect(navigation?.className).not.toContain("bottom-0");
+		expect(navigation?.className).not.toContain("pl-[var(--sal)]");
+		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
+		expect(navigationItems?.className).toContain("pr-[var(--sar)]");
 		expect(marketsButton?.getAttribute("aria-current")).toBe("page");
 		expect(tradeButton?.className).not.toContain("-webkit-tap-highlight-color");
 

@@ -117,7 +117,9 @@ describe("OrderToast placement", () => {
 		expect(status?.parentElement).toBe(document.body);
 		expect(status?.getAttribute("aria-live")).toBe("polite");
 		expect(status?.className).toContain("z-[var(--z-toast)]");
-		expect(status?.className).toContain("left-4 right-4 w-auto");
+		expect(status?.className).toContain("left-[max(1rem,var(--sal))]");
+		expect(status?.className).toContain("right-[max(1rem,var(--sar))]");
+		expect(status?.className).toContain("w-auto");
 		expect(status?.className).toContain("min-[1001px]:left-auto");
 		expect(status?.className).toContain("min-[1001px]:right-6");
 		expect(status?.className).toContain("min-[1001px]:w-80");

@@ -52,6 +52,10 @@ describe("AdaptiveModal dismissal", () => {
 		});
 
 		expect(document.querySelector(".test-modal-overlay")).not.toBeNull();
+		const dialog = document.querySelector('[role="dialog"]');
+		const positioningLayer = dialog?.parentElement?.parentElement;
+		expect(positioningLayer?.className).toContain("pl-[max(1.5rem,env(safe-area-inset-left))]");
+		expect(positioningLayer?.className).toContain("pr-[max(1.5rem,env(safe-area-inset-right))]");
 		dispatchEscape();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
@@ -116,5 +120,8 @@ describe("AdaptiveModal dismissal", () => {
 		expect(dialog?.classList.contains("fixed")).toBe(true);
 		expect(dialog?.classList.contains("relative")).toBe(false);
 		expect(dialog?.classList.contains("outline-none")).toBe(true);
+		expect(dialog?.className).toContain("left-[env(safe-area-inset-left)]");
+		expect(dialog?.className).toContain("right-[env(safe-area-inset-right)]");
+		expect(dialog?.className).not.toContain("inset-x-0");
 	});
 });
