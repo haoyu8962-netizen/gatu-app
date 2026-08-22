@@ -1,3 +1,4 @@
+import type { AgentWallet } from "@gatu/hl-react";
 import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
 import type { AgentWalletMetadata } from "@gatu/hl-react/signing/agent-storage";
 import {
@@ -10,9 +11,11 @@ import {
 	MOBILE_AGENT_REVOKE_VALIDITY_MS,
 	MOBILE_AGENT_VALIDITY_MS,
 	shouldClearMobileAgent,
+	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "@gatu/hl-react/signing/mobile-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { deriveAgentRequirements, getDefinitiveMobileAgentStaleReason } from "@/lib/hyperliquid";
 
 const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
@@ -72,12 +75,167 @@ describe("mobile agent lifecycle", () => {
 		});
 		const verification = verifyMobileAgent(
 			localAgent,
-			[{ address: approval.publicKey, name: approval.agentName, validUntil: approval.agentValidUntilMs }],
+			[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
 			NOW_MS,
 		);
 
 		expect(verification.status).toBe("approved");
 		expect(shouldClearMobileAgent(verification)).toBe(false);
+	});
+
+	it("strictly verifies one expected Mobile named-Agent slot", () => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const verification = verifyExpectedMobileAgent(
+			[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
+			{
+				agentAddress: approval.publicKey,
+				agentNameBase: MOBILE_AGENT_NAME_BASE,
+				agentValidUntilMs: approval.agentValidUntilMs,
+			},
+			NOW_MS,
+		);
+
+		expect(verification).toMatchObject({
+			status: "approved",
+			remoteAgent: {
+				address: approval.publicKey,
+				name: MOBILE_AGENT_NAME_BASE,
+				validUntil: approval.agentValidUntilMs,
+			},
+		});
+	});
+
+	it.each([
+		{
+			label: "an unavailable remote response",
+			extraAgents: undefined,
+			expectedStatus: "remote_unknown",
+		},
+		{
+			label: "a missing named slot",
+			extraAgents: [],
+			expectedStatus: "missing",
+		},
+		{
+			label: "multiple normalized Mobile named slots",
+			extraAgents: [
+				{
+					address: createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY).publicKey,
+					name: MOBILE_AGENT_NAME_BASE,
+					validUntil: createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY).agentValidUntilMs,
+				},
+				{
+					address: createMobileAgentApproval(NOW_MS, NEW_PRIVATE_KEY).publicKey,
+					name: MOBILE_AGENT_NAME_BASE,
+					validUntil: createMobileAgentApproval(NOW_MS + 1, NEW_PRIVATE_KEY).agentValidUntilMs,
+				},
+			],
+			expectedStatus: "ambiguous",
+		},
+	])("rejects $label", ({ extraAgents, expectedStatus }) => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+
+		expect(
+			verifyExpectedMobileAgent(
+				extraAgents,
+				{
+					agentAddress: approval.publicKey,
+					agentNameBase: MOBILE_AGENT_NAME_BASE,
+					agentValidUntilMs: approval.agentValidUntilMs,
+				},
+				NOW_MS,
+			),
+		).toEqual({ status: expectedStatus });
+	});
+
+	it("rejects strict address, name, expiry, null-expiry, and expiration mismatches", () => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const replacement = createMobileAgentApproval(NOW_MS + 1, NEW_PRIVATE_KEY);
+		const expected = {
+			agentAddress: approval.publicKey,
+			agentNameBase: MOBILE_AGENT_NAME_BASE,
+			agentValidUntilMs: approval.agentValidUntilMs,
+		};
+
+		expect(
+			verifyExpectedMobileAgent(
+				[
+					{
+						address: replacement.publicKey,
+						name: MOBILE_AGENT_NAME_BASE,
+						validUntil: approval.agentValidUntilMs,
+					},
+				],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "address_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[
+					{
+						address: approval.publicKey,
+						name: "Other",
+						validUntil: approval.agentValidUntilMs,
+					},
+				],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "name_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[
+					{
+						address: approval.publicKey,
+						name: `${MOBILE_AGENT_NAME_BASE} valid_until ${approval.agentValidUntilMs + 1}`,
+						validUntil: approval.agentValidUntilMs,
+					},
+				],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "name_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[
+					{
+						address: approval.publicKey,
+						name: MOBILE_AGENT_NAME_BASE,
+						validUntil: approval.agentValidUntilMs + 1,
+					},
+				],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "expiry_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: null }],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "expiry_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[
+					{
+						address: approval.publicKey,
+						name: MOBILE_AGENT_NAME_BASE,
+						validUntil: Number.MAX_SAFE_INTEGER + 1,
+					},
+				],
+				expected,
+				NOW_MS,
+			),
+		).toEqual({ status: "expiry_mismatch" });
+		expect(
+			verifyExpectedMobileAgent(
+				[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
+				expected,
+				approval.agentValidUntilMs,
+			),
+		).toEqual({ status: "expired" });
 	});
 
 	it("treats relinked older local mobile access as stale while preserving the named slot base", () => {
@@ -93,7 +251,7 @@ describe("mobile agent lifecycle", () => {
 		});
 		const verification = verifyMobileAgent(
 			oldLocalAgent,
-			[{ address: newApproval.publicKey, name: newApproval.agentName, validUntil: newApproval.agentValidUntilMs }],
+			[{ address: newApproval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: newApproval.agentValidUntilMs }],
 			NOW_MS + 1,
 		);
 
@@ -116,7 +274,7 @@ describe("mobile agent lifecycle", () => {
 
 		const verification = verifyMobileAgent(
 			expiredLocalAgent,
-			[{ address: approval.publicKey, name: approval.agentName, validUntil: approval.agentValidUntilMs }],
+			[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
 			NOW_MS,
 		);
 
@@ -156,6 +314,71 @@ describe("mobile agent lifecycle", () => {
 		vi.useRealTimers();
 	});
 
+	it("only reports strict storage success after an exact readback", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(NOW_MS);
+		installStorage();
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const metadata = createMobileAgentStorageMetadata({
+			agentName: approval.agentName,
+			agentValidUntilMs: approval.agentValidUntilMs,
+			importedAtMs: NOW_MS,
+			syncId: "verified-storage",
+		}) satisfies AgentWalletMetadata;
+		const { writeAgentToStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
+
+		const result = writeAgentToStorageAndVerify(
+			"Mainnet",
+			USER_ADDRESS,
+			approval.privateKey,
+			approval.publicKey,
+			metadata,
+		);
+
+		expect(result).toMatchObject({
+			status: "stored",
+			agent: {
+				privateKey: approval.privateKey,
+				publicKey: approval.publicKey,
+				syncId: "verified-storage",
+			},
+		});
+	});
+
+	it("fails closed when strict storage cannot write or read back", async () => {
+		installStorage();
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const { writeAgentToStorageAndVerify } = await import("@gatu/hl-react/signing/agent-storage");
+
+		vi.spyOn(localStorage, "setItem").mockImplementationOnce(() => {
+			throw new Error("quota");
+		});
+		expect(writeAgentToStorageAndVerify("Mainnet", USER_ADDRESS, approval.privateKey, approval.publicKey)).toEqual({
+			status: "failed",
+			reason: "write_failed",
+		});
+
+		// The verified writer first reads the previous Agent so it can evict
+		// signer/client caches, then performs the security-sensitive readback.
+		vi.spyOn(localStorage, "getItem").mockReturnValueOnce(null).mockReturnValueOnce(null);
+		expect(writeAgentToStorageAndVerify("Mainnet", USER_ADDRESS, approval.privateKey, approval.publicKey)).toEqual({
+			status: "failed",
+			reason: "readback_mismatch",
+		});
+
+		expect(
+			writeAgentToStorageAndVerify(
+				"Mainnet",
+				USER_ADDRESS,
+				approval.privateKey,
+				createMobileAgentApproval(NOW_MS, NEW_PRIVATE_KEY).publicKey,
+			),
+		).toEqual({
+			status: "failed",
+			reason: "invalid_agent",
+		});
+	});
+
 	it("reports remote verification failures for expired or wrong-name agents", () => {
 		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
 		const localAgent = createMobileAgentWalletRecord({
@@ -170,7 +393,7 @@ describe("mobile agent lifecycle", () => {
 		expect(
 			verifyMobileAgent(
 				localAgent,
-				[{ address: approval.publicKey, name: approval.agentName, validUntil: NOW_MS - 1 }],
+				[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: NOW_MS - 1 }],
 				NOW_MS,
 			),
 		).toMatchObject({ status: "stale", reason: "expired_remote" });
@@ -181,7 +404,7 @@ describe("mobile agent lifecycle", () => {
 				[
 					{
 						address: approval.publicKey,
-						name: "OtherAgent valid_until 1780000000000",
+						name: "OtherAgent",
 						validUntil: approval.agentValidUntilMs,
 					},
 				],
@@ -190,9 +413,184 @@ describe("mobile agent lifecycle", () => {
 		).toMatchObject({ status: "stale", reason: "wrong_remote_name" });
 	});
 
+	it("wires strict mobile Agent verification into runtime trading readiness", () => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const localAgent = createMobileAgentWalletRecord({
+			privateKey: approval.privateKey,
+			publicKey: approval.publicKey,
+			agentName: approval.agentName,
+			agentValidUntilMs: approval.agentValidUntilMs,
+			importedAtMs: NOW_MS,
+			syncId: "runtime-contract",
+		});
+
+		const ready = deriveAgentRequirements(
+			undefined,
+			[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs }],
+			localAgent,
+			undefined,
+			NOW_MS,
+		);
+		expect(ready).toMatchObject({ needsAgent: false, isReady: true });
+
+		for (const remoteAgent of [
+			{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: null },
+			{ address: approval.publicKey, name: "Other", validUntil: approval.agentValidUntilMs },
+			{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: approval.agentValidUntilMs + 1 },
+		]) {
+			expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+				needsAgent: true,
+				isReady: false,
+			});
+		}
+	});
+
+	it.each([
+		{
+			label: "partial metadata",
+			buildAgent: (approval: ReturnType<typeof createMobileAgentApproval>) => ({
+				privateKey: approval.privateKey,
+				publicKey: approval.publicKey,
+				source: "mobile-sync" as const,
+			}),
+		},
+		{
+			label: "a non-canonical local name",
+			buildAgent: (approval: ReturnType<typeof createMobileAgentApproval>) => ({
+				privateKey: approval.privateKey,
+				publicKey: approval.publicKey,
+				source: "mobile-sync" as const,
+				agentNameBase: MOBILE_AGENT_NAME_BASE,
+				agentName: `${MOBILE_AGENT_NAME_BASE} valid_until ${approval.agentValidUntilMs + 1}`,
+				agentValidUntilMs: approval.agentValidUntilMs,
+				importedAtMs: NOW_MS,
+				syncId: "wrong-local-name",
+			}),
+		},
+		{
+			label: "a mismatched private and public key",
+			buildAgent: (approval: ReturnType<typeof createMobileAgentApproval>) => ({
+				privateKey: approval.privateKey,
+				publicKey: createMobileAgentApproval(NOW_MS, NEW_PRIVATE_KEY).publicKey,
+				source: "mobile-sync" as const,
+				agentNameBase: MOBILE_AGENT_NAME_BASE,
+				agentName: approval.agentName,
+				agentValidUntilMs: approval.agentValidUntilMs,
+				importedAtMs: NOW_MS,
+				syncId: "mismatched-key-pair",
+			}),
+		},
+	])("fails closed for a mobile-sourced record with $label", ({ buildAgent }) => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const localAgent = buildAgent(approval) as AgentWallet;
+		const remoteAgent = {
+			address: localAgent.publicKey,
+			name: MOBILE_AGENT_NAME_BASE,
+			validUntil: approval.agentValidUntilMs,
+		};
+
+		expect(verifyMobileAgent(localAgent, [remoteAgent], NOW_MS)).toMatchObject({
+			status: "stale",
+			reason: "invalid_local",
+		});
+		expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+			needsAgent: true,
+			isReady: false,
+		});
+	});
+
+	it("keeps local-registration Agents on the generic address approval path", () => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const localAgent: AgentWallet = {
+			privateKey: approval.privateKey,
+			publicKey: approval.publicKey,
+			source: "local-registration",
+		};
+		const remoteAgent = {
+			address: approval.publicKey,
+			name: "app",
+			validUntil: null,
+		};
+
+		expect(verifyMobileAgent(localAgent, [remoteAgent], NOW_MS)).toMatchObject({
+			status: "not_mobile_agent",
+		});
+		expect(deriveAgentRequirements(undefined, [remoteAgent], localAgent, undefined, NOW_MS)).toMatchObject({
+			needsAgent: false,
+			isReady: true,
+		});
+	});
+
+	it("only reconciles local mobile credentials from a fresh, definitive remote result", () => {
+		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
+		const localAgent = createMobileAgentWalletRecord({
+			privateKey: approval.privateKey,
+			publicKey: approval.publicKey,
+			agentName: approval.agentName,
+			agentValidUntilMs: approval.agentValidUntilMs,
+			importedAtMs: NOW_MS,
+			syncId: "reconciliation-contract",
+		});
+		const freshOptions = {
+			requestSucceeded: true,
+			isFetching: false,
+			dataUpdatedAt: NOW_MS + 1,
+			nowMs: NOW_MS,
+		};
+
+		expect(
+			getDefinitiveMobileAgentStaleReason(localAgent, undefined, {
+				...freshOptions,
+				requestSucceeded: false,
+			}),
+		).toBeNull();
+		expect(
+			getDefinitiveMobileAgentStaleReason(localAgent, [], {
+				...freshOptions,
+				isFetching: true,
+			}),
+		).toBeNull();
+		expect(
+			getDefinitiveMobileAgentStaleReason(localAgent, [], {
+				...freshOptions,
+				dataUpdatedAt: NOW_MS,
+			}),
+		).toBeNull();
+		expect(getDefinitiveMobileAgentStaleReason(localAgent, [], freshOptions)).toBe("missing_remote");
+		expect(
+			getDefinitiveMobileAgentStaleReason(
+				localAgent,
+				[{ address: approval.publicKey, name: MOBILE_AGENT_NAME_BASE, validUntil: null }],
+				freshOptions,
+			),
+		).toBe("remote_expiry_mismatch");
+	});
+
+	it("reconciles an expired local mobile credential without waiting for a remote response", () => {
+		const approval = createMobileAgentApproval(NOW_MS - MOBILE_AGENT_VALIDITY_MS - 1, OLD_PRIVATE_KEY);
+		const localAgent = createMobileAgentWalletRecord({
+			privateKey: approval.privateKey,
+			publicKey: approval.publicKey,
+			agentName: approval.agentName,
+			agentValidUntilMs: approval.agentValidUntilMs,
+			importedAtMs: NOW_MS - MOBILE_AGENT_VALIDITY_MS,
+			syncId: "expired-reload",
+		});
+
+		expect(
+			getDefinitiveMobileAgentStaleReason(localAgent, undefined, {
+				requestSucceeded: false,
+				isFetching: true,
+				dataUpdatedAt: 0,
+				nowMs: NOW_MS,
+			}),
+		).toBe("expired_local");
+	});
+
 	it("creates a throwaway short-lived approval for main-wallet revocation", () => {
 		const revoke = createMobileAgentRevocationApproval(NOW_MS, REVOKE_PRIVATE_KEY);
 
+		expect(MOBILE_AGENT_REVOKE_VALIDITY_MS).toBe(10 * 60 * 1000);
 		expect(revoke.privateKey).toBe(REVOKE_PRIVATE_KEY);
 		expect(revoke.agentNameBase).toBe(MOBILE_AGENT_NAME_BASE);
 		expect(revoke.agentValidUntilMs).toBe(NOW_MS + MOBILE_AGENT_REVOKE_VALIDITY_MS);
@@ -204,6 +602,7 @@ describe("mobile agent lifecycle", () => {
 		expect(getExchangeMethodConfig("approveBuilderFee").client).toBe("user");
 		expect(getExchangeMethodConfig("withdraw3").client).toBe("user");
 		expect(getExchangeMethodConfig("usdSend").client).toBe("user");
+		expect(getExchangeMethodConfig("stakingLinkDisableTradingUser").client).toBe("user");
 		expect(getExchangeMethodConfig("order").client).toBe("trading");
 		expect(getExchangeMethodConfig("cancel").client).toBe("trading");
 	});

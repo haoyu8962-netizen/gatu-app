@@ -1,30 +1,74 @@
-# /etc/caddy/Caddyfile — gatu single-host reverse proxy + automatic HTTPS.
+# /etc/caddy/Caddyfile — gatu dual-origin reverse proxy + automatic HTTPS.
 #
-# Caddy obtains and renews a Let's Encrypt certificate for this domain
+# Caddy obtains and renews Let's Encrypt certificates for both domains
 # automatically. Requirements:
-#   - DNS A record  app.gatu.ai → this host's public IP
+#   - DNS A/AAAA records for app.gatu.ai and testnet.gatu.ai → this host
 #   - inbound ports 80 and 443 open in the security group
 #
-# Replace the domain below if you serve on a different hostname.
+# Both origins intentionally share one application upstream and immutable release.
 
-app.gatu.ai {
+app.gatu.ai, testnet.gatu.ai {
 	encode zstd gzip
 
-	# Long-cache the immutable, content-hashed build assets. Nitro already sets
-	# this via routeRules; we re-assert it at the edge for safety.
-	@immutable path /assets/* /charting_library/*
-	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	# Referral landing paths may contain user-controlled codes. Never cache them,
+	# leak them through Referer, or let search engines index them.
+	@referral_join path /join /join/*
+	header @referral_join {
+		>Cache-Control "no-store"
+		>Referrer-Policy "no-referrer"
+		>X-Robots-Tag "noindex, nofollow"
+	}
 
-	# Baseline security headers. A Content-Security-Policy is intentionally NOT
-	# set here — see deploy/README.md ("可选加固: CSP") for why and how to add it.
+	# The testnet origin is operational infrastructure, not a search result.
+	@testnet host testnet.gatu.ai
+	header @testnet >X-Robots-Tag "noindex, nofollow"
+
+	# The application build assets are content-hashed and safe to cache indefinitely.
+	@immutable path /assets/*
+	header @immutable >Cache-Control "public, max-age=31536000, immutable"
+
+	# Charting Library v28 can stall during repeated WebKit loads when its scripts
+	# are reused from a hot immutable cache. Revalidate the complete chart package.
+	@chart_assets path /charting_library/* /tradingview-theme-*.css
+	# The deferred set replaces every upstream Cache-Control value with one final
+	# policy. Do not use the additive header form here: conflicting policies can
+	# leave the non-hashed chart entry pinned to an obsolete bundle manifest.
+	header @chart_assets >Cache-Control "public, max-age=0, must-revalidate"
+
+	# Nitro also treats this as a non-fallthrough public asset mount. Keep an edge
+	# guard as defense in depth so a missing bundle can never become SSR/SPA HTML.
+	root * /opt/gatu/current/public
+	@missing_chart_asset {
+		path /charting_library/*
+		# During a one-time migration from the legacy in-place .output service,
+		# /opt/gatu/current may not exist yet. Let the still-running legacy Nitro
+		# process serve requests until the first immutable release is published.
+		file {
+			root /opt/gatu/current
+			try_files public/
+		}
+		not file
+	}
+	respond @missing_chart_asset 404
+
+	# Nitro route rules emit the path-specific Content-Security-Policy and related
+	# application headers. Do not add a second CSP here: browsers enforce every CSP
+	# response header, so an uncoordinated proxy policy can break the terminal or chart iframe.
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
 	}
 
-	reverse_proxy 127.0.0.1:3000
+	# The one-time mobile QR endpoint rate-limits by the client IP received by
+	# Nitro. Replace, rather than append, inbound forwarding headers so clients
+	# cannot mint arbitrary limiter buckets. A header_up set already overwrites
+	# the inbound value. Do not pair it with a same-name delete: Caddy aggregates
+	# header operations and applies deletes after sets.
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+	}
 
 	log {
 		output file /var/log/caddy/gatu.access.log {

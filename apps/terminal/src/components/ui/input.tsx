@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 type InputSize = "sm" | "default" | "lg" | "xl";
 
 const inputBaseStyles = [
-	"placeholder:text-fg-muted selection:bg-brand selection:text-white",
+	"placeholder:text-fg-muted selection:bg-brand selection:text-fg-inverse",
 	"border-stroke-weak min-w-0 rounded-8 border bg-transparent px-2 py-1",
 	"transition-[color,box-shadow,border-color] outline-none",
 	"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
@@ -29,28 +29,29 @@ const inputSizeStyles: Record<InputSize, string> = {
 	xl: "h-12 text-base px-3",
 };
 
-function getInputClassName(inputSize: InputSize, className?: string) {
-	return cn(inputBaseStyles, inputSizeStyles[inputSize], className);
+const mobileSafeInputStyles = "max-[1000px]:text-base max-[1000px]:leading-5";
+
+function getInputClassName(inputSize: InputSize, className?: string, mobileSafe = false) {
+	return cn(inputBaseStyles, inputSizeStyles[inputSize], mobileSafe && mobileSafeInputStyles, className);
 }
 
-function Input({
-	className,
-	type,
-	inputSize = "default",
-	...props
-}: React.ComponentProps<typeof BaseInput> & {
+type InputProps = Omit<React.ComponentProps<typeof BaseInput>, "className"> & {
+	className?: string;
 	inputSize?: InputSize;
-}) {
+	mobileSafe?: boolean;
+};
+
+function Input({ className, type, inputSize = "default", mobileSafe, ...props }: InputProps) {
 	return (
 		<BaseInput
 			type={type}
 			data-slot="input"
 			data-size={inputSize}
-			className={cn("w-full", getInputClassName(inputSize, className))}
+			className={cn("w-full", getInputClassName(inputSize, className, mobileSafe))}
 			{...props}
 		/>
 	);
 }
 
-export { Input, inputBaseStyles, inputSizeStyles, getInputClassName };
+export { Input, inputBaseStyles, inputSizeStyles, mobileSafeInputStyles, getInputClassName };
 export type { InputSize };

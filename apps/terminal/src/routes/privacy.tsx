@@ -4,7 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/privacyPolicy.md?raw";
 
 export const Route = createFileRoute("/privacy")({
-	ssr: false,
+	ssr: true,
 	head: () =>
 		buildPageHead({
 			title: "Privacy Policy",

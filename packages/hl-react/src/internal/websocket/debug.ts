@@ -1,9 +1,10 @@
-import { getStoreInternals, type HyperliquidStore } from "../../store";
+import { getStoreInternals, type HyperliquidStore, type WsRecoveryEvent } from "../../store";
 
 type DebugSnapshot = {
 	subscriptions: Record<string, { status: string; hasData: boolean; isStale: boolean }>;
 	counters: Record<string, { refCount: number; reconnectAttempts: number }>;
 	lastMessageAt: Record<string, number | undefined>;
+	recoveryEvents: WsRecoveryEvent[];
 	transportState: {
 		wsStatus: string;
 		wsError: string | undefined;
@@ -45,13 +46,17 @@ function createDebugSnapshot(store: HyperliquidStore): DebugSnapshot {
 			refCount: runtime?.refCount ?? 0,
 			reconnectAttempts: runtime?.reconnectAttempts ?? 0,
 		};
-		lastMessageAt[key] = internals.watchdog.getLastMessageAt(key);
+		lastMessageAt[key] = runtime?.lastMessageAt;
 	}
 
 	return {
 		subscriptions,
 		counters,
 		lastMessageAt,
+		recoveryEvents: internals.recoveryEvents.map((event) => ({
+			...event,
+			streams: event.streams.map((stream) => ({ ...stream })),
+		})),
 		transportState: {
 			wsStatus: state.wsStatus,
 			wsError: state.wsError !== undefined ? String(state.wsError) : undefined,

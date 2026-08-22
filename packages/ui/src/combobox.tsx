@@ -157,7 +157,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 		const renderPopup = (
 			<BaseCombobox.Portal>
 				<BaseCombobox.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
-					<BaseCombobox.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+					<BaseCombobox.Popup className="max-h-64 overflow-auto bg-overlay p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<BaseCombobox.List>
 							{filteredOptions.map((option) => (
 								<BaseCombobox.Item

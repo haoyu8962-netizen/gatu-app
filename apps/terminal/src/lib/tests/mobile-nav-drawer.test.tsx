@@ -1,0 +1,343 @@
+// @vitest-environment jsdom
+
+import { i18n } from "@lingui/core";
+import { act, createElement, Fragment, type ReactNode } from "react";
+import type { Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MobileNavDrawer } from "@/components/trade/mobile/mobile-nav-drawer";
+import { HYPERSCREENER_URL } from "@/config/nav";
+import { createI18nRoot } from "./harness/react";
+
+const testState = vi.hoisted(() => ({
+	depositOpen: vi.fn(),
+	depositAvailable: true,
+	depositPath: "external" as "external" | "sponsored",
+	depositUnavailableReason: null as string | null,
+	hasWalletAccess: false,
+	pathname: "/api-wallet",
+	preloadGlobalModal: vi.fn(async (): Promise<void> => undefined),
+	settingsOpen: vi.fn(),
+}));
+
+vi.mock("@gatu/ui", () => ({
+	Badge: ({ children }: { children: ReactNode }) => createElement("span", null, children),
+	Button: ({
+		"aria-label": ariaLabel,
+		"aria-busy": ariaBusy,
+		children,
+		disabled,
+		iconLeft,
+		onClick,
+	}: {
+		"aria-label"?: string;
+		"aria-busy"?: boolean;
+		children: ReactNode;
+		disabled?: boolean;
+		iconLeft?: ReactNode;
+		onClick?: () => void;
+	}) =>
+		createElement(
+			"button",
+			{ "aria-busy": ariaBusy, "aria-label": ariaLabel, disabled, onClick, type: "button" },
+			iconLeft,
+			children,
+		),
+	ButtonIcon: ({
+		"aria-busy": ariaBusy,
+		"aria-label": ariaLabel,
+		children,
+		disabled,
+		onClick,
+	}: {
+		"aria-busy"?: boolean;
+		"aria-label"?: string;
+		children: ReactNode;
+		disabled?: boolean;
+		onClick?: () => void;
+	}) =>
+		createElement(
+			"button",
+			{ "aria-busy": ariaBusy, "aria-label": ariaLabel, disabled, onClick, type: "button" },
+			children,
+		),
+	Drawer: ({
+		children,
+		onOpenChangeComplete,
+		open,
+	}: {
+		children: ReactNode;
+		onOpenChangeComplete?: (open: boolean) => void;
+		open: boolean;
+	}) =>
+		open
+			? createElement(Fragment, null, children)
+			: createElement("button", {
+					"data-testid": "drawer-close-complete",
+					onClick: () => onOpenChangeComplete?.(false),
+					type: "button",
+				}),
+	DrawerContent: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("div", { className, "data-testid": "mobile-nav-drawer", role: "dialog" }, children),
+	DrawerTitle: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("h2", { className }, children),
+}));
+
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({
+		"aria-current": ariaCurrent,
+		"aria-label": ariaLabel,
+		children,
+		className,
+		onClick,
+		search,
+		to,
+	}: {
+		"aria-current"?: string;
+		"aria-label"?: string;
+		children: ReactNode;
+		className?: string;
+		onClick?: () => void;
+		search?: unknown;
+		to: string;
+	}) =>
+		createElement(
+			"a",
+			{
+				"aria-current": ariaCurrent,
+				"aria-label": ariaLabel,
+				className,
+				"data-search": search === undefined ? undefined : JSON.stringify(search),
+				"data-to": to,
+				href: to,
+				onClick,
+			},
+			children,
+		),
+	useLocation: () => ({ pathname: testState.pathname }),
+}));
+
+vi.mock("@/components/trade/header/theme-toggle", () => ({
+	ThemeToggle: () => createElement("div", { "data-testid": "theme-toggle" }),
+}));
+
+vi.mock("@/hooks/trade/use-trade-home-path", () => ({
+	useTradeHomePath: () => "/trade/HYPE",
+}));
+
+vi.mock("@/hooks/trade/use-deposit-availability", () => ({
+	useDepositAvailability: () => ({
+		available: testState.depositAvailable,
+		path: testState.depositPath,
+		unavailableLabel: "Deposit unavailable",
+		unavailableReason: testState.depositUnavailableReason,
+	}),
+}));
+
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({ actionsBlocked: false, tradeRestricted: false }),
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ hasWalletAccess: testState.hasWalletAccess }),
+}));
+
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useDepositModalActions: () => ({ open: testState.depositOpen }),
+	useSettingsDialogActions: () => ({ open: testState.settingsOpen }),
+}));
+
+vi.mock("@/components/trade/components/lazy-global-modals", () => ({
+	preloadGlobalModal: testState.preloadGlobalModal,
+}));
+
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+describe("MobileNavDrawer", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+		testState.depositOpen.mockReset();
+		testState.depositAvailable = true;
+		testState.depositPath = "external";
+		testState.depositUnavailableReason = null;
+		testState.hasWalletAccess = false;
+		testState.pathname = "/api-wallet";
+		testState.preloadGlobalModal.mockReset();
+		testState.preloadGlobalModal.mockResolvedValue(undefined);
+		testState.settingsOpen.mockReset();
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createI18nRoot(container);
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	it("matches the desktop menu order and keeps available destinations functional", () => {
+		act(() => root.render(<MobileNavDrawer />));
+		const openButton = container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]');
+		act(() => openButton?.click());
+
+		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
+		const moreNavigation = container.querySelector<HTMLElement>('nav[aria-label="More"]');
+		const primaryItems = [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
+		const moreItems = [...(moreNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
+		const itemLabel = (item: HTMLElement) =>
+			item instanceof HTMLButtonElement && item.disabled
+				? item.querySelector("span")?.textContent?.trim()
+				: item.textContent?.trim();
+
+		expect(primaryItems.map(itemLabel)).toEqual([
+			"Trade",
+			"Portfolio",
+			"Earn",
+			"Vaults",
+			"Staking",
+			"Referrals",
+			"Leaderboard",
+		]);
+		expect(moreItems.map(itemLabel)).toEqual(["Statistics", "API Wallet"]);
+
+		const links = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="mobile-nav-drawer"] nav a')];
+		expect(links.map((link) => link.textContent?.trim())).toEqual([
+			"Trade",
+			"Portfolio",
+			"Vaults",
+			"Staking",
+			"Referrals",
+			"Leaderboard",
+			"Statistics",
+			"API Wallet",
+		]);
+		expect(links.map((link) => link.dataset.to)).toEqual([
+			"/trade/HYPE",
+			"/portfolio",
+			"/vaults",
+			"/staking",
+			"/referrals",
+			"/leaderboard",
+			undefined,
+			"/api-wallet",
+		]);
+		const statisticsLink = links.find((link) => link.textContent?.trim() === "Statistics");
+		expect(statisticsLink?.href).toBe(HYPERSCREENER_URL);
+		expect(statisticsLink?.target).toBe("_blank");
+		expect(statisticsLink?.rel).toBe("noopener noreferrer");
+
+		const upcomingItems = [
+			...container.querySelectorAll<HTMLButtonElement>('[data-testid="mobile-nav-drawer"] nav button'),
+		];
+		expect(upcomingItems.map(itemLabel)).toEqual(["Earn"]);
+		for (const item of upcomingItems) {
+			expect(item.disabled).toBe(true);
+			expect(item.textContent).toContain("Soon");
+		}
+
+		const drawerText = container.querySelector('[data-testid="mobile-nav-drawer"]')?.textContent;
+		for (const removedLabel of ["Docs", "Support", "Terms", "Privacy Policy", "Risk Disclosure"])
+			expect(drawerText).not.toContain(removedLabel);
+
+		const apiWalletLink = links.find((link) => link.textContent?.trim() === "API Wallet");
+		expect(apiWalletLink?.dataset.to).toBe("/api-wallet");
+		expect(apiWalletLink?.getAttribute("aria-current")).toBe("page");
+		expect(apiWalletLink?.className).toContain("bg-fill-hover");
+		expect(container.querySelector("h2")?.textContent).toBe("Navigation");
+		expect(container.querySelector("h2")?.className).toContain("sr-only");
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')?.className).toContain(
+			"pl-[env(safe-area-inset-left)]",
+		);
+
+		act(() => apiWalletLink?.click());
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+	});
+
+	it("keeps the drawer visible while Settings loads and opens it only after the drawer closes", async () => {
+		let resolvePreload: (() => void) | undefined;
+		testState.preloadGlobalModal.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					resolvePreload = resolve;
+				}),
+		);
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const settingsButton = container.querySelector<HTMLButtonElement>('button[aria-label="Settings"]');
+		act(() => settingsButton?.click());
+
+		expect(testState.preloadGlobalModal).toHaveBeenCalledWith("settings");
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).not.toBeNull();
+		expect(settingsButton?.disabled).toBe(true);
+		expect(settingsButton?.getAttribute("aria-busy")).toBe("true");
+		expect(testState.settingsOpen).not.toHaveBeenCalled();
+
+		await act(async () => {
+			resolvePreload?.();
+			await Promise.resolve();
+		});
+
+		expect(container.querySelector('[data-testid="mobile-nav-drawer"]')).toBeNull();
+		expect(testState.settingsOpen).not.toHaveBeenCalled();
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="drawer-close-complete"]')?.click());
+		expect(testState.settingsOpen).toHaveBeenCalledOnce();
+		expect(testState.depositOpen).not.toHaveBeenCalled();
+	});
+
+	it("cancels a pending modal when the user closes the drawer", async () => {
+		let resolvePreload: (() => void) | undefined;
+		testState.preloadGlobalModal.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					resolvePreload = resolve;
+				}),
+		);
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Settings"]')?.click());
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Close navigation"]')?.click());
+
+		await act(async () => {
+			resolvePreload?.();
+			await Promise.resolve();
+		});
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="drawer-close-complete"]')?.click());
+
+		expect(testState.settingsOpen).not.toHaveBeenCalled();
+		expect(testState.depositOpen).not.toHaveBeenCalled();
+	});
+
+	it("preloads Deposit through the shared modal registry", async () => {
+		testState.hasWalletAccess = true;
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+		const depositButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Deposit",
+		);
+		await act(async () => depositButton?.click());
+
+		expect(testState.preloadGlobalModal).toHaveBeenCalledWith("deposit");
+		expect(testState.depositOpen).not.toHaveBeenCalled();
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="drawer-close-complete"]')?.click());
+		expect(testState.depositOpen).toHaveBeenCalledWith("deposit");
+		expect(testState.settingsOpen).not.toHaveBeenCalled();
+	});
+
+	it("does not preload an unavailable Deposit path and shows its reason", async () => {
+		testState.hasWalletAccess = true;
+		testState.depositAvailable = false;
+		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		act(() => root.render(<MobileNavDrawer />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
+
+		const depositButton = container.querySelector<HTMLButtonElement>('button[aria-label="Deposit unavailable"]');
+		expect(depositButton?.disabled).toBe(true);
+		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
+		await act(async () => depositButton?.click());
+		expect(testState.preloadGlobalModal).not.toHaveBeenCalled();
+		expect(testState.depositOpen).not.toHaveBeenCalled();
+	});
+});

@@ -1,7 +1,7 @@
 ## Design Tokens
 
 - **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `packages/ui/src/globals.css` + `apps/terminal/src/styles.css`.
-- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-sm` (14px), `text-base` (16px)+.
+- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-2sm` (13px, trading-panel body per design handoff), `text-sm` (14px), `text-base` (16px)+.
 
 ### Naming rule for NEW tokens
 
@@ -27,18 +27,23 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 
 ### Surfaces — elevation (sunken → background → surface → overlay)
 - `bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
-- `bg-background` default page background (light: `#ffffff`, dark: `#12131a`)
-- `bg-surface` elevated surfaces, cards (light: `#ffffff`, dark: `#1d1e26`)
-- `bg-overlay` overlays, modals (light: `#ffffff`, dark: `#292b33`)
-- `bg-alternate` alternating rows (light: `#f5f6fa`, dark: `#1d1e26`)
+- `bg-background` default page background (light: `#ffffff`, shared dark default: `#12131a`)
+- `bg-grid-container` terminal desktop grid underlay visible through panel gutters (light: `#f1f3f6`, terminal dark: `#1b2429`)
+- `bg-portfolio-canvas` portfolio page canvas behind summary cards (light: `#f1f3f6`, terminal dark: `#04251f`)
+- `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
+- `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
+- `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`)
+- `bg-alternate` alternating rows (light: `#f5f6fa`, shared dark default: `#1d1e26`)
 - `bg-inverse-surface` inverse background
 
-> **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode — they only differ in dark. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated in both modes.
+> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
+
+> **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated.
 
 ### Foreground — text intensity
 - `text-fg` primary text (max contrast)
 - `text-fg-muted` secondary/muted text
-- `text-fg-disabled` disabled state
+- `text-fg-disabled` disabled state — bridged to `--icon-neutral` (60% ink/white) so disabled labels stay legible; the raw `--text-disabled` (12% alpha) is reserved for disabled fills/strokes, never text
 - `text-fg-inverse` / `text-fg-inverse-muted` / `text-fg-inverse-disabled` inverted text on dark/brand surfaces
 
 ### Semantic — shared bg/text
@@ -67,6 +72,7 @@ Use these with `border-*`, `ring-*`, `outline-*`, `divide-*` prefixes. The strok
 - `border-stroke-selected` selected/active border (brand)
 - `border-stroke-focus` focus ring / border
 - `border-stroke-disabled` disabled border
+- Trading panel (app-level, `apps/terminal/src/styles.css`): `border-trading-panel-stroke-card` (#e3e8ee 卡边), `border-trading-panel-stroke-input` (#d8dfe7 输入边), `border-trading-panel-stroke-control` (#c6cfd9 复选/虚线), `border-trading-panel-stroke-row` (#eef1f5 行分隔; dark 均映射语义令牌)
 - Semantic (each at 80% alpha): `border-stroke-brand-strong`, `border-stroke-error-strong`, `border-stroke-warning-strong`, `border-stroke-success-strong`, `border-stroke-info-strong`
 - Semantic soft (20% alpha): `border-stroke-brand-weak`, `border-stroke-error-weak`, etc.
 - Inverse: `border-stroke-inverse-strong` / `border-stroke-inverse-weak` / `border-stroke-inverse-disabled`

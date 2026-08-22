@@ -1,58 +1,94 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
+import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
-import { getExplorerTxUrl } from "@/lib/explorer";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { toNumber } from "@/lib/trade/numbers";
-import { getValueColorClass } from "@/lib/ui/value-color";
+import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
+import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
+import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
 	positionsPanelTableCellClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
+const historyTableHeadClass =
+	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+const historyTableCellClass = "h-[43px] px-2 py-0 text-[13px] leading-[18px]";
+const historyAssetClass =
+	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
+const historyFooterButtonClass =
+	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
+
 export function HistoryTab() {
-	const { address, isConnected } = useWalletSession();
+	useNumberFormatRevision();
+	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
-	const {
-		data: fillsEvent,
-		status,
-		error,
-	} = useSubscription(
-		"userFills",
-		{ user: address ?? "0x0", aggregateByTime: true },
-		{ enabled: isConnected && !!address },
-	);
+	const isTestnet = useIsTestnet();
+	const malformedHistory = isMalformedHistoryPageError(error);
 
-	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
+	function getDirectionLabel(direction: string) {
+		if (direction === "Open Long") return t`Open Long`;
+		if (direction === "Close Long") return t`Close Long`;
+		if (direction === "Open Short") return t`Open Short`;
+		if (direction === "Close Short") return t`Close Short`;
+		return direction;
+	}
 
-	const headerCount = isConnected ? `${fills.length} ${t`trades`}` : null;
+	const { exportCsv, isExporting } = useUserFillsCsvExport({
+		filename: "trade_history.csv",
+		buildRows: (exportFills) =>
+			buildCsvRows(exportFills, [
+				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+				{ header: t`Asset`, getValue: (fill) => fill.coin },
+				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
+				{ header: t`Type`, getValue: () => t`Trade` },
+				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
+				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
+				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
+				{
+					header: t`PNL`,
+					getValue: (fill) => {
+						const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
+					},
+				},
+				{
+					header: t`Transaction`,
+					getValue: (fill) => (hasUserFillExplorerTransaction(fill) ? fill.hash : FALLBACK_VALUE_PLACEHOLDER),
+				},
+			]),
+	});
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
-		if (status === "subscribing" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
+		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
 		if (status === "error") {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load trade history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+					{malformedHistory ? (
+						<span className="mt-1 text-xs text-fg-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
+					)}
 				</Placeholder>
 			);
 		}
@@ -64,132 +100,159 @@ export function HistoryTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
-				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
-			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[50rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
+						<Table className="table-fixed min-w-[53rem] w-full font-market-close tabular-nums">
+							<colgroup>
+								<col className="w-[132px]" />
+								<col className="w-[116px]" />
+								<col className="w-[72px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[128px]" />
+							</colgroup>
+							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pl-5 text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+										{t`Direction`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
 										{t`Type`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`Price`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`Fee`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pr-5 text-right")}>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{fills.map((fill, i) => {
-									const fee = toNumber(fill.fee);
-									const feeClass = getValueColorClass(fee);
-									const closedPnl = toNumber(fill.closedPnl);
-									const showPnl = closedPnl !== null && closedPnl !== 0;
+							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
+								{fills.map((fill) => {
+									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+									const directionLabel = getDirectionLabel(fill.dir);
+									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 
 									return (
 										<TableRow
-											key={`${fill.hash}-${fill.tid}`}
-											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
+											key={getUserFillKey(fill)}
+											className="transition-colors duration-[120ms] hover:bg-market-close-card"
 										>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, historyTableCellClass, "pl-5 font-bold")}
+											>
 												<AssetBadge
 													coin={fill.coin}
 													side={fill.side === "B" ? "buy" : "sell"}
 													onClick={() => navigateToMarket(fill.coin)}
 													aria-label={t`Switch to ${fill.coin} market`}
+													className={historyAssetClass}
+													nameClassName="text-[13px] leading-[18px] font-bold text-market-close-fg"
+													fit
 												/>
 											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
 												<span
 													className={cn(
-														"text-xs px-1 py-0.5 rounded-8 uppercase",
-														fill.liquidation ? "bg-error-soft text-error" : "bg-surface/50",
+														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-[11px] leading-[14px] font-semibold",
+														fill.liquidation
+															? "bg-error-soft text-market-close-danger"
+															: fill.dir === "Open Long" || fill.dir === "Open Short"
+																? "bg-success-soft text-market-close-success"
+																: "bg-market-close-hover text-market-close-muted",
 													)}
 												>
-													{fill.liquidation ? t`Liquidated` : fill.dir}
+													{fill.liquidation ? t`Liquidated` : directionLabel}
 												</span>
+											</TableCell>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
+												<span className="text-xs font-semibold text-market-close-muted">{t`Trade`}</span>
 											</TableCell>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+												className={cn(
+													positionsPanelTableCellClass,
+													historyTableCellClass,
+													"text-right text-market-close-fg",
+												)}
 											>
 												{formatUSD(fill.px)}
 											</TableCell>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+												className={cn(
+													positionsPanelTableCellClass,
+													historyTableCellClass,
+													"text-right text-market-close-fg",
+												)}
 											>
 												{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
 											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={feeClass}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, historyTableCellClass, "text-right text-xs")}
+											>
+												<span className="text-market-close-muted">
 													{formatToken(fill.fee, {
 														symbol: fill.feeToken,
 													})}
 												</span>
 											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												{showPnl ? (
-													<span className={getValueColorClass(closedPnl)}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, historyTableCellClass, "text-right font-semibold")}
+											>
+												{closedPnl ? (
+													<span className={getMarketCloseValueColorClass(closedPnl)}>
 														{formatUSD(closedPnl, {
 															signDisplay: "exceptZero",
 														})}
 													</span>
 												) : (
-													<span className="text-fg-muted">{FALLBACK_VALUE_PLACEHOLDER}</span>
+													<span className="text-market-close-subtle">{FALLBACK_VALUE_PLACEHOLDER}</span>
 												)}
 											</TableCell>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}
+												className={cn(
+													positionsPanelTableCellClass,
+													historyTableCellClass,
+													"pr-5 text-right text-xs text-market-close-muted",
+												)}
 											>
-												<div className="flex flex-col items-end underline decoration-dashed decoration-fg-muted/30">
-													<a
-														className="flex items-center gap-1"
-														href={getExplorerTxUrl(fill.hash) ?? ""}
-														target="_blank"
-														rel="noopener noreferrer"
-													>
+												<div className="flex flex-col items-end">
+													{hasExplorerTransaction ? (
+														<a
+															className="flex items-center gap-1 transition-colors duration-[120ms] hover:text-market-close-fg"
+															href={getExplorerTxUrl(fill.hash, isTestnet)}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<span>{formatDateTimeShort(fill.time)}</span>
+															<ArrowSquareOutIcon
+																className="size-2.5 text-market-close-stroke-control"
+																aria-hidden="true"
+															/>
+														</a>
+													) : (
 														<span>{formatDateTimeShort(fill.time)}</span>
-														<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
-													</a>
+													)}
 												</div>
 											</TableCell>
 										</TableRow>
@@ -197,10 +260,23 @@ export function HistoryTab() {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected ? (
+				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="trade-history-footer">
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						className={historyFooterButtonClass}
+						disabled={isExporting}
+						onClick={() => void exportCsv()}
+					>
+						{t`Export CSV`}
+					</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

@@ -1,29 +1,26 @@
-import type { InfoClient } from "@nktkas/hyperliquid";
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { useHyperliquid } from "../provider";
-import { createKey } from "../query/keys";
+import { infoQueryOptions } from "../query/info";
+import { useHyperliquidTransport } from "../transport-provider";
 import type { HyperliquidQueryError, QueryParameter } from "../types";
 import type { InfoMethod, InfoParams, InfoResponse } from "../types/clients";
 
-function callInfoMethod<M extends InfoMethod>(
-	info: InfoClient,
-	method: M,
-	params: InfoParams<M>,
-	signal: AbortSignal,
-): Promise<InfoResponse<M>> {
-	const fn = info[method] as (...args: unknown[]) => Promise<InfoResponse<M>>;
-	return params !== undefined ? fn.call(info, params, signal) : fn.call(info, signal);
-}
-
-export const PERSISTED_QUERY_PREFIX = "persisted" as const;
+export {
+	type InfoRequestOptions,
+	infoKey,
+	infoPersistedKey,
+	infoQueryOptions,
+	PERSISTED_QUERY_PREFIX,
+} from "../query/info";
 
 export type UseInfoOptions<TResponse, TData> = QueryParameter<TResponse, TData> & {
 	/**
 	 * When true, the query key is prefixed with "persisted" so that a
-	 * PersistQueryClientProvider configured with `shouldDehydrateQuery: q => q.queryKey[0] === "persisted"`
-	 * will save this query's data to storage across reloads.
+	 * PersistQueryClientProvider can save successful query data across reloads.
+	 * The provider must also retain TanStack Query's default dehydration predicate.
 	 */
 	persist?: boolean;
+	/** Cancels an individual SDK request after this many milliseconds. */
+	requestTimeoutMs?: number;
 };
 
 export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
@@ -31,11 +28,10 @@ export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
 	params: InfoParams<M>,
 	options: UseInfoOptions<InfoResponse<M>, TData> = {},
 ): UseQueryResult<TData, HyperliquidQueryError> {
-	const { info } = useHyperliquid();
+	const { env, info } = useHyperliquidTransport();
 
-	const { persist, ...queryOptions } = options;
-	const queryKey = persist ? infoPersistedKey(method, params) : infoKey(method, params);
-	const queryFn = ({ signal }: { signal: AbortSignal }) => callInfoMethod(info, method, params, signal);
+	const { persist, requestTimeoutMs, ...queryOptions } = options;
+	const requestOptions = infoQueryOptions(info, method, params, env, { persist, requestTimeoutMs });
 
 	const hasUser = params != null && typeof params === "object" && "user" in params;
 	const userPresent = hasUser ? Boolean((params as { user?: string }).user) : true;
@@ -43,23 +39,7 @@ export function useInfo<M extends InfoMethod, TData = InfoResponse<M>>(
 
 	return useQuery({
 		...queryOptions,
-		queryKey,
-		queryFn,
+		...requestOptions,
 		enabled,
 	});
-}
-
-export function infoKey<M extends InfoMethod>(method: M, params?: InfoParams<M>) {
-	return createKey("info", method, params);
-}
-
-export function infoPersistedKey<M extends InfoMethod>(method: M, params?: InfoParams<M>) {
-	return [PERSISTED_QUERY_PREFIX, ...createKey("info", method, params)] as const;
-}
-
-export function infoQueryOptions<M extends InfoMethod>(info: InfoClient, method: M, params: InfoParams<M>) {
-	return {
-		queryKey: createKey("info", method, params),
-		queryFn: ({ signal }: { signal: AbortSignal }) => callInfoMethod(info, method, params, signal),
-	};
 }

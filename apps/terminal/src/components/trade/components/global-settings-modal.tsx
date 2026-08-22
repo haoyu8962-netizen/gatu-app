@@ -1,4 +1,5 @@
 import {
+	Button,
 	Modal,
 	ModalContent,
 	ModalHeader,
@@ -6,74 +7,106 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-	Select,
 	Slider,
 	Toggle,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
-import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
+import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
-import { dynamicActivate } from "@/lib/i18n";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import {
+	readPositionMarketCloseConfirmationPreference,
+	resetPositionMarketCloseConfirmation,
+} from "@/lib/trade/position-market-close-confirmation-preference";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useGlobalSettings,
 	useGlobalSettingsActions,
 	useMarketOrderSlippagePercent,
 	useNetwork,
+	useSkipOrderConfirmation,
 } from "@/stores/use-global-settings-store";
 
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
-	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
-	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
+	const { showOrderbookInQuote } = useGlobalSettings();
+	const skipOrderConfirmation = useSkipOrderConfirmation();
+	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork, setSkipOrderConfirmation } =
 		useGlobalSettingsActions();
 	const network = useNetwork();
+	const isMobile = useIsMobile();
+	const { clientKey, env } = useHyperliquid();
+	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
+	const confirmationIdentity = { owner: clientKey, env };
+	const confirmationPreference = readPositionMarketCloseConfirmationPreference(confirmationIdentity);
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
-	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
+	const [localSlippageSlider, setLocalSlippageSlider] = useState<number | null>(null);
+	const slippageSliderValue = localSlippageSlider ?? slippagePercent;
+	const slippageInputValue = localSlippageInput ?? String(slippageSliderValue);
 
 	function handleSlippageInputChange(event: ChangeEvent<HTMLInputElement>) {
 		const nextValue = event.target.value;
 		setLocalSlippageInput(nextValue);
 		if (nextValue.trim() === "") return;
 		const parsed = Number(nextValue);
-		if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
+		if (!Number.isFinite(parsed) || parsed < MARKET_ORDER_SLIPPAGE_MIN_PERCENT) return;
+		const committed = setMarketOrderSlippagePercent(parsed);
+		if (committed !== parsed) setLocalSlippageInput(String(committed));
 	}
 
 	function handleSlippageInputBlur() {
+		if (localSlippageInput !== null && localSlippageInput.trim() !== "") {
+			const parsed = Number(localSlippageInput);
+			if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
+		}
 		setLocalSlippageInput(null);
 	}
 
-	function handleSlippageSliderChange(value: number) {
-		if (value !== slippagePercent) {
-			setMarketOrderSlippagePercent(value);
-		}
+	function handleSlippageSliderChange(value: number | readonly number[]) {
+		if (typeof value !== "number") return;
+		setLocalSlippageSlider(value);
 	}
 
-	function handleLanguageChange(value: string | null) {
-		if (!value || value === i18n.locale) return;
-		dynamicActivate(value as LocaleCode).catch(() => {
-			toast.error(t`Failed to change language`);
-		});
+	function handleSlippageSliderCommit(value: number | readonly number[]) {
+		if (typeof value !== "number") return;
+		setLocalSlippageSlider(null);
+		if (value !== slippagePercent) setMarketOrderSlippagePercent(value);
 	}
 
-	function handleNumberFormatChange(value: string | null) {
-		if (value) setNumberFormatLocale(value as NumberFormatLocale);
+	function handleOpenChange(nextOpen: boolean) {
+		if (nextOpen) return;
+		setLocalSlippageInput(null);
+		setLocalSlippageSlider(null);
+		close();
 	}
 
-	const languageOptions = localeList.map(({ code, name }) => ({ value: code, label: name }));
-	const numberFormatOptions = numberFormatLocaleList.map(({ code, name }) => ({ value: code, label: name }));
+	function handleOrderConfirmationToggle(nextEnabled: boolean) {
+		setSkipOrderConfirmation(!nextEnabled);
+	}
+
+	function handleDesktopLayoutReset() {
+		resetDesktopGridLayouts();
+		window.location.reload();
+	}
+
+	function handleMarketCloseConfirmationReset() {
+		const result = resetPositionMarketCloseConfirmation(confirmationIdentity);
+		refreshConfirmationPreference();
+		if (result === "required") toast.success(t`Market close confirmation restored.`);
+		else toast.error(t`Market close confirmation could not be restored in this browser.`);
+	}
 
 	return (
-		<Modal open={open} onOpenChange={close}>
+		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
@@ -93,14 +126,21 @@ export function GlobalSettingsModal() {
 										max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 										maxAllowedDecimals={2}
 										inputSize="sm"
-										className="w-16 text-right tabular-nums"
+										mobileSafe
+										aria-label={t`Slippage tolerance`}
+										className="w-16 text-right tabular-nums max-[1000px]:h-8"
 									/>
 									<span className="text-xs text-fg-muted">%</span>
 								</div>
 							</div>
 							<Slider
-								value={slippagePercent}
+								label={t`Slippage tolerance`}
+								labelHidden
+								getAriaValueText={(_formattedValue, value) => `${value}%`}
+								value={slippageSliderValue}
 								onValueChange={handleSlippageSliderChange}
+								onValueCommitted={handleSlippageSliderCommit}
+								onPointerCancel={() => setLocalSlippageSlider(null)}
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 								step={0.1}
@@ -111,29 +151,51 @@ export function GlobalSettingsModal() {
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
+						<SettingRow label={t`Order confirmation`} hint={t`Review side, size and price before each order is sent.`}>
+							<Toggle
+								size="xs"
+								aria-label={t`Order confirmation`}
+								checked={!skipOrderConfirmation}
+								onCheckedChange={handleOrderConfirmationToggle}
+							/>
+						</SettingRow>
+						<SettingRow
+							label={t`Market close confirmation`}
+							hint={
+								confirmationPreference === "dismissed"
+									? t`Market clicks currently close the full position immediately for this account and network.`
+									: confirmationPreference === "required"
+										? t`A confirmation is shown before each market close.`
+										: t`Connect an account with browser storage available to manage this preference.`
+							}
+						>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xs"
+								disabled={confirmationPreference !== "dismissed"}
+								onClick={handleMarketCloseConfirmationReset}
+							>
+								{t`Restore`}
+							</Button>
+						</SettingRow>
 					</SettingsGroup>
 
 					<SettingsGroup label={t`Display`}>
-						<SettingRow label={t`Order book in quote asset`}>
-							<Toggle size="xs" checked={showOrderbookInQuote} onCheckedChange={setShowOrderbookInQuote} />
-						</SettingRow>
-						<SettingRow label={t`Display language`}>
-							<Select
-								value={i18n.locale}
-								onValueChange={handleLanguageChange}
-								options={languageOptions}
-								size="xs"
-								triggerClassName="min-w-32"
-							/>
-						</SettingRow>
-						<SettingRow label={t`Number format`}>
-							<Select
-								value={numberFormatLocale}
-								onValueChange={handleNumberFormatChange}
-								options={numberFormatOptions}
-								size="xs"
-								triggerClassName="min-w-32"
-							/>
+						{isMobile && (
+							<SettingRow label={t`Order book in quote asset`}>
+								<Toggle
+									size="xs"
+									aria-label={t`Order book in quote asset`}
+									checked={showOrderbookInQuote}
+									onCheckedChange={setShowOrderbookInQuote}
+								/>
+							</SettingRow>
+						)}
+						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
+							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
+								{t`Reset`}
+							</Button>
 						</SettingRow>
 					</SettingsGroup>
 

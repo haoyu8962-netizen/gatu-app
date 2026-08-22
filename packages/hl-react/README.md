@@ -103,7 +103,7 @@ Pass `persist: true` to route the query through a `["persisted", ...]` key prefi
 const { data } = useInfo("spotMeta", undefined, { persist: true, staleTime: 30 * 60_000 });
 ```
 
-Key helpers: `infoKey(method, params)` (default) and `infoPersistedKey(method, params)` (prefixed). Constant: `PERSISTED_QUERY_PREFIX`.
+Key helpers: `infoKey(method, params, env)` (default) and `infoPersistedKey(method, params, env)` (prefixed). The required environment scopes both in-memory and persisted data to Mainnet or Testnet. Constant: `PERSISTED_QUERY_PREFIX`.
 
 ### `useSubscription` — WebSocket streams
 
@@ -118,6 +118,11 @@ Backing store tracks `status` (`idle | subscribing | active | error`) per key, r
 ### `useExchange` — signed mutations
 
 Wraps `ExchangeClient` methods (`order`, `cancel`, `modify`, `approveAgent`, `approveBuilderFee`, `withdraw3`, `sendToEvmWithData`, …). Returns a TanStack Query mutation. Signing comes from either the agent wallet (default, fast-path L1 trading actions) or the connected user wallet (EIP-712/user-signed actions) — `registries/exchange.ts` decides.
+
+When `HyperliquidProvider` enables `enforceLegalActions`, every method checks
+the exact master owner through the short-lived `legalCheck` cache immediately
+before entering the signing/SDK boundary. Missing terms, restrictions, stale
+failed queries, offline state, and unknown response contracts fail closed.
 
 User-wallet routed methods currently include:
 
@@ -144,11 +149,23 @@ withdraw3
 
 | Hook | Role |
 |---|---|
-| `useAgentStatus` | Does the user need a builder-fee approval? An agent approval? What agent is registered? |
-| `useAgentRegistration` | Multi-step mutation: approve builder fee → generate + persist a new agent key → `approveAgent` on Hyperliquid. States: `idle → approving_fee → approving_agent → verifying → idle/error`. |
+| `useAgentStatus` | Independently reports Agent approval, builder-fee approval, and the registered Agent address. |
+| `useAgentRegistration` | Generates an Agent key, requests `approveAgent`, persists it in the requested storage scope, and verifies the freshly approved address. States: `idle -> approving_agent -> verifying -> idle/error`. It does not approve the builder fee. |
 | `useAgentWallet` | Returns `{ data, signer, address, isReady }` — the cached `PrivateKeyAccount` used for trading signatures. |
+| `useBuilderFeeApproval` | Requests and verifies `approveBuilderFee` independently from Agent registration. |
+| `useTradingAuthorization` | Composes Agent registration and builder-fee approval for an action that requires both. |
+| `useLegalStatus` / `useTermsAcceptance` | Reads the strictly validated `legalCheck` contract and signs/submits `acceptTerms2` with the matching owner wallet. These frontend endpoints are not part of Hyperliquid's currently documented public API and remain version-locked. |
 
-Agent keys persist to `localStorage` under `hyperliquid_agent_{env}_{userAddress}` with Zod validation. `StorageEvent` listeners keep tabs in sync.
+Agent keys use `hyperliquid_agent_{env}_{userAddress}` with Zod validation.
+Session-only records live in `sessionStorage`; persistent records live in
+`localStorage`. `hyperliquid.persist_trading_connection` selects the scope and
+defaults to `false`. A session record takes precedence over a persistent record
+for the same owner and environment. `StorageEvent` listeners synchronize
+persistent records across tabs; session records intentionally remain tab-local.
+
+See `docs/trading-onboarding.md` for the required first-time flow and the
+separation between legal acceptance, Agent setup, funding classification,
+deposit guidance, and builder-fee approval.
 
 ### `useClients`, `useTransport`, `useTradingGuard`, `useApiStatus`
 

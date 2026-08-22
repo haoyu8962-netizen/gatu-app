@@ -21,10 +21,12 @@ export const RESOLUTIONS: Record<string, ResolutionConfig> = {
 	"480": { label: "8h", candleInterval: "8h", barMs: 8 * 3_600_000 },
 	"720": { label: "12h", candleInterval: "12h", barMs: 12 * 3_600_000 },
 	"1D": { label: "1D", candleInterval: "1d", barMs: 86_400_000 },
-	"1W": { label: "1W", candleInterval: "1w", barMs: 7 * 86_400_000 },
-	"1M": { label: "1M", candleInterval: "1M", barMs: 30 * 86_400_000 },
 };
 
 export function resolutionToInterval(resolution: ResolutionString): CandleInterval | undefined {
 	return RESOLUTIONS[resolution as string]?.candleInterval;
+}
+
+export function resolutionToBarMs(resolution: ResolutionString): number | undefined {
+	return RESOLUTIONS[resolution as string]?.barMs;
 }

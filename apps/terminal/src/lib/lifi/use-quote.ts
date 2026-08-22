@@ -3,6 +3,7 @@ import { getQuote } from "@lifi/sdk";
 import { useQuery } from "@tanstack/react-query";
 import Big from "big.js";
 
+import { BRIDGE_QUOTE_VALIDITY_MS } from "@/config/bridge";
 import { HYPERCORE_CHAIN_ID, HYPERCORE_USDC_ADDRESS } from "@/config/contracts";
 
 interface QuoteParams {
@@ -37,6 +38,51 @@ export interface BridgeQuote {
 	gasCosts: Array<{ amount: string; amountUSD: string; token: { symbol: string } }>;
 	feeCosts: Array<{ name: string; amount: string; amountUSD: string; token: { symbol: string }; description: string }>;
 	totalFeesUSD: string;
+}
+
+export type BridgeQuoteErrorKind = "amount-too-low" | "fees-exceed-amount" | "unavailable";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function collectToolErrorCodes(value: unknown, codes: Set<string>, depth = 0) {
+	if (depth > 6) return;
+	if (Array.isArray(value)) {
+		for (const entry of value) collectToolErrorCodes(entry, codes, depth + 1);
+		return;
+	}
+	if (!isRecord(value)) return;
+	if (typeof value.code === "string") codes.add(value.code);
+	for (const entry of Object.values(value)) collectToolErrorCodes(entry, codes, depth + 1);
+}
+
+export function getBridgeQuoteErrorKind(error: unknown): BridgeQuoteErrorKind {
+	let current = error;
+	for (let depth = 0; depth < 5 && isRecord(current); depth++) {
+		const codes = new Set<string>();
+		collectToolErrorCodes(current.responseBody, codes);
+		if (codes.size > 0 && [...codes].every((code) => code === "AMOUNT_TOO_LOW")) return "amount-too-low";
+		if (codes.size > 0 && [...codes].every((code) => code === "FEES_HIGHER_THAN_AMOUNT")) {
+			return "fees-exceed-amount";
+		}
+		current = current.cause;
+	}
+	return "unavailable";
+}
+
+export function getBridgeQuoteRemainingSeconds(dataUpdatedAt: number, now = Date.now()): number {
+	if (dataUpdatedAt <= 0) return 0;
+	const remainingMs = BRIDGE_QUOTE_VALIDITY_MS - Math.max(0, now - dataUpdatedAt);
+	return Math.max(0, Math.ceil(remainingMs / 1000));
+}
+
+export function isBridgeQuoteWorse(current: BridgeQuote, next: BridgeQuote): boolean {
+	try {
+		return Big(next.toAmountMin).lt(current.toAmountMin);
+	} catch {
+		return true;
+	}
 }
 
 function transformQuote(step: LiFiStep): BridgeQuote {
@@ -111,13 +157,13 @@ export function useBridgeQuote(params: QuoteParams | null) {
 				toChain: HYPERCORE_CHAIN_ID,
 				toToken: HYPERCORE_USDC_ADDRESS,
 				toAddress: p.fromAddress,
-				executionType: "all",
+				executionType: "transaction",
 			});
 			return transformQuote(step);
 		},
 		enabled,
-		staleTime: 30_000,
-		refetchInterval: 30_000,
+		staleTime: BRIDGE_QUOTE_VALIDITY_MS,
+		refetchInterval: BRIDGE_QUOTE_VALIDITY_MS,
 		retry: false,
 	});
 }

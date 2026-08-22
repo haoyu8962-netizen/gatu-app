@@ -12,8 +12,11 @@ export type StreamRuntime = {
 	promise?: Promise<ISubscription | undefined>;
 	reconnectTimer?: ReturnType<typeof setTimeout>;
 	cooldownTimer?: ReturnType<typeof setTimeout>;
+	releaseTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
-	detachFailureListener?: () => void;
+	recoveryGeneration: number;
+	recoveredGeneration: number;
+	awaitingFirstCandle: boolean;
 	coin: string;
 	interval: CandleInterval;
 };
@@ -45,13 +48,8 @@ export function clearCooldownTimer(runtime: StreamRuntime): void {
 	}
 }
 
-export function detachFailureListener(runtime: StreamRuntime): void {
-	runtime.detachFailureListener?.();
-	runtime.detachFailureListener = undefined;
-}
-
 export function runUnsubscribe(subscription?: ISubscription): void {
-	if (!subscription || subscription.failureSignal.aborted) return;
+	if (!subscription) return;
 	void subscription.unsubscribe().catch(() => {});
 }
 
@@ -113,65 +111,73 @@ export function startSubscription(ctx: SubscribeContext): void {
 	}
 
 	ctx.onConnecting();
+	const owner = entry;
 
-	entry.promise = getSubscriptionClient()
-		.candle({ coin: entry.coin, interval: entry.interval }, (event) => {
-			const bar = candleEventToBar(event);
-			if (!bar) return;
-			ctx.onCandle(bar);
-		})
+	// The SDK fires onError at most once, only after a confirmed subscription fails, and
+	// removes the subscription itself — identity guards keep stale epochs from acting.
+	// Failures only mark a pending recovery; listeners are reset once per recovery
+	// generation after the server confirms the resubscription, and the failure streak
+	// clears only when the first candle proves the stream is actually delivering data.
+	let activeSubscription: ISubscription | undefined;
+	const onSubscriptionError = (error: unknown) => {
+		if (ctx.runtime.get(ctx.key) !== owner) return;
+		if (!activeSubscription || owner.subscription !== activeSubscription) return;
+		owner.subscription = undefined;
+		owner.awaitingFirstCandle = false;
+		owner.recoveryGeneration += 1;
+
+		ctx.onError(error ?? new Error("Subscription failed"));
+		scheduleReconnect(ctx);
+	};
+
+	owner.promise = getSubscriptionClient()
+		.candle(
+			{ coin: entry.coin, interval: entry.interval },
+			(event) => {
+				if (ctx.runtime.get(ctx.key) !== owner) return;
+				const bar = candleEventToBar(event);
+				if (!bar) return;
+				if (owner.awaitingFirstCandle) {
+					owner.awaitingFirstCandle = false;
+					owner.reconnectAttempts = 0;
+				}
+				ctx.onCandle(bar);
+			},
+			{ onError: onSubscriptionError },
+		)
 		.then((subscription) => {
-			const entry = ctx.runtime.get(ctx.key);
-			if (!entry) {
+			if (ctx.runtime.get(ctx.key) !== owner) {
 				runUnsubscribe(subscription);
 				return subscription;
 			}
 
-			entry.promise = undefined;
+			owner.promise = undefined;
+			owner.subscription = subscription;
+			activeSubscription = subscription;
+			owner.awaitingFirstCandle = true;
 
-			if (!ctx.hasListeners()) {
-				runUnsubscribe(subscription);
-				ctx.runtime.delete(ctx.key);
-				return subscription;
-			}
+			// Listener callbacks can reach third-party TradingView code; their exceptions
+			// must not fall into the .catch below and misclassify a live subscription as failed.
+			try {
+				ctx.onActive();
 
-			entry.subscription = subscription;
-			entry.reconnectAttempts = 0;
-			detachFailureListener(entry);
-
-			const onFailure = () => {
-				const entry = ctx.runtime.get(ctx.key);
-				if (!entry) return;
-				entry.subscription = undefined;
-				detachFailureListener(entry);
-
-				const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
-				ctx.onError(reason);
-				ctx.onResetListeners();
-				scheduleReconnect(ctx);
-			};
-
-			subscription.failureSignal.addEventListener("abort", onFailure, { once: true });
-			entry.detachFailureListener = () => {
-				subscription.failureSignal.removeEventListener("abort", onFailure);
-			};
-
-			ctx.onActive();
+				if (owner.recoveryGeneration > owner.recoveredGeneration) {
+					ctx.onResetListeners();
+					owner.recoveredGeneration = owner.recoveryGeneration;
+				}
+			} catch {}
 
 			return subscription;
 		})
 		.catch((error) => {
-			const entry = ctx.runtime.get(ctx.key);
-			if (!entry) {
-				return undefined;
-			}
+			if (ctx.runtime.get(ctx.key) !== owner) return undefined;
 
-			entry.promise = undefined;
-			entry.subscription = undefined;
-			detachFailureListener(entry);
+			owner.promise = undefined;
+			owner.subscription = undefined;
+			owner.awaitingFirstCandle = false;
+			owner.recoveryGeneration += 1;
 
 			ctx.onError(error);
-			ctx.onResetListeners();
 			scheduleReconnect(ctx);
 			return undefined;
 		});

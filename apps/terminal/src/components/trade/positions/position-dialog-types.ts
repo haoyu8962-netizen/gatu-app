@@ -1,38 +1,79 @@
-export interface TpSlPositionData {
+import type { PerpMarginConstraint } from "@/domain/trade/isolated-margin";
+import type { MarginMode } from "@/lib/trade/margin-mode";
+
+export interface IsolatedMarginPositionRef {
 	coin: string;
+	dex: string;
 	assetId: number;
 	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
 	szDecimals: number;
-	existingTpPrice?: number;
-	existingSlPrice?: number;
-	existingTpOrderId?: number;
-	existingSlOrderId?: number;
+	marginConstraint: PerpMarginConstraint | undefined;
+	marginUsed: string;
+	positionValue: string;
+	liquidationPx: string | null;
 }
 
-export interface ClosePositionData {
+export interface IsolatedMarginPositionTarget extends IsolatedMarginPositionRef {
+	owner: string;
+	env: "Mainnet" | "Testnet";
+}
+
+export interface TpSlPositionRef {
+	coin: string;
+	dex: string;
+	assetId: number;
+	isLong: boolean;
+	szDecimals: number;
+	marginMode: MarginMode;
+}
+
+export interface TpSlPositionTarget extends TpSlPositionRef {
+	owner: string;
+	env: "Mainnet" | "Testnet";
+}
+
+export interface PositionMarketCloseRef {
+	coin: string;
+	dex: string;
+	assetId: number;
+	szDecimals: number;
+	signedPositionSize: string;
+	markPx: string;
+	marginMode: MarginMode;
+}
+
+export interface PositionReverseRef {
 	assetId: number;
 	coin: string;
-	size: number;
-	markPx: number;
+	dex: string;
+	signedPositionSize: string;
 	szDecimals: number;
-	isLong: boolean;
-	unrealizedPnl: number;
-	roe: number;
+	marginMode: MarginMode;
 }
 
 export interface LimitClosePositionData {
 	coin: string;
+	dex: string;
 	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
+	signedPositionSize: string;
+	entryPx: string;
+	markPx: string;
 	szDecimals: number;
+	marginMode: MarginMode;
+}
+
+export interface PositionPnlShareData {
+	coin: string;
+	dex: string;
+	env: "Mainnet" | "Testnet";
+	symbol: string;
+	quoteSymbol: string;
+	signedPositionSize: string;
+	entryPx: string;
+	markPx: string;
+	unrealizedPnl: string;
+	returnOnEquity: string;
+	leverage: string;
+	szDecimals: number;
+	capturedAtMs: number;
 }

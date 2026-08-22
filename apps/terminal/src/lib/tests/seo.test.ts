@@ -1,5 +1,16 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildPageHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
+import { buildPageHead, buildRootHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
+
+const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
+const REPOSITORY_ROOT = resolve(TERMINAL_ROOT, "../..");
+
+function getMetaContent(head: ReturnType<typeof buildPageHead>, attribute: "name" | "property", value: string) {
+	return head.meta.find((meta) => meta[attribute] === value)?.content;
+}
 
 describe("seo", () => {
 	it("builds page head with title and canonical link", () => {
@@ -15,6 +26,52 @@ describe("seo", () => {
 
 		const canonical = head.links.find((l) => l.rel === "canonical");
 		expect(canonical?.href).toBe(`${SEO_DEFAULTS.siteUrl}/trade`);
+	});
+
+	it("keeps canonical links route-owned so only one is rendered", () => {
+		const rootHead = buildRootHead();
+		const routeHead = buildPageHead({ path: "/terms" });
+		expect(rootHead.links.some((link) => link.rel === "canonical")).toBe(false);
+		expect(routeHead.links.filter((link) => link.rel === "canonical")).toHaveLength(1);
+	});
+
+	it("preloads the latin font subsets with the attributes the font cache requires", () => {
+		const rootHead = buildRootHead(["/fonts/inter-latin.woff2", "/fonts/plex-latin.woff2"]);
+		const preloads = rootHead.links.filter((link) => link.rel === "preload");
+		expect(preloads).toEqual([
+			{ rel: "preload", href: "/fonts/inter-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+			{ rel: "preload", href: "/fonts/plex-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+		]);
+		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
+	});
+
+	it("builds a complete large social card without a stale Twitter account", () => {
+		const head = buildPageHead();
+		const expectedImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`;
+
+		expect(getMetaContent(head, "property", "og:image")).toBe(expectedImage);
+		expect(getMetaContent(head, "property", "og:image:type")).toBe(SEO_DEFAULTS.ogImageType);
+		expect(getMetaContent(head, "property", "og:image:width")).toBe(String(SEO_DEFAULTS.ogImageWidth));
+		expect(getMetaContent(head, "property", "og:image:height")).toBe(String(SEO_DEFAULTS.ogImageHeight));
+		expect(getMetaContent(head, "property", "og:image:alt")).toBe(SEO_DEFAULTS.ogImageAlt);
+		expect(getMetaContent(head, "name", "twitter:card")).toBe("summary_large_image");
+		expect(getMetaContent(head, "name", "twitter:image")).toBe(expectedImage);
+		expect(getMetaContent(head, "name", "twitter:image:alt")).toBe(SEO_DEFAULTS.ogImageAlt);
+		expect(getMetaContent(head, "name", "twitter:site")).toBeUndefined();
+	});
+
+	it("ships the configured social image with the declared PNG dimensions", () => {
+		const imagePath = resolve(TERMINAL_ROOT, "public", SEO_DEFAULTS.ogImagePath.slice(1));
+		const image = readFileSync(imagePath);
+		const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+		expect(image.subarray(0, pngSignature.length).equals(pngSignature)).toBe(true);
+		expect(image.toString("ascii", 12, 16)).toBe("IHDR");
+		expect(image.readUInt32BE(16)).toBe(SEO_DEFAULTS.ogImageWidth);
+		expect(image.readUInt32BE(20)).toBe(SEO_DEFAULTS.ogImageHeight);
+
+		const deployScript = readFileSync(resolve(REPOSITORY_ROOT, "deploy/deploy.sh"), "utf8");
+		expect(deployScript).toContain(`SOCIAL_IMAGE_PATH="${SEO_DEFAULTS.ogImagePath}"`);
 	});
 
 	it("adds robots tag when noIndex is set", () => {

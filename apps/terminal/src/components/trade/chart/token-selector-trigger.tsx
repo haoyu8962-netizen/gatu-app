@@ -1,20 +1,14 @@
-import { Badge } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
 
 export const TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 border border-stroke-weak/50 bg-surface/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none";
+	"inline-flex h-9 shrink-0 select-none items-center gap-2 rounded-[9px] bg-transparent pr-2 font-market-close text-trading-panel-fg transition-[color,background-color] duration-150 ease-out hover:bg-trading-panel-hover active:bg-fill-press aria-expanded:bg-trading-panel-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-stroke-focus motion-reduce:transition-none cursor-pointer leading-none";
 
 export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 bg-surface/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none";
-
-function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
-	if (!market) return "";
-	if (market.kind === "spot") return "Spot";
-	if (market.kind === "builderPerp") return market.dex;
-	return "Perp";
-}
+	"inline-flex min-h-11 min-w-0 shrink-0 items-center rounded-[9px] bg-transparent py-1 pr-1 font-market-close hover:bg-trading-panel-hover active:bg-fill-press cursor-pointer leading-none";
 
 function getMarketLeverageLabel(market: UnifiedMarketInfo | undefined): string | null {
 	if (!market || !("maxLeverage" in market) || !market.maxLeverage) return null;
@@ -33,41 +27,77 @@ function getPairNameParts(pairName: string): { main: string; suffix: string } {
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	mobile?: boolean;
+	open?: boolean;
+	showAssetIcon?: boolean;
+	showMetadataBadge?: boolean;
 }
 
-export function TokenSelectorTriggerContent({ selectedMarket, mobile = false }: Props) {
-	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
+export function TokenSelectorTriggerContent({
+	selectedMarket,
+	mobile = false,
+	open = false,
+	showAssetIcon = true,
+	showMetadataBadge = true,
+}: Props) {
+	const { t } = useLingui();
+	const kindBadge =
+		selectedMarket?.kind === "spot"
+			? t`Spot`
+			: selectedMarket?.kind === "builderPerp"
+				? selectedMarket.dex
+				: selectedMarket
+					? t`Perp`
+					: "";
+	const isSpot = selectedMarket?.kind === "spot";
 	const leverageLabel = getMarketLeverageLabel(selectedMarket);
 	const pairName = selectedMarket?.pairName ?? selectedMarket?.name ?? "";
 	const pairNameParts = getPairNameParts(pairName);
+	const metadataBadgeClassName =
+		"inline-flex max-w-20 shrink-0 items-center truncate rounded-[4px] px-1.5 py-0.5 text-[10px] leading-none font-semibold whitespace-nowrap";
+	const kindBadgeClassName = cn(
+		metadataBadgeClassName,
+		isSpot
+			? "bg-trading-panel-success-soft text-trading-panel-success"
+			: "bg-trading-panel-hover text-trading-panel-muted",
+	);
+	const leverageBadgeClassName = cn(
+		metadataBadgeClassName,
+		"bg-trading-panel-hover text-trading-panel-muted tabular-nums",
+	);
 
 	if (mobile) {
 		return (
 			<>
 				{selectedMarket && (
 					<>
-						<AssetDisplay
-							coin={selectedMarket.name}
-							iconUrl={selectedMarket.iconUrl}
-							hideName
-							iconClassName="size-[18px]"
-						/>
-						<span className="flex min-w-0 flex-col items-start gap-1">
-							<span
-								className="max-w-[42vw] truncate text-base font-normal tracking-tight leading-none"
-								title={pairName}
-							>
-								<span className="text-fg">{pairNameParts.main}</span>
-								{pairNameParts.suffix ? <span className="text-fg-muted">{pairNameParts.suffix}</span> : null}
+						{showAssetIcon ? (
+							<AssetDisplay
+								coin={selectedMarket.name}
+								iconUrl={selectedMarket.iconUrl}
+								hideName
+								iconClassName="size-7"
+							/>
+						) : null}
+						<span className="flex min-w-0 shrink-0 flex-col items-start gap-1">
+							<span className="flex min-w-0 items-center gap-1.5 max-[360px]:gap-1">
+								<span
+									className="whitespace-nowrap text-base leading-5 font-bold tracking-tight text-trading-panel-fg max-[360px]:text-[13px] max-[360px]:leading-4"
+									title={pairName}
+								>
+									<span>{pairNameParts.main}</span>
+									{pairNameParts.suffix ? <span>{pairNameParts.suffix}</span> : null}
+								</span>
+								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 							</span>
-							<span className="flex min-w-0 items-center gap-1.5 text-3xs font-medium leading-none text-brand">
-								{kindBadge ? <span className="max-w-[5rem] truncate uppercase">{kindBadge}</span> : null}
-								{leverageLabel ? <span className="shrink-0 tabular-nums">{leverageLabel}</span> : null}
-							</span>
+							{showMetadataBadge && (kindBadge || leverageLabel) ? (
+								<span className="flex min-w-0 items-center gap-1">
+									{kindBadge ? <span className={kindBadgeClassName}>{kindBadge}</span> : null}
+									{!isSpot && leverageLabel ? <span className={leverageBadgeClassName}>{leverageLabel}</span> : null}
+								</span>
+							) : null}
 						</span>
 					</>
 				)}
-				<CaretDownIcon className="size-4 shrink-0 self-start text-fg-muted" />
 			</>
 		);
 	}
@@ -76,30 +106,27 @@ export function TokenSelectorTriggerContent({ selectedMarket, mobile = false }: 
 		<>
 			{selectedMarket && (
 				<>
-					<AssetDisplay
-						coin={selectedMarket.name}
-						iconUrl={selectedMarket.iconUrl}
-						hideName
-						iconClassName="size-[18px]"
-					/>
+					{showAssetIcon ? (
+						<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+					) : null}
 					<span
-						className="min-w-[82px] max-w-[34vw] truncate text-sm font-medium text-fg tracking-tight leading-none"
+						className="shrink-0 whitespace-nowrap text-base leading-none font-bold tracking-tight text-trading-panel-fg"
 						title={selectedMarket.pairName ?? selectedMarket.name}
 					>
 						{selectedMarket.pairName ?? selectedMarket.name}
 					</span>
-					{kindBadge ? (
-						<Badge
-							tone="neutral"
-							size="xs"
-							className="uppercase shrink-0 self-center font-normal leading-none text-fg-muted border-stroke-weak/40 bg-fill-weaker"
-						>
-							{kindBadge}
-						</Badge>
-					) : null}
 				</>
 			)}
-			<CaretDownIcon className="size-4 shrink-0 self-center text-fg-muted" />
+			<CaretDownIcon
+				className={cn(
+					"size-3 shrink-0 self-center text-trading-panel-muted transition-transform duration-150 ease-out motion-reduce:transition-none",
+					open && "rotate-180",
+				)}
+			/>
+			{showMetadataBadge && kindBadge ? <span className={kindBadgeClassName}>{kindBadge}</span> : null}
+			{showMetadataBadge && !isSpot && leverageLabel ? (
+				<span className={leverageBadgeClassName}>{leverageLabel}</span>
+			) : null}
 		</>
 	);
 }

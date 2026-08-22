@@ -1,13 +1,29 @@
-import { describe, expect, it, vi } from "vitest";
+import { i18n } from "@lingui/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	bpsToPercentage,
+	formatDateTime,
+	formatDateTimeShort,
+	formatLiquidationPrice,
 	formatNumber,
 	formatPercent,
 	formatPrice,
+	formatQuoteAmount,
+	formatSlippageBps,
+	formatTime,
 	formatToken,
 	formatUSD,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
+
+const formatSettings = vi.hoisted(() => ({
+	numberFormatLocale: "en-US" as "en-US" | "de-DE" | "fr-FR",
+}));
+
+vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => formatSettings.numberFormatLocale,
+}));
 
 vi.mock("@lingui/core/macro", () => ({
 	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -21,24 +37,93 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 describe("format", () => {
+	beforeEach(() => {
+		formatSettings.numberFormatLocale = "en-US";
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
 	it("formats USD values with fixed digits", () => {
 		expect(formatUSD(1234.56)).toBe("$1,234.56");
 		expect(formatUSD(1234.56, 0)).toBe("$1,235");
+		expect(formatUSD(150000)).toBe("$150K");
+		expect(formatUSD(150000, { compact: false })).toBe("$150,000.00");
 	});
 
 	it("formats prices using szDecimals", () => {
 		expect(szDecimalsToPriceDecimals(4)).toBe(2);
+		expect(szDecimalsToPriceDecimals(0, "spot")).toBe(8);
 		expect(formatPrice(88140.123, { szDecimals: 4 })).toBe("$88,140.12");
+		expect(formatPrice("0.00000011", { szDecimals: 0, marketType: "spot" })).toBe("$0.00000011");
+		expect(formatPrice("447.934", { szDecimals: 3, style: "decimal" })).toBe("447.934");
+		expect(formatLiquidationPrice("447.934", 3, { style: "decimal" })).toBe("447.934");
 	});
 
 	it("formats token amounts and percentages", () => {
 		expect(formatToken(1.23456, 2)).toBe("1.23");
 		expect(formatToken(1.23456, { decimals: 3, symbol: "ETH" })).toBe("1.235 ETH");
+		expect(formatQuoteAmount("12345.67", "USDH", 2)).toBe("12,345.67 USDH");
 		expect(formatPercent(0.125, 2)).toBe("+12.50%");
 	});
 
 	it("formats numbers and shortens addresses", () => {
 		expect(formatNumber(1234.56, 1)).toBe("1,234.6");
 		expect(shortenAddress("0x1234567890123456789012345678901234567890")).toBe("0x1234...7890");
+	});
+
+	it.each([
+		["en-US", "1,234.56", "$1,234.56", "+12.50%", "$12.5K"],
+		["de-DE", "1.234,56", "$1.234,56", "+12,50%", "$12,5K"],
+		["fr-FR", "1 234,56", "$1 234,56", "+12,50%", "$12,5K"],
+	] as const)("changes only number separators for the %s preset", (locale, number, usd, percent, compactUsd) => {
+		formatSettings.numberFormatLocale = locale;
+
+		expect(formatNumber(1234.56, 2)).toBe(number);
+		expect(formatUSD(1234.56, { compact: false })).toBe(usd);
+		expect(formatPercent(0.125, 2)).toBe(percent);
+		expect(formatUSD(12500, { decimals: 1 })).toBe(compactUsd);
+	});
+
+	it("formats dates from the active interface language independently of number separators", () => {
+		const value = new Date("2026-08-12T14:35:00Z");
+		const options = { timeZone: "UTC" } as const;
+
+		formatSettings.numberFormatLocale = "fr-FR";
+		expect(formatDateTimeShort(value, options)).toBe("08/12, 14:35");
+		expect(formatDateTime(value, { ...options, dateStyle: "short", timeStyle: "short" })).toBe("8/12/26, 2:35 PM");
+		expect(formatTime(value, options)).toBe("2:35 PM");
+
+		i18n.loadAndActivate({ locale: "fr", messages: {} });
+		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
+		expect(formatDateTime(value, { ...options, dateStyle: "short", timeStyle: "short" })).toBe("12/08/2026 14:35");
+		expect(formatTime(value, options)).toBe("14:35");
+
+		formatSettings.numberFormatLocale = "de-DE";
+		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
+		expect(formatDateTimeShort(value, { ...options, locale: "en-US" })).toBe("08/12, 14:35");
+	});
+
+	it("resolves sub-basis-point slippage instead of collapsing it to zero", () => {
+		expect(formatSlippageBps(37)).toBe("0.37%");
+		expect(formatSlippageBps(1.5)).toBe("0.015%");
+		expect(formatSlippageBps(0.7556)).toBe("0.0076%");
+		expect(formatSlippageBps(0.0793)).toBe("0.0008%");
+	});
+
+	it("keeps slippage distinguishable from the tenth-of-a-bp builder fee conversion", () => {
+		expect(formatSlippageBps(100)).toBe("1.00%");
+		expect(bpsToPercentage(100)).toBe("0.10");
+	});
+
+	it("labels a floor value and a depth-exhausted lower bound", () => {
+		expect(formatSlippageBps(0.0001)).toBe("<0.0001%");
+		expect(formatSlippageBps(0)).toBe("0.0000%");
+		expect(formatSlippageBps(120, { lowerBound: true })).toBe(">1.20%");
+	});
+
+	it("reports no slippage text without a usable number", () => {
+		expect(formatSlippageBps(null)).toBeNull();
+		expect(formatSlippageBps(undefined)).toBeNull();
+		expect(formatSlippageBps(Number.NaN)).toBeNull();
+		expect(formatSlippageBps(-1)).toBeNull();
 	});
 });

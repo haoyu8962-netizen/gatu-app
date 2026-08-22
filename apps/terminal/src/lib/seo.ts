@@ -28,12 +28,46 @@ export interface PageSeoOptions {
 	path?: string;
 	/** Open Graph image URL (absolute) */
 	ogImage?: string;
+	/** Accessible description for the Open Graph image */
+	ogImageAlt?: string;
+	/** Open Graph image width in pixels */
+	ogImageWidth?: number;
+	/** Open Graph image height in pixels */
+	ogImageHeight?: number;
+	/** Open Graph image MIME type */
+	ogImageType?: string;
 	/** Page type for Open Graph */
 	ogType?: "website" | "article";
 	/** Additional keywords for meta keywords tag */
 	keywords?: readonly string[];
 	/** Prevent search engine indexing */
 	noIndex?: boolean;
+}
+
+export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutput {
+	return {
+		meta: [
+			{ charSet: "utf-8" },
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+			},
+			{ name: "theme-color", content: SEO_DEFAULTS.themeColor },
+			{ name: "color-scheme", content: "dark light" },
+			{ name: "author", content: SEO_DEFAULTS.siteName },
+		],
+		links: [
+			{ rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+			{ rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
+			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+			{ rel: "manifest", href: "/manifest.json" },
+			{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
+			{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
+			...fontPreloadUrls.map(
+				(href): LinkTag => ({ rel: "preload", href, as: "font", type: "font/woff2", crossOrigin: "anonymous" }),
+			),
+		],
+	};
 }
 
 interface MetaTag {
@@ -49,6 +83,8 @@ interface LinkTag {
 	href: string;
 	type?: string;
 	sizes?: string;
+	as?: string;
+	crossOrigin?: "anonymous" | "use-credentials" | "";
 }
 
 interface HeadOutput {
@@ -66,7 +102,11 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		fullTitle = false,
 		description = SEO_DEFAULTS.defaultDescription,
 		path = "",
-		ogImage = `${SEO_DEFAULTS.siteUrl}/og-image.png`,
+		ogImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`,
+		ogImageAlt = SEO_DEFAULTS.ogImageAlt,
+		ogImageWidth = SEO_DEFAULTS.ogImageWidth,
+		ogImageHeight = SEO_DEFAULTS.ogImageHeight,
+		ogImageType = SEO_DEFAULTS.ogImageType,
 		ogType = "website",
 		keywords = [],
 		noIndex = false,
@@ -79,17 +119,9 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	const allKeywords = Array.from(new Set([...SEO_BASE_KEYWORDS, ...keywords]));
 
 	const meta: MetaTag[] = [
-		{ charSet: "utf-8" },
-		{
-			name: "viewport",
-			content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
-		},
 		{ title: pageTitle },
 		{ name: "description", content: description },
 		{ name: "keywords", content: allKeywords.join(", ") },
-		{ name: "theme-color", content: SEO_DEFAULTS.themeColor },
-		{ name: "color-scheme", content: "dark light" },
-		{ name: "author", content: SEO_DEFAULTS.siteName },
 
 		// Open Graph
 		{ property: "og:type", content: ogType },
@@ -98,29 +130,25 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		{ property: "og:description", content: description },
 		{ property: "og:url", content: canonicalUrl },
 		{ property: "og:image", content: ogImage },
+		{ property: "og:image:type", content: ogImageType },
+		{ property: "og:image:width", content: String(ogImageWidth) },
+		{ property: "og:image:height", content: String(ogImageHeight) },
+		{ property: "og:image:alt", content: ogImageAlt },
 		{ property: "og:locale", content: SEO_DEFAULTS.locale },
 
 		// Twitter Card
 		{ name: "twitter:card", content: "summary_large_image" },
-		{ name: "twitter:site", content: SEO_DEFAULTS.twitterHandle },
 		{ name: "twitter:title", content: pageTitle },
 		{ name: "twitter:description", content: description },
 		{ name: "twitter:image", content: ogImage },
+		{ name: "twitter:image:alt", content: ogImageAlt },
 	];
 
 	if (noIndex) {
 		meta.push({ name: "robots", content: "noindex, nofollow" });
 	}
 
-	const links: LinkTag[] = [
-		{ rel: "canonical", href: canonicalUrl },
-		{ rel: "icon", href: "/favicon.ico", sizes: "32x32" },
-		{ rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
-		{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-		{ rel: "manifest", href: "/manifest.json" },
-		{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
-		{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
-	];
+	const links: LinkTag[] = [{ rel: "canonical", href: canonicalUrl }];
 
 	return { meta, links };
 }

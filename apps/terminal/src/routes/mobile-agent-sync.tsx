@@ -1,11 +1,24 @@
-import { createMobileAgentWalletRecord } from "@gatu/hl-react/signing/mobile-agent";
-import { Button, TextInput } from "@gatu/ui";
+import {
+	type AgentRegistrationEpoch,
+	activateAgentOwnerForRegistration,
+	cancelAgentRegistrationEpochAndRemove,
+	captureAgentRegistrationEpoch,
+	createMobileAgentWalletRecord,
+	persistAgentForRegistration,
+	verifyAgentRegistrationOrRemove,
+} from "@gatu/hl-react";
+import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { type ChangeEvent, type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
-import { setActiveAgentOwner, useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
+import { type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import {
+	consumeBootstrappedMobileAgentSyncUrl,
+	consumeInvalidBootstrappedMobileAgentSyncLocation,
+} from "@/lib/mobile-sync/bootstrap-fragment";
 import {
 	clearMobileSyncDraft,
 	isMobileSyncEnvelopeExpired,
@@ -13,9 +26,18 @@ import {
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
 import {
+	consumeMobileSyncTicket,
+	getOrCreateMobileSyncConsumerId,
+	type MobileSyncTicketResult,
+} from "@/lib/mobile-sync/one-time-ticket-client";
+import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
+import {
 	decodeSyncKey,
 	decryptMobileAgentSyncEnvelope,
+	isMobileSyncCleanNavigationRequiredError,
 	isMobileSyncError,
+	MOBILE_SYNC_FRAGMENT_KEY,
+	MOBILE_SYNC_KEY_FRAGMENT_KEY,
 	MOBILE_SYNC_ROUTE_PATH,
 	type MobileSyncEnvelope,
 	type ParsedMobileSync,
@@ -24,8 +46,21 @@ import {
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
 
+type InitialHashCapture = { status: "loaded"; sync: ParsedMobileSync } | { status: "error"; message: string } | null;
+
+// Direct-load fragments are captured and removed by the zero-dependency client
+// bootstrap before React/providers hydrate. This route consumes that value once.
+const initialHashCaptureRef: { current: InitialHashCapture } = {
+	current: captureBootstrappedLocationHash(),
+};
+
 export const Route = createFileRoute("/mobile-agent-sync")({
 	ssr: false,
+	beforeLoad: () => {
+		// Route chunks may be preloaded before an SPA navigation. Capture again
+		// at the navigation boundary so the fragment never waits for mount.
+		if (!initialHashCaptureRef.current) initialHashCaptureRef.current = captureSpaLocationHash();
+	},
 	head: () =>
 		buildPageHead({
 			title: "Phone Access",
@@ -38,205 +73,324 @@ export const Route = createFileRoute("/mobile-agent-sync")({
 type ImportStatus =
 	| { state: "idle" }
 	| { state: "importing" }
-	| { state: "success"; userAddress: string; agentAddress: string };
+	| {
+			state: "success";
+			userAddress: string;
+			agentAddress: string;
+			localCleanupIncomplete: boolean;
+	  };
 
-type EnvelopeSource = "url" | "stored" | "manual";
+type EnvelopeSource = "url" | "stored";
+
+type LoadState =
+	| { state: "empty" }
+	| { state: "loaded"; sync: ParsedMobileSync; source: EnvelopeSource }
+	| { state: "error"; message: string };
+
+class MobileAgentRemoteVerificationError extends Error {
+	constructor(readonly hadNetworkError: boolean) {
+		super("Mobile Agent remote verification failed");
+	}
+}
+
+class MobileAgentStorageError extends Error {
+	constructor(readonly cleanupIncomplete = false) {
+		super("Mobile Agent storage verification failed");
+	}
+}
+
+class MobileAgentOneTimeTicketError extends Error {
+	constructor(readonly result: Exclude<MobileSyncTicketResult, "accepted">) {
+		super("Mobile Agent one-time ticket verification failed");
+	}
+}
 
 function MobileAgentSyncRoute() {
-	const { env } = useHyperliquid();
-	const { setAgent } = useAgentWalletActions();
-	const [sync, setSync] = useState<ParsedMobileSync | null>(null);
-	const [envelopeSource, setEnvelopeSource] = useState<EnvelopeSource | null>(null);
-	const [loadError, setLoadError] = useState<string | null>(null);
-	const [linkInput, setLinkInput] = useState("");
-	const [showLinkInput, setShowLinkInput] = useState(false);
+	const { env, info } = useHyperliquid();
+	const [loadState, setLoadState] = useState<LoadState>(createInitialLoadState);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
 	const errorAlertRef = useRef<HTMLDivElement | null>(null);
+	const importAbortRef = useRef<AbortController | null>(null);
 
-	const clearExpiredSync = useCallback(() => {
-		clearMobileSyncDraft();
-		setSync(null);
-		setEnvelopeSource(null);
-		setLoadError(t`This mobile link expired.`);
+	const clearExpiredSync = useCallback((syncToClear?: ParsedMobileSync) => {
+		syncToClear?.keyBytes.fill(0);
+		importAbortRef.current?.abort();
+		const draftCleared = clearMobileSyncDraft();
+		setLoadState({
+			state: "error",
+			message: draftCleared
+				? t`This desktop wallet QR expired.`
+				: t`This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+		});
 		setSubmitError(null);
 		setStatus({ state: "idle" });
-		setShowLinkInput(true);
 	}, []);
 
 	const clearInvalidSync = useCallback((message: string) => {
-		clearMobileSyncDraft();
-		setSync(null);
-		setEnvelopeSource(null);
-		setLoadError(message);
+		importAbortRef.current?.abort();
+		const draftCleared = clearMobileSyncDraft();
+		setLoadState((previous) => {
+			if (previous.state === "loaded") previous.sync.keyBytes.fill(0);
+			return {
+				state: "error",
+				message: draftCleared
+					? message
+					: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+			};
+		});
 		setSubmitError(null);
 		setStatus({ state: "idle" });
-		setShowLinkInput(true);
 	}, []);
 
 	const loadSync = useCallback(
 		(next: ParsedMobileSync, source: EnvelopeSource) => {
+			if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+				next.keyBytes.fill(0);
+				clearInvalidSync(t`Mobile QR import is temporarily unavailable.`);
+				return;
+			}
 			if (isMobileSyncEnvelopeExpired(next.envelope)) {
-				clearExpiredSync();
+				next.keyBytes.fill(0);
+				clearExpiredSync(next);
+				return;
+			}
+			if (!saveMobileSyncDraft(next.envelope, next.encodedKey)) {
+				next.keyBytes.fill(0);
+				clearInvalidSync(t`This device could not securely hold the QR. Check browser storage and scan again.`);
 				return;
 			}
 
-			setSync(next);
-			setEnvelopeSource(source);
-			setLoadError(null);
+			importAbortRef.current?.abort();
+			setLoadState((previous) => {
+				if (previous.state === "loaded" && previous.sync !== next) previous.sync.keyBytes.fill(0);
+				return { state: "loaded", sync: next, source };
+			});
 			setSubmitError(null);
 			setStatus({ state: "idle" });
-			setShowLinkInput(false);
-			saveMobileSyncDraft(next.envelope, next.encodedKey);
 		},
-		[clearExpiredSync],
+		[clearExpiredSync, clearInvalidSync],
 	);
 
-	const restoreStoredDraft = useCallback(() => {
-		const storedDraft = readMobileSyncDraft();
-		if (storedDraft.status === "found") {
-			try {
-				const keyBytes = decodeSyncKey(storedDraft.draft.encodedKey);
-				setSync({ envelope: storedDraft.draft.envelope, keyBytes, encodedKey: storedDraft.draft.encodedKey });
-				setEnvelopeSource("stored");
-				setLoadError(null);
-				setShowLinkInput(false);
-			} catch {
-				clearInvalidSync(t`Saved phone link was invalid. Paste the link again.`);
-			}
-			return;
-		}
-		if (storedDraft.status === "expired") {
-			clearInvalidSync(t`This mobile link expired.`);
-			return;
-		}
-		if (storedDraft.status === "invalid") {
-			clearInvalidSync(t`Saved phone link was invalid. Paste the link again.`);
-		}
-	}, [clearInvalidSync]);
-
-	const processLocationSyncHash = useCallback(() => {
-		if (window.location.hash) {
-			try {
-				const next = readAndClearMobileSyncEnvelope();
-				loadSync(next, "url");
-			} catch (error) {
-				clearInvalidSync(getMobileSyncImportErrorMessage(error));
-			}
-			return;
-		}
-
-		restoreStoredDraft();
-	}, [clearInvalidSync, loadSync, restoreStoredDraft]);
-
 	useEffect(() => {
-		processLocationSyncHash();
+		// Both StrictMode render passes may need the same pre-render capture. It
+		// is released after commit so the bearer key is not retained by the module.
+		initialHashCaptureRef.current = null;
 
 		function handleLocationChange() {
-			if (window.location.pathname === MOBILE_SYNC_ROUTE_PATH && window.location.hash) {
-				processLocationSyncHash();
+			if (!getSpaLocationScrubState().shouldScrub) return;
+			try {
+				loadSync(readAndClearMobileSyncEnvelope(), "url");
+			} catch (error) {
+				if (isMobileSyncCleanNavigationRequiredError(error)) return;
+				clearInvalidSync(getMobileSyncImportErrorMessage(error));
 			}
 		}
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
 		return () => {
+			importAbortRef.current?.abort();
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 		};
-	}, [processLocationSyncHash]);
+	}, [clearInvalidSync, loadSync]);
+
+	const loadedSync = loadState.state === "loaded" ? loadState.sync : null;
 
 	useEffect(() => {
-		if (!sync || loadError || status.state === "success") return;
+		if (!loadedSync) return;
+		return () => {
+			loadedSync.keyBytes.fill(0);
+		};
+	}, [loadedSync]);
 
-		const expiresInMs = sync.envelope.expiresAtMs - Date.now();
+	useEffect(() => {
+		if (!loadedSync || status.state === "success") return;
+
+		const expiresInMs = loadedSync.envelope.expiresAtMs - Date.now();
 		if (expiresInMs <= 0) {
-			clearExpiredSync();
+			clearExpiredSync(loadedSync);
 			return;
 		}
 
-		const timeoutId = window.setTimeout(clearExpiredSync, expiresInMs + 1);
+		const timeoutId = window.setTimeout(() => clearExpiredSync(loadedSync), expiresInMs + 1);
 		return () => window.clearTimeout(timeoutId);
-	}, [clearExpiredSync, sync, loadError, status.state]);
+	}, [clearExpiredSync, loadedSync, status.state]);
 
 	useEffect(() => {
-		if (!loadError && !submitError) return;
+		if (loadState.state !== "error" && !submitError) return;
 		errorAlertRef.current?.focus();
-	}, [loadError, submitError]);
-
-	function handleLoadPastedLink(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-
-		try {
-			const next = parseMobileSyncUrl(linkInput.trim());
-			setLinkInput("");
-			loadSync(next, "manual");
-		} catch (error) {
-			clearMobileSyncDraft();
-			setSync(null);
-			setEnvelopeSource(null);
-			setLoadError(getMobileSyncImportErrorMessage(error));
-			setSubmitError(null);
-			setStatus({ state: "idle" });
-			setShowLinkInput(true);
-		}
-	}
+	}, [loadState.state, submitError]);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (!sync || status.state === "importing") return;
+		if (!loadedSync || status.state === "importing") return;
+		if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+			loadedSync.keyBytes.fill(0);
+			clearInvalidSync(t`Mobile QR import is temporarily unavailable.`);
+			return;
+		}
 
+		importAbortRef.current?.abort();
+		const abortController = new AbortController();
+		importAbortRef.current = abortController;
 		setSubmitError(null);
 		setStatus({ state: "importing" });
 
+		let registrationToRollback:
+			| {
+					epoch: AgentRegistrationEpoch;
+					publicKey: `0x${string}`;
+					persistenceAttempted: boolean;
+			  }
+			| undefined;
+
 		try {
-			const imported = await decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
+			const imported = await decryptMobileAgentSyncEnvelope(loadedSync.envelope, loadedSync.keyBytes, {
 				currentOrigin: window.location.origin,
 				expectedEnv: env,
 			});
+			if (abortController.signal.aborted) return;
+
+			const remoteVerification = await waitForExpectedMobileAgent(
+				(attemptSignal) => info.extraAgents({ user: imported.userAddress }, attemptSignal),
+				{
+					agentAddress: imported.agentAddress,
+					agentNameBase: imported.agentNameBase,
+					agentValidUntilMs: imported.agentValidUntilMs,
+				},
+				{ signal: abortController.signal },
+			);
+			if (remoteVerification.status === "aborted") return;
+			if (remoteVerification.status !== "approved") {
+				throw new MobileAgentRemoteVerificationError(remoteVerification.hadNetworkError);
+			}
+			if (isMobileSyncEnvelopeExpired(loadedSync.envelope)) {
+				clearExpiredSync(loadedSync);
+				return;
+			}
+
 			const record = createMobileAgentWalletRecord({
 				privateKey: imported.agentPrivateKey,
 				publicKey: imported.agentAddress,
 				agentName: imported.agentName,
 				agentValidUntilMs: imported.agentValidUntilMs,
-				importedAtMs: imported.importedAtMs,
+				importedAtMs: Date.now(),
 				syncId: imported.syncId,
 			});
 			const { privateKey, publicKey, ...metadata } = record;
+			const registration = await captureAgentRegistrationEpoch(imported.env, imported.userAddress);
+			if (registration.status !== "ready") {
+				throw new MobileAgentStorageError();
+			}
+			const consumerId = getOrCreateMobileSyncConsumerId();
+			if (!consumerId) throw new MobileAgentStorageError();
+			registrationToRollback = {
+				epoch: registration.epoch,
+				publicKey,
+				persistenceAttempted: false,
+			};
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
-			setAgent(imported.env, imported.userAddress, privateKey, publicKey, metadata);
-			setActiveAgentOwner(imported.env, imported.userAddress);
-			clearMobileSyncDraft();
-			setSync(null);
-			setEnvelopeSource(null);
+			const ticketResult = await consumeMobileSyncTicket(imported.syncId, consumerId, abortController.signal);
+			if (ticketResult !== "accepted") throw new MobileAgentOneTimeTicketError(ticketResult);
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			registrationToRollback.persistenceAttempted = true;
+			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata);
+			if (storageResult.status !== "stored") throw new MobileAgentStorageError();
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			const activation = await activateAgentOwnerForRegistration(registration.epoch, publicKey);
+			if (activation.status !== "current") {
+				throw new MobileAgentStorageError();
+			}
+			const afterActivation = await verifyAgentRegistrationOrRemove(registration.epoch, publicKey);
+			if (afterActivation.status !== "current") {
+				throw new MobileAgentStorageError();
+			}
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			registrationToRollback = undefined;
+			loadedSync.keyBytes.fill(0);
+			const localCleanupIncomplete = !clearMobileSyncDraft();
+			setLoadState({ state: "empty" });
 			setStatus({
 				state: "success",
 				userAddress: imported.userAddress,
 				agentAddress: imported.agentAddress,
+				localCleanupIncomplete,
 			});
-		} catch (error) {
-			setSubmitError(getMobileSyncImportErrorMessage(error));
+		} catch (caughtError) {
+			let error = caughtError;
+			if (registrationToRollback) {
+				const cleanupIncomplete = await rollbackImportedMobileAccess(registrationToRollback);
+				if (cleanupIncomplete) error = new MobileAgentStorageError(true);
+			}
+			if (abortController.signal.aborted) return;
+			if (isMobileSyncError(error)) {
+				loadedSync.keyBytes.fill(0);
+				const draftCleared = clearMobileSyncDraft();
+				setLoadState({
+					state: "error",
+					message: draftCleared
+						? getMobileSyncImportErrorMessage(error)
+						: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+				});
+				setSubmitError(null);
+			} else {
+				setSubmitError(getMobileSyncImportErrorMessage(error));
+			}
 			setStatus({ state: "idle" });
+		} finally {
+			if (importAbortRef.current === abortController) importAbortRef.current = null;
 		}
 	}
 
-	function handleResetLink() {
-		clearMobileSyncDraft();
-		setSync(null);
-		setEnvelopeSource(null);
-		setLoadError(null);
-		setLinkInput("");
+	function handleDiscardQr() {
+		loadedSync?.keyBytes.fill(0);
+		importAbortRef.current?.abort();
+		const draftCleared = clearMobileSyncDraft();
+		setLoadState(
+			draftCleared
+				? { state: "empty" }
+				: {
+						state: "error",
+						message: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+					},
+		);
 		setSubmitError(null);
 		setStatus({ state: "idle" });
-		setShowLinkInput(false);
+	}
+
+	async function rollbackImportedMobileAccess({
+		epoch,
+		publicKey,
+		persistenceAttempted,
+	}: {
+		epoch: AgentRegistrationEpoch;
+		publicKey: `0x${string}`;
+		persistenceAttempted: boolean;
+	}): Promise<boolean> {
+		let cleanupIncomplete = false;
+		try {
+			const cancellation = await cancelAgentRegistrationEpochAndRemove(
+				epoch,
+				persistenceAttempted ? publicKey : undefined,
+			);
+			if (cancellation.status === "failed") {
+				cleanupIncomplete = true;
+			}
+		} catch {
+			cleanupIncomplete = true;
+		}
+		return cleanupIncomplete;
 	}
 
 	const isImporting = status.state === "importing";
-	const hasValidCredential = !!sync && !loadError && !isMobileSyncEnvelopeExpired(sync.envelope);
+	const hasValidCredential = !!loadedSync && !isMobileSyncEnvelopeExpired(loadedSync.envelope);
 	const importDisabled = !hasValidCredential || isImporting || status.state === "success";
-	const needsPastedLink = !sync || !!loadError;
-	const showPhoneLinkForm = needsPastedLink || showLinkInput;
-	const handleLinkInputChange = (event: ChangeEvent<HTMLInputElement>) => setLinkInput(event.target.value);
 
 	return (
 		<main className="min-h-[100dvh] bg-background px-4 py-5 text-fg sm:px-6">
@@ -250,105 +404,57 @@ function MobileAgentSyncRoute() {
 							</h1>
 						</div>
 						<p className="mt-1 text-xs text-fg-muted">
-							<Trans>Import the trading key from your desktop. No wallet connection is required on this phone.</Trans>
+							<Trans>Review and import the desktop-approved trading key. No phone wallet is required.</Trans>
 						</p>
 					</div>
 
 					<div className="space-y-4 p-4">
 						<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
 							<span className="text-fg-muted">
-								<Trans>Mode</Trans>
+								<Trans>Network</Trans>
 							</span>
-							<span className="min-w-0 truncate font-medium text-fg">
-								<Trans>Phone import</Trans>
-								<span className="text-fg-muted"> · {env}</span>
-							</span>
+							<span className="font-medium text-fg">{env}</span>
 						</div>
 
-						{sync && !loadError && (
-							<LoadedLinkPanel envelope={sync.envelope} env={env} source={envelopeSource} onReset={handleResetLink} />
+						{loadState.state === "loaded" && (
+							<LoadedQrPanel
+								envelope={loadState.sync.envelope}
+								env={env}
+								source={loadState.source}
+								onDiscard={handleDiscardQr}
+							/>
 						)}
-						{loadError && <ErrorCallout ref={errorAlertRef} message={loadError} />}
-						{submitError && !loadError && <ErrorCallout ref={errorAlertRef} message={submitError} />}
-						{submitError && loadError && <ErrorCallout message={submitError} />}
+						{loadState.state === "empty" && status.state !== "success" && <EmptyQrPanel />}
+						{loadState.state === "error" && <ErrorCallout ref={errorAlertRef} message={loadState.message} />}
+						{submitError && loadState.state !== "error" && <ErrorCallout ref={errorAlertRef} message={submitError} />}
+						{submitError && loadState.state === "error" && <ErrorCallout message={submitError} />}
 
 						{status.state === "success" ? (
-							<SuccessPanel userAddress={status.userAddress} agentAddress={status.agentAddress} />
+							<SuccessPanel
+								userAddress={status.userAddress}
+								agentAddress={status.agentAddress}
+								localCleanupIncomplete={status.localCleanupIncomplete}
+							/>
 						) : (
-							<div className="space-y-3">
-								{sync && !loadError && !showLinkInput && (
-									<Button
-										type="button"
-										variant="outline"
-										intent="neutral"
-										size="sm"
-										className="w-full"
-										onClick={() => setShowLinkInput(true)}
-									>
-										<Trans>Use a different phone link</Trans>
-									</Button>
-								)}
-
-								{showPhoneLinkForm && (
-									<form className="space-y-3" onSubmit={handleLoadPastedLink}>
-										<TextInput
-											label={t`Phone link`}
-											value={linkInput}
-											onChange={handleLinkInputChange}
-											placeholder={t`Paste link from desktop`}
-											autoCapitalize="none"
-											autoCorrect="off"
-											inputMode="url"
-											type="url"
-										/>
-										<Button
-											type="submit"
-											variant="outline"
-											intent="neutral"
-											size="md"
-											className="w-full"
-											disabled={!linkInput.trim()}
-										>
-											<Trans>Use phone link</Trans>
-										</Button>
-										{sync && !loadError && (
-											<Button
-												type="button"
-												variant="ghost"
-												intent="neutral"
-												size="sm"
-												className="w-full"
-												onClick={() => {
-													setShowLinkInput(false);
-													setLinkInput("");
-												}}
-											>
-												<Trans>Cancel</Trans>
-											</Button>
-										)}
-									</form>
-								)}
-
-								<form className="space-y-3" onSubmit={handleSubmit}>
-									<Button
-										type="submit"
-										variant="filled"
-										intent="brand"
-										size="md"
-										className="w-full"
-										disabled={importDisabled}
-										iconLeft={
-											isImporting ? (
-												<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
-											) : (
-												<DeviceMobileIcon className="size-4" aria-hidden />
-											)
-										}
-									>
-										{isImporting ? <Trans>Importing...</Trans> : <Trans>Import phone access</Trans>}
-									</Button>
-								</form>
-							</div>
+							<form className="space-y-3" onSubmit={handleSubmit}>
+								<Button
+									type="submit"
+									variant="filled"
+									intent="brand"
+									size="md"
+									className="w-full"
+									disabled={importDisabled}
+									iconLeft={
+										isImporting ? (
+											<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
+										) : (
+											<DeviceMobileIcon className="size-4" aria-hidden />
+										)
+									}
+								>
+									{isImporting ? <Trans>Verifying approval...</Trans> : <Trans>Import phone access</Trans>}
+								</Button>
+							</form>
 						)}
 					</div>
 				</div>
@@ -357,22 +463,21 @@ function MobileAgentSyncRoute() {
 	);
 }
 
-function LoadedLinkPanel({
+function LoadedQrPanel({
 	envelope,
 	env,
 	source,
-	onReset,
+	onDiscard,
 }: {
 	envelope: MobileSyncEnvelope;
 	env: string;
-	source: EnvelopeSource | null;
-	onReset: () => void;
+	source: EnvelopeSource;
+	onDiscard: () => void;
 }) {
 	const expiresAtLabel = new Date(envelope.expiresAtMs).toLocaleTimeString([], {
 		hour: "2-digit",
 		minute: "2-digit",
 	});
-	const syncPreview = envelope.syncId.slice(0, 8);
 
 	return (
 		<div className="space-y-3 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
@@ -381,11 +486,11 @@ function LoadedLinkPanel({
 					<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
 					<div className="min-w-0">
 						<p className="text-sm font-semibold text-fg">
-							<Trans>Phone link loaded</Trans>
+							<Trans>Desktop QR loaded</Trans>
 						</p>
-						<p className="mt-0.5 truncate text-xs text-fg-muted">
+						<p className="mt-0.5 text-xs text-fg-muted">
 							{source === "stored" ? (
-								<Trans>Recovered after reload. Expires {expiresAtLabel}.</Trans>
+								<Trans>Recovered in this tab. Expires {expiresAtLabel}.</Trans>
 							) : (
 								<Trans>Expires {expiresAtLabel}.</Trans>
 							)}
@@ -394,33 +499,35 @@ function LoadedLinkPanel({
 				</div>
 				<button
 					type="button"
-					onClick={onReset}
+					onClick={onDiscard}
 					className="shrink-0 rounded-xs px-2 py-1 text-xs font-medium text-fg-muted hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 				>
-					<Trans>Reset</Trans>
+					<Trans>Discard</Trans>
 				</button>
 			</div>
 
 			<div className="grid gap-2 text-xs">
-				<RequirementRow label={t`Sync ID`} value={syncPreview} complete />
-				<RequirementRow label={t`Network`} value={env} complete />
-				<RequirementRow label={t`Trading key`} value={t`Ready to import`} complete />
+				<RequirementRow label={t`Network`} value={env} />
+				<RequirementRow label={t`Trading key`} value={t`Ready for verification`} />
 			</div>
 		</div>
 	);
 }
 
-function RequirementRow({ label, value, complete }: { label: string; value: string; complete: boolean }) {
+function EmptyQrPanel() {
+	return (
+		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3 text-xs text-fg-muted">
+			<Trans>No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera.</Trans>
+		</div>
+	);
+}
+
+function RequirementRow({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-background px-3 py-2">
 			<span className="text-fg-muted">{label}</span>
 			<span className="flex min-w-0 items-center gap-1.5 font-medium text-fg">
-				<span
-					className={
-						complete ? "size-1.5 shrink-0 rounded-full bg-success" : "size-1.5 shrink-0 rounded-full bg-warning"
-					}
-					aria-hidden
-				/>
+				<span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
 				<span className="truncate">{value}</span>
 			</span>
 		</div>
@@ -441,7 +548,15 @@ const ErrorCallout = forwardRef<HTMLDivElement, { message: string }>(function Er
 	);
 });
 
-function SuccessPanel({ userAddress, agentAddress }: { userAddress: string; agentAddress: string }) {
+function SuccessPanel({
+	userAddress,
+	agentAddress,
+	localCleanupIncomplete,
+}: {
+	userAddress: string;
+	agentAddress: string;
+	localCleanupIncomplete: boolean;
+}) {
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
@@ -459,6 +574,17 @@ function SuccessPanel({ userAddress, agentAddress }: { userAddress: string; agen
 				</p>
 				<p className="mt-1 truncate font-mono font-semibold text-fg">{userAddress}</p>
 			</div>
+			{localCleanupIncomplete && (
+				<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
+					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
+					<p>
+						<Trans>
+							Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this
+							site's data.
+						</Trans>
+					</p>
+				</div>
+			)}
 			<Button
 				type="button"
 				variant="outline"
@@ -473,12 +599,202 @@ function SuccessPanel({ userAddress, agentAddress }: { userAddress: string; agen
 	);
 }
 
+function captureBootstrappedLocationHash(): InitialHashCapture {
+	if (consumeInvalidBootstrappedMobileAgentSyncLocation()) {
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? t`This is not a valid gatu desktop wallet QR.`
+				: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
+	const bootstrappedUrl = consumeBootstrappedMobileAgentSyncUrl();
+	if (!bootstrappedUrl) return null;
+	if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? t`Mobile QR import is temporarily unavailable.`
+				: t`Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+		};
+	}
+
+	try {
+		return { status: "loaded", sync: parseMobileSyncUrl(bootstrappedUrl) };
+	} catch (error) {
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? getMobileSyncImportErrorMessage(error)
+				: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
+}
+
+function captureSpaLocationHash(): InitialHashCapture {
+	if (typeof window === "undefined") return null;
+	const scrubState = getSpaLocationScrubState();
+	if (!scrubState.isRouteLocation) return null;
+	if (!scrubState.shouldScrub) {
+		if (MOBILE_PAIRING_FEATURES.importFromQr) return null;
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? t`Mobile QR import is temporarily unavailable.`
+				: t`Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+		};
+	}
+
+	try {
+		const sync = readAndClearMobileSyncEnvelope();
+		if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+			sync.keyBytes.fill(0);
+			return {
+				status: "error",
+				message: clearMobileSyncDraft()
+					? t`Mobile QR import is temporarily unavailable.`
+					: t`Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+			};
+		}
+		return { status: "loaded", sync };
+	} catch (error) {
+		if (isMobileSyncCleanNavigationRequiredError(error)) throw error;
+		return {
+			status: "error",
+			message: clearMobileSyncDraft()
+				? getMobileSyncImportErrorMessage(error)
+				: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
+}
+
+function getSpaLocationScrubState(): { isRouteLocation: boolean; shouldScrub: boolean } {
+	if (typeof window === "undefined") return { isRouteLocation: false, shouldScrub: false };
+
+	let decodedPathname: string;
+	try {
+		decodedPathname = decodeURIComponent(window.location.pathname);
+	} catch {
+		const isRouteLocation = window.location.pathname.startsWith(MOBILE_SYNC_ROUTE_PATH);
+		return { isRouteLocation, shouldScrub: isRouteLocation };
+	}
+
+	const isExactPath = decodedPathname === MOBILE_SYNC_ROUTE_PATH || decodedPathname === `${MOBILE_SYNC_ROUTE_PATH}/`;
+	const isNestedPath = decodedPathname.startsWith(`${MOBILE_SYNC_ROUTE_PATH}/`) && !isExactPath;
+	const searchParams = new URLSearchParams(window.location.search);
+	const hasCredentialQuery =
+		searchParams.has(MOBILE_SYNC_FRAGMENT_KEY) || searchParams.has(MOBILE_SYNC_KEY_FRAGMENT_KEY);
+	return {
+		isRouteLocation: isExactPath || isNestedPath,
+		shouldScrub: isNestedPath || (isExactPath && (window.location.hash !== "" || hasCredentialQuery)),
+	};
+}
+
+function createInitialLoadState(): LoadState {
+	if (!MOBILE_PAIRING_FEATURES.importFromQr) {
+		return {
+			state: "error",
+			message: clearMobileSyncDraft()
+				? t`Mobile QR import is temporarily unavailable.`
+				: t`Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+		};
+	}
+	if (initialHashCaptureRef.current?.status === "loaded") {
+		if (isMobileSyncEnvelopeExpired(initialHashCaptureRef.current.sync.envelope)) {
+			initialHashCaptureRef.current.sync.keyBytes.fill(0);
+			return {
+				state: "error",
+				message: clearMobileSyncDraft()
+					? t`This desktop wallet QR expired.`
+					: t`This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+			};
+		}
+		if (
+			!saveMobileSyncDraft(initialHashCaptureRef.current.sync.envelope, initialHashCaptureRef.current.sync.encodedKey)
+		) {
+			initialHashCaptureRef.current.sync.keyBytes.fill(0);
+			const draftCleared = clearMobileSyncDraft();
+			return {
+				state: "error",
+				message: draftCleared
+					? t`This device could not securely hold the QR. Check browser storage and scan again.`
+					: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+			};
+		}
+		return { state: "loaded", sync: initialHashCaptureRef.current.sync, source: "url" };
+	}
+	if (initialHashCaptureRef.current?.status === "error") {
+		return { state: "error", message: initialHashCaptureRef.current.message };
+	}
+
+	const storedDraft = readMobileSyncDraft();
+	if (storedDraft.status === "found") {
+		try {
+			const keyBytes = decodeSyncKey(storedDraft.draft.encodedKey);
+			return {
+				state: "loaded",
+				source: "stored",
+				sync: {
+					envelope: storedDraft.draft.envelope,
+					keyBytes,
+					encodedKey: storedDraft.draft.encodedKey,
+				},
+			};
+		} catch {
+			return {
+				state: "error",
+				message: clearMobileSyncDraft()
+					? t`The saved desktop QR was invalid. Scan a fresh QR.`
+					: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+			};
+		}
+	}
+	if (storedDraft.status === "expired") {
+		return {
+			state: "error",
+			message: clearMobileSyncDraft()
+				? t`This desktop wallet QR expired.`
+				: t`This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data.`,
+		};
+	}
+	if (storedDraft.status === "invalid") {
+		return {
+			state: "error",
+			message: clearMobileSyncDraft()
+				? t`The saved desktop QR was invalid. Scan a fresh QR.`
+				: t`The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
+	if (storedDraft.status === "unavailable") {
+		return {
+			state: "error",
+			message: t`Phone-access storage is unavailable. Close this tab and clear this site's data before scanning again.`,
+		};
+	}
+	return { state: "empty" };
+}
+
 function getMobileSyncImportErrorMessage(error: unknown): string {
+	if (error instanceof MobileAgentOneTimeTicketError) {
+		return error.result === "rejected"
+			? t`This one-time QR was already used or is no longer active. Scan a new QR.`
+			: t`The one-time QR could not be verified. Check your connection and retry.`;
+	}
+	if (error instanceof MobileAgentRemoteVerificationError) {
+		return error.hadNetworkError
+			? t`Hyperliquid approval could not be checked. Check your connection and retry.`
+			: t`This trading key is not the currently approved Mobile Agent. Create a new desktop QR.`;
+	}
+	if (error instanceof MobileAgentStorageError) {
+		return error.cleanupIncomplete
+			? t`Phone access could not be activated or fully removed from this device. Clear this site's data before retrying.`
+			: t`Phone access could not be saved on this device. Check browser storage and retry.`;
+	}
 	if (isMobileSyncError(error)) {
 		switch (error.code) {
 			case "missing_sync_fragment":
 			case "missing_sync_key":
-				return t`No mobile link found.`;
+				return t`No desktop wallet QR was found.`;
 			case "sync_payload_in_query":
 			case "sync_payload_in_path":
 			case "unknown_fragment_key":
@@ -486,23 +802,19 @@ function getMobileSyncImportErrorMessage(error: unknown): string {
 			case "invalid_envelope":
 			case "invalid_plaintext":
 			case "agent_key_mismatch":
-				return t`This is not a valid gatu mobile link.`;
+				return t`This is not a valid gatu desktop wallet QR.`;
 			case "expired_payload":
-				return t`This mobile link expired.`;
+				return t`This desktop wallet QR expired.`;
 			case "decrypt_failed":
-				return t`This mobile link is damaged or incomplete. Scan or paste it again.`;
+				return t`This desktop wallet QR is damaged or incomplete. Scan a new QR.`;
 			case "origin_mismatch":
-				return t`This link was created for a different site.`;
+				return t`This QR was created for a different site.`;
 			case "env_mismatch":
-				return t`This link was created for a different network.`;
+				return t`This QR was created for a different network.`;
 			case "account_mismatch":
-				return t`This phone link belongs to a different owner account.`;
+				return t`This QR belongs to a different owner account.`;
 		}
 	}
 
-	if (error instanceof TypeError) {
-		return t`Paste the full phone link from desktop.`;
-	}
-
-	return error instanceof Error ? error.message : t`Could not import phone access.`;
+	return t`Could not import phone access. Retry or create a new desktop QR.`;
 }

@@ -1,15 +1,13 @@
+import type { ISubscription } from "@nktkas/hyperliquid";
+
 export type FakeSubscriptionHandle = {
-	subscribe: () => Promise<{ unsubscribe: () => Promise<void>; failureSignal: AbortSignal }>;
-	failureController: AbortController;
+	subscribe: () => Promise<ISubscription>;
 };
 
 export function createFakeSubscription(): FakeSubscriptionHandle {
-	const failureController = new AbortController();
 	return {
 		subscribe: async () => ({
 			unsubscribe: async () => {},
-			failureSignal: failureController.signal,
 		}),
-		failureController,
 	};
 }

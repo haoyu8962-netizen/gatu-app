@@ -17,8 +17,6 @@ const sideToSwipeDirection: Record<DrawerSide, "up" | "down" | "left" | "right">
 interface DrawerProps extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Root> {
 	side?: DrawerSide;
 	children?: React.ReactNode;
-	open?: boolean;
-	onOpenChange?: (open: boolean) => void;
 }
 
 function Drawer({ side = "right", swipeDirection, children, ...props }: DrawerProps) {
@@ -63,7 +61,7 @@ DrawerOverlay.displayName = "DrawerOverlay";
 
 const drawerContentVariants = cva(
 	[
-		"fixed z-50 flex flex-col bg-overlay border border-stroke-weak shadow-overlay",
+		"fixed z-50 flex flex-col bg-modal border border-stroke-weak shadow-overlay outline-none",
 		"transition-transform duration-200 ease-out motion-reduce:transition-none",
 	],
 	{
@@ -78,11 +76,11 @@ const drawerContentVariants = cva(
 					"data-starting-style:-translate-x-full data-ending-style:-translate-x-full",
 				],
 				top: [
-					"inset-x-0 top-0 max-h-[85dvh] overflow-y-auto",
+					"top-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto",
 					"data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
 				],
 				bottom: [
-					"inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-12",
+					"bottom-0 left-[env(safe-area-inset-left)] right-[env(safe-area-inset-right)] max-h-[85dvh] overflow-y-auto rounded-t-12",
 					"data-starting-style:translate-y-full data-ending-style:translate-y-full",
 				],
 			},
@@ -108,15 +106,16 @@ interface DrawerContentProps
 	extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Popup>,
 		Omit<VariantProps<typeof drawerContentVariants>, "side"> {
 	overlay?: boolean;
+	overlayClassName?: string;
 	keepMounted?: boolean;
 }
 
 const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(
-	({ className, overlay = true, size, keepMounted, children, ...props }, ref) => {
+	({ className, overlay = true, overlayClassName, size, keepMounted, children, ...props }, ref) => {
 		const side = React.useContext(DrawerSideContext);
 		return (
 			<BaseDrawer.Portal keepMounted={keepMounted}>
-				{overlay && <DrawerOverlay />}
+				{overlay && <DrawerOverlay className={overlayClassName} />}
 				<BaseDrawer.Popup ref={ref} className={cn(drawerContentVariants({ side, size }), className)} {...props}>
 					{children}
 				</BaseDrawer.Popup>

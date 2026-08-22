@@ -1,21 +1,27 @@
-import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import {
-	getPerpAvailable,
-	getSpotAvailable,
+	getAccountBalanceSummary,
 	getSpotBalance,
+	getSpotTransferable,
+	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
+import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
+import { PendingActionModal } from "../components/pending-action-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
 
@@ -27,43 +33,103 @@ interface Props {
 
 export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" }: Props) {
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
-				<TransferModalBody
-					key={`${initialDirection}:${open ? "open" : "closed"}`}
-					onOpenChange={onOpenChange}
-					initialDirection={initialDirection}
-				/>
-			</ModalPopup>
-		</Modal>
+		<TransferModalBody
+			key={`${initialDirection}:${open ? "open" : "closed"}`}
+			onOpenChange={onOpenChange}
+			initialDirection={initialDirection}
+			open={open}
+		/>
 	);
 }
 
 interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 	initialDirection: TransferDirection;
+	open: boolean;
 }
 
-function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
+function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
-	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
+	const {
+		marginSummary,
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isDataStale,
+		hasError: hasBalanceError,
+	} = useDefaultDexBalances();
+	const accountDataReady =
+		spotStateStatus === "success" && perpStateStatus === "success" && !isDataStale && !hasBalanceError;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
+	const accountDataReadyRef = useRef(accountDataReady);
+	accountDataReadyRef.current = accountDataReady;
+	const availableBalanceRef = useRef({ value: "0", receivedAt: undefined as number | undefined, direction });
+	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
+	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer", {
+		preExecutionGuard: async (params, signal) => {
+			const assertCurrentBalance = () => {
+				if (!accountDataReadyRef.current)
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				const current = availableBalanceRef.current;
+				if (params.toPerp !== (current.direction === "toPerp")) {
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				}
+				assertFreshFundsAmount(params.amount, current.value, current.receivedAt);
+			};
+			assertCurrentBalance();
+			await Promise.all([assertAccountAbstraction(signal), fundsActionAvailability.assertFreshGeoAllowed(signal)]);
+			signal.throwIfAborted();
+			assertCurrentBalance();
+		},
+	});
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
-	const internalTransfersDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
+	const internalTransfersDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
 	const availableBalanceValue =
-		direction === "toSpot"
-			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
-			: getSpotAvailable(spotUsdcBal, spotAvailableAfterMaintenance);
+		accountModeReady && accountDataReady
+			? direction === "toSpot"
+				? accountSummary.withdrawable
+				: getSpotTransferable(spotUsdcBal)
+			: 0;
+	const availableBalanceExact =
+		accountModeReady && accountDataReady
+			? direction === "toSpot"
+				? String(withdrawable)
+				: getSpotTransferableValue(spotUsdcBal)
+			: "0";
+	availableBalanceRef.current = {
+		value: availableBalanceExact,
+		receivedAt: direction === "toSpot" ? perpStateReceivedAt : spotStateReceivedAt,
+		direction,
+	};
 
 	const isValidAmount =
-		!internalTransfersDisabledReason &&
+		fundsActionAvailability.internalTransfer.available &&
 		isAmountWithinBalance(amount, availableBalanceValue) &&
 		hasWalletAccess &&
 		!!walletAddress;
@@ -72,13 +138,13 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
-		if (internalTransfersDisabledReason) return;
+		if (internalTransfersDisabledReason || !accountDataReady || isPending) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || isPending || !walletAddress || internalTransfersDisabledReason) return;
+		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabledReason) return;
 
 		setError(null);
 		try {
@@ -86,8 +152,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Transfer failed`;
-			setError(message);
+			setError(formatExchangeActionError(err, t`Transfer failed`));
 		}
 	}
 
@@ -96,11 +161,12 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	}
 
 	function handleMaxClick() {
+		if (!accountDataReady) return;
 		setAmount(floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS));
 	}
 
 	return (
-		<>
+		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
 			<ModalHeader>
 				<ModalTitle>{t`Transfer USDC`}</ModalTitle>
 				<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
@@ -121,59 +187,64 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 						</div>
 					)}
 
-					<div className="flex items-center justify-center gap-3 py-2">
-						<div className="flex flex-col items-center">
-							<span
-								className={cn(
-									"text-xs px-2 py-1 uppercase font-medium",
-									direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
-								)}
-							>
-								{fromLabel}
-							</span>
-						</div>
-						<button
-							type="button"
-							onClick={handleFlip}
-							aria-label={t`Flip transfer direction`}
-							disabled={!!internalTransfersDisabledReason}
-							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
-						>
-							<ArrowsLeftRightIcon className="size-4" />
-						</button>
-						<div className="flex flex-col items-center">
-							<span
-								className={cn(
-									"text-xs px-2 py-1 uppercase font-medium",
-									direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
-								)}
-							>
-								{toLabel}
-							</span>
-						</div>
-					</div>
+					{accountModeReady && accountDataReady ? (
+						<>
+							<div className="flex items-center justify-center gap-3 py-2">
+								<div className="flex flex-col items-center">
+									<span
+										className={cn(
+											"text-xs px-2 py-1 uppercase font-medium",
+											direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+										)}
+									>
+										{fromLabel}
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={handleFlip}
+									aria-label={t`Flip transfer direction`}
+									disabled={!!internalTransfersDisabledReason || isPending}
+									className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
+								>
+									<ArrowsLeftRightIcon className="size-4" />
+								</button>
+								<div className="flex flex-col items-center">
+									<span
+										className={cn(
+											"text-xs px-2 py-1 uppercase font-medium",
+											direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+										)}
+									>
+										{toLabel}
+									</span>
+								</div>
+							</div>
 
-					<NumberInput
-						label={t`Amount`}
-						labelValue={
-							<>
-								{t`Available`}:{" "}
-								<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
-									{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
-								</span>
-							</>
-						}
-						onLabelValueClick={handleMaxClick}
-						placeholder="0.00"
-						value={amount}
-						onChange={(e) => handleAmountChange(e.target.value)}
-						disabled={!!internalTransfersDisabledReason}
-						className={cn(
-							"w-full tabular-nums",
-							exceedsBalance(amount, availableBalanceValue) &&
-								"border-stroke-error-strong focus:border-stroke-error-strong",
-						)}
-					/>
+							<NumberInput
+								label={t`Amount`}
+								labelValue={
+									<>
+										{t`Available`}:{" "}
+										<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
+											{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
+										</span>
+									</>
+								}
+								onLabelValueClick={handleMaxClick}
+								placeholder="0.00"
+								value={amount}
+								onChange={(e) => handleAmountChange(e.target.value)}
+								disabled={!!internalTransfersDisabledReason || isPending}
+								mobileSafe
+								className={cn(
+									"w-full tabular-nums max-[1000px]:h-11",
+									exceedsBalance(amount, availableBalanceValue) &&
+										"border-stroke-error-strong focus:border-stroke-error-strong",
+								)}
+							/>
+						</>
+					) : null}
 
 					{error && (
 						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
@@ -194,6 +265,6 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 					</Button>
 				</div>
 			</ModalContent>
-		</>
+		</PendingActionModal>
 	);
 }

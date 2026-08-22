@@ -13,4 +13,13 @@ const blog = defineCollection({
 	}),
 });
 
-export const collections = { blog };
+const legal = defineCollection({
+	loader: glob({
+		pattern: ["privacyPolicy.md", "riskDisclosure.md", "terms.md", "support.md"],
+		base: "../../legal",
+		generateId: ({ entry }) => entry.replace(/\.md$/, ""),
+	}),
+	schema: z.object({}).passthrough(),
+});
+
+export const collections = { blog, legal };

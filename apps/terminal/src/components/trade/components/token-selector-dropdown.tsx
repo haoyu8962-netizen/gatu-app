@@ -2,6 +2,7 @@ import { Dropdown, type DropdownItem } from "@gatu/ui";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { AssetDisplay } from "./asset-display";
 
 interface Props {
@@ -14,12 +15,13 @@ interface Props {
 }
 
 export function TokenSelectorDropdown({ tokens, selectedToken, onSelect, getBalance, disabled, className }: Props) {
+	useNumberFormatRevision();
 	const selected = tokens.find((t) => t.name === selectedToken);
 
 	const items: DropdownItem[] = tokens.map((token) => {
 		const balance = getBalance(token.name);
 		return {
-			label: `${token.name}  ${formatToken(balance, 4)}`,
+			label: `${token.displayName}  ${formatToken(balance, 4)}`,
 			icon: <AssetDisplay coin={token.name} hideName iconClassName="size-5" />,
 			active: token.name === selectedToken,
 			onSelect: () => onSelect(token.name),

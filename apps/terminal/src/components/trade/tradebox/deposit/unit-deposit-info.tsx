@@ -1,70 +1,56 @@
 import { Trans } from "@lingui/react/macro";
-import { ClockIcon, GlobeHemisphereWestIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { formatUnits } from "viem";
-import { InfoRow } from "@/components/ui/info-row";
-import { USDC_ICON_URL } from "@/config/bridge";
-import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { NETWORKS } from "@/config/networks";
-
-const ARBITRUM_NETWORK = NETWORKS[0];
+import { formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
 
 interface Props {
-	networkName: string;
+	cctpFee?: string | null;
+	cctpFeeLoading?: boolean;
+	cctpFeeError?: boolean;
 }
 
-export function UnitDepositInfo({ networkName }: Props) {
-	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
+export function UnitDepositInfo({ cctpFee, cctpFeeLoading = false, cctpFeeError = false }: Props) {
+	useNumberFormatRevision();
+	const fee = cctpFee ? (
+		formatUSD(cctpFee, { compact: false })
+	) : cctpFeeLoading ? (
+		<Trans>Checking...</Trans>
+	) : cctpFeeError ? (
+		<Trans>Unavailable</Trans>
+	) : (
+		<Trans>Calculated after funding</Trans>
+	);
 
 	return (
-		<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
-			<InfoRow
-				className="p-0"
-				labelClassName="flex items-center gap-1.5 text-fg"
-				label={
-					<>
-						<img src={USDC_ICON_URL} alt="" className="size-3 rounded-full" aria-hidden="true" />
-						<Trans>Asset</Trans>
-					</>
-				}
-				value="USDC"
-				valueClassName="font-medium"
-			/>
-			<InfoRow
-				className="p-0"
-				labelClassName="flex items-center gap-1.5 text-fg"
-				label={
-					<>
-						<GlobeHemisphereWestIcon className="size-3" />
-						<Trans>Network</Trans>
-					</>
-				}
-				value={networkName}
-				valueClassName="font-medium"
-			/>
-			<InfoRow
-				className="p-0"
-				labelClassName="flex items-center gap-1.5 text-fg"
-				label={
-					<>
-						<WarningCircleIcon className="size-3" />
-						<Trans>Minimum</Trans>
-					</>
-				}
-				value={minimumDeposit}
-				valueClassName="font-medium"
-			/>
-			<InfoRow
-				className="p-0"
-				labelClassName="flex items-center gap-1.5 text-fg"
-				label={
-					<>
-						<ClockIcon className="size-3" />
-						<Trans>Estimated time</Trans>
-					</>
-				}
-				value={ARBITRUM_NETWORK.estimatedDepositTime}
-				valueClassName="font-medium"
-			/>
-		</div>
+		<dl
+			className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 text-xs"
+			data-presentation="funding"
+		>
+			<div className="flex items-center justify-between gap-3">
+				<dt className="text-market-close-muted">
+					<Trans>You receive</Trans>
+				</dt>
+				<dd className="flex items-center gap-1.5 text-right font-medium text-market-close-fg">
+					<HyperCoreUsdcIcon size="sm" />
+					<span>
+						<Trans>USDC on HyperCore</Trans>
+					</span>
+				</dd>
+			</div>
+			<div className="flex items-center justify-between gap-3">
+				<dt className="text-market-close-muted">
+					<Trans>Fee</Trans>
+				</dt>
+				<dd className="text-right font-medium tabular-nums text-market-close-fg">{fee}</dd>
+			</div>
+			<div className="flex items-center justify-between gap-3">
+				<dt className="text-market-close-muted">
+					<Trans>Processing time</Trans>
+				</dt>
+				<dd className="text-right font-medium tabular-nums text-market-close-fg">
+					<Trans>~2 minutes</Trans>
+				</dd>
+			</div>
+		</dl>
 	);
 }

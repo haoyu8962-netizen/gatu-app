@@ -29,11 +29,11 @@ const ExchangeScopeCtx = createContext<ExchangeScopeContext>({
 	setScope: () => undefined,
 });
 
-function deriveScope(pathname: string): ScopeState {
+export function deriveScope(pathname: string, searchScope?: "all"): ScopeState {
 	const tradeRouteMarket = getTradeRouteMarketFromPath(pathname);
 	if (tradeRouteMarket) {
 		return {
-			scope: tradeRouteMarket.scope,
+			scope: searchScope === "all" ? "all" : tradeRouteMarket.scope,
 			dex: tradeRouteMarket.dex,
 			marketName: tradeRouteMarket.name,
 		};
@@ -60,19 +60,21 @@ function createRuntimeScope(routeScope: ScopeState): ScopeState {
 }
 
 export function ExchangeScopeProvider({ children }: { children: React.ReactNode }) {
-	const { pathname } = useLocation();
-	const routeScope = useMemo(() => deriveScope(pathname), [pathname]);
+	const { pathname, search } = useLocation();
+	const searchScope = search.scope === "all" ? "all" : undefined;
+	const routeScope = useMemo(() => deriveScope(pathname, searchScope), [pathname, searchScope]);
 	const [runtimeScope, setRuntimeScope] = useState(() => createRuntimeScope(routeScope));
-	const previousPathnameRef = useRef(pathname);
+	const routeKey = `${pathname}:${searchScope ?? ""}`;
+	const previousRouteKeyRef = useRef(routeKey);
 	const setScope = useCallback((scope: ExchangeScope, dex?: string, marketName?: string) => {
 		setRuntimeScope({ scope, dex, marketName });
 	}, []);
 
 	useEffect(() => {
-		if (previousPathnameRef.current === pathname) return;
-		previousPathnameRef.current = pathname;
+		if (previousRouteKeyRef.current === routeKey) return;
+		previousRouteKeyRef.current = routeKey;
 		setRuntimeScope(createRuntimeScope(routeScope));
-	}, [pathname, routeScope]);
+	}, [routeKey, routeScope]);
 
 	const value = useMemo(
 		() => ({

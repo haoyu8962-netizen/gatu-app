@@ -10,6 +10,7 @@ type KeyEntry = {
 export type StalenessWatchdog = {
 	register: (key: string, thresholdMs: number) => void;
 	unregister: (key: string) => void;
+	arm: (key: string) => void;
 	markFresh: (key: string) => void;
 	isStale: (key: string) => boolean;
 	getLastMessageAt: (key: string) => number | undefined;
@@ -46,11 +47,9 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		}
 	}
 
-	// Register tracks the key but does NOT start the interval — that happens
-	// lazily on the first markFresh. A subscription that registers but never
-	// receives data is therefore never staleness-checked. This is intentional:
-	// "never had data" is distinct from "had data, then stopped" and only the
-	// latter should trigger reconnect.
+	// Register tracks the key but does NOT start the interval. Callers normally
+	// begin monitoring on the first payload; known periodic streams may begin at
+	// subscription acknowledgement to enforce a first-frame deadline.
 	function register(key: string, thresholdMs: number) {
 		if (keys.has(key)) return;
 		keys.set(key, {
@@ -66,15 +65,22 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		if (keys.size === 0) stopInterval();
 	}
 
-	function markFresh(key: string) {
+	function arm(key: string) {
 		const entry = keys.get(key);
 		if (!entry) return;
 		entry.lastMessageAt = Date.now();
 		if (intervalId === undefined && keys.size > 0) {
 			startInterval();
 		}
-		if (entry.isStale) {
-			entry.isStale = false;
+		entry.isStale = false;
+	}
+
+	function markFresh(key: string) {
+		const entry = keys.get(key);
+		if (!entry) return;
+		const wasStale = entry.isStale;
+		arm(key);
+		if (wasStale) {
 			for (const listener of entry.listeners) {
 				listener(false);
 			}
@@ -103,7 +109,7 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		keys.clear();
 	}
 
-	return { register, unregister, markFresh, isStale, getLastMessageAt, subscribe, destroy };
+	return { register, unregister, arm, markFresh, isStale, getLastMessageAt, subscribe, destroy };
 }
 
 export type { StalenessListener };

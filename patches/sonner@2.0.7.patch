@@ -1,0 +1,28 @@
+diff --git a/dist/index.js b/dist/index.js
+index bd21e898f431298b70e941833c78819a1eb53a36..0b20001dd90abf0ddef060e4d343ebdd66393efd 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1146,7 +1146,8 @@ const Toaster = /*#__PURE__*/ React__default.default.forwardRef(function Toaster
+                 if (isNotDismissible) return;
+                 setInteracting(true);
+             },
+-            onPointerUp: ()=>setInteracting(false)
++            onPointerUp: ()=>setInteracting(false),
++            onPointerCancel: ()=>setInteracting(false)
+         }, filteredToasts.filter((toast)=>!toast.position && index === 0 || toast.position === position).map((toast, index)=>{
+             var _toastOptions_duration, _toastOptions_closeButton;
+             return /*#__PURE__*/ React__default.default.createElement(Toast, {
+diff --git a/dist/index.mjs b/dist/index.mjs
+index d0c7a5a1fa1ed8b19c27bea968bb404f2437a07e..3e98522e2c21864e9a39b312a70986df1a3f3119 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1139,7 +1139,8 @@ const Toaster = /*#__PURE__*/ React.forwardRef(function Toaster(props, ref) {
+                 if (isNotDismissible) return;
+                 setInteracting(true);
+             },
+-            onPointerUp: ()=>setInteracting(false)
++            onPointerUp: ()=>setInteracting(false),
++            onPointerCancel: ()=>setInteracting(false)
+         }, filteredToasts.filter((toast)=>!toast.position && index === 0 || toast.position === position).map((toast, index)=>{
+             var _toastOptions_duration, _toastOptions_closeButton;
+             return /*#__PURE__*/ React.createElement(Toast, {

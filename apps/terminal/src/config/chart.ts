@@ -1,6 +1,11 @@
-import type { CandleType } from "klinecharts";
-import type { ChartingLibraryFeatureset, ResolutionString, TimeFrameItem } from "@/types/charting_library";
+import type {
+	ChartingLibraryFeatureset,
+	LanguageCode,
+	ResolutionString,
+	TimeFrameItem,
+} from "@/types/charting_library";
 import { DEFAULT_QUOTE_TOKEN } from "./app";
+import { isValidLocale, type LocaleCode } from "./i18n";
 
 export const CHART_LIBRARY_PATH = "/charting_library/";
 
@@ -38,7 +43,20 @@ export const CHART_SUPPORTED_RESOLUTIONS = [
 	"1M",
 ] as unknown as ResolutionString[];
 
-export const CHART_LOCALE = "en";
+export const CHART_LOCALE = "en" satisfies LanguageCode;
+
+const chartLocaleByAppLocale: Record<LocaleCode, LanguageCode> = {
+	en: "en",
+	zh: "zh",
+	hi: "en",
+	es: "es",
+	fr: "fr",
+	ar: "ar",
+};
+
+export function resolveChartLocale(locale: string): LanguageCode {
+	return isValidLocale(locale) ? chartLocaleByAppLocale[locale] : CHART_LOCALE;
+}
 export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
 
 export const CHART_ENABLED_FEATURES = [
@@ -99,20 +117,6 @@ export const CHART_DATAFEED_CONFIG = {
 	VOLUME_PRECISION: 2,
 	SEARCH_LIMIT: 50,
 } as const;
-
-export const CHART_TYPES = [
-	{ label: "Candles", type: "candle_solid" as CandleType },
-	{ label: "Hollow", type: "candle_stroke" as CandleType },
-	{ label: "OHLC", type: "ohlc" as CandleType },
-	{ label: "Area", type: "area" as CandleType },
-] as const;
-
-export type ChartTypeConfig = (typeof CHART_TYPES)[number];
-
-export const DEFAULT_CHART_TYPE = CHART_TYPES[0];
-
-export const INITIAL_CANDLE_COUNT = 500;
-export const VOLUME_INDICATOR_NAME = "VOL";
 
 export const CHART_MIN_HEIGHT_PX = 300;
 

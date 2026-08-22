@@ -1,29 +1,33 @@
-import {
-	Button,
-	Modal,
-	ModalContent,
-	ModalDescription,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-	Select,
-	TextInput,
-} from "@gatu/ui";
+import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useCallback, useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
-import { type BalanceRow, getPerpAvailable, getSpotAvailable, getSpotAvailableValue } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	type BalanceRow,
+	getAccountBalanceSummary,
+	getSpotTransferable,
+	getSpotTransferableValue,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
+import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
+import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import {
+	isSupportedAccountAbstraction,
+	isTokenSpotBalance,
+	useDefaultDexBalances,
+} from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { formatTokenId } from "@/lib/trade/token-id";
+import { PendingActionModal } from "../components/pending-action-modal";
 
 type AccountType = "perp" | "spot";
 
@@ -41,16 +45,13 @@ export function SendModal({
 	initialAccountType = "spot",
 }: Props) {
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
-				<SendModalBody
-					key={`${initialAsset}:${initialAccountType}:${open ? "open" : "closed"}`}
-					onOpenChange={onOpenChange}
-					initialAsset={initialAsset}
-					initialAccountType={initialAccountType}
-				/>
-			</ModalPopup>
-		</Modal>
+		<SendModalBody
+			key={`${initialAsset}:${initialAccountType}:${open ? "open" : "closed"}`}
+			onOpenChange={onOpenChange}
+			initialAsset={initialAsset}
+			initialAccountType={initialAccountType}
+			open={open}
+		/>
 	);
 }
 
@@ -58,9 +59,10 @@ interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 	initialAsset: string;
 	initialAccountType: AccountType;
+	open: boolean;
 }
 
-function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyProps) {
+function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -68,57 +70,145 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	const [error, setError] = useState<string | null>(null);
 
 	const { getToken } = useSpotTokens();
-	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
-	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
-	const { hasWalletAccess } = useWalletSession();
+	const {
+		marginSummary,
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		spotStateStatus,
+		perpStateStatus,
+		spotStateReceivedAt,
+		perpStateReceivedAt,
+		isDataStale,
+		hasError: hasBalanceError,
+	} = useDefaultDexBalances();
+	const accountDataReady =
+		spotStateStatus === "success" && perpStateStatus === "success" && !isDataStale && !hasBalanceError;
+	const accountDataReadyRef = useRef(accountDataReady);
+	accountDataReadyRef.current = accountDataReady;
+	const balanceExecutionRef = useRef({
+		available: "0",
+		receivedAt: undefined as number | undefined,
+		tokenId: "",
+		source: "spot" as "spot" | "perp",
+	});
+	const { address, hasWalletAccess } = useWalletSession();
+	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
+	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
+		preExecutionGuard: async (params, signal) => {
+			const assertCurrentBalance = () => {
+				if (!accountDataReadyRef.current)
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				const current = balanceExecutionRef.current;
+				if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				}
+				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
+			};
+			assertCurrentBalance();
+			await assertAccountAbstraction(signal);
+			signal.throwIfAborted();
+			assertCurrentBalance();
+		},
+	});
+	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend", {
+		preExecutionGuard: async (params, signal) => {
+			const assertCurrentBalance = () => {
+				if (!accountDataReadyRef.current)
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				const current = balanceExecutionRef.current;
+				if (current.source !== "spot" || params.token !== current.tokenId) {
+					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				}
+				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
+			};
+			assertCurrentBalance();
+			await assertAccountAbstraction(signal);
+			signal.throwIfAborted();
+			assertCurrentBalance();
+		},
+	});
 
 	const isPending = isSendAssetPending || isSpotSendPending;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
+	const usesTradingAccount = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const activeAccountType = usesTradingAccount ? "spot" : accountType;
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
-		if (!spotBalances?.length) return [];
+		if (!accountModeReady || !accountDataReady || !spotBalances?.length) return [];
 		return spotBalances
+			.filter(isTokenSpotBalance)
 			.filter((b) => {
-				const available = getSpotAvailable(b, spotAvailableAfterMaintenance);
+				const available = getSpotTransferable(b);
 				return available > 0;
 			})
 			.map((b) => ({
 				asset: b.coin,
 				type: "spot" as const,
-				available: getSpotAvailableValue(b, spotAvailableAfterMaintenance),
+				available: getSpotTransferableValue(b),
+				transferable: getSpotTransferableValue(b),
 				inOrder: b.hold,
 				total: b.total,
 				usdValue: b.coin === DEFAULT_QUOTE_TOKEN ? b.total : b.entryNtl,
 				entryNtl: b.entryNtl,
 			}));
-	}, [spotBalances, spotAvailableAfterMaintenance]);
+	}, [accountDataReady, accountModeReady, spotBalances]);
 
 	const tokenOptions = useMemo(() => {
-		if (accountType === "perp") {
+		if (activeAccountType === "perp") {
 			return [DEFAULT_QUOTE_TOKEN];
 		}
 		return availableSpotTokens.map((b) => b.asset);
-	}, [accountType, availableSpotTokens]);
+	}, [activeAccountType, availableSpotTokens]);
 
 	const tokenInfo = getToken(selectedToken);
 	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
 	const decimals = getTokenTransferDecimals(tokenInfo);
 
-	const availableBalance = useMemo(() => {
-		if (accountType === "perp") {
-			return getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed);
-		}
-		const balance = spotBalances?.find((b) => b.coin === selectedToken);
-		return getSpotAvailable(balance, spotAvailableAfterMaintenance);
-	}, [accountType, perpSummary, spotBalances, selectedToken, spotAvailableAfterMaintenance]);
+	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
+	const availableBalance =
+		!accountModeReady || !accountDataReady
+			? 0
+			: activeAccountType === "perp"
+				? accountSummary.withdrawable
+				: getSpotTransferable(selectedSpotBalance);
+	const availableBalanceExact =
+		!accountModeReady || !accountDataReady
+			? "0"
+			: activeAccountType === "perp"
+				? String(withdrawable)
+				: getSpotTransferableValue(selectedSpotBalance);
+	balanceExecutionRef.current = {
+		available: availableBalanceExact,
+		receivedAt: activeAccountType === "perp" ? perpStateReceivedAt : spotStateReceivedAt,
+		tokenId,
+		source: activeAccountType,
+	};
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
-	const canSend = hasWalletAccess && isValidDestination && isValidAmount && !!tokenId && !isPending;
+	const canSend =
+		accountModeReady &&
+		accountDataReady &&
+		hasWalletAccess &&
+		isValidDestination &&
+		isValidAmount &&
+		!!tokenId &&
+		!isPending;
 
 	function handleAccountTypeChange(value: string | null) {
-		if (!value) return;
+		if (!value || usesTradingAccount || !accountDataReady || isPending) return;
 		const v = value as AccountType;
 		setAccountType(v);
 		if (v === "perp") {
@@ -130,25 +220,35 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	}
 
 	function handleTokenChange(value: string | null) {
-		if (!value) return;
+		if (!value || !accountDataReady || isPending) return;
 		setSelectedToken(value);
 		setAmount("");
 	}
 
 	function handleAmountChange(value: string) {
+		if (!accountDataReady || isPending) return;
 		setAmount(limitDecimalInput(value, decimals));
 	}
 
 	function handleMaxClick() {
+		if (!accountDataReady || isPending) return;
 		setAmount(floorToString(availableBalance, decimals));
 	}
 
-	const handleSend = useCallback(async () => {
+	async function handleSend() {
 		if (!canSend) return;
 
 		setError(null);
 		try {
-			if (accountType === "perp") {
+			if (usesTradingAccount) {
+				await sendAsset({
+					destination,
+					sourceDex: "spot",
+					destinationDex: "spot",
+					token: tokenId,
+					amount,
+				});
+			} else if (activeAccountType === "perp") {
 				await sendAsset({
 					destination,
 					sourceDex: "",
@@ -167,15 +267,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Send failed`;
-			setError(message);
+			setError(formatExchangeActionError(err, t`Send failed`));
 		}
-	}, [accountType, amount, canSend, destination, onOpenChange, sendAsset, spotSend, tokenId]);
+	}
 
-	const accountTypeOptions = [
-		{ value: "perp", label: t`Perps Account` },
-		{ value: "spot", label: t`Spot Account` },
-	];
+	const accountTypeOptions = !accountModeReady
+		? []
+		: usesTradingAccount
+			? [{ value: "spot", label: t`Trading Account` }]
+			: [
+					{ value: "perp", label: t`Perps Account` },
+					{ value: "spot", label: t`Spot Account` },
+				];
 
 	const tokenSelectOptions = tokenOptions.map((tokenName) => ({
 		value: tokenName,
@@ -183,7 +286,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	}));
 
 	return (
-		<>
+		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
 			<ModalHeader>
 				<ModalTitle>{t`Send Tokens`}</ModalTitle>
 				<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
@@ -197,14 +300,30 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
 						</div>
 					)}
+					{!accountModeReady && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Select a supported account mode before moving funds.`}</span>
+						</div>
+					)}
+					{accountModeReady && !accountDataReady && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
+						</div>
+					)}
 
 					<TextInput
 						placeholder={t`Destination address`}
+						aria-label={t`Destination address`}
 						value={destination}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
 						autoComplete="off"
 						spellCheck={false}
+						disabled={isPending || !accountModeReady || !accountDataReady}
+						mobileSafe
 						className={cn(
+							"max-[1000px]:min-h-11",
 							destination &&
 								!isValidDestination &&
 								"border-stroke-error-strong focus-visible:border-stroke-error-strong",
@@ -213,16 +332,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 					<div className="flex gap-2">
 						<Select
-							value={accountType}
+							value={accountModeReady ? activeAccountType : ""}
 							onValueChange={handleAccountTypeChange}
 							options={accountTypeOptions}
+							disabled={!accountModeReady || !accountDataReady || usesTradingAccount || isPending}
 							className="flex-1"
 						/>
 
 						<Select
-							value={selectedToken}
+							value={accountModeReady ? selectedToken : ""}
 							onValueChange={handleTokenChange}
 							options={tokenSelectOptions}
+							disabled={isPending || !accountModeReady || !accountDataReady}
 							className="flex-1"
 						/>
 					</div>
@@ -231,9 +352,11 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 						label={t`Amount`}
 						labelValue={
 							<>
-								Available:{" "}
+								{t`Available`}:{" "}
 								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-									{floorToString(availableBalance, decimals)} {selectedToken}
+									{accountModeReady && accountDataReady
+										? `${floorToString(availableBalance, decimals)} ${selectedToken}`
+										: "—"}
 								</span>
 							</>
 						}
@@ -241,8 +364,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 						placeholder="0.00"
 						value={amount}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+						disabled={isPending || !accountModeReady || !accountDataReady}
+						mobileSafe
 						className={cn(
-							"w-full tabular-nums",
+							"w-full tabular-nums max-[1000px]:h-11",
 							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",
 						)}
 					/>
@@ -261,6 +386,6 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 					</Button>
 				</div>
 			</ModalContent>
-		</>
+		</PendingActionModal>
 	);
 }

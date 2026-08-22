@@ -1,7 +1,8 @@
 import { ButtonIcon } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { GearIcon } from "@phosphor-icons/react";
-import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
-import { UI_TEXT } from "@/config/ui-text";
+import { Link } from "@tanstack/react-router";
+import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { LanguageSwitcher } from "../header/language-switcher";
@@ -9,43 +10,60 @@ import { ThemeToggle } from "../header/theme-toggle";
 import { UserMenu } from "../header/user-menu";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 
-const TOP_NAV_TEXT = UI_TEXT.TOP_NAV;
-
 interface Props {
 	className?: string;
 }
 
 export function MobileHeader({ className }: Props) {
+	const tradeHomePath = useTradeHomePath();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 
 	return (
 		<header
 			className={cn(
 				"pt-[env(safe-area-inset-top)]",
-				"sticky top-0 z-40 bg-surface/95 backdrop-blur-sm",
-				"border-b border-stroke-weak/60",
+				"sticky top-0 z-40 bg-surface",
+				"border-b border-trading-panel-stroke-card",
 				className,
 			)}
 		>
-			<div className={cn(APP_HEADER_HEIGHT_CLASS, "px-2 flex items-center justify-between")}>
-				<div className="flex items-center gap-1">
+			<div
+				data-slot="mobile-header-inner"
+				className="flex h-14 items-center gap-2 pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]"
+			>
+				<div data-slot="mobile-header-brand" className="flex shrink-0 items-center gap-1.5">
 					<MobileNavDrawer />
-					<img src="/icon.svg" alt="gatu" className="size-6 rounded-8" />
+					<Link
+						to={tradeHomePath}
+						search={{ scope: "all" }}
+						aria-label="gatu"
+						className="rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						<span className="text-2sm font-bold tracking-wide text-trading-panel-fg">GATU</span>
+					</Link>
 				</div>
 
-				<div className="flex items-center gap-0.5">
-					<UserMenu />
-					<ThemeToggle />
-					<LanguageSwitcher />
+				<div data-slot="mobile-header-actions" className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+					<div
+						data-slot="mobile-header-account"
+						className="flex min-w-0 flex-1 justify-end [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
+					>
+						<UserMenu />
+					</div>
+					<ThemeToggle className="ml-2 text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
+					<LanguageSwitcher
+						sideOffset={14}
+						alignOffset={-36}
+						className="size-11 min-h-11 text-market-close-muted hover:text-market-close-fg"
+					/>
 					<ButtonIcon
 						variant="ghost"
 						intent="neutral"
-						size="md"
-						className="touch-target"
-						aria-label={TOP_NAV_TEXT.SETTINGS_ARIA}
+						className="size-8 shrink-0 text-trading-panel-muted hover:text-trading-panel-fg"
 						onClick={openSettingsDialog}
+						aria-label={t`Settings`}
 					>
-						<GearIcon className="size-4" />
+						<GearIcon className="size-4.5" />
 					</ButtonIcon>
 				</div>
 			</div>

@@ -5,7 +5,6 @@ import type { CandleInterval } from "./resolution";
 import {
 	clearCooldownTimer,
 	clearReconnectTimer,
-	detachFailureListener,
 	runUnsubscribe,
 	type StreamRuntime,
 	type StreamStatus,
@@ -38,13 +37,16 @@ export type CandleStoreState = {
 		onResetCache: () => void,
 	) => void;
 	unsubscribe: (streamKey: string, listenerId: string) => void;
+	invalidateStream: (streamKey: string) => void;
 	setLastBar: (cacheKey: string, bar: Bar) => void;
+	clearLastBar: (cacheKey: string) => void;
 	getLastBar: (cacheKey: string) => Bar | undefined;
 };
 
 export type CandleStore = StoreApi<CandleStoreState>;
 
 const MAX_LAST_BAR_CACHE = WS_RELIABILITY_LIMITS.cache.maxChartLastBarEntries;
+const STREAM_RELEASE_DELAY_MS = 5_000;
 
 function streamKey(coin: string, interval: CandleInterval): string {
 	return `${coin}:${interval}`;
@@ -66,6 +68,13 @@ export function createCandleStore(): CandleStore {
 	const runtime = new Map<string, StreamRuntime>();
 	const cacheLru = new Map<string, true>();
 
+	const clearReleaseTimer = (entry: StreamRuntime) => {
+		if (entry.releaseTimer) {
+			clearTimeout(entry.releaseTimer);
+			entry.releaseTimer = undefined;
+		}
+	};
+
 	const touchCacheKey = (cacheKey: string, cache: Record<string, Bar>) => {
 		cacheLru.delete(cacheKey);
 		cacheLru.set(cacheKey, true);
@@ -78,207 +87,262 @@ export function createCandleStore(): CandleStore {
 		}
 	};
 
-	return createStore<CandleStoreState>((set, get) => ({
-		streams: {},
-		lastBarCache: {},
-
-		subscribe: (key, coin, interval, listenerId, onTick, onResetCache) => {
-			const listener: CandleListener = { id: listenerId, onTick, onResetCache };
+	return createStore<CandleStoreState>((set, get) => {
+		const releaseStream = (key: string) => {
+			const stream = get().streams[key];
+			if (stream && stream.listeners.size > 0) return;
 
 			set((state) => {
-				const existing = state.streams[key];
-				if (existing) {
-					const prevListener = existing.listeners.get(listenerId);
-					if (
-						prevListener &&
-						prevListener.onTick === listener.onTick &&
-						prevListener.onResetCache === listener.onResetCache
-					) {
-						return state;
-					}
-					const listeners = new Map(existing.listeners);
-					listeners.set(listenerId, listener);
-					return {
-						streams: { ...state.streams, [key]: { ...existing, listeners } },
-					};
-				}
-
-				const newStream: CandleStream = {
-					status: "connecting",
-					listeners: new Map([[listenerId, listener]]),
-				};
-				return { streams: { ...state.streams, [key]: newStream } };
+				const current = state.streams[key];
+				if (current && current.listeners.size > 0) return state;
+				const { [key]: _, ...rest } = state.streams;
+				return { streams: rest };
 			});
 
-			let runtimeEntry = runtime.get(key);
-			if (!runtimeEntry) {
-				runtimeEntry = { reconnectAttempts: 0, coin, interval };
-				runtime.set(key, runtimeEntry);
-			} else {
-				runtimeEntry.coin = coin;
-				runtimeEntry.interval = interval;
-			}
+			const runtimeEntry = runtime.get(key);
+			if (!runtimeEntry) return;
 
+			clearReleaseTimer(runtimeEntry);
 			clearReconnectTimer(runtimeEntry);
 			clearCooldownTimer(runtimeEntry);
 
-			const ctx: SubscribeContext = {
-				key,
-				runtime,
-				getLastBar: () => get().streams[key]?.lastBar,
-				hasListeners: () => {
-					const stream = get().streams[key];
-					return !!stream && stream.listeners.size > 0;
-				},
-				onCandle: (bar) => {
-					const current = get().streams[key];
-					if (!current) return;
+			const subscription = runtimeEntry.subscription;
+			runtimeEntry.subscription = undefined;
+			runtimeEntry.promise = undefined;
 
-					if (!isSameBar(current.lastBar, bar) || current.status !== "active" || current.error !== undefined) {
+			runtime.delete(key);
+
+			if (subscription) {
+				runUnsubscribe(subscription);
+			}
+		};
+
+		return {
+			streams: {},
+			lastBarCache: {},
+
+			subscribe: (key, coin, interval, listenerId, onTick, onResetCache) => {
+				const listener: CandleListener = { id: listenerId, onTick, onResetCache };
+
+				set((state) => {
+					const existing = state.streams[key];
+					if (existing) {
+						const prevListener = existing.listeners.get(listenerId);
+						if (
+							prevListener &&
+							prevListener.onTick === listener.onTick &&
+							prevListener.onResetCache === listener.onResetCache
+						) {
+							return state;
+						}
+						const listeners = new Map(existing.listeners);
+						listeners.set(listenerId, listener);
+						return {
+							streams: { ...state.streams, [key]: { ...existing, listeners } },
+						};
+					}
+
+					const newStream: CandleStream = {
+						status: "connecting",
+						listeners: new Map([[listenerId, listener]]),
+					};
+					return { streams: { ...state.streams, [key]: newStream } };
+				});
+
+				let runtimeEntry = runtime.get(key);
+				if (!runtimeEntry) {
+					runtimeEntry = {
+						reconnectAttempts: 0,
+						recoveryGeneration: 0,
+						recoveredGeneration: 0,
+						awaitingFirstCandle: false,
+						coin,
+						interval,
+					};
+					runtime.set(key, runtimeEntry);
+				} else {
+					runtimeEntry.coin = coin;
+					runtimeEntry.interval = interval;
+				}
+
+				clearReleaseTimer(runtimeEntry);
+				clearReconnectTimer(runtimeEntry);
+				clearCooldownTimer(runtimeEntry);
+
+				const ctx: SubscribeContext = {
+					key,
+					runtime,
+					getLastBar: () => get().streams[key]?.lastBar,
+					hasListeners: () => {
+						const stream = get().streams[key];
+						return !!stream && stream.listeners.size > 0;
+					},
+					onCandle: (bar) => {
+						const current = get().streams[key];
+						if (!current) return;
+
+						if (!isSameBar(current.lastBar, bar) || current.status !== "active" || current.error !== undefined) {
+							set((state) => {
+								const stream = state.streams[key];
+								if (!stream) return state;
+								return {
+									streams: {
+										...state.streams,
+										[key]: {
+											...stream,
+											lastBar: bar,
+											status: "active",
+											error: undefined,
+										},
+									},
+								};
+							});
+						}
+
+						for (const l of current.listeners.values()) {
+							l.onTick(bar);
+						}
+					},
+					onConnecting: () => {
+						set((state) => {
+							const stream = state.streams[key];
+							if (!stream || stream.status === "connecting") return state;
+							return {
+								streams: {
+									...state.streams,
+									[key]: { ...stream, status: "connecting", error: undefined },
+								},
+							};
+						});
+					},
+					onActive: () => {
+						set((state) => {
+							const stream = state.streams[key];
+							if (!stream) return state;
+							if (stream.status === "active" && stream.error === undefined) return state;
+							return {
+								streams: { ...state.streams, [key]: { ...stream, status: "active", error: undefined } },
+							};
+						});
+					},
+					onError: (error) => {
+						set((state) => {
+							const stream = state.streams[key];
+							if (!stream) return state;
+							return {
+								streams: { ...state.streams, [key]: { ...stream, status: "error", error } },
+							};
+						});
+					},
+					onCooldown: () => {
 						set((state) => {
 							const stream = state.streams[key];
 							if (!stream) return state;
 							return {
 								streams: {
 									...state.streams,
-									[key]: {
-										...stream,
-										lastBar: bar,
-										status: "active",
-										error: undefined,
-									},
+									[key]: { ...stream, status: "error", error: new Error("Reconnect cooldown active") },
 								},
 							};
 						});
-					}
+					},
+					onResetListeners: () => {
+						const current = get().streams[key];
+						if (!current) return;
+						for (const entry of current.listeners.values()) {
+							try {
+								entry.onResetCache();
+							} catch {}
+						}
+					},
+				};
 
-					for (const l of current.listeners.values()) {
-						l.onTick(bar);
-					}
-				},
-				onConnecting: () => {
-					set((state) => {
-						const stream = state.streams[key];
-						if (!stream || stream.status === "connecting") return state;
-						return {
-							streams: {
-								...state.streams,
-								[key]: { ...stream, status: "connecting", error: undefined },
-							},
-						};
-					});
-				},
-				onActive: () => {
-					set((state) => {
-						const stream = state.streams[key];
-						if (!stream) return state;
-						if (stream.status === "active" && stream.error === undefined) return state;
-						return {
-							streams: { ...state.streams, [key]: { ...stream, status: "active", error: undefined } },
-						};
-					});
-				},
-				onError: (error) => {
-					set((state) => {
-						const stream = state.streams[key];
-						if (!stream) return state;
-						return {
-							streams: { ...state.streams, [key]: { ...stream, status: "error", error } },
-						};
-					});
-				},
-				onCooldown: () => {
-					set((state) => {
-						const stream = state.streams[key];
-						if (!stream) return state;
-						return {
-							streams: {
-								...state.streams,
-								[key]: { ...stream, status: "error", error: new Error("Reconnect cooldown active") },
-							},
-						};
-					});
-				},
-				onResetListeners: () => {
-					const current = get().streams[key];
-					if (!current) return;
-					for (const entry of current.listeners.values()) {
-						entry.onResetCache();
-					}
-				},
-			};
+				if (runtimeEntry.subscription || runtimeEntry.promise) {
+					setTimeout(() => {
+						const stream = get().streams[key];
+						const current = stream?.listeners.get(listenerId);
+						if (!stream || !current || current.onTick !== onTick || current.onResetCache !== onResetCache) return;
+						if (stream.status === "error" || !stream.lastBar) return;
+						current.onTick(stream.lastBar);
+					}, 0);
+					return;
+				}
 
-			if (runtimeEntry.subscription || runtimeEntry.promise) {
+				startSubscription(ctx);
+			},
+
+			unsubscribe: (key, listenerId) => {
 				const stream = get().streams[key];
-				if (stream?.lastBar) {
-					onTick(stream.lastBar);
-				}
-				return;
-			}
+				if (!stream || !stream.listeners.has(listenerId)) return;
 
-			startSubscription(ctx);
-		},
+				const listeners = new Map(stream.listeners);
+				listeners.delete(listenerId);
 
-		unsubscribe: (key, listenerId) => {
-			const stream = get().streams[key];
-			if (!stream || !stream.listeners.has(listenerId)) return;
+				if (listeners.size === 0) {
+					set((state) => {
+						const current = state.streams[key];
+						if (!current) return state;
+						return { streams: { ...state.streams, [key]: { ...current, listeners } } };
+					});
 
-			const listeners = new Map(stream.listeners);
-			listeners.delete(listenerId);
-
-			if (listeners.size === 0) {
-				set((state) => {
-					const { [key]: _, ...rest } = state.streams;
-					return { streams: rest };
-				});
-
-				const runtimeEntry = runtime.get(key);
-				if (runtimeEntry) {
-					clearReconnectTimer(runtimeEntry);
-					clearCooldownTimer(runtimeEntry);
-					detachFailureListener(runtimeEntry);
-
-					const subscription = runtimeEntry.subscription;
-					runtimeEntry.subscription = undefined;
-					runtimeEntry.promise = undefined;
-
-					runtime.delete(key);
-
-					if (subscription) {
-						runUnsubscribe(subscription);
+					const runtimeEntry = runtime.get(key);
+					if (runtimeEntry) {
+						clearReconnectTimer(runtimeEntry);
+						clearCooldownTimer(runtimeEntry);
+						clearReleaseTimer(runtimeEntry);
+						runtimeEntry.releaseTimer = setTimeout(() => releaseStream(key), STREAM_RELEASE_DELAY_MS);
 					}
+				} else {
+					set((state) => ({
+						streams: { ...state.streams, [key]: { ...stream, listeners } },
+					}));
 				}
-			} else {
-				set((state) => ({
-					streams: { ...state.streams, [key]: { ...stream, listeners } },
-				}));
-			}
-		},
+			},
 
-		setLastBar: (cacheKey, bar) => {
-			set((state) => {
-				const existing = state.lastBarCache[cacheKey];
-				if (isSameBar(existing, bar)) {
+			invalidateStream: (key) => {
+				set((state) => {
+					const stream = state.streams[key];
+					if (!stream || stream.lastBar === undefined) return state;
+					return {
+						streams: { ...state.streams, [key]: { ...stream, lastBar: undefined } },
+					};
+				});
+			},
+
+			setLastBar: (cacheKey, bar) => {
+				set((state) => {
+					const existing = state.lastBarCache[cacheKey];
+					if (isSameBar(existing, bar)) {
+						cacheLru.delete(cacheKey);
+						cacheLru.set(cacheKey, true);
+						return state;
+					}
+
+					const nextCache = { ...state.lastBarCache, [cacheKey]: bar };
+					touchCacheKey(cacheKey, nextCache);
+					return { lastBarCache: nextCache };
+				});
+			},
+
+			clearLastBar: (cacheKey) => {
+				set((state) => {
+					if (!(cacheKey in state.lastBarCache)) return state;
+					const { [cacheKey]: _, ...nextCache } = state.lastBarCache;
+					cacheLru.delete(cacheKey);
+					return { lastBarCache: nextCache };
+				});
+			},
+
+			getLastBar: (cacheKey) => {
+				const bar = get().lastBarCache[cacheKey];
+				if (bar) {
 					cacheLru.delete(cacheKey);
 					cacheLru.set(cacheKey, true);
-					return state;
 				}
-
-				const nextCache = { ...state.lastBarCache, [cacheKey]: bar };
-				touchCacheKey(cacheKey, nextCache);
-				return { lastBarCache: nextCache };
-			});
-		},
-
-		getLastBar: (cacheKey) => {
-			const bar = get().lastBarCache[cacheKey];
-			if (bar) {
-				cacheLru.delete(cacheKey);
-				cacheLru.set(cacheKey, true);
-			}
-			return bar;
-		},
-	}));
+				return bar;
+			},
+		};
+	});
 }
 
 let candleStoreInstance: CandleStore | null = null;

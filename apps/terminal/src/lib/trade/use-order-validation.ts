@@ -1,13 +1,19 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
+import type { ValidationError } from "@/lib/errors/types";
 import type { FormValidationResult, Side } from "@/lib/trade/types";
 
 export interface BaseOrderInput {
+	assetId: number | null;
+	szDecimals: number;
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 	needsAgentApproval: boolean;
 	isReadyToTrade: boolean;
 	price: number;
@@ -15,9 +21,21 @@ export interface BaseOrderInput {
 	orderValue: number;
 	side: Side;
 	usesLimitPrice: boolean;
+	usesTriggerPrice: boolean;
+	triggerPriceNum: number | null;
+	scaleOrder: boolean;
+	twapOrder: boolean;
+	scaleStartPriceNum: number | null;
+	scaleEndPriceNum: number | null;
+	scaleLevelsNum: number | null;
+	scaleSkewNum: number | null;
+	twapMinutesNum: number | null;
+	twapTriggerPriceNum: number | null;
+	twapStopPriceNum: number | null;
 }
 
 export interface SpotOrderFields {
+	markPx: number;
 	baseAvailable: number;
 	quoteAvailable: number;
 	baseToken: string;
@@ -28,18 +46,13 @@ export interface PerpOrderFields {
 	orderType: string;
 	markPx: number;
 	maxSize: number;
-	usesTriggerPrice: boolean;
-	triggerPriceNum: number | null;
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
-	scaleOrder: boolean;
-	twapOrder: boolean;
-	scaleStartPriceNum: number | null;
-	scaleEndPriceNum: number | null;
-	scaleLevelsNum: number | null;
-	twapMinutesNum: number | null;
+	positionSize: number | null;
+	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
+	tpSlReturnInvalid: boolean;
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
 }
@@ -58,13 +71,14 @@ export function perpInput(base: BaseOrderInput, perp: PerpOrderFields): PerpVali
 
 function toResult(result: {
 	valid: boolean;
-	errors: { message: string }[];
+	errors: ValidationError[];
 	canSubmit: boolean;
 	needsApproval: boolean;
 }): FormValidationResult {
 	return {
 		valid: result.valid,
 		errors: result.errors.map((e) => e.message),
+		validationErrors: result.errors,
 		canSubmit: result.canSubmit,
 		needsApproval: result.needsApproval,
 	};

@@ -1,5 +1,4 @@
-import { concat, keccak256 } from "viem";
-import type { PrivateKeyAccount } from "viem/accounts";
+import { type Address, concat, type Hex, keccak256 } from "viem";
 
 // Static EIP-712 values for Hyperliquid L1 action signing — computed once at module load.
 // The domain, type schema, and source strings never change between orders.
@@ -20,7 +19,24 @@ const AGENT_TYPEHASH = h("Agent(string source,bytes32 connectionId)");
 const SOURCE_MAINNET = h("a");
 const SOURCE_TESTNET = h("b");
 
-type SignTypedDataParams = Parameters<PrivateKeyAccount["signTypedData"]>[0];
+type SignTypedDataParams = {
+	domain?: {
+		chainId?: bigint | number;
+		name?: string;
+		salt?: Hex;
+		verifyingContract?: Address;
+		version?: string;
+	};
+	message: Record<string, unknown>;
+	primaryType: string;
+	types: Record<string, readonly { name: string; type: string }[]>;
+};
+
+type L1AgentAccount = {
+	address: Address;
+	sign(parameters: { hash: Hex }): Promise<Hex>;
+	signTypedData(parameters: SignTypedDataParams): Promise<Hex>;
+};
 
 function isL1AgentDomain(params: SignTypedDataParams): boolean {
 	return params.primaryType === "Agent" && params.domain?.chainId === 1337 && params.domain?.name === "Exchange";
@@ -31,7 +47,7 @@ function isL1AgentDomain(params: SignTypedDataParams): boolean {
  * Intercepts L1 action signing to use pre-computed domain constants instead of
  * recomputing them on every order. All other signing calls pass through unchanged.
  */
-export function createL1AgentWallet(account: PrivateKeyAccount) {
+export function createL1AgentWallet(account: L1AgentAccount) {
 	return {
 		address: account.address,
 		async signTypedData(params: SignTypedDataParams): Promise<`0x${string}`> {

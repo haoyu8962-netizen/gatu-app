@@ -33,16 +33,18 @@ type ExchangeClientMethods = {
 
 export type ExchangeMethod = keyof ExchangeClientMethods & string;
 
-export type ExchangeParams<M extends ExchangeMethod> = ExchangeClientMethods[M] extends {
-	(params: infer P, ...args: any[]): Promise<unknown>;
-	(...args: any[]): Promise<unknown>;
-}
-	? P | undefined
-	: ExchangeClientMethods[M] extends (params: infer P, ...args: any[]) => Promise<unknown>
+type ExchangeOptionalParamsMethods = "scheduleCancel";
+
+export type ExchangeParams<M extends ExchangeMethod> = M extends ExchangeOptionalParamsMethods
+	? ExchangeClientMethods[M] extends {
+			(params: infer P, ...args: never[]): Promise<unknown>;
+			(...args: never[]): Promise<unknown>;
+		}
+		? P | undefined
+		: never
+	: Parameters<ExchangeClientMethods[M]> extends [infer P, ...unknown[]]
 		? P
-		: ExchangeClientMethods[M] extends (...args: any[]) => Promise<unknown>
-			? undefined
-			: never;
+		: undefined;
 
 export type ExchangeResponse<M extends ExchangeMethod> = ExchangeClientMethods[M] extends (
 	...args: never[]
@@ -53,7 +55,7 @@ export type ExchangeResponse<M extends ExchangeMethod> = ExchangeClientMethods[M
 // ── SubscriptionClient mapped types ─────────────────────────────────
 
 type SubClientMethods = {
-	[K in keyof SubscriptionClient as SubscriptionClient[K] extends (...args: any[]) => Promise<ISubscription>
+	[K in keyof SubscriptionClient as SubscriptionClient[K] extends (...args: never[]) => Promise<ISubscription>
 		? K
 		: never]: SubscriptionClient[K];
 };
@@ -62,14 +64,17 @@ export type SubMethod = keyof SubClientMethods & string;
 
 type SubOptionalParamsMethods = "allMids" | "assetCtxs";
 
-type LastParam<T extends (...args: any[]) => any> = Parameters<T> extends [...infer _Rest, infer L] ? L : never;
-
 export type SubParams<M extends SubMethod> = M extends SubOptionalParamsMethods
-	? Parameters<SubClientMethods[M]> extends [infer P, any]
+	? Parameters<SubClientMethods[M]> extends [infer P, unknown, ...unknown[]]
 		? P | undefined
 		: undefined
-	: Parameters<SubClientMethods[M]> extends [infer P, any]
+	: Parameters<SubClientMethods[M]> extends [infer P, unknown, ...unknown[]]
 		? P
 		: undefined;
 
-export type SubEvent<M extends SubMethod> = LastParam<SubClientMethods[M]> extends (data: infer E) => void ? E : never;
+type SubListener<M extends SubMethod> = Extract<
+	Parameters<SubClientMethods[M]>[0] | Parameters<SubClientMethods[M]>[1],
+	(data: never) => void
+>;
+
+export type SubEvent<M extends SubMethod> = SubListener<M> extends (data: infer E) => void ? E : never;

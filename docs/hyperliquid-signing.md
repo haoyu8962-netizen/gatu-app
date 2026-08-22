@@ -8,7 +8,7 @@
 |--------------|----------|--------|----------|------------------|
 | **L1 Actions** | 1337 | "Exchange" | Trading operations | None (API only) |
 | **User-Signed** | 0x66eee (421614) | "HyperliquidSignTransaction" | Transfers, agent approval | None (API only) |
-| **Arbitrum EVM** | 42161 | Standard EIP-712 | Deposits from Arbitrum | Arbitrum network |
+| **Arbitrum EVM** | 42161 | USDC EIP-3009 + contract call | CCTP deposits from Arbitrum | Arbitrum network |
 
 ---
 
@@ -27,8 +27,8 @@
 │  │ Domain: "Exchange"   │  │ Domain: "Hyperliquid │  │ 42161         │  │
 │  │                      │  │ SignTransaction"     │  │               │  │
 │  ├──────────────────────┤  ├──────────────────────┤  ├───────────────┤  │
-│  │ • order              │  │ • withdraw3          │  │ • Permit      │  │
-│  │ • cancel             │  │ • usdSend            │  │ • Bridge2     │  │
+│  │ • order              │  │ • withdraw3          │  │ • EIP-3009    │  │
+│  │ • cancel             │  │ • usdSend            │  │ • CCTP        │  │
 │  │ • modify             │  │ • spotSend           │  │   deposit     │  │
 │  │ • updateLeverage     │  │ • approveAgent       │  │               │  │
 │  │ • updateIsolatedMarg │  │ • approveBuilderFee  │  │               │  │
@@ -68,7 +68,7 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 | Chain ID | 1337 |
 | Domain Name | "Exchange" |
 | Serialization | Msgpack binary → keccak256 hash |
-| Signed By | Agent wallet (PrivateKeySigner or local account) |
+| Signed By | Agent wallet (viem or ethers local account) |
 | Network | None required (Hyperliquid API only) |
 
 ### Methods Using L1 Signing
@@ -96,10 +96,10 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 
 ```typescript
 import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
-import { PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { privateKeyToAccount } from "viem/accounts";
 
 // Agent wallet signs with chainId 1337 automatically
-const agentSigner = new PrivateKeySigner("0x...");
+const agentSigner = privateKeyToAccount("0x...");
 const client = new ExchangeClient({
   transport: new HttpTransport(),
   wallet: agentSigner,
@@ -169,55 +169,31 @@ await client.withdraw3({
 
 ## Signing Type 3: Arbitrum EVM Transactions (Deposits)
 
-Actual on-chain transactions on Arbitrum network. **Requires wallet connected to Arbitrum**.
+Deposits authorize native USDC with EIP-3009 and submit an on-chain CCTP call on Arbitrum. External wallets submit directly; Privy email wallets sign with their exact embedded EOA and use the matching Smart Wallet Paymaster/Bundler for gas-sponsored submission.
 
 ### Characteristics
 
 | Property | Value |
 |----------|-------|
 | Chain ID | 42161 (Arbitrum One) |
-| Contract | Bridge2 (`0x2df1c51e09aecf9cacb7bc98cb1742757f163df7`) |
+| Direct contract | CctpExtension (`0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE`) |
+| Sponsored contract | CctpExtensionV2 (`0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB`) |
 | Token | USDC (`0xaf88d065e77c8cC2239327C5EDb3A432268e5831`) |
-| Signed By | Master wallet via wagmi |
+| Authorization signer | Exact selected master/embedded EOA |
+| Transaction sender | External wallet directly, or Privy Smart Wallet via Paymaster/Bundler |
 | Network | **Arbitrum required** |
 
 ### Deposit Flow
 
-1. **Sign EIP-712 Permit** - Authorize Bridge2 to spend USDC
-2. **Call `batchedDepositWithPermit`** - On-chain transaction on Arbitrum
-3. **Hyperliquid credits** - Funds appear in HyperCore account
+1. **Fetch current routing and Circle fee/allowance** - Require a fresh `depositRoute === "cctp"` and a reviewed fee quote.
+2. **Sign EIP-3009 `ReceiveWithAuthorization`** - The exact USDC owner authorizes the selected CCTP extension.
+3. **Submit the CCTP call** - External wallets call CctpExtension; Privy Smart Wallets call `CctpExtensionV2.batchSponsorDepositForBurn` through the configured Bundler/Paymaster.
+4. **Classify the receipt and track forwarding** - A V2 transaction is successful for the user only when its matching `SponsoredDepositForBurn` event exists; `SponsoredDepositForBurnSkipped` is a failure, even if the outer transaction receipt succeeded.
+5. **Hyperliquid credits** - Continue tracking the source transaction and HyperCore credit after refresh.
 
 ### Code Example (Current Implementation)
 
-```typescript
-// From use-arbitrum-deposit.ts
-const { signTypedData } = useSignTypedData();
-const { writeContract } = useWriteContract();
-
-// Step 1: Sign permit (EIP-712 on Arbitrum)
-signTypedData({
-  domain: {
-    name: "USD Coin",
-    version: "2",
-    chainId: BigInt(ARBITRUM_CHAIN_ID),
-    verifyingContract: CONTRACTS.arbitrum.usdc,
-  },
-  types: PERMIT_TYPES,
-  primaryType: "Permit",
-  message: { owner, spender, value, nonce, deadline },
-}, {
-  onSuccess: (sig) => {
-    // Step 2: Submit deposit transaction
-    writeContract({
-      address: CONTRACTS.arbitrum.bridge2,
-      abi: BRIDGE2_ABI,
-      functionName: "batchedDepositWithPermit",
-      args: [/* deposit params */],
-      chainId: ARBITRUM_CHAIN_ID,
-    });
-  },
-});
-```
+The implementation lives in `apps/terminal/src/lib/hyperliquid/use-deposit.ts`, with pure EIP-3009/CCTP parameter and receipt validation in `apps/terminal/src/lib/trade/cctp-deposit.ts`. It revalidates the owner, route, fee quote, fast-burn allowance, and contract result at the relevant signing and submission boundaries. New Bridge2 deposits are intentionally fail-closed; legacy records remain available only for recovery and reconciliation.
 
 ---
 
@@ -272,7 +248,7 @@ await exchangeClient.withdraw3({
 
 | Category | Methods |
 |----------|---------|
-| **Deposits** | EIP-712 Permit + `Bridge2.batchedDepositWithPermit()` |
+| **Deposits** | USDC EIP-3009 authorization + CctpExtension/CctpExtensionV2 submission |
 
 ---
 
@@ -290,7 +266,9 @@ await exchangeClient.withdraw3({
 | Contract | Address |
 |----------|---------|
 | Native USDC (Arbitrum) | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
-| Bridge2 (Arbitrum) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
+| CctpExtension (Arbitrum) | `0xA95d9c1F655341597C94393fDdc30cf3c08E4fcE` |
+| CctpExtensionV2 (Arbitrum) | `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` |
+| Bridge2 (legacy recovery only) | `0x2df1c51e09aecf9cacb7bc98cb1742757f163df7` |
 | CoreDepositWallet (HyperEVM) | `0x6b9e773128f453f5c2c60935ee2de2cbc5390a24` |
 | CoreWriter (HyperEVM) | `0x3333333333333333333333333333333333333333` |
 
@@ -303,8 +281,8 @@ await exchangeClient.withdraw3({
 │                                                                          │
 │  ARBITRUM → HYPERCORE (Deposit)                                          │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐                           │
-│  │ Arbitrum │───▶│ Bridge2  │───▶│ HyperCore│                           │
-│  │ USDC     │    │ Contract │    │ Balance  │                           │
+│  │ Arbitrum │───▶│ CCTP Ext. │───▶│ HyperCore│                           │
+│  │ USDC     │    │ V1 / V2  │    │ Balance  │                           │
 │  └──────────┘    └──────────┘    └──────────┘                           │
 │  Signing: Arbitrum EVM (42161)                                           │
 │                                                                          │
@@ -353,7 +331,7 @@ Solution: Two-wallet pattern
 │                                                                          │
 │  ┌──────────────────────┐         ┌──────────────────────┐              │
 │  │   Master Wallet      │         │    Agent Wallet      │              │
-│  │   (Browser/wagmi)    │         │    (PrivateKeySigner)│              │
+│  │   (Browser/wagmi)    │         │  (viem local account)│              │
 │  ├──────────────────────┤         ├──────────────────────┤              │
 │  │ • approveAgent       │────────▶│ • order              │              │
 │  │ • approveBuilderFee  │  signs  │ • cancel             │              │
@@ -375,13 +353,18 @@ Solution: Two-wallet pattern
 
 ### Agent Key Storage Security
 
-Agent private keys are stored in browser localStorage. This is acceptable because:
+Agent private keys are stored in browser storage. `Stay Connected` is off by
+default: unchecked uses `sessionStorage`, while checked uses `localStorage`.
+Both scopes use the same environment-and-owner key and validated record shape.
+
+This storage is acceptable within the product's Agent-wallet threat model because:
 
 | Concern | Mitigation |
 |---------|------------|
 | **Limited permissions** | Agent keys can only execute trades - they cannot withdraw funds or transfer assets |
 | **User-revocable** | Users can revoke agent approval anytime from their master wallet |
-| **Session-scoped risk** | Compromise only affects trading, not custody of funds |
+| **Session-scoped default** | The default key disappears with the browser tab/session |
+| **Persistent opt-in** | Cross-restart storage requires an explicit `Stay Connected` choice |
 | **Standard pattern** | This is the recommended Hyperliquid pattern for web applications |
 
 The master wallet (hardware wallet / MetaMask) never has its keys stored - it only signs the initial agent approval and admin operations like withdrawals.
@@ -389,8 +372,8 @@ The master wallet (hardware wallet / MetaMask) never has its keys stored - it on
 ### Current Implementation
 
 ```typescript
-// useAgentRegistration.ts - Generates and stores agent wallet
-const register = async () => {
+// useAgentRegistration.ts - Generates, stores, and verifies an Agent wallet
+const register = async (options: { persistConnection: boolean }) => {
   // 1. Generate new agent keypair
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
@@ -401,16 +384,37 @@ const register = async () => {
     agentName,
   });
 
-  // 3. Store agent in localStorage (safe - agent has limited permissions)
-  setAgent(env, address, privateKey, account.address);
+  // 3. Store in the selected scope, then verify storage and server approval
+  const storageScope = options.persistConnection ? "local" : "session";
+  await persistAgentForRegistration(
+    epoch,
+    privateKey,
+    account.address,
+    { source: "local-registration" },
+    { scope: storageScope },
+  );
+  const requirements = await refetchAgent(account.address);
+  if (!requirements.isAgentReady) {
+    throw new Error("Agent approval could not be confirmed");
+  }
+  await verifyStoredAgent(account.address);
 };
 
-// useSignedExchange.ts - Creates ExchangeClient with agent
-const exchange = useMemo(() => {
-  if (!signer) return null;
-  return createExchangeClient(signer); // Agent signs all L1 actions
-}, [signer]);
+// useHyperliquidClients.ts - Agent signs L1 actions only after verification
+const trading = hasUserSession && signer && agentReady
+  ? getTradingClient(signer, isTestnet)
+  : null;
 ```
+
+Agent registration does not approve a builder fee. The terminal requests
+`approveBuilderFee` separately when the first trading action needs the
+configured builder code. The complete first-time ordering and fail-closed
+requirements are documented in `docs/trading-onboarding.md`.
+
+The low-level registration hook retains a persistent default for compatibility
+with older callers. Product entry points must pass the user's stored
+`Stay Connected` preference explicitly; omitting it is not an acceptable UI
+default.
 
 ---
 
@@ -420,7 +424,7 @@ const exchange = useMemo(() => {
 
 | Signing Type | Implementation |
 |--------------|----------------|
-| **L1 Actions** | `PrivateKeySigner` (agent wallet, stored locally) |
+| **L1 Actions** | viem local account (agent wallet, stored locally) |
 | **User-Signed** | `walletClient.signTypedData()` via SDK's AbstractWallet adapter |
 | **Arbitrum EVM** | `useSignTypedData()` + `useWriteContract()` from wagmi |
 
@@ -503,7 +507,7 @@ src/lib/hyperliquid/
 │   ├── use-send-asset.ts      # sendAsset (DEX/sub-account transfers)
 │   └── use-staking.ts         # tokenDelegate
 │
-└── bridge/               # Arbitrum EVM (wagmi)
+└── deposits/             # Arbitrum CCTP (viem + Privy Smart Wallet)
     └── use-deposit.ts
 ```
 
@@ -522,7 +526,7 @@ src/lib/hyperliquid/
 | `useUsdClassTransfer` | User-Signed | Admin | **Master** |
 | `useSendAsset` | User-Signed | Admin | **Master** |
 | `useAgentRegistration` | User-Signed | Admin | **Master** |
-| `useDeposit` | Arbitrum EVM | wagmi | **Master** |
+| `useDeposit` | EIP-3009 + Arbitrum EVM | viem / Privy Smart Wallet | **Exact master or embedded EOA** |
 
 ### Key Implementation Details
 
@@ -564,26 +568,16 @@ export function useAdminClient() {
 }
 ```
 
-#### Deposit (wagmi Direct)
-```typescript
-// bridge/use-deposit.ts
-export function useDeposit() {
-  const { chainId } = useConnection();
-  const { signTypedData } = useSignTypedData();
-  const { writeContract } = useWriteContract();
+#### Deposit (CCTP-only)
 
-  const isArbitrum = chainId === ARBITRUM_CHAIN_ID;
-
-  // ... permit signing + contract call
-}
-```
+`useDeposit` requires an explicit CCTP route. The exact owner signs the USDC EIP-3009 authorization; external wallets submit CctpExtension directly, while email-wallet sessions submit CctpExtensionV2 through the already configured Privy Smart Wallet Paymaster/Bundler. Neither path may fall back to Bridge2 when routing, fee, allowance, owner, or receipt validation fails.
 
 ### Migration Checklist
 
 - [ ] Create `signing/` module with agent status hooks
 - [ ] Create `trading/` module with `useTradingClient`
 - [ ] Create `admin/` module with `useAdminClient`
-- [ ] Move `use-arbitrum-deposit.ts` to `bridge/use-deposit.ts`
+- [x] Keep CCTP execution in `lib/hyperliquid/use-deposit.ts` and pure validation in `lib/trade/cctp-deposit.ts`
 - [ ] Update `useExchangeWithdraw3` to use admin client
 - [ ] Update `useExchangeUsdSend` to use admin client
 - [ ] Update `useExchangeSpotSend` to use admin client

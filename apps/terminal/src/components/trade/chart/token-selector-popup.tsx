@@ -5,16 +5,16 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { TokenSelectorContent } from "./token-selector-content";
 import { useTokenSelector } from "./use-token-selector";
 
-const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(44rem,calc(100vw-1rem))]";
+const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(60rem,calc(100vw-1rem))]";
 
-export type TokenSelectorPopupProps = {
+interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	mobile?: boolean;
 	headingId: string;
-};
+}
 
 export function TokenSelectorPopup({
 	selectedMarket,
@@ -23,7 +23,7 @@ export function TokenSelectorPopup({
 	onOpenChange,
 	mobile = false,
 	headingId,
-}: TokenSelectorPopupProps) {
+}: Props) {
 	const {
 		scope,
 		subcategory,
@@ -31,6 +31,8 @@ export function TokenSelectorPopup({
 		search,
 		setSearch,
 		isLoading,
+		hasClassificationError,
+		retryClassifications,
 		isFavorite,
 		sorting,
 		handleSort,
@@ -40,7 +42,8 @@ export function TokenSelectorPopup({
 		toggleFavorite,
 		table,
 		rows,
-		virtualizer,
+		virtualItems,
+		virtualTotalSize,
 		containerRef,
 		filteredMarkets,
 		highlightedIndex,
@@ -50,7 +53,6 @@ export function TokenSelectorPopup({
 		onValueChange,
 		open,
 		onOpenChange,
-		mobile,
 	});
 
 	const content = (
@@ -62,6 +64,8 @@ export function TokenSelectorPopup({
 			search={search}
 			setSearch={setSearch}
 			isLoading={isLoading}
+			hasClassificationError={hasClassificationError}
+			onRetryClassifications={retryClassifications}
 			isFavorite={isFavorite}
 			sorting={sorting}
 			handleSort={handleSort}
@@ -71,18 +75,25 @@ export function TokenSelectorPopup({
 			toggleFavorite={toggleFavorite}
 			table={table}
 			rows={rows}
-			virtualizer={virtualizer}
+			virtualItems={virtualItems}
+			virtualTotalSize={virtualTotalSize}
 			containerRef={containerRef}
 			filteredMarkets={filteredMarkets}
 			highlightedIndex={highlightedIndex}
+			handleListKeyDown={handleKeyDown}
 			headingId={headingId}
 			mobile={mobile}
+			onClose={mobile ? () => onOpenChange(false) : undefined}
 		/>
 	);
 
 	if (mobile) {
 		return (
-			<DrawerContent keepMounted className="h-[85dvh] overflow-hidden p-0">
+			<DrawerContent
+				className="inset-y-0 left-[var(--sal)] right-[var(--sar)] z-[90] h-dvh max-h-none overflow-hidden overscroll-none rounded-none border-0 bg-modal p-0 shadow-none transition-[opacity,transform] duration-200 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
+				overlayClassName="z-10 bg-transparent overscroll-none transition-none"
+				aria-labelledby={headingId}
+			>
 				{content}
 			</DrawerContent>
 		);
@@ -90,13 +101,15 @@ export function TokenSelectorPopup({
 
 	return (
 		<PopoverContent
-			className={cn(TOKEN_SELECTOR_POPOVER_WIDTH, "p-0 border-stroke-weak bg-surface")}
+			className={cn(
+				TOKEN_SELECTOR_POPOVER_WIDTH,
+				"overflow-hidden rounded-[12px] border-trading-panel-stroke-card bg-overlay p-0 data-starting-style:scale-100 data-ending-style:scale-100",
+			)}
 			align="start"
 			sideOffset={4}
 			alignOffset={-2}
 			collisionPadding={8}
 			aria-labelledby={headingId}
-			onKeyDown={handleKeyDown}
 			keepMounted
 		>
 			{content}

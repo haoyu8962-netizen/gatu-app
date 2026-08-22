@@ -16,11 +16,11 @@ interface NavigateToMarketOptions {
 export function useMarketNavigation() {
 	const navigate = useNavigate();
 	const location = useLocation();
-	const { setScope } = useExchangeScope();
+	const { scope, setScope } = useExchangeScope();
 	const { getMarketInfo } = useMarketsInfo();
 	const { setSelectedMarket } = useMarketActions();
 	const currentMarketName = useSelectedMarket();
-	const { resetPrices } = useOrderEntryActions();
+	const { resetForm } = useOrderEntryActions();
 
 	return useCallback(
 		(marketName: string, marketOverride?: UnifiedMarketInfo, options: NavigateToMarketOptions = {}) => {
@@ -33,12 +33,13 @@ export function useMarketNavigation() {
 				market?.name === currentMarketName ||
 				market?.pairName === currentMarketName;
 			if (!isCurrentMarket) {
-				resetPrices();
+				resetForm();
 			}
 
 			if (!market) {
 				void navigate({
 					to: targetPath,
+					search: (previous) => ({ ...previous, scope: scope === "all" ? "all" : undefined }),
 					resetScroll: false,
 					state: (previous) =>
 						options.displayedContent
@@ -53,10 +54,12 @@ export function useMarketNavigation() {
 
 			const nextScope = getExchangeScopeForMarket(market);
 			const nextDex = getExchangeDexForMarket(market);
-			setScope(nextScope, nextDex, market.name);
+			const preserveAllScope = scope === "all";
+			setScope(preserveAllScope ? "all" : nextScope, nextDex, market.name);
 			setSelectedMarket(nextScope, market.name);
 			void navigate({
 				to: targetPath,
+				search: (previous) => ({ ...previous, scope: preserveAllScope ? "all" : undefined }),
 				resetScroll: false,
 				state: (previous) =>
 					options.displayedContent
@@ -67,6 +70,6 @@ export function useMarketNavigation() {
 						: previous,
 			});
 		},
-		[currentMarketName, getMarketInfo, location.pathname, navigate, resetPrices, setScope, setSelectedMarket],
+		[currentMarketName, getMarketInfo, location.pathname, navigate, resetForm, scope, setScope, setSelectedMarket],
 	);
 }

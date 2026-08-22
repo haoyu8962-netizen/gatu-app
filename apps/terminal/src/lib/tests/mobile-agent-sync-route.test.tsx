@@ -1,33 +1,35 @@
 // @vitest-environment jsdom
 
 import { webcrypto } from "node:crypto";
-import {
-	act,
-	type ComponentPropsWithoutRef,
-	type ComponentType,
-	createElement,
-	Fragment,
-	forwardRef,
-	type ReactNode,
-} from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, type ComponentType, createElement, Fragment, type ReactNode } from "react";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MOBILE_SYNC_DRAFT_STORAGE_KEY, saveMobileSyncDraft } from "../mobile-sync/draft-storage";
-import {
-	createMobileAgentSyncUrl,
-	MOBILE_SYNC_CLOCK_SKEW_MS,
-	MOBILE_SYNC_PAYLOAD_TTL_MS,
-	MOBILE_SYNC_ROUTE_PATH,
-} from "../mobile-sync/sync-core";
+import { MOBILE_SYNC_DRAFT_STORAGE_KEY } from "../mobile-sync/draft-storage";
+import { createMobileAgentSyncUrl, MOBILE_SYNC_ROUTE_PATH } from "../mobile-sync/sync-core";
+import { createI18nRoot } from "./harness/react";
 
 const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
+const REGISTRATION_EPOCH = {
+	env: "Mainnet",
+	owner: USER_ADDRESS,
+	epoch: "11111111-1111-4111-8111-111111111111",
+} as const;
 
 const testState = vi.hoisted(() => ({
-	address: undefined as string | undefined,
-	setAgent: vi.fn(),
-	setActiveAgentOwner: vi.fn(),
+	activateAgentOwnerForRegistration: vi.fn(),
+	cancelAgentRegistrationEpochAndRemove: vi.fn(),
+	captureAgentRegistrationEpoch: vi.fn(),
+	consumeMobileSyncTicket: vi.fn(),
+	fullNavigate: vi.fn(),
+	getOrCreateMobileSyncConsumerId: vi.fn(),
+	importEnabled: true,
+	extraAgents: [] as Array<{ address: string; name: string; validUntil: number | null }>,
+	infoExtraAgents: vi.fn(),
+	persistAgentForRegistration: vi.fn(),
+	waitForExpectedMobileAgent: vi.fn(),
+	verifyAgentRegistrationOrRemove: vi.fn(),
 }));
 
 function renderChildren(children: ReactNode) {
@@ -43,39 +45,21 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@lingui/core/macro", () => ({
-	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
-		if (typeof strings === "string") return strings;
-		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
-	},
-	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
-		if (typeof strings === "string") return strings;
-		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
-	},
+	t: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
+		typeof strings === "string"
+			? strings
+			: strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, ""),
 }));
 
 vi.mock("@phosphor-icons/react", () => ({
 	CheckCircleIcon: Icon,
-	CopyIcon: Icon,
 	DeviceMobileIcon: Icon,
-	KeyIcon: Icon,
 	SpinnerGapIcon: Icon,
-	WalletIcon: Icon,
 	WarningCircleIcon: Icon,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
-	lazyRouteComponent:
-		() =>
-		({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) =>
-			open
-				? createElement(
-						"div",
-						null,
-						"Wallet modal",
-						createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close wallet"),
-					)
-				: null,
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -90,57 +74,59 @@ vi.mock("@gatu/ui", () => ({
 		onClick?: () => void;
 		type?: "button" | "submit" | "reset";
 	}) => createElement("button", { disabled, onClick, type: type ?? "button" }, children),
-	TextInput: forwardRef<
-		HTMLInputElement,
-		ComponentPropsWithoutRef<"input"> & {
-			iconLeft?: ReactNode;
-			iconRight?: ReactNode;
-			label?: ReactNode;
-		}
-	>(function MockTextInput({ iconLeft: _iconLeft, iconRight: _iconRight, label, onChange, value, ...props }, ref) {
-		return createElement(
-			"label",
-			null,
-			label,
-			createElement("input", {
-				...props,
-				ref,
-				onChange,
-				value: value ?? "",
-			}),
-		);
-	}),
 }));
 
-vi.mock("@/components/trade/components/wallet-modal", () => ({
-	WalletModal: ({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) =>
-		open
-			? createElement(
-					"div",
-					null,
-					"Wallet modal",
-					createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close wallet"),
-				)
-			: null,
-}));
-
-vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({
-		address: testState.address,
-		isConnected: Boolean(testState.address),
-	}),
+vi.mock("@/config/mobile-pairing", () => ({
+	MOBILE_PAIRING_FEATURES: {
+		get importFromQr() {
+			return testState.importEnabled;
+		},
+	},
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	setActiveAgentOwner: testState.setActiveAgentOwner,
-	useAgentWalletActions: () => ({ setAgent: testState.setAgent }),
 	useHyperliquid: () => ({
 		env: "Mainnet",
+		info: {
+			extraAgents: testState.infoExtraAgents,
+		},
 	}),
 }));
 
-async function flushAsyncWork(times = 1) {
-	for (let i = 0; i < times; i += 1) {
+vi.mock("@/lib/mobile-sync/remote-verification", () => ({
+	waitForExpectedMobileAgent: testState.waitForExpectedMobileAgent,
+}));
+
+vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
+	consumeMobileSyncTicket: testState.consumeMobileSyncTicket,
+	getOrCreateMobileSyncConsumerId: testState.getOrCreateMobileSyncConsumerId,
+}));
+
+vi.mock("@/lib/mobile-sync/sync-core", async () => {
+	const actual = await vi.importActual<typeof import("../mobile-sync/sync-core")>("@/lib/mobile-sync/sync-core");
+	return {
+		...actual,
+		readAndClearMobileSyncEnvelope: () =>
+			actual.readAndClearMobileSyncEnvelope(window.location, window.history, {
+				replace: testState.fullNavigate,
+			}),
+	};
+});
+
+vi.mock("@gatu/hl-react", async () => {
+	const actual = await vi.importActual<typeof import("@gatu/hl-react")>("@gatu/hl-react");
+	return {
+		...actual,
+		activateAgentOwnerForRegistration: testState.activateAgentOwnerForRegistration,
+		cancelAgentRegistrationEpochAndRemove: testState.cancelAgentRegistrationEpochAndRemove,
+		captureAgentRegistrationEpoch: testState.captureAgentRegistrationEpoch,
+		persistAgentForRegistration: testState.persistAgentForRegistration,
+		verifyAgentRegistrationOrRemove: testState.verifyAgentRegistrationOrRemove,
+	};
+});
+
+async function flushAsyncWork(times = 8) {
+	for (let index = 0; index < times; index++) {
 		await act(async () => {
 			await new Promise((resolve) => window.setTimeout(resolve, 0));
 		});
@@ -148,25 +134,23 @@ async function flushAsyncWork(times = 1) {
 }
 
 async function createSyncFixture({
-	agentPrivateKey = AGENT_PRIVATE_KEY,
 	appOrigin = window.location.origin,
 	env = "Mainnet",
-	nowMs = NOW_MS,
-	userAddress = USER_ADDRESS,
 }: {
-	agentPrivateKey?: `0x${string}`;
 	appOrigin?: string;
 	env?: "Mainnet" | "Testnet";
-	nowMs?: number;
-	userAddress?: `0x${string}`;
 } = {}) {
 	return createMobileAgentSyncUrl({
 		appOrigin,
 		env,
-		userAddress,
-		agentPrivateKey,
-		nowMs,
+		userAddress: USER_ADDRESS,
+		agentPrivateKey: AGENT_PRIVATE_KEY,
+		nowMs: NOW_MS,
 	});
+}
+
+function findButton(container: HTMLElement, label: string): HTMLButtonElement | undefined {
+	return [...container.querySelectorAll("button")].find((button) => button.textContent?.includes(label));
 }
 
 describe("MobileAgentSyncRoute", () => {
@@ -174,631 +158,476 @@ describe("MobileAgentSyncRoute", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		vi.resetModules();
 		vi.stubGlobal("crypto", webcrypto);
-		Object.defineProperty(window, "crypto", {
-			value: webcrypto,
-			configurable: true,
-		});
-		container = document.createElement("div");
-		document.body.appendChild(container);
-		root = createRoot(container);
-		testState.address = undefined;
-		testState.setAgent.mockReset();
-		testState.setActiveAgentOwner.mockReset();
+		Object.defineProperty(window, "crypto", { value: webcrypto, configurable: true });
 		vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
 		window.sessionStorage.clear();
+		window.localStorage.clear();
 		window.history.replaceState(null, "", MOBILE_SYNC_ROUTE_PATH);
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createI18nRoot(container);
+
+		testState.importEnabled = true;
+		testState.activateAgentOwnerForRegistration.mockReset();
+		testState.activateAgentOwnerForRegistration.mockResolvedValue({ status: "current" });
+		testState.cancelAgentRegistrationEpochAndRemove.mockReset();
+		testState.cancelAgentRegistrationEpochAndRemove.mockResolvedValue({ status: "cancelled" });
+		testState.captureAgentRegistrationEpoch.mockReset();
+		testState.captureAgentRegistrationEpoch.mockResolvedValue({
+			status: "ready",
+			epoch: REGISTRATION_EPOCH,
+		});
+		testState.consumeMobileSyncTicket.mockReset();
+		testState.consumeMobileSyncTicket.mockResolvedValue("accepted");
+		testState.fullNavigate.mockReset();
+		testState.getOrCreateMobileSyncConsumerId.mockReset();
+		testState.getOrCreateMobileSyncConsumerId.mockReturnValue("11".repeat(16));
+		testState.extraAgents = [];
+		testState.infoExtraAgents.mockReset();
+		testState.infoExtraAgents.mockImplementation(async () => testState.extraAgents);
+		testState.waitForExpectedMobileAgent.mockReset();
+		testState.waitForExpectedMobileAgent.mockImplementation(async (load, expected) => {
+			const agents = await load(new AbortController().signal);
+			const remoteAgent = agents.find(
+				(agent: { address: string; name: string; validUntil: number | null }) =>
+					agent.address.toLowerCase() === expected.agentAddress.toLowerCase() &&
+					agent.name === expected.agentNameBase &&
+					agent.validUntil === expected.agentValidUntilMs,
+			);
+			return remoteAgent
+				? { status: "approved", attempts: 1, remoteAgent }
+				: {
+						status: "unverified",
+						attempts: 1,
+						hadNetworkError: false,
+						lastVerification: { status: "missing" },
+					};
+		});
+		testState.persistAgentForRegistration.mockReset();
+		testState.persistAgentForRegistration.mockResolvedValue({ status: "stored" });
+		testState.verifyAgentRegistrationOrRemove.mockReset();
+		testState.verifyAgentRegistrationOrRemove.mockResolvedValue({ status: "current" });
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
 		window.sessionStorage.clear();
-		vi.clearAllMocks();
+		window.localStorage.clear();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
-		Reflect.deleteProperty(navigator, "clipboard");
 	});
 
-	it("keeps phone-link paste available while import is disabled before a link is loaded", async () => {
+	it("has no manual paste surface and keeps Import disabled without a QR", async () => {
 		const { Route } = await import("@/routes/mobile-agent-sync");
 		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
 
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
 		await flushAsyncWork();
 
-		expect(container.textContent).not.toContain("Phone link loaded");
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		const usePhoneLinkButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use phone link"),
-		);
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-
-		expect(phoneLinkInput).not.toBeNull();
-		expect(usePhoneLinkButton?.disabled).toBe(true);
-		expect(importButton?.disabled).toBe(true);
+		expect(container.querySelector("input")).toBeNull();
+		expect(container.textContent).not.toContain("Paste");
+		expect(container.textContent).not.toContain("Use a different");
+		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
 	});
 
-	it("loads a phone-access hash, cleans the URL, persists the envelope, and enables import without a wallet", async () => {
+	it("scrubs a direct-load bearer fragment before the route renders and waits for explicit Import", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+
 		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(window.location.hash).toBe("");
-		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).not.toBeNull();
-		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.textContent).toContain("Phone import");
-
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-		expect(importButton?.disabled).toBe(false);
-	});
-
-	it("uses mobile-friendly input attributes and text labels for the phone link step", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		const showLinkInputButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use a different phone link"),
-		);
-		act(() => {
-			showLinkInputButton?.click();
-		});
-		await flushAsyncWork();
-
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		expect(phoneLinkInput).not.toBeNull();
-		expect(phoneLinkInput?.type).toBe("url");
-		expect(phoneLinkInput?.inputMode).toBe("url");
-		expect(phoneLinkInput?.getAttribute("autocapitalize")).toBe("none");
-		expect(phoneLinkInput?.getAttribute("autocorrect")).toBe("off");
-		expect(container.textContent).toContain("Trading key");
-		expect(container.textContent).toContain("Ready to import");
-	});
-
-	it("loads a same-route phone-access hash after the empty route is already open", async () => {
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).not.toContain("Phone link loaded");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
-
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		act(() => {
-			window.history.pushState(null, "", `${url.pathname}${url.hash}`);
-			window.dispatchEvent(new Event("hashchange"));
-		});
-		await flushAsyncWork();
-
-		expect(window.location.hash).toBe("");
-		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.textContent).not.toContain("Recovered after reload");
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-	});
-
-	it("clears the loaded phone link when a same-route replacement hash is invalid", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Phone link loaded");
-
-		act(() => {
-			window.history.pushState(
-				null,
-				"",
-				`${MOBILE_SYNC_ROUTE_PATH}#ht-mobile-sync=not-a-valid-envelope&k=${sync.encodedKey}`,
-			);
-			window.dispatchEvent(new Event("hashchange"));
-		});
-		await flushAsyncWork();
-
 		expect(window.location.hash).toBe("");
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("This is not a valid gatu mobile link.");
-		expect(container.textContent).not.toContain("Phone link loaded");
-	});
 
-	it("recovers a saved phone link after reload", async () => {
-		const sync = await createSyncFixture();
-		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
-			storage: window.sessionStorage,
-			nowMs: NOW_MS,
-		});
-		const { Route } = await import("@/routes/mobile-agent-sync");
 		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
 		await flushAsyncWork();
 
-		expect(container.textContent).toContain("Recovered after reload");
-		expect(container.textContent).toContain(sync.syncId.slice(0, 8));
-	});
-
-	it("clears an expired stored phone link and leaves manual paste available", async () => {
-		const sync = await createSyncFixture();
-		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
-			storage: window.sessionStorage,
-			nowMs: NOW_MS,
-		});
-		vi.spyOn(Date, "now").mockReturnValue(NOW_MS + MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS + 1);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
-		expect(container.textContent).toContain("This mobile link expired.");
-		expect(container.textContent).not.toContain("Phone link loaded");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
-	});
-
-	it("clears an invalid stored phone link and leaves manual paste available", async () => {
-		window.sessionStorage.setItem(MOBILE_SYNC_DRAFT_STORAGE_KEY, JSON.stringify({ v: 1, encodedEnvelope: "bad" }));
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("Saved phone link was invalid. Paste the link again.");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
-	});
-
-	it("loads a manually pasted phone link when no QR link is present", async () => {
-		const sync = await createSyncFixture();
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		expect(phoneLinkInput).not.toBeNull();
-		act(() => {
-			if (phoneLinkInput) {
-				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(phoneLinkInput, sync.url);
-				phoneLinkInput.dispatchEvent(new Event("input", { bubbles: true }));
-			}
-		});
-		await flushAsyncWork();
-
-		act(() => {
-			phoneLinkInput?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.textContent).toContain(sync.syncId.slice(0, 8));
+		expect(container.textContent).toContain("Desktop QR loaded");
+		expect(container.textContent).not.toContain(sync.url);
+		expect(container.textContent).not.toContain(AGENT_PRIVATE_KEY);
+		expect(testState.infoExtraAgents).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
 	});
 
-	it("expires a loaded phone link while the page remains open", async () => {
-		const sync = await createSyncFixture({
-			nowMs: NOW_MS - MOBILE_SYNC_PAYLOAD_TTL_MS + 50,
-		});
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+	it("captures and scrubs at beforeLoad when a preloaded route receives an SPA fragment", async () => {
+		window.history.replaceState(null, "", "/");
 		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Phone link loaded");
-
-		await act(async () => {
-			await new Promise((resolve) => window.setTimeout(resolve, 80));
-		});
-
-		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
-		expect(container.textContent).toContain("This mobile link expired.");
-		expect(container.textContent).not.toContain("Phone link loaded");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
-	});
-
-	it("lets a manually pasted phone link replace an already loaded link", async () => {
-		const firstSync = await createSyncFixture();
-		const secondSync = await createSyncFixture({
-			agentPrivateKey: `0x${"cd".repeat(32)}`,
-		});
-		const firstUrl = new URL(firstSync.url);
-		window.history.replaceState(null, "", `${firstUrl.pathname}${firstUrl.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain(firstSync.syncId.slice(0, 8));
-
-		const replaceButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use a different phone link"),
-		);
-		expect(replaceButton).toBeDefined();
-		act(() => {
-			replaceButton?.click();
-		});
-		await flushAsyncWork();
-
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		expect(phoneLinkInput).not.toBeNull();
-		act(() => {
-			if (phoneLinkInput) {
-				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(phoneLinkInput, secondSync.url);
-				phoneLinkInput.dispatchEvent(new Event("input", { bubbles: true }));
-			}
-		});
-		await flushAsyncWork();
-
-		const usePhoneLinkButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use phone link"),
-		);
-		act(() => {
-			usePhoneLinkButton?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).not.toContain(firstSync.syncId.slice(0, 8));
-		expect(container.textContent).toContain(secondSync.syncId.slice(0, 8));
-		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toContain(secondSync.syncId);
-	});
-
-	it("keeps the loaded link when manual replacement is cancelled", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
+
+		(Route as unknown as { beforeLoad: () => void }).beforeLoad();
+		expect(window.location.hash).toBe("");
+
 		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
 		await flushAsyncWork();
-
-		const replaceButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use a different phone link"),
-		);
-		act(() => {
-			replaceButton?.click();
-		});
-		await flushAsyncWork();
-
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		act(() => {
-			if (phoneLinkInput) {
-				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
-					phoneLinkInput,
-					"https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=not-submitted",
-				);
-				phoneLinkInput.dispatchEvent(new Event("input", { bubbles: true }));
-			}
-		});
-		await flushAsyncWork();
-
-		const cancelButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Cancel"),
-		);
-		act(() => {
-			cancelButton?.click();
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain(sync.syncId.slice(0, 8));
-		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).toBeNull();
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-	});
-
-	it("clears an existing loaded link when manual replacement is invalid", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain(sync.syncId.slice(0, 8));
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-
-		const replaceButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Use a different phone link"),
-		);
-		act(() => {
-			replaceButton?.click();
-		});
-		await flushAsyncWork();
-
-		const phoneLinkInput = container.querySelector(
-			'input[placeholder="Paste link from desktop"]',
-		) as HTMLInputElement | null;
-		act(() => {
-			if (phoneLinkInput) {
-				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
-					phoneLinkInput,
-					`https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=not-a-valid-envelope&k=${sync.encodedKey}`,
-				);
-				phoneLinkInput.dispatchEvent(new Event("input", { bubbles: true }));
-			}
-		});
-		await flushAsyncWork();
-
-		act(() => {
-			phoneLinkInput?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-		});
-		await flushAsyncWork();
-
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("This is not a valid gatu mobile link.");
-		expect(container.textContent).not.toContain(sync.syncId.slice(0, 8));
-		expect(container.textContent).not.toContain("Phone link loaded");
-		expect(phoneLinkInput?.value).toContain("not-a-valid-envelope");
-	});
-
-	it("clears the loaded phone link after explicit reset", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
-		const resetButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Reset"),
-		);
-		act(() => {
-			resetButton?.click();
-		});
-		await flushAsyncWork();
-
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).not.toContain("Phone link loaded");
-		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
-	});
-
-	it("does not require or render a wallet connection step after a phone link is loaded", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.textContent).not.toContain("Connect wallet");
-		expect(container.textContent).not.toContain("Wallet modal");
-		expect(container.textContent).not.toContain("Connect to verify");
-	});
-
-	it("enables import once a valid link is loaded without a phone wallet", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-		expect(importButton?.disabled).toBe(false);
-	});
-
-	it("imports phone access when no wallet is connected on the phone", async () => {
-		const sync = await createSyncFixture();
-		const url = new URL(sync.url);
-		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-		expect(importButton?.disabled).toBe(false);
-
-		act(() => {
-			importButton?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-		});
-		await flushAsyncWork(60);
-
-		expect(testState.setAgent).toHaveBeenCalledTimes(1);
-		expect(testState.setActiveAgentOwner).toHaveBeenCalledTimes(1);
-		expect(testState.setActiveAgentOwner).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("Phone access ready");
-	});
-
-	it("uses alert semantics and focuses an invalid link error", async () => {
-		const sync = await createSyncFixture();
-		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
-		await flushAsyncWork();
-
-		act(() => {
-			window.history.pushState(
-				null,
-				"",
-				`${MOBILE_SYNC_ROUTE_PATH}#ht-mobile-sync=not-a-valid-envelope&k=${sync.encodedKey}`,
-			);
-			window.dispatchEvent(new Event("hashchange"));
-		});
-		await flushAsyncWork();
-
-		const alerts = [...container.querySelectorAll('[role="alert"]')];
-		const invalidLinkAlert = alerts.find((alert) =>
-			alert.textContent?.includes("This is not a valid gatu mobile link."),
-		);
-		expect(invalidLinkAlert).toBeDefined();
-		expect(document.activeElement).toBe(invalidLinkAlert);
+		expect(container.textContent).toContain("Desktop QR loaded");
 	});
 
 	it.each([
-		{
-			name: "wrong environment",
-			syncOptions: { env: "Testnet" as const },
-			expectedMessage: "This link was created for a different network.",
-		},
-		{
-			name: "wrong origin",
-			syncOptions: { appOrigin: "https://desktop.hypeterminal.test" },
-			expectedMessage: "This link was created for a different site.",
-		},
-	])("shows a clear import error for $name", async ({ expectedMessage, syncOptions }) => {
-		const sync = await createSyncFixture(syncOptions);
-		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
-			storage: window.sessionStorage,
-			nowMs: NOW_MS,
-		});
+		[
+			"query",
+			`${MOBILE_SYNC_ROUTE_PATH}?from=camera&ht-mobile-sync=secret-envelope&k=secret-key`,
+			`${MOBILE_SYNC_ROUTE_PATH}?from=camera`,
+		],
+		["nested path", `${MOBILE_SYNC_ROUTE_PATH}/ht-mobile-sync=secret-envelope/k=secret-key`, MOBILE_SYNC_ROUTE_PATH],
+	])("scrubs an invalid SPA %s before rendering and never imports it", async (_part, unsafeUrl, cleanUrl) => {
+		window.history.replaceState(null, "", "/");
 		const { Route } = await import("@/routes/mobile-agent-sync");
-		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		window.history.replaceState(null, "", unsafeUrl);
 
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
+		(Route as unknown as { beforeLoad: () => void }).beforeLoad();
+		expect(`${window.location.pathname}${window.location.search}${window.location.hash}`).toBe(cleanUrl);
+
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
 		await flushAsyncWork();
 
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-		expect(importButton?.disabled).toBe(false);
-
-		act(() => {
-			importButton?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-		});
-		await flushAsyncWork(80);
-
-		expect(testState.setAgent).not.toHaveBeenCalled();
-		expect(testState.setActiveAgentOwner).not.toHaveBeenCalled();
-		expect(container.textContent).toContain(expectedMessage);
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).not.toBeNull();
+		expect(container.textContent).toContain("not a valid gatu desktop wallet QR");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 	});
 
-	it("imports phone access and lands the agent after a successful import", async () => {
+	it("aborts beforeLoad and requests a clean full navigation when replaceState silently leaves an SPA fragment", async () => {
+		window.history.replaceState(null, "", "/");
+		const { Route } = await import("@/routes/mobile-agent-sync");
 		const sync = await createSyncFixture();
-		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
-			storage: window.sessionStorage,
-			nowMs: NOW_MS,
-		});
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+
+		expect(() => (Route as unknown as { beforeLoad: () => void }).beforeLoad()).toThrow(
+			/A clean full-page navigation is required/,
+		);
+		expect(testState.fullNavigate).toHaveBeenCalledWith(MOBILE_SYNC_ROUTE_PATH);
+		expect(window.location.hash).not.toBe("");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+	});
+
+	it("does not import from a hashchange when the address bar cannot be scrubbed", async () => {
 		const { Route } = await import("@/routes/mobile-agent-sync");
 		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
-
-		act(() => {
-			root.render(createElement(MobileAgentSyncRoute));
-		});
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
 		await flushAsyncWork();
 
-		expect(container.textContent).toContain(sync.syncId.slice(0, 8));
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+		window.dispatchEvent(new HashChangeEvent("hashchange"));
+		await flushAsyncWork();
 
-		const importButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Import phone access"),
-		);
-		expect(importButton?.disabled).toBe(false);
+		expect(testState.fullNavigate).toHaveBeenCalledWith(MOBILE_SYNC_ROUTE_PATH);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(container.textContent).not.toContain("Desktop QR loaded");
+		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+	});
 
-		act(() => {
-			importButton?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+	it("verifies the exact base name and expiry before strict storage and owner activation", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [
+			{
+				address: sync.agentAddress,
+				name: "Mobile",
+				validUntil: sync.agentValidUntilMs,
+			},
+		];
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+		testState.waitForExpectedMobileAgent.mockImplementationOnce(async (load) => {
+			const [remoteAgent] = await load(new AbortController().signal);
+			vi.mocked(Date.now).mockReturnValue(NOW_MS + 5_000);
+			return { status: "approved", attempts: 1, remoteAgent };
 		});
-		await flushAsyncWork(60);
 
-		expect(testState.setAgent).toHaveBeenCalledTimes(1);
-		expect(testState.setActiveAgentOwner).toHaveBeenCalledTimes(1);
-		expect(testState.setActiveAgentOwner).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
-		const [env, userAddress, privateKey, publicKey, metadata] = testState.setAgent.mock.calls[0];
-		expect(env).toBe("Mainnet");
-		expect(userAddress).toBe(USER_ADDRESS.toLowerCase());
-		expect(privateKey).toBe(AGENT_PRIVATE_KEY.toLowerCase());
-		expect(publicKey).toBe(sync.agentAddress.toLowerCase());
-		expect(metadata).toMatchObject({
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.infoExtraAgents).toHaveBeenCalledWith(
+			{ user: USER_ADDRESS.toLowerCase() },
+			expect.any(AbortSignal),
+		);
+		expect(testState.waitForExpectedMobileAgent).toHaveBeenCalledWith(
+			expect.any(Function),
+			{
+				agentAddress: sync.agentAddress.toLowerCase(),
+				agentNameBase: "Mobile",
+				agentValidUntilMs: sync.agentValidUntilMs,
+			},
+			{ signal: expect.any(AbortSignal) },
+		);
+		expect(testState.captureAgentRegistrationEpoch).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
+		expect(testState.consumeMobileSyncTicket).toHaveBeenCalledWith(
+			sync.syncId,
+			"11".repeat(16),
+			expect.any(AbortSignal),
+		);
+		expect(testState.persistAgentForRegistration).toHaveBeenCalledTimes(1);
+		expect(testState.consumeMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.persistAgentForRegistration.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(testState.persistAgentForRegistration.mock.calls[0]?.[0]).toEqual(REGISTRATION_EPOCH);
+		expect(testState.persistAgentForRegistration.mock.calls[0]?.[3]).toMatchObject({
 			source: "mobile-sync",
-			agentName: sync.agentName,
-			agentValidUntilMs: sync.agentValidUntilMs,
+			importedAtMs: NOW_MS + 5_000,
 			syncId: sync.syncId,
 		});
-
-		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
+		expect(testState.activateAgentOwnerForRegistration).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(testState.persistAgentForRegistration.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.activateAgentOwnerForRegistration.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(testState.verifyAgentRegistrationOrRemove).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("Phone access ready");
-		expect(container.textContent).not.toContain("Phone link loaded");
+	});
+
+	it("fails closed before local persistence when another device consumed the QR", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.consumeMobileSyncTicket.mockResolvedValue("rejected");
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.consumeMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+		expect(container.textContent).toContain("already used or is no longer active");
+	});
+
+	it("retains the bounded draft and never writes when remote approval is not exact", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [
+			{
+				address: sync.agentAddress,
+				name: "Mobile",
+				validUntil: sync.agentValidUntilMs + 1,
+			},
+		];
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
+		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+		expect(container.textContent).toContain("not the currently approved Mobile Agent");
+	});
+
+	it("does not write or activate when logout invalidates the epoch before persistence", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.persistAgentForRegistration.mockResolvedValue({
+			status: "failed",
+			reason: "registration_cancelled",
+		});
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(testState.verifyAgentRegistrationOrRemove).not.toHaveBeenCalled();
+		expect(testState.activateAgentOwnerForRegistration).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain("Phone access ready");
+	});
+
+	it("does not activate when logout invalidates the epoch immediately after persistence", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.activateAgentOwnerForRegistration.mockResolvedValueOnce({ status: "cancelled" });
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(testState.verifyAgentRegistrationOrRemove).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain("Phone access ready");
+	});
+
+	it("delegates post-activation rollback to the epoch-aware cancellation helper", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.verifyAgentRegistrationOrRemove.mockResolvedValueOnce({ status: "cancelled" });
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(container.textContent).not.toContain("Phone access ready");
+	});
+
+	it("rolls back the Agent if verified owner activation fails", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.activateAgentOwnerForRegistration.mockResolvedValue({
+			status: "failed",
+			reason: "owner_activation_failed",
+		});
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(testState.cancelAgentRegistrationEpochAndRemove).toHaveBeenCalledWith(
+			REGISTRATION_EPOCH,
+			sync.agentAddress.toLowerCase(),
+		);
+		expect(container.textContent).not.toContain("Phone access ready");
+		expect(container.textContent).toContain("could not be saved");
+	});
+
+	it("reports incomplete rollback when verified cancellation fails", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		testState.activateAgentOwnerForRegistration.mockResolvedValue({
+			status: "failed",
+			reason: "owner_activation_failed",
+		});
+		testState.cancelAgentRegistrationEpochAndRemove.mockResolvedValue({
+			status: "failed",
+			reason: "readback_mismatch",
+		});
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(container.textContent).toContain("could not be activated or fully removed");
+		expect(container.textContent).not.toContain("Phone access ready");
+	});
+
+	it("shows a cleanup warning when a successful import cannot remove the temporary QR draft", async () => {
+		const sync = await createSyncFixture();
+		testState.extraAgents = [{ address: sync.agentAddress, name: "Mobile", validUntil: sync.agentValidUntilMs }];
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		const originalRemoveItem = Storage.prototype.removeItem;
+		vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key: string) {
+			if (key === MOBILE_SYNC_DRAFT_STORAGE_KEY) return;
+			originalRemoveItem.call(this, key);
+		});
+		act(() => findButton(container, "Import phone access")?.click());
+		await flushAsyncWork(20);
+
+		expect(container.textContent).toContain("Phone access ready");
+		expect(container.textContent).toContain("temporary QR copy could not be cleared");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toContain(sync.syncId);
+	});
+
+	it("does not claim a QR was discarded when cleanup readback throws", async () => {
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		const originalGetItem = Storage.prototype.getItem;
+		vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (this: Storage, key: string) {
+			if (key === MOBILE_SYNC_DRAFT_STORAGE_KEY) throw new Error("readback blocked");
+			return originalGetItem.call(this, key);
+		});
+		act(() => findButton(container, "Discard")?.click());
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("temporary phone-access QR could not be cleared");
+		expect(container.textContent).not.toContain("No desktop QR is loaded");
+	});
+
+	it("scrubs and discards credentials while import is gated off", async () => {
+		testState.importEnabled = false;
+		const sync = await createSyncFixture();
+		const url = new URL(sync.url);
+		window.sessionStorage.setItem(MOBILE_SYNC_DRAFT_STORAGE_KEY, "stale-secret");
+		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+
+		const { Route } = await import("@/routes/mobile-agent-sync");
+		expect(window.location.hash).toBe("");
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+
+		const MobileAgentSyncRoute = (Route as unknown as { component: ComponentType }).component;
+		act(() => root.render(createElement(MobileAgentSyncRoute)));
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("temporarily unavailable");
+		expect(findButton(container, "Import phone access")?.disabled).toBe(true);
+		expect(testState.waitForExpectedMobileAgent).not.toHaveBeenCalled();
+		expect(testState.persistAgentForRegistration).not.toHaveBeenCalled();
 	});
 });

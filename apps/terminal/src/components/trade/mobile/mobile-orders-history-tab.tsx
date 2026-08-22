@@ -1,42 +1,144 @@
-import { t } from "@lingui/core/macro";
-import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
+import { Select } from "@gatu/ui";
+import { Plural, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
+import type { ToolbarOrderDirectionFilter } from "@/domain/trade/trading-toolbar-metrics";
+import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
+import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideLabel } from "@/lib/trade/open-orders";
-import { AssetBadge } from "../components/asset-badge";
-import { MetricCell } from "./metric-cell";
+import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
+import {
+	getOrderHistoryStatusCategory,
+	getOrderHistoryTriggerPrice,
+	getTwapAverageFillPrice,
+	type OrderHistoryEntry,
+	type OrderHistoryStatusCategory,
+} from "@/lib/trade/order-history";
+import { HistoricalOrderPrice } from "../components/historical-order-price";
+import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { MobileProgressiveList } from "./mobile-progressive-list";
+import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
+
+type OrderHistoryType = OrderHistoryEntry["type"];
+type OrderHistoryTypeFilter = "all" | OrderHistoryType;
+type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
+
+const filterTriggerClassName =
+	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterActionClassName =
+	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control active:scale-100";
+const footerActionClassName =
+	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
+
+function isOrderHistoryStatusFilter(value: string | null): value is OrderHistoryStatusFilter {
+	return (
+		value === "all" ||
+		value === "open" ||
+		value === "filled" ||
+		value === "triggered" ||
+		value === "canceled" ||
+		value === "rejected" ||
+		value === "other"
+	);
+}
+
+function isOrderHistoryDirectionFilter(value: string | null): value is ToolbarOrderDirectionFilter {
+	return value === "all" || value === "buy" || value === "sell";
+}
+
+function isOrderHistoryType(
+	value: string | null,
+	availableTypes: ReadonlySet<OrderHistoryType>,
+): value is OrderHistoryType {
+	return value !== null && availableTypes.has(value as OrderHistoryType);
+}
+
+function getOrderHistoryDisclosureKey(entry: OrderHistoryEntry): string {
+	return entry.kind === "order" ? String(entry.order.order.oid) : entry.key;
+}
 
 interface Props {
 	className?: string;
+	disclosureState?: MobileDisclosureSetState;
 	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
+export function MobileOrdersHistoryTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
+	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
+
+	return <MobileOrdersHistoryTabContent key={ownerKey} disclosureIdentity={`${env}:${ownerKey}`} {...props} />;
+}
+
+interface MobileOrdersHistoryTabContentProps extends Props {
+	disclosureIdentity: string;
+}
+
+function MobileOrdersHistoryTabContent({
+	className,
+	disclosureIdentity,
+	disclosureState,
+	scrollMode = "contained",
+}: MobileOrdersHistoryTabContentProps) {
+	useNumberFormatRevision();
+	const { t } = useLingui();
+	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
+		useOrderDisplayLabels();
+	const { entries, error, isConnected, status } = useHistoricalOrders();
+	const malformedHistory = isMalformedHistoryPageError(error);
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
-	const {
-		data: historicalOrdersEvent,
-		status,
-		error,
-	} = useSubscription("userHistoricalOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	const [typeFilter, setTypeFilter] = useState<OrderHistoryTypeFilter>("all");
+	const [directionFilter, setDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
+	const [statusFilter, setStatusFilter] = useState<OrderHistoryStatusFilter>("all");
 
-	const orders =
-		historicalOrdersEvent?.orderHistory
-			?.slice()
-			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, MAX_HISTORY_ROWS) ?? [];
+	const filteredEntries = entries.filter(
+		(entry) =>
+			(typeFilter === "all" || entry.type === typeFilter) &&
+			(directionFilter === "all" || (directionFilter === "buy") === (entry.side === "B")) &&
+			(statusFilter === "all" || getOrderHistoryStatusCategory(entry) === statusFilter),
+	);
+	const filteredOrderKeys = filteredEntries.map(getOrderHistoryDisclosureKey);
+	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
+		disclosureIdentity,
+		filteredOrderKeys,
+		disclosureState,
+	);
+	const availableTypeFilters = new Set(entries.map((entry) => entry.type));
+	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
+	const typeOptions = [
+		{ value: "all", label: t`All types` },
+		...Array.from(availableTypeFilters).map((value) => ({
+			value,
+			label: value === "twap" ? t`TWAP` : getOrderTypeLabel(value),
+		})),
+	];
+	const availableStatusFilters = new Set(entries.map(getOrderHistoryStatusCategory));
+	if (statusFilter !== "all") availableStatusFilters.add(statusFilter);
+	const statusOptions = [
+		{ value: "all", label: t`All statuses` },
+		...(["open", "filled", "triggered", "canceled", "rejected", "other"] as const)
+			.filter((value) => availableStatusFilters.has(value))
+			.map((value) => ({ value, label: getStatusFilterLabel(value) })),
+	];
 
-	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
+	const headerCount = isConnected ? (
+		<Plural value={filteredEntries.length} one="# order" other="# orders" />
+	) : (
+		FALLBACK_VALUE_PLACEHOLDER
+	);
 	const isPageScroll = scrollMode === "page";
 
 	function handleSelectMarket(name: string) {
@@ -44,9 +146,92 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 		setActiveTab("trade");
 	}
 
+	function handleSetAllExpanded(expanded: boolean) {
+		if (expanded) expandAll(filteredOrderKeys);
+		else collapseAll(filteredOrderKeys);
+	}
+
+	function getStatusFilterLabel(filter: Exclude<OrderHistoryStatusFilter, "all">) {
+		if (filter === "open") return t`Open`;
+		if (filter === "filled") return t`Filled`;
+		if (filter === "triggered") return t`Triggered`;
+		if (filter === "canceled") return t`Canceled`;
+		if (filter === "rejected") return t`Rejected`;
+		return t`Other`;
+	}
+
+	function getEntryTypeLabel(entry: OrderHistoryEntry) {
+		return entry.kind === "twap" ? t`TWAP` : getOrderTypeLabel(entry.type);
+	}
+
+	function getEntryStatusLabel(entry: OrderHistoryEntry) {
+		return entry.kind === "twap"
+			? getTwapHistoryStatusLabel(entry.twap.status.status)
+			: getHistoricalOrderStatusLabel(entry.order.status);
+	}
+
+	function getEntryPrice(entry: OrderHistoryEntry) {
+		return entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : entry.order.order.limitPx;
+	}
+
+	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
+		filename: "order_history.csv",
+		buildRows: (exportOrders) =>
+			buildCsvRows(
+				exportOrders.filter(
+					(entry) =>
+						(typeFilter === "all" || entry.type === typeFilter) &&
+						(directionFilter === "all" || (directionFilter === "buy") === (entry.side === "B")) &&
+						(statusFilter === "all" || getOrderHistoryStatusCategory(entry) === statusFilter),
+				),
+				[
+					{
+						header: t`Time`,
+						getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
+					},
+					{ header: t`Asset`, getValue: (entry) => entry.coin },
+					{
+						header: t`Direction`,
+						getValue: (entry) => getOrderSideLabel(entry.side, entry.reduceOnly),
+					},
+					{ header: t`Type`, getValue: getEntryTypeLabel },
+					{
+						header: t`Price`,
+						getValue: (entry) => {
+							const price = getEntryPrice(entry);
+							return price ? formatUSD(price, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
+						},
+					},
+					{
+						header: t`Trigger Price`,
+						getValue: (entry) => {
+							const triggerPrice = getOrderHistoryTriggerPrice(entry);
+							return triggerPrice ? formatUSD(triggerPrice, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
+						},
+					},
+					{
+						header: t`Size`,
+						getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
+					},
+					{ header: t`Status`, getValue: getEntryStatusLabel },
+					{
+						header: t`Updated`,
+						getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
+					},
+				],
+			),
+	});
+	const exportFooter = (
+		<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-order-history-footer">
+			<button type="button" disabled={isExporting} onClick={() => void exportCsv()} className={footerActionClassName}>
+				{t`Export CSV`}
+			</button>
+		</div>
+	);
+
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
+			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 				{t`Connect your wallet to view order history.`}
 			</div>
 		);
@@ -54,83 +239,250 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
-				<span>{t`Failed to load order history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
+					<span>{t`Failed to load order history.`}</span>
+					{malformedHistory ? (
+						<span className="mt-1 text-center text-xs text-market-close-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>
+					)}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
-	if (status === "active" && orders.length === 0) {
+	if (status === "ready" && entries.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
-				{t`No order history found.`}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No order history found.`}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
 	return (
-		<Skeleton name="orders-history-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
-					<ClockCounterClockwiseIcon className="size-3" />
-					{t`Order History`}
-					<span className="font-semibold text-brand ml-auto tabular-nums">{headerCount}</span>
+		<Skeleton name="orders-history-tab" loading={status === "loading" || status === "idle"}>
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				<div
+					data-testid="mobile-order-history-filter-row"
+					className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				>
+					<span className="sr-only" aria-live="polite">
+						{headerCount}
+					</span>
+					<div className="flex shrink-0 items-center gap-1.5">
+						<Select
+							size="xxs"
+							label={t`Order type`}
+							value={typeFilter}
+							onValueChange={(value) => {
+								if (value === "all") setTypeFilter("all");
+								else if (isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
+							}}
+							options={typeOptions}
+							className="w-24 shrink-0 [&>label]:sr-only"
+							triggerClassName={filterTriggerClassName}
+						/>
+						<Select
+							size="xxs"
+							label={t`Direction`}
+							value={directionFilter}
+							onValueChange={(value) => {
+								if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
+							}}
+							options={[
+								{ value: "all", label: t`All Directions` },
+								{ value: "buy", label: t`Buy` },
+								{ value: "sell", label: t`Sell` },
+							]}
+							className="w-24 shrink-0 [&>label]:sr-only"
+							triggerClassName={filterTriggerClassName}
+						/>
+						<Select
+							size="xxs"
+							label={t`Order status`}
+							value={statusFilter}
+							onValueChange={(value) => {
+								if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
+							}}
+							options={statusOptions}
+							className="w-24 shrink-0 [&>label]:sr-only"
+							triggerClassName={filterTriggerClassName}
+						/>
+					</div>
+					<div className="ml-auto flex shrink-0 items-center gap-3 pl-3">
+						<button
+							type="button"
+							onClick={() => handleSetAllExpanded(true)}
+							className={cn(filterActionClassName, "font-semibold text-market-close-fg")}
+						>
+							{t`Expand all`}
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSetAllExpanded(false)}
+							className={cn(filterActionClassName, "text-market-close-muted")}
+						>
+							{t`Collapse all`}
+						</button>
+					</div>
 				</div>
-				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{orders.map((entry) => {
-						const { order } = entry;
-						const market = markets.getMarket(order.coin);
-						const isLong = order.side === "B";
-
-						return (
-							<div
-								key={`${order.oid}-${entry.statusTimestamp}`}
-								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
-							>
-								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
-									<div className="flex items-center gap-2">
-										<AssetBadge
-											coin={order.coin}
-											side={isLong ? "buy" : "sell"}
-											onClick={() => handleSelectMarket(order.coin)}
-											nameClassName="text-sm"
-										/>
-										<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
-											{getSideLabel(order.side, market?.kind)}
-										</span>
-									</div>
-									<span
-										className={cn(
-											"text-xs px-1.5 py-0.5 rounded-8 capitalize",
-											entry.status === "filled"
-												? "bg-success-soft text-success"
-												: entry.status === "canceled"
-													? "bg-error-soft text-error"
-													: "bg-surface text-fg-muted",
-										)}
-									>
-										{entry.status}
-									</span>
-								</div>
-
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
-									<MetricCell label={t`Type`} value={order.orderType} />
-									<MetricCell label={t`Price`} value={formatUSD(order.limitPx, { compact: false })} />
-									<MetricCell label={t`Size`} value={formatToken(order.origSz, market?.szDecimals)} />
-								</div>
-
-								<div className="flex items-center justify-between px-3 py-1.5">
-									<span className="text-xs text-fg-muted tabular-nums">
-										{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
-									</span>
-									<span className="text-xs text-fg-muted tabular-nums">
-										{t`Updated`} {formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" })}
-									</span>
-								</div>
+				<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
+					<div className="flex flex-col gap-2.5 px-3.5 pt-3">
+						{filteredEntries.length === 0 ? (
+							<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+								{t`No orders match these filters.`}
 							</div>
-						);
-					})}
+						) : null}
+						<MobileProgressiveList key={`${typeFilter}:${directionFilter}:${statusFilter}`} items={filteredEntries}>
+							{(visibleEntries) =>
+								visibleEntries.map((entry) => {
+									const marketName = entry.coin;
+									const cardKey = getOrderHistoryDisclosureKey(entry);
+									const detailsId = `mobile-order-history-${entry.key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+									const isExpanded = expandedKeys.has(cardKey);
+									const market = markets.getMarket(entry.coin);
+									const isBuy = entry.side === "B";
+									const orderTypeLabel = getEntryTypeLabel(entry);
+									const sideLabel = getOrderSideLabel(entry.side, entry.reduceOnly);
+									const statusCategory = getOrderHistoryStatusCategory(entry);
+									const twapAveragePrice = entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : null;
+
+									function handleToggle() {
+										setExpanded(cardKey, !isExpanded);
+									}
+
+									return (
+										<article
+											key={cardKey}
+											className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
+										>
+											<MobileDisclosureHeader
+												expanded={isExpanded}
+												label={
+													isExpanded
+														? t`Collapse ${marketName} history details`
+														: t`Expand ${marketName} history details`
+												}
+												controls={detailsId}
+												onToggle={handleToggle}
+												className="h-[54px] grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5"
+											>
+												<button
+													type="button"
+													onClick={() => handleSelectMarket(marketName)}
+													aria-label={t`Switch to ${marketName} market, ${sideLabel} order`}
+													className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+												>
+													<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
+													<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
+														{marketName}
+													</span>
+												</button>
+												<div className="min-w-0">
+													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
+													<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+														{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
+													</div>
+												</div>
+												<div className="min-w-0">
+													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Type`}</div>
+													<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg">
+														{orderTypeLabel}
+													</div>
+												</div>
+											</MobileDisclosureHeader>
+
+											{isExpanded ? (
+												<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
+													<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
+														<div className="min-w-0">
+															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
+																{t`Direction`}
+															</div>
+															<div
+																className={cn(
+																	"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
+																	isBuy ? "text-market-close-success" : "text-market-close-danger",
+																)}
+															>
+																{sideLabel}
+															</div>
+														</div>
+														<div className="min-w-0">
+															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Price`}</div>
+															<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+																{entry.kind === "order" ? (
+																	<HistoricalOrderPrice align="start" order={entry.order.order} />
+																) : twapAveragePrice ? (
+																	formatUSD(twapAveragePrice, { compact: false })
+																) : (
+																	FALLBACK_VALUE_PLACEHOLDER
+																)}
+															</div>
+														</div>
+														<div className="min-w-0">
+															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+															<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+																{formatToken(entry.size, market?.szDecimals)}
+															</div>
+														</div>
+														<div className="min-w-0">
+															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Status`}</div>
+															<div
+																className={cn(
+																	"inline-flex max-w-full truncate rounded-[4px] px-[7px] py-0.5 text-[10px] font-bold",
+																	statusCategory === "filled"
+																		? "bg-success-soft text-success"
+																		: statusCategory === "canceled" || statusCategory === "rejected"
+																			? "bg-error-soft text-error"
+																			: "bg-market-close-hover text-market-close-muted",
+																)}
+															>
+																{getEntryStatusLabel(entry)}
+															</div>
+														</div>
+														<div className="col-span-2 min-w-0">
+															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Updated`}</div>
+															<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+																{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
+															</div>
+														</div>
+													</div>
+													<div className="flex min-h-11 items-center justify-end border-t border-market-close-stroke-card">
+														<button
+															type="button"
+															aria-label={t`Collapse ${marketName} history details`}
+															aria-controls={detailsId}
+															onClick={handleToggle}
+															className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+														>
+															<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
+																<path
+																	d="M3.5 10 8 5.5l4.5 4.5"
+																	stroke="currentColor"
+																	strokeWidth="2"
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																/>
+															</svg>
+														</button>
+													</div>
+												</div>
+											) : null}
+										</article>
+									);
+								})
+							}
+						</MobileProgressiveList>
+					</div>
+					{exportFooter}
 				</div>
 			</div>
 		</Skeleton>

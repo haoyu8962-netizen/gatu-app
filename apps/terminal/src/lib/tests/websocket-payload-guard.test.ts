@@ -1,6 +1,7 @@
 import { estimatePayloadSizeBytes, isPayloadOversized } from "@gatu/hl-react/internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
+	shouldDropOversizedPayloadForSubscriptionKey,
 	WS_RELIABILITY_LIMITS,
 } from "@gatu/hl-react/internal/websocket/reliability";
 import { describe, expect, it } from "vitest";
@@ -35,5 +36,17 @@ describe("websocket payload guard", () => {
 	it("falls back to default payload limit for unknown key", () => {
 		const limit = getPayloadLimitBytesForSubscriptionKey("not-json");
 		expect(limit).toBe(WS_RELIABILITY_LIMITS.payload.defaultMaxBytes);
+	});
+
+	it("preserves oversized user and account payloads by default", () => {
+		for (const method of ["openOrders", "spotState", "allDexsClearinghouseState", "webData3"]) {
+			const key = JSON.stringify(["hl", "subscription", method, { user: "0xabc" }]);
+			expect(shouldDropOversizedPayloadForSubscriptionKey(key)).toBe(false);
+		}
+	});
+
+	it("keeps the payload guard enabled for market streams", () => {
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "BTC" }]);
+		expect(shouldDropOversizedPayloadForSubscriptionKey(key)).toBe(true);
 	});
 });

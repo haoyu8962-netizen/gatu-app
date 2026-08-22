@@ -1,0 +1,274 @@
+import { describe, expect, it } from "vitest";
+import {
+	getToolbarAbsoluteSize,
+	getToolbarAccountLeverage,
+	getToolbarAccountMarginRatio,
+	getToolbarAccountRiskPresentation,
+	getToolbarFundingTotal,
+	getToolbarNonZeroPnl,
+	getToolbarOrderMetrics,
+	getToolbarPositionChangeRatio,
+	getToolbarSignedValueTone,
+	getToolbarTriggerConditionOperator,
+	getToolbarTwapMetrics,
+	isToolbarOrderNearMark,
+	matchesToolbarOrderFilters,
+} from "@/domain/trade/trading-toolbar-metrics";
+
+describe("trading toolbar position metrics", () => {
+	it("derives price change from unrealized PNL and absolute entry notional", () => {
+		expect(
+			getToolbarPositionChangeRatio({
+				unrealizedPnl: "250",
+				szi: "2.5",
+				entryPx: "1000",
+			}),
+		).toBe("0.1");
+		expect(
+			getToolbarPositionChangeRatio({
+				unrealizedPnl: "-12.5",
+				szi: "-0.125",
+				entryPx: "1000",
+			}),
+		).toBe("-0.1");
+	});
+
+	it("keeps decimal precision without converting financial values to numbers", () => {
+		expect(
+			getToolbarPositionChangeRatio({
+				unrealizedPnl: "0.000000000000000003",
+				szi: "-0.000000000000000001",
+				entryPx: "3",
+			}),
+		).toBe("1");
+	});
+
+	it("rejects invalid or zero entry notionals", () => {
+		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "1", szi: "0", entryPx: "100" })).toBeNull();
+		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "1", szi: "1", entryPx: "0" })).toBeNull();
+		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "invalid", szi: "1", entryPx: "100" })).toBeNull();
+	});
+});
+
+describe("trading toolbar history metrics", () => {
+	it("keeps history totals and absolute sizes exact", () => {
+		expect(getToolbarFundingTotal([{ usdc: "9007199254740992.1" }, { usdc: "-9007199254740992" }])).toBe("0.1");
+		expect(getToolbarAbsoluteSize("-0.000000000000000001")).toBe("0.000000000000000001");
+	});
+
+	it("fails closed on invalid protocol values and hides zero PNL", () => {
+		expect(getToolbarFundingTotal([{ usdc: "invalid" }])).toBeNull();
+		expect(getToolbarAbsoluteSize("invalid")).toBeNull();
+		expect(getToolbarNonZeroPnl("0.000")).toBeNull();
+		expect(getToolbarNonZeroPnl("-1.25")).toBe("-1.25");
+	});
+});
+
+describe("trading toolbar account metrics", () => {
+	it("derives the account maintenance margin ratio", () => {
+		expect(
+			getToolbarAccountMarginRatio({
+				crossMaintenanceMarginUsed: "25",
+				accountEquity: "1000",
+			}),
+		).toBe("0.025");
+	});
+
+	it("rejects negative maintenance margin and non-positive equity", () => {
+		expect(
+			getToolbarAccountMarginRatio({
+				crossMaintenanceMarginUsed: "-1",
+				accountEquity: "1000",
+			}),
+		).toBeNull();
+		expect(
+			getToolbarAccountMarginRatio({
+				crossMaintenanceMarginUsed: "1",
+				accountEquity: "0",
+			}),
+		).toBeNull();
+	});
+
+	it("derives absolute cross-account leverage without losing decimal precision", () => {
+		expect(getToolbarAccountLeverage({ totalNtlPos: "-10000000000000000.25", accountEquity: "4" })).toBe(
+			"2500000000000000.0625",
+		);
+		expect(getToolbarAccountLeverage({ totalNtlPos: "0", accountEquity: "100" })).toBe("0");
+		expect(getToolbarAccountLeverage({ totalNtlPos: "invalid", accountEquity: "100" })).toBeNull();
+		expect(getToolbarAccountLeverage({ totalNtlPos: "100", accountEquity: "0" })).toBeNull();
+	});
+
+	it("classifies signed account values without treating negative zero as a loss", () => {
+		expect(getToolbarSignedValueTone("1.25")).toBe("positive");
+		expect(getToolbarSignedValueTone("-1.25")).toBe("negative");
+		expect(getToolbarSignedValueTone("-0")).toBe("neutral");
+		expect(getToolbarSignedValueTone("invalid")).toBe("neutral");
+	});
+
+	it("clamps the progress bar and applies the documented account risk tiers", () => {
+		expect(getToolbarAccountRiskPresentation("0.21")).toEqual({ progressPercent: "21", tone: "safe" });
+		expect(getToolbarAccountRiskPresentation("0.5")).toEqual({ progressPercent: "50", tone: "warning" });
+		expect(getToolbarAccountRiskPresentation("0.75")).toEqual({ progressPercent: "75", tone: "danger" });
+		expect(getToolbarAccountRiskPresentation("1.25")).toEqual({ progressPercent: "100", tone: "danger" });
+		expect(getToolbarAccountRiskPresentation(null)).toEqual({ progressPercent: null, tone: "safe" });
+	});
+});
+
+describe("trading toolbar order metrics", () => {
+	it("matches order type and raw exchange-side filters", () => {
+		const triggerBuy = { isTrigger: true, side: "B" };
+		const limitSell = { isTrigger: false, side: "A" };
+
+		expect(matchesToolbarOrderFilters(triggerBuy, "all", "all")).toBe(true);
+		expect(matchesToolbarOrderFilters(triggerBuy, "trigger", "buy")).toBe(true);
+		expect(matchesToolbarOrderFilters(triggerBuy, "limit", "buy")).toBe(false);
+		expect(matchesToolbarOrderFilters(limitSell, "limit", "sell")).toBe(true);
+		expect(matchesToolbarOrderFilters(limitSell, "trigger", "sell")).toBe(false);
+	});
+
+	it("uses limit price and remaining size for ordinary orders above the mark", () => {
+		expect(
+			getToolbarOrderMetrics({
+				isTrigger: false,
+				limitPx: "101.25",
+				triggerPx: "0",
+				sz: "2.4",
+				markPx: "100",
+			}),
+		).toEqual({
+			referencePx: "101.25",
+			remainingValue: "243",
+			markDistanceRatio: "0.0125",
+		});
+	});
+
+	it("uses trigger price and preserves a negative distance below the mark", () => {
+		expect(
+			getToolbarOrderMetrics({
+				isTrigger: true,
+				limitPx: "81.25",
+				triggerPx: "90",
+				sz: "2.4",
+				markPx: "100",
+			}),
+		).toEqual({
+			referencePx: "90",
+			remainingValue: "216",
+			markDistanceRatio: "-0.1",
+		});
+	});
+
+	it("applies the near-mark threshold to the absolute signed distance", () => {
+		expect(isToolbarOrderNearMark("0.099999999999999999")).toBe(true);
+		expect(isToolbarOrderNearMark("-0.099999999999999999")).toBe(true);
+		expect(isToolbarOrderNearMark("0.1")).toBe(false);
+		expect(isToolbarOrderNearMark("-0.1")).toBe(false);
+		expect(isToolbarOrderNearMark(null)).toBe(false);
+		expect(isToolbarOrderNearMark("invalid")).toBe(false);
+	});
+
+	it("maps SDK trigger conditions to the compact current-orders operators", () => {
+		expect(getToolbarTriggerConditionOperator("Price above 149.00")).toBe("≥");
+		expect(getToolbarTriggerConditionOperator("Price below 149.00")).toBe("≤");
+		expect(getToolbarTriggerConditionOperator("N/A")).toBeNull();
+	});
+
+	it("preserves a valid distance when size is invalid and a valid value when mark price is invalid", () => {
+		expect(
+			getToolbarOrderMetrics({
+				isTrigger: false,
+				limitPx: "100",
+				triggerPx: "0",
+				sz: "invalid",
+				markPx: "80",
+			}),
+		).toEqual({ referencePx: "100", remainingValue: null, markDistanceRatio: "0.25" });
+		expect(
+			getToolbarOrderMetrics({
+				isTrigger: false,
+				limitPx: "100",
+				triggerPx: "0",
+				sz: "2",
+				markPx: "invalid",
+			}),
+		).toEqual({ referencePx: "100", remainingValue: "200", markDistanceRatio: null });
+	});
+
+	it("returns null metrics for an invalid selected reference price", () => {
+		expect(
+			getToolbarOrderMetrics({
+				isTrigger: true,
+				limitPx: "100",
+				triggerPx: "0",
+				sz: "2",
+				markPx: "100",
+			}),
+		).toEqual({ referencePx: null, remainingValue: null, markDistanceRatio: null });
+	});
+});
+
+describe("trading toolbar TWAP metrics", () => {
+	it("derives progress, executed average price, and remaining time", () => {
+		expect(
+			getToolbarTwapMetrics({
+				sz: "4",
+				executedSz: "1.25",
+				executedNtl: "125",
+				timestampMs: "1700000000000",
+				minutes: "30",
+				nowMs: "1700000600000",
+			}),
+		).toEqual({
+			progressRatio: "0.3125",
+			executedAvgPx: "100",
+			remainingMs: "1200000",
+		});
+	});
+
+	it("clamps completed progress and elapsed time at their view boundaries", () => {
+		expect(
+			getToolbarTwapMetrics({
+				sz: "1",
+				executedSz: "1.000000000000000001",
+				executedNtl: "100.0000000000000001",
+				timestampMs: "1700000000000",
+				minutes: "1",
+				nowMs: "1700001000000",
+			}),
+		).toEqual({
+			progressRatio: "1",
+			executedAvgPx: "100",
+			remainingMs: "0",
+		});
+	});
+
+	it("keeps zero progress while withholding an undefined execution average", () => {
+		expect(
+			getToolbarTwapMetrics({
+				sz: "2",
+				executedSz: "0",
+				executedNtl: "0",
+				timestampMs: "1700000000000",
+				minutes: "30",
+				nowMs: "1700000000000",
+			}),
+		).toEqual({
+			progressRatio: "0",
+			executedAvgPx: null,
+			remainingMs: "1800000",
+		});
+	});
+
+	it("fails each derived metric closed when its required inputs are invalid", () => {
+		expect(
+			getToolbarTwapMetrics({
+				sz: "0",
+				executedSz: "invalid",
+				executedNtl: "invalid",
+				timestampMs: "-1",
+				minutes: "0",
+				nowMs: "invalid",
+			}),
+		).toEqual({ progressRatio: null, executedAvgPx: null, remainingMs: null });
+	});
+});

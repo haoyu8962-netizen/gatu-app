@@ -1,5 +1,5 @@
-import { isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
-import { describe, expect, it } from "vitest";
+import { getStalenessThresholdForKey, isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
+import { describe, expect, it, vi } from "vitest";
 
 function key(method: string, params: Record<string, unknown> = {}) {
 	return JSON.stringify(["hl", "subscription", method, params]);
@@ -8,7 +8,6 @@ function key(method: string, params: Record<string, unknown> = {}) {
 describe("isUserStreamKey", () => {
 	it("returns true for method-based user streams", () => {
 		expect(isUserStreamKey(key("orderUpdates"))).toBe(true);
-		expect(isUserStreamKey(key("webData2"))).toBe(true);
 		expect(isUserStreamKey(key("webData3"))).toBe(true);
 		expect(isUserStreamKey(key("allDexsClearinghouseState"))).toBe(true);
 		expect(isUserStreamKey(key("spotState"))).toBe(true);
@@ -30,6 +29,13 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey(key("spotState", { user: "0x456" }))).toBe(true);
 	});
 
+	it("does not classify the removed webData2 subscription as a user stream", () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+		expect(isUserStreamKey(key("webData2"))).toBe(false);
+		expect(warning).toHaveBeenCalledOnce();
+		warning.mockRestore();
+	});
+
 	it("returns false for market streams", () => {
 		expect(isUserStreamKey(key("l2Book", { coin: "ETH" }))).toBe(false);
 		expect(isUserStreamKey(key("trades", { coin: "ETH" }))).toBe(false);
@@ -47,5 +53,37 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey("invalid")).toBe(false);
 		expect(isUserStreamKey("")).toBe(false);
 		expect(isUserStreamKey("{}")).toBe(false);
+	});
+});
+
+describe("getStalenessThresholdForKey", () => {
+	it("monitors streams with a periodic snapshot cadence", () => {
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH" }))).toBe(15_000);
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH", fast: false }))).toBe(15_000);
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH", fast: true }))).toBe(3_000);
+		expect(getStalenessThresholdForKey(key("allMids"))).toBe(20_000);
+		expect(getStalenessThresholdForKey(key("webData3"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("spotState"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("allDexsClearinghouseState"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("openOrders"))).toBe(60_000);
+	});
+
+	it("does not infer failure from silence on event-driven or change-driven streams", () => {
+		for (const method of [
+			"orderUpdates",
+			"userFills",
+			"userFundings",
+			"userHistoricalOrders",
+			"userNonFundingLedgerUpdates",
+			"trades",
+			"candle",
+		]) {
+			expect(getStalenessThresholdForKey(key(method))).toBeNull();
+		}
+	});
+
+	it("does not assign a cadence to unknown or malformed subscription keys", () => {
+		expect(getStalenessThresholdForKey(key("futureMethod"))).toBeNull();
+		expect(getStalenessThresholdForKey("invalid")).toBeNull();
 	});
 });

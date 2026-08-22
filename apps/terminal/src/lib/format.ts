@@ -1,4 +1,13 @@
+import { i18n } from "@lingui/core";
 import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
+import {
+	defaultLocale,
+	defaultNumberFormatLocale,
+	type LocaleCode,
+	languageToIntlLocale,
+	type NumberFormatLocale,
+} from "@/config/i18n";
+import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -6,6 +15,13 @@ type Formatter = Intl.NumberFormat | Intl.DateTimeFormat;
 type DateInput = Date | number | string | null | undefined;
 
 const formatterCache = new Map<string, Formatter>();
+const BASE_NUMBER_FORMAT_LOCALE = "en-US";
+
+const NUMBER_SEPARATORS_BY_FORMAT_LOCALE = {
+	"en-US": { group: ",", decimal: "." },
+	"de-DE": { group: ".", decimal: "," },
+	"fr-FR": { group: " ", decimal: "," },
+} as const satisfies Record<NumberFormatLocale, { group: string; decimal: string }>;
 
 export interface FormatOptions extends Intl.NumberFormatOptions {
 	decimals?: number;
@@ -56,6 +72,26 @@ function getFormatter(
 		throw new Error("Formatter not found in cache");
 	}
 	return formatter;
+}
+
+function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): string {
+	const formatter = getFormatter("number", BASE_NUMBER_FORMAT_LOCALE, opts);
+	const separators =
+		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[getResolvedFormatLocale() as NumberFormatLocale] ??
+		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[defaultNumberFormatLocale];
+
+	return formatter
+		.formatToParts(value)
+		.map((part) => {
+			if (part.type === "group") return separators.group;
+			if (part.type === "decimal") return separators.decimal;
+			return part.value;
+		})
+		.join("");
+}
+
+function getActiveLanguageIntlLocale(): string {
+	return languageToIntlLocale[i18n.locale as LocaleCode] ?? languageToIntlLocale[defaultLocale];
 }
 
 // Helper to normalize options
@@ -121,39 +157,44 @@ export function formatUSD(value: string | number | null | undefined, opts?: numb
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	const { decimals, compact, ...rest } = resolveOptions(opts);
+	const usesCompactNotation = (compact ?? FORMAT_COMPACT_DEFAULT) && Math.abs(parsed.value) >= FORMAT_COMPACT_THRESHOLD;
 
 	const defaults: Intl.NumberFormatOptions = {
 		style: "currency",
 		currency: "USD",
-		minimumFractionDigits: decimals ?? 2,
+		minimumFractionDigits: decimals ?? (usesCompactNotation ? 0 : 2),
 		maximumFractionDigits: decimals ?? 2,
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, FORMAT_COMPACT_DEFAULT);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
- * Calculate price decimals from szDecimals using Hyperliquid's rule.
- * Price decimals = max(0, 6 - szDecimals)
+ * Calculate price decimals from szDecimals using Hyperliquid's market-specific rule.
+ * Perp prices use max(0, 6 - szDecimals); spot prices use max(0, 8 - szDecimals).
  *
  * @example szDecimalsToPriceDecimals(4) -> 2 (BTC: szDecimals=4, shows $88,140.12)
  * @example szDecimalsToPriceDecimals(3) -> 3 (ETH: szDecimals=3, shows $3,456.789)
- * @example szDecimalsToPriceDecimals(0) -> 6 (low-priced assets)
+ * @example szDecimalsToPriceDecimals(0) -> 6 (low-priced perpetual)
+ * @example szDecimalsToPriceDecimals(0, "spot") -> 8 (low-priced spot asset)
  */
-export function szDecimalsToPriceDecimals(szDecimals: number): number {
-	return Math.max(0, 6 - szDecimals);
+export function szDecimalsToPriceDecimals(szDecimals: number, marketType: "perp" | "spot" = "perp"): number {
+	const maxDecimals = marketType === "spot" ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS;
+	return Math.max(0, maxDecimals - szDecimals);
 }
 
 export interface FormatPriceOptions extends FormatOptions {
 	/** Size decimals from market metadata - used to derive price decimals */
 	szDecimals?: number;
+	/** Hyperliquid market type used to select the protocol decimal cap. Defaults to perpetuals. */
+	marketType?: "perp" | "spot";
 	/** Remove trailing zeros (e.g., 12.00 -> 12, 12.50 -> 12.5). Defaults to true. */
 	trimZeros?: boolean;
 }
 
 /**
  * Format a price with decimal places derived from szDecimals.
- * Uses Hyperliquid's rule: priceDecimals = max(0, 6 - szDecimals)
+ * Uses Hyperliquid's market-specific `MAX_DECIMALS - szDecimals` rule.
  *
  * @example formatPrice(88140.123, { szDecimals: 4 }) -> "$88,140.12" (BTC)
  * @example formatPrice("3456.789", { szDecimals: 3 }) -> "$3,456.789" (ETH)
@@ -164,8 +205,8 @@ export function formatPrice(value: string | number | null | undefined, opts?: Fo
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	// Derive decimals from szDecimals if provided, otherwise use explicit decimals or default to 2
-	const { decimals: decOpt, compact, szDecimals, trimZeros, ...rest } = opts ?? {};
-	const resolvedDecimals = decOpt ?? (szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals) : 2);
+	const { decimals: decOpt, compact, szDecimals, marketType, trimZeros, ...rest } = opts ?? {};
+	const resolvedDecimals = decOpt ?? (szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals, marketType) : 2);
 
 	const defaults: Intl.NumberFormatOptions = {
 		style: "currency",
@@ -175,19 +216,23 @@ export function formatPrice(value: string | number | null | undefined, opts?: Fo
 	};
 
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
-export function formatLiquidationPrice(value: string | number | null | undefined, szDecimals: number): string {
+export function formatLiquidationPrice(
+	value: string | number | null | undefined,
+	szDecimals: number,
+	opts?: Omit<FormatPriceOptions, "decimals" | "szDecimals">,
+): string {
 	const parsed = parseNumberInput(value);
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 	const abs = Math.abs(parsed.value);
-	if (abs >= 1_000_000) return formatPrice(value, { szDecimals, compact: true });
+	if (abs >= 1_000_000) return formatPrice(value, { ...opts, szDecimals, compact: true });
 	if (abs >= 100_000) {
 		const cap = Math.min(4, szDecimalsToPriceDecimals(szDecimals));
-		return formatPrice(value, { decimals: cap });
+		return formatPrice(value, { ...opts, decimals: cap });
 	}
-	return formatPrice(value, { szDecimals });
+	return formatPrice(value, { ...opts, szDecimals });
 }
 
 /**
@@ -220,8 +265,17 @@ export function formatToken(value: string | number | null | undefined, opts?: nu
 	};
 
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	const number = getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	const number = formatNumberParts(parsed.value, formatOptions);
 	return symbol ? `${number} ${symbol}` : number;
+}
+
+export function formatQuoteAmount(
+	value: string | number | null | undefined,
+	quoteSymbol: string,
+	opts?: number | FormatOptions,
+): string {
+	const options = typeof opts === "number" ? { decimals: opts } : opts;
+	return formatToken(value, { ...options, symbol: quoteSymbol });
 }
 
 /**
@@ -242,7 +296,7 @@ export function formatPercent(value: string | number | null | undefined, opts?: 
 		signDisplay: "exceptZero",
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
@@ -270,7 +324,7 @@ export function formatNumber(value: string | number | null | undefined, opts?: n
 		maximumFractionDigits: resolvedDecimals ?? 3,
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
@@ -323,7 +377,7 @@ export function formatTime(value: DateInput, opts?: FormatDateOptions): string {
 	const { locale, ...rest } = opts ?? {};
 	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest) ? rest : { timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
 }
 
 /**
@@ -339,7 +393,7 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 		? rest
 		: { dateStyle: "medium", timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
 }
 
 export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions): string {
@@ -357,7 +411,7 @@ export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions):
 		...rest,
 	};
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), defaults).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), defaults).format(toDate(value));
 }
 
 /**
@@ -371,6 +425,38 @@ export function bpsToPercentage(bps: string | number | null | undefined, decimal
 	const parsed = parseNumberInput(bps);
 	if (!isValidNumber(parsed.value)) return "0";
 	return (parsed.value / 1000).toFixed(decimals);
+}
+
+const SLIPPAGE_MIN_DISPLAY_PERCENT = 0.0001;
+
+export interface FormatSlippageOptions {
+	/** The order consumed all visible depth, so the real cost is worse than the returned figure. */
+	lowerBound?: boolean;
+}
+
+/**
+ * Format real basis points of order-book slippage as a percentage string.
+ * Divides by 100 (1 bp = 0.01%), unlike bpsToPercentage which divides by 1000
+ * for the tenth-of-a-bp builder fee convention. Taker slippage on liquid markets
+ * is sub-bp, so the decimals scale down instead of rounding to "0.00%".
+ * @example formatSlippageBps(37) -> "0.37%"
+ * @example formatSlippageBps(0.0793) -> "0.0008%"
+ * @example formatSlippageBps(120, { lowerBound: true }) -> ">1.20%"
+ */
+export function formatSlippageBps(bps: number | null | undefined, options: FormatSlippageOptions = {}): string | null {
+	if (typeof bps !== "number" || !Number.isFinite(bps) || bps < 0) return null;
+	const percent = bps / 100;
+	if (options.lowerBound) return `>${formatNumber(percent, getSlippagePercentDecimals(percent))}%`;
+	if (percent > 0 && percent < SLIPPAGE_MIN_DISPLAY_PERCENT) {
+		return `<${formatNumber(SLIPPAGE_MIN_DISPLAY_PERCENT, 4)}%`;
+	}
+	return `${formatNumber(percent, getSlippagePercentDecimals(percent))}%`;
+}
+
+function getSlippagePercentDecimals(percent: number): number {
+	if (percent >= 0.1) return 2;
+	if (percent >= 0.01) return 3;
+	return 4;
 }
 
 /**

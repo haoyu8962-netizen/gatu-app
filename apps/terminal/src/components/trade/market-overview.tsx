@@ -1,41 +1,83 @@
 import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, CheckIcon, CopyIcon, FireIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { type ReactNode, useEffect, useState } from "react";
+import {
+	type FundingPeriodRates,
+	get24hChange,
+	get24hPriceChange,
+	getFundingPeriodRates,
+	getMarketCapUsd,
+	getOiUsd,
+} from "@/domain/market";
+import {
+	isLiveMarkPriceReady,
+	LIVE_MARK_MAX_STALE_MS,
+	resolveActiveMarketPrice,
+	selectMarketHeadlinePrice,
+} from "@/domain/trade/market-price";
+import { useMarketPriceFlash } from "@/hooks/trade/use-market-price-flash";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
+import {
+	formatClockDuration,
+	formatNumber,
+	formatPercent,
+	formatQuoteAmount,
+	formatUSD,
+	shortenAddress,
+} from "@/lib/format";
 import {
 	getExplorerTokenUrl,
-	type SpotMarketInfo,
+	getMarketApiCoin,
+	getSpotMarketApiCoin,
 	type UnifiedMarketInfo,
+	useHyperliquid,
+	useMarketsInfo,
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { toBig } from "@/lib/trade/numbers";
-import { getValueColorClass } from "@/lib/ui/value-color";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { type Numeric, toBig } from "@/lib/trade/numbers";
+import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
 
-function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
-	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+type MarketOverviewStatId =
+	| "price"
+	| "oracle"
+	| "change24h"
+	| "volume24h"
+	| "openInterest"
+	| "funding"
+	| "marketCap"
+	| "contract";
 
-	useEffect(() => {
-		const id = setInterval(() => setRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
-		return () => clearInterval(id);
-	}, []);
+const MARKET_OVERVIEW_STAT_WIDTH_CLASS: Record<MarketOverviewStatId, string> = {
+	price: "min-w-[90px]",
+	oracle: "min-w-[90px]",
+	change24h: "min-w-[170px]",
+	volume24h: "min-w-[136px]",
+	openInterest: "min-w-[136px]",
+	funding: "min-w-[128px]",
+	marketCap: "min-w-[136px]",
+	contract: "min-w-[112px]",
+};
 
+const KEYBOARD_SCROLL_REGION_PROPS = { tabIndex: 0 } as const;
+
+function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
+	useNumberFormatRevision();
 	const rows = [
-		{ label: t`7 days`, rate: fundingNum * 24 * 7 },
-		{ label: t`30 days`, rate: fundingNum * 24 * 30 },
-		{ label: t`1 year`, rate: fundingNum * 24 * 365 },
+		{ label: t`7 days`, rate: rates.sevenDays },
+		{ label: t`30 days`, rate: rates.thirtyDays },
+		{ label: t`1 year`, rate: rates.oneYear },
 	];
 
 	return (
-		<div className="min-w-[9rem] space-y-2">
+		<div className="min-w-[9rem] space-y-2 font-market-close">
 			<div className="flex items-center justify-between gap-4">
 				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t`Resets in`}</span>
 				<span className="font-mono text-xs tabular-nums text-fg">{formatClockDuration(remaining)}</span>
@@ -44,7 +86,7 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 				{rows.map(({ label, rate }) => (
 					<div key={label} className="flex items-center justify-between gap-4">
 						<span className="text-2xs text-fg-muted">{label}</span>
-						<span className={cn("text-xs font-medium tabular-nums", getValueColorClass(rate))}>
+						<span className={cn("text-xs font-medium tabular-nums", getMarketValueColorClass(rate))}>
 							{formatPercent(rate, { signDisplay: "exceptZero" })}
 						</span>
 					</div>
@@ -54,8 +96,55 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 	);
 }
 
-function StatDivider() {
-	return <div className="h-3 w-px shrink-0 self-center bg-stroke-weak/30" aria-hidden />;
+function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
+	useNumberFormatRevision();
+	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+	const periodRates = getFundingPeriodRates(fundingRate);
+	const hasFunding = periodRates !== null;
+
+	useEffect(() => {
+		if (!hasFunding) return;
+		const updateRemaining = () => setRemaining(HOUR_MS - (Date.now() % HOUR_MS));
+		updateRemaining();
+		const id = setInterval(updateRemaining, 1000);
+		return () => clearInterval(id);
+	}, [hasFunding]);
+
+	const block = (
+		<span>
+			<StatBlock
+				label={
+					<>
+						{t`FUNDING`} / {t`Resets in`}
+					</>
+				}
+				labelClass="cursor-help border-b border-dashed border-trading-panel-stroke-control"
+				value={
+					fundingRate === null ? (
+						"—"
+					) : (
+						<>
+							<span className={getMarketValueColorClass(fundingRate)}>
+								{formatPercent(fundingRate, {
+									minimumFractionDigits: 4,
+									signDisplay: "exceptZero",
+								})}
+							</span>
+							<span className="ml-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
+						</>
+					)
+				}
+			/>
+		</span>
+	);
+
+	if (!periodRates) return block;
+
+	return (
+		<Tooltip content={<FundingTooltipContent rates={periodRates} remaining={remaining} />} side="bottom">
+			{block}
+		</Tooltip>
+	);
 }
 
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
@@ -67,181 +156,305 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
-	if (market?.kind !== "spot") return null;
-	return (market as SpotMarketInfo).circulatingSupply;
-}
-
-function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
+function formatMarketHeaderPrice(value: string | number | null | undefined, decimals: number): string {
+	return formatNumber(value, {
+		minimumFractionDigits: decimals,
+		maximumFractionDigits: decimals,
+	});
 }
 
 export function MarketOverview() {
+	useNumberFormatRevision();
+	const { env } = useHyperliquid();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
-	const { midPx } = useOrderbookMidPrice(selectedMarketInfo?.name);
-	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
-
+	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
-	const perpCoin = selectedMarketInfo?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(selectedMarketInfo);
+	const { midPx, snapshot: bboSnapshot } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
+	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
-	const { data: perpCtxEvent } = useSubscription(
-		"activeAssetCtx",
-		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
+	const perpCoin = getMarketApiCoin(selectedMarketInfo);
+	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
+
+	const {
+		data: perpCtxEvent,
+		status: perpCtxStatus,
+		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
+	} = useSubscription("activeAssetCtx", { coin: perpCoin }, { enabled: !!perpCoin && !isSpot });
+	const {
+		data: spotCtxEvent,
+		status: spotCtxStatus,
+		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
+	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: !!spotCoin && isSpot });
+	const {
+		data: allMidsEvent,
+		isStale: allMidsIsStale,
+		lastMessageAt: allMidsReceivedAt,
+		status: allMidsStatus,
+	} = useSubscription("allMids", undefined, {
+		enabled: !!perpCoin && isSpot,
+		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
+	});
+
+	const perpPrice = resolveActiveMarketPrice({
+		coin: perpCoin,
+		enabled: !!perpCoin && !isSpot,
+		data: perpCtxEvent,
+		subscriptionStatus: perpCtxStatus,
+		isStale: perpCtxIsStale,
+		lastMessageAt: perpCtxReceivedAt,
+	});
+	const spotPriceSnapshot = resolveActiveMarketPrice({
+		coin: spotCoin,
+		enabled: !!spotCoin && isSpot,
+		data: spotCtxEvent,
+		subscriptionStatus: spotCtxStatus,
+		isStale: spotCtxIsStale,
+		lastMessageAt: spotCtxReceivedAt,
+	});
+	const hasFreshPerpCtx = isLiveMarkPriceReady(perpPrice.status, perpPrice.markPx, perpPrice.receivedAt);
+	const hasFreshSpotCtx = isLiveMarkPriceReady(
+		spotPriceSnapshot.status,
+		spotPriceSnapshot.markPx,
+		spotPriceSnapshot.receivedAt,
 	);
-	const { data: spotCtxEvent } = useSubscription(
-		"activeSpotAssetCtx",
-		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
+	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
+	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
+	const liveCtx = isSpot ? spotCtx : perpCtx;
+	const allMidsCandidate = perpCoin ? allMidsEvent?.mids?.[perpCoin] : undefined;
+	const allMidsPrice = isLiveMarkPriceReady(
+		allMidsStatus === "active" && !allMidsIsStale ? "success" : allMidsStatus === "error" ? "error" : "loading",
+		allMidsCandidate,
+		allMidsReceivedAt,
+	)
+		? allMidsCandidate
+		: undefined;
+	const hasFreshSelectedMark = isLiveMarkPriceReady(
+		selectedMarketInfo?.markPriceStatus ?? "loading",
+		selectedMarketInfo?.markPx,
+		selectedMarketInfo?.markPriceReceivedAt,
 	);
-
-	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
-	const perpCtx = perpCtxEvent?.ctx;
-
+	const fastMarketInfo = selectedMarketInfo?.name ? getMarketByName(selectedMarketInfo.name) : undefined;
+	const hasFreshFastMark =
+		fastMarketInfo?.name === selectedMarketInfo?.name &&
+		isLiveMarkPriceReady(
+			fastMarketInfo?.markPriceStatus ?? "loading",
+			fastMarketInfo?.markPx,
+			fastMarketInfo?.markPriceReceivedAt,
+		);
+	const selectedMarkSample = hasFreshSelectedMark
+		? { receipt: selectedMarketInfo, source: "selectedMarketMark", value: selectedMarketInfo?.markPx }
+		: hasFreshFastMark
+			? { receipt: fastMarketInfo, source: "fastMarketMark", value: fastMarketInfo?.markPx }
+			: { receipt: undefined, source: null, value: undefined };
+	const selectedLiveMark = selectedMarkSample.value;
+	const spotPriceSample = selectMarketHeadlinePrice({
+		bboMidPx: midPx,
+		allMidsPrice,
+		assetCtxMidPx: liveCtx?.midPx,
+	});
+	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
+	const displayPrice = isSpot ? spotPriceSample.value : perpMarkPx;
+	const priceSource = isSpot ? spotPriceSample.source : perpCtx ? "activeAssetCtxMark" : selectedMarkSample.source;
+	const priceReceipt = isSpot
+		? spotPriceSample.source === "bbo"
+			? bboSnapshot
+			: spotPriceSample.source === "allMids"
+				? allMidsEvent
+				: spotPriceSample.source === "assetCtxMid"
+					? spotCtxEvent
+					: undefined
+		: perpCtx
+			? perpCtxEvent
+			: selectedMarkSample.receipt;
+	const marketScope = selectedMarketInfo?.kind === "builderPerp" ? selectedMarketInfo.dex : isSpot ? "spot" : "perp";
+	const priceFlash = useMarketPriceFlash({
+		enabled: !!selectedMarketInfo,
+		identity: `${env}:${marketScope}:${selectedMarketInfo?.name ?? ""}`,
+		receipt: priceReceipt,
+		source: priceSource,
+		value: displayPrice,
+	});
 	const dayNtlVlm = liveCtx?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx;
+	const openInterest = perpCtx?.openInterest;
+	const markPx = perpMarkPx;
 	const funding = perpCtx?.funding;
 
-	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
+	const prevDayForChange = liveCtx?.prevDayPx;
 
-	const fundingNum = toBig(funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(prevDayForChange, midPx);
-	const oiUsd = getOiUsd(perpCtx?.openInterest, perpCtx?.markPx);
+	const fundingRate = toBig(funding)?.toString() ?? null;
+	const change24h = get24hChange(prevDayForChange, displayPrice);
+	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
+	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
-	const spotPrice = isSpot ? (spotCtxEvent?.ctx?.markPx ?? selectedMarketInfo?.markPx ?? midPx) : undefined;
-	const spotCirculatingSupply = isSpot
-		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
-		: null;
+	const spotPrice = isSpot ? (liveCtx?.markPx ?? selectedLiveMark ?? midPx) : undefined;
+	const spotCirculatingSupply = isSpot ? spotCtx?.circulatingSupply : null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
-
-	const heroPrice = midPx != null ? formatUSD(midPx, { compact: false }) : "—";
+	const marketType = isSpot ? "spot" : "perp";
+	const priceDecimals = getTradePriceDecimals(
+		displayPrice ?? selectedLiveMark,
+		selectedMarketInfo?.szDecimals ?? 2,
+		marketType,
+	);
+	const priceText = formatMarketHeaderPrice(displayPrice, priceDecimals);
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
+	const priceChangeText =
+		priceChange24h !== null
+			? formatNumber(priceChange24h, {
+					minimumFractionDigits: priceDecimals,
+					maximumFractionDigits: priceDecimals,
+					signDisplay: "exceptZero",
+				})
+			: "—";
+	const changeText = change24h === null ? "—" : `${priceChangeText} / ${changePct}`;
+	const quoteToken =
+		selectedMarketInfo?.kind === "spot"
+			? (selectedMarketInfo.tokensInfo[1]?.displayName ?? selectedMarketInfo.tokensInfo[1]?.name ?? "USDC")
+			: "USDC";
+	const spotVolumeText =
+		dayNtlVlm != null
+			? formatQuoteAmount(dayNtlVlm, quoteToken, {
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				})
+			: "—";
+	const spotMarketCapText =
+		spotMarketCap != null
+			? formatQuoteAmount(spotMarketCap, quoteToken, {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 0,
+				})
+			: "—";
+	function renderStat(id: MarketOverviewStatId, content: ReactNode) {
+		return (
+			<div key={id} data-market-stat={id} className={cn("shrink-0", MARKET_OVERVIEW_STAT_WIDTH_CLASS[id])}>
+				{content}
+			</div>
+		);
+	}
 
 	return (
-		<div className="flex min-h-0 w-max min-w-0 flex-nowrap items-center gap-0 text-xs">
-			<div className="flex shrink-0 items-center gap-2 border-r border-stroke-weak/35 pr-2.5">
-				<span className="font-sans text-sm font-semibold tabular-nums tracking-tight text-fg">{heroPrice}</span>
-				<div className="flex min-w-0 items-baseline gap-1">
-					<span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-fg-muted">{t`24h`}</span>
-					<span
-						className={cn(
-							"min-w-0 font-sans text-xs font-medium tabular-nums leading-none",
-							change24h === null ? "text-fg-muted" : getValueColorClass(change24h),
+		<section
+			data-market-overview=""
+			aria-label={selectedMarketInfo?.pairName ?? t`Price`}
+			{...KEYBOARD_SCROLL_REGION_PROPS}
+			className="relative w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain font-market-close text-[13px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-stroke-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+		>
+			<div data-market-overview-row="" className="relative flex w-max min-w-full items-center gap-6">
+				{renderStat(
+					"price",
+					<StatBlock
+						label={isSpot ? t`Price` : t`Mark`}
+						value={
+							<span
+								key={priceFlash.sequence}
+								data-direction={priceFlash.direction ?? undefined}
+								data-price-source={priceSource ?? undefined}
+								data-slot="market-overview-price-value"
+								className={cn(priceFlash.direction && "use-color-change")}
+							>
+								{priceText}
+							</span>
+						}
+						valueClass="text-trading-panel-fg"
+					/>,
+				)}
+				{!isSpot && (
+					<>
+						{renderStat(
+							"oracle",
+							<StatBlock label={t`ORACLE`} value={formatMarketHeaderPrice(oraclePx, priceDecimals)} />,
 						)}
-					>
-						{changePct}
-					</span>
-				</div>
-			</div>
-
-			{!isSpot && (
-				<>
-					<StatDivider />
-					<StatBlock layout="inline" label={t`ORACLE`} value={formatUSD(oraclePx)} />
-					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`24H VOL`}
-						value={formatUSD(dayNtlVlm, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
-					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`OPEN INT`}
-						value={formatUSD(oiUsd, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
-					<StatDivider />
-					<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} />} side="bottom">
-						<span>
+						{renderStat(
+							"change24h",
 							<StatBlock
-								layout="inline"
-								label={t`FUNDING`}
-								value={formatPercent(fundingNum, {
-									minimumFractionDigits: 4,
-									signDisplay: "exceptZero",
-								})}
-								valueClass={cn(
-									"underline decoration-dashed underline-offset-2 cursor-pointer",
-									getValueColorClass(fundingNum),
+								label={t({ message: "24h Change", context: "Market overview" })}
+								value={changeText}
+								valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
+							/>,
+						)}
+						{renderStat(
+							"volume24h",
+							<StatBlock
+								label={t({ message: "24H VOL", context: "Market overview" })}
+								value={formatUSD(dayNtlVlm, { compact: false })}
+							/>,
+						)}
+						{renderStat("openInterest", <StatBlock label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />)}
+						{renderStat("funding", <FundingStatBlock fundingRate={fundingRate} />)}
+					</>
+				)}
+				{isSpot && (
+					<>
+						{renderStat(
+							"change24h",
+							<StatBlock
+								label={t({ message: "24h Change", context: "Market overview" })}
+								value={changeText}
+								valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
+							/>,
+						)}
+						{renderStat(
+							"volume24h",
+							<StatBlock label={t({ message: "24H VOL", context: "Market overview" })} value={spotVolumeText} />,
+						)}
+						{renderStat("marketCap", <StatBlock label={t`Market Cap`} value={spotMarketCapText} />)}
+						{renderStat(
+							"contract",
+							<StatBlock
+								label={t`Contract`}
+								value={createSpotTokenContractValue(
+									spotTokenAddress,
+									copiedSpotTokenAddress === spotTokenAddress,
+									copySpotTokenAddress,
 								)}
-								icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
-							/>
-						</span>
-					</Tooltip>
-				</>
-			)}
-			{isSpot && (
-				<>
-					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`24H VOL`}
-						value={formatUSD(dayNtlVlm, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
-					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`Market Cap`}
-						value={formatUSD(spotMarketCap, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
-					<StatDivider />
-					{createSpotTokenInfoInline(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
-				</>
-			)}
-		</div>
+							/>,
+						)}
+					</>
+				)}
+			</div>
+		</section>
 	);
 }
 
-function createSpotTokenInfoInline(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+function createSpotTokenContractValue(address: string | null, copied: boolean, onCopy: (value: string) => void) {
 	function handleCopy() {
 		if (!address) return;
 		onCopy(address);
 	}
 
 	if (!address) {
-		return (
-			<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-				<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
-				<span className="font-sans text-xs font-medium tabular-nums text-fg">—</span>
-			</div>
-		);
+		return "—";
 	}
 
 	return (
-		<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-			<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
+		<span className="flex items-center gap-1 whitespace-nowrap">
 			<a
 				href={getExplorerTokenUrl(address)}
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg transition-colors hover:text-brand"
+				className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-trading-panel-fg transition-colors duration-150 hover:text-trading-panel-muted"
 				aria-label={t`Open token in explorer`}
 			>
 				{shortenAddress(address, 4, 4)}
-				<ArrowSquareOutIcon className="size-2.5 shrink-0 text-brand" aria-hidden="true" />
+				<ArrowSquareOutIcon className="size-3 shrink-0 text-trading-panel-muted" aria-hidden="true" />
 			</a>
 			<button
 				type="button"
 				onClick={handleCopy}
 				aria-label={copied ? t`Copied` : t`Copy token address`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				className="inline-flex size-5 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+				{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
 			</button>
-		</div>
+		</span>
 	);
+}
+
+function getMarketValueColorClass(value: Numeric): string {
+	const numericValue = toBig(value);
+	if (!numericValue || numericValue.eq(0)) return "text-trading-panel-subtle";
+	return numericValue.lt(0) ? "text-trading-panel-error" : "text-trading-panel-success";
 }

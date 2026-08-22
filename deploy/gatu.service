@@ -16,7 +16,10 @@ WorkingDirectory=/opt/gatu/current
 # into the client bundle at build time and are not read here).
 EnvironmentFile=/opt/gatu/shared/.env.runtime
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node server/index.mjs
+# Canonical releases carry identity markers, one exact capability token, and the
+# guard itself. Markerless releases are the narrowly scoped legacy rollback path.
+# systemd turns each $$ below into the literal $ required by /bin/sh command substitution.
+ExecStart=/bin/sh -ec 'if [ -e .gatu-release-commit ] || [ -e .gatu-release-id ] || [ -e .gatu-release-capabilities ]; then if [ ! -f .gatu-release-commit ] || [ -L .gatu-release-commit ] || [ ! -f .gatu-release-id ] || [ -L .gatu-release-id ] || [ ! -f .gatu-release-capabilities ] || [ -L .gatu-release-capabilities ] || [ ! -f ./referral-uri-guard.cjs ] || [ -L ./referral-uri-guard.cjs ] || [ "$$(/usr/bin/wc -c < .gatu-release-capabilities)" -ne 17 ] || [ "$$(/usr/bin/cat .gatu-release-capabilities)" != "referral-join-v1" ]; then echo "ERROR: identified release is missing the exact referral-join-v1 capability or guard" >&2; exit 1; fi; exec /usr/bin/node --require=./referral-uri-guard.cjs server/index.mjs; fi; exec /usr/bin/node server/index.mjs'
 Restart=on-failure
 RestartSec=3
 

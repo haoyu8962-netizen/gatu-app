@@ -1,97 +1,203 @@
-export type RawBookLevel = { px: string; sz: string; n: number };
+import Big from "big.js";
+import { toBig } from "@/lib/trade/numbers";
+
+export type RawBookLevel = { px: string; sz: string; n?: number };
 
 export type BookLevel = {
-	price: number;
-	size: number;
-	total: number;
+	price: string;
+	size: string;
+	total: string;
+	quoteSize: string;
+	quoteTotal: string;
 };
 
-export type L2BookPriceGroupOption = {
+type L2BookNativePriceGroupSelection = {
+	nSigFigs?: null;
+	mantissa?: never;
+};
+
+type L2BookDecimalPriceGroupSelection = {
+	nSigFigs: 2 | 3 | 4;
+	mantissa?: never;
+};
+
+type L2BookMantissaPriceGroupSelection = {
+	nSigFigs: 5;
+	mantissa?: 2 | 5 | null;
+};
+
+export type L2BookPriceGroupSelection =
+	| L2BookNativePriceGroupSelection
+	| L2BookDecimalPriceGroupSelection
+	| L2BookMantissaPriceGroupSelection;
+
+type L2BookPriceGroupKeyInput = {
+	nSigFigs?: 2 | 3 | 4 | 5 | null;
+	mantissa?: 2 | 5 | null;
+};
+
+export type L2BookPriceGroupOption = L2BookPriceGroupSelection & {
 	key: string;
-	nSigFigs: 2 | 3 | 4 | 5;
-	mantissa?: 2 | 5;
 	tickSize: number;
 	decimals: number;
 	label: string;
 };
 
-export type L2BookPriceGroupSelection = Pick<L2BookPriceGroupOption, "nSigFigs" | "mantissa">;
+export type L2BookSubscriptionParams =
+	| { coin: string; fast?: boolean; nSigFigs?: never; mantissa?: never }
+	| { coin: string; fast?: boolean; nSigFigs: 2 | 3 | 4; mantissa?: never }
+	| { coin: string; fast?: boolean; nSigFigs: 5; mantissa?: 2 | 5 };
 
-export function processLevels(raw: RawBookLevel[] | undefined, limit?: number): BookLevel[] {
+export interface L2BookSubscriptionOptions {
+	fast?: boolean;
+}
+
+export type RawBookSides = readonly [readonly RawBookLevel[], readonly RawBookLevel[]];
+
+export interface RawSpreadInfoOptions {
+	bboMid?: string | null;
+	eventSpread?: string | null;
+}
+
+export function processLevels(raw: readonly RawBookLevel[] | undefined, limit?: number): BookLevel[] {
 	if (!raw?.length) return [];
 	const levels = limit ? raw.slice(0, limit) : raw;
-	let total = 0;
-	return levels.map(({ px, sz }) => {
-		const price = Number(px);
-		const size = Number(sz);
-		total += size;
-		return { price, size, total };
-	});
-}
+	let total = Big(0);
+	let quoteTotal = Big(0);
+	const processed: BookLevel[] = [];
 
-export function getSpreadInfo(bids: BookLevel[], asks: BookLevel[]) {
-	const bestBid = bids[0]?.price;
-	const bestAsk = asks[0]?.price;
-	if (!bestBid || !bestAsk) return { mid: undefined, spread: undefined, spreadPct: undefined };
-	const mid = (bestBid + bestAsk) / 2;
-	const spread = bestAsk - bestBid;
-	return { mid, spread, spreadPct: (spread / mid) * 100 };
-}
+	for (const { px, sz } of levels) {
+		const price = toBig(px);
+		const size = toBig(sz);
+		if (!price || !size) continue;
 
-export function getTickSizes(price: number | undefined): number[] {
-	if (!price || price <= 0) return [];
-	const magnitude = 10 ** Math.floor(Math.log10(price));
-	const base = magnitude / 10000;
-	return [base, base * 2, base * 5, base * 10, base * 100, base * 1000];
-}
-
-export function aggregateLevels(levels: BookLevel[], tickSize: number, side: "bid" | "ask"): BookLevel[] {
-	if (!tickSize || !levels.length) return levels;
-
-	const round =
-		side === "bid"
-			? (p: number) => Math.floor(p / tickSize) * tickSize
-			: (p: number) => Math.ceil(p / tickSize) * tickSize;
-
-	const grouped = new Map<number, number>();
-	for (const { price, size } of levels) {
-		const key = round(price);
-		grouped.set(key, (grouped.get(key) ?? 0) + size);
+		const quoteSize = price.times(size);
+		total = total.plus(size);
+		quoteTotal = quoteTotal.plus(quoteSize);
+		processed.push({
+			price: px,
+			size: sz,
+			total: total.toString(),
+			quoteSize: quoteSize.toString(),
+			quoteTotal: quoteTotal.toString(),
+		});
 	}
 
-	const sorted = [...grouped.entries()].sort((a, b) => (side === "bid" ? b[0] - a[0] : a[0] - b[0]));
-	let total = 0;
-	return sorted.map(([price, size]) => {
-		total += size;
-		return { price, size, total };
-	});
+	return processed;
 }
 
-export function getMaxTotal(bids: BookLevel[], asks: BookLevel[]): number {
-	const bidMax = bids[bids.length - 1]?.total ?? 0;
-	const askMax = asks[asks.length - 1]?.total ?? 0;
-	return Math.max(bidMax, askMax);
+export function getRawSpreadInfo(levels: RawBookSides | undefined, options: RawSpreadInfoOptions = {}) {
+	const bestBid = toBig(levels?.[0][0]?.px);
+	const bestAsk = toBig(levels?.[1][0]?.px);
+	const bboMid = toBig(options.bboMid);
+	const eventSpread = toBig(options.eventSpread);
+	const visibleBookIsValid = !!bestBid && !!bestAsk && bestBid.gt(0) && bestAsk.gt(0) && bestAsk.gte(bestBid);
+	const mid = bboMid?.gt(0) ? bboMid : visibleBookIsValid ? bestAsk.plus(bestBid).div(2) : null;
+	const spread = eventSpread?.gte(0) ? eventSpread : visibleBookIsValid ? bestAsk.minus(bestBid) : null;
+	if (!mid || !spread) return null;
+
+	return {
+		mid: mid.toString(),
+		spread: spread.toString(),
+		spreadPct: spread.div(mid).times(100).toString(),
+	};
 }
 
-export function getPriceGroupingOptions(mid: number | undefined): L2BookPriceGroupOption[] {
+export function getSideMaxTotal(levels: readonly BookLevel[], showInQuote = false): string {
+	return levels
+		.reduce((max, level) => {
+			const total = toBig(showInQuote ? level.quoteTotal : level.total);
+			return total?.gt(max) ? total : max;
+		}, Big(0))
+		.toString();
+}
+
+export function getDepthPercentage(total: string, maxTotal: string): number {
+	const totalValue = toBig(total);
+	const maxValue = toBig(maxTotal);
+	if (!totalValue || !maxValue || totalValue.lte(0) || maxValue.lte(0)) return 0;
+	return Math.min(100, totalValue.div(maxValue).times(100).toNumber());
+}
+
+export function compareOrderbookValues(previous: string, current: string): -1 | 0 | 1 | null {
+	const previousValue = toBig(previous);
+	const currentValue = toBig(current);
+	if (!previousValue || !currentValue) return null;
+	return currentValue.cmp(previousValue) as -1 | 0 | 1;
+}
+
+export function getOrderbookQuoteDecimals(value: string): number {
+	const quoteValue = toBig(value);
+	if (!quoteValue || quoteValue.eq(0) || quoteValue.abs().gte("0.01")) return 2;
+	const absoluteValue = quoteValue.abs();
+	const significantDigits = Math.min(absoluteValue.c.length, 2);
+	return Math.min(20, Math.max(2, -absoluteValue.e + significantDigits - 1));
+}
+
+export function getSnapshotPriceDecimals(levels: RawBookSides | undefined, fallbackDecimals: number): number {
+	if (!levels) return fallbackDecimals;
+	let decimals = fallbackDecimals;
+	for (const side of levels) {
+		for (const level of side) {
+			const price = toBig(level.px);
+			if (price) decimals = Math.max(decimals, getBigDecimalPlaces(price));
+		}
+	}
+	return decimals;
+}
+
+export function getPriceGroupingOptions(mid: number | undefined, maxDecimals?: number): L2BookPriceGroupOption[] {
 	if (!mid || !Number.isFinite(mid) || mid <= 0) {
 		return [];
 	}
 
 	const integerDigits = Math.floor(Math.log10(mid)) + 1;
-
-	return [
-		buildPriceGroupingOption({ nSigFigs: 5 }, 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, 2 * 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, 5 * 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 4 }, 10 ** (integerDigits - 4)),
-		buildPriceGroupingOption({ nSigFigs: 3 }, 10 ** (integerDigits - 3)),
-		buildPriceGroupingOption({ nSigFigs: 2 }, 10 ** (integerDigits - 2)),
+	const minimumTickSize =
+		maxDecimals !== undefined && Number.isInteger(maxDecimals) && maxDecimals >= 0 ? 10 ** -maxDecimals : 0;
+	const fiveSignificantFigureTick = Math.max(10 ** (integerDigits - 5), minimumTickSize);
+	const nativeTickSize = integerDigits > 5 ? Math.max(1, minimumTickSize) : fiveSignificantFigureTick;
+	const options = [
+		buildPriceGroupingOption({ nSigFigs: null }, nativeTickSize),
+		buildPriceGroupingOption({ nSigFigs: 5 }, fiveSignificantFigureTick),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, Math.max(2 * 10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, Math.max(5 * 10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 4 }, Math.max(10 ** (integerDigits - 4), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 3 }, Math.max(10 ** (integerDigits - 3), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 2 }, Math.max(10 ** (integerDigits - 2), minimumTickSize)),
 	].sort((a, b) => a.tickSize - b.tickSize);
+	const seenTickSizes = new Set<number>();
+
+	return options.filter((option) => {
+		if (seenTickSizes.has(option.tickSize)) return false;
+		seenTickSizes.add(option.tickSize);
+		return true;
+	});
 }
 
-export function getPriceGroupingKey(selection: L2BookPriceGroupSelection | null | undefined): string {
-	return `${selection?.nSigFigs ?? "default"}:${selection?.mantissa ?? "default"}`;
+export function getPriceGroupingKey(selection: L2BookPriceGroupKeyInput | null | undefined): string {
+	if (selection?.nSigFigs == null) return "full";
+	return `${selection.nSigFigs}:${selection.mantissa ?? "default"}`;
+}
+
+export function getL2BookSubscriptionParams(
+	coin: string,
+	selection: L2BookPriceGroupSelection | null | undefined,
+	options: L2BookSubscriptionOptions = {},
+): L2BookSubscriptionParams {
+	if (selection?.nSigFigs == null) return { coin, ...options };
+	if (selection.nSigFigs !== 5) {
+		return { coin, ...options, nSigFigs: selection.nSigFigs };
+	}
+	return {
+		coin,
+		...options,
+		nSigFigs: 5,
+		...(selection.mantissa == null ? {} : { mantissa: selection.mantissa }),
+	};
+}
+
+function getBigDecimalPlaces(value: Big): number {
+	return Math.max(0, value.c.length - value.e - 1);
 }
 
 function buildPriceGroupingOption(selection: L2BookPriceGroupSelection, tickSize: number): L2BookPriceGroupOption {

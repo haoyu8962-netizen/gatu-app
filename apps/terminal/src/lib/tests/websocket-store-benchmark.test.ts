@@ -60,7 +60,6 @@ async function runChurnBenchmark(iterations: number, keySpace: number): Promise<
 			const key = `churn:${i % keySpace}:${i}`;
 			store.getState().acquireSubscription(key, async () => ({
 				unsubscribe: async () => {},
-				failureSignal: new AbortController().signal,
 			}));
 			store.getState().releaseSubscription(key);
 			if (i % 250 === 0) {
@@ -144,19 +143,17 @@ async function runRecoveryBenchmark(iterations: number): Promise<BenchResult> {
 	let peakHeap = memoryUsage();
 	let subscribeCalls = 0;
 	let successfulRecoveries = 0;
-	const controllers: AbortController[] = [];
+	const failureCallbacks: Array<(error: unknown) => void> = [];
 
 	await stabilizeHeap();
 	const heapBefore = memoryUsage();
 	const startedAt = performance.now();
 
-	store.getState().acquireSubscription("recovery:key", async () => {
+	store.getState().acquireSubscription("recovery:key", async (options) => {
 		subscribeCalls += 1;
-		const controller = new AbortController();
-		controllers.push(controller);
+		if (options?.onError) failureCallbacks.push(options.onError);
 		return {
 			unsubscribe: async () => {},
-			failureSignal: controller.signal,
 		};
 	});
 
@@ -165,18 +162,16 @@ async function runRecoveryBenchmark(iterations: number): Promise<BenchResult> {
 	let previousCalls = subscribeCalls;
 
 	for (let i = 0; i < iterations; i += 1) {
-		const current = controllers[controllers.length - 1];
+		const current = failureCallbacks[failureCallbacks.length - 1];
 		if (!current) break;
-		current.abort(new Error(`disconnect-${i}`));
+		current(new Error(`disconnect-${i}`));
 		await waitForMicrotasks();
 
-		store.getState().acquireSubscription("recovery:key", async () => {
+		store.getState().acquireSubscription("recovery:key", async (options) => {
 			subscribeCalls += 1;
-			const controller = new AbortController();
-			controllers.push(controller);
+			if (options?.onError) failureCallbacks.push(options.onError);
 			return {
 				unsubscribe: async () => {},
-				failureSignal: controller.signal,
 			};
 		});
 		store.getState().releaseSubscription("recovery:key");
@@ -223,7 +218,6 @@ async function runDataOverwriteBenchmark(iterations: number): Promise<BenchResul
 
 	store.getState().acquireSubscription(key, async () => ({
 		unsubscribe: async () => {},
-		failureSignal: new AbortController().signal,
 	}));
 
 	await waitForMicrotasks();

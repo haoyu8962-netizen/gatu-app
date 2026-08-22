@@ -1,18 +1,23 @@
-import { getSideLabels, getSizeModeLabel, type SideLabels } from "@/config/ui-text";
+import { getSizeModeLabel } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import {
-	type AccountAbstraction,
 	getAvailableBalanceToken,
 	getSpotBalanceData,
-	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
+import { getExecutedPrice } from "@/domain/trade/order/price";
 import { getMaxSizeForOrderEntry, getOrderValue, getSizeValueFromInput } from "@/domain/trade/order/size";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
+
+export interface MarketOrderSizingInput {
+	referencePx: number;
+	slippageBps: number;
+}
 
 export interface OrderEntryInputs {
 	isConnected: boolean;
@@ -23,11 +28,11 @@ export interface OrderEntryInputs {
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
-	accountAbstraction?: AccountAbstraction | null;
-	/** Max trade sizes in base token: [long, short] */
+	/** Max trade sizes in base token: [buy, sell]. */
 	maxTradeSzs: [number, number] | null;
-	/** Available to trade in quote token: [long, short] */
+	/** Available to trade in quote token: [buy, sell]. */
 	availableToTrade: [number, number] | null;
+	marketOrderSizing: MarketOrderSizingInput | null;
 }
 
 export interface OrderEntryDerived {
@@ -44,7 +49,6 @@ export interface OrderEntryDerived {
 	maxSize: number;
 	sizeValue: number;
 	orderValue: number;
-	sideLabels: SideLabels;
 	sizeModeLabel: string;
 }
 
@@ -61,9 +65,27 @@ function getAvailableBalance(
 	return isBuy ? availableLong : availableShort;
 }
 
+function getMaxSizePrice(
+	inputs: OrderEntryInputs,
+	isSpotMarket: boolean,
+	isBuy: boolean,
+	szDecimals: number,
+): number | string {
+	if (!isSpotMarket || !isBuy || !inputs.marketOrderSizing) return inputs.conversionPrice;
+	if (typeof inputs.market?.assetId !== "number") return 0;
+
+	const executionPrice = getExecutedPrice(
+		"market",
+		"buy",
+		inputs.marketOrderSizing.referencePx,
+		inputs.marketOrderSizing.slippageBps,
+		inputs.conversionPrice,
+	);
+	return formatPriceForOrder(executionPrice, { assetId: inputs.market.assetId, szDecimals });
+}
+
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
-	const isPerpMarket = inputs.market?.kind === "perp" || inputs.market?.kind === "builderPerp";
 	const isBuy = inputs.side === "buy";
 	const capabilities = getMarketCapabilities(inputs.market);
 	const szDecimals = inputs.market?.szDecimals ?? 0;
@@ -73,28 +95,21 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		: { baseToken: "", quoteToken: "" };
 	const spotBalance = getSpotBalanceData(inputs.spotBalances, inputs.market, inputs.spotAvailableAfterMaintenance);
 	const availableBalanceToken = getAvailableBalanceToken(inputs.market, inputs.side);
-	const usesSharedQuoteBalance =
-		isPerpMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
-
-	// activeAssetData.availableToTrade is the exchange's own "can open with this much" figure and
-	// already accounts for unified-account shared collateral plus caps the UI cannot derive. The
-	// shared spot balance (maintenance-adjusted) is only a stand-in while that subscription has no
-	// data yet — letting it override the official figure overstates what an order can actually use.
+	// Perp availability is authoritative per user, coin, and direction. Shared collateral is not a
+	// substitute because it does not include market-specific caps or the current position state.
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
-	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
-	const availableBalance =
-		usesSharedQuoteBalance && inputs.availableToTrade == null ? spotBalance.quoteAvailable : rawAvailableBalance;
+	const availableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
 	const displayAvailableBalance = availableBalance;
+	const maxSizePrice = getMaxSizePrice(inputs, isSpotMarket, isBuy, szDecimals);
 
 	const maxSize = getMaxSizeForOrderEntry({
 		isConnected: inputs.isConnected,
 		isSpotMarket,
 		side: inputs.side,
-		price: inputs.conversionPrice,
+		price: maxSizePrice,
 		spotBalance,
 		szDecimals,
 		maxTradeSzs: inputs.maxTradeSzs,
-		sharedQuoteAvailable: usesSharedQuoteBalance ? spotBalance.quoteAvailable : undefined,
 	});
 
 	const sizeValue = getSizeValueFromInput({
@@ -105,7 +120,6 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	});
 
 	const orderValue = getOrderValue(sizeValue, inputs.conversionPrice);
-	const sideLabels = getSideLabels(isSpotMarket);
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {
@@ -122,7 +136,6 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		maxSize,
 		sizeValue,
 		orderValue,
-		sideLabels,
 		sizeModeLabel,
 	};
 }

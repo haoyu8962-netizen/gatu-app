@@ -24,7 +24,11 @@ export function getPersistedLocale(): LocaleCode {
 function persistLocale(locale: string): boolean {
 	if (typeof window === "undefined") return false;
 	try {
-		window.localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
+		if (locale === defaultLocale) {
+			window.localStorage.removeItem(STORAGE_KEYS.LOCALE);
+		} else {
+			window.localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
+		}
 		return true;
 	} catch {
 		return false;
@@ -62,15 +66,17 @@ let activationSeq = 0;
  * eagerly; every other locale is a lazy chunk loaded here on demand. Throws if the locale has no
  * catalog — callers must handle it (and keep the previous locale).
  *
- * Returns `true` only when THIS call actually activated + persisted `locale`; returns `false` if a
- * newer switch superseded it (rapid switching) or persistence failed.
+ * Returns `true` only when THIS call persisted + activated `locale`; returns `false` if a newer
+ * switch superseded it (rapid switching), and throws if persistence fails.
  */
 export async function dynamicActivate(locale: string): Promise<boolean> {
 	const seq = ++activationSeq;
 	if (i18n.locale === locale) {
-		return persistLocale(locale);
+		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
+		return true;
 	}
 	if (locale === defaultLocale) {
+		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		i18n.loadAndActivate({ locale, messages: enMessages });
 	} else {
 		const loader = catalogImports[`../locales/${locale}/messages.po`];
@@ -79,10 +85,11 @@ export async function dynamicActivate(locale: string): Promise<boolean> {
 		}
 		const { messages } = await loader();
 		if (seq !== activationSeq) return false;
+		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		i18n.loadAndActivate({ locale, messages });
 	}
 	if (seq !== activationSeq) return false;
-	return persistLocale(locale);
+	return true;
 }
 
 // Boot: activate English synchronously (the only eagerly-bundled catalog) so the app always has an

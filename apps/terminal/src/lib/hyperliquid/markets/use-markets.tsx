@@ -8,8 +8,11 @@ import {
 	useInfo,
 } from "@gatu/hl-react";
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { useIsRestoring } from "@tanstack/react-query";
+import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
+import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
+import { resolveMarketMarginTiers } from "@/domain/trade/order/liquidation";
 import {
 	getBuilderPerpAssetId,
 	getBuilderPerpDisplayName,
@@ -19,11 +22,32 @@ import {
 	getSpotAssetId,
 	getSpotDisplayName,
 } from "./helper";
+import {
+	MARKET_CATALOG_DEXS_STALE_TIME_MS,
+	MARKET_CATALOG_META_STALE_TIME_MS,
+	MARKET_CATALOG_REQUEST_TIMEOUT_MS,
+} from "./market-catalog-query";
+import {
+	areAllPerpMetasValid,
+	arePerpDexsValid,
+	createMarketCatalogState,
+	getRetryableMarketCatalogQueries,
+	isSpotMetaValid,
+	type MarketCatalogQueries,
+	type MarketCatalogState,
+} from "./market-catalog-state";
 
-const META_STALE_TIME_MS = 30 * 60 * 1_000;
-const DEXS_STALE_TIME_MS = 5 * 60 * 1_000;
+export interface MarketsWithExactLookup extends Markets {
+	getMarketByName(name: string): UnifiedMarket | undefined;
+}
 
-interface CreateMarketsParams {
+export interface MarketsContextValue extends MarketsWithExactLookup {
+	readonly catalogState: MarketCatalogState;
+	readonly catalogQueries: MarketCatalogQueries;
+	retryMarketCatalog(): Promise<void>;
+}
+
+export interface CreateMarketsParams {
 	perpMeta: MetaResponse | undefined;
 	spotMeta: SpotMetaResponse | undefined;
 	allPerpMetas: MetaResponse[] | undefined;
@@ -32,7 +56,7 @@ interface CreateMarketsParams {
 	error: Error | null;
 }
 
-function createMarkets(params: CreateMarketsParams): Markets {
+export function createMarkets(params: CreateMarketsParams): MarketsWithExactLookup {
 	const { perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error } = params;
 
 	const perpMarkets: PerpMarket[] = [];
@@ -40,11 +64,18 @@ function createMarkets(params: CreateMarketsParams): Markets {
 		for (let i = 0; i < perpMeta.universe.length; i++) {
 			const market = perpMeta.universe[i];
 			if (market.isDelisted) continue;
+			const marginTiers = resolveMarketMarginTiers({
+				marginTableId: market.marginTableId,
+				maxLeverage: market.maxLeverage,
+				marginTables: perpMeta.marginTables,
+			});
 			perpMarkets.push({
 				...market,
+				...(marginTiers ? { marginTiers } : null),
 				kind: "perp",
 				shortName: market.name,
 				pairName: getPerpDisplayName(market.name),
+				routeName: market.name,
 				assetId: getPerpAssetId(i),
 				ctxIndex: i,
 				iconUrl: getIconUrlFromMarketName(market.name, "perp"),
@@ -59,14 +90,17 @@ function createMarkets(params: CreateMarketsParams): Markets {
 			...token,
 			displayName,
 			iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(token) ?? token.name, "spot"),
-			transferDecimals: token.weiDecimals + (token.evmContract?.evm_extra_wei_decimals ?? 0),
+			transferDecimals: token.weiDecimals,
 			isWrapped: displayName !== token.name,
 		};
 	});
+	const spotTokenByIndex = new Map(spotTokens.map((token) => [token.index, token]));
 
 	if (spotMeta?.universe && spotTokens.length > 0) {
+		const quoteTokenIndexes = new Set(spotMeta.universe.map((pair) => pair.tokens[1]));
+
 		for (const pair of spotMeta.universe) {
-			const tokensInfo = pair.tokens.map((idx) => spotTokens[idx]).filter((t): t is SpotToken => !!t);
+			const tokensInfo = pair.tokens.map((idx) => spotTokenByIndex.get(idx)).filter((t): t is SpotToken => !!t);
 
 			if (tokensInfo.length < 2) continue;
 
@@ -78,12 +112,24 @@ function createMarkets(params: CreateMarketsParams): Markets {
 				kind: "spot",
 				shortName: baseToken.displayName,
 				pairName: displayName,
+				routeName: displayName,
 				assetId: getSpotAssetId(pair.index),
 				ctxIndex: pair.index,
 				tokensInfo,
 				szDecimals: baseToken.szDecimals,
+				isStablePair: quoteTokenIndexes.has(pair.tokens[0]),
 				iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(baseToken) ?? baseToken.name, "spot"),
 			});
+		}
+	}
+
+	const spotPairNameCounts = new Map<string, number>();
+	for (const market of spotMarkets) {
+		spotPairNameCounts.set(market.pairName, (spotPairNameCounts.get(market.pairName) ?? 0) + 1);
+	}
+	for (const market of spotMarkets) {
+		if ((spotPairNameCounts.get(market.pairName) ?? 0) > 1) {
+			market.routeName = market.name;
 		}
 	}
 
@@ -95,20 +141,28 @@ function createMarkets(params: CreateMarketsParams): Markets {
 			if (!meta || !dexInfo) continue;
 
 			const dexName = dexInfo.name;
-			const quoteToken = spotTokens[meta.collateralToken];
+			const quoteToken = spotTokenByIndex.get(meta.collateralToken);
 
 			for (let assetIndex = 0; assetIndex < meta.universe.length; assetIndex++) {
 				const asset = meta.universe[assetIndex];
 				if (asset.isDelisted) continue;
+				const marginTiers = resolveMarketMarginTiers({
+					marginTableId: asset.marginTableId,
+					maxLeverage: asset.maxLeverage,
+					marginTables: meta.marginTables,
+				});
 
 				builderPerpMarkets.push({
 					...asset,
+					...(marginTiers ? { marginTiers } : null),
 					kind: "builderPerp",
 					shortName: getBuilderPerpShortName(asset.name),
 					pairName: getBuilderPerpDisplayName(asset.name, quoteToken?.displayName),
+					routeName: asset.name,
 					assetId: getBuilderPerpAssetId(dexIndex, assetIndex),
 					dex: dexName,
 					dexIndex,
+					deployerFeeScale: dexInfo.deployerFeeScale ?? "1",
 					ctxIndex: assetIndex,
 					quoteToken,
 					iconUrl: getIconUrlFromMarketName(asset.name, "builderPerp"),
@@ -127,7 +181,17 @@ function createMarkets(params: CreateMarketsParams): Markets {
 	const tokenByName = new Map<string, SpotToken>();
 	for (const token of spotTokens) {
 		tokenByName.set(token.name, token);
-		if (token.displayName !== token.name) {
+	}
+	const tokenDisplayNameCounts = new Map<string, number>();
+	for (const token of spotTokens) {
+		tokenDisplayNameCounts.set(token.displayName, (tokenDisplayNameCounts.get(token.displayName) ?? 0) + 1);
+	}
+	for (const token of spotTokens) {
+		if (
+			token.displayName !== token.name &&
+			!tokenByName.has(token.displayName) &&
+			tokenDisplayNameCounts.get(token.displayName) === 1
+		) {
 			tokenByName.set(token.displayName, token);
 		}
 	}
@@ -145,6 +209,10 @@ function createMarkets(params: CreateMarketsParams): Markets {
 			return marketByName.get(coin);
 		},
 
+		getMarketByName(name: string): UnifiedMarket | undefined {
+			return marketByName.get(name);
+		},
+
 		getToken(name: string): SpotToken | undefined {
 			return tokenByName.get(name);
 		},
@@ -159,7 +227,7 @@ function createMarkets(params: CreateMarketsParams): Markets {
 	};
 }
 
-function createEmptyMarkets(): Markets {
+function createEmptyMarkets(): MarketsWithExactLookup {
 	return createMarkets({
 		perpMeta: undefined,
 		spotMeta: undefined,
@@ -170,37 +238,55 @@ function createEmptyMarkets(): Markets {
 	});
 }
 
-const MarketsContext = createContext<Markets | null>(null);
+const MarketsContext = createContext<MarketsContextValue | null>(null);
 
 interface Props {
 	children: ReactNode;
 }
 
 export function MarketsProvider({ children }: Props) {
-	const {
-		data: spotMeta,
-		isLoading: spotLoading,
-		error: spotError,
-	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME_MS, persist: true });
+	const isRestoring = useIsRestoring();
+	const spotMetaQuery = useInfo("spotMeta", undefined, {
+		refetchInterval: Infinity,
+		staleTime: MARKET_CATALOG_META_STALE_TIME_MS,
+		gcTime: RQ_CACHE_MAX_AGE_MS,
+		persist: true,
+		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
+		retry: false,
+		retryOnMount: false,
+	});
+	const perpDexsQuery = useInfo("perpDexs", undefined, {
+		refetchInterval: Infinity,
+		staleTime: MARKET_CATALOG_DEXS_STALE_TIME_MS,
+		gcTime: RQ_CACHE_MAX_AGE_MS,
+		persist: true,
+		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
+		retry: false,
+		retryOnMount: false,
+	});
+	const allPerpMetasQuery = useInfo("allPerpMetas", undefined, {
+		refetchInterval: Infinity,
+		staleTime: MARKET_CATALOG_META_STALE_TIME_MS,
+		gcTime: RQ_CACHE_MAX_AGE_MS,
+		persist: true,
+		requestTimeoutMs: MARKET_CATALOG_REQUEST_TIMEOUT_MS,
+		retry: false,
+		retryOnMount: false,
+	});
 
-	const {
-		data: perpDexs,
-		isLoading: dexsLoading,
-		error: dexsError,
-	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: DEXS_STALE_TIME_MS, persist: true });
-
-	const {
-		data: allPerpMetas,
-		isLoading: allMetasLoading,
-		error: allMetasError,
-	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME_MS, persist: true });
+	const { isLoading: spotLoading, error: spotError } = spotMetaQuery;
+	const { isLoading: dexsLoading, error: dexsError } = perpDexsQuery;
+	const { isLoading: allMetasLoading, error: allMetasError } = allPerpMetasQuery;
+	const spotMeta = isSpotMetaValid(spotMetaQuery.data) ? spotMetaQuery.data : undefined;
+	const perpDexs = arePerpDexsValid(perpDexsQuery.data) ? perpDexsQuery.data : undefined;
+	const allPerpMetas = areAllPerpMetasValid(allPerpMetasQuery.data) ? allPerpMetasQuery.data : undefined;
 
 	const perpMeta = allPerpMetas?.[0];
 
 	const isLoading = spotLoading || dexsLoading || allMetasLoading;
 	const error = spotError ?? dexsError ?? allMetasError ?? null;
 
-	const markets = useMemo(
+	const baseMarkets = useMemo(
 		() =>
 			createMarkets({
 				perpMeta,
@@ -212,11 +298,81 @@ export function MarketsProvider({ children }: Props) {
 			}),
 		[perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error],
 	);
+	const catalogQueries = useMemo<MarketCatalogQueries>(
+		() => ({
+			spotMeta: {
+				data: spotMetaQuery.data,
+				status: spotMetaQuery.status,
+				fetchStatus: spotMetaQuery.fetchStatus,
+				error: spotMetaQuery.error,
+				isStale: spotMetaQuery.isStale,
+				refetch: spotMetaQuery.refetch,
+			},
+			perpDexs: {
+				data: perpDexsQuery.data,
+				status: perpDexsQuery.status,
+				fetchStatus: perpDexsQuery.fetchStatus,
+				error: perpDexsQuery.error,
+				isStale: perpDexsQuery.isStale,
+				refetch: perpDexsQuery.refetch,
+			},
+			allPerpMetas: {
+				data: allPerpMetasQuery.data,
+				status: allPerpMetasQuery.status,
+				fetchStatus: allPerpMetasQuery.fetchStatus,
+				error: allPerpMetasQuery.error,
+				isStale: allPerpMetasQuery.isStale,
+				refetch: allPerpMetasQuery.refetch,
+			},
+		}),
+		[
+			spotMetaQuery.data,
+			spotMetaQuery.status,
+			spotMetaQuery.fetchStatus,
+			spotMetaQuery.error,
+			spotMetaQuery.isStale,
+			spotMetaQuery.refetch,
+			perpDexsQuery.data,
+			perpDexsQuery.status,
+			perpDexsQuery.fetchStatus,
+			perpDexsQuery.error,
+			perpDexsQuery.isStale,
+			perpDexsQuery.refetch,
+			allPerpMetasQuery.data,
+			allPerpMetasQuery.status,
+			allPerpMetasQuery.fetchStatus,
+			allPerpMetasQuery.error,
+			allPerpMetasQuery.isStale,
+			allPerpMetasQuery.refetch,
+		],
+	);
+	const catalogState = useMemo(
+		() =>
+			createMarketCatalogState({
+				isRestoring,
+				hasUsableMarkets: baseMarkets.all.length > 0,
+				queries: catalogQueries,
+			}),
+		[isRestoring, baseMarkets.all.length, catalogQueries],
+	);
+	const retryMarketCatalog = useCallback(async () => {
+		const retryableQueries = getRetryableMarketCatalogQueries(catalogQueries);
+		await Promise.all(retryableQueries.map((query) => query.refetch()));
+	}, [catalogQueries]);
+	const markets = useMemo<MarketsContextValue>(
+		() => ({
+			...baseMarkets,
+			catalogState,
+			catalogQueries,
+			retryMarketCatalog,
+		}),
+		[baseMarkets, catalogState, catalogQueries, retryMarketCatalog],
+	);
 
 	return <MarketsContext.Provider value={markets}>{children}</MarketsContext.Provider>;
 }
 
-export function useMarkets(): Markets {
+export function useMarkets(): MarketsContextValue {
 	const context = useContext(MarketsContext);
 
 	if (!context) {

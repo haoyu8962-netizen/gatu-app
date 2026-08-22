@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { initLiFi } from "@/lib/lifi/config";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
 import type { BridgeQuote } from "@/lib/lifi/use-quote";
+import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { AmountEntryScreen } from "./amount-entry-screen";
 import { AssetSelectionScreen } from "./asset-selection-screen";
 import { BridgeErrorScreen } from "./bridge-error-screen";
 import { ConfirmationScreen } from "./confirmation-screen";
 import { ExecutingScreen } from "./executing-screen";
-import { BridgeWalletNotConnected } from "./shared-ui";
+import { BridgeCreationPaused, BridgeWalletMismatch, BridgeWalletNotConnected } from "./shared-ui";
 import { SuccessScreen } from "./success-screen";
 import type { BridgeScreen } from "./types";
 
@@ -19,16 +21,17 @@ export function BridgeTab() {
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
 	const [usdInput, setUsdInput] = useState("");
 	const [tokenAmount, setTokenAmount] = useState("");
-	const lastQuoteRef = useRef<BridgeQuote | null>(null);
 	const bridge = useBridgeExecutor();
+	const { close: closeDepositModal } = useDepositModalActions();
+	const { continueInBackground, restoreInForeground } = bridge;
 
 	useEffect(() => {
 		initLiFi();
-	}, []);
-
-	if (!hasWalletAccess || !walletAddress) {
-		return <BridgeWalletNotConnected />;
-	}
+		restoreInForeground();
+		return () => {
+			continueInBackground();
+		};
+	}, [continueInBackground, restoreInForeground]);
 
 	function handleTokenSelect(token: BridgeToken) {
 		setSelectedToken(token);
@@ -53,37 +56,59 @@ export function BridgeTab() {
 	}
 
 	async function runBridge(quote: BridgeQuote) {
-		setScreen("executing");
 		const outcome = await bridge.execute(quote);
-		if (outcome === "rejected") setScreen("confirm");
+		if (outcome === "rejected" || outcome === "disabled") setScreen("confirm");
 	}
 
 	function handleConfirm(quote: BridgeQuote) {
-		lastQuoteRef.current = quote;
-		runBridge(quote);
+		void runBridge(quote);
 	}
 
 	function handleRetry() {
-		if (lastQuoteRef.current) runBridge(lastQuoteRef.current);
+		void bridge.retry();
+	}
+
+	function handleExecutionClose() {
+		bridge.continueInBackground();
+		closeDepositModal();
 	}
 
 	function resetToSelect() {
+		if (!bridge.reset()) return;
 		setScreen("select");
 		setSelectedToken(null);
 		setUsdInput("");
 		setTokenAmount("");
-		bridge.reset();
-		lastQuoteRef.current = null;
+	}
+
+	const ownsExistingExecution =
+		bridge.status === "idle" ||
+		(!!walletAddress && !!bridge.sourceAddress && walletAddress.toLowerCase() === bridge.sourceAddress.toLowerCase());
+	if (!ownsExistingExecution) {
+		return <BridgeWalletMismatch />;
 	}
 
 	if (bridge.status === "error") {
-		return <BridgeErrorScreen error={bridge.error ?? "Unknown error"} onRetry={handleRetry} onBack={resetToSelect} />;
+		const retryUnavailableMessage =
+			bridge.retryMode === null && !LIFI_BRIDGE_FEATURES.createNewRoute
+				? "Bridge creation is paused. A route without a submitted source transaction cannot be retried."
+				: null;
+		return (
+			<BridgeErrorScreen
+				error={[bridge.error ?? "Unknown error", bridge.recoveryWarning, retryUnavailableMessage]
+					.filter(Boolean)
+					.join(" ")}
+				onRetry={bridge.retryMode ? handleRetry : undefined}
+				retryMode={bridge.retryMode ?? undefined}
+				onBack={bridge.canAbandon ? resetToSelect : undefined}
+			/>
+		);
 	}
 
 	if (bridge.status === "success" && bridge.receivedAmount) {
 		return (
 			<SuccessScreen
-				address={walletAddress}
+				address={bridge.sourceAddress ?? walletAddress ?? ""}
 				receivedAmount={bridge.receivedAmount}
 				txHash={bridge.txHash}
 				startTime={bridge.startTime}
@@ -95,15 +120,24 @@ export function BridgeTab() {
 		);
 	}
 
-	if (screen === "executing") {
+	if (bridge.status === "executing") {
 		return (
 			<ExecutingScreen
-				address={walletAddress}
+				address={bridge.sourceAddress ?? walletAddress ?? ""}
 				statusText={bridge.statusText}
 				txHash={bridge.txHash}
-				onDone={resetToSelect}
+				onDone={handleExecutionClose}
+				recoveryWarning={bridge.recoveryWarning}
 			/>
 		);
+	}
+
+	if (!hasWalletAccess || !walletAddress) {
+		return <BridgeWalletNotConnected />;
+	}
+
+	if (!LIFI_BRIDGE_FEATURES.createNewRoute) {
+		return <BridgeCreationPaused />;
 	}
 
 	if (screen === "confirm" && selectedToken && tokenAmount) {

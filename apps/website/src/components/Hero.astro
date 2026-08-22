@@ -1,9 +1,9 @@
 ---
-const appUrl = "https://app.hypeterminal.com";
+const appUrl = "https://app.gatu.ai";
 ---
 
 <section class="relative overflow-hidden border-b border-stroke-weaker">
-	<div class="absolute inset-0 terminal-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"></div>
+	<div class="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"></div>
 	<div class="absolute inset-0 glow-radial"></div>
 
 	<div class="relative mx-auto w-full max-w-6xl px-5 sm:px-6 pt-16 pb-20 md:pt-28 md:pb-28">
@@ -13,8 +13,8 @@ const appUrl = "https://app.hypeterminal.com";
 				class="stagger-item press group inline-flex items-center gap-2 rounded-full border border-stroke-weak bg-fill-weaker px-3 py-1 text-2xs text-fg-muted hover:bg-fill-weak hover:border-stroke-weak/60 transition-colors duration-200"
 			>
 				<span class="relative inline-flex">
-					<span class="inline-block h-1.5 w-1.5 rounded-full bg-terminal"></span>
-					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-terminal opacity-75 animate-ping"></span>
+					<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
+					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
 				</span>
 				<span class="uppercase tracking-uppercase">Open source · Live on mainnet</span>
 				<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" class="opacity-60 group-hover:translate-x-0.5 transition">
@@ -22,13 +22,13 @@ const appUrl = "https://app.hypeterminal.com";
 				</svg>
 			</a>
 
-			<h1 class="stagger-item mt-7 md:mt-8 max-w-3xl text-2xl md:text-4xl font-medium leading-[1.05] tracking-display">
+			<h1 class="font-display stagger-item mt-7 md:mt-8 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
 				The open-source terminal<br />
-				<span class="text-fg-subtle">for </span><span class="text-brand">Hyperliquid</span><span class="text-fg-subtle">.</span>
+				<span class="text-fg-subtle">for </span><span class="text-brand-gradient">Hyperliquid</span><span class="text-fg-subtle">.</span>
 			</h1>
 
 			<p class="stagger-item mt-5 md:mt-6 max-w-xl text-sm md:text-base text-fg-muted leading-relaxed">
-				Read the client. Fork it. Run it yourself. Perp, spot, and builder markets in one workspace — pro charts, every order type, and 1–50× leverage on Hyperliquid's WebSocket.
+				Read the client. Fork it. Run it yourself. Crypto, stocks, and indices — perps and spot in one workspace, with pro charts, every order type, and 1–50× leverage on Hyperliquid's WebSocket.
 			</p>
 
 			<div class="stagger-item mt-8 md:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -69,14 +69,14 @@ const appUrl = "https://app.hypeterminal.com";
 							<rect x="2.5" y="3.5" width="7" height="6" rx="1.5"/>
 							<path d="M4 3.5V2.5a2 2 0 0 1 4 0v1"/>
 						</svg>
-						<span>app.hypeterminal.com</span>
+						<span>app.gatu.ai</span>
 					</div>
 				</div>
 
 				<!-- Desktop screenshot (hidden on mobile) -->
 				<img
 					src="/app-desktop.jpeg"
-					alt="HypeTerminal trading interface showing BTC-USDC chart, order book, and trade panel"
+					alt="gatu trading interface showing BTC-USDC chart, order book, and trade panel"
 					class="hidden sm:block w-full h-auto bg-background"
 					loading="eager"
 					width="1600"
@@ -85,7 +85,7 @@ const appUrl = "https://app.hypeterminal.com";
 				<!-- Mobile screenshot (only on small) -->
 				<img
 					src="/app-mobile.jpeg"
-					alt="HypeTerminal mobile view showing BTC-USDC candle chart"
+					alt="gatu mobile view showing BTC-USDC candle chart"
 					class="sm:hidden w-full h-auto bg-background"
 					loading="eager"
 					width="390"
@@ -96,8 +96,8 @@ const appUrl = "https://app.hypeterminal.com";
 			<!-- Floating "CONNECTED" status chip, anchored bottom-left of screenshot -->
 			<div class="absolute -bottom-3 left-4 sm:left-6 hidden sm:inline-flex items-center gap-2 rounded-full border border-stroke-weak bg-surface px-3 py-1.5 text-2xs text-fg-muted shadow-lg">
 				<span class="relative inline-flex">
-					<span class="inline-block h-1.5 w-1.5 rounded-full bg-terminal"></span>
-					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-terminal opacity-75 animate-ping"></span>
+					<span class="inline-block h-1.5 w-1.5 rounded-full bg-live"></span>
+					<span class="absolute inset-0 inline-block h-1.5 w-1.5 rounded-full bg-live opacity-75 animate-ping"></span>
 				</span>
 				<span class="uppercase tracking-uppercase tabular">Connected · 12ms</span>
 			</div>

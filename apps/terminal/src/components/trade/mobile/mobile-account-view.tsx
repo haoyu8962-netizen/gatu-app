@@ -1,30 +1,27 @@
-import { Badge, Button, ButtonIcon, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { Badge, Button, Tooltip } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import {
 	ArrowsLeftRightIcon,
-	CopyIcon,
 	DownloadSimpleIcon,
-	SignOutIcon,
 	UploadSimpleIcon,
 	WalletIcon,
+	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { Skeleton } from "boneyard-js/react";
-import { Suspense, useState } from "react";
-import { HL_ALL_DEXS } from "@/config/app";
-import { UI_TEXT } from "@/config/ui-text";
-import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
-import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
-import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { Suspense, useId, useState } from "react";
+import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
+import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
+import { useAccountOverview } from "@/hooks/trade/use-account-overview";
+import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
+import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
+import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
-import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
-const ACCOUNT_TEXT = UI_TEXT.ACCOUNT_PANEL;
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface MobileAccountViewProps {
@@ -32,266 +29,381 @@ interface MobileAccountViewProps {
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
-	const { address, isConnected, sessionMode } = useWalletSession();
-	const { disconnectWallet } = useDisconnectWallet();
-
-	const selectedBalances = useSelectedDexBalances();
-	const defaultBalances = useDefaultDexBalances();
-	const accountAbstraction = selectedBalances.accountAbstraction;
-	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
-	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable, isLoading } =
-		summaryBalances;
-	const dex = selectedBalances.dex;
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		tokenUsdPrices: allMidsEvent?.mids,
-	});
+	useNumberFormatRevision();
+	const { t } = useLingui();
+	const overviewTitleId = useId();
+	const transferDescriptionId = useId();
+	const transferUnavailableId = useId();
+	const withdrawUnavailableId = useId();
+	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
+	const {
+		accountEquityValue,
+		accountMode,
+		accountModeReady,
+		accountRisk,
+		crossLeverage,
+		fundsActionsReady,
+		maintenanceMarginRatio,
+		marginRatioReady,
+		riskSummary,
+		showSpotFundsNotice,
+		snapshotReady: accountSummaryReady,
+		spotFundsAvailable,
+		status: accountOverviewStatus,
+		unrealizedPnlTone,
+		usesSharedQuoteBalance,
+		valuationUnavailable,
+	} = useAccountOverview();
+	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
+	const metricLoading = accountOverviewStatus === "loading";
+	const metricsHaveError = accountOverviewStatus === "error";
+	const metricsAreStale = accountOverviewStatus === "stale";
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
-	const { copied, copy } = useCopyToClipboard();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { tradeRestricted } = useGeoRestriction();
-	const hasWalletAccess = sessionMode === "wallet";
-
-	function handleCopyAddress() {
-		if (!address) return;
-		copy(address);
-	}
-
-	const riskSummary = usesSharedQuoteBalance
-		? getPerpRiskSummary(selectedBalances.allDexClearinghouseStates.map(([, state]) => state))
-		: getPerpRiskSummary([summaryBalances]);
-	const maintenanceMargin = riskSummary.crossMaintenanceMarginUsed;
-	const marginRatio = accountSummary.accountEquity > 0 ? maintenanceMargin / accountSummary.accountEquity : 0;
-	const crossLeverage =
-		accountSummary.accountEquity > 0 ? Math.abs(riskSummary.totalNtlPos) / accountSummary.accountEquity : 0;
-	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
-	const isMainDex = dex === "";
-	const showsSpotBalance = !usesUnifiedBalance && isMainDex;
-	const accountModeLabel =
-		accountSummary.mode === "unified"
-			? t`Unified Account`
-			: accountSummary.mode === "portfolioMargin"
-				? t`Portfolio Margin`
-				: t`Separate Accounts`;
-	const balanceLabel = showsSpotBalance ? t`Spot Available` : ACCOUNT_TEXT.BALANCE_LABEL;
-	const balanceValue = showsSpotBalance ? accountSummary.spotUsdcAvailable : accountSummary.balance;
-	const availableLabel = usesUnifiedBalance ? ACCOUNT_TEXT.AVAILABLE_LABEL : t`Perps Withdrawable`;
-	const equityLabel = usesUnifiedBalance ? ACCOUNT_TEXT.EQUITY_LABEL : t`Perps Equity`;
-	const showSpotFundsNotice = showsSpotBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
-	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: fundsActionsReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: !usesSharedQuoteBalance,
+	});
+	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
+	const showBridgeEntry = shouldShowLiFiBridgeTab({
+		isEmbeddedDeposit: false,
+		hasExistingExecution: hasExistingBridgeExecution,
+		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
+	});
+	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
+	const transferDescriptionIds = internalTransferDisabledReason
+		? `${transferDescriptionId} ${transferUnavailableId}`
+		: transferDescriptionId;
+	const depositGeoBlocked =
+		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
+	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
+	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
+	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	if (!isConnected) {
+		const showsEmailDeposit = depositAvailability.path === "sponsored";
 		return (
-			<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
-				<div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-					<div className="size-20 rounded-full bg-surface flex items-center justify-center">
+			<div className={cn("flex h-full min-h-0 flex-col bg-background", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+					<div className="flex size-20 items-center justify-center rounded-full bg-surface">
 						<WalletIcon className="size-10 text-fg-muted" />
 					</div>
-					<div className="text-center space-y-2">
-						<h2 className="text-lg font-semibold">{t`Connect Wallet`}</h2>
-						<p className="text-sm text-fg-muted max-w-xs">
-							{t`Connect your wallet to view your account, positions, and start trading.`}
+					<div className="max-w-xs space-y-2 text-center">
+						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
+						<p className="text-sm text-fg-muted">
+							{showsEmailDeposit
+								? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
+								: t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
-					<Button variant="outline" intent="brand" size="md" onClick={() => setWalletModalOpen(true)}>
-						{t`Connect Wallet`}
+					<Button
+						variant="outline"
+						intent="brand"
+						size="md"
+						disabled={showsEmailDeposit && !depositAvailability.available}
+						onClick={
+							showsEmailDeposit
+								? depositAvailability.available
+									? () => openDepositModal("deposit")
+									: undefined
+								: () => setWalletModalOpen(true)
+						}
+						title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
+					>
+						{showsEmailDeposit
+							? depositAvailability.available
+								? t`Deposit`
+								: depositAvailability.unavailableLabel
+							: t`Connect Wallet`}
 					</Button>
 				</div>
-				<MobileBottomNavSpacer />
-				{walletModalOpen && (
+				{walletModalOpen ? (
 					<Suspense fallback={null}>
 						<WalletModal open onOpenChange={setWalletModalOpen} />
 					</Suspense>
-				)}
+				) : null}
 			</div>
 		);
 	}
 
+	const marginRatioLabel = marginRatioReady
+		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
+		: "—";
+	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
+
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
-			<div className="shrink-0 px-4 py-4 border-b border-stroke-weak/60 bg-surface">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-3">
-						<div className="size-10 rounded-full bg-brand-soft flex items-center justify-center">
-							<span className="text-brand font-bold">{address?.slice(2, 4).toUpperCase()}</span>
+		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
+			<div className="flex min-h-full flex-col gap-3 p-3">
+				{metricsHaveError ? (
+					<div
+						role="alert"
+						className="flex items-center gap-2 rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2 text-xs text-error"
+					>
+						<WarningCircleIcon className="size-4 shrink-0" />
+						<span>{t`Failed to load balances.`}</span>
+					</div>
+				) : null}
+				{metricsAreStale && !metricsHaveError ? (
+					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+						<WarningCircleIcon className="size-4 shrink-0" />
+						<span>
+							{fundsActionsReady
+								? t`Balance data is stale.`
+								: t`Balance data is stale. Actions are temporarily unavailable.`}
+						</span>
+					</output>
+				) : null}
+				{valuationUnavailable && !metricsHaveError && !metricsAreStale ? (
+					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+						<WarningCircleIcon className="size-4 shrink-0" />
+						<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
+					</output>
+				) : null}
+				{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
+				{showsTransferEntry ? (
+					<span id={transferDescriptionId} className="sr-only">
+						{overviewLabels.transferBetweenPerpsAndSpot}
+					</span>
+				) : null}
+				{showsTransferEntry && internalTransferDisabledReason ? (
+					<span id={transferUnavailableId} className="sr-only">
+						{internalTransferDisabledReason}
+					</span>
+				) : null}
+				{showsSecondaryFundsActions && withdrawDisabledReason ? (
+					<span id={withdrawUnavailableId} className="sr-only">
+						{withdrawDisabledReason}
+					</span>
+				) : null}
+
+				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId}>
+					<div className="mb-4 flex items-start justify-between gap-3">
+						<div className="min-w-0">
+							<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
+								{overviewLabels.accountMode} · {overviewLabels.overview}
+							</h2>
+							<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
 						</div>
-						<div>
-							<div className="flex items-center gap-2">
-								<span className="font-mono text-sm">
-									{address?.slice(0, 6)}...{address?.slice(-4)}
-								</span>
-								<ButtonIcon
-									variant="ghost"
-									intent="neutral"
-									size="sm"
-									className="touch-target"
-									onClick={handleCopyAddress}
-									aria-label={t`Copy address`}
-								>
-									<CopyIcon className={cn("size-3.5", copied && "text-success")} />
-								</ButtonIcon>
-							</div>
-							<Badge tone="neutral" size="sm" className="mt-0.5">
-								{accountModeLabel}
+						<div className="flex shrink-0 items-center gap-1.5">
+							<Badge tone="neutral" size="sm">
+								{overviewLabels.accountMode}
 							</Badge>
+							{metricsAreStale && !metricsHaveError ? (
+								<WarningCircleIcon className="size-3.5 text-warning" aria-label={t`Balance data is stale.`} />
+							) : null}
 						</div>
 					</div>
-					<ButtonIcon
-						variant="ghost"
-						intent="error"
-						size="md"
-						className="touch-target"
-						onClick={() => {
-							void disconnectWallet();
-						}}
-						aria-label={t`Disconnect wallet`}
-					>
-						<SignOutIcon className="size-5" />
-					</ButtonIcon>
-				</div>
-			</div>
 
-			<div className="flex-1 min-h-0 overflow-y-auto">
-				<div className="p-2 space-y-4">
-					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-surface">
-						<Skeleton name="account-equity" loading={isLoading}>
-							<div>
-								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{equityLabel}</div>
-								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountSummary.accountEquity)}</div>
+					<div className="space-y-2 pb-4">
+						<MetricRow
+							label={overviewLabels.accountMarginRatio}
+							value={marginRatioLabel}
+							loading={metricLoading}
+							emphasized
+						/>
+						<div
+							role="progressbar"
+							aria-label={overviewLabels.accountMarginRatio}
+							aria-valuemin={0}
+							aria-valuemax={100}
+							aria-valuenow={accountRisk.progressPercent === null ? undefined : Number(accountRisk.progressPercent)}
+							aria-valuetext={marginRatioLabel}
+							className="h-1.5 overflow-hidden rounded-full bg-fill-weak"
+						>
+							{marginRatioReady ? (
 								<div
 									className={cn(
-										"text-sm tabular-nums mt-1.5 font-medium",
-										riskSummary.unrealizedPnl >= 0 ? "text-success" : "text-error",
+										"h-full rounded-full transition-[width] duration-200 motion-reduce:transition-none",
+										accountRisk.tone === "danger"
+											? "bg-error"
+											: accountRisk.tone === "warning"
+												? "bg-warning"
+												: "bg-success",
 									)}
-								>
-									{riskSummary.unrealizedPnl >= 0 ? "+" : ""}
-									{formatUSD(riskSummary.unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
-								</div>
-							</div>
-						</Skeleton>
-					</div>
-
-					<div className="grid grid-cols-2 gap-3">
-						<StatCard label={balanceLabel} value={formatUSD(balanceValue)} isLoading={isLoading} />
-						<StatCard label={availableLabel} value={formatUSD(accountSummary.available)} isLoading={isLoading} />
-						<StatCard
-							label={ACCOUNT_TEXT.MARGIN_USED_LABEL}
-							value={formatUSD(accountSummary.perpMarginUsed)}
-							isLoading={isLoading}
-						/>
-						<StatCard
-							label={ACCOUNT_TEXT.MARGIN_RATIO_LABEL}
-							value={formatPercent(marginRatio)}
-							valueClass={marginRatio > 0.8 ? "text-error" : marginRatio > 0.5 ? "text-warning" : ""}
-							isLoading={isLoading}
-						/>
-						<StatCard label={t`Maintenance Margin`} value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
-						<StatCard
-							label={ACCOUNT_TEXT.CROSS_LEVERAGE_LABEL}
-							value={`${crossLeverage.toFixed(2)}x`}
-							isLoading={isLoading}
-						/>
-					</div>
-
-					{showSpotFundsNotice && (
-						<div className="rounded-xs border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning">
-							<div className="tabular-nums">
-								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
-							</div>
-							{hasWalletAccess && (
-								<Button
-									variant="link"
-									intent="brand"
-									size="xs"
-									className="mt-1 h-auto p-0"
-									onClick={() => openTransferModal("toPerp")}
-								>
-									{t`Perps / Spot`}
-								</Button>
-							)}
+									style={{ width: `${accountRisk.progressPercent ?? 0}%` }}
+								/>
+							) : null}
 						</div>
-					)}
+					</div>
 
-					{tradeRestricted || !hasWalletAccess ? (
-						<p className="pt-2 text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
+					<div className="divide-y divide-stroke-weak/60 border-t border-stroke-weak/60">
+						<MetricRow
+							label={overviewLabels.accountValue}
+							value={
+								accountSummaryReady && accountEquityValue !== null
+									? formatUSD(accountEquityValue, { compact: false })
+									: "—"
+							}
+							loading={metricLoading}
+						/>
+						<MetricRow
+							label={overviewLabels.unrealizedPnl}
+							value={
+								accountSummaryReady && riskSummary
+									? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
+									: "—"
+							}
+							valueClassName={
+								unrealizedPnlTone === "positive"
+									? "text-success"
+									: unrealizedPnlTone === "negative"
+										? "text-error"
+										: undefined
+							}
+							loading={metricLoading}
+						/>
+						<MetricRow
+							label={overviewLabels.crossMaintenanceMargin}
+							value={
+								accountSummaryReady && riskSummary
+									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
+									: "—"
+							}
+							loading={metricLoading}
+						/>
+						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} loading={metricLoading} />
+					</div>
+				</section>
+
+				{showSpotFundsNotice ? (
+					<div
+						data-slot="account-spot-funds-notice"
+						className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning"
+					>
+						<div className="tabular-nums">
+							{overviewLabels.availableFundsInSpot}:{" "}
+							{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
+						</div>
+						{hasWalletAccess ? (
+							<Button
+								variant="link"
+								intent="brand"
+								size="xs"
+								className="mt-1 h-auto p-0"
+								disabled={!fundsActionAvailability.internalTransfer.available}
+								focusableWhenDisabled
+								aria-describedby={transferDescriptionIds}
+								title={internalTransferDisabledReason ?? undefined}
+								onClick={
+									fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
+								}
+							>
+								{overviewLabels.perpsSpot}
+							</Button>
+						) : null}
+					</div>
+				) : null}
+
+				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
+					{depositGeoBlocked ? (
+						<p className="text-center text-sm text-fg-muted">{depositAvailability.unavailableReason}</p>
+					) : !showsFundsActions ? (
+						<p className="text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
-						<div className="grid grid-cols-2 gap-2 pt-2">
+						<div className="space-y-2">
+							{depositAvailability.unavailableReason ? (
+								<output className="text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</output>
+							) : null}
 							<Button
-								variant="outline"
-								intent="neutral"
+								variant="filled"
+								intent="brand"
 								size="md"
-								onClick={() => openDepositModal("withdraw")}
-								iconLeft={<UploadSimpleIcon className="size-4" />}
-							>
-								{ACCOUNT_TEXT.WITHDRAW_LABEL}
-							</Button>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="md"
-								onClick={() => openDepositModal("deposit")}
+								disabled={!depositAvailability.available}
+								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+								aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+								title={depositAvailability.unavailableReason ?? undefined}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
+								className="min-h-11 w-full"
 							>
-								{ACCOUNT_TEXT.DEPOSIT_LABEL}
+								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 							</Button>
-							<Tooltip content={internalTransferDisabledReason} side="top">
-								<span className="inline-flex w-full">
-									<Button
-										variant="outline"
-										intent="neutral"
-										size="md"
-										onClick={() => openTransferModal("toPerp")}
-										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-										disabled={!!internalTransferDisabledReason}
-										className="w-full"
-									>
-										{t`Perps / Spot`}
-									</Button>
-								</span>
-							</Tooltip>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="md"
-								onClick={() => openDepositModal("bridge")}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Bridge`}
-							</Button>
+							<div className="grid grid-cols-2 gap-2">
+								<Tooltip content={internalTransferDisabledReason} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="md"
+											onClick={
+												fundsActionAvailability.internalTransfer.available
+													? () => openTransferModal("toPerp")
+													: undefined
+											}
+											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+											disabled={!!internalTransferDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={transferDescriptionIds}
+											className="min-h-11 w-full"
+										>
+											{overviewLabels.perpsSpot}
+										</Button>
+									</span>
+								</Tooltip>
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="md"
+											disabled={!!withdrawDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
+											aria-label={t`Withdraw`}
+											iconLeft={<UploadSimpleIcon className="size-4" />}
+											className="min-h-11 w-full"
+										>
+											{t`Withdraw`}
+										</Button>
+									</span>
+								</Tooltip>
+							</div>
+							{hasWalletAccess && showBridgeEntry ? (
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="md"
+									onClick={() => openDepositModal("bridge")}
+									aria-label={t`Bridge`}
+									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+									className="min-h-11 w-full"
+								>
+									{t`Bridge`}
+								</Button>
+							) : null}
 						</div>
 					)}
 				</div>
 			</div>
-
-			<MobileBottomNavSpacer />
 		</div>
 	);
 }
 
-interface StatCardProps {
+interface MetricRowProps {
+	emphasized?: boolean;
 	label: string;
+	loading: boolean;
 	value: string;
-	valueClass?: string;
-	isLoading?: boolean;
+	valueClassName?: string;
 }
 
-function StatCard({ label, value, valueClass, isLoading }: StatCardProps) {
+function MetricRow({ emphasized = false, label, loading, value, valueClassName }: MetricRowProps) {
 	return (
-		<div className="p-3 rounded-xs border border-stroke-weak/40 bg-surface">
-			<div className="text-2xs text-fg-muted mb-1">{label}</div>
-			<Skeleton name="stat-card-value" loading={isLoading ?? false}>
-				<div className={cn("text-base font-semibold tabular-nums", valueClass)}>{value}</div>
+		<div className="flex min-h-11 items-center justify-between gap-4 py-2.5 text-sm">
+			<span className="text-fg-muted">{label}</span>
+			<Skeleton name="mobile-account-overview-metric" loading={loading} fallback={<SkeletonValue className="w-20" />}>
+				<span className={cn("font-medium tabular-nums text-fg", emphasized && "font-semibold", valueClassName)}>
+					{value}
+				</span>
 			</Skeleton>
 		</div>
 	);

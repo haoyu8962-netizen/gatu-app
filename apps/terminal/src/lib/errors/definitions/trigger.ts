@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { isPositive } from "@/lib/trade/numbers";
+import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { createValidator, type Validator } from "../types";
 
@@ -10,6 +10,13 @@ export interface TriggerContext {
 	side: Side;
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
+	positionSize: number | null;
+	sizeValue: number;
+	reduceOnly: boolean;
+}
+
+function isReduceOnlyTrigger(ctx: TriggerContext): boolean {
+	return ctx.usesTriggerPrice && ctx.reduceOnly;
 }
 
 export const stopTriggerAboveMarkValidator: Validator<TriggerContext> = createValidator({
@@ -68,9 +75,50 @@ export const tpTriggerBelowMarkValidator: Validator<TriggerContext> = createVali
 	},
 });
 
+export const triggerPositionExistsValidator: Validator<TriggerContext> = createValidator({
+	id: "trigger-position-exists",
+	code: "TRG_005",
+	category: "trigger",
+	priority: 304,
+	getMessage: () => t`Open a position before placing a trigger order`,
+	validate: (ctx) => !isReduceOnlyTrigger(ctx) || (ctx.positionSize !== null && ctx.positionSize !== 0),
+});
+
+export const triggerPositionDirectionValidator: Validator<TriggerContext> = createValidator({
+	id: "trigger-position-direction",
+	code: "TRG_006",
+	category: "trigger",
+	priority: 305,
+	getMessage: () => t`Trigger order must reduce your current position`,
+	validate: (ctx) => {
+		if (!isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize === 0) return true;
+		return ctx.side === "sell" ? ctx.positionSize > 0 : ctx.positionSize < 0;
+	},
+});
+
+export const triggerPositionSizeValidator: Validator<TriggerContext> = createValidator({
+	id: "trigger-position-size",
+	code: "TRG_007",
+	category: "trigger",
+	priority: 306,
+	getMessage: () => t`Trigger size exceeds position size`,
+	validate: (ctx) => {
+		if (!isReduceOnlyTrigger(ctx) || ctx.positionSize === null || ctx.positionSize === 0) return true;
+		const reducesPosition = ctx.side === "sell" ? ctx.positionSize > 0 : ctx.positionSize < 0;
+		if (!reducesPosition) return true;
+		const size = toBig(ctx.sizeValue);
+		const positionSize = toBig(ctx.positionSize)?.abs();
+		if (!size || !positionSize || size.lte(0)) return true;
+		return size.lte(positionSize);
+	},
+});
+
 export const triggerValidators: Validator<TriggerContext>[] = [
 	stopTriggerAboveMarkValidator,
 	stopTriggerBelowMarkValidator,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
+	triggerPositionExistsValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionSizeValidator,
 ];

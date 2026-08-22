@@ -1,16 +1,19 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState, useTransition } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
+import { getReadyItemCount } from "@/domain/trade/position-toolbar";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useHyperliquid, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { toNumber } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
@@ -19,74 +22,247 @@ import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
 import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
+import { type MobilePositionsDisclosureStates, useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
-type TabValue = MobilePositionsTabValue;
+type TabValue = MobilePositionsTabValue | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
+const COUNTED_MOBILE_POSITION_TABS = new Set<TabValue>(["balances", "positions", "orders", "twap"]);
+const MOBILE_TAB_PREFERENCE_DELAY_MS = 120;
+const MOBILE_TAB_EDGE_FADE_WIDTH_PX = 28;
 
 interface Props {
 	className?: string;
 	scrollMode?: MobileDataScrollMode;
+	includeBottomNavSpacer?: boolean;
+	balancesContent?: ReactNode;
+	transfersContent?: ReactNode;
+	emptyDescription?: ReactNode;
+	disclosureStates?: MobilePositionsDisclosureStates;
 }
 
-export function MobilePositionsView({ className, scrollMode = "contained" }: Props) {
-	const { i18n } = useLingui();
+export function MobilePositionsView({
+	className,
+	scrollMode = "contained",
+	includeBottomNavSpacer = true,
+	balancesContent,
+	transfersContent,
+	emptyDescription,
+	disclosureStates,
+}: Props) {
+	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
-	const activeTab = resolveMobilePositionsTab(storedActiveTab);
+	const hasTransfersTab = transfersContent != null;
+	const [pendingActiveTab, setPendingActiveTab] = useState<TabValue | null>(null);
+	const resolvedStoredActiveTab = resolveMobilePositionsTab(storedActiveTab, hasTransfersTab);
+	const activeTab =
+		pendingActiveTab === null ? resolvedStoredActiveTab : resolveMobilePositionsTab(pendingActiveTab, hasTransfersTab);
+	const tabs = [...MOBILE_POSITIONS_TABS, ...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : [])];
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
-	const [isPending, startTransition] = useTransition();
+	const tabScrollRef = useRef<HTMLDivElement>(null);
+	const tabPreferenceTimerRef = useRef<number | null>(null);
+	const pendingTabPreferenceRef = useRef<TabValue | null>(null);
 	const { address, isConnected } = useWalletSession();
-	const { positions, isLoading: isLoadingState } = useUserPositions();
+	const { env } = useHyperliquid();
+	const disclosureIdentity = isConnected && address ? `${env}:${address.toLowerCase()}` : null;
+	const localDisclosureStates = useMobilePositionsDisclosureStates(disclosureIdentity);
+	const activeDisclosureStates =
+		disclosureStates?.identity === disclosureIdentity ? disclosureStates : localDisclosureStates;
+	const {
+		perpSummary,
+		spotBalances,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		hasError: balancesError,
+		isDataStale: balancesStale,
+		isLoading: balancesLoading,
+	} = useDefaultDexBalances();
+	const {
+		positions,
+		isLoading: isLoadingState,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
 	const isPageScroll = scrollMode === "page";
 
-	const { data: ordersEvent, status: ordersStatus } = useSubscription(
+	const {
+		data: ordersEvent,
+		status: ordersStatus,
+		isStale: ordersStale,
+	} = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
+	const {
+		data: twapStatesEvent,
+		status: twapStatesStatus,
+		isStale: twapStatesStale,
+	} = useSubscription(
+		"twapStates",
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
+		{ enabled: isConnected && !!address },
+	);
 	const isLoadingOrders = ordersStatus === "subscribing" || ordersStatus === "idle";
+	const isLoadingTwap = twapStatesStatus === "subscribing" || twapStatesStatus === "idle";
 
 	useEffect(() => {
-		if (storedActiveTab === activeTab) return;
-		setPositionsActiveTab(activeTab);
-	}, [activeTab, setPositionsActiveTab, storedActiveTab]);
+		if (storedActiveTab === activeTab) {
+			pendingTabPreferenceRef.current = null;
+			if (pendingActiveTab !== null) setPendingActiveTab(null);
+			return;
+		}
 
-	const positionsCount = isConnected
-		? positions.reduce((count, entry) => {
-				const size = toNumber(entry.szi);
-				return size ? count + 1 : count;
-			}, 0)
-		: 0;
+		pendingTabPreferenceRef.current = activeTab;
+		const timerId = window.setTimeout(() => {
+			if (pendingTabPreferenceRef.current !== activeTab) return;
+			pendingTabPreferenceRef.current = null;
+			tabPreferenceTimerRef.current = null;
+			setPositionsActiveTab(activeTab);
+			setPendingActiveTab((current) =>
+				current !== null && resolveMobilePositionsTab(current, hasTransfersTab) === activeTab ? null : current,
+			);
+		}, MOBILE_TAB_PREFERENCE_DELAY_MS);
+		tabPreferenceTimerRef.current = timerId;
 
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
+		return () => {
+			window.clearTimeout(timerId);
+			if (tabPreferenceTimerRef.current === timerId) tabPreferenceTimerRef.current = null;
+		};
+	}, [activeTab, hasTransfersTab, pendingActiveTab, setPositionsActiveTab, storedActiveTab]);
+
+	useEffect(() => {
+		function flushPendingTabPreference() {
+			const pendingTab = pendingTabPreferenceRef.current;
+			if (pendingTab === null) return;
+			if (tabPreferenceTimerRef.current !== null) window.clearTimeout(tabPreferenceTimerRef.current);
+			tabPreferenceTimerRef.current = null;
+			pendingTabPreferenceRef.current = null;
+			setPositionsActiveTab(pendingTab);
+		}
+		function handleVisibilityChange() {
+			if (document.visibilityState === "hidden") flushPendingTabPreference();
+		}
+
+		window.addEventListener("pagehide", flushPendingTabPreference);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			window.removeEventListener("pagehide", flushPendingTabPreference);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			flushPendingTabPreference();
+		};
+	}, [setPositionsActiveTab]);
+
+	const positionsCount = getReadyItemCount({
+		isConnected,
+		isReady: hasAllDexsSnapshot && !isLoadingState && !positionsError && !positionsStale,
+		count: positions.reduce((count, entry) => {
+			const size = toBig(entry.szi);
+			return size && !size.eq(0) ? count + 1 : count;
+		}, 0),
+	});
+	const ordersCount = getReadyItemCount({
+		isConnected,
+		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
+		count: openOrders?.length ?? 0,
+	});
+	const twapCount = getReadyItemCount({
+		isConnected,
+		isReady: twapStatesStatus === "active" && !twapStatesStale && twapStatesEvent !== undefined,
+		count: twapStatesEvent?.states?.length ?? 0,
+	});
+	const balancesCount = useMemo(() => {
+		if (!isConnected || balancesError || balancesStale || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
+		let count = 0;
+		if (toBig(perpSummary?.accountValue)?.gt(0)) count++;
+		for (const balance of spotBalances) {
+			if (toBig(balance.total)?.gt(0)) count++;
+		}
+		return count;
+	}, [
+		balancesError,
+		balancesStale,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		isConnected,
+		perpSummary?.accountValue,
+		spotBalances,
+	]);
+
+	useEffect(() => {
+		const scroller = tabScrollRef.current;
+		if (!scroller) return;
+		const scrollContainer: HTMLDivElement = scroller;
+
+		function keepSelectedTabVisible() {
+			const selectedTab = scrollContainer.querySelector<HTMLElement>(`[data-mobile-account-tab="${activeTab}"]`);
+			if (!selectedTab) return;
+
+			const scrollerRect = scrollContainer.getBoundingClientRect();
+			const selectedTabRect = selectedTab.getBoundingClientRect();
+			const visibleRight = scrollerRect.right - MOBILE_TAB_EDGE_FADE_WIDTH_PX;
+			const horizontalDelta =
+				selectedTabRect.left < scrollerRect.left
+					? selectedTabRect.left - scrollerRect.left
+					: selectedTabRect.right > visibleRight
+						? selectedTabRect.right - visibleRight
+						: 0;
+			if (horizontalDelta === 0) return;
+
+			if (typeof scrollContainer.scrollBy === "function") {
+				scrollContainer.scrollBy({ left: horizontalDelta, top: 0, behavior: "auto" });
+			} else {
+				scrollContainer.scrollLeft += horizontalDelta;
+			}
+		}
+
+		keepSelectedTabVisible();
+		if (typeof ResizeObserver === "undefined") return;
+
+		const resizeObserver = new ResizeObserver(keepSelectedTabVisible);
+		resizeObserver.observe(scrollContainer);
+		for (const tab of scrollContainer.querySelectorAll<HTMLElement>("[data-mobile-account-tab]")) {
+			resizeObserver.observe(tab);
+		}
+		return () => resizeObserver.disconnect();
+	}, [activeTab]);
 
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value)));
+		const nextTab = resolveMobilePositionsTab(value, hasTransfersTab);
+		pendingTabPreferenceRef.current = nextTab === storedActiveTab ? null : nextTab;
+		setPendingActiveTab(nextTab === resolvedStoredActiveTab ? null : nextTab);
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
+		if (tabValue === "balances") return balancesCount;
 		if (tabValue === "positions") return positionsCount;
 		if (tabValue === "orders") return ordersCount;
+		if (tabValue === "twap") return twapCount;
 		return null;
 	}
 
 	function isTabLoading(tabValue: TabValue): boolean {
 		if (!isConnected) return false;
+		if (tabValue === "balances") return balancesLoading;
 		if (tabValue === "positions") return isLoadingState;
 		if (tabValue === "orders") return isLoadingOrders;
+		if (tabValue === "twap") return isLoadingTwap;
 		return false;
 	}
 
-	const tabContentClass = cn(
-		isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0",
-		isPending && "opacity-70",
-	);
+	const tabContentClass = cn(isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0");
 
 	return (
-		<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+		<div
+			className={cn(
+				"font-market-close",
+				isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col",
+				className,
+			)}
+		>
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}
@@ -97,61 +273,98 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 						: "flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 				)}
 			>
-				<div className="shrink-0 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="w-full min-w-max justify-between px-1">
-						{MOBILE_POSITIONS_TABS.map((tab) => {
-							const count = getTabCount(tab.value);
-							const loading = isTabLoading(tab.value);
+				<div className="relative min-w-0 shrink-0">
+					<div
+						ref={tabScrollRef}
+						data-testid="mobile-account-tabs-scroll"
+						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					>
+						<TabsList
+							className="h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
+							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
+						>
+							{tabs.map((tab) => {
+								const count = getTabCount(tab.value);
+								const loading = isTabLoading(tab.value);
+								const showCountSlot = isConnected && COUNTED_MOBILE_POSITION_TABS.has(tab.value);
 
-							return (
-								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-3xs leading-7">
-									<span>{i18n._(tab.label)}</span>
-									{loading ? (
-										<Spinner className="size-3 shrink-0" />
-									) : typeof count === "number" && count > 0 ? (
-										<span className="shrink-0">({count})</span>
-									) : null}
-								</TabsTrigger>
-							);
-						})}
-					</TabsList>
+								return (
+									<TabsTrigger
+										key={tab.value}
+										value={tab.value}
+										data-mobile-account-tab={tab.value}
+										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
+									>
+										<span>{_(tab.label)}</span>
+										{showCountSlot ? (
+											<span
+												data-mobile-position-tab-count={tab.value}
+												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
+											>
+												{loading ? (
+													<Spinner className="size-3 shrink-0" />
+												) : typeof count === "number" ? (
+													`(${count})`
+												) : null}
+											</span>
+										) : null}
+									</TabsTrigger>
+								);
+							})}
+						</TabsList>
+					</div>
+					<div
+						data-testid="mobile-account-tabs-fade"
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-r from-transparent to-modal"
+					/>
 				</div>
 				{!isConnected ? (
-					<EmptyState />
+					<EmptyState activeTab={activeTab} description={emptyDescription} />
 				) : (
 					<>
+						<TabsContent value="balances" className={tabContentClass}>
+							{balancesContent}
+						</TabsContent>
 						<TabsContent value="positions" className={tabContentClass}>
-							<MobilePositionsTab scrollMode={scrollMode} />
+							<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
 						</TabsContent>
 						<TabsContent value="orders" className={tabContentClass}>
-							<MobileOrdersTab scrollMode={scrollMode} />
+							<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
 						</TabsContent>
 						<TabsContent value="twap" className={tabContentClass}>
 							<MobileTwapTab scrollMode={scrollMode} />
 						</TabsContent>
 						<TabsContent value="history" className={tabContentClass}>
-							<MobileHistoryTab scrollMode={scrollMode} />
+							<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
 						</TabsContent>
 						<TabsContent value="orders-history" className={tabContentClass}>
-							<MobileOrdersHistoryTab scrollMode={scrollMode} />
+							<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
 						</TabsContent>
 						<TabsContent value="funding" className={tabContentClass}>
-							<MobileFundingTab scrollMode={scrollMode} />
+							<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
 						</TabsContent>
+						{transfersContent != null ? (
+							<TabsContent value="transfers" className={tabContentClass}>
+								{transfersContent}
+							</TabsContent>
+						) : null}
 					</>
 				)}
-				<MobileBottomNavSpacer />
+				{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
 			</Tabs>
 		</div>
 	);
 }
 
-function resolveMobilePositionsTab(value: string): TabValue {
+function resolveMobilePositionsTab(value: string, hasTransfersTab: boolean): TabValue {
+	if (hasTransfersTab && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
 }
 
-function EmptyState() {
+function EmptyState({ activeTab, description }: { activeTab: TabValue; description?: ReactNode }) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
+	const defaultDescription = getDisconnectedDescription(activeTab);
 
 	return (
 		<>
@@ -159,9 +372,9 @@ function EmptyState() {
 				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
 					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
-				<p className="text-xs text-fg-muted max-w-xs text-pretty">{t`Connect wallet to view positions`}</p>
+				<p className="text-xs text-fg-muted max-w-xs text-pretty">{description ?? defaultDescription}</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
-					{t`Connect Wallet`}
+					<Trans>Connect Wallet</Trans>
 				</Button>
 			</div>
 			{walletModalOpen && (
@@ -171,4 +384,15 @@ function EmptyState() {
 			)}
 		</>
 	);
+}
+
+function getDisconnectedDescription(activeTab: TabValue): ReactNode {
+	if (activeTab === "balances") return <Trans>Connect your wallet to view balances.</Trans>;
+	if (activeTab === "orders") return <Trans>Connect your wallet to view open orders.</Trans>;
+	if (activeTab === "twap") return <Trans>Connect your wallet to view TWAP orders.</Trans>;
+	if (activeTab === "history") return <Trans>Connect your wallet to view trade history.</Trans>;
+	if (activeTab === "funding") return <Trans>Connect your wallet to view funding payments.</Trans>;
+	if (activeTab === "orders-history") return <Trans>Connect your wallet to view order history.</Trans>;
+	if (activeTab === "transfers") return <Trans>Connect your wallet to view deposits and withdrawals.</Trans>;
+	return <Trans>Connect your wallet to view positions.</Trans>;
 }

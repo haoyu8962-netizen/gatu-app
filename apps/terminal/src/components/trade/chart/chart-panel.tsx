@@ -1,5 +1,8 @@
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { ClientOnly } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import { resolveChartLocale } from "@/config/chart";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -8,25 +11,37 @@ import { useTheme } from "@/stores/use-global-settings-store";
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
 
 interface Props {
+	active?: boolean;
 	yAxisInside?: boolean;
 }
 
-export function ChartPanel({ yAxisInside = false }: Props) {
+export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
+	const { i18n } = useLingui();
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
+	const lastSelectedMarketRef = useRef(selectedMarket);
+	useEffect(() => {
+		if (selectedMarket) {
+			lastSelectedMarketRef.current = selectedMarket;
+		}
+	}, [selectedMarket]);
+	const chartMarket = selectedMarket ?? lastSelectedMarketRef.current;
 	const chartTheme = theme === "dark" ? "dark" : "light";
+	const chartLocale = resolveChartLocale(i18n.locale);
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
-			{!selectedMarket && <ChartLoadingFallback />}
-			{selectedMarket && (
+			{!chartMarket && <ChartLoadingFallback />}
+			{chartMarket && (
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<TradingViewChart
-							symbol={selectedMarket.name}
-							market={selectedMarket}
+							active={active}
+							symbol={chartMarket.name}
+							market={chartMarket}
 							theme={chartTheme}
+							locale={chartLocale}
 							yAxisInside={yAxisInside}
 						/>
 					</Suspense>
@@ -37,5 +52,9 @@ export function ChartPanel({ yAxisInside = false }: Props) {
 }
 
 function ChartLoadingFallback() {
-	return <div className="h-full w-full animate-pulse bg-surface" />;
+	return (
+		<output aria-live="polite" className="block h-full w-full bg-surface">
+			<span className="sr-only">{t`Loading...`}</span>
+		</output>
+	);
 }

@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useConfig, useHyperliquidStore } from "../provider";
 import { statusKeys } from "../query/keys";
-import { useHyperliquidClients } from "./useClients";
+import { useConfig, useHyperliquidStore, useHyperliquidTransport } from "../transport-provider";
 
 const HTTP_STATUS_INTERVAL_MS = 60_000;
 
@@ -14,7 +13,7 @@ export type ApiStatusResult = {
 
 export function useApiStatus(): ApiStatusResult {
 	const config = useConfig();
-	const { info } = useHyperliquidClients();
+	const { info } = useHyperliquidTransport();
 
 	const {
 		status: httpQueryStatus,

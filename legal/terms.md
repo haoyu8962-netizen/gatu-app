@@ -1,186 +1,421 @@
-# Gatu — Terms of Use
+# Gatu - Terms of Use
 
-**Last Updated:** June 15, 2026
+**Last Updated:** July 20, 2026
 
-These Terms of Use ("Terms") govern your access to and use of the website-hosted user
-interface currently available at app.gatu.ai (the "Interface") and are entered into
-between you and Gatu Corp. ("Company," "we," "us," or "our"). By accepting
-these Terms, connecting a wallet or otherwise using the Interface, you confirm that you
-have read, understand, and agree to be bound by these Terms. If you do not agree, you may
-not access or use the Interface.
+These Terms of Use ("Terms") govern your access to and use of the Gatu website-hosted
+trading interface available at [https://app.gatu.ai](https://app.gatu.ai), together with
+the related features, software, and services that Gatu makes available through that
+interface (collectively, the "Interface"). These Terms form an agreement between you and
+Gatu Corp. ("Gatu," the "Company," "we," "us," or "our").
 
-## 1. Introduction
+Please read these Terms carefully. By visiting or using the Interface, creating or
+accessing an embedded wallet, connecting a wallet, accepting an in-product notice, or
+submitting a transaction through the Interface, you confirm that you understand and agree
+to these Terms. If you do not agree, do not use the Interface.
 
-### 1.1. The Interface
-The Interface is one, but not the exclusive, means of reading from and writing
-transactions to the permissionless Hyperliquid protocol (the "Protocol") that runs on the
-Hyperliquid blockchain ("Chain") and is distinct from the Protocol. The Protocol and the
-Chain are each decentralized, permissionless, and community-driven. We do not own,
-control, operate, or custody the Protocol or the Chain, and we cannot stop, reverse, or
-modify transactions on them. You acknowledge that blockchain transactions are irreversible
-once confirmed. By using the Interface, you acknowledge that you are not buying or selling
-digital assets from us and that your use of the Interface is entirely at your own risk.
+## 1. The Interface
 
-### 1.2. Onchain Transactions
-All transactions are executed on the Chain's decentralized infrastructure through a
-decentralized set of validators. We are not a counterparty, broker, exchange, registered
-securities platform, dealer, or custodian, and we have no involvement in matching,
-executing, clearing, or settling Protocol transactions. You are solely responsible for any
-taxes and recordkeeping relating to your onchain activity.
+### 1.1. Independent Access Software
 
-### 1.3. Non-Custodial Wallet Required
-To use the Interface, you must connect a non-custodial wallet, governed by that provider's
-terms. We have no custody, access to, or control over your keys, seed phrases, or assets.
-You alone control your wallet and private keys. If you lose credentials or sign a malicious
-transaction, we cannot help recover funds.
+The Interface is software that helps users view public blockchain information and prepare,
+sign, and transmit instructions to Hyperliquid and other supported blockchain systems. It
+is only one way to interact with those systems. Gatu is an independent interface provider
+and is not Hyperliquid Corp., the Hyper Foundation, a validator, or a third-party market
+deployer.
 
-### 1.4. Third-Party Services and Content
-The Interface may rely on integrations or links to third-party services or open-source
-software (wallets, RPC providers, data partners, oracles, bridges, cloud infrastructure,
-analytics, etc.), each subject to its own terms. We do not control or endorse these and are
-not responsible for their availability, accuracy, or security.
+### 1.2. Protocol Operations
 
-## 2. Eligibility & Restricted Persons
+Orders, transfers, deposits, withdrawals, liquidations, and other transactions are
+processed by the relevant blockchain, protocol, smart contract, validator set, bridge, or
+third-party service. Gatu does not control consensus, block production, order matching,
+settlement, protocol governance, market parameters, oracle values, or the continued
+operation of any supported network. We cannot cancel, reverse, or amend a transaction after
+it has been accepted by the relevant system.
 
-### 2.1. Age & Capacity
-You must be able to form a binding contract and be at least the age of majority where you
-live, and have full authority to enter into these Terms on behalf of yourself or any entity
-you represent.
+### 1.3. No Brokerage, Exchange, or Custody Service
+
+Gatu does not act as your broker, dealer, investment adviser, clearing agency, exchange,
+bank, money transmitter, fiduciary, or custodian merely because you use the Interface. Gatu
+is not a counterparty to transactions entered through the Interface and does not guarantee
+execution, settlement, liquidity, best price, or best execution.
+
+### 1.4. Third-Party and Permissionless Markets
+
+The Interface may display markets created under permissionless deployment mechanisms,
+including HIP-3 builder-deployed perpetual markets. Such markets are operated or configured
+by independent deployers. Their inclusion may be based on public metadata, onchain activity,
+technical compatibility, or other neutral criteria. Unless expressly stated otherwise,
+Gatu has not audited, approved, endorsed, or verified a market, deployer, token, oracle, or
+related documentation. You must independently evaluate each market before trading.
+
+### 1.5. Wallets and Signing Methods
+
+The Interface may support external wallets and wallets made available through embedded,
+smart-wallet, account-abstraction, or other third-party wallet technology. It may also use
+locally controlled Agent or API Wallet credentials to authorize supported trading actions
+after the relevant master wallet has approved that authorization.
+
+Wallet providers, key-management providers, paymasters, and signing services are third
+parties and may impose separate terms. You are responsible for protecting every device,
+credential, recovery method, wallet, session, and signing authorization associated with
+your use of the Interface. Gatu does not receive your seed phrase through ordinary use and
+cannot guarantee that a lost wallet, credential, local Agent key, or asset can be recovered.
+Disconnecting a wallet from the Interface does not necessarily revoke authorizations that
+exist onchain or within a third-party service.
+
+### 1.6. Third-Party Services
+
+The Interface depends on or may link to third-party software and services, including wallet
+providers, RPC services, bridges, paymasters, indexers, data providers, charting software,
+oracles, cloud infrastructure, and block explorers. Their services may be unavailable,
+delayed, inaccurate, compromised, or changed without notice. Your use of them may be
+governed by separate agreements. Gatu is not responsible for third-party services or
+content.
+
+### 1.7. Regulatory Status
+
+Neither availability of the Interface nor display of a market means that the Interface,
+the underlying protocol, or that market has been licensed, registered, authorized, or
+approved by any governmental or regulatory authority. You must not interpret technical
+access as a statement that your activity is lawful in your jurisdiction.
+
+## 2. Eligibility and Access Restrictions
+
+### 2.1. Age, Capacity, and Authority
+
+You may use the Interface only if you have reached the age of legal majority where you live,
+can enter into a binding agreement, and are legally permitted to use the Interface. If you
+act for an organization, you represent that you have authority to bind it to these Terms.
 
 ### 2.2. Restricted Persons
-The Interface is not developed for and is not available to "Restricted Persons," who are
-strictly prohibited from accessing or using it. "Restricted Persons" include: (a) persons or
-entities who reside in, are located in, are incorporated in, or have a registered office or
-principal place of business in the United States of America, the People's Republic of China, or the Province of Ontario (Canada);
-(b) persons or entities (or any person owned or controlled by them) in jurisdictions subject
-to comprehensive economic and trade sanctions or export control laws, including the Crimea
-region, Cuba, Iran, North Korea, Syria, Myanmar (Burma), Donetsk, Luhansk, or any other
-country to which the United States, the United Kingdom, the European Union, U.N., or any
-similar authority embargoes goods or imposes similar sanctions (collectively, "Restricted
-Territories"); (c) citizens of Restricted Territories, regardless of location; (d) persons or
-entities subject to economic or trade sanctions; and (e) persons or entities
-residing/located/incorporated/with a registered office or principal place of business in any
-other jurisdiction we designate from time to time on the Interface as restricted.
 
-### 2.3. No Circumvention
-You must not use a VPN, proxy, Tor, or similar to circumvent geo-blocks or our eligibility
-rules. By using the Interface you represent and warrant that you are not a Restricted Person
-and are not using the Interface on behalf of any Restricted Person.
+The Interface is not intended for, and may not be used by, a "Restricted Person." A
+Restricted Person includes:
 
-### 2.4. Your Compliance
-You are solely responsible for ensuring your use of the Interface and any onchain activity
-complies with all applicable laws where you are located and subject to regulation (including
-laws regarding spot, synthetic, or derivatives exposure).
+- a person or entity residing, located, incorporated, registered, or principally operating in the United States of America, the People's Republic of China, or the Province of Ontario, Canada;
+- a person or entity in a jurisdiction subject to comprehensive sanctions, embargoes, or export restrictions administered by the United States, United Kingdom, European Union, United Nations, or another authority applicable to Gatu, including Crimea, Cuba, Iran, North Korea, Syria, Myanmar, Donetsk, and Luhansk;
+- a citizen of a comprehensively restricted territory where applicable restrictions follow that person regardless of current location;
+- a person or entity named on, owned by, or controlled by a person on an applicable sanctions or restricted-party list; or
+- a person or entity in another location that Gatu identifies as restricted because access would be unlawful, would require an authorization that has not been obtained, or would expose Gatu or another service provider to unacceptable legal or compliance risk.
 
-## 3. Disclaimers; Assumption of Risk
+### 2.3. No Evasion
 
-### 3.1. "As is."
-The Interface is provided "as is" and "as available" without warranties of any kind, express,
-implied, statutory or otherwise (including merchantability, title, fitness for a purpose,
-non-infringement, accuracy, completeness, reliability, security or uptime). To the fullest
-extent permitted by law, we make no warranty that access will be continuous, uninterrupted,
-timely or secure, error-free, or that information will be accurate, reliable, complete, or
-current. You will have no recourse against us for losses arising from, among others:
-incorrect information or displayed values; blockchain network failures; wallet errors;
-unauthorized access; software errors; Third-Party Service failures; slippage or market
-inefficiencies; malfunction of the Protocol or Chain; or regulatory actions.
+You must not use a virtual private network, proxy, anonymization service, false information,
+or another method to hide your location or identity, bypass a technical restriction, or
+provide access to a Restricted Person. We may use technical or operational controls to
+restrict access, but those controls do not replace your responsibility to comply with these
+Terms and applicable law.
 
-### 3.2. Risks You Accept
-You represent that you are financially and technically sophisticated enough to understand
-the risks of cryptographic and blockchain-based systems. You acknowledge that these markets
-are nascent and highly volatile; that smart-contract transactions auto-execute and are
-irreversible once confirmed; that gas/transaction and Protocol fees are variable; that
-trading with leverage may lead to significant losses including liquidation; and that we do
-not broker orders, route to competing venues, or guarantee best price or best execution.
+### 2.4. Your Legal Compliance
 
-### 3.3. No Advice
-Information on the Interface is informational only and does not constitute investment, legal,
-technical, tax, or other advice. You are solely responsible for your own diligence.
+You are solely responsible for determining whether your use of the Interface and every
+related transaction is permitted where you are located and under laws applicable to you.
+This includes laws concerning digital assets, spot trading, derivatives, leverage,
+commodities, securities, payments, taxes, sanctions, anti-money-laundering obligations, and
+consumer protection.
 
-### 3.4. No Fiduciary Duties
-These Terms do not create fiduciary duties, and any such duties are disclaimed and waived to
-the fullest extent permitted by law.
+### 2.5. Lawful Assets and Activity
+
+You represent that assets used through the Interface were lawfully obtained and are under
+your lawful control. You must not use the Interface for or on behalf of another person in a
+way that violates law, these Terms, or a restriction applicable to that person.
+
+## 3. No Warranties and Assumption of Risk
+
+### 3.1. As-Is Availability
+
+To the fullest extent allowed by law, the Interface is supplied "as is" and "as available."
+Gatu disclaims express, implied, and statutory warranties, including warranties of title,
+merchantability, fitness for a particular purpose, non-infringement, accuracy, security,
+availability, and uninterrupted operation. We do not promise that defects will be corrected
+or that displayed information will always be complete, current, or free from error.
+
+### 3.2. Trading and Market Risk
+
+Digital assets and onchain markets can be volatile, illiquid, manipulated, or unavailable.
+Prices may change quickly. Leverage can magnify losses, and a position may be partially or
+fully liquidated with little or no warning. Funding payments, margin requirements, market
+parameters, and available collateral can change. You may lose the full amount committed to
+a transaction or more where applicable law and protocol rules permit.
+
+### 3.3. Technical and Protocol Risk
+
+You accept risks arising from smart-contract bugs, protocol changes, validator failures,
+network congestion, chain reorganizations, forks, oracle errors, bridge failures, RPC or API
+outages, stale or inconsistent data, wallet defects, paymaster failures, signature errors,
+malware, phishing, compromised devices, cyberattacks, and unauthorized access. A displayed
+balance, price, liquidation estimate, transaction status, chart, or order-book value may be
+delayed or differ from authoritative onchain state.
+
+### 3.4. Bridge, Deposit, and Withdrawal Risk
+
+Deposits, withdrawals, and cross-chain transfers may involve smart contracts, third-party
+bridges, token approvals, destination-chain finality, minimum amounts, fees, and processing
+delays. A transaction shown as submitted or confirmed on one network may not yet be credited
+by another system. Sending an unsupported token, using the wrong network or address, or
+failing to satisfy a protocol minimum can result in permanent loss.
+
+### 3.5. Wallet and Authorization Risk
+
+Embedded wallets, smart wallets, Agent wallets, session keys, and account-abstraction
+features can improve usability but introduce additional software, authorization, recovery,
+and dependency risks. Gas sponsorship or paymaster support may be limited, refused, or
+discontinued. You must verify transaction details and maintain control of the master wallet
+and recovery methods associated with your account.
+
+### 3.6. Permissionless Market Risk
+
+Third-party deployed markets may have limited liquidity, incomplete or inaccurate
+documentation, concentrated control, unusual oracle or settlement design, higher volatility,
+or a greater risk of liquidation and discontinuation. A disclaimer, category label, deployer
+link, or other notice does not constitute due diligence or endorsement by Gatu.
+
+### 3.7. Regulatory and Tax Risk
+
+Laws, regulatory interpretations, and enforcement practices can change and may affect the
+availability, legality, treatment, or value of a transaction or asset. You are responsible
+for obtaining advice and for calculating, reporting, and paying all taxes, duties, or other
+government charges arising from your activity.
 
 ## 4. Prohibited Activities
 
-You agree not to, and not to attempt to, do any of the following:
+You must not engage in, attempt, encourage, or assist any of the following in connection with
+the Interface:
 
-- **4.1.1. Unlawful Conduct** — including laws on market integrity, money laundering,
-  terrorism financing, the unregistered offering of securities or derivatives to retail
-  customers, the use of stolen funds, or other illegal financial activity.
-- **4.1.2. Intellectual Property Infringement.**
-- **4.1.3. Cyberattacks.**
-- **4.1.4. Fraud and Misrepresentation.**
-- **4.1.5. Data Mining or Scraping** — except as expressly permitted by us.
-- **4.1.6. Objectionable Content** — including soliciting anyone under 18, or content that is
-  harmful, abusive, obscene, defamatory, hateful, or otherwise objectionable.
-- **4.1.7. Automated or High-Frequency Abuses** — bots/scripts exceeding reasonable usage,
-  bypassing rate limits, causing denial-of-service, or disrupting the Interface, Protocol, or
-  Chain.
-- **4.1.8. Exploitation of Vulnerabilities** — including leverage or liquidation mechanisms.
-- **4.1.9. Circumvention of Restrictions** — including using VPNs/proxies to conceal location,
-  making false statements about residency/citizenship/compliance, or other evasion.
+- **Intellectual-property infringement:** violating copyright, trademark, patent, privacy, publicity, or other proprietary rights;
+- **Security attacks:** introducing malicious code, phishing, disrupting systems, defeating security controls, obtaining unauthorized access, or causing a denial of service;
+- **Fraud or impersonation:** supplying deceptive information, impersonating another person, misappropriating assets, or using stolen credentials or funds;
+- **Market abuse:** wash trading, spoofing, manipulation, deceptive coordination, misuse of confidential or material non-public information, or another unlawful trading practice;
+- **Restriction evasion:** concealing location or identity, bypassing access controls, or acting for a Restricted Person;
+- **Financial crime:** money laundering, terrorism or proliferation financing, sanctions violations, or another unlawful transfer or use of value;
+- **Exploitation:** abusing an error, vulnerability, liquidation mechanism, oracle, bridge, reward program, or unintended system behavior;
+- **Abusive automation:** using bots, scripts, scraping, or high-frequency requests in a way that violates published limits, degrades the Interface, or interferes with other users;
+- **Unlawful content or conduct:** using the Interface in a way that violates an applicable law, court order, regulation, or legally enforceable right; or
+- **Facilitation:** providing tools, accounts, funds, instructions, or services intended to help another person perform any prohibited activity.
 
-## 5. Programs
+We may restrict Interface access, preserve relevant records, or cooperate with lawful
+requests when we reasonably believe prohibited activity has occurred. This does not imply
+that Gatu monitors or controls all onchain activity.
 
-We may run promotions or programs ("Programs") in our sole discretion, with their own terms
-(which govern on conflict). We may modify, suspend, or discontinue any Program at any time
-without notice or liability. Benefits earned have no cash value unless stated, may be subject
-to conditions, are not guaranteed, and are subject to applicable laws which may restrict
-participation in certain jurisdictions.
+## 5. No Professional Advice
 
-## 6. Modifications; Suspension
+### 5.1. Informational Content
 
-We may add, remove, modify, suspend (including through geo-blocks), or terminate any part or
-all of the Interface, any Program, and any related policy or terms in our sole discretion at
-any time without notice, with no liability. Changes are effective immediately upon posting;
-continued use constitutes acceptance.
+Charts, prices, balances, risk indicators, documentation, market labels, and other content
+provided through the Interface are for general information and transaction preparation.
+They are not investment, financial, legal, tax, accounting, technical, or operational
+advice, and they are not a recommendation to enter, hold, or exit a position.
 
-## 7. Intellectual Property; Feedback
+### 5.2. Independent Verification
 
-We (or our licensors) own all IP rights in the Interface and its "look and feel." We grant
-you a limited, revocable, non-exclusive, non-sublicensable, non-transferable license to
-access and use the Interface per these Terms; no reverse engineering, modification, or
-distribution. You grant us a worldwide, non-exclusive, sublicensable, royalty-free license to
-use content and feedback you provide for our business purposes. DMCA/IP notices:
-support@gatu.ai.
+Information may be incomplete, delayed, or incorrect. You must verify relevant information,
+including wallet addresses, network, asset, amount, order terms, fees, margin, liquidation
+price, and transaction status, before acting. Consult appropriately qualified independent
+professionals when necessary.
 
-## 8. Release; Indemnity; Limitation of Liability
+### 5.3. No Advisory or Fiduciary Relationship
 
-### 8.1. Release
-To the fullest extent permitted by law, you release us from all liability arising from your
-use of the Interface or interactions with the Protocol or Chain.
+Use of the Interface does not create an advisory, agency, partnership, fiduciary, or client
+relationship between you and Gatu. Gatu has no duty to monitor your positions, warn you of a
+market event, update information, or determine whether a transaction is suitable for you.
 
-### 8.2. Indemnity
-You agree to indemnify and hold harmless the Company and its officers, directors, employees,
-contractors, licensors, agents, affiliates, and subsidiaries from claims arising out of your
-use, your violations, prohibited activities, or disputes with third parties.
+## 6. Fees and Transactions
 
-### 8.3. Limitation of Liability
-Under no circumstances will we be liable for any indirect, punitive, incidental, special,
-consequential, or exemplary damages. **In no event will our aggregate liability to you exceed
-US$100.**
+### 6.1. Applicable Fees
 
-## 9. Dispute Resolution; Governing Law
+Use of the Interface may result in builder fees or other Interface-related fees disclosed in
+the transaction flow. You may also incur protocol fees, trading fees, funding payments, gas,
+bridge fees, wallet-provider charges, or other third-party costs. Fees and fee sponsorship
+can change. You are responsible for reviewing and paying all applicable amounts.
 
-Disputes are subject to **binding individual arbitration**; **no class actions**. These Terms
-are governed by the laws of England and Wales, without regard to its conflict-of-laws rules.
-Before filing, email support@gatu.ai with 30 days to resolve informally. Arbitration is
-administered by the London Court of International Arbitration (LCIA) under its rules, seated in
-London, United Kingdom, in English, by a sole arbitrator appointed under the LCIA rules. Claims
-must be brought within 12 months. Small claims may be brought in the small claims court of England
-and Wales. No dispute may be brought in any court located in the United States. We may seek
-injunctive relief to protect our IP or enforce Section 4.
+### 6.2. Transaction Instructions
 
-## 10. Miscellaneous
+You are responsible for all instructions signed by or submitted through your wallet,
+embedded wallet, smart wallet, approved Agent wallet, or active session. Gatu may display an
+estimate or preview, but the signed payload and authoritative onchain or protocol state
+control. Network conditions, slippage, partial fills, rejected orders, and intervening state
+changes can cause the final result to differ from an estimate.
 
-- **10.1. Privacy.** Our Privacy Policy at app.gatu.ai/privacyPolicy is incorporated by
-  reference.
-- **10.2. Assignment.** You may not assign these Terms without our consent; we may freely
-  assign.
-- **10.3. Severability; Waiver.**
-- **10.4. Not Registered with the SEC or Any Other Agency.** We are not registered as a
-  national securities exchange or in any other capacity; we do not broker, execute, or settle
-  trades and do not guarantee best price or best execution.
-- **10.5. Entire Agreement.**
-- **10.6. Notices.** Via the Interface or public communications; contact support@gatu.ai.
+### 6.3. Irreversibility and Recovery
+
+Transactions accepted by a blockchain or decentralized protocol are generally irreversible.
+Gatu does not have unilateral authority to retrieve assets, reverse fills, restore a wallet,
+change a liquidation, or resolve a dispute between protocol participants.
+
+## 7. Interface Availability and Third-Party Dependencies
+
+### 7.1. No Uptime Commitment
+
+The Interface may be slow, unavailable, inaccurate, or interrupted because of maintenance,
+software defects, heavy traffic, device limitations, internet failure, blockchain events,
+third-party outages, security incidents, or circumstances outside Gatu's control. We do not
+promise continuous operation or preservation of local settings, cached data, chart layouts,
+or locally stored Agent credentials.
+
+### 7.2. Suspension and Access Controls
+
+We may limit, suspend, or discontinue all or part of the Interface, a feature, a market
+display, or access from a location when reasonably necessary for security, maintenance,
+legal compliance, third-party requirements, or protection of users and systems. Such action
+does not alter transactions already submitted to an underlying protocol.
+
+### 7.3. Third-Party Links and Materials
+
+Links to deployer documentation, explorers, support resources, or other websites are
+provided for convenience. Gatu does not control their contents and does not guarantee their
+accuracy, legality, security, or continued availability. Accessing a third-party resource is
+at your own risk.
+
+## 8. Programs and Promotions
+
+Gatu may offer promotions, rewards, referrals, competitions, testing programs, or other
+optional initiatives (each, a "Program"). A Program may have additional eligibility rules
+and terms. Those additional terms govern the Program if they conflict with these Terms.
+
+We may change, pause, or end a Program, correct an error, disqualify ineligible activity, or
+cancel a benefit as permitted by law. Unless expressly stated otherwise, a Program benefit
+has no cash value, is not guaranteed, may depend on third-party or onchain conditions, and
+may be unavailable in some jurisdictions.
+
+## 9. Changes to the Interface and These Terms
+
+We may update, replace, add, or remove Interface functionality, supported integrations,
+policies, and these Terms. Revised Terms take effect when posted unless a later date is
+stated. The "Last Updated" date identifies the latest revision. Your continued use after an
+effective revision constitutes acceptance of the revised Terms. If you do not accept a
+revision, stop using the Interface.
+
+## 10. Intellectual Property and Feedback
+
+Gatu and its licensors retain their rights in the Interface, software, branding, and
+original content. Subject to these Terms, Gatu grants you a limited, personal, revocable,
+non-exclusive, non-transferable, and non-sublicensable right to use the Interface for its
+intended purpose.
+
+You may not copy, modify, distribute, sell, license, or reverse engineer protected portions
+of the Interface except where applicable law or an applicable open-source license expressly
+permits it. Open-source components remain subject to their respective licenses. Hyperliquid,
+wallet-provider, deployer, token, and third-party names and marks belong to their respective
+owners.
+
+If you provide feedback, you grant Gatu a worldwide, perpetual, irrevocable, transferable,
+sublicensable, royalty-free right to use it without restriction or compensation. Send
+intellectual-property notices to [support@gatu.ai](mailto:support@gatu.ai).
+
+## 11. Release and Indemnity
+
+### 11.1. Release
+
+To the fullest extent permitted by law, you assume the risks connected with the Interface
+and release Gatu and its officers, directors, employees, contractors, agents, affiliates,
+and service providers from claims arising from your voluntary interaction with supported
+blockchains, protocols, wallets, markets, deployers, and third-party services, except to the
+extent a claim cannot lawfully be released.
+
+### 11.2. Indemnity
+
+You agree to defend, indemnify, and hold harmless Gatu and its officers, directors,
+employees, contractors, agents, affiliates, and subsidiaries from claims, proceedings,
+damages, losses, liabilities, penalties, and reasonable legal costs resulting from:
+
+- your use or misuse of the Interface;
+- a transaction or instruction submitted through a device, wallet, credential, or session under your control;
+- your breach of these Terms or violation of another person's rights;
+- prohibited or unlawful activity by you; or
+- a false or misleading statement made by you in connection with the Interface.
+
+You must reasonably cooperate in the defense of an indemnified matter. Gatu may control the
+defense or settlement of such a matter, and you may not settle it in a way that imposes an
+obligation on an indemnified party without Gatu's prior written approval.
+
+## 12. Limitation of Liability
+
+To the maximum extent permitted by applicable law, Gatu and its officers, directors,
+employees, contractors, agents, affiliates, subsidiaries, and licensors will not be liable
+for lost profits, lost data, lost opportunity, loss of digital assets, trading loss,
+liquidation, business interruption, or any indirect, incidental, special, punitive,
+consequential, or exemplary damages arising from or related to the Interface, even if the
+possibility of such damages was known.
+
+Without limiting the preceding paragraph, Gatu is not responsible for losses caused by
+incorrect or delayed data, user error, wallet compromise, unauthorized signatures,
+blockchain or validator failure, protocol or smart-contract defects, oracle or bridge
+failure, third-party conduct, regulatory action, or suspension of a feature.
+
+To the fullest extent permitted by law, the total aggregate liability of Gatu and the other
+parties identified above for all claims relating to the Interface will not exceed
+**US$100**. Some jurisdictions do not permit particular warranty exclusions or liability
+limitations, so portions of this section may not apply to you.
+
+## 13. Arbitration and Class-Action Waiver
+
+### 13.1. Informal Resolution
+
+Before starting a formal dispute, you must send written notice to
+[support@gatu.ai](mailto:support@gatu.ai) describing your name and contact information, the
+facts and basis of the dispute, and the relief requested. The parties will attempt in good
+faith to resolve the matter for 30 days after receipt.
+
+### 13.2. Individual Arbitration
+
+Except for a matter that must be heard in an eligible small-claims court, you and Gatu agree
+that a dispute arising from these Terms or the Interface will be resolved by binding
+arbitration rather than in court. Arbitration must proceed only on an individual basis. You
+and Gatu waive participation in a class, collective, consolidated, or representative action
+to the extent that waiver is permitted by law.
+
+### 13.3. Governing Law and Procedure
+
+These Terms are governed by the laws of England and Wales, without applying conflict-of-law
+principles. An unresolved dispute will be finally determined under the rules of the London
+Court of International Arbitration (LCIA) by one arbitrator, in English, with the seat of
+arbitration in London, United Kingdom. Each party will bear its own costs unless the
+arbitrator determines otherwise. Neither party may commence a dispute in a court located in
+the United States, except where applicable law does not permit that restriction.
+
+### 13.4. Equitable Relief
+
+Nothing in this section prevents either party from seeking urgent injunctive or equitable
+relief to protect intellectual property, confidential information, system security, or to
+stop prohibited activity where such relief is legally available.
+
+## 14. Miscellaneous
+
+### 14.1. Privacy
+
+Our [Privacy Policy](https://app.gatu.ai/privacy) explains how Gatu handles personal data and
+is incorporated into these Terms by reference.
+
+### 14.2. Entire Agreement
+
+These Terms and any additional terms expressly incorporated into them are the entire
+agreement between you and Gatu concerning the Interface and supersede prior discussions or
+agreements about the same subject.
+
+### 14.3. Assignment
+
+You may not transfer your rights or obligations under these Terms without Gatu's prior
+written consent. Gatu may transfer these Terms, in whole or in part, in connection with a
+reorganization, financing, merger, sale, or transfer of the Interface or related business.
+
+### 14.4. Severability
+
+If a provision is held invalid or unenforceable, it will be interpreted or limited to the
+minimum extent needed to make it enforceable, and the remaining provisions will continue in
+effect.
+
+### 14.5. No Waiver
+
+A failure or delay in enforcing a provision is not a waiver. A waiver is effective only for
+the specific instance in which it is given.
+
+### 14.6. Notices
+
+Gatu may provide notices through the Interface, by email where available, or through other
+reasonable public communication channels. A notice posted through the Interface is
+effective when posted. Legal notices to Gatu may be sent to
+[support@gatu.ai](mailto:support@gatu.ai).
+
+### 14.7. Headings
+
+Section headings are for convenience and do not affect interpretation.

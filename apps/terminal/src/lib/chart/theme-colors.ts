@@ -97,7 +97,7 @@ export function colorToRgba(cssColor: string, alpha: number): string {
 
 export function getChartColors(): ChartColors {
 	return {
-		background: getCssVar("--bg-raised"),
+		background: getCssVar("--bg-base"),
 		foreground: getCssVar("--text-strong"),
 		textSecondary: getCssVar("--text-weak"),
 		textTertiary: getCssVar("--text-weak"),
@@ -119,10 +119,12 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 
 	const gridColor = strokeWeakLayerRgba(colors.border, chartGridAlpha);
 	const crosshairColor = strokeWeakLayerRgba(colors.border, chartCrosshairAlpha);
+	const paneSeparatorColor = strokeWeakLayerRgba(colors.border, chartPaneSeparatorAlpha);
 
 	return {
 		"paneProperties.background": bg,
 		"paneProperties.backgroundType": "solid",
+		"paneProperties.separatorColor": paneSeparatorColor,
 		"paneProperties.vertGridProperties.color": gridColor,
 		"paneProperties.vertGridProperties.style": 1,
 		"paneProperties.horzGridProperties.color": gridColor,
@@ -208,7 +210,7 @@ export function getLoadingScreenColors(): { backgroundColor: string; foregroundC
 	const colors = getChartColors();
 	return {
 		backgroundColor: colorToHex(colors.background),
-		foregroundColor: colorToHex(colors.background),
+		foregroundColor: colorToHex(colors.foreground),
 	};
 }
 
@@ -277,6 +279,6 @@ export function getCustomThemeColors(): CustomThemeColors {
 	};
 }
 
-export function getChartCssUrl(_theme: "light" | "dark"): string {
-	return "/tradingview-theme.css";
+export function getChartCssUrl(theme: "light" | "dark"): string {
+	return theme === "light" ? "/tradingview-theme-light.css" : "/tradingview-theme-dark.css";
 }

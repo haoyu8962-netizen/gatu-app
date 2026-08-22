@@ -1,27 +1,70 @@
+import { useInfo } from "@gatu/hl-react";
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
-import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
-import { PERP_CATEGORIES } from "@/config/markets";
 import { marketSearchConfig } from "@/config/search";
-import { type ExchangeScope, isTokenInCategory, type MarketCategory } from "@/domain/market";
+import type { ExchangeScope } from "@/domain/market";
+import { CRYPTO_MARKET_SECTORS } from "@/domain/market/crypto-taxonomy";
 import { useMarketsInfo } from "@/lib/hyperliquid";
-import { createSearcher } from "@/lib/search";
+import { createSearcher, type SearchConfig } from "@/lib/search";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions } from "@/stores/use-market-store";
+import {
+	createMarketRows,
+	filterMarketRowsByScope,
+	getDefaultMarketSubcategory,
+	getMarketClassificationState,
+	getSpotQuoteSubcategories,
+	type MarketSubcategory,
+} from "./token-selector-categories";
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
 
-export interface Subcategory {
-	value: string;
-	label: string;
-}
+const PERP_ANNOTATIONS_STALE_TIME_MS = 5 * 60 * 1_000;
+
+const TRADITIONAL_FINANCE_SUBCATEGORIES: MarketSubcategory[] = [
+	{ value: "all", label: "All" },
+	{ value: "stocks", label: "Stocks" },
+	{ value: "indices", label: "Indices" },
+	{ value: "commodities", label: "Commodities" },
+	{ value: "fx", label: "FX" },
+	{ value: "preipo", label: "Pre-IPO" },
+];
+
+const CRYPTO_MARKET_SUBCATEGORY_LABELS = {
+	ai: "AI",
+	defi: "Defi",
+	gaming: "Gaming",
+	layer1: "Layer 1",
+	layer2: "Layer 2",
+	meme: "Meme",
+} as const;
+
+const CRYPTO_MARKET_SUBCATEGORIES: MarketSubcategory[] = [
+	{ value: "all", label: "All" },
+	...CRYPTO_MARKET_SECTORS.map((sector) => ({ value: sector, label: CRYPTO_MARKET_SUBCATEGORY_LABELS[sector] })),
+];
+
+const TOKEN_SELECTOR_SEARCH_CONFIG: SearchConfig<MarketRow> = {
+	...marketSearchConfig,
+	fields: {
+		...marketSearchConfig.fields,
+		annotationDisplayName: {
+			extract: (market) => market.annotation?.displayName,
+			weight: 1.8,
+		},
+		annotationKeywords: {
+			extract: (market) => market.annotation?.keywords,
+			weight: 1,
+		},
+	},
+};
 
 export interface UseTokenSelectorOptions {
 	value: string;
 	onValueChange: (value: string, market?: MarketRow) => void;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
-	mobile?: boolean;
 }
 
 export interface UseTokenSelectorReturn {
@@ -29,10 +72,12 @@ export interface UseTokenSelectorReturn {
 	setOpen: (open: boolean) => void;
 	scope: MarketScope;
 	subcategory: string;
-	subcategories: Subcategory[];
+	subcategories: MarketSubcategory[];
 	search: string;
 	setSearch: (search: string) => void;
 	isLoading: boolean;
+	hasClassificationError: boolean;
+	retryClassifications: () => void;
 	isFavorite: (name: string) => boolean;
 	sorting: SortingState;
 	handleSort: (columnId: string) => void;
@@ -42,7 +87,8 @@ export interface UseTokenSelectorReturn {
 	toggleFavorite: (name: string) => void;
 	table: ReturnType<typeof useReactTable<MarketRow>>;
 	rows: Row<MarketRow>[];
-	virtualizer: Virtualizer<HTMLDivElement, Element>;
+	virtualItems: VirtualItem[];
+	virtualTotalSize: number;
 	containerRef: React.RefObject<HTMLDivElement | null>;
 	filteredMarkets: MarketRow[];
 	highlightedIndex: number;
@@ -59,28 +105,13 @@ type MarketsInfo = ReturnType<typeof useMarketsInfo>;
 
 function computeSubcategories(
 	scope: MarketScope,
-	spotMarkets: MarketsInfo["spotMarkets"],
 	builderPerpMarkets: MarketsInfo["builderPerpMarkets"],
-): Subcategory[] {
-	if (scope === "all") return [];
-	if (scope === "perp") return PERP_CATEGORIES;
-
-	if (scope === "spot") {
-		const quoteTokens = new Map<string, string>();
-		for (const market of spotMarkets) {
-			const quoteToken = market.tokensInfo[1];
-			if (quoteToken?.name && !quoteTokens.has(quoteToken.name)) {
-				quoteTokens.set(quoteToken.name, quoteToken.displayName);
-			}
-		}
-		return [
-			{ value: "all", label: "All" },
-			...Array.from(quoteTokens.entries()).map(([name, displayName]) => ({
-				value: name,
-				label: displayName,
-			})),
-		];
-	}
+	spotMarkets: MarketsInfo["spotMarkets"],
+): MarketSubcategory[] {
+	if (scope === "traditional") return TRADITIONAL_FINANCE_SUBCATEGORIES;
+	if (scope === "crypto") return CRYPTO_MARKET_SUBCATEGORIES;
+	if (scope === "perp") return [];
+	if (scope === "spot") return getSpotQuoteSubcategories(spotMarkets);
 
 	if (scope === "hip3") {
 		const dexNames = Object.keys(builderPerpMarkets).filter((k) => k !== "all");
@@ -97,12 +128,15 @@ export function useTokenSelector({
 	onOpenChange,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
+	const initialScope = mapExchangeToMarketScope(exchangeScope);
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-	const [localScope, setLocalScope] = useState<MarketScope>(() => mapExchangeToMarketScope(exchangeScope));
-	const [localSubcategory, setLocalSubcategory] = useState<string>(() => exchangeDex ?? "all");
+	const [localScope, setLocalScope] = useState<MarketScope>(initialScope);
+	const [subcategoryByScope, setSubcategoryByScope] = useState<Partial<Record<MarketScope, string>>>(() => ({
+		[initialScope]: exchangeDex ?? getDefaultMarketSubcategory(initialScope),
+	}));
 	const [search, setSearch] = useState("");
 	const [deferredSearch, setDeferredSearch] = useState("");
-	const [isPending, startTransition] = useTransition();
+	const [isSearchPending, startTransition] = useTransition();
 	const [sorting, setSorting] = useState<SortingState>([{ id: "volume", desc: true }]);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -113,7 +147,6 @@ export function useTokenSelector({
 	const setOpen = onOpenChange ?? setUncontrolledOpen;
 
 	const scope = localScope;
-	const subcategory = localSubcategory;
 
 	function handleSearchChange(value: string) {
 		setSearch(value);
@@ -124,6 +157,14 @@ export function useTokenSelector({
 	}
 
 	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
+	const {
+		data: perpAnnotations,
+		isPending: annotationsPending,
+		isError: annotationsError,
+		refetch: refetchAnnotations,
+	} = useInfo("perpConciseAnnotations", undefined, {
+		staleTime: PERP_ANNOTATIONS_STALE_TIME_MS,
+	});
 
 	const favorites = useFavoriteMarkets();
 	const { toggleFavoriteMarket } = useMarketActions();
@@ -132,37 +173,39 @@ export function useTokenSelector({
 	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
 
 	const subcategories = useMemo(
-		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets),
-		[scope, spotMarkets, builderPerpMarkets],
+		() => computeSubcategories(scope, builderPerpMarkets, spotMarkets),
+		[scope, builderPerpMarkets, spotMarkets],
 	);
+	const requestedSubcategory = subcategoryByScope[scope] ?? getDefaultMarketSubcategory(scope);
+	const subcategory =
+		subcategories.length === 0 || subcategories.some(({ value }) => value === requestedSubcategory)
+			? requestedSubcategory
+			: getDefaultMarketSubcategory(scope);
+	const selectorMarkets = useMemo(() => createMarketRows(markets, perpAnnotations), [markets, perpAnnotations]);
+	const classificationState = getMarketClassificationState(scope, perpAnnotations, {
+		isPending: annotationsPending,
+		isError: annotationsError,
+	});
 
 	useEffect(() => {
-		if (!open) return;
-		setLocalScope(mapExchangeToMarketScope(exchangeScope));
-		setLocalSubcategory(exchangeDex ?? "all");
-		previousExchangeKeyRef.current = exchangeKey;
-	}, [open, exchangeScope, exchangeDex, exchangeKey]);
-
-	useEffect(() => {
-		if (open) return;
 		if (previousExchangeKeyRef.current === exchangeKey) return;
 		previousExchangeKeyRef.current = exchangeKey;
 
-		if (exchangeScope === "all") {
-			setLocalScope("all");
-			setLocalSubcategory("all");
-			return;
-		}
-
-		setLocalScope(mapExchangeToMarketScope(exchangeScope));
-		setLocalSubcategory(exchangeDex ?? "all");
-	}, [open, exchangeScope, exchangeDex, exchangeKey]);
+		const nextScope = mapExchangeToMarketScope(exchangeScope);
+		const nextSubcategory = exchangeDex ?? getDefaultMarketSubcategory(nextScope);
+		setLocalScope(nextScope);
+		setSubcategoryByScope((previous) =>
+			previous[nextScope] === nextSubcategory ? previous : { ...previous, [nextScope]: nextSubcategory },
+		);
+	}, [exchangeScope, exchangeDex, exchangeKey]);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
-		setLocalSubcategory("all");
+		setSubcategoryByScope((previous) =>
+			previous[newScope] ? previous : { ...previous, [newScope]: getDefaultMarketSubcategory(newScope) },
+		);
 		if (open && hasInitializedRef.current) {
-			setHighlightedIndex(0);
+			resetListNavigation();
 		}
 	}
 
@@ -172,30 +215,8 @@ export function useTokenSelector({
 	// reference through so prices update.
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
 	const filteredByScope = useMemo(
-		() =>
-			markets.filter((market) => {
-				if (scope === "perp" && market.kind !== "perp") return false;
-				if (scope === "spot" && market.kind !== "spot") return false;
-				if (scope === "hip3" && market.kind !== "builderPerp") return false;
-
-				if (subcategory === "all") return true;
-
-				if (scope === "perp") {
-					return isTokenInCategory(market.shortName, subcategory as MarketCategory);
-				}
-
-				if (scope === "spot" && market.kind === "spot") {
-					const quoteToken = market.tokensInfo[1]?.name;
-					return quoteToken === subcategory;
-				}
-
-				if (scope === "hip3" && market.kind === "builderPerp") {
-					return market.dex === subcategory;
-				}
-
-				return true;
-			}),
-		[markets, scope, subcategory],
+		() => filterMarketRowsByScope(selectorMarkets, scope, subcategory, favoriteSet, classificationState),
+		[classificationState, selectorMarkets, scope, subcategory, favoriteSet],
 	);
 	const scopeKey = `${scope}|${subcategory}|${filteredByScope.length}|${filteredByScope.map((m) => m.name).join(",")}`;
 	let scopeFilteredMarkets: MarketRow[];
@@ -209,7 +230,10 @@ export function useTokenSelector({
 		scopeFilteredMarkets = filteredByScope;
 	}
 
-	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
+	const searcher = useMemo(
+		() => createSearcher(scopeFilteredMarkets, TOKEN_SELECTOR_SEARCH_CONFIG),
+		[scopeFilteredMarkets],
+	);
 
 	const filteredMarkets = useMemo(() => {
 		if (!deferredSearch) {
@@ -258,6 +282,13 @@ export function useTokenSelector({
 		estimateSize: () => TOKEN_SELECTOR_ROW_HEIGHT_PX,
 		overscan: TOKEN_SELECTOR_OVERSCAN,
 	});
+	const virtualItems = virtualizer.getVirtualItems();
+	const virtualTotalSize = virtualizer.getTotalSize();
+
+	function resetListNavigation() {
+		setHighlightedIndex(0);
+		virtualizer.scrollToIndex(0, { align: "start" });
+	}
 
 	useEffect(() => {
 		if (!open) return;
@@ -351,10 +382,14 @@ export function useTokenSelector({
 	}
 
 	function handleSubcategorySelect(next: string) {
-		setLocalSubcategory(next);
+		setSubcategoryByScope((previous) => ({ ...previous, [scope]: next }));
 		if (open && hasInitializedRef.current) {
-			setHighlightedIndex(0);
+			resetListNavigation();
 		}
+	}
+
+	function retryClassifications() {
+		void refetchAnnotations();
 	}
 
 	return {
@@ -365,7 +400,9 @@ export function useTokenSelector({
 		subcategories,
 		search,
 		setSearch: handleSearchChange,
-		isLoading: open && ((isLoading && markets.length === 0) || isPending),
+		isLoading: open && ((isLoading && markets.length === 0) || isSearchPending || classificationState === "pending"),
+		hasClassificationError: open && classificationState === "error",
+		retryClassifications,
 		isFavorite,
 		sorting,
 		handleSort,
@@ -375,7 +412,8 @@ export function useTokenSelector({
 		toggleFavorite: toggleFavoriteMarket,
 		table,
 		rows,
-		virtualizer,
+		virtualItems,
+		virtualTotalSize,
 		containerRef,
 		filteredMarkets,
 		highlightedIndex,

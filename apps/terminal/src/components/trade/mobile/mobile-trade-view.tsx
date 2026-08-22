@@ -1,143 +1,265 @@
-import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { Button, Tooltip } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
+import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import {
+	type ChangeEvent,
+	type ReactNode,
+	Suspense,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
-import { NumberInput } from "@/components/ui/number-input";
-import { PriceInput } from "@/components/ui/price-input";
+import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
-import { UI_TEXT } from "@/config/ui-text";
-import { get24hChange } from "@/domain/market";
-import { getLiquidationInfo } from "@/domain/trade/order/metrics";
-import { getSliderValue } from "@/domain/trade/order/size";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
+import { get24hChange, getPositionDex } from "@/domain/market";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import {
+	assertEntryOrderExecutionAllowed,
+	assertEntryTwapExecutionAllowed,
+	type EntryOrderExecutionState,
+} from "@/domain/trade/order/entry-execution-guard";
+import {
+	canEstimateProspectiveLiquidationDraft,
+	estimateProspectiveLiquidation,
+} from "@/domain/trade/order/liquidation";
+import { getOrderPrice } from "@/domain/trade/order/price";
+import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
+import { getOrderActionStage } from "@/domain/trade/order-action-stage";
+import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
+import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
+import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
+import { resolveScaleSkewNumber } from "@/domain/trade/orders";
+import { formatTwapPriceInput } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
-import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useBuilderFeeTenthsBps } from "@/hooks/trade/use-builder-fee-config";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-estimate";
+import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
+import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
+import { useLingeringValidation } from "@/hooks/ui/use-lingering-validation";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatDuration, formatNumber, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
-	useAgentRegistration,
 	useAgentStatus,
-	useExchange,
 	useSelectedMarketInfo,
+	useTradingAuthorization,
+	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
+	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
-	isTakerOrderType,
+	isTriggerOrderType,
+	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
+import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
+import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useEstablishConnectionModalActions,
+	useSettingsDialogActions,
+} from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderType,
+	useScaleEnd,
+	useScaleLevels,
+	useScaleSkew,
+	useScaleStart,
 	useSlPrice,
 	useTif,
 	useTpPrice,
 	useTpSlEnabled,
+	useTpSlReturnInvalid,
 	useTriggerPrice,
+	useTwapMinutes,
+	useTwapRandomize,
+	useTwapStopPrice,
+	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
-import { useOrderQueueActions } from "@/stores/use-order-queue-store";
-import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import {
+	getOrderbookActionsStore,
+	getSelectedPriceForMarket,
+	useSelectedPrice,
+} from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { MarginModeModal } from "../tradebox/margin-mode-modal";
-import { OrderToast } from "../tradebox/order-toast";
-import { TpSlSection } from "../tradebox/tp-sl-section";
+import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
+import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
+import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
+import { TradeFormScale } from "../tradebox/trade-form-scale";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
+import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
+import { TradeFormTwap } from "../tradebox/trade-form-twap";
 import { TradeHeader } from "../tradebox/trade-header";
+import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import { MobileTradePriceField } from "./mobile-trade-price-field";
+import { MobileTradeSizeControl } from "./mobile-trade-size-control";
 
-const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
+const ERROR_LINGER_MS = 1500;
+
 interface Props {
+	active?: boolean;
 	className?: string;
 	embedded?: boolean;
+	sizeMode: SizeMode;
+	onSizeModeChange: (sizeMode: SizeMode) => void;
 }
 
-export function MobileTradeView({ className, embedded }: Props) {
-	const { address, isConnected, sessionMode } = useWalletSession();
+export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
+	useNumberFormatRevision();
+	const { t } = useLingui();
+	const validationErrorId = useId();
+	const { address, isConnected } = useWalletSession();
+	const depositAvailability = useDepositAvailability();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
+	const crossMarginSnapshot = useProspectiveCrossMarginAccount(market);
+	const userPositions = useUserPositions();
 	const navigateToMarket = useMarketNavigation();
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
 	}
 
-	const { isReady: isAgentApproved } = useAgentStatus();
-	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
-	const accountModeControl = useAccountAbstractionControl();
-
-	const canApprove = !!walletClient && !!address;
-	const isRegistering =
-		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
-
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
 
-	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
 
 	const orderType = useOrderType();
+	const twapOrder = isTwapOrderType(orderType);
+	const requiresBuilderFee = !twapOrder;
+	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
+	const canApprove = !!walletClient && !!address;
+	const isRegistering =
+		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
+	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
+	const scaleOrder = isScaleOrderType(orderType);
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
+	const tpSlReturnInvalid = useTpSlReturnInvalid();
 	const tpPrice = useTpPrice();
 	const slPrice = useSlPrice();
 	const tif = useTif();
 	const triggerPrice = useTriggerPrice();
+	const scaleStartPriceInput = useScaleStart();
+	const scaleEndPriceInput = useScaleEnd();
+	const scaleLevelsNum = useScaleLevels();
+	const scaleSkewInput = useScaleSkew();
+	const twapMinutesNum = useTwapMinutes();
+	const twapRandomize = useTwapRandomize();
+	const twapTriggerPriceInput = useTwapTriggerPrice();
+	const twapStopPriceInput = useTwapStopPrice();
 	const [sizeInput, setSizeInput] = useState("");
-	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
-	const [reduceOnly, setReduceOnly] = useState(false);
-	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(0);
+	const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
+	const [settingsTab, setSettingsTab] = useState<MobileTradeSettingsTab>("margin");
+	const [marginDialogView, setMarginDialogView] = useState<"margin" | "leverage">("margin");
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { tradeRestricted } = useGeoRestriction();
-
-	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
+	const geoRestriction = useGeoRestriction();
+	const tradeActionsBlocked = geoRestriction.actionsBlocked;
+	const tradeRestricted = geoRestriction.tradeRestricted;
+	const tradingUnavailableReason = !geoRestriction.isResolved
+		? geoRestriction.isError
+			? t`Unable to verify regional availability. Trading is temporarily unavailable.`
+			: t`Checking regional availability. Trading is temporarily unavailable.`
+		: null;
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
-	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
+	const isTriggerOrder = isTriggerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
+	const executionReferencePx = toNumber(market?.midPx) ?? markPx;
+	const markPriceStatus = market?.markPriceStatus ?? "loading";
+	const marketType = market?.kind === "spot" ? "spot" : "perp";
+	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
+	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
+	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const twapTriggerPriceNum = toNumber(twapTriggerPx);
+	const twapStopPriceNum = toNumber(twapStopPx);
+	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
+	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
+	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
+	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder || twapOrder;
+	const { midPx } = useOrderbookMidPrice(
+		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
+	);
+	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const formattedMidForPrefill = getFormattedMidPrice(
+		midReferencePrice,
+		market?.szDecimals,
+		marketType,
+		market?.assetId,
+	);
+	const limitPrefillKey = active && usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
+	const prefilledLimitKeyRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (limitPrefillKey === null) {
+			prefilledLimitKeyRef.current = null;
+			return;
+		}
+		if (prefilledLimitKeyRef.current === limitPrefillKey) return;
+		if (limitPriceInput !== "" || formattedMidForPrefill === undefined) return;
+		prefilledLimitKeyRef.current = limitPrefillKey;
+		setLimitPriceInput(formattedMidForPrefill);
+	}, [limitPrefillKey, limitPriceInput, formattedMidForPrefill]);
 
 	const {
+		accountAbstraction,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		executionAvailability,
 		isSpotMarket,
 		baseToken,
 		quoteToken,
@@ -145,6 +267,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 		szDecimals,
 		availableBalance,
 		isAvailabilityLoading,
+		isAvailabilityBlocked,
+		isAvailabilityStale,
+		hasAvailabilityError,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
@@ -154,55 +279,199 @@ export function MobileTradeView({ className, embedded }: Props) {
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		leverageInteractionIdentity,
 		marginMode,
 		hasPosition,
+		positionStateReady,
 		currentLeverage,
 		pendingLeverage,
+		committedLeverage,
 		maxLeverage,
 		setPendingLeverage,
 		resetPendingLeverage,
 		applyMarginAndLeverage,
+		isLeverageUpdating,
+		leverageUpdateError,
 		isSwitchingMode,
 		switchModeError,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+		allowsIsolatedMarginRemoval,
+	} = useOrderEntryData({
+		market,
+		side,
+		markPx,
+		sizeMode,
+		sizeInput,
+		limitPx: usesLimitPrice ? toNumberOrZero(limitPriceInput) : undefined,
+		marketOrderSizing: orderType === "market" ? { referencePx: executionReferencePx, slippageBps } : null,
+	});
+	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, active && orderType === "market");
+	const estimatedSlippageText = formatSlippageBps(slippageEstimate?.slippageBps, {
+		lowerBound: slippageEstimate?.exceedsVisibleDepth,
+	});
+	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSize = toNumberOrZero(position?.szi);
+	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
+	const validatedPositionSize = positionSnapshotReady ? positionSize : null;
+	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
+		active,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	});
+	orderExecutionStateRef.current = {
+		active,
+		assetId: market?.assetId,
+		szDecimals: market?.szDecimals,
+		availabilityStatus,
+		availabilityReceivedAt,
+		availabilityMaxAgeMs,
+		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
+		markPriceStatus,
+		markPx: market?.markPx,
+		markPriceReceivedAt: market?.markPriceReceivedAt,
+		executionReferencePx: market?.midPx ?? market?.markPx,
+		executionPriceReceivedAt: market?.midPx !== undefined ? market.midPriceReceivedAt : market?.markPriceReceivedAt,
+		slippageBps,
+	};
+	const executionGuard = useCallback(
+		(params: Parameters<typeof assertEntryOrderExecutionAllowed>[0]) =>
+			assertEntryOrderExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const twapExecutionGuard = useCallback(
+		(params: Parameters<typeof assertEntryTwapExecutionAllowed>[0]) =>
+			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
+		[],
+	);
+	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit({
+		executionGuard,
+		twapExecutionGuard,
+		onReset: resetSubmittedForm,
+	});
+	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	useEffect(() => {
-		if (selectedPrice !== null) {
-			setOrderType("limit");
-			setLimitPriceInput(String(selectedPrice));
-			getOrderbookActionsStore().actions.clearSelectedPrice();
-		}
-	}, [selectedPrice, setOrderType]);
-	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
-	const { takerRate, makerRate } = useFeeRates(market?.kind);
-	const feeRate = isMarketExecution ? takerRate : makerRate;
-	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
-	const estimatedFee = orderValue * feeRate;
+		orderExecutionStateRef.current.active = active;
+		return () => {
+			orderExecutionStateRef.current.active = false;
+		};
+	}, [active]);
+
+	useEffect(() => {
+		if (active && isSpotMarket && isTriggerOrder) setOrderType("market");
+	}, [active, isSpotMarket, isTriggerOrder, setOrderType]);
+
+	useEffect(() => {
+		if (selectedPrice === null) return;
+
+		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		if (price === null) return;
+
+		setOrderType("limit");
+		setLimitPriceInput(price);
+	}, [market?.name, selectedPrice, setOrderType]);
+	const price = getOrderPrice(
+		orderType,
+		executionReferencePx,
+		limitPriceInput,
+		triggerPrice,
+		scaleStartPriceInput,
+		scaleEndPriceInput,
+	);
+	const { takerRate, makerRate } = useMarketFeeRates(market);
+	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
+	const feeRate = resolveEstimatedProtocolRate({ orderType, tif, takerRate, makerRate });
+	const feeQuote = buildOrderFeeQuote({
+		orderValue,
+		protocolRate: feeRate,
+		builderFeeTenthsBps,
+		marketKind: isSpotMarket ? "spot" : "perp",
+		side,
+		execution: twapOrder ? "twap" : "order",
+	});
 	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
+	const isolatedExistingPosition = position
+		? {
+				signedSize: position.szi,
+				positionValue: position.positionValue,
+				marginUsed: position.marginUsed,
+				marginMode: position.leverage.type,
+				leverage: position.leverage.value,
+			}
+		: null;
+	const prospectiveExistingPosition =
+		marginMode === "cross" ? crossMarginSnapshot.existingPosition : isolatedExistingPosition;
 
-	const liquidationInfo = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }) : null;
-	const liqPrice = liquidationInfo?.liqPrice ?? null;
-	const liqWarning = liquidationInfo?.liqWarning ?? false;
-	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
-
+	const { liqPrice, liqWarning } = estimateProspectiveLiquidation({
+		price,
+		orderSize: sizeValue,
+		leverage,
+		side,
+		marginMode,
+		accountMode: accountAbstraction,
+		marginTiers: market?.kind === "perp" || market?.kind === "builderPerp" ? market.marginTiers : null,
+		dataReady:
+			(orderType === "market" || orderType === "limit") &&
+			positionStateReady &&
+			market?.marginMetadataReady === true &&
+			isLiveMarkPriceReady(markPriceStatus, market?.markPx, market?.markPriceReceivedAt) &&
+			canEstimateProspectiveLiquidationDraft({ marginMode, orderSize: sizeValue, maxOrderSize: maxSize }),
+		reduceOnly,
+		existingPosition: prospectiveExistingPosition,
+		crossMarginAccount: crossMarginSnapshot.account,
+		executionFee: feeQuote.totalAmount,
+	});
 	const baseInput = {
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
 		isConnected,
 		isWalletLoading,
 		availableBalance,
 		hasMarket: !!market,
 		hasAssetIndex: typeof market?.assetId === "number",
-		needsAgentApproval: !isAgentApproved,
-		isReadyToTrade: isAgentApproved,
+		markPriceStatus,
+		requiresLiveMarkPrice,
+		needsAgentApproval: !isTradingAuthorized,
+		isReadyToTrade: isTradingAuthorized,
 		price,
 		sizeValue,
 		orderValue,
 		side,
 		usesLimitPrice,
+		usesTriggerPrice,
+		triggerPriceNum: toNumber(triggerPrice),
+		scaleOrder,
+		twapOrder,
+		scaleStartPriceNum,
+		scaleEndPriceNum,
+		scaleLevelsNum,
+		scaleSkewNum,
+		twapMinutesNum,
+		twapTriggerPriceNum,
+		twapStopPriceNum,
 	};
 
 	const validation = useOrderValidation(
 		isSpotMarket
 			? spotInput(baseInput, {
+					markPx,
 					baseAvailable: spotBalance.baseAvailable,
 					quoteAvailable: spotBalance.quoteAvailable,
 					baseToken,
@@ -212,21 +481,26 @@ export function MobileTradeView({ className, embedded }: Props) {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice,
-					triggerPriceNum: toNumber(triggerPrice),
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
-					scaleOrder: false,
-					twapOrder: false,
-					scaleStartPriceNum: null,
-					scaleEndPriceNum: null,
-					scaleLevelsNum: null,
-					twapMinutesNum: null,
+					positionSize: validatedPositionSize,
+					reduceOnly,
 					tpSlEnabled,
 					canUseTpSl,
+					tpSlReturnInvalid,
 					tpPriceNum: toNumber(tpPrice),
 					slPriceNum: toNumber(slPrice),
 				}),
+	);
+
+	const validationErrorText =
+		validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval
+			? validation.errors.join(" \u2022 ")
+			: "";
+	const validationSnapshot = useLingeringValidation(
+		validationErrorText,
+		hasOrderSizeValidationError(validation.validationErrors),
+		ERROR_LINGER_MS,
 	);
 
 	function applySizeFromPercent(pct: number) {
@@ -234,104 +508,207 @@ export function MobileTradeView({ className, embedded }: Props) {
 		setSizeInput(getSizeForPercent(pct));
 	}
 
+	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${sizeMode}`;
+	const sliderInteraction = useSizeSliderInteraction({
+		applyPercent: applySizeFromPercent,
+		interactionIdentity: sliderInteractionIdentity,
+		setSizeInput,
+		sizeInput,
+	});
+
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
-		setSizeMode(newMode);
+		onSizeModeChange(newMode);
 		if (convertedSize) setSizeInput(convertedSize);
+	}
+
+	function handleSizeInputChange(event: ChangeEvent<HTMLInputElement>) {
+		setSizeInput(event.target.value);
 	}
 
 	function handleSwitchChain() {
 		switchChain({ chainId: ARBITRUM_CHAIN_ID });
 	}
 
+	function handleMarginSettingsOpen() {
+		setMarginDialogView("margin");
+		setSettingsTab("margin");
+		setShowMarginDialog(true);
+	}
+
+	function handleLeverageSettingsOpen() {
+		setMarginDialogView("leverage");
+		setShowMarginDialog(true);
+	}
+
+	const handleAccountModeChange = useCallback(
+		async (nextAccountMode: SelectableAccountAbstraction) => {
+			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
+			if (didUpdate) toast.success(t`Account mode updated`);
+		},
+		[accountModeControl.setAccountAbstraction, t],
+	);
+
+	const handleMarginDialogOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) resetPendingLeverage();
+			setShowMarginDialog(open);
+		},
+		[resetPendingLeverage],
+	);
+
+	const handleLeverageApply = useCallback(
+		(mode: MarginMode, leverageValue: number) => applyMarginAndLeverage(mode, leverageValue),
+		[applyMarginAndLeverage],
+	);
+
+	const handleWalletOpen = useCallback(() => setWalletModalOpen(true), []);
+
+	const accountModeForm = useMemo(
+		() => ({
+			currentMode: accountModeControl.accountAbstraction,
+			isLoading: accountModeControl.isLoading,
+			isUpdating: accountModeControl.isUpdating,
+			canChange: accountModeControl.canSet,
+			portfolioMarginActivationEnabled: accountModeControl.portfolioMarginActivationEnabled,
+			onConnect: handleWalletOpen,
+			onApply: handleAccountModeChange,
+		}),
+		[
+			accountModeControl.accountAbstraction,
+			accountModeControl.canSet,
+			accountModeControl.isLoading,
+			accountModeControl.isUpdating,
+			accountModeControl.portfolioMarginActivationEnabled,
+			handleAccountModeChange,
+			handleWalletOpen,
+		],
+	);
+
 	async function handleApprove() {
-		if (tradeRestricted) return;
+		if (tradeActionsBlocked) return;
 		if (isRegistering) return;
 		if (!isConnected || !address) {
 			setWalletModalOpen(true);
 			return;
 		}
 		setApprovalError(null);
+		if (!isAgentReady) {
+			openEstablishConnectionModal();
+			return;
+		}
 		try {
-			await registerAgent();
+			await authorize();
 		} catch (error) {
-			setApprovalError(error instanceof Error ? error.message : ORDER_TEXT.APPROVAL_ERROR_FALLBACK);
+			setApprovalError(error instanceof Error ? error.message : t`Failed to enable trading`);
 		}
 	}
 
-	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
-		if (nextAccountMode === accountModeControl.accountAbstraction) return;
-		try {
-			await accountModeControl.setAccountAbstraction(nextAccountMode);
-			toast.success(t`Account mode updated`);
-		} catch (error) {
-			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
-		}
+	function resetSubmittedForm() {
+		setSizeInput("");
+		setLimitPriceInput("");
+		setReduceOnlyChecked(false);
+		setTpPrice("");
+		setSlPrice("");
+		setTriggerPrice("");
+	}
+
+	function canExecuteOrder() {
+		if (tradeActionsBlocked) return false;
+		if (!isConnected || !address) return false;
+		if (isAvailabilityBlocked) return false;
+		if (!validation.canSubmit) return false;
+		if (!market || !baseToken || typeof market.assetId !== "number") return false;
+		if (!requiresLiveMarkPrice) return true;
+		return isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt);
 	}
 
 	async function handleSubmit() {
-		if (tradeRestricted) return;
-		if (!isConnected || !address) return;
-		if (!validation.canSubmit || isSubmitting) return;
+		if (isSubmitting || !canExecuteOrder()) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
-		const orderSzDecimals = market.szDecimals ?? 0;
-		const plan = buildOrderPlan({
-			kind: "entry",
+		const draft: OrderConfirmationDraft = {
 			assetId: market.assetId,
+			marketLabel: market.pairName ?? market.name,
+			marketKind: isSpotMarket ? "spot" : "perp",
+			isLeveraged: capabilities.isLeveraged,
 			side,
+			sideLabel: sideLabels[side],
 			orderType,
-			sizeValue,
-			szDecimals: orderSzDecimals,
-			markPx,
-			price,
-			slippageBps,
-			reduceOnly,
 			tif,
-			limitPriceInput,
-			triggerPriceInput: triggerPrice,
-			scaleStartPriceInput: "",
-			scaleEndPriceInput: "",
-			scaleLevelsNum: null,
-			tpSlEnabled,
-			canUseTpSl,
-			tpPriceNum: toNumber(tpPrice),
-			slPriceNum: toNumber(slPrice),
-		});
+			baseToken,
+			szDecimals: market.szDecimals,
+			sizeValue,
+			orderValue,
+			limitPrice: toNumber(limitPriceInput),
+			triggerPrice: toNumber(triggerPrice),
+			scaleStartPrice: scaleStartPriceNum,
+			scaleEndPrice: scaleEndPriceNum,
+			scaleLevels: scaleLevelsNum,
+			scaleSkew: scaleSkewNum,
+			twapMinutes: twapMinutesNum,
+			twapRandomize,
+			twapTriggerPrice: twapTriggerPriceNum,
+			twapStopPrice: twapStopPriceNum,
+			tpSlEnabled: tpSlEnabled && canUseTpSl,
+			tpPrice: toNumber(tpPrice),
+			slPrice: toNumber(slPrice),
+			reduceOnly,
+			leverage,
+			marginMode,
+			marginRequired,
+			feeQuote,
+			liqPrice,
+			liqWarning,
+			slippagePercent,
+		};
 
-		if (plan.orders.length === 0) return;
-
-		const orderId = addOrder({
-			market: baseToken,
-			side,
-			size: formatSizeForOrder(sizeValue, orderSzDecimals),
-			price: formatPriceForOrder(price),
-			orderType: isMarketExecution ? "market" : "limit",
-			status: "pending",
-		});
-
-		try {
-			const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
-
-			const statuses = result.response?.data?.statuses ?? [];
-			throwIfResponseError(statuses[0]);
-
-			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
-			setSizeInput("");
-			setLimitPriceInput("");
-			setTpPrice("");
-			setSlPrice("");
-			setTriggerPrice("");
-		} catch (error) {
-			updateOrder(orderId, {
-				status: "failed",
-				error: error instanceof Error ? error.message : ORDER_TEXT.ORDER_ERROR_FALLBACK,
-			});
-		}
+		await confirmation.requestSubmit(
+			{
+				market: {
+					assetId: market.assetId,
+					kind: isSpotMarket ? "spot" : "perp",
+					name: market.name,
+					szDecimals: market.szDecimals,
+				},
+				baseToken,
+				side,
+				orderType,
+				sizeValue,
+				marginMode,
+				slippageBps,
+				reduceOnly,
+				tif,
+				limitPriceInput,
+				triggerPriceInput: triggerPrice,
+				scaleStartPriceInput,
+				scaleEndPriceInput,
+				scaleLevelsNum,
+				scaleSkewInput,
+				twapMinutesNum,
+				twapRandomize,
+				twapTriggerPx,
+				twapStopPx,
+				tpSlEnabled,
+				canUseTpSl,
+				tpPriceNum: toNumber(tpPrice),
+				slPriceNum: toNumber(slPrice),
+				twapOrder,
+				scaleOrder,
+				triggerOrder: isTriggerOrder,
+			},
+			draft,
+		);
 	}
 
-	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
+	async function executeSubmit(input: OrderSubmitDraftInput) {
+		await submitOrder({ ...input, price, executionReferencePx, markPx });
+	}
+
+	const confirmation = useOrderConfirmation({ execute: executeSubmit, canExecute: canExecuteOrder });
+
+	const sliderValue = getSliderValue(sizeValue, maxSize);
 
 	const buttonContent = getMobileOrderButtonContent({
 		isConnected,
@@ -339,14 +716,30 @@ export function MobileTradeView({ className, embedded }: Props) {
 		isSwitchingChain,
 		availableBalance,
 		isBalanceLoading: isAvailabilityLoading,
-		canDeposit: sessionMode === "wallet",
+		hasBalanceError: hasAvailabilityError,
+		canDeposit: depositAvailability.available,
+		depositUnavailableReason: depositAvailability.unavailableReason,
+		tradingUnavailableReason,
 		needsApproval: validation.needsApproval,
+		isAgentReady,
+		isApprovalLoading,
 		canSubmit: validation.canSubmit,
 		isRegistering,
 		canApprove,
 		isSubmitting,
 		side,
 		sideLabel: sideLabels[side],
+		labels: {
+			connect: t`Connect Wallet`,
+			switching: t`Switching...`,
+			switchChain: t`Switch to Arbitrum`,
+			loading: t`Loading...`,
+			balanceError: t`Failed to load balances.`,
+			deposit: t`Deposit`,
+			depositUnavailable: t`Deposit unavailable`,
+			signing: t`Signing...`,
+			enableTrading: t`Enable Trading`,
+		},
 		onConnect: () => setWalletModalOpen(true),
 		onSwitchChain: handleSwitchChain,
 		onDeposit: () => openDepositModal("deposit"),
@@ -354,51 +747,57 @@ export function MobileTradeView({ className, embedded }: Props) {
 		onSubmit: handleSubmit,
 	});
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
-	const sizePercentDisabled = isFormDisabled || maxSize <= 0;
-	const entryInputSize = embedded ? "lg" : "xl";
-	const inlineButtonSize = embedded ? "xs" : "sm";
-	const sliderThumbSize = embedded ? "md" : "lg";
+	const priceUnitLabel = quoteToken || "USDC";
 
 	function formatAvailableBalance(): string {
-		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
+		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
 		return formatToken(availableBalance, decimals);
 	}
 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
+	const isMarginDialogUpdating = marginDialogView === "leverage" ? isLeverageUpdating : isSwitchingMode;
+	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<div className={cn("flex flex-col min-h-0 self-stretch", !embedded && "h-full bg-background", className)}>
+		<div className={cn("flex flex-col self-stretch", !embedded && "h-full min-h-0 bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
-				onOpenChange={(open) => {
-					if (!open) resetPendingLeverage();
-					setShowMarginDialog(open);
-				}}
+				onOpenChange={handleMarginDialogOpenChange}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
+				committedLeverage={committedLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				hasPosition={hasPosition}
-				isOnlyIsolated={capabilities.isOnlyIsolated}
-				isUpdating={isSwitchingMode}
-				updateError={switchModeError}
+				positionStateReady={positionStateReady}
+				allowsCrossMargin={capabilities.allowsCrossMargin}
+				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
+				isUpdating={isMarginDialogUpdating}
+				updateError={marginDialogError}
 				showLeverage={capabilities.isLeveraged}
-				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
+				onApply={handleLeverageApply}
+				presentation="drawer"
+				mobileView={marginDialogView}
+				marketIdentity={leverageInteractionIdentity}
+				marketLabel={market?.pairName ?? market?.name}
+				settingsTab={settingsTab}
+				onSettingsTabChange={setSettingsTab}
+				accountModeForm={accountModeForm}
 			/>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					<div className="shrink-0 text-right">
-						<div className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
-							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
+					<div className="min-w-0 text-right">
+						<div className={cn("truncate whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
+							{formatPrice(markPx || null, { szDecimals: market?.szDecimals, marketType })}
 						</div>
 						{typeof change24h === "number" && (
-							<div className={cn("whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
+							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
 								{change24h >= 0 ? "+" : ""}
 								{change24h.toFixed(2)}%
 							</div>
@@ -408,13 +807,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 			</div>
 			<div
 				className={cn(
-					"flex-1 min-h-0 flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-					embedded ? "overflow-y-auto overscroll-y-contain" : "overflow-y-auto overscroll-contain",
+					"flex-1 flex flex-col overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+					!embedded && "min-h-0 overflow-y-auto overscroll-contain",
 				)}
 			>
 				<div
 					className={cn(
-						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-1.5 space-y-1.5" : "px-3 py-4 space-y-4",
+						embedded
+							? "trade-panel-container flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2 font-market-close"
+							: "trade-panel-container px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader
@@ -426,215 +827,266 @@ export function MobileTradeView({ className, embedded }: Props) {
 						onSideChange={setSide}
 						marginMode={marginMode}
 						leverage={leverage}
-						onMarginLeverageClick={() => setShowMarginDialog(true)}
+						onMarginLeverageClick={handleMarginSettingsOpen}
+						onMarginModeClick={handleMarginSettingsOpen}
+						onLeverageClick={handleLeverageSettingsOpen}
 						isLeveraged={capabilities.isLeveraged}
-						accountMode={accountModeControl.accountAbstraction}
-						isAccountModeLoading={accountModeControl.isLoading}
-						isAccountModeUpdating={accountModeControl.isUpdating}
-						canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
-						onAccountModeChange={handleAccountModeChange}
-						hideAlgoOrders
 						compact={embedded}
 						layout="mobile"
 					/>
 
-					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>
-						<span className="text-fg-muted uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
-						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
-							{formatAvailableBalance()}
-						</span>
-						<span className="ml-1 text-2xs tabular-nums text-fg-muted">{availableBalanceToken}</span>
-					</div>
-
-					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
-						<p className="text-2xs font-medium uppercase text-fg-muted">{ORDER_TEXT.SIZE_LABEL}</p>
-						<div className={cn("flex items-stretch", embedded ? "gap-1.5" : "gap-2")}>
-							<NumberInput
-								inputMode="decimal"
-								inputSize={entryInputSize}
-								placeholder="0.00"
-								value={sizeInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
-								className="flex-1 tabular-nums font-semibold"
-								disabled={isFormDisabled}
-							/>
-							{isFormDisabled ? (
-								<span
-									data-disabled
-									className={cn(
-										buttonVariants({ variant: "outline", intent: "neutral", size: inlineButtonSize }),
-										"shrink-0 self-stretch pointer-events-none",
-									)}
-								>
-									{sizeModeLabel}
-									<CaretDownIcon className="size-3.5" />
-								</span>
-							) : (
-								<Button
-									variant="outline"
-									intent="neutral"
-									size={inlineButtonSize}
-									onClick={handleSizeModeToggle}
-									iconRight={<CaretDownIcon className="size-3.5" />}
-									className="shrink-0 self-stretch"
-								>
-									{sizeModeLabel}
-								</Button>
+					<button
+						type="button"
+						onClick={() => applySizeFromPercent(100)}
+						disabled={isFormDisabled || maxSize <= 0}
+						className="relative flex min-h-7 w-full min-w-0 items-center justify-between gap-2 text-2xs text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] disabled:cursor-default"
+					>
+						<span className="shrink-0 whitespace-nowrap">{t`Available`}</span>
+						<span
+							className={cn(
+								"inline-flex min-w-0 items-center justify-end gap-1 truncate whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-right font-semibold tabular-nums text-trading-panel-fg",
+								(isFormDisabled || maxSize <= 0) && "border-transparent",
 							)}
-						</div>
-						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
-							<Slider
-								thumbSize={sliderThumbSize}
-								value={sliderValue}
-								onValueChange={(val: number) => {
-									setIsDraggingSlider(true);
-									setDragSliderValue(val);
-								}}
-								onValueCommitted={(val: number) => {
-									setIsDraggingSlider(false);
-									applySizeFromPercent(val);
-								}}
-								max={100}
-								step={0.1}
-								disabled={isFormDisabled || maxSize <= 0}
-							/>
-							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
-								{SIZE_PERCENT_OPTIONS.map((pct) =>
-									sizePercentDisabled ? (
-										<span key={pct}>{pct}%</span>
-									) : (
-										<button
-											key={pct}
-											type="button"
-											onClick={() => applySizeFromPercent(pct)}
-											className="hover:text-fg transition-colors disabled:cursor-not-allowed"
-										>
-											{pct}%
-										</button>
-									),
-								)}
-							</div>
-						</div>
-					</div>
+						>
+							<span className="tabular-nums text-trading-panel-fg">{formatAvailableBalance()}</span>
+							<span className="tabular-nums text-trading-panel-muted">{availableBalanceToken}</span>
+							{isAvailabilityStale ? (
+								<Tooltip content={t`Loading...`} side="top">
+									<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+								</Tooltip>
+							) : null}
+							{hasAvailabilityError ? (
+								<Tooltip content={t`Failed to load balances.`} side="top">
+									<WarningCircleIcon
+										className="size-3 shrink-0 text-trading-panel-error"
+										aria-label={t`Failed to load balances.`}
+									/>
+								</Tooltip>
+							) : null}
+						</span>
+					</button>
 
 					{usesTriggerPrice && (
-						<PriceInput
+						<MobileTradePriceField
 							label={t`Trigger Price`}
+							unitLabel={priceUnitLabel}
 							inputMode="decimal"
-							inputSize={entryInputSize}
 							placeholder="0.00"
 							value={triggerPrice}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
 							onMidClick={setTriggerPrice}
-							midPrice={markPx}
+							midPrice={midReferencePrice}
 							szDecimals={market?.szDecimals}
-							className="tabular-nums font-semibold"
+							marketType={marketType}
+							assetId={market?.assetId}
 							disabled={isFormDisabled}
+						/>
+					)}
+
+					{twapOrder && (
+						<TradeFormTwap
+							disabled={isFormDisabled}
+							side={side}
+							quoteToken={priceUnitLabel}
+							markPx={markPx}
+							assetId={market?.assetId}
+							szDecimals={szDecimals}
+							compact
+							mobileSafe
+						/>
+					)}
+
+					{scaleOrder && (
+						<TradeFormScale
+							midPrice={midReferencePrice}
+							szDecimals={szDecimals}
+							marketType={marketType}
+							assetId={market?.assetId}
+							disabled={isFormDisabled}
+							compact
+							mobileSafe
 						/>
 					)}
 
 					{usesLimitPrice && (
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
-							<PriceInput
-								label={ORDER_TEXT.LIMIT_PRICE_LABEL}
+							<MobileTradePriceField
+								label={t`Price`}
+								unitLabel={priceUnitLabel}
 								inputMode="decimal"
-								inputSize={entryInputSize}
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
 								onMidClick={setLimitPriceInput}
-								midPrice={markPx}
+								midPrice={midReferencePrice}
 								szDecimals={market?.szDecimals}
-								className="tabular-nums font-semibold"
+								marketType={marketType}
+								assetId={market?.assetId}
 								disabled={isFormDisabled}
 							/>
-							<div className="flex">
-								<TradeFormTif orderType={orderType} disabled={isFormDisabled} />
-							</div>
 						</div>
 					)}
 
-					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
-						<div className={cn("flex items-center", embedded ? "gap-2 text-2xs" : "gap-4")}>
-							{capabilities.hasReduceOnly && (
-								<Checkbox
-									checked={reduceOnly}
-									onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
-									disabled={isFormDisabled}
-									label={ORDER_TEXT.REDUCE_ONLY_LABEL}
-								/>
+					<MobileTradeSizeControl
+						canUsePercent={!isFormDisabled && maxSize > 0}
+						disabled={isFormDisabled}
+						errorId={validationSnapshot.hasSizeError ? validationErrorId : undefined}
+						hasError={validationSnapshot.hasSizeError}
+						interactionIdentity={sliderInteractionIdentity}
+						maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
+						onPercentChange={applySizeFromPercent}
+						onPercentCancel={sliderInteraction.onPercentCancel}
+						onPercentCommit={sliderInteraction.onPercentCommit}
+						onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
+						onSizeChange={handleSizeInputChange}
+						onSizeModeToggle={handleSizeModeToggle}
+						percentAriaLabel={`${t`Size`} (%)`}
+						side={side}
+						sizeAriaLabel={t`Size`}
+						sizeInput={sizeInput}
+						sizeLabel={t`Size`}
+						sizeModeLabel={sizeModeLabel}
+						sliderValue={sliderValue}
+					/>
+
+					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice || scaleOrder) && (
+						<TradeOptionCheckboxes
+							className={cn(
+								"flex flex-wrap items-center gap-y-1",
+								embedded ? "gap-x-2 text-2xs max-[379px]:gap-x-1" : "gap-x-4",
 							)}
-							{capabilities.hasTpSl && canUseTpSl && (
-								<Checkbox
-									checked={tpSlEnabled}
-									onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
-									disabled={isFormDisabled}
-									label={ORDER_TEXT.TPSL_LABEL}
-								/>
-							)}
-						</div>
+							tradingPanel
+							reduceOnly={
+								capabilities.hasReduceOnly
+									? {
+											checked: reduceOnlyChecked,
+											disabled: isFormDisabled,
+											onCheckedChange: setReduceOnlyChecked,
+										}
+									: undefined
+							}
+							tpSl={
+								capabilities.hasTpSl && canUseTpSl
+									? { checked: tpSlEnabled, disabled: isFormDisabled, onCheckedChange: setTpSlEnabled }
+									: undefined
+							}
+						>
+							{orderType === "limit" || scaleOrder ? (
+								<TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel />
+							) : null}
+						</TradeOptionCheckboxes>
 					)}
 
 					{tpSlEnabled && canUseTpSl && (
-						<TpSlSection
-							compact
-							side={side}
-							referencePrice={markPx}
+						<TradeFormTpSl
+							assetId={market?.assetId ?? null}
+							marketId={market?.name ?? null}
+							referencePrice={price}
 							size={sizeValue}
 							szDecimals={szDecimals}
-							tpPrice={tpPrice}
-							slPrice={slPrice}
-							onTpPriceChange={setTpPrice}
-							onSlPriceChange={setSlPrice}
+							quoteSymbol={getTpSlCollateralSymbol(market)}
+							leverage={leverage}
 							disabled={isFormDisabled}
+							mobileTouchSafe
 						/>
 					)}
 
-					<div className={cn("divide-y divide-stroke-weak/40", embedded ? "text-2xs" : "text-xs")}>
-						{capabilities.isLeveraged && (
+					<div className={cn("border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}>
+						{twapOrder && (
+							<>
+								<SummaryRow
+									label={t`Frequency`}
+									value={t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
+									valueClass="max-w-[60%] whitespace-normal leading-tight text-trading-panel-fg"
+									compact={embedded}
+								/>
+								<SummaryRow
+									label={t`Runtime`}
+									value={twapMinutesNum > 0 ? formatDuration(twapMinutesNum) : FALLBACK_VALUE_PLACEHOLDER}
+									compact={embedded}
+								/>
+								{isPositive(twapTriggerPriceNum) && (
+									<SummaryRow
+										label={t`Trigger Price`}
+										value={formatSummaryPrice(twapTriggerPriceNum, market?.szDecimals, marketType)}
+										compact={embedded}
+									/>
+								)}
+								{isPositive(twapStopPriceNum) && (
+									<SummaryRow
+										label={getTwapStopPriceLabel(side)}
+										value={formatSummaryPrice(twapStopPriceNum, market?.szDecimals, marketType)}
+										compact={embedded}
+									/>
+								)}
+							</>
+						)}
+						{scaleOrder && (
+							<>
+								<SummaryRow
+									label={t`Start Price`}
+									value={formatSummaryPrice(scaleStartPriceNum, market?.szDecimals, marketType)}
+									compact={embedded}
+								/>
+								<SummaryRow
+									label={t`End Price`}
+									value={formatSummaryPrice(scaleEndPriceNum, market?.szDecimals, marketType)}
+									compact={embedded}
+								/>
+								<SummaryRow label={t`Number of Orders`} value={formatSummaryCount(scaleLevelsNum)} compact={embedded} />
+								<SummaryRow label={t`Size Skew`} value={formatSummaryCount(scaleSkewNum)} compact={embedded} />
+							</>
+						)}
+						{capabilities.isLeveraged && (orderType === "market" || orderType === "limit") && (
 							<SummaryRow
-								label={ORDER_TEXT.SUMMARY_LIQ}
-								value={
-									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
-								}
-								valueClass={liqValueClass}
+								label={t`Liq. Price`}
+								value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
+								valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
 								compact={embedded}
 							/>
 						)}
 						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_ORDER_VALUE}
-							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
+							label={t`Order Value`}
+							value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 							compact={embedded}
 						/>
 						{capabilities.isLeveraged && (
 							<SummaryRow
-								label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
-								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+								label={t`Margin Req.`}
+								value={marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 								compact={embedded}
 							/>
 						)}
-						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
-							<span className="min-w-0 truncate text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
-							{embedded && !isConnected ? (
-								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-									<span className="tabular-nums text-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-fg-muted" />
+						{orderType === "market" && (
+							<div
+								className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
+							>
+								<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
+									<span title={t`Est. Slippage`} className="text-trading-panel-muted">
+										<span className="sr-only">{t`Est. Slippage`}: </span>
+										{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+									</span>
+									<span aria-hidden="true" className="text-trading-panel-subtle">
+										/
+									</span>
+									<button
+										type="button"
+										onClick={openSettingsDialog}
+										aria-label={t`Slippage`}
+										className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+									>
+										<span className="text-trading-panel-muted">{t`Max`}</span>
+										<span className="text-trading-panel-error">{slippagePercent}%</span>
+										<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+									</button>
 								</span>
-							) : (
-								<button
-									type="button"
-									onClick={openSettingsDialog}
-									className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
-								>
-									<span className="tabular-nums text-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-fg-muted" />
-								</button>
-							)}
-						</div>
+							</div>
+						)}
 						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_FEE}
-							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-							valueClass="text-fg-muted"
+							label={t`Est. Fee`}
+							value={<OrderFeeSummaryValue quote={feeQuote} />}
+							valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
 							compact={embedded}
 						/>
 					</div>
@@ -642,45 +1094,61 @@ export function MobileTradeView({ className, embedded }: Props) {
 			</div>
 
 			<div
-				className={cn("shrink-0 border-t border-stroke-weak/40 bg-background", embedded ? "px-2 py-2" : "px-3 py-3")}
+				className={cn(
+					"shrink-0 border-t border-trading-panel-stroke-card bg-surface",
+					embedded ? "px-2.5 py-2" : "px-3 py-3",
+				)}
 			>
-				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
-					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
+				{validationSnapshot.text && (
+					<p id={validationErrorId} role="alert" className="text-xs text-error mb-2">
+						{validationSnapshot.text}
+					</p>
 				)}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
-				{tradeRestricted ? (
+				{tradeRestricted && !buttonContent.disabledReason ? (
 					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">
 						{t`Trading is not available in your region`}
 					</Button>
 				) : (
 					<Button
-						variant="outline"
+						variant="filled"
 						size={embedded ? "md" : "lg"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
-						intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
+						intent={getTradingCtaIntent(buttonContent.variant)}
 						className={cn(
-							"w-full",
-							buttonContent.variant === "cyan"
-								? "bg-brand-soft border-stroke-brand-strong text-brand hover:bg-brand-soft/30"
-								: buttonContent.variant === "buy"
-									? "bg-success-soft border-stroke-success-strong text-success hover:bg-success-soft/30"
-									: "bg-error-soft border-stroke-error-strong text-error hover:bg-error-soft/30",
+							"w-full rounded-[10px] text-sm font-bold whitespace-nowrap shadow-none",
+							embedded && "h-[38px]",
+							getTradingCtaClass(buttonContent.variant),
 						)}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 					>
 						{buttonContent.text}
 					</Button>
 				)}
+				{buttonContent.disabledReason ? (
+					<output className="mt-2 text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
+				) : null}
 				{!embedded && <MobileBottomNavSpacer />}
 			</div>
+
+			{confirmation.pending && (
+				<OrderConfirmationModal
+					open
+					draft={confirmation.pending.draft}
+					isSubmitting={confirmation.isConfirming}
+					dontShowAgain={confirmation.dontShowAgain}
+					onDontShowAgainChange={confirmation.setDontShowAgain}
+					onConfirm={confirmation.confirm}
+					onOpenChange={confirmation.cancel}
+				/>
+			)}
 
 			{walletModalOpen && (
 				<Suspense fallback={null}>
 					<WalletModal open onOpenChange={setWalletModalOpen} />
 				</Suspense>
 			)}
-			<OrderToast />
 		</div>
 	);
 }
@@ -692,22 +1160,37 @@ function SummaryRow({
 	compact,
 }: {
 	label: string;
-	value: string;
+	value: ReactNode;
 	valueClass?: string;
 	compact?: boolean;
 }) {
 	return (
 		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
-			<span className="min-w-0 truncate text-fg-muted">{label}</span>
-			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
+			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
+			<span
+				className={cn(
+					"shrink-0 whitespace-nowrap text-right font-semibold tabular-nums",
+					valueClass ?? "text-trading-panel-fg",
+				)}
+			>
+				{value}
+			</span>
 		</div>
 	);
 }
 
-function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
-	if (!liqPrice) return "text-fg-muted";
-	if (liqWarning) return "text-error";
-	return "text-fg";
+function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boolean): string | undefined {
+	if (!liqPrice) return "text-trading-panel-muted";
+	if (liqWarning) return "text-trading-panel-error";
+	return undefined;
+}
+
+function formatSummaryPrice(value: number | null, szDecimals: number | undefined, marketType: "perp" | "spot"): string {
+	return isPositive(value) ? formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
+}
+
+function formatSummaryCount(value: number | null): string {
+	return isPositive(value) ? formatNumber(String(value)) : FALLBACK_VALUE_PLACEHOLDER;
 }
 
 interface MobileButtonContentInput {
@@ -716,14 +1199,20 @@ interface MobileButtonContentInput {
 	isSwitchingChain: boolean;
 	availableBalance: number;
 	isBalanceLoading: boolean;
+	hasBalanceError: boolean;
 	canDeposit: boolean;
+	depositUnavailableReason?: string | null;
+	tradingUnavailableReason?: string | null;
 	needsApproval: boolean;
+	isAgentReady: boolean;
+	isApprovalLoading: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
 	canApprove: boolean;
 	isSubmitting: boolean;
 	side: Side;
 	sideLabel: string;
+	labels: MobileOrderButtonLabels;
 	onConnect: () => void;
 	onSwitchChain: () => void;
 	onDeposit: () => void;
@@ -731,57 +1220,95 @@ interface MobileButtonContentInput {
 	onSubmit: () => void;
 }
 
-function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
-	if (!input.isConnected) {
+interface MobileOrderButtonLabels {
+	connect: string;
+	switching: string;
+	switchChain: string;
+	loading: string;
+	balanceError: string;
+	deposit: string;
+	depositUnavailable: string;
+	signing: string;
+	enableTrading: string;
+}
+
+export function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
+	const stage = getOrderActionStage({
+		isConnected: input.isConnected,
+		needsChainSwitch: input.needsChainSwitch,
+		needsApproval: input.needsApproval,
+		isAgentReady: input.isAgentReady,
+		hasBalanceError: input.hasBalanceError,
+		isBalanceLoading: input.isBalanceLoading,
+		availableBalance: input.availableBalance,
+	});
+
+	if (stage === "connect") {
 		return {
-			text: ORDER_TEXT.BUTTON_CONNECT,
+			text: input.labels.connect,
 			action: input.onConnect,
 			disabled: false,
 			variant: "cyan",
 		};
 	}
-	if (input.needsChainSwitch) {
+	if (stage === "switchChain") {
 		return {
-			text: input.isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
+			text: input.isSwitchingChain ? input.labels.switching : input.labels.switchChain,
 			action: input.onSwitchChain,
 			disabled: input.isSwitchingChain,
 			variant: "cyan",
 		};
 	}
-	if (input.isBalanceLoading) {
+	if (stage === "agent" || stage === "builder") {
 		return {
-			text: ORDER_TEXT.BUTTON_LOADING,
+			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.isApprovalLoading, input.labels),
+			action: input.onApprove,
+			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove || !!input.tradingUnavailableReason,
+			disabledReason: input.tradingUnavailableReason ?? undefined,
+			variant: "cyan",
+		};
+	}
+	if (stage === "balanceError") {
+		return {
+			text: input.labels.balanceError,
 			action: () => {},
 			disabled: true,
 			variant: "cyan",
 		};
 	}
-	if (input.availableBalance <= 0) {
+	if (stage === "balanceLoading") {
 		return {
-			text: ORDER_TEXT.BUTTON_DEPOSIT,
-			action: input.canDeposit ? input.onDeposit : () => {},
-			disabled: !input.canDeposit,
+			text: input.labels.loading,
+			action: () => {},
+			disabled: true,
 			variant: "cyan",
 		};
 	}
-	if (input.needsApproval) {
+	if (stage === "deposit") {
 		return {
-			text: getApprovalButtonText(input.isRegistering, input.canApprove),
-			action: input.onApprove,
-			disabled: input.isRegistering || !input.canApprove,
+			text: input.canDeposit ? input.labels.deposit : input.labels.depositUnavailable,
+			action: input.canDeposit ? input.onDeposit : () => {},
+			disabled: !input.canDeposit,
+			disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
 			variant: "cyan",
 		};
 	}
 	return {
 		text: input.sideLabel,
 		action: input.onSubmit,
-		disabled: !input.canSubmit || input.isSubmitting,
+		disabled: !input.canSubmit || input.isSubmitting || !!input.tradingUnavailableReason,
+		disabledReason: input.tradingUnavailableReason ?? undefined,
 		variant: input.side,
 	};
 }
 
-function getApprovalButtonText(isRegistering: boolean, canApprove: boolean): string {
-	if (isRegistering) return ORDER_TEXT.BUTTON_SIGNING;
-	if (!canApprove) return ORDER_TEXT.BUTTON_LOADING;
-	return ORDER_TEXT.BUTTON_ENABLE_TRADING;
+function getApprovalButtonText(
+	isRegistering: boolean,
+	canApprove: boolean,
+	isApprovalLoading: boolean,
+	labels: MobileOrderButtonLabels,
+): string {
+	if (isRegistering) return labels.signing;
+	if (isApprovalLoading || !canApprove) return labels.loading;
+	return labels.enableTrading;
 }

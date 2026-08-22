@@ -1,3 +1,4 @@
+import { Field } from "@base-ui/react/field";
 import { Slider as BaseSlider } from "@base-ui/react/slider";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
@@ -11,12 +12,23 @@ const sliderVariants = cva([
 type SliderThumbSize = "sm" | "md" | "lg";
 
 interface SliderProps
-	extends Omit<React.ComponentPropsWithoutRef<typeof BaseSlider.Root>, "className">,
+	extends Omit<
+			React.ComponentPropsWithoutRef<typeof BaseSlider.Root>,
+			"aria-describedby" | "aria-invalid" | "className"
+		>,
 		VariantProps<typeof sliderVariants> {
+	"aria-describedby"?: string;
+	"aria-invalid"?: boolean;
 	className?: string;
-	label?: string;
+	controlClassName?: string;
+	getAriaValueText?: React.ComponentPropsWithoutRef<typeof BaseSlider.Thumb>["getAriaValueText"];
+	indicatorClassName?: string;
+	label: string;
+	labelHidden?: boolean;
 	showValue?: boolean;
+	thumbClassName?: string;
 	thumbSize?: SliderThumbSize;
+	trackClassName?: string;
 }
 
 const thumbSizeClasses: Record<SliderThumbSize, string> = {
@@ -44,45 +56,82 @@ const trackHeightClasses: Record<SliderThumbSize, string> = {
 };
 
 const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
-	({ className, label, showValue, thumbSize = "md", ...props }, ref) => {
+	(
+		{
+			"aria-describedby": ariaDescribedBy,
+			"aria-invalid": ariaInvalid,
+			className,
+			controlClassName,
+			getAriaValueText,
+			indicatorClassName,
+			label,
+			labelHidden,
+			showValue,
+			thumbClassName,
+			thumbSize = "md",
+			trackClassName,
+			...props
+		},
+		ref,
+	) => {
 		const val = props.value ?? props.defaultValue;
 		const thumbCount = Array.isArray(val) ? val.length : 1;
 
 		return (
-			<BaseSlider.Root ref={ref} className={cn(sliderVariants({ className }))} {...props}>
-				{(label || showValue) && (
-					<div className="flex items-center gap-4">
-						{label && <BaseSlider.Label className="flex-1 text-sm font-normal text-fg">{label}</BaseSlider.Label>}
-						{showValue && <BaseSlider.Value className="text-sm font-normal text-fg-muted tabular-nums" />}
-					</div>
-				)}
-				<BaseSlider.Control className={cn("relative flex w-full items-center", controlHeightClasses[thumbSize])}>
-					<BaseSlider.Track
-						className={cn(
-							"relative w-full overflow-hidden rounded-32",
-							"bg-fill-weak ring-1 ring-inset ring-stroke-weak",
-							"inset-shadow-sunken",
-							trackHeightClasses[thumbSize],
-						)}
-					>
-						<BaseSlider.Indicator className="absolute inset-y-0 h-auto rounded-32 bg-fill-selected min-w-1 inset-shadow-sunken" />
-					</BaseSlider.Track>
-					{Array.from({ length: thumbCount }, (_, i) => (
-						<BaseSlider.Thumb
-							key={i}
-							index={i}
-							className={cn(
-								"relative rounded-full bg-white",
-								"border-2 border-stroke-focus shadow-md",
-								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-								"before:absolute before:content-['']",
-								thumbSizeClasses[thumbSize],
-								thumbHitAreaClasses[thumbSize],
-							)}
-						/>
-					))}
-				</BaseSlider.Control>
-			</BaseSlider.Root>
+			<Field.Root
+				ref={ref}
+				disabled={props.disabled}
+				invalid={ariaInvalid}
+				render={
+					<BaseSlider.Root className={cn(sliderVariants({ className }))} {...props}>
+						<div className={cn("flex items-center gap-4", labelHidden && !showValue && "sr-only")}>
+							<BaseSlider.Label
+								className={cn("flex-1 text-sm font-normal text-fg", labelHidden && showValue && "sr-only")}
+							>
+								{label}
+							</BaseSlider.Label>
+							{showValue && <BaseSlider.Value className="text-sm font-normal text-fg-muted tabular-nums" />}
+						</div>
+						<BaseSlider.Control
+							className={cn("relative flex w-full items-center", controlHeightClasses[thumbSize], controlClassName)}
+						>
+							<BaseSlider.Track
+								className={cn(
+									"relative w-full overflow-hidden rounded-32",
+									"bg-fill-weak ring-1 ring-inset ring-stroke-weak",
+									"inset-shadow-sunken",
+									trackHeightClasses[thumbSize],
+									trackClassName,
+								)}
+							>
+								<BaseSlider.Indicator
+									className={cn(
+										"absolute inset-y-0 h-auto rounded-32 bg-fill-selected min-w-1 inset-shadow-sunken",
+										indicatorClassName,
+									)}
+								/>
+							</BaseSlider.Track>
+							{Array.from({ length: thumbCount }, (_, i) => (
+								<BaseSlider.Thumb
+									key={i}
+									index={i}
+									aria-describedby={ariaDescribedBy}
+									getAriaValueText={getAriaValueText}
+									className={cn(
+										"relative rounded-full bg-white",
+										"border-2 border-stroke-focus shadow-md",
+										"[&:has(input:focus-visible)]:outline-2 [&:has(input:focus-visible)]:outline-offset-2 [&:has(input:focus-visible)]:outline-stroke-focus",
+										"before:absolute before:content-['']",
+										thumbSizeClasses[thumbSize],
+										thumbHitAreaClasses[thumbSize],
+										thumbClassName,
+									)}
+								/>
+							))}
+						</BaseSlider.Control>
+					</BaseSlider.Root>
+				}
+			/>
 		);
 	},
 );

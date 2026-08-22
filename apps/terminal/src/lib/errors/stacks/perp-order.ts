@@ -1,10 +1,16 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { noBalanceValidator } from "../definitions/balance";
 import {
 	signerNotReadyValidator,
 	walletLoadingValidator,
 	walletNotConnectedValidator,
 } from "../definitions/connection";
-import { marketNotReadyValidator, noMarketValidator, noMarkPriceValidator } from "../definitions/market";
+import {
+	liveMarkPriceValidator,
+	marketNotReadyValidator,
+	noMarketValidator,
+	noMarkPriceValidator,
+} from "../definitions/market";
 import {
 	enterLimitPriceValidator,
 	enterSizeValidator,
@@ -18,17 +24,39 @@ import {
 	type ScaleContext,
 	scaleLevelMinNotionalValidator,
 	scaleLevelsRangeValidator,
+	scalePricePrecisionValidator,
+	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+	scaleSkewRangeValidator,
 	scaleStartEndDifferValidator,
 } from "../definitions/scale";
-import { enterTpSlPriceValidator, slPriceValidator, type TpSlContext, tpPriceValidator } from "../definitions/tpsl";
+import {
+	enterTpSlPriceValidator,
+	slPriceValidator,
+	type TpSlContext,
+	tpPriceValidator,
+	tpSlReturnValidator,
+} from "../definitions/tpsl";
 import {
 	stopTriggerAboveMarkValidator,
 	stopTriggerBelowMarkValidator,
 	type TriggerContext,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionExistsValidator,
+	triggerPositionSizeValidator,
 } from "../definitions/trigger";
-import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
+import {
+	type TwapContext,
+	twapMinNotionalValidator,
+	twapMinutesRangeValidator,
+	twapStopBeyondTriggerValidator,
+	twapStopDirectionValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapTriggerPricePositiveValidator,
+} from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
 export interface PerpOrderContext extends OrderInputContext, TpSlContext, TriggerContext, ScaleContext, TwapContext {
@@ -39,6 +67,8 @@ export interface PerpOrderContext extends OrderInputContext, TpSlContext, Trigge
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 	orderType: string;
 }
 
@@ -56,12 +86,14 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
+	liveMarkPriceValidator,
 	noMarkPriceValidator,
 	enterLimitPriceValidator,
 	enterTriggerPriceValidator,
 	enterSizeValidator,
 	minOrderNotionalValidator,
 	exceedsMaxSizeValidator,
+	tpSlReturnValidator,
 	enterTpSlPriceValidator,
 	tpPriceValidator,
 	slPriceValidator,
@@ -69,12 +101,24 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	stopTriggerBelowMarkValidator,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
+	triggerPositionExistsValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionSizeValidator,
 	enterPriceRangeValidator,
 	scaleLevelsRangeValidator,
 	scaleStartEndDifferValidator,
+	scaleSizeAllocationValidator,
+	scalePricePrecisionValidator,
 	scaleLevelMinNotionalValidator,
+	scaleSkewRangeValidator,
+	scaleSkewAllocationValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,
+	twapTriggerPricePositiveValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapStopDirectionValidator,
+	twapStopBeyondTriggerValidator,
 ];
 
 export function validatePerpOrder(context: PerpOrderContext): PerpOrderValidationResult {

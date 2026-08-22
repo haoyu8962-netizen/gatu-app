@@ -14,8 +14,9 @@
  * without rewriting every caller's `onChange(e)` handler.
  */
 import { Input as BaseInput } from "@base-ui/react/input";
+import Big from "big.js";
 import type * as React from "react";
-import { useCallback } from "react";
+import { useCallback, useId } from "react";
 import { cn } from "@/lib/cn";
 import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
@@ -47,8 +48,58 @@ function exceedsDecimalLimit(value: string, maxDecimals: number | undefined): bo
 	return dotIndex !== -1 && value.length - dotIndex - 1 > maxDecimals;
 }
 
+function parseBigOrNull(value: string | number): Big | null {
+	try {
+		return new Big(String(value));
+	} catch {
+		return null;
+	}
+}
+
+function roundLikeMath(value: Big): Big {
+	const integer = value.round(0, Big.roundDown);
+	const fraction = value.minus(integer).abs();
+
+	if (value.gte(0)) return fraction.gte("0.5") ? integer.plus(1) : integer;
+	return fraction.gt("0.5") ? integer.minus(1) : integer;
+}
+
+interface StepValueInput {
+	allowNegative: boolean;
+	currentValue: string;
+	direction: "down" | "up";
+	max: number | undefined;
+	min: number | undefined;
+	step: number;
+	useDecimals: boolean;
+}
+
+function resolveSteppedValue({
+	allowNegative,
+	currentValue,
+	direction,
+	max,
+	min,
+	step,
+	useDecimals,
+}: StepValueInput): string {
+	const current = parseBigOrNull(currentValue) ?? new Big(0);
+	const stepValue = parseBigOrNull(step) ?? new Big(0);
+	let next = direction === "up" ? current.plus(stepValue) : current.minus(stepValue);
+	const minValue = min === undefined ? null : parseBigOrNull(min);
+	const maxValue = max === undefined ? null : parseBigOrNull(max);
+
+	if (minValue && next.lt(minValue)) next = minValue;
+	if (maxValue && next.gt(maxValue)) next = maxValue;
+	if (!allowNegative && next.lt(0)) next = new Big(0);
+	if (!useDecimals) next = roundLikeMath(next);
+
+	return next.toFixed();
+}
+
 interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" | "min" | "max" | "step"> {
 	inputSize?: InputSize;
+	mobileSafe?: boolean;
 	allowDecimals?: boolean;
 	allowNegative?: boolean;
 	maxAllowedDecimals?: number;
@@ -58,6 +109,7 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 	maxLabel?: React.ReactNode;
 	onMaxClick?: () => void;
 	suffix?: React.ReactNode;
+	suffixClassName?: string;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	label?: string;
 	labelValue?: React.ReactNode;
@@ -67,6 +119,7 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 export function NumberInput({
 	className,
 	inputSize = "default",
+	mobileSafe,
 	allowDecimals = true,
 	allowNegative = false,
 	maxAllowedDecimals,
@@ -76,15 +129,19 @@ export function NumberInput({
 	maxLabel,
 	onMaxClick,
 	suffix,
+	suffixClassName,
 	value,
 	onChange,
 	onKeyDown,
 	disabled,
+	id,
 	label,
 	labelValue,
 	onLabelValueClick,
 	...props
 }: Props) {
+	const generatedInputId = useId();
+	const inputId = id ?? generatedInputId;
 	const effectiveAllowDecimals = allowDecimals && (maxAllowedDecimals === undefined || maxAllowedDecimals > 0);
 	const hasMax = maxLabel != null && onMaxClick != null;
 	const hasSuffix = !hasMax && suffix != null;
@@ -111,15 +168,15 @@ export function NumberInput({
 			if (e.key === "ArrowUp" || e.key === "ArrowDown") {
 				e.preventDefault();
 				const input = e.currentTarget;
-				const currentValue = parseFloat(input.value) || 0;
-				const delta = e.key === "ArrowUp" ? step : -step;
-				let newValue = currentValue + delta;
-
-				if (min !== undefined && newValue < min) newValue = min;
-				if (max !== undefined && newValue > max) newValue = max;
-				if (!allowNegative && newValue < 0) newValue = 0;
-
-				const newValueStr = effectiveAllowDecimals ? String(newValue) : String(Math.round(newValue));
+				const newValueStr = resolveSteppedValue({
+					allowNegative,
+					currentValue: input.value,
+					direction: e.key === "ArrowUp" ? "up" : "down",
+					max,
+					min,
+					step,
+					useDecimals: effectiveAllowDecimals,
+				});
 				const syntheticEvent = createSyntheticEvent(input, newValueStr);
 				onChange?.(syntheticEvent);
 				onKeyDown?.(e);
@@ -189,13 +246,18 @@ export function NumberInput({
 
 	const inputEl = (
 		<BaseInput
+			id={inputId}
 			type="text"
 			inputMode={effectiveAllowDecimals ? "decimal" : "numeric"}
 			data-slot="input"
 			data-size={inputSize}
 			value={value}
 			disabled={disabled}
-			className={getInputClassName(inputSize, cn(hasMax && "pr-20", hasSuffix && "pr-7", className))}
+			className={getInputClassName(
+				inputSize,
+				cn("w-full", hasMax && "pr-20", hasSuffix && "pr-7", className),
+				mobileSafe,
+			)}
 			onKeyDown={handleKeyDown}
 			onChange={handleChange}
 			{...props}
@@ -205,7 +267,7 @@ export function NumberInput({
 	function renderInputWithAction() {
 		if (hasMax) {
 			return (
-				<div className="relative">
+				<div className="relative min-w-0">
 					{inputEl}
 					<button
 						type="button"
@@ -220,9 +282,14 @@ export function NumberInput({
 		}
 		if (hasSuffix) {
 			return (
-				<div className="relative">
+				<div className="relative min-w-0">
 					{inputEl}
-					<span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-fg-muted whitespace-nowrap tabular-nums">
+					<span
+						className={cn(
+							"pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-fg-muted tabular-nums",
+							suffixClassName,
+						)}
+					>
 						{suffix}
 					</span>
 				</div>
@@ -238,7 +305,9 @@ export function NumberInput({
 	return (
 		<div>
 			<div className="mb-1.5 flex items-center justify-between">
-				<span className={labelTypographyClass}>{label}</span>
+				<label className={labelTypographyClass} htmlFor={inputId}>
+					{label}
+				</label>
 				{labelValue != null && onLabelValueClick ? (
 					<button
 						type="button"

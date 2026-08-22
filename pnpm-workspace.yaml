@@ -1,6 +1,11 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - apps/*
+  - packages/*
 
 overrides:
-  "@noble/hashes": "1.8.0"
+  '@noble/hashes': 1.8.0
+  '@tanstack/query-core': 5.90.16
+
+patchedDependencies:
+  '@nktkas/hyperliquid': patches/@nktkas__hyperliquid.patch
+  sonner@2.0.7: patches/sonner@2.0.7.patch

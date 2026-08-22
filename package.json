@@ -3,11 +3,15 @@
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@10.21.0",
+	"engines": {
+		"node": ">=22.15.0"
+	},
 	"scripts": {
 		"dev": "pnpm --filter @gatu/terminal dev",
 		"build": "pnpm --filter @gatu/terminal build",
 		"serve": "pnpm --filter @gatu/terminal serve",
 		"test": "pnpm --filter @gatu/terminal test",
+		"typecheck": "pnpm --filter @gatu/hl-react typecheck && pnpm --filter @gatu/ui typecheck && pnpm --filter @gatu/terminal typecheck",
 		"diagnostics:browser": "node scripts/browser-diagnostics.js",
 		"validate:mobile-device": "node scripts/validate-mobile-phone-access-device-validation.js",
 		"test:mobile-device-validator": "node --test scripts/validate-mobile-phone-access-device-validation.test.js",
@@ -19,6 +23,7 @@
 		"fix": "biome check --write",
 		"i18n:extract": "pnpm --filter @gatu/terminal i18n:extract",
 		"i18n:compile": "pnpm --filter @gatu/terminal i18n:compile",
+		"asset-info:generate": "node scripts/generate-spot-asset-info.mjs",
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {
@@ -26,6 +31,7 @@
 		"@biomejs/biome": "2.2.4",
 		"@commitlint/cli": "20.3.1",
 		"@commitlint/config-conventional": "20.3.1",
+		"es-module-lexer": "1.7.0",
 		"lefthook": "1.11.0",
 		"typescript": "5.7.2"
 	}

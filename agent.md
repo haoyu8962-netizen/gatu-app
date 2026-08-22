@@ -12,7 +12,7 @@ HypeTerminal is a web-based trading terminal for Hyperliquid, a decentralized pe
 | Routing | TanStack Router (file-based) |
 | State | Zustand (persisted), TanStack Query |
 | Styling | Tailwind CSS 4, Radix UI, shadcn/ui |
-| Web3 | Wagmi 3, Viem, @nktkas/hyperliquid SDK |
+| Web3 | Privy, @privy-io/wagmi, Wagmi 3, Viem, @nktkas/hyperliquid SDK |
 | Charts | TradingView Charting Library |
 | Forms | React Hook Form, Zod |
 | i18n | Lingui (6 languages) |
@@ -75,7 +75,7 @@ Zustand stores in `src/stores/`:
 - Tailwind CSS with custom color tokens in `src/styles.css`
 - Radix UI for accessible primitives
 - CVA for component variants
-- Mobile breakpoint: 768px
+- Mobile breakpoint: 1000px (inclusive); desktop layouts start at 1001px
 
 ## Important Files
 
@@ -83,10 +83,14 @@ Zustand stores in `src/stores/`:
 |------|---------|
 | `src/routes/__root.tsx` | Root layout |
 | `src/providers/root.tsx` | Provider composition |
+| `src/providers/pwa-install.tsx` | Capability-based PWA installation state |
 | `src/config/constants.ts` | Global constants |
+| `src/config/privy.ts` | Privy login, wallet directory, and appearance contract |
+| `src/components/trade/components/wallet-modal.tsx` | Shared desktop/mobile wallet connection entry |
 | `src/lib/trade/numbers.ts` | Precise arithmetic (Big.js) |
 | `src/lib/hyperliquid/clients.ts` | API client singletons |
 | `src/lib/format.ts` | Number/currency formatting |
+| `packages/hl-react/src/signing/agent-storage.ts` | Owner-scoped Agent key persistence |
 
 ## Data Flow
 
@@ -149,7 +153,8 @@ const result = Big(price).times(quantity).toFixed(2);
 
 - **Hyperliquid API** - Exchange data and order execution
 - **TradingView** - Professional charting
-- **Wallet Providers** - MetaMask, WalletConnect, Coinbase, Rabby
+- **Wallet Authentication** - Privy email and embedded wallets
+- **External Wallet Directory** - Privy-managed Ethereum wallet catalog with @privy-io/wagmi connector state
 - **Arbitrum** - Token deposits via bridge
 
 ## Performance Considerations

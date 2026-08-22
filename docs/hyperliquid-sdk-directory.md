@@ -11,9 +11,16 @@ Scan the "Want to..." tables below to find the right method for your task.
 - **(I)** = Info method → read-only, no wallet needed, use `InfoClient`
 - **(E)** = Exchange method → requires signing, use `ExchangeClient` with wallet
 - **(S)** = Subscription → real-time WebSocket stream, use `SubscriptionClient`
+- **(X)** = Explorer method/stream → use `ExplorerClient` with an explorer-compatible transport
 
-### Step 3: Get Full Parameter Schema (Full Docs)
-Once you know which method to use, look up the complete OpenAPI schema in:
+### Step 3: Get the Current Parameter Schema
+
+The checked-in `hyperliquid-sdk-1.md` and `hyperliquid-sdk-2.md` files are archived `0.33.1`
+snapshots. They are useful for broad navigation, but they do not include every `0.33.2`/`0.33.3`
+schema change. For current parameters and response unions, use the
+[SDK GitBook](https://nktkas.gitbook.io/hyperliquid) and the installed `0.33.3` declarations first.
+
+Archived snapshot locations:
 
 | Content | File | Lines |
 |---------|------|-------|
@@ -32,8 +39,9 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | `InfoClient` | Read-only queries | No |
 | `ExchangeClient` | Signed actions (orders, transfers) | Yes |
 | `SubscriptionClient` | Real-time WebSocket streams | No |
+| `ExplorerClient` | HyperCore block, transaction, and user explorer data | No |
 
-**Wallet options:** `privateKeyToAccount("0x...")` (viem), `new Wallet("0x...")` (ethers), `new PrivateKeySigner("0x...")` (built-in, no deps)
+**Wallet options:** `privateKeyToAccount("0x...")` (viem) or `new Wallet("0x...")` (ethers)
 
 ---
 
@@ -56,6 +64,23 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 
 **Candle intervals:** 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 1d, 3d, 1w, 1M
 
+### Market selector taxonomy
+
+- Use `meta().universe[].name` as the canonical identity for main perpetuals. Spot identities and
+  `{dex}:{coin}` HIP-3 identities remain separate market kinds.
+- `perpConciseAnnotations` supplies broad HIP-3 categories such as stocks, indices, commodities,
+  FX, and pre-IPO. The current mainnet response does not supply the AI, Defi, Gaming, Layer 1,
+  Layer 2, or Meme membership for native main perpetuals; the API category value is not a closed
+  enum and must not be treated as permanently incapable of supplying those categories.
+- The Crypto sector mapping in `apps/terminal/src/domain/market/crypto-taxonomy.ts` mirrors the
+  official terminal taxonomy. `CRYPTO_MARKET_TAXONOMY_REVISION` records the latest verified
+  snapshot captured from `https://app.hyperliquid.xyz/trade/HYPE`. A readable test fixture records
+  the source, capture method, and complete membership so changes require an explicit review. The
+  mapping uses exact, case-sensitive main-perp names, permits one market in multiple sectors, and
+  must not classify Spot or HIP-3 markets by matching display symbols.
+- The Pre-launch selector scope is backed by the official `preipo` annotation. It must fail closed
+  while annotations are unavailable instead of guessing from market names or DEX prefixes.
+
 ---
 
 ## Account State
@@ -67,10 +92,11 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Get spot token balances | `spotClearinghouseState({user})` | I |
 | Stream spot balances | `spotState({user})` | S |
 | Get everything (positions, orders, fills) | `webData2({user})` | I |
-| Stream everything | `webData2({user})` | S |
+| Stream comprehensive account state | `webData3({user})` | S |
 | Get per-asset leverage + max trade sizes | `activeAssetData({user, coin})` | S |
 | Get portfolio PnL breakdown | `portfolio({user})` | I |
-| Get user display name | `userDetails({user})` | I |
+| Get account abstraction mode | `userAbstraction({user})` | I |
+| Get explorer user transaction details | `userDetails({user})` | X |
 
 ---
 
@@ -79,7 +105,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Want to... | Method | Type |
 |------------|--------|------|
 | Place limit/market/trigger orders | `order({orders, grouping, builder?})` | E |
-| Place TWAP order | `twapOrder({a, b, s, r, m, t})` | E |
+| Place TWAP order | `twapOrder({twap: {a, b, s, r, m, t}, details?})` | E |
 | Get TWAP history | `twapHistory({user})` | I |
 | Stream TWAP history | `userTwapHistory({user})` | S |
 | Stream TWAP slice fills | `userTwapSliceFills({user})` | S |
@@ -106,6 +132,13 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 **Market orders:** Use `t.limit.tif = "FrontendMarket"` (or `"Ioc"`) with an aggressive `p`.
 **Scale/ladder orders:** Not native; send multiple limit orders in one `order({orders: [...]})` call.
 **OrderType labels:** `frontendOpenOrders` / `openOrders` / `historicalOrders` return `orderType` values for display.
+In `0.33.3`, the display union also includes `Twap Slice`, `Vault Close`, and `Spot Dust Conversion`.
+**Order status additions:** `outcomeSettledCanceled` and `internalCancel` are terminal canceled states;
+`tooManyOpenOrdersRejected` is a terminal placement rejection.
+**Conditional TWAP:** `twapOrder` optionally accepts `details: {t, s}`. `t` is either `null` or
+`{p, a}` (trigger price and above/below direction); `s` is either `null` or the stop price. When
+`details` is present, both keys are required. TWAP history treats `waitingForTrigger` as live and
+`stopped` as terminal; `TwapState` exposes nullable `trigger` and `stopPx` fields.
 **Grouping:** `"na"` (standalone), `"normalTpsl"` (fixed TP/SL size), `"positionTpsl"` (TP/SL scales with position)
 
 ---
@@ -130,7 +163,8 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Transfer between DEXs/sub-accounts | `sendAsset({destination, sourceDex, destinationDex, token, amount})` | E |
 | Move USDC between perp↔spot | `usdClassTransfer({amount, toPerp, ...})` | E |
 | Withdraw to Arbitrum L1 | `withdraw3({destination, amount, ...})` | E |
-| Validate transfer before sending | `preTransferCheck({user, destination, amount})` | I |
+| Withdraw USDC through CCTP | `sendToEvmWithData({token, amount, sourceDex, destinationRecipient, addressEncoding, destinationChainId, gasLimit, data})` | E |
+| Validate transfer before sending | `preTransferCheck({user, source})` | I |
 
 ---
 
@@ -181,6 +215,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Want to... | Method | Type |
 |------------|--------|------|
 | Get my delegations | `delegations({user})` | I |
+| Get delegation history | `delegatorHistory({user})` | I |
 | Get delegation summary | `delegatorSummary({user})` | I |
 | Get staking rewards | `delegatorRewards({user})` | I |
 | Get all validators | `validatorSummaries()` | I |
@@ -218,6 +253,24 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 
 ## Advanced
 
+### Additional SDK 0.33.3 APIs
+
+These methods are present in the pinned `@nktkas/hyperliquid@0.33.3` clients but do not fit the
+short intent tables above:
+
+| Area | Methods | Type |
+|------|---------|------|
+| Borrow/lend state | `allBorrowLendReserveStates`, `borrowLendReserveState`, `borrowLendUserState`, `userBorrowLendInterest` | I |
+| Expanded market metadata | `allPerpMetas`, `approvedBuilders`, `outcomeMeta`, `outcomeTemplates`, `perpAnnotation`, `perpCategories`, `perpConciseAnnotations`, `perpDexLimits`, `settledOutcome`, `spotDeployState`, `spotMeta`, `spotMetaAndAssetCtxs` | I |
+| Transfer routing | `usdcRouting` | I |
+| Network and account checks | `gossipPriorityAuctionStatus`, `gossipRootIps`, `legalCheck`, `subAccounts2`, `userRole`, `userTwapSliceFillsByTime`, `validatorL1Votes` | I |
+| Agent and account actions | `agentEnableDexAbstraction`, `agentSendAsset`, `agentSetAbstraction`, `authorizeAqav2Role`, `userOutcome` | E |
+| Borrow/lend and staking actions | `borrowLend`, `cDeposit`, `cSignerAction`, `cValidatorAction`, `cWithdraw`, `linkStakingUser`, `stakingLinkDisableTradingUser`, `validatorL1Stream` | E |
+| EVM, HIP-3/HIP-4, and deployment actions | `activateOutcomeDeployer`, `evmUserModify`, `finalizeEvmContract`, `gossipPriorityBid`, `hip3LiquidatorTransfer`, `sendToEvmWithData`, `spotUser`, `topUpIsolatedOnlyMargin` | E |
+| Exchange control actions | `noop`, `reserveRequestWeight`, `vaultDistribute` | E |
+| Expanded market streams | `activeAssetCtx`, `activeSpotAssetCtx`, `allDexsAssetCtxs`, `fastAssetCtxs`, `outcomeMetaUpdates`, `spotAssetCtxs` | S |
+| Expanded account streams | `allDexsClearinghouseState`, `notification`, `userHistoricalOrders`, `webData3` | S |
+
 ### Multi-sig
 | Want to... | Method | Type |
 |------------|--------|------|
@@ -229,14 +282,16 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 |------------|--------|------|
 | Check if DEX abstraction enabled | `userDexAbstraction({user})` | I |
 | Enable/disable DEX abstraction | `userDexAbstraction({...})` | E |
+| Set account abstraction mode (`unifiedAccount` / `portfolioMargin` / `disabled`) | `userSetAbstraction({user, abstraction})` | E |
+| Configure portfolio margin | `userPortfolioMargin({...})` | E |
 
 ### Explorer/Blockchain
 | Want to... | Method | Type |
 |------------|--------|------|
-| Get block details | `blockDetails({height})` | I |
-| Get transaction details | `txDetails({hash})` | I |
-| Stream blocks | `explorerBlock` | S |
-| Stream transactions | `explorerTxs` | S |
+| Get block details | `blockDetails({height})` | X |
+| Get transaction details | `txDetails({hash})` | X |
+| Stream blocks | `explorerBlock` | X |
+| Stream transactions | `explorerTxs` | X |
 
 ### Token/Perp Deployment
 | Want to... | Method | Type |
@@ -266,16 +321,20 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 `ExchangeClient` handles signing automatically. For custom wallet integrations:
 
 ```typescript
-import { signL1Action, signUserSignedAction, signMultiSigAction, PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { signL1Action, signMultiSigL1, signMultiSigUserSigned, signUserSignedAction } from "@nktkas/hyperliquid/signing";
 ```
 
 | Function | Use for |
 |----------|---------|
 | `signL1Action` | Orders, cancels, leverage, TWAP, vault ops |
 | `signUserSignedAction` | Withdraw, usdSend, spotSend, approveAgent (EIP-712) |
-| `signMultiSigAction` | Multi-sig operations |
+| `signMultiSigL1` | Multi-sig L1 operations |
+| `signMultiSigUserSigned` | Multi-sig user-signed operations |
 
-**Params:** `{wallet, action, nonce, isTestnet?, vaultAddress?, expiresAfter?}`
+Use each signing function's TypeScript signature as the source of truth. The signing entry point
+exports signing functions and wallet-related types; it does not expose a generic family of
+helper-specific `*Parameters` aliases. Multi-sig helpers accept an ordered `signers` tuple and
+construct the wire wrapper internally.
 
 ---
 
@@ -358,7 +417,9 @@ TWAP (Time-Weighted Average Price) orders require multiple subscriptions to disp
     time: number,                    // When status changed (seconds)
     twapId?: number,                 // TWAP identifier
     state: TwapState,                // Snapshot at status change time
-    status: { status: "activated" | "finished" | "terminated" | "error" }
+    status: {
+      status: "activated" | "waitingForTrigger" | "finished" | "terminated" | "stopped" | "error"
+    }
   }>
 }
 ```
@@ -383,6 +444,11 @@ TWAP (Time-Weighted Average Price) orders require multiple subscriptions to disp
   minutes: number,        // Duration in minutes
   reduceOnly: boolean,
   randomize: boolean,
+  stopPx: string | null,  // Terminates the TWAP at this price when set
+  trigger: {              // Activation condition; null for immediate activation
+    px: string,
+    above: boolean
+  } | null,
   timestamp: number,      // Creation time (ms since epoch)
   user: Address
 }
@@ -494,7 +560,9 @@ const orders = useMemo(() => {
 orders.map((order) => {
   const liveState = statesByTwapId.get(order.twapId);
   const state = liveState ?? order.state;
-  const status = order.status.status; // "activated" | "finished" | "terminated"
+  const status = order.status.status;
+  // live: "activated" | "waitingForTrigger"
+  // terminal: "finished" | "terminated" | "stopped" | "error"
 });
 ```
 

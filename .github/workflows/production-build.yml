@@ -1,0 +1,150 @@
+name: Production Builds
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/production-build.yml"
+      - "apps/**"
+      - "deploy/**"
+      - "packages/**"
+      - "scripts/check-client-bundle-budget.mjs"
+      - "scripts/check-client-chunk-cycles.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+jobs:
+  terminal:
+    name: Build terminal
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Test production deployment validators
+        run: >-
+          node --test
+          deploy/deploy-bootstrap.test.mjs
+          deploy/deploy-health-check.test.mjs
+          deploy/validate-caddy-forwarded-headers.test.mjs
+          deploy/validate-production-env.test.mjs
+          deploy/resolve-client-asset.test.mjs
+
+      - name: Test TradingView integration
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/chart-*.test.ts
+          src/lib/tests/chart-*.test.tsx
+          src/lib/tests/load-tradingview.test.ts
+          src/lib/tests/mobile-chart-view.test.tsx
+          src/lib/tests/tradingview-*.test.ts
+          src/lib/tests/tradingview-*.test.tsx
+
+      - name: Test Deposit, CCTP, routing, and geo guards
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/cctp-deposit-catalogs.test.ts
+          src/lib/tests/cctp-deposit-tracking.test.ts
+          src/lib/tests/cctp-deposit.test.ts
+          src/lib/tests/deposit-availability.test.tsx
+          src/lib/tests/deposit-broadcast.test.ts
+          src/lib/tests/deposit-empty-balances-entry.test.tsx
+          src/lib/tests/deposit-execution-state.test.ts
+          src/lib/tests/deposit-form-routing.test.tsx
+          src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx
+          src/lib/tests/deposit-order-cta.test.tsx
+          src/lib/tests/development-geo.test.ts
+          src/lib/tests/embedded-deposit-auto-bridge.test.tsx
+          src/lib/tests/funding-address-card.test.tsx
+          src/lib/tests/geo-server-functions.test.ts
+          src/lib/tests/referral-action-geo.test.ts
+          src/lib/tests/trading-onboarding-gate.test.tsx
+          src/lib/tests/usdc-routing.test.ts
+          src/lib/tests/use-cctp-deposit-tracking.test.tsx
+          src/lib/tests/use-deposit-routing-guard.test.tsx
+          src/lib/tests/use-email-embedded-wallet.test.tsx
+          src/lib/tests/use-geo-restriction.test.tsx
+          src/lib/tests/use-usdc-routing.test.ts
+          src/lib/tests/unit-deposit-info.test.tsx
+
+      - name: Build production terminal and enforce bundle budget
+        run: pnpm --filter @gatu/terminal build
+        env:
+          GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
+          GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          NODE_ENV: production
+
+      - name: Verify production lazy client graph
+        run: |
+          set -euo pipefail
+          graph_tmp="$(mktemp -d)"
+          server_pid=""
+          cleanup() {
+            if [ -n "$server_pid" ]; then
+              kill "$server_pid" 2>/dev/null || true
+              wait "$server_pid" 2>/dev/null || true
+            fi
+            rm -rf "$graph_tmp"
+          }
+          trap cleanup EXIT
+
+          HOST=127.0.0.1 PORT=3099 NODE_ENV=production \
+            node --require=./deploy/referral-uri-guard.cjs apps/terminal/.output/server/index.mjs \
+            >"$graph_tmp/server.log" 2>&1 &
+          server_pid="$!"
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl --connect-timeout 2 --max-time 5 -fsS \
+              -o "$graph_tmp/builders-perp.html" http://127.0.0.1:3099/builders-perp \
+              2>"$graph_tmp/readiness-error"; then
+              ready=true
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$graph_tmp/server.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat "$graph_tmp/readiness-error"
+            cat "$graph_tmp/server.log"
+            exit 1
+          fi
+
+          node deploy/resolve-client-asset.mjs \
+            http://127.0.0.1:3099 "$graph_tmp/builders-perp.html" trade-terminal-page
+
+      - name: Verify TradingView package and compressed build assets
+        run: node deploy/verify-chart-build.mjs apps/terminal/public apps/terminal/.output/public deploy/manifests/tradingview-charting-library.json
+
+  website:
+    name: Build website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build marketing website
+        run: pnpm --filter @gatu/website build

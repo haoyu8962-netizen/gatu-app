@@ -10,9 +10,11 @@ export interface OrderQueueItem {
 	orderType?: "market" | "limit" | "trigger" | "scale" | "twap";
 	tpPrice?: string;
 	slPrice?: string;
-	status: "pending" | "success" | "failed";
+	status: "pending" | "confirming" | "unconfirmed" | "partial" | "success" | "canceled" | "failed";
 	outcome?: OrderOutcome;
 	error?: string;
+	acceptedCount?: number;
+	totalCount?: number;
 	createdAt: number;
 	completedAt?: number;
 }
@@ -54,7 +56,7 @@ const useOrderQueueStore = create<OrderQueueStore>()((set) => ({
 						? {
 								...order,
 								...update,
-								completedAt: update.status === "success" || update.status === "failed" ? Date.now() : order.completedAt,
+								completedAt: isCompletedOrderStatus(update.status) ? Date.now() : order.completedAt,
 							}
 						: order,
 				),
@@ -68,10 +70,28 @@ const useOrderQueueStore = create<OrderQueueStore>()((set) => ({
 	},
 }));
 
+function isCompletedOrderStatus(status: OrderQueueItem["status"] | undefined): boolean {
+	return (
+		status === "unconfirmed" ||
+		status === "partial" ||
+		status === "success" ||
+		status === "canceled" ||
+		status === "failed"
+	);
+}
+
 export function useOrderQueue() {
 	return useOrderQueueStore((state) => state.orders);
 }
 
 export function useOrderQueueActions() {
 	return useOrderQueueStore((state) => state.actions);
+}
+
+export function updateOrderQueueItem(id: string, update: Partial<Omit<OrderQueueItem, "id">>): void {
+	useOrderQueueStore.getState().actions.updateOrder(id, update);
+}
+
+export function hasOrderQueueItem(id: string): boolean {
+	return useOrderQueueStore.getState().orders.some((order) => order.id === id);
 }

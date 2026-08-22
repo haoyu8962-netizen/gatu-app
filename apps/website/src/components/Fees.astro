@@ -1,0 +1,40 @@
+---
+const fees = [
+	{ value: "0%", label: "Maker fee", note: "as low as, at the top volume tier" },
+	{ value: "0.0144%", label: "Taker fee", note: "as low as, with max HYPE staking discount" },
+];
+---
+
+<section id="fees" class="border-b border-stroke-weaker">
+	<div class="reveal mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
+		<div class="text-center">
+			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">Fees</span>
+			<h2 class="font-display mt-3 text-xl md:text-2xl tracking-display">Fees start low and go lower.</h2>
+			<p class="mt-4 mx-auto max-w-md text-sm text-fg-muted leading-relaxed">
+				No gas per trade, no subscription, no spread markup, no withdrawal ransom.
+			</p>
+		</div>
+
+		<div class="mt-12 mx-auto max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
+			{fees.map((f) => (
+				<div class="bg-surface p-6 md:p-8 text-center">
+					<div class="text-2xl md:text-3xl font-medium tabular-nums tracking-tight">{f.value}</div>
+					<div class="mt-1 text-2xs uppercase tracking-uppercase text-fg-muted">{f.label}</div>
+					<div class="mt-1 text-2xs text-fg-faint">{f.note}</div>
+				</div>
+			))}
+		</div>
+
+		<p class="mt-6 text-center text-2xs text-fg-faint">
+			Base tier starts at 0.015% maker / 0.045% taker and drops with volume and HYPE staking. Typical
+			centralized exchanges charge ~0.10% taker.
+			<a
+				href="https://app.hyperliquid.xyz/fundingComparison"
+				rel="noopener"
+				class="underline underline-offset-2 hover:text-fg-muted transition-colors duration-150"
+			>
+				Funding rates are public and comparable across venues.
+			</a>
+		</p>
+	</div>
+</section>

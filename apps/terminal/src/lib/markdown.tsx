@@ -151,14 +151,16 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 				rows.push(parseTableRow(lines[i]));
 				i++;
 			}
+			const keyedHeader = withOccurrenceKeys(header, (cell) => cell);
+			const keyedRows = withOccurrenceKeys(rows, (row) => JSON.stringify(row));
 			blocks.push(
 				<div key={key++} className="my-4 overflow-x-auto">
 					<table className="w-full border-collapse text-sm">
 						<thead>
 							<tr>
-								{header.map((cell, ci) => (
+								{keyedHeader.map(({ key: cellKey, value: cell }) => (
 									<th
-										key={ci}
+										key={cellKey}
 										className="border border-stroke-weak bg-fill-weak px-3 py-2 text-left font-semibold text-fg"
 									>
 										{renderInline(cell)}
@@ -167,10 +169,10 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 							</tr>
 						</thead>
 						<tbody>
-							{rows.map((row, ri) => (
-								<tr key={ri}>
-									{row.map((cell, ci) => (
-										<td key={ci} className="border border-stroke-weak px-3 py-2 align-top text-fg-muted">
+							{keyedRows.map(({ key: rowKey, value: row }) => (
+								<tr key={rowKey}>
+									{withOccurrenceKeys(row, (cell) => cell).map(({ key: cellKey, value: cell }) => (
+										<td key={cellKey} className="border border-stroke-weak px-3 py-2 align-top text-fg-muted">
 											{renderInline(cell)}
 										</td>
 									))}
@@ -237,4 +239,14 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 	}
 
 	return blocks;
+}
+
+function withOccurrenceKeys<T>(values: readonly T[], serialize: (value: T) => string) {
+	const occurrences = new Map<string, number>();
+	return values.map((value) => {
+		const serialized = serialize(value);
+		const occurrence = occurrences.get(serialized) ?? 0;
+		occurrences.set(serialized, occurrence + 1);
+		return { key: `${serialized}\u0000${occurrence}`, value };
+	});
 }

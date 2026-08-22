@@ -1,11 +1,16 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import type { SizeMode } from "@/lib/trade/types";
+import { useExchangeScope } from "@/providers/exchange-scope";
+import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
 import { MobilePositionsView } from "./mobile-positions-view";
 import { MobileTradeView } from "./mobile-trade-view";
+import type { MobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
 type TopView = "chart" | "book" | "trades";
 
@@ -13,17 +18,49 @@ interface Props {
 	active?: boolean;
 	showMarketBar?: boolean;
 	showOrderForm?: boolean;
+	disclosureStates: MobilePositionsDisclosureStates;
 }
 
-export function MobileTradeLayout({ active = true, showMarketBar = false, showOrderForm = true }: Props) {
+export function MobileTradeLayout({
+	active = true,
+	showMarketBar = false,
+	showOrderForm = true,
+	disclosureStates,
+}: Props) {
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const { routeMarketName } = useExchangeScope();
+	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
+
 	return showOrderForm ? (
-		<TradeOrderView active={active} showMarketBar={showMarketBar} />
+		<TradeOrderView
+			active={active}
+			showMarketBar={showMarketBar}
+			marketKey={marketKey}
+			disclosureStates={disclosureStates}
+		/>
 	) : (
-		<MarketsDataView active={active} showMarketBar={showMarketBar} />
+		<MarketsDataView
+			active={active}
+			showMarketBar={showMarketBar}
+			marketKey={marketKey}
+			disclosureStates={disclosureStates}
+		/>
 	);
 }
 
-function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarketBar: boolean }) {
+function TradeOrderView({
+	active,
+	showMarketBar,
+	marketKey,
+	disclosureStates,
+}: {
+	active: boolean;
+	showMarketBar: boolean;
+	marketKey: string;
+	disclosureStates: MobilePositionsDisclosureStates;
+}) {
+	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
+
 	return (
 		<div
 			className={cn(
@@ -31,23 +68,54 @@ function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarket
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[57px]" />}
+			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
-			<div className="w-full min-w-0 h-[52dvh] min-h-[420px] overflow-hidden flex items-stretch">
-				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
-				<MobileBookView compact inTabLayout view="book" className="flex-1 min-h-0 min-w-0 self-stretch" />
+			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[370px] flex items-stretch">
+				<MobileTradeView
+					key={marketKey}
+					active={active}
+					embedded
+					sizeMode={sizeMode}
+					onSizeModeChange={setSizeMode}
+					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
+				/>
+				<div className="relative flex-1 min-w-0 self-stretch">
+					<MobileBookView
+						active={active}
+						compact
+						inTabLayout
+						showOrderbookInQuote={sizeMode === "quote"}
+						view="book"
+						className="absolute inset-0"
+					/>
+				</div>
 			</div>
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" />
+					<MobilePositionsView
+						scrollMode="page"
+						includeBottomNavSpacer={false}
+						balancesContent={<MobileBalancesTab />}
+						disclosureStates={disclosureStates}
+					/>
 				</div>
 			)}
 		</div>
 	);
 }
 
-function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarketBar: boolean }) {
+function MarketsDataView({
+	active,
+	showMarketBar,
+	marketKey,
+	disclosureStates,
+}: {
+	active: boolean;
+	showMarketBar: boolean;
+	marketKey: string;
+	disclosureStates: MobilePositionsDisclosureStates;
+}) {
 	const [topView, setTopView] = useState<TopView>("chart");
 
 	const tabs: { value: TopView; label: string }[] = [
@@ -65,7 +133,7 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[57px]" />}
+			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
 			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
 				{tabs.map((tab) => {
@@ -91,21 +159,37 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 					aria-hidden={topView !== "chart"}
 					className={cn(
 						"absolute inset-0 flex min-h-0 flex-col",
-						topView === "chart" ? "z-10 opacity-100 pointer-events-auto" : "z-0 opacity-0 pointer-events-none",
+						topView === "chart"
+							? "z-10 visible opacity-100 pointer-events-auto"
+							: "z-0 invisible opacity-0 pointer-events-none",
 					)}
 				>
-					<MobileChartView />
+					<MobileChartView active={active && topView === "chart"} />
 				</div>
-				{topView !== "chart" && active && (
-					<div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background">
-						<MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />
-					</div>
-				)}
+				<div
+					aria-hidden={topView === "chart"}
+					className={cn(
+						"absolute inset-0 flex min-h-0 flex-col bg-background",
+						topView === "chart" ? "z-0 invisible pointer-events-none" : "z-10 visible pointer-events-auto",
+					)}
+				>
+					<MobileBookView
+						active={active && topView !== "chart"}
+						inTabLayout
+						view={bookView}
+						className="flex-1 min-h-0"
+					/>
+				</div>
 			</div>
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" />
+					<MobilePositionsView
+						scrollMode="page"
+						includeBottomNavSpacer={false}
+						balancesContent={<MobileBalancesTab />}
+						disclosureStates={disclosureStates}
+					/>
 				</div>
 			)}
 		</div>

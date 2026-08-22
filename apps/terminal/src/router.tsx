@@ -10,7 +10,8 @@ export function getRouter() {
 		routeTree,
 		context: { ...rqContext },
 		defaultPreload: "intent",
-		Wrap: (props: { children: React.ReactNode }) => {
+		defaultPendingMinMs: 0,
+		InnerWrap: (props: { children: React.ReactNode }) => {
 			return <RootProvider {...rqContext}>{props.children}</RootProvider>;
 		},
 	});

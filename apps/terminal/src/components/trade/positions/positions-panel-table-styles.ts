@@ -1,8 +1,8 @@
-export const positionsPanelTableHeadClass = "font-medium uppercase tracking-wide text-fg-muted";
+export const positionsPanelTableHeadClass = "font-medium normal-case tracking-normal text-fg-muted";
 
 export const positionsPanelTableCellClass = "";
 
-export const positionsPanelTableHeaderClass = "[&_tr]:border-stroke-weak [&_tr]:border-t-0 bg-fill-weaker";
+export const positionsPanelTableHeaderClass = "[&_tr]:border-stroke-weak [&_tr]:border-t-0 bg-market-close-card";
 
 export const positionsPanelTableBodyClass = "[&_tr]:border-stroke-weak";
 
@@ -15,7 +15,6 @@ export const positionsPanelTabRootClass = "flex min-h-0 min-w-0 flex-1 flex-col 
 export const positionsPanelTableCaptionRowClass =
 	"flex shrink-0 items-center justify-end gap-3 border-b border-stroke-weak px-2.5 py-1";
 
-export const positionsPanelRowHoverClass =
-	"border-stroke-weak transition-colors [&:hover:not(:has(button:hover,a:hover))]:bg-fill-hover";
+export const positionsPanelRowHoverClass = "border-stroke-weak [&:hover:not(:has(button:hover,a:hover))]:bg-fill-hover";
 
-export const positionsPanelRowStripeClass = "bg-alternate";
+export const positionsPanelRowStripeClass = "";

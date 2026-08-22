@@ -6,11 +6,12 @@ const BRIDGE_MESSAGE_MAX_WIDTH = "max-w-70";
 
 interface Props {
 	error: string;
-	onBack: () => void;
-	onRetry: () => void;
+	onBack?: () => void;
+	onRetry?: () => void;
+	retryMode?: "retry" | "track";
 }
 
-export function BridgeErrorScreen({ error, onBack, onRetry }: Props) {
+export function BridgeErrorScreen({ error, onBack, onRetry, retryMode = "retry" }: Props) {
 	return (
 		<div className="flex flex-1 flex-col items-center">
 			<div className="flex flex-1 flex-col items-center justify-center gap-4">
@@ -24,14 +25,20 @@ export function BridgeErrorScreen({ error, onBack, onRetry }: Props) {
 					<p className={`text-xs text-fg-muted ${BRIDGE_MESSAGE_MAX_WIDTH}`}>{error}</p>
 				</div>
 			</div>
-			<div className="flex gap-2 w-full mt-auto">
-				<Button variant="outline" intent="neutral" size="lg" className="flex-1" onClick={onBack}>
-					<Trans>Back</Trans>
-				</Button>
-				<Button variant="filled" intent="brand" size="lg" className="flex-1" onClick={onRetry}>
-					<Trans>Try Again</Trans>
-				</Button>
-			</div>
+			{onBack || onRetry ? (
+				<div className="flex gap-2 w-full mt-auto">
+					{onBack ? (
+						<Button variant="outline" intent="neutral" size="lg" className="flex-1" onClick={onBack}>
+							<Trans>Back</Trans>
+						</Button>
+					) : null}
+					{onRetry ? (
+						<Button variant="filled" intent="brand" size="lg" className="flex-1" onClick={onRetry}>
+							{retryMode === "track" ? <Trans>Resume tracking</Trans> : <Trans>Try Again</Trans>}
+						</Button>
+					) : null}
+				</div>
+			) : null}
 		</div>
 	);
 }

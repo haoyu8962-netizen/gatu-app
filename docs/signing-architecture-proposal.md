@@ -2,6 +2,13 @@
 
 > A cleaner approach to handling Hyperliquid's three signing contexts with wagmi/viem.
 
+> **Status: historical proposal.** This file describes the design discussion
+> that preceded the current implementation and contains old hook names and
+> migration assumptions. Use `docs/hyperliquid-signing.md` for signing
+> mechanics, `docs/trading-onboarding.md` for the implemented first-time flow,
+> and `docs/runtime-guardrails.md` for production invariants. Do not treat the
+> "Current Issues" section below as the current repository state.
+
 ## Current Issues
 
 ### 1. Two ExchangeClients with Unclear Roles

@@ -1,0 +1,1 @@
+export const MOBILE_SYNC_TICKET_TTL_MS = 60_000;

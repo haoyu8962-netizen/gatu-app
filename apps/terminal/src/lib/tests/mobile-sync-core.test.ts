@@ -13,6 +13,7 @@ import {
 	MOBILE_SYNC_PAYLOAD_TTL_MS,
 	MOBILE_SYNC_ROUTE_PATH,
 	type MobileAgentSyncPlaintext,
+	MobileSyncCleanNavigationRequiredError,
 	MobileSyncError,
 	parseMobileSyncUrl,
 	readAndClearMobileSyncEnvelope,
@@ -43,6 +44,27 @@ async function createSyncFixture() {
 	});
 	const { keyBytes } = parseMobileSyncUrl(sync.url);
 	return { ...sync, keyBytes };
+}
+
+function createMutableLocation(href: string) {
+	const initialUrl = new URL(href);
+	const location = {
+		href: initialUrl.href,
+		pathname: initialUrl.pathname,
+		search: initialUrl.search,
+		hash: initialUrl.hash,
+	};
+	const history = {
+		replaceState: vi.fn((_data: unknown, _unused: string, nextUrl?: string | URL | null) => {
+			if (nextUrl === undefined || nextUrl === null) return;
+			const updatedUrl = new URL(String(nextUrl), location.href);
+			location.href = updatedUrl.href;
+			location.pathname = updatedUrl.pathname;
+			location.search = updatedUrl.search;
+			location.hash = updatedUrl.hash;
+		}),
+	};
+	return { history, location };
 }
 
 describe("mobile sync core", () => {
@@ -141,17 +163,81 @@ describe("mobile sync core", () => {
 	});
 
 	it("cleans the URL before parsing so invalid links are removed from history too", () => {
-		const history = { replaceState: vi.fn() };
+		const { history, location } = createMutableLocation(
+			`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
+		);
+		const navigation = { replace: vi.fn() };
+
+		expect(() => readAndClearMobileSyncEnvelope(location, history, navigation)).toThrow(MobileSyncError);
+		expect(history.replaceState).toHaveBeenCalledWith(null, "", `${MOBILE_SYNC_ROUTE_PATH}?from=qr`);
+		expect(navigation.replace).not.toHaveBeenCalled();
+		expect(location.hash).toBe("");
+		expect(getMobileSyncCleanUrl(location)).toBe(`${MOBILE_SYNC_ROUTE_PATH}?from=qr`);
+	});
+
+	it.each([
+		[
+			"fragment",
+			`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr#${MOBILE_SYNC_FRAGMENT_KEY}=secret-envelope&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=secret-key`,
+			`${MOBILE_SYNC_ROUTE_PATH}?from=qr`,
+		],
+		[
+			"query",
+			`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr&${MOBILE_SYNC_FRAGMENT_KEY}=secret-envelope&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=secret-key`,
+			`${MOBILE_SYNC_ROUTE_PATH}?from=qr`,
+		],
+		[
+			"path",
+			`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}/${MOBILE_SYNC_FRAGMENT_KEY}=secret-envelope/${MOBILE_SYNC_KEY_FRAGMENT_KEY}=secret-key`,
+			MOBILE_SYNC_ROUTE_PATH,
+		],
+	])("uses a clean full navigation when replaceState silently leaves the %s credential", (_part, href, cleanUrl) => {
+		const initialUrl = new URL(href);
 		const location = {
-			href: `${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
-			pathname: MOBILE_SYNC_ROUTE_PATH,
-			search: "?from=qr",
-			hash: `#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
+			href: initialUrl.href,
+			pathname: initialUrl.pathname,
+			search: initialUrl.search,
+			hash: initialUrl.hash,
+		};
+		const history = { replaceState: vi.fn() };
+		const navigation = { replace: vi.fn() };
+
+		expect(() => readAndClearMobileSyncEnvelope(location, history, navigation)).toThrow(
+			MobileSyncCleanNavigationRequiredError,
+		);
+		expect(navigation.replace).toHaveBeenCalledWith(cleanUrl);
+	});
+
+	it("fails closed and requests a clean full navigation when replaceState throws", () => {
+		const href = `${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=secret-envelope&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=secret-key`;
+		const initialUrl = new URL(href);
+		const location = {
+			href: initialUrl.href,
+			pathname: initialUrl.pathname,
+			search: initialUrl.search,
+			hash: initialUrl.hash,
+		};
+		const history = {
+			replaceState: vi.fn(() => {
+				throw new DOMException("blocked", "SecurityError");
+			}),
+		};
+		const navigation = {
+			replace: vi.fn(() => {
+				throw new DOMException("blocked", "SecurityError");
+			}),
 		};
 
-		expect(() => readAndClearMobileSyncEnvelope(location, history)).toThrow(MobileSyncError);
-		expect(history.replaceState).toHaveBeenCalledWith(null, "", `${MOBILE_SYNC_ROUTE_PATH}?from=qr`);
-		expect(getMobileSyncCleanUrl(location)).toBe(`${MOBILE_SYNC_ROUTE_PATH}?from=qr`);
+		let caught: unknown;
+		try {
+			readAndClearMobileSyncEnvelope(location, history, navigation);
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(MobileSyncCleanNavigationRequiredError);
+		expect((caught as Error).message).not.toContain("secret-envelope");
+		expect(navigation.replace).toHaveBeenCalledWith(MOBILE_SYNC_ROUTE_PATH);
 	});
 
 	it("rejects malformed payload encoding", () => {

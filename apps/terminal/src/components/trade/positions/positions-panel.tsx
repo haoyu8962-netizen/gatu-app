@@ -1,21 +1,38 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
-import { Suspense, useMemo, useTransition } from "react";
+import { Trans } from "@lingui/react/macro";
+import { Suspense, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	ALL_POSITION_MARKETS,
+	getReadyItemCount,
+	type PositionDirectionFilter,
+	type PositionMarketFilter,
+	type PositionMarketIdentity,
+} from "@/domain/trade/position-toolbar";
+import { useAccountOverview } from "@/hooks/trade/use-account-overview";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
+import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import { PositionFilterToolbar } from "./position-filter-toolbar";
+import type { PositionMarketOption } from "./position-market-filter";
 
-const tabContentBaseClass = "flex-1 min-h-0 flex flex-col mt-0";
+const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
+const CONTEXTUAL_TOOLBAR_TABS = new Set(["balances", "orders", "funding", "orders-history"]);
+const COUNTED_POSITION_TABS = new Set(["balances", "positions", "orders", "twap"]);
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
+const AccountTransfersTab = createLazyComponent(() => import("./account-transfers-tab"), "AccountTransfersTab");
 const FundingTab = createLazyComponent(() => import("./funding-tab"), "FundingTab");
 const HistoryTab = createLazyComponent(() => import("./history-tab"), "HistoryTab");
 const OrdersHistoryTab = createLazyComponent(() => import("./orders-history-tab"), "OrdersHistoryTab");
@@ -23,40 +40,202 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
-export function PositionsPanel() {
-	const { i18n } = useLingui();
+interface Props {
+	includeTransfers?: boolean;
+	autoHeight?: boolean;
+}
+
+interface PositionFiltersState {
+	ownerKey: string | null;
+	direction: PositionDirectionFilter;
+	market: PositionMarketFilter;
+}
+
+const POSITIONS_TAB_VALUES = new Set<string>(POSITIONS_TABS.map((tab) => tab.value));
+
+export function PositionsPanel({ includeTransfers = false, autoHeight = false }: Props) {
+	const { _ } = useLingui();
+	const withdrawUnavailableId = useId();
 	useRenderCommitTrack("positions-table");
-	const activeTab = usePositionsActiveTab();
+	const storedActiveTab = usePositionsActiveTab();
+	const activeTab = resolvePositionsTab(storedActiveTab, includeTransfers);
+	const tabs = includeTransfers ? [...POSITIONS_TABS, PORTFOLIO_TRANSFERS_TAB] : POSITIONS_TABS;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
+	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
 	const [isPending, startTransition] = useTransition();
-	const { address, isConnected } = useWalletSession();
-	const { perpSummary, spotBalances } = useDefaultDexBalances();
-	const { positions } = useUserPositions();
-	const { data: ordersEvent } = useSubscription(
+	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
+	const tabScrollRef = useRef<HTMLDivElement>(null);
+	const { address, hasWalletAccess, isConnected } = useWalletSession();
+	const ownerKey = address?.toLowerCase() ?? null;
+	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
+		ownerKey,
+		direction: "all",
+		market: ALL_POSITION_MARKETS,
+	});
+	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
+	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
+	const markets = useMarkets();
+	const {
+		accountEquityValue: accountEquity,
+		accountModeReady,
+		defaultBalances,
+		fundsActionsReady,
+		maintenanceMarginRatio,
+		riskSummary,
+		summaryReady: accountSummaryReady,
+	} = useAccountOverview();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: fundsActionsReady,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled: false,
+	});
+	const {
+		perpSummary,
+		spotBalances,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		hasError: balancesError,
+	} = defaultBalances;
+	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
+	const {
+		positions,
+		isLoading: positionsLoading,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const {
+		data: ordersEvent,
+		status: ordersStatus,
+		isStale: ordersStale,
+	} = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
-	const { data: twapStatesEvent } = useSubscription(
+	const {
+		data: twapStatesEvent,
+		status: twapStatesStatus,
+		isStale: twapStatesStale,
+	} = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
-	const twapCount = isConnected ? (twapStatesEvent?.states?.length ?? 0) : null;
+	const twapCount = getReadyItemCount({
+		isConnected,
+		isReady: twapStatesStatus === "active" && !twapStatesStale && twapStatesEvent !== undefined,
+		count: twapStatesEvent?.states?.length ?? 0,
+	});
+	const currentPositionMarket: PositionMarketIdentity | null = selectedMarket
+		? {
+				coin: selectedMarket.name,
+				dex: selectedMarket.kind === "builderPerp" ? selectedMarket.dex : "",
+			}
+		: null;
+	const positionMarketOptions: PositionMarketOption[] = positions.map((position) => {
+		const market = markets.getMarket(position.coin);
+		const baseLabel = market?.shortName ?? position.coin;
+		return {
+			coin: position.coin,
+			dex: position.dex,
+			label: position.dex ? `${baseLabel} (${position.dex})` : baseLabel,
+		};
+	});
 
 	function handleTabChange(value: string) {
 		startTransition(() => setPositionsActiveTab(value));
 	}
 
-	const positionsCount = isConnected ? positions.length : null;
+	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction,
+			market: current.ownerKey === ownerKey ? current.market : ALL_POSITION_MARKETS,
+		}));
+	}
 
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : null;
+	function handlePositionMarketChange(market: PositionMarketFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction: current.ownerKey === ownerKey ? current.direction : "all",
+			market,
+		}));
+	}
+
+	const positionsCount = getReadyItemCount({
+		isConnected,
+		isReady: hasAllDexsSnapshot && !positionsLoading && !positionsError && !positionsStale,
+		count: positions.length,
+	});
+
+	const ordersCount = getReadyItemCount({
+		isConnected,
+		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
+		count: openOrders?.length ?? 0,
+	});
+	const positionsAccountSummary =
+		accountSummaryReady && accountEquity !== null && riskSummary
+			? {
+					accountEquity,
+					unrealizedPnl: riskSummary.unrealizedPnl,
+					maintenanceMarginRatio,
+				}
+			: null;
 
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
+	const showsFundsActions = includeTransfers && activeTab === PORTFOLIO_TRANSFERS_TAB.value;
+	const showsPositionToolbar = activeTab === "positions" && positionsCount !== null;
+	const hasHeaderActions = showsFundsActions || showsPositionToolbar || CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
+
+	useEffect(() => {
+		const scroller = tabScrollRef.current;
+		if (!scroller) return;
+		const scrollContainer: HTMLDivElement = scroller;
+
+		function revealActiveTab() {
+			const activeTabElement = scrollContainer.querySelector<HTMLElement>(`[data-positions-tab="${activeTab}"]`);
+			if (!activeTabElement) return;
+
+			const scrollerRect = scrollContainer.getBoundingClientRect();
+			const activeTabRect = activeTabElement.getBoundingClientRect();
+			let horizontalDelta = 0;
+			if (activeTabRect.left < scrollerRect.left) horizontalDelta = activeTabRect.left - scrollerRect.left;
+			else if (activeTabRect.right > scrollerRect.right) horizontalDelta = activeTabRect.right - scrollerRect.right;
+			if (horizontalDelta === 0) return;
+
+			if (typeof scrollContainer.scrollBy === "function") {
+				scrollContainer.scrollBy({ behavior: "auto", left: horizontalDelta, top: 0 });
+			} else {
+				scrollContainer.scrollLeft += horizontalDelta;
+			}
+		}
+
+		revealActiveTab();
+		if (typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver(revealActiveTab);
+		observer.observe(scrollContainer);
+		if (toolbarTarget) observer.observe(toolbarTarget);
+		for (const tab of scrollContainer.querySelectorAll<HTMLElement>("[data-positions-tab]")) observer.observe(tab);
+		return () => observer.disconnect();
+	}, [activeTab, toolbarTarget]);
 
 	const balancesCount = useMemo(() => {
-		if (!isConnected) return null;
+		if (
+			!isConnected ||
+			balancesError ||
+			defaultBalances.isDataStale ||
+			defaultBalances.perpStateStatus !== "success" ||
+			defaultBalances.spotStateStatus !== "success" ||
+			!hasAllDexsSnapshot ||
+			!hasSpotStateSnapshot
+		)
+			return null;
 		let count = 0;
 		const perpAccountValue = toNumberOrZero(perpSummary?.accountValue);
 		if (perpAccountValue > 0) count++;
@@ -66,7 +245,17 @@ export function PositionsPanel() {
 			}
 		}
 		return count;
-	}, [isConnected, perpSummary?.accountValue, spotBalances]);
+	}, [
+		balancesError,
+		defaultBalances.isDataStale,
+		defaultBalances.perpStateStatus,
+		defaultBalances.spotStateStatus,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		isConnected,
+		perpSummary?.accountValue,
+		spotBalances,
+	]);
 
 	function getTabCount(tabValue: string): number | null {
 		if (tabValue === "balances") return balancesCount;
@@ -77,45 +266,129 @@ export function PositionsPanel() {
 	}
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden bg-surface">
+		<div className={cn("flex flex-col bg-surface", autoHeight ? "min-h-64" : "h-full overflow-hidden")}>
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}
 				className="flex-1 min-h-0 flex flex-col"
-				size="sm"
+				size="xs"
 				variant="underline"
 			>
-				<div className="overflow-x-auto scrollbar-none px-2 pt-1.5 pb-1">
-					<TabsList className="min-w-max gap-1">
-						{POSITIONS_TABS.map((tab) => {
-							const count = getTabCount(tab.value);
+				<div
+					data-testid="positions-toolbar-header"
+					className="font-market-close flex h-[45px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
+				>
+					<div
+						ref={tabScrollRef}
+						data-testid="positions-tabs-scroll"
+						className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					>
+						<TabsList
+							className="h-full min-w-max gap-0.5 border-b-0"
+							indicatorClassName="bg-market-close-fg transition-[left] duration-[120ms] ease-linear"
+						>
+							{tabs.map((tab) => {
+								const count = getTabCount(tab.value);
+								const showCountSlot = isConnected && COUNTED_POSITION_TABS.has(tab.value);
 
-							return (
-								<TabsTrigger
-									key={tab.value}
-									value={tab.value}
-									className="inline-flex items-center gap-1 whitespace-nowrap"
-								>
-									<span>{i18n._(tab.label)}</span>
-									{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
-								</TabsTrigger>
-							);
-						})}
-					</TabsList>
+								return (
+									<TabsTrigger
+										key={tab.value}
+										value={tab.value}
+										data-positions-tab={tab.value}
+										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
+									>
+										<span>{_(tab.label)}</span>
+										{showCountSlot ? (
+											<span
+												data-position-tab-count={tab.value}
+												className="inline-flex min-w-[3ch] shrink-0 justify-center tabular-nums"
+											>
+												{typeof count === "number" ? `(${count})` : null}
+											</span>
+										) : null}
+									</TabsTrigger>
+								);
+							})}
+						</TabsList>
+					</div>
+					<div
+						ref={setToolbarTarget}
+						data-testid="positions-header-actions"
+						className={cn("flex shrink-0 items-center gap-2", hasHeaderActions && "pl-3")}
+					>
+						{showsFundsActions ? (
+							<>
+								<Tooltip content={depositAvailability.unavailableReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="filled"
+											intent="neutral"
+											size="xxs"
+											disabled={!depositAvailability.available}
+											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+											title={depositAvailability.unavailableReason ?? undefined}
+											className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+										>
+											<Trans context="Trading toolbar action">Deposit</Trans>
+										</Button>
+									</span>
+								</Tooltip>
+								{withdrawDisabledReason ? (
+									<span id={withdrawUnavailableId} className="sr-only">
+										{withdrawDisabledReason}
+									</span>
+								) : null}
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="xxs"
+											disabled={!!withdrawDisabledReason}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
+											className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+										>
+											<Trans context="Trading toolbar action">Withdraw</Trans>
+										</Button>
+									</span>
+								</Tooltip>
+							</>
+						) : null}
+						{showsPositionToolbar ? (
+							<PositionFilterToolbar
+								direction={positionDirectionFilter}
+								market={positionMarketFilter}
+								marketOptions={positionMarketOptions}
+								onDirectionChange={handlePositionDirectionChange}
+								onMarketChange={handlePositionMarketChange}
+							/>
+						) : null}
+					</div>
 				</div>
 				<TabsContent value="balances" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<BalancesTab />
+						<BalancesTab toolbarTarget={activeTab === "balances" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="positions" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<PositionsTab />
+						<PositionsTab
+							directionFilter={positionDirectionFilter}
+							marketFilter={positionMarketFilter}
+							currentMarket={currentPositionMarket}
+							accountSummary={positionsAccountSummary}
+						/>
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="orders" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<OrdersTab />
+						<OrdersTab toolbarTarget={activeTab === "orders" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="twap" className={tabContentClass}>
@@ -125,7 +398,7 @@ export function PositionsPanel() {
 				</TabsContent>
 				<TabsContent value="orders-history" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<OrdersHistoryTab />
+						<OrdersHistoryTab toolbarTarget={activeTab === "orders-history" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="history" className={tabContentClass}>
@@ -135,12 +408,24 @@ export function PositionsPanel() {
 				</TabsContent>
 				<TabsContent value="funding" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<FundingTab />
+						<FundingTab toolbarTarget={activeTab === "funding" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
+				{includeTransfers ? (
+					<TabsContent value="transfers" className={tabContentClass}>
+						<Suspense fallback={<TabLoadingFallback />}>
+							<AccountTransfersTab />
+						</Suspense>
+					</TabsContent>
+				) : null}
 			</Tabs>
 		</div>
 	);
+}
+
+function resolvePositionsTab(value: string, includeTransfers: boolean): string {
+	if (includeTransfers && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
+	return POSITIONS_TAB_VALUES.has(value) ? value : "positions";
 }
 
 function TabLoadingFallback() {

@@ -61,10 +61,10 @@ describe("visibility-pause for market streams", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("passes user-stream writes through for method-based user streams (webData2)", async () => {
+	it("passes user-stream writes through for method-based user streams (webData3)", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const key = marketKey("webData2", { coin: "ETH" });
+		const key = marketKey("webData3", { coin: "ETH" });
 		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
@@ -106,7 +106,7 @@ describe("visibility-pause for market streams", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("triggers transport close after flushing on visible", async () => {
+	it("keeps the transport connected after flushing on visible", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("allMids");
@@ -123,7 +123,8 @@ describe("visibility-pause for market streams", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		document.dispatchEvent(new Event("visibilitychange"));
 
-		expect(triggerReconnect).toHaveBeenCalledTimes(1);
+		expect(store.getState().subscriptions[key]?.data).toEqual({ mid: "100" });
+		expect(triggerReconnect).not.toHaveBeenCalled();
 
 		store.getState().releaseSubscription(key);
 	});

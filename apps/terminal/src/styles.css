@@ -2,7 +2,20 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
 @import "@gatu/ui/globals.css";
+@import "react-grid-layout/css/styles.css";
 @source "../../../packages/ui/src";
+
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 /* ============================================
    HyperTerminal UI — Design Tokens
@@ -19,6 +32,7 @@
 @theme {
   /* ---- Font Families ---- */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-market-close: "IBM Plex Sans Variable", "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", monospace;
 
   /* ---- Typography Scale (Desktop) ----
@@ -37,6 +51,8 @@
   --text-2xs--line-height: 16px;
   --text-xs: 12px;
   --text-xs--line-height: 16px;
+  --text-2sm: 13px;
+  --text-2sm--line-height: 18px;
   --text-sm: 14px;
   --text-sm--line-height: 20px;
   --text-base: 16px;
@@ -64,9 +80,9 @@
   /* ---- Spacing Base (4px grid) ---- */
   --spacing: 4px;
 
-  /* ---- Shadows ---- */
-  --shadow-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
-  --shadow-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.08), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+  /* ---- Shadows (themed: see --elevation-* in :root/.dark) ---- */
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
   --inset-shadow-sunken: inset 0 1px 4px rgba(0, 0, 0, 0.08);
 
   /* ---- Letter Spacing ---- */
@@ -104,12 +120,91 @@
   :root {
     color-scheme: light;
 
+    /* Elevation (light): shared surfaces stack on white, so shadows stay soft. */
+    --elevation-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+    --elevation-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.08), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+
+    /* API wallet page — handoff semantics mapped to project tokens. */
+    --api-wallet-frame-max: 90rem;
+    --api-wallet-content-max: 85rem;
+    --api-wallet-description-max: 48.75rem;
+    --api-wallet-page-min-height: 43.75rem;
+    --api-wallet-page-radius: 0.875rem;
+    --api-wallet-modal-title-font-size: 1.0625rem;
+    --api-wallet-modal-title-line-height: 1.5rem;
+    --api-wallet-form-columns: 21.25rem minmax(0, 1fr) 12.5rem 9.375rem;
+    --api-wallet-row-min-height: 2.875rem;
+    --api-wallet-table-head-height: 1.75rem;
+    --api-wallet-modal-width: 26.25rem;
+    --api-wallet-modal-viewport-gap: 1rem;
+    --api-wallet-modal-radius: 1rem;
+    --api-wallet-sheet-radius: 1.125rem;
+    --api-wallet-card-radius: 0.75rem;
+    --api-wallet-control-radius: 0.625rem;
+    --api-wallet-control-height: 2.5rem;
+    --api-wallet-mobile-control-height: 3rem;
+    --api-wallet-state-icon-size: 2.75rem;
+    --api-wallet-mobile-state-icon-size: 2.5rem;
+    --api-wallet-progress-ring-size: 3.75rem;
+    --api-wallet-mobile-progress-ring-size: 3.5rem;
+    --api-wallet-progress-ring-stroke: 0.1875rem;
+    --api-wallet-step-dot-size: 1rem;
+    --api-wallet-skeleton-line-height: 0.6875rem;
+    --api-wallet-secret-tracking: 0.18em;
+    --api-wallet-col-name: 18%;
+    --api-wallet-col-address: 34%;
+    --api-wallet-col-status: 16%;
+    --api-wallet-col-expiry: 20%;
+    --api-wallet-col-action: 12%;
+    --api-wallet-fg: var(--market-close-text-strong);
+    --api-wallet-muted: var(--market-close-text-muted);
+    --api-wallet-subtle: var(--market-close-text-subtle);
+    --api-wallet-stroke-card: var(--market-close-stroke-card);
+    --api-wallet-stroke-input: var(--market-close-stroke-input);
+    --api-wallet-stroke-control: var(--market-close-stroke-control);
+    --api-wallet-surface-card: var(--market-close-surface-card);
+    --api-wallet-surface-hover: var(--market-close-surface-hover);
+    --api-wallet-control: var(--market-close-control-active);
+    --api-wallet-on-control: var(--market-close-control-active-text);
+    --api-wallet-danger: var(--market-close-danger);
+    --api-wallet-danger-on: var(--market-close-danger-text);
+    --api-wallet-success: var(--market-close-success);
+    --api-wallet-warning: var(--market-close-warning);
+    --api-wallet-disabled: var(--text-disabled);
+    --api-wallet-page-shadow: var(--shadow-raised);
+    --api-wallet-modal-shadow: var(--shadow-overlay);
+
+    /* Vaults, staking, and leaderboard redesign semantics. */
+    --earn-frame-max: 90rem;
+    --earn-content-max: 85rem;
+    --earn-page-min-height: 35rem;
+    --earn-page-radius: 0.875rem;
+    --earn-search-max: 21.25rem;
+    --earn-rank-column: 4.375rem;
+    --earn-trader-column: 15.625rem;
+    --earn-mobile-sort-width: 10rem;
+    --earn-rows-select-width: 5rem;
+    --earn-state-copy-max: 25rem;
+    --earn-frame-wide-max: 100rem;
+    --staking-frame-max: 90rem;
+    --staking-validator-table-min: 60.4375rem;
+    --staking-rewards-table-min: 40rem;
+    --staking-history-table-min: 44rem;
+    --vault-detail-sidebar-min: 18rem;
+    --funds-action-toast-offset: 2.5rem;
+    --funds-action-toast-max: 2rem;
+    --funds-action-value-max: 65%;
+    --funds-action-modal-inset: 1rem;
+
     /* Background */
     --bg-base: #ffffff;
     --bg-raised: #ffffff;
     --bg-overlay: #ffffff;
+    --bg-modal: #ffffff;
     --bg-sunken: #f5f6fa;
     --bg-alternate: #f5f6fa;
+    --bg-grid-container: #f1f3f6;
+    --bg-portfolio-canvas: #f1f3f6;
     --bg-brand: #4c64d9;
     --bg-inverse: #12131a;
 
@@ -188,23 +283,103 @@
     /* HyperTerminal Trading Extensions */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --orderbook-depth-bid: var(--text-success);
+    --orderbook-depth-ask: var(--text-error);
+    --orderbook-flash-bid: #0a9981;
+    --orderbook-flash-ask: #ed7088;
+    --orderbook-text: var(--text-strong);
+    --orderbook-spread-bg: var(--bg-alternate);
     --market-neutral: #8A919A;
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
     --sel: rgba(37, 99, 235, 0.15);
+
+    /* Trading toolbar and close confirmation — design handoff semantic colors. */
+    --market-close-text-strong: #1a2330;
+    --market-close-text-muted: #6b7686;
+    --market-close-text-subtle: #98a2b0;
+    --market-close-stroke-card: #e3e8ee;
+    --market-close-stroke-input: #d8dfe7;
+    --market-close-stroke-control: #c6cfd9;
+    --market-close-surface-card: #f7f9fb;
+    --market-close-surface-hover: #f1f4f8;
+    --market-close-control-active: #1a2330;
+    --market-close-control-active-text: #ffffff;
+    --market-close-danger: #d6453d;
+    --market-close-danger-text: #ffffff;
+    --market-close-danger-disabled: #efc3bf;
+    --market-close-success: #1f8a5a;
+    --market-close-warning: #d98e1f;
+    --market-close-inline-edit-shadow: 0 4px 16px rgba(20, 30, 45, 0.16);
+    --legal-acceptance-disabled-fill: #edf1f5;
+    --legal-acceptance-pending-fill: #33505e;
+    --legal-acceptance-shadow: 0 24px 64px rgba(20, 30, 45, 0.2);
+    --language-settings-disabled: #c6cfd9;
+    --language-settings-divider: #eef1f5;
+    --language-settings-shadow: 0 16px 40px rgba(20, 30, 45, 0.18);
+
+    /* Trading panel surfaces and controls — mobile redesign semantic colors. */
+    --trading-panel-text-strong: #1a2330;
+    --trading-panel-text-muted: #6b7686;
+    --trading-panel-text-subtle: #98a2b0;
+    --trading-panel-stroke-card: #e3e8ee;
+    --trading-panel-stroke-input: #d8dfe7;
+    --trading-panel-stroke-control: #c6cfd9;
+    --trading-panel-stroke-row: #eef1f5;
+    --trading-panel-surface-card: #f7f9fb;
+    --trading-panel-surface-hover: #f1f4f8;
+    --trading-panel-control-active: #1a2330;
+    --trading-panel-control-active-text: #ffffff;
+    --trading-panel-success: #1f8a5a;
+    --trading-panel-error: #d6453d;
+    --trading-panel-warning: #d98e1f;
+    --trading-panel-success-fill: #1f8a5a;
+    --trading-panel-error-fill: #d6453d;
+    --trading-panel-neutral-disabled-fill: #c6cfd9;
+    --trading-panel-success-disabled-fill: #b9dccb;
+    --trading-panel-error-disabled-fill: #efc3bf;
+    --trading-panel-on-success: #ffffff;
+    --trading-panel-on-error: #ffffff;
+    --trading-panel-on-disabled: #ffffff;
+    --trading-panel-success-soft: #eaf5ef;
+    --trading-panel-error-soft: #fcefee;
+    --trading-panel-scrim: rgb(20 30 45 / 42%);
+    --trading-panel-slider-thumb: #ffffff;
+    --trading-panel-slider-shadow: 0 2px 6px rgba(20, 30, 45, 0.2);
+
+    /* Position PNL share card — intentionally fixed inverse canvas across themes. */
+    --position-share-card: #1a2330;
+    --position-share-fg: #ffffff;
+    --position-share-muted: #8fa0b0;
+    --position-share-profit: #2fc482;
+    --position-share-loss: #f0665e;
+    --position-share-long: #1f8a5a;
+    --position-share-short: #d6453d;
+    --position-share-divider: #ffffff1f;
+    --position-share-outline: #ffffff66;
+    --position-share-hover: #ffffff1f;
+    --position-share-button-hover: #f1f4f8;
   }
 
   /* ==================== DARK MODE ==================== */
   .dark {
     color-scheme: dark;
 
+    /* Elevation: the light shadows are near-invisible on #0f1a1f, so overlays need heavier
+       black to lift off the terminal surface. */
+    --elevation-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.32), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --elevation-overlay: 0 20px 24px -4px rgba(0, 0, 0, 0.48), 0 8px 8px -4px rgba(0, 0, 0, 0.32);
+
     /* Background */
-    --bg-base: #12131a;
-    --bg-raised: #1d1e26;
+    --bg-base: #0f1a1f;
+    --bg-raised: #0f1a1f;
     --bg-overlay: #292b33;
+    --bg-modal: #0f1a1f;
     --bg-sunken: #000000;
-    --bg-alternate: #1d1e26;
+    --bg-alternate: #0f1a1f;
+    --bg-grid-container: #1b2429;
+    --bg-portfolio-canvas: #04251f;
     --bg-brand: #b2bcf1;
     --bg-inverse: #ffffff;
 
@@ -283,11 +458,69 @@
     /* HyperTerminal Trading Extensions (Dark) */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --orderbook-depth-bid: #1fa67d;
+    --orderbook-depth-ask: #ed7088;
+    --orderbook-flash-bid: #0a9981;
+    --orderbook-flash-ask: #ed7088;
+    --orderbook-text: #d2dad7;
+    --orderbook-spread-bg: #273035;
     --market-neutral: #6B7280;
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
     --sel: rgba(79, 125, 255, 0.15);
+
+    /* Dark mode follows the terminal's existing semantic contrast system. */
+    --market-close-text-strong: var(--text-strong);
+    --market-close-text-muted: var(--text-weak);
+    --market-close-text-subtle: var(--icon-neutral);
+    --market-close-stroke-card: var(--stroke-weak);
+    --market-close-stroke-input: var(--stroke-strong);
+    --market-close-stroke-control: var(--stroke-strong);
+    --market-close-surface-card: var(--fill-weak);
+    --market-close-surface-hover: var(--fill-press);
+    --market-close-control-active: var(--fill-selected);
+    --market-close-control-active-text: var(--text-inverse-strong);
+    --market-close-danger: var(--fill-error-strong);
+    --market-close-danger-text: var(--text-inverse-strong);
+    --market-close-danger-disabled: var(--fill-disabled);
+    --market-close-success: var(--fill-success-strong);
+    --market-close-warning: var(--text-warning);
+    --market-close-inline-edit-shadow: 0 4px 16px rgba(0, 0, 0, 0.36);
+    --legal-acceptance-disabled-fill: var(--fill-disabled);
+    --legal-acceptance-pending-fill: var(--bg-overlay);
+    --legal-acceptance-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
+    --language-settings-disabled: var(--text-disabled);
+    --language-settings-divider: var(--stroke-weak);
+    --language-settings-shadow: 0 16px 40px rgba(0, 0, 0, 0.48);
+
+    --trading-panel-text-strong: var(--text-strong);
+    --trading-panel-text-muted: var(--text-weak);
+    --trading-panel-text-subtle: var(--icon-neutral);
+    --trading-panel-stroke-card: var(--stroke-weak);
+    --trading-panel-stroke-input: color-mix(in srgb, var(--stroke-strong) 40%, var(--stroke-weak));
+    --trading-panel-stroke-control: var(--stroke-strong);
+    --trading-panel-stroke-row: color-mix(in srgb, var(--stroke-weak) 70%, transparent);
+    --trading-panel-surface-card: var(--fill-weak);
+    --trading-panel-surface-hover: var(--fill-press);
+    --trading-panel-control-active: var(--fill-selected);
+    --trading-panel-control-active-text: var(--text-inverse-strong);
+    --trading-panel-success: var(--text-success);
+    --trading-panel-error: var(--text-error);
+    --trading-panel-warning: var(--text-warning);
+    --trading-panel-success-fill: var(--fill-success-weak);
+    --trading-panel-error-fill: var(--fill-error-weak);
+    --trading-panel-neutral-disabled-fill: var(--fill-disabled);
+    --trading-panel-success-disabled-fill: var(--fill-disabled);
+    --trading-panel-error-disabled-fill: var(--fill-disabled);
+    --trading-panel-on-success: var(--text-success);
+    --trading-panel-on-error: var(--text-error);
+    --trading-panel-on-disabled: var(--icon-neutral);
+    --trading-panel-success-soft: var(--fill-success-weak);
+    --trading-panel-error-soft: var(--fill-error-weak);
+    --trading-panel-scrim: var(--fill-overlay);
+    --trading-panel-slider-thumb: var(--fill-white);
+    --trading-panel-slider-shadow: 0 2px 6px rgba(0, 0, 0, 0.36);
   }
 }
 
@@ -301,14 +534,36 @@
   --color-background: var(--bg-base);
   --color-surface: var(--bg-raised);
   --color-overlay: var(--bg-overlay);
+  --color-modal: var(--bg-modal);
   --color-sunken: var(--bg-sunken);
   --color-alternate: var(--bg-alternate);
+  --color-grid-container: var(--bg-grid-container);
+  --color-portfolio-canvas: var(--bg-portfolio-canvas);
   --color-inverse-surface: var(--bg-inverse);
+
+  /* API wallet page */
+  --color-api-wallet-fg: var(--api-wallet-fg);
+  --color-api-wallet-muted: var(--api-wallet-muted);
+  --color-api-wallet-subtle: var(--api-wallet-subtle);
+  --color-api-wallet-stroke-card: var(--api-wallet-stroke-card);
+  --color-api-wallet-stroke-input: var(--api-wallet-stroke-input);
+  --color-api-wallet-stroke-control: var(--api-wallet-stroke-control);
+  --color-api-wallet-card: var(--api-wallet-surface-card);
+  --color-api-wallet-hover: var(--api-wallet-surface-hover);
+  --color-api-wallet-control: var(--api-wallet-control);
+  --color-api-wallet-on-control: var(--api-wallet-on-control);
+  --color-api-wallet-danger: var(--api-wallet-danger);
+  --color-api-wallet-danger-on: var(--api-wallet-danger-on);
+  --color-api-wallet-success: var(--api-wallet-success);
+  --color-api-wallet-warning: var(--api-wallet-warning);
+  --color-api-wallet-disabled: var(--api-wallet-disabled);
+  --shadow-api-wallet-page: var(--api-wallet-page-shadow);
+  --shadow-api-wallet-modal: var(--api-wallet-modal-shadow);
 
   /* Foregrounds */
   --color-fg: var(--text-strong);
   --color-fg-muted: var(--text-weak);
-  --color-fg-disabled: var(--text-disabled);
+  --color-fg-disabled: var(--icon-neutral);
   --color-fg-inverse: var(--text-inverse-strong);
   --color-fg-inverse-muted: var(--text-inverse-weak);
   --color-fg-inverse-disabled: var(--text-inverse-disabled);
@@ -341,6 +596,72 @@
   --color-fill-inverse-disabled: var(--fill-inverse-disabled);
   --color-white: var(--fill-white);
   --color-yellow: var(--fill-yellow);
+
+  /* Trading toolbar and close confirmation */
+  --color-market-close-fg: var(--market-close-text-strong);
+  --color-market-close-muted: var(--market-close-text-muted);
+  --color-market-close-subtle: var(--market-close-text-subtle);
+  --color-market-close-stroke-card: var(--market-close-stroke-card);
+  --color-market-close-stroke-input: var(--market-close-stroke-input);
+  --color-market-close-stroke-control: var(--market-close-stroke-control);
+  --color-market-close-card: var(--market-close-surface-card);
+  --color-market-close-hover: var(--market-close-surface-hover);
+  --color-market-close-control: var(--market-close-control-active);
+  --color-market-close-on-control: var(--market-close-control-active-text);
+  --color-market-close-danger: var(--market-close-danger);
+  --color-market-close-danger-text: var(--market-close-danger-text);
+  --color-market-close-danger-disabled: var(--market-close-danger-disabled);
+  --color-market-close-success: var(--market-close-success);
+  --color-market-close-warning: var(--market-close-warning);
+  --shadow-market-close-inline-edit: var(--market-close-inline-edit-shadow);
+  --color-legal-acceptance-disabled: var(--legal-acceptance-disabled-fill);
+  --color-legal-acceptance-pending: var(--legal-acceptance-pending-fill);
+  --shadow-legal-acceptance: var(--legal-acceptance-shadow);
+  --color-language-settings-disabled: var(--language-settings-disabled);
+  --color-language-settings-divider: var(--language-settings-divider);
+  --shadow-language-settings: var(--language-settings-shadow);
+
+  /* Trading panel surfaces and controls */
+  --color-trading-panel-fg: var(--trading-panel-text-strong);
+  --color-trading-panel-muted: var(--trading-panel-text-muted);
+  --color-trading-panel-subtle: var(--trading-panel-text-subtle);
+  --color-trading-panel-stroke-card: var(--trading-panel-stroke-card);
+  --color-trading-panel-stroke-input: var(--trading-panel-stroke-input);
+  --color-trading-panel-stroke-control: var(--trading-panel-stroke-control);
+  --color-trading-panel-stroke-row: var(--trading-panel-stroke-row);
+  --color-trading-panel-card: var(--trading-panel-surface-card);
+  --color-trading-panel-hover: var(--trading-panel-surface-hover);
+  --color-trading-panel-control: var(--trading-panel-control-active);
+  --color-trading-panel-on-control: var(--trading-panel-control-active-text);
+  --color-trading-panel-success: var(--trading-panel-success);
+  --color-trading-panel-error: var(--trading-panel-error);
+  --color-trading-panel-warning: var(--trading-panel-warning);
+  --color-trading-panel-success-fill: var(--trading-panel-success-fill);
+  --color-trading-panel-error-fill: var(--trading-panel-error-fill);
+  --color-trading-panel-neutral-disabled-fill: var(--trading-panel-neutral-disabled-fill);
+  --color-trading-panel-success-disabled-fill: var(--trading-panel-success-disabled-fill);
+  --color-trading-panel-error-disabled-fill: var(--trading-panel-error-disabled-fill);
+  --color-trading-panel-on-success: var(--trading-panel-on-success);
+  --color-trading-panel-on-error: var(--trading-panel-on-error);
+  --color-trading-panel-on-disabled: var(--trading-panel-on-disabled);
+  --color-trading-panel-success-soft: var(--trading-panel-success-soft);
+  --color-trading-panel-error-soft: var(--trading-panel-error-soft);
+  --color-trading-panel-scrim: var(--trading-panel-scrim);
+  --color-trading-panel-slider-thumb: var(--trading-panel-slider-thumb);
+  --shadow-trading-panel-slider: var(--trading-panel-slider-shadow);
+
+  /* Position PNL share card */
+  --color-position-share-card: var(--position-share-card);
+  --color-position-share-fg: var(--position-share-fg);
+  --color-position-share-muted: var(--position-share-muted);
+  --color-position-share-profit: var(--position-share-profit);
+  --color-position-share-loss: var(--position-share-loss);
+  --color-position-share-long: var(--position-share-long);
+  --color-position-share-short: var(--position-share-short);
+  --color-position-share-divider: var(--position-share-divider);
+  --color-position-share-outline: var(--position-share-outline);
+  --color-position-share-hover: var(--position-share-hover);
+  --color-position-share-button-hover: var(--position-share-button-hover);
 
   /* Strokes (kept as `stroke-` — border ≠ stroke, so no stutter) */
   --color-stroke-weak: var(--stroke-weak);
@@ -388,7 +709,7 @@
    Layer 4: Responsive Typography
    ============================================= */
 @layer base {
-  @media (max-width: 767px) {
+  @media (max-width: 1000px) {
     :root,
     .dark {
       --text-xl: 24px;
@@ -413,6 +734,11 @@
     font-family: var(--font-sans);
     background-color: var(--bg-base);
     color: var(--text-strong);
+    /* Hyperliquid uses 8px controls and a 16px mobile sheet; keep Privy on that same scale. */
+    --privy-border-radius-sm: var(--radius-16);
+    --privy-border-radius-md: var(--radius-16);
+    --privy-border-radius-lg: var(--radius-32);
+    --privy-border-radius-full: var(--radius-full);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -442,7 +768,20 @@
 
   html {
     height: 100%;
-    scrollbar-gutter: stable;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
+  html[data-theme-transition],
+  html[data-theme-transition]::before,
+  html[data-theme-transition]::after,
+  html[data-theme-transition] *,
+  html[data-theme-transition] *::before,
+  html[data-theme-transition] *::after {
+    transition-property: none !important;
   }
 
   body {
@@ -473,6 +812,26 @@
 }
 
 @layer components {
+  .api-wallet-col-name {
+    width: var(--api-wallet-col-name);
+  }
+
+  .api-wallet-col-address {
+    width: var(--api-wallet-col-address);
+  }
+
+  .api-wallet-col-status {
+    width: var(--api-wallet-col-status);
+  }
+
+  .api-wallet-col-expiry {
+    width: var(--api-wallet-col-expiry);
+  }
+
+  .api-wallet-col-action {
+    width: var(--api-wallet-col-action);
+  }
+
   .active\:scale-98:active { transform: scale(0.98); }
   .active\:scale-95:active { transform: scale(0.95); }
 
@@ -513,16 +872,156 @@
   }
 
   .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.18) 100%);
+    background-color: var(--orderbook-depth-ask);
+    opacity: 0.15;
   }
   .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.18) 0%, transparent 100%);
+    background-color: var(--orderbook-depth-bid);
+    opacity: 0.15;
   }
-  .dark .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.25) 100%);
+
+  .orderbook-panel-container {
+    container-name: orderbook-panel;
+    container-type: inline-size;
   }
-  .dark .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.25) 0%, transparent 100%);
+
+  .orderbook-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr);
+  }
+
+  .trades-grid {
+    grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 2fr) minmax(4.5rem, 2fr);
+  }
+
+  @container orderbook-panel (max-width: 19.9375rem) {
+    .orderbook-price-heading {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 17.4375rem) {
+    .orderbook-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .trades-grid {
+      grid-template-columns: minmax(3.5rem, 1fr) minmax(0, 1fr) minmax(3.5rem, 1fr);
+    }
+  }
+
+  @container orderbook-panel (max-width: 14.9375rem) {
+    .orderbook-asset-heading,
+    .trades-asset-heading,
+    .orderbook-tab-label {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 12.4375rem) {
+    .trades-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .trades-grid > :nth-child(3) {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 11.1875rem) {
+    .orderbook-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .orderbook-grid > :nth-child(3) {
+      display: none;
+    }
+  }
+
+  .trade-panel-container {
+    container-name: trade-panel;
+    container-type: inline-size;
+  }
+
+  .trade-control-grid {
+    gap: 0.5rem;
+  }
+
+  .trade-control-button {
+    padding-inline: 0.625rem;
+  }
+
+  .trade-order-type-button {
+    padding-inline: 0.125rem;
+  }
+
+  .trade-compact-label {
+    display: none;
+  }
+
+  .trade-card-label-compact {
+    display: none;
+  }
+
+  .trade-account-value-compact {
+    display: none;
+  }
+
+  @container trade-panel (max-width: 22.25rem) {
+    .trade-control-button {
+      padding-inline: 0.3125rem;
+    }
+
+    .trade-card-label-full {
+      display: none;
+    }
+
+    .trade-card-label-compact {
+      display: block;
+    }
+
+    .trade-account-value-full {
+      display: none;
+    }
+
+    .trade-account-value-compact {
+      display: block;
+    }
+  }
+
+  @container trade-panel (max-width: 12.4375rem) {
+    .trade-control-grid {
+      gap: 0.25rem;
+    }
+
+    .trade-control-button {
+      padding-inline: 0.125rem;
+    }
+
+    .trade-full-label {
+      display: none;
+    }
+
+    .trade-compact-label {
+      display: block;
+    }
+  }
+
+  .orderbook-price-ask,
+  .orderbook-price-ask:hover {
+    color: var(--orderbook-depth-ask);
+  }
+
+  .orderbook-price-bid,
+  .orderbook-price-bid:hover {
+    color: var(--orderbook-depth-bid);
+  }
+
+  .orderbook-value-text {
+    color: var(--orderbook-text);
+  }
+
+  .orderbook-spread-bg {
+    background-color: var(--orderbook-spread-bg);
   }
 
   .trade-row-buy,
@@ -532,12 +1031,12 @@
     background-color: transparent;
     transition: background-color 0.4s ease-out;
   }
-  .trade-row-buy {
+  .trade-row-buy:not([data-initial]) {
     @starting-style {
       background-color: oklch(from var(--text-success) l c h / 0.12);
     }
   }
-  .trade-row-sell {
+  .trade-row-sell:not([data-initial]) {
     @starting-style {
       background-color: oklch(from var(--text-error) l c h / 0.12);
     }
@@ -555,7 +1054,19 @@
     --price-flash-color: var(--market-down);
   }
 
-  @media (max-width: 767px) {
+  .orderbook-color-change {
+    animation: orderbook-color-change 1.8s ease 0s 1 normal none;
+  }
+
+  .orderbook-color-change[data-direction="up"] {
+    --orderbook-flash-color: var(--orderbook-flash-bid);
+  }
+
+  .orderbook-color-change[data-direction="down"] {
+    --orderbook-flash-color: var(--orderbook-flash-ask);
+  }
+
+  @media (max-width: 1000px) {
     .mobile-terminal {
       font-variant-numeric: tabular-nums;
     }
@@ -567,6 +1078,76 @@
     }
 
     100% {
+    }
+  }
+
+  @keyframes orderbook-color-change {
+    0% {
+      color: var(--orderbook-flash-color);
+    }
+
+    100% {
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .use-color-change,
+    .orderbook-color-change {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  .desktop-terminal-grid.react-grid-layout {
+    background-color: transparent;
+    transition-property: none !important;
+  }
+
+  .desktop-terminal-grid > .react-grid-item {
+    min-width: 0;
+    transition-property: none !important;
+  }
+
+  .desktop-terminal-grid > .react-grid-placeholder {
+    background-color: var(--fill-brand-weak);
+    border: 1px solid var(--stroke-brand-strong);
+    opacity: 0.45;
+  }
+
+  .desktop-terminal-grid > .react-grid-item > .react-resizable-handle {
+    z-index: 20;
+    opacity: 1;
+    touch-action: none;
+  }
+
+  .desktop-terminal-grid > .react-grid-item > .react-resizable-handle::after {
+    border-color: var(--stroke-strong);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .desktop-terminal-grid > .react-grid-item:hover > .react-resizable-handle::after,
+  .desktop-terminal-grid > .react-grid-item.resizing > .react-resizable-handle::after {
+    opacity: 0.8;
+  }
+
+  .desktop-grid-panel {
+    container-type: inline-size;
+    border-color: var(--stroke-weak);
+  }
+
+  .account-panel-container {
+    container-name: account-panel;
+  }
+
+  @container account-panel (max-width: 15rem) {
+    .account-panel-secondary-actions {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .account-panel-risk-bar {
+      display: none;
     }
   }
 }

@@ -1,50 +1,95 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import { ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
+import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { NotFoundPage } from "@/components/pages/not-found-page";
+import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { createLazyComponent } from "@/lib/lazy";
-import { buildPageHead } from "@/lib/seo";
+import { buildRootHead } from "@/lib/seo";
+import { isDocumentRoutePath, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
+import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
+import ibmPlexSansLatinWoff2 from "@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url";
+import interLatinWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import appCss from "../styles.css?url";
 
+const FONT_PRELOAD_URLS = [interLatinWoff2, ibmPlexSansLatinWoff2];
+
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
+const FundsActionRecoveryHost = createLazyComponent(
+	() => import("@/components/funds-action/funds-action-recovery-host"),
+	"FundsActionRecoveryHost",
+);
+const THEME_BOOTSTRAP_SCRIPT = `(()=>{let theme="dark";try{const value=JSON.parse(localStorage.getItem("global-settings-v2")||"null");if(value?.state?.theme==="light")theme="light"}catch{}document.documentElement.classList.remove("light","dark");document.documentElement.classList.add(theme)})();`;
+let serviceWorkerRegistration: Promise<ServiceWorkerRegistration | undefined> | undefined;
+
+function registerServiceWorker() {
+	if (serviceWorkerRegistration || !("serviceWorker" in navigator)) return;
+	serviceWorkerRegistration = navigator.serviceWorker
+		.register("/sw.js", { scope: "/", updateViaCache: "none" })
+		.catch(() => undefined);
+}
 
 interface MyRouterContext {
 	queryClient: QueryClient;
 }
 
+interface RootSearch {
+	scope?: "all";
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	head: () => buildPageHead(),
+	validateSearch: (search: Record<string, unknown>): RootSearch => (search.scope === "all" ? { scope: "all" } : {}),
+	head: () => buildRootHead(FONT_PRELOAD_URLS),
 	shellComponent: RootDocument,
 	component: RootComponent,
+	errorComponent: RouterErrorPage,
 	notFoundComponent: NotFoundPage,
 });
 
 function RootComponent() {
+	const pathname = useRouterState({ select: (state) => state.location.pathname });
+	const isDocumentRoute = isDocumentRoutePath(pathname);
+
 	useEffect(() => {
-		if ("serviceWorker" in navigator) {
-			navigator.serviceWorker.register("/sw.js", { scope: "/" });
-		}
+		registerServiceWorker();
 	}, []);
 
+	if (isDocumentRoute) return <Outlet />;
+
 	return (
-		<ClientOnly fallback={<AppShellSkeleton />}>
-			<I18nReadyGate fallback={<AppShellSkeleton />}>
-				<ExchangeScopeProvider>
-					<MarketsInfoProvider>
-						<Outlet />
-						<Suspense fallback={null}>
-							<Toaster />
-						</Suspense>
-					</MarketsInfoProvider>
-				</ExchangeScopeProvider>
-			</I18nReadyGate>
-		</ClientOnly>
+		<ApplicationErrorBoundary>
+			<ClientRuntimeGate>
+				<AppRuntime />
+			</ClientRuntimeGate>
+		</ApplicationErrorBoundary>
+	);
+}
+
+function AppRuntime() {
+	const clientRuntimeReady = useClientRuntimeReady();
+
+	if (!clientRuntimeReady) return <AppShellSkeleton />;
+
+	return (
+		<I18nReadyGate fallback={<AppShellSkeleton />}>
+			<ExchangeScopeProvider>
+				<MarketsInfoProvider>
+					<Outlet />
+					<Suspense fallback={null}>
+						<FundsActionRecoveryHost />
+					</Suspense>
+					<Suspense fallback={null}>
+						<Toaster />
+					</Suspense>
+				</MarketsInfoProvider>
+			</ExchangeScopeProvider>
+		</I18nReadyGate>
 	);
 }
 
@@ -70,10 +115,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	// the active language by the i18n module (see lib/i18n.ts), which re-asserts them past any
 	// shell re-render.
 	return (
-		<html lang="en" dir="ltr" suppressHydrationWarning>
+		<html lang="en" dir="ltr" className="dark" suppressHydrationWarning>
 			<head>
 				<HeadContent />
-				<link rel="stylesheet" href={appCss} />
+				<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>
+				<link rel="stylesheet" href={appCss} precedence="default" />
 			</head>
 			<body>
 				{children}

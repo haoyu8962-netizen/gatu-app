@@ -1,5 +1,2 @@
-[mcp_servers.hyperliquid-docs]
-url = "https://hyperliquid.gitbook.io/hyperliquid-docs/~gitbook/mcp"
-
 [mcp_servers.privy-docs]
 url = "https://docs.privy.io/mcp"

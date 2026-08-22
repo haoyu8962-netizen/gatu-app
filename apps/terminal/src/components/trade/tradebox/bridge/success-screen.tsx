@@ -7,7 +7,8 @@ import { LIFI_EXPLORER_URL } from "@/config/bridge";
 import { formatTokenAmount, processTypeLabel } from "@/lib/bridge/format";
 import { formatDateTimeShort, shortenAddress } from "@/lib/format";
 import type { ProcessDetail } from "@/lib/lifi/use-bridge";
-import { ExplorerLink, HyperCoreUsdcIcon } from "./shared-ui";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { ExplorerLink } from "./shared-ui";
 
 interface Props {
 	address: string;

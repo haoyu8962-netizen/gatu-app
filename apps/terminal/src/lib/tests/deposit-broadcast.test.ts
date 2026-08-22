@@ -1,6 +1,10 @@
 import type { Hash, PublicClient } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import {
+	DefinitiveDepositSourceFailureError,
+	isDefinitiveDepositSourceFailure,
+} from "@/lib/hyperliquid/deposit-source-error";
+import {
 	waitForBroadcastedTransaction,
 	waitForConfirmedReceipt,
 	waitForWalletTransactionHash,
@@ -14,12 +18,22 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as Hash;
-
 function createPublicClientMock(overrides: Partial<PublicClient>): PublicClient {
 	return overrides as PublicClient;
 }
 
 describe("deposit broadcast confirmation", () => {
+	it("classifies definitive failures by structured code instead of localized wording", () => {
+		expect(
+			isDefinitiveDepositSourceFailure(
+				new DefinitiveDepositSourceFailureError("source-transaction-reverted", "交易已在 Arbitrum 上回滚"),
+			),
+		).toBe(true);
+		expect(isDefinitiveDepositSourceFailure(new Error("交易已在 Arbitrum 上回滚"))).toBe(false);
+		expect(isDefinitiveDepositSourceFailure(new Error("Transaction reverted on Arbitrum"))).toBe(false);
+		expect(isDefinitiveDepositSourceFailure(new Error("HTTP request failed"))).toBe(false);
+	});
+
 	it("accepts a visible transaction receipt", async () => {
 		const publicClient = createPublicClientMock({
 			getTransactionReceipt: vi.fn().mockResolvedValue({ status: "success" }),
@@ -86,12 +100,19 @@ describe("deposit broadcast confirmation", () => {
 		);
 	});
 
-	it("times out when the wallet does not return a transaction hash", async () => {
-		const never = new Promise<Hash>(() => {});
+	it("keeps waiting after the wallet response threshold without enabling an unsafe retry", async () => {
+		let resolveHash: ((hash: Hash) => void) | undefined;
+		const walletResponse = new Promise<Hash>((resolve) => {
+			resolveHash = resolve;
+		});
+		const onDelayed = vi.fn();
+		const result = waitForWalletTransactionHash(walletResponse, 0, onDelayed);
 
-		await expect(waitForWalletTransactionHash(never, 0)).rejects.toThrow(
-			"Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.",
-		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(onDelayed).toHaveBeenCalledOnce();
+
+		resolveHash?.(HASH);
+		await expect(result).resolves.toBe(HASH);
 	});
 
 	it("does not confirm through the wallet provider when the public RPC fails", async () => {
@@ -130,9 +151,14 @@ describe("deposit broadcast confirmation", () => {
 			request: vi.fn().mockResolvedValue({ status: "0x0", blockNumber: "0x1", logs: [] }),
 		};
 
-		await expect(waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
-			"Transaction reverted on Arbitrum",
+		const failure = await waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 }).catch(
+			(error: unknown) => error,
 		);
+		expect(failure).toBeInstanceOf(DefinitiveDepositSourceFailureError);
+		expect(failure).toMatchObject({
+			code: "source-transaction-reverted",
+			message: "Transaction reverted on Arbitrum",
+		});
 		expect(publicClient.getTransactionReceipt).toHaveBeenCalledWith({ hash: HASH });
 	});
 });

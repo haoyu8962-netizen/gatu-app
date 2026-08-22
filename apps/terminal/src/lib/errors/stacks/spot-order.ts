@@ -1,10 +1,22 @@
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
 import { noBalanceValidator } from "../definitions/balance";
 import {
 	signerNotReadyValidator,
 	walletLoadingValidator,
 	walletNotConnectedValidator,
 } from "../definitions/connection";
-import { marketNotReadyValidator, noMarketValidator } from "../definitions/market";
+import { liveMarkPriceValidator, marketNotReadyValidator, noMarketValidator } from "../definitions/market";
+import {
+	enterPriceRangeValidator,
+	type ScaleContext,
+	scaleLevelMinNotionalValidator,
+	scaleLevelsRangeValidator,
+	scalePricePrecisionValidator,
+	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+	scaleSkewRangeValidator,
+	scaleStartEndDifferValidator,
+} from "../definitions/scale";
 import {
 	insufficientBaseBalanceValidator,
 	insufficientQuoteBalanceValidator,
@@ -16,9 +28,19 @@ import {
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
 } from "../definitions/spot-input";
+import {
+	type TwapContext,
+	twapMinNotionalValidator,
+	twapMinutesRangeValidator,
+	twapStopBeyondTriggerValidator,
+	twapStopDirectionValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapTriggerPricePositiveValidator,
+} from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
-export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext {
+export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext, ScaleContext, TwapContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
@@ -26,6 +48,8 @@ export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext {
 	availableBalance: number;
 	hasMarket: boolean;
 	hasAssetIndex: boolean;
+	markPriceStatus: MarkPriceStatus;
+	requiresLiveMarkPrice: boolean;
 }
 
 export interface SpotOrderValidationResult {
@@ -42,9 +66,25 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	noMarketValidator,
 	marketNotReadyValidator,
 	signerNotReadyValidator,
+	liveMarkPriceValidator,
 	spotEnterLimitPriceValidator,
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
+	enterPriceRangeValidator,
+	scaleLevelsRangeValidator,
+	scaleStartEndDifferValidator,
+	scaleSizeAllocationValidator,
+	scalePricePrecisionValidator,
+	scaleLevelMinNotionalValidator,
+	scaleSkewRangeValidator,
+	scaleSkewAllocationValidator,
+	twapMinutesRangeValidator,
+	twapMinNotionalValidator,
+	twapTriggerPricePositiveValidator,
+	twapStopPricePositiveValidator,
+	twapTriggerDiffersFromMarkValidator,
+	twapStopDirectionValidator,
+	twapStopBeyondTriggerValidator,
 	insufficientQuoteBalanceValidator,
 	insufficientBaseBalanceValidator,
 ];

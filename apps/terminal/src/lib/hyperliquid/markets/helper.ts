@@ -20,7 +20,7 @@ export function getBuilderPerpAssetId(dexIndex: number, assetIndex: number): num
 
 export function getMarketKindFromName(name: string): MarketKind {
 	if (name.includes(BUILDER_DEX_SEPARATOR)) return "builderPerp";
-	if (name.startsWith("@")) return "spot";
+	if (name.startsWith("@") || name.includes(SPOT_MARKET_NAME_SEPARATOR)) return "spot";
 	return "perp";
 }
 

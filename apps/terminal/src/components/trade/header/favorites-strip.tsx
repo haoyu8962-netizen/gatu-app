@@ -6,6 +6,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 
@@ -24,7 +25,7 @@ export function FavoritesStrip() {
 	}
 
 	return (
-		<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+		<div className="flex items-center gap-1.5 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 			<StarIcon weight="fill" className="size-3 shrink-0 text-yellow" />
 			{favorites.map((name) => (
 				<FavoriteChip key={name} name={name} isActive={name === (selectedMarket?.name ?? selectedMarketName)} />
@@ -39,6 +40,7 @@ interface FavoriteChipProps {
 }
 
 function FavoriteChip({ name, isActive }: FavoriteChipProps) {
+	useNumberFormatRevision();
 	const { toggleFavoriteMarket } = useMarketActions();
 	const { getMarketInfo } = useMarketsInfo();
 	const navigateToMarket = useMarketNavigation();

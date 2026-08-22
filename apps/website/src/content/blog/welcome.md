@@ -1,5 +1,5 @@
 ---
-title: "Building Hypeterminal in the open"
+title: "Building gatu in the open"
 description: "Why the source for the client that signs your trades belongs in a public repo."
 date: 2026-05-01
 ---

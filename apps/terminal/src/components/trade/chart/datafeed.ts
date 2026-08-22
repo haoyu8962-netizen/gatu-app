@@ -1,10 +1,19 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
+import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
-import { type CandleInterval, resolutionToInterval } from "@/lib/chart/resolution";
+import { CandleRateLimitError, requestCandleSnapshot } from "@/lib/chart/candle-gate";
+import { type CandleInterval, resolutionToBarMs, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
-import { coinFromSymbolName, inferPriceScaleFromMids, symbolFromCoin } from "@/lib/chart/symbol";
+import {
+	coinFromSymbolName,
+	inferPriceScaleFromMids,
+	isChartDisplaySymbolName,
+	normalizeChartSymbolKey,
+	symbolFromCoin,
+} from "@/lib/chart/symbol";
 import { getInfoClient } from "@/lib/hyperliquid";
+import { getHttpStatus } from "@/lib/query-retry";
 import type {
 	Bar,
 	DatafeedConfiguration,
@@ -16,7 +25,7 @@ import type {
 	PeriodParams,
 	ResolutionString,
 	ResolveCallback,
-	ServerTimeCallback,
+	SearchSymbolsCallback,
 	SubscribeBarsCallback,
 } from "@/types/charting_library";
 import {
@@ -51,23 +60,55 @@ async function getMeta(): Promise<MetaResponse> {
 
 const allMidsCache = new Map<string, { value: AllMidsResponse; fetchedAt: number }>();
 const allMidsPromise = new Map<string, Promise<AllMidsResponse>>();
-const DAY_MS = 24 * 60 * 60 * 1000;
-const HISTORY_FALLBACK_MAX_REQUEST_AGE_MS = 7 * DAY_MS;
-const HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL: Partial<Record<CandleInterval, number>> = {
-	"1m": 14 * DAY_MS,
-	"3m": 30 * DAY_MS,
-	"5m": 45 * DAY_MS,
-	"15m": 90 * DAY_MS,
-	"30m": 120 * DAY_MS,
-	"1h": 180 * DAY_MS,
-	"2h": 365 * DAY_MS,
-	"4h": 365 * DAY_MS,
-	"8h": 365 * DAY_MS,
-	"12h": 365 * DAY_MS,
-	"1d": 730 * DAY_MS,
-	"1w": 730 * DAY_MS,
-	"1M": 730 * DAY_MS,
+const HYPERLIQUID_MAX_CANDLES = 5_000;
+const CHART_HISTORY_INLINE_RATE_LIMIT_TIMEOUT_MS = 25_000;
+
+export interface HistoryRequestIdentity {
+	requestId: number;
+	streamGeneration: number;
+	streamKey: string;
+	targetGeneration: number;
+}
+
+type ActiveHistoryRequest = {
+	identity: HistoryRequestIdentity;
+	reject: (reason: unknown) => void;
+	timeoutId: ReturnType<typeof setTimeout> | null;
 };
+
+type HistoryRequestContext = {
+	activeRequests: Set<ActiveHistoryRequest>;
+	isDestroyed: () => boolean;
+};
+
+type FetchBarsResult = {
+	bars: Bar[];
+	rawCount: number;
+};
+
+type HistoryCallbackState = {
+	settled: boolean;
+};
+
+function createHistoryTimeoutError(): Error {
+	const error = new Error(t`Chart history request timed out`);
+	error.name = "TimeoutError";
+	return error;
+}
+
+function createDatafeedDestroyedError(): Error {
+	const error = new Error("Chart datafeed destroyed");
+	error.name = "AbortError";
+	return error;
+}
+
+function cloneBar(bar: Bar): Bar {
+	return { ...bar };
+}
+
+function cloneBars(bars: Bar[]): Bar[] {
+	return bars.map(cloneBar);
+}
 
 function getDexForCoin(coin: string): string | undefined {
 	const separatorIdx = coin.indexOf(":");
@@ -99,18 +140,16 @@ async function getAllMids(dex?: string): Promise<AllMidsResponse> {
 }
 
 async function isKnownCoin(coin: string): Promise<boolean> {
-	// Spot markets use @id format (e.g., @232)
-	if (coin.startsWith("@")) return true;
-
-	// HIP-3 markets use dex:coin format (e.g., xyz:XYZ100)
-	if (coin.includes(":") && !coin.includes("/") && !coin.includes("-")) return true;
+	// Structured spot and HIP-3 symbols must be resolved from the application's market metadata.
+	// Their shape alone does not prove that Hyperliquid accepts the coin.
+	if (coin.startsWith("@") || coin.includes(":")) return false;
 
 	// Perp markets - check against meta
 	try {
 		const meta = await getMeta();
 		return meta.universe.some((asset) => asset.name === coin && !(asset.isDelisted ?? false));
 	} catch {
-		return true;
+		return false;
 	}
 }
 
@@ -127,44 +166,102 @@ function cacheKey(symbol: LibrarySymbolInfo, resolution: ResolutionString): stri
 	return `${symbol.ticker ?? symbol.name}:${resolution as string}`;
 }
 
-async function fetchBars(coin: string, interval: CandleInterval, fromMs: number, toMs: number) {
-	const candles = await getInfoClient().candleSnapshot({
-		coin,
-		interval,
-		startTime: fromMs,
-		endTime: toMs,
+async function fetchBars(
+	coin: string,
+	interval: CandleInterval,
+	fromMs: number,
+	toMs: number,
+	requestContext: HistoryRequestContext,
+	identity: HistoryRequestIdentity,
+	timeoutMs = CHART_HISTORY_REQUEST_TIMEOUT_MS,
+): Promise<FetchBarsResult> {
+	if (requestContext.isDestroyed()) throw createDatafeedDestroyedError();
+	if (timeoutMs <= 0) throw createHistoryTimeoutError();
+
+	const activeRequest: ActiveHistoryRequest = {
+		identity,
+		reject: () => undefined,
+		timeoutId: null,
+	};
+	const cancellation = new Promise<never>((_resolve, reject) => {
+		activeRequest.reject = reject;
 	});
-	return filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
+	requestContext.activeRequests.add(activeRequest);
+	activeRequest.timeoutId = setTimeout(() => {
+		activeRequest.reject(createHistoryTimeoutError());
+	}, timeoutMs);
+
+	try {
+		const request = requestCandleSnapshot({ coin, interval, startTime: fromMs, endTime: toMs });
+		const candles = await Promise.race([request, cancellation]);
+		return {
+			bars: filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs),
+			rawCount: candles.length,
+		};
+	} finally {
+		if (activeRequest.timeoutId !== null) clearTimeout(activeRequest.timeoutId);
+		activeRequest.timeoutId = null;
+		requestContext.activeRequests.delete(activeRequest);
+	}
 }
 
-async function fetchPreviousBars(coin: string, interval: CandleInterval, beforeMs: number) {
-	if (beforeMs <= 0) return null;
-	const lookbackMs = HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL[interval] ?? 180 * DAY_MS;
-	const fromMs = Math.max(0, beforeMs - lookbackMs);
-	if (fromMs >= beforeMs) return null;
+async function waitForHistoryRetry(
+	waitMs: number,
+	requestContext: HistoryRequestContext,
+	identity: HistoryRequestIdentity,
+): Promise<void> {
+	if (requestContext.isDestroyed()) throw createDatafeedDestroyedError();
+	if (waitMs <= 0) return;
 
-	const bars = await fetchBars(coin, interval, fromMs, beforeMs);
-	return bars.length > 0 ? bars : null;
+	await new Promise<void>((resolve, reject) => {
+		const activeRequest: ActiveHistoryRequest = {
+			identity,
+			reject,
+			timeoutId: null,
+		};
+		requestContext.activeRequests.add(activeRequest);
+		activeRequest.timeoutId = setTimeout(() => {
+			activeRequest.timeoutId = null;
+			requestContext.activeRequests.delete(activeRequest);
+			resolve();
+		}, waitMs);
+	});
 }
 
-function limitBarsToCountBack(bars: Bar[], countBack: number) {
-	const limit = Math.max(1, countBack || bars.length);
-	return bars.length > limit ? bars.slice(-limit) : bars;
+function describeHistoryError(error: unknown): string {
+	if (error instanceof CandleRateLimitError || getHttpStatus(error) === 429) {
+		return t`Chart data is temporarily rate limited`;
+	}
+	return error instanceof Error ? error.message : String(error);
 }
 
-function shouldFetchPreviousBars(periodParams: PeriodParams, toMs: number) {
-	return periodParams.firstDataRequest && Date.now() - toMs <= HISTORY_FALLBACK_MAX_REQUEST_AGE_MS;
+function clampCountBack(periodParams: PeriodParams): number {
+	return Math.min(HYPERLIQUID_MAX_CANDLES, Math.max(1, Math.floor(periodParams.countBack) || 1));
+}
+
+function getHistoryRequestFromMs(fromMs: number, toMs: number, barMs: number, countBack: number): number {
+	const earliestCountBackBarMs = Math.max(0, toMs - countBack * barMs);
+	const earliestApiBarMs = Math.max(0, toMs - HYPERLIQUID_MAX_CANDLES * barMs);
+	return Math.max(earliestApiBarMs, Math.min(fromMs, earliestCountBackBarMs));
+}
+
+function selectHistoryBars(bars: Bar[], fromMs: number, countBack: number): Bar[] {
+	const requestedRangeBars = bars.filter((bar) => bar.time >= fromMs);
+	if (requestedRangeBars.length >= countBack) return requestedRangeBars;
+	return bars.length > countBack ? bars.slice(-countBack) : bars;
 }
 
 const configuration: DatafeedConfiguration = {
 	exchanges: [{ value: EXCHANGE, name: EXCHANGE, desc: EXCHANGE }],
 	supported_resolutions: SUPPORTED_RESOLUTIONS,
 	supports_marks: false,
-	supports_time: true,
+	supports_time: false,
 	supports_timescale_marks: false,
 };
 
 interface DatafeedOptions {
+	getHistoryTargetGeneration?: () => number;
+	getHistoryTarget?: () => { coin: string; resolution: ResolutionString };
 	getPriceScale?: (coin: string) => number | undefined;
 	isKnownCoin?: (coin: string) => boolean | undefined;
 	getSymbolInfo?: (
@@ -178,50 +275,249 @@ interface DatafeedOptions {
 				pricescale?: number;
 		  }
 		| undefined;
+	onRealtimeReset?: () => void;
+	requestRealtimeReset?: () => void;
+	onHistoryError?: (error: unknown, historyStreamKey?: string, identity?: HistoryRequestIdentity) => void;
+	onHistoryRateLimit?: (
+		error: CandleRateLimitError,
+		historyStreamKey: string,
+		identity: HistoryRequestIdentity,
+	) => void;
+	onHistorySuccess?: (historyStreamKey?: string, identity?: HistoryRequestIdentity) => void;
 }
 
-export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
+type ActiveRealtimeSubscription = {
+	streamKey: string;
+	cacheKey: string;
+	coin: string;
+	resolution: ResolutionString;
+	onResetCache: () => void;
+};
+
+export interface ChartDatafeed extends IBasicDataFeed {
+	destroy(): void;
+	invalidateHistoryRequests(): void;
+	resetRealtimeCache(historyStreamKey?: string): boolean;
+}
+
+export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 	const store = getCandleStore();
-	const listenerToStream = new Map<string, string>();
-	const symbolToCoin = new Map<string, string>();
-	const resolveAsync = (callback: () => void) => {
-		setTimeout(callback, 0);
+	const realtimeSubscriptions = new Map<string, ActiveRealtimeSubscription>();
+	const resolvedCoinBySymbol = new Map<string, string>();
+	const activeHistoryRequests = new Set<ActiveHistoryRequest>();
+	const pendingCallbacks = new Set<ReturnType<typeof setTimeout>>();
+	const exhaustedHistoryByStream = new Map<string, number>();
+	let destroyed = false;
+	let currentHistoryStreamKey: string | null = null;
+	let currentHistoryTargetGeneration: number | null = null;
+	let historyStreamGeneration = 0;
+	let nextHistoryRequestId = 0;
+	const historyRequestContext: HistoryRequestContext = {
+		activeRequests: activeHistoryRequests,
+		isDestroyed: () => destroyed,
 	};
-	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo) => {
-		const symbolName = symbol.ticker ?? symbol.name;
-		return symbolToCoin.get(symbolName) ?? coinFromSymbolName(symbolName);
+	const resolveAsync = (callback: () => void) => {
+		if (destroyed) return;
+		const timeoutId = setTimeout(() => {
+			pendingCallbacks.delete(timeoutId);
+			if (!destroyed) callback();
+		}, 0);
+		pendingCallbacks.add(timeoutId);
+	};
+	const getHistoryTargetGeneration = () => options.getHistoryTargetGeneration?.() ?? 0;
+	const matchesHistoryTarget = (coin: string, resolution: ResolutionString) => {
+		const target = options.getHistoryTarget?.();
+		if (!target) return true;
+		return (
+			normalizeChartSymbolKey(coin) === normalizeChartSymbolKey(target.coin) &&
+			String(resolution) === String(target.resolution)
+		);
+	};
+	const isCurrentHistoryRequest = (identity: HistoryRequestIdentity) =>
+		identity.targetGeneration === getHistoryTargetGeneration() &&
+		identity.targetGeneration === currentHistoryTargetGeneration &&
+		identity.streamGeneration === historyStreamGeneration &&
+		identity.streamKey === currentHistoryStreamKey;
+	const cancelStaleHistoryRequests = () => {
+		const cancellationError = createDatafeedDestroyedError();
+		for (const request of [...activeHistoryRequests]) {
+			if (isCurrentHistoryRequest(request.identity)) continue;
+			if (request.timeoutId !== null) clearTimeout(request.timeoutId);
+			request.timeoutId = null;
+			activeHistoryRequests.delete(request);
+			request.reject(cancellationError);
+		}
+	};
+	const beginHistoryRequest = (historyStreamKey: string): HistoryRequestIdentity => {
+		const targetGeneration = getHistoryTargetGeneration();
+		if (currentHistoryTargetGeneration !== targetGeneration || currentHistoryStreamKey !== historyStreamKey) {
+			currentHistoryTargetGeneration = targetGeneration;
+			currentHistoryStreamKey = historyStreamKey;
+			historyStreamGeneration += 1;
+		}
+		nextHistoryRequestId += 1;
+		const identity = {
+			requestId: nextHistoryRequestId,
+			streamGeneration: historyStreamGeneration,
+			streamKey: historyStreamKey,
+			targetGeneration,
+		};
+		cancelStaleHistoryRequests();
+		return identity;
+	};
+	const resolveHistoryCancellation = (onResult: HistoryCallback, callbackState: HistoryCallbackState) => {
+		resolveAsync(() => {
+			if (callbackState.settled) return;
+			callbackState.settled = true;
+			onResult([], { noData: false });
+		});
+	};
+	const resolveHistoryResult = (
+		callback: () => void,
+		onResult: HistoryCallback,
+		identity: HistoryRequestIdentity,
+		callbackState: HistoryCallbackState,
+	) => {
+		resolveAsync(() => {
+			if (callbackState.settled) return;
+			callbackState.settled = true;
+			if (!isCurrentHistoryRequest(identity)) {
+				onResult([], { noData: false });
+				return;
+			}
+			try {
+				options.onHistorySuccess?.(identity.streamKey, identity);
+			} catch {}
+			callback();
+		});
+	};
+	const resolveHistoryError = (
+		error: unknown,
+		onResult: HistoryCallback,
+		onError: DatafeedErrorCallback,
+		identity: HistoryRequestIdentity,
+		callbackState: HistoryCallbackState,
+	) => {
+		resolveAsync(() => {
+			if (callbackState.settled) return;
+			callbackState.settled = true;
+			if (!isCurrentHistoryRequest(identity)) {
+				onResult([], { noData: false });
+				return;
+			}
+			try {
+				options.onHistoryError?.(error, identity.streamKey, identity);
+			} catch {}
+			onError(describeHistoryError(error));
+		});
+	};
+	const rememberResolvedCoin = (rawSymbolName: string, symbolInfo: LibrarySymbolInfo) => {
+		const apiTicker = symbolInfo.ticker;
+		if (!apiTicker) return;
+
+		for (const symbolName of [
+			rawSymbolName,
+			symbolInfo.name,
+			apiTicker,
+			`${EXCHANGE}:${symbolInfo.name}`,
+			`${EXCHANGE}:${apiTicker}`,
+		]) {
+			resolvedCoinBySymbol.set(normalizeChartSymbolKey(symbolName), apiTicker);
+		}
+	};
+	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo): string | undefined => {
+		for (const symbolName of [symbol.ticker, symbol.name]) {
+			if (!symbolName) continue;
+			const coin = resolvedCoinBySymbol.get(normalizeChartSymbolKey(symbolName));
+			if (coin) return coin;
+		}
+		return undefined;
 	};
 
-	return {
-		onReady: (callback: OnReadyCallback) => {
-			setTimeout(() => callback(configuration), 0);
+	const resetSubscription = (subscription: ActiveRealtimeSubscription) => {
+		store.getState().invalidateStream(subscription.streamKey);
+		store.getState().clearLastBar(subscription.cacheKey);
+		subscription.onResetCache();
+	};
+
+	const datafeed: ChartDatafeed = {
+		destroy: () => {
+			if (destroyed) return;
+			destroyed = true;
+
+			for (const timeoutId of pendingCallbacks) clearTimeout(timeoutId);
+			pendingCallbacks.clear();
+
+			const destroyedError = createDatafeedDestroyedError();
+			for (const request of activeHistoryRequests) {
+				if (request.timeoutId !== null) clearTimeout(request.timeoutId);
+				request.timeoutId = null;
+				request.reject(destroyedError);
+			}
+			activeHistoryRequests.clear();
+
+			for (const [listenerGuid, subscription] of realtimeSubscriptions) {
+				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
+			}
+			realtimeSubscriptions.clear();
+			resolvedCoinBySymbol.clear();
+			exhaustedHistoryByStream.clear();
 		},
 
-		searchSymbols: () => {},
+		invalidateHistoryRequests: () => {
+			if (destroyed) return;
+			cancelStaleHistoryRequests();
+		},
+
+		resetRealtimeCache: (historyStreamKey) => {
+			if (destroyed) return false;
+			let didReset = false;
+			for (const subscription of [...realtimeSubscriptions.values()]) {
+				if (!matchesHistoryTarget(subscription.coin, subscription.resolution)) continue;
+				if (historyStreamKey && subscription.streamKey !== historyStreamKey) continue;
+				try {
+					resetSubscription(subscription);
+					didReset = true;
+				} catch {}
+			}
+			if (!didReset) return false;
+			options.onRealtimeReset?.();
+			return true;
+		},
+
+		onReady: (callback: OnReadyCallback) => {
+			resolveAsync(() => callback(configuration));
+		},
+
+		searchSymbols: (_userInput: string, _exchange: string, _symbolType: string, onResult: SearchSymbolsCallback) => {
+			resolveAsync(() => onResult([]));
+		},
 
 		resolveSymbol: (symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension) => {
+			if (destroyed) return;
 			void extension;
 
 			void (async () => {
 				const rawSymbolName = symbolName.trim();
 				const coin = coinFromSymbolName(symbolName);
 				const resolvedSymbol = options.getSymbolInfo?.(rawSymbolName, coin);
+				if (!resolvedSymbol && isChartDisplaySymbolName(rawSymbolName)) {
+					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
+					return;
+				}
 				const displayName = resolvedSymbol?.name ?? symbolFromCoin(coin);
 				const apiTicker = resolvedSymbol?.ticker ?? coin;
-				if (resolvedSymbol) {
-					symbolToCoin.set(rawSymbolName, apiTicker);
-					symbolToCoin.set(displayName, apiTicker);
-					symbolToCoin.set(apiTicker, apiTicker);
-				}
 
 				const knownByCaller = resolvedSymbol ? true : options.isKnownCoin?.(apiTicker);
-				if (knownByCaller !== true && !(await isKnownCoin(apiTicker))) {
+				const knownCoin = knownByCaller ?? (await isKnownCoin(apiTicker));
+				if (!knownCoin) {
 					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
 					return;
 				}
 
 				const pricescale =
 					resolvedSymbol?.pricescale ?? options.getPriceScale?.(apiTicker) ?? (await inferPriceScale(apiTicker));
+				if (destroyed) return;
 
 				const symbolInfo: LibrarySymbolInfo = {
 					name: displayName,
@@ -236,11 +532,16 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 					pricescale,
 					minmov: CHART_DATAFEED_CONFIG.MIN_MOVEMENT,
 					has_intraday: true,
+					intraday_multipliers: ["1", "3", "5", "15", "30", "60", "120", "240", "480", "720"],
+					has_daily: true,
+					daily_multipliers: ["1"],
+					has_weekly_and_monthly: false,
 					supported_resolutions: SUPPORTED_RESOLUTIONS,
 					volume_precision: CHART_DATAFEED_CONFIG.VOLUME_PRECISION,
 					data_status: CHART_DATAFEED_CONFIG.DATA_STATUS,
 				};
 
+				rememberResolvedCoin(rawSymbolName, symbolInfo);
 				resolveAsync(() => onResolve(symbolInfo));
 			})().catch((error) => {
 				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
@@ -254,45 +555,131 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 			onResult: HistoryCallback,
 			onError: DatafeedErrorCallback,
 		) => {
+			if (destroyed) return;
+			let identity: HistoryRequestIdentity | undefined;
+			const callbackState = { settled: false };
 			void (async () => {
 				const interval = resolutionToInterval(resolution);
-				if (!interval) {
-					onError(t`Unsupported resolution: ${String(resolution)}`);
+				const barMs = resolutionToBarMs(resolution);
+				if (!interval || !barMs) {
+					resolveAsync(() => onError(t`Unsupported resolution: ${String(resolution)}`));
 					return;
 				}
 
 				const coin = coinFromLibrarySymbol(symbolInfo);
+				if (!coin) {
+					resolveAsync(() => onError(t`Unknown symbol: ${symbolInfo.ticker ?? symbolInfo.name}`));
+					return;
+				}
+				if (!matchesHistoryTarget(coin, resolution)) {
+					resolveHistoryCancellation(onResult, callbackState);
+					return;
+				}
+				const historyStreamKey = streamKey(coin, interval);
+				const requestIdentity = beginHistoryRequest(historyStreamKey);
+				identity = requestIdentity;
 				const fromMs = Math.max(0, Math.floor(periodParams.from * 1000));
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
 				if (toMs <= fromMs) {
-					onResult([], { noData: true });
+					resolveHistoryResult(() => onResult([], { noData: false }), onResult, requestIdentity, callbackState);
+					return;
+				}
+				if (toMs <= (exhaustedHistoryByStream.get(historyStreamKey) ?? 0)) {
+					resolveHistoryResult(() => onResult([], { noData: true }), onResult, requestIdentity, callbackState);
 					return;
 				}
 
-				const bars = await fetchBars(coin, interval, fromMs, toMs);
-				const key = cacheKey(symbolInfo, resolution);
-
-				if (bars.length === 0) {
-					const fallbackBars = shouldFetchPreviousBars(periodParams, toMs)
-						? await fetchPreviousBars(coin, interval, fromMs)
-						: null;
-					const limitedFallbackBars = fallbackBars ? limitBarsToCountBack(fallbackBars, periodParams.countBack) : null;
-					const fallbackLastBar = limitedFallbackBars?.at(-1);
-					if (limitedFallbackBars && fallbackLastBar) {
-						onResult(limitedFallbackBars, { noData: false });
+				const countBack = clampCountBack(periodParams);
+				const requestFromMs = getHistoryRequestFromMs(fromMs, toMs, barMs, countBack);
+				let rateLimitDeadline: number | null = null;
+				const fetchHistorySnapshot = async (startTime: number, endTime: number) => {
+					for (;;) {
+						if (!isCurrentHistoryRequest(requestIdentity)) {
+							throw createDatafeedDestroyedError();
+						}
+						const timeoutMs =
+							rateLimitDeadline === null
+								? CHART_HISTORY_REQUEST_TIMEOUT_MS
+								: Math.min(CHART_HISTORY_REQUEST_TIMEOUT_MS, rateLimitDeadline - Date.now());
+						try {
+							return await fetchBars(
+								coin,
+								interval,
+								startTime,
+								endTime,
+								historyRequestContext,
+								requestIdentity,
+								timeoutMs,
+							);
+						} catch (error) {
+							if (!(error instanceof CandleRateLimitError)) throw error;
+							if (!isCurrentHistoryRequest(requestIdentity)) throw createDatafeedDestroyedError();
+							rateLimitDeadline ??= Date.now() + CHART_HISTORY_INLINE_RATE_LIMIT_TIMEOUT_MS;
+							try {
+								options.onHistoryRateLimit?.(error, requestIdentity.streamKey, requestIdentity);
+							} catch {}
+							if (error.retryAt >= rateLimitDeadline) throw error;
+							await waitForHistoryRetry(
+								Math.min(error.retryAt, rateLimitDeadline) - Date.now(),
+								historyRequestContext,
+								requestIdentity,
+							);
+						}
+					}
+				};
+				let snapshot = await fetchHistorySnapshot(requestFromMs, toMs);
+				if (destroyed) return;
+				if (!isCurrentHistoryRequest(requestIdentity)) {
+					resolveHistoryCancellation(onResult, callbackState);
+					return;
+				}
+				let noData = requestFromMs === 0 && snapshot.rawCount === 0;
+				if (snapshot.rawCount === 0 && requestFromMs > 0) {
+					const probe = await fetchHistorySnapshot(0, requestFromMs);
+					if (destroyed) return;
+					if (!isCurrentHistoryRequest(requestIdentity)) {
+						resolveHistoryCancellation(onResult, callbackState);
 						return;
 					}
-					onResult([], { noData: true });
+					if (probe.rawCount === 0) {
+						noData = true;
+						exhaustedHistoryByStream.set(
+							historyStreamKey,
+							Math.max(exhaustedHistoryByStream.get(historyStreamKey) ?? 0, toMs),
+						);
+					} else {
+						snapshot = probe;
+					}
+				} else if (noData) {
+					exhaustedHistoryByStream.set(
+						historyStreamKey,
+						Math.max(exhaustedHistoryByStream.get(historyStreamKey) ?? 0, toMs),
+					);
+				}
+				const key = cacheKey(symbolInfo, resolution);
+				const resultBars = selectHistoryBars(snapshot.bars, fromMs, countBack);
+
+				const lastBar = resultBars.at(-1);
+				if (!lastBar) {
+					resolveHistoryResult(() => onResult([], { noData }), onResult, requestIdentity, callbackState);
 					return;
 				}
 
-				const lastBar = bars[bars.length - 1];
-				store.getState().setLastBar(key, lastBar);
+				const cachedLastBar = store.getState().getLastBar(key);
+				if (!cachedLastBar || lastBar.time >= cachedLastBar.time) {
+					store.getState().setLastBar(key, cloneBar(lastBar));
+				}
 
-				onResult(bars, { noData: false });
+				const callbackBars = cloneBars(resultBars);
+				resolveHistoryResult(() => onResult(callbackBars, { noData: false }), onResult, requestIdentity, callbackState);
 			})().catch((error) => {
-				onError(error instanceof Error ? error.message : String(error));
+				if (!identity || destroyed) return;
+				if (!isCurrentHistoryRequest(identity)) {
+					resolveHistoryCancellation(onResult, callbackState);
+					return;
+				}
+				resolveHistoryError(error, onResult, onError, identity, callbackState);
 			});
 		},
 
@@ -303,41 +690,69 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 			listenerGuid: string,
 			onResetCacheNeededCallback: () => void,
 		) => {
+			if (destroyed) return;
 			const interval = resolutionToInterval(resolution);
 			if (!interval) return;
 
-			const existingStreamKey = listenerToStream.get(listenerGuid);
-			if (existingStreamKey) {
-				store.getState().unsubscribe(existingStreamKey, listenerGuid);
-			}
-
 			const coin = coinFromLibrarySymbol(symbolInfo);
+			if (!coin) return;
+			if (!matchesHistoryTarget(coin, resolution)) return;
+
+			const existingSubscription = realtimeSubscriptions.get(listenerGuid);
+			if (existingSubscription) {
+				store.getState().unsubscribe(existingSubscription.streamKey, listenerGuid);
+			}
 			const symbolCacheKey = cacheKey(symbolInfo, resolution);
 			const key = streamKey(coin, interval);
 
-			listenerToStream.set(listenerGuid, key);
+			const realtimeSubscription: ActiveRealtimeSubscription = {
+				streamKey: key,
+				cacheKey: symbolCacheKey,
+				coin,
+				resolution,
+				onResetCache: onResetCacheNeededCallback,
+			};
+			realtimeSubscriptions.set(listenerGuid, realtimeSubscription);
 
 			const wrappedOnTick = (bar: Bar) => {
+				if (
+					destroyed ||
+					realtimeSubscriptions.get(listenerGuid) !== realtimeSubscription ||
+					!matchesHistoryTarget(coin, resolution)
+				) {
+					return;
+				}
 				const lastBar = store.getState().getLastBar(symbolCacheKey);
 				if (lastBar && bar.time < lastBar.time) return;
 
-				store.getState().setLastBar(symbolCacheKey, bar);
-				onTick(bar);
+				store.getState().setLastBar(symbolCacheKey, cloneBar(bar));
+				onTick(cloneBar(bar));
 			};
 
-			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, onResetCacheNeededCallback);
+			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, () => {
+				if (
+					realtimeSubscriptions.get(listenerGuid) !== realtimeSubscription ||
+					!matchesHistoryTarget(coin, resolution)
+				) {
+					return;
+				}
+				if (options.requestRealtimeReset) {
+					options.requestRealtimeReset();
+					return;
+				}
+				resetSubscription(realtimeSubscription);
+				options.onRealtimeReset?.();
+			});
 		},
 
 		unsubscribeBars: (listenerGuid: string) => {
-			const key = listenerToStream.get(listenerGuid);
-			if (key) {
-				store.getState().unsubscribe(key, listenerGuid);
-				listenerToStream.delete(listenerGuid);
+			const subscription = realtimeSubscriptions.get(listenerGuid);
+			if (subscription) {
+				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
+				realtimeSubscriptions.delete(listenerGuid);
 			}
 		},
-
-		getServerTime: (callback: ServerTimeCallback) => {
-			callback(Math.floor(Date.now() / 1000));
-		},
 	};
+
+	return datafeed;
 }

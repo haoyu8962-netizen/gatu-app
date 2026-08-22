@@ -1,12 +1,8 @@
 import { useEffect } from "react";
 import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
-import { type SpotMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
-
-function getSpotSubscriptionCoin(market: ReturnType<typeof useSelectedMarketInfo>["data"]): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
-}
+import { getMarketApiCoin, getSpotMarketApiCoin, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 
 export function TabTitleSync() {
 	useDocumentTitle();
@@ -14,11 +10,12 @@ export function TabTitleSync() {
 }
 
 export function useDocumentTitle() {
+	const numberFormatRevision = useNumberFormatRevision();
 	const { data: market } = useSelectedMarketInfo();
 
 	const isSpot = market?.kind === "spot";
-	const perpCoin = market?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(market);
+	const perpCoin = getMarketApiCoin(market);
+	const spotCoin = getSpotMarketApiCoin(market);
 
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",
@@ -36,10 +33,11 @@ export function useDocumentTitle() {
 	const szDecimals = market?.szDecimals;
 
 	useEffect(() => {
+		void numberFormatRevision;
 		if (!markPx || !pairName) return;
-		const price = formatPrice(markPx, { szDecimals });
+		const price = formatPrice(markPx, { szDecimals, marketType: isSpot ? "spot" : "perp" });
 		document.title = `${price} · ${pairName} | gatu`;
-	}, [markPx, pairName, szDecimals]);
+	}, [isSpot, markPx, numberFormatRevision, pairName, szDecimals]);
 
 	useEffect(() => {
 		return () => {

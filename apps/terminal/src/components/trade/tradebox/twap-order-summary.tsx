@@ -1,74 +1,64 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
+import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
+import { getTwapRuntimeMinutes } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
-import { bpsToPercentage, formatDuration, formatToken, formatUSD } from "@/lib/format";
+import { formatDuration, formatPrice } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { isPositive } from "@/lib/trade/numbers";
+import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
+import type { Side } from "@/lib/trade/types";
+import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
+import { SummaryRow } from "../components/summary-row";
 
 interface Props {
 	twapMinutesNum: number | null;
-	sizeValue: number;
-	orderValue: number;
-	estimatedFee: number;
-	feeRatePercent: string;
-	baseToken: string;
+	twapTriggerPriceNum: number | null;
+	twapStopPriceNum: number | null;
+	side: Side;
+	feeQuote: OrderFeeQuote;
 	szDecimals: number | undefined;
-}
-
-function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
-	return (
-		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
-			<span className="min-w-0 truncate text-xs tracking-[0.5px] text-fg-muted">{label}</span>
-			<span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-fg">{children}</span>
-		</div>
-	);
 }
 
 export function TwapOrderSummary({
 	twapMinutesNum,
-	sizeValue,
-	orderValue,
-	estimatedFee,
-	feeRatePercent,
-	baseToken,
+	twapTriggerPriceNum,
+	twapStopPriceNum,
+	side,
+	feeQuote,
 	szDecimals,
 }: Props) {
-	const minutes = Math.max(0, Math.round(twapMinutesNum ?? 0));
-	const numberOfOrders = minutes > 0 ? Math.floor((minutes * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1 : 0;
-	const sizePerSuborder = numberOfOrders > 0 ? sizeValue / numberOfOrders : 0;
+	useNumberFormatRevision();
+	const { t } = useLingui();
+	const minutes = getTwapRuntimeMinutes(twapMinutesNum);
+	const stopPriceLabel = getTwapStopPriceLabel(side);
 
 	return (
 		<div className="flex min-w-0 flex-col">
 			<SummaryRow label={t`Frequency`}>
-				<span className="whitespace-nowrap text-fg">{t`${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}</span>
+				<span className="inline-block max-w-40 whitespace-normal text-right leading-tight">
+					{t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
+				</span>
 			</SummaryRow>
 			<SummaryRow label={t`Runtime`}>
-				<span className={cn("whitespace-nowrap", minutes > 0 ? "text-fg" : "text-fg-muted")}>
+				<span className={cn("whitespace-nowrap", minutes > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{minutes > 0 ? formatDuration(minutes) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
-			<SummaryRow label={t`Number of Orders`}>
-				<span className={cn("whitespace-nowrap", numberOfOrders > 0 ? "text-fg" : "text-fg-muted")}>
-					{numberOfOrders > 0 ? numberOfOrders : FALLBACK_VALUE_PLACEHOLDER}
-				</span>
-			</SummaryRow>
-			<SummaryRow label={t`Size per Suborder`}>
-				<span className={cn("whitespace-nowrap", sizePerSuborder > 0 ? "text-fg" : "text-fg-muted")}>
-					{sizePerSuborder > 0
-						? formatToken(sizePerSuborder, { decimals: szDecimals, symbol: baseToken })
-						: FALLBACK_VALUE_PLACEHOLDER}
-				</span>
-			</SummaryRow>
-			<SummaryRow label={t`Fees`}>
-				<span className="whitespace-nowrap text-fg-muted">
-					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-				</span>
-			</SummaryRow>
-			{DEFAULT_BUILDER_CONFIG?.f && (
-				<SummaryRow label={t`Builder Fee`}>
-					<span className="whitespace-nowrap text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
+			{isPositive(twapTriggerPriceNum) && (
+				<SummaryRow label={t`Trigger Price`}>
+					<span className="whitespace-nowrap">{formatPrice(twapTriggerPriceNum, { szDecimals })}</span>
 				</SummaryRow>
 			)}
+			{isPositive(twapStopPriceNum) && (
+				<SummaryRow label={stopPriceLabel}>
+					<span className="whitespace-nowrap">{formatPrice(twapStopPriceNum, { szDecimals })}</span>
+				</SummaryRow>
+			)}
+			<SummaryRow label={t`Fees`}>
+				<OrderFeeSummaryValue quote={feeQuote} />
+			</SummaryRow>
 		</div>
 	);
 }

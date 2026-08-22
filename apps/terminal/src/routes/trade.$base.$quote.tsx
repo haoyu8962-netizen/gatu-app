@@ -9,6 +9,7 @@ export const Route = createFileRoute("/trade/$base/$quote")({
 			description: `Trade ${params.base}/${params.quote} on Hyperliquid.`,
 			path: `/trade/${params.base}/${params.quote}`,
 			keywords: ["trade", "hyperliquid", params.base, params.quote],
+			noIndex: true,
 		}),
 	component: EmptyTradeRoute,
 });

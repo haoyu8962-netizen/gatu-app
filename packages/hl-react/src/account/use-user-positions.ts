@@ -5,6 +5,7 @@ import { getAccountLedgerRefreshKey } from "./ledger-refresh";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawPosition = RawClearinghouseState["assetPositions"][number];
+const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 export interface Position {
 	dex: string;
@@ -28,6 +29,8 @@ export interface UserPositions {
 	withdrawable: string;
 	isLoading: boolean;
 	hasError: boolean;
+	isStale: boolean;
+	receivedAt: number | undefined;
 }
 
 function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined): Position[] {
@@ -45,8 +48,7 @@ function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined)
 			const position = assetPosition?.position;
 			if (!position) continue;
 
-			const size = Number(position.szi);
-			if (!Number.isFinite(size) || size === 0) continue;
+			if (!isNonZeroPositionSize(position.szi)) continue;
 
 			positions.push({
 				dex,
@@ -67,6 +69,12 @@ function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined)
 	return positions;
 }
 
+/** @internal Exact string gate used before preserving protocol position values. */
+export function isNonZeroPositionSize(value: string): boolean {
+	const normalized = value.trim();
+	return SIGNED_DECIMAL_PATTERN.test(normalized) && /[1-9]/.test(normalized);
+}
+
 function getWithdrawable(event: AllDexsClearinghouseStateWsEvent | undefined): string {
 	if (!event?.clearinghouseStates) return "0";
 	const mainDex = event.clearinghouseStates.find(([dex]) => dex === "");
@@ -80,6 +88,8 @@ const EMPTY: UserPositions = {
 	withdrawable: "0",
 	isLoading: false,
 	hasError: false,
+	isStale: false,
+	receivedAt: undefined,
 };
 
 export function useUserPositions(): UserPositions {
@@ -89,7 +99,7 @@ export function useUserPositions(): UserPositions {
 
 	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
 	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
-	const { data, status } = useSubscription(
+	const { data, status, isStale, lastMessageAt } = useSubscription(
 		"allDexsClearinghouseState",
 		{ user: address ?? "" },
 		{ enabled, refreshKey: ledgerRefreshKey },
@@ -108,6 +118,8 @@ export function useUserPositions(): UserPositions {
 		withdrawable,
 		isLoading,
 		hasError,
+		isStale,
+		receivedAt: lastMessageAt,
 
 		getPosition(coin: string, dex?: string) {
 			if (dex !== undefined) {

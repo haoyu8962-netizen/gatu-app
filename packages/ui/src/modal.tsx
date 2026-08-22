@@ -27,7 +27,7 @@ function useMobile(): boolean {
 
 // ─── Modal (centered overlay) ─────────────────────────────────────────────────
 
-const modalPopupVariants = cva(["relative w-full bg-overlay shadow-overlay rounded-12", "flex flex-col outline-none"], {
+const modalPopupVariants = cva(["relative w-full bg-modal shadow-overlay rounded-12", "flex flex-col outline-none"], {
 	variants: {
 		size: {
 			sm: "max-w-sm",
@@ -49,14 +49,40 @@ const ModalClose = Dialog.Close;
 interface ModalPopupProps
 	extends React.ComponentPropsWithoutRef<typeof Dialog.Popup>,
 		VariantProps<typeof modalPopupVariants> {
+	closeLabel?: string;
 	showClose?: boolean;
+	layer?: "default" | "blocking";
+	overlayClassName?: string;
 }
 
 const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
-	({ className, size, showClose = true, children, ...props }, ref) => (
+	(
+		{
+			className,
+			size,
+			closeLabel = "Close",
+			showClose = true,
+			layer = "default",
+			overlayClassName,
+			children,
+			...props
+		},
+		ref,
+	) => (
 		<Dialog.Portal>
-			<Dialog.Backdrop className="fixed inset-0 z-40 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0" />
-			<div className="fixed inset-0 z-50 overflow-y-auto p-6">
+			<Dialog.Backdrop
+				className={cn(
+					"fixed inset-0 bg-scrim transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
+					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-40",
+					overlayClassName,
+				)}
+			/>
+			<div
+				className={cn(
+					"fixed inset-0 overflow-y-auto py-6 pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
+					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-50",
+				)}
+			>
 				<div className="flex min-h-full items-center justify-center">
 					<Dialog.Popup
 						className={cn(
@@ -78,7 +104,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 								)}
-								aria-label="Close"
+								aria-label={closeLabel}
 							>
 								<XIcon size={16} weight="bold" />
 							</Dialog.Close>
@@ -137,8 +163,8 @@ const ModalFooter = React.forwardRef<HTMLDivElement, ModalFooterProps>(({ classN
 ModalFooter.displayName = "ModalFooter";
 
 // ─── AdaptiveModal ────────────────────────────────────────────────────────────
-// On mobile (< 768px): renders as a bottom drawer with swipe-to-close.
-// On desktop: renders as a centered modal.
+// Auto mode uses a bottom drawer below 768px and a centered modal otherwise.
+// Callers may override the presentation and disable dismissal for blocking flows.
 // Children are shared between both — use ModalHeader / ModalContent / ModalFooter as usual.
 
 interface AdaptiveModalProps {
@@ -146,21 +172,64 @@ interface AdaptiveModalProps {
 	onOpenChange: (open: boolean) => void;
 	size?: VariantProps<typeof modalPopupVariants>["size"];
 	showClose?: boolean;
+	showHandle?: boolean;
+	handleClassName?: string;
+	dismissible?: boolean;
+	presentation?: "auto" | "modal" | "drawer";
+	layer?: "default" | "blocking";
+	overlayClassName?: string;
+	closeLabel?: string;
 	children: React.ReactNode;
 	className?: string;
 }
 
-function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, className }: AdaptiveModalProps) {
-	const isMobile = useMobile();
+function AdaptiveModal({
+	open,
+	onOpenChange,
+	size,
+	showClose = true,
+	showHandle = true,
+	handleClassName,
+	dismissible = true,
+	presentation = "auto",
+	layer = "default",
+	overlayClassName,
+	closeLabel = "Close",
+	children,
+	className,
+}: AdaptiveModalProps) {
+	const detectedMobile = useMobile();
+	const useDrawer = presentation === "drawer" || (presentation === "auto" && detectedMobile);
 
-	if (isMobile) {
+	function handleOpenChange(nextOpen: boolean, eventDetails: { cancel: () => void }) {
+		if (!dismissible && !nextOpen) {
+			eventDetails.cancel();
+			return;
+		}
+		onOpenChange(nextOpen);
+	}
+
+	if (useDrawer) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={onOpenChange}>
-				<DrawerContent className={cn("relative pb-[env(safe-area-inset-bottom)]", className)}>
-					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
-						aria-hidden="true"
-					/>
+			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+				<DrawerContent
+					overlayClassName={cn(layer === "blocking" && "z-[var(--z-blocking-overlay)]", overlayClassName)}
+					className={cn(
+						"pb-[env(safe-area-inset-bottom)]",
+						layer === "blocking" && "z-[var(--z-blocking-overlay)]",
+						className,
+					)}
+				>
+					{dismissible && showHandle && (
+						<div
+							data-slot="drawer-handle"
+							className={cn(
+								"absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20",
+								handleClassName,
+							)}
+							aria-hidden="true"
+						/>
+					)}
 					{showClose && (
 						<DrawerClose
 							className={cn(
@@ -171,7 +240,7 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							)}
-							aria-label="Close"
+							aria-label={closeLabel}
 						>
 							<XIcon size={16} weight="bold" />
 						</DrawerClose>
@@ -183,8 +252,15 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 	}
 
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size={size} showClose={showClose} className={className}>
+		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+			<ModalPopup
+				size={size}
+				showClose={showClose}
+				closeLabel={closeLabel}
+				layer={layer}
+				overlayClassName={overlayClassName}
+				className={className}
+			>
 				{children}
 			</ModalPopup>
 		</Modal>

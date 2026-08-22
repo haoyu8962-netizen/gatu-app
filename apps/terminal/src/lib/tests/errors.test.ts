@@ -1,6 +1,12 @@
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import { formatErrorForDisplay } from "@/lib/errors";
-import { formatTransferError } from "@/lib/errors/format";
+import {
+	formatExchangeActionError,
+	formatOrderPlanError,
+	formatTransferError,
+	isAmbiguousExchangeActionError,
+} from "@/lib/errors/format";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -10,6 +16,23 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 describe("errors", () => {
+	it("maps cross-tab funds lock failures to actionable product messages", () => {
+		expect(formatTransferError(new Error("Another funds operation is still in progress for this account."))).toContain(
+			"Another funds operation",
+		);
+		expect(formatTransferError(new Error("Secure cross-tab funds coordination requires Web Locks support."))).toContain(
+			"supported browser",
+		);
+	});
+
+	it("maps fail-closed legal execution errors to actionable product messages", () => {
+		expect(formatTransferError(new Error("Hyperliquid access could not be verified before this action"))).toBe(
+			"Unable to verify regional availability. Trading is temporarily unavailable.",
+		);
+		expect(formatTransferError(new Error("This account is not permitted to perform this Hyperliquid action"))).toBe(
+			"This account is not currently permitted to perform trading actions on Hyperliquid.",
+		);
+	});
 	it("formats nested error details for display", () => {
 		const error = new Error("Base error");
 		(error as { shortMessage?: string }).shortMessage = "Short";
@@ -80,7 +103,48 @@ describe("errors", () => {
 		);
 	});
 
+	it("redacts smart-wallet nonce conflicts instead of exposing RPC payloads", () => {
+		const message =
+			'RPC Request failed. URL: https://rpc.zerodev.app/private Request body: {"callData":"0xdeadbeef"} Details: AA25 invalid account nonce';
+
+		const formatted = formatTransferError(new Error(message));
+
+		expect(formatted).toBe(
+			"Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.",
+		);
+		expect(formatted).not.toContain("rpc.zerodev.app");
+		expect(formatted).not.toContain("callData");
+	});
+
 	it("does not label unrelated timeout errors as deposit failures", () => {
 		expect(formatTransferError(new Error("Withdraw confirmation timed out."))).toBe("Withdraw confirmation timed out.");
+	});
+
+	it("warns against blind retries when a signed exchange request has an ambiguous transport result", () => {
+		const error = new HttpRequestError({ detail: "Request timed out after 10000 ms" });
+
+		expect(isAmbiguousExchangeActionError(error)).toBe(true);
+		expect(formatExchangeActionError(error, "Withdrawal failed")).toBe(
+			"Request status could not be confirmed. Check balances and transfer history before retrying.",
+		);
+	});
+
+	it("keeps rate-limit responses deterministic because the exchange rejected them before execution", () => {
+		const error = new HttpRequestError({ response: new Response("rate limited", { status: 429 }) });
+
+		expect(isAmbiguousExchangeActionError(error)).toBe(false);
+		expect(formatExchangeActionError(error, "Transfer failed")).not.toContain("status could not be confirmed");
+	});
+
+	it("routes scale build errors through localized presentation messages", () => {
+		expect(formatOrderPlanError("Scale prices must resolve to distinct ticks")).toBe(
+			"Scale prices must resolve to distinct ticks",
+		);
+		expect(formatOrderPlanError("Enter a valid scale price range")).toBe("Enter price range");
+		expect(formatOrderPlanError("Enter a valid scale skew")).toBe("Enter a valid scale skew");
+		expect(formatOrderPlanError("Size skew is too aggressive for the total size")).toBe(
+			"Size skew is too aggressive for the total size",
+		);
+		expect(formatOrderPlanError("Unknown plan error")).toBe("Unknown plan error");
 	});
 });

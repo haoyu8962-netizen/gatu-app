@@ -187,10 +187,10 @@ describe("websocket soak", () => {
 			const chartStore = createCandleStore();
 			const keyPool = createSubscriptionKeys(keyPoolSize);
 			const refs = new Map<string, number>();
-			const controllers = new Map<string, AbortController>();
+			const failureCallbacks = new Map<string, (error: unknown) => void>();
 			const subscribeFnByKey = new Map<
 				string,
-				() => Promise<{ unsubscribe: () => Promise<void>; failureSignal: AbortSignal }>
+				(options?: { onError?: (error: unknown) => void }) => Promise<{ unsubscribe: () => Promise<void> }>
 			>();
 			const statusSnapshot = new Map<string, string>();
 			const samples: SoakSample[] = [];
@@ -215,15 +215,15 @@ describe("websocket soak", () => {
 				const existing = subscribeFnByKey.get(key);
 				if (existing) return existing;
 
-				const created = async () => {
+				const created = async (options?: { onError?: (error: unknown) => void }) => {
 					subscribeCalls += 1;
-					const controller = new AbortController();
-					controllers.set(key, controller);
+					const onError = options?.onError;
+					if (onError) failureCallbacks.set(key, onError);
 					return {
 						unsubscribe: async () => {
 							unsubscribeCalls += 1;
+							if (onError && failureCallbacks.get(key) === onError) failureCallbacks.delete(key);
 						},
-						failureSignal: controller.signal,
 					};
 				};
 				subscribeFnByKey.set(key, created);
@@ -258,13 +258,12 @@ describe("websocket soak", () => {
 			};
 
 			const abortOne = () => {
-				const abortable = Array.from(controllers.entries()).filter(([, ctrl]) => !ctrl.signal.aborted);
-				const picked = pickRandom(abortable);
+				const picked = pickRandom(Array.from(failureCallbacks.entries()));
 				if (!picked) return;
-				const [key, controller] = picked;
-				controller.abort(new Error("soak-simulated-disconnect"));
+				const [key, onError] = picked;
+				failureCallbacks.delete(key);
+				onError(new Error("soak-simulated-disconnect"));
 				abortCount += 1;
-				controllers.delete(key);
 			};
 
 			const touchChartCache = () => {

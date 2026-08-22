@@ -37,6 +37,7 @@ interface SearchInputProps
 	label?: string;
 	helperText?: string;
 	errorMessage?: string;
+	inputClassName?: string;
 	onClear?: () => void;
 }
 
@@ -66,6 +67,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 			helperText,
 			error,
 			errorMessage,
+			inputClassName,
 			required,
 			disabled,
 			size: sizeProp,
@@ -130,6 +132,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 							searchInputTextClasses[size],
 							"text-fg placeholder:text-fg-muted",
 							"disabled:text-fg-disabled disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
+							inputClassName,
 						)}
 						{...props}
 					/>

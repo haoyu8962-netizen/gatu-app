@@ -1,34 +1,66 @@
-import {
-	Button,
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-	SegmentedControlItem,
-	SegmentedControls,
-} from "@gatu/ui";
+import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState } from "react";
-import { isAddress } from "viem";
+import { useQueryClient } from "@tanstack/react-query";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
-import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import {
+	CCTP_MAX_DEPOSIT_USDC,
+	CCTP_TESTNET_MAX_DEPOSIT_USDC,
+	isCctpExternalDepositEnabled,
+	isCctpSponsoredDepositEnabled,
+} from "@/config/cctp-deposit";
+import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
-import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	getAccountBalanceSummary,
+	getSpotBalance,
+	getSpotTransferableValue,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
+import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
+import {
+	assertPreTransferCheckMatchesReview,
+	getCanonicalSpotSystemAddress,
+	normalizePreTransferCheck,
+	PreTransferCheckExecutionError,
+} from "@/domain/trade/pre-transfer-check";
+import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
+import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
+import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
+import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { executeWithFreshWithdrawalRoute, useFreshUsdcRouting, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { formatTransferError } from "@/lib/errors/format";
+import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
-import { toSafeBig } from "@/lib/trade/numbers";
-import { validateWithdraw } from "@/lib/trade/withdraw-validation";
-import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
+import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
+import {
+	buildCctpWithdrawalParameters,
+	getMaximumWithdrawal,
+	getWithdrawalNetReceived,
+	getWithdrawalRouteFee,
+	getWithdrawalSourceDex,
+	isPositiveDecimal,
+	validateWithdrawal,
+	type WithdrawalRoute,
+} from "@/lib/trade/withdrawal";
+import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
 	useDepositModalOpen,
@@ -36,6 +68,7 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
@@ -45,7 +78,20 @@ const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "
 
 const ARBITRUM_NETWORK = NETWORKS[0];
 
-const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
+interface WithdrawalAttempt {
+	activationFee: string;
+	amount: string;
+	route: WithdrawalRoute;
+	routeFee: string;
+}
+
+interface CctpPreTransferReview {
+	fee: string;
+	params: {
+		source: Address;
+		user: Address;
+	};
+}
 
 function normalizeError(error: unknown): Error {
 	if (error instanceof Error) return error;
@@ -53,18 +99,50 @@ function normalizeError(error: unknown): Error {
 }
 
 export function DepositModal() {
+	useNumberFormatRevision();
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
-	const { close, setTab } = useDepositModalActions();
+	const { close } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
+	const isMobile = useIsMobile();
+	const presentation = isMobile ? "drawer" : "modal";
 
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
 	const [withdrawDestination, setWithdrawDestination] = useState("");
+	const [withdrawalAttempt, setWithdrawalAttempt] = useState<WithdrawalAttempt | null>(null);
+	const [withdrawalRouteChanged, setWithdrawalRouteChanged] = useState(false);
+	const [depositRoutingPreflightFailed, setDepositRoutingPreflightFailed] = useState(false);
+	const [depositCctpPreflightError, setDepositCctpPreflightError] = useState<string | null>(null);
+	const [withdrawalRoutingPreflightFailed, setWithdrawalRoutingPreflightFailed] = useState(false);
+	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
+	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
+	const depositPreflightIdRef = useRef(0);
+	const cctpPreTransferReviewRef = useRef<CctpPreTransferReview | null>(null);
+	const observedWithdrawalRouteRef = useRef<WithdrawalRoute | null>(null);
+	const queryClient = useQueryClient();
+	const { env, info } = useHyperliquid();
 	const isTestnet = useIsTestnet();
+	const depositAvailability = useDepositAvailability();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
+	const usdcRoutingQuery = useUsdcRouting(open);
+	const fetchFreshUsdcRouting = useFreshUsdcRouting();
+	const usdcRoutingStatus = getUsdcRoutingQueryStatus({
+		data: usdcRoutingQuery.data,
+		isError: usdcRoutingQuery.isError,
+		isFetching: usdcRoutingQuery.isFetching,
+	});
+	const depositRoutingStatus = depositRoutingPreflightFailed ? "error" : usdcRoutingStatus;
+	const withdrawalRoutingStatus = withdrawalRoutingPreflightFailed ? "error" : usdcRoutingStatus;
+	const routedWithdrawalRoute = getWithdrawalRoute(usdcRoutingQuery.data);
+	const withdrawalRoute = routedWithdrawalRoute ?? "arbitrum-cctp";
+	const selectedDepositRoute = usdcRoutingQuery.data?.depositRoute ?? "cctp";
+	const depositRouteReady = depositRoutingStatus === "ready" && !!usdcRoutingQuery.data?.depositRoute;
+	const cctpExternalDepositEnabled = isCctpExternalDepositEnabled(isTestnet);
+	const cctpSponsoredDepositEnabled = isCctpSponsoredDepositEnabled(isTestnet);
 
-	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress, login } = useWalletSession();
+	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress, walletIntent } = useWalletSession();
+	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const {
 		emailAddress: emailWalletAddress,
 		embeddedWalletAddress: ensuredEmbeddedWalletAddress,
@@ -76,8 +154,26 @@ export function DepositModal() {
 	} = useEmailEmbeddedWallet();
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
-	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
+	const walletIdentityResolved = walletIntent === "embedded" || walletIntent === "external";
+	const isEmbeddedDeposit = !!emailAddress && walletIntent === "embedded" && shouldUseEmailEmbeddedWallet;
 	const depositMode = isEmbeddedDeposit ? "smart" : "wallet";
+	let depositAmountRaw: bigint | undefined;
+	try {
+		depositAmountRaw = depositAmount.trim() ? parseUnits(depositAmount.trim(), 6) : undefined;
+	} catch {
+		depositAmountRaw = undefined;
+	}
+	const cctpDepositFeeQuery = useCctpDepositFee({
+		amountRaw: depositAmountRaw,
+		enabled:
+			open &&
+			depositAvailability.available &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			walletIntent === "external" &&
+			cctpExternalDepositEnabled,
+		isTestnet,
+	});
 
 	const {
 		balance: depositBalance,
@@ -88,6 +184,11 @@ export function DepositModal() {
 		status: depositStatus,
 		error: depositError,
 		hash: depositHash,
+		executionAmount: depositExecutionAmount,
+		executionRoute: depositExecutionRoute,
+		cctpRecoveryUnavailable,
+		submissionOutcomeUnknown,
+		walletResponseDelayed,
 		isArbitrum,
 		isSwitching,
 		deposit,
@@ -98,25 +199,64 @@ export function DepositModal() {
 		validate: validateDeposit,
 		reset: resetDeposit,
 		networkName: depositNetworkName,
-		smartDepositEnabled,
+		sponsoredCctpEnabled,
+		sponsoredCctpReadiness,
 	} = useDeposit({
+		balanceEnabled: open && walletIdentityResolved,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
 		mode: depositMode,
+		depositRoute: selectedDepositRoute,
+		expectedCctpMaxFeeRaw: cctpDepositFeeQuery.calculation?.maxFeeRaw,
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
+		sponsoredReadinessEnabled:
+			open &&
+			depositAvailability.available &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			isEmbeddedDeposit,
 	});
-
-	const selectedBalances = useSelectedDexBalances();
+	const embeddedCctpDepositFeeQuery = useCctpDepositFee({
+		amountRaw: maxDepositRaw,
+		enabled:
+			open &&
+			depositAvailability.available &&
+			depositRouteReady &&
+			selectedDepositRoute === "cctp" &&
+			isEmbeddedDeposit &&
+			sponsoredCctpEnabled &&
+			sponsoredCctpReadiness.status === "ready",
+		isTestnet,
+	});
+	const displayedCctpDepositFeeQuery = isEmbeddedDeposit ? embeddedCctpDepositFeeQuery : cctpDepositFeeQuery;
+	const cctpTrackingOwner = isEmbeddedDeposit ? depositEmbeddedWalletAddress : walletAddress;
+	const cctpDepositTracking = useCctpDepositTracking({
+		enabled: open && !!cctpTrackingOwner,
+		env: isTestnet ? "Testnet" : "Mainnet",
+		owner: cctpTrackingOwner,
+		poll: !isEmbeddedDeposit,
+		sourceHash: depositExecutionRoute === "cctp" ? depositHash : undefined,
+	});
+	const isCurrentCctpDeposit =
+		!!depositHash &&
+		(depositExecutionRoute === "cctp" || cctpDepositTracking.recoveryRecord?.sourceHash === depositHash.toLowerCase());
 	const defaultBalances = useDefaultDexBalances();
-	const accountAbstraction = selectedBalances.accountAbstraction;
-	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
+	const accountAbstraction = defaultBalances.accountAbstraction;
+	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
 	const {
 		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		withdrawable: perpWithdrawable,
-	} = summaryBalances;
-	const dex = selectedBalances.dex;
+		spotStateStatus,
+		perpStateStatus,
+		isDataStale: isBalanceDataStale,
+		hasError: hasBalanceError,
+	} = defaultBalances;
+	const withdrawalBalanceReady =
+		spotStateStatus === "success" && perpStateStatus === "success" && !isBalanceDataStale && !hasBalanceError;
+	const withdrawalBalanceReadyRef = useRef(withdrawalBalanceReady);
+	withdrawalBalanceReadyRef.current = withdrawalBalanceReady;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -125,37 +265,177 @@ export function DepositModal() {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
-	const withdrawable = String(accountSummary.withdrawable);
-	const withdrawableNum = accountSummary.withdrawable;
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: withdrawalBalanceReady,
+		accountModeReady: isSupportedAccountAbstraction(accountAbstraction),
+		fundsActionsEnabled: accountSummary.isAvailable,
+		hasWalletAccess,
+		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
+	});
+	const withdrawable = withdrawalBalanceReady ? String(accountSummary.withdrawable) : "0";
+	const exactWithdrawable = withdrawalBalanceReady
+		? accountSummary.usesSpotStateForPerps
+			? getSpotTransferableValue(getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN))
+			: String(perpWithdrawable)
+		: "0";
+	const withdrawalBalanceExecutionRef = useRef({
+		available: exactWithdrawable,
+		receivedAt: accountSummary.usesSpotStateForPerps
+			? defaultBalances.spotStateReceivedAt
+			: defaultBalances.perpStateReceivedAt,
+	});
+	withdrawalBalanceExecutionRef.current = {
+		available: exactWithdrawable,
+		receivedAt: accountSummary.usesSpotStateForPerps
+			? defaultBalances.spotStateReceivedAt
+			: defaultBalances.perpStateReceivedAt,
+	};
 	const showSpotFundsNotice =
-		dex === "" && !accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+		withdrawalBalanceReady &&
+		!accountSummary.usesSpotStateForPerps &&
+		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
-	const {
-		mutate: withdraw,
-		isPending: isWithdrawPending,
-		isSuccess: isWithdrawSuccess,
-		error: withdrawError,
-		reset: resetWithdraw,
-	} = useExchange("withdraw3");
-
-	const baseDepositValidation = validateDeposit(depositAmount);
+	const reviewedDepositAmount = isEmbeddedDeposit ? maxDepositAmount : depositAmount;
+	const reviewedDepositAmountRaw = isEmbeddedDeposit ? maxDepositRaw : depositAmountRaw;
+	const baseDepositValidation = validateDeposit(reviewedDepositAmount);
 	const embeddedWalletValidationError =
 		isEmbeddedDeposit && embeddedWalletError
 			? formatTransferError(normalizeError(embeddedWalletError))
 			: isEmbeddedDeposit && (needsEmbeddedWallet || isCreatingEmbeddedWallet || !depositEmbeddedWalletAddress)
 				? t`Creating your wallet. Please wait...`
 				: null;
-	const depositValidation = embeddedWalletValidationError
-		? { valid: false, error: embeddedWalletValidationError }
-		: isEmbeddedDeposit && !smartDepositEnabled
-			? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
-			: baseDepositValidation;
-	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
-	const canUseFundsActions = hasWalletAccess && !!walletAddress;
+	const cctpDepositFeeUnavailable =
+		selectedDepositRoute === "cctp" &&
+		(!isEmbeddedDeposit || !isTestnet) &&
+		(displayedCctpDepositFeeQuery.isLoading ||
+			displayedCctpDepositFeeQuery.isError ||
+			!displayedCctpDepositFeeQuery.calculation ||
+			displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false);
+	const displayedCctpDepositFeeRaw =
+		selectedDepositRoute === "cctp"
+			? (displayedCctpDepositFeeQuery.calculation?.maxFeeRaw ??
+				(displayedCctpDepositFeeQuery.data?.feeQuote
+					? getAmountIndependentCctpMaxFeeRaw(displayedCctpDepositFeeQuery.data.feeQuote)
+					: null))
+			: null;
+	const cctpDepositFee = displayedCctpDepositFeeRaw !== null ? formatUnits(displayedCctpDepositFeeRaw, 6) : null;
+	const cctpDepositAmountLimitError =
+		selectedDepositRoute === "cctp" &&
+		reviewedDepositAmountRaw !== undefined &&
+		reviewedDepositAmountRaw > CCTP_MAX_DEPOSIT_USDC
+			? t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`
+			: selectedDepositRoute === "cctp" &&
+					isTestnet &&
+					reviewedDepositAmountRaw !== undefined &&
+					reviewedDepositAmountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC
+				? t`Circle testnet deposits are limited to 1,000 USDC per transfer.`
+				: null;
+	const unresolvedWalletValidation = walletIdentityResolved
+		? null
+		: { valid: false, error: depositAvailability.unavailableReason };
+	const depositValidation =
+		unresolvedWalletValidation ??
+		(!depositRouteReady
+			? { valid: false, error: null }
+			: !depositAvailability.available
+				? { valid: false, error: depositAvailability.unavailableReason }
+				: embeddedWalletValidationError
+					? { valid: false, error: embeddedWalletValidationError }
+					: selectedDepositRoute === "bridge"
+						? {
+								valid: false,
+								error: t`Legacy Bridge2 deposits are no longer accepted. Deposits are paused.`,
+							}
+						: !isEmbeddedDeposit && !cctpExternalDepositEnabled
+							? {
+									valid: false,
+									error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+								}
+							: isEmbeddedDeposit && !cctpSponsoredDepositEnabled
+								? { valid: false, error: t`Gas-sponsored CCTP deposits are not enabled for this network.` }
+								: isEmbeddedDeposit && sponsoredCctpReadiness.status !== "ready"
+									? { valid: false, error: null }
+									: cctpDepositAmountLimitError
+										? { valid: false, error: cctpDepositAmountLimitError }
+										: cctpDepositFeeUnavailable
+											? {
+													valid: false,
+													error: displayedCctpDepositFeeQuery.isError
+														? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+														: displayedCctpDepositFeeQuery.hasSufficientFastAllowance === false
+															? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+															: null,
+												}
+											: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error });
+	const canUseFundsActions = walletIdentityResolved && hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
-	const showBridgeTab = !isEmbeddedDeposit;
+	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
+	const showBridgeTab = shouldShowLiFiBridgeTab({
+		isEmbeddedDeposit,
+		hasExistingExecution: hasExistingBridgeExecution,
+		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
+	});
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
-	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
+	const usesFundsRedesign = visibleTab !== "bridge";
+	const withdrawalQueriesEnabled =
+		open &&
+		visibleTab === "withdraw" &&
+		fundsActionAvailability.withdrawal.available &&
+		withdrawalRoutingStatus === "ready" &&
+		!!routedWithdrawalRoute;
+	const cctpWithdrawalQueriesEnabled = withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp";
+	const spotMetaQuery = useInfo("spotMeta", undefined, {
+		enabled: cctpWithdrawalQueriesEnabled,
+		refetchOnWindowFocus: true,
+		staleTime: 30_000,
+	});
+	let cctpUsdcSystemAddress: Address | undefined;
+	if (spotMetaQuery.data) {
+		try {
+			cctpUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaQuery.data, "USDC");
+		} catch {
+			cctpUsdcSystemAddress = undefined;
+		}
+	}
+	const preTransferParams = {
+		user: cctpUsdcSystemAddress ?? zeroAddress,
+		source: walletAddress ?? zeroAddress,
+	};
+	const preTransferCheckQuery = useInfo("preTransferCheck", preTransferParams, {
+		enabled: cctpWithdrawalQueriesEnabled && !!cctpUsdcSystemAddress,
+		refetchOnWindowFocus: true,
+		select: normalizePreTransferCheck,
+		staleTime: 30_000,
+	});
+	const cctpFeeQuery = useCctpWithdrawalFee({
+		enabled: withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp",
+		isTestnet,
+	});
+	const cctpWithdrawal = useExchange("sendToEvmWithData", {
+		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-cctp", params.amount, signal),
+	});
+	const legacyWithdrawal = useExchange("withdraw3", {
+		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", params.amount, signal),
+	});
+	const isWithdrawPending = isWithdrawalPreflighting || cctpWithdrawal.isPending || legacyWithdrawal.isPending;
+	const isWithdrawSuccess = cctpWithdrawal.isSuccess || legacyWithdrawal.isSuccess;
+	const withdrawError = cctpWithdrawal.error ?? legacyWithdrawal.error;
+	const cctpFee = cctpFeeQuery.data ?? null;
+	const withdrawalRouteFee = getWithdrawalRouteFee(withdrawalRoute, cctpFee);
+	const withdrawalActivationFee = withdrawalRoute === "arbitrum-cctp" ? (preTransferCheckQuery.data?.fee ?? "0") : "0";
+	const withdrawalMaxAmount =
+		withdrawalRoute === "arbitrum-legacy" || preTransferCheckQuery.isSuccess
+			? getMaximumWithdrawal(withdrawable, withdrawalActivationFee)
+			: "0";
+	const withdrawValidation = validateWithdrawal({
+		amount: withdrawAmount,
+		available: withdrawable,
+		route: withdrawalRoute,
+		routeFee: withdrawalRouteFee,
+		activationFee: withdrawalActivationFee,
+	});
+	const isDepositPending = isDepositPreflighting || depositStatus === "pending" || depositStatus === "confirming";
+	const displayedDepositAmount = depositExecutionAmount ?? depositAmount;
 	const walletDepositProviderUnavailable =
 		canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && walletProviderStatus === "error";
 	const requiresWithdrawDestination = isEmbeddedDeposit;
@@ -166,53 +446,463 @@ export function DepositModal() {
 		requiresWithdrawDestination && normalizedWithdrawDestination && !isAddress(normalizedWithdrawDestination)
 			? t`Invalid destination address`
 			: null;
-	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid;
+	const withdrawalPrerequisitesPending =
+		isWithdrawalPreflighting ||
+		withdrawalRoutingStatus === "loading" ||
+		(withdrawalRoute === "arbitrum-cctp" &&
+			(spotMetaQuery.isFetching || preTransferCheckQuery.isFetching || cctpFeeQuery.isFetching));
+	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
+	let withdrawalPrerequisiteError: string | null = null;
+	if (!fundsActionAvailability.withdrawal.available) {
+		withdrawalPrerequisiteError = fundsActionAvailability.withdrawal.unavailableReason;
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		(spotMetaQuery.isError || cctpSpotMetaInvalid)
+	) {
+		withdrawalPrerequisiteError = t`Unable to verify the current HyperCore USDC destination.`;
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		preTransferCheckQuery.data?.isSanctioned
+	) {
+		withdrawalPrerequisiteError = t`Withdrawals are unavailable for this address.`;
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		preTransferCheckQuery.isError
+	) {
+		withdrawalPrerequisiteError = t`Unable to verify withdrawal eligibility.`;
+	} else if (withdrawalRoutingStatus === "ready" && withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError) {
+		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
+	}
+	const withdrawalPrerequisitesReady =
+		fundsActionAvailability.withdrawal.available &&
+		withdrawalRoutingStatus === "ready" &&
+		!!routedWithdrawalRoute &&
+		(withdrawalRoute === "arbitrum-legacy" ||
+			(spotMetaQuery.isSuccess &&
+				!!cctpUsdcSystemAddress &&
+				preTransferCheckQuery.isSuccess &&
+				!preTransferCheckQuery.data.isSanctioned &&
+				cctpFeeQuery.isSuccess));
+	const canRetryWithdrawalPrerequisites =
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		!preTransferCheckQuery.data?.isSanctioned &&
+		(spotMetaQuery.isError || cctpSpotMetaInvalid || preTransferCheckQuery.isError || cctpFeeQuery.isError);
+	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
-		if (!open || visibleTab !== "deposit" || !needsEmbeddedWallet) return;
+		if (!open || visibleTab !== "deposit" || !depositAvailability.available || !needsEmbeddedWallet) return;
 		void ensureEmailEmbeddedWallet().catch(() => {});
-	}, [ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
+	}, [depositAvailability.available, ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
+
+	useEffect(() => {
+		if (!open) {
+			observedWithdrawalRouteRef.current = null;
+			return;
+		}
+		if (!routedWithdrawalRoute) return;
+		const previousRoute = observedWithdrawalRouteRef.current;
+		observedWithdrawalRouteRef.current = routedWithdrawalRoute;
+		if (previousRoute && previousRoute !== routedWithdrawalRoute) setWithdrawalRouteChanged(true);
+	}, [open, routedWithdrawalRoute]);
 
 	function handleDepositRetry() {
 		resetDeposit();
 	}
 
+	async function assertFreshWithdrawalRoute(expectedRoute: WithdrawalRoute, signal?: AbortSignal) {
+		let freshRoute: WithdrawalRoute | null;
+		try {
+			freshRoute = getWithdrawalRoute(await fetchFreshUsdcRouting(signal));
+		} catch {
+			throw new Error(t`Unable to verify the current Hyperliquid withdrawal route.`);
+		}
+		if (!freshRoute) throw new Error(t`Unable to verify the current Hyperliquid withdrawal route.`);
+		if (freshRoute !== expectedRoute) {
+			throw new Error(
+				t`The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.`,
+			);
+		}
+	}
+
+	async function fetchFreshPreTransferCheck(review: CctpPreTransferReview, signal: AbortSignal) {
+		const options = infoQueryOptions(info, "preTransferCheck", review.params, env);
+		try {
+			signal.throwIfAborted();
+			await queryClient.cancelQueries({ exact: true, queryKey: options.queryKey });
+			signal.throwIfAborted();
+			const response = await info.preTransferCheck(review.params, signal);
+			signal.throwIfAborted();
+			const normalized = normalizePreTransferCheck(response);
+			await queryClient.cancelQueries({ exact: true, queryKey: options.queryKey });
+			signal.throwIfAborted();
+			queryClient.setQueryData(options.queryKey, response);
+			return normalized;
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			throw new PreTransferCheckExecutionError("unavailable");
+		}
+	}
+
+	async function assertFreshCctpPreTransferCheck(signal: AbortSignal) {
+		const review = cctpPreTransferReviewRef.current;
+		if (!review) throw new PreTransferCheckExecutionError("unavailable");
+		const current = await fetchFreshPreTransferCheck(review, signal);
+		assertPreTransferCheckMatchesReview(review.fee, current);
+	}
+
+	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, amount: unknown, signal: AbortSignal) {
+		const assertCurrentBalance = () => {
+			if (!withdrawalBalanceReadyRef.current) {
+				throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+			}
+			const balance = withdrawalBalanceExecutionRef.current;
+			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
+		};
+		assertCurrentBalance();
+		const guards = [
+			assertFreshWithdrawalRoute(expectedRoute, signal),
+			assertAccountAbstraction(signal),
+			fundsActionAvailability.assertFreshGeoAllowed(signal),
+		];
+		if (expectedRoute === "arbitrum-cctp") guards.push(assertFreshCctpPreTransferCheck(signal));
+		await Promise.all(guards);
+		signal.throwIfAborted();
+		assertCurrentBalance();
+	}
+
 	function handleClose() {
+		const completedTrackingHash =
+			cctpDepositTracking.data?.status === "forward-submitted" ? cctpDepositTracking.trackedSourceHash : undefined;
+		const definitivelyFailedTrackingHash =
+			depositExecutionRoute === "cctp" && depositHash && isDefinitiveDepositSourceFailure(depositError)
+				? depositHash
+				: undefined;
+		const removableTrackingHash = completedTrackingHash ?? definitivelyFailedTrackingHash;
+		if (removableTrackingHash && cctpTrackingOwner) {
+			try {
+				removeCctpDepositTrackingRecord(isTestnet ? "Testnet" : "Mainnet", cctpTrackingOwner, removableTrackingHash);
+			} catch {
+				// The source transaction hash remains available in the explorer link.
+			}
+		}
+		depositPreflightIdRef.current += 1;
 		resetDeposit();
-		resetWithdraw();
+		cctpWithdrawal.reset();
+		legacyWithdrawal.reset();
 		setDepositAmount("");
 		setWithdrawAmount("");
 		setWithdrawDestination("");
+		setWithdrawalAttempt(null);
+		setWithdrawalRouteChanged(false);
+		setDepositRoutingPreflightFailed(false);
+		setDepositCctpPreflightError(null);
+		setWithdrawalRoutingPreflightFailed(false);
+		setIsDepositPreflighting(false);
+		setIsWithdrawalPreflighting(false);
+		cctpPreTransferReviewRef.current = null;
+		observedWithdrawalRouteRef.current = null;
 		close();
 	}
 
-	function handleDepositSubmit() {
-		if (depositValidation.valid && canUseDeposit && !isDepositPending) {
-			deposit(depositAmount);
+	function handlePendingClose() {
+		close();
+	}
+
+	function handleModalOpenChange(nextOpen: boolean) {
+		if (!nextOpen) handleClose();
+	}
+
+	function handleReconnectWallet() {
+		handleClose();
+		void reconnectWallet();
+	}
+
+	async function handleDepositSubmit() {
+		if (
+			!depositAvailability.available ||
+			!depositValidation.valid ||
+			!canUseDeposit ||
+			isDepositPending ||
+			!depositRouteReady
+		) {
+			return;
+		}
+
+		setDepositCctpPreflightError(null);
+		const preflightId = depositPreflightIdRef.current + 1;
+		depositPreflightIdRef.current = preflightId;
+		setIsDepositPreflighting(true);
+		try {
+			const freshRouting = await fetchFreshUsdcRouting();
+			if (depositPreflightIdRef.current !== preflightId) return;
+			if (!freshRouting) {
+				setDepositRoutingPreflightFailed(true);
+				return;
+			}
+			setDepositRoutingPreflightFailed(false);
+			if (freshRouting.depositRoute !== selectedDepositRoute) return;
+			if (selectedDepositRoute === "cctp") {
+				const reviewedCalculation = displayedCctpDepositFeeQuery.calculation;
+				if (!reviewedCalculation || reviewedDepositAmountRaw === undefined) return;
+				const freshFeeResult = await displayedCctpDepositFeeQuery.refetch();
+				if (depositPreflightIdRef.current !== preflightId) return;
+				if (!freshFeeResult.data || freshFeeResult.isError) {
+					setDepositCctpPreflightError(t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`);
+					return;
+				}
+				if (freshFeeResult.data.fastAllowanceRaw < reviewedDepositAmountRaw) {
+					setDepositCctpPreflightError(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+					return;
+				}
+				const freshCalculation = calculateCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
+				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
+					setDepositCctpPreflightError(t`Circle fees changed. Review the updated fee, then submit again.`);
+					return;
+				}
+			}
+			await deposit(reviewedDepositAmount, {
+				expectedBalanceRaw: isEmbeddedDeposit ? reviewedDepositAmountRaw : undefined,
+				expectedCctpMaxFeeRaw: displayedCctpDepositFeeQuery.calculation?.maxFeeRaw,
+			});
+		} catch {
+			if (depositPreflightIdRef.current === preflightId) setDepositRoutingPreflightFailed(true);
+			return;
+		} finally {
+			if (depositPreflightIdRef.current === preflightId) setIsDepositPreflighting(false);
 		}
 	}
 
-	function handleWithdrawSubmit() {
-		if (!canSubmitWithdraw || !walletAddress) return;
+	function handleDepositAmountChange(value: string) {
+		setDepositCctpPreflightError(null);
+		setDepositAmount(value);
+	}
+
+	async function handleWithdrawSubmit() {
+		if (!canSubmitWithdraw || !walletAddress || withdrawalRouteFee === null) return;
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
-		if (destination) {
-			withdraw({ destination, amount: withdrawAmount });
+		if (!isAddress(destination)) return;
+
+		setIsWithdrawalPreflighting(true);
+		try {
+			const expectedWithdrawalRoute = routedWithdrawalRoute;
+			if (!expectedWithdrawalRoute) return;
+
+			let cctpPreTransferReview: CctpPreTransferReview | null = null;
+			if (expectedWithdrawalRoute === "arbitrum-cctp") {
+				const reviewedPreTransferCheck = preTransferCheckQuery.data;
+				if (!reviewedPreTransferCheck || reviewedPreTransferCheck.isSanctioned || !cctpUsdcSystemAddress) return;
+
+				const spotMetaResult = await spotMetaQuery.refetch();
+				if (!spotMetaResult.data || spotMetaResult.isError) return;
+				let freshUsdcSystemAddress: Address;
+				try {
+					freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
+				} catch {
+					return;
+				}
+				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress.toLowerCase()) return;
+
+				const preTransferResult = await preTransferCheckQuery.refetch();
+				if (!preTransferResult.data || preTransferResult.isError) return;
+				try {
+					assertPreTransferCheckMatchesReview(reviewedPreTransferCheck.fee, preTransferResult.data);
+				} catch {
+					return;
+				}
+				cctpPreTransferReview = {
+					fee: preTransferResult.data.fee,
+					params: { user: freshUsdcSystemAddress, source: walletAddress },
+				};
+			}
+
+			let freshRouteFee = getWithdrawalRouteFee(expectedWithdrawalRoute, cctpFee);
+			if (expectedWithdrawalRoute === "arbitrum-cctp") {
+				const cctpFeeResult = await cctpFeeQuery.refetch();
+				if (!cctpFeeResult.data || cctpFeeResult.isError) return;
+				freshRouteFee = cctpFeeResult.data;
+			}
+			if (freshRouteFee === null) return;
+
+			const freshValidation = validateWithdrawal({
+				amount: withdrawAmount,
+				available: withdrawable,
+				route: expectedWithdrawalRoute,
+				routeFee: freshRouteFee,
+				activationFee: cctpPreTransferReview?.fee ?? "0",
+			});
+			if (!freshValidation.valid) return;
+
+			const executionStatus = await executeWithFreshWithdrawalRoute(
+				expectedWithdrawalRoute,
+				fetchFreshUsdcRouting,
+				async () => {
+					setWithdrawalRouteChanged(false);
+					setWithdrawalAttempt({
+						activationFee: cctpPreTransferReview?.fee ?? "0",
+						amount: withdrawAmount,
+						route: expectedWithdrawalRoute,
+						routeFee: freshRouteFee,
+					});
+					if (expectedWithdrawalRoute === "arbitrum-cctp") {
+						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
+						cctpPreTransferReviewRef.current = cctpPreTransferReview;
+						await cctpWithdrawal.mutateAsync(
+							buildCctpWithdrawalParameters({
+								amount: withdrawAmount,
+								destination,
+								sourceDex: getWithdrawalSourceDex(accountSummary.usesSpotStateForPerps),
+							}),
+						);
+						return;
+					}
+					await legacyWithdrawal.mutateAsync({ destination, amount: withdrawAmount });
+				},
+			);
+			if (executionStatus === "changed") {
+				setWithdrawalRoutingPreflightFailed(false);
+				setWithdrawalRouteChanged(true);
+			} else if (executionStatus === "unavailable") {
+				setWithdrawalRoutingPreflightFailed(true);
+			} else {
+				setWithdrawalRoutingPreflightFailed(false);
+			}
+		} catch {
+			// Query and mutation state render the actionable error without duplicating the request.
+		} finally {
+			cctpPreTransferReviewRef.current = null;
+			setIsWithdrawalPreflighting(false);
 		}
+	}
+
+	async function handleWithdrawalPrerequisiteRetry() {
+		const routingResult = await usdcRoutingQuery.refetch();
+		const freshWithdrawalRoute = getWithdrawalRoute(routingResult.data);
+		if (routingResult.isError || !freshWithdrawalRoute) {
+			setWithdrawalRoutingPreflightFailed(true);
+			return;
+		}
+		setWithdrawalRoutingPreflightFailed(false);
+		if (freshWithdrawalRoute === "arbitrum-cctp") {
+			const spotMetaResult = await spotMetaQuery.refetch();
+			if (spotMetaResult.isError || !spotMetaResult.data) return;
+			let freshUsdcSystemAddress: Address;
+			try {
+				freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
+			} catch {
+				return;
+			}
+			if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress?.toLowerCase()) return;
+			await Promise.all([preTransferCheckQuery.refetch(), cctpFeeQuery.refetch()]);
+		}
+	}
+
+	async function handleDepositRoutingRetry() {
+		const result = await usdcRoutingQuery.refetch();
+		setDepositRoutingPreflightFailed(result.isError || !result.data);
+	}
+
+	function handleWithdrawalErrorRetry() {
+		cctpWithdrawal.reset();
+		legacyWithdrawal.reset();
+		setWithdrawalAttempt(null);
 	}
 
 	function handlePerpsSpotTransferClick() {
 		openTransferModal("toPerp");
 	}
+	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
+	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
+	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
+	const recoveredCctpDeposit = visibleTab === "deposit" && !depositHash ? cctpDepositTracking.recoveryRecord : null;
 
-	if (depositStatus === "success") {
+	if (recoveredCctpDeposit) {
+		const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
+				title={<Trans>Deposit</Trans>}
+				icon={forwardSubmitted ? "success" : "loading"}
+				heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+				description={
+					forwardSubmitted ? (
+						<Trans>
+							Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
+						</Trans>
+					) : cctpDepositTracking.isError ? (
+						<Trans>
+							The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume
+							when you return.
+						</Trans>
+					) : (
+						<Trans>Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer.</Trans>
+					)
+				}
+				txHash={recoveredCctpDeposit.sourceHash}
+				txChain={depositTxChain}
+				onClose={handleClose}
+			>
+				<Button onClick={handleClose} className="w-full">
+					<Trans>Close</Trans>
+				</Button>
+			</StatusScreen>
+		);
+	}
+
+	if (depositStatus === "success") {
+		if (isCurrentCctpDeposit) {
+			const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
+			return (
+				<StatusScreen
+					open={open}
+					presentation={presentation}
+					title={<Trans>Deposit</Trans>}
+					icon={forwardSubmitted ? "success" : "loading"}
+					heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+					description={
+						cctpRecoveryUnavailable ? (
+							<Trans>
+								Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.
+							</Trans>
+						) : forwardSubmitted ? (
+							<Trans>
+								Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
+							</Trans>
+						) : cctpDepositTracking.isError ? (
+							<Trans>
+								The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this
+								window; tracking will resume when you return.
+							</Trans>
+						) : (
+							<Trans>
+								The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid.
+							</Trans>
+						)
+					}
+					txHash={depositHash}
+					txChain={depositTxChain}
+					onClose={handleClose}
+				>
+					<Button onClick={handleClose} className="w-full">
+						<Trans>Done</Trans>
+					</Button>
+				</StatusScreen>
+			);
+		}
+		return (
+			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="success"
 				heading={<Trans>Deposit submitted</Trans>}
 				description={
 					<>
-						<span className="tabular-nums font-medium text-success">{depositAmount} USDC</span>{" "}
+						<span className="tabular-nums font-medium text-success">{displayedDepositAmount} USDC</span>{" "}
 						<Trans>confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.</Trans>
 					</>
 				}
@@ -229,18 +919,31 @@ export function DepositModal() {
 
 	if (depositStatus === "error") {
 		const hasSubmittedDeposit = !!depositHash;
+		const depositStatusUnknown =
+			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
 
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
-				heading={<Trans>Deposit failed</Trans>}
-				description={formatTransferError(depositError)}
+				heading={depositStatusUnknown ? <Trans>Deposit status unknown</Trans> : <Trans>Deposit failed</Trans>}
+				description={
+					depositStatusUnknown ? (
+						<Trans>
+							The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction
+							before retrying.
+						</Trans>
+					) : (
+						formatTransferError(depositError)
+					)
+				}
 				txHash={depositHash}
 				txChain={depositTxChain}
 				onClose={handleClose}
 			>
-				{hasSubmittedDeposit ? (
+				{hasSubmittedDeposit || submissionOutcomeUnknown ? (
 					<Button onClick={handleClose} className="w-full">
 						<Trans>Close</Trans>
 					</Button>
@@ -261,22 +964,42 @@ export function DepositModal() {
 	if (depositStatus === "pending" || depositStatus === "confirming") {
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="loading"
-				heading={
-					depositStatus === "pending" ? <Trans>Confirm in wallet</Trans> : <Trans>Waiting for chain confirmation</Trans>
+				heading={depositPendingHeading}
+				description={
+					<span className="flex flex-col gap-1">
+						<span className="tabular-nums">{displayedDepositAmount} USDC → Hyperliquid</span>
+						{walletResponseDelayed ? (
+							<span className="flex flex-col gap-1">
+								<Trans>
+									Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit.
+								</Trans>
+								<Trans>Closing this dialog will not cancel it.</Trans>
+							</span>
+						) : null}
+					</span>
 				}
-				description={<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>}
 				txHash={depositStatus === "confirming" ? depositHash : undefined}
 				txChain={depositTxChain}
 				closable={false}
-			/>
+			>
+				{walletResponseDelayed ? (
+					<Button variant="outline" intent="neutral" onClick={handlePendingClose} className="w-full">
+						<Trans>Close</Trans>
+					</Button>
+				) : null}
+			</StatusScreen>
 		);
 	}
 
 	if (walletDepositProviderUnavailable) {
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Wallet connection unavailable</Trans>}
@@ -287,13 +1010,7 @@ export function DepositModal() {
 					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
 						<Trans>Cancel</Trans>
 					</Button>
-					<Button
-						onClick={() => {
-							handleClose();
-							login();
-						}}
-						className="flex-1"
-					>
+					<Button onClick={handleReconnectWallet} disabled={!walletsReady || isReconnecting} className="flex-1">
 						<Trans>Reconnect wallet</Trans>
 					</Button>
 				</div>
@@ -310,7 +1027,8 @@ export function DepositModal() {
 	) {
 		return (
 			<WrongNetworkScreen
-				open
+				open={open}
+				presentation={presentation}
 				onClose={handleClose}
 				onSwitch={switchToArbitrum}
 				isSwitching={isSwitching}
@@ -319,11 +1037,14 @@ export function DepositModal() {
 		);
 	}
 
-	if (isWithdrawSuccess) {
-		const withdrawNetReceived = Math.max(toSafeBig(withdrawAmount).minus(WITHDRAWAL_FEE_USD).toNumber(), 0);
+	if (isWithdrawSuccess && withdrawalAttempt) {
+		const withdrawNetReceived = getWithdrawalNetReceived(withdrawalAttempt.amount, withdrawalAttempt.routeFee);
+		const isCctpWithdrawal = withdrawalAttempt.route === "arbitrum-cctp";
 
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Withdraw</Trans>}
 				icon="success"
 				heading={<Trans>Withdrawal submitted</Trans>}
@@ -331,13 +1052,28 @@ export function DepositModal() {
 					<div className="space-y-1">
 						<div>
 							<Trans>Net received</Trans>:{" "}
-							<span className="tabular-nums font-medium text-success">${formatNumber(withdrawNetReceived, 2)}</span>
+							<span className="tabular-nums font-medium text-success">
+								${formatNumber(Number(withdrawNetReceived ?? 0), 2)}
+							</span>
 						</div>
 						<div className="text-fg-muted">
-							<Trans>Network fee</Trans>: <span className="tabular-nums">${formatNumber(WITHDRAWAL_FEE_USD, 2)}</span>
+							<Trans>Withdrawal fee</Trans>:{" "}
+							<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.routeFee), 2)}</span>
 						</div>
+						{isPositiveDecimal(withdrawalAttempt.activationFee) ? (
+							<div className="text-fg-muted">
+								<Trans>One-time account activation fee</Trans>:{" "}
+								<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.activationFee), 2)}</span>
+							</div>
+						) : null}
 						<div className="text-fg-muted">
-							<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
+							{isCctpWithdrawal ? (
+								<Trans>
+									CCTP forwarding to Arbitrum usually completes in {ARBITRUM_NETWORK.estimatedWithdrawTime}.
+								</Trans>
+							) : (
+								<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
+							)}
 						</div>
 					</div>
 				}
@@ -351,106 +1087,179 @@ export function DepositModal() {
 	}
 
 	if (withdrawError) {
+		const isAmbiguousWithdrawal = isAmbiguousExchangeActionError(withdrawError);
 		return (
 			<StatusScreen
+				open={open}
+				presentation={presentation}
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
-				heading={<Trans>Withdrawal failed</Trans>}
-				description={formatTransferError(withdrawError)}
+				heading={isAmbiguousWithdrawal ? <Trans>Withdrawal status unknown</Trans> : <Trans>Withdrawal failed</Trans>}
+				description={formatExchangeActionError(withdrawError, t`Withdrawal failed`)}
 				onClose={handleClose}
 			>
-				<div className="flex w-full gap-2">
-					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-						<Trans>Cancel</Trans>
+				{isAmbiguousWithdrawal ? (
+					<Button onClick={handleClose} className="w-full">
+						<Trans>Close</Trans>
 					</Button>
-					<Button onClick={resetWithdraw} className="flex-1">
-						<Trans>Retry</Trans>
-					</Button>
-				</div>
+				) : (
+					<div className="flex w-full gap-2">
+						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
+							<Trans>Cancel</Trans>
+						</Button>
+						<Button onClick={handleWithdrawalErrorRetry} className="flex-1">
+							<Trans>Retry</Trans>
+						</Button>
+					</div>
+				)}
 			</StatusScreen>
 		);
 	}
 
 	return (
-		<Modal open={open} onOpenChange={handleClose}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>
-						<Trans>Transfer</Trans>
-					</ModalTitle>
-				</ModalHeader>
+		<PendingActionModal
+			open={open}
+			onOpenChange={handleModalOpenChange}
+			isPending={isWithdrawPending || isDepositPreflighting}
+			presentation={presentation}
+			handleClassName={usesFundsRedesign ? "top-2.5 !rounded-[2px] bg-market-close-stroke-input" : undefined}
+			overlayClassName={usesFundsRedesign ? "!bg-scrim/60 !backdrop-blur-none" : undefined}
+			className={
+				usesFundsRedesign
+					? "font-market-close !border-0 !bg-modal !shadow-none max-[1000px]:!rounded-t-[20px] [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:!max-w-[28rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button>svg]:size-[18px]"
+					: undefined
+			}
+		>
+			<ModalHeader
+				divider={!usesFundsRedesign}
+				className={
+					usesFundsRedesign
+						? "px-4 pt-7 pr-14 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
+						: undefined
+				}
+			>
+				<ModalTitle
+					className={
+						usesFundsRedesign
+							? visibleTab === "deposit"
+								? "sr-only"
+								: "text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6"
+							: undefined
+					}
+				>
+					{visibleTab === "deposit" ? (
+						<Trans>Deposit</Trans>
+					) : visibleTab === "withdraw" ? (
+						<Trans>Withdraw</Trans>
+					) : (
+						<Trans>Bridge</Trans>
+					)}
+				</ModalTitle>
+			</ModalHeader>
 
-				<ModalContent className="space-y-4">
-					<SegmentedControls
-						value={visibleTab}
-						onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
-						fullWidth
-					>
-						<SegmentedControlItem value="deposit" icon={<ArrowLineDownIcon className="size-3" />}>
-							<Trans>Deposit</Trans>
-						</SegmentedControlItem>
-						<SegmentedControlItem value="withdraw" icon={<ArrowLineUpIcon className="size-3" />}>
-							<Trans>Withdraw</Trans>
-						</SegmentedControlItem>
-						{showBridgeTab ? (
-							<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
-								<Trans>Bridge</Trans>
-							</SegmentedControlItem>
-						) : null}
-					</SegmentedControls>
+			<ModalContent
+				className={
+					usesFundsRedesign ? "px-4 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-3.5 min-[1001px]:pb-6" : "space-y-4"
+				}
+			>
+				<div className={usesFundsRedesign ? "flex flex-col" : "flex min-h-72 flex-col"}>
+					{visibleTab === "deposit" &&
+						(canUseDeposit ? (
+							<DepositForm
+								amount={depositAmount}
+								onAmountChange={handleDepositAmountChange}
+								balance={depositBalance}
+								maxAmount={maxDepositAmount}
+								maxDepositRaw={maxDepositRaw}
+								balanceStatus={depositBalanceStatus}
+								balanceError={depositBalanceError}
+								validation={depositValidation}
+								isPending={isDepositPending}
+								onSubmit={handleDepositSubmit}
+								routingStatus={depositRoutingStatus}
+								depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
+								onRetryRouting={handleDepositRoutingRetry}
+								networkName={depositNetworkName}
+								sponsoredCctpEnabled={sponsoredCctpEnabled}
+								sponsoredCctpReadiness={sponsoredCctpReadiness}
+								depositUnavailableReason={depositAvailability.unavailableReason}
+								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
+								cctpFee={cctpDepositFee}
+								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}
+								cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
+								pendingCctpRecovery={
+									!depositHash &&
+									!!cctpDepositTracking.recoveryRecord &&
+									cctpDepositTracking.data?.status !== "forward-submitted"
+								}
+								usesFundingAddressFlow={isEmbeddedDeposit}
+								fundingAddressPending={
+									depositAvailability.available &&
+									isEmbeddedDeposit &&
+									!embeddedWalletError &&
+									!depositEmbeddedWalletAddress
+								}
+								fundingAddressError={embeddedWalletError ? embeddedWalletValidationError : null}
+								fundingAddress={
+									depositAvailability.available && isEmbeddedDeposit && sponsoredCctpReadiness.status === "ready"
+										? depositEmbeddedWalletAddress
+										: undefined
+								}
+								onRetryFundingAddress={() => {
+									void ensureEmailEmbeddedWallet().catch(() => {});
+								}}
+								onDone={handleClose}
+							/>
+						) : (
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						))}
 
-					<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
-						{visibleTab === "deposit" &&
-							(canUseDeposit ? (
-								<DepositForm
-									amount={depositAmount}
-									onAmountChange={setDepositAmount}
-									balance={depositBalance}
-									maxAmount={maxDepositAmount}
-									maxDepositRaw={maxDepositRaw}
-									balanceStatus={depositBalanceStatus}
-									balanceError={depositBalanceError}
-									validation={depositValidation}
-									isPending={isDepositPending}
-									onSubmit={handleDepositSubmit}
-									networkName={depositNetworkName}
-									smartDepositEnabled={smartDepositEnabled}
-									autoBridgeEnabled={isEmbeddedDeposit}
-									fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
-									onDone={handleClose}
-								/>
+					{visibleTab === "withdraw" &&
+						(!canUseFundsActions ? (
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						) : (
+							<WithdrawForm
+								amount={withdrawAmount}
+								onAmountChange={setWithdrawAmount}
+								destination={withdrawDestination}
+								onDestinationChange={setWithdrawDestination}
+								destinationRequired={requiresWithdrawDestination}
+								destinationError={withdrawDestinationError}
+								available={withdrawable}
+								maxAmount={withdrawalMaxAmount}
+								route={withdrawalRoute}
+								routingStatus={withdrawalRoutingStatus}
+								routeChanged={withdrawalRouteChanged}
+								routeFee={withdrawalRouteFee}
+								activationFee={withdrawalActivationFee}
+								showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
+								prerequisitesPending={withdrawalPrerequisitesPending}
+								prerequisiteError={withdrawalPrerequisiteError}
+								canRetryPrerequisites={canRetryWithdrawalPrerequisites}
+								onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
+								validation={withdrawValidation}
+								canSubmit={canSubmitWithdraw}
+								isPending={isWithdrawPending}
+								onSubmit={handleWithdrawSubmit}
+								spotAvailable={accountSummary.spotUsdcAvailable}
+								showSpotFundsNotice={showSpotFundsNotice}
+								onTransferClick={
+									fundsActionAvailability.internalTransfer.available ? handlePerpsSpotTransferClick : undefined
+								}
+							/>
+						))}
+
+					{visibleTab === "bridge" && showBridgeTab && (
+						<Suspense fallback={null}>
+							{canUseFundsActions ? (
+								<LazyBridgeTab />
 							) : (
-								<WalletNotConnected />
-							))}
-
-						{visibleTab === "withdraw" &&
-							(!canUseFundsActions ? (
-								<WalletNotConnected />
-							) : (
-								<WithdrawForm
-									amount={withdrawAmount}
-									onAmountChange={setWithdrawAmount}
-									destination={withdrawDestination}
-									onDestinationChange={setWithdrawDestination}
-									destinationRequired={requiresWithdrawDestination}
-									destinationError={withdrawDestinationError}
-									available={withdrawable}
-									validation={withdrawValidation}
-									canSubmit={canSubmitWithdraw}
-									isPending={isWithdrawPending}
-									onSubmit={handleWithdrawSubmit}
-									spotAvailable={accountSummary.spotUsdcAvailable}
-									showSpotFundsNotice={showSpotFundsNotice}
-									onTransferClick={handlePerpsSpotTransferClick}
-								/>
-							))}
-
-						{visibleTab === "bridge" && showBridgeTab && (
-							<Suspense fallback={null}>{canUseFundsActions ? <LazyBridgeTab /> : <WalletNotConnected />}</Suspense>
-						)}
-					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
+								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+							)}
+						</Suspense>
+					)}
+				</div>
+			</ModalContent>
+		</PendingActionModal>
 	);
 }

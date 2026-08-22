@@ -2,6 +2,9 @@ const hyperliquidConnectSources = [
 	"https://api.hyperliquid.xyz",
 	"https://api.hyperliquid-testnet.xyz",
 	"https://app.hyperliquid.xyz",
+	"https://stats-data.hyperliquid.xyz",
+	"https://rpc.hyperliquid.xyz",
+	"https://rpc.hyperliquid-testnet.xyz",
 	"wss://api.hyperliquid.xyz",
 	"wss://api.hyperliquid-testnet.xyz",
 ] as const;
@@ -24,6 +27,8 @@ const walletConnectConnectSources = [
 ] as const;
 
 const smartWalletConnectSources = ["https://rpc.zerodev.app"] as const;
+
+const circleCctpConnectSources = ["https://iris-api.circle.com", "https://iris-api-sandbox.circle.com"] as const;
 
 const bridgeConnectSources = [
 	"https://li.quest",
@@ -75,6 +80,7 @@ export const cspDirectives: Record<string, string> = {
 		...privyConnectSources,
 		...walletConnectConnectSources,
 		...smartWalletConnectSources,
+		...circleCctpConnectSources,
 		...bridgeConnectSources,
 	].join(" "),
 	"worker-src": "'self' blob:",

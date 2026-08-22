@@ -2,7 +2,7 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist, subscribeWithSelector } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
-import { type LimitTif, ORDER_TYPES, type OrderType } from "@/config/trade";
+import { type LimitTif, ORDER_TYPES, type OrderType, SCALE_SKEW_DEFAULT } from "@/config/trade";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import { isScaleOrderType, isTriggerOrderType } from "@/lib/trade/order-types";
 import type { Side, SizeMode } from "@/lib/trade/types";
@@ -20,16 +20,19 @@ interface FormState {
 	scaleStart: string;
 	scaleEnd: string;
 	scaleLevels: number;
+	scaleSkew: string;
 	twapMinutes: number;
 	twapRandomize: boolean;
+	twapTriggerPrice: string;
+	twapStopPrice: string;
 	reduceOnly: boolean;
 	tpSlEnabled: boolean;
 	tpPrice: string;
 	slPrice: string;
+	tpReturnInvalid: boolean;
+	slReturnInvalid: boolean;
 	tif: LimitTif;
 }
-
-interface OrderEntryState extends PersistedState, FormState {}
 
 interface OrderEntryActions {
 	setSide: (side: Side) => void;
@@ -43,19 +46,24 @@ interface OrderEntryActions {
 	setScaleStart: (price: string) => void;
 	setScaleEnd: (price: string) => void;
 	setScaleLevels: (levels: number) => void;
+	setScaleSkew: (skew: string) => void;
 	setTwapMinutes: (minutes: number) => void;
 	setTwapRandomize: (randomize: boolean) => void;
+	setTwapTriggerPrice: (price: string) => void;
+	setTwapStopPrice: (price: string) => void;
 	setReduceOnly: (reduceOnly: boolean) => void;
 	setTpSlEnabled: (enabled: boolean) => void;
 	setTpPrice: (price: string) => void;
 	setSlPrice: (price: string) => void;
+	setTpReturnInvalid: (invalid: boolean) => void;
+	setSlReturnInvalid: (invalid: boolean) => void;
 	setTif: (tif: LimitTif) => void;
 
 	resetForm: () => void;
 	resetPrices: () => void;
 }
 
-interface OrderEntryStore extends OrderEntryState {
+interface OrderEntryFormStore extends FormState {
 	actions: OrderEntryActions;
 }
 
@@ -72,12 +80,17 @@ const DEFAULT_FORM: FormState = {
 	scaleStart: "",
 	scaleEnd: "",
 	scaleLevels: 4,
+	scaleSkew: String(SCALE_SKEW_DEFAULT),
 	twapMinutes: 30,
 	twapRandomize: true,
+	twapTriggerPrice: "",
+	twapStopPrice: "",
 	reduceOnly: false,
 	tpSlEnabled: false,
 	tpPrice: "",
 	slPrice: "",
+	tpReturnInvalid: false,
+	slReturnInvalid: false,
 	tif: "Gtc",
 };
 
@@ -91,144 +104,176 @@ const orderEntrySchema = z.object({
 
 const validatedStorage = createValidatedStorage(orderEntrySchema, "order entry");
 
-const useOrderEntryStore = create<OrderEntryStore>()(
-	subscribeWithSelector(
-		persist(
-			(set) => ({
-				...DEFAULT_PERSISTED,
-				...DEFAULT_FORM,
+// Keep the persisted preferences in their own store. Zustand's persist middleware
+// writes after every set(), even when partialize() drops the changed field. Keeping
+// transient form input out of this store prevents pointer/input events from doing
+// synchronous localStorage work while preserving the existing persisted payload.
+const usePersistedOrderEntryStore = create<PersistedState>()(
+	persist(() => ({ ...DEFAULT_PERSISTED }), {
+		name: STORAGE_KEYS.ORDER_ENTRY,
+		version: 2,
+		storage: createJSONStorage(() => validatedStorage),
+		partialize: (state) => ({
+			side: state.side,
+			orderType: state.orderType,
+			sizeMode: state.sizeMode,
+		}),
+		merge: (persisted, current) => ({
+			...current,
+			...DEFAULT_PERSISTED,
+			...(persisted as Partial<PersistedState>),
+		}),
+	}),
+);
 
-				actions: {
-					setSide: (side) => set({ side }),
+const useOrderEntryFormStore = create<OrderEntryFormStore>()(
+	subscribeWithSelector((set) => ({
+		...DEFAULT_FORM,
 
-					setOrderType: (orderType) => {
-						const isTrigger = isTriggerOrderType(orderType);
-						const isScale = isScaleOrderType(orderType);
-						set((state) => {
-							const wasTrigger = isTriggerOrderType(state.orderType);
-							const needsTifReset = isScale && state.tif === "Ioc";
-							function nextReduceOnly() {
-								if (isTrigger) return true;
-								if (wasTrigger) return false;
-								return state.reduceOnly;
-							}
-							return {
-								orderType,
-								reduceOnly: nextReduceOnly(),
-								tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
-								tif: needsTifReset ? "Gtc" : state.tif,
-							};
-						});
-					},
-
-					setSizeMode: (sizeMode) => set({ sizeMode }),
-
-					toggleSizeMode: () =>
-						set((state) => ({
-							sizeMode: state.sizeMode === "base" ? "quote" : "base",
-						})),
-
-					setSize: (size) => set({ size }),
-					setLimitPrice: (limitPrice) => set({ limitPrice }),
-					setTriggerPrice: (triggerPrice) => set({ triggerPrice }),
-					setScaleStart: (scaleStart) => set({ scaleStart }),
-					setScaleEnd: (scaleEnd) => set({ scaleEnd }),
-					setScaleLevels: (scaleLevels) => set({ scaleLevels }),
-					setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
-					setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
-					setReduceOnly: (reduceOnly) => set({ reduceOnly }),
-					setTpSlEnabled: (tpSlEnabled) => set({ tpSlEnabled }),
-					setTpPrice: (tpPrice) => set({ tpPrice }),
-					setSlPrice: (slPrice) => set({ slPrice }),
-					setTif: (tif) => set({ tif }),
-
-					resetForm: () => set({ ...DEFAULT_FORM }),
-
-					resetPrices: () =>
-						set({
-							limitPrice: "",
-							triggerPrice: "",
-							scaleStart: "",
-							scaleEnd: "",
-							tpPrice: "",
-							slPrice: "",
-						}),
-				},
-			}),
-			{
-				name: STORAGE_KEYS.ORDER_ENTRY,
-				version: 2,
-				storage: createJSONStorage(() => validatedStorage),
-				partialize: (state) => ({
-					side: state.side,
-					orderType: state.orderType,
-					sizeMode: state.sizeMode,
-				}),
-				merge: (persisted, current) => ({
-					...current,
-					...DEFAULT_PERSISTED,
-					...DEFAULT_FORM,
-					...(persisted as Partial<PersistedState>),
-				}),
+		actions: {
+			setSide: (side) => {
+				set({ tpReturnInvalid: false, slReturnInvalid: false });
+				usePersistedOrderEntryStore.setState({ side });
 			},
-		),
-	),
+
+			setOrderType: (orderType) => {
+				const isTrigger = isTriggerOrderType(orderType);
+				const isScale = isScaleOrderType(orderType);
+
+				set((state) => {
+					const needsTifReset = isScale && state.tif === "Ioc";
+					return {
+						tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
+						tpReturnInvalid: isTrigger ? false : state.tpReturnInvalid,
+						slReturnInvalid: isTrigger ? false : state.slReturnInvalid,
+						tif: needsTifReset ? "Gtc" : state.tif,
+					};
+				});
+				usePersistedOrderEntryStore.setState({ orderType });
+			},
+
+			setSizeMode: (sizeMode) => usePersistedOrderEntryStore.setState({ sizeMode }),
+
+			toggleSizeMode: () => {
+				const { sizeMode } = usePersistedOrderEntryStore.getState();
+				usePersistedOrderEntryStore.setState({ sizeMode: sizeMode === "base" ? "quote" : "base" });
+			},
+
+			setSize: (size) => set({ size }),
+			setLimitPrice: (limitPrice) => set({ limitPrice }),
+			setTriggerPrice: (triggerPrice) => set({ triggerPrice }),
+			setScaleStart: (scaleStart) => set({ scaleStart }),
+			setScaleEnd: (scaleEnd) => set({ scaleEnd }),
+			setScaleLevels: (scaleLevels) => set({ scaleLevels }),
+			setScaleSkew: (scaleSkew) => set({ scaleSkew }),
+			setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
+			setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
+			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
+			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
+			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
+			setTpSlEnabled: (tpSlEnabled) =>
+				set((state) => ({
+					tpSlEnabled,
+					tpReturnInvalid: tpSlEnabled ? state.tpReturnInvalid : false,
+					slReturnInvalid: tpSlEnabled ? state.slReturnInvalid : false,
+				})),
+			setTpPrice: (tpPrice) => set({ tpPrice, tpReturnInvalid: false }),
+			setSlPrice: (slPrice) => set({ slPrice, slReturnInvalid: false }),
+			setTpReturnInvalid: (tpReturnInvalid) => set({ tpReturnInvalid }),
+			setSlReturnInvalid: (slReturnInvalid) => set({ slReturnInvalid }),
+			setTif: (tif) => set({ tif }),
+
+			resetForm: () => set({ ...DEFAULT_FORM }),
+
+			resetPrices: () =>
+				set({
+					limitPrice: "",
+					triggerPrice: "",
+					scaleStart: "",
+					scaleEnd: "",
+					twapTriggerPrice: "",
+					twapStopPrice: "",
+					tpPrice: "",
+					slPrice: "",
+					tpReturnInvalid: false,
+					slReturnInvalid: false,
+				}),
+		},
+	})),
 );
 
 export function useOrderSide() {
-	return useOrderEntryStore((s) => s.side);
+	return usePersistedOrderEntryStore((s) => s.side);
 }
 export function useOrderType() {
-	return useOrderEntryStore((s) => s.orderType);
+	return usePersistedOrderEntryStore((s) => s.orderType);
 }
 export function useSizeMode() {
-	return useOrderEntryStore((s) => s.sizeMode);
+	return usePersistedOrderEntryStore((s) => s.sizeMode);
 }
 export function useReduceOnly() {
-	return useOrderEntryStore((s) => s.reduceOnly);
+	return useOrderEntryFormStore((s) => s.reduceOnly);
 }
 
 export function useOrderSize() {
-	return useOrderEntryStore((s) => s.size);
+	return useOrderEntryFormStore((s) => s.size);
 }
 export function useLimitPrice() {
-	return useOrderEntryStore((s) => s.limitPrice);
+	return useOrderEntryFormStore((s) => s.limitPrice);
 }
 export function useTriggerPrice() {
-	return useOrderEntryStore((s) => s.triggerPrice);
+	return useOrderEntryFormStore((s) => s.triggerPrice);
 }
 
 export function useScaleStart() {
-	return useOrderEntryStore((s) => s.scaleStart);
+	return useOrderEntryFormStore((s) => s.scaleStart);
 }
 export function useScaleEnd() {
-	return useOrderEntryStore((s) => s.scaleEnd);
+	return useOrderEntryFormStore((s) => s.scaleEnd);
 }
 export function useScaleLevels() {
-	return useOrderEntryStore((s) => s.scaleLevels);
+	return useOrderEntryFormStore((s) => s.scaleLevels);
+}
+export function useScaleSkew() {
+	return useOrderEntryFormStore((s) => s.scaleSkew);
 }
 
 export function useTwapMinutes() {
-	return useOrderEntryStore((s) => s.twapMinutes);
+	return useOrderEntryFormStore((s) => s.twapMinutes);
 }
 export function useTwapRandomize() {
-	return useOrderEntryStore((s) => s.twapRandomize);
+	return useOrderEntryFormStore((s) => s.twapRandomize);
+}
+export function useTwapTriggerPrice() {
+	return useOrderEntryFormStore((s) => s.twapTriggerPrice);
+}
+export function useTwapStopPrice() {
+	return useOrderEntryFormStore((s) => s.twapStopPrice);
 }
 
 export function useTpSlEnabled() {
-	return useOrderEntryStore((s) => s.tpSlEnabled);
+	return useOrderEntryFormStore((s) => s.tpSlEnabled);
 }
 export function useTpPrice() {
-	return useOrderEntryStore((s) => s.tpPrice);
+	return useOrderEntryFormStore((s) => s.tpPrice);
 }
 export function useSlPrice() {
-	return useOrderEntryStore((s) => s.slPrice);
+	return useOrderEntryFormStore((s) => s.slPrice);
+}
+export function useTpReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.tpReturnInvalid);
+}
+export function useSlReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.slReturnInvalid);
+}
+export function useTpSlReturnInvalid() {
+	return useOrderEntryFormStore((s) => s.tpReturnInvalid || s.slReturnInvalid);
 }
 
 export function useTif() {
-	return useOrderEntryStore((s) => s.tif);
+	return useOrderEntryFormStore((s) => s.tif);
 }
 
 export function useOrderEntryActions() {
-	return useOrderEntryStore((s) => s.actions);
+	return useOrderEntryFormStore((s) => s.actions);
 }

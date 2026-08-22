@@ -49,15 +49,46 @@ interface CheckboxProps
 	extends Omit<React.ComponentPropsWithoutRef<typeof BaseCheckbox.Root>, "className">,
 		VariantProps<typeof checkboxVariants> {
 	className?: string;
+	controlClassName?: string;
+	indicatorClassName?: string;
+	labelClassName?: string;
 	label?: React.ReactNode;
 	description?: React.ReactNode;
 	errorMessage?: string;
 }
 
 const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
-	({ className, size: sizeProp, error, label, description, errorMessage, disabled, indeterminate, ...props }, ref) => {
+	(
+		{
+			"aria-label": ariaLabel,
+			"aria-describedby": ariaDescribedBy,
+			"aria-labelledby": ariaLabelledBy,
+			className,
+			controlClassName,
+			indicatorClassName,
+			labelClassName,
+			size: sizeProp,
+			error,
+			label,
+			description,
+			errorMessage,
+			disabled,
+			indeterminate,
+			...props
+		},
+		ref,
+	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
 		const iconSize = iconSizeMap[size ?? "md"];
+		const generatedId = React.useId();
+		const labelId = label ? `${generatedId}-label` : undefined;
+		const ariaLabelId = ariaLabel ? `${generatedId}-aria-label` : undefined;
+		const descriptionId = description ? `${generatedId}-description` : undefined;
+		const errorId = error && errorMessage ? `${generatedId}-error` : undefined;
+		const generatedLabelledBy = ariaLabelledBy ?? ariaLabelId ?? labelId ?? descriptionId;
+		const generatedDescribedBy = [ariaDescribedBy, labelId ? descriptionId : undefined, errorId]
+			.filter(Boolean)
+			.join(" ");
 
 		return (
 			<label
@@ -67,23 +98,41 @@ const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
 					className,
 				)}
 			>
+				{ariaLabelId && (
+					<span id={ariaLabelId} className="sr-only">
+						{ariaLabel}
+					</span>
+				)}
 				<BaseCheckbox.Root
 					ref={ref}
+					aria-label={ariaLabel}
+					aria-describedby={generatedDescribedBy || undefined}
+					aria-labelledby={generatedLabelledBy}
 					disabled={disabled}
 					indeterminate={indeterminate}
-					className={cn(checkboxVariants({ size, error }))}
+					className={cn(checkboxVariants({ size, error }), controlClassName)}
 					{...props}
 				>
-					<BaseCheckbox.Indicator className="flex items-center justify-center text-icon-inverse-strong">
+					<BaseCheckbox.Indicator
+						className={cn("flex items-center justify-center text-icon-inverse-strong", indicatorClassName)}
+					>
 						{indeterminate ? <MinusIcon size={iconSize} weight="bold" /> : <CheckIcon size={iconSize} weight="bold" />}
 					</BaseCheckbox.Indicator>
 				</BaseCheckbox.Root>
 				{(label || description || (error && errorMessage)) && (
 					<span className="flex flex-col gap-1">
-						{label && <span className="text-xs text-fg">{label}</span>}
-						{description && <span className="text-xs text-fg-muted">{description}</span>}
+						{label && (
+							<span id={labelId} className={cn("text-xs text-fg", labelClassName)}>
+								{label}
+							</span>
+						)}
+						{description && (
+							<span id={descriptionId} className="text-xs text-fg-muted">
+								{description}
+							</span>
+						)}
 						{error && errorMessage && (
-							<span className="flex items-center gap-1">
+							<span id={errorId} className="flex items-center gap-1">
 								<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
 								<span className="text-xs text-error">{errorMessage}</span>
 							</span>

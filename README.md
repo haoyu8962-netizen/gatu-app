@@ -55,7 +55,7 @@ hypeterminal/
 
 ## Quick start
 
-Prereqs: **Node 20+**, **pnpm 9+**.
+Prereqs: **Node 22.15+**, **pnpm 10.21+**.
 
 ```bash
 git clone https://github.com/your-org/hypeterminal.git
@@ -100,6 +100,7 @@ Commit types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`,
 - **[packages/ui/README.md](packages/ui/README.md)** — design tokens, component inventory, CVA patterns
 - **[packages/hyperliquid-api/SKILL.md](packages/hyperliquid-api/SKILL.md)** — Agent Skill for AI tools working with the Hyperliquid API
 - **[docs/runtime-guardrails.md](docs/runtime-guardrails.md)** — runtime boundaries for wallet/agent state, funding, TradingView, mobile layout, market mapping, and WS subscriptions
+- **[docs/spot-asset-information.md](docs/spot-asset-information.md)** — source, refresh, trust, and rendering boundaries for spot descriptions and social links
 
 ## License
 

@@ -7,11 +7,15 @@ import type {
 	InfoClient,
 	L2BookWsEvent,
 	L2BookWsParameters,
+	NoopParameters,
 	OrderParameters,
 	OrderSuccessResponse,
+	ScheduleCancelParameters,
+	SpotStateWsParameters,
 	SubscriptionClient,
 	TradesWsEvent,
 	TradesWsParameters,
+	UserFeesResponse,
 	UserFillsWsEvent,
 	UserFillsWsParameters,
 } from "@nktkas/hyperliquid";
@@ -53,6 +57,22 @@ describe("InfoClient mapped types", () => {
 		expectTypeOf<"config_">().not.toMatchTypeOf<Methods>();
 	});
 
+	it("includes the Info methods added in SDK 0.33.3", () => {
+		expectTypeOf<"outcomeTemplates">().toMatchTypeOf<InfoMethod>();
+		expectTypeOf<"usdcRouting">().toMatchTypeOf<InfoMethod>();
+	});
+
+	it("preserves the userFees staking-link discriminant added in SDK 0.33.3", () => {
+		type StakingLink = NonNullable<UserFeesResponse["stakingLink"]>;
+		type StakingUserView = Extract<StakingLink, { type: "stakingUser" }>;
+		type TradingUserView = Exclude<StakingLink, StakingUserView>;
+
+		expectTypeOf<StakingUserView>().toHaveProperty("tradingUser");
+		expectTypeOf<StakingUserView>().not.toHaveProperty("stakingUser");
+		expectTypeOf<TradingUserView>().toHaveProperty("stakingUser");
+		expectTypeOf<TradingUserView>().not.toHaveProperty("tradingUser");
+	});
+
 	it("covers all InfoClient methods", () => {
 		type SDKMethods = Exclude<keyof InfoClient, "config_">;
 		expectTypeOf<InfoMethod>().toMatchTypeOf<SDKMethods>();
@@ -65,14 +85,27 @@ describe("ExchangeClient mapped types", () => {
 		expectTypeOf<CancelParameters>().toMatchTypeOf<ExchangeParams<"cancel">>();
 	});
 
-	it("resolves params as undefined for no-params method", () => {
+	it("requires the nonce params introduced for noop", () => {
 		type NoopParams = ExchangeParams<"noop">;
-		expectTypeOf<undefined>().toMatchTypeOf<NoopParams>();
+		expectTypeOf<NoopParams>().toEqualTypeOf<NoopParameters>();
+		expectTypeOf<undefined>().not.toMatchTypeOf<NoopParams>();
+	});
+
+	it("preserves optional params for overloaded methods", () => {
+		expectTypeOf<ExchangeParams<"scheduleCancel">>().toEqualTypeOf<ScheduleCancelParameters | undefined>();
+	});
+
+	it("resolves params as undefined for opts-only methods", () => {
+		expectTypeOf<ExchangeParams<"claimRewards">>().toEqualTypeOf<undefined>();
 	});
 
 	it("resolves response type correctly", () => {
 		expectTypeOf<ExchangeResponse<"order">>().toEqualTypeOf<OrderSuccessResponse>();
 		expectTypeOf<ExchangeResponse<"cancel">>().toEqualTypeOf<CancelSuccessResponse>();
+	});
+
+	it("includes the Exchange method added in SDK 0.33.3", () => {
+		expectTypeOf<"activateOutcomeDeployer">().toMatchTypeOf<ExchangeMethod>();
 	});
 
 	it("covers all ExchangeClient methods", () => {
@@ -86,10 +119,10 @@ describe("SubscriptionClient mapped types", () => {
 		expectTypeOf<SubParams<"l2Book">>().toEqualTypeOf<L2BookWsParameters>();
 		expectTypeOf<SubParams<"trades">>().toEqualTypeOf<TradesWsParameters>();
 		expectTypeOf<SubParams<"userFills">>().toEqualTypeOf<UserFillsWsParameters>();
+		expectTypeOf<SubParams<"spotState">>().toEqualTypeOf<SpotStateWsParameters>();
 	});
 
 	it("resolves params as undefined for no-params method", () => {
-		expectTypeOf<SubParams<"explorerBlock">>().toEqualTypeOf<undefined>();
 		expectTypeOf<SubParams<"spotAssetCtxs">>().toEqualTypeOf<undefined>();
 	});
 
@@ -105,8 +138,11 @@ describe("SubscriptionClient mapped types", () => {
 	});
 
 	it("resolves event type for no-params method", () => {
-		expectTypeOf<SubEvent<"explorerBlock">>().not.toBeNever();
 		expectTypeOf<SubEvent<"spotAssetCtxs">>().not.toBeNever();
+	});
+
+	it("excludes the webData2 subscription removed in SDK 0.33.2", () => {
+		expectTypeOf<"webData2">().not.toMatchTypeOf<SubMethod>();
 	});
 
 	it("never resolves to never for any method", () => {

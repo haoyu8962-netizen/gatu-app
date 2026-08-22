@@ -7,24 +7,65 @@ export {
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
 export { getAccountLedgerRefreshKey } from "./account/ledger-refresh";
-export { type Position, type UserPositions, useUserPositions } from "./account/use-user-positions";
 export {
+	isNonZeroPositionSize,
+	type Position,
+	type UserPositions,
+	useUserPositions,
+} from "./account/use-user-positions";
+export {
+	type AssetIdKind,
 	calculateAssetId,
+	calculateOutcomeAssetId,
 	getAssetIdKind,
+	getOutcomeAssetIdFromCoin,
 	isBuilderPerpAssetId,
+	isOutcomeAssetId,
 	isPerpAssetId,
 	isSpotAssetId,
+	OUTCOME_ASSET_ID_OFFSET,
+	type OutcomeSide,
 	type ParsedAssetId,
+	type ParsedOutcomeAsset,
 	parseAssetId,
+	parseOutcomeCoin,
 } from "./asset-id";
 export { getMarketCapabilities, type MarketCapabilities } from "./capabilities";
-export { createExchangeClient, getInfoClient, getSubscriptionClient, initializeClients } from "./clients";
-export { assertExchange, MissingTransportError, MissingWalletError, ProviderNotFoundError } from "./errors";
-export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
+export {
+	createExchangeClient,
+	getInfoClient,
+	getSubscriptionClient,
+	initializeClients,
+	subscribeWsReconnect,
+} from "./clients";
+export {
+	assertExchange,
+	MissingTransportError,
+	MissingWalletError,
+	OversizedWebSocketPayloadError,
+	ProviderNotFoundError,
+	WalletAccountMismatchError,
+} from "./errors";
+export {
+	assertExchangeMutationAllowed,
+	HyperliquidExchangePolicyProvider,
+	type HyperliquidExchangePolicyProviderProps,
+	isPortfolioMarginActivation,
+	usePortfolioMarginActivationPolicy,
+} from "./exchange-policy";
+export { getExplorerAddressUrl, getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
-export { useExchange } from "./hooks/useExchange";
 export {
+	type ExchangeExecutionGuard,
+	type ExchangeMutationOptions,
+	type ExchangePreExecutionGuard,
+	type GuardedExchangeMutationOptions,
+	type IsolatedManagementExchangeMethod,
+	useExchange,
+} from "./hooks/useExchange";
+export {
+	type InfoRequestOptions,
 	infoKey,
 	infoPersistedKey,
 	infoQueryOptions,
@@ -32,9 +73,21 @@ export {
 	type UseInfoOptions,
 	useInfo,
 } from "./hooks/useInfo";
+export {
+	type L2BookSubscriptionOptions,
+	useL2BookSubscription,
+} from "./hooks/useL2BookSubscription";
+export {
+	publicStatsDataKeys,
+	type UsePublicLeaderboardOptions,
+	type UsePublicVaultsOptions,
+	usePublicLeaderboard,
+	usePublicVaults,
+} from "./hooks/usePublicStatsData";
 export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
+export { verifyLegalActionAllowed } from "./internal/exchange/legal-execution";
 export { enableHyperliquidDebug } from "./internal/websocket/debug";
 export {
 	createHealthReport,
@@ -43,6 +96,24 @@ export {
 	registerHealthReport,
 } from "./internal/websocket/health";
 export { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "./internal/websocket/reliability";
+export {
+	type AcceptTermsRequest,
+	acceptHyperliquidTerms,
+	assertLegalStatusAllows,
+	classifyLegalStatusError,
+	getLegalStatusRetryDelayMs,
+	LEGAL_STATUS_ERROR_REASONS,
+	LEGAL_STATUS_HTTP_TIMEOUT_MS,
+	LEGAL_STATUS_STALE_TIME_MS,
+	type LegalActionBlockReason,
+	type LegalActionCapability,
+	LegalActionNotAllowedError,
+	type LegalRestriction,
+	type LegalStatus,
+	type LegalStatusErrorReason,
+	parseLegalStatus,
+	shouldRetryLegalStatus,
+} from "./legal";
 export type {
 	BuilderPerpMarket,
 	MarketKind,
@@ -52,32 +123,124 @@ export type {
 	SpotToken as MarketSpotToken,
 	UnifiedMarket,
 } from "./markets/types";
-export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provider";
-export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
+export type {
+	HyperliquidContextValue,
+	HyperliquidProviderProps,
+	HyperliquidSessionContextValue,
+	HyperliquidSessionProviderProps,
+	HyperliquidTransportContextValue,
+	HyperliquidTransportProviderProps,
+} from "./provider";
+export {
+	HyperliquidProvider,
+	HyperliquidSessionContext,
+	HyperliquidSessionProvider,
+	HyperliquidTransportContext,
+	HyperliquidTransportProvider,
+	useConfig,
+	useHyperliquid,
+	useHyperliquidOptional,
+	useHyperliquidTransport,
+} from "./provider";
+export {
+	clearPublicStatsDataCacheForTests,
+	fetchPublicLeaderboard,
+	fetchPublicVaults,
+	getPublicStatsDataUrl,
+	normalizePublicLeaderboard,
+	normalizePublicVaults,
+	PUBLIC_STATS_DATA_LIMITS,
+	type PublicLeaderboardPerformance,
+	type PublicLeaderboardRow,
+	PublicStatsDataError,
+	type PublicStatsDataErrorCode,
+	type PublicStatsDataset,
+	type PublicStatsWindow,
+	type PublicStatsWindowMap,
+	type PublicVaultRelationship,
+	type PublicVaultRow,
+} from "./public-stats-data";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
 export {
+	type AgentApprovalMutateAsync,
+	HyperliquidAgentApprovalProvider,
+	type HyperliquidAgentApprovalProviderProps,
+	useAgentApprovalOverride,
+} from "./signing/agent-approval-provider";
+export {
+	type AgentRegistrationCleanupResult,
+	type AgentRegistrationCleanupTarget,
+	type AgentRegistrationEpoch,
+	type AgentRegistrationExecutionLease,
+	type AgentRegistrationExecutionLeaseOptions,
+	type AgentRegistrationExecutionStartResult,
+	type AgentRegistrationPersistResult,
+	type AgentRegistrationPreExecutionGuard,
+	AgentRegistrationPreExecutionGuardTimeoutError,
+	type AgentRegistrationSessionFailureReason,
+	type AgentRegistrationSessionResult,
+	type AgentRegistrationShutdownOptions,
+	type AgentRegistrationShutdownResult,
+	type AgentRegistrationVerificationResult,
+	activateAgentOwnerForRegistration,
+	activateAgentRegistrationSession,
+	cancelAgentRegistrationEpochAndRemove,
+	captureAgentRegistrationEpoch,
+	captureAgentRegistrationExecutionLease,
+	cleanupAgentRegistrationIfMatches,
+	closeAgentRegistrationSession,
+	closeAgentRegistrationSessionAndRemove,
+	isAgentRegistrationEpochCurrent,
+	isAgentRegistrationExecutionLeaseCurrent,
+	persistAgentForRegistration,
+	restoreAgentRegistrationSession,
+	startAgentRegistrationExecution,
+	verifyAgentRegistrationOrRemove,
+} from "./signing/agent-registration-session";
+export {
+	type ActiveAgentOwnerExecutionLease,
 	type AgentOwner,
+	captureActiveAgentOwnerExecutionLease,
 	clearActiveAgentOwner,
+	clearActiveAgentOwnerIfMatches,
+	ensureActiveAgentOwnerRevision,
 	getActiveAgentOwner,
 	type ResolvedSession,
 	resolveSession,
+	runWithActiveAgentOwnerExecutionLease,
 	type SessionMode,
 	setActiveAgentOwner,
+	setActiveAgentOwnerAndVerify,
 	useActiveAgentOwner,
 } from "./signing/agent-session";
 export {
+	type AgentStorageRemovalResult,
+	type AgentStorageScope,
+	type AgentStorageWriteOptions,
+	type AgentStorageWriteResult,
+	type AgentWalletMetadata,
+	hasInvalidAgentStorageRecord,
+	PERSIST_TRADING_CONNECTION_STORAGE_KEY,
 	readAgentFromStorage,
+	readPersistTradingConnection,
 	removeAgentFromStorage,
+	removeAgentFromStorageAndVerify,
 	useAgentWalletActions,
 	useAgentWalletStorage,
+	useInvalidAgentStorageRecord,
 	writeAgentToStorage,
+	writeAgentToStorageAndVerify,
+	writePersistTradingConnection,
 } from "./signing/agent-storage";
+export { isBuilderFeeApproved } from "./signing/agent-utils";
 export {
 	createMobileAgentApproval,
 	createMobileAgentName,
 	createMobileAgentRevocationApproval,
 	createMobileAgentStorageMetadata,
 	createMobileAgentWalletRecord,
+	type ExpectedMobileAgent,
+	type ExpectedMobileAgentVerification,
 	findApprovedMobileAgent,
 	getMobileAgentNameBase,
 	isMobileAgentName,
@@ -89,6 +252,7 @@ export {
 	type MobileAgentStorageMetadata,
 	type MobileAgentVerification,
 	shouldClearMobileAgent,
+	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "./signing/mobile-agent";
 export type {
@@ -99,12 +263,56 @@ export type {
 	RegistrationStatus,
 } from "./signing/types";
 export {
+	type AgentRegistrationOptions,
 	type RegistrationStep,
+	resolveAgentRegistrationStorageScope,
 	type UseAgentRegistrationResult,
 	useAgentRegistration,
 } from "./signing/use-agent-registration";
-export { type AgentRequirements, type UseAgentStatusResult, useAgentStatus } from "./signing/use-agent-status";
+export {
+	type AgentRequirements,
+	type AgentVerificationStatus,
+	deriveAgentRequirements,
+	deriveAgentVerificationStatus,
+	getDefinitiveMobileAgentStaleReason,
+	type UseAgentStatusResult,
+	useAgentStatus,
+} from "./signing/use-agent-status";
 export { type UseAgentWalletResult, useAgentWallet } from "./signing/use-agent-wallet";
+export {
+	type UseBuilderFeeApprovalResult,
+	useBuilderFeeApproval,
+} from "./signing/use-builder-fee-approval";
+export { useLegalStatus } from "./signing/use-legal-status";
+export { useLegalStatusLifecycle } from "./signing/use-legal-status-lifecycle";
+export {
+	type TermsAcceptanceWalletContext,
+	type TermsAcceptanceWalletResolver,
+	type UseTermsAcceptanceOptions,
+	useTermsAcceptance,
+} from "./signing/use-terms-acceptance";
+export {
+	type UseTradingAuthorizationResult,
+	useTradingAuthorization,
+} from "./signing/use-trading-authorization";
+export {
+	buildL2SubscriptionPayload,
+	canUseL2Decompression,
+	createL2BookProcessor,
+	decodeL2CompressedDelta,
+	inflateL2CompressedPayload,
+	L2_BOOK_STREAM_ERROR_CODES,
+	type L2BookDelta,
+	type L2BookLevel,
+	type L2BookLevels,
+	type L2BookProcessor,
+	type L2BookSnapshot,
+	L2BookStreamError,
+	type L2BookStreamErrorCode,
+	type L2SubscriptionParameters,
+	type L2SubscriptionPayload,
+	mergeL2BookSide,
+} from "./subscriptions/l2";
 export type {
 	HyperliquidConfig,
 	HyperliquidQueryError,

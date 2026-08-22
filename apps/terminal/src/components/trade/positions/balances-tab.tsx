@@ -1,37 +1,33 @@
-import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
-import {
-	type BalanceRow,
-	filterBalanceRowsByUsdValue,
-	getPerpBalanceRows,
-	getSpotBalanceRows,
-	getTotalUsdValue,
-	isQuoteBalanceSharedWithPerps,
-} from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
+import { type BalanceRow, filterBalanceRowsByUsdValue, getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
+import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
+import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
-import { toNumberOrZero } from "@/lib/trade/numbers";
-import { useSwapModalActions } from "@/stores/use-global-modal-store";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { useDepositModalActions, useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
+import {
+	balancesTableActionClass,
+	balancesTableCellClass,
+	balancesTableHeadClass,
+	balancesTableHeaderClass,
+} from "./balances-table-styles";
+import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
-	positionsPanelTableCellClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -41,11 +37,18 @@ import { TransferModal } from "./transfer-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
 
-export function BalancesTab() {
-	const { isConnected } = useWalletSession();
+interface Props {
+	toolbarTarget?: HTMLElement | null;
+}
+
+export function BalancesTab({ toolbarTarget }: Props) {
+	useNumberFormatRevision();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();
+	const { open: openDepositModal } = useDepositModalActions();
+	const depositAvailability = useDepositAvailability();
+	const { hasWalletAccess } = useWalletSession();
 	const { open: openSwapModal } = useSwapModalActions();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -65,43 +68,26 @@ export function BalancesTab() {
 	});
 
 	const {
-		perpSummary,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		withdrawable,
-		isLoading,
+		accountDataReady,
+		accountModeReady,
+		balances,
 		hasError,
-	} = useDefaultDexBalances();
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
-	const mids = allMidsEvent?.mids;
-
-	const perpBalances = useMemo(
-		() =>
-			getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
-		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable],
-	);
-	const spotBalanceRows = useMemo(
-		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
-		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
-	);
-	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
-	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
-
-	function getPnl(row: BalanceRow): { pnl: number; pnlPercent: number } | null {
-		if (row.type === "perp") return null;
-		const entryNtl = toNumberOrZero(row.entryNtl);
-		if (entryNtl === 0) return null;
-
-		const midPx = toNumberOrZero(mids?.[row.asset]);
-		if (midPx === 0) return null;
-
-		const total = toNumberOrZero(row.total);
-		const currentValue = total * midPx;
-		const pnl = currentValue - entryNtl;
-		const pnlPercent = (pnl / entryNtl) * 100;
-		return { pnl, pnlPercent };
-	}
+		internalTransfersEnabled,
+		isConnected,
+		isDataStale,
+		isLoading,
+		perpFundsActionsEnabled,
+		perpBalances,
+		showBalanceAccountType,
+		spotBalanceRows,
+	} = useBalanceRows();
+	const fundsActionAvailability = useFundsActionAvailability({
+		accountDataReady: accountDataReady && !isDataStale,
+		accountModeReady,
+		fundsActionsEnabled: true,
+		hasWalletAccess,
+		internalTransfersEnabled,
+	});
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -112,8 +98,10 @@ export function BalancesTab() {
 		if (!hideSmallBalances) return spotBalanceRows;
 		return filterBalanceRowsByUsdValue(spotBalanceRows, SMALL_BALANCE_THRESHOLD_USD);
 	}, [hideSmallBalances, spotBalanceRows]);
-
-	const totalValue = useMemo(() => getTotalUsdValue(balances), [balances]);
+	const filteredBalances = useMemo(
+		() => [...filteredPerpBalances, ...filteredSpotBalances],
+		[filteredPerpBalances, filteredSpotBalances],
+	);
 
 	function handleTransferClick(row: BalanceRow) {
 		if (row.asset !== DEFAULT_QUOTE_TOKEN) return;
@@ -132,71 +120,102 @@ export function BalancesTab() {
 		});
 	}
 
-	function renderBalanceRow(row: BalanceRow, index: number) {
+	function renderBalanceRow(row: BalanceRow) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
-		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
-		const canSwap = row.type === "spot" && parseFloat(row.available) > 0;
+		const displayAvailable = getBalanceRowDisplayAvailable(row);
+		const hasTransferableBalance = isTradingToolbarBalancePositive(row.transferable);
+		const fundsActionsEnabled = row.type === "spot" || perpFundsActionsEnabled;
+		const canTransfer =
+			fundsActionAvailability.internalTransfer.available &&
+			fundsActionsEnabled &&
+			row.asset === DEFAULT_QUOTE_TOKEN &&
+			hasTransferableBalance;
+		const canSwap =
+			accountDataReady && accountModeReady && row.type === "spot" && isTradingToolbarBalancePositive(row.available);
+		const canWithdraw =
+			fundsActionAvailability.withdrawal.available &&
+			fundsActionsEnabled &&
+			row.asset === DEFAULT_QUOTE_TOKEN &&
+			hasTransferableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
-		const pnlData = getPnl(row);
 		return (
-			<TableRow
-				key={`${row.type}-${row.asset}`}
-				className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
-			>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-					<AssetDisplay coin={row.asset} />
+			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-market-close-fg")}>
+					<div className="flex min-w-0 items-center gap-2">
+						<AssetDisplay
+							coin={row.asset}
+							iconClassName="size-6"
+							nameClassName="text-[13px] font-bold text-market-close-fg"
+						/>
+						{showBalanceAccountType ? (
+							<span className="shrink-0 text-[10px] font-medium text-market-close-subtle">
+								{row.type === "perp" ? t`Trading` : t`Spot`}
+							</span>
+						) : null}
+					</div>
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
-					{formatToken(row.available, decimals)}
-				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatToken(row.total, decimals)}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-success")}>
-					{formatUSD(row.usdValue, { compact: true })}
-				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
-					{pnlData ? (
-						<span className={pnlData.pnl >= 0 ? "text-success" : "text-error"}>
-							{pnlData.pnl >= 0 ? "+" : ""}
-							{formatUSD(pnlData.pnl, { compact: true })} ({pnlData.pnlPercent >= 0 ? "+" : ""}
-							{pnlData.pnlPercent.toFixed(1)}%)
-						</span>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
+					{row.tradeAvailable !== undefined ? (
+						<Tooltip content={t`Balance available to trade`} side="top">
+							<span className="cursor-default border-b border-dashed border-market-close-stroke-control">
+								{displayAvailable === null ? "—" : formatToken(displayAvailable, decimals)}
+							</span>
+						</Tooltip>
 					) : (
-						<span className="text-fg-muted">—</span>
+						formatToken(displayAvailable, decimals)
 					)}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-					<div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
+					{formatUSD(row.usdValue, { compact: true })}
+				</TableCell>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right")}>
+					<div className="flex flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
 						{canTransfer && (
 							<Button
-								variant="link"
+								variant="outline"
+								intent="neutral"
+								size="xxs"
 								onClick={() => handleTransferClick(row)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
-								<ArrowsLeftRightIcon className="size-2.5" />
 								{transferLabel}
 							</Button>
 						)}
 						{canSwap && (
 							<Button
-								variant="link"
+								variant="outline"
+								intent="neutral"
+								size="xxs"
 								onClick={() => openSwapModal(row.asset)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
-								<ArrowsDownUpIcon className="size-2.5" />
 								{t`Swap`}
 							</Button>
 						)}
-						{parseFloat(row.available) > 0 && (
+						{accountDataReady && fundsActionsEnabled && accountModeReady && hasTransferableBalance && (
 							<Button
-								variant="link"
+								variant="outline"
+								intent="neutral"
+								size="xxs"
 								onClick={() => handleSendClick(row)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
-								<PaperPlaneTiltIcon className="size-2.5" />
 								{t`Send`}
+							</Button>
+						)}
+						{canWithdraw && (
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xxs"
+								onClick={() => openDepositModal("withdraw")}
+								className={balancesTableActionClass}
+							>
+								{t`Withdraw`}
 							</Button>
 						)}
 					</div>
@@ -206,111 +225,94 @@ export function BalancesTab() {
 	}
 
 	function renderPlaceholder() {
-		if (!isConnected) return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
-		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
+		if (!isConnected) {
+			if (depositAvailability.path === "sponsored") {
+				return renderDepositPlaceholder(t`Open Deposit to prepare your email wallet.`);
+			}
+			return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
+		}
 		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
-		if (balances.length === 0)
-			return <Placeholder>{t`No balances found. Deposit funds to start trading.`}</Placeholder>;
+		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
+		if (!accountModeReady) {
+			return <Placeholder variant="error">{t`Select a supported account mode to view balances.`}</Placeholder>;
+		}
+		if (balances.length === 0) {
+			return renderDepositPlaceholder(t`No balances found. Deposit funds to start trading.`);
+		}
 		return null;
+	}
+
+	function renderDepositPlaceholder(defaultLabel: string) {
+		return (
+			<Placeholder>
+				<div className="flex flex-col items-center gap-2.5 text-center">
+					<span>{depositAvailability.unavailableReason ?? defaultLabel}</span>
+					<Button
+						variant="outline"
+						intent="neutral"
+						size="xs"
+						disabled={!depositAvailability.available}
+						onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+						aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+						title={depositAvailability.unavailableReason ?? undefined}
+						className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"
+					>
+						{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					</Button>
+				</div>
+			</Placeholder>
+		);
 	}
 
 	const placeholder = renderPlaceholder();
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
+			<DesktopTabToolbarPortal target={toolbarTarget}>
 				<Checkbox
-					size="xxs"
+					size="xs"
 					checked={hideSmallBalances}
 					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
-					label={
-						<span className="text-3xs font-normal normal-case tracking-normal text-fg-muted">{t`Hide small`}</span>
-					}
-					className="gap-1.5 items-center"
+					label={t`Hide small`}
+					className="shrink-0 items-center gap-[7px]"
+					controlClassName="size-3.5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
+					indicatorClassName="text-market-close-on-control [&>svg]:size-2.5"
+					labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal normal-case tracking-normal text-market-close-muted"
 				/>
-				{isConnected && !isLoading ? (
-					<span className="tabular-nums text-3xs font-medium text-success">
-						{formatUSD(totalValue, { compact: true })}
-					</span>
-				) : null}
-			</div>
+			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
-					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[44rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
-								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[20%] text-left")}>
-										{t`Asset`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
-										{t`Available`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
-										{t`Total`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
-									>
-										{t`USD Value`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
-									>
-										{t`PNL`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}
-									>
-										{t`Actions`}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{filteredPerpBalances.length > 0 && (
-									<>
-										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell
-												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-brand/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-brand"
-											>
-												{t`Perpetuals`}
-											</TableCell>
-										</TableRow>
-										{filteredPerpBalances.map((row, i) => renderBalanceRow(row, i))}
-									</>
-								)}
-								{filteredSpotBalances.length > 0 && (
-									<>
-										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell
-												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-warning/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-warning"
-											>
-												{t`Spot`}
-											</TableCell>
-										</TableRow>
-										{filteredSpotBalances.map((row, i) => renderBalanceRow(row, i))}
-									</>
-								)}
-							</TableBody>
-						</Table>
-						<ScrollBar orientation="horizontal" />
-					</ScrollArea>
+					<div className="flex h-full min-h-0 flex-col">
+						{isDataStale ? (
+							<output className="shrink-0 border-b border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
+								{t`Balance data is stale. Actions are temporarily unavailable.`}
+							</output>
+						) : null}
+						<ScrollArea className="min-h-0 flex-1">
+							<Table className="table-fixed min-w-[52rem] w-full">
+								<TableHeader className={balancesTableHeaderClass}>
+									<TableRow className={positionsPanelTableHeaderRowClass}>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
+											{t`Asset`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`Total`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`Available`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
+											{t`USD Value`}
+										</TableHead>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[18%] text-right")}>
+											{t`Actions`}
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody className={positionsPanelTableBodyClass}>{filteredBalances.map(renderBalanceRow)}</TableBody>
+							</Table>
+						</ScrollArea>
+					</div>
 				)}
 			</div>
 

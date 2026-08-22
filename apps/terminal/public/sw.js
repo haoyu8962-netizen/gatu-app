@@ -1,26 +1,44 @@
-const CACHE_VERSION = "v6";
-const CHARTING_CACHE = `charting-${CACHE_VERSION}`;
+const CACHE_VERSION = "v8";
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
+const RETIRED_CACHE_CLEANUP_TIMEOUT_MS = 1_500;
 
 const MAX_ICON_ENTRIES = 500;
 const MAX_ICON_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
-	event.waitUntil(
-		caches
-			.keys()
-			.then((keys) =>
-				Promise.all(
-					keys
-						.filter((k) => ![CHARTING_CACHE, FONT_CACHE, ICON_CACHE].includes(k))
-						.map((k) => caches.delete(k)),
-				),
-			)
-			.then(() => self.clients.claim()),
-	);
+	const claimClients = Promise.resolve()
+		.then(() => self.clients.claim())
+		.catch(() => undefined);
+	const cleanupRetiredCaches = Promise.resolve()
+		.then(() => caches.keys())
+		.then((keys) =>
+			Promise.allSettled(
+				keys.filter(isRetiredManagedCache).map((key) => caches.delete(key)),
+			),
+		)
+		.catch(() => undefined);
+	event.waitUntil(settleWithin(Promise.all([claimClients, cleanupRetiredCaches]), RETIRED_CACHE_CLEANUP_TIMEOUT_MS));
 });
+
+function isRetiredManagedCache(key) {
+	return /^(?:charting|fonts|icons)-/.test(key) && ![FONT_CACHE, ICON_CACHE].includes(key);
+}
+
+function settleWithin(promise, timeoutMs) {
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = () => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timeout);
+			resolve();
+		};
+		const timeout = setTimeout(finish, timeoutMs);
+		promise.then(finish, finish);
+	});
+}
 
 self.addEventListener("fetch", (event) => {
 	const { request } = event;
@@ -28,13 +46,8 @@ self.addEventListener("fetch", (event) => {
 
 	if (request.method !== "GET") return;
 
-	if (url.pathname.startsWith("/charting_library/")) {
-		event.respondWith(cacheFirst(request, CHARTING_CACHE));
-		return;
-	}
-
 	if (request.destination === "font") {
-		event.respondWith(cacheFirst(request, FONT_CACHE));
+		event.respondWith(cacheFirst(request, FONT_CACHE, event));
 		return;
 	}
 
@@ -42,35 +55,42 @@ self.addEventListener("fetch", (event) => {
 		url.hostname === "app.hyperliquid.xyz" &&
 		url.pathname.startsWith("/coins/")
 	) {
-		event.respondWith(staleWhileRevalidate(request, ICON_CACHE));
+		event.respondWith(staleWhileRevalidate(request, ICON_CACHE, event));
 		return;
 	}
 });
 
-async function cacheFirst(request, cacheName) {
-	const cached = await caches.match(request);
+async function cacheFirst(request, cacheName, event) {
+	const cached = await caches.match(request).catch(() => undefined);
 	if (cached) return cached;
 	const response = await fetch(request);
 	if (response.ok) {
-		const cache = await caches.open(cacheName);
-		cache.put(request, response.clone());
+		const write = caches
+			.open(cacheName)
+			.then((cache) => cache.put(request, response.clone()))
+			.catch(() => undefined);
+		event.waitUntil(write);
 	}
 	return response;
 }
 
-async function staleWhileRevalidate(request, cacheName) {
-	const cache = await caches.open(cacheName);
-	const cached = await cache.match(request);
-	const fetched = fetch(request)
+function staleWhileRevalidate(request, cacheName, event) {
+	const cache = caches.open(cacheName).catch(() => undefined);
+	const cached = cache.then((value) => value?.match(request)).catch(() => undefined);
+	const fetched = fetch(request);
+	const refresh = fetched
 		.then(async (response) => {
 			if (isCacheableResponse(response)) {
-				await cache.put(request, response.clone());
-				await evictOldEntries(cache, MAX_ICON_ENTRIES);
+				const value = await cache;
+				if (value) {
+					await value.put(request, response.clone());
+					await evictOldEntries(value, MAX_ICON_ENTRIES);
+				}
 			}
-			return response;
 		})
-		.catch((error) => cached || Promise.reject(error));
-	return cached || fetched;
+		.catch(() => undefined);
+	event.waitUntil(refresh);
+	return cached.then((value) => value || fetched);
 }
 
 function isCacheableResponse(response) {

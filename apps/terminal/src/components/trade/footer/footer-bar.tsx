@@ -13,6 +13,12 @@ import { useCommandMenuActions } from "@/stores/use-global-modal-store";
 const FOOTER_LINK_CLASS =
 	"rounded-6 text-fg-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
 
+export type FooterBarMode = "default" | "market-loading";
+
+interface Props {
+	mode?: FooterBarMode;
+}
+
 function getStatusDisplay(status: ApiStatus) {
 	switch (status) {
 		case "connected":
@@ -42,10 +48,11 @@ function getStatusDisplay(status: ApiStatus) {
 	}
 }
 
-export function FooterBar() {
+export function FooterBar({ mode = "default" }: Props) {
 	const { status } = useApiStatus();
 	const { icon, text, className } = getStatusDisplay(status);
 	const { open } = useCommandMenuActions();
+	const isMarketLoading = mode === "market-loading";
 
 	return (
 		<footer
@@ -62,7 +69,8 @@ export function FooterBar() {
 			</div>
 			<button
 				type="button"
-				onClick={open}
+				disabled={isMarketLoading}
+				onClick={isMarketLoading ? undefined : open}
 				className={cn(
 					APP_BAR_BUTTON_HEIGHT_CLASS,
 					"absolute left-1/2 flex min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
@@ -86,6 +94,9 @@ export function FooterBar() {
 					</Link>
 					<Link to="/privacy" className={FOOTER_LINK_CLASS}>
 						<Trans>Privacy Policy</Trans>
+					</Link>
+					<Link to="/risk" className={FOOTER_LINK_CLASS}>
+						<Trans>Risk Disclosure</Trans>
 					</Link>
 				</nav>
 				<Divider orientation="vertical" className="my-1.5 hidden md:block" />

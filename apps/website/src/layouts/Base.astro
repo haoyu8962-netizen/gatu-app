@@ -56,8 +56,6 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		{seo.ogType === "article" && seo.author && <meta property="article:author" content={seo.author} />}
 
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:site" content={SEO_DEFAULTS.twitterHandle} />
-		<meta name="twitter:creator" content={SEO_DEFAULTS.twitterHandle} />
 		<meta name="twitter:title" content={seo.title} />
 		<meta name="twitter:description" content={seo.description} />
 		<meta name="twitter:image" content={seo.ogImage} />
@@ -66,8 +64,8 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<link rel="canonical" href={seo.canonical} />
 		<link rel="sitemap" href="/sitemap-index.xml" />
 
-		<link rel="preconnect" href="https://app.hypeterminal.com" />
-		<link rel="dns-prefetch" href="https://app.hypeterminal.com" />
+		<link rel="preconnect" href="https://app.gatu.ai" />
+		<link rel="dns-prefetch" href="https://app.gatu.ai" />
 
 		{schemas.map((schema) => (
 			<script type="application/ld+json" set:html={JSON.stringify(schema)} />
@@ -75,5 +73,49 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 	</head>
 	<body class="flex min-h-screen flex-col bg-background text-fg antialiased">
 		<slot />
+		<script>
+			const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+			const revealTargets = document.querySelectorAll<HTMLElement>(".reveal");
+			if (reduced) {
+				for (const el of revealTargets) el.classList.add("reveal-in");
+			} else if (revealTargets.length > 0) {
+				const io = new IntersectionObserver(
+					(entries) => {
+						for (const entry of entries) {
+							if (!entry.isIntersecting) continue;
+							entry.target.classList.add("reveal-in");
+							io.unobserve(entry.target);
+						}
+					},
+					{ rootMargin: "0px 0px -10% 0px" },
+				);
+				for (const el of revealTargets) io.observe(el);
+			}
+
+			const countTargets = document.querySelectorAll<HTMLElement>("[data-countup]");
+			if (!reduced && countTargets.length > 0) {
+				const co = new IntersectionObserver((entries) => {
+					for (const entry of entries) {
+						if (!entry.isIntersecting) continue;
+						co.unobserve(entry.target);
+						const el = entry.target as HTMLElement;
+						const target = Number(el.dataset.countup);
+						if (!Number.isFinite(target)) continue;
+						const suffix = el.dataset.suffix ?? "";
+						const start = performance.now();
+						const duration = 900;
+						function frame(now: number) {
+							const t = Math.min((now - start) / duration, 1);
+							const eased = 1 - (1 - t) ** 3;
+							el.textContent = `${Math.round(target * eased)}${suffix}`;
+							if (t < 1) requestAnimationFrame(frame);
+						}
+						requestAnimationFrame(frame);
+					}
+				});
+				for (const el of countTargets) co.observe(el);
+			}
+		</script>
 	</body>
 </html>

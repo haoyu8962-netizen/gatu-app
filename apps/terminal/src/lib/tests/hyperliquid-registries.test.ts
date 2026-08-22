@@ -1,5 +1,9 @@
 import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
-import { getAccumulateConfig, getDefaultThrottle } from "@gatu/hl-react/registries/subscription";
+import {
+	getAccumulateConfig,
+	getDefaultThrottle,
+	shouldAcceptSubscriptionEvent,
+} from "@gatu/hl-react/registries/subscription";
 import { ExchangeClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import type { ExchangeMethod, SubMethod } from "@/lib/hyperliquid";
@@ -23,6 +27,8 @@ describe("exchange registry", () => {
 		}
 	});
 
+	// Exact methods marked "Signing: User-Signed EIP-712" by
+	// @nktkas/hyperliquid 0.33.3. Update this contract with every SDK upgrade.
 	const EXPECTED_USER_SIGNED: ExchangeMethod[] = [
 		"approveAgent",
 		"approveBuilderFee",
@@ -33,6 +39,7 @@ describe("exchange registry", () => {
 		"sendAsset",
 		"sendToEvmWithData",
 		"spotSend",
+		"stakingLinkDisableTradingUser",
 		"tokenDelegate",
 		"usdClassTransfer",
 		"usdSend",
@@ -57,6 +64,18 @@ describe("exchange registry", () => {
 		}
 	});
 
+	it("routes activateOutcomeDeployer as an L1 action through the trading client", () => {
+		expect(getExchangeMethodConfig("activateOutcomeDeployer").client).toBe("trading");
+	});
+
+	it("routes referral actions through the Agent client without a builder payload", () => {
+		for (const method of ["claimRewards", "registerReferrer", "setReferrer"] as const) {
+			const config = getExchangeMethodConfig(method);
+			expect(config.client).toBe("trading");
+			expect(config.injectBuilder).toBe(false);
+		}
+	});
+
 	it("only injects builder config for order", () => {
 		for (const method of EXCHANGE_METHODS) {
 			const config = getExchangeMethodConfig(method);
@@ -68,10 +87,10 @@ describe("exchange registry", () => {
 		}
 	});
 
-	it("only uses clientKey for order and cancel", () => {
+	it("uses clientKey for account-scoped trading mutations", () => {
 		for (const method of EXCHANGE_METHODS) {
 			const config = getExchangeMethodConfig(method);
-			if (method === "order" || method === "cancel") {
+			if (method === "order" || method === "cancel" || method === "batchModify") {
 				expect(config.useClientKey, `${method} should use clientKey`).toBe(true);
 			} else {
 				expect(config.useClientKey, `${method} should not use clientKey`).toBe(false);
@@ -95,12 +114,13 @@ describe("subscription registry", () => {
 		for (const method of EXPECTED_ACCUMULATING) {
 			const config = getAccumulateConfig(method);
 			expect(config, `${method} should have accumulate config`).not.toBeNull();
-			expect(typeof config!.getItems).toBe("function");
-			expect(typeof config!.withItems).toBe("function");
-			expect(typeof config!.isSnapshot).toBe("function");
-			expect(config!.buffer.maxSize).toBeGreaterThan(0);
-			expect(typeof config!.buffer.getKey).toBe("function");
-			expect(typeof config!.buffer.compare).toBe("function");
+			if (!config) throw new Error(`Missing accumulate config for ${method}`);
+			expect(typeof config.getItems).toBe("function");
+			expect(typeof config.withItems).toBe("function");
+			expect(typeof config.isSnapshot).toBe("function");
+			expect(config.buffer.maxSize).toBeGreaterThan(0);
+			expect(typeof config.buffer.getKey).toBe("function");
+			expect(typeof config.buffer.compare).toBe("function");
 		}
 	});
 
@@ -111,11 +131,54 @@ describe("subscription registry", () => {
 		}
 	});
 
-	it("has default throttle only for l2Book", () => {
+	it("uses time, coin, and tid to identify public trades", () => {
+		const config = getAccumulateConfig("trades");
+		expect(config?.buffer.getKey({ time: 123, coin: "HYPE", tid: 456 })).toBe("123:HYPE:456");
+	});
+
+	it("preserves distinct ledger deltas that share an L1 hash", () => {
+		const config = getAccumulateConfig("userNonFundingLedgerUpdates");
+		const hash = `0x${"1".repeat(64)}`;
+		const withdrawalKey = config?.buffer.getKey({
+			delta: { type: "vaultWithdraw", netWithdrawnUsd: "99" },
+			hash,
+			time: 123,
+		});
+		const commissionKey = config?.buffer.getKey({
+			delta: { type: "vaultLeaderCommission", usdc: "1" },
+			hash,
+			time: 123,
+		});
+
+		expect(withdrawalKey).not.toBe(commissionKey);
+	});
+
+	it("coalesces order-book streams to at most one store update per frame", () => {
+		expect(getDefaultThrottle("bbo")).toBe(16);
 		expect(getDefaultThrottle("l2Book")).toBe(16);
-		const others = SUB_METHODS.filter((m) => m !== "l2Book");
+		const others = SUB_METHODS.filter((m) => m !== "bbo" && m !== "l2Book");
 		for (const method of others) {
 			expect(getDefaultThrottle(method), `${method} should not have default throttle`).toBeUndefined();
 		}
 	});
+
+	it("rejects coin or fast-mode l2Book payloads routed to the wrong listener", () => {
+		const fastEvent = { coin: "ETH", fast: true, levels: [[], []], time: 1 };
+		const fullEvent = { coin: "ETH", levels: [[], []], time: 2 };
+
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH", fast: true }, fastEvent)).toBe(true);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH", fast: true }, fullEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH" }, fastEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "BTC" }, fullEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("trades", { coin: "ETH" }, fastEvent)).toBe(true);
+	});
+
+	it.each(["activeAssetCtx", "activeSpotAssetCtx"] as const)(
+		"rejects %s payloads routed to another market before they enter the shared store",
+		(method) => {
+			expect(shouldAcceptSubscriptionEvent(method, { coin: "ETH" }, { coin: "ETH", ctx: {} })).toBe(true);
+			expect(shouldAcceptSubscriptionEvent(method, { coin: "ETH" }, { coin: "BTC", ctx: {} })).toBe(false);
+			expect(shouldAcceptSubscriptionEvent(method, undefined, { coin: "ETH", ctx: {} })).toBe(false);
+		},
+	);
 });

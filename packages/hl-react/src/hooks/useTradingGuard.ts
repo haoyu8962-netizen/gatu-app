@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useAgentRegistration } from "../signing/use-agent-registration";
 import { useAgentStatus } from "../signing/use-agent-status";
+import { useTradingAuthorization } from "../signing/use-trading-authorization";
 
 type PendingAction = () => void | Promise<void>;
 
@@ -14,15 +14,31 @@ interface UseTradingGuardResult {
 	clearError: () => void;
 }
 
-export function useTradingGuard(): UseTradingGuardResult {
-	const { isReady, isLoading, signaturesRequired } = useAgentStatus();
-	const { register: registerAgent, status: registerStatus, error: agentError } = useAgentRegistration();
+interface UseTradingGuardOptions {
+	requiresBuilderFee?: boolean;
+}
+
+export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradingGuardResult {
+	const requiresBuilderFee = options.requiresBuilderFee !== false;
+	const agentStatus = useAgentStatus();
+	const isReady = agentStatus.isAgentReady && (!requiresBuilderFee || agentStatus.isBuilderFeeReady);
+	const isLoading = agentStatus.isAgentLoading || (requiresBuilderFee && agentStatus.isBuilderFeeLoading);
+	const signaturesRequired = Number(agentStatus.needsAgent) + Number(requiresBuilderFee && agentStatus.needsBuilderFee);
+	const {
+		authorize,
+		status: authorizationStatus,
+		error: authorizationError,
+	} = useTradingAuthorization({
+		requiresBuilderFee,
+	});
 	const pendingActionRef = useRef<PendingAction | null>(null);
 	const prevIsReadyRef = useRef(isReady);
 	const [localError, setLocalError] = useState<Error | null>(null);
 
 	const isEnabling =
-		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
+		authorizationStatus === "approving_fee" ||
+		authorizationStatus === "approving_agent" ||
+		authorizationStatus === "verifying";
 	const needsTrading = !isLoading && signaturesRequired > 0;
 
 	useEffect(() => {
@@ -46,7 +62,7 @@ export function useTradingGuard(): UseTradingGuardResult {
 	function enableTrading() {
 		if (isEnabling) return;
 		setLocalError(null);
-		registerAgent().catch((err) => {
+		authorize().catch((err) => {
 			pendingActionRef.current = null;
 			const error = err instanceof Error ? err : new Error(String(err));
 			setLocalError(error);
@@ -54,6 +70,7 @@ export function useTradingGuard(): UseTradingGuardResult {
 	}
 
 	function guardAction(action: PendingAction) {
+		setLocalError(null);
 		if (isReady) {
 			Promise.resolve(action()).catch((err) => {
 				setLocalError(err instanceof Error ? err : new Error(String(err)));
@@ -74,7 +91,7 @@ export function useTradingGuard(): UseTradingGuardResult {
 		needsTrading,
 		enableTrading,
 		guardAction,
-		error: localError ?? agentError,
+		error: localError ?? authorizationError,
 		clearError,
 	};
 }

@@ -1,10 +1,19 @@
 import type { ExtraAgentsResponse, MaxBuilderFeeResponse } from "@nktkas/hyperliquid";
 
-export function isAgentApproved(extraAgents: ExtraAgentsResponse | undefined, publicKey: string | undefined): boolean {
+export function isAgentApproved(
+	extraAgents: ExtraAgentsResponse | undefined,
+	publicKey: string | undefined,
+	expectedName?: string,
+): boolean {
 	if (!extraAgents || !publicKey) return false;
 	const normalizedKey = publicKey.toLowerCase();
 	const now = Date.now();
-	return extraAgents.some((agent) => agent.address.toLowerCase() === normalizedKey && agent.validUntil > now);
+	return extraAgents.some(
+		(agent) =>
+			agent.address.toLowerCase() === normalizedKey &&
+			(expectedName === undefined || agent.name === expectedName) &&
+			(agent.validUntil ?? Number.POSITIVE_INFINITY) > now,
+	);
 }
 
 export function isBuilderFeeApproved(
@@ -18,6 +27,6 @@ export function isBuilderFeeApproved(
 
 export function convertFeeToPercentageString(fee: number | string): string {
 	const feeNum = typeof fee === "string" ? Number(fee) : fee;
-	const percentage = (feeNum / 10000) * 100;
+	const percentage = feeNum / 1000;
 	return `${percentage}%`;
 }

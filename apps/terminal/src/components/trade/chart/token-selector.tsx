@@ -1,11 +1,12 @@
-import { infoPersistedKey } from "@gatu/hl-react";
+import { infoKey, infoPersistedKey } from "@gatu/hl-react";
 import { Drawer, DrawerTrigger } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { cn } from "@/lib/cn";
+import { type UnifiedMarketInfo, useHyperliquid } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME,
@@ -16,13 +17,21 @@ import {
 const TokenSelectorPopup = createLazyComponent(() => import("./token-selector-popup"), "TokenSelectorPopup");
 const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 
-export type TokenSelectorProps = {
+interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
-};
+	showAssetIcon?: boolean;
+	showMetadataBadge?: boolean;
+}
 
-export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorProps) {
+export function TokenSelector({
+	selectedMarket,
+	onValueChange,
+	showAssetIcon = true,
+	showMetadataBadge = true,
+}: Props) {
 	const isMobile = useIsMobile();
+	const { env } = useHyperliquid();
 	const queryClient = useQueryClient();
 	const headingId = useId();
 	const [open, setOpen] = useState(false);
@@ -37,14 +46,15 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 				const now = Date.now();
 				if (now - lastMarketMetadataRefreshRef.current >= MARKET_METADATA_REFRESH_INTERVAL_MS) {
 					lastMarketMetadataRefreshRef.current = now;
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("spotMeta", undefined) });
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("perpDexs", undefined) });
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("allPerpMetas", undefined) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("spotMeta", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("perpDexs", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("allPerpMetas", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoKey("perpConciseAnnotations", undefined, env) });
 				}
 			}
 			setOpen(nextOpen);
 		},
-		[queryClient],
+		[env, queryClient],
 	);
 
 	useEffect(() => {
@@ -76,17 +86,22 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 
 	if (isMobile) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange}>
+			<Drawer side="bottom" modal="trap-focus" open={open} onOpenChange={handleOpenChange}>
 				<DrawerTrigger
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					className={cn(MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME, showAssetIcon ? "pl-2.5" : "pl-1")}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} mobile />
+					<TokenSelectorTriggerContent
+						selectedMarket={selectedMarket}
+						mobile
+						showAssetIcon={showAssetIcon}
+						showMetadataBadge={showMetadataBadge}
+					/>
 				</DrawerTrigger>
 				{popup}
 			</Drawer>
@@ -101,12 +116,17 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					className={cn(TOKEN_SELECTOR_TRIGGER_CLASSNAME, showAssetIcon ? "pl-2" : "pl-1")}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />
+					<TokenSelectorTriggerContent
+						selectedMarket={selectedMarket}
+						open={open}
+						showAssetIcon={showAssetIcon}
+						showMetadataBadge={showMetadataBadge}
+					/>
 				</button>
 			</PopoverTrigger>
 			{popup}

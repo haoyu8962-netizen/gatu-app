@@ -1,63 +1,109 @@
-# Gatu — Risk Disclosure
+# Gatu - Risk Disclosure
 
-> **草案（DRAFT）· 未经合格法律顾问审定前禁止对外发布**　·　品牌 Gatu（加途）　·　官网 gatu.ai　·　应用 app.gatu.ai
+**Last Updated:** July 21, 2026
 
-**Last Updated:** 【日期 — 发布前由运营方填写】
+This Risk Disclosure supplements the Gatu [Terms of Use](https://app.gatu.ai/terms). It
+highlights material risks but cannot describe every possible risk. If this Risk Disclosure
+conflicts with the Terms, the Terms control. Nothing in this document is investment,
+financial, legal, tax, or trading advice.
 
-This Risk Disclosure supplements Gatu's Terms of Use. By using the Interface, you acknowledge
-and accept the following risks. **This is not investment, legal, or tax advice.**
+## 1. Interface and Third-Party Systems
 
-## 1. General Nature of the Products
-Products accessible via the Interface are cash-settled, USDC-margined and USDC-settled
-**linear perpetual derivative contracts** that reference an underlying asset via an oracle
-price. **They are not shares, securities, securities entitlements, tokenized equity, IPO
-allocations, or any claim against any issuer.** A position confers no ownership, voting,
-dividend, information, or allocation rights.
+Gatu is non-custodial interface software. Orders, transfers, deposits, withdrawals,
+liquidations, and settlements are performed by Hyperliquid, supported blockchains, smart
+contracts, bridges, validators, wallets, and other third-party systems. Gatu does not control
+those systems and cannot reverse a transaction or guarantee execution, settlement,
+availability, or recovery.
 
-## 2. Market & Volatility Risk
-Markets for these digital assets are nascent and highly volatile due to adoption,
-speculation, technology, security vulnerabilities, and regulatory uncertainty. Prices may
-move rapidly and you may lose some or all of your funds.
+## 2. Loss, Volatility, and Liquidity
 
-## 3. Leverage & Liquidation Risk
-Trading with leverage magnifies both gains and losses and may lead to significant losses
-including the full liquidation of your positions. Advanced or expert modes may expose you to
-additional risk. Auto-deleveraging may affect your positions.
+Digital assets, spot markets, and perpetual contracts may be highly volatile, illiquid, or
+subject to rapid price gaps. Available liquidity can disappear and quoted prices can differ
+from executable prices. You may lose all assets committed to a transaction or account and,
+where protocol rules permit, may incur additional obligations.
 
-## 4. Oracle, Mark Price & Off-Hours Pricing Risk
-Prices are derived by a relayer mechanism that uses external data when underlying markets are
-open and an internal pricing mechanism (e.g., an exponentially weighted moving average
-advanced via impact price difference) when external data is unavailable, including outside the
-underlying's trading sessions. Oracle, mark, and internal prices may diverge from any
-reference, external, or eventual settlement price. Discovery bounds and similar protections
-may constrain price movement.
+## 3. Leverage, Margin, and Liquidation
 
-## 5. Pre-IPO / Special Markets Risk (if offered)
-Pre-IPO perpetuals reference the *anticipated* public equity value of a private company and
-rely on a discretionary initial reference price that **is not a forecast and not an
-indication of any listing price**. Any displayed reference share count or market cap is
-indicative only. Listing may be delayed, cancelled, or diverge materially (foreign exchange,
-depositary receipts, direct listing, SPAC), and markets may convert or settle under
-predefined rules, potentially at values materially different from your expectations.
+Leverage magnifies gains and losses. Maximum leverage and margin tiers vary by market and may
+change. A small adverse price movement can consume margin and cause a partial or full
+liquidation with little or no warning.
 
-## 6. Technology, Smart Contract & Settlement Risk
-Blockchain transactions are irreversible once confirmed. Smart contracts may contain bugs or
-be exploited; oracles and bridges may fail; front-running is possible; gas/transaction and
-Protocol fees are variable and may spike. The Interface, Protocol, or Chain may malfunction,
-be interrupted, or be discontinued.
+Cross margin shares collateral across cross-margin positions. Isolated margin limits the
+collateral assigned to a position but can still be fully lost. Unified or portfolio-margin
+modes may combine spot balances, eligible collateral, borrowing, interest, and positions
+across perpetual DEXs, including HIP-3 markets. Losses, collateral-value changes, borrowing
+costs, or liquidation in one part of a shared account can therefore affect other assets and
+positions.
 
-## 7. Non-Custodial & Wallet Risk
-You alone control your keys and assets. Lost credentials, compromised wallets, or signing a
-malicious transaction may result in irreversible loss, which we cannot help recover.
+Displayed liquidation prices and margin ratios are estimates based on current data. Funding,
+fees, unrealized profit and loss, other positions, margin tiers, oracle updates, and account
+mode can change the actual liquidation threshold.
 
-## 8. Regulatory & Legal Risk
-The legal and regulatory status of these products is uncertain and varies by jurisdiction.
-Regulatory actions may affect availability or value. You are solely responsible for ensuring
-your activity is lawful where you are located and regulated, and for any taxes.
+## 4. Mark Price, Oracle, and Funding Risk
 
-## 9. No Best Execution
-We do not broker orders, route to competing venues, or guarantee best price or best execution.
+Perpetual contracts rely on mark and oracle prices for margin, unrealized profit and loss,
+funding, triggers, and liquidations. These prices can differ from the order book, an external
+venue, or the price you expect. Oracle delay, error, manipulation, market closure, or an
+unusual settlement method can produce unexpected funding, trigger, or liquidation outcomes.
+Funding rates and payments can change and may materially reduce returns.
 
-## 10. No Advice; Your Responsibility
-All information is informational only. You are financially and technically sophisticated
-enough to understand these risks and you trade entirely at your own risk.
+## 5. HIP-3 and Permissionless Markets
+
+HIP-3 markets are deployed and operated independently by third parties. A deployer may define
+contract specifications, oracle methodology, leverage limits, and settlement behavior. Such
+markets may have limited liquidity, incomplete documentation, concentrated control, unusual
+trading hours, or greater manipulation, discontinuation, and liquidation risk. Displaying a
+market, label, disclaimer, or deployer link does not mean Gatu audited, approved, or endorsed
+the market or deployer.
+
+## 6. Spot Asset and Token Risk
+
+Spot tokens can lose all value and may include transfer restrictions, upgradeable contracts,
+administrative controls, unusual token mechanics, or inaccurate metadata. A token name,
+symbol, price, market-cap estimate, or contract-address link is informational and is not a
+verification of legitimacy, supply, ownership, or value.
+
+## 7. Order and Execution Risk
+
+Market orders can execute at materially different prices because of slippage or limited
+liquidity. Limit, stop, take-profit, TWAP, and scaled orders may be rejected, partially filled,
+triggered at an unexpected executable price, or remain open. Reduce-only and trigger orders
+may be canceled by protocol rules. Interface previews, balances, charts, order books, and
+status messages can be delayed or differ from authoritative protocol state.
+
+## 8. Bridge, Deposit, Withdrawal, and Transfer Risk
+
+Bridges and transfers involve independent networks, contracts, token approvals, fees,
+minimums, and finality rules. Confirmation on one chain does not guarantee credit on another.
+Using an unsupported token, network, amount, destination, or bridge route can cause delay or
+permanent loss. A failed or delayed credit should be verified on the relevant block explorer
+before retrying.
+
+## 9. Wallet, Agent, and Authorization Risk
+
+You are responsible for external wallets, embedded wallets, devices, recovery methods,
+signatures, and locally stored Agent credentials. Malware, phishing, unauthorized access,
+lost credentials, or an incorrect signature can cause irreversible loss. Disconnecting a
+wallet from the Interface does not necessarily revoke an authorization recorded onchain or by
+a third-party service.
+
+## 10. Technology and Operational Risk
+
+Smart contracts, validators, networks, APIs, RPC endpoints, WebSockets, charting software,
+wallet providers, paymasters, and the Interface may fail, be compromised, or become
+unavailable. Congestion, forks, reorganizations, software defects, stale data, and service
+changes can prevent or delay an intended action.
+
+## 11. Regulatory and Tax Risk
+
+The legal and regulatory treatment of digital assets, derivatives, leverage, and
+permissionless markets varies and can change without notice. Access to the Interface does not
+mean an activity is lawful in your jurisdiction. You are responsible for determining legal
+eligibility and for all tax, reporting, and compliance obligations.
+
+## 12. Your Responsibility
+
+Only use products and account modes you understand. Review the market's specifications,
+deployer documentation, collateral, margin mode, leverage, liquidation price, fees, funding,
+oracle, order details, and transaction network before acting. Use independent professional
+advice where appropriate and do not commit assets you cannot afford to lose.

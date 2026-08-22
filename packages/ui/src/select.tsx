@@ -55,6 +55,8 @@ interface SelectProps extends VariantProps<typeof selectTriggerVariants> {
 	disabled?: boolean;
 	className?: string;
 	triggerClassName?: string;
+	triggerAriaLabel?: string;
+	popupClassName?: string;
 	name?: string;
 	value?: string | null;
 	defaultValue?: string | null;
@@ -86,6 +88,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 		{
 			className,
 			triggerClassName,
+			triggerAriaLabel,
+			popupClassName,
 			size: sizeProp,
 			error,
 			label,
@@ -147,6 +151,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 					name={name}
 				>
 					<BaseSelect.Trigger
+						aria-label={triggerAriaLabel}
 						className={cn(
 							selectTriggerVariants({ size, error }),
 							"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed data-disabled:text-fg-disabled",
@@ -173,7 +178,12 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 
 					<BaseSelect.Portal>
 						<BaseSelect.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
-							<BaseSelect.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+							<BaseSelect.Popup
+								className={cn(
+									"max-h-64 overflow-auto bg-overlay p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									popupClassName,
+								)}
+							>
 								{options.map((option) =>
 									isGroupOption(option) ? (
 										<BaseSelect.Group key={option.label}>

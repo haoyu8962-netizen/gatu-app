@@ -1,256 +1,379 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
+import { useLingui } from "@lingui/react/macro";
+import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
+import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
+import type { MarkPriceStatus } from "@/domain/trade/market-price";
+import { getPositionFundingPayment, isLiquidationPriceNear } from "@/domain/trade/position-toolbar";
+import { getToolbarPositionChangeRatio } from "@/domain/trade/trading-toolbar-metrics";
 import { cn } from "@/lib/cn";
-import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import {
+	formatLiquidationPrice,
+	formatPercent,
+	formatPrice,
+	formatQuoteAmount,
+	formatToken,
+	formatUSD,
+} from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
-import { isPositive, toBig } from "@/lib/trade/numbers";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
-import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
-	positionsPanelTableCellClass,
-} from "./positions-panel-table-styles";
+import type {
+	IsolatedMarginPositionRef,
+	LimitClosePositionData,
+	PositionMarketCloseRef,
+	PositionPnlShareData,
+	PositionReverseRef,
+	TpSlPositionRef,
+} from "./position-dialog-types";
+import { createPositionPnlShareData } from "./position-pnl-share-data";
+import { positionTableCellClass } from "./position-table-styles";
+import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
+
+export type PositionPnlMode = "roe" | "priceChange";
 
 interface Props {
 	position: Position;
+	env: "Mainnet" | "Testnet";
+	isDataStale: boolean;
 	markets: Markets;
 	markPx: string | undefined;
+	markPriceStatus: MarkPriceStatus;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
 	isEven: boolean;
-	onClose: (data: ClosePositionData) => void;
+	pnlMode: PositionPnlMode;
+	onMarketClose: (data: PositionMarketCloseRef) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
-	onReverse: (data: ClosePositionData) => void;
-	onOpenTpSl: (data: TpSlPositionData) => void;
+	onShare: (data: PositionPnlShareData) => void;
+	onReverse: (data: PositionReverseRef) => void;
+	onOpenTpSl: (data: TpSlPositionRef) => void;
+	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
 
 export function PositionRow({
 	position: p,
+	env,
+	isDataStale,
 	markets,
 	markPx: markPxRaw,
+	markPriceStatus,
 	tpSlInfo,
 	isRowClosing,
 	isEven,
-	onClose,
+	pnlMode,
+	onMarketClose,
 	onLimitClose,
+	onShare,
 	onReverse,
 	onOpenTpSl,
+	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
-	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
-	const isLong = size > 0;
-	const absSize = Math.abs(size);
+	useNumberFormatRevision();
+	const { t } = useLingui();
+	const sizeValue = toBig(p.szi);
+	const isLong = sizeValue?.gt(0) ?? false;
+	const absSize = sizeValue?.abs().toString();
 	const market = markets.getMarket(p.coin);
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
-	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
+	const markPxValue = toBig(markPxRaw);
 	const displayName = market?.pairName ?? p.coin;
+	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
+	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
+	const quoteSymbol =
+		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
 
-	const liqPx = toBig(p.liquidationPx)?.toNumber();
+	const hasFreshMark = markPriceStatus === "success";
 	const liqIsNear =
-		liqPx != null &&
-		Number.isFinite(markPx) &&
-		Number.isFinite(liqPx) &&
-		Math.abs(liqPx - markPx) / markPx <= LIQ_WARNING_PROXIMITY;
+		!isDataStale &&
+		hasFreshMark &&
+		isLiquidationPriceNear({
+			markPx: markPxRaw,
+			liquidationPx: p.liquidationPx,
+			proximity: LIQ_WARNING_PROXIMITY,
+		});
 
-	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
-	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
-	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
-	const cumFunding = toBig(p.cumFunding.sinceOpen)?.toNumber() ?? Number.NaN;
-	const canClose = isPositive(absSize) && typeof assetId === "number" && isPositive(markPx);
+	const fundingPayment = getPositionFundingPayment(p.cumFunding.sinceOpen);
+	const canManage = typeof assetId === "number";
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
+	const canReverse =
+		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+	const canShare =
+		!isDataStale &&
+		hasFreshMark &&
+		(sizeValue?.abs().gt(0) ?? false) &&
+		(toBig(p.entryPx)?.gt(0) ?? false) &&
+		(markPxValue?.gt(0) ?? false) &&
+		toBig(p.unrealizedPnl) !== null &&
+		toBig(p.returnOnEquity) !== null;
 
-	const pnlClass = getValueColorClass(unrealizedPnl);
-	const fundingClass = getValueColorClass(cumFunding ? -cumFunding : null);
+	const pnlClass = isDataStale ? "text-market-close-subtle" : getValueColorClass(p.unrealizedPnl);
+	const fundingClass = isDataStale || fundingPayment === null ? "text-fg-muted" : getValueColorClass(fundingPayment);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
+	const sideClass = isLong ? "text-market-close-success" : "text-market-close-danger";
+	const directionLabel = isLong ? t`Long` : t`Short`;
+	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
+	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
+	const entryPriceDisplay = formatPrice(p.entryPx, { szDecimals, style: "decimal" });
+	const markPriceDisplay = formatPrice(markPxRaw, { szDecimals, style: "decimal" });
+	const pnlDisplay = formatUSD(p.unrealizedPnl, {
+		compact: false,
+		currencyDisplay: "narrowSymbol",
+		signDisplay: "exceptZero",
+	});
+	const roeDisplay = formatPercent(p.returnOnEquity, 1);
+	const priceChangeRatio = getToolbarPositionChangeRatio({
+		unrealizedPnl: p.unrealizedPnl,
+		szi: p.szi,
+		entryPx: p.entryPx,
+	});
+	const pnlPercentDisplay = pnlMode === "roe" ? roeDisplay : formatPercent(priceChangeRatio, 1);
+	const liquidationPriceDisplay = formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" });
+	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
+	const fundingDisplay = formatUSD(fundingPayment, {
+		compact: false,
+		currencyDisplay: "narrowSymbol",
+		signDisplay: "exceptZero",
+	});
+	const markStatusIndicator =
+		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
+			<Tooltip content={t`Loading...`} side="top">
+				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+			</Tooltip>
+		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
+			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
+				<WarningCircleIcon
+					className="size-3 shrink-0 text-warning"
+					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
+				/>
+			</Tooltip>
+		) : null;
 
 	function renderTpSlContent() {
-		if (tpSlInfo?.tpPrice && tpSlInfo?.slPrice) {
-			return (
-				<>
-					<div className="flex items-center gap-1 text-2xs tabular-nums">
-						<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-						<span className="text-fg-muted">/</span>
-						<span className="text-error/70">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
-					</div>
-					<PencilIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
-				</>
-			);
-		}
 		if (hasTpSl) {
 			return (
-				<>
-					<div className="flex items-center gap-1 text-2xs tabular-nums">
-						{tpSlInfo?.tpPrice ? (
-							<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-						) : (
-							<span className="text-error/70">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
-						)}
-					</div>
-					<PlusIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
-				</>
+				<span className="flex flex-col items-end gap-px text-xs leading-4 tabular-nums">
+					<span>
+						<span className="mr-1 text-[10px] text-market-close-subtle">TP</span>
+						<span className={tpSlInfo?.tpPrice ? "font-semibold text-market-close-success" : "text-fg-disabled"}>
+							{tpSlInfo?.tpPrice ? formatPrice(tpSlInfo.tpPrice, { szDecimals, style: "decimal" }) : "—"}
+						</span>
+					</span>
+					<span>
+						<span className="mr-1 text-[10px] text-market-close-subtle">SL</span>
+						<span className={tpSlInfo?.slPrice ? "font-semibold text-market-close-danger" : "text-fg-disabled"}>
+							{tpSlInfo?.slPrice ? formatPrice(tpSlInfo.slPrice, { szDecimals, style: "decimal" }) : "—"}
+						</span>
+					</span>
+				</span>
 			);
 		}
 		return (
-			<div className="flex items-center gap-0.5 text-2xs font-medium text-fg-muted group-hover:text-fg transition-colors">
-				<PlusIcon className="size-3" />
-				<span>{t`Add`}</span>
-			</div>
+			<span className="rounded-[6px] border border-dashed border-market-close-stroke-control px-2 py-0.5 text-xs font-medium text-market-close-subtle transition-all duration-[120ms] group-hover:border-market-close-control group-hover:text-market-close-fg">
+				+ {t`Add`}
+			</span>
 		);
 	}
 
-	function buildCloseData(): ClosePositionData | null {
-		if (!canClose || typeof assetId !== "number") return null;
+	function buildReverseRef(): PositionReverseRef | null {
+		if (!canReverse || typeof assetId !== "number") return null;
 		return {
 			assetId,
 			coin: p.coin,
-			size: absSize,
-			markPx,
+			dex: p.dex,
+			signedPositionSize: p.szi,
 			szDecimals,
-			isLong,
-			unrealizedPnl,
-			roe,
+			marginMode: p.leverage.type,
 		};
 	}
 
-	function handleClose() {
-		const data = buildCloseData();
-		if (data) onClose(data);
+	function handleMarketClose() {
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		onMarketClose({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			szDecimals,
+			signedPositionSize: p.szi,
+			markPx: markPxRaw,
+			marginMode: p.leverage.type,
+		});
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number") return;
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
 		onLimitClose({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
-			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
+			signedPositionSize: p.szi,
+			entryPx: p.entryPx,
+			markPx: markPxRaw,
 			szDecimals,
+			marginMode: p.leverage.type,
 		});
 	}
 
 	function handleReverse() {
-		const data = buildCloseData();
+		const data = buildReverseRef();
 		if (data) onReverse(data);
+	}
+
+	function handleShare() {
+		const data = createPositionPnlShareData({
+			position: p,
+			markPx: markPxRaw,
+			env,
+			symbol: displayName,
+			quoteSymbol,
+			szDecimals,
+		});
+		if (data) onShare(data);
 	}
 
 	function handleOpenTpSl() {
 		if (typeof assetId !== "number") return;
 		onOpenTpSl({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
 			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
 			szDecimals,
-			existingTpPrice: tpSlInfo?.tpPrice,
-			existingSlPrice: tpSlInfo?.slPrice,
-			existingTpOrderId: tpSlInfo?.tpOrderId,
-			existingSlOrderId: tpSlInfo?.slOrderId,
+			marginMode: p.leverage.type,
 		});
 	}
 
+	function handleAdjustMargin() {
+		if (p.leverage.type !== "isolated" || typeof assetId !== "number") return;
+		onAdjustMargin({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			isLong,
+			szDecimals,
+			marginConstraint,
+			marginUsed: p.marginUsed,
+			positionValue: p.positionValue,
+			liquidationPx: p.liquidationPx,
+		});
+	}
+
+	const marginContent = (
+		<span className="inline-flex flex-col items-end gap-px whitespace-nowrap tabular-nums" title={marginDisplay}>
+			<span className="text-[13px] font-semibold text-market-close-fg">{marginDisplay}</span>
+			<span
+				className={cn(
+					"rounded-[4px] px-1.5 text-[10px] leading-[14px] font-semibold text-market-close-subtle",
+					p.leverage.type === "isolated"
+						? "bg-fill-weak"
+						: "border border-market-close-stroke-card bg-transparent leading-3",
+				)}
+			>
+				{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
+			</span>
+		</span>
+	);
+
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "min-w-0 text-fg")}>
-				<AssetBadge
-					coin={p.coin}
-					side={isLong ? "buy" : "sell"}
-					fit
-					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-					aria-label={
-						isLong
-							? t`Switch to ${displayName} market, long position`
-							: t`Switch to ${displayName} market, short position`
-					}
-				/>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">
-						{formatToken(absSize, {
-							decimals: szDecimals,
-							symbol: p.coin,
-						})}
-					</span>
-					<span className="text-2xs text-fg-muted tabular-nums leading-tight">
-						({formatUSD(p.positionValue, { compact: true })})
-					</span>
+			<TableCell size="dense" className={cn(positionTableCellClass, "pl-5 text-left text-market-close-fg")}>
+				<div className="flex items-center gap-2 whitespace-nowrap">
+					<span
+						className={cn(
+							"h-7 w-[3px] shrink-0 rounded-[2px]",
+							isLong ? "bg-market-close-success" : "bg-market-close-danger",
+						)}
+						aria-hidden="true"
+					/>
+					<AssetBadge
+						coin={p.coin}
+						subtitle={
+							<span className={sideClass}>
+								{directionLabel} · {p.leverage.value}x
+							</span>
+						}
+						fit
+						onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
+						className="border-0 bg-transparent p-0 hover:bg-transparent active:bg-transparent"
+						nameClassName="text-[13px] leading-4 font-bold text-market-close-fg"
+						subtitleClassName="text-[11px] leading-[14px] font-semibold"
+						aria-label={
+							isLong
+								? t`Switch to ${displayName} market, long position`
+								: t`Switch to ${displayName} market, short position`
+						}
+					/>
+					{p.dex ? (
+						<span className="shrink-0 rounded-[4px] bg-fill-weak px-1 py-0.5 text-[10px] leading-3 font-semibold text-market-close-muted">
+							{p.dex}
+						</span>
+					) : null}
 				</div>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
-					<span className="text-2xs font-medium text-fg-muted leading-tight">
-						{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="flex flex-col items-end gap-px" title={`${sizeDisplay} / ${positionValueDisplay}`}>
+					<span className="text-[13px] font-semibold text-market-close-fg">{sizeDisplay}</span>
+					<span className="text-[11px] leading-[14px] text-market-close-subtle">{positionValueDisplay}</span>
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="flex flex-col items-end gap-px" title={`${entryPriceDisplay} / ${markPriceDisplay}`}>
+					<span className="text-[13px] text-market-close-fg">{entryPriceDisplay}</span>
+					<span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-market-close-subtle">
+						{markPriceDisplay}
+						{markStatusIndicator}
 					</span>
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>
+				<div className="flex min-w-0 items-center justify-end gap-1">
+					<span className="flex flex-col items-end gap-px tabular-nums" title={`${pnlDisplay} (${pnlPercentDisplay})`}>
+						<span className="text-[13px] font-bold">{pnlDisplay}</span>
+						<span className="text-[11px] leading-[14px] font-semibold opacity-75">{pnlPercentDisplay}</span>
+					</span>
+					<Tooltip content={t`Share PNL`} side="top">
+						<button
+							type="button"
+							onClick={handleShare}
+							disabled={!canShare}
+							aria-label={t`Share PNL for ${displayName}`}
+							className="relative inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<ShareIcon aria-hidden="true" className="size-3.5" />
+						</button>
+					</Tooltip>
 				</div>
-			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted whitespace-nowrap")}
-			>
-				<span className="tabular-nums">{formatPrice(p.entryPx, { szDecimals })}</span>
-			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg whitespace-nowrap")}
-			>
-				<span className="text-xs font-semibold tabular-nums">{formatPrice(markPx, { szDecimals })}</span>
 			</TableCell>
 			<TableCell
 				size="dense"
 				className={cn(
-					positionsPanelTableCellClass,
-					"text-right tabular-nums min-w-0",
-					liqIsNear ? "text-error font-medium" : "text-fg-muted",
+					positionTableCellClass,
+					"tabular-nums",
+					liqIsNear ? "font-bold text-market-close-danger" : "text-market-close-subtle",
 				)}
 			>
-				<span className="block truncate" title={formatPrice(p.liquidationPx, { szDecimals })}>
-					{formatLiquidationPrice(p.liquidationPx, szDecimals)}
+				<span className="block text-[13px]" title={liquidationPriceDisplay}>
+					{liquidationPriceDisplay}
 				</span>
 			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums whitespace-nowrap", fundingClass)}
-			>
-				<span className="font-medium tabular-nums">
-					{formatUSD(cumFunding ? -cumFunding : null, { signDisplay: "exceptZero" })}
-				</span>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-				<div className={cn("flex flex-col items-end gap-px tabular-nums", pnlClass)}>
-					<span className="text-xs font-semibold leading-tight">
-						{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
-					</span>
-					<span className={cn("text-2xs leading-tight opacity-90", pnlClass)}>
-						({formatPercent(p.returnOnEquity, 1)})
-					</span>
-				</div>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-				<Tooltip content={tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
+			<TableCell size="dense" className={positionTableCellClass}>
+				<Tooltip content={hasTpSl ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
 					<button
 						type="button"
 						onClick={handleOpenTpSl}
-						disabled={typeof assetId !== "number"}
+						disabled={!canManage}
 						className={cn(
-							"group inline-flex items-center gap-1.5 cursor-pointer transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
+							"group inline-flex min-h-[26px] items-center justify-end rounded-[6px] transition-all duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50",
 							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
 						)}
 					>
@@ -258,12 +381,25 @@ export function PositionRow({
 					</button>
 				</Tooltip>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
+			<TableCell size="dense" className={cn(positionTableCellClass, "text-market-close-fg")}>
+				{marginContent}
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums", fundingClass)}>
+				<span className="block text-xs font-medium tabular-nums" title={fundingDisplay}>
+					{fundingDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "pr-5")}>
 				<PositionActionsDropdown
 					canClose={canClose}
+					canManage={canManage}
+					canReverse={canReverse}
+					isIsolated={p.leverage.type === "isolated"}
 					isRowClosing={isRowClosing}
-					onMarketClose={handleClose}
+					onMarketClose={handleMarketClose}
 					onLimitClose={handleLimitClose}
+					onAdjustMargin={handleAdjustMargin}
+					onOpenTpSl={handleOpenTpSl}
 					onReverse={handleReverse}
 				/>
 			</TableCell>

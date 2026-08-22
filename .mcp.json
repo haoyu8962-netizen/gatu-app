@@ -7,6 +7,10 @@
     "hyperliquid-docs": {
       "type": "http",
       "url": "https://hyperliquid.gitbook.io/hyperliquid-docs/~gitbook/mcp"
+    },
+    "hyperliquid-sdk-docs": {
+      "type": "http",
+      "url": "https://nktkas.gitbook.io/hyperliquid/~gitbook/mcp"
     }
   }
 }

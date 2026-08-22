@@ -13,8 +13,8 @@ export function getUnderlyingAsset(token: RawToken): string | undefined {
 	if (ASSET_REPLACEMENTS[token.name]) {
 		return ASSET_REPLACEMENTS[token.name];
 	}
-	if (token.fullName?.startsWith("Unit") && token.name.startsWith("U")) {
-		return token.name.slice(1);
+	if (token.fullName?.startsWith("Unit ") && token.name.startsWith("U")) {
+		return token.name.replace(/^U+/, "") || token.name;
 	}
 	return token.name;
 }

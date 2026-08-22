@@ -2,12 +2,15 @@
  * Core trading types used across order entry, validation, and execution.
  */
 
+import type { ValidationError } from "@/lib/errors/types";
+
 export type Side = "buy" | "sell";
 export type SizeMode = "base" | "quote";
 
 export interface FormValidationResult {
 	valid: boolean;
 	errors: string[];
+	validationErrors: ValidationError[];
 	canSubmit: boolean;
 	needsApproval: boolean;
 }
@@ -16,6 +19,7 @@ export interface ButtonContent {
 	text: string;
 	action: () => void;
 	disabled: boolean;
+	disabledReason?: string;
 	variant: "cyan" | "buy" | "sell";
 }
 
@@ -25,7 +29,7 @@ export interface TpSlState {
 	sl: string;
 }
 
-export type ActiveModal = "wallet" | "marginMode" | null;
+export type ActiveModal = "wallet" | "marginMode" | "leverage" | "accountMode" | null;
 
 export interface OrderRequest {
 	a: number;

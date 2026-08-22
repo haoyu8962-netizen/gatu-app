@@ -1,25 +1,12 @@
-import type { Address, Hex } from "viem";
-import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
-import { LRU } from "../lru";
+import type { Address } from "viem";
+import type { PrivateKeyAccount } from "viem/accounts";
 import { useHyperliquid } from "../provider";
+import { getCachedAgentSigner, signerCache } from "./agent-signer-cache";
 import { useAgentWalletStorage } from "./agent-storage";
 import type { AgentWallet } from "./types";
 import { useAgentStatus } from "./use-agent-status";
 
-/** @internal — exported only for tests; do not consume from outside this package. */
-export const signerCache = new LRU<Hex, PrivateKeyAccount>(4);
-
-function getCachedSigner(privateKey: Hex): PrivateKeyAccount | null {
-	const cached = signerCache.get(privateKey);
-	if (cached) return cached;
-	try {
-		const account = privateKeyToAccount(privateKey);
-		signerCache.set(privateKey, account);
-		return account;
-	} catch {
-		return null;
-	}
-}
+export { signerCache };
 
 export interface UseAgentWalletResult {
 	data: AgentWallet | null;
@@ -31,16 +18,16 @@ export interface UseAgentWalletResult {
 export function useAgentWallet(): UseAgentWalletResult {
 	const { env, clientKey } = useHyperliquid();
 	const userAddress = clientKey === "disconnected" ? undefined : (clientKey as Address);
-	const { isReady } = useAgentStatus();
+	const { isAgentReady } = useAgentStatus();
 
 	const agentWallet = useAgentWalletStorage(env, userAddress);
 
-	const signer = isReady && agentWallet?.privateKey ? getCachedSigner(agentWallet.privateKey) : null;
+	const signer = isAgentReady && agentWallet?.privateKey ? getCachedAgentSigner(agentWallet.privateKey) : null;
 
 	return {
-		data: isReady ? agentWallet : null,
+		data: isAgentReady ? agentWallet : null,
 		signer,
 		address: agentWallet?.publicKey ?? null,
-		isReady: isReady && signer !== null,
+		isReady: isAgentReady && signer !== null,
 	};
 }

@@ -1,7 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CoinIcon, WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { HL_ICON_URL, USDC_ICON_URL } from "@/config/bridge";
+import { BRIDGE_QUOTE_VALIDITY_MS } from "@/config/bridge";
 import { cn } from "@/lib/cn";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { isSafeHttpUrl } from "@/lib/safe-url";
@@ -48,21 +47,6 @@ export function PoweredByLiFi() {
 	);
 }
 
-export function HyperCoreUsdcIcon({ size = "md" }: { size?: "sm" | "md" }) {
-	const iconSize = size === "sm" ? "size-5" : "size-8";
-	const badgeSize = size === "sm" ? "size-2.5" : "size-3.5";
-	return (
-		<div className="relative shrink-0">
-			<img src={USDC_ICON_URL} alt="USDC" className={cn(iconSize, "rounded-full")} />
-			<img
-				src={HL_ICON_URL}
-				alt="Hyperliquid"
-				className={cn("absolute -bottom-0.5 -right-0.5 rounded-full border border-overlay", badgeSize)}
-			/>
-		</div>
-	);
-}
-
 export function BridgeWalletNotConnected() {
 	return (
 		<div className="flex flex-col items-center gap-4 py-8">
@@ -75,6 +59,39 @@ export function BridgeWalletNotConnected() {
 				</p>
 				<p className="text-xs text-fg">
 					<Trans>Connect your wallet to bridge funds</Trans>
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export function BridgeWalletMismatch() {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="flex size-12 items-center justify-center rounded-full bg-surface border border-stroke-weak/40">
+				<WalletIcon className="size-6 text-fg" />
+			</div>
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium">
+					<Trans>Reconnect the bridge wallet</Trans>
+				</p>
+				<p className="text-xs text-fg">
+					<Trans>This bridge can only be resumed by the wallet that started it.</Trans>
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export function BridgeCreationPaused() {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium">
+					<Trans>Bridge creation is temporarily unavailable</Trans>
+				</p>
+				<p className="text-xs text-fg-muted">
+					<Trans>Deposits and withdrawals remain available.</Trans>
 				</p>
 			</div>
 		</div>
@@ -137,21 +154,9 @@ export function ExplorerLink({ href, children }: { href: string; children: React
 }
 
 const QUOTE_COUNTDOWN_RADIUS = 10;
-const QUOTE_COUNTDOWN_DURATION_S = 30;
+const QUOTE_COUNTDOWN_DURATION_S = BRIDGE_QUOTE_VALIDITY_MS / 1000;
 
-export function QuoteCountdown({ dataUpdatedAt }: { dataUpdatedAt: number }) {
-	const [remaining, setRemaining] = useState(QUOTE_COUNTDOWN_DURATION_S);
-
-	useEffect(() => {
-		function tick() {
-			const elapsed = (Date.now() - dataUpdatedAt) / 1000;
-			setRemaining(Math.max(0, Math.ceil(QUOTE_COUNTDOWN_DURATION_S - elapsed)));
-		}
-		tick();
-		const id = setInterval(tick, 1000);
-		return () => clearInterval(id);
-	}, [dataUpdatedAt]);
-
+export function QuoteCountdown({ remaining }: { remaining: number }) {
 	const circumference = 2 * Math.PI * QUOTE_COUNTDOWN_RADIUS;
 	const offset = circumference * (1 - remaining / QUOTE_COUNTDOWN_DURATION_S);
 

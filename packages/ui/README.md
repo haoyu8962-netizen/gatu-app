@@ -60,17 +60,19 @@ All tokens live in `src/globals.css` as Tailwind v4 `@theme` CSS variables. Thre
 
 Everything in the app references semantic names, not raw colors. Categories:
 
-| Prefix | Purpose | Examples |
+| Utility family | Purpose | Examples |
 |---|---|---|
-| `bg-*` | Backgrounds (elevation model: sunken → base → raised → overlay) | `bg-bg-base`, `bg-bg-raised`, `bg-bg-overlay` |
-| `text-*` | Text intensities / intents | `text-text-strong`, `text-text-weak`, `text-text-brand` |
-| `fill-*` | Non-elevation backgrounds (chips, hover states, scrims) | `bg-fill-weak`, `bg-fill-hover`, `bg-fill-brand-strong` |
+| `bg-*` | Surfaces, including dedicated blocking and lightweight overlay roles | `bg-background`, `bg-surface`, `bg-overlay`, `bg-modal` |
+| `text-*` | Text intensities / intents | `text-fg`, `text-fg-muted`, `text-brand` |
+| `bg-fill-*` | Non-elevation backgrounds (chips, hover states, scrims) | `bg-fill-weak`, `bg-fill-hover`, `bg-fill-selected` |
 | `stroke-*` | Borders & dividers | `border-stroke-weak`, `border-stroke-focus` |
-| `icon-*` | Icon colors | `text-icon-neutral`, `text-icon-error` |
+| `icon-*` | Icon colors | `text-icon`, `text-icon-error` |
 | `market-*` | Trading: up / down / neutral | `text-market-up`, `bg-market-down` |
 | `scope-*` | DEX category tints | `bg-scope-perp`, `bg-scope-spot`, `bg-scope-builders` |
 
 Full taxonomy lives in `.claude/rules/design-tokens.md`. **Never use hex literals** (e.g. `text-[#2b2e48]`) — always a semantic token.
+
+Use `bg-modal` for blocking modal and drawer surfaces. Keep tooltips, toasts, and selection indicators on `bg-overlay`; applications may override the two semantic surfaces independently for their own themes.
 
 Dark mode is a class variant: `@custom-variant dark (&:where(.dark, .dark *))`.
 
@@ -134,9 +136,9 @@ import { Divider } from "@gatu/ui";
 
 export function InfoRow({ label, value }: Props) {
   return (
-    <div className="flex justify-between text-xs text-text-weak">
+    <div className="flex justify-between text-xs text-fg-muted">
       <span>{label}</span>
-      <span className="text-text-strong tabular-nums">{value}</span>
+      <span className="text-fg tabular-nums">{value}</span>
     </div>
   );
 }

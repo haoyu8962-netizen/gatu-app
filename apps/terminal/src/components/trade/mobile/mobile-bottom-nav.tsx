@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
@@ -16,18 +16,19 @@ interface Props {
 }
 
 export function MobileBottomNav({ activeTab, onTabChange, badges, className }: Props) {
-	const { i18n } = useLingui();
+	const { _ } = useLingui();
 
 	return (
 		<nav
 			className={cn(
-				"fixed inset-x-0 bottom-0 z-50 bg-surface/95 backdrop-blur-sm border-t border-stroke-weak/60",
+				"relative z-50 shrink-0 bg-surface border-t border-trading-panel-stroke-card",
+				"[touch-action:pan-x_pinch-zoom]",
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}
-			aria-label={t`Primary navigation`}
+			aria-label={_(msg`Primary navigation`)}
 		>
-			<div className="flex items-stretch">
+			<div className="flex items-stretch pl-[var(--sal)] pr-[var(--sar)]">
 				{MOBILE_NAV_ITEMS.map((item) => {
 					const isActive = activeTab === item.id;
 					const badgeCount = badges?.[item.id];
@@ -41,32 +42,30 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 							onClick={() => onTabChange(item.id)}
 							style={{ minHeight: `${MOBILE_BOTTOM_NAV_HEIGHT_PX}px` }}
 							className={cn(
-								"flex-1 flex flex-col items-center justify-center gap-0.5 rounded-none",
-								"py-2 px-1",
-								"transition-colors duration-150 ease-out",
-								"active:bg-fill-press active:scale-95",
-								isActive ? "text-brand" : "text-fg",
+								"flex-1 flex flex-col items-center justify-center gap-[3px] rounded-none px-1",
+								isActive ? "text-trading-panel-fg" : "text-trading-panel-subtle",
 							)}
 							aria-current={isActive ? "page" : undefined}
-							aria-label={i18n._(item.label)}
+							aria-label={_(item.label)}
 						>
 							<span className="relative">
 								<Icon className="size-5" />
-								{isActive && <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-brand" />}
 								{showBadge && (
 									<span
 										className={cn(
 											"absolute -top-1 -right-2 min-w-4 h-4 px-1",
 											"flex items-center justify-center",
 											"rounded-full text-xs font-medium tabular-nums",
-											"bg-brand text-white",
+											"bg-brand text-fg-inverse",
 										)}
 									>
 										{badgeCount > NAV_BADGE_MAX_COUNT ? `${NAV_BADGE_MAX_COUNT}+` : badgeCount}
 									</span>
 								)}
 							</span>
-							<span className="text-xs font-medium tracking-wide">{i18n._(item.label)}</span>
+							<span className={cn("text-3xs tracking-wide", isActive ? "font-bold" : "font-medium")}>
+								{_(item.label)}
+							</span>
 						</button>
 					);
 				})}

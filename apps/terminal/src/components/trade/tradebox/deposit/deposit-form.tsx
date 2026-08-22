@@ -1,13 +1,14 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
+import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
 import { AmountInput } from "./amount-input";
 import { AssetSelect } from "./asset-select";
+import { FundingAddressCard } from "./funding-address-card";
 import { NetworkSelect } from "./shared-ui";
 import { UnitDepositInfo } from "./unit-deposit-info";
 
@@ -22,10 +23,23 @@ interface Props {
 	validation: { valid: boolean; error: string | null };
 	isPending: boolean;
 	onSubmit: () => void;
+	routingStatus: UsdcRoutingQueryStatus;
+	depositRoute: UsdcTransferRoute | null;
+	onRetryRouting: () => void;
 	networkName: string;
-	smartDepositEnabled: boolean;
-	autoBridgeEnabled?: boolean;
+	sponsoredCctpEnabled: boolean;
+	sponsoredCctpReadiness: SponsoredCctpReadiness;
+	depositUnavailableReason?: string | null;
+	requiresExplicitFundingDeposit: boolean;
+	cctpFee: string | null;
+	cctpFeeLoading: boolean;
+	cctpFeeError: boolean;
+	pendingCctpRecovery: boolean;
+	usesFundingAddressFlow: boolean;
+	fundingAddressPending: boolean;
+	fundingAddressError?: string | null;
 	fundingAddress?: `0x${string}`;
+	onRetryFundingAddress?: () => void;
 	onDone?: () => void;
 }
 
@@ -40,21 +54,77 @@ export function DepositForm({
 	validation,
 	isPending,
 	onSubmit,
+	routingStatus,
+	depositRoute,
+	onRetryRouting,
 	networkName,
-	smartDepositEnabled,
-	autoBridgeEnabled = false,
+	sponsoredCctpEnabled,
+	sponsoredCctpReadiness,
+	depositUnavailableReason = null,
+	requiresExplicitFundingDeposit,
+	cctpFee,
+	cctpFeeLoading,
+	cctpFeeError,
+	pendingCctpRecovery,
+	usesFundingAddressFlow,
+	fundingAddressPending,
+	fundingAddressError = null,
 	fundingAddress,
+	onRetryFundingAddress,
 	onDone,
 }: Props) {
-	const { copied, copy } = useCopyToClipboard(1500);
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
-	const canSubmitBridgeDeposit =
-		fundingAddress && smartDepositEnabled && maxDepositRaw !== undefined && maxDepositRaw >= MIN_DEPOSIT_USDC;
+	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
+	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
+	const explicitFundingDepositReady =
+		requiresExplicitFundingDeposit &&
+		cctpRoutingReady &&
+		sponsoredCctpEnabled &&
+		sponsoredCctpReadiness.status === "ready" &&
+		!!fundingAddress;
+	const explicitFundingDepositDisabled =
+		!explicitFundingDepositReady ||
+		!validation.valid ||
+		isPending ||
+		balanceStatus === "loading" ||
+		balanceStatus === "error" ||
+		cctpFeeLoading ||
+		pendingCctpRecovery;
+	const routingNotice = (() => {
+		if (routingStatus === "loading" || (cctpRoutingReady && !fundingAddress)) {
+			return null;
+		}
+		return (
+			<div
+				role="alert"
+				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+			>
+				<p>
+					{bridgeRoutingReady ? (
+						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
+					) : (
+						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
+					)}
+				</p>
+				{!bridgeRoutingReady ? (
+					<Button
+						variant="link"
+						intent="neutral"
+						size="xxs"
+						className="mt-1 h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+						onClick={onRetryRouting}
+					>
+						<Trans>Retry</Trans>
+					</Button>
+				) : null}
+			</div>
+		);
+	})();
 	const embeddedDepositStatus = (() => {
-		if (!smartDepositEnabled) {
+		if (!sponsoredCctpEnabled) {
 			return {
 				tone: "error" as const,
-				text: <Trans>Smart wallet deposits are not enabled for this network.</Trans>,
+				text: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
 			};
 		}
 		if (balanceStatus === "loading") {
@@ -79,137 +149,307 @@ export function DepositForm({
 				),
 			};
 		}
+		if (validation.error) {
+			return {
+				tone: "error" as const,
+				text: validation.error,
+			};
+		}
 		return null;
 	})();
-	const fundingAddressPanel = fundingAddress ? (
-		<div className="flex min-h-10 items-center justify-center gap-2 rounded-xs bg-fill-weak px-3 py-2">
-			<span className="min-w-0 break-all text-center font-mono text-xs font-medium tabular-nums text-fg">
-				{fundingAddress}
-			</span>
-			<Button
-				type="button"
-				variant="ghost"
-				intent="neutral"
-				size="xs"
-				onClick={() => copy(fundingAddress)}
-				aria-label={copied ? t`Copied` : t`Copy embedded wallet address`}
-				className="shrink-0"
-			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-			</Button>
+	const transferSelectors = (
+		<div className="space-y-1.5">
+			<div className="flex items-baseline justify-between gap-3 text-[11px] leading-4 text-market-close-subtle">
+				<span className="whitespace-nowrap">
+					<Trans>You send</Trans>
+				</span>
+				<span className="whitespace-nowrap tabular-nums">
+					<Trans>Minimum</Trans> {minimumDeposit}
+				</span>
+			</div>
+			<div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+				<AssetSelect presentation="funding" />
+				<span className="text-[13px] text-market-close-stroke-control" aria-hidden="true">
+					·
+				</span>
+				<NetworkSelect
+					label={usesFundingAddressFlow ? t`Funding chain` : t`Network`}
+					value="arbitrum"
+					onChange={() => {}}
+					disabled
+					displayName={networkName}
+					presentation="funding"
+				/>
+			</div>
 		</div>
-	) : null;
+	);
 
-	if (fundingAddress && autoBridgeEnabled) {
+	if (usesFundingAddressFlow) {
+		const retryRoutingAction =
+			routingStatus === "error" || routingStatus === "unknown" ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={onRetryRouting}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const retrySponsoredReadinessAction =
+			sponsoredCctpReadiness.status === "error" && sponsoredCctpReadiness.failure !== "build-gate-disabled" ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={sponsoredCctpReadiness.retry}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const retryFundingAddressAction =
+			fundingAddressError && onRetryFundingAddress ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={onRetryFundingAddress}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : undefined;
+		const sponsoredReadinessError = (() => {
+			switch (sponsoredCctpReadiness.failure) {
+				case "build-gate-disabled":
+					return <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>;
+				case "wrong-chain":
+					return <Trans>The gas-sponsored wallet is configured for a different Arbitrum network.</Trans>;
+				case "paymaster-unavailable":
+					return <Trans>Gas sponsorship is unavailable for this Arbitrum network.</Trans>;
+				default:
+					return <Trans>Unable to prepare the gas-sponsored wallet for this network.</Trans>;
+			}
+		})();
+		const fundingAddressReady =
+			!depositUnavailableReason &&
+			cctpRoutingReady &&
+			sponsoredCctpEnabled &&
+			sponsoredCctpReadiness.status === "ready" &&
+			!!fundingAddress;
+		const fundingAddressState = (() => {
+			if (depositUnavailableReason) {
+				return { message: depositUnavailableReason, state: "unavailable" } as const;
+			}
+			if (routingStatus === "loading") {
+				return { message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const;
+			}
+			if (cctpRoutingReady && !sponsoredCctpEnabled) {
+				return {
+					message: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
+					state: "unavailable",
+				} as const;
+			}
+			if (bridgeRoutingReady) {
+				return {
+					message: <Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>,
+					state: "unavailable",
+				} as const;
+			}
+			if (!cctpRoutingReady) {
+				return {
+					message: <Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>,
+					action: retryRoutingAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (fundingAddressPending) {
+				return { message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const;
+			}
+			if (fundingAddressError) {
+				return {
+					message: fundingAddressError,
+					action: retryFundingAddressAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (sponsoredCctpReadiness.status === "idle" || sponsoredCctpReadiness.status === "loading") {
+				return { state: "loading" } as const;
+			}
+			if (sponsoredCctpReadiness.status === "error") {
+				return {
+					message: sponsoredReadinessError,
+					action: retrySponsoredReadinessAction,
+					state: "unavailable",
+				} as const;
+			}
+			if (fundingAddressReady && fundingAddress) return { address: fundingAddress, state: "ready" } as const;
+			return {
+				message: (
+					<Trans>Your email wallet is unavailable. Sign out and log in again with the same email, then retry.</Trans>
+				),
+				state: "unavailable",
+			} as const;
+		})();
+		const showFundingDestinationDetails =
+			!depositUnavailableReason &&
+			cctpRoutingReady &&
+			sponsoredCctpEnabled &&
+			(fundingAddressState.state === "loading" || fundingAddressState.state === "ready");
+		const showFundingDestinationPlaceholders =
+			!depositUnavailableReason && routingStatus === "loading" && sponsoredCctpEnabled;
+		const showExplicitFundingDepositAction =
+			requiresExplicitFundingDeposit &&
+			!depositUnavailableReason &&
+			sponsoredCctpEnabled &&
+			(showFundingDestinationDetails || showFundingDestinationPlaceholders) &&
+			maxDepositRaw !== undefined &&
+			maxDepositRaw > 0n;
+		const fundingNetworkNotice = (
+			<Trans>
+				Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
+				networks. Minimum deposit is {minimumDeposit}.
+			</Trans>
+		);
+
 		return (
-			<div className="flex flex-1 flex-col gap-4">
-				<div className="flex flex-col items-center gap-3 pt-1">
-					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
-						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
-					</div>
-					<h3 className="text-base font-semibold text-fg">
+			<div
+				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg min-[1001px]:min-h-[37.5rem]"
+				data-deposit-layout="funding-address"
+				data-deposit-readiness={sponsoredCctpReadiness.status}
+			>
+				<div className="pt-0.5 text-center">
+					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>
 					</h3>
 				</div>
 
-				<div className="space-y-2">
-					<AssetSelect />
-					<NetworkSelect
-						label={<Trans>Funding chain</Trans>}
-						value="arbitrum"
-						onChange={() => {}}
-						disabled
-						displayName={networkName}
-					/>
+				{transferSelectors}
 
-					{fundingAddressPanel}
-				</div>
+				<FundingAddressCard {...fundingAddressState} />
 
-				{embeddedDepositStatus ? (
+				{showFundingDestinationDetails ? (
+					<div className="contents" data-deposit-slot="funding-details">
+						{fundingAddressReady && embeddedDepositStatus ? (
+							<div
+								role={embeddedDepositStatus.tone === "error" ? "alert" : "status"}
+								className={
+									embeddedDepositStatus.tone === "error"
+										? "rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+										: embeddedDepositStatus.tone === "success"
+											? "rounded-[10px] border border-stroke-success-weak bg-success-soft px-3 py-2.5 text-center text-xs leading-relaxed text-success"
+											: "rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
+								}
+							>
+								{embeddedDepositStatus.text}
+							</div>
+						) : null}
+
+						<UnitDepositInfo cctpFee={cctpFee} cctpFeeLoading={cctpFeeLoading} cctpFeeError={cctpFeeError} />
+					</div>
+				) : showFundingDestinationPlaceholders ? (
 					<div
-						className={
-							embeddedDepositStatus.tone === "error"
-								? "rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
-								: embeddedDepositStatus.tone === "success"
-									? "rounded-xs border border-stroke-success-strong/50 bg-success-soft px-3 py-2 text-center text-xs leading-relaxed text-success"
-									: "rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted"
-						}
+						aria-hidden="true"
+						className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3"
+						data-deposit-placeholder="funding-details"
+						data-deposit-slot="funding-details"
 					>
-						{embeddedDepositStatus.text}
+						{["receive", "fee", "time"].map((row) => (
+							<div
+								className={
+									row === "receive"
+										? "flex h-5 items-center justify-between gap-3"
+										: "flex h-4 items-center justify-between gap-3"
+								}
+								key={row}
+							>
+								<div className="h-2 w-16 rounded-full bg-market-close-stroke-input/50" />
+								<div className="h-2 w-24 rounded-full bg-market-close-stroke-input/50" />
+							</div>
+						))}
 					</div>
 				) : null}
 
-				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-
-				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
-					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
-					<Trans>
-						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-						networks. Minimum deposit is {minimumDeposit}.
-					</Trans>
-				</div>
-			</div>
-		);
-	}
-
-	if (fundingAddress && !canSubmitBridgeDeposit) {
-		return (
-			<div className="flex flex-1 flex-col gap-4">
-				<div className="flex flex-col items-center gap-3 pt-1">
-					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
-						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
+				{showFundingDestinationDetails ? (
+					<div
+						className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+						data-deposit-notice="funding-network"
+						data-deposit-slot="funding-network-notice"
+					>
+						{fundingNetworkNotice}
 					</div>
-					<h3 className="text-base font-semibold text-fg">
-						<Trans>Deposit USDC from Arbitrum</Trans>
-					</h3>
-				</div>
+				) : showFundingDestinationPlaceholders ? (
+					<div
+						aria-hidden="true"
+						className="relative overflow-hidden rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
+						data-deposit-placeholder="funding-network-notice"
+						data-deposit-slot="funding-network-notice"
+					>
+						<span className="invisible">{fundingNetworkNotice}</span>
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-3">
+							<div className="h-2 w-4/5 rounded-full bg-market-close-stroke-input/50" />
+							<div className="h-2 w-3/5 rounded-full bg-market-close-stroke-input/50" />
+						</div>
+					</div>
+				) : null}
 
-				<div className="space-y-2">
-					<AssetSelect />
-					<NetworkSelect
-						label={<Trans>Funding chain</Trans>}
-						value="arbitrum"
-						onChange={() => {}}
-						disabled
-						displayName={networkName}
-					/>
+				{showExplicitFundingDepositAction ? (
+					<Button
+						variant="filled"
+						intent="neutral"
+						onClick={onSubmit}
+						disabled={explicitFundingDepositDisabled}
+						aria-busy={isPending}
+						className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90 data-disabled:bg-market-close-stroke-control data-disabled:text-market-close-on-control"
+					>
+						<Trans>Deposit</Trans> <span className="tabular-nums">{balance} USDC</span>
+					</Button>
+				) : null}
 
-					{fundingAddressPanel}
-				</div>
-
-				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
+				<Button
+					variant="filled"
+					intent="neutral"
+					onClick={onDone}
+					className="mt-auto min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90"
+				>
 					<Trans>Done</Trans>
 				</Button>
-
-				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
-					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
-					<Trans>
-						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-						networks. Minimum deposit is {minimumDeposit}.
-					</Trans>
-				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-2">
-			{fundingAddressPanel}
-
-			<div className="grid grid-cols-2 gap-2">
-				<AssetSelect />
-				<NetworkSelect
-					label={<Trans>Network</Trans>}
-					value="arbitrum"
-					onChange={() => {}}
-					disabled
-					displayName={networkName}
-				/>
+		<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
+			<div className="flex flex-col items-center gap-2 text-center">
+				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 rounded-full" />
+				<div className="space-y-0.5">
+					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
+						<Trans>Deposit USDC from Arbitrum</Trans>
+					</h3>
+					<p className="min-h-[18px] text-[11px] leading-[18px] text-market-close-subtle">
+						{cctpRoutingReady ? (
+							cctpFeeError ? (
+								<Trans>Unable to verify the current Circle fee. Deposits are temporarily unavailable.</Trans>
+							) : cctpFee ? (
+								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
+							) : (
+								<Trans>The fee will be confirmed using Circle's latest quote before submission.</Trans>
+							)
+						) : null}
+					</p>
+				</div>
 			</div>
 
-			<UnitDepositInfo networkName={networkName} />
+			{transferSelectors}
+
+			{routingNotice}
+			{pendingCctpRecovery ? (
+				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
+					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
+				</div>
+			) : null}
 
 			<AmountInput
 				amount={amount}

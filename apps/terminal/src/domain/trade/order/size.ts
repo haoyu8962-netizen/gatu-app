@@ -1,6 +1,7 @@
 import Big from "big.js";
+import { QUOTE_SIZE_INPUT_MAX_DECIMALS } from "@/config/trade";
 import type { SpotBalanceData } from "@/domain/trade/balances";
-import { floorToDecimals, formatDecimalFloor, toBig } from "@/lib/trade/numbers";
+import { floorToDecimals, formatDecimalFloor, type Numeric, toBig } from "@/lib/trade/numbers";
 import type { Side, SizeMode } from "@/lib/trade/types";
 
 interface MaxSizeInput {
@@ -14,11 +15,10 @@ interface OrderEntryMaxSizeInput {
 	isConnected: boolean;
 	isSpotMarket: boolean;
 	side: Side;
-	price: number;
+	price: Numeric;
 	spotBalance: SpotBalanceData;
 	szDecimals: number;
 	maxTradeSzs: [number, number] | null;
-	sharedQuoteAvailable?: number;
 }
 
 interface SizeValueInput {
@@ -72,23 +72,16 @@ export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
 			const quote = toBig(input.spotBalance.quoteAvailable);
 			const px = toBig(input.price);
 			if (!quote || !px || quote.lte(0) || px.lte(0)) return 0;
-			const size = quote.div(px).toNumber();
-			const floored = floorToDecimals(size, input.szDecimals);
+			const floored = quote.div(px).round(input.szDecimals, Big.roundDown).toNumber();
 			return Number.isFinite(floored) ? floored : 0;
 		}
 		const floored = floorToDecimals(input.spotBalance.baseAvailable, input.szDecimals);
 		return Number.isFinite(floored) ? floored : 0;
 	}
 
-	const maxTradeSize = input.maxTradeSzs?.[isBuy ? 0 : 1] ?? 0;
-	if (maxTradeSize > 0) return maxTradeSize;
-
-	const sharedQuote = toBig(input.sharedQuoteAvailable);
-	const px = toBig(input.price);
-	if (!sharedQuote || !px || sharedQuote.lte(0) || px.lte(0)) return 0;
-	const size = sharedQuote.div(px).toNumber();
-	const floored = floorToDecimals(size, input.szDecimals);
-	return Number.isFinite(floored) ? floored : 0;
+	const maxTradeSize = input.maxTradeSzs?.[isBuy ? 0 : 1];
+	if (maxTradeSize == null || !Number.isFinite(maxTradeSize) || maxTradeSize <= 0) return 0;
+	return maxTradeSize;
 }
 
 export function getMaxSize(input: MaxSizeInput): number {
@@ -137,8 +130,8 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 	if (input.isSpotMarket) {
 		if (isBuy) {
 			if (isQuoteMode) {
-				const quoteAmount = Big(input.spotBalance.quoteAvailable).times(pct);
-				return quoteAmount.toFixed(2);
+				const quoteAmount = Big(input.maxSize).times(input.price).times(pct);
+				return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 			}
 			const tokenAmount = Big(input.maxSize).times(pct).toNumber();
 			return formatSizeValue(tokenAmount, input.szDecimals);
@@ -178,4 +171,13 @@ export function getSliderValue(sizeValue: number, maxSize: number): number {
 	const max = toBig(maxSize);
 	if (!sz || !max || sz.lte(0) || max.lte(0)) return 0;
 	return Math.min(100, sz.div(max).times(100).toNumber());
+}
+
+export function formatSliderPercent(value: number): string {
+	if (!Number.isFinite(value) || value <= 0) return "0";
+	return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+}
+
+export function getSizeInputMaxDecimals(sizeMode: SizeMode, szDecimals: number): number {
+	return sizeMode === "quote" ? QUOTE_SIZE_INPUT_MAX_DECIMALS : szDecimals;
 }

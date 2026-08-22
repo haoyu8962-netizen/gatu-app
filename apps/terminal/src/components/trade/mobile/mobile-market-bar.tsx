@@ -1,44 +1,35 @@
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import {
 	formatClockDuration,
 	formatNumber,
 	formatPercent,
+	formatQuoteAmount,
 	formatUSD,
 	shortenAddress,
-	szDecimalsToPriceDecimals,
 } from "@/lib/format";
-import {
-	getExplorerTokenUrl,
-	type SpotMarketInfo,
-	type SubParams,
-	type UnifiedMarketInfo,
-	useSelectedMarketInfo,
-	useSubscription,
-} from "@/lib/hyperliquid";
+import { getExplorerTokenUrl, type UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
+import { getTradePriceDecimals } from "@/lib/trade/trades";
 import { TokenSelector } from "../chart/token-selector";
-
-type PriceDirection = "up" | "down";
+import { MarketAssetInfo } from "../components/market-asset-info";
+import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
+import { useMobileMarketBarSnapshot } from "./mobile-market-bar-provider";
 
 const HOUR_MS = 3_600_000;
 const TOOLTIP_WIDTH_PX = 320;
 const TOOLTIP_VIEWPORT_PADDING_PX = 16;
 const TOOLTIP_SIDE_OFFSET_PX = 4;
 const TOOLTIP_ESTIMATED_HEIGHT_PX = 144;
-
-interface PriceFlashState {
-	sequence: number;
-	direction: PriceDirection | null;
-}
 
 interface Props {
 	className?: string;
@@ -56,76 +47,50 @@ interface TooltipPosition {
 	width: number;
 }
 
-type AllMidsParams = SubParams<"allMids">;
+function getSafeAreaInset(variable: "--sal" | "--sar"): number {
+	const value = window.getComputedStyle(document.documentElement).getPropertyValue(variable);
+	const parsed = Number.parseFloat(value);
+	return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
 
 export function MobileMarketBar({ className }: Props) {
-	const { data: market } = useSelectedMarketInfo();
+	useNumberFormatRevision();
+	const {
+		market,
+		displayPrice,
+		priceFlash,
+		prevDayPx,
+		marketMarkPx,
+		oraclePx,
+		dayNtlVlm,
+		openInterest,
+		funding,
+		spotMarkPx,
+		spotCirculatingSupply,
+	} = useMobileMarketBarSnapshot();
 	const navigateToMarket = useMarketNavigation();
-	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
+	const detailsId = useId();
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+	const initialPriceFlashSequenceRef = useRef(priceFlash.sequence);
+	const visiblePriceDirection =
+		priceFlash.sequence > initialPriceFlashSequenceRef.current ? priceFlash.direction : null;
 
 	function handleMarketChange(name: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(name, nextMarket);
 	}
 
-	const { midPx } = useOrderbookMidPrice(market?.name);
 	const isSpot = market?.kind === "spot";
-	const perpCoin = market?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(market);
-	const midsCoin = getAllMidsCoin(market);
-	const { data: allMidsEvent } = useSubscription("allMids", getAllMidsParams(market), { enabled: !!midsCoin });
-	const { data: perpCtxEvent } = useSubscription(
-		"activeAssetCtx",
-		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
-	);
-	const { data: spotCtxEvent } = useSubscription(
-		"activeSpotAssetCtx",
-		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
-	);
-
-	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
-	const previousMidPxRef = useRef<number | undefined>(undefined);
-
-	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
-	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
-	const midsPrice = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
-	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
-	const displayPrice = midPx ?? midsPrice ?? liveCtx?.markPx ?? marketMarkPx;
-	const displayPriceNumber = toBig(displayPrice)?.toNumber();
-
+	const priceDecimals = getPriceDecimals(market, displayPrice ?? marketMarkPx ?? oraclePx);
+	const fundingNum = toBig(funding)?.toNumber() ?? null;
+	const shouldRunFundingCountdown = expanded && !isSpot && fundingNum !== null;
 	useEffect(() => {
-		const previous = previousMidPxRef.current;
-		previousMidPxRef.current = displayPriceNumber;
-		if (typeof displayPriceNumber !== "number" || typeof previous !== "number" || displayPriceNumber === previous) {
-			return;
-		}
-		setPriceFlash((state) => ({
-			sequence: state.sequence + 1,
-			direction: displayPriceNumber > previous ? "up" : "down",
-		}));
-	}, [displayPriceNumber]);
-
-	useEffect(() => {
-		if (!expanded) return;
+		if (!shouldRunFundingCountdown) return;
 		setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS));
 		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
 		return () => clearInterval(id);
-	}, [expanded]);
-
-	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
-	const priceDecimals = getPriceDecimals(market);
-	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
-	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
-	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
-	const funding = perpCtx?.funding ?? market?.funding;
-	const spotMarkPx = isSpot ? (spotCtxEvent?.ctx?.markPx ?? market?.markPx ?? midPx ?? midsPrice) : undefined;
-	const spotCirculatingSupply = isSpot
-		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(market))
-		: null;
-	const fundingNum = toBig(funding)?.toNumber() ?? 0;
+	}, [shouldRunFundingCountdown]);
 	const change24h = get24hChange(prevDayPx, displayPrice);
 	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
@@ -135,106 +100,153 @@ export function MobileMarketBar({ className }: Props) {
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
 	const spotTokenAddress = getSpotTokenAddress(market);
+	const spotSocials = getSpotAssetSocials(market);
+	const spotQuoteToken =
+		market?.kind === "spot" ? (market.tokensInfo[1]?.displayName ?? market.tokensInfo[1]?.name ?? "USDC") : "USDC";
+	const spotVolumeText = formatQuoteAmount(dayNtlVlm, spotQuoteToken, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+	const spotMarketCapText = formatQuoteAmount(spotMarketCap, spotQuoteToken, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	});
 
 	return (
 		<div
 			className={cn(
-				"shrink-0 w-full max-w-full min-w-0 overflow-hidden bg-surface border-b border-stroke-weak/60",
+				"w-full max-w-full min-w-0 shrink-0 overflow-hidden border-b border-trading-panel-stroke-row bg-surface font-market-close text-trading-panel-fg",
 				className,
 			)}
 		>
-			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5">
-				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7.5rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
-					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
-						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
+			<div className="min-w-0">
+				<div className="grid min-h-[61px] min-w-0 grid-cols-2 items-center gap-x-4 px-4 py-2.5 max-[360px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] max-[360px]:gap-x-1 max-[360px]:px-2.5">
+					<div className="flex min-w-0 items-center gap-0">
+						<div className="flex shrink-0 [&>span]:size-11 [&_button]:size-11 [&_.relative.inline-flex]:size-7">
+							<MarketAssetInfo key={market?.name} market={market} />
+						</div>
+						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
 					</div>
 
-					<div data-boneyard="market-price" className="min-w-0 text-left">
-						<div className="flex min-w-0 flex-col items-start gap-1">
-							<span
-								key={priceFlash.sequence}
-								data-direction={priceFlash.direction ?? undefined}
-								className={cn(
-									"block truncate font-sans text-base leading-none font-normal text-fg tabular-nums",
-									priceFlash.direction && "use-color-change",
-								)}
-								title={priceText}
-							>
-								{priceText}
-							</span>
-							<div
-								className={cn(
-									"truncate font-sans text-xs leading-none tabular-nums",
-									changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
-										? "invisible text-fg-muted"
-										: changeColorClass,
-								)}
-								title={`${changeAmountText} / ${changePercentText}`}
-							>
-								{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
-									? `${changeAmountText} / ${changePercentText}`
-									: "0.00 / 0.00%"}
+					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
+						<div data-boneyard="market-price" className="min-w-0 text-left">
+							<div className="flex min-w-0 flex-col items-start">
+								<span
+									key={priceFlash.sequence}
+									data-direction={visiblePriceDirection ?? undefined}
+									className={cn(
+										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5",
+										visiblePriceDirection && "use-color-change",
+									)}
+									title={priceText}
+								>
+									{priceText}
+								</span>
+								<div
+									className={cn(
+										"max-w-full whitespace-normal text-[11px] leading-[15px] font-semibold tabular-nums",
+										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+											? "invisible text-trading-panel-subtle"
+											: changeColorClass,
+									)}
+									title={`${changeAmountText} / ${changePercentText}`}
+								>
+									{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+										? `${changeAmountText} / ${changePercentText}`
+										: "0.00 / 0.00%"}
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<button
-						type="button"
-						onClick={() => setExpanded((value) => !value)}
-						className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-fill-weak text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-						aria-expanded={expanded}
-						aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
-					>
-						{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
-					</button>
+						<button
+							type="button"
+							onClick={() => setExpanded((value) => !value)}
+							className={cn(
+								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+								expanded
+									? "border-trading-panel-control text-trading-panel-fg"
+									: "border-trading-panel-stroke-input text-trading-panel-muted",
+							)}
+							aria-expanded={expanded}
+							aria-controls={detailsId}
+							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
+						>
+							<CaretDownIcon
+								className={cn(
+									"size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none",
+									expanded && "rotate-180",
+								)}
+							/>
+						</button>
+					</div>
 				</div>
 
 				{expanded && (
-					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5 pl-8">
+					<div id={detailsId} className="mx-4 border-t border-trading-panel-stroke-row">
 						{!isSpot && (
 							<>
-								<DetailCell
-									label={
-										<>
-											{t`Mark`}/{t`ORACLE`}
-										</>
-									}
-									tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
-									value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
-								/>
-								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-								<DetailCell
-									label={t`OPEN INT`}
-									tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
-									value={formatUSD(oiUsd, { compact: false })}
-								/>
-								<DetailCell
-									label={
-										<>
-											{t`FUNDING`}/{t`Resets in`}
-										</>
-									}
-									tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
-									value={
-										<span className="inline-flex items-center gap-2">
-											<span className={getPriceChangeColorClass(fundingNum)}>
-												{formatPercent(fundingNum, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
-											</span>
-											<span>{formatClockDuration(fundingRemaining)}</span>
-										</span>
-									}
-								/>
+								<div className="grid grid-cols-2 gap-x-4 py-2.5">
+									<DetailCell
+										label={
+											<>
+												{t`Mark`}/{t`ORACLE`}
+											</>
+										}
+										tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
+										value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
+									/>
+									<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+									<DetailCell
+										label={t`OPEN INT`}
+										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
+										value={formatUSD(oiUsd, { compact: false })}
+									/>
+									<DetailCell
+										label={
+											<>
+												{t`FUNDING`}/{t`Resets in`}
+											</>
+										}
+										tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
+										value={
+											fundingNum === null ? (
+												FALLBACK_VALUE_PLACEHOLDER
+											) : (
+												<span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+													<span className={getPriceChangeColorClass(fundingNum)}>
+														{formatPercent(fundingNum, {
+															minimumFractionDigits: 4,
+															signDisplay: "exceptZero",
+														})}
+													</span>
+													<span>{formatClockDuration(fundingRemaining)}</span>
+												</span>
+											)
+										}
+									/>
+								</div>
 							</>
 						)}
 						{isSpot && (
 							<>
-								<DetailCell label={t`Mark`} value={formatDisplayPrice(spotMarkPx, priceDecimals)} />
-								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-								<DetailCell label={t`Market Cap`} value={formatUSD(spotMarketCap, { compact: false })} />
-								<DetailCell
-									label={t`More Info`}
-									value={createSpotTokenInfo(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
-								/>
+								<div className="grid grid-cols-2 gap-x-4 py-2.5">
+									<DetailCell label={t`Price`} value={formatDisplayPrice(displayPrice, priceDecimals)} />
+									<DetailCell label={t`24H VOL`} value={spotVolumeText} />
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+									<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
+									<DetailCell
+										label={t`More Info`}
+										value={createSpotTokenInfo(
+											spotTokenAddress,
+											copiedSpotTokenAddress === spotTokenAddress,
+											copySpotTokenAddress,
+											spotSocials,
+										)}
+									/>
+								</div>
 							</>
 						)}
 					</div>
@@ -244,8 +256,13 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
-function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (value: string) => void) {
-	if (!address) return FALLBACK_VALUE_PLACEHOLDER;
+function createSpotTokenInfo(
+	address: string | null,
+	copied: boolean,
+	onCopy: (value: string) => void,
+	socials: SpotAssetSocials | null,
+) {
+	if (!address && !hasSpotSocialLinks(socials)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	function handleCopy() {
 		if (!address) return;
@@ -253,27 +270,36 @@ function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (v
 	}
 
 	return (
-		<span className="inline-flex min-w-0 max-w-full items-center gap-1">
-			<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
-				{shortenAddress(address, 4, 4)}
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
+			{address ? (
+				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
+					{shortenAddress(address, 4, 4)}
+				</span>
+			) : null}
+			<span data-slot="mobile-spot-token-actions" className="flex min-w-0 max-w-full flex-wrap items-center">
+				{address ? (
+					<>
+						<a
+							href={getExplorerTokenUrl(address)}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={t`Open token in explorer`}
+							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+						>
+							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
+						</a>
+						<button
+							type="button"
+							onClick={handleCopy}
+							aria-label={copied ? t`Copied` : t`Copy token address`}
+							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+						>
+							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+						</button>
+					</>
+				) : null}
+				<SpotMarketSocialIconLinks socials={socials} showTooltips={false} targetSize="touch" />
 			</span>
-			<a
-				href={getExplorerTokenUrl(address)}
-				target="_blank"
-				rel="noopener noreferrer"
-				aria-label={t`Open token in explorer`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-			>
-				<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
-			</a>
-			<button
-				type="button"
-				onClick={handleCopy}
-				aria-label={copied ? t`Copied` : t`Copy token address`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-			</button>
 		</span>
 	);
 }
@@ -288,11 +314,13 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 		if (!trigger || typeof window === "undefined") return;
 
 		const rect = trigger.getBoundingClientRect();
-		const maxWidth = Math.max(0, window.innerWidth - TOOLTIP_VIEWPORT_PADDING_PX * 2);
+		const leftPadding = Math.max(TOOLTIP_VIEWPORT_PADDING_PX, getSafeAreaInset("--sal"));
+		const rightPadding = Math.max(TOOLTIP_VIEWPORT_PADDING_PX, getSafeAreaInset("--sar"));
+		const maxWidth = Math.max(0, window.innerWidth - leftPadding - rightPadding);
 		const width = Math.min(TOOLTIP_WIDTH_PX, maxWidth);
 		const left = Math.min(
-			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, rect.left),
-			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, window.innerWidth - width - TOOLTIP_VIEWPORT_PADDING_PX),
+			Math.max(leftPadding, rect.left),
+			Math.max(leftPadding, window.innerWidth - width - rightPadding),
 		);
 		const belowTop = rect.bottom + TOOLTIP_SIDE_OFFSET_PX;
 		const aboveTop = rect.top - TOOLTIP_ESTIMATED_HEIGHT_PX - TOOLTIP_SIDE_OFFSET_PX;
@@ -361,7 +389,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 
 	return (
 		<div className="min-w-0">
-			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">
+			<div className="text-[10px] leading-4 text-trading-panel-subtle">
 				{tooltipContent ? (
 					<>
 						<button
@@ -372,9 +400,9 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 							onBlur={closeTooltip}
 							onClick={handleTooltipClick}
 							aria-describedby={tooltipPosition ? tooltipId : undefined}
-							className="max-w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-current underline decoration-dashed underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
-							{label}
+							<span className="truncate">{label}</span>
 						</button>
 						{tooltipPosition && createMarketDetailTooltip(tooltipId, tooltipContent, tooltipPosition)}
 					</>
@@ -383,7 +411,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 				)}
 			</div>
 			<div
-				className="truncate text-xs font-semibold leading-5 text-fg tabular-nums"
+				className="whitespace-normal break-words text-[13px] leading-5 font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
 				title={typeof value === "string" ? value : undefined}
 			>
 				{value}
@@ -412,11 +440,6 @@ function createMarketDetailTooltip(id: string, content: ReactNode, position: Too
 	);
 }
 
-function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
-	if (market?.kind !== "spot") return null;
-	return (market as SpotMarketInfo).circulatingSupply;
-}
-
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
 	if (market?.kind !== "spot") return null;
 	const baseToken = market.tokensInfo[0];
@@ -426,25 +449,12 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
-}
-
-function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
-	if (!market) return "";
-	if (market.kind === "spot") return `@${(market as SpotMarketInfo).index}`;
-	return market.name;
-}
-
-function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
-	if (market?.kind !== "builderPerp") return undefined;
-	return { dex: market.dex };
-}
-
-function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {
+function getPriceDecimals(
+	market: UnifiedMarketInfo | undefined,
+	referencePrice: string | number | null | undefined,
+): number {
 	if (!market) return 2;
-	return szDecimalsToPriceDecimals(market.szDecimals);
+	return getTradePriceDecimals(referencePrice, market.szDecimals, market.kind === "spot" ? "spot" : "perp");
 }
 
 function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {
@@ -480,6 +490,6 @@ function formatSignedPercent(value: number | null): string {
 }
 
 function getPriceChangeColorClass(value: number | null): string {
-	if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "text-fg-muted";
-	return value < 0 ? "text-error" : "text-success";
+	if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "text-trading-panel-subtle";
+	return value < 0 ? "text-trading-panel-error" : "text-trading-panel-success";
 }

@@ -1,10 +1,15 @@
 import type { ISubscription, SubscriptionClient } from "@nktkas/hyperliquid";
 import { useRef } from "react";
 import { RingBuffer } from "../internal/circular-buffer/ring-buffer";
-import { useHyperliquid } from "../provider";
 import { serializeKey, subscriptionKeys } from "../query/keys";
-import { getAccumulateConfig, getDefaultThrottle } from "../registries/subscription";
-import type { SubscriptionOptions, SubscriptionResult } from "../types";
+import {
+	createSubscriptionEventAccumulator,
+	getAccumulateConfig,
+	getDefaultThrottle,
+	shouldAcceptSubscriptionEvent,
+} from "../registries/subscription";
+import { useHyperliquidTransport } from "../transport-provider";
+import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import type { SubEvent, SubMethod, SubParams } from "../types/clients";
 import { useSub } from "./utils/useSub";
 
@@ -13,7 +18,7 @@ export function useSubscription<M extends SubMethod>(
 	params: SubParams<M>,
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<SubEvent<M>> {
-	const { subscription } = useHyperliquid();
+	const { subscription } = useHyperliquidTransport();
 	const { refreshKey, ...subscriptionOptions } = options;
 	const baseKey = subscriptionKeys.method(method, params);
 	const key =
@@ -24,19 +29,25 @@ export function useSubscription<M extends SubMethod>(
 
 	const accConfig = getAccumulateConfig(method);
 	const bufferRef = useRef<RingBuffer<unknown> | null>(null);
-	const prevMethodRef = useRef(method);
-	if (accConfig && (!bufferRef.current || prevMethodRef.current !== method)) {
+	const bufferKeyRef = useRef<string | null>(null);
+	if (accConfig && (!bufferRef.current || bufferKeyRef.current !== key)) {
 		bufferRef.current = new RingBuffer(accConfig.buffer);
-		prevMethodRef.current = method;
+		bufferKeyRef.current = key;
+	} else if (!accConfig && bufferRef.current) {
+		bufferRef.current = null;
+		bufferKeyRef.current = null;
 	}
 
 	return useSub(
 		key,
-		(listener: (data: SubEvent<M>) => void) => {
+		(listener: (data: SubEvent<M>) => void, failureOptions?: SubscribeFailureOptions) => {
 			const fn = (subscription as SubscriptionClient)[method] as (...args: unknown[]) => Promise<ISubscription>;
+			const acceptEvent = (event: SubEvent<M>) => shouldAcceptSubscriptionEvent(method, params, event);
+			const eventAccumulator = createSubscriptionEventAccumulator(method);
 
 			if (accConfig) {
 				const wrappedListener = (event: SubEvent<M>) => {
+					if (!acceptEvent(event)) return;
 					const buffer = bufferRef.current;
 					if (!buffer) return;
 					if (accConfig.isSnapshot(event)) {
@@ -46,11 +57,17 @@ export function useSubscription<M extends SubMethod>(
 					listener(accConfig.withItems(event, buffer.getItems()) as SubEvent<M>);
 				};
 				return params !== undefined
-					? fn.call(subscription, params, wrappedListener)
-					: fn.call(subscription, wrappedListener);
+					? fn.call(subscription, params, wrappedListener, failureOptions)
+					: fn.call(subscription, wrappedListener, failureOptions);
 			}
 
-			return params !== undefined ? fn.call(subscription, params, listener) : fn.call(subscription, listener);
+			const filteredListener = (event: SubEvent<M>) => {
+				if (!acceptEvent(event)) return;
+				listener(eventAccumulator?.add(event) ?? event);
+			};
+			return params !== undefined
+				? fn.call(subscription, params, filteredListener, failureOptions)
+				: fn.call(subscription, filteredListener, failureOptions);
 		},
 		mergedOptions,
 	);

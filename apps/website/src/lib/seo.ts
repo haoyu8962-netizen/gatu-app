@@ -73,7 +73,6 @@ export function organizationSchema() {
 		name: SEO_DEFAULTS.siteName,
 		url: SEO_DEFAULTS.siteUrl,
 		logo: new URL("/favicon.svg", SEO_DEFAULTS.siteUrl).toString(),
-		sameAs: [SEO_DEFAULTS.githubUrl],
 	};
 }
 
@@ -99,7 +98,6 @@ export function softwareApplicationSchema() {
 		offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 		isAccessibleForFree: true,
 		image: new URL(SEO_DEFAULTS.ogImage, SEO_DEFAULTS.siteUrl).toString(),
-		sameAs: [SEO_DEFAULTS.githubUrl],
 	};
 }
 
@@ -158,6 +156,18 @@ export function breadcrumbSchema(items: BreadcrumbItem[]) {
 			position: index + 1,
 			name: item.name,
 			item: new URL(item.path, SEO_DEFAULTS.siteUrl).toString(),
+		})),
+	};
+}
+
+export function faqSchema(faqs: ReadonlyArray<{ q: string; a: string }>) {
+	return {
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		mainEntity: faqs.map((f) => ({
+			"@type": "Question",
+			name: f.q,
+			acceptedAnswer: { "@type": "Answer", text: f.a },
 		})),
 	};
 }

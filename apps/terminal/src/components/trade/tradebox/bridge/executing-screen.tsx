@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { BRIDGE_TIMEOUT_MS, LIFI_EXPLORER_URL } from "@/config/bridge";
 import { shortenAddress } from "@/lib/format";
-import { ExplorerLink, HyperCoreUsdcIcon } from "./shared-ui";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { ExplorerLink } from "./shared-ui";
 
 const BRIDGE_MESSAGE_MAX_WIDTH = "max-w-70";
 
@@ -14,9 +15,10 @@ interface Props {
 	statusText: string;
 	txHash: string | null;
 	onDone: () => void;
+	recoveryWarning: string | null;
 }
 
-export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) {
+export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryWarning }: Props) {
 	const [isTimedOut, setIsTimedOut] = useState(false);
 	const startTimeRef = useRef(Date.now());
 
@@ -42,7 +44,11 @@ export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) 
 							<Trans>Taking longer than expected</Trans>
 						</p>
 						<p className={`text-xs text-fg-muted ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
-							<Trans>Your bridge is still processing. Funds are safe.</Trans>
+							{txHash ? (
+								<Trans>Your bridge is still processing. Funds are safe.</Trans>
+							) : (
+								<Trans>Confirm transaction in your wallet</Trans>
+							)}
 						</p>
 					</div>
 					{txHash ? (
@@ -50,10 +56,13 @@ export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) 
 							<Trans>Track on LI.FI Explorer</Trans>
 						</ExplorerLink>
 					) : null}
+					{recoveryWarning ? (
+						<p role="alert" className={`text-xs text-warning ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
+							{recoveryWarning}
+						</p>
+					) : null}
 				</div>
-				<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-					<Trans>Close</Trans>
-				</Button>
+				{recoveryWarning ? null : <ExecutionActions onClose={onDone} />}
 			</div>
 		);
 	}
@@ -113,9 +122,21 @@ export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) 
 				</div>
 			) : null}
 
-			<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-				<Trans>Close</Trans>
-			</Button>
+			{recoveryWarning ? (
+				<p role="alert" className={`text-xs text-center text-warning ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
+					{recoveryWarning}
+				</p>
+			) : (
+				<ExecutionActions onClose={onDone} />
+			)}
 		</div>
+	);
+}
+
+function ExecutionActions({ onClose }: { onClose: () => void }) {
+	return (
+		<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onClose}>
+			<Trans>Close</Trans>
+		</Button>
 	);
 }

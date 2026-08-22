@@ -1,8 +1,6 @@
 export {
 	candleEventToBar,
-	candleEventToKLineData,
 	candleSnapshotToBar,
-	candlesToKLineData,
 	filterAndSortBars,
 } from "./candle";
 export { type CandleInterval, RESOLUTIONS, type ResolutionConfig, resolutionToInterval } from "./resolution";

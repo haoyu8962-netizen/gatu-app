@@ -1,148 +1,121 @@
-import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
-import type { ReactNode } from "react";
-import { createContext, useContext, useRef } from "react";
-import { useStore } from "zustand";
+import type { ContextType, ReactNode } from "react";
+import { useContext, useMemo } from "react";
 import {
-	createWsReconnectTrigger,
-	getHttpTransport,
-	getInfoClient,
-	getSubscriptionClient,
-	getWsTransport,
-	initializeClients,
-} from "./clients";
-import { createHyperliquidConfig } from "./create-config";
-import { ProviderNotFoundError } from "./errors";
-import { registerChaosHarness } from "./internal/websocket/chaos";
-import { registerDebugSnapshot, setDebugStore } from "./internal/websocket/debug";
-import { registerHealthReport } from "./internal/websocket/health";
-import { resolveSession, type SessionMode, useActiveAgentOwner } from "./signing/agent-session";
+	HyperliquidContext,
+	type HyperliquidContextValue,
+	HyperliquidSessionContext,
+	HyperliquidTransportContext,
+} from "./provider-context";
+import { HyperliquidSessionProvider } from "./session-provider";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
-import { createHyperliquidStore, type HyperliquidStore, type HyperliquidStoreState } from "./store";
+import { HyperliquidTransportProvider } from "./transport-provider";
 
-const DIAGNOSTICS_STORAGE_KEY = "hl-diagnostics-enabled";
-
-export interface HyperliquidContextValue {
-	info: InfoClient;
-	subscription: SubscriptionClient;
-	env: HyperliquidEnv;
-	isTestnet: boolean;
-	builderConfig: BuilderConfig;
-	agentName: string;
-	clientKey: string;
-	sessionMode: SessionMode;
-}
-
-export const HyperliquidContext = createContext<HyperliquidContextValue | null>(null);
-export const HyperliquidStoreContext = createContext<HyperliquidStore | null>(null);
+export type {
+	HyperliquidContextValue,
+	HyperliquidSessionContextValue,
+	HyperliquidTransportContextValue,
+} from "./provider-context";
+export { HyperliquidContext, HyperliquidSessionContext, HyperliquidTransportContext } from "./provider-context";
+export { HyperliquidSessionProvider, type HyperliquidSessionProviderProps } from "./session-provider";
+export {
+	HyperliquidStoreContext,
+	HyperliquidTransportProvider,
+	type HyperliquidTransportProviderProps,
+	useConfig,
+	useHyperliquidStore,
+	useHyperliquidStoreApi,
+	useHyperliquidTransport,
+} from "./transport-provider";
 
 export interface HyperliquidProviderProps {
 	children: ReactNode;
 	env: HyperliquidEnv;
 	userAddress: `0x${string}` | undefined;
+	allowAgentOnlySession?: boolean;
 	builderConfig: BuilderConfig;
 	agentName?: string;
-}
-
-function shouldExposeDiagnostics(): boolean {
-	if (import.meta.env.DEV) return true;
-	if (typeof window === "undefined") return false;
-
-	try {
-		const params = new URLSearchParams(window.location.search);
-		const diagnosticsFlag = params.get("hl_diagnostics");
-
-		if (diagnosticsFlag === "1" || diagnosticsFlag === "true") {
-			return true;
-		}
-
-		if (diagnosticsFlag === "0" || diagnosticsFlag === "false") {
-			return false;
-		}
-
-		return window.localStorage.getItem(DIAGNOSTICS_STORAGE_KEY) === "1";
-	} catch {
-		return false;
-	}
+	enforceLegalActions?: boolean;
+	onAgentCleanupFailure?: (failure: { env: HyperliquidEnv; owner: `0x${string}`; reason: string }) => void;
 }
 
 export function HyperliquidProvider({
 	children,
 	env,
 	userAddress,
+	allowAgentOnlySession = true,
 	builderConfig,
 	agentName = "app",
+	enforceLegalActions = false,
+	onAgentCleanupFailure,
 }: HyperliquidProviderProps) {
-	const isTestnet = env === "Testnet";
-
-	const initRef = useRef(false);
-	if (!initRef.current) {
-		initializeClients(isTestnet);
-		initRef.current = true;
-	}
-
-	const storeRef = useRef<HyperliquidStore | null>(null);
-	if (!storeRef.current) {
-		storeRef.current = createHyperliquidStore(
-			createHyperliquidConfig({
-				httpTransport: getHttpTransport(isTestnet),
-				wsTransport: getWsTransport(isTestnet),
-				ssr: false,
-				triggerReconnect: createWsReconnectTrigger(isTestnet),
-			}),
-		);
-		setDebugStore(storeRef.current);
-		if (import.meta.env.DEV) registerChaosHarness(storeRef.current);
-		if (shouldExposeDiagnostics()) {
-			registerDebugSnapshot(storeRef.current);
-			registerHealthReport(storeRef.current);
-		}
-	}
-
-	const activeAgentOwner = useActiveAgentOwner();
-	const { clientKey, sessionMode } = resolveSession(userAddress, activeAgentOwner, env);
-
-	const value = {
-		info: getInfoClient(isTestnet),
-		subscription: getSubscriptionClient(isTestnet),
-		env,
-		isTestnet,
-		builderConfig,
-		agentName,
-		clientKey,
-		sessionMode,
-	};
-
 	return (
-		<HyperliquidStoreContext.Provider value={storeRef.current}>
-			<HyperliquidContext.Provider value={value}>{children}</HyperliquidContext.Provider>
-		</HyperliquidStoreContext.Provider>
+		<HyperliquidTransportProvider env={env}>
+			<HyperliquidSessionProvider
+				userAddress={userAddress}
+				allowAgentOnlySession={allowAgentOnlySession}
+				builderConfig={builderConfig}
+				agentName={agentName}
+				enforceLegalActions={enforceLegalActions}
+				onAgentCleanupFailure={onAgentCleanupFailure}
+			>
+				<HyperliquidContextBridge>{children}</HyperliquidContextBridge>
+			</HyperliquidSessionProvider>
+		</HyperliquidTransportProvider>
 	);
 }
 
-export function useHyperliquid(): HyperliquidContextValue {
-	const context = useContext(HyperliquidContext);
-	if (!context) {
-		throw new Error("useHyperliquid must be used within a HyperliquidProvider");
+function HyperliquidContextBridge({ children }: { children: ReactNode }) {
+	const transportContext = useContext(HyperliquidTransportContext);
+	const sessionContext = useContext(HyperliquidSessionContext);
+	if (!transportContext || !sessionContext) {
+		throw new Error("HyperliquidContextBridge must be used within the split Hyperliquid providers");
 	}
-	return context;
+	return (
+		<HyperliquidContext.Provider value={combineHyperliquidContexts(transportContext, sessionContext)}>
+			{children}
+		</HyperliquidContext.Provider>
+	);
+}
+
+function combineHyperliquidContexts(
+	transportContext: NonNullable<ContextType<typeof HyperliquidTransportContext>>,
+	sessionContext: NonNullable<ContextType<typeof HyperliquidSessionContext>>,
+): HyperliquidContextValue {
+	return {
+		info: transportContext.info,
+		subscription: transportContext.subscription,
+		env: transportContext.env,
+		isTestnet: transportContext.isTestnet,
+		builderConfig: sessionContext.builderConfig,
+		agentName: sessionContext.agentName,
+		clientKey: sessionContext.clientKey,
+		sessionMode: sessionContext.sessionMode,
+		exchangeLifecycle: sessionContext.exchangeLifecycle,
+		enforceLegalActions: sessionContext.enforceLegalActions,
+	};
+}
+
+export function useHyperliquid(): HyperliquidContextValue {
+	const transportContext = useContext(HyperliquidTransportContext);
+	const sessionContext = useContext(HyperliquidSessionContext);
+	const legacyContext = useContext(HyperliquidContext);
+	const splitContext = useMemo(
+		() => (transportContext && sessionContext ? combineHyperliquidContexts(transportContext, sessionContext) : null),
+		[transportContext, sessionContext],
+	);
+	if (legacyContext) return legacyContext;
+	if (splitContext) return splitContext;
+	throw new Error("useHyperliquid must be used within a HyperliquidProvider");
 }
 
 export function useHyperliquidOptional(): HyperliquidContextValue | null {
-	return useContext(HyperliquidContext);
-}
-
-export function useHyperliquidStoreApi() {
-	const store = useContext(HyperliquidStoreContext);
-	if (!store) {
-		throw new ProviderNotFoundError();
-	}
-	return store;
-}
-
-export function useHyperliquidStore<T>(selector: (state: HyperliquidStoreState) => T): T {
-	return useStore(useHyperliquidStoreApi(), selector);
-}
-
-export function useConfig() {
-	return useHyperliquidStore((state) => state.config);
+	const transportContext = useContext(HyperliquidTransportContext);
+	const sessionContext = useContext(HyperliquidSessionContext);
+	const legacyContext = useContext(HyperliquidContext);
+	const splitContext = useMemo(
+		() => (transportContext && sessionContext ? combineHyperliquidContexts(transportContext, sessionContext) : null),
+		[transportContext, sessionContext],
+	);
+	if (legacyContext) return legacyContext;
+	return splitContext;
 }

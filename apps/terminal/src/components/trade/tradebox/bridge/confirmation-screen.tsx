@@ -10,13 +10,22 @@ import {
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import Big from "big.js";
+import { useEffect, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { formatSendAmount, formatTokenAmount } from "@/lib/bridge/format";
 import { formatDuration, formatUSD, shortenAddress } from "@/lib/format";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
-import { type BridgeQuote, useBridgeQuote } from "@/lib/lifi/use-quote";
-import { HyperCoreUsdcIcon, QuoteCountdown, TokenIcon } from "./shared-ui";
+import {
+	type BridgeQuote,
+	getBridgeQuoteErrorKind,
+	getBridgeQuoteRemainingSeconds,
+	isBridgeQuoteWorse,
+	useBridgeQuote,
+} from "@/lib/lifi/use-quote";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { HyperCoreUsdcIcon } from "../hypercore-usdc-icon";
+import { QuoteCountdown, TokenIcon } from "./shared-ui";
 
 interface Props {
 	token: BridgeToken;
@@ -26,7 +35,13 @@ interface Props {
 	onConfirm: (quote: BridgeQuote) => void;
 }
 
+type QuoteFeedback = "expired" | "refresh-error" | "updated" | "amount-too-low" | "fees-exceed-amount" | "unavailable";
+
 export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: Props) {
+	useNumberFormatRevision();
+	const [currentTime, setCurrentTime] = useState(Date.now);
+	const [isConfirming, setIsConfirming] = useState(false);
+	const [feedback, setFeedback] = useState<{ kind: QuoteFeedback; dataUpdatedAt: number } | null>(null);
 	const quoteParams = {
 		fromChainId: token.chainId,
 		fromTokenAddress: token.address,
@@ -35,8 +50,83 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 		amount: tokenAmount,
 	};
 
-	const { data: quote, isLoading: quoteLoading, isError: quoteError, dataUpdatedAt } = useBridgeQuote(quoteParams);
-	const showQuoteError = quoteError && !quote;
+	const {
+		data: quote,
+		isLoading: quoteLoading,
+		isError: quoteError,
+		error: quoteQueryError,
+		dataUpdatedAt,
+		refetch,
+	} = useBridgeQuote(quoteParams);
+	const remainingSeconds = quote ? getBridgeQuoteRemainingSeconds(dataUpdatedAt, currentTime) : 0;
+	const quoteExpired = !!quote && remainingSeconds === 0;
+	const currentFeedback = feedback?.dataUpdatedAt === dataUpdatedAt ? feedback.kind : null;
+	let notice: QuoteFeedback | null = currentFeedback;
+	if (!notice && quoteError && (!quote || quoteExpired)) notice = getBridgeQuoteErrorKind(quoteQueryError);
+	if (!notice && quoteExpired) notice = "expired";
+
+	useEffect(() => {
+		if (!quote) return;
+		setCurrentTime(Date.now());
+		const interval = window.setInterval(() => setCurrentTime(Date.now()), 1000);
+		return () => window.clearInterval(interval);
+	}, [quote]);
+
+	async function handleConfirm() {
+		if (!quote || isConfirming) return;
+		const wasExpired = quoteExpired;
+		setIsConfirming(true);
+		setFeedback(null);
+
+		try {
+			const result = await refetch();
+			if (result.isError || !result.data) {
+				setFeedback({ kind: "refresh-error", dataUpdatedAt });
+				return;
+			}
+			if (wasExpired) return;
+			if (isBridgeQuoteWorse(quote, result.data)) {
+				setFeedback({ kind: "updated", dataUpdatedAt: result.dataUpdatedAt });
+				return;
+			}
+			onConfirm(result.data);
+		} catch {
+			setFeedback({ kind: "refresh-error", dataUpdatedAt });
+		} finally {
+			setIsConfirming(false);
+		}
+	}
+
+	const noticeContent = (() => {
+		switch (notice) {
+			case "expired":
+				return <Trans>Quote expired. Refresh it before confirming.</Trans>;
+			case "refresh-error":
+				return <Trans>Quote refresh failed. Try again before confirming.</Trans>;
+			case "updated":
+				return <Trans>Quote updated. Review the new amount before confirming.</Trans>;
+			case "amount-too-low":
+				return <Trans>Amount is too low for the available bridge routes.</Trans>;
+			case "fees-exceed-amount":
+				return <Trans>Fees are higher than the bridge amount.</Trans>;
+			case "unavailable":
+				return <Trans>No route available. Try a different amount or asset.</Trans>;
+			default:
+				return null;
+		}
+	})();
+	const confirmButtonContent = (() => {
+		if (quoteLoading || isConfirming) {
+			return (
+				<>
+					<SpinnerGapIcon className="size-4 animate-spin" />
+					<Trans>Preparing your quote...</Trans>
+				</>
+			);
+		}
+		if (quoteExpired) return <Trans>Refresh quote</Trans>;
+		return <Trans>Confirm</Trans>;
+	})();
 
 	const usdDisplay = (() => {
 		try {
@@ -61,7 +151,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 						<ArrowLeftIcon className="size-3" />
 						<Trans>Back</Trans>
 					</button>
-					{quote ? <QuoteCountdown dataUpdatedAt={dataUpdatedAt} /> : null}
+					{quote ? <QuoteCountdown remaining={remainingSeconds} /> : null}
 				</div>
 
 				<p className="text-4xl font-semibold text-fg tabular-nums text-center py-2">{usdDisplay}</p>
@@ -137,12 +227,10 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 				</Collapsible>
 			) : null}
 
-			{showQuoteError ? (
+			{noticeContent ? (
 				<div className="flex items-center gap-2 rounded-8 border border-stroke-error-strong/30 bg-error-soft p-2.5">
 					<WarningCircleIcon className="size-4 text-error shrink-0" />
-					<span className="text-xs text-error">
-						<Trans>No route available. Try a different amount or asset.</Trans>
-					</span>
+					<span className="text-xs text-error">{noticeContent}</span>
 				</div>
 			) : null}
 
@@ -151,17 +239,10 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 				intent="brand"
 				size="lg"
 				className="w-full mt-auto"
-				disabled={!quote || quoteLoading}
-				onClick={() => quote && onConfirm(quote)}
+				disabled={!quote || quoteLoading || isConfirming}
+				onClick={() => void handleConfirm()}
 			>
-				{quoteLoading ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin" />
-						<Trans>Preparing your quote...</Trans>
-					</>
-				) : (
-					<Trans>Confirm</Trans>
-				)}
+				{confirmButtonContent}
 			</Button>
 		</div>
 	);

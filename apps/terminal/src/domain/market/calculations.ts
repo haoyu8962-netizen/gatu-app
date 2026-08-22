@@ -43,6 +43,35 @@ export function get24hChange(prevDayPx: Numeric, markPx: Numeric): number | null
 	return mark.minus(prev).div(prev).times(100).toNumber();
 }
 
+export function get24hPriceChange(prevDayPx: Numeric, markPx: Numeric): number | null {
+	const prev = toBig(prevDayPx);
+	const mark = toBig(markPx);
+	if (!prev || !mark) return null;
+	return mark.minus(prev).toNumber();
+}
+
+export function getEightHourFundingRate(fundingRate: Numeric): number | null {
+	const funding = toBig(fundingRate);
+	if (!funding) return null;
+	return funding.times(8).toNumber();
+}
+
+export interface FundingPeriodRates {
+	sevenDays: string;
+	thirtyDays: string;
+	oneYear: string;
+}
+
+export function getFundingPeriodRates(fundingRate: Numeric): FundingPeriodRates | null {
+	const funding = toBig(fundingRate);
+	if (!funding) return null;
+	return {
+		sevenDays: funding.times(24 * 7).toFixed(),
+		thirtyDays: funding.times(24 * 30).toFixed(),
+		oneYear: funding.times(24 * 365).toFixed(),
+	};
+}
+
 export function getOiUsd(openInterest: Numeric, markPx: Numeric): number | null {
 	const oi = toBig(openInterest);
 	const px = toBig(markPx);

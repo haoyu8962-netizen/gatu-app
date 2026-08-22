@@ -18,8 +18,10 @@ export const WS_RELIABILITY_LIMITS = {
 	payload: {
 		defaultMaxBytes: 256 * 1024,
 		perMethodMaxBytes: {
+			l2: 1024 * 1024,
 			l2Book: 1024 * 1024,
 			allMids: 512 * 1024,
+			fastAssetCtxs: 512 * 1024,
 			allDexsAssetCtxs: 512 * 1024,
 			assetCtxs: 512 * 1024,
 			trades: 384 * 1024,
@@ -28,31 +30,41 @@ export const WS_RELIABILITY_LIMITS = {
 	cache: {
 		maxChartLastBarEntries: 256,
 	},
+	transport: {
+		// The SDK pings every 30s. A 45s all-message silence therefore means
+		// neither market data nor the expected pong reached this client.
+		inactivityThresholdMs: 45_000,
+		checkIntervalMs: 5_000,
+	},
 	staleness: {
 		checkIntervalMs: 5_000,
-		defaultThresholdMs: 30_000,
+		// Public l2Book snapshots arrive around every 5s by default. The
+		// incremental l2 channel and l2Book fast mode arrive around every 0.5s.
+		// Allow several missed snapshots before recovery.
+		l2BookFastThresholdMs: 3_000,
 		perMethodThresholdMs: {
-			l2Book: 20_000,
-			trades: 20_000,
+			l2: 3_000,
+			l2Book: 15_000,
 			allMids: 20_000,
-			candle: 20_000,
-			activeAssetCtx: 20_000,
-			activeSpotAssetCtx: 20_000,
+			activeAssetCtx: 10_000,
+			activeSpotAssetCtx: 10_000,
 			activeAssetData: 20_000,
+			fastAssetCtxs: 10_000,
 			allDexsAssetCtxs: 20_000,
 			spotAssetCtxs: 20_000,
 			assetCtxs: 20_000,
-			orderUpdates: 60_000,
-			webData2: 60_000,
 			webData3: 60_000,
 			allDexsClearinghouseState: 60_000,
+			spotState: 60_000,
+			clearinghouseState: 60_000,
+			openOrders: 60_000,
+			twapStates: 60_000,
 		},
 	},
 } as const;
 
 const USER_STREAM_METHODS = new Set([
 	"orderUpdates",
-	"webData2",
 	"webData3",
 	"allDexsClearinghouseState",
 	"spotState",
@@ -67,11 +79,27 @@ const USER_STREAM_METHODS = new Set([
 	"userTwapSliceFills",
 ]);
 
+const NON_PERIODIC_METHODS = new Set([
+	"notification",
+	"bbo",
+	"trades",
+	"candle",
+	"orderUpdates",
+	"userEvents",
+	"userFills",
+	"userFundings",
+	"userHistoricalOrders",
+	"userNonFundingLedgerUpdates",
+	"userTwapHistory",
+	"userTwapSliceFills",
+]);
+
 // Union of methods we explicitly classify. Anything outside this list falls
 // through to "market stream" behavior (pause-and-buffer on hidden). We emit a
 // one-shot dev warning so new SDK methods don't silently land on that path.
 const KNOWN_METHODS = new Set<string>([
 	...USER_STREAM_METHODS,
+	...NON_PERIODIC_METHODS,
 	...Object.keys(WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs),
 ]);
 const warnedUnknownMethods = new Set<string>();
@@ -122,6 +150,10 @@ export function isUserStreamKey(key: string): boolean {
 	return false;
 }
 
+export function shouldDropOversizedPayloadForSubscriptionKey(key: string): boolean {
+	return !isUserStreamKey(key);
+}
+
 export function getReconnectDelayMs(attempt: number): number {
 	const exponent = Math.max(0, attempt - 1);
 	const baseDelay = Math.min(
@@ -139,12 +171,27 @@ export function getSdkReconnectionDelayMs(attempt: number): number {
 	return Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
 }
 
-export function getStalenessThresholdForKey(key: string): number {
+export function getSubscriptionMethodForKey(key: string): string | undefined {
 	const parsed = parseKey(key);
-	const fallback = WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
-	if (!parsed || parsed.method === undefined) return fallback;
+	return parsed?.method;
+}
+
+export function getStalenessThresholdForKey(key: string): number | null {
+	const parsed = parseKey(key);
+	const method = parsed?.method;
+	if (!method) return null;
+	if (
+		method === "l2Book" &&
+		parsed.params !== null &&
+		typeof parsed.params === "object" &&
+		!Array.isArray(parsed.params) &&
+		"fast" in parsed.params &&
+		parsed.params.fast === true
+	) {
+		return WS_RELIABILITY_LIMITS.staleness.l2BookFastThresholdMs;
+	}
 	const table = WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs;
-	return table[parsed.method as keyof typeof table] ?? fallback;
+	return table[method as keyof typeof table] ?? null;
 }
 
 export function getPayloadLimitBytesForSubscriptionKey(key: string): number {

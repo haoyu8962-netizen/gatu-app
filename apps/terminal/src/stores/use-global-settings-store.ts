@@ -1,26 +1,36 @@
-import { i18n } from "@lingui/core";
+import Big from "big.js";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { STORAGE_KEYS } from "@/config/app";
-import { type LocaleCode, type NumberFormatLocale, resolveNumberFormatLocale } from "@/config/i18n";
+import {
+	defaultNumberFormatLocale,
+	type NumberFormatLocale,
+	normalizeNumberFormatLocale,
+	resolveNumberFormatLocale,
+} from "@/config/i18n";
 import {
 	DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 } from "@/config/trade";
-import type { Network } from "@/lib/network";
+import { getNetwork, type Network, subscribeNetworkStorage, switchNetwork } from "@/lib/network";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 
 type Theme = "dark" | "light";
+
+const THEME_TRANSITION_GUARD_ATTRIBUTE = "data-theme-transition";
+let themeTransitionReleaseFrame: number | undefined;
 
 const globalSettingsSchema = z.object({
 	state: z.object({
 		hideSmallBalances: z.boolean().optional(),
 		showOrderbookInQuote: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
+		skipOrderConfirmation: z.boolean().optional(),
 		numberFormatLocale: z.string().optional(),
 		marketOrderSlippagePercent: z.number().optional(),
 		marginMode: z.enum(["cross", "isolated"]).optional(),
@@ -37,19 +47,21 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
 	showOrderbookInQuote: false,
 	showChartScanlines: false,
-	numberFormatLocale: "auto" as NumberFormatLocale,
+	skipOrderConfirmation: false,
+	numberFormatLocale: defaultNumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
 	positionsActiveTab: "positions",
 	mobileActiveTab: "trade",
 	theme: "dark" as Theme,
-	network: "mainnet" as Network,
+	network: getNetwork(),
 } as const;
 
 interface GlobalSettingsStore {
 	hideSmallBalances: boolean;
 	showOrderbookInQuote: boolean;
 	showChartScanlines: boolean;
+	skipOrderConfirmation: boolean;
 	numberFormatLocale: NumberFormatLocale;
 	marketOrderSlippagePercent: number;
 	marginMode: MarginMode;
@@ -61,8 +73,9 @@ interface GlobalSettingsStore {
 		setHideSmallBalances: (next: boolean) => void;
 		setShowOrderbookInQuote: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
+		setSkipOrderConfirmation: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
-		setMarketOrderSlippagePercent: (percent: number) => void;
+		setMarketOrderSlippagePercent: (percent: number) => number;
 		setMarginMode: (mode: MarginMode) => void;
 		setPositionsActiveTab: (tab: string) => void;
 		setMobileActiveTab: (tab: string) => void;
@@ -79,20 +92,26 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setHideSmallBalances: (next) => set({ hideSmallBalances: next }),
 				setShowOrderbookInQuote: (next) => set({ showOrderbookInQuote: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
+				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
 				setMarketOrderSlippagePercent: (percent) => {
+					const current = get().marketOrderSlippagePercent;
+					if (!Number.isFinite(percent)) return current;
 					const next = Math.min(
 						Math.max(percent, MARKET_ORDER_SLIPPAGE_MIN_PERCENT),
 						MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 					);
-					if (get().marketOrderSlippagePercent === next) return;
+					if (current === next) return next;
 					set({ marketOrderSlippagePercent: next });
+					return next;
 				},
 				setMarginMode: (mode) => set({ marginMode: mode }),
 				setPositionsActiveTab: (tab) => set({ positionsActiveTab: tab }),
 				setMobileActiveTab: (tab) => set({ mobileActiveTab: tab }),
 				setTheme: (theme) => set({ theme }),
 				setNetwork: (network) => {
+					const result = switchNetwork(network);
+					if (result !== "persisted") return;
 					set({ network });
 					if (typeof window !== "undefined") window.location.reload();
 				},
@@ -100,26 +119,39 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 		}),
 		{
 			name: STORAGE_KEYS.GLOBAL_SETTINGS,
-			version: 2,
+			version: 4,
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
 				showOrderbookInQuote: state.showOrderbookInQuote,
 				showChartScanlines: state.showChartScanlines,
-				numberFormatLocale: state.numberFormatLocale,
+				skipOrderConfirmation: state.skipOrderConfirmation,
+				...(state.numberFormatLocale === defaultNumberFormatLocale
+					? {}
+					: { numberFormatLocale: state.numberFormatLocale }),
 				marketOrderSlippagePercent: state.marketOrderSlippagePercent,
 				marginMode: state.marginMode,
 				positionsActiveTab: state.positionsActiveTab,
 				mobileActiveTab: state.mobileActiveTab,
 				theme: state.theme,
-				network: state.network,
 			}),
+			migrate: (persisted) => {
+				const state = persisted as Partial<GlobalSettingsStore>;
+				return {
+					...state,
+					numberFormatLocale: normalizeNumberFormatLocale(state.numberFormatLocale),
+				};
+			},
 			merge: (persisted, current) => {
 				const p = persisted as Partial<GlobalSettingsStore>;
 				const showOrderbookInQuote =
 					typeof p.showOrderbookInQuote === "boolean"
 						? p.showOrderbookInQuote
 						: DEFAULT_GLOBAL_SETTINGS.showOrderbookInQuote;
+				const skipOrderConfirmation =
+					typeof p.skipOrderConfirmation === "boolean"
+						? p.skipOrderConfirmation
+						: DEFAULT_GLOBAL_SETTINGS.skipOrderConfirmation;
 				const slippagePercent = Math.min(
 					Math.max(
 						p?.marketOrderSlippagePercent ?? DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
@@ -131,27 +163,77 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...current,
 					...DEFAULT_GLOBAL_SETTINGS,
 					...p,
+					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
 					showOrderbookInQuote,
+					skipOrderConfirmation,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p?.theme === "light" ? "light" : "dark",
-					network: p?.network === "testnet" ? "testnet" : "mainnet",
+					network: getNetwork(),
 				};
 			},
 		},
 	),
 );
 
-function applyThemeClass(theme: Theme) {
+function suppressThemeTransitions(root: HTMLElement) {
+	root.setAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE, "");
+	const view = root.ownerDocument.defaultView;
+	if (!view || typeof view.requestAnimationFrame !== "function") {
+		root.removeAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE);
+		return;
+	}
+
+	if (themeTransitionReleaseFrame !== undefined) {
+		view.cancelAnimationFrame(themeTransitionReleaseFrame);
+	}
+	themeTransitionReleaseFrame = view.requestAnimationFrame(() => {
+		themeTransitionReleaseFrame = view.requestAnimationFrame(() => {
+			root.removeAttribute(THEME_TRANSITION_GUARD_ATTRIBUTE);
+			themeTransitionReleaseFrame = undefined;
+		});
+	});
+}
+
+// Keeps <html class> in sync with the persisted theme, re-asserting past any document-shell
+// re-render (React re-acquiring the <html> singleton writes back the SSR default) via a
+// MutationObserver. The idempotent `contains` guard makes it settle in one pass.
+function applyThemeClass(theme: Theme, suppressTransitions = false) {
 	if (typeof document === "undefined") return;
 	const root = document.documentElement;
+	const other = theme === "dark" ? "light" : "dark";
+	if (root.classList.contains(theme) && !root.classList.contains(other)) return;
+	if (suppressTransitions) suppressThemeTransitions(root);
 	root.classList.remove("light", "dark");
 	root.classList.add(theme);
 }
 
-applyThemeClass(useGlobalSettingsStore.getState().theme);
+function syncDocumentTheme() {
+	applyThemeClass(useGlobalSettingsStore.getState().theme);
+}
+
+const globalScope = globalThis as { __gatuThemeDocSync?: boolean };
+if (typeof document !== "undefined" && !globalScope.__gatuThemeDocSync) {
+	globalScope.__gatuThemeDocSync = true;
+	syncDocumentTheme();
+	new MutationObserver(() => applyThemeClass(useGlobalSettingsStore.getState().theme, true)).observe(
+		document.documentElement,
+		{
+			attributes: true,
+			attributeFilter: ["class"],
+		},
+	);
+}
+
 useGlobalSettingsStore.subscribe((state, prev) => {
-	if (state.theme !== prev.theme) applyThemeClass(state.theme);
+	if (state.theme !== prev.theme) applyThemeClass(state.theme, true);
+	if (state.numberFormatLocale !== prev.numberFormatLocale) notifyNumberFormatChange();
+});
+
+subscribeNetworkStorage((network) => {
+	if (useGlobalSettingsStore.getState().network === network) return;
+	useGlobalSettingsStore.setState({ network });
+	window.location.reload();
 });
 
 export function useTheme() {
@@ -181,21 +263,36 @@ export function useMarketOrderSlippagePercent() {
 	return useGlobalSettingsStore((state) => state.marketOrderSlippagePercent);
 }
 
+export function marketOrderSlippagePercentToBpsString(percent: number): string {
+	return Big(String(percent)).times(100).toString();
+}
+
+export function useMarketOrderSlippageBpsString(): string {
+	return useGlobalSettingsStore((state) => marketOrderSlippagePercentToBpsString(state.marketOrderSlippagePercent));
+}
+
 export function useMarketOrderSlippageBps() {
-	return useGlobalSettingsStore((state) => state.marketOrderSlippagePercent * 100);
+	return Number(useMarketOrderSlippageBpsString());
+}
+
+export function useSkipOrderConfirmation() {
+	return useGlobalSettingsStore((state) => state.skipOrderConfirmation);
+}
+
+export function getSkipOrderConfirmation(): boolean {
+	return useGlobalSettingsStore.getState().skipOrderConfirmation;
 }
 
 export function useMarginMode() {
 	return useGlobalSettingsStore((state) => state.marginMode);
 }
 
-export function useResolvedFormatLocale(): string {
-	const numberFormatLocale = useGlobalSettingsStore((state) => state.numberFormatLocale);
-	return resolveNumberFormatLocale(numberFormatLocale, i18n.locale as LocaleCode);
+export function getResolvedFormatLocale(): string {
+	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale);
 }
 
-export function getResolvedFormatLocale(): string {
-	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale, i18n.locale as LocaleCode);
+export function getNumberFormatLocale(): NumberFormatLocale {
+	return useGlobalSettingsStore.getState().numberFormatLocale;
 }
 
 export function useHideSmallBalances() {
