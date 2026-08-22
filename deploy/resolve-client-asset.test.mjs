@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import { resolveReachableClientAsset } from "./resolve-client-asset.mjs";
 
 const BASE_URL = "http://127.0.0.1:3000";
@@ -233,14 +234,9 @@ test("rejects non-asset module URLs in the HTML", async () => {
 });
 
 test("applies one overall deadline across the graph", async () => {
-	const fetchImpl = (_input, { signal }) =>
-		new Promise((_resolve, reject) => {
-			if (signal.aborted) {
-				reject(signal.reason);
-				return;
-			}
-			signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-		});
+	const fetchImpl = async (_input, { signal }) => {
+		await delay(1_000, undefined, { ref: true, signal });
+	};
 
 	await assert.rejects(
 		resolveReachableClientAsset({
