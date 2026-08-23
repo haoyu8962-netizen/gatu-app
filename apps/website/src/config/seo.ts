@@ -10,7 +10,7 @@ export const SEO_DEFAULTS = {
 	ogImage: "/og-website-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
-	ogImageAlt: "GATU：链上交易的入口，永续与现货直达链上",
+	ogImageAlt: "GATU — Gateway to on-chain transactions",
 	logoImage: "/gatu-logo-1024.png",
 } as const;
 
