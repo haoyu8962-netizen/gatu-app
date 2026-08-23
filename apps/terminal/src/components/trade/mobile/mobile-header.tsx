@@ -2,6 +2,7 @@ import { ButtonIcon } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
+import { GatuLogo } from "@/components/brand/gatu-logo";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
@@ -33,10 +34,10 @@ export function MobileHeader({ className }: Props) {
 					<Link
 						to={tradeHomePath}
 						search={{ scope: "all" }}
-						aria-label="gatu"
+						aria-label="GATU"
 						className="rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					>
-						<span className="text-2sm font-bold tracking-wide text-trading-panel-fg">GATU</span>
+						<GatuLogo variant="wordmark" className="h-[10px] w-auto" />
 					</Link>
 				</div>
 

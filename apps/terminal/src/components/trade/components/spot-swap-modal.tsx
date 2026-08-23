@@ -396,7 +396,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 										size="sm"
 										onClick={handleFlip}
 										disabled={isDisabled}
-										className="size-8 rounded-full bg-background border-stroke-weak hover:border-stroke-brand-strong hover:bg-fill-hover transition-colors"
+										className="size-8 rounded-full bg-background border-stroke-weak hover:border-stroke-action hover:bg-fill-hover transition-colors"
 										aria-label={t`Swap direction`}
 									>
 										<ArrowsDownUpIcon className="size-3.5" />

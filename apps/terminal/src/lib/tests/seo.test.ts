@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildPageHead, buildRootHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
+import { ROUTE_SEO } from "@/config/seo";
+import { buildMarketDocumentTitle, buildPageHead, buildRootHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
@@ -28,6 +29,28 @@ describe("seo", () => {
 		expect(canonical?.href).toBe(`${SEO_DEFAULTS.siteUrl}/trade`);
 	});
 
+	it("keeps the Terminal document and social titles distinct", () => {
+		const head = buildPageHead(ROUTE_SEO.TRADE);
+
+		expect(head.meta.find((meta) => meta.title)?.title).toBe("GATU Terminal — 永续 · 现货交易终端");
+		expect(getMetaContent(head, "name", "description")).toBe("低延迟链上交易终端：永续、现货、组合与订单管理。");
+		expect(getMetaContent(head, "property", "og:title")).toBe("GATU Terminal");
+		expect(getMetaContent(head, "name", "twitter:title")).toBe("GATU Terminal");
+		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.gatu.ai/og-terminal-1200x630.png");
+	});
+
+	it("formats live market titles with the price first", () => {
+		expect(buildMarketDocumentTitle("0.8471", "GTU-USDC")).toBe("0.8471 GTU/USDC · GATU");
+		expect(buildMarketDocumentTitle("0.8471", "GTU/USDC")).toBe("0.8471 GTU/USDC · GATU");
+	});
+
+	it("keeps route-specific social titles when no override is provided", () => {
+		const head = buildPageHead({ title: "Portfolio", path: "/portfolio" });
+
+		expect(getMetaContent(head, "property", "og:title")).toBe("Portfolio | GATU");
+		expect(getMetaContent(head, "name", "twitter:title")).toBe("Portfolio | GATU");
+	});
+
 	it("keeps canonical links route-owned so only one is rendered", () => {
 		const rootHead = buildRootHead();
 		const routeHead = buildPageHead({ path: "/terms" });
@@ -43,6 +66,18 @@ describe("seo", () => {
 			{ rel: "preload", href: "/fonts/plex-latin.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
 		]);
 		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
+	});
+
+	it("publishes the dedicated vector favicon alongside ICO and Apple fallbacks", () => {
+		const iconLinks = buildRootHead().links.filter((link) => link.rel === "icon" || link.rel === "apple-touch-icon");
+		expect(iconLinks).toEqual([
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
+			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
+			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+		]);
+		for (const link of iconLinks) {
+			expect(readFileSync(resolve(TERMINAL_ROOT, "public", link.href.slice(1))).byteLength).toBeGreaterThan(0);
+		}
 	});
 
 	it("builds a complete large social card without a stale Twitter account", () => {

@@ -367,7 +367,7 @@ function VaultMobileCard({
 					suffix={age === null ? undefined : <Trans>days</Trans>}
 				/>
 			</dl>
-			<div className="mt-2 text-brand">
+			<div className="mt-2 text-signal">
 				<VaultPerformanceChart snapshot={snapshot} kind="pnl" compact />
 			</div>
 		</Link>

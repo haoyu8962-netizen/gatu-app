@@ -122,7 +122,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 				)}
 			>
 				<BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
-				<BaseSelect.ItemIndicator className="text-icon-brand">
+				<BaseSelect.ItemIndicator className="text-icon-action">
 					<CheckIcon size={16} weight="bold" />
 				</BaseSelect.ItemIndicator>
 			</BaseSelect.Item>

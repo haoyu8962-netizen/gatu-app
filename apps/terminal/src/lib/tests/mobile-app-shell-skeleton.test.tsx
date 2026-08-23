@@ -43,7 +43,7 @@ describe("AppShellSkeleton mobile viewport", () => {
 
 		expect(container.querySelectorAll('[class*="animate-"]')).toHaveLength(0);
 		expect(container.querySelectorAll("[data-shell-panel]")).toHaveLength(7);
-		expect(container.textContent).toContain("gatu");
+		expect(container.textContent).toContain("GATU");
 	});
 
 	it("exposes one implicit status while keeping the decorative AppShell out of the accessibility tree", () => {

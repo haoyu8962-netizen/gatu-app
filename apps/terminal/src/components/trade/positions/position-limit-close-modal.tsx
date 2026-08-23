@@ -338,7 +338,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 						inputSize="xl"
 						mobileSafe
 						dir="ltr"
-						className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-control focus-visible:ring-0 min-[1001px]:h-11"
+						className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-focus focus-visible:ring-0 min-[1001px]:h-11"
 					/>
 				</section>
 

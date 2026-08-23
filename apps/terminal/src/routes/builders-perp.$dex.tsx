@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
+import { ROUTE_SEO } from "@/config/seo";
 import { startMarketCatalogBootstrap } from "@/lib/hyperliquid/markets/market-catalog-bootstrap";
 import { createLazyComponent } from "@/lib/lazy";
 import { buildPageHead } from "@/lib/seo";
@@ -19,10 +20,9 @@ export const Route = createFileRoute("/builders-perp/$dex")({
 	},
 	head: ({ params }) =>
 		buildPageHead({
-			title: `${params.dex} Markets`,
-			description: `Trade ${params.dex} perpetual markets on Hyperliquid DEX.`,
+			...ROUTE_SEO.BUILDERS_PERP,
 			path: `/builders-perp/${params.dex}`,
-			keywords: ["builders", "hip-3", params.dex],
+			keywords: [...ROUTE_SEO.BUILDERS_PERP.keywords, params.dex],
 		}),
 	component: TradeTerminalPage,
 });

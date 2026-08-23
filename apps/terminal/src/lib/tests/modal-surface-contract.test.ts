@@ -54,15 +54,19 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-modal")).toBe("var(--bg-modal)");
 	});
 
-	it("keeps market-close light colors exact and dark controls contrast-safe", () => {
+	it("keeps market-close status colors exact while separating action and focus roles", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-text-strong")).toBe("#1a2330");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active")).toBe("#1a2330");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active")).toBe("var(--action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active-text")).toBe("var(--on-action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-focus")).toBe("var(--focus)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger")).toBe("#d6453d");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger-disabled")).toBe("#efc3bf");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-warning")).toBe("#d98e1f");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active")).toBe("var(--fill-selected)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active-text")).toBe(
-			"var(--text-inverse-strong)",
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active")).toBe("var(--action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active-text")).toBe("var(--on-action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-focus")).toBe("var(--focus)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-market-close-focus")).toBe(
+			"var(--market-close-control-focus)",
 		);
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-danger-text")).toBe(
 			"var(--text-inverse-strong)",

@@ -405,7 +405,7 @@ function FramedTpSlRow({
 						framedFrameClass,
 						mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 						!disabled &&
-							"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
+							"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-focus focus-within:bg-transparent",
 						!!error &&
 							"border-trading-panel-error hover:not-data-disabled:border-trading-panel-error focus-within:border-trading-panel-error",
 						disabled && "opacity-50",
@@ -431,7 +431,7 @@ function FramedTpSlRow({
 							framedFrameClass,
 							mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 							!returnDisabled &&
-								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-stroke-control focus-within:bg-transparent",
+								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-focus focus-within:bg-transparent",
 							!!returnError &&
 								"border-trading-panel-error hover:not-data-disabled:border-trading-panel-error focus-within:border-trading-panel-error",
 							returnDisabled && "opacity-50",

@@ -28,7 +28,7 @@ const TextBlock = React.forwardRef<HTMLDivElement, TextBlockProps>(
 		return (
 			<div className={cn(textBlockVariants({ align, className }))} ref={ref} {...props}>
 				{icon && (
-					<div className="flex items-start p-3 rounded-full bg-brand-soft border border-stroke-brand-weak text-icon-brand">
+					<div className="flex items-start p-3 rounded-full bg-signal-soft border border-stroke-signal/30 text-icon-signal">
 						{icon}
 					</div>
 				)}
@@ -42,7 +42,7 @@ const TextBlock = React.forwardRef<HTMLDivElement, TextBlockProps>(
 					<a
 						href={linkHref}
 						onClick={onLinkClick}
-						className="text-sm font-semibold text-brand underline rounded-4 transition-opacity duration-150 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						className="text-sm font-semibold text-signal underline rounded-4 transition-colors duration-150 hover:text-signal-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					>
 						{linkLabel}
 					</a>

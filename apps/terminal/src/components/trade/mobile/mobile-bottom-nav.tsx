@@ -56,7 +56,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 											"absolute -top-1 -right-2 min-w-4 h-4 px-1",
 											"flex items-center justify-center",
 											"rounded-full text-xs font-medium tabular-nums",
-											"bg-brand text-fg-inverse",
+											"bg-action text-on-action",
 										)}
 									>
 										{badgeCount > NAV_BADGE_MAX_COUNT ? `${NAV_BADGE_MAX_COUNT}+` : badgeCount}

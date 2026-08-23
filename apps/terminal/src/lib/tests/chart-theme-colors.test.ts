@@ -19,7 +19,7 @@ const TRADINGVIEW_THEME_STYLESHEETS = [
 const cssVariables = {
 	"--bg-base": "#0f1a1f",
 	"--bg-raised": "#1d1e26",
-	"--fill-brand-strong": "#b2bcf1",
+	"--chart-accent": "#b2bcf1",
 	"--market-down": "#ed7088",
 	"--market-up": "#0a9981",
 	"--stroke-weak": "#ffffff1f",
@@ -49,6 +49,7 @@ describe("chart theme colors", () => {
 
 		expect(colors.background).toBe("#0f1a1f");
 		expect(colors.surface).toBe("#1d1e26");
+		expect(colors.accent).toBe("#b2bcf1");
 		expect(overrides["paneProperties.background"]).toBe("#0f1a1f");
 		expect(overrides["scalesProperties.backgroundColor"]).toBe("#0f1a1f");
 		expect(getLoadingScreenColors()).toEqual({

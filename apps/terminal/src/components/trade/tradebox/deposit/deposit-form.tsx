@@ -446,7 +446,7 @@ export function DepositForm({
 
 			{routingNotice}
 			{pendingCctpRecovery ? (
-				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
+				<div className="rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
 			) : null}

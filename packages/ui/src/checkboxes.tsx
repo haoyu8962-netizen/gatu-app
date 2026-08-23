@@ -12,8 +12,8 @@ const checkboxVariants = cva(
 		"border rounded-4 bg-background",
 		"transition-colors duration-150 motion-reduce:transition-none",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-checked:bg-brand data-checked:border-transparent",
-		"data-indeterminate:bg-brand data-indeterminate:border-transparent",
+		"data-checked:bg-action data-checked:border-transparent",
+		"data-indeterminate:bg-action data-indeterminate:border-transparent",
 		"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 	],
 	{
@@ -113,9 +113,7 @@ const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
 					className={cn(checkboxVariants({ size, error }), controlClassName)}
 					{...props}
 				>
-					<BaseCheckbox.Indicator
-						className={cn("flex items-center justify-center text-icon-inverse-strong", indicatorClassName)}
-					>
+					<BaseCheckbox.Indicator className={cn("flex items-center justify-center text-on-action", indicatorClassName)}>
 						{indeterminate ? <MinusIcon size={iconSize} weight="bold" /> : <CheckIcon size={iconSize} weight="bold" />}
 					</BaseCheckbox.Indicator>
 				</BaseCheckbox.Root>

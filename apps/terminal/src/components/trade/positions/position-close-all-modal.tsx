@@ -207,7 +207,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 					type="button"
 					disabled={!isDismissible}
 					onClick={() => handleOpenChange(false)}
-					className="min-h-10 rounded-[10px] text-[13px] font-semibold text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
+					className="min-h-10 rounded-[10px] text-[13px] font-semibold text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle"
 				>
 					{t`Back`}
 				</button>

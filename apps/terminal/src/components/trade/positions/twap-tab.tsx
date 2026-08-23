@@ -80,7 +80,7 @@ export function TwapTab() {
 						<button
 							type="button"
 							onClick={() => setOrderType("twap")}
-							className="mt-1 rounded-[7px] border border-market-close-stroke-control px-3.5 py-1.5 text-xs font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="mt-1 rounded-[7px] border border-market-close-stroke-control px-3.5 py-1.5 text-xs font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 						>
 							{t`Create TWAP`}
 						</button>
@@ -185,7 +185,7 @@ export function TwapTab() {
 														<td className="p-0">
 															<button
 																type="button"
-																className="rounded-[4px] text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+																className="rounded-[4px] text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 																onClick={() => navigateToMarket(state.coin)}
 																aria-label={t`Switch to ${marketLabel} market`}
 															>
@@ -266,7 +266,7 @@ export function TwapTab() {
 															</Tooltip>
 															<button
 																type="button"
-																className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-stroke-error-weak px-3 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+																className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-stroke-error-weak px-3 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
 																aria-label={t`Terminate TWAP order`}
 																aria-busy={cancellingTwapId === twapId}
 																disabled={cancellingTwapId !== null}

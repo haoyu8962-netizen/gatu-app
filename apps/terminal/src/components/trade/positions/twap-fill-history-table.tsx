@@ -99,7 +99,7 @@ export function TwapFillHistoryTable() {
 												type="button"
 												onClick={() => navigateToMarket(fill.coin)}
 												aria-label={t`Switch to ${marketLabel} market`}
-												className="rounded-[4px] font-bold text-market-close-fg outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="rounded-[4px] font-bold text-market-close-fg outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{marketLabel}
 											</button>

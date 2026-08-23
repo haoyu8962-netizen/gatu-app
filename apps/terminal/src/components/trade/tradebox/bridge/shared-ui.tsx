@@ -145,7 +145,7 @@ export function ExplorerLink({ href, children }: { href: string; children: React
 			href={href}
 			target="_blank"
 			rel="noopener noreferrer"
-			className="inline-flex items-center gap-1 text-brand hover:opacity-80"
+			className="inline-flex items-center gap-1 text-signal hover:text-signal-hover"
 		>
 			{children}
 			<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
@@ -179,7 +179,7 @@ export function QuoteCountdown({ remaining }: { remaining: number }) {
 					fill="none"
 					stroke="currentColor"
 					strokeWidth="2"
-					className="text-brand transition-[stroke-dashoffset] duration-1000 ease-linear"
+					className="text-signal transition-[stroke-dashoffset] duration-1000 ease-linear"
 					strokeDasharray={circumference}
 					strokeDashoffset={offset}
 					strokeLinecap="round"

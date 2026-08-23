@@ -104,7 +104,7 @@ export function getChartColors(): ChartColors {
 		border: getCssVar("--stroke-weak"),
 		green: getCssVar("--market-up"),
 		red: getCssVar("--market-down"),
-		accent: getCssVar("--fill-brand-strong"),
+		accent: getCssVar("--chart-accent"),
 		surface: getCssVar("--bg-raised"),
 	};
 }
@@ -262,7 +262,7 @@ export function getCustomThemeColors(): CustomThemeColors {
 	const red = colorToHex(colors.red);
 	const green = colorToHex(colors.green);
 	const amber = colorToHex(getCssVar("--text-warning") || colors.accent);
-	const purple = colorToHex(getCssVar("--fill-brand-strong") || colors.accent);
+	const purple = colorToHex(getCssVar("--chart-accent") || colors.accent);
 	const bg = colorToHex(colors.background);
 	const fg = colorToHex(colors.foreground);
 

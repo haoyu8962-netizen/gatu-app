@@ -52,21 +52,31 @@
 	:root {
 		color-scheme: dark;
 
-		/* Derived from apps/terminal/src/styles.css dark tokens; brand hues follow
-		   public/logo.svg and low-contrast text steps are lifted for marketing copy. */
+		/* Marketing surfaces stay unchanged while actions and signals use the new brand roles. */
 		--bg-base: #12131a;
 		--bg-raised: #1d1e26;
 		--bg-overlay: #292b33;
 		--bg-sunken: #000000;
 		--bg-alternate: #1d1e26;
-		--bg-brand: #26d2ec;
+		--bg-brand: var(--action);
 		--bg-inverse: #ffffff;
+
+		--action: #edeef2;
+		--action-hover: #ffffff;
+		--action-active: #d5d7de;
+		--on-action: #08090d;
+		--signal: #d7ff3f;
+		--signal-hover: #e6ff70;
+		--signal-soft: rgb(215 255 63 / 14%);
+		--focus: var(--signal);
+		--logo-ink: #edeef2;
+		--logo-node: #d7ff3f;
 
 		--text-strong: #ffffff;
 		--text-weak: #ffffffc7;
 		--text-muted: #ffffff99;
 		--text-faint: #ffffff70;
-		--text-brand: #26d2ec;
+		--text-brand: var(--signal);
 		--text-disabled: #ffffff1f;
 		--text-error: #ff9c9c;
 		--text-warning: #e0be70;
@@ -79,16 +89,15 @@
 		--fill-weaker: #ffffff08;
 		--fill-hover: #ffffff14;
 		--fill-press: #ffffff1f;
-		--fill-brand-strong: #26d2ec;
-		--fill-brand-weak: #26d2ec14;
+		--fill-brand-strong: var(--action);
+		--fill-brand-weak: var(--fill-weak);
 
 		--stroke-strong: #ffffff99;
 		--stroke-weak: #ffffff1f;
 		--stroke-weaker: #ffffff0f;
-		--stroke-focus: #26d2ec;
+		--stroke-focus: var(--focus);
 
-		/* Semantic "live/online" indicator — intentionally green, decoupled from brand. */
-		--live: #57cb60;
+		--live: var(--signal);
 	}
 
 }
@@ -108,6 +117,14 @@
 	--color-fg-disabled: var(--text-disabled);
 	--color-fg-inverse: var(--text-inverse-strong);
 
+	--color-action: var(--action);
+	--color-action-hover: var(--action-hover);
+	--color-action-active: var(--action-active);
+	--color-on-action: var(--on-action);
+	--color-signal: var(--signal);
+	--color-signal-hover: var(--signal-hover);
+	--color-signal-soft: var(--signal-soft);
+	--color-focus: var(--focus);
 	--color-brand: var(--text-brand);
 	--color-brand-soft: var(--fill-brand-weak);
 	--color-error: var(--text-error);
@@ -146,9 +163,14 @@
 		-moz-osx-font-smoothing: grayscale;
 	}
 
+	:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+		outline: 2px solid var(--stroke-focus);
+		outline-offset: 2px;
+	}
+
 	::selection {
-		background: var(--fill-brand-strong);
-		color: var(--bg-base);
+		background: var(--signal);
+		color: var(--on-action);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -199,28 +221,6 @@
 			linear-gradient(to right, var(--stroke-weaker) 1px, transparent 1px),
 			linear-gradient(to bottom, var(--stroke-weaker) 1px, transparent 1px);
 		background-size: 56px 56px;
-	}
-
-	/* Glow + gradient hues track the logo gradient in public/logo.svg. */
-	.glow-radial {
-		background:
-			radial-gradient(ellipse 50% 40% at 50% 0%, rgba(70, 240, 222, 0.14), transparent 65%),
-			radial-gradient(ellipse 80% 30% at 50% 0%, rgba(46, 134, 245, 0.07), transparent 70%);
-	}
-
-	.text-brand-gradient {
-		background: linear-gradient(90deg, #46f0de, #26d2ec, #2e86f5, #26d2ec, #46f0de);
-		background-size: 200% 100%;
-		background-clip: text;
-		-webkit-background-clip: text;
-		color: transparent;
-		animation: gradient-flow 10s linear infinite;
-	}
-
-	@keyframes gradient-flow {
-		to {
-			background-position: 200% 0;
-		}
 	}
 
 	.marquee {

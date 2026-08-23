@@ -294,7 +294,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										key={tab.value}
 										value={tab.value}
 										data-positions-tab={tab.value}
-										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
+										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
 										{typeof count === "number" ? <span className="tabular-nums">({count})</span> : null}

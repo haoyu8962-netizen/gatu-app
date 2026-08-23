@@ -24,8 +24,9 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content={SEO_DEFAULTS.themeColor} />
 		<meta name="color-scheme" content="dark light" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="apple-touch-icon" href="/favicon.svg" />
+		<link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48 64x64" href="/favicon.ico" />
+		<link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
 		<title>{seo.title}</title>
 		<meta name="description" content={seo.description} />
@@ -38,7 +39,7 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 
 		<meta property="og:type" content={seo.ogType} />
 		<meta property="og:site_name" content={SEO_DEFAULTS.siteName} />
-		<meta property="og:title" content={seo.title} />
+		<meta property="og:title" content={seo.ogTitle} />
 		<meta property="og:description" content={seo.description} />
 		<meta property="og:url" content={seo.canonical} />
 		<meta property="og:locale" content={SEO_DEFAULTS.locale} />
@@ -56,7 +57,7 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		{seo.ogType === "article" && seo.author && <meta property="article:author" content={seo.author} />}
 
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content={seo.title} />
+		<meta name="twitter:title" content={seo.ogTitle} />
 		<meta name="twitter:description" content={seo.description} />
 		<meta name="twitter:image" content={seo.ogImage} />
 		<meta name="twitter:image:alt" content={seo.ogImageAlt} />

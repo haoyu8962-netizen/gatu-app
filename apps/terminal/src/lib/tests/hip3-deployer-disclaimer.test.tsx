@@ -101,8 +101,8 @@ describe("Hip3DeployerDisclaimer", () => {
 			'a[href="https://docs.trade.xyz/consolidated-resources/specification-index"]',
 		);
 		const termsLink = document.body.querySelector('a[href="/terms"]');
-		expect(documentationLink?.classList.contains("text-brand")).toBe(true);
-		expect(termsLink?.classList.contains("text-brand")).toBe(true);
+		expect(documentationLink?.classList.contains("text-signal")).toBe(true);
+		expect(termsLink?.classList.contains("text-signal")).toBe(true);
 
 		const checkbox = getAcknowledgementCheckbox();
 		expect(checkbox.getAttribute("aria-checked")).toBe("false");

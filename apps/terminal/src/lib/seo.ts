@@ -22,6 +22,8 @@ export interface PageSeoOptions {
 	title?: string;
 	/** Use title as-is without appending site name */
 	fullTitle?: boolean;
+	/** Open Graph and Twitter title when it should differ from the document title */
+	ogTitle?: string;
 	/** Meta description (max ~155 chars for search results) */
 	description?: string;
 	/** Canonical URL path (e.g., "/trade") */
@@ -57,8 +59,8 @@ export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutp
 			{ name: "author", content: SEO_DEFAULTS.siteName },
 		],
 		links: [
-			{ rel: "icon", href: "/favicon.ico", sizes: "32x32" },
-			{ rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
+			{ rel: "icon", href: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64", type: "image/x-icon" },
+			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			{ rel: "manifest", href: "/manifest.json" },
 			{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
@@ -100,6 +102,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	const {
 		title,
 		fullTitle = false,
+		ogTitle,
 		description = SEO_DEFAULTS.defaultDescription,
 		path = "",
 		ogImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`,
@@ -113,6 +116,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	} = options;
 
 	const pageTitle = title ? (fullTitle ? title : `${title} | ${SEO_DEFAULTS.siteName}`) : SEO_DEFAULTS.defaultTitle;
+	const socialTitle = ogTitle ?? (title ? pageTitle : SEO_DEFAULTS.defaultOgTitle);
 
 	const canonicalUrl = `${SEO_DEFAULTS.siteUrl}${path}`;
 
@@ -126,7 +130,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		// Open Graph
 		{ property: "og:type", content: ogType },
 		{ property: "og:site_name", content: SEO_DEFAULTS.siteName },
-		{ property: "og:title", content: pageTitle },
+		{ property: "og:title", content: socialTitle },
 		{ property: "og:description", content: description },
 		{ property: "og:url", content: canonicalUrl },
 		{ property: "og:image", content: ogImage },
@@ -138,7 +142,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 
 		// Twitter Card
 		{ name: "twitter:card", content: "summary_large_image" },
-		{ name: "twitter:title", content: pageTitle },
+		{ name: "twitter:title", content: socialTitle },
 		{ name: "twitter:description", content: description },
 		{ name: "twitter:image", content: ogImage },
 		{ name: "twitter:image:alt", content: ogImageAlt },
@@ -151,6 +155,11 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	const links: LinkTag[] = [{ rel: "canonical", href: canonicalUrl }];
 
 	return { meta, links };
+}
+
+export function buildMarketDocumentTitle(price: string, pairName: string): string {
+	const displayPair = pairName.replace(/-([^-]+)$/, "/$1");
+	return `${price} ${displayPair} · ${SEO_DEFAULTS.siteName}`;
 }
 
 /**

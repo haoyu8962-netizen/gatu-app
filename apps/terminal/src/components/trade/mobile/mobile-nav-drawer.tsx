@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, ListIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GatuLogo } from "@/components/brand/gatu-logo";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
@@ -34,7 +35,7 @@ export function MobileNavDrawer() {
 	function getNavLinkClass(active: boolean): string {
 		return cn(
 			"rounded-8 px-3 py-2.5 text-sm transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-			active ? "bg-fill-hover font-medium text-brand" : "text-fg",
+			active ? "bg-fill-hover font-medium text-action" : "text-fg",
 		);
 	}
 
@@ -128,14 +129,10 @@ export function MobileNavDrawer() {
 							to={tradeHomePath}
 							search={{ scope: "all" }}
 							onClick={close}
-							aria-label="gatu"
+							aria-label="GATU"
 							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
-							<img src="/icon.svg" alt="" aria-hidden className="size-5 rounded-8" />
-							<span className="text-xs font-bold tracking-tight">
-								<span className="text-brand">ga</span>
-								<span className="text-fg">tu</span>
-							</span>
+							<GatuLogo className="h-4 w-auto" />
 						</Link>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />

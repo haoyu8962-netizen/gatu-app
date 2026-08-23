@@ -58,7 +58,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 			<ModalFooter className="grid grid-cols-2 gap-2 px-4 pt-3 pb-4 min-[1001px]:px-6 min-[1001px]:pt-4 min-[1001px]:pb-6">
 				<button
 					type="button"
-					className="min-h-11 rounded-[10px] border border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle min-[1001px]:min-h-10"
+					className="min-h-11 rounded-[10px] border border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle min-[1001px]:min-h-10"
 					disabled={isSubmitting}
 					onClick={() => onOpenChange(false)}
 				>
@@ -66,7 +66,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 				</button>
 				<button
 					type="button"
-					className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted min-[1001px]:min-h-10"
+					className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted min-[1001px]:min-h-10"
 					aria-busy={isSubmitting}
 					disabled={isSubmitting || orderCount === 0}
 					onClick={handleConfirm}

@@ -6,7 +6,7 @@ import { cn } from "./utils";
 const textLinkVariants = cva(
 	[
 		"inline-flex items-center cursor-pointer",
-		"transition-opacity duration-150 motion-reduce:transition-none",
+		"transition-[color,opacity] duration-150 motion-reduce:transition-none",
 		"rounded-4",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"hover:opacity-80",
@@ -26,7 +26,7 @@ const textLinkVariants = cva(
 				strong: "font-semibold",
 			},
 			intent: {
-				brand: "text-brand",
+				brand: "text-signal hover:text-signal-hover hover:opacity-100",
 				neutral: "text-fg",
 				error: "text-error",
 			},

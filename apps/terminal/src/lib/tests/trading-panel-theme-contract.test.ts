@@ -36,7 +36,11 @@ describe("trading panel theme contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-stroke-control")).toBe("#c6cfd9");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-surface-card")).toBe("#f7f9fb");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-surface-hover")).toBe("#f1f4f8");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-control-active")).toBe("#1a2330");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-control-active")).toBe("var(--action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-control-active-text")).toBe(
+			"var(--on-action)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-control-focus")).toBe("var(--focus)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-success")).toBe("#1f8a5a");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-error")).toBe("#d6453d");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-neutral-disabled-fill")).toBe("#c6cfd9");
@@ -58,7 +62,11 @@ describe("trading panel theme contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-on-disabled")).toBe("var(--icon-neutral)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-surface-hover")).toBe("var(--fill-press)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-text-subtle")).toBe("var(--icon-neutral)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-control-active")).toBe("var(--fill-selected)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-control-active")).toBe("var(--action)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-control-active-text")).toBe(
+			"var(--on-action)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-control-focus")).toBe("var(--focus)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-success")).toBe("var(--text-success)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-error")).toBe("var(--text-error)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-neutral-disabled-fill")).toBe(
@@ -86,10 +94,13 @@ describe("trading panel theme contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-trading-panel-error")).toBe(
 			"var(--trading-panel-error)",
 		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-trading-panel-focus")).toBe(
+			"var(--trading-panel-control-focus)",
+		);
 		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--shadow-trading-panel-slider")).toBe(
 			"var(--trading-panel-slider-shadow)",
 		);
-		expect(INPUT_SOURCE).toContain("selection:text-fg-inverse");
+		expect(INPUT_SOURCE).toContain("selection:bg-signal-soft selection:text-fg");
 		expect(INPUT_SOURCE).not.toContain("selection:text-white");
 		expect(TRADING_CTA_SOURCE).toContain("data-disabled:bg-trading-panel-neutral-disabled-fill");
 		expect(TRADING_CTA_SOURCE).toContain("data-disabled:bg-trading-panel-success-disabled-fill");

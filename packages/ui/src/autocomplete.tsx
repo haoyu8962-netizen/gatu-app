@@ -124,7 +124,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 						{multiValue.map((val) => (
 							<Combobox.Chip
 								key={val}
-								className="inline-flex items-center gap-1 rounded-4 bg-brand-soft px-2 py-0.5 text-xs text-fg"
+								className="inline-flex items-center gap-1 rounded-4 bg-fill-weak px-2 py-0.5 text-xs text-fg"
 							>
 								{val}
 								<Combobox.ChipRemove className="shrink-0 cursor-pointer text-icon hover:text-fg">
@@ -170,14 +170,14 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 									{multiple && (
 										<span className="inline-flex items-center justify-center size-4 rounded-4 border shrink-0 transition-colors border-stroke-strong group-data-selected/item:bg-fill-selected group-data-selected/item:border-stroke-selected">
 											<Combobox.ItemIndicator>
-												<CheckIcon size={10} weight="bold" className="text-fg-inverse" />
+												<CheckIcon size={10} weight="bold" className="text-on-action" />
 											</Combobox.ItemIndicator>
 										</span>
 									)}
 									<span className="flex-1">{option}</span>
 									{!multiple && (
 										<Combobox.ItemIndicator>
-											<CheckIcon size={16} weight="bold" className="text-brand" />
+											<CheckIcon size={16} weight="bold" className="text-action" />
 										</Combobox.ItemIndicator>
 									)}
 								</Combobox.Item>

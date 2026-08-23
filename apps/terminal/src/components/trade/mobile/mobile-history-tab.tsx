@@ -38,11 +38,11 @@ type TradeHistoryRoleFilter = "all" | "maker" | "taker";
 type UserFill = UserFillsResponse[number];
 
 const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
 const filterActionClassName =
-	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control active:scale-100";
+	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus active:scale-100";
 const footerActionClassName =
-	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
+	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
 function getTradeHistoryType(fill: UserFill): Exclude<TradeHistoryTypeFilter, "all"> {
 	if (fill.liquidation) return "liquidation";
@@ -343,7 +343,7 @@ function MobileHistoryTabContent({
 													type="button"
 													onClick={() => handleSelectMarket(marketName)}
 													aria-label={t`Switch to ${marketName} market`}
-													className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+													className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 												>
 													<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
 													<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
@@ -422,7 +422,7 @@ function MobileHistoryTabContent({
 																href={explorerUrl}
 																target="_blank"
 																rel="noopener noreferrer"
-																className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+																className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 															>
 																{t`Explorer`}
 																<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
@@ -435,7 +435,7 @@ function MobileHistoryTabContent({
 															aria-label={t`Collapse ${marketName} history details`}
 															aria-controls={detailsId}
 															onClick={handleToggle}
-															className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+															className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 														>
 															<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
 																<path

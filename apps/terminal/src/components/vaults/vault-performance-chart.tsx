@@ -48,7 +48,7 @@ export function VaultPerformanceChart({ snapshot, kind, compact = false }: Vault
 					preserveAspectRatio="none"
 					className={cn(
 						"size-full",
-						tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-brand",
+						tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-chart-accent",
 					)}
 				>
 					{compact ? null : (

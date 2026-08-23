@@ -160,7 +160,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					"!py-0 text-xs gap-1.5",
 					"items-center justify-start font-semibold text-fg",
 					"hover:bg-fill-hover active:bg-fill-press",
-					"data-[popup-open]:border-stroke-brand-strong/40 data-[popup-open]:bg-fill-hover",
+					"data-[popup-open]:border-stroke-action/40 data-[popup-open]:bg-fill-hover",
 					"transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav &&
 						"h-[34px] min-h-[34px] max-h-[34px] !rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",

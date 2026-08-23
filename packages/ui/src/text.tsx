@@ -17,7 +17,7 @@ const textVariants = cva("", {
 		color: {
 			strong: "text-fg",
 			weak: "text-fg-muted",
-			brand: "text-brand",
+			brand: "text-signal",
 			disabled: "text-fg-disabled",
 			error: "text-error",
 			warning: "text-warning",

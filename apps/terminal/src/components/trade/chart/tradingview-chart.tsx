@@ -1565,7 +1565,7 @@ export function TradingViewChart({
 					aria-live="polite"
 					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 px-4 text-center text-xs font-medium text-fg-muted"
 				>
-					<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
+					<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
 					{t`Loading...`}
 				</output>
 			)}
@@ -1581,7 +1581,7 @@ export function TradingViewChart({
 					)}
 				>
 					{(historyRateLimit?.phase === "recovering" || !hasLoadedHistoryRef.current) && (
-						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
+						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
 					)}
 					{t`Live chart data is rate limited. Retrying shortly.`}
 				</output>

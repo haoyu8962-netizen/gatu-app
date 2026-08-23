@@ -72,7 +72,7 @@ export function ReferralRewardsCard({ claimDisabled, onClaim, rewards }: Props) 
 									<p className="text-2xs text-fg-muted">
 										<Trans>Total claimable</Trans>
 									</p>
-									<p className="mt-0.5 text-xs font-semibold tabular-nums text-brand min-[1001px]:text-2sm">
+									<p className="mt-0.5 text-xs font-semibold tabular-nums text-action min-[1001px]:text-2sm">
 										{formatToken(reward.claimableRewards, {
 											symbol: reward.name,
 											maximumFractionDigits: reward.weiDecimals ?? 8,
@@ -100,7 +100,7 @@ export function ReferralRewardsCard({ claimDisabled, onClaim, rewards }: Props) 
 
 			<details className="group mt-3 rounded-[10px] border border-stroke-weak bg-fill-weak">
 				<summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs font-semibold text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus">
-					<InfoIcon className="size-4 text-brand" />
+					<InfoIcon className="size-4 text-info" />
 					<span className="flex-1">
 						<Trans>How Hyperliquid referrals work</Trans>
 					</span>
@@ -127,7 +127,7 @@ export function ReferralRewardsCard({ claimDisabled, onClaim, rewards }: Props) 
 						href="https://hyperliquid.gitbook.io/hyperliquid-docs/referrals"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="mt-2 inline-flex items-center gap-1 rounded-[4px] text-2xs font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						className="mt-2 inline-flex items-center gap-1 rounded-[4px] text-2xs font-medium text-signal hover:text-signal-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					>
 						<Trans>Read official referral rules</Trans>
 						<ArrowSquareOutIcon className="size-3" />

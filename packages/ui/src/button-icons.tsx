@@ -40,7 +40,7 @@ const buttonIconVariants = cva(
 				variant: "filled",
 				intent: "brand",
 				className:
-					"bg-brand text-fg-inverse hover:opacity-90 active:opacity-80 data-disabled:text-fg-disabled data-disabled:bg-fill-disabled",
+					"bg-action text-on-action hover:bg-action-hover active:bg-action-active data-disabled:text-fg-disabled data-disabled:bg-fill-disabled",
 			},
 			{
 				variant: "filled",
@@ -65,7 +65,7 @@ const buttonIconVariants = cva(
 				variant: "outline",
 				intent: "brand",
 				className:
-					"border-stroke-brand-strong text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:text-fg-disabled data-disabled:border-stroke-disabled",
+					"border-stroke-action text-action hover:bg-fill-hover active:bg-fill-press data-disabled:text-fg-disabled data-disabled:border-stroke-disabled",
 			},
 			{
 				variant: "outline",
@@ -89,7 +89,7 @@ const buttonIconVariants = cva(
 			{
 				variant: "ghost",
 				intent: "brand",
-				className: "text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:text-fg-disabled",
+				className: "text-action hover:bg-fill-hover active:bg-fill-press data-disabled:text-fg-disabled",
 			},
 			{
 				variant: "ghost",

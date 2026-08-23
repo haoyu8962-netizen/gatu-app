@@ -92,7 +92,7 @@ export function OrderInlineEdit({
 			/>
 			<button
 				type="button"
-				className="inline-flex h-[27px] min-w-11 shrink-0 items-center justify-center gap-1 rounded-[7px] bg-market-close-control px-2.5 text-xs font-semibold text-market-close-on-control transition-opacity duration-[120ms] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-60"
+				className="inline-flex h-[27px] min-w-11 shrink-0 items-center justify-center gap-1 rounded-[7px] bg-market-close-control px-2.5 text-xs font-semibold text-market-close-on-control transition-opacity duration-[120ms] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-60"
 				aria-label={confirmLabel}
 				disabled={disabled}
 				onClick={onConfirm}

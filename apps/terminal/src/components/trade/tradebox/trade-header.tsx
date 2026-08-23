@@ -115,7 +115,7 @@ export function TradeHeader({
 	const mobileControlClass = cn(
 		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
 		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
-		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control",
+		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
 

@@ -38,7 +38,7 @@ export function ReferralSummaryCards({ data, discountPercent, usdcRewardsEarned 
 				<p className="text-2xs text-fg-muted min-[1001px]:text-xs">
 					<Trans>USDC claimable</Trans>
 				</p>
-				<p className="mt-1 text-base leading-5 font-bold tabular-nums text-brand min-[1001px]:mt-1.5 min-[1001px]:text-[22px] min-[1001px]:leading-[1.1]">
+				<p className="mt-1 text-base leading-5 font-bold tabular-nums text-action min-[1001px]:mt-1.5 min-[1001px]:text-[22px] min-[1001px]:leading-[1.1]">
 					{formatToken(data.unclaimedRewards, { decimals: 2, symbol: "USDC" })}
 				</p>
 			</article>

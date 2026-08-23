@@ -124,7 +124,7 @@ export function PositionReverseConfirmationModal({
 			<ModalFooter className="flex-col items-stretch gap-2 px-4 pt-4 pb-4 min-[1001px]:px-6 min-[1001px]:pb-6">
 				<button
 					type="button"
-					className="min-h-11 w-full rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[150ms] min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted"
+					className="min-h-11 w-full rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[150ms] min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted"
 					aria-busy={isSubmitting}
 					disabled={isConfirmDisabled}
 					onClick={handleConfirm}

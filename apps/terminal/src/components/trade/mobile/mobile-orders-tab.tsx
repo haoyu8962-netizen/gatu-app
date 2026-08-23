@@ -881,7 +881,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 							{ value: "limit", label: t`Limit` },
 							{ value: "trigger", label: t`Trigger` },
 						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto shrink-0 [&>label]:sr-only"
 					/>
@@ -895,7 +895,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 							{ value: "buy", label: t`Buy` },
 							{ value: "sell", label: t`Sell` },
 						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
 						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto shrink-0 [&>label]:sr-only"
 					/>
@@ -1116,7 +1116,7 @@ function MobileOrderCard({
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
 						aria-label={t`Switch to ${marketLabel} market`}
-						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-left text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-left text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 					>
 						{marketLabel}
 					</button>
@@ -1152,7 +1152,7 @@ function MobileOrderCard({
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								className="relative inline-flex h-[18px] items-center rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
 								onClick={() => {
 									if (!canModify) {
 										if (modifyUnavailableReason) onModifyUnavailable(modifyUnavailableReason);
@@ -1169,7 +1169,7 @@ function MobileOrderCard({
 							</button>
 							<button
 								type="button"
-								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>
@@ -1182,7 +1182,7 @@ function MobileOrderCard({
 							aria-label={t`Collapse ${marketLabel} order details`}
 							aria-controls={detailsId}
 							onClick={() => onExpandedChange(false)}
-							className="relative -mr-3.5 inline-flex h-[18px] w-11 items-center justify-center rounded-xs text-market-close-subtle after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+							className="relative -mr-3.5 inline-flex h-[18px] w-11 items-center justify-center rounded-xs text-market-close-subtle after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 						>
 							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
 								<path
