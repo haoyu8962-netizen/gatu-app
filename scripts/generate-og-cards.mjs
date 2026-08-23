@@ -14,7 +14,11 @@ const OUTPUT_MANIFEST_PATH = resolve(REPOSITORY_ROOT, "designs/og-cards/output-m
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const WIDTH = 1200;
 const HEIGHT = 630;
-const MAX_MEAN_CHANNEL_DELTA = 2;
+const DEFAULT_MAX_MEAN_CHANNEL_DELTA = 2;
+// The Website card's large display copy accumulates more CoreText/FreeType
+// rasterization variance. Keep the independent material-pixel cap as a second
+// guard against localized drift.
+const WEBSITE_MAX_MEAN_CHANNEL_DELTA = 3.5;
 const MAX_CHANGED_PIXEL_RATIO = 0.03;
 const MATERIAL_CHANNEL_DELTA = 16;
 
@@ -26,6 +30,7 @@ const CARDS = [
 	{
 		name: "website",
 		output: resolve(REPOSITORY_ROOT, "apps/website/public/og-website-1200x630.png"),
+		maxMeanChannelDelta: WEBSITE_MAX_MEAN_CHANNEL_DELTA,
 	},
 ];
 
@@ -86,7 +91,7 @@ try {
 				assertValidPng(card.name, "deployed", deployedAnalysis);
 
 				const difference = await comparePngs(page, deployed, generated);
-				assertSafeDifference(card.name, difference);
+				assertSafeDifference(card, difference);
 				generatedCards.push({ card, deployed, difference, generated, generatedPath });
 			} else {
 				generatedCards.push({ card, deployed, generated, generatedPath });
@@ -293,13 +298,14 @@ function assertValidPng(cardName, kind, analysis) {
 	}
 }
 
-function assertSafeDifference(cardName, difference) {
+function assertSafeDifference(card, difference) {
+	const maxMeanChannelDelta = card.maxMeanChannelDelta ?? DEFAULT_MAX_MEAN_CHANNEL_DELTA;
 	if (
-		difference.meanChannelDelta > MAX_MEAN_CHANNEL_DELTA ||
+		difference.meanChannelDelta > maxMeanChannelDelta ||
 		difference.changedPixelRatio > MAX_CHANGED_PIXEL_RATIO
 	) {
 		throw new Error(
-			`${cardName} render differs materially from the deployed card: ${formatDifference(difference)}. ` +
+			`${card.name} render differs materially from the deployed card: ${formatDifference(difference)}. ` +
 				"Review the source and output before replacing the deployed image.",
 		);
 	}
