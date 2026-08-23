@@ -10,6 +10,8 @@ const WEBSITE_STYLES = readFileSync(resolve(TEST_DIR, "../../../..", "website/sr
 const WEBSITE_HERO = readFileSync(resolve(TEST_DIR, "../../../..", "website/src/components/Hero.astro"), "utf8");
 const WEBSITE_MARKETS = readFileSync(resolve(TEST_DIR, "../../../..", "website/src/components/Markets.astro"), "utf8");
 const CHART_THEME_COLORS = readFileSync(resolve(TEST_DIR, "../..", "lib/chart/theme-colors.ts"), "utf8");
+const TERMINAL_OG_IMAGE = readFileSync(resolve(TEST_DIR, "../../..", "public/og-terminal-1200x630.png"));
+const WEBSITE_OG_IMAGE = readFileSync(resolve(TEST_DIR, "../../../..", "website/public/og-website-1200x630.png"));
 
 describe("brand semantics contract", () => {
 	it("defines the same action, signal, and focus roles in the shared and terminal themes", () => {
@@ -80,6 +82,15 @@ describe("brand semantics contract", () => {
 		for (const legacyTreatment of ["#26d2ec", "#46f0de", "#2e86f5", "glow-radial", "text-brand-gradient"]) {
 			expect(websiteBrandSources.toLowerCase()).not.toContain(legacyTreatment);
 		}
+	});
+
+	it("ships distinct Terminal and Website social cards at the declared large-card dimensions", () => {
+		for (const image of [TERMINAL_OG_IMAGE, WEBSITE_OG_IMAGE]) {
+			expect(image.toString("ascii", 12, 16)).toBe("IHDR");
+			expect(image.readUInt32BE(16)).toBe(1200);
+			expect(image.readUInt32BE(20)).toBe(630);
+		}
+		expect(TERMINAL_OG_IMAGE.equals(WEBSITE_OG_IMAGE)).toBe(false);
 	});
 });
 

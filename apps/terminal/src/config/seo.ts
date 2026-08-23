@@ -8,7 +8,7 @@ export const SEO_DEFAULTS = {
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
 	ogImageType: "image/png",
-	ogImageAlt: "GATU Terminal — 永续 · 现货交易终端",
+	ogImageAlt: "GATU 永续与现货交易终端：低延迟、自托管、链上结算",
 	locale: "en_US",
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
 	themeColor: "#0F1A1F",
