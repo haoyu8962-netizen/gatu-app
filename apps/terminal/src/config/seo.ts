@@ -1,3 +1,5 @@
+export type OpenGraphLocale = `${Lowercase<string>}_${Uppercase<string>}`;
+
 export const SEO_DEFAULTS = {
 	siteName: "GATU",
 	siteUrl: "https://app.gatu.ai",
@@ -9,7 +11,7 @@ export const SEO_DEFAULTS = {
 	ogImageHeight: 630,
 	ogImageType: "image/png",
 	ogImageAlt: "GATU 永续与现货交易终端：低延迟、自托管、链上结算",
-	locale: "en_US",
+	locale: "en_US" satisfies OpenGraphLocale,
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
 	themeColor: "#0F1A1F",
 } as const;
@@ -21,6 +23,7 @@ const TRADE_PAGE_SEO = {
 	fullTitle: true,
 	description: SEO_DEFAULTS.defaultDescription,
 	ogTitle: SEO_DEFAULTS.defaultOgTitle,
+	ogLocale: "zh_CN" satisfies OpenGraphLocale,
 } as const;
 
 export const ROUTE_SEO = {

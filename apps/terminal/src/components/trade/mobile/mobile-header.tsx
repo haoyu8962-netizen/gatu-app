@@ -35,9 +35,9 @@ export function MobileHeader({ className }: Props) {
 						to={tradeHomePath}
 						search={{ scope: "all" }}
 						aria-label="GATU"
-						className="rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					>
-						<GatuLogo variant="wordmark" className="h-[10px] w-auto" />
+						<GatuLogo variant="mark" micro className="size-[22px]" />
 					</Link>
 				</div>
 

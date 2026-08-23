@@ -43,9 +43,12 @@ export function MobileShellSkeleton() {
 			className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
 		>
 			<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
-				<div className="h-14 px-3 flex items-center justify-between">
-					<div className="flex items-center">
-						<GatuLogo className="h-4 w-auto shrink-0" />
+				<div className="h-14 px-2.5 flex items-center justify-between">
+					<div className="flex items-center gap-1.5">
+						<div className="size-11 shrink-0" />
+						<div className="grid size-11 shrink-0 place-items-center">
+							<GatuLogo variant="mark" micro className="size-[22px]" />
+						</div>
 					</div>
 				</div>
 			</div>

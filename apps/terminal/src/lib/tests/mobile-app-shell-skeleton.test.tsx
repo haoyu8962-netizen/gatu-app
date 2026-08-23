@@ -46,6 +46,20 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(container.textContent).toContain("GATU");
 	});
 
+	it("reserves the mobile drawer and brand slots with the approved micro mark", () => {
+		act(() => root.render(<AppShellSkeleton />));
+
+		const mobileShell = container.querySelector("[data-shell-mobile]");
+		const brandMark = mobileShell?.querySelector<SVGElement>('[data-gatu-logo="mark"]');
+		const brandSlot = brandMark?.parentElement;
+		const drawerSlot = brandSlot?.previousElementSibling;
+
+		expect(brandMark?.getAttribute("class")).toContain("size-[22px]");
+		expect(brandMark?.querySelector("path")?.getAttribute("stroke-width")).toBe("6.5");
+		expect(brandSlot?.className).toContain("size-11");
+		expect(drawerSlot?.className).toContain("size-11");
+	});
+
 	it("exposes one implicit status while keeping the decorative AppShell out of the accessibility tree", () => {
 		act(() => root.render(<AppShellSkeleton />));
 

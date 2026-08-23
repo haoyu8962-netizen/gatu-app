@@ -13,7 +13,7 @@
  * ```
  */
 
-import { SEO_BASE_KEYWORDS, SEO_DEFAULTS } from "@/config/seo";
+import { type OpenGraphLocale, SEO_BASE_KEYWORDS, SEO_DEFAULTS } from "@/config/seo";
 
 export { SEO_DEFAULTS };
 
@@ -24,6 +24,8 @@ export interface PageSeoOptions {
 	fullTitle?: boolean;
 	/** Open Graph and Twitter title when it should differ from the document title */
 	ogTitle?: string;
+	/** Locale of the Open Graph metadata, formatted as language_TERRITORY */
+	ogLocale?: OpenGraphLocale;
 	/** Meta description (max ~155 chars for search results) */
 	description?: string;
 	/** Canonical URL path (e.g., "/trade") */
@@ -103,6 +105,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		title,
 		fullTitle = false,
 		ogTitle,
+		ogLocale = SEO_DEFAULTS.locale,
 		description = SEO_DEFAULTS.defaultDescription,
 		path = "",
 		ogImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`,
@@ -138,7 +141,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		{ property: "og:image:width", content: String(ogImageWidth) },
 		{ property: "og:image:height", content: String(ogImageHeight) },
 		{ property: "og:image:alt", content: ogImageAlt },
-		{ property: "og:locale", content: SEO_DEFAULTS.locale },
+		{ property: "og:locale", content: ogLocale },
 
 		// Twitter Card
 		{ name: "twitter:card", content: "summary_large_image" },

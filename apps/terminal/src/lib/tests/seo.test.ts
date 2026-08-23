@@ -35,6 +35,7 @@ describe("seo", () => {
 		expect(head.meta.find((meta) => meta.title)?.title).toBe("GATU Terminal — 永续 · 现货交易终端");
 		expect(getMetaContent(head, "name", "description")).toBe("低延迟链上交易终端：永续、现货、组合与订单管理。");
 		expect(getMetaContent(head, "property", "og:title")).toBe("GATU Terminal");
+		expect(getMetaContent(head, "property", "og:locale")).toBe("zh_CN");
 		expect(getMetaContent(head, "name", "twitter:title")).toBe("GATU Terminal");
 		expect(getMetaContent(head, "property", "og:image")).toBe("https://app.gatu.ai/og-terminal-1200x630.png");
 	});
@@ -48,6 +49,7 @@ describe("seo", () => {
 		const head = buildPageHead({ title: "Portfolio", path: "/portfolio" });
 
 		expect(getMetaContent(head, "property", "og:title")).toBe("Portfolio | GATU");
+		expect(getMetaContent(head, "property", "og:locale")).toBe("en_US");
 		expect(getMetaContent(head, "name", "twitter:title")).toBe("Portfolio | GATU");
 	});
 
@@ -89,6 +91,7 @@ describe("seo", () => {
 		expect(getMetaContent(head, "property", "og:image:width")).toBe(String(SEO_DEFAULTS.ogImageWidth));
 		expect(getMetaContent(head, "property", "og:image:height")).toBe(String(SEO_DEFAULTS.ogImageHeight));
 		expect(getMetaContent(head, "property", "og:image:alt")).toBe(SEO_DEFAULTS.ogImageAlt);
+		expect(getMetaContent(head, "property", "og:locale")).toBe("en_US");
 		expect(getMetaContent(head, "name", "twitter:card")).toBe("summary_large_image");
 		expect(getMetaContent(head, "name", "twitter:image")).toBe(expectedImage);
 		expect(getMetaContent(head, "name", "twitter:image:alt")).toBe(SEO_DEFAULTS.ogImageAlt);
