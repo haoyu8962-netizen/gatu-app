@@ -1566,14 +1566,14 @@ export function TradingViewChart({
 				<output
 					data-chart-loading
 					aria-live="polite"
-					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 px-4 text-center text-xs font-medium text-fg-muted"
+					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center text-fg-muted"
 				>
 					{hasCompletedInitialWidgetLoadRef.current ? (
 						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
 					) : (
-						<GatuOrbitLoader className="size-7 shrink-0" />
+						<GatuOrbitLoader className="size-9 shrink-0" />
 					)}
-					{t`Loading...`}
+					<span className="sr-only">{t`Loading...`}</span>
 				</output>
 			)}
 			{(rateLimitedUntil !== null || historyRateLimit !== null) && !isInitializing && !initError && (

@@ -78,6 +78,8 @@ describe("boot placeholder contract", () => {
 		expect(chartWidget).toContain("data-chart-loading");
 		expect(chartWidget).toContain("text-fg-muted");
 		expect(chartWidget).toContain("GatuOrbitLoader");
+		expect(chartWidget).toContain('className="size-9 shrink-0"');
+		expect(chartWidget).toContain('<span className="sr-only">{t`Loading...`}</span>');
 		expect(chartWidget).toContain("hasCompletedInitialWidgetLoadRef.current");
 		expect(chartWidget).toContain("SpinnerGapIcon");
 		expect(chartWidget).toContain("animate-spin");

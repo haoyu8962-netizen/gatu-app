@@ -1788,8 +1788,10 @@ describe("TradingViewChart", () => {
 		expect(loading?.className).toContain("flex");
 		expect(loading?.className).toContain("text-fg-muted");
 		expect(loading?.className).not.toContain("sr-only");
-		expect(loading?.querySelector('[data-gatu-loader="orbit"]')?.getAttribute("class")).toContain("size-7");
+		expect(loading?.querySelector('[data-gatu-loader="orbit"]')?.getAttribute("class")).toContain("size-9");
 		expect(loading?.querySelector("svg.animate-spin")).toBeNull();
+		expect(loading?.querySelector("span")?.className).toContain("sr-only");
+		expect(loading?.querySelector("span")?.textContent).toBe("Loading...");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
