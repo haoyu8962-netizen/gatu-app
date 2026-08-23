@@ -14,9 +14,23 @@ interface UseTradingGuardResult {
 	clearError: () => void;
 }
 
-export function useTradingGuard(): UseTradingGuardResult {
-	const { isReady, isLoading, signaturesRequired } = useAgentStatus();
-	const { authorize, status: authorizationStatus, error: authorizationError } = useTradingAuthorization();
+interface UseTradingGuardOptions {
+	requiresBuilderFee?: boolean;
+}
+
+export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradingGuardResult {
+	const requiresBuilderFee = options.requiresBuilderFee !== false;
+	const agentStatus = useAgentStatus();
+	const isReady = agentStatus.isAgentReady && (!requiresBuilderFee || agentStatus.isBuilderFeeReady);
+	const isLoading = agentStatus.isAgentLoading || (requiresBuilderFee && agentStatus.isBuilderFeeLoading);
+	const signaturesRequired = Number(agentStatus.needsAgent) + Number(requiresBuilderFee && agentStatus.needsBuilderFee);
+	const {
+		authorize,
+		status: authorizationStatus,
+		error: authorizationError,
+	} = useTradingAuthorization({
+		requiresBuilderFee,
+	});
 	const pendingActionRef = useRef<PendingAction | null>(null);
 	const prevIsReadyRef = useRef(isReady);
 	const [localError, setLocalError] = useState<Error | null>(null);

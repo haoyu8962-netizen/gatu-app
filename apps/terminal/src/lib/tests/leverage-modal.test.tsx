@@ -63,8 +63,12 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: ({ children, containerClassName: _containerClassName, ...props }: Record<string, unknown>) =>
-		createElement("button", { ...props, type: "button" }, children as ReactNode),
+	TradingActionButton: ({
+		children,
+		containerClassName: _containerClassName,
+		requiresBuilderFee: _requiresBuilderFee,
+		...props
+	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-editor", () => ({

@@ -34,7 +34,16 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
-		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
+		const headerItems = mobileShell?.firstElementChild?.firstElementChild;
+		const workspace = mobileShell?.children.item(1);
+		const navigationItems = mobileShell?.lastElementChild?.firstElementChild;
+		expect(headerItems?.className).toContain("h-14");
+		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
+		expect(headerItems?.className).toContain("pr-[max(0.625rem,var(--sar))]");
+		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
+		expect(workspace?.className).toContain("pr-[max(3px,var(--sar))]");
+		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
+		expect(navigationItems?.className).toContain("pr-[var(--sar)]");
 		expect(mobileShell?.lastElementChild?.querySelectorAll(".h-14")).toHaveLength(3);
 	});
 
@@ -123,7 +132,13 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
-		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
+		const headerItems = mobileShell?.firstElementChild?.firstElementChild;
+		const workspace = mobileShell?.children.item(1);
+		const navigationItems = mobileShell?.lastElementChild?.firstElementChild;
+		expect(headerItems?.className).toContain("h-14");
+		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
+		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
+		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
 		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1.h-14")).toHaveLength(3);
 		expect(mobileShell?.innerHTML).not.toContain("animate-pulse");
 	});

@@ -42,7 +42,7 @@ export function OfflineBanner({ className }: Props) {
 			role="alert"
 			aria-live="polite"
 			className={cn(
-				"shrink-0 px-3 py-2.5",
+				"shrink-0 py-2.5 pl-[max(0.75rem,var(--sal))] pr-[max(0.75rem,var(--sar))]",
 				"flex items-center justify-between gap-2",
 				"text-xs font-medium",
 				isOnline

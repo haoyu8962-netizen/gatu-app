@@ -9,19 +9,23 @@ const testState = vi.hoisted(() => ({
 	enableTrading: vi.fn(),
 	error: null as Error | null,
 	guardAction: vi.fn(),
+	guardOptions: [] as Array<{ requiresBuilderFee?: boolean }>,
 	isReady: false,
 	needsTrading: true,
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useTradingGuard: () => ({
-		isReady: testState.isReady,
-		isEnabling: false,
-		needsTrading: testState.needsTrading,
-		enableTrading: testState.enableTrading,
-		guardAction: testState.guardAction,
-		error: testState.error,
-	}),
+	useTradingGuard: (options: { requiresBuilderFee?: boolean }) => {
+		testState.guardOptions.push(options);
+		return {
+			isReady: testState.isReady,
+			isEnabling: false,
+			needsTrading: testState.needsTrading,
+			enableTrading: testState.enableTrading,
+			guardAction: testState.guardAction,
+			error: testState.error,
+		};
+	},
 }));
 
 describe("TradingActionButton", () => {
@@ -35,6 +39,7 @@ describe("TradingActionButton", () => {
 		testState.error = null;
 		testState.enableTrading.mockReset();
 		testState.guardAction.mockReset();
+		testState.guardOptions.length = 0;
 		testState.isReady = false;
 		testState.needsTrading = true;
 	});
@@ -54,6 +59,19 @@ describe("TradingActionButton", () => {
 
 		const alert = container.querySelector('[role="alert"]');
 		expect(alert?.textContent).toContain("Selected wallet does not match");
+		expect(testState.guardOptions.at(-1)).toEqual({ requiresBuilderFee: true });
+	});
+
+	it("can guard an Agent-only action without requiring builder fee approval", () => {
+		act(() => {
+			root.render(
+				<TradingActionButton onClick={vi.fn()} requiresBuilderFee={false}>
+					Update leverage
+				</TradingActionButton>,
+			);
+		});
+
+		expect(testState.guardOptions.at(-1)).toEqual({ requiresBuilderFee: false });
 	});
 
 	it("requires a second explicit action after enabling when requested", () => {

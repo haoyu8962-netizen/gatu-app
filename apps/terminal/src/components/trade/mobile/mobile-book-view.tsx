@@ -759,13 +759,24 @@ function SplitOrderbook({
 					<span>{t`Spread`}</span>
 					<span className="tabular-nums text-trading-panel-subtle">{spreadText}</span>
 				</div>
-				<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px px-2 pb-1.5 text-2xs uppercase tracking-wider text-fg-muted">
-					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
+				<div
+					data-slot="split-orderbook-column-headings"
+					className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px pb-1.5 text-2xs uppercase tracking-wider text-fg-muted"
+				>
+					<div
+						data-slot="split-orderbook-bid-headings"
+						className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2"
+					>
 						<div>{t`Total`}</div>
-						<div className="text-right">{t`Price`}</div>
+						<div data-slot="split-orderbook-bid-price-heading" className="text-right">
+							{t`Price`}
+						</div>
 					</div>
-					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
-						<div>{t`Price`}</div>
+					<div
+						data-slot="split-orderbook-ask-headings"
+						className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2"
+					>
+						<div data-slot="split-orderbook-ask-price-heading">{t`Price`}</div>
 						<div className="text-right">{t`Total`}</div>
 					</div>
 				</div>

@@ -8870,6 +8870,8 @@ msgstr "委托修改提交前交易数据已变化。"
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打开后再提交。"

@@ -9550,6 +9550,8 @@ msgstr "ऑर्डर संशोधन सबमिट होने से �
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "इस संवाद के खुले रहने के दौरान ट्रेडिंग डेटा बदल गया। सबमिट करने से पहले इसे बंद करके फिर से खोलें।"

@@ -735,6 +735,23 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(submitted.orders[0]?.s).toBe(expectedSize);
 	});
 
+	it("fails closed when a fresh percentage close would exceed that percentage of the live position", async () => {
+		mocks.livePosition = createLivePosition("1.500");
+		const sessionId = openSession();
+		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
+
+		await act(async () => {
+			await currentHook().submit({ sessionId });
+		});
+
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			phase: "idle",
+			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+		});
+	});
+
 	it("fails closed when the fresh REST position changed direction", async () => {
 		mocks.restPositionSize = "-2.500";
 		const sessionId = openSession();
@@ -825,6 +842,36 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.guardCalls).toBe(1);
 
 		mocks.livePosition = createLivePosition("-2.500");
+		act(() => root.render(createElement(Probe)));
+
+		await act(async () => {
+			gate.release();
+			await submitPromise;
+		});
+
+		expect(mocks.guardCalls).toBe(2);
+		expect(mocks.executeOrder).not.toHaveBeenCalled();
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			phase: "idle",
+			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+		});
+	});
+
+	it("fails closed when the live position size changes after a percentage close is planned", async () => {
+		const sessionId = openSession();
+		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
+		const gate = createExecutionGate();
+		mocks.betweenExecutionGuards = gate.wait;
+		let submitPromise!: Promise<void>;
+
+		await act(async () => {
+			submitPromise = currentHook().submit({ sessionId });
+			await gate.entered;
+		});
+		expect(mocks.guardCalls).toBe(1);
+
+		mocks.livePosition = createLivePosition("1.500");
 		act(() => root.render(createElement(Probe)));
 
 		await act(async () => {

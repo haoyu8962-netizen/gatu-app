@@ -43,7 +43,7 @@ export function MobileShellSkeleton() {
 			className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
 		>
 			<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
-				<div className="h-14 px-2.5 flex items-center justify-between">
+				<div className="h-14 flex items-center justify-between pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]">
 					<div className="flex items-center gap-1.5">
 						<div className="size-11 shrink-0" />
 						<div className="grid size-11 shrink-0 place-items-center">
@@ -52,7 +52,7 @@ export function MobileShellSkeleton() {
 					</div>
 				</div>
 			</div>
-			<div className="flex min-h-0 flex-1 flex-col gap-[3px] bg-grid-container p-[3px]">
+			<div className="flex min-h-0 flex-1 flex-col gap-[3px] bg-grid-container py-[3px] pl-[max(3px,var(--sal))] pr-[max(3px,var(--sar))]">
 				<div className="h-12 shrink-0 bg-surface" />
 				<div className="min-h-48 flex-[3] bg-surface" />
 				<div className="grid min-h-40 flex-[2] grid-cols-2 gap-[3px]">
@@ -62,7 +62,7 @@ export function MobileShellSkeleton() {
 				<div className="min-h-36 flex-[2] bg-surface" />
 			</div>
 			<div className="border-t border-stroke-weak/60 pb-[env(safe-area-inset-bottom)]">
-				<div className="flex items-stretch">
+				<div className="flex items-stretch pl-[var(--sal)] pr-[var(--sar)]">
 					{["markets", "trade", "account"].map((tab) => (
 						<div key={tab} className="flex-1 h-14" />
 					))}

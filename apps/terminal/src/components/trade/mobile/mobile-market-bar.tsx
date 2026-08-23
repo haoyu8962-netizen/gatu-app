@@ -47,6 +47,12 @@ interface TooltipPosition {
 	width: number;
 }
 
+function getSafeAreaInset(variable: "--sal" | "--sar"): number {
+	const value = window.getComputedStyle(document.documentElement).getPropertyValue(variable);
+	const parsed = Number.parseFloat(value);
+	return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
 export function MobileMarketBar({ className }: Props) {
 	useNumberFormatRevision();
 	const {
@@ -308,11 +314,13 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 		if (!trigger || typeof window === "undefined") return;
 
 		const rect = trigger.getBoundingClientRect();
-		const maxWidth = Math.max(0, window.innerWidth - TOOLTIP_VIEWPORT_PADDING_PX * 2);
+		const leftPadding = Math.max(TOOLTIP_VIEWPORT_PADDING_PX, getSafeAreaInset("--sal"));
+		const rightPadding = Math.max(TOOLTIP_VIEWPORT_PADDING_PX, getSafeAreaInset("--sar"));
+		const maxWidth = Math.max(0, window.innerWidth - leftPadding - rightPadding);
 		const width = Math.min(TOOLTIP_WIDTH_PX, maxWidth);
 		const left = Math.min(
-			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, rect.left),
-			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, window.innerWidth - width - TOOLTIP_VIEWPORT_PADDING_PX),
+			Math.max(leftPadding, rect.left),
+			Math.max(leftPadding, window.innerWidth - width - rightPadding),
 		);
 		const belowTop = rect.bottom + TOOLTIP_SIDE_OFFSET_PX;
 		const aboveTop = rect.top - TOOLTIP_ESTIMATED_HEIGHT_PX - TOOLTIP_SIDE_OFFSET_PX;

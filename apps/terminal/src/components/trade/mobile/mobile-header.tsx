@@ -28,8 +28,11 @@ export function MobileHeader({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="flex h-14 items-center justify-between px-2.5">
-				<div className="flex items-center gap-1.5">
+			<div
+				data-slot="mobile-header-inner"
+				className="flex h-14 items-center gap-2 pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]"
+			>
+				<div data-slot="mobile-header-brand" className="flex shrink-0 items-center gap-1.5">
 					<MobileNavDrawer />
 					<Link
 						to={tradeHomePath}
@@ -41,11 +44,14 @@ export function MobileHeader({ className }: Props) {
 					</Link>
 				</div>
 
-				<div className="flex min-w-0 items-center gap-0.5">
-					<div className="min-w-0 [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs">
+				<div data-slot="mobile-header-actions" className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+					<div
+						data-slot="mobile-header-account"
+						className="flex min-w-0 flex-1 justify-end [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
+					>
 						<UserMenu />
 					</div>
-					<ThemeToggle className="text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
+					<ThemeToggle className="ml-2 text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
 					<LanguageSwitcher
 						sideOffset={14}
 						alignOffset={-36}

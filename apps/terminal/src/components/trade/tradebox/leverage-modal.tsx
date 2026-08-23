@@ -181,6 +181,7 @@ function LeverageModalContent({
 					</Button>
 				)}
 				<TradingActionButton
+					requiresBuilderFee={false}
 					onClick={handleConfirm}
 					disabled={!isDirty || dragLeverage !== null || !leverageInputValid || isUpdating || showSuccess}
 					containerClassName="flex-1"

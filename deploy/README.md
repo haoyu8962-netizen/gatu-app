@@ -7,7 +7,7 @@ gatu 是 TanStack Start + Nitro 的 **SSR 应用**,必须有常驻 Node 进程�
 ```
 Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai)
          → 反代 127.0.0.1:3000
-         → systemd gatu.service → shared referral URI guard → node /opt/gatu/current/server/index.mjs
+         → systemd gatu.service → /opt/gatu/current referral URI guard → node server/index.mjs
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
@@ -74,7 +74,7 @@ IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端
 ## 1. 开 EC2
 
 - **AMI**:Ubuntu 24.04 LTS。
-- **规格**:`t3.large`(8GB,因为**在机器上构建**要 8GB heap)。若改用「本地构建只传产物」(见末尾备选 B),可降到 `t3.small`。
+- **规格**:`t3.large`(8GB,因为**在机器上构建**要 8GB heap)。
 - **磁盘**:30GB gp3。
 - **安全组**:入站 `22`(限你的 IP)、`80`、`443`。
 - 绑定 Elastic IP,并让上面的 DNS 指向它。
@@ -223,13 +223,14 @@ sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
-> 若构建仍 OOM:升 `t3.xlarge`(16GB),或改用备选 B。
+> 若构建仍 OOM:升 `t3.xlarge`(16GB)。不要绕过 canonical `deploy.sh main` 手工发布产物。
 
 ## 7. 安装 systemd 服务
 
 ```bash
-sudo cp /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
+sudo install -m 0644 /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
 sudo systemctl daemon-reload
+sudo systemctl show gatu.service --property=NeedDaemonReload --property=WorkingDirectory --property=ExecStart
 sudo systemctl enable gatu          # 开机自启（先不 start，等首次 deploy 创建 /opt/gatu/current）
 ```
 
@@ -248,6 +249,9 @@ sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 与 testnet
 ```bash
 sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 ```
+
+生产脚本只接受省略参数或显式 `main`；其他分支会在 fetch/reset 前以退出码 64 拒绝。同步后若仓库仍有
+任何 nonignored untracked 文件，脚本只报告并 fail closed，不会自动删除文件。
 
 脚本会:同步代码 → 验证仓库与已安装 `Caddyfile` 完全一致 → 注入 `.env.local` → `pnpm install` → 构建 → 复制 `.output` 到
 `/opt/gatu/releases/<timestamp>-<commit>` → 合并上一版 `public/assets` 中的 hashed chunks →
@@ -398,15 +402,16 @@ canonical 部署进程继承同一锁描述符。即使外层调用 shell 被终
 
 ### 已有服务器从旧部署模式迁移
 
+只在本部署变更已经合并且目标 commit 可从 `origin/main` 获取后执行迁移；共享生产主机不得长期部署 PR 分支。
 从尚未包含上述互斥/re-exec 逻辑的旧 `deploy.sh` 迁移时，旧 Bash 进程无法在
 `git reset` 后自动学会新逻辑。先暂停 CI、cron 和其他手工部署触发器，确认没有部署进程后，
 仅首次用 `gatu` 用户显式同步并从新文件启动；在最后一条命令完成前不要恢复其他触发器：
 
 ```bash
 sudo -u gatu git -C /opt/gatu/repo fetch --prune origin
-sudo -u gatu git -C /opt/gatu/repo reset --hard origin/test-pr102
+sudo -u gatu git -C /opt/gatu/repo reset --hard origin/main
 sudo -u gatu /bin/bash -n /opt/gatu/repo/deploy/deploy.sh
-sudo -u gatu /bin/bash /opt/gatu/repo/deploy/deploy.sh test-pr102
+sudo -u gatu /bin/bash /opt/gatu/repo/deploy/deploy.sh main
 ```
 
 之后只需执行最后一条部署命令；脚本会自行加锁、精确同步并重新载入新版本。
@@ -427,17 +432,22 @@ root install/reload 会让被入侵的应用用户获得修改公网代理的能
 如果服务器之前的 `gatu.service` 仍使用 `/opt/gatu/repo/apps/terminal/.output`,再更新 systemd 单元:
 
 ```bash
-sudo cp /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
+sudo install -m 0644 /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
 sudo systemctl daemon-reload
+sudo systemctl show gatu.service --property=NeedDaemonReload --property=WorkingDirectory --property=ExecStart
 sudo -u gatu mkdir -p /opt/gatu/releases
-sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh test-pr102
+sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 ```
 
-`deploy.sh` 会在第一次重启前把 Referral URI guard 原子安装到
-`/opt/gatu/shared/referral-uri-guard.cjs`。更新并 `daemon-reload` 该 unit 后，不要在首次新版部署前单独重启
-`gatu`；共享 guard 使随后回滚到尚未携带 `/join` 路由的旧 release 也能正常启动。
+canonical release 在原子切换 `current` 前写入 commit/release identity、内容精确为 `referral-join-v1\n` 的
+capability 文件和 `referral-uri-guard.cjs`。systemd 从当前 release 相对加载 guard，所以发布和回滚会一起切换
+server 与 guard。只要出现任一 identity/capability marker，缺失或畸形 capability、缺失 guard 都会使启动 fail closed。
+三个 marker 全部缺失的旧 release 才走不 preload guard 的一次性 legacy rollback 兼容路径；canonical 新 release
+不能通过省略 capability 绕过 guard。更新并 `daemon-reload` unit 后，不要在首次新版部署前单独重启 `gatu`。
 
-`deploy.sh` 会拒绝继续运行旧 `WorkingDirectory`,避免再次原地覆盖运行中的 `.output`。
+`deploy.sh` 同时比较已安装 unit，并读取 systemd 已加载的 `FragmentPath`、`DropInPaths`、
+`NeedDaemonReload`、`WorkingDirectory` 和 `ExecStart`。旧工作目录、未 reload、drop-in 或 shared guard
+ExecStart 都会在构建前 fail closed，避免再次原地覆盖运行中的 `.output`。
 
 ---
 
@@ -480,19 +490,12 @@ curl -sSI https://app.gatu.ai/ | grep -i '^content-security-policy:'
 curl -sSI https://app.gatu.ai/charting_library/charting_library.js | grep -i '^content-security-policy:'
 ```
 
-### 备选 B:本地/CI 构建,只传产物(EC2 可降到 t3.small)
-因为 `.output` 自包含,无需在 EC2 上构建:
+### 产物上传部署尚未支持生产
 
-```bash
-release="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
-# 本地（已设好 VITE_* 的 apps/terminal/.env.local）
-GATU_BUILD_SHA="$(git rev-parse HEAD)" GATU_RELEASE_ID="$release" NITRO_PRESET=node-server pnpm build
-ssh gatu@<host> "mkdir -p /opt/gatu/releases/${release}"
-rsync -az --delete apps/terminal/.output/ "gatu@<host>:/opt/gatu/releases/${release}/"
-ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && mv -Tf /opt/gatu/current.tmp /opt/gatu/current && sudo systemctl restart gatu"
-```
-
-此时 EC2 上不需要 Node 构建内存、不需要 pnpm install,只需 Node 运行 + Caddy。
+不要把任意本地/CI checkout 的 `.output` 直接 rsync 后切换 `current`。该路径会绕过 main provenance、
+release identity/capability、上一版 hashed assets、TradingView manifest、systemd/Caddy preflight、双 origin
+健康检查和自动回滚。只有未来提供并验证等价的签名产物发布器后，才能把它作为生产入口；当前正常生产发布
+唯一入口是合并后的 `main` 配合 `deploy.sh main`。
 
 ---
 

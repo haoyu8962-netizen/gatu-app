@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build & restart gatu on a single EC2 host.
-# Run as the `gatu` user:  bash /opt/gatu/repo/deploy/deploy.sh [branch]
+# Run as the `gatu` user:  bash /opt/gatu/repo/deploy/deploy.sh [main]
 #
-# Idempotent: discards local changes, syncs to origin/<branch>, installs,
+# Idempotent: discards tracked local changes, syncs to origin/main, installs,
 # builds a Nitro node-server output, publishes it as an immutable release,
 # verifies the canonical Caddy config, switches /opt/gatu/current
 # atomically, restarts the service, and health-checks both Node and Caddy.
@@ -30,10 +30,14 @@ CURL_MAX_TIME_SECONDS=15
 DEPLOY_LOCK_PATH="${SHARED}/deploy.lock"
 
 sync_and_reexec_deploy() {
-	local target_sha current_sha lock_target expected_lock_target
+	local target_sha current_sha lock_target expected_lock_target untracked_files
 
 	if [ "$#" -gt 1 ]; then
-		echo "ERROR: usage: deploy.sh [branch]" >&2
+		echo "ERROR: usage: deploy.sh [main]" >&2
+		exit 64
+	fi
+	if [ "$BRANCH" != "main" ]; then
+		echo "ERROR: production deployments may only synchronize origin/main; received ${BRANCH}." >&2
 		exit 64
 	fi
 	if ! git check-ref-format --branch "$BRANCH" >/dev/null 2>&1; then
@@ -96,6 +100,12 @@ sync_and_reexec_deploy() {
 	fi
 	if ! git diff --quiet HEAD --; then
 		echo "ERROR: tracked repository files changed after deployment synchronization." >&2
+		exit 1
+	fi
+	untracked_files="$(git ls-files --others --exclude-standard)"
+	if [ -n "$untracked_files" ]; then
+		echo "ERROR: nonignored untracked repository files remain after deployment synchronization:" >&2
+		printf '%s\n' "$untracked_files" >&2
 		exit 1
 	fi
 }
@@ -164,6 +174,50 @@ verify_caddy_config() {
 	fi
 }
 
+systemctl_show_property() {
+	/usr/bin/systemctl show "--property=$1" --value gatu.service
+}
+
+verify_loaded_systemd_unit() {
+	local load_state fragment_path drop_in_paths need_daemon_reload working_directory exec_start
+
+	if ! load_state="$(systemctl_show_property LoadState)" || [ "$load_state" != "loaded" ]; then
+		echo "ERROR: systemd has not loaded gatu.service." >&2
+		exit 1
+	fi
+	if ! fragment_path="$(systemctl_show_property FragmentPath)" || [ "$fragment_path" != "/etc/systemd/system/gatu.service" ]; then
+		echo "ERROR: systemd loaded gatu.service from ${fragment_path:-<unknown>}, expected /etc/systemd/system/gatu.service." >&2
+		exit 1
+	fi
+	if ! drop_in_paths="$(systemctl_show_property DropInPaths)" || [ -n "$drop_in_paths" ]; then
+		echo "ERROR: gatu.service has unsupported systemd drop-ins: ${drop_in_paths:-<unknown>}." >&2
+		exit 1
+	fi
+	if ! need_daemon_reload="$(systemctl_show_property NeedDaemonReload)" || [ "$need_daemon_reload" != "no" ]; then
+		echo "ERROR: systemd has not loaded the installed gatu.service; run sudo systemctl daemon-reload." >&2
+		exit 1
+	fi
+	if ! working_directory="$(systemctl_show_property WorkingDirectory)" || [ "$working_directory" != "$CURRENT" ]; then
+		echo "ERROR: loaded gatu.service uses WorkingDirectory=${working_directory:-<unknown>}, expected ${CURRENT}." >&2
+		exit 1
+	fi
+	if ! exec_start="$(systemctl_show_property ExecStart)"; then
+		echo "ERROR: unable to inspect the loaded gatu.service ExecStart." >&2
+		exit 1
+	fi
+	if [[ "$exec_start" != *"path=/bin/sh"* ||
+		"$exec_start" != *"argv[]=/bin/sh -ec"* ||
+		"$exec_start" != *".gatu-release-commit"* ||
+		"$exec_start" != *".gatu-release-id"* ||
+		"$exec_start" != *".gatu-release-capabilities"* ||
+		"$exec_start" != *"referral-join-v1"* ||
+		"$exec_start" != *"--require=./referral-uri-guard.cjs server/index.mjs"* ||
+		"$exec_start" == *"/opt/gatu/shared/referral-uri-guard.cjs"* ]]; then
+		echo "ERROR: loaded gatu.service ExecStart does not enforce the immutable release referral guard." >&2
+		exit 1
+	fi
+}
+
 verify_systemd_unit() {
 	local source_unit="${REPO}/deploy/gatu.service"
 	local installed_unit="/etc/systemd/system/gatu.service"
@@ -175,18 +229,11 @@ verify_systemd_unit() {
 		echo "  sudo systemctl daemon-reload" >&2
 		exit 1
 	fi
+	verify_loaded_systemd_unit
 }
 
-install_referral_uri_guard() {
-	local source_guard="${REPO}/deploy/referral-uri-guard.cjs"
-	local installed_guard="${SHARED}/referral-uri-guard.cjs"
-	local temporary_guard="${SHARED}/.referral-uri-guard.cjs.tmp.$$"
-
-	node --check "$source_guard"
-	mkdir -p "$SHARED"
-	cp "$source_guard" "$temporary_guard"
-	chmod 0644 "$temporary_guard"
-	mv -f "$temporary_guard" "$installed_guard"
+verify_referral_uri_guard() {
+	node --check "${REPO}/deploy/referral-uri-guard.cjs"
 }
 
 publish_release() {
@@ -760,9 +807,9 @@ fi
 sync_and_reexec_deploy "$@"
 unset GATU_DEPLOY_LOCK_FD GATU_DEPLOY_SYNCED_SHA
 
-echo "==> [2/8] Verify package manager and systemd unit"
+echo "==> [2/8] Verify package manager and service configuration"
 ensure_pnpm
-install_referral_uri_guard
+verify_referral_uri_guard
 verify_systemd_unit
 verify_caddy_config
 

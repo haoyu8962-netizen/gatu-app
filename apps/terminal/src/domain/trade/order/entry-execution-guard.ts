@@ -10,6 +10,8 @@ import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/marke
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
 
+export const ENTRY_POSITION_MAX_AGE_MS = 60_000;
+
 export interface EntryOrderExecutionState {
 	active: boolean;
 	assetId: number | undefined;
@@ -18,6 +20,9 @@ export interface EntryOrderExecutionState {
 	availabilityReceivedAt: number | undefined;
 	availabilityMaxAgeMs: number;
 	availability: EntryOrderExecutionAvailability;
+	positionStateReady: boolean;
+	positionReceivedAt: number | undefined;
+	positionSignedSize: string | undefined;
 	markPriceStatus: MarkPriceStatus;
 	markPx: string | undefined;
 	markPriceReceivedAt: number | undefined;
@@ -36,6 +41,37 @@ function isFrontendMarketOrder(order: OrderParameters["orders"][number]): boolea
 
 function isEntryTriggerOrder(params: OrderParameters): boolean {
 	return params.grouping === "na" && params.orders.length === 1 && "trigger" in params.orders[0].t;
+}
+
+function assertReduceOnlyTriggerPosition(
+	order: OrderParameters["orders"][number],
+	state: EntryOrderExecutionState,
+	now: number,
+): void {
+	if (order.r !== true) return;
+	const positionAge =
+		state.positionReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.positionReceivedAt;
+	if (
+		!state.positionStateReady ||
+		positionAge < 0 ||
+		positionAge > ENTRY_POSITION_MAX_AGE_MS ||
+		state.positionSignedSize === undefined
+	) {
+		throw new Error("Live position data is unavailable");
+	}
+
+	let positionSize: Big;
+	let orderSize: Big;
+	try {
+		positionSize = new Big(state.positionSignedSize);
+		orderSize = new Big(order.s);
+	} catch {
+		throw new Error("Live position data is unavailable");
+	}
+	const reducesPosition = order.b ? positionSize.lt(0) : positionSize.gt(0);
+	if (positionSize.eq(0) || !orderSize.gt(0) || !reducesPosition || orderSize.gt(positionSize.abs())) {
+		throw new Error("Reduce-only trigger no longer matches the current position");
+	}
 }
 
 function assertMarketCapStillSafe(
@@ -179,6 +215,7 @@ export function assertEntryOrderExecutionAllowed(
 	const marketOrders = params.orders.filter(isFrontendMarketOrder);
 	const entryTrigger = isEntryTriggerOrder(params);
 	const hasAttachedTriggers = params.grouping === "normalTpsl";
+	if (entryTrigger) assertReduceOnlyTriggerPosition(params.orders[0], state, now);
 	if (marketOrders.length === 0 && !entryTrigger && !hasAttachedTriggers) return;
 	if (
 		(marketOrders.length > 0 || entryTrigger) &&

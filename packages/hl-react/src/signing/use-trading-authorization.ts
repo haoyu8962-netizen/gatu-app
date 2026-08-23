@@ -13,47 +13,59 @@ export interface UseTradingAuthorizationResult {
 	error: Error | null;
 }
 
-export function useTradingAuthorization(): UseTradingAuthorizationResult {
+export interface UseTradingAuthorizationOptions {
+	requiresBuilderFee?: boolean;
+}
+
+export function useTradingAuthorization(options: UseTradingAuthorizationOptions = {}): UseTradingAuthorizationResult {
+	const requiresBuilderFee = options.requiresBuilderFee !== false;
 	const agentStatus = useAgentStatus();
 	const agentRegistration = useAgentRegistration();
 	const builderFeeApproval = useBuilderFeeApproval();
 
 	const authorization = useMutation({
-		mutationKey: ["hl", "tradingAuthorization", agentStatus.agentAddress],
+		mutationKey: ["hl", "tradingAuthorization", agentStatus.agentAddress, requiresBuilderFee],
 		mutationFn: async (): Promise<Address> => {
+			const refetchRequirements = requiresBuilderFee ? agentStatus.refetch : agentStatus.refetchAgent;
 			let registeredAddress = agentStatus.agentAddress;
 			let newlyVerifiedAgentAddress: Address | undefined;
-			let requirements = await agentStatus.refetch();
+			let requirements = await refetchRequirements();
 
 			if (requirements.needsAgent) {
 				registeredAddress = await agentRegistration.register({
 					persistConnection: readPersistTradingConnection(),
 				});
 				newlyVerifiedAgentAddress = registeredAddress;
-				requirements = await agentStatus.refetch(newlyVerifiedAgentAddress);
+				requirements = await refetchRequirements(newlyVerifiedAgentAddress);
 			}
 
-			if (requirements.needsBuilderFee) {
+			if (requiresBuilderFee && requirements.needsBuilderFee) {
 				await builderFeeApproval.approve();
 			}
 
-			const confirmed = await agentStatus.refetch(newlyVerifiedAgentAddress);
-			if (!confirmed.isReady) throw new Error("Trading authorization could not be confirmed");
+			const confirmed = await refetchRequirements(newlyVerifiedAgentAddress);
+			if (!confirmed.isAgentReady || (requiresBuilderFee && !confirmed.isBuilderFeeReady)) {
+				throw new Error("Trading authorization could not be confirmed");
+			}
 			return registeredAddress ?? zeroAddress;
 		},
 	});
 
 	let status: RegistrationStatus = "idle";
-	if (builderFeeApproval.status === "approving_fee") status = "approving_fee";
+	if (requiresBuilderFee && builderFeeApproval.status === "approving_fee") status = "approving_fee";
 	else if (agentRegistration.status === "approving_agent") status = "approving_agent";
 	else if (authorization.isPending) status = "verifying";
-	else if (authorization.isError || builderFeeApproval.status === "error" || agentRegistration.status === "error") {
+	else if (
+		authorization.isError ||
+		(requiresBuilderFee && builderFeeApproval.status === "error") ||
+		agentRegistration.status === "error"
+	) {
 		status = "error";
 	}
 
 	return {
 		authorize: authorization.mutateAsync,
 		status,
-		error: authorization.error ?? builderFeeApproval.error ?? agentRegistration.error,
+		error: authorization.error ?? (requiresBuilderFee ? builderFeeApproval.error : null) ?? agentRegistration.error,
 	};
 }

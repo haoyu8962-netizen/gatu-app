@@ -14,6 +14,7 @@ const testState = vi.hoisted(() => ({
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	openDepositModal: vi.fn(),
 	setPositionsActiveTab: vi.fn(),
+	snapshotsReady: true,
 }));
 
 const accountBalances = {
@@ -44,8 +45,22 @@ const accountBalances = {
 vi.mock("@/hooks/trade/use-account-balances", () => ({
 	isSupportedAccountAbstraction: (value: unknown) =>
 		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
-	useDefaultDexBalances: () => accountBalances,
-	useSelectedDexBalances: () => accountBalances,
+	useDefaultDexBalances: () => ({
+		...accountBalances,
+		hasAllDexsSnapshot: testState.snapshotsReady,
+		hasSpotStateSnapshot: testState.snapshotsReady,
+		isLoading: !testState.snapshotsReady,
+		perpStateStatus: testState.snapshotsReady ? "success" : "pending",
+		spotStateStatus: testState.snapshotsReady ? "success" : "pending",
+	}),
+	useSelectedDexBalances: () => ({
+		...accountBalances,
+		hasAllDexsSnapshot: testState.snapshotsReady,
+		hasSpotStateSnapshot: testState.snapshotsReady,
+		isLoading: !testState.snapshotsReady,
+		perpStateStatus: testState.snapshotsReady ? "success" : "pending",
+		spotStateStatus: testState.snapshotsReady ? "success" : "pending",
+	}),
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
@@ -92,9 +107,21 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useSelectedMarketInfo: () => ({ data: { name: "xyz:GOOGL", kind: "builderPerp", dex: "xyz" } }),
 	useSubscription: (name: string) =>
 		name === "openOrders"
-			? { data: { orders: [{ oid: 1 }, { oid: 2 }] }, status: "active", isStale: false }
-			: { data: { states: [[45, {}]] }, status: "active", isStale: false },
-	useUserPositions: () => ({ positions: [{ coin: "xyz:GOOGL", dex: "xyz" }], isLoading: false, hasError: false }),
+			? {
+					data: { orders: [{ oid: 1 }, { oid: 2 }] },
+					status: testState.snapshotsReady ? "active" : "subscribing",
+					isStale: false,
+				}
+			: {
+					data: { states: [[45, {}]] },
+					status: testState.snapshotsReady ? "active" : "subscribing",
+					isStale: false,
+				},
+	useUserPositions: () => ({
+		positions: [{ coin: "xyz:GOOGL", dex: "xyz" }],
+		isLoading: !testState.snapshotsReady,
+		hasError: false,
+	}),
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -137,6 +164,7 @@ describe("desktop positions panel shell", () => {
 		testState.geoStatus = "allowed";
 		testState.openDepositModal.mockReset();
 		testState.setPositionsActiveTab.mockReset();
+		testState.snapshotsReady = true;
 		i18n.load("en", {});
 		i18n.activate("en");
 		container = document.createElement("div");
@@ -173,6 +201,22 @@ describe("desktop positions panel shell", () => {
 			"Order History",
 		]);
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(1)");
+		expect(container.querySelectorAll("[data-position-tab-count]")).toHaveLength(4);
+	});
+
+	it("reserves count geometry while connected snapshots are loading without displaying stale values", () => {
+		testState.snapshotsReady = false;
+		render();
+
+		const slots = Array.from(container.querySelectorAll<HTMLElement>("[data-position-tab-count]"));
+		expect(slots).toHaveLength(4);
+		for (const slot of slots) {
+			expect(slot.className).toContain("min-w-[3ch]");
+			expect(slot.textContent).toBe("");
+		}
+		expect(
+			Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'), (tab) => tab.textContent).slice(0, 4),
+		).toEqual(["Balances", "Positions", "Open Orders", "TWAP"]);
 	});
 
 	it("matches the 1a tab rhythm and keeps the position filter without funds actions", () => {

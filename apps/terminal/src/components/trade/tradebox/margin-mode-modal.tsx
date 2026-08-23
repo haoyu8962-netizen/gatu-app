@@ -584,6 +584,7 @@ function MarginModeForm({
 					</Button>
 				) : (
 					<TradingActionButton
+						requiresBuilderFee={false}
 						onClick={handleConfirm}
 						disabled={
 							!isDirty ||

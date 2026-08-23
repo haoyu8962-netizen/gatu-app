@@ -59,6 +59,7 @@ interface ExecutionContext {
 	env: "Mainnet" | "Testnet";
 	closeSize: string;
 	freshSignedPositionSize: string;
+	plannedLiveSignedPositionSize: string;
 	marginMode: "cross" | "isolated";
 	expectedOrder: ExchangeOrder;
 	grouping: "na" | "normalTpsl" | "positionTpsl";
@@ -179,7 +180,15 @@ export function usePositionMarketCloseSubmit() {
 					}
 					assertSessionIdentity(refreshedSession, liveContextRef.current.clientKey, liveContextRef.current.env);
 					assertFreshSnapshotCompatibleWithLive(refreshedSession, fresh, liveContextRef.current);
+					const plannedLivePosition = liveContextRef.current.userPositions.getPosition(
+						refreshedSession.position.coin,
+						refreshedSession.position.dex,
+					);
+					if (!plannedLivePosition || !toBig(plannedLivePosition.szi)) {
+						throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+					}
 					const closeResolution = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
+					assertPercentageCloseWithinLiveIntent(refreshedSession, plannedLivePosition.szi, closeResolution);
 
 					const plan = buildOrderPlan({
 						kind: "marketClose",
@@ -212,6 +221,7 @@ export function usePositionMarketCloseSubmit() {
 						env: refreshedSession.env,
 						closeSize: String(order.s),
 						freshSignedPositionSize: fresh.signedPositionSize,
+						plannedLiveSignedPositionSize: plannedLivePosition.szi,
 						marginMode: fresh.marginMode,
 						expectedOrder: order,
 						grouping: plan.grouping,
@@ -363,6 +373,29 @@ function resolveCurrentCloseSize(
 	return resolution;
 }
 
+function assertPercentageCloseWithinLiveIntent(
+	session: PositionMarketCloseSession,
+	liveSignedPositionSize: string,
+	closeResolution: PositionMarketCloseResolution,
+): void {
+	if (session.sizingIntent.kind !== "percent") return;
+	const liveResolution = resolvePositionMarketClosePercent({
+		signedPositionSize: liveSignedPositionSize,
+		szDecimals: session.position.szDecimals,
+		percent: session.sizingIntent.value,
+	});
+	const plannedCloseSize = toBig(closeResolution.normalizedSize);
+	const liveIntentLimit = toBig(liveResolution.normalizedSize);
+	if (
+		liveResolution.errors.length > 0 ||
+		!plannedCloseSize ||
+		!liveIntentLimit ||
+		plannedCloseSize.gt(liveIntentLimit)
+	) {
+		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+	}
+}
+
 function assertFreshSnapshotCompatibleWithLive(
 	session: PositionMarketCloseSession,
 	fresh: FreshCloseSnapshot,
@@ -391,12 +424,15 @@ function assertLivePositionMatches(
 	const currentPosition = live.userPositions.getPosition(session.position.coin, session.position.dex);
 	const currentSize = toBig(currentPosition?.szi);
 	const expectedSize = toBig(execution.freshSignedPositionSize);
+	const plannedLiveSize = toBig(execution.plannedLiveSignedPositionSize);
 	const closeSize = toBig(execution.closeSize);
 	if (
 		!currentSize ||
 		!expectedSize ||
+		!plannedLiveSize ||
 		!closeSize ||
 		currentSize.gt(0) !== expectedSize.gt(0) ||
+		!currentSize.eq(plannedLiveSize) ||
 		currentSize.abs().lt(closeSize) ||
 		currentPosition?.leverage.type !== execution.marginMode
 	) {
