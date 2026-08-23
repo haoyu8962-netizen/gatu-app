@@ -175,7 +175,7 @@ export function ApiWalletView({
 								href={OFFICIAL_AGENT_WALLET_DOCS_URL}
 								target="_blank"
 								rel="noopener"
-								className="inline-flex items-center gap-1 font-semibold text-brand underline decoration-api-wallet-stroke-control underline-offset-4 hover:text-api-wallet-fg"
+								className="inline-flex items-center gap-1 font-semibold text-signal underline decoration-api-wallet-stroke-control underline-offset-4 hover:text-signal-hover"
 							>
 								<Trans>Read the official agent wallet documentation</Trans>
 								<ArrowSquareOutIcon className="size-3" />

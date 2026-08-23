@@ -307,7 +307,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 									disabled={!closeAllPreview}
 									aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
 									title={closeAllUnavailableReason ?? undefined}
-									className="min-h-[27px] whitespace-nowrap rounded-[7px] border border-stroke-error-weak bg-modal px-2.5 text-xs leading-4 font-semibold text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-subtle"
+									className="min-h-[27px] whitespace-nowrap rounded-[7px] border border-stroke-error-weak bg-modal px-2.5 text-xs leading-4 font-semibold text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-subtle"
 								>
 									{t`Close All`}
 								</button>
@@ -351,7 +351,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t`Entry Price`} / {t`Mark Price`}
 											</button>
@@ -366,7 +366,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 												type="button"
 												onClick={() => setPnlMode((current) => (current === "roe" ? "priceChange" : "roe"))}
 												aria-label={pnlMode === "roe" ? t`Show price change percentage` : t`Show ROE percentage`}
-												className="cursor-pointer border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-market-close-muted transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-pointer border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-market-close-muted transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{pnlHeader} <span aria-hidden="true">▾</span>
 											</button>
@@ -379,7 +379,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t`Liquidation Price`}
 											</button>
@@ -398,7 +398,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t({ message: "Funding", context: "Cumulative position funding" })}
 											</button>

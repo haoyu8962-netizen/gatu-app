@@ -27,7 +27,7 @@ interface Props {
 }
 
 const LINK_CLASS =
-	"rounded-[2px] text-market-close-fg underline decoration-market-close-stroke-control underline-offset-2 transition-colors duration-[120ms] hover:text-market-close-danger hover:decoration-market-close-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control";
+	"rounded-[2px] text-market-close-fg underline decoration-market-close-stroke-control underline-offset-2 transition-colors duration-[120ms] hover:text-market-close-danger hover:decoration-market-close-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus";
 
 const CHECKBOX_ROW_CLASS =
 	"min-h-11 w-full gap-2.5 rounded-[10px] px-2 py-3 transition-colors duration-[120ms] min-[1001px]:py-2.5 min-[1001px]:pr-2.5";

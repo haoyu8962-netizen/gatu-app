@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { GatuOrbitLoader } from "@/components/brand/gatu-orbit-loader";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { getCandleGateRetryAt, subscribeCandleGate } from "@/lib/chart/candle-gate";
 import { createHistoryRecoveryController } from "@/lib/chart/history-recovery";
@@ -120,6 +121,7 @@ export function TradingViewChart({
 	const widgetEpochRef = useRef(0);
 	const datafeedRef = useRef<ChartDatafeed | null>(null);
 	const chartReadyRef = useRef(false);
+	const hasCompletedInitialWidgetLoadRef = useRef(false);
 	const pendingDataResetRef = useRef(false);
 	const pendingRealtimeResetRef = useRef(false);
 	const failedHistoryStreamKeyRef = useRef<string | null>(null);
@@ -1437,6 +1439,7 @@ export function TradingViewChart({
 					if (disposed || widgetEpochRef.current !== widgetEpoch || widgetRef.current !== widget) return;
 					clearReadyWatchdog();
 					chartReadyRef.current = true;
+					hasCompletedInitialWidgetLoadRef.current = true;
 					pendingChartStateRef.current = null;
 					pendingChartStateSymbolRef.current = null;
 					pendingChartIntervalRef.current = null;
@@ -1563,10 +1566,14 @@ export function TradingViewChart({
 				<output
 					data-chart-loading
 					aria-live="polite"
-					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-2 px-4 text-center text-xs font-medium text-fg-muted"
+					className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center text-fg-muted"
 				>
-					<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
-					{t`Loading...`}
+					{hasCompletedInitialWidgetLoadRef.current ? (
+						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
+					) : (
+						<GatuOrbitLoader className="size-9 shrink-0" />
+					)}
+					<span className="sr-only">{t`Loading...`}</span>
 				</output>
 			)}
 			{(rateLimitedUntil !== null || historyRateLimit !== null) && !isInitializing && !initError && (
@@ -1581,7 +1588,7 @@ export function TradingViewChart({
 					)}
 				>
 					{(historyRateLimit?.phase === "recovering" || !hasLoadedHistoryRef.current) && (
-						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-brand motion-reduce:animate-none" />
+						<SpinnerGapIcon aria-hidden="true" className="size-4 animate-spin text-signal motion-reduce:animate-none" />
 					)}
 					{t`Live chart data is rate limited. Retrying shortly.`}
 				</output>

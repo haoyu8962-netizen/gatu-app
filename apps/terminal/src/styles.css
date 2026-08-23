@@ -205,13 +205,26 @@
     --bg-alternate: #f5f6fa;
     --bg-grid-container: #f1f3f6;
     --bg-portfolio-canvas: #f1f3f6;
-    --bg-brand: #4c64d9;
+    --bg-brand: var(--action);
     --bg-inverse: #12131a;
+
+    /* Brand roles. Product surfaces, market semantics, and chart data colors stay independent. */
+    --action: #15171e;
+    --action-hover: #32363d;
+    --action-active: #08090d;
+    --on-action: #ffffff;
+    --signal: #667311;
+    --signal-hover: #4f5a0d;
+    --signal-soft: rgb(102 115 17 / 10%);
+    --focus: var(--signal);
+    --chart-accent: #4c64d9;
+    --logo-ink: #15171e;
+    --logo-node: #15171e;
 
     /* Text */
     --text-strong: #000626e5;
     --text-weak: #000933a6;
-    --text-brand: #4c64d9;
+    --text-brand: var(--signal);
     --text-disabled: #0011661a;
     --text-error: #c73a3a;
     --text-warning: #8f6c1a;
@@ -227,11 +240,11 @@
     --fill-weaker: #00158005;
     --fill-hover: #0015800a;
     --fill-press: #0011661a;
-    --fill-selected: #4c64d9;
+    --fill-selected: var(--action);
     --fill-disabled: #0011661a;
     --fill-overlay: #000d4daa;
-    --fill-brand-strong: #4c64d9;
-    --fill-brand-weak: #4c64d90d;
+    --fill-brand-strong: var(--action);
+    --fill-brand-weak: var(--fill-weak);
     --fill-error-strong: #c73a3a;
     --fill-error-weak: #ff4a4a0d;
     --fill-warning-strong: #8f6c1a;
@@ -251,11 +264,11 @@
     /* Stroke */
     --stroke-strong: #000d4d73;
     --stroke-weak: #0011661a;
-    --stroke-selected: #4c64d9;
-    --stroke-focus: #4c64d9;
+    --stroke-selected: var(--action);
+    --stroke-focus: var(--focus);
     --stroke-disabled: #0011661a;
-    --stroke-brand-strong: #4c64d9cc;
-    --stroke-brand-weak: #4c64d933;
+    --stroke-brand-strong: var(--action);
+    --stroke-brand-weak: var(--stroke-weak);
     --stroke-error-strong: #c73a3acc;
     --stroke-error-weak: #c73a3a24;
     --stroke-warning-strong: #8f6c1acc;
@@ -270,7 +283,7 @@
 
     /* Icon */
     --icon-neutral: #000d4d99;
-    --icon-brand: #4c64d9cc;
+    --icon-brand: var(--signal);
     --icon-disabled: #0011661a;
     --icon-error: #c73a3acc;
     --icon-warning: #8f6c1acc;
@@ -293,7 +306,7 @@
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
-    --sel: rgba(37, 99, 235, 0.15);
+    --sel: var(--signal-soft);
 
     /* Trading toolbar and close confirmation — design handoff semantic colors. */
     --market-close-text-strong: #1a2330;
@@ -304,8 +317,9 @@
     --market-close-stroke-control: #c6cfd9;
     --market-close-surface-card: #f7f9fb;
     --market-close-surface-hover: #f1f4f8;
-    --market-close-control-active: #1a2330;
-    --market-close-control-active-text: #ffffff;
+    --market-close-control-active: var(--action);
+    --market-close-control-active-text: var(--on-action);
+    --market-close-control-focus: var(--focus);
     --market-close-danger: #d6453d;
     --market-close-danger-text: #ffffff;
     --market-close-danger-disabled: #efc3bf;
@@ -329,8 +343,9 @@
     --trading-panel-stroke-row: #eef1f5;
     --trading-panel-surface-card: #f7f9fb;
     --trading-panel-surface-hover: #f1f4f8;
-    --trading-panel-control-active: #1a2330;
-    --trading-panel-control-active-text: #ffffff;
+    --trading-panel-control-active: var(--action);
+    --trading-panel-control-active-text: var(--on-action);
+    --trading-panel-control-focus: var(--focus);
     --trading-panel-success: #1f8a5a;
     --trading-panel-error: #d6453d;
     --trading-panel-warning: #d98e1f;
@@ -380,13 +395,26 @@
     --bg-alternate: #0f1a1f;
     --bg-grid-container: #1b2429;
     --bg-portfolio-canvas: #04251f;
-    --bg-brand: #b2bcf1;
+    --bg-brand: var(--action);
     --bg-inverse: #ffffff;
+
+    /* Brand roles. Product surfaces, market semantics, and chart data colors stay independent. */
+    --action: #edeef2;
+    --action-hover: #ffffff;
+    --action-active: #d5d7de;
+    --on-action: #08090d;
+    --signal: #d7ff3f;
+    --signal-hover: #e6ff70;
+    --signal-soft: rgb(215 255 63 / 14%);
+    --focus: var(--signal);
+    --chart-accent: #b2bcf1;
+    --logo-ink: #edeef2;
+    --logo-node: #d7ff3f;
 
     /* Text */
     --text-strong: #ffffff;
     --text-weak: #ffffffc7;
-    --text-brand: #b2bcf1;
+    --text-brand: var(--signal);
     --text-disabled: #ffffff1f;
     --text-error: #ff9c9c;
     --text-warning: #e0be70;
@@ -402,11 +430,11 @@
     --fill-weaker: #ffffff08;
     --fill-hover: #ffffff0f;
     --fill-press: #ffffff1f;
-    --fill-selected: #b2bcf1;
+    --fill-selected: var(--action);
     --fill-disabled: #ffffff1f;
     --fill-overlay: #000626a8;
-    --fill-brand-strong: #b2bcf1;
-    --fill-brand-weak: #b2bcf10f;
+    --fill-brand-strong: var(--action);
+    --fill-brand-weak: var(--fill-weak);
     --fill-error-strong: #ff9c9c;
     --fill-error-weak: #ff9c9c14;
     --fill-warning-strong: #e0be70;
@@ -426,11 +454,11 @@
     /* Stroke */
     --stroke-strong: #ffffff99;
     --stroke-weak: #ffffff1f;
-    --stroke-selected: #b2bcf1;
-    --stroke-focus: #b2bcf1;
+    --stroke-selected: var(--action);
+    --stroke-focus: var(--focus);
     --stroke-disabled: #ffffff1f;
-    --stroke-brand-strong: #b2bcf1cc;
-    --stroke-brand-weak: #b2bcf133;
+    --stroke-brand-strong: var(--action);
+    --stroke-brand-weak: var(--stroke-weak);
     --stroke-error-strong: #ff9c9ccc;
     --stroke-error-weak: #ff9c9c33;
     --stroke-warning-strong: #e0be70cc;
@@ -445,7 +473,7 @@
 
     /* Icon */
     --icon-neutral: #ffffff99;
-    --icon-brand: #b2bcf1cc;
+    --icon-brand: var(--signal);
     --icon-disabled: #ffffff1f;
     --icon-error: #ff9c9ccc;
     --icon-warning: #e0be70cc;
@@ -468,7 +496,7 @@
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
-    --sel: rgba(79, 125, 255, 0.15);
+    --sel: var(--signal-soft);
 
     /* Dark mode follows the terminal's existing semantic contrast system. */
     --market-close-text-strong: var(--text-strong);
@@ -479,8 +507,9 @@
     --market-close-stroke-control: var(--stroke-strong);
     --market-close-surface-card: var(--fill-weak);
     --market-close-surface-hover: var(--fill-press);
-    --market-close-control-active: var(--fill-selected);
-    --market-close-control-active-text: var(--text-inverse-strong);
+    --market-close-control-active: var(--action);
+    --market-close-control-active-text: var(--on-action);
+    --market-close-control-focus: var(--focus);
     --market-close-danger: var(--fill-error-strong);
     --market-close-danger-text: var(--text-inverse-strong);
     --market-close-danger-disabled: var(--fill-disabled);
@@ -503,8 +532,9 @@
     --trading-panel-stroke-row: color-mix(in srgb, var(--stroke-weak) 70%, transparent);
     --trading-panel-surface-card: var(--fill-weak);
     --trading-panel-surface-hover: var(--fill-press);
-    --trading-panel-control-active: var(--fill-selected);
-    --trading-panel-control-active-text: var(--text-inverse-strong);
+    --trading-panel-control-active: var(--action);
+    --trading-panel-control-active-text: var(--on-action);
+    --trading-panel-control-focus: var(--focus);
     --trading-panel-success: var(--text-success);
     --trading-panel-error: var(--text-error);
     --trading-panel-warning: var(--text-warning);
@@ -568,7 +598,18 @@
   --color-fg-inverse-muted: var(--text-inverse-weak);
   --color-fg-inverse-disabled: var(--text-inverse-disabled);
 
-  /* Semantic (shared: bg-*, text-*, border-*) */
+  /* Brand roles */
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-active: var(--action-active);
+  --color-on-action: var(--on-action);
+  --color-signal: var(--signal);
+  --color-signal-hover: var(--signal-hover);
+  --color-signal-soft: var(--signal-soft);
+  --color-focus: var(--focus);
+  --color-chart-accent: var(--chart-accent);
+
+  /* Compatibility aliases and semantic status colors */
   --color-brand: var(--text-brand);
   --color-brand-soft: var(--fill-brand-weak);
   --color-error: var(--text-error);
@@ -608,6 +649,7 @@
   --color-market-close-hover: var(--market-close-surface-hover);
   --color-market-close-control: var(--market-close-control-active);
   --color-market-close-on-control: var(--market-close-control-active-text);
+  --color-market-close-focus: var(--market-close-control-focus);
   --color-market-close-danger: var(--market-close-danger);
   --color-market-close-danger-text: var(--market-close-danger-text);
   --color-market-close-danger-disabled: var(--market-close-danger-disabled);
@@ -633,6 +675,7 @@
   --color-trading-panel-hover: var(--trading-panel-surface-hover);
   --color-trading-panel-control: var(--trading-panel-control-active);
   --color-trading-panel-on-control: var(--trading-panel-control-active-text);
+  --color-trading-panel-focus: var(--trading-panel-control-focus);
   --color-trading-panel-success: var(--trading-panel-success);
   --color-trading-panel-error: var(--trading-panel-error);
   --color-trading-panel-warning: var(--trading-panel-warning);
@@ -668,6 +711,8 @@
   --color-stroke-strong: var(--stroke-strong);
   --color-stroke-selected: var(--stroke-selected);
   --color-stroke-focus: var(--stroke-focus);
+  --color-stroke-action: var(--action);
+  --color-stroke-signal: var(--signal);
   --color-stroke-disabled: var(--stroke-disabled);
   --color-stroke-brand-strong: var(--stroke-brand-strong);
   --color-stroke-brand-weak: var(--stroke-brand-weak);
@@ -686,6 +731,8 @@
   /* Icons */
   --color-icon: var(--icon-neutral);
   --color-icon-brand: var(--icon-brand);
+  --color-icon-action: var(--action);
+  --color-icon-signal: var(--signal);
   --color-icon-disabled: var(--icon-disabled);
   --color-icon-error: var(--icon-error);
   --color-icon-warning: var(--icon-warning);
@@ -812,6 +859,39 @@
 }
 
 @layer components {
+  .gatu-orbit-loader__track {
+    opacity: 0.2;
+  }
+
+  .gatu-orbit-loader__segment {
+    animation: gatu-orbit-loader 1.5s linear infinite;
+  }
+
+  .gatu-orbit-loader__static-node {
+    opacity: 0;
+  }
+
+  @keyframes gatu-orbit-loader {
+    to {
+      stroke-dashoffset: -100;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gatu-orbit-loader__track {
+      opacity: 1;
+    }
+
+    .gatu-orbit-loader__segment {
+      animation: none;
+      opacity: 0;
+    }
+
+    .gatu-orbit-loader__static-node {
+      opacity: 1;
+    }
+  }
+
   .api-wallet-col-name {
     width: var(--api-wallet-col-name);
   }
@@ -1110,8 +1190,8 @@
   }
 
   .desktop-terminal-grid > .react-grid-placeholder {
-    background-color: var(--fill-brand-weak);
-    border: 1px solid var(--stroke-brand-strong);
+    background-color: var(--fill-weak);
+    border: 1px solid var(--action);
     opacity: 0.45;
   }
 

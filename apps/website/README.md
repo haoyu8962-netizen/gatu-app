@@ -1,8 +1,8 @@
 # @gatu/website
 
-Marketing site served at **hypeterminal.com**. Built with Astro + Tailwind v4. Static output, no JS framework on the client.
+Marketing site served at **gatu.ai**. Built with Astro + Tailwind v4. Static output, no JS framework on the client.
 
-The trading app lives at **app.hypeterminal.com** (`apps/terminal`).
+The trading app lives at **app.gatu.ai** (`apps/terminal`).
 
 ## Local
 
@@ -14,7 +14,7 @@ pnpm --filter @gatu/website preview
 
 ## Deploying to Vercel (apex domain)
 
-The terminal already deploys from this repo's root `vercel.json` to `app.hypeterminal.com`. The website is a **separate Vercel project** that points at this directory.
+The terminal already deploys from this repo's root `vercel.json` to `app.gatu.ai`. The website is a **separate Vercel project** that points at this directory.
 
 ### One-time setup
 
@@ -24,16 +24,16 @@ The terminal already deploys from this repo's root `vercel.json` to `app.hypeter
 4. Install Command: leave default — `apps/website/vercel.json` overrides it.
 5. Build Command: leave default — same.
 6. Output Directory: leave default — same.
-7. After first deploy, **Settings → Domains** → add `hypeterminal.com` (apex) and `www.hypeterminal.com`.
+7. After first deploy, **Settings → Domains** → add `gatu.ai` (apex) and `www.gatu.ai`.
 8. Set the apex as the Production Domain.
 
 ### DNS
 
 At your registrar:
 
-- `hypeterminal.com` (apex) → Vercel's apex IPs (`A` record `76.76.21.21`) or ALIAS to `cname.vercel-dns.com` if your DNS supports it.
-- `www.hypeterminal.com` → CNAME `cname.vercel-dns.com`.
-- `app.hypeterminal.com` already points at the terminal project — leave it alone.
+- `gatu.ai` (apex) → Vercel's apex IPs (`A` record `76.76.21.21`) or ALIAS to `cname.vercel-dns.com` if your DNS supports it.
+- `www.gatu.ai` → CNAME `cname.vercel-dns.com`.
+- `app.gatu.ai` already points at the terminal project — leave it alone.
 
 ### Why two projects, not one?
 

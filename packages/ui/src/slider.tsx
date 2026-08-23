@@ -118,8 +118,8 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 									aria-describedby={ariaDescribedBy}
 									getAriaValueText={getAriaValueText}
 									className={cn(
-										"relative rounded-full bg-white",
-										"border-2 border-stroke-focus shadow-md",
+										"relative rounded-full bg-surface",
+										"border-2 border-stroke-action shadow-md",
 										"[&:has(input:focus-visible)]:outline-2 [&:has(input:focus-visible)]:outline-offset-2 [&:has(input:focus-visible)]:outline-stroke-focus",
 										"before:absolute before:content-['']",
 										thumbSizeClasses[thumbSize],

@@ -43,6 +43,7 @@ describe("Slider slot classes", () => {
 		expect(control?.classList.contains("relative")).toBe(true);
 		expect(track?.classList.contains("bg-fill-weak")).toBe(true);
 		expect(indicator?.classList.contains("bg-fill-selected")).toBe(true);
-		expect(thumb?.classList.contains("bg-white")).toBe(true);
+		expect(thumb?.classList.contains("bg-surface")).toBe(true);
+		expect(thumb?.classList.contains("border-stroke-action")).toBe(true);
 	});
 });

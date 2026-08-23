@@ -67,9 +67,9 @@ export function CommandMenu() {
 							<span
 								className={cn(
 									"rounded-8 px-1.5 py-0.5 text-xs",
-									market.kind === "perp" && "bg-brand-soft text-brand",
-									market.kind === "spot" && "bg-success-soft text-success",
-									market.kind === "builderPerp" && "bg-warning-soft text-warning",
+									market.kind === "perp" && "bg-fill-weak text-scope-perp",
+									market.kind === "spot" && "bg-fill-weak text-scope-spot",
+									market.kind === "builderPerp" && "bg-fill-weak text-scope-builders",
 								)}
 							>
 								{KIND_LABELS[market.kind]}

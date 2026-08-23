@@ -21,9 +21,9 @@ const alertGlobalVariants = cva(["flex items-start rounded-8 shadow-raised overf
 			success: "bg-success-soft border border-stroke-success-weak",
 			information: "bg-info-soft border border-stroke-info-weak",
 			neutral: "bg-fill-weaker border border-stroke-weak",
-			brand: "bg-brand-soft border border-stroke-brand-weak",
+			brand: "bg-signal-soft border border-stroke-signal/30",
 			"inverse-neutral": "bg-inverse-surface",
-			"inverse-brand": "bg-brand",
+			"inverse-brand": "bg-action",
 		},
 	},
 	defaultVariants: {
@@ -37,9 +37,9 @@ const toneColors: Record<AlertGlobalTone, { icon: string; text: string; close: s
 	success: { icon: "text-icon-success", text: "text-fg-muted", close: "text-icon" },
 	information: { icon: "text-icon-info", text: "text-fg-muted", close: "text-icon" },
 	neutral: { icon: "text-icon", text: "text-fg-muted", close: "text-icon" },
-	brand: { icon: "text-icon-brand", text: "text-fg-muted", close: "text-icon" },
+	brand: { icon: "text-icon-signal", text: "text-fg-muted", close: "text-icon" },
 	"inverse-neutral": { icon: "text-icon-inverse", text: "text-fg-inverse", close: "text-icon-inverse" },
-	"inverse-brand": { icon: "text-icon-inverse", text: "text-fg-inverse", close: "text-icon-inverse" },
+	"inverse-brand": { icon: "text-on-action", text: "text-on-action", close: "text-on-action/70" },
 };
 
 interface AlertGlobalProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertGlobalVariants> {

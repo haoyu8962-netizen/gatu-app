@@ -37,7 +37,7 @@ export function PositionActionsDropdown({
 				size="xxs"
 				disabled={!canClose || isRowClosing}
 				onClick={onMarketClose}
-				className={`${positionTableInlineActionClass} border-stroke-error-weak text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:!outline-market-close-control`}
+				className={`${positionTableInlineActionClass} border-stroke-error-weak text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:!outline-market-close-focus`}
 			>
 				{isRowClosing ? t`Closing...` : t`Market Close`}
 			</Button>
@@ -45,7 +45,7 @@ export function PositionActionsDropdown({
 				size="xxs"
 				className="flex shrink-0 text-market-close-subtle"
 				triggerVariant="minimal"
-				triggerClassName="size-[26px] rounded-[7px] p-0 transition-all duration-[120ms] hover:bg-market-close-hover focus-visible:!outline-market-close-control"
+				triggerClassName="size-[26px] rounded-[7px] p-0 transition-all duration-[120ms] hover:bg-market-close-hover focus-visible:!outline-market-close-focus"
 				triggerAriaLabel={t`More position actions`}
 				trigger={<DotsThreeIcon className="size-[18px]" weight="bold" aria-hidden="true" />}
 				hideCaret

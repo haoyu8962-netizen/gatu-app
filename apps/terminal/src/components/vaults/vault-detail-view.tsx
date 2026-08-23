@@ -197,7 +197,7 @@ export function VaultDetailView({
 						href={getExplorerAddressUrl(detail.leader, isTestnet)}
 						target="_blank"
 						rel="noopener"
-						className="mt-3 inline-flex items-center gap-1 font-mono text-xs tabular-nums text-brand hover:underline"
+						className="mt-3 inline-flex items-center gap-1 font-mono text-xs tabular-nums text-signal hover:text-signal-hover hover:underline"
 					>
 						{shortenAddress(detail.leader)}
 						<ArrowSquareOutIcon className="size-3" />

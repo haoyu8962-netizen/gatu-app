@@ -258,7 +258,7 @@ export function PositionCloseSizingControls({
 					inputSize="xl"
 					mobileSafe
 					dir="ltr"
-					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 pr-12 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-control focus-visible:ring-0 min-[1001px]:h-11"
+					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 pr-12 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-focus focus-visible:ring-0 min-[1001px]:h-11"
 					suffixClassName="right-3 text-[13px] leading-[18px] font-normal text-market-close-muted min-[1001px]:font-medium"
 				/>
 
@@ -275,7 +275,7 @@ export function PositionCloseSizingControls({
 					inputSize="xl"
 					mobileSafe
 					dir="ltr"
-					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-2.5 pr-[22px] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-control focus-visible:ring-0 min-[1001px]:h-11"
+					className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-2.5 pr-[22px] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-focus focus-visible:ring-0 min-[1001px]:h-11"
 					suffixClassName="right-2.5 text-[13px] leading-[18px] font-normal text-market-close-muted"
 				/>
 			</div>
@@ -296,7 +296,7 @@ export function PositionCloseSizingControls({
 								onIntentChange(percent === 100 ? { kind: "max" } : { kind: "percent", value: String(percent) })
 							}
 							className={cn(
-								"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-[13px] leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-control focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
+								"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-[13px] leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-focus focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
 								selected
 									? "!border-market-close-control !bg-market-close-control !text-market-close-on-control hover:!bg-market-close-control active:!bg-market-close-control"
 									: "!border-market-close-stroke-card !bg-modal !text-market-close-muted hover:!bg-modal active:!bg-modal min-[1001px]:hover:!border-market-close-control min-[1001px]:hover:!text-market-close-control",
@@ -326,7 +326,7 @@ export function PositionCloseSizingControls({
 					controlClassName="h-9 min-[1001px]:h-8"
 					trackClassName="h-1 !rounded-[2px] bg-market-close-stroke-card ring-0 !shadow-none"
 					indicatorClassName="min-w-0 !rounded-[2px] bg-market-close-control !shadow-none"
-					thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-trading-panel-slider before:-inset-[7px] [&:has(input:focus-visible)]:!outline-none min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
+					thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-trading-panel-slider before:-inset-[7px] min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
 				/>
 				<div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
 					{SLIDER_MARKS.map((mark) => (

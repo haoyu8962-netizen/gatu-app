@@ -193,8 +193,8 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 								<div className="flex flex-col items-center">
 									<span
 										className={cn(
-											"text-xs px-2 py-1 uppercase font-medium",
-											direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+											"bg-fill-weak text-xs px-2 py-1 uppercase font-medium",
+											direction === "toSpot" ? "text-scope-perp" : "text-scope-spot",
 										)}
 									>
 										{fromLabel}
@@ -205,15 +205,15 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 									onClick={handleFlip}
 									aria-label={t`Flip transfer direction`}
 									disabled={!!internalTransfersDisabledReason || isPending}
-									className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
+									className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-action"
 								>
 									<ArrowsLeftRightIcon className="size-4" />
 								</button>
 								<div className="flex flex-col items-center">
 									<span
 										className={cn(
-											"text-xs px-2 py-1 uppercase font-medium",
-											direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+											"bg-fill-weak text-xs px-2 py-1 uppercase font-medium",
+											direction === "toPerp" ? "text-scope-perp" : "text-scope-spot",
 										)}
 									>
 										{toLabel}

@@ -11,7 +11,7 @@ import { type ApiStatus, useApiStatus } from "@/lib/hyperliquid";
 import { useCommandMenuActions } from "@/stores/use-global-modal-store";
 
 const FOOTER_LINK_CLASS =
-	"rounded-6 text-fg-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
+	"rounded-6 text-fg-muted transition-colors hover:text-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
 
 export type FooterBarMode = "default" | "market-loading";
 

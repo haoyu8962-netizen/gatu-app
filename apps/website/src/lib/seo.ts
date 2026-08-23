@@ -3,6 +3,7 @@ import { SEO_BASE_KEYWORDS, SEO_DEFAULTS } from "@/config/seo";
 export interface PageSeo {
 	title?: string;
 	fullTitle?: boolean;
+	ogTitle?: string;
 	description?: string;
 	path?: string;
 	ogImage?: string;
@@ -16,6 +17,7 @@ export interface PageSeo {
 
 export interface ResolvedSeo {
 	title: string;
+	ogTitle: string;
 	description: string;
 	canonical: string;
 	ogImage: string;
@@ -32,6 +34,7 @@ export function resolveSeo(options: PageSeo = {}): ResolvedSeo {
 	const {
 		title,
 		fullTitle = false,
+		ogTitle,
 		description = SEO_DEFAULTS.defaultDescription,
 		path = "/",
 		ogImage,
@@ -44,6 +47,7 @@ export function resolveSeo(options: PageSeo = {}): ResolvedSeo {
 	} = options;
 
 	const pageTitle = title ? (fullTitle ? title : `${title} — ${SEO_DEFAULTS.siteName}`) : SEO_DEFAULTS.defaultTitle;
+	const socialTitle = ogTitle ?? (title ? pageTitle : SEO_DEFAULTS.defaultOgTitle);
 
 	const canonical = new URL(path, SEO_DEFAULTS.siteUrl).toString().replace(/\/$/, path === "/" ? "/" : "");
 
@@ -53,6 +57,7 @@ export function resolveSeo(options: PageSeo = {}): ResolvedSeo {
 
 	return {
 		title: pageTitle,
+		ogTitle: socialTitle,
 		description,
 		canonical,
 		ogImage: resolvedImage,
@@ -72,7 +77,7 @@ export function organizationSchema() {
 		"@type": "Organization",
 		name: SEO_DEFAULTS.siteName,
 		url: SEO_DEFAULTS.siteUrl,
-		logo: new URL("/favicon.svg", SEO_DEFAULTS.siteUrl).toString(),
+		logo: new URL(SEO_DEFAULTS.logoImage, SEO_DEFAULTS.siteUrl).toString(),
 	};
 }
 
@@ -134,7 +139,10 @@ export function blogPostingSchema(post: BlogPostingInput) {
 			"@type": "Organization",
 			name: SEO_DEFAULTS.siteName,
 			url: SEO_DEFAULTS.siteUrl,
-			logo: { "@type": "ImageObject", url: new URL("/favicon.svg", SEO_DEFAULTS.siteUrl).toString() },
+			logo: {
+				"@type": "ImageObject",
+				url: new URL(SEO_DEFAULTS.logoImage, SEO_DEFAULTS.siteUrl).toString(),
+			},
 		},
 		mainEntityOfPage: { "@type": "WebPage", "@id": url },
 		image: new URL(SEO_DEFAULTS.ogImage, SEO_DEFAULTS.siteUrl).toString(),

@@ -169,7 +169,7 @@ export function UserMenu({ variant = "default" }: Props) {
 					"!py-0 text-xs gap-1.5",
 					"items-center justify-start font-semibold text-fg",
 					"hover:bg-fill-hover active:bg-fill-press",
-					"data-[popup-open]:border-stroke-brand-strong/40 data-[popup-open]:bg-fill-hover",
+					"data-[popup-open]:border-stroke-action/40 data-[popup-open]:bg-fill-hover",
 					"transition-[color,background-color,border-color] duration-150 ease-out",
 					isDesktopNav ? "shrink-0" : "min-w-0 max-w-full",
 					isDesktopNav &&

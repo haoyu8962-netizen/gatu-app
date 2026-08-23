@@ -123,13 +123,24 @@
 		--bg-modal: #ffffff;
 		--bg-sunken: #f5f6fa;
 		--bg-alternate: #f5f6fa;
-		--bg-brand: #4c64d9;
+		--bg-brand: var(--action);
 		--bg-inverse: #12131a;
+
+		/* Brand roles: neutral actions, acid signal, and a frozen legacy chart accent. */
+		--action: #15171e;
+		--action-hover: #32363d;
+		--action-active: #08090d;
+		--on-action: #ffffff;
+		--signal: #667311;
+		--signal-hover: #4f5a0d;
+		--signal-soft: rgb(102 115 17 / 10%);
+		--focus: var(--signal);
+		--chart-accent: #4c64d9;
 
 		/* Text */
 		--text-strong: #000626e5;
 		--text-weak: #000933a6;
-		--text-brand: #4c64d9;
+		--text-brand: var(--signal);
 		--text-disabled: #0011661a;
 		--text-error: #c73a3a;
 		--text-warning: #8f6c1a;
@@ -145,11 +156,11 @@
 		--fill-weaker: #00158005;
 		--fill-hover: #0015800a;
 		--fill-press: #0011661a;
-		--fill-selected: #4c64d9;
+		--fill-selected: var(--action);
 		--fill-disabled: #0011661a;
 		--fill-overlay: #000d4d73;
-		--fill-brand-strong: #4c64d9;
-		--fill-brand-weak: #4c64d90d;
+		--fill-brand-strong: var(--action);
+		--fill-brand-weak: var(--fill-weak);
 		--fill-error-strong: #c73a3a;
 		--fill-error-weak: #ff4a4a0d;
 		--fill-warning-strong: #8f6c1a;
@@ -169,11 +180,11 @@
 		/* Stroke */
 		--stroke-strong: #000d4d73;
 		--stroke-weak: #0011661a;
-		--stroke-selected: #4c64d9;
-		--stroke-focus: #4c64d9;
+		--stroke-selected: var(--action);
+		--stroke-focus: var(--focus);
 		--stroke-disabled: #0011661a;
-		--stroke-brand-strong: #4c64d9cc;
-		--stroke-brand-weak: #4c64d933;
+		--stroke-brand-strong: var(--action);
+		--stroke-brand-weak: var(--stroke-weak);
 		--stroke-error-strong: #c73a3acc;
 		--stroke-error-weak: #c73a3a24;
 		--stroke-warning-strong: #8f6c1acc;
@@ -188,7 +199,7 @@
 
 		/* Icon */
 		--icon-neutral: #000d4d99;
-		--icon-brand: #4c64d9cc;
+		--icon-brand: var(--signal);
 		--icon-disabled: #0011661a;
 		--icon-error: #c73a3acc;
 		--icon-warning: #8f6c1acc;
@@ -210,13 +221,24 @@
 		--bg-modal: #292b33;
 		--bg-sunken: #0a0a0a;
 		--bg-alternate: #1d1e26;
-		--bg-brand: #b2bcf1;
+		--bg-brand: var(--action);
 		--bg-inverse: #ffffff;
+
+		/* Brand roles: neutral actions, acid signal, and a frozen legacy chart accent. */
+		--action: #edeef2;
+		--action-hover: #ffffff;
+		--action-active: #d5d7de;
+		--on-action: #08090d;
+		--signal: #d7ff3f;
+		--signal-hover: #e6ff70;
+		--signal-soft: rgb(215 255 63 / 14%);
+		--focus: var(--signal);
+		--chart-accent: #b2bcf1;
 
 		/* Text */
 		--text-strong: #ffffff;
 		--text-weak: #ffffffc7;
-		--text-brand: #b2bcf1;
+		--text-brand: var(--signal);
 		--text-disabled: #ffffff1f;
 		--text-error: #ff9c9c;
 		--text-warning: #e0be70;
@@ -232,11 +254,11 @@
 		--fill-weaker: #ffffff08;
 		--fill-hover: #ffffff0f;
 		--fill-press: #ffffff1f;
-		--fill-selected: #b2bcf1;
+		--fill-selected: var(--action);
 		--fill-disabled: #ffffff1f;
 		--fill-overlay: #000626a8;
-		--fill-brand-strong: #b2bcf1;
-		--fill-brand-weak: #b2bcf10f;
+		--fill-brand-strong: var(--action);
+		--fill-brand-weak: var(--fill-weak);
 		--fill-error-strong: #ff9c9c;
 		--fill-error-weak: #ff9c9c14;
 		--fill-warning-strong: #e0be70;
@@ -256,11 +278,11 @@
 		/* Stroke */
 		--stroke-strong: #ffffff99;
 		--stroke-weak: #ffffff1f;
-		--stroke-selected: #b2bcf1;
-		--stroke-focus: #b2bcf1;
+		--stroke-selected: var(--action);
+		--stroke-focus: var(--focus);
 		--stroke-disabled: #ffffff1f;
-		--stroke-brand-strong: #b2bcf1cc;
-		--stroke-brand-weak: #b2bcf133;
+		--stroke-brand-strong: var(--action);
+		--stroke-brand-weak: var(--stroke-weak);
 		--stroke-error-strong: #ff9c9ccc;
 		--stroke-error-weak: #ff9c9c33;
 		--stroke-warning-strong: #e0be70cc;
@@ -275,7 +297,7 @@
 
 		/* Icon */
 		--icon-neutral: #ffffff99;
-		--icon-brand: #b2bcf1cc;
+		--icon-brand: var(--signal);
 		--icon-disabled: #ffffff1f;
 		--icon-error: #ff9c9ccc;
 		--icon-warning: #e0be70cc;
@@ -321,7 +343,18 @@
 	--color-fg-inverse-muted: var(--text-inverse-weak);
 	--color-fg-inverse-disabled: var(--text-inverse-disabled);
 
-	/* Semantic (shared: bg-*, text-*, border-*) */
+	/* Brand roles */
+	--color-action: var(--action);
+	--color-action-hover: var(--action-hover);
+	--color-action-active: var(--action-active);
+	--color-on-action: var(--on-action);
+	--color-signal: var(--signal);
+	--color-signal-hover: var(--signal-hover);
+	--color-signal-soft: var(--signal-soft);
+	--color-focus: var(--focus);
+	--color-chart-accent: var(--chart-accent);
+
+	/* Compatibility aliases and semantic status colors */
 	--color-brand: var(--text-brand);
 	--color-brand-soft: var(--fill-brand-weak);
 	--color-error: var(--text-error);
@@ -357,6 +390,8 @@
 	--color-stroke-strong: var(--stroke-strong);
 	--color-stroke-selected: var(--stroke-selected);
 	--color-stroke-focus: var(--stroke-focus);
+	--color-stroke-action: var(--action);
+	--color-stroke-signal: var(--signal);
 	--color-stroke-disabled: var(--stroke-disabled);
 	--color-stroke-brand-strong: var(--stroke-brand-strong);
 	--color-stroke-brand-weak: var(--stroke-brand-weak);
@@ -375,6 +410,8 @@
 	/* Icons */
 	--color-icon: var(--icon-neutral);
 	--color-icon-brand: var(--icon-brand);
+	--color-icon-action: var(--action);
+	--color-icon-signal: var(--signal);
 	--color-icon-disabled: var(--icon-disabled);
 	--color-icon-error: var(--icon-error);
 	--color-icon-warning: var(--icon-warning);

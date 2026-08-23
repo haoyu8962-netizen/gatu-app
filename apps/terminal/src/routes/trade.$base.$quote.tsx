@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ROUTE_SEO } from "@/config/seo";
 import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/trade/$base/$quote")({
 	ssr: false,
 	head: ({ params }) =>
 		buildPageHead({
-			title: `${params.base}/${params.quote} Market`,
-			description: `Trade ${params.base}/${params.quote} on Hyperliquid.`,
+			...ROUTE_SEO.TRADE,
 			path: `/trade/${params.base}/${params.quote}`,
-			keywords: ["trade", "hyperliquid", params.base, params.quote],
+			keywords: [...ROUTE_SEO.TRADE.keywords, params.base, params.quote],
 			noIndex: true,
 		}),
 	component: EmptyTradeRoute,

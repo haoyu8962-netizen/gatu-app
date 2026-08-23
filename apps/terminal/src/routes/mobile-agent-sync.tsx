@@ -398,7 +398,7 @@ function MobileAgentSyncRoute() {
 				<div className="rounded-12 border border-stroke-weak bg-overlay shadow-overlay">
 					<div className="border-b border-stroke-weak p-4">
 						<div className="flex items-center gap-2">
-							<DeviceMobileIcon className="size-5 text-brand" weight="duotone" aria-hidden />
+							<DeviceMobileIcon className="size-5 text-signal" weight="duotone" aria-hidden />
 							<h1 className="text-base font-semibold text-fg">
 								<Trans>Import phone access</Trans>
 							</h1>
@@ -480,7 +480,7 @@ function LoadedQrPanel({
 	});
 
 	return (
-		<div className="space-y-3 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
 			<div className="flex items-start justify-between gap-3">
 				<div className="flex min-w-0 items-start gap-2">
 					<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
@@ -559,7 +559,7 @@ function SuccessPanel({
 }) {
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
 				<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-fg">

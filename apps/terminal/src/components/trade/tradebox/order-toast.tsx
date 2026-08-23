@@ -54,7 +54,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 			<div
 				className={cn(
 					"flex items-center justify-center size-7 rounded-8 shrink-0",
-					order.status === "pending" && "bg-brand-soft border border-stroke-brand-strong/30",
+					order.status === "pending" && "bg-fill-weak border border-stroke-weak",
 					order.status === "confirming" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "unconfirmed" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "partial" && "bg-warning-soft border border-stroke-warning-strong/30",
@@ -63,7 +63,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 					order.status === "failed" && "bg-error-soft border border-stroke-error-strong/30",
 				)}
 			>
-				{order.status === "pending" && <SpinnerGapIcon className="size-4 animate-spin text-brand" />}
+				{order.status === "pending" && <SpinnerGapIcon className="size-4 animate-spin text-signal" />}
 				{order.status === "confirming" && <SpinnerGapIcon className="size-4 animate-spin text-warning" />}
 				{order.status === "unconfirmed" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "partial" && <WarningCircleIcon className="size-4 text-warning" />}
@@ -192,7 +192,7 @@ export function OrderToast() {
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
 				"font-sans",
 
-				pendingCount > 0 && "ring-1 ring-stroke-brand-strong/30",
+				pendingCount > 0 && "ring-1 ring-stroke-strong/30",
 				confirmingCount > 0 && pendingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
 				unconfirmedCount > 0 && pendingCount === 0 && confirmingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
 				partialCount > 0 &&
@@ -225,12 +225,12 @@ export function OrderToast() {
 		>
 			<div className="px-3 py-2 border-b border-stroke-weak/40 bg-surface flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<LightningIcon className="size-4 text-brand" />
+					<LightningIcon className="size-4 text-action" />
 					<span className="text-xs font-semibold uppercase tracking-wider text-fg">{t`Order Queue`}</span>
 				</div>
 				<div className="flex items-center gap-1.5">
 					{pendingCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-brand-soft text-brand border border-stroke-brand-strong/30">
+						<span className="px-1.5 py-0.5 rounded border border-stroke-weak bg-fill-weak text-xs font-medium text-fg-muted">
 							{pendingCount} {t`pending`}
 						</span>
 					)}

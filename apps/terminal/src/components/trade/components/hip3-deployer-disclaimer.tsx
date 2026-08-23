@@ -19,7 +19,7 @@ interface Props {
 	onCancel?: () => void;
 }
 
-const LINK_CLASS = "text-brand no-underline hover:text-brand/80";
+const LINK_CLASS = "text-signal no-underline hover:text-signal-hover";
 
 export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 	const isMobile = useIsMobile();
@@ -115,7 +115,7 @@ export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 				<Button
 					type="button"
 					size="md"
-					className="h-10 flex-1 py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-brand/30 data-disabled:text-fg-inverse/60"
+					className="h-10 flex-1 py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-fill-disabled data-disabled:text-fg-disabled"
 					disabled={!isAcknowledged}
 					onClick={handleConfirm}
 				>

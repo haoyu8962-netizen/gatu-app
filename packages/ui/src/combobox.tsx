@@ -119,7 +119,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 						{multiValue.map((val) => (
 							<BaseCombobox.Chip
 								key={val}
-								className="inline-flex items-center gap-1 rounded-4 bg-brand-soft px-2 py-0.5 text-xs text-fg"
+								className="inline-flex items-center gap-1 rounded-4 bg-fill-weak px-2 py-0.5 text-xs text-fg"
 							>
 								{val}
 								<BaseCombobox.ChipRemove className="shrink-0 cursor-pointer text-icon hover:text-fg">
@@ -171,14 +171,14 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 									{multiple && (
 										<span className="inline-flex items-center justify-center size-4 rounded-4 border shrink-0 transition-colors border-stroke-strong group-data-selected/item:bg-fill-selected group-data-selected/item:border-stroke-selected">
 											<BaseCombobox.ItemIndicator>
-												<CheckIcon size={10} weight="bold" className="text-fg-inverse" />
+												<CheckIcon size={10} weight="bold" className="text-on-action" />
 											</BaseCombobox.ItemIndicator>
 										</span>
 									)}
 									<span className="flex-1">{option}</span>
 									{!multiple && (
 										<BaseCombobox.ItemIndicator>
-											<CheckIcon size={16} weight="bold" className="text-brand" />
+											<CheckIcon size={16} weight="bold" className="text-action" />
 										</BaseCombobox.ItemIndicator>
 									)}
 								</BaseCombobox.Item>

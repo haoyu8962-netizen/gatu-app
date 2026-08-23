@@ -13,7 +13,7 @@ export function getTradingCtaClass(variant: TradingCtaVariant): string {
 		return cn(
 			"bg-trading-panel-control text-trading-panel-on-control hover:not-data-disabled:bg-trading-panel-control/90",
 			"data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled",
-			"dark:bg-brand-soft dark:text-brand dark:hover:not-data-disabled:bg-brand-soft/80",
+			"dark:bg-fill-weak dark:text-action dark:hover:not-data-disabled:bg-fill-hover",
 		);
 	}
 	if (variant === "buy") {

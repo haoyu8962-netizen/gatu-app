@@ -1,3 +1,4 @@
+import { GatuLogo } from "@/components/brand/gatu-logo";
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
@@ -5,7 +6,7 @@ import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 export function AppShellSkeleton() {
 	return (
 		<div aria-busy="true" data-testid="app-shell-fallback">
-			<output className="sr-only">Loading gatu...</output>
+			<output className="sr-only">Loading GATU...</output>
 			<div aria-hidden="true">
 				<style>{`
 					[data-shell-mobile]{display:flex}
@@ -23,19 +24,7 @@ export function AppShellSkeleton() {
 							"flex shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5",
 						)}
 					>
-						<span className="grid size-[26px] place-items-center rounded-[7px] bg-market-close-control text-market-close-on-control">
-							<svg viewBox="0 0 120 120" width={18} height={18} fill="none" className="size-[18px]">
-								<title>Gatu</title>
-								<path
-									d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
-									stroke="currentColor"
-									strokeWidth="16"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</span>
-						<span className="text-base font-bold text-market-close-fg">gatu</span>
+						<GatuLogo className="h-[18px] w-auto shrink-0" />
 					</div>
 					<div className="min-h-0 flex-1 overflow-hidden bg-grid-container">
 						<DesktopGridLoadingSurface markShellPanels panelClassName="bg-surface" />
@@ -54,21 +43,12 @@ export function MobileShellSkeleton() {
 			className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden"
 		>
 			<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
-				<div className="h-14 flex items-center justify-between pl-[max(0.75rem,var(--sal))] pr-[max(0.75rem,var(--sar))]">
+				<div className="h-14 flex items-center justify-between pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]">
 					<div className="flex items-center gap-1.5">
-						<span className="grid size-6 place-items-center rounded-[6px] bg-market-close-control text-market-close-on-control">
-							<svg viewBox="0 0 120 120" width={16} height={16} fill="none" className="size-4">
-								<title>Gatu</title>
-								<path
-									d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
-									stroke="currentColor"
-									strokeWidth="16"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</span>
-						<span className="text-sm font-bold text-market-close-fg">gatu</span>
+						<div className="size-11 shrink-0" />
+						<div className="grid size-11 shrink-0 place-items-center">
+							<GatuLogo variant="mark" micro className="size-[22px]" />
+						</div>
 					</div>
 				</div>
 			</div>

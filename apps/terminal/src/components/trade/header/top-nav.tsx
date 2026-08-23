@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { GatuLogo } from "@/components/brand/gatu-logo";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
@@ -95,32 +96,16 @@ export function TopNav({ mode = "default" }: Props) {
 				<Link
 					to={tradeHomePath}
 					search={{ scope: "all" }}
-					aria-label="gatu"
+					aria-label="GATU"
 					className={cn(
 						"mr-6 flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 						hasWalletAccess ? "max-[1181px]:mr-7" : "max-[1181px]:mr-8",
 					)}
 				>
-					<span className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-market-close-control text-market-close-on-control">
-						<svg aria-hidden viewBox="0 0 120 120" fill="none" className="size-[18px]">
-							<title>Gatu</title>
-							<path
-								d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
-								stroke="currentColor"
-								strokeWidth="16"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-						</svg>
-					</span>
-					<span
-						className={cn(
-							"text-base leading-6 font-bold tracking-[-0.2px] whitespace-nowrap text-market-close-fg",
-							hasWalletAccess && "max-[1181px]:hidden",
-						)}
-					>
-						gatu
-					</span>
+					<GatuLogo className={cn("h-[18px] w-auto shrink-0", hasWalletAccess && "max-[1181px]:hidden")} />
+					{hasWalletAccess ? (
+						<GatuLogo variant="mark" micro className="hidden size-[22px] shrink-0 max-[1181px]:block" />
+					) : null}
 				</Link>
 				<div className="hidden min-[1001px]:flex min-w-0 items-center">
 					<nav className="flex items-center gap-0.5 text-[13px] leading-[18px]" aria-label={t`Primary navigation`}>

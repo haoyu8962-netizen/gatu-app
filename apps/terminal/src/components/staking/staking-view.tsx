@@ -729,7 +729,7 @@ function HistoryContent({
 									href={getExplorerTxUrl(entry.hash, isTestnet)}
 									target="_blank"
 									rel="noopener"
-									className="inline-flex items-center gap-1 text-brand hover:underline"
+									className="inline-flex items-center gap-1 text-signal hover:text-signal-hover hover:underline"
 								>
 									{shortenAddress(entry.hash, 6, 6)}
 									<ArrowRightIcon aria-hidden="true" className="size-3" />

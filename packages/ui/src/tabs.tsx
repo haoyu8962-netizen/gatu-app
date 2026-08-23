@@ -71,7 +71,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 					(variant === "underline" ? (
 						<Tabs.Indicator
 							className={cn(
-								"absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
+								"absolute -bottom-px h-0.5 bg-action transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
 								indicatorClassName,
 							)}
 							style={{

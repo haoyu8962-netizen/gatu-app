@@ -62,7 +62,7 @@ export function AmountInput({
 					maxAllowedDecimals={6}
 					mobileSafe
 					className={cn(
-						"h-11 w-full rounded-[10px] border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold tabular-nums text-market-close-fg placeholder:text-market-close-subtle focus-visible:border-market-close-control focus-visible:ring-market-close-stroke-control/20",
+						"h-11 w-full rounded-[10px] border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold tabular-nums text-market-close-fg placeholder:text-market-close-subtle focus-visible:border-market-close-focus focus-visible:ring-market-close-focus/20",
 						helperText && "border-market-close-danger focus-visible:border-market-close-danger",
 					)}
 				/>

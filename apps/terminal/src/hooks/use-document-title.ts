@@ -3,6 +3,7 @@ import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
 import { getMarketApiCoin, getSpotMarketApiCoin, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { buildMarketDocumentTitle } from "@/lib/seo";
 
 export function TabTitleSync() {
 	useDocumentTitle();
@@ -35,8 +36,8 @@ export function useDocumentTitle() {
 	useEffect(() => {
 		void numberFormatRevision;
 		if (!markPx || !pairName) return;
-		const price = formatPrice(markPx, { szDecimals, marketType: isSpot ? "spot" : "perp" });
-		document.title = `${price} · ${pairName} | gatu`;
+		const price = formatPrice(markPx, { szDecimals, marketType: isSpot ? "spot" : "perp", style: "decimal" });
+		document.title = buildMarketDocumentTitle(price, pairName);
 	}, [isSpot, markPx, numberFormatRevision, pairName, szDecimals]);
 
 	useEffect(() => {

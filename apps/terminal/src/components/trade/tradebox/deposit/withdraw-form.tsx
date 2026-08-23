@@ -216,7 +216,7 @@ export function WithdrawForm({
 						spellCheck={false}
 						disabled={isPending}
 						className={cn(
-							"min-h-11 !rounded-[10px] !border-market-close-stroke-input !bg-modal px-3 py-0 font-mono tabular-nums focus-within:!outline-market-close-control",
+							"min-h-11 !rounded-[10px] !border-market-close-stroke-input !bg-modal px-3 py-0 font-mono tabular-nums focus-within:!outline-market-close-focus",
 							destinationError && "!border-market-close-danger focus-within:!outline-market-close-danger",
 						)}
 						inputClassName="text-base leading-5 font-semibold text-market-close-fg placeholder:text-market-close-muted min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"

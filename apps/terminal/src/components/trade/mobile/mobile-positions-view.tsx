@@ -293,7 +293,7 @@ export function MobilePositionsView({
 										key={tab.value}
 										value={tab.value}
 										data-mobile-account-tab={tab.value}
-										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:text-market-close-fg"
+										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
 										{showCountSlot ? (

@@ -54,7 +54,7 @@ export function TwapSubviewTabs({ idPrefix, mobile = false, onValueChange, value
 							document.getElementById(`${idPrefix}-${nextTab.value}-tab`)?.focus();
 						}}
 						className={cn(
-							"relative inline-flex min-h-10 shrink-0 items-center justify-center px-3 text-xs font-semibold outline-none transition-colors duration-[120ms] after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-transparent after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control",
+							"relative inline-flex min-h-10 shrink-0 items-center justify-center px-3 text-xs font-semibold outline-none transition-colors duration-[120ms] after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-transparent after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus",
 							mobile && "min-h-11 px-3.5",
 							selected
 								? "text-market-close-fg after:bg-market-close-control"

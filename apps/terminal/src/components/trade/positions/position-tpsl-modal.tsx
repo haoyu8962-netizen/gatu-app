@@ -1243,7 +1243,7 @@ function PositionTpSlForm({
 						disabled={isSubmitting}
 						label={t`Configure amount`}
 						className="items-center gap-2 min-[1001px]:hidden"
-						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control data-checked:border-market-close-control data-checked:bg-market-close-control"
+						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus data-checked:border-market-close-control data-checked:bg-market-close-control"
 						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
 						labelClassName="text-[13px] font-normal text-market-close-muted"
 					/>
@@ -1276,7 +1276,7 @@ function PositionTpSlForm({
 						disabled={isSubmitting}
 						label={t`Limit execution`}
 						className="items-center gap-2"
-						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control data-checked:border-market-close-control data-checked:bg-market-close-control"
+						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus data-checked:border-market-close-control data-checked:bg-market-close-control"
 						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
 						labelClassName="text-[13px] font-normal text-market-close-muted"
 					/>

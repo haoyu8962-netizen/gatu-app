@@ -13,7 +13,7 @@ const badgeDotVariants = cva(["inline-block shrink-0 rounded-full"], {
 			success: "bg-success",
 			information: "bg-info",
 			neutral: "bg-fill",
-			brand: "bg-brand",
+			brand: "bg-signal",
 		},
 		size: {
 			xxs: "size-1",

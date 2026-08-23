@@ -101,7 +101,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 								type="button"
 								onClick={() => handleSelectMarket(fill.coin)}
 								aria-label={t`Switch to ${marketLabel} market`}
-								className="-my-2 min-h-11 min-w-0 truncate rounded-[4px] text-sm font-bold text-market-close-fg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+								className="-my-2 min-h-11 min-w-0 truncate rounded-[4px] text-sm font-bold text-market-close-fg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 							>
 								{marketLabel}
 							</button>

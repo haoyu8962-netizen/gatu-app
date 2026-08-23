@@ -141,7 +141,7 @@ export function ReferralActionModal({ action, claimableRewards, initialCode, onC
 
 				{step === "submitting" ? (
 					<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
-						<SpinnerGapIcon className="size-8 animate-spin text-brand motion-reduce:animate-none" />
+						<SpinnerGapIcon className="size-8 animate-spin text-signal motion-reduce:animate-none" />
 						<p className="text-sm font-semibold text-fg">
 							<Trans>Waiting for confirmation</Trans>
 						</p>

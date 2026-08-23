@@ -1,54 +1,56 @@
-import { APP_NAME } from "./app";
+export type OpenGraphLocale = `${Lowercase<string>}_${Uppercase<string>}`;
 
 export const SEO_DEFAULTS = {
-	siteName: APP_NAME,
+	siteName: "GATU",
 	siteUrl: "https://app.gatu.ai",
-	defaultTitle: "gatu - Hyperliquid Trading Terminal",
-	defaultDescription:
-		"A professional trading terminal for Hyperliquid DEX. Trade perpetuals and spot markets with real-time data, advanced charting, and seamless wallet connectivity.",
-	ogImagePath: "/gatu-terminal-og-v1.png",
+	defaultTitle: "GATU Terminal — 永续 · 现货交易终端",
+	defaultOgTitle: "GATU Terminal",
+	defaultDescription: "低延迟链上交易终端：永续、现货、组合与订单管理。",
+	ogImagePath: "/og-terminal-1200x630.png",
 	ogImageWidth: 1200,
 	ogImageHeight: 630,
 	ogImageType: "image/png",
-	ogImageAlt: "gatu Hyperliquid trading terminal",
-	locale: "en_US",
+	ogImageAlt: "GATU 永续与现货交易终端：低延迟、自托管、链上结算",
+	locale: "en_US" satisfies OpenGraphLocale,
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
 	themeColor: "#0F1A1F",
 } as const;
 
 export const SEO_BASE_KEYWORDS = ["hyperliquid", "trading", "dex", "perpetuals", "crypto", "defi"] as const;
 
+const TRADE_PAGE_SEO = {
+	title: SEO_DEFAULTS.defaultTitle,
+	fullTitle: true,
+	description: SEO_DEFAULTS.defaultDescription,
+	ogTitle: SEO_DEFAULTS.defaultOgTitle,
+	ogLocale: "zh_CN" satisfies OpenGraphLocale,
+} as const;
+
 export const ROUTE_SEO = {
 	TRADE: {
-		title: "Trade",
-		description:
-			"Trade perpetuals and spot markets on Hyperliquid DEX with real-time charts, orderbook, and one-click order execution.",
+		...TRADE_PAGE_SEO,
 		path: "/",
 		keywords: ["trade", "orderbook", "chart", "perpetuals", "spot"],
 	},
 	PERP: {
-		title: "Perpetuals Trading",
-		description:
-			"Trade perpetual futures on Hyperliquid DEX with up to 50x leverage, real-time charts, and advanced order types.",
+		...TRADE_PAGE_SEO,
 		path: "/perp",
 		keywords: ["perpetuals", "futures", "leverage", "trading"],
 	},
 	SPOT: {
-		title: "Spot Trading",
-		description: "Trade spot markets on Hyperliquid DEX with real-time orderbook, charts, and instant execution.",
+		...TRADE_PAGE_SEO,
 		path: "/spot",
 		keywords: ["spot", "trading", "exchange"],
 	},
 	BUILDERS_PERP: {
-		title: "Builder Perpetuals",
-		description: "Trade builder-deployed perpetual markets (HIP-3) on Hyperliquid DEX.",
+		...TRADE_PAGE_SEO,
 		path: "/builders-perp",
 		keywords: ["builders", "hip-3", "perpetuals", "community"],
 	},
 	COMPONENTS: {
 		title: "Components",
 		description:
-			"UI component showcase for gatu design system. Explore buttons, badges, cards, and trading-specific components.",
+			"UI component showcase for the GATU design system. Explore buttons, badges, cards, and trading-specific components.",
 		path: "/components",
 		keywords: ["components", "design system", "ui"],
 		noIndex: true,

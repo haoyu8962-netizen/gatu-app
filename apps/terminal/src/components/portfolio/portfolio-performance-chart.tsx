@@ -330,7 +330,7 @@ export function PortfolioPerformanceChart({
 					>
 						<svg
 							viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
-							className="size-full text-brand"
+							className="size-full text-chart-accent"
 							aria-hidden="true"
 							preserveAspectRatio="none"
 						>
@@ -431,7 +431,7 @@ export function PortfolioPerformanceChart({
 										cx={activePoint.x}
 										cy={activePoint.y}
 										r="3"
-										className="fill-surface stroke-brand"
+										className="fill-surface stroke-chart-accent"
 										strokeWidth="1.5"
 										vectorEffect="non-scaling-stroke"
 										data-active-point={activePoint.timestamp}
@@ -503,7 +503,9 @@ function ChartTab({ active, onClick, children }: { active: boolean; onClick: () 
 			aria-pressed={active}
 			className={cn(
 				"relative h-10 rounded-none px-2 text-xs font-normal",
-				active ? "text-fg after:absolute after:inset-x-1 after:bottom-0 after:h-px after:bg-brand" : "text-fg-muted",
+				active
+					? "text-fg after:absolute after:inset-x-1 after:bottom-0 after:h-px after:bg-chart-accent"
+					: "text-fg-muted",
 			)}
 		>
 			{children}

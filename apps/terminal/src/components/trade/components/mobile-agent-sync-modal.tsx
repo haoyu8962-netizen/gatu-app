@@ -1107,7 +1107,7 @@ function MobileAgentSyncSession({
 		>
 			<ModalHeader>
 				<div className="flex items-center gap-2">
-					<DeviceMobileIcon className="size-4 text-brand" weight="duotone" aria-hidden />
+					<DeviceMobileIcon className="size-4 text-signal" weight="duotone" aria-hidden />
 					<ModalTitle>
 						<Trans>Link mobile device</Trans>
 					</ModalTitle>
@@ -1249,7 +1249,7 @@ function CreateAccessPanel() {
 	return (
 		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
 			<div className="flex items-start gap-3">
-				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-brand" weight="duotone" aria-hidden />
+				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-signal" weight="duotone" aria-hidden />
 				<div className="min-w-0 space-y-1">
 					<p className="text-sm font-semibold text-fg">
 						<Trans>Create phone access</Trans>
@@ -1265,9 +1265,9 @@ function CreateAccessPanel() {
 
 function ApprovalReviewPanel() {
 	return (
-		<div className="space-y-3 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+		<div className="space-y-3 rounded-8 border border-stroke-weak bg-fill-weak p-3">
 			<div className="flex items-start gap-3">
-				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-brand" weight="duotone" aria-hidden />
+				<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-signal" weight="duotone" aria-hidden />
 				<div className="min-w-0 space-y-1">
 					<p className="text-sm font-semibold text-fg">
 						<Trans>Approve a mobile trading key</Trans>
@@ -1311,7 +1311,7 @@ function ConcealedQrPanel({
 
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+			<div className="flex items-start gap-2 rounded-8 border border-stroke-weak bg-fill-weak p-3">
 				<CheckIcon className="mt-0.5 size-4 shrink-0 text-success" weight="bold" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-fg">
@@ -1362,7 +1362,7 @@ function ConcealedQrPanel({
 					aria-valuenow={Math.round(progressPercent)}
 					className="mt-2 h-1 overflow-hidden rounded-full bg-fill"
 				>
-					<div className="h-full bg-brand transition-[width] duration-100" style={{ width: `${progressPercent}%` }} />
+					<div className="h-full bg-signal transition-[width] duration-100" style={{ width: `${progressPercent}%` }} />
 				</div>
 			</div>
 
@@ -1403,7 +1403,7 @@ function VisibleQrPanel({
 						</p>
 					</div>
 					{!payload.rendered && (
-						<SpinnerGapIcon className="size-4 animate-spin text-brand" aria-label={t`Rendering QR`} />
+						<SpinnerGapIcon className="size-4 animate-spin text-signal" aria-label={t`Rendering QR`} />
 					)}
 				</div>
 				<div className="mt-3 flex justify-center rounded-8 border border-stroke-weak bg-white p-3">
@@ -1503,7 +1503,7 @@ function ResetMobileAccessPanel({
 			)}
 
 			{state.status === "success" && (
-				<div className="mt-3 flex items-start gap-2 rounded-8 border border-stroke-brand-strong/25 bg-background p-2.5 text-xs text-fg-muted">
+				<div className="mt-3 flex items-start gap-2 rounded-8 border border-stroke-weak bg-background p-2.5 text-xs text-fg-muted">
 					<CheckIcon className="mt-0.5 size-3.5 shrink-0 text-success" weight="bold" aria-hidden />
 					<p>
 						{expiresAtLabel ? (
