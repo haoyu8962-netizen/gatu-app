@@ -36,6 +36,25 @@ describe("brand semantics contract", () => {
 		expect(CHART_THEME_COLORS).not.toContain('getCssVar("--fill-brand-strong")');
 	});
 
+	it("keeps the orbit loader tokenized and replaces motion with the complete static mark", () => {
+		expect(TERMINAL_STYLES).toContain("animation: gatu-orbit-loader 1.5s linear infinite;");
+		expect(TERMINAL_STYLES).toContain("stroke-dashoffset: -100;");
+		expect(TERMINAL_STYLES).toContain(`@media (prefers-reduced-motion: reduce) {
+    .gatu-orbit-loader__track {
+      opacity: 1;
+    }
+
+    .gatu-orbit-loader__segment {
+      animation: none;
+      opacity: 0;
+    }
+
+    .gatu-orbit-loader__static-node {
+      opacity: 1;
+    }
+  }`);
+	});
+
 	it("preserves terminal canvas, order-book, scope, and market colors", () => {
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-base")).toBe("#0f1a1f");
 		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--orderbook-depth-bid")).toBe("#1fa67d");

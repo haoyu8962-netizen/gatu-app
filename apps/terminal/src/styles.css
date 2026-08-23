@@ -859,6 +859,39 @@
 }
 
 @layer components {
+  .gatu-orbit-loader__track {
+    opacity: 0.2;
+  }
+
+  .gatu-orbit-loader__segment {
+    animation: gatu-orbit-loader 1.5s linear infinite;
+  }
+
+  .gatu-orbit-loader__static-node {
+    opacity: 0;
+  }
+
+  @keyframes gatu-orbit-loader {
+    to {
+      stroke-dashoffset: -100;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gatu-orbit-loader__track {
+      opacity: 1;
+    }
+
+    .gatu-orbit-loader__segment {
+      animation: none;
+      opacity: 0;
+    }
+
+    .gatu-orbit-loader__static-node {
+      opacity: 1;
+    }
+  }
+
   .api-wallet-col-name {
     width: var(--api-wallet-col-name);
   }

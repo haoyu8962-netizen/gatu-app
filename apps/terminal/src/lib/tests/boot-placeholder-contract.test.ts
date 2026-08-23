@@ -69,7 +69,7 @@ describe("boot placeholder contract", () => {
 		expect(workspace).not.toContain("bg-fill-weaker");
 	});
 
-	it("keeps chart initialization visible with the shared loading indicator", () => {
+	it("uses the branded orbit only for initial chart loading while retaining the recovery spinner", () => {
 		const chartPanel = readComponent("trade/chart/chart-panel.tsx");
 		const chartWidget = readComponent("trade/chart/tradingview-chart.tsx");
 
@@ -77,6 +77,8 @@ describe("boot placeholder contract", () => {
 		expect(chartPanel).toContain('<span className="sr-only">');
 		expect(chartWidget).toContain("data-chart-loading");
 		expect(chartWidget).toContain("text-fg-muted");
+		expect(chartWidget).toContain("GatuOrbitLoader");
+		expect(chartWidget).toContain("hasCompletedInitialWidgetLoadRef.current");
 		expect(chartWidget).toContain("SpinnerGapIcon");
 		expect(chartWidget).toContain("animate-spin");
 	});
