@@ -327,10 +327,7 @@ function MobileHistoryTabContent({
 				</div>
 				<div
 					data-testid="mobile-trade-history-list"
-					className={cn(
-						"min-h-0 overflow-y-auto overscroll-y-contain",
-						isPageScroll ? "max-h-[min(60dvh,32rem)]" : "flex-1",
-					)}
+					className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}
 				>
 					<div className="flex flex-col gap-2.5 px-3.5 pt-3">
 						{filteredFills.length === 0 ? (

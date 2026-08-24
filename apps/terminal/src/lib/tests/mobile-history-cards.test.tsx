@@ -464,9 +464,9 @@ describe("mobile history disclosure cards", () => {
 			`/tradeHistory/${OWNER_A}`,
 		);
 		const historyList = container.querySelector<HTMLElement>('[data-testid="mobile-trade-history-list"]');
-		expect(historyList?.className).toContain("max-h-[min(60dvh,32rem)]");
-		expect(historyList?.className).toContain("overflow-y-auto");
-		expect(historyList?.className).toContain("overscroll-y-contain");
+		expect(historyList?.className).not.toContain("max-h-");
+		expect(historyList?.className).not.toContain("overflow-y-auto");
+		expect(historyList?.className).not.toContain("overscroll-y-contain");
 		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
 		expectDisclosureControls();
 
@@ -495,6 +495,15 @@ describe("mobile history disclosure cards", () => {
 			"trade_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
 		);
+	});
+
+	it("keeps contained trade history internally scrollable", () => {
+		render(<MobileHistoryTab scrollMode="contained" />);
+
+		const historyList = container.querySelector<HTMLElement>('[data-testid="mobile-trade-history-list"]');
+		expect(historyList?.className).toContain("flex-1");
+		expect(historyList?.className).toContain("overflow-y-auto");
+		expect(historyList?.className).toContain("overscroll-y-contain");
 	});
 
 	it("caps progressive trade history at 30 while CSV keeps the complete export snapshot", () => {
