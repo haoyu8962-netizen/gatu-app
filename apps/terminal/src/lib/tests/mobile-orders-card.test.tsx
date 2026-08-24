@@ -232,20 +232,21 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).toContain("Yes");
 		expect(container.textContent).toContain("Close Short");
 		expect(container.textContent).toContain("≤ 149.00");
-		const compactCollapse = [
+		const collapseControls = [
 			...container.querySelectorAll<HTMLButtonElement>('button[aria-label="Collapse ORCL order details"]'),
-		].find((button) => button.className.includes("after:size-11"));
-		expect(compactCollapse?.className).toContain("h-[18px]");
-		expect(compactCollapse?.className).toContain("w-11");
-		expect(compactCollapse?.className).toContain("after:size-11");
-		expect(compactCollapse?.className).toContain("after:top-[calc(50%_-_1px)]");
+		];
+		expect(collapseControls).toHaveLength(1);
+		expect(collapseControls[0]?.getAttribute("aria-expanded")).toBe("true");
+		expect(collapseControls[0]?.getAttribute("aria-controls")).toBeTruthy();
 
 		mocks.orders = [{ ...order, limitPx: "151.25", sz: "1.500" } as OpenOrder];
 		renderOrders({ expandFirst: false });
 		expect(container.textContent).toContain("Original Size");
 		expect(container.textContent).toContain("1.500");
 
-		const collapse = container.querySelector<HTMLButtonElement>('button[aria-label="Collapse ORCL order details"]');
+		const collapse = container.querySelector<HTMLButtonElement>(
+			'button[aria-expanded="true"][aria-label="Collapse ORCL order details"]',
+		);
 		act(() => collapse?.click());
 		expect(container.textContent).not.toContain("Original Size");
 	});

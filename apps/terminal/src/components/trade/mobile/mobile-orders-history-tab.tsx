@@ -25,6 +25,7 @@ import {
 	type OrderHistoryStatusCategory,
 } from "@/lib/trade/order-history";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
+import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileProgressiveList } from "./mobile-progressive-list";
@@ -37,8 +38,6 @@ type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
 const filterTriggerClassName =
 	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
-const filterActionClassName =
-	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control active:scale-100";
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -124,11 +123,8 @@ function MobileOrdersHistoryTabContent({
 		)
 		.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 	const filteredOrderKeys = filteredEntries.map(getOrderHistoryDisclosureKey);
-	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
-		disclosureIdentity,
-		filteredOrderKeys,
-		disclosureState,
-	);
+	const disclosure = useMobileDisclosureSet(disclosureIdentity, filteredOrderKeys, disclosureState);
+	const { expandedKeys, setExpanded } = disclosure;
 	const availableTypeFilters = new Set(entries.map((entry) => entry.type));
 	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
 	const typeOptions = [
@@ -157,11 +153,6 @@ function MobileOrdersHistoryTabContent({
 	function handleSelectMarket(name: string) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setActiveTab("trade");
-	}
-
-	function handleSetAllExpanded(expanded: boolean) {
-		if (expanded) expandAll(filteredOrderKeys);
-		else collapseAll(filteredOrderKeys);
 	}
 
 	function getStatusFilterLabel(filter: Exclude<OrderHistoryStatusFilter, "all">) {
@@ -359,22 +350,7 @@ function MobileOrdersHistoryTabContent({
 							triggerClassName={filterTriggerClassName}
 						/>
 					</div>
-					<div className="ml-auto flex shrink-0 items-center gap-3 pl-3">
-						<button
-							type="button"
-							onClick={() => handleSetAllExpanded(true)}
-							className={cn(filterActionClassName, "font-semibold text-market-close-fg")}
-						>
-							{t`Expand all`}
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSetAllExpanded(false)}
-							className={cn(filterActionClassName, "text-market-close-muted")}
-						>
-							{t`Collapse all`}
-						</button>
-					</div>
+					<MobileBulkDisclosureActions keys={filteredOrderKeys} controller={disclosure} className="ml-auto pl-3" />
 				</div>
 				<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 					<div className="flex flex-col gap-2.5 px-3.5 pt-3">
@@ -497,25 +473,6 @@ function MobileOrdersHistoryTabContent({
 																{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}
 															</div>
 														</div>
-													</div>
-													<div className="flex min-h-11 items-center justify-end border-t border-market-close-stroke-card">
-														<button
-															type="button"
-															aria-label={t`Collapse ${marketName} history details`}
-															aria-controls={detailsId}
-															onClick={handleToggle}
-															className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
-														>
-															<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-																<path
-																	d="M3.5 10 8 5.5l4.5 4.5"
-																	stroke="currentColor"
-																	strokeWidth="2"
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																/>
-															</svg>
-														</button>
 													</div>
 												</div>
 											) : null}

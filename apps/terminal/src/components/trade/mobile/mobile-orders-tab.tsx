@@ -1148,7 +1148,7 @@ function MobileOrderCard({
 						<OrderMetric label={t`Reduce Only`} value={order.reduceOnly ? t`Yes` : t`No`} />
 					</div>
 
-					<div className="flex items-center justify-between border-t border-market-close-stroke-card/60 pt-2.5">
+					<div className="flex items-center border-t border-market-close-stroke-card/60 pt-2.5">
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
@@ -1177,23 +1177,6 @@ function MobileOrderCard({
 								{t`Cancel`}
 							</button>
 						</div>
-						<button
-							type="button"
-							aria-label={t`Collapse ${marketLabel} order details`}
-							aria-controls={detailsId}
-							onClick={() => onExpandedChange(false)}
-							className="relative -mr-3.5 inline-flex h-[18px] w-11 items-center justify-center rounded-xs text-market-close-subtle after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
-						>
-							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-								<path
-									d="M3.5 10 8 5.5l4.5 4.5"
-									stroke="currentColor"
-									strokeWidth="1.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</button>
 					</div>
 				</div>
 			) : null}

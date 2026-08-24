@@ -341,34 +341,49 @@ describe("mobile history disclosure cards", () => {
 	}
 
 	function expectDisclosureControls() {
+		function expectBulkAvailability(canExpand: boolean, canCollapse: boolean) {
+			const expandAll = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Expand all",
+			);
+			const collapseAll = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Collapse all",
+			);
+			expect(expandAll?.disabled).toBe(!canExpand);
+			expect(collapseAll?.disabled).toBe(!canCollapse);
+		}
+
 		let disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 		expect(disclosureButtons.every((button) => button.parentElement?.className.includes("h-[54px]"))).toBe(true);
+		expectBulkAvailability(true, false);
 
 		act(() => disclosureButtons[1]?.click());
 		disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		expectBulkAvailability(true, true);
 
 		act(() => disclosureButtons[0]?.click());
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+		expectBulkAvailability(false, true);
 
 		act(() => getDisclosureButtons()[0]?.click());
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		expectBulkAvailability(true, true);
 
 		clickButton("Collapse all");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+		expectBulkAvailability(true, false);
 
 		clickButton("Expand all");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
-		const collapseButtons = Array.from(
-			container.querySelectorAll<HTMLButtonElement>("article button[aria-controls]:not([aria-expanded])"),
+		expectBulkAvailability(false, true);
+		const cardDisclosureControls = Array.from(
+			container.querySelectorAll<HTMLButtonElement>("article button[aria-controls]"),
 		);
-		expect(collapseButtons).toHaveLength(2);
-		expect(collapseButtons.every((button) => button.className.includes("size-11"))).toBe(true);
-		expect(collapseButtons.every((button) => button.querySelector("path")?.getAttribute("stroke-width") === "2")).toBe(
-			true,
-		);
+		expect(cardDisclosureControls).toHaveLength(2);
+		expect(cardDisclosureControls.every((button) => button.hasAttribute("aria-expanded"))).toBe(true);
 
+		const bulkActionClasses: string[] = [];
 		for (const label of ["Expand all", "Collapse all"]) {
 			const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 				(candidate) => candidate.textContent === label,
@@ -376,7 +391,12 @@ describe("mobile history disclosure cards", () => {
 			expect(button?.className).toContain("h-[27px]");
 			expect(button?.className).toContain("min-h-0");
 			expect(button?.className).toContain("after:h-11");
+			expect(button?.className).toContain("font-normal");
+			expect(button?.className).toContain("text-market-close-fg");
+			expect(button?.getAttribute("aria-pressed")).toBeNull();
+			if (button) bulkActionClasses.push(button.className);
 		}
+		expect(new Set(bulkActionClasses).size).toBe(1);
 	}
 
 	function expectM4VisualContract(

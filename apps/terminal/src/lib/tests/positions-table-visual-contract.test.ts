@@ -196,8 +196,8 @@ describe("positions table visual contract", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Mark Price`");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Liquidation Price`");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain('d="M3.5 10 8 5.5l4.5 4.5"');
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain('strokeWidth="2"');
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain('d="M3.5 10 8 5.5l4.5 4.5"');
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("aria-controls={detailsId}");
 		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("divide-x");
 		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("Margin · Iso");
 	});

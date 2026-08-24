@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MobilePositionBulkDetailsActions } from "@/components/trade/mobile/mobile-positions-tab";
+import { MobileBulkDisclosureActions } from "@/components/trade/mobile/mobile-bulk-disclosure-actions";
 import { PositionFilterToolbar } from "@/components/trade/positions/position-filter-toolbar";
 import { ALL_POSITION_MARKETS } from "@/domain/trade/position-toolbar";
 import { createI18nRoot } from "./harness/react";
@@ -77,40 +77,49 @@ describe("mobile position filter row", () => {
 		const onCollapseAll = vi.fn();
 		const filteredPositionKeys = ["one", "two"];
 
-		function renderActions(expandedPositionKeys: ReadonlySet<string>) {
+		function renderActions(keys: readonly string[], expandedKeys: ReadonlySet<string>) {
 			act(() => {
 				root.render(
-					<MobilePositionBulkDetailsActions
-						filteredPositionKeys={filteredPositionKeys}
-						expandedPositionKeys={expandedPositionKeys}
-						onExpandAll={onExpandAll}
-						onCollapseAll={onCollapseAll}
+					<MobileBulkDisclosureActions
+						keys={keys}
+						controller={{ expandedKeys, expandAll: onExpandAll, collapseAll: onCollapseAll }}
 					/>,
 				);
 			});
 		}
 
-		renderActions(new Set());
-		const expandAll = container.querySelector<HTMLButtonElement>('[data-testid="expand-all-position-details"]');
-		const collapseAll = container.querySelector<HTMLButtonElement>('[data-testid="collapse-all-position-details"]');
-		const actions = container.querySelector<HTMLElement>('[data-testid="mobile-position-bulk-details-actions"]');
+		renderActions([], new Set());
+		const expandAll = container.querySelector<HTMLButtonElement>('[data-testid="expand-all-details"]');
+		const collapseAll = container.querySelector<HTMLButtonElement>('[data-testid="collapse-all-details"]');
+		const actions = container.querySelector<HTMLElement>('[data-testid="mobile-bulk-disclosure-actions"]');
 
 		expect(actions?.className).toContain("gap-3");
+		expect(expandAll?.disabled).toBe(true);
+		expect(collapseAll?.disabled).toBe(true);
+		act(() => expandAll?.click());
+		expect(onExpandAll).not.toHaveBeenCalled();
+
+		renderActions(filteredPositionKeys, new Set());
 		expect(expandAll?.disabled).toBe(false);
 		expect(collapseAll?.disabled).toBe(true);
 		expect(expandAll?.className).toContain("after:h-11");
 		expect(collapseAll?.className).toContain("after:h-11");
+		expect(expandAll?.className).toContain("font-normal");
+		expect(expandAll?.className).toContain("text-market-close-fg");
+		expect(expandAll?.className).toBe(collapseAll?.className);
+		expect(expandAll?.getAttribute("aria-pressed")).toBeNull();
+		expect(collapseAll?.getAttribute("aria-pressed")).toBeNull();
 		act(() => expandAll?.click());
-		expect(onExpandAll).toHaveBeenCalledTimes(1);
+		expect(onExpandAll).toHaveBeenCalledWith(filteredPositionKeys);
 		expect(onCollapseAll).not.toHaveBeenCalled();
 
-		renderActions(new Set(["one"]));
+		renderActions(filteredPositionKeys, new Set(["one"]));
 		expect(expandAll?.disabled).toBe(false);
 		expect(collapseAll?.disabled).toBe(false);
 		act(() => collapseAll?.click());
-		expect(onCollapseAll).toHaveBeenCalledTimes(1);
+		expect(onCollapseAll).toHaveBeenCalledWith(filteredPositionKeys);
 
-		renderActions(new Set(filteredPositionKeys));
+		renderActions(filteredPositionKeys, new Set(filteredPositionKeys));
 		expect(expandAll?.disabled).toBe(true);
 		expect(collapseAll?.disabled).toBe(false);
 	});

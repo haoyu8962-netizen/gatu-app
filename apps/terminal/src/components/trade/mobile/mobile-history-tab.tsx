@@ -22,6 +22,7 @@ import { toNumber } from "@/lib/trade/numbers";
 import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileProgressiveList } from "./mobile-progressive-list";
@@ -41,8 +42,6 @@ type UserFill = UserFillsResponse[number];
 
 const filterTriggerClassName =
 	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
-const filterActionClassName =
-	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control active:scale-100";
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
@@ -103,11 +102,12 @@ function MobileHistoryTabContent({
 		)
 		.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 	const filteredFillKeys = filteredFills.map(getUserFillKey);
-	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
+	const disclosure = useMobileDisclosureSet(
 		`${isTestnet ? "Testnet" : "Mainnet"}:${ownerKey}`,
 		filteredFillKeys,
 		disclosureState,
 	);
+	const { expandedKeys, setExpanded } = disclosure;
 	const typeOptions = [
 		{ value: "all", label: t`All types` },
 		...(["trade", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
@@ -133,11 +133,6 @@ function MobileHistoryTabContent({
 	function handleSelectMarket(name: string) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setActiveTab("trade");
-	}
-
-	function handleSetAllExpanded(expanded: boolean) {
-		if (expanded) expandAll(filteredFillKeys);
-		else collapseAll(filteredFillKeys);
 	}
 
 	function getTypeFilterLabel(filter: Exclude<TradeHistoryTypeFilter, "all">) {
@@ -308,22 +303,7 @@ function MobileHistoryTabContent({
 							triggerClassName={filterTriggerClassName}
 						/>
 					</div>
-					<div className="ml-auto flex shrink-0 items-center gap-3 pl-3">
-						<button
-							type="button"
-							onClick={() => handleSetAllExpanded(true)}
-							className={cn(filterActionClassName, "font-semibold text-market-close-fg")}
-						>
-							{t`Expand all`}
-						</button>
-						<button
-							type="button"
-							onClick={() => handleSetAllExpanded(false)}
-							className={cn(filterActionClassName, "text-market-close-muted")}
-						>
-							{t`Collapse all`}
-						</button>
-					</div>
+					<MobileBulkDisclosureActions keys={filteredFillKeys} controller={disclosure} className="ml-auto pl-3" />
 				</div>
 				<div
 					data-testid="mobile-trade-history-list"
@@ -449,8 +429,8 @@ function MobileHistoryTabContent({
 															</div>
 														</div>
 													</div>
-													<div className="flex min-h-11 items-center justify-between border-t border-market-close-stroke-card">
-														{explorerUrl ? (
+													{explorerUrl ? (
+														<div className="flex min-h-11 items-center border-t border-market-close-stroke-card">
 															<a
 																href={explorerUrl}
 																target="_blank"
@@ -460,27 +440,8 @@ function MobileHistoryTabContent({
 																{t`Explorer`}
 																<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 															</a>
-														) : (
-															<span />
-														)}
-														<button
-															type="button"
-															aria-label={t`Collapse ${marketName} history details`}
-															aria-controls={detailsId}
-															onClick={handleToggle}
-															className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
-														>
-															<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-																<path
-																	d="M3.5 10 8 5.5l4.5 4.5"
-																	stroke="currentColor"
-																	strokeWidth="2"
-																	strokeLinecap="round"
-																	strokeLinejoin="round"
-																/>
-															</svg>
-														</button>
-													</div>
+														</div>
+													) : null}
 												</div>
 											) : null}
 										</article>

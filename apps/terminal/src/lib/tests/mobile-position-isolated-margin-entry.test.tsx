@@ -87,6 +87,11 @@ describe("MobilePositionCard isolated margin entry", () => {
 			);
 		});
 		expandPositionDetails();
+		const disclosureControls = container.querySelectorAll(
+			'button[aria-label="Collapse CXMT-USDC position details"][aria-controls]',
+		);
+		expect(disclosureControls).toHaveLength(1);
+		expect(disclosureControls[0]?.getAttribute("aria-expanded")).toBe("true");
 
 		const button = container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]');
 		if (!(button instanceof HTMLButtonElement)) throw new Error("Isolated margin entry was not rendered");

@@ -424,7 +424,7 @@ export function MobilePositionCard({
 						</button>
 					</div>
 
-					<div className="flex items-center justify-between border-t border-market-close-stroke-card pt-[11px]">
+					<div className="flex items-center border-t border-market-close-stroke-card pt-[11px]">
 						<div className="flex min-w-0 items-center gap-4">
 							<button
 								type="button"
@@ -451,23 +451,6 @@ export function MobilePositionCard({
 								{t`Reverse`}
 							</button>
 						</div>
-						<button
-							type="button"
-							aria-label={t`Collapse ${displayName} position details`}
-							aria-controls={detailsId}
-							onClick={handleToggleDetails}
-							className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
-						>
-							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-								<path
-									d="M3.5 10 8 5.5l4.5 4.5"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</button>
 					</div>
 				</div>
 			) : null}
