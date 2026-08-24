@@ -505,6 +505,7 @@ msgid "Add to Target"
 msgstr "Añadir hasta el objetivo"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "Añadir TP/SL"
 
@@ -533,7 +534,8 @@ msgstr "Ajustar el margen aislado de {displayName}"
 msgid "Adjust leverage"
 msgstr "Ajustar apalancamiento"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "Ajustar margen"
 
@@ -1532,22 +1534,24 @@ msgstr "Cerrar"
 #~ msgstr "Cerrar todo"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "Cerrar todo no está disponible en este momento."
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "Cerrar todo no está disponible en este momento."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "Cerrar todo no está disponible porque se detectaron datos de mercado duplicados."
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "Cerrar todo no está disponible porque se detectaron datos de mercado duplicados."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "Cerrar todo no está disponible porque los datos de posición están incompletos."
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "Cerrar todo no está disponible porque los datos de posición están incompletos."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "Cerrar todo no está disponible hasta que se hayan cargado el mercado y el precio de marca de cada posición."
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "Cerrar todo no está disponible hasta que se hayan cargado el mercado y el precio de marca de cada posición."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Cerrar todas las posiciones"
 
@@ -1697,8 +1701,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "Cerrar este cuadro de diálogo no cancelará la orden."
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "Cerrando..."
+#~ msgid "Closing..."
+#~ msgstr "Cerrando..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2933,6 +2937,7 @@ msgstr "Editar el tamaño de la orden de {0}"
 msgid "Edit {0} trigger price"
 msgstr "Editar el precio de activación de {0}"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "Editar TP/SL"
@@ -4276,6 +4281,7 @@ msgstr "El apalancamiento está fijado en {currentLeverage}× para este mercado.
 msgid "Limit"
 msgstr "Límite"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4295,7 @@ msgid "Limit Buy"
 msgstr "Compra límite"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Cierre con límite"
@@ -4773,6 +4779,7 @@ msgstr "Mercado"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +4802,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "Actualmente, los clics de mercado cierran de inmediato la posición completa para esta cuenta y red."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Cierre a mercado"
@@ -5097,8 +5104,8 @@ msgstr "Más información"
 #~ msgstr "Más páginas"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "Más acciones de posición"
+#~ msgid "More position actions"
+#~ msgstr "Más acciones de posición"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -7065,6 +7072,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "Invertir"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "Invertir"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "Orden de inversión ejecutada por {filledSizeLabel}."
@@ -7073,7 +7085,7 @@ msgstr "Orden de inversión ejecutada por {filledSizeLabel}."
 msgid "Reverse order filled."
 msgstr "Orden de inversión ejecutada."
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "Invertir posición"
@@ -7657,8 +7669,8 @@ msgstr "Establecer en {p}%"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "Establecer TP/SL"
+#~ msgid "Set TP/SL"
+#~ msgstr "Establecer TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"

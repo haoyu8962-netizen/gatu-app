@@ -485,6 +485,7 @@ msgid "Add to Target"
 msgstr "补充至目标"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "添加 TP/SL"
 
@@ -513,7 +514,8 @@ msgstr "调整 {displayName} 的逐仓保证金"
 msgid "Adjust leverage"
 msgstr "调整杠杆"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "调整保证金"
 
@@ -1422,22 +1424,24 @@ msgstr "关闭"
 #~ msgstr "一键全平"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "一键全平当前不可用。"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "一键全平当前不可用。"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "检测到重复的市场数据，一键全平不可用。"
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "检测到重复的市场数据，一键全平不可用。"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "持仓数据不完整，一键全平不可用。"
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "持仓数据不完整，一键全平不可用。"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "所有持仓市场和标记价格加载完成前，一键全平不可用。"
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "所有持仓市场和标记价格加载完成前，一键全平不可用。"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "一键全平"
 
@@ -1587,8 +1591,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "关闭此弹窗不会取消该订单。"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "平仓中..."
+#~ msgid "Closing..."
+#~ msgstr "平仓中..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2753,6 +2757,7 @@ msgstr "修改 {0} 委托数量"
 msgid "Edit {0} trigger price"
 msgstr "修改 {0} 触发价格"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
@@ -4014,6 +4019,7 @@ msgstr "该市场的杠杆固定为 {currentLeverage}×。"
 msgid "Limit"
 msgstr "限价"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4027,7 +4033,7 @@ msgid "Limit Buy"
 msgstr "限价买入"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "限价平仓"
@@ -4468,6 +4474,7 @@ msgstr "市场"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4490,7 +4497,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "当前在此账户和网络中点击“市价”会立即平掉全部仓位。"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "市价平仓"
@@ -4768,8 +4775,8 @@ msgstr "更多信息"
 #~ msgstr "更多页面"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "更多仓位操作"
+#~ msgid "More position actions"
+#~ msgstr "更多仓位操作"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -6564,6 +6571,11 @@ msgstr "显示"
 msgid "Reverse"
 msgstr "反向"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "反手"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "反向委托已成交 {filledSizeLabel}。"
@@ -6572,7 +6584,7 @@ msgstr "反向委托已成交 {filledSizeLabel}。"
 msgid "Reverse order filled."
 msgstr "反向委托已成交。"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "反向仓位"
@@ -7094,8 +7106,8 @@ msgid "Set to {p}%"
 msgstr "设为{p}%"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "设置止盈止损"
+#~ msgid "Set TP/SL"
+#~ msgstr "设置止盈止损"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/desktop-utilities-menu.tsx

@@ -1,8 +1,14 @@
-import { Table, TableBody, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
+import {
+	getPositionCloseAllQuoteSymbol,
+	type PositionCloseAllSnapshot,
+	type PositionCloseAllSnapshotIssue,
+	resolvePositionCloseAllSnapshot,
+} from "@/domain/trade/position-close-all";
 import {
 	filterPositions,
 	type PositionDirectionFilter,
@@ -19,6 +25,7 @@ import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
+import { PositionCloseAllController } from "./position-close-all-modal";
 import type {
 	IsolatedMarginPositionRef,
 	IsolatedMarginPositionTarget,
@@ -61,6 +68,7 @@ interface OwnedPositionPnlShare {
 }
 
 export function PositionsTab({ directionFilter, marketFilter, currentMarket }: Props) {
+	const closeAllUnavailableId = useId();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();
 	const navigateToMarket = useMarketNavigation();
@@ -79,6 +87,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionTarget | null>(null);
 	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const [closeAllSnapshot, setCloseAllSnapshot] = useState<PositionCloseAllSnapshot | null>(null);
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
@@ -101,11 +110,79 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
+	const signingIdentityReady =
+		isConnected && !!address && clientKey !== "disconnected" && address.toLowerCase() === clientKey.toLowerCase();
+	const allPositionMarksFresh = positions.every(
+		(position) => getMarketInfo(position.coin)?.markPriceStatus === "success",
+	);
+	const closeAllMarketDataReady =
+		!positionsLoading &&
+		!positionsError &&
+		!positionsStale &&
+		!markets.isLoading &&
+		!markets.error &&
+		allPositionMarksFresh;
+	const closeAllDataReady = signingIdentityReady && closeAllMarketDataReady;
+
+	function resolveCurrentCloseAllSnapshot(capturedAtMs = Date.now()) {
+		return resolvePositionCloseAllSnapshot({
+			owner: address,
+			env,
+			capturedAtMs,
+			candidates: positions.map((position) => {
+				const market = markets.getMarket(position.coin);
+				const marketInfo = getMarketInfo(position.coin);
+				return {
+					coin: position.coin,
+					dex: position.dex,
+					assetId: market?.assetId,
+					szDecimals: market?.szDecimals,
+					signedPositionSize: position.szi,
+					markPx: marketInfo?.markPx,
+					positionValue: position.positionValue,
+					unrealizedPnl: position.unrealizedPnl,
+					marginMode: position.leverage.type,
+					quoteSymbol: getPositionCloseAllQuoteSymbol(market),
+				};
+			}),
+		});
+	}
+
+	const closeAllResolution = resolveCurrentCloseAllSnapshot();
+	const closeAllPreview = closeAllDataReady ? closeAllResolution.snapshot : null;
+	const closeAllIssues: readonly PositionCloseAllSnapshotIssue[] = closeAllResolution.issues;
+	const visibleCloseAllSnapshot =
+		signingIdentityReady && address && closeAllSnapshot?.owner === address.toLowerCase() && closeAllSnapshot.env === env
+			? closeAllSnapshot
+			: null;
+
+	function getCloseAllUnavailableReason() {
+		if (closeAllPreview) return null;
+		if (!signingIdentityReady) return t`Close all is currently unavailable.`;
+		if (!closeAllMarketDataReady || closeAllIssues.includes("invalid-market")) {
+			return t`Close all is unavailable until every position market and mark price has loaded.`;
+		}
+		if (closeAllIssues.includes("invalid-position")) {
+			return t`Close all is unavailable because position data is incomplete.`;
+		}
+		if (closeAllIssues.includes("duplicate-market")) {
+			return t`Close all is unavailable because duplicate market data was detected.`;
+		}
+		return t`Close all is currently unavailable.`;
+	}
+
+	const closeAllUnavailableReason = getCloseAllUnavailableReason();
 
 	const pnlHeader = pnlMode === "roe" ? t`PNL (ROE %)` : t`PNL (Price Change %)`;
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
 		positionMarketClose.open(position);
+	}
+
+	function handleOpenCloseAll() {
+		if (!closeAllDataReady) return;
+		const resolution = resolveCurrentCloseAllSnapshot(Date.now());
+		if (resolution.snapshot) setCloseAllSnapshot(resolution.snapshot);
 	}
 
 	function handleReverse(data: PositionReverseRef) {
@@ -150,18 +227,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 
 	const placeholder = renderPlaceholder();
-	const filteredPlaceholder =
-		!placeholder && filteredPositions.length === 0 ? (
-			<Placeholder>{t`No positions match the selected filters.`}</Placeholder>
-		) : null;
 
 	return (
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableShellClass}>
-				{placeholder || filteredPlaceholder ? (
-					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-						{placeholder ?? filteredPlaceholder}
-					</div>
+				{placeholder ? (
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>
 				) : (
 					<ScrollArea className="min-h-0 w-full flex-1 [&_[data-slot=scroll-area-viewport]]:overscroll-x-none">
 						<Table
@@ -243,11 +314,44 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										</Tooltip>
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "pr-5")}>
-										{t`Actions`}
+										<span className="sr-only">{t`Actions`}</span>
+										{closeAllUnavailableReason ? (
+											<span id={closeAllUnavailableId} className="sr-only">
+												{closeAllUnavailableReason}
+											</span>
+										) : null}
+										<Tooltip content={closeAllUnavailableReason} side="top">
+											<span className="inline-flex max-w-full">
+												<Button
+													type="button"
+													variant="ghost"
+													intent="brand"
+													size="xxs"
+													disabled={!closeAllPreview}
+													focusableWhenDisabled
+													onClick={closeAllPreview ? handleOpenCloseAll : undefined}
+													aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
+													title={closeAllUnavailableReason ?? undefined}
+													className="h-[26px] min-h-0 max-w-full rounded-[6px] bg-transparent px-1 py-0 text-right text-[11px] leading-4 font-semibold whitespace-nowrap text-market-close-success shadow-none transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:!outline-market-close-control active:not-data-disabled:scale-100 data-disabled:bg-transparent data-disabled:text-market-close-subtle"
+												>
+													{t`Close All Positions`}
+												</Button>
+											</span>
+										</Tooltip>
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody className={cn(positionsPanelTableBodyClass, positionTableBodyClass)}>
+								{filteredPositions.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={POSITION_TABLE_COLUMNS.length}
+											className="h-24 text-center text-xs text-market-close-subtle"
+										>
+											{t`No positions match the selected filters.`}
+										</TableCell>
+									</TableRow>
+								) : null}
 								{filteredPositions.map((p, i) => {
 									const assetId = markets.getAssetId(p.coin);
 									const isMarketClosePending = positionMarketClose.pendingAssetId === assetId;
@@ -296,6 +400,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				target={selectedReverseTarget}
 				onOpenChange={(open) => {
 					if (!open) setSelectedReverseTarget(null);
+				}}
+			/>
+			<PositionCloseAllController
+				snapshot={visibleCloseAllSnapshot}
+				onOpenChange={(open) => {
+					if (!open) setCloseAllSnapshot(null);
 				}}
 			/>
 			<PositionPnlShareModal

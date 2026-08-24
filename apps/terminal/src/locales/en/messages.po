@@ -509,6 +509,7 @@ msgid "Add to Target"
 msgstr "Add to Target"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "Add TP/SL"
 
@@ -537,7 +538,8 @@ msgstr "Adjust isolated margin for {displayName}"
 msgid "Adjust leverage"
 msgstr "Adjust leverage"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "Adjust Margin"
 
@@ -1545,22 +1547,24 @@ msgstr "Close"
 #~ msgstr "Close All"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "Close all is currently unavailable."
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "Close all is currently unavailable."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "Close all is unavailable because duplicate market data was detected."
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "Close all is unavailable because duplicate market data was detected."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "Close all is unavailable because position data is incomplete."
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "Close all is unavailable because position data is incomplete."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "Close all is unavailable until every position market and mark price has loaded."
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "Close all is unavailable until every position market and mark price has loaded."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Close All Positions"
 
@@ -1710,8 +1714,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "Closing this dialog will not cancel it."
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "Closing..."
+#~ msgid "Closing..."
+#~ msgstr "Closing..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2946,6 +2950,7 @@ msgstr "Edit {0} order size"
 msgid "Edit {0} trigger price"
 msgstr "Edit {0} trigger price"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "Edit TP/SL"
@@ -4293,6 +4298,7 @@ msgstr "Leverage is fixed at {currentLeverage}× for this market."
 msgid "Limit"
 msgstr "Limit"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4306,7 +4312,7 @@ msgid "Limit Buy"
 msgstr "Limit Buy"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Limit Close"
@@ -4790,6 +4796,7 @@ msgstr "Market"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4812,7 +4819,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "Market clicks currently close the full position immediately for this account and network."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market Close"
@@ -5118,8 +5125,8 @@ msgstr "More Info"
 #~ msgstr "More pages"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "More position actions"
+#~ msgid "More position actions"
+#~ msgstr "More position actions"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -7086,6 +7093,11 @@ msgstr "Reveal"
 msgid "Reverse"
 msgstr "Reverse"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "Reverse"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "Reverse order filled for {filledSizeLabel}."
@@ -7094,7 +7106,7 @@ msgstr "Reverse order filled for {filledSizeLabel}."
 msgid "Reverse order filled."
 msgstr "Reverse order filled."
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "Reverse Position"
@@ -7678,8 +7690,8 @@ msgstr "Set to {p}%"
 #~ msgstr "Set TP to {p}%"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "Set TP/SL"
+#~ msgid "Set TP/SL"
+#~ msgstr "Set TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"

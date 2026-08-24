@@ -24,7 +24,6 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
-import { PositionActionsDropdown } from "./position-actions-dropdown";
 import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
@@ -33,6 +32,7 @@ import type {
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
+import { PositionInlineActions } from "./position-inline-actions";
 import { createPositionPnlShareData } from "./position-pnl-share-data";
 import { positionTableCellClass } from "./position-table-styles";
 import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
@@ -372,6 +372,7 @@ export function PositionRow({
 						type="button"
 						onClick={handleOpenTpSl}
 						disabled={!canManage}
+						aria-label={hasTpSl ? t`Edit TP/SL` : t`Add TP/SL`}
 						className={cn(
 							"group inline-flex min-h-[26px] items-center justify-end rounded-[6px] transition-all duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50",
 							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
@@ -382,7 +383,21 @@ export function PositionRow({
 				</Tooltip>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "text-market-close-fg")}>
-				{marginContent}
+				{p.leverage.type === "isolated" ? (
+					<Tooltip content={t`Adjust Margin`} side="left">
+						<button
+							type="button"
+							onClick={handleAdjustMargin}
+							disabled={!canManage}
+							aria-label={t`Adjust Margin`}
+							className="inline-flex min-h-[30px] items-center justify-end rounded-[6px] transition-colors duration-[120ms] hover:bg-market-close-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{marginContent}
+						</button>
+					</Tooltip>
+				) : (
+					marginContent
+				)}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums", fundingClass)}>
 				<span className="block text-xs font-medium tabular-nums" title={fundingDisplay}>
@@ -390,16 +405,12 @@ export function PositionRow({
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "pr-5")}>
-				<PositionActionsDropdown
+				<PositionInlineActions
 					canClose={canClose}
-					canManage={canManage}
 					canReverse={canReverse}
-					isIsolated={p.leverage.type === "isolated"}
 					isRowClosing={isRowClosing}
 					onMarketClose={handleMarketClose}
 					onLimitClose={handleLimitClose}
-					onAdjustMargin={handleAdjustMargin}
-					onOpenTpSl={handleOpenTpSl}
 					onReverse={handleReverse}
 				/>
 			</TableCell>

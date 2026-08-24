@@ -16,7 +16,6 @@ const USER_MENU_SOURCE = readTerminalComponent("trade/header/user-menu.tsx");
 const TOKEN_SELECTOR_POPUP_SOURCE = readTerminalComponent("trade/chart/token-selector-popup.tsx");
 const MOBILE_AGENT_QR_SCANNER_SOURCE = readTerminalComponent("trade/components/mobile-agent-qr-scanner.tsx");
 const TRADING_DROPDOWN_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-dropdown.ts"), "utf8");
-const POSITION_ACTIONS_DROPDOWN_SOURCE = readTerminalComponent("trade/positions/position-actions-dropdown.tsx");
 
 describe("modal surface contract", () => {
 	it("uses the dedicated modal surface for blocking overlays", () => {
@@ -40,7 +39,6 @@ describe("modal surface contract", () => {
 		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).toContain("bg-modal px-6 text-center");
 		expect(MOBILE_AGENT_QR_SCANNER_SOURCE).not.toContain("bg-[#0F1A1F]");
 		expect(TRADING_DROPDOWN_SOURCE).toContain("bg-overlay p-1");
-		expect(POSITION_ACTIONS_DROPDOWN_SOURCE).toContain("bg-overlay p-1.5 shadow-overlay");
 	});
 
 	it("keeps the shared and terminal modal tokens wired to their intended surfaces", () => {

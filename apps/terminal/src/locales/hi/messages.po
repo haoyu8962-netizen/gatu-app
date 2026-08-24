@@ -505,6 +505,7 @@ msgid "Add to Target"
 msgstr "लक्ष्य तक जोड़ें"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "TP/SL जोड़ें"
 
@@ -533,7 +534,8 @@ msgstr "{displayName} का आइसोलेटेड मार्जिन �
 msgid "Adjust leverage"
 msgstr "लीवरेज समायोजित करें"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "मार्जिन समायोजित करें"
 
@@ -1532,22 +1534,24 @@ msgstr "बंद करें"
 #~ msgstr "सभी बंद करें"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "डुप्लिकेट बाज़ार डेटा मिलने के कारण सभी बंद करना उपलब्ध नहीं है।"
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "डुप्लिकेट बाज़ार डेटा मिलने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "सभी पोज़िशन बंद करें"
 
@@ -1697,8 +1701,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "इस डायलॉग को बंद करने से ऑर्डर रद्द नहीं होगा।"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "बंद हो रहा है..."
+#~ msgid "Closing..."
+#~ msgstr "बंद हो रहा है..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2933,6 +2937,7 @@ msgstr "{0} ऑर्डर आकार संपादित करें"
 msgid "Edit {0} trigger price"
 msgstr "{0} ट्रिगर मूल्य संपादित करें"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "TP/SL संपादित करें"
@@ -4276,6 +4281,7 @@ msgstr "इस बाज़ार के लिए लीवरेज {currentLe
 msgid "Limit"
 msgstr "लिमिट"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4295,7 @@ msgid "Limit Buy"
 msgstr "लिमिट खरीद"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Limit क्लोज़"
@@ -4773,6 +4779,7 @@ msgstr "बाज़ार"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +4802,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "इस खाते और नेटवर्क के लिए मार्केट क्लिक वर्तमान में पूरी पोज़िशन तुरंत बंद कर देते हैं।"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market क्लोज़"
@@ -5097,8 +5104,8 @@ msgstr "अधिक जानकारी"
 #~ msgstr "और पृष्ठ"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "अधिक पोज़िशन कार्रवाइयाँ"
+#~ msgid "More position actions"
+#~ msgstr "अधिक पोज़िशन कार्रवाइयाँ"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -7065,6 +7072,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "रिवर्स"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "रिवर्स"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "{filledSizeLabel} के लिए रिवर्स ऑर्डर भरा गया।"
@@ -7073,7 +7085,7 @@ msgstr "{filledSizeLabel} के लिए रिवर्स ऑर्डर �
 msgid "Reverse order filled."
 msgstr "रिवर्स ऑर्डर भरा गया।"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "पोज़िशन रिवर्स करें"
@@ -7657,8 +7669,8 @@ msgstr "{p}% पर सेट करें"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "TP/SL सेट करें"
+#~ msgid "Set TP/SL"
+#~ msgstr "TP/SL सेट करें"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"

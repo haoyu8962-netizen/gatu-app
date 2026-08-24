@@ -505,6 +505,7 @@ msgid "Add to Target"
 msgstr "Ajouter jusqu'à la cible"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "Ajouter TP/SL"
 
@@ -533,7 +534,8 @@ msgstr "Ajuster la marge isolée de {displayName}"
 msgid "Adjust leverage"
 msgstr "Ajuster l'effet de levier"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "Ajuster la marge"
 
@@ -1532,22 +1534,24 @@ msgstr "Fermer"
 #~ msgstr "Tout fermer"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "Tout fermer est actuellement indisponible."
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "Tout fermer est actuellement indisponible."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "Tout fermer est indisponible car des données de marché en double ont été détectées."
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "Tout fermer est indisponible car des données de marché en double ont été détectées."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "Tout fermer est indisponible car les données de position sont incomplètes."
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "Tout fermer est indisponible car les données de position sont incomplètes."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "Tout fermer est indisponible tant que tous les marchés des positions et les prix mark ne sont pas chargés."
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "Tout fermer est indisponible tant que tous les marchés des positions et les prix mark ne sont pas chargés."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Fermer toutes les positions"
 
@@ -1697,8 +1701,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "Fermer cette boîte de dialogue ne l'annulera pas."
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "Fermeture..."
+#~ msgid "Closing..."
+#~ msgstr "Fermeture..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2933,6 +2937,7 @@ msgstr "Modifier la taille de l'ordre {0}"
 msgid "Edit {0} trigger price"
 msgstr "Modifier le prix de déclenchement de {0}"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "Modifier TP/SL"
@@ -4276,6 +4281,7 @@ msgstr "L'effet de levier est fixé à {currentLeverage}× pour ce marché."
 msgid "Limit"
 msgstr "Limite"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4295,7 @@ msgid "Limit Buy"
 msgstr "Achat limite"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Clôture limite"
@@ -4773,6 +4779,7 @@ msgstr "Marché"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +4802,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "Les clics sur Marché ferment actuellement la position entière immédiatement pour ce compte et ce réseau."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Clôture au marché"
@@ -5097,8 +5104,8 @@ msgstr "Plus d’infos"
 #~ msgstr "Plus de pages"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "Plus d'actions sur la position"
+#~ msgid "More position actions"
+#~ msgstr "Plus d'actions sur la position"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -7065,6 +7072,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "Inverser"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "Inverser"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "Ordre d'inversion exécuté pour {filledSizeLabel}."
@@ -7073,7 +7085,7 @@ msgstr "Ordre d'inversion exécuté pour {filledSizeLabel}."
 msgid "Reverse order filled."
 msgstr "Ordre d'inversion exécuté."
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "Inverser la position"
@@ -7657,8 +7669,8 @@ msgstr "Régler sur {p}%"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "Définir TP/SL"
+#~ msgid "Set TP/SL"
+#~ msgstr "Définir TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"

@@ -28,7 +28,7 @@ function readMobilePositionSource(file: string): string {
 const POSITIONS_PANEL_SOURCE = readPositionSource("positions-panel.tsx");
 const POSITIONS_TAB_SOURCE = readPositionSource("positions-tab.tsx");
 const POSITION_ROW_SOURCE = readPositionSource("position-row.tsx");
-const POSITION_ACTIONS_SOURCE = readPositionSource("position-actions-dropdown.tsx");
+const POSITION_ACTIONS_SOURCE = readPositionSource("position-inline-actions.tsx");
 const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-card.tsx");
 
 describe("positions table visual contract", () => {
@@ -51,7 +51,7 @@ describe("positions table visual contract", () => {
 	});
 
 	it("uses the official-density fixed nine-column geometry", () => {
-		expect(POSITION_TABLE_MIN_WIDTH).toBe(1096);
+		expect(POSITION_TABLE_MIN_WIDTH).toBe(1136);
 		expect(POSITION_TABLE_COLUMNS.map(({ id, width }) => [id, width])).toEqual([
 			["market", 150],
 			["size", 134],
@@ -61,7 +61,7 @@ describe("positions table visual contract", () => {
 			["tpsl", 100],
 			["margin", 116],
 			["funding", 78],
-			["actions", 144],
+			["actions", 184],
 		]);
 		expect(POSITION_TABLE_COLUMNS.reduce((total, column) => total + column.width, 0)).toBe(POSITION_TABLE_MIN_WIDTH);
 		expect(POSITION_ROW_SOURCE).not.toContain("truncate");
@@ -88,7 +88,10 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("PositionCloseAllController");
+		expect(POSITIONS_TAB_SOURCE).toContain("PositionCloseAllController");
+		expect(POSITIONS_TAB_SOURCE).toContain("Close All Positions");
+		expect(POSITIONS_TAB_SOURCE).toContain("candidates: positions.map");
+		expect(POSITIONS_TAB_SOURCE).toContain("focusableWhenDisabled");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
 	});
 
@@ -111,7 +114,7 @@ describe("positions table visual contract", () => {
 	});
 
 	it("provides header help and switches PNL percentage modes through the Big.js domain metric", () => {
-		expect(POSITIONS_TAB_SOURCE.match(/<Tooltip\b/g)).toHaveLength(4);
+		expect(POSITIONS_TAB_SOURCE.match(/<Tooltip\b/g)).toHaveLength(5);
 		expect(POSITIONS_TAB_SOURCE).toContain("border-dotted");
 		expect(POSITIONS_TAB_SOURCE).toContain('useState<PositionPnlMode>("roe")');
 		expect(POSITIONS_TAB_SOURCE).toContain('current === "roe" ? "priceChange" : "roe"');
@@ -145,18 +148,20 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).toContain("twapStatesEvent !== undefined");
 	});
 
-	it("uses a market-close button plus the complete 1a overflow menu", () => {
+	it("shows limit, market, and reverse as direct row actions without a duplicate overflow menu", () => {
 		expect(positionTableInlineActionClass).toContain("h-[26px]");
+		expect(positionTableInlineActionClass).toContain("text-market-close-success");
 		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onMarketClose}");
-		expect(POSITION_ACTIONS_SOURCE).toContain("<Dropdown");
-		expect(POSITION_ACTIONS_SOURCE).toContain("hideCaret");
+		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onLimitClose}");
+		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onReverse}");
+		expect(POSITION_ACTIONS_SOURCE).not.toContain("<Dropdown");
 		expect(POSITION_ACTIONS_SOURCE).toContain("t`Limit Close`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("t`Adjust Margin`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("t`Set TP/SL`");
 		expect(POSITION_ACTIONS_SOURCE).toContain("t`Reverse Position`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("danger: true");
-		expect(POSITION_ROW_SOURCE).toContain("onAdjustMargin={handleAdjustMargin}");
-		expect(POSITION_ROW_SOURCE).toContain("onOpenTpSl={handleOpenTpSl}");
+		expect(POSITION_ACTIONS_SOURCE).toContain('context: "Order type"');
+		expect(POSITION_ACTIONS_SOURCE).toContain('context: "Position action"');
+		expect(POSITION_ROW_SOURCE).toContain("onClick={handleAdjustMargin}");
+		expect(POSITION_ROW_SOURCE).toContain("onClick={handleOpenTpSl}");
+		expect(POSITION_ROW_SOURCE).toContain("<PositionInlineActions");
 	});
 
 	it("uses the handoff mobile disclosure card without internal cell dividers", () => {

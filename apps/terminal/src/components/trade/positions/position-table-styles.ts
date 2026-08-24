@@ -1,5 +1,5 @@
 // Keep the desktop overflow distance aligned with Hyperliquid's compact account table.
-export const POSITION_TABLE_MIN_WIDTH = 1096;
+export const POSITION_TABLE_MIN_WIDTH = 1136;
 
 // Combined columns preserve Gatu's information hierarchy while matching the official table density.
 export const POSITION_TABLE_COLUMNS = [
@@ -11,7 +11,7 @@ export const POSITION_TABLE_COLUMNS = [
 	{ id: "tpsl", width: 100 },
 	{ id: "margin", width: 116 },
 	{ id: "funding", width: 78 },
-	{ id: "actions", width: 144 },
+	{ id: "actions", width: 184 },
 ] as const;
 
 export const positionTableHeaderClass = "bg-surface [&_tr]:border-stroke-weak [&_tr]:border-t-0";
@@ -24,4 +24,4 @@ export const positionTableHeadClass =
 export const positionTableCellClass = "h-14 whitespace-nowrap px-[7px] py-2 text-right text-xs leading-4";
 
 export const positionTableInlineActionClass =
-	"h-[26px] min-h-0 rounded-[7px] px-2.5 py-0 text-xs leading-4 font-semibold shadow-none active:not-data-disabled:scale-100";
+	"inline-flex h-[26px] min-h-0 items-center rounded-[4px] px-0.5 py-0 text-xs leading-4 font-semibold text-market-close-success transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle disabled:opacity-50";

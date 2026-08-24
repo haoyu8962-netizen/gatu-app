@@ -55,7 +55,7 @@ describe("PositionRow market close entry", () => {
 		vi.clearAllMocks();
 	});
 
-	it("opens the shared market-close flow with exact exchange strings", async () => {
+	it("opens the shared market-close flow with exact exchange strings", () => {
 		const onMarketClose = vi.fn();
 		const onShare = vi.fn();
 		const onLimitClose = vi.fn();
@@ -95,9 +95,7 @@ describe("PositionRow market close entry", () => {
 			);
 		});
 
-		const marketButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent?.trim() === "Market Close",
-		);
+		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]');
 		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Desktop market close entry was not rendered");
 
 		act(() => marketButton.click());
@@ -127,26 +125,17 @@ describe("PositionRow market close entry", () => {
 			}),
 		);
 
-		const moreActions = container.querySelector<HTMLButtonElement>('button[aria-label="More position actions"]');
-		if (!moreActions) throw new Error("Desktop position overflow menu was not rendered");
+		expect(container.querySelector('button[aria-label="More position actions"]')).toBeNull();
+		expect(document.body.querySelector('[role="menuitem"]')).toBeNull();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		let menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		expect(menuItems.map((item) => item.textContent?.trim())).toEqual([
-			"Limit Close",
-			"Adjust Margin",
-			"Set TP/SL",
-			"Reverse Position",
-		]);
-
-		const adjustMarginButton = menuItems.find((button) => button.textContent?.trim() === "Adjust Margin");
-		await act(async () => adjustMarginButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const adjustMarginButton = container.querySelector<HTMLButtonElement>('button[aria-label="Adjust Margin"]');
+		if (!adjustMarginButton) throw new Error("Desktop isolated margin entry was not rendered");
+		act(() => adjustMarginButton.click());
 		expect(onAdjustMargin).toHaveBeenCalledOnce();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const tpSlButton = menuItems.find((button) => button.textContent?.trim() === "Set TP/SL");
-		await act(async () => tpSlButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const tpSlButton = container.querySelector<HTMLButtonElement>('button[aria-label="Add TP/SL"]');
+		if (!tpSlButton) throw new Error("Desktop TP/SL entry was not rendered");
+		act(() => tpSlButton.click());
 		expect(onOpenTpSl).toHaveBeenCalledWith({
 			coin: "xyz:CXMT",
 			dex: "xyz",
@@ -156,18 +145,14 @@ describe("PositionRow market close entry", () => {
 			marginMode: "isolated",
 		});
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const reverseButton = menuItems.find((button) => button.textContent?.trim() === "Reverse Position");
-		await act(async () => reverseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const reverseButton = container.querySelector<HTMLButtonElement>('button[aria-label="Reverse Position"]');
+		if (!reverseButton) throw new Error("Desktop reverse entry was not rendered");
+		act(() => reverseButton.click());
 		expect(onReverse).toHaveBeenCalledOnce();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const limitButton = menuItems.find((button) => button.textContent?.trim() === "Limit Close");
-		if (!(limitButton instanceof HTMLElement)) throw new Error("Desktop limit close entry was not rendered");
-
-		await act(async () => limitButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
+		if (!limitButton) throw new Error("Desktop limit close entry was not rendered");
+		act(() => limitButton.click());
 
 		expect(onLimitClose).toHaveBeenCalledWith({
 			coin: "xyz:CXMT",

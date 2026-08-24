@@ -505,6 +505,7 @@ msgid "Add to Target"
 msgstr "الإضافة حتى الهدف"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "إضافة TP/SL"
 
@@ -533,7 +534,8 @@ msgstr "تعديل الهامش المعزول لـ {displayName}"
 msgid "Adjust leverage"
 msgstr "تعديل الرافعة المالية"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "تعديل الهامش"
 
@@ -1532,22 +1534,24 @@ msgstr "إغلاق"
 #~ msgstr "إغلاق الكل"
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is currently unavailable."
-#~ msgstr "إغلاق الكل غير متاح حالياً."
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "إغلاق الكل غير متاح حالياً."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because duplicate market data was detected."
-#~ msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable because position data is incomplete."
-#~ msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
 
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Close all is unavailable until every position market and mark price has loaded."
-#~ msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز وسعر العلامة الخاص به."
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز وسعر العلامة الخاص به."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "إغلاق جميع المراكز"
 
@@ -1697,8 +1701,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "لن يؤدي إغلاق مربع الحوار هذا إلى إلغائه."
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "جاري الإغلاق..."
+#~ msgid "Closing..."
+#~ msgstr "جاري الإغلاق..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -2933,6 +2937,7 @@ msgstr "تعديل حجم أمر {0}"
 msgid "Edit {0} trigger price"
 msgstr "تعديل سعر تفعيل {0}"
 
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "تعديل TP/SL"
@@ -4276,6 +4281,7 @@ msgstr "الرافعة المالية ثابتة عند {currentLeverage}× له
 msgid "Limit"
 msgstr "محدد"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4295,7 @@ msgid "Limit Buy"
 msgstr "شراء محدد"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "إغلاق بأمر محدد"
@@ -4773,6 +4779,7 @@ msgstr "السوق"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +4802,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "يؤدي النقر على الإغلاق بسعر السوق حاليًا إلى إغلاق المركز بالكامل فورًا لهذا الحساب وهذه الشبكة."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "إغلاق بسعر السوق"
@@ -5097,8 +5104,8 @@ msgstr "مزيد من المعلومات"
 #~ msgstr "صفحات أخرى"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "المزيد من إجراءات المركز"
+#~ msgid "More position actions"
+#~ msgstr "المزيد من إجراءات المركز"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -7065,6 +7072,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "عكس"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "عكس"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "تم تنفيذ أمر العكس بمقدار {filledSizeLabel}."
@@ -7073,7 +7085,7 @@ msgstr "تم تنفيذ أمر العكس بمقدار {filledSizeLabel}."
 msgid "Reverse order filled."
 msgstr "تم تنفيذ أمر العكس."
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "عكس المركز"
@@ -7657,8 +7669,8 @@ msgstr "تعيين إلى {p}%"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "تعيين TP/SL"
+#~ msgid "Set TP/SL"
+#~ msgstr "تعيين TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"
