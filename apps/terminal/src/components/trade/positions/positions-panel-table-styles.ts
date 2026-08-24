@@ -15,6 +15,6 @@ export const positionsPanelTabRootClass = "flex min-h-0 min-w-0 flex-1 flex-col 
 export const positionsPanelTableCaptionRowClass =
 	"flex shrink-0 items-center justify-end gap-3 border-b border-stroke-weak px-2.5 py-1";
 
-export const positionsPanelRowHoverClass = "border-stroke-weak [&:hover:not(:has(button:hover,a:hover))]:bg-fill-hover";
+export const positionsPanelRowHoverClass = "border-stroke-weak hover:bg-fill-hover";
 
 export const positionsPanelRowStripeClass = "";

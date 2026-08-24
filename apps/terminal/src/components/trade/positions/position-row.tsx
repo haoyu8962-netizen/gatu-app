@@ -269,7 +269,7 @@ export function PositionRow({
 	}
 
 	const marginContent = (
-		<span className="inline-flex flex-col items-end gap-px whitespace-nowrap tabular-nums" title={marginDisplay}>
+		<span className="inline-flex flex-col items-end gap-px whitespace-nowrap tabular-nums">
 			<span className="text-[13px] font-semibold text-market-close-fg">{marginDisplay}</span>
 			<span
 				className={cn(

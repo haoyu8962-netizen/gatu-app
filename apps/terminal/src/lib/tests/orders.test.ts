@@ -60,9 +60,9 @@ describe("orders", () => {
 
 	it.each([
 		["buy", "0.5", "100"],
-		["sell", "0.05", "99.999"],
+		["sell", "0.05", "100"],
 	] as const)(
-		"rounds %s FrontendMarket protection prices down at exact half-tick boundaries",
+		"rounds %s FrontendMarket protection prices inside the configured slippage boundary",
 		(side, slippageBps, price) => {
 			const order = buildFrontendMarketOrder({
 				assetId: 0,

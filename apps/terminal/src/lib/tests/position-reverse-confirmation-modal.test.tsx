@@ -7,7 +7,11 @@ import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
 	adaptiveProps: null as Record<string, unknown> | null,
+	enableTrading: vi.fn(),
+	guardAction: vi.fn((action: () => void) => action()),
+	isReady: true,
 	isMobile: false,
+	needsTrading: false,
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -19,6 +23,15 @@ vi.mock("@gatu/ui", () => ({
 		testState.adaptiveProps = props;
 		return open ? createElement("div", { role: "dialog" }, children) : null;
 	},
+	Button: ({
+		children,
+		focusableWhenDisabled: _focusableWhenDisabled,
+		intent: _intent,
+		size: _size,
+		variant: _variant,
+		...props
+	}: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("button", { type: "button", ...props }, children),
 	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("div", props, children),
 	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
@@ -31,6 +44,17 @@ vi.mock("@gatu/ui", () => ({
 		createElement("h2", props, children),
 }));
 
+vi.mock("@/lib/hyperliquid", () => ({
+	useTradingGuard: () => ({
+		isReady: testState.isReady,
+		isEnabling: false,
+		needsTrading: testState.needsTrading,
+		enableTrading: testState.enableTrading,
+		guardAction: testState.guardAction,
+		error: null,
+	}),
+}));
+
 import { PositionReverseConfirmationModal } from "@/components/trade/positions/position-reverse-confirmation-modal";
 
 describe("PositionReverseConfirmationModal", () => {
@@ -39,7 +63,11 @@ describe("PositionReverseConfirmationModal", () => {
 
 	beforeEach(() => {
 		testState.adaptiveProps = null;
+		testState.enableTrading.mockReset();
+		testState.guardAction.mockClear();
+		testState.isReady = true;
 		testState.isMobile = false;
+		testState.needsTrading = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -87,9 +115,12 @@ describe("PositionReverseConfirmationModal", () => {
 
 		const confirm = getButton(container, "Sell / Short");
 		expect(container.querySelectorAll("footer button")).toHaveLength(1);
+		expect(confirm.className).toContain("!transition-none");
+		expect(confirm.className).not.toContain("transition-colors");
 		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		act(() => confirm.click());
+		expect(testState.guardAction).toHaveBeenCalledOnce();
 		expect(onConfirm).toHaveBeenCalledOnce();
 	});
 
@@ -109,6 +140,30 @@ describe("PositionReverseConfirmationModal", () => {
 		);
 
 		expect(getButton(container, "Buy / Long")).toBeTruthy();
+	});
+
+	it("does not reverse on the same click that starts trading authorization", () => {
+		testState.isReady = false;
+		testState.needsTrading = true;
+		const onConfirm = vi.fn();
+		const render = () =>
+			root.render(
+				<PositionReverseConfirmationModal
+					open
+					marketLabel="BTC"
+					currentDirection="long"
+					reverseSizeLabel="0.020 BTC"
+					isSubmitting={false}
+					onOpenChange={vi.fn()}
+					onConfirm={onConfirm}
+				/>,
+			);
+
+		act(render);
+		act(() => getButton(container, "Enable").click());
+		expect(testState.enableTrading).toHaveBeenCalledOnce();
+		expect(testState.guardAction).not.toHaveBeenCalled();
+		expect(onConfirm).not.toHaveBeenCalled();
 	});
 
 	it("locks the mobile bottom sheet and actions while submitting", () => {
@@ -185,6 +240,11 @@ function getButton(container: HTMLElement, text: string): HTMLButtonElement {
 	const button = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 		(candidate) => candidate.textContent === text,
 	);
-	if (!button) throw new Error(`Button not found: ${text}`);
+	if (!button) {
+		const available = [...container.querySelectorAll<HTMLButtonElement>("button")].map(
+			(candidate) => candidate.textContent,
+		);
+		throw new Error(`Button not found: ${text}. Available: ${available.join(", ")}`);
+	}
 	return button;
 }

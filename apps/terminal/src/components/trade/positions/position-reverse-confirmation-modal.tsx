@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { type ReactNode, useId } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import { TradingActionButton } from "../components/trading-action-button";
 
 export type PositionReverseDirection = "long" | "short";
 
@@ -122,15 +123,18 @@ export function PositionReverseConfirmationModal({
 			</ModalContent>
 
 			<ModalFooter className="flex-col items-stretch gap-2 px-4 pt-4 pb-4 min-[1001px]:px-6 min-[1001px]:pb-6">
-				<button
-					type="button"
-					className="min-h-11 w-full rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[150ms] min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted"
+				<TradingActionButton
+					onClick={handleConfirm}
+					requireReadyConfirmation
+					intent="error"
+					size="lg"
+					containerClassName="w-full items-stretch"
+					className="min-h-11 w-full !rounded-[10px] !bg-market-close-danger px-3 text-[13px] font-bold !text-market-close-danger-text !shadow-none !transition-none min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control active:not-data-disabled:scale-100 data-disabled:cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
 					aria-busy={isSubmitting}
 					disabled={isConfirmDisabled}
-					onClick={handleConfirm}
 				>
 					{isSubmitting ? t`Reversing...` : targetDirection === "long" ? t`Buy / Long` : t`Sell / Short`}
-				</button>
+				</TradingActionButton>
 				<p className="text-center text-[11px] leading-4 text-market-close-subtle">
 					{t`This action cannot be undone after execution.`}
 				</p>

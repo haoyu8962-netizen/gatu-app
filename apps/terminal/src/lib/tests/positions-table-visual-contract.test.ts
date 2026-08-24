@@ -16,6 +16,7 @@ import {
 } from "@/components/trade/positions/positions-panel-table-styles";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const UI_GLOBALS_SOURCE = readFileSync(resolve(TEST_DIR, "../../../../..", "packages/ui/src/globals.css"), "utf8");
 
 function readPositionSource(file: string): string {
 	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/positions/${file}`), "utf8");
@@ -29,6 +30,9 @@ const POSITIONS_PANEL_SOURCE = readPositionSource("positions-panel.tsx");
 const POSITIONS_TAB_SOURCE = readPositionSource("positions-tab.tsx");
 const POSITION_ROW_SOURCE = readPositionSource("position-row.tsx");
 const POSITION_ACTIONS_SOURCE = readPositionSource("position-inline-actions.tsx");
+const POSITION_MARKET_CLOSE_MODAL_SOURCE = readPositionSource("position-market-close-modal.tsx");
+const POSITION_LIMIT_CLOSE_MODAL_SOURCE = readPositionSource("position-limit-close-modal.tsx");
+const POSITION_CLOSE_ALL_MODAL_SOURCE = readPositionSource("position-close-all-modal.tsx");
 const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-card.tsx");
 
 describe("positions table visual contract", () => {
@@ -127,6 +131,9 @@ describe("positions table visual contract", () => {
 		const rowClassTokens = positionsPanelRowHoverClass.split(/\s+/);
 
 		expect(positionsPanelRowHoverClass).toContain("bg-fill-hover");
+		expect(positionsPanelRowHoverClass).not.toContain(":has(");
+		expect(UI_GLOBALS_SOURCE).toContain("@custom-variant hover");
+		expect(UI_GLOBALS_SOURCE).toContain("@media (hover: hover)");
 		expect(rowClassTokens).not.toContain("transition-colors");
 		expect(rowClassTokens).not.toContain("transition-all");
 		expect(rowClassTokens.some((token) => token.includes("background-color"))).toBe(false);
@@ -162,6 +169,19 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("onClick={handleAdjustMargin}");
 		expect(POSITION_ROW_SOURCE).toContain("onClick={handleOpenTpSl}");
 		expect(POSITION_ROW_SOURCE).toContain("<PositionInlineActions");
+		expect(POSITION_ROW_SOURCE).not.toContain("title={marginDisplay}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("title={closeAllUnavailableReason");
+	});
+
+	it("does not animate destructive action colors while live safety gates change", () => {
+		for (const source of [
+			POSITION_MARKET_CLOSE_MODAL_SOURCE,
+			POSITION_LIMIT_CLOSE_MODAL_SOURCE,
+			POSITION_CLOSE_ALL_MODAL_SOURCE,
+		]) {
+			expect(source).toMatch(/className="[^"]*!transition-none[^"]*data-disabled:!bg-market-close-danger-disabled/);
+			expect(source).not.toContain("!transition-[background-color]");
+		}
 	});
 
 	it("uses the handoff mobile disclosure card without internal cell dividers", () => {
