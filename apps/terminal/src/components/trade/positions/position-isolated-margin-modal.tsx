@@ -565,6 +565,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 					{t`Cancel`}
 				</Button>
 				<TradingActionButton
+					requiresBuilderFee={false}
 					onClick={handleSubmit}
 					disabled={!canSubmit}
 					containerClassName="max-[1000px]:w-full"

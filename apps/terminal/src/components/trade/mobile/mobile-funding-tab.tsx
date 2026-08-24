@@ -37,9 +37,9 @@ interface Props {
 }
 
 const filterTriggerClassName =
-	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
 const footerActionClassName =
-	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
+	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
 interface FundingLoadingStateProps {
 	className?: string;
 	isPageScroll: boolean;
@@ -111,7 +111,7 @@ function MobileFundingTabContent({
 	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
-	const { error, fundings: updates, isOffline, status } = useUserFunding();
+	const { error, fundings: updates, isOffline, isStale, status } = useUserFunding();
 	const markets = useMarkets();
 	const malformedHistory = isMalformedHistoryPageError(error);
 	const [directionFilter, setDirectionFilter] = useState<FundingHistorySideFilter>("all");
@@ -172,7 +172,7 @@ function MobileFundingTabContent({
 		</div>
 	);
 	const updateWarning =
-		error || isOffline ? (
+		error || isOffline || isStale ? (
 			<output
 				aria-live="polite"
 				className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-3.5 text-xs text-market-close-danger"
@@ -309,7 +309,7 @@ function MobileFundingTabContent({
 												type="button"
 												onClick={() => handleSelectMarket(marketName)}
 												aria-label={t`Switch to ${marketName} market`}
-												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 											>
 												<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
 												<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">

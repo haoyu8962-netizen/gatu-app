@@ -14,11 +14,11 @@ type PrivyClientConfigWithPasskeysDisabled = PrivyClientConfig & {
 const PRIVY_APPEARANCE_BY_THEME = {
 	dark: {
 		theme: "#0F1A1F",
-		accentColor: "#50D2C1",
+		accentColor: "#EDEEF2",
 	},
 	light: {
 		theme: "#FFFFFF",
-		accentColor: "#4C64D9",
+		accentColor: "#15171E",
 	},
 } as const satisfies Record<PrivyTheme, Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "theme">>;
 

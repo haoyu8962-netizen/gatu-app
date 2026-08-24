@@ -24,4 +24,4 @@ export const positionTableHeadClass =
 export const positionTableCellClass = "h-14 whitespace-nowrap px-[7px] py-2 text-right text-xs leading-4";
 
 export const positionTableInlineActionClass =
-	"inline-flex h-[26px] min-h-0 items-center rounded-[4px] px-0.5 py-0 text-xs leading-4 font-semibold text-market-close-success transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle disabled:opacity-50";
+	"inline-flex h-[26px] min-h-0 items-center rounded-[4px] px-0.5 py-0 text-xs leading-4 font-semibold text-market-close-success transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle disabled:opacity-50";

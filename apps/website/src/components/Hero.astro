@@ -4,7 +4,6 @@ const appUrl = "https://app.gatu.ai";
 
 <section class="relative overflow-hidden border-b border-stroke-weaker">
 	<div class="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"></div>
-	<div class="absolute inset-0 glow-radial"></div>
 
 	<div class="relative mx-auto w-full max-w-6xl px-5 sm:px-6 pt-16 pb-20 md:pt-28 md:pb-28">
 		<div class="stagger flex flex-col items-center text-center">
@@ -24,7 +23,7 @@ const appUrl = "https://app.gatu.ai";
 
 			<h1 class="font-display stagger-item mt-7 md:mt-8 max-w-3xl text-3xl md:text-4xl leading-[1.02] tracking-display">
 				The open-source terminal<br />
-				<span class="text-fg-subtle">for </span><span class="text-brand-gradient">Hyperliquid</span><span class="text-fg-subtle">.</span>
+				<span class="text-fg-subtle">for </span><span class="text-signal">Hyperliquid</span><span class="text-fg-subtle">.</span>
 			</h1>
 
 			<p class="stagger-item mt-5 md:mt-6 max-w-xl text-sm md:text-base text-fg-muted leading-relaxed">
@@ -34,7 +33,7 @@ const appUrl = "https://app.gatu.ai";
 			<div class="stagger-item mt-8 md:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
 				<a
 					href={appUrl}
-					class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs bg-brand px-5 text-sm font-medium text-fg-inverse hover:opacity-90 transition-[opacity,transform] duration-200"
+					class="press inline-flex h-11 items-center justify-center gap-2 rounded-xs bg-action px-5 text-sm font-medium text-on-action transition-[background-color,transform] duration-200 hover:bg-action-hover active:bg-action-active"
 				>
 					Open the terminal
 					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -56,7 +55,6 @@ const appUrl = "https://app.gatu.ai";
 
 		<!-- Real app screenshots framed in a browser chrome. -->
 		<div class="relative mx-auto mt-14 md:mt-20 max-w-5xl">
-			<div class="absolute -inset-6 rounded-12 bg-fill-brand-weak blur-3xl opacity-50"></div>
 			<div class="absolute -inset-2 rounded-12 ring-1 ring-stroke-weaker"></div>
 
 			<div class="relative rounded-12 border border-stroke-weak bg-surface shadow-2xl overflow-hidden">
@@ -76,16 +74,16 @@ const appUrl = "https://app.gatu.ai";
 				<!-- Desktop screenshot (hidden on mobile) -->
 				<img
 					src="/app-desktop.jpeg"
-					alt="gatu trading interface showing BTC-USDC chart, order book, and trade panel"
+					alt="GATU trading interface showing BTC-USDC chart, order book, and trade panel"
 					class="hidden sm:block w-full h-auto bg-background"
 					loading="eager"
 					width="1600"
-					height="1000"
+					height="900"
 				/>
 				<!-- Mobile screenshot (only on small) -->
 				<img
 					src="/app-mobile.jpeg"
-					alt="gatu mobile view showing BTC-USDC candle chart"
+					alt="GATU mobile view showing BTC-USDC candle chart"
 					class="sm:hidden w-full h-auto bg-background"
 					loading="eager"
 					width="390"

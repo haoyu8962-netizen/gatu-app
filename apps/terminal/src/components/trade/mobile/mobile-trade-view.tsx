@@ -160,13 +160,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		navigateToMarket(marketName, nextMarket);
 	}
 
-	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
-	const { authorize, status: registerStatus } = useTradingAuthorization();
-	const canApprove = !!walletClient && !!address;
-	const isRegistering =
-		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
-	const isApprovalLoading = isAgentReady ? isBuilderFeeLoading : isAgentLoading;
-
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
 
@@ -174,6 +167,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 	const orderType = useOrderType();
 	const twapOrder = isTwapOrderType(orderType);
+	const requiresBuilderFee = !twapOrder;
+	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
+	const canApprove = !!walletClient && !!address;
+	const isRegistering =
+		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
+	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
 	const scaleOrder = isScaleOrderType(orderType);
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
@@ -308,6 +309,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		lowerBound: slippageEstimate?.exceedsVisibleDepth,
 	});
 	const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSize = toNumberOrZero(position?.szi);
+	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
+	const validatedPositionSize = positionSnapshotReady ? positionSize : null;
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active,
 		assetId: market?.assetId,
@@ -316,6 +321,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availabilityReceivedAt,
 		availabilityMaxAgeMs,
 		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -331,6 +339,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		availabilityReceivedAt,
 		availabilityMaxAgeMs,
 		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -384,10 +395,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		scaleStartPriceInput,
 		scaleEndPriceInput,
 	);
-	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
-	const positionSize = toNumberOrZero(position?.szi);
-	const validatedPositionSize =
-		userPositions.isLoading || userPositions.hasError || userPositions.isStale ? null : positionSize;
 	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const builderFeeTenthsBps = useBuilderFeeTenthsBps();
 	const feeRate = resolveEstimatedProtocolRate({ orderType, tif, takerRate, makerRate });

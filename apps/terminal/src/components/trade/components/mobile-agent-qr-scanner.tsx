@@ -191,7 +191,7 @@ export function MobileAgentQrScanner({
 					/>
 					{!cameraActive && (
 						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-modal px-6 text-center">
-							<QrCodeIcon className="size-12 text-brand" weight="duotone" aria-hidden />
+							<QrCodeIcon className="size-12 text-signal" weight="duotone" aria-hidden />
 							<p className="text-xs text-fg-muted">
 								<Trans>Scan the QR shown by Link Mobile Device on your desktop.</Trans>
 							</p>
@@ -199,7 +199,7 @@ export function MobileAgentQrScanner({
 					)}
 					{cameraActive && (
 						<div
-							className="pointer-events-none absolute inset-[12%] rounded-16 border-2 border-brand shadow-[0_0_0_999px_rgb(0_0_0/0.22)]"
+							className="pointer-events-none absolute inset-[12%] rounded-16 border-2 border-signal shadow-[0_0_0_999px_rgb(0_0_0/0.22)]"
 							aria-hidden
 						/>
 					)}

@@ -243,7 +243,7 @@ function VaultPendingStage({
 }) {
 	return (
 		<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
-			<SpinnerGapIcon className="size-8 animate-spin text-brand motion-reduce:animate-none" />
+			<SpinnerGapIcon className="size-8 animate-spin text-signal motion-reduce:animate-none" />
 			<p className="text-sm font-bold text-fg">
 				{stage === "awaiting" ? (
 					<Trans>Authorizing request</Trans>

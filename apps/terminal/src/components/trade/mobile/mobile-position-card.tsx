@@ -312,7 +312,7 @@ export function MobilePositionCard({
 									? t`Switch to ${displayName} market, long position`
 									: t`Switch to ${displayName} market, short position`
 							}
-							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 flex-wrap items-baseline gap-x-1 rounded-xs text-left after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 flex-wrap items-baseline gap-x-1 rounded-xs text-left after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 						>
 							<span className="max-w-full shrink-0 break-words text-[13px] font-bold leading-[18px] text-market-close-fg">
 								{sizeSymbol}
@@ -358,7 +358,7 @@ export function MobilePositionCard({
 						}}
 						disabled={!canShare}
 						aria-label={t`Share PNL for ${displayName}`}
-						className="pointer-events-auto relative z-10 inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-40"
+						className="pointer-events-auto relative z-10 inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<ShareIcon aria-hidden="true" className="size-3.5" />
 					</button>
@@ -378,8 +378,9 @@ export function MobilePositionCard({
 							<button
 								type="button"
 								onClick={handleAdjustMargin}
+								disabled={isRowClosing}
 								aria-label={t`Adjust isolated margin for ${displayName}`}
-								className="group relative min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+								className="group relative min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 							>
 								{marginMetric}
 							</button>
@@ -402,8 +403,8 @@ export function MobilePositionCard({
 						<button
 							type="button"
 							onClick={handleOpenTpSl}
-							disabled={typeof assetId !== "number"}
-							className="group relative min-w-0 rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+							disabled={typeof assetId !== "number" || isRowClosing}
+							className="group relative min-w-0 rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 						>
 							<PositionMetric
 								label={t`TP/SL`}
@@ -428,7 +429,7 @@ export function MobilePositionCard({
 						<div className="flex min-w-0 items-center gap-4">
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleLimitClose}
 								disabled={!canClose || isRowClosing}
 							>
@@ -436,7 +437,7 @@ export function MobilePositionCard({
 							</button>
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleMarketClose}
 								disabled={!canClose || isRowClosing}
 							>
@@ -444,7 +445,7 @@ export function MobilePositionCard({
 							</button>
 							<button
 								type="button"
-								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 								onClick={handleReverse}
 								disabled={!canReverse || isRowClosing}
 							>

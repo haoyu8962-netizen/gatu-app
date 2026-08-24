@@ -75,7 +75,8 @@ const buttonGroupItemVariants = cva(
 			{
 				variant: "outline",
 				intent: "brand",
-				className: "border-stroke-brand-strong text-brand hover:bg-fill-hover active:bg-fill-press",
+				className:
+					"border-stroke-action text-action hover:bg-fill-hover active:bg-fill-press data-disabled:border-stroke-disabled",
 			},
 			{
 				variant: "outline",
@@ -90,7 +91,8 @@ const buttonGroupItemVariants = cva(
 			{
 				variant: "filled",
 				intent: "brand",
-				className: "bg-brand text-fg-inverse hover:opacity-90 active:opacity-80",
+				className:
+					"bg-action text-on-action hover:bg-action-hover active:bg-action-active data-disabled:bg-fill-disabled data-disabled:text-fg-disabled",
 			},
 			{
 				variant: "filled",
@@ -105,7 +107,7 @@ const buttonGroupItemVariants = cva(
 			{
 				variant: "ghost",
 				intent: "brand",
-				className: "text-brand hover:bg-fill-hover active:bg-fill-press",
+				className: "text-action hover:bg-fill-hover active:bg-fill-press",
 			},
 			{
 				variant: "ghost",
@@ -120,7 +122,7 @@ const buttonGroupItemVariants = cva(
 			{
 				variant: "link",
 				intent: "brand",
-				className: "text-brand underline underline-offset-4 hover:opacity-80",
+				className: "text-signal underline underline-offset-4 hover:text-signal-hover",
 			},
 			{
 				variant: "link",

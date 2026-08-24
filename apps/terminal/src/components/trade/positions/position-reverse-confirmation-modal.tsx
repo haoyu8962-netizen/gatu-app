@@ -129,7 +129,7 @@ export function PositionReverseConfirmationModal({
 					intent="error"
 					size="lg"
 					containerClassName="w-full items-stretch"
-					className="min-h-11 w-full !rounded-[10px] !bg-market-close-danger px-3 text-[13px] font-bold !text-market-close-danger-text !shadow-none !transition-none min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control active:not-data-disabled:scale-100 data-disabled:cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
+					className="min-h-11 w-full !rounded-[10px] !bg-market-close-danger px-3 text-[13px] font-bold !text-market-close-danger-text !shadow-none !transition-none min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus active:not-data-disabled:scale-100 data-disabled:cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
 					aria-busy={isSubmitting}
 					disabled={isConfirmDisabled}
 				>

@@ -122,6 +122,7 @@ const FRESH_SNAPSHOT_METHODS = new Set([
 	"spotState",
 	"twapStates",
 	"userFills",
+	"userFundings",
 	"userHistoricalOrders",
 	"webData3",
 ]);

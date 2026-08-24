@@ -13,7 +13,7 @@ const badgeVariants = cva(["inline-flex items-center font-semibold rounded-full 
 			success: "bg-success-soft border-stroke-success-weak text-success",
 			information: "bg-info-soft border-stroke-info-weak text-info",
 			neutral: "bg-fill-weak border-stroke-weak text-fg",
-			brand: "bg-brand-soft border-stroke-brand-weak text-brand",
+			brand: "bg-signal-soft border-stroke-signal/30 text-signal",
 		},
 		size: {
 			xxs: "px-1 py-0 text-2xs gap-0.5",
@@ -35,7 +35,7 @@ const dotColors: Record<BadgeTone, string> = {
 	success: "bg-success",
 	information: "bg-info",
 	neutral: "bg-fill",
-	brand: "bg-brand",
+	brand: "bg-signal",
 };
 
 const iconColors: Record<BadgeTone, string> = {
@@ -44,7 +44,7 @@ const iconColors: Record<BadgeTone, string> = {
 	success: "text-icon-success",
 	information: "text-icon-info",
 	neutral: "text-icon",
-	brand: "text-icon-brand",
+	brand: "text-icon-signal",
 };
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {

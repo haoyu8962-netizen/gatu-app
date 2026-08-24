@@ -284,7 +284,7 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 							onClick={() => void handleSaveImage()}
 							disabled={isSaving || (!isTestnet && !shareUrl)}
 							aria-busy={isSaving}
-							className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] bg-position-share-fg px-2 text-xs font-bold whitespace-nowrap text-position-share-card transition-all duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:text-[13px] min-[1001px]:hover:bg-position-share-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-position-share-fg disabled:cursor-not-allowed disabled:opacity-50"
+							className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] bg-position-share-fg px-2 text-xs font-bold whitespace-nowrap text-position-share-card transition-all duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:text-[13px] min-[1001px]:hover:bg-position-share-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<DownloadSimpleIcon aria-hidden="true" className="size-3.5" weight="bold" />
 							{isSaving ? t`Saving...` : t`Save image`}
@@ -294,7 +294,7 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 							onClick={handleCopyLink}
 							disabled={!shareUrl}
 							aria-label={t`Copy a link that opens the ${position.symbol} market`}
-							className="hidden min-h-10 items-center justify-center gap-1.5 rounded-[10px] bg-position-share-fg px-2 text-[13px] font-bold whitespace-nowrap text-position-share-card transition-all duration-[120ms] min-[1001px]:inline-flex min-[1001px]:hover:bg-position-share-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-position-share-fg disabled:cursor-not-allowed disabled:opacity-50"
+							className="hidden min-h-10 items-center justify-center gap-1.5 rounded-[10px] bg-position-share-fg px-2 text-[13px] font-bold whitespace-nowrap text-position-share-card transition-all duration-[120ms] min-[1001px]:inline-flex min-[1001px]:hover:bg-position-share-button-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							{copied ? (
 								<CheckIcon aria-hidden="true" className="size-3.5" weight="bold" />
@@ -306,7 +306,7 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 						<button
 							type="button"
 							onClick={() => onOpenChange(false)}
-							className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-position-share-outline bg-transparent px-2 text-xs font-semibold whitespace-nowrap text-position-share-fg transition-all duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:text-[13px] min-[1001px]:hover:bg-position-share-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-position-share-fg"
+							className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-position-share-outline bg-transparent px-2 text-xs font-semibold whitespace-nowrap text-position-share-fg transition-all duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:text-[13px] min-[1001px]:hover:bg-position-share-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							{t`Close`}
 						</button>

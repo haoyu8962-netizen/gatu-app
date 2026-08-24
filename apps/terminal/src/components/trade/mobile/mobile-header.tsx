@@ -2,6 +2,7 @@ import { ButtonIcon } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
+import { GatuLogo } from "@/components/brand/gatu-logo";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
@@ -27,24 +28,30 @@ export function MobileHeader({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="flex h-14 items-center justify-between px-2.5">
-				<div className="flex items-center gap-1.5">
+			<div
+				data-slot="mobile-header-inner"
+				className="flex h-14 items-center gap-2 pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]"
+			>
+				<div data-slot="mobile-header-brand" className="flex shrink-0 items-center gap-1.5">
 					<MobileNavDrawer />
 					<Link
 						to={tradeHomePath}
 						search={{ scope: "all" }}
-						aria-label="gatu"
-						className="rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						aria-label="GATU"
+						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					>
-						<span className="text-2sm font-bold tracking-wide text-trading-panel-fg">GATU</span>
+						<GatuLogo variant="mark" micro className="size-[22px]" />
 					</Link>
 				</div>
 
-				<div className="flex min-w-0 items-center gap-0.5">
-					<div className="min-w-0 [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs">
+				<div data-slot="mobile-header-actions" className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+					<div
+						data-slot="mobile-header-account"
+						className="flex min-w-0 flex-1 justify-end [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
+					>
 						<UserMenu />
 					</div>
-					<ThemeToggle className="text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
+					<ThemeToggle className="ml-2 text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
 					<LanguageSwitcher
 						sideOffset={14}
 						alignOffset={-36}

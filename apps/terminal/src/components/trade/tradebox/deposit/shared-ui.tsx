@@ -100,9 +100,9 @@ export function StatusScreen({
 				<output className="flex flex-col items-center gap-4 py-6" aria-live="polite">
 					{icon === "loading" ? (
 						<div className="relative">
-							<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
-							<div className="relative flex size-14 items-center justify-center rounded-full bg-brand-soft/10 border border-stroke-brand-strong/30">
-								<SpinnerGapIcon className="size-7 animate-spin text-brand" />
+							<div className="absolute inset-0 animate-ping rounded-full bg-signal-soft/20" />
+							<div className="relative flex size-14 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft/10">
+								<SpinnerGapIcon className="size-7 animate-spin text-signal" />
 							</div>
 						</div>
 					) : (
@@ -130,7 +130,7 @@ export function StatusScreen({
 							href={explorerUrl}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
+							className="inline-flex items-center gap-1.5 text-xs text-signal hover:text-signal-hover hover:underline"
 						>
 							<Trans>View on explorer</Trans>
 							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />

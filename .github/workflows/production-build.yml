@@ -6,9 +6,12 @@ on:
       - ".github/workflows/production-build.yml"
       - "apps/**"
       - "deploy/**"
+      - "designs/og-cards/**"
       - "packages/**"
+      - "tests/**"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
+      - "scripts/generate-og-cards.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -145,6 +148,12 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for brand card verification
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test brand contracts
+        run: pnpm test:brand
 
       - name: Build marketing website
         run: pnpm --filter @gatu/website build

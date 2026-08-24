@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 	fundings: [] as Array<Record<string, unknown>>,
 	fundingError: undefined as unknown,
 	fundingOffline: false,
+	fundingStale: false,
 	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 	navigateToMarket: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
@@ -172,6 +173,7 @@ vi.mock("@/hooks/trade/use-user-funding", () => ({
 		fundings: [...mocks.fundings].sort((left, right) => Number(right.time) - Number(left.time)),
 		isConnected: true,
 		isOffline: mocks.fundingOffline,
+		isStale: mocks.fundingStale,
 		status: mocks.fundingStatus,
 	}),
 }));
@@ -282,6 +284,7 @@ describe("mobile history disclosure cards", () => {
 		mocks.fundings = createFundings();
 		mocks.fundingError = undefined;
 		mocks.fundingOffline = false;
+		mocks.fundingStale = false;
 		mocks.fundingStatus = "ready";
 		mocks.orders = createOrders();
 		mocks.ordersError = undefined;
@@ -622,6 +625,14 @@ describe("mobile history disclosure cards", () => {
 
 	it("keeps mobile funding cards visible when live updates pause", () => {
 		mocks.fundingError = new Error("WebSocket unavailable");
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("warns while mobile funding cards await a fresh reconnect snapshot", () => {
+		mocks.fundingStale = true;
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);

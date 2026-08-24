@@ -54,7 +54,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 			<button
 				type="button"
 				onClick={onBack}
-				className="flex items-center gap-1 text-xs text-brand hover:opacity-80 self-start"
+				className="flex items-center gap-1 text-xs text-signal hover:text-signal-hover self-start"
 			>
 				<ArrowLeftIcon className="size-3" />
 				<Trans>Back</Trans>
@@ -82,7 +82,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 							key={p}
 							type="button"
 							onClick={() => handlePercent(p)}
-							className="px-3 py-1.5 text-xs font-medium text-fg bg-surface hover:bg-brand/20 rounded-8 transition-colors"
+							className="px-3 py-1.5 text-xs font-medium text-fg bg-surface hover:bg-signal-soft rounded-8 transition-colors"
 						>
 							<Trans>{p}%</Trans>
 						</button>
@@ -90,7 +90,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 					<button
 						type="button"
 						onClick={handleMax}
-						className="px-3 py-1.5 text-xs font-medium text-fg bg-surface hover:bg-brand/20 rounded-8 transition-colors"
+						className="px-3 py-1.5 text-xs font-medium text-fg bg-surface hover:bg-signal-soft rounded-8 transition-colors"
 					>
 						<Trans>Max</Trans>
 					</button>

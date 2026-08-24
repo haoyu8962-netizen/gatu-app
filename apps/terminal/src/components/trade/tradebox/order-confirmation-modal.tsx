@@ -18,6 +18,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
+import { isTwapOrderType } from "@/lib/trade/order-types";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { TradingActionButton } from "../components/trading-action-button";
 
@@ -95,7 +96,7 @@ export function OrderConfirmationModal({
 					onCheckedChange={onDontShowAgainChange}
 					disabled={isSubmitting}
 					className="w-fit shrink-0 items-center gap-2"
-					controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
+					controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-focus focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
 					indicatorClassName="text-market-close-on-control [&>svg]:size-3"
 					labelClassName="whitespace-nowrap text-2sm font-normal text-market-close-muted"
 					label={t`Don't show this confirmation again`}
@@ -114,6 +115,7 @@ export function OrderConfirmationModal({
 					{t`Cancel`}
 				</Button>
 				<TradingActionButton
+					requiresBuilderFee={!isTwapOrderType(draft.orderType)}
 					onClick={onConfirm}
 					disabled={isSubmitting}
 					intent={getTradingCtaIntent(draft.side)}

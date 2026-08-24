@@ -228,7 +228,7 @@ function GlobalModalLoadingFallback() {
 			aria-busy="true"
 		>
 			<output className="flex items-center gap-2 rounded-12 border border-stroke-weak bg-modal px-4 py-3 text-sm text-fg shadow-overlay">
-				<SpinnerGapIcon className="size-4 animate-spin text-brand motion-reduce:animate-none" aria-hidden="true" />
+				<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
 				<Trans>Loading...</Trans>
 			</output>
 		</div>

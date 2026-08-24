@@ -34,7 +34,16 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
-		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
+		const headerItems = mobileShell?.firstElementChild?.firstElementChild;
+		const workspace = mobileShell?.children.item(1);
+		const navigationItems = mobileShell?.lastElementChild?.firstElementChild;
+		expect(headerItems?.className).toContain("h-14");
+		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
+		expect(headerItems?.className).toContain("pr-[max(0.625rem,var(--sar))]");
+		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
+		expect(workspace?.className).toContain("pr-[max(3px,var(--sar))]");
+		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
+		expect(navigationItems?.className).toContain("pr-[var(--sar)]");
 		expect(mobileShell?.lastElementChild?.querySelectorAll(".h-14")).toHaveLength(3);
 	});
 
@@ -43,7 +52,21 @@ describe("AppShellSkeleton mobile viewport", () => {
 
 		expect(container.querySelectorAll('[class*="animate-"]')).toHaveLength(0);
 		expect(container.querySelectorAll("[data-shell-panel]")).toHaveLength(7);
-		expect(container.textContent).toContain("gatu");
+		expect(container.textContent).toContain("GATU");
+	});
+
+	it("reserves the mobile drawer and brand slots with the approved micro mark", () => {
+		act(() => root.render(<AppShellSkeleton />));
+
+		const mobileShell = container.querySelector("[data-shell-mobile]");
+		const brandMark = mobileShell?.querySelector<SVGElement>('[data-gatu-logo="mark"]');
+		const brandSlot = brandMark?.parentElement;
+		const drawerSlot = brandSlot?.previousElementSibling;
+
+		expect(brandMark?.getAttribute("class")).toContain("size-[22px]");
+		expect(brandMark?.querySelector("path")?.getAttribute("stroke-width")).toBe("6.5");
+		expect(brandSlot?.className).toContain("size-11");
+		expect(drawerSlot?.className).toContain("size-11");
 	});
 
 	it("exposes one implicit status while keeping the decorative AppShell out of the accessibility tree", () => {
@@ -109,7 +132,13 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
-		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
+		const headerItems = mobileShell?.firstElementChild?.firstElementChild;
+		const workspace = mobileShell?.children.item(1);
+		const navigationItems = mobileShell?.lastElementChild?.firstElementChild;
+		expect(headerItems?.className).toContain("h-14");
+		expect(headerItems?.className).toContain("pl-[max(0.625rem,var(--sal))]");
+		expect(workspace?.className).toContain("pl-[max(3px,var(--sal))]");
+		expect(navigationItems?.className).toContain("pl-[var(--sal)]");
 		expect(mobileShell?.lastElementChild?.querySelectorAll(".flex-1.h-14")).toHaveLength(3);
 		expect(mobileShell?.innerHTML).not.toContain("animate-pulse");
 	});

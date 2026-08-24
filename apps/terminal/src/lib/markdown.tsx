@@ -41,7 +41,7 @@ function renderInline(text: string): ReactNode[] {
 					key={key++}
 					href={href}
 					{...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-					className="text-brand hover:underline"
+					className="text-signal hover:text-signal-hover hover:underline"
 				>
 					{match[1]}
 				</a>,
@@ -130,7 +130,7 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 			blocks.push(
 				<blockquote
 					key={key++}
-					className="my-4 rounded-xs border-l-2 border-stroke-brand-strong/40 bg-fill-weak px-4 py-2 text-sm text-fg-muted"
+					className="my-4 rounded-xs border-l-2 border-stroke-signal/40 bg-fill-weak px-4 py-2 text-sm text-fg-muted"
 				>
 					{renderInline(buffer.join(" "))}
 				</blockquote>,

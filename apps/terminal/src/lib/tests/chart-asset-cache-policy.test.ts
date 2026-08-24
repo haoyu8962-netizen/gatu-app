@@ -112,13 +112,14 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain("GATU_DEPLOY_LOCK_FD=9");
 		expect(deployScript).toContain('readlink -f "/proc/$$/fd/9"');
 		expect(deployScript).toContain(`cp deploy/referral-uri-guard.cjs "\${release_tmp}/referral-uri-guard.cjs"`);
-		expect(systemdUnit).toContain(
-			"ExecStart=/usr/bin/node --require=/opt/gatu/shared/referral-uri-guard.cjs server/index.mjs",
-		);
+		expect(systemdUnit).toContain("--require=./referral-uri-guard.cjs server/index.mjs");
+		expect(systemdUnit).toContain(".gatu-release-capabilities");
+		expect(systemdUnit).toContain("referral-join-v1");
+		expect(systemdUnit).not.toContain("/opt/gatu/shared/referral-uri-guard.cjs");
 		expect(systemdUnit).not.toContain("NODE_OPTIONS");
-		expect(deployScript).toContain("install_referral_uri_guard");
-		expect(deployScript).toMatch(/installed_guard="\$\{SHARED\}\/referral-uri-guard\.cjs"/);
-		expect(deployScript).toContain('node --check "$source_guard"');
+		expect(deployScript).toContain("verify_referral_uri_guard");
+		expect(deployScript).toContain(`node --check "\${REPO}/deploy/referral-uri-guard.cjs"`);
+		expect(deployScript).toContain("verify_loaded_systemd_unit");
 		expect(deployScript).toMatch(
 			/health_check\(\)[\s\S]*?verify_referral_deep_link[\s\S]*?verify_upstream_malformed_referral_deep_link/,
 		);

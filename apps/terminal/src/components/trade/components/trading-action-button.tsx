@@ -16,6 +16,7 @@ interface Props extends Omit<ButtonProps, "onClick"> {
 	holdDurationMs?: number;
 	holdProgressClassName?: string;
 	requireReadyConfirmation?: boolean;
+	requiresBuilderFee?: boolean;
 }
 
 export function TradingActionButton({
@@ -25,6 +26,7 @@ export function TradingActionButton({
 	holdDurationMs,
 	holdProgressClassName,
 	requireReadyConfirmation = false,
+	requiresBuilderFee = true,
 	disabled,
 	className,
 	variant = "filled",
@@ -40,7 +42,9 @@ export function TradingActionButton({
 	onPointerUp,
 	...buttonProps
 }: Props) {
-	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard();
+	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard({
+		requiresBuilderFee,
+	});
 	const holdEnabled = typeof holdDurationMs === "number" && Number.isFinite(holdDurationMs) && holdDurationMs > 0;
 	const buttonDisabled = disabled || isEnabling || (!isReady && !needsTrading);
 

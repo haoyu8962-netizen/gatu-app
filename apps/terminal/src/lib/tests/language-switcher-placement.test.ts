@@ -13,7 +13,10 @@ const MOBILE_NAV_DRAWER_SOURCE = readFileSync(
 describe("language switcher placement", () => {
 	it("keeps the only mobile language entry in the top bar", () => {
 		expect(MOBILE_HEADER_SOURCE).toContain("<LanguageSwitcher");
-		expect(MOBILE_HEADER_SOURCE).toContain('className="flex h-14 items-center justify-between px-2.5"');
+		expect(MOBILE_HEADER_SOURCE).toContain('data-slot="mobile-header-inner"');
+		expect(MOBILE_HEADER_SOURCE).toContain(
+			"flex h-14 items-center gap-2 pl-[max(0.625rem,var(--sal))] pr-[max(0.625rem,var(--sar))]",
+		);
 		expect(MOBILE_HEADER_SOURCE).toContain("sideOffset={14}");
 		expect(MOBILE_HEADER_SOURCE).toContain("alignOffset={-36}");
 		expect(MOBILE_HEADER_SOURCE).toContain("size-11 min-h-11");

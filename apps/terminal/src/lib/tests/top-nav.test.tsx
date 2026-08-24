@@ -393,7 +393,7 @@ describe("TopNav", () => {
 		testState.tradeHomePath = "/spot/@107";
 		renderNav();
 
-		const logoLink = container.querySelector<HTMLAnchorElement>('a[aria-label="gatu"]');
+		const logoLink = container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]');
 		const tradeLink = findLink("Trade");
 		for (const link of [logoLink, tradeLink]) {
 			expect(link?.dataset.to).toBe("/spot/@107");
@@ -455,7 +455,7 @@ describe("TopNav", () => {
 		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		expect(testState.openSettingsDialog).not.toHaveBeenCalled();
 
-		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="gatu"]')).not.toBeNull();
+		expect(container.querySelector<HTMLAnchorElement>('a[aria-label="GATU"]')).not.toBeNull();
 		expect(findLink("Trade")).not.toBeUndefined();
 		const moreTriggers = container.querySelectorAll<HTMLButtonElement>('[data-testid="more-dropdown"] > button');
 		expect(moreTriggers).toHaveLength(2);

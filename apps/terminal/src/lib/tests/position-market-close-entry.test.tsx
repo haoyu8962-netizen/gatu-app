@@ -244,4 +244,57 @@ describe("PositionRow market close entry", () => {
 			true,
 		);
 	});
+
+	it("disables every position mutation while a market close is pending", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+		const onReverse = vi.fn();
+		const onOpenTpSl = vi.fn();
+		const onAdjustMargin = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: "7.575900",
+							markPriceStatus: "success",
+							tpSlInfo: undefined,
+							isRowClosing: true,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose,
+							onShare: vi.fn(),
+							onLimitClose,
+							onReverse,
+							onOpenTpSl,
+							onAdjustMargin,
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		const actionLabels = ["Limit Close", "Market Close", "Reverse Position", "Add TP/SL", "Adjust Margin"];
+		for (const label of actionLabels) {
+			const button = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+			expect(button?.disabled, label).toBe(true);
+			act(() => button?.click());
+		}
+
+		expect(onMarketClose).not.toHaveBeenCalled();
+		expect(onLimitClose).not.toHaveBeenCalled();
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(onOpenTpSl).not.toHaveBeenCalled();
+		expect(onAdjustMargin).not.toHaveBeenCalled();
+	});
 });

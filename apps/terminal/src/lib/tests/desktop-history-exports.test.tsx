@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
 	] as Array<Record<string, unknown>>,
 	fundingError: undefined as unknown,
 	fundingOffline: false,
+	fundingStale: false,
 	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 }));
 
@@ -73,6 +74,7 @@ vi.mock("@/hooks/trade/use-user-funding", () => ({
 		fundings: mocks.fundings,
 		isConnected: true,
 		isOffline: mocks.fundingOffline,
+		isStale: mocks.fundingStale,
 		status: mocks.fundingStatus,
 	}),
 }));
@@ -183,6 +185,7 @@ describe("desktop history exports", () => {
 		];
 		mocks.fundingError = undefined;
 		mocks.fundingOffline = false;
+		mocks.fundingStale = false;
 		mocks.fundingStatus = "ready";
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -321,6 +324,14 @@ describe("desktop history exports", () => {
 
 	it("keeps funding rows visible when live updates pause", () => {
 		mocks.fundingError = new Error("WebSocket unavailable");
+		act(() => root.render(<FundingTab />));
+
+		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("warns when retained funding rows are waiting for a fresh reconnect snapshot", () => {
+		mocks.fundingStale = true;
 		act(() => root.render(<FundingTab />));
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);

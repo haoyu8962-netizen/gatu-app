@@ -347,7 +347,7 @@ export function PositionRow({
 							onClick={handleShare}
 							disabled={!canShare}
 							aria-label={t`Share PNL for ${displayName}`}
-							className="relative inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-40"
+							className="relative inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							<ShareIcon aria-hidden="true" className="size-3.5" />
 						</button>
@@ -371,10 +371,10 @@ export function PositionRow({
 					<button
 						type="button"
 						onClick={handleOpenTpSl}
-						disabled={!canManage}
+						disabled={!canManage || isRowClosing}
 						aria-label={hasTpSl ? t`Edit TP/SL` : t`Add TP/SL`}
 						className={cn(
-							"group inline-flex min-h-[26px] items-center justify-end rounded-[6px] transition-all duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50",
+							"group inline-flex min-h-[26px] items-center justify-end rounded-[6px] transition-all duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50",
 							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
 						)}
 					>
@@ -388,9 +388,9 @@ export function PositionRow({
 						<button
 							type="button"
 							onClick={handleAdjustMargin}
-							disabled={!canManage}
+							disabled={!canManage || isRowClosing}
 							aria-label={t`Adjust Margin`}
-							className="inline-flex min-h-[30px] items-center justify-end rounded-[6px] transition-colors duration-[120ms] hover:bg-market-close-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+							className="inline-flex min-h-[30px] items-center justify-end rounded-[6px] transition-colors duration-[120ms] hover:bg-market-close-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							{marginContent}
 						</button>

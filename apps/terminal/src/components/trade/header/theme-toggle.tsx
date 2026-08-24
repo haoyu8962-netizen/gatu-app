@@ -29,8 +29,8 @@ function ThemeToggleButton({ className, iconClassName }: Props) {
 			variant="ghost"
 			intent="neutral"
 			className={cn(
-				"size-8 shrink-0",
-				isDark ? "text-warning hover:text-warning/80" : "text-brand hover:text-brand/80",
+				"size-8 shrink-0 active:not-data-disabled:scale-100",
+				isDark ? "text-warning hover:text-warning/80" : "text-fg-muted hover:text-fg",
 				className,
 			)}
 			onClick={() => setTheme(isDark ? "light" : "dark")}

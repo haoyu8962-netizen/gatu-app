@@ -108,7 +108,7 @@ export function MobileOrderModificationModal({
 					{triggerPriceValue !== undefined ? (
 						<label
 							className={cn(
-								"flex min-h-11 items-center rounded-[10px] border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-control",
+								"flex min-h-11 items-center rounded-[10px] border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-focus",
 								triggerPriceInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
 							)}
 						>
@@ -133,7 +133,7 @@ export function MobileOrderModificationModal({
 
 					<label
 						className={cn(
-							"flex min-h-11 items-center rounded-[10px] border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-control",
+							"flex min-h-11 items-center rounded-[10px] border bg-modal px-3 transition-colors duration-[120ms] focus-within:border-market-close-focus",
 							sizeInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
 						)}
 					>
@@ -166,7 +166,7 @@ export function MobileOrderModificationModal({
 				<ModalFooter className="px-4 pt-3 pb-4">
 					<button
 						type="submit"
-						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-on-control transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
+						className="min-h-11 w-full rounded-[12px] bg-market-close-control px-3 text-sm font-bold text-market-close-on-control transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:bg-market-close-stroke-control disabled:text-market-close-muted"
 						aria-busy={busy || undefined}
 						disabled={isConfirmDisabled}
 					>

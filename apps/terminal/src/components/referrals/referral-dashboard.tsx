@@ -114,7 +114,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
 				{initialReferralCode ? (
-					<p className="mt-2 rounded-[10px] border border-stroke-brand-weak bg-brand-soft px-3 py-2 text-xs text-fg">
+					<p className="mt-2 rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2 text-xs text-fg">
 						<Trans>You were invited with referral code {initialReferralCode}. Review it before applying.</Trans>
 					</p>
 				) : null}
@@ -174,7 +174,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	if (referrals.status === "idle") {
 		content = (
 			<div className="border-t border-stroke-weak px-4 py-14 text-center min-[1001px]:px-5 min-[1001px]:py-16">
-				<GiftIcon aria-hidden="true" className="mx-auto size-10 text-brand" />
+				<GiftIcon aria-hidden="true" className="mx-auto size-10 text-signal" />
 				<h2 className="mt-4 text-lg font-bold text-fg">
 					<Trans>Connect to view referrals</Trans>
 				</h2>

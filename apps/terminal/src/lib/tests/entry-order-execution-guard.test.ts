@@ -15,6 +15,9 @@ function executionState(overrides: Partial<EntryOrderExecutionState> = {}): Entr
 		availabilityReceivedAt: 1_000,
 		availabilityMaxAgeMs: 20_000,
 		availability: { kind: "perp", maxBaseBySide: { buy: "10", sell: "10" } },
+		positionStateReady: true,
+		positionReceivedAt: 1_000,
+		positionSignedSize: "-2",
 		markPriceStatus: "success",
 		markPx: "100",
 		markPriceReceivedAt: 1_000,
@@ -206,6 +209,43 @@ describe("entry order SDK execution guard", () => {
 				1_001,
 			),
 		).toThrow("Trading availability changed");
+	});
+
+	it("fails closed for a reduce-only trigger without a fresh matching position", () => {
+		const reducing: OrderParameters = {
+			...triggerOrder(false, "sl", "99"),
+			orders: [{ ...triggerOrder(false, "sl", "99").orders[0], r: true }],
+		};
+
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				reducing,
+				executionState({ positionStateReady: false, positionSignedSize: undefined }),
+				1_001,
+			),
+		).toThrow("Live position data is unavailable");
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				reducing,
+				executionState({
+					availabilityReceivedAt: 61_000,
+					markPriceReceivedAt: 61_000,
+					positionReceivedAt: 1_000,
+					positionSignedSize: "2",
+				}),
+				61_001,
+			),
+		).toThrow("Live position data is unavailable");
+		expect(() =>
+			assertEntryOrderExecutionAllowed(reducing, executionState({ positionSignedSize: "-2" }), 1_001),
+		).toThrow("Reduce-only trigger no longer matches");
+		expect(() =>
+			assertEntryOrderExecutionAllowed(
+				{ ...reducing, orders: [{ ...reducing.orders[0], s: "3" }] },
+				executionState({ positionSignedSize: "2" }),
+				1_001,
+			),
+		).toThrow("Reduce-only trigger no longer matches");
 	});
 
 	it("validates attached limit TP/SL against the parent price without requiring a live mark", () => {

@@ -73,7 +73,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						<Trans>Complete the protocol stages, then share your official Hyperliquid referral link.</Trans>
 					</p>
 				</div>
-				<span className="rounded-full border border-stroke-brand-weak bg-brand-soft px-2 py-0.5 text-2xs font-semibold text-brand">
+				<span className="rounded-full border border-stroke-signal/30 bg-signal-soft px-2 py-0.5 text-2xs font-semibold text-signal">
 					<Trans>Step {currentStep} of 3</Trans>
 				</span>
 			</div>
@@ -88,7 +88,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 							key={label}
 							className={
 								active
-									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-[8px] border border-stroke-brand-weak bg-brand-soft px-2 py-2"
+									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-[8px] border border-stroke-weak bg-fill-weak px-2 py-2"
 									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-[8px] border border-stroke-weak px-2 py-2"
 							}
 						>
@@ -97,7 +97,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 									complete
 										? "grid size-4 shrink-0 place-items-center rounded-full bg-success text-fg-inverse"
 										: active
-											? "grid size-4 shrink-0 place-items-center rounded-full bg-brand text-3xs font-semibold text-fg-inverse"
+											? "grid size-4 shrink-0 place-items-center rounded-full bg-action text-3xs font-semibold text-on-action"
 											: "grid size-4 shrink-0 place-items-center rounded-full border border-stroke-strong text-3xs text-fg-muted"
 								}
 							>
@@ -127,7 +127,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						aria-valuenow={activationProgress ?? 0}
 						className="mt-2 h-1.5 overflow-hidden rounded-full bg-fill-press"
 					>
-						<div className="h-full rounded-full bg-brand" style={{ width: `${activationProgress ?? 0}%` }} />
+						<div className="h-full rounded-full bg-action" style={{ width: `${activationProgress ?? 0}%` }} />
 					</div>
 					<p className="mt-1.5 text-2xs leading-4 text-fg-muted">
 						<Trans>Hyperliquid will unlock code creation when the required volume is confirmed.</Trans>
@@ -136,7 +136,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 			) : null}
 
 			{data.referrerState.stage === "needToCreateCode" ? (
-				<div className="mt-3 rounded-[10px] border border-stroke-brand-weak bg-brand-soft p-3">
+				<div className="mt-3 rounded-[10px] border border-stroke-weak bg-fill-weak p-3">
 					<p className="text-xs font-semibold text-fg">
 						<Trans>You are eligible to create a referral code.</Trans>
 					</p>

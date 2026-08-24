@@ -129,6 +129,10 @@ describe("MobileTerminal disclosure state", () => {
 		expect(terminal?.className).toContain("overflow-hidden");
 		expect(terminal?.className).toContain("overscroll-none");
 		expect(terminal?.className).not.toContain("h-dvh");
+		expect(terminal?.className).not.toContain("pl-[var(--sal)]");
+		expect(terminal?.className).not.toContain("pr-[var(--sar)]");
+		expect(main?.className).toContain("pl-[var(--sal)]");
+		expect(main?.className).toContain("pr-[var(--sar)]");
 		expect(main?.style.paddingBottom).toBe("");
 	});
 

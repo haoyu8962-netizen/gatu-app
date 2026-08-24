@@ -67,7 +67,7 @@ function FundingLoadingPlaceholder() {
 export function FundingTab({ toolbarTarget }: Props = {}) {
 	useNumberFormatRevision();
 	const navigateToMarket = useMarketNavigation();
-	const { error, fundings: updates, isConnected, isOffline, status } = useUserFunding();
+	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();
 	const { address } = useWalletSession();
 	const markets = useMarkets();
 	const totalFunding = getToolbarFundingTotal(updates);
@@ -136,7 +136,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 							{t`Funding shown`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
 						</span>
 					) : null}
-					{isConnected && status === "ready" && (error || isOffline) ? (
+					{isConnected && status === "ready" && (error || isOffline || isStale) ? (
 						<output aria-live="polite" className="whitespace-nowrap text-xs text-market-close-danger">
 							{isOffline ? t`You are offline.` : t`Funding updates paused.`}
 						</output>

@@ -19,7 +19,7 @@ export function MobileDisclosureHeader({ expanded, label, onToggle, children, cl
 				aria-label={label}
 				aria-controls={controls}
 				onClick={onToggle}
-				className="absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+				className="absolute inset-0 z-0 cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 			/>
 			<div className="contents pointer-events-none">{children}</div>
 			<svg

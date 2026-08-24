@@ -22,9 +22,9 @@ const alertVariants = cva(["flex items-start overflow-clip rounded-8"], {
 			success: "bg-success-soft border border-stroke-success-weak",
 			information: "bg-info-soft border border-stroke-info-weak",
 			neutral: "bg-fill-weaker border border-stroke-weak",
-			brand: "bg-brand-soft border border-stroke-brand-weak",
+			brand: "bg-signal-soft border border-stroke-signal/30",
 			"inverse-neutral": "bg-inverse-surface",
-			"inverse-brand": "bg-brand",
+			"inverse-brand": "bg-action",
 		},
 	},
 	defaultVariants: {
@@ -78,8 +78,8 @@ const toneColors: Record<
 		close: "text-icon",
 	},
 	brand: {
-		accent: "bg-stroke-brand-strong",
-		icon: "text-icon-brand",
+		accent: "bg-signal",
+		icon: "text-icon-signal",
 		title: "text-fg",
 		description: "text-fg-muted",
 		close: "text-icon",
@@ -92,11 +92,11 @@ const toneColors: Record<
 		close: "text-icon-inverse",
 	},
 	"inverse-brand": {
-		accent: "bg-stroke-inverse-strong",
-		icon: "text-icon-inverse",
-		title: "text-fg-inverse",
-		description: "text-fg-inverse-muted",
-		close: "text-icon-inverse",
+		accent: "bg-on-action/60",
+		icon: "text-on-action",
+		title: "text-on-action",
+		description: "text-on-action/80",
+		close: "text-on-action/70",
 	},
 };
 

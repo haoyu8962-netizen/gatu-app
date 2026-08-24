@@ -406,14 +406,18 @@ describe("TradingViewChart", () => {
 		let stateAtRemoval:
 			| {
 					ariaBusy: string | null | undefined;
+					hasBrandLoader: boolean;
 					hasLoadingOutput: boolean;
+					hasRecoverySpinner: boolean;
 					maskClassName: string | undefined;
 			  }
 			| undefined;
 		widgets[0]?.remove.mockImplementationOnce(() => {
 			stateAtRemoval = {
 				ariaBusy: container.firstElementChild?.getAttribute("aria-busy"),
+				hasBrandLoader: container.querySelector('[data-gatu-loader="orbit"]') !== null,
 				hasLoadingOutput: container.querySelector("[data-chart-loading]") !== null,
+				hasRecoverySpinner: container.querySelector("[data-chart-loading] svg.animate-spin") !== null,
 				maskClassName: container.querySelector("[data-chart-initializing]")?.className,
 			};
 		});
@@ -433,7 +437,9 @@ describe("TradingViewChart", () => {
 
 		expect(stateAtRemoval).toEqual({
 			ariaBusy: "true",
+			hasBrandLoader: false,
 			hasLoadingOutput: true,
+			hasRecoverySpinner: true,
 			maskClassName: expect.stringContaining("opacity-100"),
 		});
 		expect(widgetConstructor).toHaveBeenCalledOnce();
@@ -1742,6 +1748,8 @@ describe("TradingViewChart", () => {
 		expect(widgets[1]?.remove).not.toHaveBeenCalled();
 		expect(container.textContent).toContain("Loading...");
 		expect(container.textContent).not.toContain("Retry");
+		expect(container.querySelector('[data-gatu-loader="orbit"]')).not.toBeNull();
+		expect(container.querySelector("[data-chart-loading] svg.animate-spin")).toBeNull();
 
 		await act(async () => {
 			vi.advanceTimersByTime(15_000);
@@ -1780,7 +1788,10 @@ describe("TradingViewChart", () => {
 		expect(loading?.className).toContain("flex");
 		expect(loading?.className).toContain("text-fg-muted");
 		expect(loading?.className).not.toContain("sr-only");
-		expect(loading?.querySelector("svg")?.getAttribute("class")).toContain("animate-spin");
+		expect(loading?.querySelector('[data-gatu-loader="orbit"]')?.getAttribute("class")).toContain("size-9");
+		expect(loading?.querySelector("svg.animate-spin")).toBeNull();
+		expect(loading?.querySelector("span")?.className).toContain("sr-only");
+		expect(loading?.querySelector("span")?.textContent).toBe("Loading...");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
@@ -1823,6 +1834,8 @@ describe("TradingViewChart", () => {
 		expect(loadTradingViewScript).toHaveBeenCalledTimes(3);
 		expect(mask?.className).toContain("opacity-100");
 		expect(chart?.getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector('[data-gatu-loader="orbit"]')).not.toBeNull();
+		expect(container.querySelector("[data-chart-loading] svg.animate-spin")).toBeNull();
 
 		act(() => keepRetryPending?.());
 		await flushChartEffects();

@@ -146,7 +146,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 					<button
 						type="button"
 						onClick={onBack}
-						className="flex items-center gap-1 text-xs text-brand hover:opacity-80"
+						className="flex items-center gap-1 text-xs text-signal hover:text-signal-hover"
 					>
 						<ArrowLeftIcon className="size-3" />
 						<Trans>Back</Trans>

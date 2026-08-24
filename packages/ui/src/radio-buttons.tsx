@@ -32,7 +32,7 @@ const radioIndicatorVariants = cva(
 
 const radioDotVariants = cva(
 	[
-		"rounded-full bg-white",
+		"rounded-full bg-on-action",
 		"transition-transform duration-150 motion-reduce:transition-none",
 		"data-unchecked:scale-0 data-checked:scale-100",
 	],

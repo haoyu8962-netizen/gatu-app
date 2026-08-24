@@ -235,6 +235,21 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(container.textContent).not.toContain("101.0");
 	});
 
+	it("insets each split heading half to match the mobile data rows", () => {
+		render({ compact: false });
+
+		const headings = container.querySelector<HTMLElement>('[data-slot="split-orderbook-column-headings"]');
+		const bidHeadings = container.querySelector<HTMLElement>('[data-slot="split-orderbook-bid-headings"]');
+		const askHeadings = container.querySelector<HTMLElement>('[data-slot="split-orderbook-ask-headings"]');
+
+		expect(headings?.className).toContain("gap-px");
+		expect(headings?.className).not.toContain("px-2");
+		expect(bidHeadings?.className).toContain("px-2");
+		expect(askHeadings?.className).toContain("px-2");
+		expect(container.querySelector('[data-slot="split-orderbook-bid-price-heading"]')?.textContent).toBe("Price");
+		expect(container.querySelector('[data-slot="split-orderbook-ask-price-heading"]')?.textContent).toBe("Price");
+	});
+
 	it("uses one shared compact observer to derive the two-sided slot budget", () => {
 		let resizeObserverCount = 0;
 		let observedElement: Element | undefined;

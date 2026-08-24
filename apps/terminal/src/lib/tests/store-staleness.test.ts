@@ -163,6 +163,7 @@ describe("store staleness integration", () => {
 		"spotState",
 		"twapStates",
 		"userFills",
+		"userFundings",
 		"userHistoricalOrders",
 		"webData3",
 	])("keeps retained %s snapshots stale until the reconnect delivers fresh data", async (method) => {

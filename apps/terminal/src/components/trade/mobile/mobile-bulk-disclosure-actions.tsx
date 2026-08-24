@@ -9,7 +9,7 @@ interface Props {
 }
 
 const actionClassName =
-	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap p-0 text-xs font-normal leading-4 text-market-close-fg transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled";
+	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap p-0 text-xs font-normal leading-4 text-market-close-fg transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled";
 
 export function MobileBulkDisclosureActions({ keys, controller, className }: Props) {
 	const { t } = useLingui();

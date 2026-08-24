@@ -260,7 +260,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t`Entry Price`} / {t`Mark Price`}
 											</button>
@@ -275,7 +275,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 												type="button"
 												onClick={() => setPnlMode((current) => (current === "roe" ? "priceChange" : "roe"))}
 												aria-label={pnlMode === "roe" ? t`Show price change percentage` : t`Show ROE percentage`}
-												className="cursor-pointer border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-market-close-muted transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-pointer border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-market-close-muted transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{pnlHeader} <span aria-hidden="true">▾</span>
 											</button>
@@ -288,7 +288,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t`Liquidation Price`}
 											</button>
@@ -307,7 +307,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										>
 											<button
 												type="button"
-												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
 												{t({ message: "Funding", context: "Cumulative position funding" })}
 											</button>
@@ -331,7 +331,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 													focusableWhenDisabled
 													onClick={closeAllPreview ? handleOpenCloseAll : undefined}
 													aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
-													className="h-[26px] min-h-0 max-w-full rounded-[6px] bg-transparent px-1 py-0 text-right text-[11px] leading-4 font-semibold whitespace-nowrap text-market-close-success shadow-none transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:!outline-market-close-control active:not-data-disabled:scale-100 data-disabled:bg-transparent data-disabled:text-market-close-subtle"
+													className="h-[26px] min-h-0 max-w-full rounded-[6px] bg-transparent px-1 py-0 text-right text-[11px] leading-4 font-semibold whitespace-nowrap text-market-close-success shadow-none transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:!outline-market-close-focus active:not-data-disabled:scale-100 data-disabled:bg-transparent data-disabled:text-market-close-subtle"
 												>
 													{t`Close All Positions`}
 												</Button>

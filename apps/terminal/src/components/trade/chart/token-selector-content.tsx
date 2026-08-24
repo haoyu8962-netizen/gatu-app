@@ -186,7 +186,7 @@ export function TokenSelectorContent({
 						onClear={() => setSearch("")}
 						size={mobile ? "md" : "sm"}
 						className={cn(
-							"min-w-0 flex-1 [&>div]:rounded-[10px] [&>div]:border-trading-panel-stroke-input [&>div]:bg-transparent focus-within:[&>div]:border-trading-panel-control",
+							"min-w-0 flex-1 [&>div]:rounded-[10px] [&>div]:border-trading-panel-stroke-input [&>div]:bg-transparent focus-within:[&>div]:border-trading-panel-focus",
 							mobile ? "[&>div]:h-10" : "[&>div]:h-[38px]",
 						)}
 						inputClassName={cn(

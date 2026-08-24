@@ -126,8 +126,6 @@ export function TradePanel() {
 
 	const userPositions = useUserPositions();
 
-	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
-	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const geoRestriction = useGeoRestriction();
 	const tradeActionsBlocked = geoRestriction.actionsBlocked;
 	const tradeRestricted = geoRestriction.tradeRestricted;
@@ -197,6 +195,10 @@ export function TradePanel() {
 		allowsIsolatedMarginRemoval,
 	} = orderEntryData;
 	const slippageEstimate = useMarketSlippageEstimate(market?.name, side, sizeValue, orderType === "market");
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSize = toNumberOrZero(position?.szi);
+	const positionSnapshotReady = !userPositions.isLoading && !userPositions.hasError && !userPositions.isStale;
+	const validatedPositionSize = positionSnapshotReady ? positionSize : null;
 	const orderExecutionStateRef = useRef<EntryOrderExecutionState>({
 		active: true,
 		assetId: market?.assetId,
@@ -205,6 +207,9 @@ export function TradePanel() {
 		availabilityReceivedAt,
 		availabilityMaxAgeMs,
 		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -220,6 +225,9 @@ export function TradePanel() {
 		availabilityReceivedAt,
 		availabilityMaxAgeMs,
 		availability: executionAvailability,
+		positionStateReady: positionSnapshotReady,
+		positionReceivedAt: userPositions.receivedAt,
+		positionSignedSize: position?.szi,
 		markPriceStatus,
 		markPx: market?.markPx,
 		markPriceReceivedAt: market?.markPriceReceivedAt,
@@ -271,6 +279,10 @@ export function TradePanel() {
 	const takeProfitOrder = isTakeProfitOrderType(orderType);
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
+	const requiresBuilderFee = !twapOrder;
+	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
 	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
 	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
@@ -317,10 +329,6 @@ export function TradePanel() {
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
-
-	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
-	const positionSize = toNumberOrZero(position?.szi);
-	const validatedPositionSize = userPositions.isLoading || userPositions.hasError ? null : positionSize;
 
 	const price = getOrderPrice(
 		orderType,
@@ -380,7 +388,7 @@ export function TradePanel() {
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
 	const canApprove = !!walletClient && !!address;
-	const isApprovalLoading = isAgentReady ? isBuilderFeeLoading : isAgentLoading;
+	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
 
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,

@@ -70,8 +70,8 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 	return (
 		<div className="flex flex-1 flex-col gap-4">
 			<div className="flex flex-1 flex-col items-center justify-center gap-4">
-				<div className="flex size-12 items-center justify-center rounded-full bg-brand/10 border border-stroke-brand-strong/30">
-					<SpinnerGapIcon className="size-6 animate-spin text-brand" />
+				<div className="flex size-12 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft">
+					<SpinnerGapIcon className="size-6 animate-spin text-signal" />
 				</div>
 				<div className="text-center space-y-1">
 					<p className="text-sm font-medium text-fg">{statusText}</p>

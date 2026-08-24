@@ -169,6 +169,9 @@ describe("MobileMarketBar", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		document.documentElement.style.removeProperty("--sal");
+		document.documentElement.style.removeProperty("--sar");
+		vi.restoreAllMocks();
 	});
 
 	it("labels expanded spot notionals with the selected quote token", () => {
@@ -281,6 +284,43 @@ describe("MobileMarketBar", () => {
 		expect(tooltipTrigger?.className).toContain("after:min-w-11");
 		expect(tooltipTrigger?.className).toContain("after:w-full");
 		expect(tooltipTrigger?.className).not.toContain("after:size-11");
+	});
+
+	it("keeps market detail tooltips inside both iOS landscape safe-area edges", () => {
+		Object.assign(mocks.selectedMarket, {
+			kind: "perp",
+			name: "HYPE",
+			pairName: "HYPE-USDC",
+			maxLeverage: 10,
+			funding: "0.0001",
+		});
+		vi.spyOn(window, "innerWidth", "get").mockReturnValue(844);
+		renderExpandedBar();
+
+		const tooltipTrigger = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+			button.textContent?.includes("Mark/ORACLE"),
+		);
+		expect(tooltipTrigger).not.toBeNull();
+		vi.spyOn(tooltipTrigger as HTMLButtonElement, "getBoundingClientRect")
+			.mockReturnValueOnce({ bottom: 70, left: 0, top: 50 } as DOMRect)
+			.mockReturnValueOnce({ bottom: 70, left: 700, top: 50 } as DOMRect);
+
+		document.documentElement.style.setProperty("--sal", "59px");
+		document.documentElement.style.setProperty("--sar", "0px");
+		act(() => tooltipTrigger?.click());
+		let tooltip = document.body.querySelector<HTMLElement>('[role="tooltip"]');
+		expect(tooltip?.style.left).toBe("59px");
+		expect(tooltip?.style.width).toBe("320px");
+
+		act(() => tooltipTrigger?.click());
+		document.documentElement.style.setProperty("--sal", "0px");
+		document.documentElement.style.setProperty("--sar", "59px");
+		act(() => tooltipTrigger?.click());
+		tooltip = document.body.querySelector<HTMLElement>('[role="tooltip"]');
+		expect(tooltip?.style.left).toBe("465px");
+		expect(Number.parseFloat(tooltip?.style.left ?? "0") + Number.parseFloat(tooltip?.style.width ?? "0")).toBe(
+			844 - 59,
+		);
 	});
 
 	it("renders address actions without a social row dependency", () => {

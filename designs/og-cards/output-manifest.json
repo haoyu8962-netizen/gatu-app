@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"sourceSha256": "e410ca7ad9d0dd2221e14cb2363bb2cc6e34ecef27c1303622740c5d07013322",
+	"dimensions": {
+		"height": 630,
+		"width": 1200
+	},
+	"outputs": {
+		"terminal": {
+			"path": "apps/terminal/public/og-terminal-1200x630.png",
+			"sha256": "303a2868dc0f656bd52793d3cbff60f345a5333612edce5f8b8ea043aef51b7d"
+		},
+		"website": {
+			"path": "apps/website/public/og-website-1200x630.png",
+			"sha256": "2a7ff82b0c996051d04381e3acc9c9b6e02625a4a6ccdbcaf050ae77eb1b804e"
+		}
+	}
+}

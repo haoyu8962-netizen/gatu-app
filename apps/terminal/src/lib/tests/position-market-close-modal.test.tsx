@@ -332,6 +332,7 @@ describe("PositionMarketCloseModal", () => {
 		expect(testState.sliderProps?.thumbClassName).toContain("min-[1001px]:size-[26px]");
 		expect(testState.sliderProps?.thumbClassName).toContain("shadow-trading-panel-slider");
 		expect(testState.sliderProps?.thumbClassName).not.toContain("shadow-[");
+		expect(testState.sliderProps?.thumbClassName).not.toContain("focus-visible)]:!outline-none");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.textContent).toContain(
 			"Market Close 1.2500 BTC",
 		);

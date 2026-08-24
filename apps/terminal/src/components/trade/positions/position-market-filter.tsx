@@ -67,7 +67,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 					size="xxs"
 					aria-label={_(msg`Filter positions by market: ${ariaValue}`)}
 					className={cn(
-						"min-h-0 gap-1 font-normal focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100",
+						"min-h-0 gap-1 font-normal focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100",
 						mobile
 							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
 							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-modal px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
@@ -94,7 +94,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 							className="text-xs data-[selected=true]:bg-market-close-hover"
 						>
 							<span>{_(allMessage)}</span>
-							{value.type === "all" ? <CheckIcon className="ml-auto size-3 text-brand" weight="bold" /> : null}
+							{value.type === "all" ? <CheckIcon className="ml-auto size-3 text-action" weight="bold" /> : null}
 						</CommandItem>
 						<CommandItem
 							value={_(currentMessage)}
@@ -102,7 +102,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 							className="text-xs data-[selected=true]:bg-market-close-hover"
 						>
 							<span>{_(currentMessage)}</span>
-							{value.type === "current" ? <CheckIcon className="ml-auto size-3 text-brand" weight="bold" /> : null}
+							{value.type === "current" ? <CheckIcon className="ml-auto size-3 text-action" weight="bold" /> : null}
 						</CommandItem>
 						{options.map((option) => {
 							const selected = isSelectedMarket(value, option);
@@ -114,7 +114,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 									className="text-xs data-[selected=true]:bg-market-close-hover"
 								>
 									<span className="truncate">{option.label}</span>
-									{selected ? <CheckIcon className="ml-auto size-3 shrink-0 text-brand" weight="bold" /> : null}
+									{selected ? <CheckIcon className="ml-auto size-3 shrink-0 text-action" weight="bold" /> : null}
 								</CommandItem>
 							);
 						})}

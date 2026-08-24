@@ -28,7 +28,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 			)}
 			aria-label={_(msg`Primary navigation`)}
 		>
-			<div className="flex items-stretch">
+			<div className="flex items-stretch pl-[var(--sal)] pr-[var(--sar)]">
 				{MOBILE_NAV_ITEMS.map((item) => {
 					const isActive = activeTab === item.id;
 					const badgeCount = badges?.[item.id];
@@ -56,7 +56,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 											"absolute -top-1 -right-2 min-w-4 h-4 px-1",
 											"flex items-center justify-center",
 											"rounded-full text-xs font-medium tabular-nums",
-											"bg-brand text-fg-inverse",
+											"bg-action text-on-action",
 										)}
 									>
 										{badgeCount > NAV_BADGE_MAX_COUNT ? `${NAV_BADGE_MAX_COUNT}+` : badgeCount}

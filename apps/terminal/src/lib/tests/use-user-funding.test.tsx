@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 	subscription: {
 		data: undefined as UserFundingsWsEvent | undefined,
 		error: undefined as unknown,
+		isStale: false,
 		status: "idle" as "active" | "error" | "idle" | "subscribing",
 	},
 	useSubscription: vi.fn(),
@@ -66,6 +67,7 @@ describe("useUserFunding", () => {
 		mocks.isOnline = true;
 		mocks.subscription.data = undefined;
 		mocks.subscription.error = undefined;
+		mocks.subscription.isStale = false;
 		mocks.subscription.status = "idle";
 		mocks.useSubscription.mockReset();
 	});
@@ -191,6 +193,18 @@ describe("useUserFunding", () => {
 
 		expect(result).toMatchObject({ fundings: [createFunding(NOW)], status: "ready" });
 		expect(result.error).toBe(error);
+	});
+
+	it("keeps a retained snapshot visible but marks it stale until a reconnect snapshot arrives", () => {
+		mocks.subscription.data = { fundings: [createFunding(NOW)], isSnapshot: true, user: ADDRESS_A };
+		mocks.subscription.isStale = true;
+		mocks.subscription.status = "active";
+
+		expect(renderHook()).toMatchObject({
+			fundings: [createFunding(NOW)],
+			isStale: true,
+			status: "ready",
+		});
 	});
 
 	it("fails closed when a funding update is malformed", () => {

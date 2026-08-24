@@ -63,6 +63,7 @@ describe("number format reactivity contract", () => {
 
 	it("recomputes the document title when the number format changes", () => {
 		expect(DOCUMENT_TITLE_SOURCE).toContain("const numberFormatRevision = useNumberFormatRevision()");
+		expect(DOCUMENT_TITLE_SOURCE).toContain('style: "decimal"');
 		expect(DOCUMENT_TITLE_SOURCE).toContain("[isSpot, markPx, numberFormatRevision, pairName, szDecimals]");
 	});
 });

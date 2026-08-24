@@ -187,6 +187,7 @@ function LeverageEditor({
 						<Trans>Cancel</Trans>
 					</Button>
 					<TradingActionButton
+						requiresBuilderFee={false}
 						variant="outline"
 						intent="brand"
 						size={compact ? "sm" : "lg"}
@@ -203,6 +204,7 @@ function LeverageEditor({
 
 			{!updateError && compact && (
 				<TradingActionButton
+					requiresBuilderFee={false}
 					variant="outline"
 					intent="brand"
 					size="sm"
@@ -218,6 +220,7 @@ function LeverageEditor({
 
 			{!updateError && !compact && (
 				<TradingActionButton
+					requiresBuilderFee={false}
 					variant="outline"
 					intent="brand"
 					size="lg"

@@ -393,4 +393,54 @@ describe("MobilePositionCard isolated margin entry", () => {
 
 		expect(container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]')).toBeNull();
 	});
+
+	it("disables every position mutation while a market close is pending", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+		const onReverse = vi.fn();
+		const onOpenTpSl = vi.fn();
+		const onAdjustMargin = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets,
+					markPx: "7.5759",
+					markPriceStatus: "success",
+					tpSlInfo: undefined,
+					isRowClosing: true,
+					expanded: true,
+					onMarketClose,
+					onShare: vi.fn(),
+					onReverse,
+					onLimitClose,
+					onOpenTpSl,
+					onAdjustMargin,
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const namedLabels = ["Adjust isolated margin for CXMT-USDC", "Limit Close", "Market Close", "Reverse"];
+		const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button"));
+		for (const label of namedLabels) {
+			const button = buttons.find(
+				(candidate) => candidate.getAttribute("aria-label") === label || candidate.textContent?.trim() === label,
+			);
+			expect(button?.disabled, label).toBe(true);
+			act(() => button?.click());
+		}
+		const tpSlButton = buttons.find((candidate) => candidate.textContent?.trim().startsWith("TP/SL"));
+		expect(tpSlButton?.disabled, "TP/SL").toBe(true);
+		act(() => tpSlButton?.click());
+
+		expect(onMarketClose).not.toHaveBeenCalled();
+		expect(onLimitClose).not.toHaveBeenCalled();
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(onOpenTpSl).not.toHaveBeenCalled();
+		expect(onAdjustMargin).not.toHaveBeenCalled();
+	});
 });

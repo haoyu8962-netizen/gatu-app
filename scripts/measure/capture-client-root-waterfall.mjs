@@ -826,8 +826,6 @@ function loadPlaywright() {
 	const candidates = [
 		"playwright",
 		process.env.PLAYWRIGHT_PATH,
-		"/Users/zhixing/.nvm/versions/node/v22.18.0/lib/node_modules/playwright",
-		"/Users/zhixing/.nvm/versions/node/v24.15.0/lib/node_modules/playwright",
 	].filter(Boolean);
 	for (const candidate of candidates) {
 		try {

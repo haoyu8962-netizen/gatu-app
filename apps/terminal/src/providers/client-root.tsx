@@ -34,10 +34,15 @@ import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
 import { ClientRuntimeProvider } from "@/providers/client-runtime";
 import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
-import { useTheme } from "@/stores/use-global-settings-store";
 
 const network = getNetwork();
 const env = network === "testnet" ? "Testnet" : "Mainnet";
+// Privy 3.30.0 rebuilds its connected-wallet wrappers whenever its config is
+// recalculated. Freeze the appearance selected at client-runtime startup so a
+// terminal theme toggle cannot cascade into a Wagmi reconnect. The next page
+// load picks up the newly persisted theme.
+const sessionPrivyConfig =
+	PRIVY_CONFIG_BY_THEME[document.documentElement.classList.contains("light") ? "light" : "dark"];
 const persister = createSyncStoragePersister({
 	storage: window.localStorage,
 	key: STORAGE_KEYS.RQ_CACHE,
@@ -93,12 +98,11 @@ function HyperliquidLegalLifecycle() {
 }
 
 export function ClientRootProvider({ children, queryClient }: Props) {
-	const theme = useTheme();
 	const persistenceCallbacks = createQueryPersistenceCallbacks(queryClient, persister);
 
 	return (
 		<PwaInstallProvider>
-			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
+			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={sessionPrivyConfig}>
 				<PrivyLoginMethodObserver />
 				<SmartWalletsProvider>
 					<PersistQueryClientProvider

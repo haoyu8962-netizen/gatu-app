@@ -4,6 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/fundingHistory/$address")({
 	ssr: false,
+	remountDeps: ({ params }) => ({ address: params.address.toLowerCase() }),
 	head: ({ params }) =>
 		buildPageHead({
 			title: "Funding Payments",

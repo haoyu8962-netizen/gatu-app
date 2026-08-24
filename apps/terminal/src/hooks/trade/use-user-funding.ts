@@ -14,6 +14,7 @@ interface UserFundingResult {
 	fundings: UserFunding[];
 	isConnected: boolean;
 	isOffline: boolean;
+	isStale: boolean;
 	status: UserFundingStatus;
 }
 
@@ -66,6 +67,7 @@ export function useUserFunding(): UserFundingResult {
 		fundings,
 		isConnected: enabled,
 		isOffline: enabled && !isOnline,
+		isStale: fundingSubscription.isStale,
 		status,
 	};
 }
