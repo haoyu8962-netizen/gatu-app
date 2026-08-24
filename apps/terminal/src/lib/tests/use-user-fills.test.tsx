@@ -4,7 +4,7 @@ import type { UserFillsResponse, UserFillsWsEvent } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 
 type UserFill = UserFillsResponse[number];
@@ -12,18 +12,18 @@ type UserFill = UserFillsResponse[number];
 const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111" as `0x${string}` | undefined,
 	isConnected: true,
-	query: {
-		data: undefined as UserFillsResponse | undefined,
-		error: null as unknown,
-		isError: false,
-	},
+	isOnline: true,
 	subscription: {
 		data: undefined as UserFillsWsEvent | undefined,
 		error: undefined as unknown,
+		isStale: false,
 		status: "idle" as "idle" | "subscribing" | "active" | "error",
 	},
-	useInfo: vi.fn(),
 	useSubscription: vi.fn(),
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+	useOnlineStatus: () => mocks.isOnline,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -34,10 +34,6 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useInfo: (method: string, ...args: unknown[]) => {
-		mocks.useInfo(method, ...args);
-		return mocks.query;
-	},
 	useSubscription: (method: string, ...args: unknown[]) => {
 		mocks.useSubscription(method, ...args);
 		return mocks.subscription;
@@ -85,13 +81,11 @@ describe("useUserFills", () => {
 		hookValue = null;
 		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.isConnected = true;
-		mocks.query.data = undefined;
-		mocks.query.error = null;
-		mocks.query.isError = false;
+		mocks.isOnline = true;
 		mocks.subscription.data = undefined;
 		mocks.subscription.error = undefined;
+		mocks.subscription.isStale = false;
 		mocks.subscription.status = "idle";
-		mocks.useInfo.mockReset();
 		mocks.useSubscription.mockReset();
 	});
 
@@ -106,181 +100,137 @@ describe("useUserFills", () => {
 		return hookValue;
 	}
 
-	it("does not treat an empty realtime snapshot as confirmed empty history while REST is pending", () => {
+	it("uses the WebSocket snapshot as the recent-history boundary without issuing REST", () => {
 		mocks.subscription.data = {
 			fills: [],
 			isSnapshot: true,
 			user: mocks.address as `0x${string}`,
 		};
 		mocks.subscription.status = "active";
-
-		const result = renderHook();
-
-		expect(result.status).toBe("loading");
-		expect(result.fills).toEqual([]);
-	});
-
-	it("uses the REST snapshot when the realtime snapshot is empty", () => {
-		const fill = createFill();
-		mocks.query.data = [fill];
-		mocks.subscription.data = {
-			fills: [],
-			isSnapshot: true,
-			user: mocks.address as `0x${string}`,
-		};
 		mocks.subscription.status = "active";
 
 		const result = renderHook();
 
 		expect(result.status).toBe("ready");
-		expect(result.fills).toEqual([fill]);
-		expect(mocks.useInfo).toHaveBeenCalledWith(
-			"userFills",
-			{ aggregateByTime: true, user: mocks.address },
-			expect.objectContaining({
-				enabled: true,
-				refetchOnReconnect: true,
-				refetchOnWindowFocus: false,
-			}),
-		);
+		expect(result.fills).toEqual([]);
 		expect(mocks.useSubscription).toHaveBeenCalledWith(
 			"userFills",
 			{ aggregateByTime: true, user: mocks.address },
 			{ enabled: true },
 		);
-		expect(mocks.useInfo.mock.calls.some(([method]) => method === "userTwapSliceFills")).toBe(false);
-		expect(mocks.useSubscription.mock.calls.some(([method]) => method === "userTwapSliceFills")).toBe(false);
 	});
 
-	it("excludes TWAP fills reported by the general fills stream", () => {
-		const ordinaryFill = createFill({ oid: 84, tid: 200, time: 1000 });
-		const zeroIdTwapFill = createFill({ oid: 85, tid: 201, time: 2000, twapId: 0 });
-		const twapFill = createFill({ oid: 86, tid: 202, time: 3000, twapId: 7 });
-		mocks.query.data = [ordinaryFill, zeroIdTwapFill];
-		mocks.subscription.data = {
-			fills: [twapFill],
-			user: mocks.address as `0x${string}`,
-		};
-
-		const result = renderHook();
-
-		expect(result.status).toBe("ready");
-		expect(result.fills).toEqual([ordinaryFill]);
-	});
-
-	it("filters TWAP fills before applying the recent-history row limit", () => {
-		const ordinaryFill = createFill({ oid: 999, tid: 999, time: 1 });
-		const twapFills = Array.from({ length: MAX_HISTORY_ROWS }, (_, index) =>
-			createFill({ oid: index + 1, tid: index + 1, time: index + 2, twapId: index }),
+	it("filters TWAP fills, sorts newest first, and keeps only the latest 30 ordinary fills", () => {
+		const ordinaryFills = Array.from({ length: 35 }, (_, index) =>
+			createFill({ oid: index + 1, tid: index + 1, time: index + 1 }),
 		);
-		mocks.query.data = [...twapFills, ordinaryFill];
-
-		const result = renderHook();
-
-		expect(result.status).toBe("ready");
-		expect(result.fills).toEqual([ordinaryFill]);
-	});
-
-	it("accepts an explicit empty REST response as an empty trade history", () => {
-		mocks.query.data = [];
-		mocks.subscription.status = "error";
-		mocks.subscription.error = new Error("WebSocket unavailable");
-
-		const result = renderHook();
-
-		expect(result.status).toBe("ready");
-		expect(result.error).toBeUndefined();
-		expect(result.fills).toEqual([]);
-	});
-
-	it("keeps realtime fills visible but does not mark history complete while REST is pending", () => {
-		const fill = createFill();
+		const twapFills = Array.from({ length: 5 }, (_, index) =>
+			createFill({ oid: 100 + index, tid: 100 + index, time: 100 + index, twapId: index }),
+		);
 		mocks.subscription.data = {
-			fills: [fill],
+			fills: [...ordinaryFills, ...twapFills],
 			isSnapshot: true,
 			user: mocks.address as `0x${string}`,
 		};
-		mocks.subscription.status = "active";
 
 		const result = renderHook();
 
-		expect(result.status).toBe("loading");
-		expect(result.fills).toEqual([fill]);
+		expect(result.status).toBe("ready");
+		expect(result.fills).toHaveLength(RECENT_ACCOUNT_HISTORY_ROWS);
+		expect(result.fills[0]?.time).toBe(35);
+		expect(result.fills.at(-1)?.time).toBe(6);
+		expect(result.fills.every((fill) => fill.twapId === null)).toBe(true);
 	});
 
-	it("does not let a non-empty realtime update hide a failed REST snapshot", () => {
-		const queryError = new Error("REST unavailable");
-		mocks.query.error = queryError;
-		mocks.query.isError = true;
+	it("fails closed for a mismatched user or malformed fill identity", () => {
 		mocks.subscription.data = {
 			fills: [createFill()],
-			user: mocks.address as `0x${string}`,
+			user: "0x2222222222222222222222222222222222222222",
 		};
-		mocks.subscription.status = "active";
 
-		const result = renderHook();
-
-		expect(result.status).toBe("error");
-		expect(result.error).toBe(queryError);
-	});
-
-	it("fails closed when the REST snapshot contains an invalid fill identity", () => {
-		mocks.query.data = [{ ...createFill(), tid: undefined as never }];
-
-		const result = renderHook();
-
+		let result = renderHook();
 		expect(result.status).toBe("error");
 		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 		expect(result.fills).toEqual([]);
-	});
 
-	it("fails closed instead of throwing when the REST snapshot is not an array", () => {
-		mocks.query.data = { fills: [] } as never;
-
-		const result = renderHook();
-
-		expect(result.status).toBe("error");
-		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
-	});
-
-	it("fails closed when a realtime fill has an invalid timestamp", () => {
-		mocks.query.data = [];
 		mocks.subscription.data = {
 			fills: [{ ...createFill(), time: Number.NaN }],
 			user: mocks.address as `0x${string}`,
 		};
-		mocks.subscription.status = "active";
-
-		const result = renderHook();
-
+		result = renderHook();
 		expect(result.status).toBe("error");
-		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
-	});
+		expect(result.fills).toEqual([]);
 
-	it("fails closed when a fill has a malformed TWAP ID", () => {
-		mocks.query.data = [createFill({ twapId: Number.NaN })];
-
-		const result = renderHook();
-
+		mocks.subscription.data = {
+			fills: [{ ...createFill(), side: "X" as never }],
+			user: mocks.address as `0x${string}`,
+		};
+		result = renderHook();
 		expect(result.status).toBe("error");
-		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 		expect(result.fills).toEqual([]);
 	});
 
-	it("reports an error when REST fails and the active realtime stream has no history", () => {
-		const queryError = new Error("REST unavailable");
-		mocks.query.error = queryError;
-		mocks.query.isError = true;
+	it("keeps a valid snapshot visible when realtime updates later fail", () => {
+		const error = new Error("WebSocket unavailable");
 		mocks.subscription.data = {
-			fills: [],
+			fills: [createFill()],
 			isSnapshot: true,
 			user: mocks.address as `0x${string}`,
 		};
-		mocks.subscription.status = "active";
+		mocks.subscription.error = error;
+		mocks.subscription.status = "error";
 
 		const result = renderHook();
 
+		expect(result.status).toBe("ready");
+		expect(result.error).toBe(error);
+		expect(result.fills).toHaveLength(1);
+		expect(result.isStale).toBe(true);
+	});
+
+	it("keeps a retained snapshot stale until a reconnect delivers fresh data", () => {
+		mocks.subscription.data = {
+			fills: [createFill()],
+			isSnapshot: true,
+			user: mocks.address as `0x${string}`,
+		};
+		mocks.subscription.status = "subscribing";
+		mocks.subscription.isStale = true;
+
+		let result = renderHook();
+		expect(result.status).toBe("ready");
+		expect(result.isStale).toBe(true);
+
+		mocks.subscription.status = "active";
+		result = renderHook();
+		expect(result.isStale).toBe(true);
+
+		mocks.subscription.isStale = false;
+		result = renderHook();
+		expect(result.isStale).toBe(false);
+	});
+
+	it("distinguishes offline, initial subscription failure, and disconnected states", () => {
+		mocks.isOnline = false;
+		let result = renderHook();
+		expect(result.status).toBe("offline");
+		expect(result.isOffline).toBe(true);
+
+		mocks.isOnline = true;
+		mocks.subscription.status = "error";
+		mocks.subscription.error = new Error("WebSocket unavailable");
+		result = renderHook();
 		expect(result.status).toBe("error");
-		expect(result.error).toBe(queryError);
+
+		mocks.address = undefined;
+		mocks.isConnected = false;
+		result = renderHook();
+		expect(result.status).toBe("idle");
+		expect(result.isConnected).toBe(false);
+		expect(mocks.useSubscription).toHaveBeenLastCalledWith(
+			"userFills",
+			{ aggregateByTime: true, user: "0x0000000000000000000000000000000000000000" },
+			{ enabled: false },
+		);
 	});
 });

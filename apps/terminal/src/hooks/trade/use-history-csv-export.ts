@@ -1,10 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import type {
-	HistoricalOrdersResponse,
-	TwapHistoryResponse,
-	UserFillsResponse,
-	UserFundingResponse,
-} from "@nktkas/hyperliquid";
+import type { HistoricalOrdersResponse, UserFillsResponse, UserFundingResponse } from "@nktkas/hyperliquid";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -16,7 +11,7 @@ import {
 	fetchTimeRangeHistory,
 	MalformedHistoryPageError,
 } from "@/lib/trade/history-pagination";
-import { buildOrderHistoryEntries, isValidTwapHistoryItem, type OrderHistoryEntry } from "@/lib/trade/order-history";
+import { buildOrderHistoryEntries, type OrderHistoryEntry } from "@/lib/trade/order-history";
 import { filterNonTwapUserFills, getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
 import {
 	getUserFundingKey,
@@ -26,7 +21,8 @@ import {
 } from "@/lib/trade/user-funding";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
-const USER_FILLS_API_LIMIT = 10_000;
+const USER_FILLS_API_PAGE_LIMIT = 2_000;
+const USER_FILLS_EXPORT_LIMIT = 10_000;
 const USER_FUNDING_API_PAGE_LIMIT = 500;
 const HISTORICAL_ORDERS_API_LIMIT = 2_000;
 
@@ -41,6 +37,10 @@ interface CsvExportResult {
 }
 
 interface FundingCsvExportOptions extends CsvExportOptions<UserFunding> {
+	address?: `0x${string}`;
+}
+
+interface AccountCsvExportOptions<T> extends CsvExportOptions<T> {
 	address?: `0x${string}`;
 }
 
@@ -148,9 +148,9 @@ export function useFundingHistoryCsvExport(options: FundingCsvExportOptions): Cs
 	return { exportCsv, isExporting };
 }
 
-export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsResponse[number]>): CsvExportResult {
+export function useUserFillsCsvExport(options: AccountCsvExportOptions<UserFillsResponse[number]>): CsvExportResult {
 	const { t } = useLingui();
-	const { isExporting, run } = useHistoryExportRunner();
+	const { isExporting, run } = useHistoryExportRunner(options.address);
 
 	async function exportCsv() {
 		const toastId = toast.loading(t`Exporting trade history...`);
@@ -171,7 +171,8 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 						),
 					getKey: getUserFillKey,
 					getTime: (fill) => fill.time,
-					maxItems: USER_FILLS_API_LIMIT,
+					maxItems: USER_FILLS_EXPORT_LIMIT,
+					pageLimit: USER_FILLS_API_PAGE_LIMIT,
 					signal,
 					validateItem: isValidUserFillHistoryItem,
 				});
@@ -201,32 +202,29 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 	return { exportCsv, isExporting };
 }
 
-export function useHistoricalOrdersCsvExport(options: CsvExportOptions<OrderHistoryEntry>): CsvExportResult {
+export function useHistoricalOrdersCsvExport(options: AccountCsvExportOptions<OrderHistoryEntry>): CsvExportResult {
 	const { t } = useLingui();
-	const { isExporting, run } = useHistoryExportRunner();
+	const { isExporting, run } = useHistoryExportRunner(options.address);
 
 	async function exportCsv() {
 		const toastId = toast.loading(t`Exporting order history...`);
 		try {
 			const result = await run<HistoryLoadResult<OrderHistoryEntry>>(async (address, signal) => {
 				const client = getInfoClient();
-				const [orders, twaps] = await Promise.all([
-					fetchHistoryPageWithRetry((requestSignal) => client.historicalOrders({ user: address }, requestSignal), {
-						signal,
-					}),
-					fetchHistoryPageWithRetry((requestSignal) => client.twapHistory({ user: address }, requestSignal), {
-						signal,
-					}),
-				]);
-				if (!Array.isArray(orders) || orders.some((entry) => !isValidHistoricalOrderHistoryItem(entry))) {
-					throw new MalformedHistoryPageError();
-				}
-				if (!Array.isArray(twaps) || twaps.some((entry) => !isValidTwapHistoryItem(entry))) {
+				const orders = await fetchHistoryPageWithRetry(
+					(requestSignal) => client.historicalOrders({ user: address }, requestSignal),
+					{ signal },
+				);
+				if (
+					!Array.isArray(orders) ||
+					orders.length > HISTORICAL_ORDERS_API_LIMIT ||
+					orders.some((entry) => !isValidHistoricalOrderHistoryItem(entry))
+				) {
 					throw new MalformedHistoryPageError();
 				}
 				return {
-					items: buildOrderHistoryEntries(orders as HistoricalOrdersResponse, twaps as TwapHistoryResponse),
-					truncated: orders.length >= HISTORICAL_ORDERS_API_LIMIT || twaps.length >= HISTORICAL_ORDERS_API_LIMIT,
+					items: buildOrderHistoryEntries(orders as HistoricalOrdersResponse, []),
+					truncated: orders.length >= HISTORICAL_ORDERS_API_LIMIT,
 				};
 			});
 			if (!result) {

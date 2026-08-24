@@ -97,16 +97,18 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 			compare: (a, b) => b.time - a.time,
 		},
 	}),
-	userFills: defineAccumulator<{ fills: unknown[]; isSnapshot?: boolean }, { tid: number; time: number }>({
-		getItems: (event) => event.fills as { tid: number; time: number }[],
-		withItems: (event, items) => ({ ...event, fills: items }),
-		isSnapshot: (event) => event.isSnapshot === true,
-		buffer: {
-			maxSize: 200,
-			getKey: (f) => String(f.tid),
-			compare: (a, b) => b.time - a.time,
+	userFills: defineAccumulator<{ fills: unknown[]; isSnapshot?: boolean }, { coin: string; tid: number; time: number }>(
+		{
+			getItems: (event) => event.fills as { coin: string; tid: number; time: number }[],
+			withItems: (event, items) => ({ ...event, fills: items }),
+			isSnapshot: (event) => event.isSnapshot === true,
+			buffer: {
+				maxSize: 200,
+				getKey: (f) => `${f.time}:${f.coin}:${f.tid}`,
+				compare: (a, b) => b.time - a.time,
+			},
 		},
-	}),
+	),
 	userFundings: defineAccumulator<{ fundings: unknown[]; isSnapshot?: boolean }, { time: number; coin: string }>({
 		getItems: (event) => event.fundings as { time: number; coin: string }[],
 		withItems: (event, items) => ({ ...event, fundings: items }),

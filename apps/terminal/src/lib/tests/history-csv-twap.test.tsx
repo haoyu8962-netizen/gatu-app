@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { HistoricalOrdersResponse, TwapHistoryResponse, UserFillsResponse } from "@nktkas/hyperliquid";
+import type { HistoricalOrdersResponse, UserFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +10,6 @@ import { createI18nRoot } from "./harness/react";
 const mocks = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
 	historicalOrders: vi.fn(),
-	twapHistory: vi.fn(),
 	userFillsByTime: vi.fn(),
 	userTwapSliceFillsByTime: vi.fn(),
 }));
@@ -29,7 +28,6 @@ vi.mock("@/lib/csv", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	getInfoClient: () => ({
 		historicalOrders: mocks.historicalOrders,
-		twapHistory: mocks.twapHistory,
 		userFillsByTime: mocks.userFillsByTime,
 		userTwapSliceFillsByTime: mocks.userTwapSliceFillsByTime,
 	}),
@@ -97,33 +95,14 @@ function createOrder(): HistoricalOrdersResponse[number] {
 	};
 }
 
-function createTwap(): TwapHistoryResponse[number] {
-	return {
-		state: {
-			coin: "ETH",
-			executedNtl: "350",
-			executedSz: "0.1",
-			minutes: 10,
-			randomize: false,
-			reduceOnly: false,
-			side: "B",
-			stopPx: null,
-			sz: "0.2",
-			timestamp: 1500,
-			trigger: null,
-			user: "0x1111111111111111111111111111111111111111",
-		},
-		status: { status: "finished" },
-		time: 2500,
-		twapId: 7,
-	};
-}
-
-describe("TWAP history CSV exports", () => {
+describe("account history CSV exports", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.historicalOrders.mockReset();
+		mocks.userFillsByTime.mockReset();
+		mocks.userTwapSliceFillsByTime.mockReset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -139,7 +118,7 @@ describe("TWAP history CSV exports", () => {
 		const ordinaryFill = createFill();
 		const zeroIdTwapFill = createFill({ oid: 43, tid: 101, time: 2000, twapId: 0 });
 		const twapFill = createFill({ oid: 44, tid: 102, time: 3000, twapId: 7 });
-		mocks.userFillsByTime.mockResolvedValueOnce([ordinaryFill, zeroIdTwapFill, twapFill]).mockResolvedValueOnce([]);
+		mocks.userFillsByTime.mockResolvedValueOnce([ordinaryFill, zeroIdTwapFill, twapFill]);
 		let hookValue: ReturnType<typeof useUserFillsCsvExport> | null = null;
 		function Probe() {
 			hookValue = useUserFillsCsvExport({
@@ -158,9 +137,8 @@ describe("TWAP history CSV exports", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledWith("fills.csv", [["BTC", "null"]]);
 	});
 
-	it("exports ordinary orders and TWAP parent lifecycle records", async () => {
+	it("keeps ordinary order export separate from TWAP lifecycle history", async () => {
 		mocks.historicalOrders.mockResolvedValue([createOrder()]);
-		mocks.twapHistory.mockResolvedValue([createTwap()]);
 		let hookValue: ReturnType<typeof useHistoricalOrdersCsvExport> | null = null;
 		function Probe() {
 			hookValue = useHistoricalOrdersCsvExport({
@@ -175,10 +153,44 @@ describe("TWAP history CSV exports", () => {
 		await act(async () => hookValue?.exportCsv());
 
 		expect(mocks.historicalOrders).toHaveBeenCalled();
-		expect(mocks.twapHistory).toHaveBeenCalled();
-		expect(mocks.downloadCsv).toHaveBeenCalledWith("orders.csv", [
-			["twap", "ETH"],
-			["order", "BTC"],
-		]);
+		expect(mocks.downloadCsv).toHaveBeenCalledWith("orders.csv", [["order", "BTC"]]);
+	});
+
+	it("fails closed when a fills export page exceeds the 2000-item API boundary", async () => {
+		mocks.userFillsByTime.mockResolvedValueOnce(
+			Array.from({ length: 2_001 }, (_, index) => createFill({ oid: index + 1, tid: index + 1, time: index + 1 })),
+		);
+		let hookValue: ReturnType<typeof useUserFillsCsvExport> | null = null;
+		function Probe() {
+			hookValue = useUserFillsCsvExport({
+				filename: "fills.csv",
+				buildRows: (fills) => fills.map((fill) => [fill.coin]),
+			});
+			return null;
+		}
+		act(() => root.render(<Probe />));
+		if (!hookValue) throw new Error("Missing fills export hook");
+
+		await act(async () => hookValue?.exportCsv());
+
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the order export response exceeds the 2000-item API boundary", async () => {
+		mocks.historicalOrders.mockResolvedValueOnce(Array.from({ length: 2_001 }, () => createOrder()));
+		let hookValue: ReturnType<typeof useHistoricalOrdersCsvExport> | null = null;
+		function Probe() {
+			hookValue = useHistoricalOrdersCsvExport({
+				filename: "orders.csv",
+				buildRows: (entries) => entries.map((entry) => [entry.kind]),
+			});
+			return null;
+		}
+		act(() => root.render(<Probe />));
+		if (!hookValue) throw new Error("Missing order export hook");
+
+		await act(async () => hookValue?.exportCsv());
+
+		expect(mocks.downloadCsv).not.toHaveBeenCalled();
 	});
 });

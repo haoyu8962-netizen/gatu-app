@@ -35,10 +35,12 @@ import { Route as ApiLeaderboardRouteImport } from './routes/api.leaderboard'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
 import { Route as FundingHistoryAddressRouteImport } from './routes/fundingHistory.$address'
+import { Route as HistoricalOrdersAddressRouteImport } from './routes/historicalOrders.$address'
 import { Route as JoinSplatRouteImport } from './routes/join.$'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as TradeIndexRouteImport } from './routes/trade.index'
 import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
+import { Route as TradeHistoryAddressRouteImport } from './routes/tradeHistory.$address'
 import { Route as VaultsIndexRouteImport } from './routes/vaults.index'
 import { Route as VaultsVaultAddressRouteImport } from './routes/vaults.$vaultAddress'
 import { Route as TradeBaseQuoteRouteImport } from './routes/trade.$base.$quote'
@@ -173,6 +175,11 @@ const FundingHistoryAddressRoute = FundingHistoryAddressRouteImport.update({
   path: '/fundingHistory/$address',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoricalOrdersAddressRoute = HistoricalOrdersAddressRouteImport.update({
+  id: '/historicalOrders/$address',
+  path: '/historicalOrders/$address',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinSplatRoute = JoinSplatRouteImport.update({
   id: '/join/$',
   path: '/join/$',
@@ -192,6 +199,11 @@ const TradeSymbolRoute = TradeSymbolRouteImport.update({
   id: '/$symbol',
   path: '/$symbol',
   getParentRoute: () => TradeRoute,
+} as any)
+const TradeHistoryAddressRoute = TradeHistoryAddressRouteImport.update({
+  id: '/tradeHistory/$address',
+  path: '/tradeHistory/$address',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const VaultsIndexRoute = VaultsIndexRouteImport.update({
   id: '/',
@@ -235,9 +247,11 @@ export interface FileRoutesByFullPath {
   '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
+  '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/tradeHistory/$address': typeof TradeHistoryAddressRoute
   '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
@@ -267,9 +281,11 @@ export interface FileRoutesByTo {
   '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
+  '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/tradeHistory/$address': typeof TradeHistoryAddressRoute
   '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp': typeof BuildersPerpIndexRoute
   '/trade': typeof TradeIndexRoute
@@ -303,9 +319,11 @@ export interface FileRoutesById {
   '/api/leaderboard': typeof ApiLeaderboardRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/fundingHistory/$address': typeof FundingHistoryAddressRoute
+  '/historicalOrders/$address': typeof HistoricalOrdersAddressRoute
   '/join/$': typeof JoinSplatRoute
   '/join/$code': typeof JoinCodeRoute
   '/trade/$symbol': typeof TradeSymbolRoute
+  '/tradeHistory/$address': typeof TradeHistoryAddressRoute
   '/vaults/$vaultAddress': typeof VaultsVaultAddressRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
   '/trade/': typeof TradeIndexRoute
@@ -340,9 +358,11 @@ export interface FileRouteTypes {
     | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
+    | '/historicalOrders/$address'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/tradeHistory/$address'
     | '/vaults/$vaultAddress'
     | '/builders-perp/'
     | '/trade/'
@@ -372,9 +392,11 @@ export interface FileRouteTypes {
     | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
+    | '/historicalOrders/$address'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/tradeHistory/$address'
     | '/vaults/$vaultAddress'
     | '/builders-perp'
     | '/trade'
@@ -407,9 +429,11 @@ export interface FileRouteTypes {
     | '/api/leaderboard'
     | '/builders-perp/$dex'
     | '/fundingHistory/$address'
+    | '/historicalOrders/$address'
     | '/join/$'
     | '/join/$code'
     | '/trade/$symbol'
+    | '/tradeHistory/$address'
     | '/vaults/$vaultAddress'
     | '/builders-perp/'
     | '/trade/'
@@ -442,8 +466,10 @@ export interface RootRouteChildren {
   VaultsRoute: typeof VaultsRouteWithChildren
   ApiLeaderboardRoute: typeof ApiLeaderboardRoute
   FundingHistoryAddressRoute: typeof FundingHistoryAddressRoute
+  HistoricalOrdersAddressRoute: typeof HistoricalOrdersAddressRoute
   JoinSplatRoute: typeof JoinSplatRoute
   JoinCodeRoute: typeof JoinCodeRoute
+  TradeHistoryAddressRoute: typeof TradeHistoryAddressRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -630,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FundingHistoryAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/historicalOrders/$address': {
+      id: '/historicalOrders/$address'
+      path: '/historicalOrders/$address'
+      fullPath: '/historicalOrders/$address'
+      preLoaderRoute: typeof HistoricalOrdersAddressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$': {
       id: '/join/$'
       path: '/join/$'
@@ -657,6 +690,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trade/$symbol'
       preLoaderRoute: typeof TradeSymbolRouteImport
       parentRoute: typeof TradeRoute
+    }
+    '/tradeHistory/$address': {
+      id: '/tradeHistory/$address'
+      path: '/tradeHistory/$address'
+      fullPath: '/tradeHistory/$address'
+      preLoaderRoute: typeof TradeHistoryAddressRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/vaults/': {
       id: '/vaults/'
@@ -748,8 +788,10 @@ const rootRouteChildren: RootRouteChildren = {
   VaultsRoute: VaultsRouteWithChildren,
   ApiLeaderboardRoute: ApiLeaderboardRoute,
   FundingHistoryAddressRoute: FundingHistoryAddressRoute,
+  HistoricalOrdersAddressRoute: HistoricalOrdersAddressRoute,
   JoinSplatRoute: JoinSplatRoute,
   JoinCodeRoute: JoinCodeRoute,
+  TradeHistoryAddressRoute: TradeHistoryAddressRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

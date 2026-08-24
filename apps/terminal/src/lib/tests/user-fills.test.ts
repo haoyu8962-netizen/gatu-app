@@ -67,6 +67,29 @@ describe("mergeUserFillSources", () => {
 		expect(isValidUserFillHistoryItem({ ...createFill(), twapId: undefined })).toBe(false);
 	});
 
+	it("validates optional liquidation details before they drive display state", () => {
+		expect(
+			isValidUserFillHistoryItem(
+				createFill({
+					liquidation: {
+						liquidatedUser: "0x1111111111111111111111111111111111111111",
+						markPx: "62000.5",
+						method: "backstop",
+					},
+				}),
+			),
+		).toBe(true);
+
+		for (const liquidation of [
+			"liquidated",
+			{ markPx: "invalid", method: "market" },
+			{ markPx: "62000", method: "unknown" },
+			{ liquidatedUser: "0x1234", markPx: "62000", method: "market" },
+		]) {
+			expect(isValidUserFillHistoryItem({ ...createFill(), liquidation })).toBe(false);
+		}
+	});
+
 	it("normalizes TWAP slice fills without losing their parent ID", () => {
 		const entry: UserTwapSliceFillsResponse[number] = { fill: createFill(), twapId: 7 };
 

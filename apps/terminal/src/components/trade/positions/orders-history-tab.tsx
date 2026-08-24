@@ -1,16 +1,19 @@
 import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
 import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
+import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import {
@@ -32,6 +35,8 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
+type OrderHistoryType = OrderHistoryEntry["type"];
+type OrderHistoryTypeFilter = "all" | OrderHistoryType;
 type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
 const orderHistoryTableHeadClass =
@@ -41,6 +46,8 @@ const orderHistoryAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
 const orderHistoryToolbarButtonClass =
 	"h-[27px] min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
+const orderHistoryFooterButtonClass =
+	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 function isOrderHistoryStatusFilter(value: string | null): value is OrderHistoryStatusFilter {
 	return (
@@ -54,6 +61,13 @@ function isOrderHistoryStatusFilter(value: string | null): value is OrderHistory
 	);
 }
 
+function isOrderHistoryType(
+	value: string | null,
+	availableTypes: ReadonlySet<OrderHistoryType>,
+): value is OrderHistoryType {
+	return value !== null && availableTypes.has(value as OrderHistoryType);
+}
+
 function getOrderHistoryStatusBadgeClass(status: OrderHistoryStatusCategory): string {
 	return status === "filled" || status === "triggered"
 		? "bg-success-soft text-market-close-success"
@@ -64,31 +78,48 @@ interface Props {
 	toolbarTarget?: HTMLElement | null;
 }
 
-export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
+export function OrdersHistoryTab(props: Props = {}) {
+	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
+	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
+
+	return <OrdersHistoryTabContent key={`${env}:${ownerKey}`} address={address} {...props} />;
+}
+
+interface OrdersHistoryTabContentProps extends Props {
+	address?: `0x${string}`;
+}
+
+function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
 		useOrderDisplayLabels();
-	const { entries, error, isConnected, status } = useHistoricalOrders();
+	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const malformedHistory = isMalformedHistoryPageError(error);
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
-	const [typeFilter, setTypeFilter] = useState("all");
+	const [typeFilter, setTypeFilter] = useState<OrderHistoryTypeFilter>("all");
 	const [statusFilter, setStatusFilter] = useState<OrderHistoryStatusFilter>("all");
 
-	const filteredEntries = entries.filter(
-		(entry) =>
-			(typeFilter === "all" || entry.type === typeFilter) &&
-			(statusFilter === "all" || getOrderHistoryStatusCategory(entry) === statusFilter),
-	);
+	const filteredEntries = entries
+		.filter(
+			(entry) =>
+				(typeFilter === "all" || entry.type === typeFilter) &&
+				(statusFilter === "all" || getOrderHistoryStatusCategory(entry) === statusFilter),
+		)
+		.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
+	const availableTypeFilters = new Set(entries.map((entry) => entry.type));
+	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
 	const typeOptions = [
 		{ value: "all", label: t`All types` },
-		...Array.from(new Set(entries.map((entry) => entry.type))).map((value) => ({
+		...Array.from(availableTypeFilters).map((value) => ({
 			value,
 			label: value === "twap" ? t`TWAP` : getOrderTypeLabel(value),
 		})),
 	];
 	const availableStatusFilters = new Set(entries.map(getOrderHistoryStatusCategory));
+	if (statusFilter !== "all") availableStatusFilters.add(statusFilter);
 	const statusOptions = [
 		{ value: "all", label: t`All statuses` },
 		...(["open", "filled", "triggered", "canceled", "rejected", "other"] as const)
@@ -170,6 +201,9 @@ export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view order history.`}</Placeholder>;
+		if (status === "offline") {
+			return <Placeholder>{t`You are offline. Order history will load when the connection returns.`}</Placeholder>;
+		}
 		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading order history...`}</Placeholder>;
 		if (status === "error") {
 			return (
@@ -201,7 +235,9 @@ export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 						size="xxs"
 						label={t`Order type`}
 						value={typeFilter}
-						onValueChange={(value) => setTypeFilter(value ?? "all")}
+						onValueChange={(value) => {
+							if (value === "all" || isOrderHistoryType(value, availableTypeFilters)) setTypeFilter(value);
+						}}
 						options={typeOptions}
 						className="min-w-[7rem] [&>label]:sr-only"
 						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-control"
@@ -234,6 +270,14 @@ export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 					) : null}
 				</div>
 			</DesktopTabToolbarPortal>
+			{status === "ready" && (error || isOffline || isStale) ? (
+				<output
+					aria-live="polite"
+					className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-5 text-xs text-market-close-danger"
+				>
+					{isOffline ? t`You are offline.` : t`Order history updates paused.`}
+				</output>
+			) : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -370,6 +414,20 @@ export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected && address ? (
+				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="order-history-footer">
+					<Button
+						nativeButton={false}
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						className={orderHistoryFooterButtonClass}
+						render={<Link to="/historicalOrders/$address" params={{ address }} />}
+					>
+						{t`View all`}
+					</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

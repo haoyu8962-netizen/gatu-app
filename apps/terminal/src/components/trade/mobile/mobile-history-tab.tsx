@@ -2,9 +2,11 @@ import { Select } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -65,14 +67,16 @@ export function MobileHistoryTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
 
-	return <MobileHistoryTabContent key={ownerKey} ownerKey={ownerKey} {...props} />;
+	return <MobileHistoryTabContent key={ownerKey} address={address} ownerKey={ownerKey} {...props} />;
 }
 
 interface MobileHistoryTabContentProps extends Props {
+	address?: `0x${string}`;
 	ownerKey: string;
 }
 
 function MobileHistoryTabContent({
+	address,
 	className,
 	disclosureState,
 	ownerKey,
@@ -80,7 +84,7 @@ function MobileHistoryTabContent({
 }: MobileHistoryTabContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { error, fills, isConnected, status } = useUserFills();
+	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -90,12 +94,14 @@ function MobileHistoryTabContent({
 	const [directionFilter, setDirectionFilter] = useState<TradeHistoryDirectionFilter>("all");
 	const [roleFilter, setRoleFilter] = useState<TradeHistoryRoleFilter>("all");
 
-	const filteredFills = fills.filter(
-		(fill) =>
-			(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
-			(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
-			(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
-	);
+	const filteredFills = fills
+		.filter(
+			(fill) =>
+				(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
+				(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
+				(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
+		)
+		.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 	const filteredFillKeys = filteredFills.map(getUserFillKey);
 	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
 		`${isTestnet ? "Testnet" : "Mainnet"}:${ownerKey}`,
@@ -184,16 +190,44 @@ function MobileHistoryTabContent({
 	});
 	const exportFooter = (
 		<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-trade-history-footer">
+			{address ? (
+				<Link to="/tradeHistory/$address" params={{ address }} className={footerActionClassName}>
+					{t`View all`}
+				</Link>
+			) : null}
 			<button type="button" disabled={isExporting} onClick={() => void exportCsv()} className={footerActionClassName}>
 				{t`Export CSV`}
 			</button>
 		</div>
 	);
+	const degradedNotice =
+		status === "ready" && (error || isOffline || isStale) ? (
+			<output
+				aria-live="polite"
+				className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-3.5 text-xs text-market-close-danger"
+			>
+				{isOffline ? t`You are offline.` : t`Trade history updates paused.`}
+			</output>
+		) : null;
 
 	if (!isConnected) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 				{t`Connect your wallet to view trade history.`}
+			</div>
+		);
+	}
+
+	if (status === "offline") {
+		return (
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<output
+					aria-live="polite"
+					className="flex flex-1 items-center justify-center p-6 text-center text-sm text-market-close-muted"
+				>
+					{t`You are offline. Trade history will load when the connection returns.`}
+				</output>
+				{exportFooter}
 			</div>
 		);
 	}
@@ -219,6 +253,7 @@ function MobileHistoryTabContent({
 	if (status === "ready" && fills.length === 0) {
 		return (
 			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				{degradedNotice}
 				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 					{t`No fills found.`}
 				</div>
@@ -230,6 +265,7 @@ function MobileHistoryTabContent({
 	return (
 		<Skeleton name="history-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				{degradedNotice}
 				<div
 					data-testid="mobile-trade-history-filter-row"
 					className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

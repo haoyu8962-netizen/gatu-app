@@ -7,6 +7,7 @@ export const SL_QUICK_PERCENT_OPTIONS = [5, 10, 25, 50] as const;
 
 export const SMALL_BALANCE_THRESHOLD_USD = 1;
 export const MAX_HISTORY_ROWS = 200;
+export const RECENT_ACCOUNT_HISTORY_ROWS = 30;
 export const FUNDING_SKELETON_DELAY_MS = 250;
 export const RECENT_FUNDING_ROWS = 30;
 export const TWAP_HISTORY_PAGE_SIZE = 200;

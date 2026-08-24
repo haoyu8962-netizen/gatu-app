@@ -1,12 +1,15 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { RECENT_ACCOUNT_HISTORY_ROWS } from "@/config/trade";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
@@ -36,11 +39,13 @@ const historyFooterButtonClass =
 
 export function HistoryTab() {
 	useNumberFormatRevision();
-	const { error, fills, isConnected, status } = useUserFills();
+	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
+	const { address } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
 	const malformedHistory = isMalformedHistoryPageError(error);
+	const visibleFills = fills.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 
 	function getDirectionLabel(direction: string) {
 		if (direction === "Open Long") return t`Open Long`;
@@ -77,6 +82,9 @@ export function HistoryTab() {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
+		if (status === "offline") {
+			return <Placeholder>{t`You are offline. Trade history will load when the connection returns.`}</Placeholder>;
+		}
 		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
 		if (status === "error") {
 			return (
@@ -100,6 +108,14 @@ export function HistoryTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
+			{status === "ready" && (error || isOffline || isStale) ? (
+				<output
+					aria-live="polite"
+					className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-5 text-xs text-market-close-danger"
+				>
+					{isOffline ? t`You are offline.` : t`Trade history updates paused.`}
+				</output>
+			) : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -143,7 +159,7 @@ export function HistoryTab() {
 								</TableRow>
 							</TableHeader>
 							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
-								{fills.map((fill) => {
+								{visibleFills.map((fill) => {
 									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
 									const directionLabel = getDirectionLabel(fill.dir);
 									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
@@ -263,8 +279,18 @@ export function HistoryTab() {
 					</ScrollArea>
 				)}
 			</div>
-			{isConnected ? (
+			{isConnected && address ? (
 				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="trade-history-footer">
+					<Button
+						nativeButton={false}
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						className={historyFooterButtonClass}
+						render={<Link to="/tradeHistory/$address" params={{ address }} />}
+					>
+						{t`View all`}
+					</Button>
 					<Button
 						variant="ghost"
 						intent="neutral"

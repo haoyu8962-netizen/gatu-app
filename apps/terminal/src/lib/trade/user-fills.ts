@@ -1,6 +1,11 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
 
+const UNSIGNED_DECIMAL_PATTERN = /^\d+(?:\.\d+)?$/;
+const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
+const TRANSACTION_HASH_PATTERN = /^0x[a-fA-F0-9]{64}$/;
+const ACCOUNT_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
+
 export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResponse[number] {
 	if (!isRecord(item)) return false;
 	return (
@@ -16,8 +21,37 @@ export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResp
 		typeof item.coin === "string" &&
 		item.coin.length > 0 &&
 		typeof item.hash === "string" &&
-		item.hash.length > 0 &&
+		TRANSACTION_HASH_PATTERN.test(item.hash) &&
+		typeof item.px === "string" &&
+		UNSIGNED_DECIMAL_PATTERN.test(item.px) &&
+		typeof item.sz === "string" &&
+		UNSIGNED_DECIMAL_PATTERN.test(item.sz) &&
+		typeof item.startPosition === "string" &&
+		SIGNED_DECIMAL_PATTERN.test(item.startPosition) &&
+		typeof item.closedPnl === "string" &&
+		SIGNED_DECIMAL_PATTERN.test(item.closedPnl) &&
+		typeof item.fee === "string" &&
+		SIGNED_DECIMAL_PATTERN.test(item.fee) &&
+		typeof item.feeToken === "string" &&
+		item.feeToken.length > 0 &&
+		typeof item.dir === "string" &&
+		item.dir.length > 0 &&
+		typeof item.crossed === "boolean" &&
+		(item.side === "A" || item.side === "B") &&
+		isValidUserFillLiquidation(item.liquidation) &&
 		(item.twapId === null || (typeof item.twapId === "number" && Number.isSafeInteger(item.twapId) && item.twapId >= 0))
+	);
+}
+
+function isValidUserFillLiquidation(value: unknown): boolean {
+	if (value === undefined) return true;
+	if (!isRecord(value)) return false;
+	return (
+		typeof value.markPx === "string" &&
+		UNSIGNED_DECIMAL_PATTERN.test(value.markPx) &&
+		(value.method === "market" || value.method === "backstop") &&
+		(value.liquidatedUser === undefined ||
+			(typeof value.liquidatedUser === "string" && ACCOUNT_ADDRESS_PATTERN.test(value.liquidatedUser)))
 	);
 }
 
@@ -26,7 +60,7 @@ export function filterNonTwapUserFills(fills: UserFillsResponse): UserFillsRespo
 }
 
 export function getUserFillKey(fill: UserFillsResponse[number]): string {
-	return `${fill.tid}:${fill.oid}:${fill.time}`;
+	return `${fill.time}:${fill.coin}:${fill.tid}`;
 }
 
 export function isValidUserTwapSliceFillHistoryItem(item: unknown): item is UserTwapSliceFillsResponse[number] {

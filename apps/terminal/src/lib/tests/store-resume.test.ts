@@ -198,6 +198,8 @@ describe("store-driven resume via singletons", () => {
 		"openOrders",
 		"spotState",
 		"twapStates",
+		"userFills",
+		"userHistoricalOrders",
 		"webData3",
 	])("marks retained %s snapshots stale as soon as the transport disconnects", async (method) => {
 		let notifyDisconnect: (() => void) | undefined;

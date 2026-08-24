@@ -237,12 +237,26 @@ describe("desktop history exports", () => {
 		expect(directionBadge?.className).toContain("bg-market-close-hover");
 		expect(container.querySelector("tbody td")?.className).toContain("h-[43px]");
 		expect(footer?.className).toContain("h-[38px]");
+		expect(footer?.querySelector('a[href="/tradeHistory/0x1111111111111111111111111111111111111111"]')).not.toBeNull();
 		expect(footer?.querySelector("svg")).toBeNull();
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"trade_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
 		);
+	});
+
+	it("defensively caps the desktop trade table at 30 recent rows", () => {
+		const fill = mocks.fills[0];
+		mocks.fills = Array.from({ length: 35 }, (_, index) => ({
+			...fill,
+			tid: index + 1,
+			time: Number(fill?.time) + index,
+		}));
+
+		act(() => root.render(<HistoryTab />));
+
+		expect(container.querySelectorAll("tbody tr")).toHaveLength(30);
 	});
 
 	it("labels ordinary fills as trades", () => {

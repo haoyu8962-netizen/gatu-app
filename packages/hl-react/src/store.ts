@@ -121,6 +121,8 @@ const FRESH_SNAPSHOT_METHODS = new Set([
 	"openOrders",
 	"spotState",
 	"twapStates",
+	"userFills",
+	"userHistoricalOrders",
 	"webData3",
 ]);
 

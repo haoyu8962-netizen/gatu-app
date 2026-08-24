@@ -70,6 +70,8 @@ export function useOrderDisplayLabels() {
 				return t`Vault Close`;
 			case "Spot Dust Conversion":
 				return t`Spot Dust Conversion`;
+			default:
+				return FALLBACK_VALUE_PLACEHOLDER;
 		}
 	}
 
