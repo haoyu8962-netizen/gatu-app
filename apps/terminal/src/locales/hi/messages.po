@@ -40,6 +40,12 @@ msgstr "{0} Hyperliquid के मूल परपेचुअल मार्�
 #~ msgid "{0} more wallets"
 #~ msgstr ""
 
+#. placeholder {0}: pagination.currentPage
+#. placeholder {1}: pagination.totalPages
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -80,6 +86,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
+msgstr ""
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} history"
@@ -607,9 +617,17 @@ msgstr "वर्तमान में उपलब्ध सभी रेफ�
 msgid "All Directions"
 msgstr "सभी दिशाएं"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All markets"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "सभी भूमिकाएं"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All sides"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -874,6 +892,8 @@ msgstr ""
 msgid "Ask"
 msgstr "बिक्री"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1037,6 +1057,10 @@ msgstr "फिर ऑनलाइन"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Back to asset selection"
 #~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Back to trade"
+msgstr ""
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
@@ -1398,6 +1422,10 @@ msgstr "जांच हो रही है..."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Choose another market or side."
 msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3003,6 +3031,10 @@ msgstr "अधिकतम 6 दशमलव स्थानों वाली 
 msgid "Enter a positive target leverage."
 msgstr "धनात्मक लक्ष्य लीवरेज दर्ज करें।"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Enter a valid 0x account address to view funding payments."
+msgstr ""
+
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
 msgstr ""
@@ -3288,6 +3320,7 @@ msgstr ""
 msgid "Explorer"
 msgstr "एक्सप्लोरर"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3305,8 +3338,12 @@ msgid "Exporting deposits and withdrawals..."
 msgstr "जमा और निकासी निर्यात हो रही है..."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Exporting funding history..."
-msgstr "फंडिंग इतिहास निर्यात हो रहा है..."
+#~ msgid "Exporting funding history..."
+#~ msgstr "फंडिंग इतिहास निर्यात हो रहा है..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding payments..."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3365,8 +3402,12 @@ msgid "Failed to export deposits and withdrawals."
 msgstr "जमा और निकासी निर्यात नहीं हो सके।"
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Failed to export funding history."
-msgstr "फंडिंग इतिहास निर्यात करने में विफल।"
+#~ msgid "Failed to export funding history."
+#~ msgstr "फंडिंग इतिहास निर्यात करने में विफल।"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding payments."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3404,8 +3445,13 @@ msgstr "जमा और निकासी लोड नहीं हो सक
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding history."
-msgstr "फंडिंग इतिहास लोड करने में विफल।"
+#~ msgid "Failed to load funding history."
+#~ msgstr "फंडिंग इतिहास लोड करने में विफल।"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Failed to load funding payments."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3592,6 +3638,14 @@ msgstr "पूर्ण"
 msgid "Filter by {label}"
 msgstr "{label} के अनुसार फ़िल्टर करें"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by market"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by side"
+msgstr ""
+
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
 #~ msgstr "दिशा के अनुसार पोज़िशन फ़िल्टर करें"
@@ -3700,18 +3754,53 @@ msgstr "फंडिंग"
 msgid "Funding chain"
 msgstr "जमा चेन"
 
-#: src/config/trade.ts
-msgid "Funding History"
-msgstr "फंडिंग इतिहास"
-
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#~ msgid "Funding Payments"
-#~ msgstr "फंडिंग भुगतान"
+msgid "Funding data could not be validated. Refresh and try again."
+msgstr ""
+
+#: src/config/trade.ts
+#~ msgid "Funding History"
+#~ msgstr "फंडिंग इतिहास"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Funding history pagination"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments"
+msgstr ""
+
+#: src/config/trade.ts
+msgid "Funding Payments"
+msgstr "फंडिंग भुगतान"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments are unavailable"
+msgstr ""
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments for {0}"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments pagination"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding shown"
 msgstr "प्रदर्शित फंडिंग"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding updates paused."
+msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3869,10 +3958,8 @@ msgstr ""
 msgid "History"
 msgstr "इतिहास"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -4074,6 +4161,10 @@ msgstr "अपर्याप्त बैलेंस"
 msgid "Insufficient funds for gas"
 msgstr "गैस के लिए अपर्याप्त फंड"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Invalid account address"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -4088,6 +4179,10 @@ msgstr "गंतव्य पता अमान्य है"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Invalid funding history address"
 #~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
@@ -4434,8 +4529,17 @@ msgid "Loading deposits and withdrawals..."
 msgstr "जमा और निकासी लोड हो रही है..."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Loading funding history..."
-msgstr "फंडिंग इतिहास लोड हो रहा है..."
+#~ msgid "Loading funding history..."
+#~ msgstr "फंडिंग इतिहास लोड हो रहा है..."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Loading funding payments"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Loading funding payments."
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4566,6 +4670,7 @@ msgstr ""
 msgid "Log in with Email"
 msgstr "ईमेल से लॉग इन करें"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4753,6 +4858,7 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #~ msgid "Mark:"
 #~ msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -5196,6 +5302,14 @@ msgstr "नई पोर्टफोलियो मार्जिन सक्
 msgid "Next"
 msgstr "अगला"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Next funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Next funding payments page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr ""
@@ -5317,10 +5431,22 @@ msgstr "कोई निष्पादन नहीं मिला।"
 msgid "No fills match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाली कोई फिल नहीं है।"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found in the confirmed 30-day window."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "कोई फंडिंग भुगतान नहीं मिला।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments match the selected filters."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5356,6 +5482,10 @@ msgstr "कोई मार्केट नहीं"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "कोई बाज़ार नहीं मिला।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No matching funding payments"
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
@@ -5615,6 +5745,10 @@ msgstr ""
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
 msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
@@ -6025,6 +6159,9 @@ msgstr "पॉज़ करें"
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "पॉज़ अनुपलब्ध: Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6280,6 +6417,9 @@ msgstr "पोर्टफोलियो सारांश"
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6399,6 +6539,14 @@ msgstr "4 सेकंड तक दबाकर रखें"
 #: src/components/referrals/referred-traders.tsx
 msgid "Previous"
 msgstr "पिछला"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Previous funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Previous funding payments page"
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
@@ -6604,6 +6752,9 @@ msgstr ""
 msgid "Ranked by"
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -6649,9 +6800,7 @@ msgstr "वास्तविक PNL"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "हाल का इतिहास सुरक्षित प्रदर्शन सीमा से अधिक है। बड़ी रेंज प्राप्त करने के लिए CSV निर्यात करें।"
 
@@ -6838,9 +6987,14 @@ msgstr "रेफ़र किए गए ट्रेडरों के पे�
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "पहले $1B वॉल्यूम पर, रेफ़रर अभी ट्रेडर की छूट लागू होने के बाद उसकी फ़ीस का 10% कमाते हैं।"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Refresh"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Refresh failed. Previously loaded funding payments remain visible."
 msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -7006,6 +7160,7 @@ msgid "Resume tracking"
 msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -7241,6 +7396,8 @@ msgstr ""
 msgid "Role"
 msgstr "भूमिका"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Rows per page"
 msgstr ""
@@ -7707,6 +7864,7 @@ msgstr "PNL साझा करें"
 msgid "Share PNL for {displayName}"
 msgstr "{displayName} का PNL साझा करें"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -7800,6 +7958,7 @@ msgstr "ROE प्रतिशत दिखाएँ"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr ""
@@ -8353,7 +8512,10 @@ msgstr "स्वैप किया जा रहा है..."
 #~ msgstr "{0} पर स्विच करें"
 
 #. placeholder {0}: fill.coin
+#. placeholder {0}: funding.coin
 #. placeholder {0}: update.coin
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
@@ -8613,6 +8775,10 @@ msgstr ""
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "साइन करने से पहले खाता सक्रियण शुल्क बदल गया। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The account has no funding payments in the confirmed 30-day window."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr ""
@@ -8837,6 +9003,10 @@ msgstr "Hyperliquid द्वारा पुष्टि किए जाने
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The requested 30-day window could not be verified. No partial history is shown."
+msgstr ""
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -9251,6 +9421,8 @@ msgstr ""
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/referrals/referral-legacy-history.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -10373,6 +10545,8 @@ msgstr ""
 msgid "Verifying..."
 msgstr "सत्यापित किया जा रहा है..."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "View all"
 msgstr "सभी देखें"
@@ -10672,6 +10846,25 @@ msgstr "आप किसी प्रतिबंधित क्षेत्र
 #: src/components/referrals/referral-code-card.tsx
 msgid "You are eligible to create a referral code."
 msgstr "आप रेफ़रल कोड बनाने के लिए पात्र हैं।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline. Funding payments will load when the connection returns."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline. Previously loaded funding payments remain visible."
+msgstr ""
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

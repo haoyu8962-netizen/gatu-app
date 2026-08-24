@@ -27,6 +27,7 @@ import {
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 const USER_FILLS_API_LIMIT = 10_000;
+const USER_FUNDING_API_PAGE_LIMIT = 500;
 const HISTORICAL_ORDERS_API_LIMIT = 2_000;
 
 interface CsvExportOptions<T> {
@@ -39,6 +40,10 @@ interface CsvExportResult {
 	isExporting: boolean;
 }
 
+interface FundingCsvExportOptions extends CsvExportOptions<UserFunding> {
+	address?: `0x${string}`;
+}
+
 interface HistoryLoadResult<T> {
 	items: T[];
 	truncated: boolean;
@@ -49,10 +54,11 @@ export function isHistoryAbortError(error: unknown): boolean {
 	return error.name === "AbortError" || (error.cause !== error && isHistoryAbortError(error.cause));
 }
 
-export function useHistoryExportRunner() {
-	const { address, isConnected } = useWalletSession();
+export function useHistoryExportRunner(requestedAddress?: `0x${string}`) {
+	const { address: walletAddress, isConnected } = useWalletSession();
 	const isTestnet = useIsTestnet();
-	const identity = isConnected && address ? `${isTestnet ? "testnet" : "mainnet"}:${address.toLowerCase()}` : null;
+	const address = requestedAddress ?? (isConnected ? walletAddress : undefined);
+	const identity = address ? `${isTestnet ? "testnet" : "mainnet"}:${address.toLowerCase()}` : null;
 	const identityRef = useRef(identity);
 	const controllerRef = useRef<AbortController | null>(null);
 	const mountedRef = useRef(false);
@@ -94,12 +100,12 @@ export function useHistoryExportRunner() {
 	return { isExporting, run };
 }
 
-export function useFundingHistoryCsvExport(options: CsvExportOptions<UserFunding>): CsvExportResult {
+export function useFundingHistoryCsvExport(options: FundingCsvExportOptions): CsvExportResult {
 	const { t } = useLingui();
-	const { isExporting, run } = useHistoryExportRunner();
+	const { isExporting, run } = useHistoryExportRunner(options.address);
 
 	async function exportCsv() {
-		const toastId = toast.loading(t`Exporting funding history...`);
+		const toastId = toast.loading(t`Exporting funding payments...`);
 		try {
 			const result = await run<HistoryLoadResult<UserFunding>>(async (address, signal) => {
 				const client = getInfoClient();
@@ -115,6 +121,8 @@ export function useFundingHistoryCsvExport(options: CsvExportOptions<UserFunding
 					},
 					getKey: getUserFundingKey,
 					getTime: (funding) => funding.time,
+					pageLimit: USER_FUNDING_API_PAGE_LIMIT,
+					requireAscending: true,
 					signal,
 					validateItem: isValidUserFunding,
 				});
@@ -133,7 +141,7 @@ export function useFundingHistoryCsvExport(options: CsvExportOptions<UserFunding
 			}
 		} catch (error) {
 			if (isHistoryAbortError(error)) toast.dismiss(toastId);
-			else toast.error(t`Failed to export funding history.`, { id: toastId });
+			else toast.error(t`Failed to export funding payments.`, { id: toastId });
 		}
 	}
 

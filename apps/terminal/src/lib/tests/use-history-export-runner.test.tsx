@@ -7,11 +7,12 @@ import { useHistoryExportRunner } from "@/hooks/trade/use-history-csv-export";
 
 const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111" as `0x${string}`,
+	isConnected: true,
 	isTestnet: false,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: mocks.address, isConnected: true }),
+	useWalletSession: () => ({ address: mocks.address, isConnected: mocks.isConnected }),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -22,8 +23,8 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let hookValue: ReturnType<typeof useHistoryExportRunner> | null = null;
 
-function Probe() {
-	hookValue = useHistoryExportRunner();
+function Probe({ requestedAddress }: { requestedAddress?: `0x${string}` }) {
+	hookValue = useHistoryExportRunner(requestedAddress);
 	return null;
 }
 
@@ -33,6 +34,7 @@ describe("history export owner isolation", () => {
 
 	beforeEach(() => {
 		mocks.address = "0x1111111111111111111111111111111111111111";
+		mocks.isConnected = true;
 		mocks.isTestnet = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -94,5 +96,24 @@ describe("history export owner isolation", () => {
 			result = await resultPromise;
 		});
 		expect(result).toBeNull();
+	});
+
+	it("exports a public page address without requiring a connected wallet", async () => {
+		const publicAddress = "0x3333333333333333333333333333333333333333" as const;
+		mocks.isConnected = false;
+		act(() => root.render(<Probe requestedAddress={publicAddress} />));
+		if (!hookValue) throw new Error("Missing history export runner");
+
+		let loadedAddress: `0x${string}` | undefined;
+		let result: string | null | undefined;
+		await act(async () => {
+			result = await hookValue?.run(async (address) => {
+				loadedAddress = address;
+				return "public history";
+			});
+		});
+
+		expect(loadedAddress).toBe(publicAddress);
+		expect(result).toBe("public history");
 	});
 });

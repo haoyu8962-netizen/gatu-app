@@ -169,7 +169,7 @@ describe("desktop positions panel shell", () => {
 			"Open Orders(2)",
 			"TWAP(1)",
 			"Trade History",
-			"Funding History",
+			"Funding Payments",
 			"Order History",
 		]);
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(1)");

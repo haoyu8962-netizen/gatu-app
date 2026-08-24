@@ -40,6 +40,12 @@ msgstr "{0} is listed as a native Hyperliquid perpetual market."
 #~ msgid "{0} more wallets"
 #~ msgstr "{0} more wallets"
 
+#. placeholder {0}: pagination.currentPage
+#. placeholder {1}: pagination.totalPages
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{0} of {1}"
+msgstr "{0} of {1}"
+
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -80,6 +86,10 @@ msgstr "{days} days"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr "{formatted} USDC deposited to Hyperliquid"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
+msgstr "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} history"
@@ -611,9 +621,17 @@ msgstr "All currently available referral rewards are claimed to your Spot balanc
 msgid "All Directions"
 msgstr "All Directions"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All markets"
+msgstr "All markets"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "All roles"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All sides"
+msgstr "All sides"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -878,6 +896,8 @@ msgstr "As-needed position close"
 msgid "Ask"
 msgstr "Ask"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1041,6 +1061,10 @@ msgstr "Back online"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Back to asset selection"
 #~ msgstr "Back to asset selection"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Back to trade"
+msgstr "Back to trade"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
@@ -1403,6 +1427,10 @@ msgstr "Checking..."
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
 msgstr "Child"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Choose another market or side."
+msgstr "Choose another market or side."
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Choose how much of this position to close with a reduce-only market order."
@@ -3016,6 +3044,10 @@ msgstr "Enter a positive amount with up to 6 decimal places."
 msgid "Enter a positive target leverage."
 msgstr "Enter a positive target leverage."
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Enter a valid 0x account address to view funding payments."
+msgstr "Enter a valid 0x account address to view funding payments."
+
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
 msgstr "Enter a valid max price"
@@ -3301,6 +3333,7 @@ msgstr "Explore HyperCore Vaults. Deposits share in each vault's gains and losse
 msgid "Explorer"
 msgstr "Explorer"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3318,8 +3351,12 @@ msgid "Exporting deposits and withdrawals..."
 msgstr "Exporting deposits and withdrawals..."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Exporting funding history..."
-msgstr "Exporting funding history..."
+#~ msgid "Exporting funding history..."
+#~ msgstr "Exporting funding history..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding payments..."
+msgstr "Exporting funding payments..."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3378,8 +3415,12 @@ msgid "Failed to export deposits and withdrawals."
 msgstr "Failed to export deposits and withdrawals."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Failed to export funding history."
-msgstr "Failed to export funding history."
+#~ msgid "Failed to export funding history."
+#~ msgstr "Failed to export funding history."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding payments."
+msgstr "Failed to export funding payments."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3417,8 +3458,13 @@ msgstr "Failed to load deposits and withdrawals."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding history."
-msgstr "Failed to load funding history."
+#~ msgid "Failed to load funding history."
+#~ msgstr "Failed to load funding history."
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Failed to load funding payments."
+msgstr "Failed to load funding payments."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3605,6 +3651,14 @@ msgstr "Filled"
 msgid "Filter by {label}"
 msgstr "Filter by {label}"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by market"
+msgstr "Filter funding payments by market"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by side"
+msgstr "Filter funding payments by side"
+
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
 #~ msgstr "Filter positions by direction"
@@ -3713,18 +3767,53 @@ msgstr "FUNDING"
 msgid "Funding chain"
 msgstr "Funding chain"
 
-#: src/config/trade.ts
-msgid "Funding History"
-msgstr "Funding History"
-
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#~ msgid "Funding Payments"
-#~ msgstr "Funding Payments"
+msgid "Funding data could not be validated. Refresh and try again."
+msgstr "Funding data could not be validated. Refresh and try again."
+
+#: src/config/trade.ts
+#~ msgid "Funding History"
+#~ msgstr "Funding History"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Funding history pagination"
+#~ msgstr "Funding history pagination"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments"
+msgstr "Funding payments"
+
+#: src/config/trade.ts
+msgid "Funding Payments"
+msgstr "Funding Payments"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments are unavailable"
+msgstr "Funding payments are unavailable"
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments for {0}"
+msgstr "Funding payments for {0}"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments pagination"
+msgstr "Funding payments pagination"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments will load automatically when the connection returns."
+msgstr "Funding payments will load automatically when the connection returns."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding shown"
 msgstr "Funding shown"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding updates paused."
+msgstr "Funding updates paused."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3886,10 +3975,8 @@ msgstr "Historical APR does not predict future performance; the displayed APR ca
 msgid "History"
 msgstr "History"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -4091,6 +4178,10 @@ msgstr "Insufficient balance"
 msgid "Insufficient funds for gas"
 msgstr "Insufficient funds for gas"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Invalid account address"
+msgstr "Invalid account address"
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -4106,6 +4197,10 @@ msgstr "Invalid destination address"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
 #~ msgstr "Invalid Ethereum address"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Invalid funding history address"
+#~ msgstr "Invalid funding history address"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -4451,8 +4546,17 @@ msgid "Loading deposits and withdrawals..."
 msgstr "Loading deposits and withdrawals..."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Loading funding history..."
-msgstr "Loading funding history..."
+#~ msgid "Loading funding history..."
+#~ msgstr "Loading funding history..."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Loading funding payments"
+msgstr "Loading funding payments"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Loading funding payments."
+msgstr "Loading funding payments."
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4583,6 +4687,7 @@ msgstr "Locked until {0}"
 msgid "Log in with Email"
 msgstr "Log in with Email"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4770,6 +4875,7 @@ msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, 
 #~ msgid "Mark:"
 #~ msgstr "Mark:"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -5217,6 +5323,14 @@ msgstr "New portfolio margin activation is temporarily unavailable. Existing por
 msgid "Next"
 msgstr "Next"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Next funding history page"
+#~ msgstr "Next funding history page"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Next funding payments page"
+msgstr "Next funding payments page"
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "Next page"
@@ -5338,10 +5452,22 @@ msgstr "No fills found."
 msgid "No fills match these filters."
 msgstr "No fills match these filters."
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found"
+msgstr "No funding payments found"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found in the confirmed 30-day window."
+msgstr "No funding payments found in the confirmed 30-day window."
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "No funding payments found."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments match the selected filters."
+msgstr "No funding payments match the selected filters."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5377,6 +5503,10 @@ msgstr "No market"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "No markets found."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No matching funding payments"
+msgstr "No matching funding payments"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
@@ -5637,6 +5767,10 @@ msgstr "Only the matching master wallet can approve or remove API wallets. Switc
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
+msgstr "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
@@ -6046,6 +6180,9 @@ msgstr "Pause"
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6301,6 +6438,9 @@ msgstr "Portfolio summary"
 msgid "Portfolio Value"
 msgstr "Portfolio Value"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6420,6 +6560,14 @@ msgstr "Press and hold for 4 seconds"
 #: src/components/referrals/referred-traders.tsx
 msgid "Previous"
 msgstr "Previous"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Previous funding history page"
+#~ msgstr "Previous funding history page"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Previous funding payments page"
+msgstr "Previous funding payments page"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
@@ -6625,6 +6773,9 @@ msgstr "Rank"
 msgid "Ranked by"
 msgstr "Ranked by"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -6670,9 +6821,7 @@ msgstr "Realized PNL"
 #~ msgstr "Recent"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 
@@ -6859,10 +7008,15 @@ msgstr "Referred traders pages"
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Refresh"
 msgstr "Refresh"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Refresh failed. Previously loaded funding payments remain visible."
+msgstr "Refresh failed. Previously loaded funding payments remain visible."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -7027,6 +7181,7 @@ msgid "Resume tracking"
 msgstr "Resume tracking"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -7262,6 +7417,8 @@ msgstr "ROI"
 msgid "Role"
 msgstr "Role"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Rows per page"
 msgstr "Rows per page"
@@ -7728,6 +7885,7 @@ msgstr "Share PNL"
 msgid "Share PNL for {displayName}"
 msgstr "Share PNL for {displayName}"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -7821,6 +7979,7 @@ msgstr "Show ROE percentage"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr "Side"
@@ -8374,7 +8533,10 @@ msgstr "Swapping..."
 #~ msgstr "Switch to {0}"
 
 #. placeholder {0}: fill.coin
+#. placeholder {0}: funding.coin
 #. placeholder {0}: update.coin
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
@@ -8634,6 +8796,10 @@ msgstr "Testnet queue: approximately five minutes"
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "The account activation fee changed before signing. Review the updated fee and try again."
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The account has no funding payments in the confirmed 30-day window."
+msgstr "The account has no funding payments in the confirmed 30-day window."
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "The active wallet is not this account's master wallet"
@@ -8858,6 +9024,10 @@ msgstr "The replacement expired before Hyperliquid confirmed it. Review and sign
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The requested 30-day window could not be verified. No partial history is shown."
+msgstr "The requested 30-day window could not be verified. No partial history is shown."
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -9276,6 +9446,8 @@ msgstr "This window stays locked until the request reaches a verifiable result."
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/referrals/referral-legacy-history.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -10398,6 +10570,8 @@ msgstr "Verifying the result"
 msgid "Verifying..."
 msgstr "Verifying..."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "View all"
 msgstr "View all"
@@ -10697,6 +10871,25 @@ msgstr "You are accessing our products and services from a restricted jurisdicti
 #: src/components/referrals/referral-code-card.tsx
 msgid "You are eligible to create a referral code."
 msgstr "You are eligible to create a referral code."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline"
+msgstr "You are offline"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline."
+msgstr "You are offline."
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline. Funding payments will load when the connection returns."
+msgstr "You are offline. Funding payments will load when the connection returns."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline. Previously loaded funding payments remain visible."
+msgstr "You are offline. Previously loaded funding payments remain visible."
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

@@ -92,6 +92,46 @@ describe("history pagination", () => {
 		expect(result.items.at(-1)?.id).toBe("event-1200");
 	});
 
+	it("stops after a complete endpoint-specific short page", async () => {
+		const controller = new AbortController();
+		const fetchPage = vi.fn(async () =>
+			Array.from({ length: 478 }, (_, index) => ({ id: `event-${index}`, time: index + 1 })),
+		);
+
+		const result = await fetchTimeRangeHistory<Event>({
+			endTime: 1_000,
+			fetchPage,
+			getKey: (event) => event.id,
+			getTime: (event) => event.time,
+			pageLimit: 500,
+			requireAscending: true,
+			signal: controller.signal,
+		});
+
+		expect(fetchPage).toHaveBeenCalledOnce();
+		expect(result).toMatchObject({ items: expect.any(Array), truncated: false });
+		expect(result.items).toHaveLength(478);
+	});
+
+	it("fails closed when an endpoint requiring ascending pages returns unordered timestamps", async () => {
+		const controller = new AbortController();
+
+		await expect(
+			fetchTimeRangeHistory<Event>({
+				endTime: 3_000,
+				fetchPage: async () => [
+					{ id: "later", time: 2_000 },
+					{ id: "earlier", time: 1_000 },
+				],
+				getKey: (event) => event.id,
+				getTime: (event) => event.time,
+				pageLimit: 500,
+				requireAscending: true,
+				signal: controller.signal,
+			}),
+		).rejects.toMatchObject({ name: "MalformedHistoryPageError" });
+	});
+
 	it("preserves matching history outside the latest display window", async () => {
 		const events = Array.from({ length: 600 }, (_, index) => ({
 			id: `event-${index + 1}`,

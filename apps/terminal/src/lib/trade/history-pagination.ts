@@ -40,6 +40,8 @@ interface FetchTimeRangeHistoryOptions<T> {
 	fetchPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<readonly T[]>;
 	getKey: (item: T) => string;
 	getTime: (item: T) => number;
+	pageLimit?: number;
+	requireAscending?: boolean;
 	validateItem?: (item: T) => boolean;
 	maxItems?: number;
 	maxPages?: number;
@@ -129,6 +131,8 @@ export async function fetchTimeRangeHistory<T>(
 		fetchPage,
 		getKey,
 		getTime,
+		pageLimit,
+		requireAscending = false,
 		validateItem,
 		maxItems = Number.POSITIVE_INFINITY,
 		maxPages = DEFAULT_MAX_PAGES,
@@ -145,18 +149,24 @@ export async function fetchTimeRangeHistory<T>(
 		throwIfAborted(signal);
 		const page = await fetchPage(startTime, endTime, signal);
 		if (!Array.isArray(page)) throw new MalformedHistoryPageError();
+		if (pageLimit !== undefined && page.length > pageLimit) throw new MalformedHistoryPageError();
 		if (page.length === 0) {
 			return { items: sortHistory(itemsByKey.values(), getTime), truncated: false };
 		}
 
 		let maxPageTime = previousCursor;
 		let newItems = 0;
+		let previousItemTime: number | undefined;
 		for (const item of page) {
 			if (validateItem && !validateItem(item)) throw new MalformedHistoryPageError();
 			const time = getTime(item);
 			if (!Number.isSafeInteger(time) || time < startTime || time > endTime) {
 				throw new MalformedHistoryPageError();
 			}
+			if (requireAscending && previousItemTime !== undefined && time < previousItemTime) {
+				throw new MalformedHistoryPageError();
+			}
+			previousItemTime = time;
 			maxPageTime = Math.max(maxPageTime, time);
 			const key = getKey(item);
 			if (typeof key !== "string" || key.length === 0) throw new MalformedHistoryPageError();
@@ -172,18 +182,22 @@ export async function fetchTimeRangeHistory<T>(
 		}
 
 		retainLatestHistoryItems(itemsByKey, retainLatestItems, getKey, getTime, retainItemsMatching);
+		const nextCursor = requireAscending ? (previousItemTime ?? previousCursor) : maxPageTime;
 
 		// A repeated inclusive page with no new identities cannot advance. If it is a
 		// full page, report truncation because more events may share that timestamp.
-		if (newItems === 0 || maxPageTime <= previousCursor) {
+		if (newItems === 0 || nextCursor <= previousCursor) {
 			return {
 				items: sortHistory(itemsByKey.values(), getTime),
-				truncated: page.length >= 500,
+				truncated: page.length >= (pageLimit ?? 500),
 			};
 		}
+		if (pageLimit !== undefined && page.length < pageLimit) {
+			return { items: sortHistory(itemsByKey.values(), getTime), truncated: false };
+		}
 
-		previousCursor = maxPageTime;
-		startTime = maxPageTime;
+		previousCursor = nextCursor;
+		startTime = nextCursor;
 	}
 
 	return { items: sortHistory(itemsByKey.values(), getTime), truncated: true };

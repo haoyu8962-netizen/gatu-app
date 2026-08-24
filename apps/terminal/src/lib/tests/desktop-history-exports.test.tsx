@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FundingTab } from "@/components/trade/positions/funding-tab";
@@ -28,15 +28,30 @@ const mocks = vi.hoisted(() => ({
 	fundings: [
 		{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
 	] as Array<Record<string, unknown>>,
+	fundingError: undefined as unknown,
+	fundingOffline: false,
+	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 }));
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
 	AssetBadge: ({ coin }: { coin: string }) => <span>{coin}</span>,
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, params, to, ...props }: { children?: ReactNode; params?: { address?: string }; to: string }) => (
+		<a href={to.replace("$address", params?.address ?? "")} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/components/ui/scroll-area", () => ({
 	ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	ScrollBar: () => null,
+}));
+
+vi.mock("@/components/ui/skeleton", () => ({
+	Skeleton: ({ children }: { children: ReactNode }) => children,
 }));
 
 vi.mock("@/hooks/trade/use-market-navigation", () => ({
@@ -54,10 +69,11 @@ vi.mock("@/hooks/trade/use-user-fills", () => ({
 
 vi.mock("@/hooks/trade/use-user-funding", () => ({
 	useUserFunding: () => ({
-		error: null,
+		error: mocks.fundingError,
 		fundings: mocks.fundings,
 		isConnected: true,
-		status: "ready",
+		isOffline: mocks.fundingOffline,
+		status: mocks.fundingStatus,
 	}),
 }));
 
@@ -165,6 +181,9 @@ describe("desktop history exports", () => {
 		mocks.fundings = [
 			{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
 		];
+		mocks.fundingError = undefined;
+		mocks.fundingOffline = false;
+		mocks.fundingStatus = "ready";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -174,6 +193,7 @@ describe("desktop history exports", () => {
 		act(() => root.unmount());
 		container.remove();
 		mocks.downloadCsv.mockReset();
+		vi.useRealTimers();
 	});
 
 	function clickExport() {
@@ -251,7 +271,11 @@ describe("desktop history exports", () => {
 		expect(container.textContent).toContain("Funding shown");
 		const toolbar = container.querySelector('[data-testid="funding-history-toolbar"]');
 		expect(toolbar).not.toBeNull();
-		expect(container.querySelector('[data-testid="funding-history-footer"]')).toBeNull();
+		const footer = container.querySelector('[data-testid="funding-history-footer"]');
+		expect(footer).not.toBeNull();
+		expect(
+			footer?.querySelector('a[href="/fundingHistory/0x1111111111111111111111111111111111111111"]'),
+		).not.toBeNull();
 		expect(container.querySelector("tbody td")?.className).toContain("h-10");
 		expect(container.querySelector("table")?.className).toContain("min-w-[52rem]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
@@ -279,5 +303,45 @@ describe("desktop history exports", () => {
 		expect(button?.disabled).toBe(false);
 		act(() => button?.click());
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
+	});
+
+	it("keeps funding rows visible when live updates pause", () => {
+		mocks.fundingError = new Error("WebSocket unavailable");
+		act(() => root.render(<FundingTab />));
+
+		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("shows offline explicitly and preserves already loaded funding rows", () => {
+		mocks.fundingOffline = true;
+		act(() => root.render(<FundingTab />));
+
+		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
+		expect(container.textContent).toContain("You are offline.");
+
+		mocks.fundings = [];
+		mocks.fundingStatus = "offline";
+		act(() => root.render(<FundingTab />));
+		expect(container.textContent).toContain("Funding payments will load when the connection returns.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+	});
+
+	it("delays the visible funding skeleton while announcing loading accessibly", () => {
+		vi.useFakeTimers();
+		mocks.fundings = [];
+		mocks.fundingStatus = "loading";
+		act(() => root.render(<FundingTab />));
+
+		const status = container.querySelector("output");
+		expect(status?.className).toContain("sr-only");
+		expect(status?.textContent).toContain("Loading funding payments.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(249));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).not.toBeNull();
 	});
 });

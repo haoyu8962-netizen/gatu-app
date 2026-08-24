@@ -36,6 +36,12 @@ msgstr "已授权 {0} 个"
 msgid "{0} is listed as a native Hyperliquid perpetual market."
 msgstr "{0} 已作为 Hyperliquid 原生永续市场上线。"
 
+#. placeholder {0}: pagination.currentPage
+#. placeholder {1}: pagination.totalPages
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -72,6 +78,10 @@ msgstr "第 {currentPage} 页，共 {totalPages} 页"
 #: src/components/api-wallet/api-wallet-form.tsx
 msgid "{days} days"
 msgstr "{days} 天"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
+msgstr ""
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} history"
@@ -571,9 +581,17 @@ msgstr "当前所有可领取的推荐奖励都将领取至您的 Spot 余额。
 msgid "All Directions"
 msgstr "全部方向"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All markets"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "全部角色"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All sides"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -826,6 +844,8 @@ msgstr "按需平仓"
 msgid "Ask"
 msgstr "卖盘"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -974,6 +994,10 @@ msgstr "返回"
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "Back online"
 msgstr "已恢复在线"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Back to trade"
+msgstr ""
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
@@ -1280,6 +1304,10 @@ msgstr "检查中..."
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
 msgstr "子金库"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Choose another market or side."
+msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Choose how much of this position to close with a reduce-only market order."
@@ -2815,6 +2843,10 @@ msgstr "请输入正数，最多 6 位小数。"
 msgid "Enter a positive target leverage."
 msgstr "请输入大于 0 的目标杠杆。"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Enter a valid 0x account address to view funding payments."
+msgstr ""
+
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
 msgstr "请输入有效的最高价"
@@ -3091,6 +3123,7 @@ msgstr "探索 HyperCore 金库。存款会按份额承担各金库的收益与�
 msgid "Explorer"
 msgstr "区块浏览器"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3108,8 +3141,12 @@ msgid "Exporting deposits and withdrawals..."
 msgstr "正在导出存款和提款记录..."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Exporting funding history..."
-msgstr "正在导出资金费历史……"
+#~ msgid "Exporting funding history..."
+#~ msgstr "正在导出资金费历史……"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding payments..."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3164,8 +3201,12 @@ msgid "Failed to export deposits and withdrawals."
 msgstr "存款和提款记录导出失败。"
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Failed to export funding history."
-msgstr "导出资金费历史失败。"
+#~ msgid "Failed to export funding history."
+#~ msgstr "导出资金费历史失败。"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding payments."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3199,8 +3240,13 @@ msgstr "存款和提款记录加载失败。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding history."
-msgstr "加载资金费用历史失败。"
+#~ msgid "Failed to load funding history."
+#~ msgstr "加载资金费用历史失败。"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Failed to load funding payments."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3363,6 +3409,14 @@ msgstr "已成交"
 msgid "Filter by {label}"
 msgstr "按 {label} 筛选"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by market"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by side"
+msgstr ""
+
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
 #~ msgstr "按方向筛选仓位"
@@ -3463,18 +3517,53 @@ msgstr "资金费率"
 msgid "Funding chain"
 msgstr "充值链"
 
-#: src/config/trade.ts
-msgid "Funding History"
-msgstr "资金费率历史"
-
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#~ msgid "Funding Payments"
-#~ msgstr "资金费用"
+msgid "Funding data could not be validated. Refresh and try again."
+msgstr ""
+
+#: src/config/trade.ts
+#~ msgid "Funding History"
+#~ msgstr "资金费率历史"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Funding history pagination"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments"
+msgstr ""
+
+#: src/config/trade.ts
+msgid "Funding Payments"
+msgstr "资金费用"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments are unavailable"
+msgstr ""
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments for {0}"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments pagination"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding shown"
 msgstr "当前显示资金费"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding updates paused."
+msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3636,10 +3725,8 @@ msgstr "历史 APR 不代表未来表现；所显示的 APR 可能变化。"
 msgid "History"
 msgstr "历史"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -3829,6 +3916,10 @@ msgstr "余额不足"
 msgid "Insufficient funds for gas"
 msgstr "Gas 余额不足"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Invalid account address"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -3840,6 +3931,10 @@ msgstr "金额无效"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Invalid destination address"
 msgstr "目的地址无效"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Invalid funding history address"
+#~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -4164,8 +4259,17 @@ msgid "Loading deposits and withdrawals..."
 msgstr "正在加载存款和提款记录..."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Loading funding history..."
-msgstr "加载资金费用历史中..."
+#~ msgid "Loading funding history..."
+#~ msgstr "加载资金费用历史中..."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Loading funding payments"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Loading funding payments."
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4296,6 +4400,7 @@ msgstr "锁定至 {0}"
 msgid "Log in with Email"
 msgstr "使用邮箱登录"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4448,6 +4553,7 @@ msgstr "标记价格不可用。请等待行情更新后重试。"
 msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
 msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和触发止盈/止损订单。预言机价格：用于资金费用支付的参考价格。详情请参阅 HIP-3 部署者的文档。"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4858,6 +4964,14 @@ msgstr "暂时无法新开通投资组合保证金。已开通的投资组合保
 msgid "Next"
 msgstr "下一页"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Next funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Next funding payments page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
 msgstr "下一页"
@@ -4975,10 +5089,22 @@ msgstr "未找到成交记录。"
 msgid "No fills match these filters."
 msgstr "没有符合筛选条件的成交记录。"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found in the confirmed 30-day window."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "未找到资金费用记录。"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments match the selected filters."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5013,6 +5139,10 @@ msgstr "无市场"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "未找到市场。"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No matching funding payments"
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
@@ -5244,6 +5374,10 @@ msgstr "只有匹配的主钱包才能授权或移除 API 钱包。请切换钱�
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确认授权成功后，私钥将显示一次，供你下载并安全保存。"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
+msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
@@ -5593,6 +5727,9 @@ msgstr "暂停"
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "暂停不可用：Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -5835,6 +5972,9 @@ msgstr "投资组合摘要"
 msgid "Portfolio Value"
 msgstr "投资组合价值"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -5945,6 +6085,14 @@ msgstr "按住 4 秒"
 #: src/components/referrals/referred-traders.tsx
 msgid "Previous"
 msgstr "上一页"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Previous funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Previous funding payments page"
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
@@ -6137,6 +6285,9 @@ msgstr "排名"
 msgid "Ranked by"
 msgstr "排序依据"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -6178,9 +6329,7 @@ msgid "Realized PNL"
 msgstr "已实现盈亏"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "近期历史记录超过安全显示上限。请导出 CSV 以获取更大范围。"
 
@@ -6354,10 +6503,15 @@ msgstr "已推荐交易者分页"
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "在被推荐交易者前 $1B 成交量内，推荐人目前可获得交易者折扣后手续费的 10%。"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Refresh"
 msgstr "刷新"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Refresh failed. Previously loaded funding payments remain visible."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -6505,6 +6659,7 @@ msgid "Resume tracking"
 msgstr "继续跟踪"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -6740,6 +6895,8 @@ msgstr "ROI"
 msgid "Role"
 msgstr "角色"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Rows per page"
 msgstr "每页行数"
@@ -7140,6 +7297,7 @@ msgstr "分享盈亏"
 msgid "Share PNL for {displayName}"
 msgstr "分享 {displayName} 的盈亏"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -7205,6 +7363,7 @@ msgstr "显示 ROE 百分比"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "显示最近 30 天返回的奖励领取记录，其中可能包含推荐奖励和 Builder 奖励。"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr "方向"
@@ -7733,7 +7892,10 @@ msgstr "兑换中..."
 #~ msgstr "切换到 {0}"
 
 #. placeholder {0}: fill.coin
+#. placeholder {0}: funding.coin
 #. placeholder {0}: update.coin
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
@@ -7977,6 +8139,10 @@ msgstr "测试网队列：约 5 分钟"
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "账户激活费用在签名前已变化。请检查更新后的费用并重试。"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The account has no funding payments in the confirmed 30-day window."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr "当前钱包不是此账户的主钱包"
@@ -8197,6 +8363,10 @@ msgstr "替代密钥在 Hyperliquid 确认前已过期。请重新检查并签�
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "请求已提交，但最终状态仍在更新。重试前请检查推荐数据和领取历史。"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The requested 30-day window could not be verified. No partial history is shown."
+msgstr ""
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -8593,6 +8763,8 @@ msgstr "在请求得到可验证的结果前，此窗口将保持锁定。"
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/referrals/referral-legacy-history.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
@@ -9688,6 +9860,8 @@ msgstr "正在验证结果"
 msgid "Verifying..."
 msgstr "验证中..."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "View all"
 msgstr "查看全部"
@@ -9959,6 +10133,25 @@ msgstr "您正从受限制的司法管辖区访问我们的产品和服务。我
 #: src/components/referrals/referral-code-card.tsx
 msgid "You are eligible to create a referral code."
 msgstr "您已符合创建推荐码的条件。"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline. Funding payments will load when the connection returns."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline. Previously loaded funding payments remain visible."
+msgstr ""
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

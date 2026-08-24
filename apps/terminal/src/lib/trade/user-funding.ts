@@ -3,6 +3,12 @@ import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
 
 export type UserFunding = UserFundingsWsEvent["fundings"][number];
 
+export function normalizeUserFunding(item: unknown): UserFunding | null {
+	if (!isRecord(item)) return null;
+	const candidate = item.nSamples === undefined ? { ...item, nSamples: null } : item;
+	return isValidUserFunding(candidate) ? candidate : null;
+}
+
 export function isValidUserFunding(item: unknown): item is UserFunding {
 	if (!isRecord(item)) return false;
 	return (
@@ -24,14 +30,19 @@ export function getUserFundingKey(funding: UserFunding): string {
 
 export function normalizeUserFundingResponse(response: UserFundingResponse | undefined): UserFunding[] {
 	if (response !== undefined && !Array.isArray(response)) throw new MalformedHistoryPageError();
-	return (response ?? []).map(({ delta, time }) => ({
-		coin: delta.coin,
-		fundingRate: delta.fundingRate,
-		nSamples: delta.nSamples,
-		szi: delta.szi,
-		time,
-		usdc: delta.usdc,
-	}));
+	return (response ?? []).map((entry) => {
+		if (!isRecord(entry) || !isRecord(entry.delta)) throw new MalformedHistoryPageError();
+		const funding = normalizeUserFunding({
+			coin: entry.delta.coin,
+			fundingRate: entry.delta.fundingRate,
+			nSamples: entry.delta.nSamples,
+			szi: entry.delta.szi,
+			time: entry.time,
+			usdc: entry.delta.usdc,
+		});
+		if (!funding) throw new MalformedHistoryPageError();
+		return funding;
+	});
 }
 
 export function mergeUserFundingSources(...sources: ReadonlyArray<readonly UserFunding[] | undefined>): UserFunding[] {

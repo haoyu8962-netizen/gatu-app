@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
 	fills: [] as Array<Record<string, unknown>>,
 	fundings: [] as Array<Record<string, unknown>>,
+	fundingError: undefined as unknown,
+	fundingOffline: false,
+	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 	navigateToMarket: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
 	setActiveTab: vi.fn(),
@@ -167,6 +170,14 @@ vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, params, to, ...props }: { children?: ReactNode; params?: { address?: string }; to: string }) => (
+		<a href={to.replace("$address", params?.address ?? "")} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/hooks/trade/use-user-fills", () => ({
 	useUserFills: () => ({
 		error: null,
@@ -188,10 +199,11 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 
 vi.mock("@/hooks/trade/use-user-funding", () => ({
 	useUserFunding: () => ({
-		error: null,
+		error: mocks.fundingError,
 		fundings: [...mocks.fundings].sort((left, right) => Number(right.time) - Number(left.time)),
 		isConnected: true,
-		status: "ready",
+		isOffline: mocks.fundingOffline,
+		status: mocks.fundingStatus,
 	}),
 }));
 
@@ -296,6 +308,9 @@ describe("mobile history disclosure cards", () => {
 		mocks.address = OWNER_A;
 		mocks.fills = createFills();
 		mocks.fundings = createFundings();
+		mocks.fundingError = undefined;
+		mocks.fundingOffline = false;
+		mocks.fundingStatus = "ready";
 		mocks.orders = createOrders();
 		mocks.twaps = [];
 		container = document.createElement("div");
@@ -308,6 +323,7 @@ describe("mobile history disclosure cards", () => {
 		container.remove();
 		vi.clearAllMocks();
 		vi.unstubAllGlobals();
+		vi.useRealTimers();
 	});
 
 	function render(component: ReactElement) {
@@ -389,7 +405,12 @@ describe("mobile history disclosure cards", () => {
 		}
 	}
 
-	function expectM4VisualContract(filterRowTestId: string, footerTestId: string, selectCount: number) {
+	function expectM4VisualContract(
+		filterRowTestId: string,
+		footerTestId: string,
+		selectCount: number,
+		expectsViewAll = false,
+	) {
 		const filterRow = container.querySelector<HTMLElement>(`[data-testid="${filterRowTestId}"]`);
 		expect(filterRow?.className).toContain("h-12");
 		expect(filterRow?.className).toContain("px-3.5");
@@ -450,7 +471,14 @@ describe("mobile history disclosure cards", () => {
 		expect(exportButton?.className).toContain("h-[38px]");
 		expect(exportButton?.className).toContain("min-h-0");
 		expect(exportButton?.className).toContain("after:h-11");
-		expect(container.textContent).not.toContain("View all");
+		const viewAllLink = footer?.querySelector<HTMLAnchorElement>("a");
+		if (expectsViewAll) {
+			expect(viewAllLink?.textContent).toBe("View all");
+			expect(viewAllLink?.href).toContain(`/fundingHistory/${OWNER_A}`);
+			expect(viewAllLink?.className).toContain("h-[38px]");
+		} else {
+			expect(viewAllLink).toBeNull();
+		}
 	}
 
 	it("keeps trade history values, explorer links, and independent disclosure state", () => {
@@ -548,7 +576,7 @@ describe("mobile history disclosure cards", () => {
 
 	it("keeps funding position, payment, rate, and direction semantics", () => {
 		render(<MobileFundingTab scrollMode="page" />);
-		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1);
+		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1, true);
 		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
@@ -577,6 +605,46 @@ describe("mobile history disclosure cards", () => {
 		expect(button?.disabled).toBe(false);
 		act(() => button?.click());
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
+	});
+
+	it("keeps mobile funding cards visible when live updates pause", () => {
+		mocks.fundingError = new Error("WebSocket unavailable");
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("shows mobile funding offline state without discarding an existing snapshot", () => {
+		mocks.fundingOffline = true;
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("You are offline.");
+
+		mocks.fundings = [];
+		mocks.fundingStatus = "offline";
+		render(<MobileFundingTab scrollMode="page" />);
+		expect(container.textContent).toContain("Funding payments will load when the connection returns.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+	});
+
+	it("delays the mobile funding skeleton while announcing loading accessibly", () => {
+		vi.useFakeTimers();
+		mocks.fundings = [];
+		mocks.fundingStatus = "loading";
+		render(<MobileFundingTab scrollMode="page" />);
+
+		const status = container.querySelector("output");
+		expect(status?.className).toContain("sr-only");
+		expect(status?.textContent).toContain("Loading funding payments.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(249));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).not.toBeNull();
 	});
 
 	it("keeps historical order labels and expands cards independently", () => {
@@ -690,9 +758,9 @@ describe("mobile history disclosure cards", () => {
 		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
 		clickButton("Export CSV");
 		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
-		expect(exportRows).toHaveLength(2);
+		expect(exportRows).toHaveLength(3);
 		expect(exportRows?.flat()).toContain("ETH");
-		expect(exportRows?.flat()).not.toContain("BTC");
+		expect(exportRows?.flat()).toContain("BTC");
 
 		clickButton("Collapse all");
 		await selectOption("Direction", "All Directions");
