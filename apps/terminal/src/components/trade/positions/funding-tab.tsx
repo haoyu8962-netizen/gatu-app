@@ -146,7 +146,10 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[52rem] w-full font-market-close tabular-nums">
+						<Table
+							containerClassName="overflow-visible"
+							className="table-fixed min-w-[52rem] w-full font-market-close tabular-nums"
+						>
 							<colgroup>
 								<col className="w-[136px]" />
 								<col className="w-[176px]" />
