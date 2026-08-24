@@ -347,8 +347,8 @@ msgid "Account data unavailable"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Account Equity"
-msgstr "खाता इक्विटी"
+#~ msgid "Account Equity"
+#~ msgstr "खाता इक्विटी"
 
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -1528,24 +1528,24 @@ msgid "Close"
 msgstr "बंद करें"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close All"
-msgstr "सभी बंद करें"
+#~ msgid "Close All"
+#~ msgstr "सभी बंद करें"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is currently unavailable."
-msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
+#~ msgid "Close all is currently unavailable."
+#~ msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because duplicate market data was detected."
-msgstr "डुप्लिकेट बाज़ार डेटा मिलने के कारण सभी बंद करना उपलब्ध नहीं है।"
+#~ msgid "Close all is unavailable because duplicate market data was detected."
+#~ msgstr "डुप्लिकेट बाज़ार डेटा मिलने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because position data is incomplete."
-msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
+#~ msgid "Close all is unavailable because position data is incomplete."
+#~ msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable until every position market and mark price has loaded."
-msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
+#~ msgid "Close all is unavailable until every position market and mark price has loaded."
+#~ msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close All Positions"
@@ -4522,12 +4522,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4617,8 +4612,8 @@ msgstr "Mainnet"
 #~ msgstr "मेंटेनेंस Margin"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Maintenance Margin Ratio"
-msgstr "मेंटेनेंस मार्जिन अनुपात"
+#~ msgid "Maintenance Margin Ratio"
+#~ msgstr "मेंटेनेंस मार्जिन अनुपात"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -4728,10 +4723,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "मार्क प्राइस ऑरेकल कीमतों से प्राप्त होता है और अवास्तविक PnL तथा लिक्विडेशन की गणना के लिए उपयोग होता है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "मार्क प्राइस उपलब्ध नहीं है। बाज़ार डेटा की प्रतीक्षा करें और फिर से प्रयास करें।"
@@ -6282,8 +6274,8 @@ msgid "Position"
 msgstr "पोजीशन"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position actions"
-msgstr "पोज़िशन कार्रवाइयाँ"
+#~ msgid "Position actions"
+#~ msgstr "पोज़िशन कार्रवाइयाँ"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -10040,7 +10032,6 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"

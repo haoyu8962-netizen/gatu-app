@@ -47,7 +47,7 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("table-fixed w-full");
 		expect(POSITIONS_TAB_SOURCE).toContain("style={{ minWidth: POSITION_TABLE_MIN_WIDTH }}");
 		expect(POSITIONS_TAB_SOURCE).toContain("<colgroup>");
-		expect(POSITIONS_TAB_SOURCE).toContain("positionsPanelTableCaptionRowClass");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("positionsPanelTableCaptionRowClass");
 	});
 
 	it("uses the official-density fixed nine-column geometry", () => {
@@ -81,17 +81,15 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).not.toContain("riskFill");
 	});
 
-	it("shows the production-scoped account summary without deriving finance in the row component", () => {
-		expect(POSITIONS_TAB_SOURCE).toContain('data-testid="positions-summary-bar"');
+	it("keeps the positions workspace focused on position rows without a duplicate account summary", () => {
+		expect(POSITIONS_TAB_SOURCE).not.toContain('data-testid="positions-summary-bar"');
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl");
-		expect(POSITIONS_TAB_SOURCE).toContain("accountSummary?.unrealizedPnl ?? null");
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Unrealized PNL`}");
-		expect(POSITIONS_TAB_SOURCE).toContain("Account Equity");
-		expect(POSITIONS_TAB_SOURCE).toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("accountSummary");
+		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("PositionCloseAllController");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
-		expect(POSITIONS_TAB_SOURCE).toContain('"bg-market-close-success"');
-		expect(POSITIONS_TAB_SOURCE).toContain('"text-market-close-success"');
-		expect(POSITIONS_TAB_SOURCE).not.toContain("market-close-profit");
 	});
 
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {

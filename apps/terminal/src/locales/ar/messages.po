@@ -347,8 +347,8 @@ msgid "Account data unavailable"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Account Equity"
-msgstr "حقوق ملكية الحساب"
+#~ msgid "Account Equity"
+#~ msgstr "حقوق ملكية الحساب"
 
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -1528,24 +1528,24 @@ msgid "Close"
 msgstr "إغلاق"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close All"
-msgstr "إغلاق الكل"
+#~ msgid "Close All"
+#~ msgstr "إغلاق الكل"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is currently unavailable."
-msgstr "إغلاق الكل غير متاح حالياً."
+#~ msgid "Close all is currently unavailable."
+#~ msgstr "إغلاق الكل غير متاح حالياً."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because duplicate market data was detected."
-msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
+#~ msgid "Close all is unavailable because duplicate market data was detected."
+#~ msgstr "إغلاق الكل غير متاح بسبب اكتشاف بيانات سوق مكررة."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because position data is incomplete."
-msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
+#~ msgid "Close all is unavailable because position data is incomplete."
+#~ msgstr "إغلاق الكل غير متاح لأن بيانات المراكز غير مكتملة."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable until every position market and mark price has loaded."
-msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز وسعر العلامة الخاص به."
+#~ msgid "Close all is unavailable until every position market and mark price has loaded."
+#~ msgstr "إغلاق الكل غير متاح حتى يكتمل تحميل سوق كل مركز وسعر العلامة الخاص به."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close All Positions"
@@ -4522,12 +4522,7 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4617,8 +4612,8 @@ msgstr "الشبكة الرئيسية"
 #~ msgstr "هامش الصيانة"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Maintenance Margin Ratio"
-msgstr "نسبة هامش الصيانة"
+#~ msgid "Maintenance Margin Ratio"
+#~ msgstr "نسبة هامش الصيانة"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -4728,10 +4723,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "يُشتق سعر العلامة من أسعار الأوراكل ويُستخدم لحساب الأرباح والخسائر غير المحققة والتصفية."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "سعر العلامة غير متاح. انتظر بيانات السوق وحاول مرة أخرى."
@@ -6282,8 +6274,8 @@ msgid "Position"
 msgstr "المركز"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position actions"
-msgstr "إجراءات المركز"
+#~ msgid "Position actions"
+#~ msgstr "إجراءات المركز"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -10040,7 +10032,6 @@ msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 msgid "Unrealized P&L"
 msgstr "الأرباح والخسائر غير المحققة"
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"

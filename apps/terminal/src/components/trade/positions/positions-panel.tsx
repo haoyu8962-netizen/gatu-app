@@ -75,15 +75,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
 	const markets = useMarkets();
-	const {
-		accountEquityValue: accountEquity,
-		accountModeReady,
-		defaultBalances,
-		fundsActionsReady,
-		maintenanceMarginRatio,
-		riskSummary,
-		summaryReady: accountSummaryReady,
-	} = useAccountOverview();
+	const { accountModeReady, defaultBalances, fundsActionsReady } = useAccountOverview();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
 		accountModeReady,
@@ -177,15 +169,6 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
 		count: openOrders?.length ?? 0,
 	});
-	const positionsAccountSummary =
-		accountSummaryReady && accountEquity !== null && riskSummary
-			? {
-					accountEquity,
-					unrealizedPnl: riskSummary.unrealizedPnl,
-					maintenanceMarginRatio,
-				}
-			: null;
-
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
 	const showsFundsActions = includeTransfers && activeTab === PORTFOLIO_TRANSFERS_TAB.value;
 	const showsPositionToolbar = activeTab === "positions" && positionsCount !== null;
@@ -373,7 +356,6 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 							directionFilter={positionDirectionFilter}
 							marketFilter={positionMarketFilter}
 							currentMarket={currentPositionMarket}
-							accountSummary={positionsAccountSummary}
 						/>
 					</Suspense>
 				</TabsContent>

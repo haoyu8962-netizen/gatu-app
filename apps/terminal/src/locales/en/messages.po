@@ -351,8 +351,8 @@ msgid "Account data unavailable"
 msgstr "Account data unavailable"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Account Equity"
-msgstr "Account Equity"
+#~ msgid "Account Equity"
+#~ msgstr "Account Equity"
 
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -1541,24 +1541,24 @@ msgstr "Close"
 #~ msgstr "Close"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close All"
-msgstr "Close All"
+#~ msgid "Close All"
+#~ msgstr "Close All"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is currently unavailable."
-msgstr "Close all is currently unavailable."
+#~ msgid "Close all is currently unavailable."
+#~ msgstr "Close all is currently unavailable."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because duplicate market data was detected."
-msgstr "Close all is unavailable because duplicate market data was detected."
+#~ msgid "Close all is unavailable because duplicate market data was detected."
+#~ msgstr "Close all is unavailable because duplicate market data was detected."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable because position data is incomplete."
-msgstr "Close all is unavailable because position data is incomplete."
+#~ msgid "Close all is unavailable because position data is incomplete."
+#~ msgstr "Close all is unavailable because position data is incomplete."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable until every position market and mark price has loaded."
-msgstr "Close all is unavailable until every position market and mark price has loaded."
+#~ msgid "Close all is unavailable until every position market and mark price has loaded."
+#~ msgstr "Close all is unavailable until every position market and mark price has loaded."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close All Positions"
@@ -4539,12 +4539,7 @@ msgstr "Loading wallet..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4634,8 +4629,8 @@ msgstr "Mainnet"
 #~ msgstr "Maintenance Margin"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Maintenance Margin Ratio"
-msgstr "Maintenance Margin Ratio"
+#~ msgid "Maintenance Margin Ratio"
+#~ msgstr "Maintenance Margin Ratio"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -4745,10 +4740,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "Mark price is unavailable. Wait for market data and try again."
@@ -6303,8 +6295,8 @@ msgid "Position"
 msgstr "Position"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position actions"
-msgstr "Position actions"
+#~ msgid "Position actions"
+#~ msgstr "Position actions"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -10065,7 +10057,6 @@ msgstr "Unlock your wallet and try again."
 msgid "Unrealized P&L"
 msgstr "Unrealized P&L"
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
