@@ -8,11 +8,13 @@ import {
 	writeAgentToStorageAndVerify,
 	writePersistTradingConnection,
 } from "@gatu/hl-react/signing/agent-storage";
+import { createMobileAgentName, MOBILE_AGENT_NAME_BASE } from "@gatu/hl-react/signing/mobile-agent";
 import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 const STORAGE_KEY = `hyperliquid_agent_Mainnet_${OWNER}`;
+const REGISTRATION_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER}`;
 const PRIVATE_KEY = `0x${"31".repeat(32)}` as `0x${string}`;
 const PUBLIC_KEY = privateKeyToAccount(PRIVATE_KEY).address;
 
@@ -87,6 +89,171 @@ describe("Agent storage scope", () => {
 
 		expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
 		expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+	});
+
+	it("rejects a submission marker that is not bound to an earlier pending marker", () => {
+		expect(
+			writeAgentToStorageAndVerify("Mainnet", OWNER, PRIVATE_KEY, PUBLIC_KEY, {
+				source: "local-registration",
+				approvalSubmissionStartedAtMs: Date.now(),
+			}),
+		).toEqual({ status: "failed", reason: "invalid_agent" });
+		expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+		expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+	});
+
+	it("does not expose a pending key when shared cross-tab coordination points elsewhere", () => {
+		const approvalPendingAtMs = Date.now();
+		expect(
+			writeAgentToStorageAndVerify(
+				"Mainnet",
+				OWNER,
+				PRIVATE_KEY,
+				PUBLIC_KEY,
+				{ source: "local-registration", approvalPendingAtMs },
+				{ scope: "session" },
+			).status,
+		).toBe("stored");
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				registrationPublicKey: `0x${"22".repeat(20)}`,
+				registrationPendingAtMs: approvalPendingAtMs,
+			}),
+		);
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				registrationPublicKey: PUBLIC_KEY.toLowerCase(),
+				registrationPendingAtMs: approvalPendingAtMs,
+			}),
+		);
+		expect(readAgentFromStorage("Mainnet", OWNER)?.publicKey).toBe(PUBLIC_KEY.toLowerCase());
+	});
+
+	it("does not expose a pending key without matching shared coordination", () => {
+		expect(
+			writeAgentToStorageAndVerify(
+				"Mainnet",
+				OWNER,
+				PRIVATE_KEY,
+				PUBLIC_KEY,
+				{ source: "local-registration", approvalPendingAtMs: Date.now() },
+				{ scope: "session" },
+			).status,
+		).toBe("stored");
+
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+	});
+
+	it("does not expose a non-pending local Agent while another registration is coordinated", () => {
+		expect(
+			writeAgentToStorageAndVerify("Mainnet", OWNER, PRIVATE_KEY, PUBLIC_KEY, {
+				source: "local-registration",
+			}).status,
+		).toBe("stored");
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				registrationPublicKey: `0x${"22".repeat(20)}`,
+				registrationPendingAtMs: Date.now(),
+			}),
+		);
+
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+	});
+
+	it("does not expose a mobile Agent while a local registration is coordinated", () => {
+		const importedAtMs = Date.now();
+		const agentValidUntilMs = importedAtMs + 60_000;
+		expect(
+			writeAgentToStorageAndVerify("Mainnet", OWNER, PRIVATE_KEY, PUBLIC_KEY, {
+				source: "mobile-sync",
+				agentNameBase: MOBILE_AGENT_NAME_BASE,
+				agentName: createMobileAgentName(agentValidUntilMs),
+				agentValidUntilMs,
+				importedAtMs,
+				syncId: "coordinated-registration-test",
+			}).status,
+		).toBe("stored");
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				registrationPublicKey: `0x${"22".repeat(20)}`,
+				registrationPendingAtMs: importedAtMs,
+			}),
+		);
+
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+	});
+
+	it("requires the local and shared submission boundaries to match exactly", () => {
+		const approvalPendingAtMs = Date.now();
+		const approvalSubmissionStartedAtMs = approvalPendingAtMs + 1;
+		expect(
+			writeAgentToStorageAndVerify(
+				"Mainnet",
+				OWNER,
+				PRIVATE_KEY,
+				PUBLIC_KEY,
+				{ source: "local-registration", approvalPendingAtMs, approvalSubmissionStartedAtMs },
+				{ scope: "session" },
+			).status,
+		).toBe("stored");
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				registrationPublicKey: PUBLIC_KEY.toLowerCase(),
+				registrationPendingAtMs: approvalPendingAtMs,
+			}),
+		);
+
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+	});
+
+	it.each([
+		{ registrationPublicKey: PUBLIC_KEY.toLowerCase() },
+		{ registrationPendingAtMs: 2 },
+		{ registrationSubmissionStartedAtMs: 2 },
+		{
+			registrationPublicKey: PUBLIC_KEY.toLowerCase(),
+			registrationPendingAtMs: 2,
+			registrationSubmissionStartedAtMs: 1,
+		},
+	])("does not expose an Agent through malformed shared registration coordination", (coordination) => {
+		expect(
+			writeAgentToStorageAndVerify("Mainnet", OWNER, PRIVATE_KEY, PUBLIC_KEY, {
+				source: "local-registration",
+			}).status,
+		).toBe("stored");
+		window.localStorage.setItem(
+			REGISTRATION_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "11111111-1111-4111-8111-111111111111",
+				state: "active",
+				...coordination,
+			}),
+		);
+
+		expect(readAgentFromStorage("Mainnet", OWNER)).toBeNull();
 	});
 
 	it("removes both storage scopes during verified shutdown", () => {

@@ -12,6 +12,7 @@ import {
 	type AgentStorageWriteOptions,
 	type AgentWalletMetadata,
 	inspectAgentStorageRecord,
+	markAgentApprovalSubmissionStartedAndVerify,
 	removeAgentFromStorageAndVerify,
 	writeAgentToStorageAndVerify,
 } from "./agent-storage";
@@ -20,6 +21,7 @@ import type { HyperliquidEnv } from "./types";
 const SESSION_STORAGE_PREFIX = "hyperliquid_agent_registration_session";
 const SESSION_RECORD_VERSION = 1;
 const PRE_EXECUTION_GUARD_TIMEOUT_MS = 10_000;
+export const AGENT_REGISTRATION_COORDINATION_WINDOW_MS = 5 * 60_000;
 const PRE_EXECUTION_GUARD_ACTIVE_OWNER_MESSAGE =
 	"Pre-execution guards cannot run with an active Agent-owner execution lease.";
 type AgentStorageRemovalFailureReason = Extract<AgentStorageRemovalResult, { status: "failed" }>["reason"];
@@ -28,12 +30,21 @@ interface AgentRegistrationSessionRecord {
 	version: typeof SESSION_RECORD_VERSION;
 	epoch: string;
 	state: "active" | "closed" | "closing";
+	/** Public, non-secret coordination for an in-flight local Agent approval. */
+	registrationPublicKey?: Address;
+	registrationPendingAtMs?: number;
+	registrationSubmissionStartedAtMs?: number;
 }
 
 export interface AgentRegistrationEpoch {
 	env: HyperliquidEnv;
 	owner: Address;
 	epoch: string;
+}
+
+export interface AgentRegistrationCaptureOptions {
+	/** Reuses only the exact shared pending candidate for reconciliation. */
+	resumePublicKey?: Address;
 }
 
 export interface AgentRegistrationExecutionLease {
@@ -64,6 +75,7 @@ export type AgentRegistrationSessionFailureReason =
 	| "lock_unavailable"
 	| "storage_unavailable"
 	| "invalid_session"
+	| "registration_in_progress"
 	| "owner_activation_failed"
 	| "owner_cleanup_failed"
 	| "unsafe_cleanup_target"
@@ -76,12 +88,14 @@ export type AgentRegistrationSessionResult =
 
 export type AgentRegistrationShutdownResult =
 	| { status: "closed"; epoch: AgentRegistrationEpoch }
+	| { status: "preserved"; epoch: AgentRegistrationEpoch }
 	| {
 			status: "failed";
 			reason: AgentRegistrationSessionFailureReason | AgentStorageRemovalFailureReason;
 	  };
 
 export interface AgentRegistrationShutdownOptions {
+	preserveIfSubmissionStarted?: boolean;
 	restoreOnFailure?: boolean;
 }
 
@@ -97,6 +111,14 @@ export type AgentRegistrationCleanupResult =
 			status: "failed";
 			reason: AgentRegistrationSessionFailureReason | AgentStorageRemovalFailureReason;
 	  };
+
+export interface AgentRegistrationPersistOptions extends AgentStorageWriteOptions {
+	/**
+	 * Resolves a coordinated pending candidate. Remote verification may finalize
+	 * a submitted candidate; expiry cleanup must atomically prove it unsubmitted.
+	 */
+	pendingResolution?: "verified" | "expired-unsubmitted";
+}
 
 export type AgentRegistrationPersistResult =
 	| { status: "stored" }
@@ -130,11 +152,38 @@ function parseSessionRecord(value: string | null): AgentRegistrationSessionRecor
 
 	try {
 		const parsed = JSON.parse(value) as Record<string, unknown>;
+		const registrationPublicKey =
+			typeof parsed.registrationPublicKey === "string" && /^0x[0-9a-fA-F]{40}$/.test(parsed.registrationPublicKey)
+				? (parsed.registrationPublicKey.toLowerCase() as Address)
+				: undefined;
+		const registrationPendingAtMs =
+			typeof parsed.registrationPendingAtMs === "number" &&
+			Number.isSafeInteger(parsed.registrationPendingAtMs) &&
+			parsed.registrationPendingAtMs > 0
+				? parsed.registrationPendingAtMs
+				: undefined;
+		const registrationSubmissionStartedAtMs =
+			typeof parsed.registrationSubmissionStartedAtMs === "number" &&
+			Number.isSafeInteger(parsed.registrationSubmissionStartedAtMs) &&
+			parsed.registrationSubmissionStartedAtMs > 0
+				? parsed.registrationSubmissionStartedAtMs
+				: undefined;
+		const hasRegistrationMetadata =
+			parsed.registrationPublicKey !== undefined ||
+			parsed.registrationPendingAtMs !== undefined ||
+			parsed.registrationSubmissionStartedAtMs !== undefined;
 		if (
 			parsed.version !== SESSION_RECORD_VERSION ||
 			typeof parsed.epoch !== "string" ||
 			parsed.epoch.length < 16 ||
-			(parsed.state !== "active" && parsed.state !== "closed" && parsed.state !== "closing")
+			(parsed.state !== "active" && parsed.state !== "closed" && parsed.state !== "closing") ||
+			(hasRegistrationMetadata &&
+				(parsed.state === "closed" ||
+					registrationPublicKey === undefined ||
+					registrationPendingAtMs === undefined ||
+					(parsed.registrationSubmissionStartedAtMs !== undefined &&
+						(registrationSubmissionStartedAtMs === undefined ||
+							registrationSubmissionStartedAtMs < registrationPendingAtMs))))
 		) {
 			return "invalid";
 		}
@@ -142,6 +191,9 @@ function parseSessionRecord(value: string | null): AgentRegistrationSessionRecor
 			version: SESSION_RECORD_VERSION,
 			epoch: parsed.epoch,
 			state: parsed.state,
+			...(registrationPublicKey === undefined ? {} : { registrationPublicKey }),
+			...(registrationPendingAtMs === undefined ? {} : { registrationPendingAtMs }),
+			...(registrationSubmissionStartedAtMs === undefined ? {} : { registrationSubmissionStartedAtMs }),
 		};
 	} catch {
 		return "invalid";
@@ -241,6 +293,44 @@ function matchesExecutionLease(lease: AgentRegistrationExecutionLease): boolean 
 	return (
 		inspection.status === "valid" && inspection.agent.publicKey.toLowerCase() === lease.agentPublicKey.toLowerCase()
 	);
+}
+
+function hasMatchingPendingRegistration(
+	record: AgentRegistrationSessionRecord,
+	inspection: ReturnType<typeof inspectAgentStorageRecord>,
+): boolean {
+	return (
+		record.registrationPublicKey !== undefined &&
+		record.registrationPendingAtMs !== undefined &&
+		inspection.status === "valid" &&
+		inspection.agent.source === "local-registration" &&
+		inspection.agent.approvalPendingAtMs === record.registrationPendingAtMs &&
+		inspection.agent.approvalSubmissionStartedAtMs === record.registrationSubmissionStartedAtMs &&
+		inspection.agent.publicKey.toLowerCase() === record.registrationPublicKey.toLowerCase()
+	);
+}
+
+function withoutRegistrationCoordination(record: AgentRegistrationSessionRecord): AgentRegistrationSessionRecord {
+	return {
+		version: record.version,
+		epoch: record.epoch,
+		state: record.state,
+	};
+}
+
+function copyRegistrationCoordination(
+	target: AgentRegistrationSessionRecord,
+	source: AgentRegistrationSessionRecord | null,
+): AgentRegistrationSessionRecord {
+	if (!source?.registrationPublicKey || source.registrationPendingAtMs === undefined) return target;
+	return {
+		...target,
+		registrationPublicKey: source.registrationPublicKey,
+		registrationPendingAtMs: source.registrationPendingAtMs,
+		...(source.registrationSubmissionStartedAtMs === undefined
+			? {}
+			: { registrationSubmissionStartedAtMs: source.registrationSubmissionStartedAtMs }),
+	};
 }
 
 async function runPreExecutionGuard(guard: AgentRegistrationPreExecutionGuard): Promise<void> {
@@ -371,6 +461,85 @@ export async function startAgentRegistrationExecution<T>(
 	return result ?? invalidated;
 }
 
+/**
+ * Revalidates the exact pending Agent and durably marks the submission boundary
+ * under the registration lock before starting the exchange request.
+ */
+export async function startAgentRegistrationSubmission<T>(
+	lease: AgentRegistrationExecutionLease,
+	canStart: () => boolean,
+	execute: () => Promise<T>,
+): Promise<AgentRegistrationExecutionStartResult<T>> {
+	const invalidated = { status: "invalidated" } as const;
+	const agentPublicKey = lease.agentPublicKey;
+	if (!agentPublicKey || lease.activeOwner) return invalidated;
+	let markerFailure = false;
+
+	const result = await withSessionLock<AgentRegistrationExecutionStartResult<T>>(
+		lease.epoch.env,
+		lease.epoch.owner,
+		() => {
+			if (!matchesExecutionLease(lease)) return invalidated;
+			try {
+				if (!canStart()) return invalidated;
+			} catch {
+				return invalidated;
+			}
+
+			const current = readSessionRecord(lease.epoch.env, lease.epoch.owner);
+			if (
+				current.status !== "read" ||
+				!current.record ||
+				current.record.registrationPublicKey?.toLowerCase() !== agentPublicKey.toLowerCase() ||
+				current.record.registrationPendingAtMs === undefined ||
+				current.record.registrationSubmissionStartedAtMs !== undefined
+			) {
+				return invalidated;
+			}
+			const pending = inspectAgentStorageRecord(lease.epoch.env, lease.epoch.owner);
+			if (
+				pending.status !== "valid" ||
+				pending.agent.source !== "local-registration" ||
+				pending.agent.publicKey.toLowerCase() !== agentPublicKey.toLowerCase() ||
+				pending.agent.approvalPendingAtMs !== current.record.registrationPendingAtMs ||
+				pending.agent.approvalSubmissionStartedAtMs !== undefined
+			) {
+				return invalidated;
+			}
+
+			const submissionStartedAtMs = Date.now();
+			const coordinationWrite = writeSessionRecord(lease.epoch.env, lease.epoch.owner, {
+				...current.record,
+				registrationSubmissionStartedAtMs: submissionStartedAtMs,
+			});
+			if (coordinationWrite.status === "failed") {
+				markerFailure = true;
+				return invalidated;
+			}
+
+			const marker = markAgentApprovalSubmissionStartedAndVerify(
+				lease.epoch.env,
+				lease.epoch.owner,
+				agentPublicKey,
+				submissionStartedAtMs,
+			);
+			if (marker.status === "failed") {
+				writeSessionRecord(lease.epoch.env, lease.epoch.owner, current.record);
+				markerFailure = true;
+				return invalidated;
+			}
+
+			try {
+				return { status: "started", execution: Promise.resolve(execute()) };
+			} catch (error) {
+				return { status: "started", execution: Promise.reject(error) };
+			}
+		},
+	);
+	if (markerFailure) throw new Error("Agent approval submission state could not be stored safely");
+	return result ?? invalidated;
+}
+
 export async function activateAgentRegistrationSession(env: HyperliquidEnv, owner: Address): Promise<boolean> {
 	const result = await withSessionLock(env, owner, () => {
 		const current = readSessionRecord(env, owner);
@@ -391,12 +560,33 @@ export async function activateAgentRegistrationSession(env: HyperliquidEnv, owne
 export async function captureAgentRegistrationEpoch(
 	env: HyperliquidEnv,
 	owner: Address,
+	options: AgentRegistrationCaptureOptions = {},
 ): Promise<AgentRegistrationSessionResult> {
 	const result = await withSessionLock<AgentRegistrationSessionResult>(env, owner, () => {
 		const current = readSessionRecord(env, owner);
 		if (current.status === "failed") return current;
 		if (current.record?.state === "closing") {
 			return { status: "failed", reason: "invalid_session" };
+		}
+		if (current.record?.state === "active" && current.record.registrationPublicKey) {
+			const inspection = inspectAgentStorageRecord(env, owner);
+			if (inspection.status === "failed") return inspection;
+			if (
+				options.resumePublicKey?.toLowerCase() === current.record.registrationPublicKey.toLowerCase() &&
+				hasMatchingPendingRegistration(current.record, inspection)
+			) {
+				return {
+					status: "ready",
+					epoch: { env, owner: owner.toLowerCase() as Address, epoch: current.record.epoch },
+				};
+			}
+			const pendingAtMs = current.record.registrationPendingAtMs;
+			if (
+				current.record.registrationSubmissionStartedAtMs !== undefined ||
+				(pendingAtMs !== undefined && Date.now() - pendingAtMs < AGENT_REGISTRATION_COORDINATION_WINDOW_MS)
+			) {
+				return { status: "failed", reason: "registration_in_progress" };
+			}
 		}
 
 		const record = createSessionRecord("active");
@@ -422,7 +612,10 @@ export async function isAgentRegistrationEpochCurrent(epoch: AgentRegistrationEp
 
 export async function closeAgentRegistrationSession(env: HyperliquidEnv, owner: Address): Promise<boolean> {
 	const result = await withSessionLock(env, owner, () => {
-		const next = createSessionRecord("closing");
+		const current = readSessionRecord(env, owner);
+		if (current.status === "failed") return false;
+		const created = createSessionRecord("closing");
+		const next = created ? copyRegistrationCoordination(created, current.record) : null;
 		return !!next && writeSessionRecord(env, owner, next).status === "stored";
 	});
 	return result ?? false;
@@ -433,7 +626,7 @@ export async function persistAgentForRegistration(
 	privateKey: string,
 	publicKey: Address,
 	metadata: AgentWalletMetadata = { source: "local-registration" },
-	options: AgentStorageWriteOptions = {},
+	options: AgentRegistrationPersistOptions = {},
 ): Promise<AgentRegistrationPersistResult> {
 	const result = await withSessionLock<AgentRegistrationPersistResult>(epoch.env, epoch.owner, () => {
 		const before = readSessionRecord(epoch.env, epoch.owner);
@@ -441,13 +634,123 @@ export async function persistAgentForRegistration(
 		if (!matchesEpoch(before.record, epoch)) {
 			return { status: "failed", reason: "registration_cancelled" };
 		}
+		if (!before.record) return { status: "failed", reason: "invalid_session" };
 
-		const write = writeAgentToStorageAndVerify(epoch.env, epoch.owner, privateKey, publicKey, metadata, options);
+		const isPendingLocalRegistration =
+			metadata.source === "local-registration" && metadata.approvalPendingAtMs !== undefined;
+		if (options.pendingResolution === "expired-unsubmitted" && before.record.registrationPublicKey === undefined) {
+			return { status: "failed", reason: "registration_cancelled" };
+		}
+		if (before.record.registrationPublicKey !== undefined && !isPendingLocalRegistration) {
+			const existing = inspectAgentStorageRecord(epoch.env, epoch.owner);
+			if (
+				metadata.source !== "local-registration" ||
+				before.record.registrationPublicKey.toLowerCase() !== publicKey.toLowerCase() ||
+				existing.status !== "valid" ||
+				existing.agent.source !== "local-registration" ||
+				existing.agent.publicKey.toLowerCase() !== publicKey.toLowerCase() ||
+				existing.agent.privateKey.toLowerCase() !== privateKey.toLowerCase() ||
+				existing.agent.approvalPendingAtMs !== before.record.registrationPendingAtMs
+			) {
+				return { status: "failed", reason: "registration_in_progress" };
+			}
+			if (options.pendingResolution === undefined) {
+				return { status: "failed", reason: "registration_in_progress" };
+			}
+			if (
+				options.pendingResolution === "expired-unsubmitted" &&
+				(before.record.registrationSubmissionStartedAtMs !== undefined ||
+					existing.agent.approvalSubmissionStartedAtMs !== undefined)
+			) {
+				return { status: "failed", reason: "registration_cancelled" };
+			}
+		}
+		if (
+			isPendingLocalRegistration &&
+			before.record.registrationPublicKey !== undefined &&
+			before.record.registrationPublicKey.toLowerCase() !== publicKey.toLowerCase()
+		) {
+			return { status: "failed", reason: "registration_cancelled" };
+		}
+
+		let effectiveMetadata = metadata;
+		let coordinatedRecord = before.record;
+		if (isPendingLocalRegistration) {
+			const existing = inspectAgentStorageRecord(epoch.env, epoch.owner);
+			if (existing.status === "failed") return existing;
+			const existingPendingAgent =
+				existing.status === "valid" &&
+				existing.agent.source === "local-registration" &&
+				existing.agent.publicKey.toLowerCase() === publicKey.toLowerCase() &&
+				existing.agent.approvalPendingAtMs === metadata.approvalPendingAtMs
+					? existing.agent
+					: undefined;
+			if (
+				existing.status === "valid" &&
+				existing.agent.publicKey.toLowerCase() === publicKey.toLowerCase() &&
+				existingPendingAgent === undefined
+			) {
+				return { status: "failed", reason: "registration_cancelled" };
+			}
+			if (
+				before.record.registrationPublicKey?.toLowerCase() === publicKey.toLowerCase() &&
+				before.record.registrationPendingAtMs !== metadata.approvalPendingAtMs
+			) {
+				return { status: "failed", reason: "registration_cancelled" };
+			}
+			const storedSubmissionStartedAtMs = existingPendingAgent?.approvalSubmissionStartedAtMs;
+			const coordinatedSubmissionStartedAtMs =
+				before.record.registrationPublicKey?.toLowerCase() === publicKey.toLowerCase()
+					? before.record.registrationSubmissionStartedAtMs
+					: undefined;
+			const requestedSubmissionStartedAtMs = metadata.approvalSubmissionStartedAtMs;
+			const submissionMarkers = [
+				storedSubmissionStartedAtMs,
+				coordinatedSubmissionStartedAtMs,
+				requestedSubmissionStartedAtMs,
+			].filter((value): value is number => value !== undefined);
+			if (new Set(submissionMarkers).size > 1) {
+				return { status: "failed", reason: "registration_cancelled" };
+			}
+			const approvalSubmissionStartedAtMs = submissionMarkers[0];
+			effectiveMetadata = {
+				...metadata,
+				...(approvalSubmissionStartedAtMs === undefined ? {} : { approvalSubmissionStartedAtMs }),
+			};
+			coordinatedRecord = {
+				version: before.record.version,
+				epoch: before.record.epoch,
+				state: before.record.state,
+				registrationPublicKey: publicKey.toLowerCase() as Address,
+				registrationPendingAtMs: metadata.approvalPendingAtMs,
+				...(approvalSubmissionStartedAtMs === undefined
+					? {}
+					: { registrationSubmissionStartedAtMs: approvalSubmissionStartedAtMs }),
+			};
+			const coordinationWrite = writeSessionRecord(epoch.env, epoch.owner, coordinatedRecord);
+			if (coordinationWrite.status === "failed") return coordinationWrite;
+		}
+
+		const write = writeAgentToStorageAndVerify(epoch.env, epoch.owner, privateKey, publicKey, effectiveMetadata, {
+			scope: options.scope,
+		});
 		if (write.status === "failed") {
+			if (isPendingLocalRegistration && effectiveMetadata.approvalSubmissionStartedAtMs === undefined) {
+				writeSessionRecord(epoch.env, epoch.owner, before.record);
+			}
 			return {
 				status: "failed",
 				reason: write.reason === "invalid_agent" ? "invalid_agent" : "agent_write_failed",
 			};
+		}
+
+		if (!isPendingLocalRegistration) {
+			const coordinationClear = writeSessionRecord(
+				epoch.env,
+				epoch.owner,
+				withoutRegistrationCoordination(coordinatedRecord),
+			);
+			if (coordinationClear.status === "failed") return coordinationClear;
 		}
 
 		const after = readSessionRecord(epoch.env, epoch.owner);
@@ -465,6 +768,7 @@ export async function persistAgentForRegistration(
 export async function cancelAgentRegistrationEpochAndRemove(
 	epoch: AgentRegistrationEpoch,
 	expectedPublicKey?: Address,
+	options: { preserveIfSubmissionStarted?: boolean } = {},
 ): Promise<AgentRegistrationVerificationResult> {
 	const result = await withSessionLock<AgentRegistrationVerificationResult>(epoch.env, epoch.owner, async () => {
 		const current = readSessionRecord(epoch.env, epoch.owner);
@@ -473,6 +777,23 @@ export async function cancelAgentRegistrationEpochAndRemove(
 		// A stale generation has no authority over storage that may belong to a
 		// newer registration. Return before reading the Agent slot.
 		if (!matchesEpoch(current.record, epoch)) return { status: "cancelled" };
+
+		if (expectedPublicKey && options.preserveIfSubmissionStarted) {
+			if (
+				current.record?.registrationPublicKey?.toLowerCase() === expectedPublicKey.toLowerCase() &&
+				current.record.registrationSubmissionStartedAtMs !== undefined
+			) {
+				return { status: "current" };
+			}
+			const pending = inspectAgentStorageRecord(epoch.env, epoch.owner);
+			if (
+				pending.status === "valid" &&
+				pending.agent.publicKey.toLowerCase() === expectedPublicKey.toLowerCase() &&
+				pending.agent.approvalSubmissionStartedAtMs !== undefined
+			) {
+				return { status: "current" };
+			}
+		}
 
 		const closing = createSessionRecord("closing");
 		if (!closing) return { status: "failed", reason: "storage_unavailable" };
@@ -564,7 +885,27 @@ export async function closeAgentRegistrationSessionAndRemove(
 	options: AgentRegistrationShutdownOptions = {},
 ): Promise<AgentRegistrationShutdownResult> {
 	const result = await withSessionLock<AgentRegistrationShutdownResult>(env, owner, async () => {
-		const next = createSessionRecord("closing");
+		const current = readSessionRecord(env, owner);
+		if (current.status === "failed") return current;
+		if (options.preserveIfSubmissionStarted) {
+			const inspection = inspectAgentStorageRecord(env, owner);
+			if (inspection.status === "failed") return inspection;
+			if (
+				current.record?.registrationSubmissionStartedAtMs !== undefined ||
+				(inspection.status === "valid" && inspection.agent.approvalSubmissionStartedAtMs !== undefined)
+			) {
+				const epoch = current.record?.epoch;
+				if (!epoch || current.record?.state !== "active") {
+					return { status: "failed", reason: "invalid_session" };
+				}
+				return {
+					status: "preserved",
+					epoch: { env, owner: owner.toLowerCase() as Address, epoch },
+				};
+			}
+		}
+		const created = createSessionRecord("closing");
+		const next = created ? copyRegistrationCoordination(created, current.record) : null;
 		if (!next) return { status: "failed", reason: "storage_unavailable" };
 
 		const write = writeSessionRecord(env, owner, next);
@@ -573,7 +914,8 @@ export async function closeAgentRegistrationSessionAndRemove(
 		const removal = removeAgentFromStorageAndVerify(env, owner);
 		if (removal.status === "failed") {
 			if (options.restoreOnFailure !== false) {
-				const active = createSessionRecord("active");
+				const createdActive = createSessionRecord("active");
+				const active = createdActive ? copyRegistrationCoordination(createdActive, current.record) : null;
 				if (active) writeSessionRecord(env, owner, active);
 			}
 			return removal;
@@ -610,6 +952,12 @@ export async function cleanupAgentRegistrationIfMatches(
 	const result = await withSessionLock<AgentRegistrationCleanupResult>(env, owner, async () => {
 		const current = readSessionRecord(env, owner);
 		if (current.status === "failed") return current;
+		// An invalid or stale local record cannot prove that an approval request
+		// never reached Hyperliquid. Preserve a recorded submission boundary so
+		// automatic status cleanup cannot make a second approval possible.
+		if (current.record?.registrationSubmissionStartedAtMs !== undefined) {
+			return { status: "skipped" };
+		}
 
 		const inspection = inspectAgentStorageRecord(env, owner);
 		if (inspection.status === "failed") return inspection;
@@ -644,7 +992,8 @@ export async function restoreAgentRegistrationSession(epoch: AgentRegistrationEp
 			return false;
 		}
 
-		const next = createSessionRecord("active");
+		const created = createSessionRecord("active");
+		const next = created ? copyRegistrationCoordination(created, current.record) : null;
 		return !!next && writeSessionRecord(epoch.env, epoch.owner, next).status === "stored";
 	});
 	return result ?? false;

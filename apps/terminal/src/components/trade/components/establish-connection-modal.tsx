@@ -1,26 +1,54 @@
 import { AdaptiveModal, Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { readPersistTradingConnection, useAgentRegistration, writePersistTradingConnection } from "@/lib/hyperliquid";
+import {
+	type AgentMissingReason,
+	type AgentRegistrationFailurePhase,
+	readPersistTradingConnection,
+	useAgentRegistration,
+	writePersistTradingConnection,
+} from "@/lib/hyperliquid";
 
 interface Props {
 	onClose: () => void;
 	onConnected: () => void;
 }
 
+const previousAttemptMessage = msg`A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature.`;
+const missingConnectionMessage = msg`Trading is not connected in this browser. Reconnect to create or replace its trading key.`;
+const ambiguousCompletionMessage = msg`The connection could not be completed. It may already be approved; wait a moment and try again.`;
+const unsafePreflightMessage = msg`The connection could not be checked safely. No wallet signature was requested; wait a moment and try again.`;
+const identityChangedMessage = msg`Wallet or network changed before the connection completed. Reopen the action for the current account.`;
+const otherTabMessage = msg`A trading connection is already being established in another tab. Finish or cancel it there before trying again.`;
+const unsupportedCoordinationMessage = msg`This browser cannot safely coordinate the trading connection across tabs. Use a supported browser.`;
+const connectionFallbackMessage = msg`Connection could not be established.`;
+
 export function EstablishConnectionModal({ onClose, onConnected }: Props) {
-	const { t } = useLingui();
+	const { _ } = useLingui();
 	const isMobile = useIsMobile();
-	const { register, status, error } = useAgentRegistration();
+	const { walletIntent } = useWalletSession();
+	const { register, status, error, agentMissingReason, failurePhase } = useAgentRegistration();
 	const [persistConnection, setPersistConnection] = useState(readPersistTradingConnection);
 	const isPending = status === "approving_agent" || status === "verifying";
+	const missingReasonDescriptor = getMissingReasonMessage(agentMissingReason);
+	const missingReasonMessage = missingReasonDescriptor ? _(missingReasonDescriptor) : null;
+	const errorDescriptor = error ? getConnectionErrorMessage(error, failurePhase) : null;
+	const errorMessage = error
+		? errorDescriptor
+			? _(errorDescriptor)
+			: formatExchangeActionError(error, _(connectionFallbackMessage))
+		: null;
 
 	function handleConnect() {
 		if (isPending) return;
-		void register({ persistConnection })
+		void register({ approval: { applicationReview: "confirmed" }, persistConnection })
 			.then(onConnected)
 			.catch(() => undefined);
 	}
@@ -58,15 +86,23 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 					checked={persistConnection}
 					disabled={isPending}
 					onCheckedChange={handlePersistConnectionChange}
+					description={
+						<Trans>Stored only in this browser profile; other browsers and devices stay disconnected.</Trans>
+					}
 					label={
 						<span className="text-sm leading-5 text-fg-muted">
 							<Trans>Stay Connected</Trans>
 						</span>
 					}
 				/>
-				{error ? (
+				{missingReasonMessage ? (
+					<output className="block rounded-8 bg-warning-soft px-3 py-2 text-xs leading-5 text-warning">
+						{missingReasonMessage}
+					</output>
+				) : null}
+				{errorMessage ? (
 					<p role="alert" className="text-xs leading-4 text-error">
-						{formatExchangeActionError(error, t`Connection could not be established.`)}
+						{errorMessage}
 					</p>
 				) : null}
 			</ModalContent>
@@ -75,7 +111,11 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 				<Button type="button" size="md" className="h-10 w-full" disabled={isPending} onClick={handleConnect}>
 					{isPending ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
 					{status === "approving_agent" ? (
-						<Trans>Confirm in wallet</Trans>
+						walletIntent === "embedded" ? (
+							<Trans>Connecting...</Trans>
+						) : (
+							<Trans>Confirm in wallet</Trans>
+						)
 					) : status === "verifying" ? (
 						<Trans>Verifying...</Trans>
 					) : (
@@ -85,4 +125,48 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 			</ModalFooter>
 		</AdaptiveModal>
 	);
+}
+
+function getMissingReasonMessage(reason: AgentMissingReason | null): MessageDescriptor | null {
+	if (!reason) return null;
+	if (reason === "approval_unconfirmed") {
+		return previousAttemptMessage;
+	}
+	return missingConnectionMessage;
+}
+
+function getConnectionErrorMessage(
+	error: Error,
+	failurePhase: AgentRegistrationFailurePhase | null,
+): MessageDescriptor | null {
+	if (failurePhase === "verification" || failurePhase === "persistence") {
+		return ambiguousCompletionMessage;
+	}
+
+	if (error.name !== "AgentStatusError") {
+		if (
+			failurePhase === "preflight" &&
+			(error.message === "Agent key storage could not be verified" ||
+				error.message === "Stored Agent key is invalid" ||
+				error.message === "Agent private key could not be stored securely")
+		) {
+			return unsafePreflightMessage;
+		}
+		if (error.message.startsWith("Wallet or network changed")) {
+			return identityChangedMessage;
+		}
+		if (error.message.startsWith("A trading connection is already being established in another tab")) {
+			return otherTabMessage;
+		}
+		if (error.message.startsWith("Secure Agent registration requires Web Locks support")) {
+			return unsupportedCoordinationMessage;
+		}
+		return null;
+	}
+
+	if (failurePhase === "preflight" && error.name === "AgentStatusError") {
+		return unsafePreflightMessage;
+	}
+
+	return null;
 }

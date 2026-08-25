@@ -20,6 +20,7 @@ import {
 	persistAgentForRegistration,
 	restoreAgentRegistrationSession,
 	startAgentRegistrationExecution,
+	startAgentRegistrationSubmission,
 	verifyAgentRegistrationOrRemove,
 } from "@gatu/hl-react/signing/agent-registration-session";
 import {
@@ -318,6 +319,43 @@ describe("Agent registration session coordination", () => {
 		expect(await isAgentRegistrationEpochCurrent(newCapture.epoch)).toBe(true);
 	});
 
+	it("does not clear a submitted boundary when its local Agent record becomes invalid", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs: Date.now(),
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => undefined,
+		);
+		if (submission.status !== "started") throw new Error("Expected started submission");
+		await submission.execution;
+		const shared = window.localStorage.getItem(SESSION_STORAGE_KEY);
+		window.localStorage.setItem(AGENT_STORAGE_KEY, "{invalid");
+
+		expect(
+			await cleanupAgentRegistrationIfMatches("Mainnet", OWNER, {
+				kind: "invalid-record",
+			}),
+		).toEqual({ status: "skipped" });
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe("{invalid");
+		expect(window.localStorage.getItem(SESSION_STORAGE_KEY)).toBe(shared);
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+	});
+
 	it("atomically removes a matching stale Agent and its active owner", async () => {
 		expect(await activateAgentRegistrationSession("Mainnet", OWNER)).toBe(true);
 		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
@@ -606,6 +644,351 @@ describe("Agent registration session coordination", () => {
 			status: "invalidated",
 		});
 		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("marks the exact pending Agent before starting submission and preserves it during ambiguous cleanup", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const approvalPendingAtMs = Date.now();
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs,
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		expect(lease).not.toBeNull();
+		if (!lease) throw new Error("Expected exact registration lease");
+
+		const execute = vi.fn(async () => "submitted");
+		const submission = await startAgentRegistrationSubmission(lease, () => true, execute);
+		expect(submission.status).toBe("started");
+		if (submission.status !== "started") throw new Error("Expected started submission");
+		await expect(submission.execution).resolves.toBe("submitted");
+		expect(execute).toHaveBeenCalledOnce();
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
+			approvalPendingAtMs,
+			approvalSubmissionStartedAtMs: expect.any(Number),
+			publicKey: publicKey.toLowerCase(),
+		});
+
+		expect(
+			await cancelAgentRegistrationEpochAndRemove(captured.epoch, publicKey, {
+				preserveIfSubmissionStarted: true,
+			}),
+		).toEqual({ status: "current" });
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).not.toBeNull();
+		expect(await isAgentRegistrationEpochCurrent(captured.epoch)).toBe(true);
+		expect(
+			await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER, {
+				preserveIfSubmissionStarted: true,
+			}),
+		).toEqual({ status: "preserved", epoch: captured.epoch });
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).not.toBeNull();
+		expect(await isAgentRegistrationEpochCurrent(captured.epoch)).toBe(true);
+	});
+
+	it("preserves a submitted Agent when only the shared submission boundary remains readable", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs: Date.now(),
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => undefined,
+		);
+		if (submission.status !== "started") throw new Error("Expected started submission");
+		await submission.execution;
+
+		const stored = JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}") as Record<string, unknown>;
+		delete stored.approvalSubmissionStartedAtMs;
+		window.localStorage.setItem(AGENT_STORAGE_KEY, JSON.stringify(stored));
+
+		expect(
+			await cancelAgentRegistrationEpochAndRemove(captured.epoch, publicKey, {
+				preserveIfSubmissionStarted: true,
+			}),
+		).toEqual({ status: "current" });
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).not.toBeNull();
+		expect(await isAgentRegistrationEpochCurrent(captured.epoch)).toBe(true);
+	});
+
+	it("allows only an explicit exact-key reconciliation to reuse shared pending coordination", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const approvalPendingAtMs = Date.now();
+		expect(
+			await persistAgentForRegistration(
+				captured.epoch,
+				privateKey,
+				publicKey,
+				{ source: "local-registration", approvalPendingAtMs },
+				{ scope: "session" },
+			),
+		).toEqual({ status: "stored" });
+
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+		expect(
+			await captureAgentRegistrationEpoch("Mainnet", OWNER, {
+				resumePublicKey: publicKey,
+			}),
+		).toEqual(captured);
+		const sharedRecord = window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "";
+		expect(sharedRecord).toContain(publicKey.toLowerCase());
+		expect(sharedRecord).not.toContain(privateKey.slice(2));
+
+		window.sessionStorage.clear();
+		expect(
+			await captureAgentRegistrationEpoch("Mainnet", OWNER, {
+				resumePublicKey: publicKey,
+			}),
+		).toEqual({ status: "failed", reason: "registration_in_progress" });
+	});
+
+	it("treats the shared submission boundary as one-shot and preserves it against a stale pending write", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const approvalPendingAtMs = Date.now();
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs,
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		expect(lease).not.toBeNull();
+		if (!lease) throw new Error("Expected exact registration lease");
+
+		const firstExecute = vi.fn(async () => "submitted");
+		const first = await startAgentRegistrationSubmission(lease, () => true, firstExecute);
+		expect(first.status).toBe("started");
+		if (first.status !== "started") throw new Error("Expected first submission");
+		await expect(first.execution).resolves.toBe("submitted");
+		const secondExecute = vi.fn(async () => "duplicate");
+		expect(await startAgentRegistrationSubmission(lease, () => true, secondExecute)).toEqual({
+			status: "invalidated",
+		});
+		expect(secondExecute).not.toHaveBeenCalled();
+
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs,
+			}),
+		).toEqual({ status: "stored" });
+		const stored = JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}") as Record<string, unknown>;
+		const shared = JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}") as Record<string, unknown>;
+		expect(stored.approvalSubmissionStartedAtMs).toBeTypeOf("number");
+		expect(shared.registrationSubmissionStartedAtMs).toBe(stored.approvalSubmissionStartedAtMs);
+		vi.spyOn(Date, "now").mockReturnValue(Number(stored.approvalSubmissionStartedAtMs) + 10 * 60_000);
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+	});
+
+	it("rejects expired-pending cleanup when submission wins the registration lock", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const approvalPendingAtMs = Date.now() - 5 * 60_000;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs,
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+
+		let markLockAcquired = () => {};
+		let releaseLock = () => {};
+		const lockAcquired = new Promise<void>((resolve) => {
+			markLockAcquired = resolve;
+		});
+		const lockRelease = new Promise<void>((resolve) => {
+			releaseLock = resolve;
+		});
+		const heldLock = window.navigator.locks.request(SESSION_LOCK_NAME, { mode: "exclusive" }, async () => {
+			markLockAcquired();
+			await lockRelease;
+		});
+		await lockAcquired;
+
+		const submissionPromise = startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => "submitted",
+		);
+		const staleCleanupPromise = persistAgentForRegistration(
+			captured.epoch,
+			privateKey,
+			publicKey,
+			{ source: "local-registration" },
+			{ pendingResolution: "expired-unsubmitted" },
+		);
+		releaseLock();
+		await heldLock;
+
+		const submission = await submissionPromise;
+		expect(submission.status).toBe("started");
+		if (submission.status !== "started") throw new Error("Expected started submission");
+		await expect(submission.execution).resolves.toBe("submitted");
+		expect(await staleCleanupPromise).toEqual({ status: "failed", reason: "registration_cancelled" });
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
+			approvalPendingAtMs,
+			approvalSubmissionStartedAtMs: expect.any(Number),
+			publicKey: publicKey.toLowerCase(),
+		});
+		expect(JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}")).toMatchObject({
+			registrationPublicKey: publicKey.toLowerCase(),
+			registrationPendingAtMs: approvalPendingAtMs,
+			registrationSubmissionStartedAtMs: expect.any(Number),
+		});
+	});
+
+	it("never lets a different registration entry point replace a submitted local Agent", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs: Date.now(),
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => undefined,
+		);
+		expect(submission.status).toBe("started");
+		if (submission.status === "started") await submission.execution;
+
+		const importedPrivateKey = generatePrivateKey();
+		const importedPublicKey = privateKeyToAccount(importedPrivateKey).address;
+		const importedAtMs = Date.now();
+		const agentValidUntilMs = importedAtMs + 60_000;
+		expect(
+			await persistAgentForRegistration(captured.epoch, importedPrivateKey, importedPublicKey, {
+				source: "mobile-sync",
+				agentNameBase: "Mobile",
+				agentName: `Mobile valid_until ${agentValidUntilMs}`,
+				agentValidUntilMs,
+				importedAtMs,
+				syncId: "different-entry-point",
+			}),
+		).toEqual({ status: "failed", reason: "registration_in_progress" });
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
+			privateKey,
+			publicKey: publicKey.toLowerCase(),
+			approvalSubmissionStartedAtMs: expect.any(Number),
+		});
+	});
+
+	it("keeps submitted coordination when logout storage cleanup cannot be verified", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs: Date.now(),
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => undefined,
+		);
+		if (submission.status === "started") await submission.execution;
+
+		const originalRemoveItem = Storage.prototype.removeItem;
+		vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (this: Storage, key: string) {
+			if (key === AGENT_STORAGE_KEY) throw new Error("remove blocked");
+			originalRemoveItem.call(this, key);
+		});
+		expect(await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "remove_failed",
+		});
+		expect(JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}")).toMatchObject({
+			state: "active",
+			registrationPublicKey: publicKey.toLowerCase(),
+			registrationSubmissionStartedAtMs: expect.any(Number),
+		});
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+	});
+
+	it("invalidates a signed submission boundary when another tab replaced the exact pending key", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(captured.epoch, privateKey, publicKey, {
+				source: "local-registration",
+				approvalPendingAtMs: Date.now(),
+			}),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		expect(lease).not.toBeNull();
+		if (!lease) throw new Error("Expected exact registration lease");
+
+		const replacementPrivateKey = generatePrivateKey();
+		const replacementPublicKey = privateKeyToAccount(replacementPrivateKey).address;
+		window.localStorage.setItem(
+			AGENT_STORAGE_KEY,
+			JSON.stringify({
+				approvalPendingAtMs: Date.now(),
+				privateKey: replacementPrivateKey,
+				publicKey: replacementPublicKey.toLowerCase(),
+				source: "local-registration",
+			}),
+		);
+		const execute = vi.fn(async () => "unexpected");
+
+		expect(await startAgentRegistrationSubmission(lease, () => true, execute)).toEqual({ status: "invalidated" });
+		expect(execute).not.toHaveBeenCalled();
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).not.toHaveProperty(
+			"approvalSubmissionStartedAtMs",
+		);
 	});
 
 	it("runs the pre-execution guard only after acquiring the signing-session lock", async () => {

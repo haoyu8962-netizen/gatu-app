@@ -39,12 +39,16 @@ const sourcedAgentWalletSchema = z.discriminatedUnion("source", [
 	agentKeySchema
 		.extend({
 			source: z.literal("local-registration"),
+			approvalPendingAtMs: z.number().int().positive().safe().optional(),
+			approvalSubmissionStartedAtMs: z.number().int().positive().safe().optional(),
 			...nonMobileMetadataSchema,
 		})
 		.strict(),
 	agentKeySchema
 		.extend({
 			source: z.literal("mobile-sync"),
+			approvalPendingAtMs: z.never().optional(),
+			approvalSubmissionStartedAtMs: z.never().optional(),
 			agentNameBase: z.literal(MOBILE_AGENT_NAME_BASE),
 			agentName: z.string().min(1),
 			agentValidUntilMs: z.number().int().positive().safe(),
@@ -57,6 +61,8 @@ const sourcedAgentWalletSchema = z.discriminatedUnion("source", [
 const legacyLocalAgentWalletSchema = agentKeySchema
 	.extend({
 		source: z.undefined().optional(),
+		approvalPendingAtMs: z.never().optional(),
+		approvalSubmissionStartedAtMs: z.never().optional(),
 		...nonMobileMetadataSchema,
 	})
 	.strict();
@@ -79,6 +85,14 @@ const agentWalletSchema = z
 				agent.syncId.trim() !== agent.syncId)
 		) {
 			ctx.addIssue({ code: "custom", message: "Invalid canonical mobile Agent metadata" });
+		}
+
+		if (
+			agent.source === "local-registration" &&
+			agent.approvalSubmissionStartedAtMs !== undefined &&
+			(agent.approvalPendingAtMs === undefined || agent.approvalSubmissionStartedAtMs < agent.approvalPendingAtMs)
+		) {
+			ctx.addIssue({ code: "custom", message: "Invalid Agent approval submission metadata" });
 		}
 	});
 
@@ -197,14 +211,55 @@ function getRegistrationSessionStorageKey(env: HyperliquidEnv, userAddress: stri
 	return `${REGISTRATION_SESSION_STORAGE_PREFIX}_${env}_${userAddress.toLowerCase()}`;
 }
 
-function isAgentRegistrationSessionUsable(raw: string | null): boolean {
+function isAgentRegistrationSessionUsable(raw: string | null, agent?: AgentWallet | null): boolean {
 	// Existing installations without a session record remain compatible. Once
-	// a record exists, malformed and closing/closed records fail closed.
-	if (raw === null) return true;
+	// a record exists, malformed and closing/closed records fail closed. Pending
+	// records are new and are usable only with exact shared coordination.
+	if (raw === null) {
+		return agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined;
+	}
 	try {
 		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		const registrationPublicKey =
+			typeof parsed.registrationPublicKey === "string" && /^0x[0-9a-fA-F]{40}$/.test(parsed.registrationPublicKey)
+				? parsed.registrationPublicKey.toLowerCase()
+				: undefined;
+		const registrationPendingAtMs =
+			typeof parsed.registrationPendingAtMs === "number" &&
+			Number.isSafeInteger(parsed.registrationPendingAtMs) &&
+			parsed.registrationPendingAtMs > 0
+				? parsed.registrationPendingAtMs
+				: undefined;
+		const registrationSubmissionStartedAtMs =
+			typeof parsed.registrationSubmissionStartedAtMs === "number" &&
+			Number.isSafeInteger(parsed.registrationSubmissionStartedAtMs) &&
+			parsed.registrationSubmissionStartedAtMs > 0
+				? parsed.registrationSubmissionStartedAtMs
+				: undefined;
+		const hasRegistrationMetadata =
+			parsed.registrationPublicKey !== undefined ||
+			parsed.registrationPendingAtMs !== undefined ||
+			parsed.registrationSubmissionStartedAtMs !== undefined;
+		const isActive =
+			parsed.version === 1 &&
+			parsed.state === "active" &&
+			typeof parsed.epoch === "string" &&
+			parsed.epoch.length >= 16 &&
+			(!hasRegistrationMetadata ||
+				(registrationPublicKey !== undefined &&
+					registrationPendingAtMs !== undefined &&
+					(parsed.registrationSubmissionStartedAtMs === undefined ||
+						(registrationSubmissionStartedAtMs !== undefined &&
+							registrationSubmissionStartedAtMs >= registrationPendingAtMs))));
+		if (!isActive) return false;
+		if (registrationPublicKey === undefined) {
+			return agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined;
+		}
+		if (agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined) return false;
 		return (
-			parsed.version === 1 && parsed.state === "active" && typeof parsed.epoch === "string" && parsed.epoch.length >= 16
+			registrationPublicKey === agent.publicKey.toLowerCase() &&
+			registrationPendingAtMs === agent.approvalPendingAtMs &&
+			registrationSubmissionStartedAtMs === agent.approvalSubmissionStartedAtMs
 		);
 	} catch {
 		return false;
@@ -245,6 +300,47 @@ export function inspectAgentStorageRecord(env: HyperliquidEnv, userAddress: stri
 	}
 }
 
+/** @internal Must be called while the registration lock for this owner is held. */
+export function markAgentApprovalSubmissionStartedAndVerify(
+	env: HyperliquidEnv,
+	userAddress: string,
+	expectedPublicKey: Address,
+	submissionStartedAtMs: number,
+): AgentStorageWriteResult {
+	const records = readStoredAgentRecords(env, userAddress);
+	if (!records) return { status: "failed", reason: "storage_unavailable" };
+	const raw = getPreferredStoredAgentRaw(records);
+	if (raw === null) return { status: "failed", reason: "invalid_agent" };
+
+	let agent: AgentWallet | null = null;
+	try {
+		agent = parseAgentWallet(JSON.parse(raw));
+	} catch {
+		return { status: "failed", reason: "invalid_agent" };
+	}
+	if (
+		!agent ||
+		agent.source !== "local-registration" ||
+		agent.approvalPendingAtMs === undefined ||
+		agent.publicKey.toLowerCase() !== expectedPublicKey.toLowerCase()
+	) {
+		return { status: "failed", reason: "invalid_agent" };
+	}
+
+	return writeAgentToStorageAndVerify(
+		env,
+		userAddress,
+		agent.privateKey,
+		agent.publicKey,
+		{
+			source: "local-registration",
+			approvalPendingAtMs: agent.approvalPendingAtMs,
+			approvalSubmissionStartedAtMs: submissionStartedAtMs,
+		},
+		{ scope: records.sessionRaw !== null ? "session" : "local" },
+	);
+}
+
 // A verified cleanup attempt quarantines the exact slot immediately. If
 // browser storage refuses both removal and tombstoning, this process must not
 // recreate a signer from the stale value. Only a later verified write can
@@ -264,8 +360,8 @@ export function readAgentFromStorage(env: HyperliquidEnv, userAddress: string): 
 		const key = getStorageKey(env, userAddress);
 		if (blockedAgentStorageKeys.has(key)) return null;
 		const sessionRaw = localStorage.getItem(getRegistrationSessionStorageKey(env, userAddress));
-		if (!isAgentRegistrationSessionUsable(sessionRaw)) return null;
-		return readStoredAgentRecord(env, userAddress);
+		const agent = readStoredAgentRecord(env, userAddress);
+		return isAgentRegistrationSessionUsable(sessionRaw, agent) ? agent : null;
 	} catch {
 		return null;
 	}
@@ -680,16 +776,16 @@ export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string)
 		return null;
 	}
 	const raw = getPreferredStoredAgentRaw(records);
-	if (!isAgentRegistrationSessionUsable(registrationRaw)) {
-		const storedAgent = raw
-			? (() => {
-					try {
-						return parseAgentWallet(JSON.parse(raw));
-					} catch {
-						return null;
-					}
-				})()
-			: null;
+	const storedAgent = raw
+		? (() => {
+				try {
+					return parseAgentWallet(JSON.parse(raw));
+				} catch {
+					return null;
+				}
+			})()
+		: null;
+	if (!isAgentRegistrationSessionUsable(registrationRaw, storedAgent)) {
 		evictAgentWallet(env, entry?.value ?? storedAgent);
 		snapshotCache.set(key, {
 			raw,

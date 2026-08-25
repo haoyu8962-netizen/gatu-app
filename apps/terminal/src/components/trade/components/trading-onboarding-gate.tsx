@@ -10,11 +10,6 @@ import {
 	useEstablishConnectionModalActions,
 	useGlobalModalType,
 } from "@/stores/use-global-modal-store";
-import {
-	useAgentPromptDismissed,
-	useClearAgentPromptDismissal,
-	useDismissAgentPrompt,
-} from "@/stores/use-trading-onboarding-store";
 import { EstablishConnectionModal } from "./establish-connection-modal";
 
 interface Props {
@@ -24,7 +19,7 @@ interface Props {
 export function TradingOnboardingGate({ children }: Props) {
 	const { hasWalletAccess, walletAddress } = useWalletSession();
 	const { env } = useHyperliquid();
-	const { agentVerificationStatus, isAgentReady } = useAgentStatus();
+	const { isAgentReady } = useAgentStatus();
 	const balances = useDefaultDexBalances();
 	const {
 		available: depositAvailable,
@@ -36,11 +31,7 @@ export function TradingOnboardingGate({ children }: Props) {
 	const establishConnection = useEstablishConnectionModalActions();
 	const deposit = useDepositModalActions();
 	const [pendingDepositIdentity, setPendingDepositIdentity] = useState<string | null>(null);
-	const identity = walletAddress?.toLowerCase() ?? null;
-	const promptIdentity = identity ? `${env}:${identity}` : null;
-	const wasDismissed = useAgentPromptDismissed(promptIdentity);
-	const dismissAgentPrompt = useDismissAgentPrompt();
-	const clearAgentPromptDismissal = useClearAgentPromptDismissal();
+	const identity = walletAddress ? `${env}:${walletAddress.toLowerCase()}` : null;
 	const fundingState = getTradingAccountFundingState({
 		isConnected: hasWalletAccess,
 		isLoading: balances.isLoading,
@@ -60,12 +51,12 @@ export function TradingOnboardingGate({ children }: Props) {
 	}, [activeModal, establishConnection, hasWalletAccess, isAgentReady]);
 
 	useEffect(() => {
-		if (!promptIdentity || agentVerificationStatus !== "ready") return;
-		clearAgentPromptDismissal(promptIdentity);
-	}, [agentVerificationStatus, clearAgentPromptDismissal, promptIdentity]);
-
-	useEffect(() => {
-		if (!identity || pendingDepositIdentity !== identity || fundingState === "loading" || fundingState === "error") {
+		if (!pendingDepositIdentity) return;
+		if (!identity || pendingDepositIdentity !== identity) {
+			setPendingDepositIdentity(null);
+			return;
+		}
+		if (fundingState === "loading" || fundingState === "error") {
 			return;
 		}
 		if (fundingState !== "empty") {
@@ -92,21 +83,17 @@ export function TradingOnboardingGate({ children }: Props) {
 		pendingDepositIdentity,
 	]);
 
-	const wasRequested = activeModal === "establishConnection";
-	const shouldAutoOpen = activeModal === null && !wasDismissed && agentVerificationStatus === "missing";
-	const shouldShowConnection = hasWalletAccess && !!identity && !isAgentReady && (wasRequested || shouldAutoOpen);
+	const shouldShowConnection = activeModal === "establishConnection" && hasWalletAccess && !!identity && !isAgentReady;
 
 	function handleClose() {
-		if (promptIdentity) dismissAgentPrompt(promptIdentity);
-		if (wasRequested) establishConnection.close();
+		establishConnection.close();
 	}
 
 	function handleConnected() {
 		if (identity) {
-			if (promptIdentity) dismissAgentPrompt(promptIdentity);
 			setPendingDepositIdentity(identity);
 		}
-		if (wasRequested) establishConnection.close();
+		establishConnection.close();
 	}
 
 	if (shouldShowConnection) {

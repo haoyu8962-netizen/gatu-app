@@ -281,6 +281,10 @@ msgstr "قد يُصفّى المركز عندما يصل سعر العلامة �
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "لا يزال إيداع CCTP سابق قيد التتبع. لا تُعد إرسال التحويل نفسه."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "لا تزال محاولة اتصال سابقة قيد التسوية. ستتحقق إعادة المحاولة من مفتاح التداول نفسه ولن تطلب توقيعًا آخر."
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "لا يمكن تطبيق رمز إحالة إلا مرة واحدة، ولا يمكن تغييره من هذه الصفحة."
@@ -292,6 +296,10 @@ msgstr "لا يتوفر سعر تصفية موثوق قبل التداول لأ�
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "يجري حاليًا إنشاء اتصال تداول في علامة تبويب أخرى. أكمله أو ألغِه هناك قبل إعادة المحاولة."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -2194,6 +2202,7 @@ msgstr "جارٍ الاتصال"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -8639,6 +8648,10 @@ msgstr "يجب أن يكون مُحفِّز الإيقاف أدنى من سعر 
 msgid "Stop trigger must be below mark"
 msgstr "يجب أن يكون مُحفِّز الإيقاف أدنى من سعر العلامة"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "يُخزن فقط في ملف تعريف هذا المتصفح؛ تظل المتصفحات والأجهزة الأخرى غير متصلة."
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "تحويل حساب فرعي"
@@ -9068,6 +9081,14 @@ msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوام
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "تعذر التحقق من الاتصال بأمان. لم يُطلب أي توقيع من المحفظة؛ انتظر قليلًا ثم أعد المحاولة."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "تعذر إكمال الاتصال. ربما تمت الموافقة عليه بالفعل؛ انتظر قليلًا ثم أعد المحاولة."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr ""
@@ -9406,6 +9427,10 @@ msgstr "لا يمكن استئناف هذا الجسر إلا بواسطة ال�
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "لا يستطيع هذا المتصفح تنسيق عمليات الأموال بأمان بين علامات التبويب. استخدم متصفحًا مدعومًا."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "لا يستطيع هذا المتصفح تنسيق اتصال التداول بأمان عبر علامات التبويب. استخدم متصفحًا مدعومًا."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -10026,6 +10051,10 @@ msgstr "قد ينطوي التداول في هذه الأسواق على مخا�
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "التداول غير متاح في منطقتك"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "التداول غير متصل في هذا المتصفح. أعد الاتصال لإنشاء مفتاح التداول أو استبداله."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
@@ -10972,6 +11001,10 @@ msgstr "المحفظة غير متصلة بـ {0}. بدّل الشبكة في م
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "تغيرت المحفظة أو الشبكة قبل اكتمال الاتصال. أعد فتح الإجراء للحساب الحالي."
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."

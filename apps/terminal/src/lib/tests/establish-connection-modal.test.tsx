@@ -1,16 +1,27 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	agentMissingReason: null as
+		| "no_local_key"
+		| "remote_named_agent_exists"
+		| "local_key_not_approved"
+		| "remote_key_replaced"
+		| "agent_name_mismatch"
+		| "invalid_local_record"
+		| null,
 	error: null as Error | null,
+	failurePhase: null as "preflight" | "approval" | "persistence" | "verification" | null,
 	isMobile: false,
 	persistConnection: false,
 	register: vi.fn(),
 	status: "idle" as "idle" | "approving_agent" | "verifying" | "error",
+	walletIntent: "external" as "embedded" | "external",
 	writePersistTradingConnection: vi.fn(),
 }));
 
@@ -18,10 +29,16 @@ vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => testState.isMobile,
 }));
 
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ walletIntent: testState.walletIntent }),
+}));
+
 vi.mock("@/lib/hyperliquid", () => ({
 	readPersistTradingConnection: () => testState.persistConnection,
 	useAgentRegistration: () => ({
+		agentMissingReason: testState.agentMissingReason,
 		error: testState.error,
+		failurePhase: testState.failurePhase,
 		register: testState.register,
 		status: testState.status,
 	}),
@@ -54,11 +71,13 @@ vi.mock("@gatu/ui", () => ({
 		createElement("button", { disabled, onClick, type: "button" }, children),
 	Checkbox: ({
 		checked,
+		description,
 		disabled,
 		label,
 		onCheckedChange,
 	}: {
 		checked: boolean;
+		description?: ReactNode;
 		disabled?: boolean;
 		label: ReactNode;
 		onCheckedChange: (checked: boolean) => void;
@@ -73,6 +92,7 @@ vi.mock("@gatu/ui", () => ({
 				type: "checkbox",
 			}),
 			label,
+			description,
 		),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
@@ -89,17 +109,21 @@ describe("EstablishConnectionModal", () => {
 	let onConnected: Mock<() => void>;
 
 	beforeEach(() => {
+		i18n.activate("en");
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		onClose = vi.fn();
 		onConnected = vi.fn();
 		testState.error = null;
+		testState.agentMissingReason = null;
+		testState.failurePhase = null;
 		testState.isMobile = false;
 		testState.persistConnection = false;
 		testState.register.mockReset();
 		testState.register.mockResolvedValue("0x1111111111111111111111111111111111111111");
 		testState.status = "idle";
+		testState.walletIntent = "external";
 		testState.writePersistTradingConnection.mockReset();
 	});
 
@@ -127,7 +151,10 @@ describe("EstablishConnectionModal", () => {
 		);
 		await act(async () => connect?.click());
 
-		expect(testState.register).toHaveBeenCalledWith({ persistConnection: false });
+		expect(testState.register).toHaveBeenCalledWith({
+			approval: { applicationReview: "confirmed" },
+			persistConnection: false,
+		});
 		expect(onConnected).toHaveBeenCalledOnce();
 	});
 
@@ -143,7 +170,11 @@ describe("EstablishConnectionModal", () => {
 		);
 		await act(async () => connect?.click());
 
-		expect(testState.register).toHaveBeenCalledWith({ persistConnection: true });
+		expect(testState.register).toHaveBeenCalledWith({
+			approval: { applicationReview: "confirmed" },
+			persistConnection: true,
+		});
+		expect(container.textContent).toContain("browser profile");
 	});
 
 	it("allows dismissal and surfaces a recoverable registration error", async () => {
@@ -155,5 +186,78 @@ describe("EstablishConnectionModal", () => {
 		const close = [...container.querySelectorAll("button")].find((button) => button.textContent === "Close");
 		act(() => close?.click());
 		expect(onClose).toHaveBeenCalledOnce();
+	});
+
+	it("explains when another same-name connection replaced this browser key", async () => {
+		testState.agentMissingReason = "remote_key_replaced";
+		await renderModal();
+
+		expect(container.textContent).toContain("Trading is not connected in this browser");
+		expect(container.textContent).toContain("create or replace its trading key");
+	});
+
+	it("warns before a browser with no local key replaces a same-name remote Agent", async () => {
+		testState.agentMissingReason = "remote_named_agent_exists";
+		await renderModal();
+
+		expect(container.textContent).toContain("Trading is not connected in this browser");
+		expect(container.textContent).toContain("create or replace its trading key");
+	});
+
+	it("uses the application dialog as the only confirmation for an embedded email wallet", async () => {
+		testState.status = "approving_agent";
+		testState.walletIntent = "embedded";
+		await renderModal();
+
+		expect(container.textContent).toContain("Connecting...");
+		expect(container.textContent).not.toContain("Confirm in wallet");
+	});
+
+	it("clarifies that a preflight status failure did not request a signature", async () => {
+		testState.error = Object.assign(new Error("Could not load agent status"), {
+			name: "AgentStatusError",
+			reason: "rate_limited",
+		});
+		testState.failurePhase = "preflight";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("could not be checked safely");
+		expect(container.textContent).toContain("No wallet signature was requested");
+	});
+
+	it("localizes an unknown preflight status error without exposing internal text", async () => {
+		testState.error = Object.assign(new Error("Could not load agent status"), {
+			name: "AgentStatusError",
+			reason: "unknown",
+		});
+		testState.failurePhase = "preflight";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("could not be checked safely");
+		expect(container.textContent).toContain("No wallet signature was requested");
+		expect(container.textContent).not.toContain("Could not load agent status");
+	});
+
+	it("treats every post-approval verification failure as an ambiguous result", async () => {
+		testState.error = new Error("Agent registration cleanup could not be verified");
+		testState.failurePhase = "verification";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("It may already be approved");
+		expect(container.textContent).not.toContain("Agent registration cleanup could not be verified");
+	});
+
+	it("fails closed with localized guidance when browser key storage cannot be trusted", async () => {
+		testState.error = new Error("Agent key storage could not be verified");
+		testState.failurePhase = "preflight";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("could not be checked safely");
+		expect(container.textContent).toContain("No wallet signature was requested");
+		expect(container.textContent).not.toContain("Agent key storage could not be verified");
 	});
 });

@@ -269,6 +269,10 @@ msgstr "当标记价格达到强平价格时，仓位可能被强制平仓。"
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "先前的 CCTP 充值仍在跟踪中。请勿重复提交同一笔转账。"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "上一次连接尝试仍在核对中。重试只会检查同一个交易密钥，不会再次请求签名。"
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "推荐码只能绑定一次，且无法在此页面更改。"
@@ -280,6 +284,10 @@ msgstr "反向委托无法提供可靠的交易前预估强平价。成交后请
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr "质押关联无法解除。质押账户将获得交易账户资金的完全控制权，因此本页面不提供关联操作。"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "另一个标签页正在建立交易连接。请先在该标签页完成或取消，然后再试。"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -2059,6 +2067,7 @@ msgstr "已连接"
 msgid "Connecting"
 msgstr "连接中"
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -8023,6 +8032,10 @@ msgstr "止损触发价须低于强平价格"
 msgid "Stop trigger must be below mark"
 msgstr "止损触发价须低于标记价"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "仅存储在当前浏览器配置文件中；其他浏览器和设备仍保持未连接。"
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "子账户转账"
@@ -8428,6 +8441,14 @@ msgstr "无法确认撤单响应。请刷新当前委托后再试。"
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr "经确认的服务端锁定时间戳决定何时可以提取。"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "无法安全检查连接。未请求钱包签名；请稍候重试。"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "无法完成连接。连接可能已获授权；请稍候重试。"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "最新的 extraAgents 数据中已出现完全匹配的名称和公开地址。"
@@ -8758,6 +8779,10 @@ msgstr "此跨链桥交易只能由发起它的钱包继续。"
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请使用受支持的浏览器。"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请使用受支持的浏览器。"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -9346,6 +9371,10 @@ msgstr "交易这些市场可能涉及更高风险，包括流动性不足、高
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "您所在的地区暂不支持交易"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "此浏览器尚未建立交易连接。请重新连接以创建或替换交易密钥。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
@@ -10283,6 +10312,10 @@ msgstr "钱包未连接到 {0}。请在钱包中切换网络后重试。"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "钱包未连接"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "钱包或网络在连接完成前发生变化。请为当前账户重新打开操作。"
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."

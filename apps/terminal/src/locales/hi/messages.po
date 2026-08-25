@@ -281,6 +281,10 @@ msgstr "जब मार्क मूल्य पोज़िशन के ल�
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "पिछले CCTP जमा को अभी भी ट्रैक किया जा रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "पिछला कनेक्शन प्रयास अभी भी मिलान किया जा रहा है। दोबारा प्रयास करने पर उसी ट्रेडिंग कुंजी की जाँच होगी और किसी अन्य हस्ताक्षर का अनुरोध नहीं किया जाएगा।"
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "रेफ़रल कोड केवल एक बार लागू किया जा सकता है और इस पेज से बदला नहीं जा सकता।"
@@ -292,6 +296,10 @@ msgstr "रिवर्स ऑर्डर के लिए ट्रेड स�
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "किसी दूसरे टैब में ट्रेडिंग कनेक्शन पहले से स्थापित किया जा रहा है। दोबारा प्रयास करने से पहले उसे वहीं पूरा करें या रद्द करें।"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -2194,6 +2202,7 @@ msgstr "कनेक्ट हो रहा है"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -8639,6 +8648,10 @@ msgstr "स्टॉप ट्रिगर लिक्विडेशन मू
 msgid "Stop trigger must be below mark"
 msgstr "Stop ट्रिगर मार्क मूल्य से नीचे होना चाहिए"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "केवल इस ब्राउज़र प्रोफ़ाइल में संग्रहीत; अन्य ब्राउज़र और डिवाइस डिस्कनेक्टेड रहते हैं।"
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "उप-खाता ट्रांसफर"
@@ -9068,6 +9081,14 @@ msgstr "रद्दीकरण प्रतिक्रिया की पु
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "कनेक्शन की सुरक्षित रूप से जाँच नहीं की जा सकी। वॉलेट हस्ताक्षर का अनुरोध नहीं किया गया; कुछ देर प्रतीक्षा करके दोबारा प्रयास करें।"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "कनेक्शन पूरा नहीं किया जा सका। हो सकता है इसे पहले ही स्वीकृत किया जा चुका हो; कुछ देर प्रतीक्षा करके दोबारा प्रयास करें।"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr ""
@@ -9406,6 +9427,10 @@ msgstr "यह ब्रिज केवल उसी वॉलेट से फ
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "यह ब्राउज़र सभी टैब में धनराशि के ऑपरेशन सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र इस्तेमाल करें।"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "यह ब्राउज़र अलग-अलग टैब में ट्रेडिंग कनेक्शन को सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र का उपयोग करें।"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -10026,6 +10051,10 @@ msgstr "इन बाज़ारों में ट्रेडिंग म�
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "आपके क्षेत्र में ट्रेडिंग उपलब्ध नहीं है"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "इस ब्राउज़र में ट्रेडिंग कनेक्ट नहीं है। इसकी ट्रेडिंग कुंजी बनाने या बदलने के लिए दोबारा कनेक्ट करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
@@ -10972,6 +11001,10 @@ msgstr "वॉलेट {0} से कनेक्ट नहीं है। अ
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "कनेक्शन पूरा होने से पहले वॉलेट या नेटवर्क बदल गया। वर्तमान खाते के लिए कार्रवाई दोबारा खोलें।"
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."

@@ -13,6 +13,8 @@ export interface AgentWallet {
 	privateKey: Hex;
 	publicKey: Address;
 	source?: AgentWalletSource;
+	approvalPendingAtMs?: number;
+	approvalSubmissionStartedAtMs?: number;
 	agentNameBase?: string;
 	agentName?: string;
 	agentValidUntilMs?: number;

@@ -281,6 +281,10 @@ msgstr "Una posición puede liquidarse cuando el precio de marca alcanza su prec
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "Se sigue realizando el seguimiento de un depósito CCTP anterior. No vuelvas a enviar la misma transferencia."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "Todavía se está conciliando un intento de conexión anterior. Al volver a intentarlo se comprobará la misma clave de trading y no se solicitará otra firma."
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "Un código de referido solo puede aplicarse una vez y no puede cambiarse desde esta página."
@@ -292,6 +296,10 @@ msgstr "No hay un precio de liquidación previo fiable para una orden de inversi
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "Ya se está estableciendo una conexión de trading en otra pestaña. Complétala o cancélala allí antes de volver a intentarlo."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -2194,6 +2202,7 @@ msgstr "Conectando"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -8639,6 +8648,10 @@ msgstr "El precio de activación del stop debe estar por debajo del precio de li
 msgid "Stop trigger must be below mark"
 msgstr "El disparador stop debe estar por debajo del precio de marca"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "Se almacena solo en este perfil del navegador; los demás navegadores y dispositivos permanecen desconectados."
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "Transferencia de subcuenta"
@@ -9068,6 +9081,14 @@ msgstr "No se pudo confirmar la respuesta de cancelación. Actualiza las órdene
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "No se pudo comprobar la conexión de forma segura. No se solicitó ninguna firma del monedero; espera un momento y vuelve a intentarlo."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "No se pudo completar la conexión. Es posible que ya se haya aprobado; espera un momento y vuelve a intentarlo."
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr ""
@@ -9406,6 +9427,10 @@ msgstr "Este puente solo puede reanudarse con la billetera que lo inició."
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "Este navegador no puede coordinar de forma segura las operaciones de fondos entre pestañas. Usa un navegador compatible."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "Este navegador no puede coordinar de forma segura la conexión de trading entre pestañas. Usa un navegador compatible."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -10026,6 +10051,10 @@ msgstr "Operar en estos mercados puede implicar un riesgo elevado, incluida una 
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "El trading no está disponible en tu región"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "La conexión de trading no está activa en este navegador. Vuelve a conectarte para crear o reemplazar su clave de trading."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
@@ -10972,6 +11001,10 @@ msgstr "El monedero no está conectado a {0}. Cambia de red en tu monedero y vue
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Billetera no conectada"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "El monedero o la red cambiaron antes de que se completara la conexión. Vuelve a abrir la acción para la cuenta actual."
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."

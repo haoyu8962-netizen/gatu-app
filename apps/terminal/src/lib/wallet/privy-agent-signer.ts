@@ -1,4 +1,5 @@
 import type { SignTypedDataParams } from "@privy-io/react-auth";
+import type { AgentApprovalOptions } from "@/lib/hyperliquid";
 import { hasSameWalletAddress } from "./privy-wagmi";
 
 interface PrivySignTypedDataOptions {
@@ -17,7 +18,7 @@ export type PrivySignTypedData = (
 	options?: PrivySignTypedDataOptions,
 ) => Promise<{ signature: string }>;
 
-interface CreatePrivyAgentSignerOptions {
+interface CreatePrivyAgentSignerOptions extends AgentApprovalOptions {
 	expectedAddress: `0x${string}`;
 	activeAddress: `0x${string}` | undefined;
 	embeddedWalletAddress: `0x${string}` | undefined;
@@ -44,6 +45,7 @@ interface HyperliquidTypedData {
  * active wallet, and Privy embedded wallet are the same address.
  */
 export function createPrivyAgentSigner({
+	applicationReview,
 	expectedAddress,
 	activeAddress,
 	embeddedWalletAddress,
@@ -65,13 +67,16 @@ export function createPrivyAgentSigner({
 		async signTypedData(typedData: HyperliquidTypedData): Promise<`0x${string}`> {
 			const result = await signTypedData(typedData as SignTypedDataParams, {
 				address: expectedAddress,
-				uiOptions: {
-					showWalletUIs: true,
-					title: "Approve mobile trading access",
-					description: "Review and approve this Hyperliquid Agent permission.",
-					buttonText: "Approve access",
-					isCancellable: true,
-				},
+				uiOptions:
+					applicationReview === "confirmed"
+						? { showWalletUIs: false }
+						: {
+								showWalletUIs: true,
+								title: "Approve mobile trading access",
+								description: "Review and approve this Hyperliquid Agent permission.",
+								buttonText: "Approve access",
+								isCancellable: true,
+							},
 			});
 			await beforeSubmit();
 			return result.signature as `0x${string}`;

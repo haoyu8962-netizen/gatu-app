@@ -1,28 +1,30 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
-import { useAgentApprovalOverride } from "./agent-approval-provider";
+import { type AgentApprovalOptions, useAgentApprovalOverride } from "./agent-approval-provider";
 import {
-	activateAgentRegistrationSession,
+	AGENT_REGISTRATION_COORDINATION_WINDOW_MS,
+	type AgentRegistrationPersistOptions,
 	cancelAgentRegistrationEpochAndRemove,
 	captureAgentRegistrationEpoch,
-	closeAgentRegistrationSessionAndRemove,
 	isAgentRegistrationEpochCurrent,
 	persistAgentForRegistration,
 	verifyAgentRegistrationOrRemove,
 } from "./agent-registration-session";
-import type { AgentStorageScope } from "./agent-storage";
+import { type AgentStorageScope, inspectAgentStorageRecord } from "./agent-storage";
 import type { RegistrationStatus } from "./types";
-import { useAgentStatus } from "./use-agent-status";
+import { type AgentMissingReason, useAgentStatus } from "./use-agent-status";
 import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
 export type RegistrationStep = "agent" | null;
 
+export type AgentRegistrationFailurePhase = "preflight" | "approval" | "persistence" | "verification";
+
 export interface AgentRegistrationOptions {
+	approval?: AgentApprovalOptions;
 	persistConnection?: boolean;
 }
 
@@ -30,12 +32,26 @@ export interface UseAgentRegistrationResult {
 	register: (options?: AgentRegistrationOptions) => Promise<Address>;
 	status: RegistrationStatus;
 	currentStep: RegistrationStep;
+	agentMissingReason: AgentMissingReason | null;
+	failurePhase: AgentRegistrationFailurePhase | null;
 	error: Error | null;
 	reset: () => void;
 }
 
 export function resolveAgentRegistrationStorageScope(options?: AgentRegistrationOptions): AgentStorageScope {
 	return options?.persistConnection === true ? "local" : "session";
+}
+
+export function isDefinitiveAgentApprovalRejection(error: unknown): boolean {
+	if (!isRecord(error)) return false;
+	if (error.name === "ApiRequestError") return true;
+	if (error.name !== "HttpRequestError" || !isRecord(error.response)) return false;
+	const status = error.response.status;
+	return typeof status === "number" && status >= 400 && status < 500 && status !== 408 && status !== 499;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
 }
 
 function deriveRegistrationStatus(
@@ -51,10 +67,10 @@ function deriveRegistrationStatus(
 export function useAgentRegistration(): UseAgentRegistrationResult {
 	const { env, agentName, clientKey } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
-	const addressRef = useRef(address);
-	addressRef.current = address;
+	const identityRef = useRef({ address, env });
 
 	const [currentStep, setCurrentStep] = useState<RegistrationStep>(null);
+	const [failurePhase, setFailurePhase] = useState<AgentRegistrationFailurePhase | null>(null);
 	const mountedRef = useRef(true);
 
 	useEffect(() => {
@@ -64,59 +80,104 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		};
 	}, []);
 
+	useLayoutEffect(() => {
+		identityRef.current = { address, env };
+	}, [address, env]);
+
 	const agentStatus = useAgentStatus();
-	const fallbackApproveAgent = useExchange("approveAgent");
 	const approveAgentOverride = useAgentApprovalOverride();
 
 	function safeSetStep(step: RegistrationStep) {
 		if (mountedRef.current) setCurrentStep(step);
 	}
 
+	function safeSetFailurePhase(phase: AgentRegistrationFailurePhase | null) {
+		if (mountedRef.current) setFailurePhase(phase);
+	}
+
 	const registration = useMutation({
-		mutationKey: ["hl", "registration", address],
+		mutationKey: ["hl", "registration", env, address],
+		retry: false,
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
+			let phase: AgentRegistrationFailurePhase = "preflight";
+			safeSetFailurePhase(null);
+			const approvalOptions =
+				options?.approval?.applicationReview === "confirmed"
+					? ({ applicationReview: "confirmed" } satisfies AgentApprovalOptions)
+					: undefined;
 			try {
 				const startAddress = address;
 				if (!startAddress) throw new Error("No wallet connected");
 				const verifiedAddress: Address = startAddress;
+				const registrationEnv = env;
+				const initialStorage = inspectAgentStorageRecord(registrationEnv, verifiedAddress);
+				if (initialStorage.status === "failed") {
+					throw new Error("Agent key storage could not be verified");
+				}
+				if (initialStorage.status === "invalid") {
+					throw new Error("Stored Agent key is invalid");
+				}
+				let cleanupPublicKey = initialStorage.status === "valid" ? initialStorage.agent.publicKey : undefined;
+				let pendingPublicKey =
+					initialStorage.status === "valid" &&
+					initialStorage.agent.source === "local-registration" &&
+					initialStorage.agent.approvalPendingAtMs !== undefined
+						? initialStorage.agent.publicKey
+						: undefined;
+				if (pendingPublicKey) phase = "verification";
 
-				const registrationSession = await captureAgentRegistrationEpoch(env, verifiedAddress);
+				const registrationSession = await captureAgentRegistrationEpoch(
+					registrationEnv,
+					verifiedAddress,
+					pendingPublicKey ? { resumePublicKey: pendingPublicKey } : undefined,
+				);
 				if (registrationSession.status === "failed") {
 					throw new Error(
 						registrationSession.reason === "lock_unavailable"
 							? "Secure Agent registration requires Web Locks support. Update your browser and try again."
-							: "Secure Agent registration session is unavailable",
+							: registrationSession.reason === "registration_in_progress"
+								? "A trading connection is already being established in another tab."
+								: "Secure Agent registration session is unavailable",
 					);
 				}
 				const epoch = registrationSession.epoch;
 
-				function hasSameWallet() {
-					return addressRef.current?.toLowerCase() === verifiedAddress.toLowerCase();
+				function hasSameIdentity() {
+					return (
+						identityRef.current.env === registrationEnv &&
+						identityRef.current.address?.toLowerCase() === verifiedAddress.toLowerCase()
+					);
 				}
 
-				async function assertRegistrationCurrent() {
-					if (!hasSameWallet()) {
-						const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch);
-						if (cancellation.status === "failed") {
-							throw new Error("Wallet changed and Agent registration cleanup failed");
-						}
-						throw new Error("Wallet changed during registration");
+				async function cancelChangedIdentity(expectedPublicKey?: Address): Promise<never> {
+					const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch, expectedPublicKey, {
+						preserveIfSubmissionStarted: true,
+					});
+					if (cancellation.status === "failed") {
+						throw new Error("Wallet or network changed and Agent registration cleanup failed");
 					}
-					if (!(await isAgentRegistrationEpochCurrent(epoch))) {
+					throw new Error("Wallet or network changed during registration");
+				}
+
+				async function assertRegistrationCurrent(expectedPublicKey: Address | undefined = cleanupPublicKey) {
+					if (!hasSameIdentity()) {
+						await cancelChangedIdentity(expectedPublicKey);
+					}
+					const isCurrent = await isAgentRegistrationEpochCurrent(epoch);
+					if (!hasSameIdentity()) {
+						await cancelChangedIdentity(expectedPublicKey);
+					}
+					if (!isCurrent) {
 						throw new Error("Agent registration session changed");
 					}
 				}
 
-				async function verifyStoredAgent(publicKey: Address) {
-					if (!hasSameWallet()) {
-						const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch, publicKey);
-						if (cancellation.status === "failed") {
-							throw new Error("Wallet changed and Agent registration cleanup failed");
-						}
-						throw new Error("Wallet changed during registration");
-					}
+				await assertRegistrationCurrent(pendingPublicKey ?? cleanupPublicKey);
 
+				async function verifyStoredAgent(publicKey: Address) {
+					await assertRegistrationCurrent(publicKey);
 					const verification = await verifyAgentRegistrationOrRemove(epoch, publicKey);
+					await assertRegistrationCurrent(publicKey);
 					if (verification.status === "failed") {
 						throw new Error("Agent registration cleanup could not be verified");
 					}
@@ -125,17 +186,56 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					}
 				}
 
+				function requireStoredAgent(publicKey: Address) {
+					const inspection = inspectAgentStorageRecord(registrationEnv, verifiedAddress);
+					if (inspection.status === "failed") {
+						throw new Error("Agent key storage could not be verified");
+					}
+					if (inspection.status === "invalid") {
+						throw new Error("Stored Agent key is invalid");
+					}
+					if (
+						inspection.status !== "valid" ||
+						inspection.agent.source !== "local-registration" ||
+						inspection.agent.publicKey.toLowerCase() !== publicKey.toLowerCase()
+					) {
+						throw new Error("Agent registration session changed");
+					}
+					return inspection.agent;
+				}
+
+				async function refetchAgentAndAssert(agentAddressOverride?: Address, expectedPublicKey?: Address) {
+					try {
+						return await agentStatus.refetchAgent(agentAddressOverride);
+					} finally {
+						await assertRegistrationCurrent(expectedPublicKey);
+					}
+				}
+
 				const storageScope = resolveAgentRegistrationStorageScope(options);
 
-				async function persistAndVerifyAgent(privateKey: `0x${string}`, publicKey: Address) {
-					await assertRegistrationCurrent();
+				async function persistExactAgent(
+					privateKey: `0x${string}`,
+					publicKey: Address,
+					approvalPendingAtMs?: number,
+					approvalSubmissionStartedAtMs?: number,
+					pendingResolution?: AgentRegistrationPersistOptions["pendingResolution"],
+				) {
 					const persistence = await persistAgentForRegistration(
 						epoch,
 						privateKey,
 						publicKey,
-						{ source: "local-registration" },
-						{ scope: storageScope },
+						approvalPendingAtMs === undefined
+							? { source: "local-registration" }
+							: {
+									source: "local-registration",
+									approvalPendingAtMs,
+									...(approvalSubmissionStartedAtMs === undefined ? {} : { approvalSubmissionStartedAtMs }),
+								},
+						{ pendingResolution, scope: storageScope },
 					);
+					if (persistence.status === "stored") cleanupPublicKey = publicKey;
+					await assertRegistrationCurrent(cleanupPublicKey);
 					if (persistence.status === "failed") {
 						throw new Error(
 							persistence.reason === "registration_cancelled"
@@ -143,47 +243,148 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 								: "Agent private key could not be stored securely",
 						);
 					}
-					await verifyStoredAgent(publicKey);
+					return requireStoredAgent(publicKey);
+				}
 
-					const remoteVerification = await agentStatus.refetchAgent(publicKey);
+				async function verifyApprovedAgent(publicKey: Address) {
+					phase = "verification";
+					await verifyStoredAgent(publicKey);
+					const remoteVerification = await refetchAgentAndAssert(publicKey, publicKey);
+					const storedAgent = requireStoredAgent(publicKey);
 					if (!remoteVerification.isAgentReady) {
 						throw new Error("Agent approval could not be confirmed");
 					}
 					await verifyStoredAgent(publicKey);
+					phase = "persistence";
+					await persistExactAgent(storedAgent.privateKey, publicKey, undefined, undefined, "verified");
+					await verifyStoredAgent(publicKey);
 				}
 
-				const requirements = await agentStatus.refetchAgent();
-				await assertRegistrationCurrent();
+				const capturedStorage = inspectAgentStorageRecord(registrationEnv, verifiedAddress);
+				if (capturedStorage.status === "failed") {
+					throw new Error("Agent key storage could not be verified");
+				}
+				if (capturedStorage.status === "invalid") {
+					throw new Error("Stored Agent key is invalid");
+				}
+				cleanupPublicKey = capturedStorage.status === "valid" ? capturedStorage.agent.publicKey : undefined;
+				pendingPublicKey =
+					capturedStorage.status === "valid" &&
+					capturedStorage.agent.source === "local-registration" &&
+					capturedStorage.agent.approvalPendingAtMs !== undefined
+						? capturedStorage.agent.publicKey
+						: undefined;
+				phase = pendingPublicKey ? "verification" : "preflight";
+
+				if (pendingPublicKey) {
+					const pendingAgent = requireStoredAgent(pendingPublicKey);
+					const approvalPendingAtMs = pendingAgent.approvalPendingAtMs;
+					if (approvalPendingAtMs === undefined) {
+						throw new Error("Agent registration session changed");
+					}
+					await persistExactAgent(
+						pendingAgent.privateKey,
+						pendingPublicKey,
+						approvalPendingAtMs,
+						pendingAgent.approvalSubmissionStartedAtMs,
+					);
+
+					const remoteVerification = await refetchAgentAndAssert(pendingPublicKey, pendingPublicKey);
+					const storedAgent = requireStoredAgent(pendingPublicKey);
+					if (!remoteVerification.isAgentReady) {
+						if (
+							storedAgent.approvalSubmissionStartedAtMs === undefined &&
+							Date.now() - approvalPendingAtMs >= AGENT_REGISTRATION_COORDINATION_WINDOW_MS
+						) {
+							await persistExactAgent(
+								storedAgent.privateKey,
+								pendingPublicKey,
+								undefined,
+								undefined,
+								"expired-unsubmitted",
+							);
+						}
+						throw new Error("Agent approval could not be confirmed");
+					}
+					await verifyStoredAgent(pendingPublicKey);
+					phase = "persistence";
+					await persistExactAgent(storedAgent.privateKey, pendingPublicKey, undefined, undefined, "verified");
+					await verifyStoredAgent(pendingPublicKey);
+					return pendingPublicKey;
+				}
+
+				const capturedAgentAddress = capturedStorage.status === "valid" ? capturedStorage.agent.publicKey : undefined;
+				const requirements = await refetchAgentAndAssert(
+					capturedStorage.status === "valid" && capturedStorage.agent.source === "local-registration"
+						? capturedStorage.agent.publicKey
+						: undefined,
+					capturedAgentAddress,
+				);
 
 				if (requirements.needsAgent) {
-					safeSetStep("agent");
-
+					if (!approveAgentOverride) {
+						throw new Error("A host Agent approval provider is required");
+					}
 					const privateKey = generatePrivateKey();
 					const account = privateKeyToAccount(privateKey);
 					const publicKey = account.address;
+					const approvalPendingAtMs = Date.now();
 
-					const approveAgentPromise = (approveAgentOverride ?? fallbackApproveAgent.mutateAsync)({
+					await persistExactAgent(privateKey, publicKey, approvalPendingAtMs);
+					await verifyStoredAgent(publicKey);
+					phase = "approval";
+					safeSetStep("agent");
+
+					const approvalParams = {
 						agentAddress: publicKey,
 						agentName,
-					});
+					};
+					const approvalController = new AbortController();
+					const approveAgentPromise = Promise.resolve().then(() =>
+						approveAgentOverride(approvalParams, {
+							...approvalOptions,
+							registrationPublicKey: publicKey,
+							signal: approvalController.signal,
+						}),
+					);
 					try {
-						await withWalletApprovalTimeout(approveAgentPromise);
+						await withWalletApprovalTimeout(approveAgentPromise, {
+							onTimeout: (error) => approvalController.abort(error),
+						});
 					} catch (error) {
-						approveAgentPromise
-							.then(async () => {
-								await persistAndVerifyAgent(privateKey, publicKey);
-							})
-							.catch(() => {});
+						approvalController.abort(error);
+						const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch, publicKey, {
+							preserveIfSubmissionStarted: !isDefinitiveAgentApprovalRejection(error),
+						});
+						if (cancellation.status === "failed") {
+							throw new Error("Agent registration cleanup could not be verified");
+						}
+						if (cancellation.status === "current") {
+							phase = "verification";
+							void approveAgentPromise
+								.then(async () => {
+									await verifyApprovedAgent(publicKey);
+								})
+								.catch(async (lateError: unknown) => {
+									if (isDefinitiveAgentApprovalRejection(lateError)) {
+										await cancelAgentRegistrationEpochAndRemove(epoch, publicKey);
+									}
+								});
+							await assertRegistrationCurrent(publicKey);
+						}
 						throw error;
 					}
-					await assertRegistrationCurrent();
+					await assertRegistrationCurrent(publicKey);
 
-					await persistAndVerifyAgent(privateKey, publicKey);
+					await verifyApprovedAgent(publicKey);
 
 					return publicKey;
 				}
 
-				return agentStatus.agentAddress ?? zeroAddress;
+				return capturedAgentAddress ?? agentStatus.agentAddress ?? zeroAddress;
+			} catch (error) {
+				safeSetFailurePhase(phase);
+				throw error;
 			} finally {
 				safeSetStep(null);
 			}
@@ -193,13 +394,9 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const status = deriveRegistrationStatus(registration.isPending, registration.isError, currentStep);
 
 	function reset() {
-		if (address) {
-			void closeAgentRegistrationSessionAndRemove(env, address).then((result) => {
-				if (result.status === "closed") void activateAgentRegistrationSession(env, address);
-			});
-		}
 		registration.reset();
 		setCurrentStep(null);
+		setFailurePhase(null);
 	}
 
 	function register(options?: AgentRegistrationOptions) {
@@ -210,6 +407,8 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		register,
 		status,
 		currentStep,
+		agentMissingReason: agentStatus.agentMissingReason,
+		failurePhase,
 		error: registration.error,
 		reset,
 	};

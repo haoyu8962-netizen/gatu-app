@@ -163,17 +163,20 @@ export {
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
 export {
 	type AgentApprovalMutateAsync,
+	type AgentApprovalOptions,
 	HyperliquidAgentApprovalProvider,
 	type HyperliquidAgentApprovalProviderProps,
 	useAgentApprovalOverride,
 } from "./signing/agent-approval-provider";
 export {
+	type AgentRegistrationCaptureOptions,
 	type AgentRegistrationCleanupResult,
 	type AgentRegistrationCleanupTarget,
 	type AgentRegistrationEpoch,
 	type AgentRegistrationExecutionLease,
 	type AgentRegistrationExecutionLeaseOptions,
 	type AgentRegistrationExecutionStartResult,
+	type AgentRegistrationPersistOptions,
 	type AgentRegistrationPersistResult,
 	type AgentRegistrationPreExecutionGuard,
 	AgentRegistrationPreExecutionGuardTimeoutError,
@@ -195,6 +198,7 @@ export {
 	persistAgentForRegistration,
 	restoreAgentRegistrationSession,
 	startAgentRegistrationExecution,
+	startAgentRegistrationSubmission,
 	verifyAgentRegistrationOrRemove,
 } from "./signing/agent-registration-session";
 export {
@@ -263,6 +267,7 @@ export type {
 	RegistrationStatus,
 } from "./signing/types";
 export {
+	type AgentRegistrationFailurePhase,
 	type AgentRegistrationOptions,
 	type RegistrationStep,
 	resolveAgentRegistrationStorageScope,
@@ -270,8 +275,14 @@ export {
 	useAgentRegistration,
 } from "./signing/use-agent-registration";
 export {
+	type AgentMissingReason,
 	type AgentRequirements,
+	AgentStatusError,
+	type AgentStatusErrorReason,
 	type AgentVerificationStatus,
+	classifyAgentStatusError,
+	type DeriveAgentMissingReasonOptions,
+	deriveAgentMissingReason,
 	deriveAgentRequirements,
 	deriveAgentVerificationStatus,
 	getDefinitiveMobileAgentStaleReason,

@@ -1,8 +1,15 @@
 const WALLET_APPROVAL_TIMEOUT_MS = 60_000;
 
-export function withWalletApprovalTimeout<T>(promise: Promise<T>): Promise<T> {
+export interface WalletApprovalTimeoutOptions {
+	onTimeout?: (error: Error) => void;
+}
+
+export function withWalletApprovalTimeout<T>(
+	promise: Promise<T>,
+	options: WalletApprovalTimeoutOptions = {},
+): Promise<T> {
 	if (typeof document === "undefined") {
-		return withWallClockTimeout(promise);
+		return withWallClockTimeout(promise, options);
 	}
 
 	return new Promise<T>((resolve, reject) => {
@@ -40,12 +47,12 @@ export function withWalletApprovalTimeout<T>(promise: Promise<T>): Promise<T> {
 		function resumeTimer() {
 			if (settled || document.hidden || startedAt !== undefined) return;
 			if (remainingMs <= 0) {
-				finish(() => reject(createTimeoutError()));
+				finish(() => rejectWithTimeout(reject, options));
 				return;
 			}
 			startedAt = Date.now();
 			timeoutId = setTimeout(() => {
-				finish(() => reject(createTimeoutError()));
+				finish(() => rejectWithTimeout(reject, options));
 			}, remainingMs);
 		}
 
@@ -66,17 +73,26 @@ export function withWalletApprovalTimeout<T>(promise: Promise<T>): Promise<T> {
 	});
 }
 
-function withWallClockTimeout<T>(promise: Promise<T>): Promise<T> {
+function withWallClockTimeout<T>(promise: Promise<T>, options: WalletApprovalTimeoutOptions): Promise<T> {
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<never>((_, reject) => {
 		timeoutId = setTimeout(() => {
-			reject(createTimeoutError());
+			rejectWithTimeout(reject, options);
 		}, WALLET_APPROVAL_TIMEOUT_MS);
 	});
 
 	return Promise.race([promise, timeout]).finally(() => {
 		if (timeoutId) clearTimeout(timeoutId);
 	});
+}
+
+function rejectWithTimeout(reject: (reason: Error) => void, options: WalletApprovalTimeoutOptions): void {
+	const error = createTimeoutError();
+	try {
+		options.onTimeout?.(error);
+	} finally {
+		reject(error);
+	}
 }
 
 function createTimeoutError(): Error {
