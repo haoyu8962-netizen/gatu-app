@@ -1,10 +1,16 @@
 /** @vitest-environment jsdom */
 
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileOrdersTab } from "@/components/trade/mobile/mobile-orders-tab";
 import type { OpenOrder } from "@/lib/trade/open-orders";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+	getPendingTradingActionToastId,
+} from "@/stores/use-pending-trading-action-store";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -22,6 +28,7 @@ const mocks = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastInfo: vi.fn(),
 	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
 }));
 
 const triggerOrder = {
@@ -82,7 +89,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			mocks.batchModifyGuard = options?.executionGuard;
 			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
 		}
-		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
+		return { mutateAsync: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
 	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({
@@ -110,6 +117,7 @@ vi.mock("sonner", () => ({
 		error: mocks.toastError,
 		info: mocks.toastInfo,
 		success: mocks.toastSuccess,
+		warning: mocks.toastWarning,
 	},
 }));
 
@@ -156,6 +164,7 @@ describe("mobile order modification", () => {
 	});
 
 	beforeEach(() => {
+		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -178,6 +187,7 @@ describe("mobile order modification", () => {
 		mocks.toastError.mockReset();
 		mocks.toastInfo.mockReset();
 		mocks.toastSuccess.mockReset();
+		mocks.toastWarning.mockReset();
 	});
 
 	afterEach(() => {
@@ -233,7 +243,7 @@ describe("mobile order modification", () => {
 		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 
-	it("submits one complete guarded payload and reports success only after live writeback", async () => {
+	it("submits one complete guarded payload and waits for shared reconciliation", async () => {
 		const { size } = openEditor();
 		await act(async () => {
 			if (!size) return;
@@ -259,16 +269,19 @@ describe("mobile order modification", () => {
 				},
 			],
 		});
-		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.");
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		expect(pendingModification?.phase).toBe("awaiting");
+		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.", {
+			id: getPendingTradingActionToastId(pendingModification?.id ?? ""),
+		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(size?.disabled).toBe(true);
 
-		mocks.orders = [{ ...triggerOrder, sz: "1.500" } as OpenOrder];
 		await act(async () => {
-			root.render(<MobileOrdersTab scrollMode="page" />);
+			if (pendingModification) getPendingTradingActionActions().resolveModification(pendingModification.id);
 			await Promise.resolve();
 		});
-		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order modification confirmed.");
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
 	});
 
@@ -281,8 +294,7 @@ describe("mobile order modification", () => {
 		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 
-	it("does not claim success after the 15 second live-data timeout", async () => {
-		vi.useFakeTimers();
+	it("does not claim success when shared reconciliation marks the writeback unconfirmed", async () => {
 		const { size } = openEditor();
 		await act(async () => {
 			if (!size) return;
@@ -290,7 +302,13 @@ describe("mobile order modification", () => {
 			pressKey(size, "Enter");
 			await Promise.resolve();
 		});
-		act(() => vi.advanceTimersByTime(15_000));
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		await act(async () => {
+			if (pendingModification) {
+				getPendingTradingActionActions().markModificationUnconfirmed(pendingModification.id);
+			}
+			await Promise.resolve();
+		});
 
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(document.body.querySelector('[role="alert"]')?.textContent).toContain(
@@ -305,7 +323,26 @@ describe("mobile order modification", () => {
 		expect(findButton("Cancel", container)?.disabled).toBe(false);
 	});
 
-	it("fails closed when the active account changes while awaiting live confirmation", async () => {
+	it("releases a modification when a transport-shaped error happens before the SDK boundary", async () => {
+		mocks.modifyOrders.mockImplementationOnce(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			throw new HttpRequestError({ detail: "Legal status unavailable" });
+		});
+		const { size } = openEditor();
+
+		await act(async () => {
+			if (!size) return;
+			changeInput(size, "1.500");
+			pressKey(size, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
+		expect(mocks.toastError).toHaveBeenCalledOnce();
+	});
+
+	it("keeps an awaiting modification isolated to its original account", async () => {
 		const { size } = openEditor();
 		await act(async () => {
 			if (!size) return;
@@ -316,18 +353,27 @@ describe("mobile order modification", () => {
 
 		mocks.address = "0x2222222222222222222222222222222222222222";
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
-		mocks.orders = [];
+		mocks.orders = [triggerOrder];
 		await act(async () => {
 			root.render(<MobileOrdersTab scrollMode="page" />);
 			await Promise.resolve();
 		});
 
 		const sessionChanged = "The trading account or network changed. Reopen the editor and try again.";
-		expect(mocks.toastError).toHaveBeenCalledWith(sessionChanged);
+		expect(mocks.toastError).not.toHaveBeenCalled();
 		expect(mocks.toastInfo).not.toHaveBeenCalledWith("The modified order is no longer open.");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain(sessionChanged);
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain(sessionChanged);
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
+		expect(findButton("Cancel", container)?.disabled).toBe(false);
+		expect(getPendingTradingActionSnapshot().modifications).toEqual([
+			expect.objectContaining({
+				env: "Mainnet",
+				owner: "0x1111111111111111111111111111111111111111",
+				phase: "awaiting",
+			}),
+		]);
 	});
 
 	it("explains unsupported modifications on touch without submitting an order", () => {

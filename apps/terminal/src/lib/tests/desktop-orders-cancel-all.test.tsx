@@ -1,22 +1,30 @@
 /** @vitest-environment jsdom */
 
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrdersTab } from "@/components/trade/positions/orders-tab";
 import type { OpenOrder } from "@/lib/trade/open-orders";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+	getPendingTradingActionToastId,
+} from "@/stores/use-pending-trading-action-store";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
+	cancelError: null as Error | null,
 	cancelGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
 	clientKey: "0x1111111111111111111111111111111111111111",
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	getOrderSideLabel: vi.fn(() => "Close Short"),
 	markPx: "160",
+	modifyError: null as Error | null,
 	modifyOrders: vi.fn(),
 	orders: [] as OpenOrder[],
 	quoteSymbol: "USDC" as string,
@@ -28,6 +36,7 @@ const mocks = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastInfo: vi.fn(),
 	toastSuccess: vi.fn(),
+	toastWarning: vi.fn(),
 }));
 
 const order = {
@@ -108,10 +117,24 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
 		if (method === "batchModify") {
 			mocks.batchModifyGuard = options?.executionGuard;
-			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
+			return { mutateAsync: mocks.modifyOrders, error: mocks.modifyError, reset: mocks.resetModifyError };
 		}
 		mocks.cancelGuard = options?.executionGuard;
-		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
+		return {
+			mutateAsync: (params: unknown) =>
+				new Promise((resolve, reject) => {
+					mocks.cancelOrders(params, {
+						onSuccess: resolve,
+						onError: (cause: Error) => {
+							mocks.cancelError = cause;
+							reject(cause);
+						},
+						onSettled: () => {},
+					});
+				}),
+			error: mocks.cancelError,
+			reset: mocks.resetCancelError,
+		};
 	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({
@@ -144,6 +167,7 @@ vi.mock("sonner", () => ({
 		error: mocks.toastError,
 		info: mocks.toastInfo,
 		success: mocks.toastSuccess,
+		warning: mocks.toastWarning,
 	},
 }));
 
@@ -204,16 +228,19 @@ describe("desktop cancel all orders confirmation", () => {
 	});
 
 	beforeEach(() => {
+		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.assetId = 120_001;
 		mocks.batchModifyGuard = undefined;
+		mocks.cancelError = null;
 		mocks.cancelGuard = undefined;
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
+		mocks.modifyError = null;
 		mocks.orders = [order];
 		mocks.quoteSymbol = "USDC";
 		mocks.subscriptionIsStale = false;
@@ -231,6 +258,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.toastError.mockReset();
 		mocks.toastInfo.mockReset();
 		mocks.toastSuccess.mockReset();
+		mocks.toastWarning.mockReset();
 	});
 
 	afterEach(() => {
@@ -349,7 +377,7 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(input?.getAttribute("aria-invalid")).toBe("true");
 	});
 
-	it("guards both SDK boundaries, locks duplicate submits, and waits for the subscription writeback", async () => {
+	it("guards both SDK boundaries, locks duplicate submits, and waits for shared reconciliation", async () => {
 		act(() => root.render(<OrdersTab />));
 		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
 		act(() => edit?.click());
@@ -373,17 +401,20 @@ describe("desktop cancel all orders confirmation", () => {
 			expect.objectContaining({ oid: 42, order: expect.objectContaining({ a: 120_001, s: "1" }) }),
 		]);
 		expect(input?.disabled).toBe(true);
-		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.");
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		expect(pendingModification?.phase).toBe("awaiting");
+		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.", {
+			id: getPendingTradingActionToastId(pendingModification?.id ?? ""),
+		});
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 
-		mocks.orders = [{ ...order, sz: "1.000" } as OpenOrder];
 		await act(async () => {
-			root.render(<OrdersTab />);
+			if (pendingModification) getPendingTradingActionActions().resolveModification(pendingModification.id);
 			await Promise.resolve();
 		});
 
 		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
-		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order modification confirmed.");
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
 
 	it("returns focus to the order type filter when the edited order is no longer open", async () => {
@@ -399,8 +430,10 @@ describe("desktop cancel all orders confirmation", () => {
 			await Promise.resolve();
 		});
 
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
 		mocks.orders = [];
 		await act(async () => {
+			if (pendingModification) getPendingTradingActionActions().resolveModification(pendingModification.id);
 			root.render(<OrdersTab />);
 			await Promise.resolve();
 		});
@@ -411,7 +444,7 @@ describe("desktop cancel all orders confirmation", () => {
 		const orderTypeTrigger = orderTypeLabel?.parentElement?.querySelector<HTMLButtonElement>('[role="combobox"]');
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 		expect(document.activeElement).toBe(orderTypeTrigger);
-		expect(mocks.toastInfo).toHaveBeenCalledWith("The modified order is no longer open.");
+		expect(mocks.toastInfo).not.toHaveBeenCalledWith("The modified order is no longer open.");
 	});
 
 	it("fails a queued SDK execution when the owner changes before its final guard", async () => {
@@ -445,10 +478,9 @@ describe("desktop cancel all orders confirmation", () => {
 		});
 
 		expect(mocks.toastInfo).not.toHaveBeenCalled();
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"The trading account or network changed. Reopen the editor and try again.",
-		);
-		expect(input?.disabled).toBe(false);
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 	});
 
 	it("fails a queued SDK execution when the environment changes before its final guard", async () => {
@@ -481,9 +513,8 @@ describe("desktop cancel all orders confirmation", () => {
 		});
 
 		expect(mocks.toastInfo).not.toHaveBeenCalled();
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"The trading account or network changed. Reopen the editor and try again.",
-		);
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
 	});
 
 	it("never reconciles an awaiting modification against another account's matching order", async () => {
@@ -498,7 +529,11 @@ describe("desktop cancel all orders confirmation", () => {
 			pressKey(input, "Enter");
 			await Promise.resolve();
 		});
-		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.");
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		expect(pendingModification?.phase).toBe("awaiting");
+		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.", {
+			id: getPendingTradingActionToastId(pendingModification?.id ?? ""),
+		});
 
 		mocks.address = "0x2222222222222222222222222222222222222222";
 		mocks.clientKey = mocks.address;
@@ -510,39 +545,69 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.toastInfo).not.toHaveBeenCalledWith("The modified order is no longer open.");
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"The trading account or network changed. Reopen the editor and try again.",
-		);
-		expect(container.textContent).toContain("The trading account or network changed. Reopen the editor and try again.");
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(false);
+		expect(getPendingTradingActionSnapshot().modifications).toEqual([
+			expect.objectContaining({
+				id: pendingModification?.id,
+				env: "Mainnet",
+				owner: "0x1111111111111111111111111111111111111111",
+				phase: "awaiting",
+			}),
+		]);
 	});
 
-	it("unlocks cancellation after an unconfirmed writeback timeout without claiming success", async () => {
-		vi.useFakeTimers();
-		try {
-			act(() => root.render(<OrdersTab />));
-			const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
-			act(() => edit?.click());
-			const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
-			await act(async () => {
-				if (!input) return;
-				changeInput(input, "1.000");
-				pressKey(input, "Enter");
-				await Promise.resolve();
-			});
-			expect(input?.disabled).toBe(true);
+	it("unlocks cancellation when shared reconciliation marks the writeback unconfirmed", async () => {
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+		expect(input?.disabled).toBe(true);
 
-			act(() => vi.advanceTimersByTime(15_000));
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		await act(async () => {
+			if (pendingModification) {
+				getPendingTradingActionActions().markModificationUnconfirmed(pendingModification.id);
+			}
+			await Promise.resolve();
+		});
 
-			expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
-			expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(false);
-			expect(
-				container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]')?.disabled,
-			).toBe(true);
-			expect(container.textContent).toContain("Refresh before retrying; cancellation remains available.");
-			expect(mocks.toastSuccess).not.toHaveBeenCalled();
-		} finally {
-			vi.useRealTimers();
-		}
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(false);
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]')?.disabled).toBe(
+			true,
+		);
+		expect(container.textContent).toContain("Refresh before retrying; cancellation remains available.");
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+	});
+
+	it("releases a modification when a transport-shaped error happens before the SDK boundary", async () => {
+		mocks.modifyOrders.mockImplementationOnce(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			throw new HttpRequestError({ detail: "Legal status unavailable" });
+		});
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(getPendingTradingActionSnapshot().modifications).toHaveLength(0);
+		expect(mocks.toastWarning).not.toHaveBeenCalled();
+		expect(mocks.toastError).toHaveBeenCalledOnce();
 	});
 
 	it("invalidates the asynchronous execution when the component unmounts", async () => {
@@ -579,7 +644,7 @@ describe("desktop cancel all orders confirmation", () => {
 		root = createI18nRoot(container);
 	});
 
-	it("opens the warning before submitting and rejects a synchronous double confirmation", () => {
+	it("opens the warning before submitting and rejects a synchronous double confirmation", async () => {
 		act(() => root.render(<OrdersTab />));
 
 		const requestButton = container.querySelector<HTMLButtonElement>('button[aria-label="Cancel all orders"]');
@@ -608,9 +673,12 @@ describe("desktop cancel all orders confirmation", () => {
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
 			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
-		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
+		await act(async () => {
+			callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } });
+			await Promise.resolve();
+		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
-		act(() => callbacks?.onSettled());
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
 	});
 
 	it("keeps row cancellation on the existing immediate path", () => {
@@ -624,6 +692,54 @@ describe("desktop cancel all orders confirmation", () => {
 			{ cancels: [{ a: 120_001, o: 42 }] },
 			expect.objectContaining({ onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("does not let an old account cancellation settle a new account interaction", async () => {
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+		const accountACallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
+			| { onSuccess: (response: unknown) => void }
+			| undefined;
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		mocks.clientKey = mocks.address;
+		await act(async () => {
+			root.render(<OrdersTab />);
+			await Promise.resolve();
+		});
+		const accountBCancel = container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]');
+		expect(accountBCancel?.disabled).toBe(false);
+		act(() => accountBCancel?.click());
+		expect(mocks.cancelOrders).toHaveBeenCalledTimes(2);
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(true);
+
+		await act(async () => {
+			accountACallbacks?.onSuccess({
+				status: "ok",
+				response: { type: "cancel", data: { statuses: ["success"] } },
+			});
+			await Promise.resolve();
+		});
+
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(true);
+	});
+
+	it("does not show a late cancellation rejection from the previous account", async () => {
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+		const accountACallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		mocks.clientKey = mocks.address;
+		act(() => root.render(<OrdersTab />));
+
+		await act(async () => {
+			accountACallbacks?.onError(new Error("Account A cancellation failed"));
+			await Promise.resolve();
+		});
+
+		expect(mocks.cancelError?.message).toBe("Account A cancellation failed");
+		expect(container.textContent).not.toContain("Account A cancellation failed");
 	});
 
 	it("cancels an outcome order with its protocol action asset and keeps modification unavailable", () => {
@@ -743,7 +859,7 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(container.querySelector('button[aria-label="Cancel selected orders"]')).toBeNull();
 	});
 
-	it("ignores an old account's cancellation callback without clearing the new account selection", () => {
+	it("ignores an old account's cancellation callback without clearing the new account selection", async () => {
 		act(() => root.render(<OrdersTab />));
 		act(() => container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')?.click());
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
@@ -759,9 +875,11 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => accountBOrder?.click());
 		expect(accountBOrder?.getAttribute("aria-checked")).toBe("true");
 
-		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
+		await act(async () => {
+			callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } });
+			await Promise.resolve();
+		});
 		expect(accountBOrder?.getAttribute("aria-checked")).toBe("true");
-		act(() => callbacks?.onSettled());
 	});
 
 	it("fails row cancellation closed while the open-orders snapshot is stale", () => {
@@ -808,9 +926,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.clientKey = mocks.address;
 		act(() => root.render(<OrdersTab />));
 
-		expect(() => queuedGuard?.(params)).toThrow(
-			"The trading account or network changed. Reopen the confirmation and try again.",
-		);
+		expect(() => queuedGuard?.(params)).toThrow("Open orders changed. Reopen the confirmation and try again.");
 	});
 
 	it("does not start cancel all while a row cancellation is unresolved", () => {
@@ -837,7 +953,8 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => confirmButton?.click());
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
-		expect(document.body.textContent).toContain(
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+		expect(document.body.textContent).not.toContain(
 			"The trading account or network changed. Reopen the confirmation and try again.",
 		);
 	});

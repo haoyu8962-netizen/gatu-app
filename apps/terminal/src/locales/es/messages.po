@@ -3412,6 +3412,11 @@ msgstr "Fallido"
 msgid "Failed to build a close order"
 msgstr "No se pudo generar una orden de cierre"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr ""
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
 msgstr "No se pudo cancelar la orden TWAP."
@@ -6129,8 +6134,7 @@ msgstr ""
 msgid "Order market context does not match the submitted asset."
 msgstr "El contexto de mercado de la orden no coincide con el activo enviado."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "Modificación de la orden confirmada."
 
@@ -9073,9 +9077,16 @@ msgstr "La transacción de Arbitrum se ha enviado, pero no se pudo verificar su 
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "No se pudo confirmar la respuesta de cancelación. Actualiza las órdenes abiertas antes de volver a intentarlo."
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr ""
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
@@ -9158,8 +9169,11 @@ msgstr "Es posible que la actualización del margen se haya aplicado. Actualiza 
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr ""
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "La orden modificada ya no está abierta."
 
@@ -9180,8 +9194,7 @@ msgstr "El servicio de QR de un solo uso no está disponible. Verifica tu conexi
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "La orden puede continuar, pero esta preferencia de confirmación no se pudo guardar."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "La orden cambió antes de que se confirmara la modificación solicitada. Revisa la orden más reciente antes de volver a intentarlo."
 
@@ -9191,6 +9204,9 @@ msgid "The order is still being confirmed."
 msgstr "La orden todavía se está confirmando."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "La actualización de la orden no fue confirmada por los datos en vivo. Actualiza antes de volver a intentarlo; la cancelación sigue disponible."
@@ -9211,6 +9227,7 @@ msgstr ""
 msgid "The page you are looking for does not exist."
 msgstr "La página que buscas no existe."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "La modificación anterior de la orden aún no está confirmada. Actualiza las órdenes abiertas antes de volver a intentarlo."
@@ -9341,11 +9358,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "La cuenta de trading o la red cambió. Vuelve a abrir la confirmación e inténtalo de nuevo."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "La cuenta de trading o la red cambió. Vuelve a abrir el editor e inténtalo de nuevo."
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9562,8 +9581,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "Este QR de un solo uso ya se usó o ya no está activo. Escanea un nuevo QR."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "Esta orden cambió o ya no está abierta. Actualiza y vuelve a intentarlo."
@@ -9999,7 +10016,6 @@ msgstr "Cuenta de trading"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "Los datos de trading cambiaron antes de que se pudiera enviar la modificación de la orden."
 
@@ -10245,10 +10261,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "Actividad de TWAP"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "Cancelación de TWAP confirmada."
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr ""
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "La cancelación de TWAP se envió, pero no se pudo confirmar su estado. Comprueba la lista de TWAP activos antes de volver a intentarlo."

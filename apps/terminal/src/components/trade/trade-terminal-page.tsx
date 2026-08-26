@@ -14,6 +14,7 @@ import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boo
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
+import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
 import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
 import { MobileLoadingFallback } from "./mobile/mobile-loading-fallback";
@@ -68,6 +69,7 @@ function TradeTerminalContent({ marketReady }: Props) {
 
 	return (
 		<>
+			<AccountActivityFeedOwner />
 			<MarketReadySynchronizers marketReady={marketReady} />
 			{isMobile ? (
 				marketReady ? (

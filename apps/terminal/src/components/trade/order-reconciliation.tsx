@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { HL_ALL_DEXS } from "@/config/app";
 import {
 	isAcceptedOrderStatus,
 	isCanceledOrderStatus,
@@ -9,6 +10,7 @@ import {
 	type OrderProcessingStatus,
 } from "@/domain/trade/order-tracking";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
 import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
@@ -20,20 +22,189 @@ import {
 	usePendingOrderActiveSubmissionIds,
 	usePendingOrderSubmissions,
 } from "@/stores/use-pending-order-store";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionToastId,
+	TRADING_ACTION_CONFIRMATION_TIMEOUT_MS,
+	usePendingOrderCancellations,
+	usePendingOrderModifications,
+} from "@/stores/use-pending-trading-action-store";
 
 const RECONCILIATION_TICK_MS = 3_000;
+
+interface OrderReconciliationIdentity {
+	env: "Mainnet" | "Testnet";
+	mounted: boolean;
+	owner: string | null;
+}
 
 export function OrderReconciliation() {
 	const { clientKey, env, info } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
 	const submissions = usePendingOrderSubmissions();
 	const activeSubmissionIds = usePendingOrderActiveSubmissionIds();
+	const modifications = usePendingOrderModifications();
+	const cancellations = usePendingOrderCancellations();
 	const pollingRef = useRef(false);
+	const normalizedAddress = address?.toLowerCase();
+	const identityRef = useRef<OrderReconciliationIdentity>({
+		env,
+		mounted: true,
+		owner: normalizedAddress ?? null,
+	});
+	identityRef.current.env = env;
+	identityRef.current.owner = normalizedAddress ?? null;
+	const hasCurrentTradingAction =
+		!!normalizedAddress &&
+		[...modifications, ...cancellations].some((action) => action.env === env && action.owner === normalizedAddress);
 	const { data: orderUpdates } = useSubscription(
 		"orderUpdates",
 		{ user: address ?? "0x0000000000000000000000000000000000000000" },
 		{ enabled: !!address },
 	);
+	const {
+		data: openOrdersEvent,
+		status: openOrdersStatus,
+		isStale: openOrdersStale,
+		lastMessageAt: openOrdersLastMessageAt,
+	} = useSubscription(
+		"openOrders",
+		{ user: address ?? "0x0000000000000000000000000000000000000000", dex: HL_ALL_DEXS },
+		{ enabled: hasCurrentTradingAction },
+	);
+
+	useEffect(() => {
+		identityRef.current.mounted = true;
+		return () => {
+			identityRef.current.mounted = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		const awaiting = [...modifications, ...cancellations].filter(
+			(action) => action.phase === "awaiting" && action.confirmationStartedAt !== null,
+		);
+		const now = Date.now();
+		markExpiredTradingActions(awaiting, now, () => identityRef.current);
+		const nextDeadline = Math.min(
+			...awaiting
+				.map((action) => (action.confirmationStartedAt ?? now) + TRADING_ACTION_CONFIRMATION_TIMEOUT_MS)
+				.filter((deadline) => deadline > now),
+		);
+		if (!Number.isFinite(nextDeadline)) return;
+
+		const timer = window.setTimeout(
+			() => markExpiredTradingActions(awaiting, Date.now(), () => identityRef.current),
+			nextDeadline - now,
+		);
+		return () => window.clearTimeout(timer);
+	}, [cancellations, modifications]);
+
+	useEffect(() => {
+		if (!address || openOrdersStatus !== "active" || openOrdersStale || !openOrdersEvent) return;
+		const owner = address.toLowerCase();
+		const openOrders = openOrdersEvent.orders;
+		const completedCancellationOids = new Set<number>();
+		const activeCancellationOids = new Set<number>();
+		for (const cancellation of cancellations) {
+			const stillOpen = cancellation.oids.some((oid) => openOrders.some((order) => order.oid === oid));
+			if (cancellation.env !== env || cancellation.owner !== owner || cancellation.phase === "submitting") {
+				continue;
+			}
+			if (
+				typeof openOrdersLastMessageAt !== "number" ||
+				cancellation.requestStartedAt === null ||
+				openOrdersLastMessageAt <= cancellation.requestStartedAt
+			) {
+				continue;
+			}
+			if (stillOpen) {
+				if (
+					cancellation.phase !== "unconfirmed" ||
+					cancellation.unconfirmedAt === null ||
+					openOrdersLastMessageAt <= cancellation.unconfirmedAt
+				) {
+					for (const oid of cancellation.oids) activeCancellationOids.add(oid);
+					continue;
+				}
+				getPendingTradingActionActions().releaseOrderCancellation(cancellation.id);
+				toast.info(t`The cancellation was not confirmed. Review open orders before retrying.`, {
+					id: getPendingTradingActionToastId(cancellation.id),
+				});
+				continue;
+			}
+			for (const oid of cancellation.oids) completedCancellationOids.add(oid);
+			getPendingTradingActionActions().confirmOrderCancellation(cancellation.id);
+		}
+
+		for (const modification of modifications) {
+			if (
+				modification.env !== env ||
+				modification.owner !== owner ||
+				modification.phase === "submitting" ||
+				completedCancellationOids.has(modification.oid) ||
+				activeCancellationOids.has(modification.oid)
+			) {
+				continue;
+			}
+			if (
+				typeof openOrdersLastMessageAt !== "number" ||
+				modification.requestStartedAt === null ||
+				openOrdersLastMessageAt <= modification.requestStartedAt
+			) {
+				continue;
+			}
+			const matches = openOrders.filter((order) => order.oid === modification.oid);
+			if (matches.length === 0) {
+				getPendingTradingActionActions().resolveModification(modification.id);
+				toast.info(t`The modified order is no longer open.`, {
+					id: getPendingTradingActionToastId(modification.id),
+				});
+				continue;
+			}
+			if (matches.length !== 1) continue;
+			const latest = matches[0];
+			if (!latest) continue;
+			if (matchesExpectedModification(modification, latest)) {
+				getPendingTradingActionActions().resolveModification(modification.id);
+				toast.success(t`Order modification confirmed.`, {
+					id: getPendingTradingActionToastId(modification.id),
+				});
+				continue;
+			}
+			if (hasModificationTargetChanged(modification, latest)) {
+				const negativeConclusionStartedAt =
+					modification.phase === "unconfirmed" ? modification.unconfirmedAt : modification.confirmationStartedAt;
+				if (negativeConclusionStartedAt === null || openOrdersLastMessageAt <= negativeConclusionStartedAt) {
+					continue;
+				}
+				getPendingTradingActionActions().resolveModification(modification.id);
+				toast.error(
+					t`The order changed before the requested modification was confirmed. Review the latest order before retrying.`,
+					{ id: getPendingTradingActionToastId(modification.id) },
+				);
+				continue;
+			}
+			if (modification.phase === "unconfirmed") {
+				if (modification.unconfirmedAt === null || openOrdersLastMessageAt <= modification.unconfirmedAt) {
+					continue;
+				}
+				getPendingTradingActionActions().resolveModification(modification.id);
+				toast.info(t`The modification was not confirmed. Review the order before retrying.`, {
+					id: getPendingTradingActionToastId(modification.id),
+				});
+			}
+		}
+	}, [
+		address,
+		cancellations,
+		env,
+		modifications,
+		openOrdersEvent,
+		openOrdersLastMessageAt,
+		openOrdersStale,
+		openOrdersStatus,
+	]);
 
 	useEffect(() => {
 		const eligible = submissions.filter(
@@ -124,6 +295,61 @@ export function OrderReconciliation() {
 	}, [activeSubmissionIds, address, env, info, submissions]);
 
 	return null;
+}
+
+type AwaitingTradingAction =
+	| ReturnType<typeof usePendingOrderModifications>[number]
+	| ReturnType<typeof usePendingOrderCancellations>[number];
+
+function markExpiredTradingActions(
+	actions: AwaitingTradingAction[],
+	now: number,
+	getIdentity: () => OrderReconciliationIdentity,
+): void {
+	for (const action of actions) {
+		if ("oid" in action) {
+			if (!getPendingTradingActionActions().expireModificationAwaiting(action.id, now)) continue;
+			const identity = getIdentity();
+			if (!identity.mounted || identity.env !== action.env || identity.owner !== action.owner) continue;
+			toast.error(
+				t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`,
+				{ id: getPendingTradingActionToastId(action.id) },
+			);
+			continue;
+		}
+		if (!getPendingTradingActionActions().expireOrderCancellationAwaiting(action.id, now)) continue;
+		const identity = getIdentity();
+		if (!identity.mounted || identity.env !== action.env || identity.owner !== action.owner) continue;
+		toast.warning(t`The cancellation response could not be confirmed. Refresh open orders before retrying.`, {
+			id: getPendingTradingActionToastId(action.id),
+		});
+	}
+}
+
+function matchesExpectedModification(
+	modification: ReturnType<typeof usePendingOrderModifications>[number],
+	order: { sz: string; triggerPx: string },
+): boolean {
+	return (
+		(modification.expectedSize === null || decimalsEqual(order.sz, modification.expectedSize)) &&
+		(modification.expectedTriggerPx === null || decimalsEqual(order.triggerPx, modification.expectedTriggerPx))
+	);
+}
+
+function hasModificationTargetChanged(
+	modification: ReturnType<typeof usePendingOrderModifications>[number],
+	order: { sz: string; triggerPx: string },
+): boolean {
+	return (
+		(modification.expectedSize !== null && !decimalsEqual(order.sz, modification.originalSize)) ||
+		(modification.expectedTriggerPx !== null && !decimalsEqual(order.triggerPx, modification.originalTriggerPx))
+	);
+}
+
+function decimalsEqual(left: string, right: string): boolean {
+	const leftValue = toBig(left);
+	const rightValue = toBig(right);
+	return !!leftValue && !!rightValue && leftValue.eq(rightValue);
 }
 
 function markExpiredSubmissions(submissions: PendingOrderSubmission[], now: number): void {

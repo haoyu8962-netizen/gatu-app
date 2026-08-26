@@ -3412,6 +3412,11 @@ msgstr "فشل"
 msgid "Failed to build a close order"
 msgstr "فشل إنشاء أمر إغلاق"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr ""
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
 msgstr "تعذر إلغاء أمر TWAP."
@@ -6129,8 +6134,7 @@ msgstr ""
 msgid "Order market context does not match the submitted asset."
 msgstr "سياق سوق الأمر لا يطابق الأصل المرسل."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "تم تأكيد تعديل الأمر."
 
@@ -9073,9 +9077,16 @@ msgstr "أُرسلت معاملة Arbitrum، لكن تعذر التحقق من �
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "تعذر تأكيد استجابة الإلغاء. حدّث الأوامر المفتوحة قبل إعادة المحاولة."
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr ""
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
@@ -9158,8 +9169,11 @@ msgstr "قد يكون تحديث الهامش قد تم تطبيقه. حدّث �
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr ""
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "الأمر المعدَّل لم يعد مفتوحًا."
 
@@ -9180,8 +9194,7 @@ msgstr "خدمة رمز QR لمرة واحدة غير متاحة. تحقق من 
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "يمكن متابعة الأمر، لكن تعذر حفظ تفضيل التأكيد هذا."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "تغيّر الأمر قبل تأكيد التعديل المطلوب. راجع أحدث حالة للأمر قبل إعادة المحاولة."
 
@@ -9191,6 +9204,9 @@ msgid "The order is still being confirmed."
 msgstr "لا يزال تأكيد الأمر جارياً."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "لم تؤكد البيانات المباشرة تحديث الأمر. حدّث قبل إعادة المحاولة؛ ويظل الإلغاء متاحًا."
@@ -9211,6 +9227,7 @@ msgstr ""
 msgid "The page you are looking for does not exist."
 msgstr "الصفحة التي تبحث عنها غير موجودة."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "لا يزال تعديل الأمر السابق غير مؤكد. حدّث الأوامر المفتوحة قبل إعادة المحاولة."
@@ -9341,11 +9358,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "تغيّر حساب التداول أو الشبكة. أعد فتح نافذة التأكيد وحاول مرة أخرى."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "تغيّر حساب التداول أو الشبكة. أعد فتح المحرر وحاول مرة أخرى."
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9562,8 +9581,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "رمز QR لمرة واحدة هذا استُخدم بالفعل أو لم يعد نشطًا. امسح رمز QR جديدًا."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "تغيّر هذا الأمر أو لم يعد مفتوحًا. حدّث وحاول مرة أخرى."
@@ -9999,7 +10016,6 @@ msgstr "حساب التداول"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "تغيّرت بيانات التداول قبل التمكن من إرسال تعديل الأمر."
 
@@ -10245,10 +10261,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "نشاط TWAP"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "تم تأكيد إلغاء TWAP."
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr ""
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "تم إرسال طلب إلغاء TWAP، ولكن تعذر تأكيد حالته. تحقق من قائمة أوامر TWAP النشطة قبل إعادة المحاولة."

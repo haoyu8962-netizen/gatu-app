@@ -3215,6 +3215,11 @@ msgstr "失败"
 msgid "Failed to build a close order"
 msgstr "无法生成平仓委托"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr "撤单失败。"
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
 msgstr "TWAP 订单撤销失败。"
@@ -5711,8 +5716,7 @@ msgstr ""
 msgid "Order market context does not match the submitted asset."
 msgstr "委托的市场上下文与提交的资产不匹配。"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "委托修改已确认。"
 
@@ -8433,9 +8437,16 @@ msgid "The Arbitrum transaction was submitted, but its final status could not be
 msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请检查该交易。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "无法确认撤单响应。请刷新当前委托后再试。"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr "未能确认撤单。重试前请检查当前委托。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
@@ -8518,8 +8529,11 @@ msgstr "保证金更新可能已生效。请刷新持仓数据后再试。"
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr "匹配的主钱包将签署此账户级 Agent 授权。"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr "未能确认委托修改。重试前请检查该委托。"
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "修改后的委托已不在当前委托中。"
 
@@ -8540,8 +8554,7 @@ msgstr "一次性二维码服务不可用。请检查网络连接后重试。"
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "订单可继续提交，但无法保存此确认偏好。"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "委托在本次修改确认前已发生变化。重试前请检查最新委托。"
 
@@ -8551,6 +8564,9 @@ msgid "The order is still being confirmed."
 msgstr "订单仍在确认中。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "实时数据尚未确认委托更新。重试前请刷新；仍可取消该委托。"
@@ -8571,6 +8587,7 @@ msgstr ""
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "上一次委托修改仍未确认。重试前请刷新当前委托。"
@@ -8701,11 +8718,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "交易账户或网络已发生变化。请重新打开确认弹窗后再试。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8900,8 +8919,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "此一次性二维码已被使用或已失效。请扫描新的二维码。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "该委托已变化或不再有效。请刷新后重试。"
@@ -9319,7 +9336,6 @@ msgstr "交易账户"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "委托修改提交前交易数据已变化。"
 
@@ -9561,10 +9577,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "TWAP 活动"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "TWAP 撤销已确认。"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr "未能确认 TWAP 撤销。重试前请检查当前 TWAP 委托。"
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP 撤销请求已提交，但无法确认其状态。重试前请检查当前 TWAP 列表。"

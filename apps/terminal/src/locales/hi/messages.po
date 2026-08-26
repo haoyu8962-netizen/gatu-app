@@ -3412,6 +3412,11 @@ msgstr "विफल"
 msgid "Failed to build a close order"
 msgstr "क्लोज़ ऑर्डर तैयार करने में विफल"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr ""
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
 msgstr "TWAP ऑर्डर रद्द नहीं किया जा सका।"
@@ -6129,8 +6134,7 @@ msgstr ""
 msgid "Order market context does not match the submitted asset."
 msgstr "ऑर्डर का बाज़ार संदर्भ सबमिट किए गए एसेट से मेल नहीं खाता।"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "ऑर्डर संशोधन की पुष्टि हो गई।"
 
@@ -9073,9 +9077,16 @@ msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो ग
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "रद्दीकरण प्रतिक्रिया की पुष्टि नहीं हो सकी। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
+
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr ""
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
@@ -9158,8 +9169,11 @@ msgstr "मार्जिन अपडेट लागू हो चुका �
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr ""
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "संशोधित ऑर्डर अब खुला नहीं है।"
 
@@ -9180,8 +9194,7 @@ msgstr "वन-टाइम QR सेवा अनुपलब्ध है। �
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "ऑर्डर जारी रह सकता है, लेकिन यह पुष्टि प्राथमिकता सहेजी नहीं जा सकी।"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "अनुरोधित संशोधन की पुष्टि होने से पहले ऑर्डर बदल गया। फिर से प्रयास करने से पहले नवीनतम ऑर्डर की समीक्षा करें।"
 
@@ -9191,6 +9204,9 @@ msgid "The order is still being confirmed."
 msgstr "ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "लाइव डेटा से ऑर्डर अपडेट की पुष्टि नहीं हुई। फिर से प्रयास करने से पहले रीफ़्रेश करें; रद्दीकरण अभी भी उपलब्ध है।"
@@ -9211,6 +9227,7 @@ msgstr ""
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "पिछला ऑर्डर संशोधन अभी भी अपुष्ट है। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
@@ -9341,11 +9358,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "ट्रेडिंग खाता या नेटवर्क बदल गया। पुष्टि संवाद दोबारा खोलें और फिर से प्रयास करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "ट्रेडिंग खाता या नेटवर्क बदल गया। संपादक दोबारा खोलें और फिर से प्रयास करें।"
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9562,8 +9581,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "यह वन-टाइम QR पहले ही उपयोग हो चुका है या अब सक्रिय नहीं है। नया QR स्कैन करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "यह ऑर्डर बदल गया है या अब खुला नहीं है। रीफ़्रेश करें और फिर से प्रयास करें।"
@@ -9999,7 +10016,6 @@ msgstr "ट्रेडिंग खाता"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "ऑर्डर संशोधन सबमिट होने से पहले ट्रेडिंग डेटा बदल गया।"
 
@@ -10245,10 +10261,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "TWAP गतिविधि"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr ""
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP रद्दीकरण अनुरोध भेज दिया गया, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। पुनः प्रयास करने से पहले सक्रिय TWAP सूची देखें।"

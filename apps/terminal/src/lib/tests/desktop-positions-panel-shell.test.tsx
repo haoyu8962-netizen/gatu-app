@@ -12,7 +12,10 @@ const testState = vi.hoisted(() => ({
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
+	loadedLazyComponents: new Set<string>(),
 	openDepositModal: vi.fn(),
+	pendingLazyComponent: new Promise<void>(() => undefined),
+	preloadLazyComponent: vi.fn(),
 	setPositionsActiveTab: vi.fn(),
 	snapshotsReady: true,
 }));
@@ -125,15 +128,27 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/lib/lazy", () => ({
-	createLazyComponent:
-		(_loader: unknown, name: string) =>
-		({ toolbarTarget }: { toolbarTarget?: HTMLElement | null }) => (
-			<>
-				{toolbarTarget
-					? createPortal(<div data-mock-toolbar={name} data-testid={`${name}-header-actions`} />, toolbarTarget)
-					: null}
-				<div data-lazy-component={name} />
-			</>
+	createLazyComponent: (_loader: unknown, name: string) =>
+		Object.assign(
+			function MockLazyComponent({ toolbarTarget }: { toolbarTarget?: HTMLElement | null }) {
+				if (!testState.loadedLazyComponents.has(name)) throw testState.pendingLazyComponent;
+
+				return (
+					<>
+						{toolbarTarget
+							? createPortal(<div data-mock-toolbar={name} data-testid={`${name}-header-actions`} />, toolbarTarget)
+							: null}
+						<div data-lazy-component={name} />
+					</>
+				);
+			},
+			{
+				preload: () => {
+					testState.preloadLazyComponent(name);
+					testState.loadedLazyComponents.add(name);
+					return Promise.resolve();
+				},
+			},
 		),
 }));
 
@@ -162,7 +177,21 @@ describe("desktop positions panel shell", () => {
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
 		testState.geoStatus = "allowed";
+		testState.loadedLazyComponents.clear();
+		for (const name of [
+			"BalancesTab",
+			"AccountTransfersTab",
+			"FundingTab",
+			"HistoryTab",
+			"OrdersHistoryTab",
+			"OrdersTab",
+			"PositionsTab",
+			"TwapTab",
+		]) {
+			testState.loadedLazyComponents.add(name);
+		}
 		testState.openDepositModal.mockReset();
+		testState.preloadLazyComponent.mockReset();
 		testState.setPositionsActiveTab.mockReset();
 		testState.snapshotsReady = true;
 		i18n.load("en", {});
@@ -175,6 +204,7 @@ describe("desktop positions panel shell", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.useRealTimers();
 	});
 
 	function renderNode(node: ReactNode) {
@@ -202,6 +232,59 @@ describe("desktop positions panel shell", () => {
 		]);
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(1)");
 		expect(container.querySelectorAll("[data-position-tab-count]")).toHaveLength(4);
+	});
+
+	it("preloads compact history tabs while idle without dimming or mounting hidden panels", () => {
+		vi.useFakeTimers();
+		testState.loadedLazyComponents.delete("FundingTab");
+		testState.loadedLazyComponents.delete("HistoryTab");
+		testState.loadedLazyComponents.delete("OrdersHistoryTab");
+		render();
+
+		expect(testState.preloadLazyComponent).not.toHaveBeenCalled();
+
+		act(() => vi.advanceTimersByTime(1_000));
+
+		expect(testState.preloadLazyComponent.mock.calls.map(([name]) => name)).toEqual([
+			"FundingTab",
+			"HistoryTab",
+			"OrdersHistoryTab",
+		]);
+
+		testState.activeTab = "history";
+		render();
+
+		const activeContent = container.querySelector<HTMLElement>('[data-lazy-component="HistoryTab"]')?.parentElement;
+		expect(activeContent?.className).not.toContain("opacity-70");
+		expect(container.querySelector('[role="status"]')).toBeNull();
+		expect(container.querySelector('[data-lazy-component="FundingTab"]')).toBeNull();
+		expect(container.querySelector('[data-lazy-component="OrdersHistoryTab"]')).toBeNull();
+	});
+
+	it("preloads a history chunk from pointer, focus, and direct tab intent", () => {
+		vi.useFakeTimers();
+		testState.loadedLazyComponents.delete("FundingTab");
+		testState.loadedLazyComponents.delete("HistoryTab");
+		testState.loadedLazyComponents.delete("OrdersHistoryTab");
+		render();
+
+		const historyTab = container.querySelector<HTMLElement>('[data-positions-tab="history"]');
+		const fundingTab = container.querySelector<HTMLElement>('[data-positions-tab="funding"]');
+		const ordersHistoryTab = container.querySelector<HTMLElement>('[data-positions-tab="orders-history"]');
+
+		act(() => historyTab?.dispatchEvent(new MouseEvent("pointerover", { bubbles: true })));
+		expect(testState.preloadLazyComponent).toHaveBeenLastCalledWith("HistoryTab");
+
+		act(() => fundingTab?.focus());
+		expect(testState.preloadLazyComponent).toHaveBeenLastCalledWith("FundingTab");
+
+		act(() => ordersHistoryTab?.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true })));
+		expect(testState.preloadLazyComponent).toHaveBeenLastCalledWith("OrdersHistoryTab");
+
+		testState.preloadLazyComponent.mockClear();
+		act(() => historyTab?.click());
+		expect(testState.preloadLazyComponent).toHaveBeenCalledWith("HistoryTab");
+		expect(testState.setPositionsActiveTab).toHaveBeenCalledWith("history");
 	});
 
 	it("reserves count geometry while connected snapshots are loading without displaying stale values", () => {

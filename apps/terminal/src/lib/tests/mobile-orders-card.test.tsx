@@ -5,12 +5,17 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileOrdersTab } from "@/components/trade/mobile/mobile-orders-tab";
 import type { OpenOrder } from "@/lib/trade/open-orders";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+} from "@/stores/use-pending-trading-action-store";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
+	cancelError: null as Error | null,
 	cancelGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
 	clientKey: "0x1111111111111111111111111111111111111111",
@@ -18,6 +23,7 @@ const mocks = vi.hoisted(() => ({
 	isStale: false,
 	marketKind: "builderPerp" as "builderPerp" | "perp" | "spot",
 	marketSzDecimals: 3,
+	modifyError: null as Error | null,
 	modifyOrders: vi.fn(),
 	navigateToMarket: vi.fn(),
 	resetCancelError: vi.fn(),
@@ -115,10 +121,24 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
 		if (method === "batchModify") {
 			mocks.batchModifyGuard = options?.executionGuard;
-			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
+			return { mutateAsync: mocks.modifyOrders, error: mocks.modifyError, reset: mocks.resetModifyError };
 		}
 		mocks.cancelGuard = options?.executionGuard;
-		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
+		return {
+			mutateAsync: (params: unknown) =>
+				new Promise((resolve, reject) => {
+					mocks.cancelOrders(params, {
+						onSuccess: resolve,
+						onError: (cause: Error) => {
+							mocks.cancelError = cause;
+							reject(cause);
+						},
+						onSettled: () => {},
+					});
+				}),
+			error: mocks.cancelError,
+			reset: mocks.resetCancelError,
+		};
 	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({
@@ -180,17 +200,20 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	beforeEach(() => {
+		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.assetId = 120_001;
+		mocks.cancelError = null;
 		mocks.cancelGuard = undefined;
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.isStale = false;
 		mocks.marketKind = "builderPerp";
 		mocks.marketSzDecimals = 3;
+		mocks.modifyError = null;
 		mocks.orders = [order];
 		mocks.openOrdersEvent = null;
 		mocks.status = "active";
@@ -375,9 +398,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
 		renderOrders();
-		expect(() => mocks.cancelGuard?.(params)).toThrow(
-			"The trading account or network changed. Reopen the confirmation and try again.",
-		);
+		expect(() => mocks.cancelGuard?.(params)).toThrow("Open orders changed. Reopen the confirmation and try again.");
 	});
 
 	it("cancels an outcome without market metadata and keeps modification safely unavailable", () => {
@@ -475,7 +496,68 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 	});
 
-	it("requires confirmation before canceling all and blocks duplicate submission", () => {
+	it("does not let an old account cancellation settle a new account interaction", async () => {
+		renderOrders();
+		const accountACancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		act(() => accountACancel?.click());
+		const accountACallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
+			| { onSuccess: (response: unknown) => void }
+			| undefined;
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		mocks.clientKey = mocks.address;
+		renderOrders();
+		const accountBCancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		expect(accountBCancel?.disabled).toBe(false);
+		act(() => accountBCancel?.click());
+		expect(mocks.cancelOrders).toHaveBeenCalledTimes(2);
+		expect(
+			[...container.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent?.trim() === "Cancel",
+			)?.disabled,
+		).toBe(true);
+
+		await act(async () => {
+			accountACallbacks?.onSuccess({
+				status: "ok",
+				response: { type: "cancel", data: { statuses: ["success"] } },
+			});
+			await Promise.resolve();
+		});
+
+		expect(
+			[...container.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent?.trim() === "Cancel",
+			)?.disabled,
+		).toBe(true);
+	});
+
+	it("does not show a late cancellation rejection from the previous account", async () => {
+		renderOrders();
+		const accountACancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		act(() => accountACancel?.click());
+		const accountACallbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void } | undefined;
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		mocks.clientKey = mocks.address;
+		renderOrders();
+
+		await act(async () => {
+			accountACallbacks?.onError(new Error("Account A cancellation failed"));
+			await Promise.resolve();
+		});
+
+		expect(mocks.cancelError?.message).toBe("Account A cancellation failed");
+		expect(container.textContent).not.toContain("Account A cancellation failed");
+	});
+
+	it("requires confirmation before canceling all and blocks duplicate submission", async () => {
 		renderOrders();
 
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
@@ -507,12 +589,15 @@ describe("MobileOrdersTab disclosure card", () => {
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
 			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
-		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
+		await act(async () => {
+			callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } });
+			await Promise.resolve();
+		});
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
-		act(() => callbacks?.onSettled());
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
 	});
 
-	it("does not close the confirmation for a malformed cancellation response", () => {
+	it("does not close the confirmation for a malformed cancellation response", async () => {
 		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
@@ -526,10 +611,13 @@ describe("MobileOrdersTab disclosure card", () => {
 			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
 
-		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } }));
+		await act(async () => {
+			callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } });
+			await Promise.resolve();
+		});
 		expect(document.body.textContent).toContain("Cancel All Orders");
 		expect(document.body.textContent).toContain("The cancellation response could not be confirmed.");
-		act(() => callbacks?.onSettled());
+		expect(getPendingTradingActionSnapshot().orderCancellations[0]?.phase).toBe("awaiting");
 	});
 
 	it("cancels all standard and outcome orders with their exact action asset IDs", () => {
