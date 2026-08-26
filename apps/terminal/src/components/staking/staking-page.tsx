@@ -25,7 +25,7 @@ export function StakingPage({ onActionSubmit }: StakingPageProps) {
 	const isTestnet = useIsTestnet();
 	if (fixture) {
 		return (
-			<div className="min-h-dvh bg-portfolio-canvas font-sans text-fg min-[1001px]:pb-8">
+			<div className="min-h-dvh bg-grid-container font-sans text-fg min-[1001px]:pb-8">
 				<main className="mx-auto w-full max-w-[var(--staking-frame-max)] px-4 py-4 min-[1001px]:px-8 min-[1001px]:py-6 min-[1200px]:px-16">
 					<StakingFixture fixture={fixture} env={isTestnet ? "Testnet" : "Mainnet"} />
 				</main>
@@ -45,7 +45,7 @@ function StakingLive({ onActionSubmit, isTestnet }: StakingPageProps & { isTestn
 		<>
 			<div
 				className={cn(
-					"min-h-dvh bg-portfolio-canvas font-sans text-fg",
+					"min-h-dvh bg-grid-container font-sans text-fg",
 					!isMobile && "pb-8",
 					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
 					isTestnet && "testnet-bg",

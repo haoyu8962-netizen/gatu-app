@@ -95,6 +95,7 @@ export function HyperliquidSessionProvider({
 
 		if (changed && previous) {
 			void closeAgentRegistrationSessionAndRemove(previous.env, previous.owner, {
+				preserveIfSubmissionStarted: true,
 				restoreOnFailure: false,
 			})
 				.then((result) => {

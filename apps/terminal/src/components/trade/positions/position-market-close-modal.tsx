@@ -115,13 +115,13 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const helperId = `position-market-close-helper-${sessionId}`;
 	const marketInfo = getMarketInfo(position.coin);
 	const sizeSymbol = marketInfo?.shortName ?? position.coin.split(":").pop() ?? position.coin;
-	const markPx = marketInfo?.markPx ?? position.markPx;
+	const displayMarkPx = marketInfo?.markPx ?? position.markPx;
 	const estimatedPnl = estimatePositionMarketClosePnl({
 		signedPositionSize,
 		normalizedCloseSize: sizing.normalizedSize,
 		unrealizedPnl: livePosition?.unrealizedPnl,
 		entryPx: livePosition?.entryPx,
-		markPx,
+		markPx: displayMarkPx,
 	});
 	const formattedCloseSize = formatToken(sizing.normalizedSize, { decimals: position.szDecimals });
 	const pnlColorClass = estimatedPnl
@@ -148,7 +148,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		{
 			key: "mark",
 			label: t`Mark price`,
-			value: formatPrice(markPx, { szDecimals: position.szDecimals }),
+			value: formatPrice(displayMarkPx, { szDecimals: position.szDecimals }),
 			valueClassName: "font-semibold text-market-close-fg min-[1001px]:font-normal",
 		},
 		...(showPnl
@@ -302,7 +302,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					size="lg"
 					aria-describedby={helperId}
 					containerClassName="w-full items-stretch"
-					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-[background-color] duration-150 hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted min-[1001px]:py-[14px]"
+					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted min-[1001px]:py-[14px]"
 				>
 					{progressLabel ? (
 						<>

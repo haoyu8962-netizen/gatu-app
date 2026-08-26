@@ -69,11 +69,12 @@ export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): Exc
 		const multiplier = params.side === "buy" ? Big(1).plus(slippage) : Big(1).minus(slippage);
 		orderPrice = markPx.times(multiplier);
 	}
+	const roundingMode = params.side === "buy" ? Big.roundDown : Big.roundUp;
 
 	return {
 		a: params.assetId,
 		b: params.side === "buy",
-		p: formatPriceForOrderWithRounding(orderPrice, params, Big.roundDown),
+		p: formatPriceForOrderWithRounding(orderPrice, params, roundingMode),
 		s: formatSizeForOrder(params.size, params.szDecimals),
 		r: params.reduceOnly,
 		t: { limit: { tif: "FrontendMarket" } },

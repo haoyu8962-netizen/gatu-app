@@ -51,15 +51,22 @@ The terminal must preserve this ordering:
    per-call confirmation UI enabled. Identity and environment are rechecked
    before signing, after signing, after server confirmation, and before the
    legal cache is updated.
-4. **Establish the trading connection.** Only a completed `extraAgents`
-   response may establish that no locally available Agent is approved for
-   this exact owner and environment. Loading, refreshing, absent, and failed
-   responses remain non-definitive and must not trigger `approveAgent`. Agent
-   registration is separate from builder-fee approval.
-5. **Verify the new Agent.** Persist the generated Agent key only in the
-   selected storage scope, refetch the server-side Agent status, and confirm
-   the freshly generated public address and deployment-scoped Agent name
-   before reporting success.
+4. **Establish the trading connection.** A user must explicitly invoke
+   **Enable Trading** before the connection dialog is presented. Only a
+   completed `extraAgents` response may establish that no locally available
+   Agent is approved for this exact owner and environment. Loading, refreshing,
+   absent, and failed responses remain non-definitive and must not trigger
+   `approveAgent`. The application dialog is the permission review for this
+   entry point. After that review, the exact Privy email embedded wallet may
+   suppress Privy's duplicate per-call confirmation UI. All other Agent
+   approval entry points retain confirmation by default, and external wallets
+   are unchanged. Page load and status checks never sign. Agent registration
+   is separate from builder-fee approval.
+5. **Verify the new Agent.** Before opening the wallet signing request, persist
+   the generated key in the selected storage scope as approval-pending and
+   therefore unverified. Refetch the server-side Agent status after approval,
+   confirm the exact generated public address and deployment-scoped Agent name,
+   and only then clear the pending marker and report success.
 6. **Classify account funding.** Wait for both the complete all-DEX perpetual
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
@@ -96,8 +103,9 @@ legal and Agent onboarding are complete.
 
 ## Stay Connected
 
-`Stay Connected` controls only the storage lifetime of the generated Agent
-private key. It does not change the owner wallet or Agent permissions.
+`Stay connected in this browser` controls only the storage lifetime of the
+generated Agent private key. It does not change the owner wallet or Agent
+permissions.
 
 | Choice | Agent key storage | Lifetime |
 |---|---|---|
@@ -113,10 +121,11 @@ instead of falling back to stale data, and reads never cross owners or
 environments.
 
 The persistent choice does not synchronize an Agent private key between
-origins, browser profiles, or devices. The matching owner/master EOA authorizes
-the Agent but cannot reconstruct its locally generated private key. Runtime
-verification must therefore match both the stored public key and the exact
-deployment Agent name returned by `extraAgents`.
+origins (including a different host or port), browser profiles, or devices.
+The matching owner/master EOA authorizes the Agent but cannot reconstruct its
+locally generated private key. Runtime verification must therefore match both
+the stored public key and the exact deployment Agent name returned by
+`extraAgents`.
 
 Hyperliquid deregisters an existing named Agent when another `approveAgent`
 uses the same name. Production reserves `gatu`; local development defaults to
@@ -124,6 +133,10 @@ uses the same name. Production reserves `gatu`; local development defaults to
 `VITE_HYPERLIQUID_AGENT_NAME` (maximum 16 characters) and must not reuse the
 production slot. Names are finite deployment slots, not random per-session
 identifiers, because an account supports only three named Agents.
+When the expected name points to another public key, the connection dialog
+must distinguish a replaced local key from a browser that has no local key.
+Both cases warn that reconnecting here will replace the other same-name
+connection before requesting approval.
 
 Both the onboarding dialog and direct trading-action authorization must honor
 the same preference. A future entry point must not call Agent registration
@@ -135,8 +148,10 @@ External mobile wallets commonly background the browser while the wallet app
 is open. Wallet-approval timeouts must pause while the document is hidden and
 resume only when it becomes visible. A late wallet result may complete only
 while the original owner, registration epoch, and generated Agent still match.
-Wallet changes and stale registration epochs fail closed and remove the
-unverified local key.
+Wallet changes and stale registration epochs fail closed. They remove an
+unverified key only before the submission boundary; once submission has
+started, the exact key and coordination remain under the old owner/environment
+scope for later reconciliation.
 
 Wallet-backed sessions wait for both Privy's authentication readiness and
 `useWallets().ready`. Linked wallet metadata proves ownership but does not make
@@ -146,7 +161,8 @@ While the exact signer is being restored, trading remains disconnected and
 must not fall back to a different wallet or a persisted agent-only owner. This
 transient state also must not delete the last confirmed owner's Agent. Agent
 cleanup belongs to verified explicit logout, confirmed owner replacement, or
-an explicit security reset.
+an explicit security reset for ordinary keys; an uncertain submitted candidate
+remains preserved until it can be reconciled or explicitly removed.
 
 Login intent is recorded only from Privy's public login callback in an
 application-owned, `user.id`-bound `sessionStorage` record. Do not read or scan
@@ -183,14 +199,59 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   whose approval write succeeded but cannot yet be confirmed remains stored
   but inert; only a later successful exact-address check may make it usable.
 - An `extraAgents` error, absent response, or cached miss being refreshed is
-  not proof that an Agent is missing and must not open the automatic prompt.
+  not proof that an Agent is missing and must not initiate Agent approval.
+- Agent-status failures preserve their underlying cause and the registration
+  phase. A preflight failure states that no signature was requested; a
+  post-approval verification failure warns that approval may already have
+  completed. Rate limiting, timeout, service availability, and network errors
+  remain distinguishable. A locally persisted `approvalPendingAtMs` marker is
+  written before the approval request can be signed. At the signed transport
+  boundary, `approvalSubmissionStartedAtMs` is written under the same Web Lock
+  that revalidates the exact owner, environment, epoch, and public key, and the
+  exchange request starts before that lock is released. This binds a lost
+  response, timeout, or later verification failure to the exact candidate, so
+  closing the dialog, remounting the route, refreshing, or retrying cannot turn
+  an uncertain result into another approval. Any failure before that atomic
+  boundary removes the candidate without inferring behavior from error names
+  or messages. Cross-tab coordination is stored in `localStorage` as only the
+  candidate public address and timestamps; it never contains the private key.
+  The private key remains in the selected Agent storage scope. Another tab may
+  resume only when it already holds that exact candidate; otherwise it fails
+  closed while the attempt is pending. Once the boundary is recorded, a later
+  remote miss never proves non-submission and therefore never expires or
+  replaces the key. Only an old pending record that never reached the boundary
+  may have its marker cleared after the five-minute reconciliation window;
+  that cleanup performs a lock-protected compare-and-set and succeeds only
+  while both the shared and local submission markers are still absent. It
+  still fails without signing, and only a later explicit action may replace
+  the candidate. Retries recheck the same key and move all pending metadata to
+  the selected storage scope without generating a replacement.
+- Registration revalidates both owner and environment after every asynchronous
+  boundary. If either changes, cleanup is limited to the exact stored key for
+  the captured registration epoch. Unreadable or invalid storage fails closed
+  before any approval request. Final preflight and retry checks read the latest
+  cross-tab storage value instead of relying on an earlier React render
+  snapshot. The direct owner-wallet approval lease is also bound to that exact
+  pending public key before signing, after signing, and atomically when the
+  transport request starts, preventing an older tab from replacing a newer
+  Agent registration. Registration supplies no generic `useExchange` fallback:
+  a host approval provider that enforces the wallet-signing contract is
+  required, and the registration mutation explicitly disables automatic retry.
+- A confirmed owner or environment change removes an unsubmitted candidate but
+  preserves a candidate whose submission boundary was already recorded under
+  its old owner/environment scope. The new identity cannot use that key, while
+  returning to the old identity can reconcile the exact candidate. Automatic
+  session lifecycle cleanup follows the same rule; explicit disconnect remains
+  the user-authorized path that removes the scoped key.
 - Keep that verification state separate from action-level loading UI. An
   initial Agent query may block the action, but background revalidation must
   not repeatedly disable the explicit Enable Trading entry; registration
   still refetches the definitive status before requesting a signature.
-- Closing the automatic Agent prompt is remembered by environment and owner
-  for the current SPA session. A verified ready state clears that dismissal;
-  an explicit user request always remains available.
+- Trading-page load, refresh, and route remount must not automatically present
+  the connection dialog. An explicit Enable Trading request owns the modal
+  session. Once requested, the dialog remains mounted while Agent verification
+  moves through missing, loading, or error states; it closes when the user
+  cancels, wallet access is lost, or the Agent becomes ready.
 - Builder-fee approval must not be coupled back into `useAgentRegistration`.
 - `usdcRouting` is the sole source of truth for deposit and withdrawal routes.
   Route cache and requests remain isolated by environment, and the route must
@@ -271,7 +332,6 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
 | LI.FI per-transaction guard and committed-route recovery | `apps/terminal/src/lib/lifi/use-bridge.ts`, `bridge-execution-persistence.ts` |
 | Cross-tab funds serialization | `packages/hl-react/src/internal/exchange/funds-action-lock.ts` |
 | Automatic embedded-wallet deposit | `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx` |
-| Session-scoped prompt dismissal | `apps/terminal/src/stores/use-trading-onboarding-store.ts` |
 | Modal precedence | `apps/terminal/src/components/trade/components/global-modals.tsx` |
 
 ## Regression Checklist
@@ -289,10 +349,16 @@ At minimum, changes to this flow must cover:
 - an existing approved Agent without a redundant signature;
 - new Agent verification using the newly generated address;
 - Agent status errors, unknown results, and cached misses during refresh;
+- page load, refresh, and route remount never automatically presenting Agent
+  approval, with an explicitly requested dialog remaining mounted through
+  missing, loading, and error states until cancellation or readiness;
 - session-only and persistent Agent storage;
 - temporary signer loss and restoration, confirmed wallet changes, explicit
   logout, duplicate registration, timeout, and background/foreground transitions;
 - funded, empty, loading, and failed account snapshots;
+- a post-connection deposit intent remaining bound to the exact owner and
+  environment while funding and geo checks resolve, and being discarded after
+  either identity changes;
 - external and embedded wallet-path classification, each environment release
   flag, disconnected and Agent-only external sessions, authenticated email
   sessions awaiting exact embedded-wallet activation, restricted geo, and

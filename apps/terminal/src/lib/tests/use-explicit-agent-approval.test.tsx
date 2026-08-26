@@ -15,6 +15,10 @@ interface Deferred<T> {
 	resolve: (value: T) => void;
 }
 
+interface TestTransport {
+	request: (endpoint: "info" | "exchange", payload: unknown, signal?: AbortSignal) => Promise<unknown>;
+}
+
 function createDeferred<T>(): Deferred<T> {
 	let resolve = (_value: T) => {};
 	const promise = new Promise<T>((promiseResolve) => {
@@ -40,6 +44,8 @@ const testState = vi.hoisted(() => ({
 	isRegistrationLeaseCurrent: vi.fn(),
 	signTypedData: vi.fn(),
 	startRegistrationExecution: vi.fn(),
+	startRegistrationSubmission: vi.fn(),
+	transportRequest: vi.fn(),
 	verifyLegalActionAllowed: vi.fn(),
 	walletAddress: "0x1111111111111111111111111111111111111111",
 	walletClient: {
@@ -59,8 +65,16 @@ vi.mock("wagmi", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	captureAgentRegistrationExecutionLease: testState.captureRegistrationLease,
 	createExchangeClient: testState.createExchangeClient,
+	HttpTransport: class {
+		readonly isTestnet: boolean;
+		constructor(options: { isTestnet: boolean }) {
+			this.isTestnet = options.isTestnet;
+		}
+		request = testState.transportRequest;
+	},
 	isAgentRegistrationExecutionLeaseCurrent: testState.isRegistrationLeaseCurrent,
 	startAgentRegistrationExecution: testState.startRegistrationExecution,
+	startAgentRegistrationSubmission: testState.startRegistrationSubmission,
 	verifyLegalActionAllowed: testState.verifyLegalActionAllowed,
 	useHyperliquid: () => ({
 		enforceLegalActions: testState.enforceLegalActions,
@@ -120,6 +134,7 @@ describe("useExplicitAgentApproval", () => {
 		testState.clientApproveAgent.mockResolvedValue({ status: "ok", response: { type: "default" } });
 		testState.captureRegistrationLease.mockReset();
 		testState.captureRegistrationLease.mockReturnValue({
+			agentPublicKey: AGENT,
 			epoch: { env: "Mainnet", owner: OWNER, epoch: "11111111-1111-4111-8111-111111111111" },
 		});
 		testState.createExchangeClient.mockReset();
@@ -143,6 +158,13 @@ describe("useExplicitAgentApproval", () => {
 			async (_lease: unknown, canStart: () => boolean, execute: () => Promise<unknown>) =>
 				canStart() ? { status: "started", execution: execute() } : { status: "invalidated" },
 		);
+		testState.startRegistrationSubmission.mockReset();
+		testState.startRegistrationSubmission.mockImplementation(
+			async (_lease: unknown, canStart: () => boolean, execute: () => Promise<unknown>) =>
+				canStart() ? { status: "started", execution: execute() } : { status: "invalidated" },
+		);
+		testState.transportRequest.mockReset();
+		testState.transportRequest.mockResolvedValue({ status: "ok", response: { type: "default" } });
 		testState.verifyLegalActionAllowed.mockReset();
 		testState.verifyLegalActionAllowed.mockResolvedValue({});
 	});
@@ -177,7 +199,32 @@ describe("useExplicitAgentApproval", () => {
 			await hook.mutateAsync(params, { signal: controller.signal });
 		});
 
+		expect(testState.captureRegistrationLease).toHaveBeenCalledWith("Mainnet", OWNER, undefined);
 		expect(testState.clientApproveAgent).toHaveBeenCalledWith(params, { signal: controller.signal });
+	});
+
+	it("shows the embedded-wallet confirmation by default", async () => {
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" });
+		});
+
+		expect(testState.createPrivyAgentSigner).toHaveBeenCalledWith(
+			expect.objectContaining({ applicationReview: undefined }),
+		);
+	});
+
+	it("forwards an explicitly confirmed application review to the embedded signer", async () => {
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" }, { applicationReview: "confirmed" });
+		});
+
+		expect(testState.createPrivyAgentSigner).toHaveBeenCalledWith(
+			expect.objectContaining({ applicationReview: "confirmed" }),
+		);
 	});
 
 	it("checks legal access before the direct embedded-wallet SDK request", async () => {
@@ -210,6 +257,66 @@ describe("useExplicitAgentApproval", () => {
 
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("binds lease capture to the exact pending Agent and fails closed if another tab replaced it", async () => {
+		testState.captureRegistrationLease.mockReturnValue(null);
+		const hook = await renderApprovalHook();
+		const params = { agentAddress: AGENT, agentName: "Mobile" };
+
+		await act(async () => {
+			await expect(hook.mutateAsync(params, { registrationPublicKey: AGENT })).rejects.toThrow(
+				"The wallet session changed before mobile access approval.",
+			);
+		});
+
+		expect(testState.captureRegistrationLease).toHaveBeenCalledWith("Mainnet", OWNER, {
+			agentPublicKey: AGENT,
+		});
+		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("revalidates the exact pending Agent at the signed transport submission boundary", async () => {
+		testState.createExchangeClient.mockImplementation(
+			(_signer: unknown, _isTestnet: boolean, _cacheKey: undefined, transport: TestTransport) => ({
+				approveAgent: async () => {
+					if (!testState.beforeSubmit) throw new Error("Missing pre-submit guard");
+					await testState.beforeSubmit();
+					return transport.request("exchange", { action: "approveAgent" });
+				},
+			}),
+		);
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await hook.mutateAsync({ agentAddress: AGENT, agentName: "HypeTerminal" }, { registrationPublicKey: AGENT });
+		});
+
+		expect(testState.captureRegistrationLease).toHaveBeenCalledWith("Mainnet", OWNER, { agentPublicKey: AGENT });
+		expect(testState.startRegistrationSubmission).toHaveBeenCalledOnce();
+		expect(testState.transportRequest).toHaveBeenCalledWith("exchange", { action: "approveAgent" }, undefined);
+	});
+
+	it("does not submit a signed request after the exact transport lease is invalidated", async () => {
+		testState.startRegistrationSubmission.mockResolvedValue({ status: "invalidated" });
+		testState.createExchangeClient.mockImplementation(
+			(_signer: unknown, _isTestnet: boolean, _cacheKey: undefined, transport: TestTransport) => ({
+				approveAgent: async () => {
+					if (!testState.beforeSubmit) throw new Error("Missing pre-submit guard");
+					await testState.beforeSubmit();
+					return transport.request("exchange", { action: "approveAgent" });
+				},
+			}),
+		);
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await expect(
+				hook.mutateAsync({ agentAddress: AGENT, agentName: "HypeTerminal" }, { registrationPublicKey: AGENT }),
+			).rejects.toThrow("The wallet session changed before mobile access approval.");
+		});
+		expect(testState.transportRequest).not.toHaveBeenCalled();
 	});
 
 	it("does not capture a lease or open the old signer after identity changes during legal preflight", async () => {
@@ -280,7 +387,10 @@ describe("useExplicitAgentApproval", () => {
 		const params = { agentAddress: AGENT, agentName: "Mobile" };
 
 		await act(async () => {
-			await hook.mutateAsync(params, { signal: controller.signal });
+			await hook.mutateAsync(params, {
+				applicationReview: "confirmed",
+				signal: controller.signal,
+			});
 		});
 
 		expect(testState.createExternalAgentSigner).toHaveBeenCalledWith(
@@ -402,6 +512,37 @@ describe("useExplicitAgentApproval", () => {
 		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
 		expect(testState.signTypedData).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("releases the in-flight slot immediately when registration abandons a pre-submit attempt", async () => {
+		const abandoned = createDeferred<{ status: string }>();
+		testState.clientApproveAgent
+			.mockReturnValueOnce(abandoned.promise)
+			.mockResolvedValueOnce({ status: "ok", response: { type: "default" } });
+		const hook = await renderApprovalHook();
+		const controller = new AbortController();
+		let firstRequest: Promise<unknown> | undefined;
+		await act(async () => {
+			firstRequest = hook.mutateAsync(
+				{ agentAddress: AGENT, agentName: "HypeTerminal" },
+				{ registrationPublicKey: AGENT, signal: controller.signal },
+			);
+			await vi.waitFor(() => expect(testState.clientApproveAgent).toHaveBeenCalledOnce());
+		});
+		if (!firstRequest) throw new Error("Expected abandoned approval request");
+		void firstRequest.catch(() => undefined);
+		expect(approval?.isPending).toBe(true);
+
+		await act(async () => {
+			controller.abort(new Error("Registration timed out before submission"));
+			await Promise.resolve();
+		});
+		expect(approval?.isPending).toBe(false);
+
+		await act(async () => {
+			await approval?.mutateAsync({ agentAddress: AGENT, agentName: "HypeTerminal" }, { registrationPublicKey: AGENT });
+		});
+		expect(testState.clientApproveAgent).toHaveBeenCalledTimes(2);
 	});
 
 	it("does not create the external-wallet signer when already aborted", async () => {

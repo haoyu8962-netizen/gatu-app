@@ -40,6 +40,14 @@ msgstr "{0} Hyperliquid के मूल परपेचुअल मार्�
 #~ msgid "{0} more wallets"
 #~ msgstr ""
 
+#. placeholder {0}: pagination.currentPage
+#. placeholder {1}: pagination.totalPages
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -80,6 +88,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
+msgstr ""
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} history"
@@ -269,6 +281,10 @@ msgstr "जब मार्क मूल्य पोज़िशन के ल�
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "पिछले CCTP जमा को अभी भी ट्रैक किया जा रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "पिछला कनेक्शन प्रयास अभी भी मिलान किया जा रहा है। दोबारा प्रयास करने पर उसी ट्रेडिंग कुंजी की जाँच होगी और किसी अन्य हस्ताक्षर का अनुरोध नहीं किया जाएगा।"
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "रेफ़रल कोड केवल एक बार लागू किया जा सकता है और इस पेज से बदला नहीं जा सकता।"
@@ -280,6 +296,10 @@ msgstr "रिवर्स ऑर्डर के लिए ट्रेड स�
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "किसी दूसरे टैब में ट्रेडिंग कनेक्शन पहले से स्थापित किया जा रहा है। दोबारा प्रयास करने से पहले उसे वहीं पूरा करें या रद्द करें।"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -347,8 +367,8 @@ msgid "Account data unavailable"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Account Equity"
-msgstr "खाता इक्विटी"
+#~ msgid "Account Equity"
+#~ msgstr "खाता इक्विटी"
 
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -505,6 +525,7 @@ msgid "Add to Target"
 msgstr "लक्ष्य तक जोड़ें"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "TP/SL जोड़ें"
 
@@ -533,7 +554,8 @@ msgstr "{displayName} का आइसोलेटेड मार्जिन �
 msgid "Adjust leverage"
 msgstr "लीवरेज समायोजित करें"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "मार्जिन समायोजित करें"
 
@@ -599,16 +621,33 @@ msgstr "सभी क्रॉस पोज़िशन समान क्र�
 msgid "All currently available referral rewards are claimed to your Spot balance."
 msgstr "वर्तमान में उपलब्ध सभी रेफ़रल पुरस्कार आपके Spot बैलेंस में प्राप्त किए जाएंगे।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "All directions"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 msgid "All Directions"
 msgstr "सभी दिशाएं"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "All markets"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "सभी भूमिकाएं"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All sides"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "All statuses"
@@ -618,6 +657,8 @@ msgstr "सभी स्थितियां"
 msgid "All Time"
 msgstr "सभी समय"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -872,6 +913,12 @@ msgstr ""
 msgid "Ask"
 msgstr "बिक्री"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1036,6 +1083,12 @@ msgstr "फिर ऑनलाइन"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Back to trade"
+msgstr ""
+
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr ""
@@ -1187,6 +1240,8 @@ msgstr "Builder के कुल आंकड़े संचयी एट्र
 #~ msgid "buy"
 #~ msgstr "खरीदें"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1296,6 +1351,7 @@ msgstr "चयनित ऑर्डर रद्द करें"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "TWAP ऑर्डर रद्द करें"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -1396,6 +1452,18 @@ msgstr "जांच हो रही है..."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Choose another market or side."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Choose another market, direction, role, or type."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Choose different market, direction, type, or status filters."
 msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1528,9 +1596,10 @@ msgid "Close"
 msgstr "बंद करें"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close All"
-msgstr "सभी बंद करें"
+#~ msgid "Close All"
+#~ msgstr "सभी बंद करें"
 
+#: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close all is currently unavailable."
 msgstr "सभी बंद करना अभी उपलब्ध नहीं है।"
@@ -1544,10 +1613,15 @@ msgid "Close all is unavailable because position data is incomplete."
 msgstr "पोज़िशन डेटा अधूरा होने के कारण सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable until every position market and mark price has loaded."
-msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
+#~ msgid "Close all is unavailable until every position market and mark price has loaded."
+#~ msgstr "जब तक हर पोज़िशन का बाज़ार और मार्क मूल्य लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is unavailable until every position market has loaded."
+msgstr "जब तक हर पोज़िशन का बाज़ार लोड नहीं हो जाता, तब तक सभी बंद करना उपलब्ध नहीं है।"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "सभी पोज़िशन बंद करें"
 
@@ -1567,6 +1641,7 @@ msgstr ""
 msgid "Close close-all confirmation"
 msgstr "सभी बंद करने की पुष्टि बंद करें"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1635,6 +1710,7 @@ msgstr "पोज़िशन बंद करें"
 msgid "Close reverse confirmation"
 msgstr "रिवर्स पुष्टि बंद करें"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1697,8 +1773,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "इस डायलॉग को बंद करने से ऑर्डर रद्द नहीं होगा।"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "बंद हो रहा है..."
+#~ msgid "Closing..."
+#~ msgstr "बंद हो रहा है..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -1717,20 +1793,15 @@ msgid "Codes support 1–20 characters. Availability is confirmed by Hyperliquid
 msgstr "कोड में 1–20 वर्ण हो सकते हैं। सबमिट करने पर Hyperliquid इसकी उपलब्धता की पुष्टि करता है।"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Collapse {displayName} position details"
 msgstr "{displayName} पोज़िशन विवरण समेटें"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Collapse {marketLabel} order details"
 msgstr "{marketLabel} ऑर्डर विवरण समेटें"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 msgid "Collapse {marketName} history details"
 msgstr "{marketName} इतिहास विवरण समेटें"
@@ -1739,10 +1810,7 @@ msgstr "{marketName} इतिहास विवरण समेटें"
 #~ msgid "Collapse account panel"
 #~ msgstr "खाता पैनल छोटा करें"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
 msgid "Collapse all"
 msgstr "सभी समेटें"
 
@@ -2138,6 +2206,7 @@ msgstr "कनेक्ट हो रहा है"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -2758,7 +2827,14 @@ msgstr "गंतव्य पता"
 #~ msgstr ""
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -2934,6 +3010,7 @@ msgid "Edit {0} trigger price"
 msgstr "{0} ट्रिगर मूल्य संपादित करें"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "TP/SL संपादित करें"
 
@@ -2997,6 +3074,18 @@ msgstr "अधिकतम 6 दशमलव स्थानों वाली 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive target leverage."
 msgstr "धनात्मक लक्ष्य लीवरेज दर्ज करें।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Enter a valid 0x account address to view funding payments."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Enter a valid 0x account address to view ordinary order history."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Enter a valid 0x account address to view trade history."
+msgstr ""
 
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
@@ -3234,10 +3323,7 @@ msgstr "{marketName} इतिहास विवरण विस्तृत �
 #~ msgid "Expand account panel"
 #~ msgstr "खाता पैनल विस्तृत करें"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
 msgid "Expand all"
 msgstr "सभी विस्तृत करें"
 
@@ -3283,6 +3369,9 @@ msgstr ""
 msgid "Explorer"
 msgstr "एक्सप्लोरर"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3300,8 +3389,12 @@ msgid "Exporting deposits and withdrawals..."
 msgstr "जमा और निकासी निर्यात हो रही है..."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Exporting funding history..."
-msgstr "फंडिंग इतिहास निर्यात हो रहा है..."
+#~ msgid "Exporting funding history..."
+#~ msgstr "फंडिंग इतिहास निर्यात हो रहा है..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding payments..."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3322,6 +3415,11 @@ msgstr "विफल"
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Failed to build a close order"
 msgstr "क्लोज़ ऑर्डर तैयार करने में विफल"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr ""
 
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
@@ -3360,8 +3458,12 @@ msgid "Failed to export deposits and withdrawals."
 msgstr "जमा और निकासी निर्यात नहीं हो सके।"
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Failed to export funding history."
-msgstr "फंडिंग इतिहास निर्यात करने में विफल।"
+#~ msgid "Failed to export funding history."
+#~ msgstr "फंडिंग इतिहास निर्यात करने में विफल।"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding payments."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3399,8 +3501,13 @@ msgstr "जमा और निकासी लोड नहीं हो सक
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding history."
-msgstr "फंडिंग इतिहास लोड करने में विफल।"
+#~ msgid "Failed to load funding history."
+#~ msgstr "फंडिंग इतिहास लोड करने में विफल।"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Failed to load funding payments."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3516,6 +3623,8 @@ msgstr "TP/SL ऑर्डर अपडेट करने में विफ�
 msgid "Favorites"
 msgstr "पसंदीदा"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -3571,6 +3680,7 @@ msgstr "निष्पादन इतिहास"
 msgid "Fill status"
 msgstr "फिल स्थिति"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -3586,6 +3696,30 @@ msgstr "पूर्ण"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "{label} के अनुसार फ़िल्टर करें"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by market"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by side"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by direction"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by market"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by status"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by type"
+msgstr ""
 
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
@@ -3606,6 +3740,22 @@ msgstr "मार्जिन मोड के अनुसार पोज़�
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Filter positions by market: {ariaValue}"
 msgstr "बाज़ार के अनुसार पोज़िशन फ़िल्टर करें: {ariaValue}"
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by direction"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by market"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by role"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by type"
+msgstr ""
 
 #: src/components/staking/staking-view.tsx
 msgid "Filter validators"
@@ -3695,18 +3845,53 @@ msgstr "फंडिंग"
 msgid "Funding chain"
 msgstr "जमा चेन"
 
-#: src/config/trade.ts
-msgid "Funding History"
-msgstr "फंडिंग इतिहास"
-
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#~ msgid "Funding Payments"
-#~ msgstr "फंडिंग भुगतान"
+msgid "Funding data could not be validated. Refresh and try again."
+msgstr ""
+
+#: src/config/trade.ts
+#~ msgid "Funding History"
+#~ msgstr "फंडिंग इतिहास"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Funding history pagination"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments"
+msgstr ""
+
+#: src/config/trade.ts
+msgid "Funding Payments"
+msgstr "फंडिंग भुगतान"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments are unavailable"
+msgstr ""
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments for {0}"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments pagination"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding shown"
 msgstr "प्रदर्शित फंडिंग"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding updates paused."
+msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3864,10 +4049,8 @@ msgstr ""
 msgid "History"
 msgstr "इतिहास"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -3959,6 +4142,10 @@ msgstr "Hyperliquid के अनुसार यह ट्रेडिंग �
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
 msgstr "Hyperliquid पर दावा करने से पहले पात्र रिवॉर्ड $1 से अधिक होने चाहिए। अंतिम पात्रता की पुष्टि प्रोटोकॉल करता है।"
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Hyperliquid returns at most the most recent {ORDER_HISTORY_API_LIMIT} ordinary orders. TWAP history is separate and is not included."
+msgstr ""
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Hyperliquid testnet account"
@@ -4069,6 +4256,12 @@ msgstr "अपर्याप्त बैलेंस"
 msgid "Insufficient funds for gas"
 msgstr "गैस के लिए अपर्याप्त फंड"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Invalid account address"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -4083,6 +4276,10 @@ msgstr "गंतव्य पता अमान्य है"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Invalid funding history address"
 #~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
@@ -4276,6 +4473,7 @@ msgstr "इस बाज़ार के लिए लीवरेज {currentLe
 msgid "Limit"
 msgstr "लिमिट"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4487,7 @@ msgid "Limit Buy"
 msgstr "लिमिट खरीद"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Limit क्लोज़"
@@ -4354,6 +4552,8 @@ msgstr ""
 msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -4428,8 +4628,17 @@ msgid "Loading deposits and withdrawals..."
 msgstr "जमा और निकासी लोड हो रही है..."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Loading funding history..."
-msgstr "फंडिंग इतिहास लोड हो रहा है..."
+#~ msgid "Loading funding history..."
+#~ msgstr "फंडिंग इतिहास लोड हो रहा है..."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Loading funding payments"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Loading funding payments."
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4444,6 +4653,10 @@ msgstr "बाज़ार लोड हो रहे हैं..."
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Loading open orders..."
 msgstr "खुले ऑर्डर लोड हो रहे हैं..."
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Loading order history"
+msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Loading order history..."
@@ -4487,6 +4700,10 @@ msgstr "नवीनतम पोज़िशन लोड हो रही ह�
 msgid "Loading token metadata..."
 msgstr "टोकन मेटाडेटा लोड हो रहा है..."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Loading trade history"
+msgstr ""
+
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
 msgstr "ट्रेड इतिहास लोड हो रहा है..."
@@ -4522,12 +4739,9 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4560,6 +4774,7 @@ msgstr ""
 msgid "Log in with Email"
 msgstr "ईमेल से लॉग इन करें"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4617,9 +4832,11 @@ msgstr "Mainnet"
 #~ msgstr "मेंटेनेंस Margin"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Maintenance Margin Ratio"
-msgstr "मेंटेनेंस मार्जिन अनुपात"
+#~ msgid "Maintenance Margin Ratio"
+#~ msgstr "मेंटेनेंस मार्जिन अनुपात"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Maker"
@@ -4728,10 +4945,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "मार्क प्राइस ऑरेकल कीमतों से प्राप्त होता है और अवास्तविक PnL तथा लिक्विडेशन की गणना के लिए उपयोग होता है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "मार्क प्राइस उपलब्ध नहीं है। बाज़ार डेटा की प्रतीक्षा करें और फिर से प्रयास करें।"
@@ -4747,6 +4961,9 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #~ msgid "Mark:"
 #~ msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4773,6 +4990,7 @@ msgstr "बाज़ार"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +5013,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "इस खाते और नेटवर्क के लिए मार्केट क्लिक वर्तमान में पूरी पोज़िशन तुरंत बंद कर देते हैं।"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market क्लोज़"
@@ -5097,8 +5315,8 @@ msgstr "अधिक जानकारी"
 #~ msgstr "और पृष्ठ"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "अधिक पोज़िशन कार्रवाइयाँ"
+#~ msgid "More position actions"
+#~ msgstr "अधिक पोज़िशन कार्रवाइयाँ"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -5189,8 +5407,24 @@ msgstr "नई पोर्टफोलियो मार्जिन सक्
 msgid "Next"
 msgstr "अगला"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Next funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Next funding payments page"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Next order history page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Next trade history page"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
@@ -5301,19 +5535,43 @@ msgstr ""
 msgid "No expiry reported"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills found"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills found in the recent trade snapshot."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "No fills found."
 msgstr "कोई निष्पादन नहीं मिला।"
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills match the selected filters."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाली कोई फिल नहीं है।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found in the confirmed 30-day window."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "कोई फंडिंग भुगतान नहीं मिला।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments match the selected filters."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5350,6 +5608,18 @@ msgstr "कोई मार्केट नहीं"
 msgid "No markets found."
 msgstr "कोई बाज़ार नहीं मिला।"
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No matching fills"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No matching funding payments"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No matching orders"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
 msgstr ""
@@ -5371,6 +5641,10 @@ msgstr "कोई खुला ऑर्डर नहीं।"
 msgid "No operation was submitted."
 msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No order history found"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
@@ -5385,6 +5659,7 @@ msgstr "कोई ऑर्डर नहीं"
 msgid "No orders match the filters."
 msgstr "फ़िल्टरों से मेल खाने वाला कोई ऑर्डर नहीं है।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No orders match the selected filters."
 msgstr "चयनित फ़िल्टरों से मेल खाने वाला कोई ऑर्डर नहीं है।"
@@ -5393,6 +5668,10 @@ msgstr "चयनित फ़िल्टरों से मेल खान�
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No orders match these filters."
 msgstr "इन फ़िल्टरों से मेल खाने वाला कोई ऑर्डर नहीं है।"
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No ordinary orders found."
+msgstr ""
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
@@ -5610,6 +5889,10 @@ msgstr ""
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
+msgstr ""
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 msgstr ""
@@ -5626,6 +5909,7 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "खुला"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -5662,6 +5946,7 @@ msgstr "OPEN INT"
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5704,6 +5989,7 @@ msgstr "खुले ऑर्डर बदल गए। पुष्टि फ�
 msgid "Open related page"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5815,9 +6101,30 @@ msgstr "ऑर्डर विफल"
 msgid "Order filled"
 msgstr "ऑर्डर भर गया"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history"
+msgstr ""
+
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history is unavailable"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history pagination"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order history updates paused."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-tracked-order.ts
@@ -5825,8 +6132,7 @@ msgstr "ऑर्डर हिस्ट्री"
 msgid "Order market context does not match the submitted asset."
 msgstr "ऑर्डर का बाज़ार संदर्भ सबमिट किए गए एसेट से मेल नहीं खाता।"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "ऑर्डर संशोधन की पुष्टि हो गई।"
 
@@ -5909,11 +6215,17 @@ msgstr "क्लाइंट ऑर्डर ID वाले ऑर्डर �
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "लिंक किए गए TP/SL ऑर्डर वाले ऑर्डर यहाँ संशोधित नहीं किए जा सकते।"
 
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Ordinary order history for {0}"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Original Size"
 msgstr "मूल आकार"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -6018,6 +6330,9 @@ msgstr "पॉज़ करें"
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "पॉज़ अनुपलब्ध: Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6066,6 +6381,8 @@ msgstr ""
 #~ msgid "perp"
 #~ msgstr "परप"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
@@ -6207,6 +6524,9 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -6273,6 +6593,9 @@ msgstr "पोर्टफोलियो सारांश"
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6282,8 +6605,8 @@ msgid "Position"
 msgstr "पोजीशन"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position actions"
-msgstr "पोज़िशन कार्रवाइयाँ"
+#~ msgid "Position actions"
+#~ msgstr "पोज़िशन कार्रवाइयाँ"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -6393,14 +6716,36 @@ msgstr "4 सेकंड तक दबाकर रखें"
 msgid "Previous"
 msgstr "पिछला"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Previous funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Previous funding payments page"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Previous order history page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Previous trade history page"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Previous Vault page"
 msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6597,6 +6942,9 @@ msgstr ""
 msgid "Ranked by"
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -6642,9 +6990,7 @@ msgstr "वास्तविक PNL"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "हाल का इतिहास सुरक्षित प्रदर्शन सीमा से अधिक है। बड़ी रेंज प्राप्त करने के लिए CSV निर्यात करें।"
 
@@ -6831,9 +7177,24 @@ msgstr "रेफ़र किए गए ट्रेडरों के पे�
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "पहले $1B वॉल्यूम पर, रेफ़रर अभी ट्रेडर की छूट लागू होने के बाद उसकी फ़ीस का 10% कमाते हैं।"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Refresh"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Refresh failed. Previously loaded funding payments remain visible."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Refresh failed. Previously loaded order history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Refresh failed. Previously loaded trade history remains visible."
 msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -6866,6 +7227,7 @@ msgstr ""
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6999,11 +7361,14 @@ msgid "Resume tracking"
 msgstr "ट्रैकिंग फिर से शुरू करें"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -7065,6 +7430,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "रिवर्स"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "रिवर्स"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "{filledSizeLabel} के लिए रिवर्स ऑर्डर भरा गया।"
@@ -7073,7 +7443,7 @@ msgstr "{filledSizeLabel} के लिए रिवर्स ऑर्डर �
 msgid "Reverse order filled."
 msgstr "रिवर्स ऑर्डर भरा गया।"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "पोज़िशन रिवर्स करें"
@@ -7225,11 +7595,20 @@ msgstr "RO"
 msgid "ROI"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Role"
 msgstr "भूमिका"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Rows per page"
 msgstr ""
 
@@ -7549,6 +7928,8 @@ msgstr ""
 #~ msgid "sell"
 #~ msgstr "बेचें"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7657,8 +8038,8 @@ msgstr "{p}% पर सेट करें"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "TP/SL सेट करें"
+#~ msgid "Set TP/SL"
+#~ msgstr "TP/SL सेट करें"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"
@@ -7695,6 +8076,7 @@ msgstr "PNL साझा करें"
 msgid "Share PNL for {displayName}"
 msgstr "{displayName} का PNL साझा करें"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -7788,6 +8170,7 @@ msgstr "ROE प्रतिशत दिखाएँ"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "पिछले 30 दिनों में रिपोर्ट किए गए पुरस्कार प्राप्ति रिकॉर्ड दिखाता है। इनमें रेफ़रल और बिल्डर पुरस्कार शामिल हो सकते हैं।"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr ""
@@ -7829,6 +8212,12 @@ msgstr ""
 msgid "Signing..."
 msgstr "साइन हो रहा है..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -8016,6 +8405,8 @@ msgstr "स्रोत"
 #~ msgstr "स्पॉट"
 
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -8167,6 +8558,10 @@ msgid "Statistics"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8255,6 +8650,10 @@ msgstr "स्टॉप ट्रिगर लिक्विडेशन मू
 msgid "Stop trigger must be below mark"
 msgstr "Stop ट्रिगर मार्क मूल्य से नीचे होना चाहिए"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "केवल इस ब्राउज़र प्रोफ़ाइल में संग्रहीत; अन्य ब्राउज़र और डिवाइस डिस्कनेक्टेड रहते हैं।"
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "उप-खाता ट्रांसफर"
@@ -8340,8 +8739,15 @@ msgstr "स्वैप किया जा रहा है..."
 #~ msgid "Switch to {0}"
 #~ msgstr "{0} पर स्विच करें"
 
+#. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
-#. placeholder {0}: update.coin
+#. placeholder {0}: funding.coin
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
@@ -8526,6 +8932,8 @@ msgstr "Take Profit ट्रिगर मार्क मूल्य से �
 msgid "Take profit trigger must be below mark"
 msgstr "Take Profit ट्रिगर मार्क मूल्य से नीचे होना चाहिए"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Taker"
@@ -8601,6 +9009,18 @@ msgstr ""
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "साइन करने से पहले खाता सक्रियण शुल्क बदल गया। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The account has no fills in the public API snapshot."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The account has no funding payments in the confirmed 30-day window."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "The account has no ordinary orders in the available history."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr ""
@@ -8655,13 +9075,28 @@ msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो ग
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "रद्दीकरण प्रतिक्रिया की पुष्टि नहीं हो सकी। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr ""
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "कनेक्शन की सुरक्षित रूप से जाँच नहीं की जा सकी। वॉलेट हस्ताक्षर का अनुरोध नहीं किया गया; कुछ देर प्रतीक्षा करके दोबारा प्रयास करें।"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "कनेक्शन पूरा नहीं किया जा सका। हो सकता है इसे पहले ही स्वीकृत किया जा चुका हो; कुछ देर प्रतीक्षा करके दोबारा प्रयास करें।"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -8732,8 +9167,11 @@ msgstr "मार्जिन अपडेट लागू हो चुका �
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr ""
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "संशोधित ऑर्डर अब खुला नहीं है।"
 
@@ -8754,8 +9192,7 @@ msgstr "वन-टाइम QR सेवा अनुपलब्ध है। �
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "ऑर्डर जारी रह सकता है, लेकिन यह पुष्टि प्राथमिकता सहेजी नहीं जा सकी।"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "अनुरोधित संशोधन की पुष्टि होने से पहले ऑर्डर बदल गया। फिर से प्रयास करने से पहले नवीनतम ऑर्डर की समीक्षा करें।"
 
@@ -8765,6 +9202,9 @@ msgid "The order is still being confirmed."
 msgstr "ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "लाइव डेटा से ऑर्डर अपडेट की पुष्टि नहीं हुई। फिर से प्रयास करने से पहले रीफ़्रेश करें; रद्दीकरण अभी भी उपलब्ध है।"
@@ -8777,10 +9217,15 @@ msgstr ""
 msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
 msgstr "पेज Hyperliquid से रीफ़्रेश हो रहा है। हाल के बदलाव दिखने में थोड़ा समय लग सकता है।"
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "पिछला ऑर्डर संशोधन अभी भी अपुष्ट है। फिर से प्रयास करने से पहले खुले ऑर्डर रीफ़्रेश करें।"
@@ -8817,6 +9262,10 @@ msgstr "जब तक आप जान-बूझकर QR प्रकट नह
 msgid "The QR stays on this device and is never uploaded."
 msgstr "QR इसी डिवाइस पर रहता है और कभी अपलोड नहीं किया जाता।"
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The recent trade snapshot could not be loaded or validated."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
@@ -8825,6 +9274,14 @@ msgstr "Hyperliquid द्वारा पुष्टि किए जाने
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "अनुरोध सबमिट हो गया है, लेकिन इसकी अंतिम स्थिति अभी अपडेट हो रही है। दोबारा प्रयास करने से पहले रेफ़रल डेटा और प्राप्ति इतिहास जांचें।"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The requested 30-day window could not be verified. No partial history is shown."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "The response could not be verified. No partial order history is shown."
+msgstr ""
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -8899,11 +9356,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "ट्रेडिंग खाता या नेटवर्क बदल गया। पुष्टि संवाद दोबारा खोलें और फिर से प्रयास करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "ट्रेडिंग खाता या नेटवर्क बदल गया। संपादक दोबारा खोलें और फिर से प्रयास करें।"
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8947,6 +9406,14 @@ msgstr "इस खाते को अभी Hyperliquid पर ट्रेड�
 msgid "This account is not currently permitted to use Hyperliquid referrals."
 msgstr "इस खाते को अभी Hyperliquid रेफ़रल इस्तेमाल करने की अनुमति नहीं है।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available from this endpoint."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "This account reached the {TRADE_HISTORY_SNAPSHOT_LIMIT}-fill snapshot limit. Older fills may exist and are not included in this page count."
+msgstr ""
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This action cannot be undone after execution."
 msgstr "निष्पादन के बाद यह कार्रवाई पूर्ववत नहीं की जा सकती।"
@@ -8977,6 +9444,10 @@ msgstr "यह ब्रिज केवल उसी वॉलेट से फ
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "यह ब्राउज़र सभी टैब में धनराशि के ऑपरेशन सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र इस्तेमाल करें।"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "यह ब्राउज़र अलग-अलग टैब में ट्रेडिंग कनेक्शन को सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र का उपयोग करें।"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -9108,8 +9579,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "यह वन-टाइम QR पहले ही उपयोग हो चुका है या अब सक्रिय नहीं है। नया QR स्कैन करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "यह ऑर्डर बदल गया है या अब खुला नहीं है। रीफ़्रेश करें और फिर से प्रयास करें।"
@@ -9239,9 +9708,15 @@ msgstr ""
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referral-legacy-history.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -9452,9 +9927,35 @@ msgstr "ट्रेड"
 #~ msgid "Trade ClockCounterClockwise"
 #~ msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history"
+msgstr ""
+
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history for {0}"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history is unavailable"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history pagination"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Trade history updates paused."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -9513,7 +10014,6 @@ msgstr "ट्रेडिंग खाता"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "ऑर्डर संशोधन सबमिट होने से पहले ट्रेडिंग डेटा बदल गया।"
 
@@ -9566,6 +10066,10 @@ msgstr "इन बाज़ारों में ट्रेडिंग म�
 msgid "Trading is not available in your region"
 msgstr "आपके क्षेत्र में ट्रेडिंग उपलब्ध नहीं है"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "इस ब्राउज़र में ट्रेडिंग कनेक्ट नहीं है। इसकी ट्रेडिंग कुंजी बनाने या बदलने के लिए दोबारा कनेक्ट करें।"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
 msgstr "ट्रेडिंग कुंजी"
@@ -9588,6 +10092,7 @@ msgid "Traditional Finance"
 msgstr "पारंपरिक वित्त"
 
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Transaction"
@@ -9680,6 +10185,7 @@ msgstr "ट्रिगर शर्त"
 msgid "Trigger order must reduce your current position"
 msgstr "ट्रिगर ऑर्डर को आपकी मौजूदा पोज़िशन कम करनी चाहिए"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -9708,6 +10214,7 @@ msgstr ""
 msgid "Trigger size exceeds position size"
 msgstr "ट्रिगर का आकार पोज़िशन के आकार से अधिक है"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -9752,10 +10259,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "TWAP गतिविधि"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr ""
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP रद्दीकरण अनुरोध भेज दिया गया, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। पुनः प्रयास करने से पहले सक्रिय TWAP सूची देखें।"
@@ -9811,6 +10323,13 @@ msgstr "TWAP ऑर्डर का भाग"
 msgid "Two-sided open interest: the sum of long and short positions on this contract."
 msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉन्ट्रैक्ट पर लॉन्ग और शॉर्ट पोज़िशन का योग।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -10042,7 +10561,6 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -10065,12 +10583,23 @@ msgstr "असमर्थित रेजोल्यूशन: {0}"
 msgid "Up to {cctpFee} USDC in fees will be deducted from your deposit."
 msgstr "आपकी जमा राशि से शुल्क के रूप में अधिकतम {cctpFee} USDC काटे जाएंगे।"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
+msgstr ""
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
 msgstr "अपडेट विफल रहा"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -10364,6 +10893,12 @@ msgstr ""
 msgid "Verifying..."
 msgstr "सत्यापित किया जा रहा है..."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "View all"
 msgstr "सभी देखें"
@@ -10485,6 +11020,10 @@ msgstr "वॉलेट {0} से कनेक्ट नहीं है। अ
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "कनेक्शन पूरा होने से पहले वॉलेट या नेटवर्क बदल गया। वर्तमान खाते के लिए कार्रवाई दोबारा खोलें।"
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
@@ -10663,6 +11202,51 @@ msgstr "आप किसी प्रतिबंधित क्षेत्र
 #: src/components/referrals/referral-code-card.tsx
 msgid "You are eligible to create a referral code."
 msgstr "आप रेफ़रल कोड बनाने के लिए पात्र हैं।"
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "You are offline"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "You are offline."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline. Funding payments will load when the connection returns."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "You are offline. Order history will load when the connection returns."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline. Previously loaded funding payments remain visible."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "You are offline. Previously loaded order history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "You are offline. Previously loaded trade history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "You are offline. Trade history will load when the connection returns."
+msgstr ""
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

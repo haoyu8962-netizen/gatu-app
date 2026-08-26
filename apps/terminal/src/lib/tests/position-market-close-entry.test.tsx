@@ -55,7 +55,7 @@ describe("PositionRow market close entry", () => {
 		vi.clearAllMocks();
 	});
 
-	it("opens the shared market-close flow with exact exchange strings", async () => {
+	it("opens the shared market-close flow with exact exchange strings", () => {
 		const onMarketClose = vi.fn();
 		const onShare = vi.fn();
 		const onLimitClose = vi.fn();
@@ -95,9 +95,16 @@ describe("PositionRow market close entry", () => {
 			);
 		});
 
-		const marketButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent?.trim() === "Market Close",
-		);
+		const cells = [...container.querySelectorAll<HTMLTableCellElement>("tbody tr > td")];
+		const metricTitles = cells.slice(1, 5).map((cell) => cell.querySelector<HTMLElement>("[title]")?.title);
+		expect(cells).toHaveLength(11);
+		expect(metricTitles[0]).toContain("CXMT");
+		expect(metricTitles[1]).toContain("USDC");
+		expect(metricTitles[2]).not.toBe(metricTitles[3]);
+		expect(metricTitles.every((title) => title !== undefined && !title.includes(" / "))).toBe(true);
+		expect(cells[1]?.querySelector("span")?.classList).toContain("text-market-close-danger");
+
+		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]');
 		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Desktop market close entry was not rendered");
 
 		act(() => marketButton.click());
@@ -127,26 +134,17 @@ describe("PositionRow market close entry", () => {
 			}),
 		);
 
-		const moreActions = container.querySelector<HTMLButtonElement>('button[aria-label="More position actions"]');
-		if (!moreActions) throw new Error("Desktop position overflow menu was not rendered");
+		expect(container.querySelector('button[aria-label="More position actions"]')).toBeNull();
+		expect(document.body.querySelector('[role="menuitem"]')).toBeNull();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		let menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		expect(menuItems.map((item) => item.textContent?.trim())).toEqual([
-			"Limit Close",
-			"Adjust Margin",
-			"Set TP/SL",
-			"Reverse Position",
-		]);
-
-		const adjustMarginButton = menuItems.find((button) => button.textContent?.trim() === "Adjust Margin");
-		await act(async () => adjustMarginButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const adjustMarginButton = container.querySelector<HTMLButtonElement>('button[aria-label="Adjust Margin"]');
+		if (!adjustMarginButton) throw new Error("Desktop isolated margin entry was not rendered");
+		act(() => adjustMarginButton.click());
 		expect(onAdjustMargin).toHaveBeenCalledOnce();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const tpSlButton = menuItems.find((button) => button.textContent?.trim() === "Set TP/SL");
-		await act(async () => tpSlButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const tpSlButton = container.querySelector<HTMLButtonElement>('button[aria-label="Add TP/SL"]');
+		if (!tpSlButton) throw new Error("Desktop TP/SL entry was not rendered");
+		act(() => tpSlButton.click());
 		expect(onOpenTpSl).toHaveBeenCalledWith({
 			coin: "xyz:CXMT",
 			dex: "xyz",
@@ -156,18 +154,14 @@ describe("PositionRow market close entry", () => {
 			marginMode: "isolated",
 		});
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const reverseButton = menuItems.find((button) => button.textContent?.trim() === "Reverse Position");
-		await act(async () => reverseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const reverseButton = container.querySelector<HTMLButtonElement>('button[aria-label="Reverse Position"]');
+		if (!reverseButton) throw new Error("Desktop reverse entry was not rendered");
+		act(() => reverseButton.click());
 		expect(onReverse).toHaveBeenCalledOnce();
 
-		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const limitButton = menuItems.find((button) => button.textContent?.trim() === "Limit Close");
-		if (!(limitButton instanceof HTMLElement)) throw new Error("Desktop limit close entry was not rendered");
-
-		await act(async () => limitButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
+		if (!limitButton) throw new Error("Desktop limit close entry was not rendered");
+		act(() => limitButton.click());
 
 		expect(onLimitClose).toHaveBeenCalledWith({
 			coin: "xyz:CXMT",
@@ -176,6 +170,72 @@ describe("PositionRow market close entry", () => {
 			signedPositionSize: "-205.9000",
 			entryPx: "7.79995",
 			markPx: "7.575900",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
+	});
+
+	it("keeps risk-reducing close entries available without a toolbar mark", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: undefined,
+							markPriceStatus: "loading",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose,
+							onShare: vi.fn(),
+							onLimitClose,
+							onReverse: vi.fn(),
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]');
+		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
+		expect(marketButton?.disabled).toBe(false);
+		expect(limitButton?.disabled).toBe(false);
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
+
+		act(() => {
+			marketButton?.click();
+			limitButton?.click();
+		});
+		expect(onMarketClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			szDecimals: 1,
+			signedPositionSize: "-205.9000",
+			marginMode: "isolated",
+		});
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "-205.9000",
+			entryPx: "7.79995",
 			szDecimals: 1,
 			marginMode: "isolated",
 		});
@@ -258,5 +318,58 @@ describe("PositionRow market close entry", () => {
 		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Share PNL for CXMT-USDC"]')?.disabled).toBe(
 			true,
 		);
+	});
+
+	it("disables every position mutation while a market close is pending", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+		const onReverse = vi.fn();
+		const onOpenTpSl = vi.fn();
+		const onAdjustMargin = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: "7.575900",
+							markPriceStatus: "success",
+							tpSlInfo: undefined,
+							isRowClosing: true,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose,
+							onShare: vi.fn(),
+							onLimitClose,
+							onReverse,
+							onOpenTpSl,
+							onAdjustMargin,
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		const actionLabels = ["Limit Close", "Market Close", "Reverse Position", "Add TP/SL", "Adjust Margin"];
+		for (const label of actionLabels) {
+			const button = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+			expect(button?.disabled, label).toBe(true);
+			act(() => button?.click());
+		}
+
+		expect(onMarketClose).not.toHaveBeenCalled();
+		expect(onLimitClose).not.toHaveBeenCalled();
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(onOpenTpSl).not.toHaveBeenCalled();
+		expect(onAdjustMargin).not.toHaveBeenCalled();
 	});
 });

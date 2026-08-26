@@ -94,17 +94,23 @@ export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
 	);
 }
 
-export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean, cacheKey?: string): ExchangeClient {
-	if (cacheKey) {
+export function createExchangeClient(
+	wallet: AbstractWallet,
+	isTestnet: boolean,
+	cacheKey?: string,
+	transport?: IRequestTransport,
+): ExchangeClient {
+	const shouldCache = !!cacheKey && transport === undefined;
+	if (shouldCache && cacheKey) {
 		const cached = tradingClientCache.get(cacheKey);
 		if (cached) return cached;
 	}
 	const client = new ExchangeClient({
-		transport: getHttpTransport(isTestnet),
+		transport: transport ?? getHttpTransport(isTestnet),
 		wallet,
 		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
 	});
-	if (cacheKey) {
+	if (shouldCache && cacheKey) {
 		tradingClientCache.set(cacheKey, client);
 	}
 	return client;

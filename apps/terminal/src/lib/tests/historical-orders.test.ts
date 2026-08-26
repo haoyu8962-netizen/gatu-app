@@ -1,6 +1,10 @@
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
-import { getHistoricalOrderPriceDisplay, mergeHistoricalOrderSources } from "@/lib/trade/historical-orders";
+import {
+	getHistoricalOrderPriceDisplay,
+	isValidHistoricalOrderHistoryItem,
+	mergeHistoricalOrderSources,
+} from "@/lib/trade/historical-orders";
 
 type HistoricalOrderEntry = HistoricalOrdersResponse[number];
 
@@ -29,6 +33,30 @@ function createOrderEntry(overrides: Partial<HistoricalOrderEntry> = {}): Histor
 		...overrides,
 	};
 }
+
+describe("historical order validation", () => {
+	it("accepts every SDK order type and rejects unknown runtime values", () => {
+		const entry = createOrderEntry();
+		const supportedTypes = [
+			"Market",
+			"Limit",
+			"Stop Market",
+			"Stop Limit",
+			"Take Profit Market",
+			"Take Profit Limit",
+			"Twap Slice",
+			"Vault Close",
+			"Spot Dust Conversion",
+		] as const satisfies readonly HistoricalOrderEntry["order"]["orderType"][];
+
+		for (const orderType of supportedTypes) {
+			expect(isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType } })).toBe(true);
+		}
+		expect(
+			isValidHistoricalOrderHistoryItem({ ...entry, order: { ...entry.order, orderType: "Unexpected Type" } }),
+		).toBe(false);
+	});
+});
 
 describe("historical order price display", () => {
 	it("uses the limit price for a regular order", () => {

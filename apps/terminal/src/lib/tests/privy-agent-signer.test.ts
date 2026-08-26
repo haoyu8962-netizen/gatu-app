@@ -68,6 +68,26 @@ describe("createPrivyAgentSigner", () => {
 		);
 	});
 
+	it("hides only the Privy confirmation after an application review is confirmed", async () => {
+		const signTypedData = vi.fn().mockResolvedValue({ signature: `0x${"1".repeat(130)}` });
+		const signer = createPrivyAgentSigner({
+			applicationReview: "confirmed",
+			expectedAddress: EXPECTED_ADDRESS,
+			activeAddress: EXPECTED_ADDRESS,
+			embeddedWalletAddress: EXPECTED_ADDRESS,
+			chainId: 42161,
+			signTypedData,
+			beforeSubmit: vi.fn(),
+		});
+
+		await signer.signTypedData(typedData);
+
+		expect(signTypedData).toHaveBeenCalledWith(typedData, {
+			address: EXPECTED_ADDRESS,
+			uiOptions: { showWalletUIs: false },
+		});
+	});
+
 	it("is selected by SDK 0.33.3 as a JSON-RPC wallet with the expected approval chain", async () => {
 		const rawSignature = `0x${"11".repeat(64)}1b` as const;
 		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });

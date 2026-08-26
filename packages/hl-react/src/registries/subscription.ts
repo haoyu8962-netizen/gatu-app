@@ -32,14 +32,8 @@ interface AccumulateConfig<TEvent = unknown, TItem = unknown> {
 
 export interface SubscriptionEventAccumulator<TEvent> {
 	add: (event: TEvent) => TEvent;
+	reset: () => void;
 }
-
-type FastAssetCtxPriceField = "markPx" | "midPx";
-
-const fastAssetCtxFieldReceivedAt = new WeakMap<
-	object,
-	ReadonlyMap<string, Readonly<Partial<Record<FastAssetCtxPriceField, number>>>>
->();
 
 function defineAccumulator<TEvent, TItem>(config: AccumulateConfig<TEvent, TItem>): AccumulateConfig {
 	return config as AccumulateConfig;
@@ -47,39 +41,20 @@ function defineAccumulator<TEvent, TItem>(config: AccumulateConfig<TEvent, TItem
 
 function createFastAssetCtxsAccumulator(): SubscriptionEventAccumulator<FastAssetCtxsWsEvent> {
 	let accumulated = new Map<string, FastAssetCtxsWsEvent[string]>();
-	let fieldTimestamps = new Map<string, Readonly<Partial<Record<FastAssetCtxPriceField, number>>>>();
 
 	return {
 		add: (event) => {
-			const receivedAt = Date.now();
 			const next = new Map(accumulated);
-			const nextFieldTimestamps = new Map(fieldTimestamps);
 			for (const [coin, update] of Object.entries(event)) {
 				next.set(coin, { ...next.get(coin), ...update });
-				const currentTimestamps = nextFieldTimestamps.get(coin);
-				nextFieldTimestamps.set(coin, {
-					...(currentTimestamps ?? {}),
-					...(Object.hasOwn(update, "markPx") ? { markPx: receivedAt } : null),
-					...(Object.hasOwn(update, "midPx") ? { midPx: receivedAt } : null),
-				});
 			}
 			accumulated = next;
-			fieldTimestamps = nextFieldTimestamps;
-			const snapshot = Object.fromEntries(next);
-			fastAssetCtxFieldReceivedAt.set(snapshot, nextFieldTimestamps);
-			return snapshot;
+			return Object.fromEntries(next);
+		},
+		reset: () => {
+			accumulated = new Map();
 		},
 	};
-}
-
-export function getFastAssetCtxFieldReceivedAt(
-	snapshot: FastAssetCtxsWsEvent | undefined,
-	coin: string,
-	field: FastAssetCtxPriceField,
-): number | undefined {
-	if (!snapshot) return undefined;
-	const receivedAt = fastAssetCtxFieldReceivedAt.get(snapshot)?.get(coin)?.[field];
-	return receivedAt;
 }
 
 const EVENT_ACCUMULATORS: Partial<Record<SubMethod, () => SubscriptionEventAccumulator<unknown>>> = {
@@ -97,16 +72,18 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 			compare: (a, b) => b.time - a.time,
 		},
 	}),
-	userFills: defineAccumulator<{ fills: unknown[]; isSnapshot?: boolean }, { tid: number; time: number }>({
-		getItems: (event) => event.fills as { tid: number; time: number }[],
-		withItems: (event, items) => ({ ...event, fills: items }),
-		isSnapshot: (event) => event.isSnapshot === true,
-		buffer: {
-			maxSize: 200,
-			getKey: (f) => String(f.tid),
-			compare: (a, b) => b.time - a.time,
+	userFills: defineAccumulator<{ fills: unknown[]; isSnapshot?: boolean }, { coin: string; tid: number; time: number }>(
+		{
+			getItems: (event) => event.fills as { coin: string; tid: number; time: number }[],
+			withItems: (event, items) => ({ ...event, fills: items }),
+			isSnapshot: (event) => event.isSnapshot === true,
+			buffer: {
+				maxSize: 200,
+				getKey: (f) => `${f.time}:${f.coin}:${f.tid}`,
+				compare: (a, b) => b.time - a.time,
+			},
 		},
-	}),
+	),
 	userFundings: defineAccumulator<{ fundings: unknown[]; isSnapshot?: boolean }, { time: number; coin: string }>({
 		getItems: (event) => event.fundings as { time: number; coin: string }[],
 		withItems: (event, items) => ({ ...event, fundings: items }),

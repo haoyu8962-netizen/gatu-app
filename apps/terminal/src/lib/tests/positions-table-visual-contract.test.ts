@@ -16,6 +16,7 @@ import {
 } from "@/components/trade/positions/positions-panel-table-styles";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const UI_GLOBALS_SOURCE = readFileSync(resolve(TEST_DIR, "../../../../..", "packages/ui/src/globals.css"), "utf8");
 
 function readPositionSource(file: string): string {
 	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/positions/${file}`), "utf8");
@@ -28,7 +29,10 @@ function readMobilePositionSource(file: string): string {
 const POSITIONS_PANEL_SOURCE = readPositionSource("positions-panel.tsx");
 const POSITIONS_TAB_SOURCE = readPositionSource("positions-tab.tsx");
 const POSITION_ROW_SOURCE = readPositionSource("position-row.tsx");
-const POSITION_ACTIONS_SOURCE = readPositionSource("position-actions-dropdown.tsx");
+const POSITION_ACTIONS_SOURCE = readPositionSource("position-inline-actions.tsx");
+const POSITION_MARKET_CLOSE_MODAL_SOURCE = readPositionSource("position-market-close-modal.tsx");
+const POSITION_LIMIT_CLOSE_MODAL_SOURCE = readPositionSource("position-limit-close-modal.tsx");
+const POSITION_CLOSE_ALL_MODAL_SOURCE = readPositionSource("position-close-all-modal.tsx");
 const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-card.tsx");
 
 describe("positions table visual contract", () => {
@@ -47,21 +51,23 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("table-fixed w-full");
 		expect(POSITIONS_TAB_SOURCE).toContain("style={{ minWidth: POSITION_TABLE_MIN_WIDTH }}");
 		expect(POSITIONS_TAB_SOURCE).toContain("<colgroup>");
-		expect(POSITIONS_TAB_SOURCE).toContain("positionsPanelTableCaptionRowClass");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("positionsPanelTableCaptionRowClass");
 	});
 
-	it("uses the official-density fixed nine-column geometry", () => {
-		expect(POSITION_TABLE_MIN_WIDTH).toBe(1096);
+	it("uses the official-density fixed eleven-column geometry", () => {
+		expect(POSITION_TABLE_MIN_WIDTH).toBe(1332);
 		expect(POSITION_TABLE_COLUMNS.map(({ id, width }) => [id, width])).toEqual([
 			["market", 150],
-			["size", 134],
-			["prices", 126],
+			["size", 112],
+			["positionValue", 132],
+			["entryPrice", 106],
+			["markPrice", 106],
 			["pnl", 144],
 			["liquidation", 104],
 			["tpsl", 100],
 			["margin", 116],
 			["funding", 78],
-			["actions", 144],
+			["actions", 184],
 		]);
 		expect(POSITION_TABLE_COLUMNS.reduce((total, column) => total + column.width, 0)).toBe(POSITION_TABLE_MIN_WIDTH);
 		expect(POSITION_ROW_SOURCE).not.toContain("truncate");
@@ -70,28 +76,44 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
 	});
 
-	it("uses the handoff's nine combined position columns", () => {
-		expect(POSITIONS_TAB_SOURCE.match(/<TableHead\b/g)).toHaveLength(9);
-		expect(POSITION_ROW_SOURCE.match(/<TableCell\b/g)).toHaveLength(9);
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`} / {t`Position Value`}");
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`} / {t`Mark Price`}");
+	it("uses eleven independent semantic position columns", () => {
+		expect(POSITIONS_TAB_SOURCE.match(/<TableHead\b/g)).toHaveLength(11);
+		expect(POSITION_ROW_SOURCE.match(/<TableCell\b/g)).toHaveLength(11);
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Position Value`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Mark Price`}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Size`} / {t`Position Value`}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Entry Price`} / {t`Mark Price`}");
+		expect(POSITION_ROW_SOURCE).toContain("title={sizeDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={positionValueDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={entryPriceDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={markPriceDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain('cn("block text-[13px] font-semibold", sideClass)');
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Liquidation Price`}");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Margin Ratio`}");
 		expect(POSITION_ROW_SOURCE).toContain("liqIsNear");
 		expect(POSITION_ROW_SOURCE).not.toContain("riskFill");
 	});
 
-	it("shows the production-scoped account summary without deriving finance in the row component", () => {
-		expect(POSITIONS_TAB_SOURCE).toContain('data-testid="positions-summary-bar"');
+	it("keeps the positions workspace focused on position rows without a duplicate account summary", () => {
+		expect(POSITIONS_TAB_SOURCE).not.toContain('data-testid="positions-summary-bar"');
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl");
-		expect(POSITIONS_TAB_SOURCE).toContain("accountSummary?.unrealizedPnl ?? null");
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Unrealized PNL`}");
-		expect(POSITIONS_TAB_SOURCE).toContain("Account Equity");
-		expect(POSITIONS_TAB_SOURCE).toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("accountSummary");
+		expect(POSITIONS_PANEL_SOURCE).not.toContain("positionsAccountSummary");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).toContain("PositionCloseAllController");
+		expect(POSITIONS_TAB_SOURCE).toContain("Close All Positions");
+		expect(POSITIONS_TAB_SOURCE).toContain("candidates: positions.map");
+		expect(POSITIONS_TAB_SOURCE).toContain("focusableWhenDisabled");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
-		expect(POSITIONS_TAB_SOURCE).toContain('"bg-market-close-success"');
-		expect(POSITIONS_TAB_SOURCE).toContain('"text-market-close-success"');
-		expect(POSITIONS_TAB_SOURCE).not.toContain("market-close-profit");
+	});
+
+	it("keeps Close All readiness independent from the incremental fast mark stream", () => {
+		expect(POSITIONS_TAB_SOURCE).not.toContain("allPositionMarksFresh");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("markPx: marketInfo?.markPx");
+		expect(POSITIONS_TAB_SOURCE).toContain("Close all is unavailable until every position market has loaded.");
 	});
 
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {
@@ -113,7 +135,7 @@ describe("positions table visual contract", () => {
 	});
 
 	it("provides header help and switches PNL percentage modes through the Big.js domain metric", () => {
-		expect(POSITIONS_TAB_SOURCE.match(/<Tooltip\b/g)).toHaveLength(4);
+		expect(POSITIONS_TAB_SOURCE.match(/<Tooltip\b/g)).toHaveLength(5);
 		expect(POSITIONS_TAB_SOURCE).toContain("border-dotted");
 		expect(POSITIONS_TAB_SOURCE).toContain('useState<PositionPnlMode>("roe")');
 		expect(POSITIONS_TAB_SOURCE).toContain('current === "roe" ? "priceChange" : "roe"');
@@ -126,6 +148,9 @@ describe("positions table visual contract", () => {
 		const rowClassTokens = positionsPanelRowHoverClass.split(/\s+/);
 
 		expect(positionsPanelRowHoverClass).toContain("bg-fill-hover");
+		expect(positionsPanelRowHoverClass).not.toContain(":has(");
+		expect(UI_GLOBALS_SOURCE).toContain("@custom-variant hover");
+		expect(UI_GLOBALS_SOURCE).toContain("@media (hover: hover)");
 		expect(rowClassTokens).not.toContain("transition-colors");
 		expect(rowClassTokens).not.toContain("transition-all");
 		expect(rowClassTokens.some((token) => token.includes("background-color"))).toBe(false);
@@ -147,21 +172,36 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).toContain("twapStatesEvent !== undefined");
 	});
 
-	it("uses a market-close button plus the complete 1a overflow menu", () => {
+	it("shows limit, market, and reverse as direct row actions without a duplicate overflow menu", () => {
 		expect(positionTableInlineActionClass).toContain("h-[26px]");
+		expect(positionTableInlineActionClass).toContain("text-market-close-success");
 		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onMarketClose}");
-		expect(POSITION_ACTIONS_SOURCE).toContain("<Dropdown");
-		expect(POSITION_ACTIONS_SOURCE).toContain("hideCaret");
+		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onLimitClose}");
+		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onReverse}");
+		expect(POSITION_ACTIONS_SOURCE).not.toContain("<Dropdown");
 		expect(POSITION_ACTIONS_SOURCE).toContain("t`Limit Close`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("t`Adjust Margin`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("t`Set TP/SL`");
 		expect(POSITION_ACTIONS_SOURCE).toContain("t`Reverse Position`");
-		expect(POSITION_ACTIONS_SOURCE).toContain("danger: true");
-		expect(POSITION_ROW_SOURCE).toContain("onAdjustMargin={handleAdjustMargin}");
-		expect(POSITION_ROW_SOURCE).toContain("onOpenTpSl={handleOpenTpSl}");
+		expect(POSITION_ACTIONS_SOURCE).toContain('context: "Order type"');
+		expect(POSITION_ACTIONS_SOURCE).toContain('context: "Position action"');
+		expect(POSITION_ROW_SOURCE).toContain("onClick={handleAdjustMargin}");
+		expect(POSITION_ROW_SOURCE).toContain("onClick={handleOpenTpSl}");
+		expect(POSITION_ROW_SOURCE).toContain("<PositionInlineActions");
+		expect(POSITION_ROW_SOURCE).not.toContain("title={marginDisplay}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("title={closeAllUnavailableReason");
 	});
 
-	it("uses the handoff mobile disclosure card without internal cell dividers", () => {
+	it("does not animate destructive action colors while live safety gates change", () => {
+		for (const source of [
+			POSITION_MARKET_CLOSE_MODAL_SOURCE,
+			POSITION_LIMIT_CLOSE_MODAL_SOURCE,
+			POSITION_CLOSE_ALL_MODAL_SOURCE,
+		]) {
+			expect(source).toMatch(/className="[^"]*!transition-none[^"]*data-disabled:!bg-market-close-danger-disabled/);
+			expect(source).not.toContain("!transition-[background-color]");
+		}
+	});
+
+	it("uses the official mobile disclosure card structure without internal cell dividers", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("<MobileDisclosureHeader");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-3");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px]");
@@ -173,8 +213,8 @@ describe("positions table visual contract", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Mark Price`");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Liquidation Price`");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain('d="M3.5 10 8 5.5l4.5 4.5"');
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain('strokeWidth="2"');
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain('d="M3.5 10 8 5.5l4.5 4.5"');
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("aria-controls={detailsId}");
 		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("divide-x");
 		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("Margin · Iso");
 	});

@@ -221,7 +221,7 @@ describe("MobilePositionsView tabs", () => {
 			"Orders(0)",
 			"TWAP(0)",
 			"Trade History",
-			"Funding History",
+			"Funding Payments",
 			"Order History",
 		]);
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(0)");

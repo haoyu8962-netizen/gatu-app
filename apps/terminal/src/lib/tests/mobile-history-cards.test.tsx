@@ -10,11 +10,20 @@ const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111",
 	downloadCsv: vi.fn(),
 	fills: [] as Array<Record<string, unknown>>,
+	fillsError: undefined as unknown,
+	fillsOffline: false,
+	fillsStale: false,
 	fundings: [] as Array<Record<string, unknown>>,
+	fundingError: undefined as unknown,
+	fundingOffline: false,
+	fundingStale: false,
+	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 	navigateToMarket: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
+	ordersError: undefined as unknown,
+	ordersOffline: false,
+	ordersStale: false,
 	setActiveTab: vi.fn(),
-	twaps: [] as Array<Record<string, unknown>>,
 }));
 
 const OWNER_A = "0x1111111111111111111111111111111111111111";
@@ -98,32 +107,8 @@ function createOrders() {
 	];
 }
 
-function createTwapHistory() {
-	return [
-		{
-			state: {
-				coin: "SOL",
-				executedNtl: "350",
-				executedSz: "2",
-				minutes: 10,
-				randomize: false,
-				reduceOnly: false,
-				side: "B",
-				stopPx: null,
-				sz: "4",
-				timestamp: 1_754_350_800_000,
-				trigger: null,
-				user: OWNER_A,
-			},
-			status: { status: "activated" },
-			time: 1_754_350_900_000,
-			twapId: 42,
-		},
-	];
-}
-
 function getOrderHistoryEntries() {
-	const orderEntries = mocks.orders.map((entry) => {
+	return mocks.orders.map((entry) => {
 		const order = entry.order as Record<string, unknown>;
 		return {
 			coin: order.coin,
@@ -138,22 +123,6 @@ function getOrderHistoryEntries() {
 			updatedAt: entry.statusTimestamp,
 		};
 	});
-	const twapEntries = mocks.twaps.map((twap) => {
-		const state = twap.state as Record<string, unknown>;
-		return {
-			coin: state.coin,
-			createdAt: state.timestamp,
-			key: `twap:${String(twap.twapId)}`,
-			kind: "twap",
-			reduceOnly: state.reduceOnly,
-			side: state.side,
-			size: state.sz,
-			twap,
-			type: "twap",
-			updatedAt: twap.time,
-		};
-	});
-	return [...orderEntries, ...twapEntries];
 }
 
 function createFundings() {
@@ -167,10 +136,20 @@ vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, params, to, ...props }: { children?: ReactNode; params?: { address?: string }; to: string }) => (
+		<a href={to.replace("$address", params?.address ?? "")} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/hooks/trade/use-user-fills", () => ({
 	useUserFills: () => ({
-		error: null,
+		error: mocks.fillsError,
 		isConnected: true,
+		isOffline: mocks.fillsOffline,
+		isStale: mocks.fillsStale,
 		status: "ready",
 		fills: mocks.fills,
 	}),
@@ -179,8 +158,10 @@ vi.mock("@/hooks/trade/use-user-fills", () => ({
 vi.mock("@/hooks/trade/use-historical-orders", () => ({
 	useHistoricalOrders: () => ({
 		entries: getOrderHistoryEntries(),
-		error: null,
+		error: mocks.ordersError,
 		isConnected: true,
+		isOffline: mocks.ordersOffline,
+		isStale: mocks.ordersStale,
 		status: "ready",
 		orders: mocks.orders,
 	}),
@@ -188,10 +169,12 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 
 vi.mock("@/hooks/trade/use-user-funding", () => ({
 	useUserFunding: () => ({
-		error: null,
+		error: mocks.fundingError,
 		fundings: [...mocks.fundings].sort((left, right) => Number(right.time) - Number(left.time)),
 		isConnected: true,
-		status: "ready",
+		isOffline: mocks.fundingOffline,
+		isStale: mocks.fundingStale,
+		status: mocks.fundingStatus,
 	}),
 }));
 
@@ -295,9 +278,18 @@ describe("mobile history disclosure cards", () => {
 	beforeEach(() => {
 		mocks.address = OWNER_A;
 		mocks.fills = createFills();
+		mocks.fillsError = undefined;
+		mocks.fillsOffline = false;
+		mocks.fillsStale = false;
 		mocks.fundings = createFundings();
+		mocks.fundingError = undefined;
+		mocks.fundingOffline = false;
+		mocks.fundingStale = false;
+		mocks.fundingStatus = "ready";
 		mocks.orders = createOrders();
-		mocks.twaps = [];
+		mocks.ordersError = undefined;
+		mocks.ordersOffline = false;
+		mocks.ordersStale = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -308,6 +300,7 @@ describe("mobile history disclosure cards", () => {
 		container.remove();
 		vi.clearAllMocks();
 		vi.unstubAllGlobals();
+		vi.useRealTimers();
 	});
 
 	function render(component: ReactElement) {
@@ -351,34 +344,49 @@ describe("mobile history disclosure cards", () => {
 	}
 
 	function expectDisclosureControls() {
+		function expectBulkAvailability(canExpand: boolean, canCollapse: boolean) {
+			const expandAll = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Expand all",
+			);
+			const collapseAll = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+				(button) => button.textContent === "Collapse all",
+			);
+			expect(expandAll?.disabled).toBe(!canExpand);
+			expect(collapseAll?.disabled).toBe(!canCollapse);
+		}
+
 		let disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 		expect(disclosureButtons.every((button) => button.parentElement?.className.includes("h-[54px]"))).toBe(true);
+		expectBulkAvailability(true, false);
 
 		act(() => disclosureButtons[1]?.click());
 		disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		expectBulkAvailability(true, true);
 
 		act(() => disclosureButtons[0]?.click());
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+		expectBulkAvailability(false, true);
 
 		act(() => getDisclosureButtons()[0]?.click());
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		expectBulkAvailability(true, true);
 
 		clickButton("Collapse all");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+		expectBulkAvailability(true, false);
 
 		clickButton("Expand all");
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
-		const collapseButtons = Array.from(
-			container.querySelectorAll<HTMLButtonElement>("article button[aria-controls]:not([aria-expanded])"),
+		expectBulkAvailability(false, true);
+		const cardDisclosureControls = Array.from(
+			container.querySelectorAll<HTMLButtonElement>("article button[aria-controls]"),
 		);
-		expect(collapseButtons).toHaveLength(2);
-		expect(collapseButtons.every((button) => button.className.includes("size-11"))).toBe(true);
-		expect(collapseButtons.every((button) => button.querySelector("path")?.getAttribute("stroke-width") === "2")).toBe(
-			true,
-		);
+		expect(cardDisclosureControls).toHaveLength(2);
+		expect(cardDisclosureControls.every((button) => button.hasAttribute("aria-expanded"))).toBe(true);
 
+		const bulkActionClasses: string[] = [];
 		for (const label of ["Expand all", "Collapse all"]) {
 			const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 				(candidate) => candidate.textContent === label,
@@ -386,10 +394,20 @@ describe("mobile history disclosure cards", () => {
 			expect(button?.className).toContain("h-[27px]");
 			expect(button?.className).toContain("min-h-0");
 			expect(button?.className).toContain("after:h-11");
+			expect(button?.className).toContain("font-normal");
+			expect(button?.className).toContain("text-market-close-fg");
+			expect(button?.getAttribute("aria-pressed")).toBeNull();
+			if (button) bulkActionClasses.push(button.className);
 		}
+		expect(new Set(bulkActionClasses).size).toBe(1);
 	}
 
-	function expectM4VisualContract(filterRowTestId: string, footerTestId: string, selectCount: number) {
+	function expectM4VisualContract(
+		filterRowTestId: string,
+		footerTestId: string,
+		selectCount: number,
+		viewAllPath?: string,
+	) {
 		const filterRow = container.querySelector<HTMLElement>(`[data-testid="${filterRowTestId}"]`);
 		expect(filterRow?.className).toContain("h-12");
 		expect(filterRow?.className).toContain("px-3.5");
@@ -450,16 +468,28 @@ describe("mobile history disclosure cards", () => {
 		expect(exportButton?.className).toContain("h-[38px]");
 		expect(exportButton?.className).toContain("min-h-0");
 		expect(exportButton?.className).toContain("after:h-11");
-		expect(container.textContent).not.toContain("View all");
+		const viewAllLink = footer?.querySelector<HTMLAnchorElement>("a");
+		if (viewAllPath) {
+			expect(viewAllLink?.textContent).toBe("View all");
+			expect(viewAllLink?.href).toContain(viewAllPath);
+			expect(viewAllLink?.className).toContain("h-[38px]");
+		} else {
+			expect(viewAllLink).toBeNull();
+		}
 	}
 
 	it("keeps trade history values, explorer links, and independent disclosure state", () => {
 		render(<MobileHistoryTab scrollMode="page" />);
-		expectM4VisualContract("mobile-trade-history-filter-row", "mobile-trade-history-footer", 3);
+		expectM4VisualContract(
+			"mobile-trade-history-filter-row",
+			"mobile-trade-history-footer",
+			3,
+			`/tradeHistory/${OWNER_A}`,
+		);
 		const historyList = container.querySelector<HTMLElement>('[data-testid="mobile-trade-history-list"]');
-		expect(historyList?.className).toContain("max-h-[min(60dvh,32rem)]");
-		expect(historyList?.className).toContain("overflow-y-auto");
-		expect(historyList?.className).toContain("overscroll-y-contain");
+		expect(historyList?.className).not.toContain("max-h-");
+		expect(historyList?.className).not.toContain("overflow-y-auto");
+		expect(historyList?.className).not.toContain("overscroll-y-contain");
 		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
 		expectDisclosureControls();
 
@@ -490,7 +520,16 @@ describe("mobile history disclosure cards", () => {
 		);
 	});
 
-	it("mounts trade history progressively while counts and CSV keep the complete snapshot", () => {
+	it("keeps contained trade history internally scrollable", () => {
+		render(<MobileHistoryTab scrollMode="contained" />);
+
+		const historyList = container.querySelector<HTMLElement>('[data-testid="mobile-trade-history-list"]');
+		expect(historyList?.className).toContain("flex-1");
+		expect(historyList?.className).toContain("overflow-y-auto");
+		expect(historyList?.className).toContain("overscroll-y-contain");
+	});
+
+	it("caps progressive trade history at 30 while CSV keeps the complete export snapshot", () => {
 		let intersectionCallback: IntersectionObserverCallback | null = null;
 		class MockIntersectionObserver {
 			readonly disconnect = vi.fn();
@@ -512,7 +551,7 @@ describe("mobile history disclosure cards", () => {
 
 		render(<MobileHistoryTab scrollMode="page" />);
 		expect(container.querySelectorAll("article")).toHaveLength(MOBILE_PROGRESSIVE_LIST_BATCH_SIZE);
-		expect(container.textContent).toContain("60 trades");
+		expect(container.textContent).toContain("30 trades");
 
 		clickButton("Export CSV");
 		expect(mocks.downloadCsv).toHaveBeenCalledWith("trade_history.csv", expect.any(Array));
@@ -522,14 +561,14 @@ describe("mobile history disclosure cards", () => {
 		act(() => {
 			intersectionCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
 		});
-		expect(container.querySelectorAll("article")).toHaveLength(48);
+		expect(container.querySelectorAll("article")).toHaveLength(30);
 		clickButton("Expand all");
 		expect(getDisclosureButtons().every((button) => button.getAttribute("aria-expanded") === "true")).toBe(true);
 
 		act(() => {
 			intersectionCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
 		});
-		expect(container.querySelectorAll("article")).toHaveLength(60);
+		expect(container.querySelectorAll("article")).toHaveLength(30);
 		expect(getDisclosureButtons().every((button) => button.getAttribute("aria-expanded") === "true")).toBe(true);
 	});
 
@@ -548,7 +587,12 @@ describe("mobile history disclosure cards", () => {
 
 	it("keeps funding position, payment, rate, and direction semantics", () => {
 		render(<MobileFundingTab scrollMode="page" />);
-		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1);
+		expectM4VisualContract(
+			"mobile-funding-history-filter-row",
+			"mobile-funding-history-footer",
+			1,
+			`/fundingHistory/${OWNER_A}`,
+		);
 		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
@@ -579,9 +623,62 @@ describe("mobile history disclosure cards", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
+	it("keeps mobile funding cards visible when live updates pause", () => {
+		mocks.fundingError = new Error("WebSocket unavailable");
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("warns while mobile funding cards await a fresh reconnect snapshot", () => {
+		mocks.fundingStale = true;
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("Funding updates paused.");
+	});
+
+	it("shows mobile funding offline state without discarding an existing snapshot", () => {
+		mocks.fundingOffline = true;
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).toContain("You are offline.");
+
+		mocks.fundings = [];
+		mocks.fundingStatus = "offline";
+		render(<MobileFundingTab scrollMode="page" />);
+		expect(container.textContent).toContain("Funding payments will load when the connection returns.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+	});
+
+	it("delays the mobile funding skeleton while announcing loading accessibly", () => {
+		vi.useFakeTimers();
+		mocks.fundings = [];
+		mocks.fundingStatus = "loading";
+		render(<MobileFundingTab scrollMode="page" />);
+
+		const status = container.querySelector("output");
+		expect(status?.className).toContain("sr-only");
+		expect(status?.textContent).toContain("Loading funding payments.");
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(249));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
+
+		act(() => vi.advanceTimersByTime(1));
+		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).not.toBeNull();
+	});
+
 	it("keeps historical order labels and expands cards independently", () => {
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
-		expectM4VisualContract("mobile-order-history-filter-row", "mobile-order-history-footer", 3);
+		expectM4VisualContract(
+			"mobile-order-history-filter-row",
+			"mobile-order-history-footer",
+			3,
+			`/historicalOrders/${OWNER_A}`,
+		);
 		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
@@ -606,19 +703,6 @@ describe("mobile history disclosure cards", () => {
 		);
 	});
 
-	it("renders TWAP parent lifecycle records in mobile order history", () => {
-		mocks.orders = [];
-		mocks.twaps = createTwapHistory();
-		render(<MobileOrdersHistoryTab scrollMode="page" />);
-
-		expect(container.querySelectorAll("article")).toHaveLength(1);
-		expect(container.textContent).toContain("SOL");
-		expect(container.textContent).toContain("TWAP");
-		act(() => getDisclosureButtons()[0]?.click());
-		expect(container.textContent).toContain("Running");
-		expect(container.textContent).not.toContain("No order history found.");
-	});
-
 	it("keeps full order export available when the recent mobile snapshot is empty", () => {
 		mocks.orders = [];
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
@@ -630,6 +714,22 @@ describe("mobile history disclosure cards", () => {
 		expect(button?.disabled).toBe(false);
 		act(() => button?.click());
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
+	});
+
+	it("keeps degraded warnings visible when cached recent snapshots are empty", () => {
+		mocks.fills = [];
+		mocks.fillsStale = true;
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		expect(container.textContent).toContain("Trade history updates paused.");
+		expect(container.textContent).toContain("No fills found.");
+
+		mocks.orders = [];
+		mocks.ordersOffline = true;
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+
+		expect(container.textContent).toContain("You are offline.");
+		expect(container.textContent).toContain("No order history found.");
 	});
 
 	it("filters non-TWAP trade history by type, side, and maker/taker role without carrying state to another owner", async () => {
@@ -690,9 +790,9 @@ describe("mobile history disclosure cards", () => {
 		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
 		clickButton("Export CSV");
 		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
-		expect(exportRows).toHaveLength(2);
+		expect(exportRows).toHaveLength(3);
 		expect(exportRows?.flat()).toContain("ETH");
-		expect(exportRows?.flat()).not.toContain("BTC");
+		expect(exportRows?.flat()).toContain("BTC");
 
 		clickButton("Collapse all");
 		await selectOption("Direction", "All Directions");

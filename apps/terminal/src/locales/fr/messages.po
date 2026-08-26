@@ -40,6 +40,14 @@ msgstr "{0} est coté comme marché perpétuel natif de Hyperliquid."
 #~ msgid "{0} more wallets"
 #~ msgstr ""
 
+#. placeholder {0}: pagination.currentPage
+#. placeholder {1}: pagination.totalPages
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "{0} of {1}"
+msgstr ""
+
 #. placeholder {0}: outcome.acceptedCount
 #. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
@@ -80,6 +88,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
+msgstr ""
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} history"
@@ -269,6 +281,10 @@ msgstr "Une position peut être liquidée lorsque le prix mark atteint son prix 
 msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
 msgstr "Un dépôt CCTP précédent est toujours en cours de suivi. Ne renvoyez pas le même transfert."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature."
+msgstr "Une précédente tentative de connexion est toujours en cours de vérification. Une nouvelle tentative vérifie la même clé de trading et ne demande pas d’autre signature."
+
 #: src/components/referrals/referral-action-modal.tsx
 msgid "A referral code can only be applied once and cannot be changed from this page."
 msgstr "Un code de parrainage ne peut être appliqué qu’une seule fois et ne peut pas être modifié depuis cette page."
@@ -280,6 +296,10 @@ msgstr "Aucun prix de liquidation fiable n'est disponible avant l'exécution d'u
 #: src/components/staking/staking-view.tsx
 msgid "A staking link cannot be removed. The staking account gains full control of the trading account's funds, so this page does not offer a link action."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
+msgstr "Une connexion de trading est déjà en cours d’établissement dans un autre onglet. Terminez-la ou annulez-la dans cet onglet avant de réessayer."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "A TWAP is active for one of these markets."
@@ -347,8 +367,8 @@ msgid "Account data unavailable"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Account Equity"
-msgstr "Capitaux propres du compte"
+#~ msgid "Account Equity"
+#~ msgstr "Capitaux propres du compte"
 
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
@@ -505,6 +525,7 @@ msgid "Add to Target"
 msgstr "Ajouter jusqu'à la cible"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "Ajouter TP/SL"
 
@@ -533,7 +554,8 @@ msgstr "Ajuster la marge isolée de {displayName}"
 msgid "Adjust leverage"
 msgstr "Ajuster l'effet de levier"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Adjust Margin"
 msgstr "Ajuster la marge"
 
@@ -599,16 +621,33 @@ msgstr "Toutes les positions en marge croisée partagent la même marge croisée
 msgid "All currently available referral rewards are claimed to your Spot balance."
 msgstr "Toutes les récompenses de parrainage actuellement disponibles sont versées sur votre solde Spot."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "All directions"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 msgid "All Directions"
 msgstr "Toutes les directions"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "All markets"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "All roles"
 msgstr "Tous les rôles"
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "All sides"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "All statuses"
@@ -618,6 +657,8 @@ msgstr "Tous les statuts"
 msgid "All Time"
 msgstr "Depuis toujours"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -872,6 +913,12 @@ msgstr ""
 msgid "Ask"
 msgstr "Vente"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1036,6 +1083,12 @@ msgstr "De nouveau en ligne"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Back to trade"
+msgstr ""
+
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
 msgstr ""
@@ -1187,6 +1240,8 @@ msgstr "Les totaux Builder correspondent à une attribution cumulée et ne s’a
 #~ msgid "buy"
 #~ msgstr "achat"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -1296,6 +1351,7 @@ msgstr "Annuler les ordres sélectionnés"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "Annuler l'ordre TWAP"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -1396,6 +1452,18 @@ msgstr "Vérification..."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Child"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Choose another market or side."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Choose another market, direction, role, or type."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Choose different market, direction, type, or status filters."
 msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1528,9 +1596,10 @@ msgid "Close"
 msgstr "Fermer"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close All"
-msgstr "Tout fermer"
+#~ msgid "Close All"
+#~ msgstr "Tout fermer"
 
+#: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Close all is currently unavailable."
 msgstr "Tout fermer est actuellement indisponible."
@@ -1544,10 +1613,15 @@ msgid "Close all is unavailable because position data is incomplete."
 msgstr "Tout fermer est indisponible car les données de position sont incomplètes."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Close all is unavailable until every position market and mark price has loaded."
-msgstr "Tout fermer est indisponible tant que tous les marchés des positions et les prix mark ne sont pas chargés."
+#~ msgid "Close all is unavailable until every position market and mark price has loaded."
+#~ msgstr "Tout fermer est indisponible tant que tous les marchés des positions et les prix mark ne sont pas chargés."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is unavailable until every position market has loaded."
+msgstr "Tout fermer est indisponible tant que tous les marchés des positions ne sont pas chargés."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Close All Positions"
 msgstr "Fermer toutes les positions"
 
@@ -1567,6 +1641,7 @@ msgstr ""
 msgid "Close close-all confirmation"
 msgstr "Fermer la confirmation de fermeture globale"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1635,6 +1710,7 @@ msgstr "Fermer la position"
 msgid "Close reverse confirmation"
 msgstr "Fermer la confirmation d'inversion"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1697,8 +1773,8 @@ msgid "Closing this dialog will not cancel it."
 msgstr "Fermer cette boîte de dialogue ne l'annulera pas."
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Closing..."
-msgstr "Fermeture..."
+#~ msgid "Closing..."
+#~ msgstr "Fermeture..."
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Code copied"
@@ -1717,20 +1793,15 @@ msgid "Codes support 1–20 characters. Availability is confirmed by Hyperliquid
 msgstr "Les codes doivent contenir entre 1 et 20 caractères. Leur disponibilité est confirmée par Hyperliquid lors de l’envoi."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Collapse {displayName} position details"
 msgstr "Réduire les détails de la position {displayName}"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Collapse {marketLabel} order details"
 msgstr "Réduire les détails de l'ordre {marketLabel}"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 msgid "Collapse {marketName} history details"
 msgstr "Réduire les détails de l'historique {marketName}"
@@ -1739,10 +1810,7 @@ msgstr "Réduire les détails de l'historique {marketName}"
 #~ msgid "Collapse account panel"
 #~ msgstr "Réduire le panneau du compte"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
 msgid "Collapse all"
 msgstr "Tout réduire"
 
@@ -2138,6 +2206,7 @@ msgstr "Connexion"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -2758,7 +2827,14 @@ msgstr "Adresse de destination"
 #~ msgstr ""
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -2934,6 +3010,7 @@ msgid "Edit {0} trigger price"
 msgstr "Modifier le prix de déclenchement de {0}"
 
 #: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "Modifier TP/SL"
 
@@ -2997,6 +3074,18 @@ msgstr "Saisissez un montant positif comportant jusqu'à 6 décimales."
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive target leverage."
 msgstr "Saisissez un levier cible positif."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Enter a valid 0x account address to view funding payments."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Enter a valid 0x account address to view ordinary order history."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Enter a valid 0x account address to view trade history."
+msgstr ""
 
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
@@ -3234,10 +3323,7 @@ msgstr "Développer les détails de l'historique {marketName}"
 #~ msgid "Expand account panel"
 #~ msgstr "Développer le panneau du compte"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-bulk-disclosure-actions.tsx
 msgid "Expand all"
 msgstr "Tout développer"
 
@@ -3283,6 +3369,9 @@ msgstr ""
 msgid "Explorer"
 msgstr "Explorateur"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3300,8 +3389,12 @@ msgid "Exporting deposits and withdrawals..."
 msgstr "Export des dépôts et retraits..."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Exporting funding history..."
-msgstr "Export de l'historique de financement..."
+#~ msgid "Exporting funding history..."
+#~ msgstr "Export de l'historique de financement..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding payments..."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3322,6 +3415,11 @@ msgstr "Échoué"
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Failed to build a close order"
 msgstr "Échec de la création d'un ordre de fermeture"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to cancel order."
+msgstr ""
 
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
@@ -3360,8 +3458,12 @@ msgid "Failed to export deposits and withdrawals."
 msgstr "Échec de l’export des dépôts et retraits."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "Failed to export funding history."
-msgstr "Échec de l'exportation de l'historique du funding."
+#~ msgid "Failed to export funding history."
+#~ msgstr "Échec de l'exportation de l'historique du funding."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding payments."
+msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3399,8 +3501,13 @@ msgstr "Échec du chargement des dépôts et retraits."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding history."
-msgstr "Échec du chargement de l'historique de financement."
+#~ msgid "Failed to load funding history."
+#~ msgstr "Échec du chargement de l'historique de financement."
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Failed to load funding payments."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3516,6 +3623,8 @@ msgstr "Échec de la mise à jour des ordres TP/SL"
 msgid "Favorites"
 msgstr "Favoris"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -3571,6 +3680,7 @@ msgstr "Historique des exécutions"
 msgid "Fill status"
 msgstr "Statut d'exécution"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -3586,6 +3696,30 @@ msgstr "Exécuté"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Filter by {label}"
 msgstr "Filtrer par {label}"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by market"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Filter funding payments by side"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by direction"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by market"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by status"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Filter order history by type"
+msgstr ""
 
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
@@ -3606,6 +3740,22 @@ msgstr "Filtrer les positions par mode de marge : {marginLabel}"
 #: src/components/trade/positions/position-market-filter.tsx
 msgid "Filter positions by market: {ariaValue}"
 msgstr "Filtrer les positions par marché : {ariaValue}"
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by direction"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by market"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by role"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Filter trade history by type"
+msgstr ""
 
 #: src/components/staking/staking-view.tsx
 msgid "Filter validators"
@@ -3695,18 +3845,53 @@ msgstr "FUNDING"
 msgid "Funding chain"
 msgstr "Chaîne de dépôt"
 
-#: src/config/trade.ts
-msgid "Funding History"
-msgstr "Historique du funding"
-
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-#~ msgid "Funding Payments"
-#~ msgstr "Paiements de financement"
+msgid "Funding data could not be validated. Refresh and try again."
+msgstr ""
+
+#: src/config/trade.ts
+#~ msgid "Funding History"
+#~ msgstr "Historique du funding"
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Funding history pagination"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments"
+msgstr ""
+
+#: src/config/trade.ts
+msgid "Funding Payments"
+msgstr "Paiements de financement"
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments are unavailable"
+msgstr ""
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments for {0}"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments pagination"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Funding payments will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding shown"
 msgstr "Financement affiché"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding updates paused."
+msgstr ""
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3864,10 +4049,8 @@ msgstr ""
 msgid "History"
 msgstr "Historique"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -3959,6 +4142,10 @@ msgstr "Hyperliquid indique que cette clé de trading a été remplacée, modifi
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Hyperliquid requires more than $1 in eligible rewards before a claim. Final eligibility is confirmed by the protocol."
 msgstr "Hyperliquid exige plus de 1 $ de récompenses éligibles avant toute réclamation. L’éligibilité finale est confirmée par le protocole."
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Hyperliquid returns at most the most recent {ORDER_HISTORY_API_LIMIT} ordinary orders. TWAP history is separate and is not included."
+msgstr ""
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Hyperliquid testnet account"
@@ -4069,6 +4256,12 @@ msgstr "Solde insuffisant"
 msgid "Insufficient funds for gas"
 msgstr "Fonds insuffisants pour le gas"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Invalid account address"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
@@ -4083,6 +4276,10 @@ msgstr "Adresse de destination invalide"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Invalid funding history address"
 #~ msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
@@ -4276,6 +4473,7 @@ msgstr "L'effet de levier est fixé à {currentLeverage}× pour ce marché."
 msgid "Limit"
 msgstr "Limite"
 
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4289,7 +4487,7 @@ msgid "Limit Buy"
 msgstr "Achat limite"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr "Clôture limite"
@@ -4354,6 +4552,8 @@ msgstr ""
 msgid "Liq. Price"
 msgstr "Prix liq."
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -4428,8 +4628,17 @@ msgid "Loading deposits and withdrawals..."
 msgstr "Chargement des dépôts et retraits..."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Loading funding history..."
-msgstr "Chargement de l'historique de financement..."
+#~ msgid "Loading funding history..."
+#~ msgstr "Chargement de l'historique de financement..."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Loading funding payments"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Loading funding payments."
+msgstr ""
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4444,6 +4653,10 @@ msgstr "Chargement des marchés..."
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Loading open orders..."
 msgstr "Chargement des ordres ouverts..."
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Loading order history"
+msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Loading order history..."
@@ -4487,6 +4700,10 @@ msgstr "Chargement de la dernière position..."
 msgid "Loading token metadata..."
 msgstr "Chargement des métadonnées du jeton..."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Loading trade history"
+msgstr ""
+
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
 msgstr "Chargement de l'historique des transactions..."
@@ -4522,12 +4739,9 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4560,6 +4774,7 @@ msgstr ""
 msgid "Log in with Email"
 msgstr "Se connecter par e-mail"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4617,9 +4832,11 @@ msgstr "Mainnet"
 #~ msgstr "Marge de maintenance"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Maintenance Margin Ratio"
-msgstr "Ratio de marge de maintenance"
+#~ msgid "Maintenance Margin Ratio"
+#~ msgstr "Ratio de marge de maintenance"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Maker"
@@ -4728,10 +4945,7 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Le prix Mark est dérivé des prix oracle et sert à calculer le PnL non réalisé et la liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "Le prix Mark est indisponible. Attendez les données de marché et réessayez."
@@ -4747,6 +4961,9 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #~ msgid "Mark:"
 #~ msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4773,6 +4990,7 @@ msgstr "Marché"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4795,7 +5013,7 @@ msgid "Market clicks currently close the full position immediately for this acco
 msgstr "Les clics sur Marché ferment actuellement la position entière immédiatement pour ce compte et ce réseau."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Clôture au marché"
@@ -5097,8 +5315,8 @@ msgstr "Plus d’infos"
 #~ msgstr "Plus de pages"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "More position actions"
-msgstr "Plus d'actions sur la position"
+#~ msgid "More position actions"
+#~ msgstr "Plus d'actions sur la position"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Move Spot HYPE to staking"
@@ -5189,8 +5407,24 @@ msgstr "L'activation d'une nouvelle marge de portefeuille est temporairement ind
 msgid "Next"
 msgstr "Suivant"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Next funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Next funding payments page"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Next order history page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Next trade history page"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
@@ -5301,19 +5535,43 @@ msgstr ""
 msgid "No expiry reported"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills found"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills found in the recent trade snapshot."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "No fills found."
 msgstr "Aucune exécution trouvée."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No fills match the selected filters."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
 msgstr "Aucune exécution ne correspond à ces filtres."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments found in the confirmed 30-day window."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "Aucun paiement de financement trouvé."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No funding payments match the selected filters."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5350,6 +5608,18 @@ msgstr "Pas de marché"
 msgid "No markets found."
 msgstr "Aucun marché trouvé."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "No matching fills"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "No matching funding payments"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No matching orders"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
 msgstr ""
@@ -5371,6 +5641,10 @@ msgstr "Aucun ordre ouvert."
 msgid "No operation was submitted."
 msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No order history found"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
@@ -5385,6 +5659,7 @@ msgstr "Aucun ordre"
 msgid "No orders match the filters."
 msgstr "Aucun ordre ne correspond aux filtres."
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No orders match the selected filters."
 msgstr "Aucun ordre ne correspond aux filtres sélectionnés."
@@ -5393,6 +5668,10 @@ msgstr "Aucun ordre ne correspond aux filtres sélectionnés."
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No orders match these filters."
 msgstr "Aucun ordre ne correspond à ces filtres."
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "No ordinary orders found."
+msgstr ""
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
@@ -5610,6 +5889,10 @@ msgstr ""
 msgid "Only the public address is submitted for approval. After fresh extraAgents data confirms the approval, the private key is shown once for download and secure storage."
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
+msgstr ""
+
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
 msgstr ""
@@ -5626,6 +5909,7 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "ouvert"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/vaults/vault-detail-view.tsx
@@ -5662,6 +5946,7 @@ msgstr "OPEN INT"
 msgid "Open Interest"
 msgstr "Intérêt ouvert"
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5704,6 +5989,7 @@ msgstr "Les ordres ouverts ont changé. Rouvrez la confirmation et réessayez."
 msgid "Open related page"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5815,9 +6101,30 @@ msgstr "Ordre échoué"
 msgid "Order filled"
 msgstr "Ordre exécuté"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history"
+msgstr ""
+
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "Historique des ordres"
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history is unavailable"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history pagination"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order history updates paused."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Order history will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-tracked-order.ts
@@ -5825,8 +6132,7 @@ msgstr "Historique des ordres"
 msgid "Order market context does not match the submitted asset."
 msgstr "Le contexte de marché de l'ordre ne correspond pas à l'actif soumis."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "Order modification confirmed."
 msgstr "Modification de l'ordre confirmée."
 
@@ -5909,11 +6215,17 @@ msgstr "Les ordres avec un ID d'ordre client ne peuvent pas être modifiés ici.
 msgid "Orders with linked TP/SL orders cannot be modified here."
 msgstr "Les ordres avec des ordres TP/SL liés ne peuvent pas être modifiés ici."
 
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Ordinary order history for {0}"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Original Size"
 msgstr "Taille d'origine"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -6018,6 +6330,9 @@ msgstr "Pause"
 msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 msgstr "Pause indisponible : Hyperliquid ne permet pas de mettre en pause les ordres TWAP actifs."
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6066,6 +6381,8 @@ msgstr ""
 #~ msgid "perp"
 #~ msgstr "perp"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-trigger.tsx
 #: src/components/trade/components/market-asset-info.tsx
@@ -6207,6 +6524,9 @@ msgstr ""
 #: src/components/leaderboard/leaderboard-view.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -6273,6 +6593,9 @@ msgstr "Résumé du portefeuille"
 msgid "Portfolio Value"
 msgstr "Valeur du portefeuille"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -6282,8 +6605,8 @@ msgid "Position"
 msgstr "Position"
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position actions"
-msgstr "Actions sur la position"
+#~ msgid "Position actions"
+#~ msgstr "Actions sur la position"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -6393,14 +6716,36 @@ msgstr "Appuyez et maintenez pendant 4 secondes"
 msgid "Previous"
 msgstr "Précédent"
 
+#: src/components/funding-history/funding-history-page.tsx
+#~ msgid "Previous funding history page"
+#~ msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Previous funding payments page"
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Previous order history page"
+msgstr ""
+
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Previous trade history page"
 msgstr ""
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Previous Vault page"
 msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -6597,6 +6942,9 @@ msgstr ""
 msgid "Ranked by"
 msgstr ""
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -6642,9 +6990,7 @@ msgstr "PnL réalisé"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "L'historique récent dépasse la limite d'affichage sûre. Exportez en CSV pour récupérer une plage plus étendue."
 
@@ -6831,9 +7177,24 @@ msgstr "Pages des traders parrainés"
 msgid "Referrers currently earn 10% of referred fees after the trader discount, for the first $1B of volume."
 msgstr "Les parrains gagnent actuellement 10 % des frais générés par les traders parrainés, après la réduction accordée au trader, sur les premiers $1B de volume."
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Refresh"
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "Refresh failed. Previously loaded funding payments remain visible."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Refresh failed. Previously loaded order history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Refresh failed. Previously loaded trade history remains visible."
 msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -6866,6 +7227,7 @@ msgstr ""
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6999,11 +7361,14 @@ msgid "Resume tracking"
 msgstr "Reprendre le suivi"
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
@@ -7065,6 +7430,11 @@ msgstr ""
 msgid "Reverse"
 msgstr "Inverser"
 
+#: src/components/trade/positions/position-inline-actions.tsx
+msgctxt "Position action"
+msgid "Reverse"
+msgstr "Inverser"
+
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 msgid "Reverse order filled for {filledSizeLabel}."
 msgstr "Ordre d'inversion exécuté pour {filledSizeLabel}."
@@ -7073,7 +7443,7 @@ msgstr "Ordre d'inversion exécuté pour {filledSizeLabel}."
 msgid "Reverse order filled."
 msgstr "Ordre d'inversion exécuté."
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Reverse Position"
 msgstr "Inverser la position"
@@ -7225,11 +7595,20 @@ msgstr "RO"
 msgid "ROI"
 msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Role"
 msgstr "Rôle"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Rows per page"
 msgstr ""
 
@@ -7549,6 +7928,8 @@ msgstr ""
 #~ msgid "sell"
 #~ msgstr "vente"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7657,8 +8038,8 @@ msgstr "Régler sur {p}%"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Set TP/SL"
-msgstr "Définir TP/SL"
+#~ msgid "Set TP/SL"
+#~ msgstr "Définir TP/SL"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"
@@ -7695,6 +8076,7 @@ msgstr "Partager le PNL"
 msgid "Share PNL for {displayName}"
 msgstr "Partager le PNL de {displayName}"
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -7788,6 +8170,7 @@ msgstr "Afficher le pourcentage de ROE"
 msgid "Shows reward claims reported in the last 30 days. Claims can include referral and builder rewards."
 msgstr "Affiche les réclamations de récompenses signalées au cours des 30 derniers jours. Elles peuvent inclure des récompenses de parrainage et de Builder."
 
+#: src/components/funding-history/funding-history-page.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Side"
 msgstr ""
@@ -7829,6 +8212,12 @@ msgstr ""
 msgid "Signing..."
 msgstr "Signature..."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -8016,6 +8405,8 @@ msgstr "Source"
 #~ msgstr "spot"
 
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -8167,6 +8558,10 @@ msgid "Statistics"
 msgstr ""
 
 #: src/components/api-wallet/api-wallet-list.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -8255,6 +8650,10 @@ msgstr "Le déclencheur Stop doit être inférieur au prix de liquidation"
 msgid "Stop trigger must be below mark"
 msgstr "Le déclencheur du stop doit être en dessous du prix mark"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stored only in this browser profile; other browsers and devices stay disconnected."
+msgstr "Stockée uniquement dans ce profil de navigateur ; les autres navigateurs et appareils restent déconnectés."
+
 #: src/config/account-ledger.ts
 msgid "Sub-account Transfer"
 msgstr "Transfert de sous-compte"
@@ -8340,8 +8739,15 @@ msgstr "Échange en cours..."
 #~ msgid "Switch to {0}"
 #~ msgstr "Passer à {0}"
 
+#. placeholder {0}: entry.coin
 #. placeholder {0}: fill.coin
-#. placeholder {0}: update.coin
+#. placeholder {0}: funding.coin
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
@@ -8526,6 +8932,8 @@ msgstr "Le déclencheur Take Profit doit être au-dessus du prix mark"
 msgid "Take profit trigger must be below mark"
 msgstr "Le déclencheur Take Profit doit être en dessous du prix mark"
 
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Taker"
@@ -8601,6 +9009,18 @@ msgstr ""
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "Les frais d’activation du compte ont changé avant la signature. Vérifiez les frais actualisés et réessayez."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The account has no fills in the public API snapshot."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The account has no funding payments in the confirmed 30-day window."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "The account has no ordinary orders in the available history."
+msgstr ""
+
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
 msgstr ""
@@ -8655,13 +9075,28 @@ msgstr "La transaction Arbitrum a été soumise, mais son statut final n’a pas
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "La réponse d'annulation n'a pas pu être confirmée. Actualisez les ordres ouverts avant de réessayer."
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The cancellation was not confirmed. Review open orders before retrying."
+msgstr ""
+
 #: src/components/vaults/vault-action-modal.tsx
 msgid "The confirmed server lock timestamp governs when withdrawal becomes available."
 msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be checked safely. No wallet signature was requested; wait a moment and try again."
+msgstr "La connexion n’a pas pu être vérifiée en toute sécurité. Aucune signature de portefeuille n’a été demandée ; patientez un instant et réessayez."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "The connection could not be completed. It may already be approved; wait a moment and try again."
+msgstr "La connexion n’a pas pu être finalisée. Elle est peut-être déjà approuvée ; patientez un instant et réessayez."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "The exact name and public address are now present in fresh extraAgents data."
@@ -8732,8 +9167,11 @@ msgstr "La mise à jour de la marge a peut-être été appliquée. Actualisez le
 msgid "The matching master wallet signs this account-level agent approval."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The modification was not confirmed. Review the order before retrying."
+msgstr ""
+
+#: src/components/trade/order-reconciliation.tsx
 msgid "The modified order is no longer open."
 msgstr "L'ordre modifié n'est plus ouvert."
 
@@ -8754,8 +9192,7 @@ msgstr "Le service de QR à usage unique est indisponible. Vérifiez votre conne
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr "L'ordre peut continuer, mais cette préférence de confirmation n'a pas pu être enregistrée."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
 msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
 msgstr "L'ordre a changé avant que la modification demandée ne soit confirmée. Vérifiez le dernier état de l'ordre avant de réessayer."
 
@@ -8765,6 +9202,9 @@ msgid "The order is still being confirmed."
 msgstr "L'ordre est toujours en cours de confirmation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "La mise à jour de l'ordre n'a pas été confirmée par les données en direct. Actualisez avant de réessayer ; l'annulation reste disponible."
@@ -8777,10 +9217,15 @@ msgstr ""
 msgid "The page is refreshing from Hyperliquid. Recent changes can take a moment to appear."
 msgstr "La page actualise les données depuis Hyperliquid. Les modifications récentes peuvent mettre un moment à apparaître."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La page que vous recherchez n'existe pas."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
 msgstr "La modification d'ordre précédente n'est toujours pas confirmée. Actualisez les ordres ouverts avant de réessayer."
@@ -8817,6 +9262,10 @@ msgstr "Le QR reste masqué jusqu'à ce que vous le révéliez délibérément."
 msgid "The QR stays on this device and is never uploaded."
 msgstr "Le QR reste sur cet appareil et n'est jamais téléversé."
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "The recent trade snapshot could not be loaded or validated."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
@@ -8825,6 +9274,14 @@ msgstr "Le remplacement a expiré avant que Hyperliquid ne le confirme. Vérifie
 #: src/lib/errors/format.ts
 msgid "The request was submitted, but its final status is still updating. Check referral data and claim history before retrying."
 msgstr "La demande a été envoyée, mais son statut final est toujours en cours de mise à jour. Vérifiez les données de parrainage et l’historique des réclamations avant de réessayer."
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "The requested 30-day window could not be verified. No partial history is shown."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "The response could not be verified. No partial order history is shown."
+msgstr ""
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -8899,11 +9356,13 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "Le compte de trading ou le réseau a changé. Rouvrez la confirmation et réessayez."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "Le compte de trading ou le réseau a changé. Rouvrez l'éditeur et réessayez."
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "The trading account or network changed. Review active TWAP orders before retrying."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -8947,6 +9406,14 @@ msgstr "Ce compte n'est actuellement pas autorisé à effectuer des opérations 
 msgid "This account is not currently permitted to use Hyperliquid referrals."
 msgstr "Ce compte n’est actuellement pas autorisé à utiliser le programme de parrainage Hyperliquid."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available from this endpoint."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "This account reached the {TRADE_HISTORY_SNAPSHOT_LIMIT}-fill snapshot limit. Older fills may exist and are not included in this page count."
+msgstr ""
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This action cannot be undone after execution."
 msgstr "Cette action est irréversible après exécution."
@@ -8977,6 +9444,10 @@ msgstr "Ce pont ne peut être repris que par le portefeuille qui l'a initié."
 #: src/lib/errors/format.ts
 msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
 msgstr "Ce navigateur ne peut pas coordonner en toute sécurité les opérations sur les fonds entre les onglets. Utilisez un navigateur pris en charge."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
+msgstr "Ce navigateur ne peut pas coordonner la connexion de trading en toute sécurité entre les onglets. Utilisez un navigateur compatible."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -9108,8 +9579,6 @@ msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr "Ce QR à usage unique a déjà été utilisé ou n'est plus actif. Scannez un nouveau QR."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "This order changed or is no longer open. Refresh and try again."
 msgstr "Cet ordre a changé ou n'est plus ouvert. Actualisez et réessayez."
@@ -9239,9 +9708,15 @@ msgstr ""
 msgid "TIF"
 msgstr "TIF"
 
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/referrals/referral-legacy-history.tsx
 #: src/components/staking/staking-view.tsx
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -9452,9 +9927,35 @@ msgstr "Trader"
 #~ msgid "Trade ClockCounterClockwise"
 #~ msgstr ""
 
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history"
+msgstr ""
+
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "Historique des transactions"
+
+#. placeholder {0}: shortenAddress(address, 8, 6)
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history for {0}"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history is unavailable"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history pagination"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Trade history updates paused."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Trade history will load automatically when the connection returns."
+msgstr ""
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -9513,7 +10014,6 @@ msgstr "Compte de trading"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "Les données de trading ont changé avant que la modification de l'ordre ne puisse être soumise."
 
@@ -9566,6 +10066,10 @@ msgstr "La négociation sur ces marchés peut présenter des risques élevés, n
 msgid "Trading is not available in your region"
 msgstr "Le trading n'est pas disponible dans votre région"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading is not connected in this browser. Reconnect to create or replace its trading key."
+msgstr "La connexion de trading n’est pas établie dans ce navigateur. Reconnectez-vous pour créer ou remplacer sa clé de trading."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
 msgstr "Clé de trading"
@@ -9588,6 +10092,7 @@ msgid "Traditional Finance"
 msgstr "Finance traditionnelle"
 
 #: src/components/staking/staking-view.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Transaction"
@@ -9680,6 +10185,7 @@ msgstr "Condition de déclenchement"
 msgid "Trigger order must reduce your current position"
 msgstr "L'ordre à déclenchement doit réduire votre position actuelle"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -9708,6 +10214,7 @@ msgstr ""
 msgid "Trigger size exceeds position size"
 msgstr "La taille de l'ordre à déclenchement dépasse celle de la position"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -9752,10 +10259,15 @@ msgstr "TWAP"
 msgid "TWAP activity"
 msgstr "Activité TWAP"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/components/trade/twap-reconciliation.tsx
 msgid "TWAP cancellation confirmed."
 msgstr "Annulation du TWAP confirmée."
 
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
+msgstr ""
+
+#: src/components/trade/twap-reconciliation.tsx
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "La demande d'annulation du TWAP a été envoyée, mais son statut n'a pas pu être confirmé. Consultez la liste des TWAP actifs avant de réessayer."
@@ -9811,6 +10323,13 @@ msgstr "Tranche d'ordre TWAP"
 msgid "Two-sided open interest: the sum of long and short positions on this contract."
 msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur ce contrat."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
@@ -10042,7 +10561,6 @@ msgstr "Déverrouillez votre portefeuille puis réessayez."
 msgid "Unrealized P&L"
 msgstr "P&L latent"
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -10065,12 +10583,23 @@ msgstr "Résolution non prise en charge : {0}"
 msgid "Up to {cctpFee} USDC in fees will be deducted from your deposit."
 msgstr "Jusqu’à {cctpFee} USDC de frais seront déduits de votre dépôt."
 
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders"
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
+msgstr ""
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
 msgstr "Échec de la mise à jour"
 
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -10364,6 +10893,12 @@ msgstr ""
 msgid "Verifying..."
 msgstr "Vérification..."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "View all"
 msgstr "Tout afficher"
@@ -10485,6 +11020,10 @@ msgstr "Le portefeuille n’est pas connecté à {0}. Changez de réseau dans vo
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Portefeuille non connecté"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Wallet or network changed before the connection completed. Reopen the action for the current account."
+msgstr "Le portefeuille ou le réseau a changé avant la fin de la connexion. Rouvrez l’action pour le compte actuel."
 
 #: src/lib/errors/format.ts
 msgid "Wallet or network changed before the referral request could be confirmed. Reopen the action and review the current account."
@@ -10663,6 +11202,51 @@ msgstr "Vous accédez à nos produits et services depuis une juridiction restrei
 #: src/components/referrals/referral-code-card.tsx
 msgid "You are eligible to create a referral code."
 msgstr "Vous êtes éligible à la création d’un code de parrainage."
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
+msgid "You are offline"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "You are offline."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "You are offline. Funding payments will load when the connection returns."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "You are offline. Order history will load when the connection returns."
+msgstr ""
+
+#: src/components/funding-history/funding-history-page.tsx
+msgid "You are offline. Previously loaded funding payments remain visible."
+msgstr ""
+
+#: src/components/historical-orders/historical-orders-page.tsx
+msgid "You are offline. Previously loaded order history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+msgid "You are offline. Previously loaded trade history remains visible."
+msgstr ""
+
+#: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "You are offline. Trade history will load when the connection returns."
+msgstr ""
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

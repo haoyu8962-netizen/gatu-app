@@ -84,7 +84,6 @@ function snapshotWith(positionCount: number): PositionCloseAllSnapshot {
 			assetId: index,
 			szDecimals: 2,
 			signedPositionSize: "1.5",
-			markPx: "100",
 			marginMode: "cross" as const,
 			quoteSymbol: "USDC",
 		})),

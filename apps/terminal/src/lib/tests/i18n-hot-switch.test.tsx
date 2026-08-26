@@ -12,6 +12,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 
@@ -255,6 +256,9 @@ function OrderLabelsProbe() {
 			<span data-label="twap-slice">{getOrderTypeLabel("Twap Slice")}</span>
 			<span data-label="vault-close">{getOrderTypeLabel("Vault Close")}</span>
 			<span data-label="spot-dust-conversion">{getOrderTypeLabel("Spot Dust Conversion")}</span>
+			<span data-label="unknown-type">
+				{getOrderTypeLabel("Unexpected Type" as Parameters<typeof getOrderTypeLabel>[0])}
+			</span>
 			<span data-label="advanced">{getAdvancedOrderTypeLabel("stopMarket")}</span>
 			<span data-label="condition">{getTriggerConditionLabel("Price above 70")}</span>
 			<span data-label="status">{getHistoricalOrderStatusLabel("internalCancel")}</span>
@@ -349,6 +353,7 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="twap-slice"]')?.textContent).toBe("TWAP 分片");
 		expect(orderLabels?.querySelector('[data-label="vault-close"]')?.textContent).toBe("金库平仓");
 		expect(orderLabels?.querySelector('[data-label="spot-dust-conversion"]')?.textContent).toBe("现货零头转换");
+		expect(orderLabels?.querySelector('[data-label="unknown-type"]')?.textContent).toBe(FALLBACK_VALUE_PLACEHOLDER);
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("止损市价");
 		expect(orderLabels?.querySelector('[data-label="condition"]')?.textContent).toBe("价格高于 70");
 		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");

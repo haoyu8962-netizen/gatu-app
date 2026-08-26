@@ -87,6 +87,11 @@ describe("MobilePositionCard isolated margin entry", () => {
 			);
 		});
 		expandPositionDetails();
+		const disclosureControls = container.querySelectorAll(
+			'button[aria-label="Collapse CXMT-USDC position details"][aria-controls]',
+		);
+		expect(disclosureControls).toHaveLength(1);
+		expect(disclosureControls[0]?.getAttribute("aria-expanded")).toBe("true");
 
 		const button = container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]');
 		if (!(button instanceof HTMLButtonElement)) throw new Error("Isolated margin entry was not rendered");
@@ -186,7 +191,57 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 	});
 
-	it("keeps reverse available while cached mark data is temporarily unavailable", () => {
+	it("orders expanded metrics like the official mobile position card", () => {
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets,
+					markPx: "7.5759",
+					markPriceStatus: "success",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					expanded: true,
+					onMarketClose: vi.fn(),
+					onShare: vi.fn(),
+					onReverse: vi.fn(),
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const disclosure = container.querySelector<HTMLButtonElement>(
+			'button[aria-label="Collapse CXMT-USDC position details"]',
+		);
+		const detailsId = disclosure?.getAttribute("aria-controls");
+		const details = detailsId ? document.getElementById(detailsId) : null;
+		const metrics = details?.querySelector<HTMLDivElement>(":scope > div.grid");
+		if (!metrics) throw new Error("Expanded position metrics were not rendered");
+
+		const labels = [...metrics.children].map((metric) => {
+			const metricRoot = metric instanceof HTMLButtonElement ? metric.firstElementChild : metric;
+			return metricRoot?.firstElementChild?.textContent;
+		});
+		expect(metrics.className).toContain("grid-cols-3");
+		expect(labels).toEqual([
+			"Entry Price",
+			"Mark Price",
+			"Liquidation Price",
+			"Position Value",
+			"Margin",
+			"TP/SL",
+			"Funding",
+		]);
+	});
+
+	it("keeps close and reverse actions available without a toolbar mark", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
 		const onReverse = vi.fn();
 		act(() => {
 			root.render(
@@ -199,10 +254,10 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPriceStatus: "loading",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					onMarketClose: vi.fn(),
+					onMarketClose,
 					onShare: vi.fn(),
 					onReverse,
-					onLimitClose: vi.fn(),
+					onLimitClose,
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
 					onSelectMarket: vi.fn(),
@@ -215,10 +270,33 @@ describe("MobilePositionCard isolated margin entry", () => {
 		const marketClose = buttons.find((button) => button.textContent?.trim() === "Market Close");
 		const limitClose = buttons.find((button) => button.textContent?.trim() === "Limit Close");
 		const reverse = buttons.find((button) => button.textContent?.trim() === "Reverse");
-		expect(marketClose?.disabled).toBe(true);
-		expect(limitClose?.disabled).toBe(true);
+		expect(marketClose?.disabled).toBe(false);
+		expect(limitClose?.disabled).toBe(false);
 		expect(reverse?.disabled).toBe(false);
-		act(() => reverse?.click());
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
+		act(() => {
+			marketClose?.click();
+			limitClose?.click();
+			reverse?.click();
+		});
+		expect(onMarketClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			szDecimals: 1,
+			signedPositionSize: "205.9",
+			marginMode: "isolated",
+		});
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "205.9",
+			entryPx: "7.79995",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
 		expect(onReverse).toHaveBeenCalledOnce();
 	});
 
@@ -387,5 +465,55 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 
 		expect(container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]')).toBeNull();
+	});
+
+	it("disables every position mutation while a market close is pending", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+		const onReverse = vi.fn();
+		const onOpenTpSl = vi.fn();
+		const onAdjustMargin = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets,
+					markPx: "7.5759",
+					markPriceStatus: "success",
+					tpSlInfo: undefined,
+					isRowClosing: true,
+					expanded: true,
+					onMarketClose,
+					onShare: vi.fn(),
+					onReverse,
+					onLimitClose,
+					onOpenTpSl,
+					onAdjustMargin,
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const namedLabels = ["Adjust isolated margin for CXMT-USDC", "Limit Close", "Market Close", "Reverse"];
+		const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button"));
+		for (const label of namedLabels) {
+			const button = buttons.find(
+				(candidate) => candidate.getAttribute("aria-label") === label || candidate.textContent?.trim() === label,
+			);
+			expect(button?.disabled, label).toBe(true);
+			act(() => button?.click());
+		}
+		const tpSlButton = buttons.find((candidate) => candidate.textContent?.trim().startsWith("TP/SL"));
+		expect(tpSlButton?.disabled, "TP/SL").toBe(true);
+		act(() => tpSlButton?.click());
+
+		expect(onMarketClose).not.toHaveBeenCalled();
+		expect(onLimitClose).not.toHaveBeenCalled();
+		expect(onReverse).not.toHaveBeenCalled();
+		expect(onOpenTpSl).not.toHaveBeenCalled();
+		expect(onAdjustMargin).not.toHaveBeenCalled();
 	});
 });

@@ -7,7 +7,7 @@ const assetsDirectory = resolve(process.argv[2] ?? "apps/terminal/.output/public
 const budgets = {
 	largestChunkRawBytes: 4_050_000,
 	largestChunkGzipBytes: 1_200_000,
-	totalGzipBaselineBytes: 3_097_124,
+	totalGzipBaselineBytes: 3_154_707,
 	totalGzipAllowedIncreaseBytes: 10_000,
 	tradeStartup: {
 		requiredRouteIds: ["__root__", "/trade/$symbol"],
@@ -19,6 +19,9 @@ const budgets = {
 		{ name: "trade-terminal-page", baselineGzipBytes: 119_207, allowedIncreaseBytes: 4_000 },
 		{ name: "token-selector-popup", baselineGzipBytes: 14_355, allowedIncreaseBytes: 1_500 },
 		{ name: "api-wallet", baselineGzipBytes: 17_967, allowedIncreaseBytes: 2_000 },
+		{ name: "fundingHistory._address", baselineGzipBytes: 6_820, allowedIncreaseBytes: 1_500 },
+		{ name: "tradeHistory._address", baselineGzipBytes: 8_373, allowedIncreaseBytes: 1_500 },
+		{ name: "historicalOrders._address", baselineGzipBytes: 8_163, allowedIncreaseBytes: 1_500 },
 		{ name: "leaderboard", baselineGzipBytes: 12_083, allowedIncreaseBytes: 1_500 },
 		{ name: "staking", baselineGzipBytes: 23_131, allowedIncreaseBytes: 2_500 },
 		{ name: "vaults-page", baselineGzipBytes: 27_075, allowedIncreaseBytes: 3_000 },

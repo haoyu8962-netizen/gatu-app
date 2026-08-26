@@ -18,9 +18,7 @@ interface ResolveFastMarketPriceInput {
 	data: Readonly<Record<string, FastMarketPrice>> | undefined;
 	subscriptionStatus: SubscriptionStatus;
 	isStale: boolean;
-	markReceivedAt: number | undefined;
-	midReceivedAt: number | undefined;
-	now?: number;
+	lastMessageAt: number | undefined;
 }
 
 interface ActiveMarketPriceEvent {
@@ -84,35 +82,30 @@ export function resolveFastMarketPrice({
 	data,
 	subscriptionStatus,
 	isStale,
-	markReceivedAt,
-	midReceivedAt,
-	now = Date.now(),
+	lastMessageAt,
 }: ResolveFastMarketPriceInput): LiveMarketPriceSnapshot {
 	const fastPrice = data?.[coin];
 	const markPx = getPositivePrice(fastPrice?.markPx);
-	const rawMidPx = fastPrice?.midPx === null ? null : getPositivePrice(fastPrice?.midPx);
-	const midAge = midReceivedAt === undefined ? null : now - midReceivedAt;
-	const midPx = midAge !== null && midAge >= 0 && midAge <= LIVE_MARK_MAX_STALE_MS ? rawMidPx : undefined;
+	const midPx = fastPrice?.midPx === null ? null : getPositivePrice(fastPrice?.midPx);
+	const midReceivedAt = midPx !== undefined ? lastMessageAt : undefined;
 
-	if (!enabled) return { markPx, midPx, status: "idle", receivedAt: markReceivedAt, midReceivedAt };
+	if (!enabled) return { markPx, midPx, status: "idle", receivedAt: lastMessageAt, midReceivedAt };
 	if (subscriptionStatus === "error") {
-		return { markPx, midPx, status: "error", receivedAt: markReceivedAt, midReceivedAt };
+		return { markPx, midPx, status: "error", receivedAt: lastMessageAt, midReceivedAt };
 	}
 	if (subscriptionStatus !== "active" || !data) {
-		return { markPx, midPx, status: "loading", receivedAt: markReceivedAt, midReceivedAt };
+		return { markPx, midPx, status: "loading", receivedAt: lastMessageAt, midReceivedAt };
 	}
-	if (!markPx) return { markPx, midPx, status: "error", receivedAt: markReceivedAt, midReceivedAt };
-	if (markReceivedAt === undefined) {
-		return { markPx, midPx, status: "loading", receivedAt: markReceivedAt, midReceivedAt };
+	if (!markPx) return { markPx, midPx, status: "error", receivedAt: lastMessageAt, midReceivedAt };
+	if (lastMessageAt === undefined) {
+		return { markPx, midPx, status: "loading", receivedAt: lastMessageAt, midReceivedAt };
 	}
-	const markAge = now - markReceivedAt;
-	const isMarkStale = markAge < 0 || markAge > LIVE_MARK_MAX_STALE_MS;
 
 	return {
 		markPx,
 		midPx,
-		status: isStale || isMarkStale ? "stale" : "success",
-		receivedAt: markReceivedAt,
+		status: isStale ? "stale" : "success",
+		receivedAt: lastMessageAt,
 		midReceivedAt,
 	};
 }

@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 
-import { act, createElement, type ReactNode } from "react";
+import { act, createElement, type ReactNode, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingOnboardingGate } from "@/components/trade/components/trading-onboarding-gate";
-import { resetTradingOnboardingStore } from "@/stores/use-trading-onboarding-store";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 
@@ -22,15 +21,17 @@ const testState = vi.hoisted(() => ({
 		spotBalances: [] as { total: string }[],
 	},
 	closeConnection: vi.fn(),
+	connectionMounted: vi.fn(),
+	connectionUnmounted: vi.fn(),
 	connectionProps: null as { onClose: () => void; onConnected: () => void } | null,
 	depositAvailable: true,
 	depositAvailabilityReason: null as string | null,
 	depositUnavailableReason: null as string | null,
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	geoResolutionStatus: "resolved" as "loading" | "error" | "resolved",
 	hasWalletAccess: true,
 	openDeposit: vi.fn(),
 	toastError: vi.fn(),
-	env: "Mainnet" as "Mainnet" | "Testnet",
 	walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
 }));
 
@@ -75,6 +76,10 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 vi.mock("@/components/trade/components/establish-connection-modal", () => ({
 	EstablishConnectionModal: (props: { onClose: () => void; onConnected: () => void }) => {
 		testState.connectionProps = props;
+		useEffect(() => {
+			testState.connectionMounted();
+			return () => testState.connectionUnmounted();
+		}, []);
 		return createElement("div", { "data-testid": "connection-modal" });
 	},
 }));
@@ -102,6 +107,8 @@ describe("TradingOnboardingGate", () => {
 			spotBalances: [],
 		};
 		testState.closeConnection.mockReset();
+		testState.connectionMounted.mockReset();
+		testState.connectionUnmounted.mockReset();
 		testState.connectionProps = null;
 		testState.depositAvailable = true;
 		testState.depositAvailabilityReason = null;
@@ -112,7 +119,6 @@ describe("TradingOnboardingGate", () => {
 		testState.openDeposit.mockReset();
 		testState.toastError.mockReset();
 		testState.walletAddress = OWNER;
-		resetTradingOnboardingStore();
 	});
 
 	afterEach(() => {
@@ -125,23 +131,7 @@ describe("TradingOnboardingGate", () => {
 		act(() => root.render(createElement(TradingOnboardingGate, null, child)));
 	}
 
-	it("automatically presents Agent connection after the legal gate", () => {
-		renderGate();
-
-		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
-		expect(container.querySelector('[data-testid="content"]')).toBeNull();
-	});
-
-	it("allows the automatic prompt to be dismissed for the current wallet", () => {
-		renderGate();
-		act(() => testState.connectionProps?.onClose());
-
-		expect(container.querySelector('[data-testid="connection-modal"]')).toBeNull();
-		expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
-		expect(testState.closeConnection).not.toHaveBeenCalled();
-	});
-
-	it.each(["unknown", "loading", "error"] as const)(
+	it.each(["missing", "unknown", "loading", "error"] as const)(
 		"does not automatically prompt while Agent status is %s",
 		(agentVerificationStatus) => {
 			testState.agentVerificationStatus = agentVerificationStatus;
@@ -152,12 +142,10 @@ describe("TradingOnboardingGate", () => {
 		},
 	);
 
-	it("preserves dismissal for the same environment and owner across a route remount", () => {
+	it("does not prompt after a route remount while Agent status is missing", () => {
 		renderGate();
-		act(() => testState.connectionProps?.onClose());
 		act(() => root.unmount());
 		root = createRoot(container);
-		testState.connectionProps = null;
 
 		renderGate();
 
@@ -165,38 +153,34 @@ describe("TradingOnboardingGate", () => {
 		expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
 	});
 
-	it("allows an explicit request to override a remembered dismissal", () => {
-		renderGate();
-		act(() => testState.connectionProps?.onClose());
+	it("keeps an explicitly requested modal mounted while Agent verification changes", () => {
 		testState.activeModal = "establishConnection";
-
 		renderGate();
 
 		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
-	});
+		expect(testState.connectionMounted).toHaveBeenCalledOnce();
 
-	it("allows a different environment to prompt independently", () => {
+		testState.agentVerificationStatus = "loading";
 		renderGate();
-		act(() => testState.connectionProps?.onClose());
-		testState.env = "Testnet";
-
+		testState.agentVerificationStatus = "error";
 		renderGate();
 
 		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
+		expect(testState.connectionMounted).toHaveBeenCalledOnce();
+		expect(testState.connectionUnmounted).not.toHaveBeenCalled();
 	});
 
-	it("clears remembered dismissal after the Agent is definitively ready", () => {
+	it("closes an explicitly requested modal after the Agent becomes ready", () => {
+		testState.activeModal = "establishConnection";
 		renderGate();
-		act(() => testState.connectionProps?.onClose());
 		testState.agentReady = true;
 		testState.agentVerificationStatus = "ready";
 		renderGate();
 
-		testState.agentReady = false;
-		testState.agentVerificationStatus = "missing";
-		renderGate();
-
-		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="connection-modal"]')).toBeNull();
+		expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
+		expect(testState.connectionUnmounted).toHaveBeenCalledOnce();
+		expect(testState.closeConnection).toHaveBeenCalledOnce();
 	});
 
 	it("closes an explicitly requested connection modal", () => {
@@ -208,6 +192,7 @@ describe("TradingOnboardingGate", () => {
 	});
 
 	it("opens deposit after Agent registration only for a definitively empty account", () => {
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
@@ -216,6 +201,7 @@ describe("TradingOnboardingGate", () => {
 
 	it("does not open deposit when any Hyperliquid account already has funds", () => {
 		testState.balances.marginSummary.accountValue = "25";
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
@@ -226,6 +212,7 @@ describe("TradingOnboardingGate", () => {
 		testState.depositAvailable = false;
 		testState.depositAvailabilityReason = "external-deposit-disabled";
 		testState.depositUnavailableReason = "Deposits from external wallets are not enabled on Mainnet.";
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
@@ -238,6 +225,7 @@ describe("TradingOnboardingGate", () => {
 		testState.depositAvailabilityReason = "geo-unresolved";
 		testState.depositUnavailableReason = "Checking regional availability.";
 		testState.geoResolutionStatus = "loading";
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
@@ -259,6 +247,7 @@ describe("TradingOnboardingGate", () => {
 		testState.depositAvailabilityReason = "geo-unresolved";
 		testState.depositUnavailableReason = "Unable to verify regional availability.";
 		testState.geoResolutionStatus = "error";
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 
@@ -276,6 +265,7 @@ describe("TradingOnboardingGate", () => {
 	it("waits for complete account snapshots before deciding to open deposit", () => {
 		testState.balances.hasSpotStateSnapshot = false;
 		testState.balances.isLoading = true;
+		testState.activeModal = "establishConnection";
 		renderGate();
 		act(() => testState.connectionProps?.onConnected());
 		expect(testState.openDeposit).not.toHaveBeenCalled();
@@ -284,5 +274,40 @@ describe("TradingOnboardingGate", () => {
 		testState.balances.isLoading = false;
 		renderGate();
 		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+	});
+
+	it("discards a pending deposit intent after the wallet identity changes", () => {
+		testState.balances.hasSpotStateSnapshot = false;
+		testState.balances.isLoading = true;
+		testState.activeModal = "establishConnection";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+
+		testState.walletAddress = "0x2222222222222222222222222222222222222222";
+		renderGate();
+		testState.walletAddress = OWNER;
+		testState.balances.hasSpotStateSnapshot = true;
+		testState.balances.isLoading = false;
+		renderGate();
+
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+	});
+
+	it("discards a pending deposit intent after the Hyperliquid environment changes", () => {
+		testState.balances.hasSpotStateSnapshot = false;
+		testState.balances.isLoading = true;
+		testState.activeModal = "establishConnection";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+
+		testState.env = "Testnet";
+		renderGate();
+		testState.balances.hasSpotStateSnapshot = true;
+		testState.balances.isLoading = false;
+		renderGate();
+
+		expect(testState.openDeposit).not.toHaveBeenCalled();
 	});
 });

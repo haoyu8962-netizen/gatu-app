@@ -1,16 +1,21 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FUNDING_SKELETON_DELAY_MS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFunding } from "@/hooks/trade/use-user-funding";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
@@ -29,20 +34,43 @@ const fundingTableHeadClass =
 const fundingTableCellClass = "h-10 px-2 py-0 text-[13px] leading-[18px]";
 const fundingAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
-const fundingToolbarButtonClass =
-	"h-[27px] min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
-
+const fundingFooterActionClass =
+	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 interface Props {
 	toolbarTarget?: HTMLElement | null;
+}
+
+function FundingLoadingPlaceholder() {
+	const [showSkeleton, setShowSkeleton] = useState(false);
+
+	useEffect(() => {
+		const timeoutId = window.setTimeout(() => setShowSkeleton(true), FUNDING_SKELETON_DELAY_MS);
+		return () => window.clearTimeout(timeoutId);
+	}, []);
+
+	return (
+		<div className="h-full w-full">
+			<output aria-live="polite" className="sr-only">
+				{t`Loading funding payments.`}
+			</output>
+			{showSkeleton ? (
+				<div data-testid="funding-loading-skeleton" className="h-full">
+					<Skeleton name="funding-tab" loading>
+						<div className="h-full w-full" />
+					</Skeleton>
+				</div>
+			) : null}
+		</div>
+	);
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
 	useNumberFormatRevision();
 	const navigateToMarket = useMarketNavigation();
-	const { error, fundings: updates, isConnected, status } = useUserFunding();
+	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();
+	const { address } = useWalletSession();
 	const markets = useMarkets();
 	const totalFunding = getToolbarFundingTotal(updates);
-	const historyLimitReached = isIncompleteHistorySnapshotError(error);
 	const malformedHistory = isMalformedHistoryPageError(error);
 
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
@@ -75,18 +103,17 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view funding payments.`}</Placeholder>;
-		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading funding history...`}</Placeholder>;
+		if (status === "offline") {
+			return <Placeholder>{t`You are offline. Funding payments will load when the connection returns.`}</Placeholder>;
+		}
+		if (status === "loading" || status === "idle") return <FundingLoadingPlaceholder />;
 		if (status === "error") {
 			return (
 				<Placeholder variant="error">
-					<span>{t`Failed to load funding history.`}</span>
-					{historyLimitReached ? (
+					<span>{t`Failed to load funding payments.`}</span>
+					{malformedHistory ? (
 						<span className="mt-1 text-xs text-fg-muted">
-							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
-						</span>
-					) : malformedHistory ? (
-						<span className="mt-1 text-xs text-fg-muted">
-							{t`History data could not be validated. Refresh and try again.`}
+							{t`Funding data could not be validated. Refresh and try again.`}
 						</span>
 					) : (
 						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
@@ -109,24 +136,20 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 							{t`Funding shown`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
 						</span>
 					) : null}
-					{isConnected ? (
-						<Button
-							variant="ghost"
-							intent="neutral"
-							size="xxs"
-							className={fundingToolbarButtonClass}
-							disabled={isExporting}
-							onClick={() => void exportCsv()}
-						>
-							{t`Export CSV`}
-						</Button>
+					{isConnected && status === "ready" && (error || isOffline || isStale) ? (
+						<output aria-live="polite" className="whitespace-nowrap text-xs text-market-close-danger">
+							{isOffline ? t`You are offline.` : t`Funding updates paused.`}
+						</output>
 					) : null}
 				</div>
 			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[52rem] w-full font-market-close tabular-nums">
+						<Table
+							containerClassName="overflow-visible"
+							className="table-fixed min-w-[52rem] w-full font-market-close tabular-nums"
+						>
 							<colgroup>
 								<col className="w-[136px]" />
 								<col className="w-[176px]" />
@@ -224,6 +247,30 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected && address ? (
+				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="funding-history-footer">
+					<Button
+						nativeButton={false}
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						className={fundingFooterActionClass}
+						render={<Link to="/fundingHistory/$address" params={{ address }} />}
+					>
+						{t`View all`}
+					</Button>
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						className={fundingFooterActionClass}
+						disabled={isExporting}
+						onClick={() => void exportCsv()}
+					>
+						{t`Export CSV`}
+					</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

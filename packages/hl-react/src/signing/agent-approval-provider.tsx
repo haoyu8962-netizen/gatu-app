@@ -1,8 +1,18 @@
 import { createContext, type ReactNode, useContext } from "react";
+import type { Address } from "viem";
 import type { ExchangeParams, ExchangeResponse } from "../types/clients";
+
+export interface AgentApprovalOptions {
+	applicationReview?: "confirmed";
+	/** @internal Binds trading-connection approval to its exact pre-saved candidate. */
+	registrationPublicKey?: Address;
+	/** @internal Cancels a stale registration attempt before it can submit. */
+	signal?: AbortSignal;
+}
 
 export type AgentApprovalMutateAsync = (
 	params: ExchangeParams<"approveAgent">,
+	options?: AgentApprovalOptions,
 ) => Promise<ExchangeResponse<"approveAgent">>;
 
 const AgentApprovalContext = createContext<AgentApprovalMutateAsync | null>(null);

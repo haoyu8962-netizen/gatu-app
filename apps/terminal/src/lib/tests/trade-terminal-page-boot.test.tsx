@@ -78,6 +78,10 @@ vi.mock("@/hooks/use-document-title", () => ({
 	},
 }));
 
+vi.mock("@/components/trade/account-activity-feed-owner", () => ({
+	AccountActivityFeedOwner: () => <div data-testid="account-activity-feed-owner" />,
+}));
+
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useIsTestnet: () => testState.isTestnet,
 }));

@@ -1,15 +1,19 @@
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import { useSignTypedData } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { isAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { useWalletClient } from "wagmi";
-import type { ExchangeParams, ExchangeResponse } from "@/lib/hyperliquid";
+import type { AgentApprovalOptions, ExchangeParams, ExchangeResponse } from "@/lib/hyperliquid";
 import {
 	captureAgentRegistrationExecutionLease,
 	createExchangeClient,
+	HttpTransport,
+	type IRequestTransport,
 	isAgentRegistrationExecutionLeaseCurrent,
 	startAgentRegistrationExecution,
+	startAgentRegistrationSubmission,
 	useHyperliquid,
 	verifyLegalActionAllowed,
 } from "@/lib/hyperliquid";
@@ -26,18 +30,12 @@ export interface ExplicitAgentApproval {
 	isPending: boolean;
 }
 
-export interface ExplicitAgentApprovalOptions {
-	/**
-	 * Forwarded to direct embedded- and external-wallet SDK requests and checked
-	 * before signing and again before the signed request is submitted.
-	 */
-	signal?: AbortSignal;
-}
+export type ExplicitAgentApprovalOptions = AgentApprovalOptions;
 
 /**
- * Agent approval must always be an explicit master-wallet action. Privy email
- * sessions use a dedicated signer so the per-action confirmation UI cannot be
- * suppressed by the app-wide embedded-wallet setting.
+ * Agent approval must always be initiated by an explicit master-wallet action.
+ * The dedicated Privy signer may hide its second confirmation only after the
+ * caller confirms that the user reviewed the permission in the application.
  */
 export function useExplicitAgentApproval(): ExplicitAgentApproval {
 	const queryClient = useQueryClient();
@@ -46,7 +44,7 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 	const { enforceLegalActions, env, exchangeLifecycle, info } = useHyperliquid();
 	const { walletAddress, connectedWalletAddress, embeddedWalletAddress, hasWalletAccess, walletIntent } =
 		useWalletSession();
-	const inFlightRef = useRef(false);
+	const inFlightRef = useRef<symbol | null>(null);
 	const walletClientAddress = walletClient?.account?.address;
 	const identityRef = useRef({
 		connectedWalletAddress,
@@ -57,7 +55,19 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 		walletClientAddress,
 		walletIntent,
 	});
-	identityRef.current = {
+	const [isExplicitApprovalPending, setIsExplicitApprovalPending] = useState(false);
+
+	useLayoutEffect(() => {
+		identityRef.current = {
+			connectedWalletAddress,
+			embeddedWalletAddress,
+			env,
+			hasWalletAccess,
+			walletAddress,
+			walletClientAddress,
+			walletIntent,
+		};
+	}, [
 		connectedWalletAddress,
 		embeddedWalletAddress,
 		env,
@@ -65,14 +75,24 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 		walletAddress,
 		walletClientAddress,
 		walletIntent,
-	};
-	const [isExplicitApprovalPending, setIsExplicitApprovalPending] = useState(false);
+	]);
 
 	async function mutateAsync(
 		params: ExchangeParams<"approveAgent">,
 		options: ExplicitAgentApprovalOptions = {},
 	): Promise<ExchangeResponse<"approveAgent">> {
+		const applicationReview = options.applicationReview === "confirmed" ? "confirmed" : undefined;
+		const registrationPublicKey = options.registrationPublicKey;
 		throwIfApprovalAborted(options.signal);
+		if (!isAddress(params.agentAddress)) {
+			throw new Error("A valid Agent address is required.");
+		}
+		if (
+			registrationPublicKey &&
+			(!isAddress(registrationPublicKey) || registrationPublicKey.toLowerCase() !== params.agentAddress.toLowerCase())
+		) {
+			throw new Error("The pending Agent address changed before approval.");
+		}
 		if (!hasWalletAccess || !walletAddress) {
 			throw new Error("Connect the selected Hyperliquid master wallet before approving mobile access.");
 		}
@@ -80,7 +100,14 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 			throw new Error("A mobile access approval is already pending.");
 		}
 
-		inFlightRef.current = true;
+		const attempt = Symbol("explicit-agent-approval");
+		inFlightRef.current = attempt;
+		const releaseAttempt = () => {
+			if (inFlightRef.current !== attempt) return;
+			inFlightRef.current = null;
+			setIsExplicitApprovalPending(false);
+		};
+		options.signal?.addEventListener("abort", releaseAttempt, { once: true });
 		try {
 			const approvalWalletIntent = walletIntent;
 			if (approvalWalletIntent !== "embedded" && approvalWalletIntent !== "external") {
@@ -132,69 +159,85 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				});
 			}
 			assertApprovalSessionCurrent();
-			const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
+			const registrationLease = captureAgentRegistrationExecutionLease(
+				env,
+				walletAddress,
+				registrationPublicKey ? { agentPublicKey: registrationPublicKey } : undefined,
+			);
 			if (!registrationLease) {
 				throw new Error("The wallet session changed before mobile access approval.");
 			}
-			const guarded = await startAgentRegistrationExecution(
-				registrationLease,
-				() => {
-					try {
-						assertApprovalSessionCurrent();
-						return true;
-					} catch {
-						return false;
+			const canSubmit = () => {
+				try {
+					assertApprovalSessionCurrent();
+					return true;
+				} catch {
+					return false;
+				}
+			};
+			const guarded = await startAgentRegistrationExecution(registrationLease, canSubmit, () => {
+				const beforeSubmit = async () => {
+					assertApprovalSessionCurrent();
+					if (enforceLegalActions) {
+						await verifyLegalActionAllowed({
+							queryClient,
+							info,
+							env,
+							owner: walletAddress,
+							forceFresh: true,
+						});
 					}
-				},
-				() => {
-					const beforeSubmit = async () => {
-						assertApprovalSessionCurrent();
-						if (enforceLegalActions) {
-							await verifyLegalActionAllowed({
-								queryClient,
-								info,
-								env,
-								owner: walletAddress,
-								forceFresh: true,
-							});
-						}
-						assertApprovalSessionCurrent();
-						if (!(await isAgentRegistrationExecutionLeaseCurrent(registrationLease))) {
+					assertApprovalSessionCurrent();
+					if (!(await isAgentRegistrationExecutionLeaseCurrent(registrationLease))) {
+						throw new Error("The wallet session changed before mobile access approval.");
+					}
+					assertApprovalSessionCurrent();
+				};
+				let signer: AbstractWallet;
+				if (approvalWalletIntent === "embedded") {
+					signer = createPrivyAgentSigner({
+						applicationReview,
+						expectedAddress: walletAddress,
+						activeAddress: connectedWalletAddress,
+						embeddedWalletAddress,
+						chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
+						signTypedData,
+						beforeSubmit,
+					});
+				} else {
+					if (!walletClient) {
+						throw new Error("The active external wallet does not match the selected Hyperliquid account.");
+					}
+					signer = createExternalAgentSigner({
+						expectedAddress: walletAddress,
+						walletClient,
+						beforeSubmit,
+					});
+				}
+				const baseTransport = new HttpTransport({ isTestnet: env === "Testnet" });
+				const transport: IRequestTransport = {
+					isTestnet: baseTransport.isTestnet,
+					async request<T>(endpoint: "info" | "exchange", payload: unknown, signal?: AbortSignal): Promise<T> {
+						const execute = () => baseTransport.request<T>(endpoint, payload, signal);
+						const submission = registrationPublicKey
+							? await startAgentRegistrationSubmission(registrationLease, canSubmit, execute)
+							: await startAgentRegistrationExecution(registrationLease, canSubmit, execute);
+						if (submission.status === "invalidated") {
 							throw new Error("The wallet session changed before mobile access approval.");
 						}
-						assertApprovalSessionCurrent();
-					};
-					let signer: AbstractWallet;
-					if (approvalWalletIntent === "embedded") {
-						signer = createPrivyAgentSigner({
-							expectedAddress: walletAddress,
-							activeAddress: connectedWalletAddress,
-							embeddedWalletAddress,
-							chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
-							signTypedData,
-							beforeSubmit,
-						});
-					} else {
-						if (!walletClient) {
-							throw new Error("The active external wallet does not match the selected Hyperliquid account.");
-						}
-						signer = createExternalAgentSigner({
-							expectedAddress: walletAddress,
-							walletClient,
-							beforeSubmit,
-						});
-					}
-					const client = createExchangeClient(signer, env === "Testnet");
-					return client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
-				},
-			);
+						return await submission.execution;
+					},
+				};
+				const client = createExchangeClient(signer, env === "Testnet", undefined, transport);
+				return client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
+			});
 			if (guarded.status === "invalidated") {
 				throw new Error("The wallet session changed before mobile access approval.");
 			}
 			return await guarded.execution;
 		} finally {
-			inFlightRef.current = false;
-			setIsExplicitApprovalPending(false);
+			options.signal?.removeEventListener("abort", releaseAttempt);
+			releaseAttempt();
 		}
 	}
 

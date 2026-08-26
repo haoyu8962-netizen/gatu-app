@@ -6,11 +6,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 const AGENT = "0x2222222222222222222222222222222222222222";
+const NEXT_AGENT = "0x3333333333333333333333333333333333333333";
 
 const testState = vi.hoisted(() => ({
 	data: [] as Array<{ address: `0x${string}`; name: string; validUntil: number | null }> | undefined,
 	error: null as Error | null,
 	isFetching: false,
+	localAgent: {
+		privateKey: `0x${"ab".repeat(32)}`,
+		publicKey: "0x2222222222222222222222222222222222222222",
+		source: "local-registration" as const,
+	} as {
+		privateKey: `0x${string}`;
+		publicKey: `0x${string}`;
+		source: "local-registration";
+	} | null,
+	refetchData: [] as Array<{ address: `0x${string}`; name: string; validUntil: number | null }> | undefined,
+	refetchError: null as Error | null,
 }));
 
 vi.mock("@gatu/hl-react/provider", () => ({
@@ -31,7 +43,7 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 					error: testState.error,
 					isFetching: testState.isFetching,
 					isLoading: testState.isFetching && testState.data === undefined,
-					refetch: vi.fn(),
+					refetch: vi.fn(async () => ({ data: testState.refetchData, error: testState.refetchError })),
 				}
 			: {
 					data: undefined,
@@ -44,20 +56,21 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 }));
 
 vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
-	useAgentWalletStorage: () => ({
-		privateKey: `0x${"ab".repeat(32)}`,
-		publicKey: AGENT,
-		source: "local-registration",
-	}),
+	readAgentFromStorage: () => testState.localAgent,
+	useAgentWalletStorage: () => testState.localAgent,
 	useInvalidAgentStorageRecord: () => false,
 }));
 
-import { useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
+import { AgentStatusError, useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
+
+let observedStatus: ReturnType<typeof useAgentStatus> | undefined;
 
 function Probe() {
 	const status = useAgentStatus();
+	observedStatus = status;
 	return createElement("output", {
 		"data-status": status.agentVerificationStatus,
+		"data-missing-reason": status.agentMissingReason ?? "none",
 		"data-loading": String(status.isAgentLoading),
 		"data-total-loading": String(status.isLoading),
 		"data-needs-agent": String(status.needsAgent),
@@ -77,6 +90,14 @@ describe("useAgentStatus definitive verification", () => {
 		testState.data = [];
 		testState.error = null;
 		testState.isFetching = false;
+		testState.localAgent = {
+			privateKey: `0x${"ab".repeat(32)}`,
+			publicKey: AGENT,
+			source: "local-registration",
+		};
+		testState.refetchData = [];
+		testState.refetchError = null;
+		observedStatus = undefined;
 	});
 
 	afterEach(() => {
@@ -94,6 +115,7 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("loading");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("none");
 		expect(probe?.getAttribute("data-loading")).toBe("false");
 		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
@@ -120,6 +142,7 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("error");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("none");
 		expect(probe?.getAttribute("data-loading")).toBe("false");
 		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
@@ -131,6 +154,7 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("local_key_not_approved");
 		expect(probe?.getAttribute("data-loading")).toBe("false");
 		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("true");
@@ -156,7 +180,68 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("agent_name_mismatch");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("true");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+	});
+
+	it("exposes an absent local key only after a definitive remote result", () => {
+		testState.localAgent = null;
+		const probe = renderProbe();
+
+		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("no_local_key");
+	});
+
+	it("warns when an absent local key would replace a same-name remote Agent", () => {
+		testState.localAgent = null;
+		testState.data = [{ address: "0x3333333333333333333333333333333333333333", name: "gatu-dev", validUntil: null }];
+		const probe = renderProbe();
+
+		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-missing-reason")).toBe("remote_named_agent_exists");
+	});
+
+	it("preserves a rate-limit cause when refetching only Agent status", async () => {
+		const cause = Object.assign(new Error("Too many requests"), { response: { status: 429 } });
+		testState.refetchError = cause;
+		renderProbe();
+
+		const result = observedStatus?.refetchAgent();
+		await expect(result).rejects.toMatchObject({
+			name: "AgentStatusError",
+			reason: "rate_limited",
+			cause,
+		});
+		await expect(result).rejects.toBeInstanceOf(AgentStatusError);
+	});
+
+	it("uses the latest stored Agent when a cross-tab write lands after render", async () => {
+		testState.localAgent = null;
+		renderProbe();
+		testState.localAgent = {
+			privateKey: `0x${"cd".repeat(32)}`,
+			publicKey: NEXT_AGENT,
+			source: "local-registration",
+		};
+		testState.refetchData = [{ address: NEXT_AGENT, name: "gatu-dev", validUntil: null }];
+
+		await expect(observedStatus?.refetchAgent()).resolves.toMatchObject({
+			isAgentReady: true,
+			needsAgent: false,
+		});
+	});
+
+	it("preserves a service failure cause when refetching all requirements", async () => {
+		const cause = Object.assign(new Error("Service unavailable"), { response: { status: 503 } });
+		testState.refetchError = cause;
+		renderProbe();
+
+		const result = observedStatus?.refetch();
+		await expect(result).rejects.toMatchObject({
+			name: "AgentStatusError",
+			reason: "service_unavailable",
+			cause,
+		});
 	});
 });

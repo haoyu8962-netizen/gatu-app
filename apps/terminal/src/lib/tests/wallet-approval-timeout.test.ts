@@ -29,12 +29,14 @@ describe("wallet approval timeout", () => {
 
 	it("times out after 60 seconds of foreground waiting", async () => {
 		const approval = deferred<void>();
-		const result = withWalletApprovalTimeout(approval.promise);
+		const onTimeout = vi.fn();
+		const result = withWalletApprovalTimeout(approval.promise, { onTimeout });
 		const expectation = expect(result).rejects.toThrow("Wallet approval timed out");
 
 		await vi.advanceTimersByTimeAsync(60_000);
 
 		await expectation;
+		expect(onTimeout).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("timed out") }));
 	});
 
 	it("does not count time spent in a mobile wallet app", async () => {

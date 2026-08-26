@@ -7,6 +7,9 @@ export const SL_QUICK_PERCENT_OPTIONS = [5, 10, 25, 50] as const;
 
 export const SMALL_BALANCE_THRESHOLD_USD = 1;
 export const MAX_HISTORY_ROWS = 200;
+export const RECENT_ACCOUNT_HISTORY_ROWS = 30;
+export const FUNDING_SKELETON_DELAY_MS = 250;
+export const RECENT_FUNDING_ROWS = 30;
 export const TWAP_HISTORY_PAGE_SIZE = 200;
 export const MAX_TWAP_HISTORY_ROWS = 2000;
 export const LIQ_WARNING_PROXIMITY = 0.1;
@@ -57,7 +60,7 @@ export const POSITIONS_TABS = [
 	{ value: "orders", label: msg`Open Orders` },
 	{ value: "twap", label: msg`TWAP` },
 	{ value: "history", label: msg`Trade History` },
-	{ value: "funding", label: msg`Funding History` },
+	{ value: "funding", label: msg`Funding Payments` },
 	{ value: "orders-history", label: msg`Order History` },
 ] as const;
 

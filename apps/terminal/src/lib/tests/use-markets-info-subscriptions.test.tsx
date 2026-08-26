@@ -6,6 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useMarketsInfoInternal } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 const mocks = vi.hoisted(() => ({
+	fastPriceSubscription: {
+		data: undefined as Record<string, { markPx?: string; midPx?: string | null }> | undefined,
+		status: "idle" as "idle" | "subscribing" | "active" | "error",
+		error: null as unknown,
+		isStale: false,
+		lastMessageAt: undefined as number | undefined,
+	},
 	useSubscription: vi.fn(),
 }));
 
@@ -13,12 +20,32 @@ vi.mock("@gatu/hl-react", () => ({
 	useHyperliquidTransport: () => ({ env: "Mainnet" }),
 	useSubscription: (...args: unknown[]) => {
 		mocks.useSubscription(...args);
+		if (args[0] === "fastAssetCtxs") return mocks.fastPriceSubscription;
 		return { data: undefined, status: "idle", error: null, isStale: false, lastMessageAt: undefined };
 	},
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-markets", () => ({
-	useMarkets: () => ({ builderPerp: [], error: null, isLoading: false, perp: [], spot: [] }),
+	useMarkets: () => ({
+		builderPerp: [],
+		error: null,
+		isLoading: false,
+		perp: [
+			{
+				assetId: 0,
+				ctxIndex: 0,
+				iconUrl: undefined,
+				kind: "perp",
+				maxLeverage: 50,
+				name: "BTC",
+				pairName: "BTC-USDC",
+				routeName: "BTC",
+				shortName: "BTC",
+				szDecimals: 5,
+			},
+		],
+		spot: [],
+	}),
 }));
 
 vi.mock("@/providers/exchange-scope", () => ({
@@ -32,13 +59,15 @@ vi.mock("@/stores/use-market-store", () => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 function Probe({ subscriptionsEnabled }: { subscriptionsEnabled: boolean }) {
-	useMarketsInfoInternal({
+	captured = useMarketsInfoInternal({
 		alwaysSubscribeAll: true,
 		subscriptionKeepAliveMs: 10_000,
 		subscriptionsEnabled,
 	});
 	return null;
 }
+
+let captured: ReturnType<typeof useMarketsInfoInternal>;
 
 describe("useMarketsInfoInternal subscription gate", () => {
 	let container: HTMLDivElement;
@@ -49,6 +78,11 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		mocks.useSubscription.mockReset();
+		mocks.fastPriceSubscription.data = undefined;
+		mocks.fastPriceSubscription.status = "idle";
+		mocks.fastPriceSubscription.error = null;
+		mocks.fastPriceSubscription.isStale = false;
+		mocks.fastPriceSubscription.lastMessageAt = undefined;
 		sessionStorage.clear();
 	});
 
@@ -93,5 +127,24 @@ describe("useMarketsInfoInternal subscription gate", () => {
 		mocks.useSubscription.mockClear();
 		renderProbe(false);
 		expectLatestSubscriptionState(false);
+	});
+
+	it("uses aggregate stream receipt time for retained fast prices", () => {
+		mocks.fastPriceSubscription.data = {
+			BTC: { markPx: "100000", midPx: "100001" },
+			HYPE: { markPx: "42" },
+		};
+		mocks.fastPriceSubscription.status = "active";
+		mocks.fastPriceSubscription.lastMessageAt = 11_000;
+
+		renderProbe(true);
+
+		expect(captured.getMarketByName("BTC")).toMatchObject({
+			markPx: "100000",
+			midPx: "100001",
+			markPriceStatus: "success",
+			markPriceReceivedAt: 11_000,
+			midPriceReceivedAt: 11_000,
+		});
 	});
 });

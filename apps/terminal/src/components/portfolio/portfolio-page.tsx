@@ -23,6 +23,7 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { AccountActivityFeedOwner } from "../trade/account-activity-feed-owner";
 import { TopNav } from "../trade/header/top-nav";
 import { MobileAccountTransfersTab } from "../trade/mobile/mobile-account-transfers-tab";
 import { MobileBalancesTab } from "../trade/mobile/mobile-balances-tab";
@@ -82,6 +83,7 @@ export function PortfolioPage() {
 
 	return (
 		<>
+			<AccountActivityFeedOwner />
 			<div
 				className={cn(
 					"min-h-dvh bg-portfolio-canvas text-fg font-sans",

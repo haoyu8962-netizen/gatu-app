@@ -33,6 +33,7 @@ vi.mock("@gatu/hl-react/signing/agent-registration-session", () => ({
 }));
 
 vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
+	readAgentFromStorage: () => null,
 	useAgentWalletStorage: () => null,
 	useInvalidAgentStorageRecord: () => true,
 }));

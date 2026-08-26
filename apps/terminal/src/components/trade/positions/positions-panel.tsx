@@ -1,7 +1,7 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { Suspense, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -40,6 +40,20 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
+const HISTORY_TAB_PRELOADERS: Readonly<Record<string, () => void>> = {
+	funding: () => void FundingTab.preload?.(),
+	history: () => void HistoryTab.preload?.(),
+	"orders-history": () => void OrdersHistoryTab.preload?.(),
+};
+
+function preloadHistoryTab(value: string) {
+	HISTORY_TAB_PRELOADERS[value]?.();
+}
+
+function preloadHistoryTabs() {
+	for (const preload of Object.values(HISTORY_TAB_PRELOADERS)) preload();
+}
+
 interface Props {
 	includeTransfers?: boolean;
 	autoHeight?: boolean;
@@ -63,7 +77,6 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
-	const [isPending, startTransition] = useTransition();
 	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
 	const tabScrollRef = useRef<HTMLDivElement>(null);
 	const { address, hasWalletAccess, isConnected } = useWalletSession();
@@ -76,15 +89,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
 	const markets = useMarkets();
-	const {
-		accountEquityValue: accountEquity,
-		accountModeReady,
-		defaultBalances,
-		fundsActionsReady,
-		maintenanceMarginRatio,
-		riskSummary,
-		summaryReady: accountSummaryReady,
-	} = useAccountOverview();
+	const { accountModeReady, defaultBalances, fundsActionsReady } = useAccountOverview();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
 		accountModeReady,
@@ -148,7 +153,8 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	});
 
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(value));
+		preloadHistoryTab(value);
+		setPositionsActiveTab(value);
 	}
 
 	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
@@ -178,19 +184,22 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
 		count: openOrders?.length ?? 0,
 	});
-	const positionsAccountSummary =
-		accountSummaryReady && accountEquity !== null && riskSummary
-			? {
-					accountEquity,
-					unrealizedPnl: riskSummary.unrealizedPnl,
-					maintenanceMarginRatio,
-				}
-			: null;
-
-	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
 	const showsFundsActions = includeTransfers && activeTab === PORTFOLIO_TRANSFERS_TAB.value;
 	const showsPositionToolbar = activeTab === "positions" && positionsCount !== null;
 	const hasHeaderActions = showsFundsActions || showsPositionToolbar || CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		const browserWindow = window;
+		if (browserWindow.requestIdleCallback) {
+			const idleId = browserWindow.requestIdleCallback(preloadHistoryTabs, { timeout: 2_000 });
+			return () => browserWindow.cancelIdleCallback(idleId);
+		}
+
+		const timeoutId = browserWindow.setTimeout(preloadHistoryTabs, 1_000);
+		return () => browserWindow.clearTimeout(timeoutId);
+	}, []);
 
 	useEffect(() => {
 		const scroller = tabScrollRef.current;
@@ -296,6 +305,9 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 										key={tab.value}
 										value={tab.value}
 										data-positions-tab={tab.value}
+										onPointerEnter={() => preloadHistoryTab(tab.value)}
+										onPointerDown={() => preloadHistoryTab(tab.value)}
+										onFocus={() => preloadHistoryTab(tab.value)}
 										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-focus data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
@@ -371,48 +383,47 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 						) : null}
 					</div>
 				</div>
-				<TabsContent value="balances" className={tabContentClass}>
+				<TabsContent value="balances" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<BalancesTab toolbarTarget={activeTab === "balances" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="positions" className={tabContentClass}>
+				<TabsContent value="positions" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<PositionsTab
 							directionFilter={positionDirectionFilter}
 							marketFilter={positionMarketFilter}
 							currentMarket={currentPositionMarket}
-							accountSummary={positionsAccountSummary}
 						/>
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="orders" className={tabContentClass}>
+				<TabsContent value="orders" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<OrdersTab toolbarTarget={activeTab === "orders" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="twap" className={tabContentClass}>
+				<TabsContent value="twap" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<TwapTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="orders-history" className={tabContentClass}>
+				<TabsContent value="orders-history" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<OrdersHistoryTab toolbarTarget={activeTab === "orders-history" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="history" className={tabContentClass}>
+				<TabsContent value="history" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<HistoryTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="funding" className={tabContentClass}>
+				<TabsContent value="funding" className={tabContentBaseClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<FundingTab toolbarTarget={activeTab === "funding" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				{includeTransfers ? (
-					<TabsContent value="transfers" className={tabContentClass}>
+					<TabsContent value="transfers" className={tabContentBaseClass}>
 						<Suspense fallback={<TabLoadingFallback />}>
 							<AccountTransfersTab />
 						</Suspense>

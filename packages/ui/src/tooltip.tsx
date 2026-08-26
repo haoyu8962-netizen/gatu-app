@@ -70,10 +70,10 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 		},
 		ref,
 	) => {
-		if (!content) return children;
+		const disabled = !content;
 
 		return (
-			<BaseTooltip.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
+			<BaseTooltip.Root disabled={disabled} open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
 				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} closeOnClick={closeOnClick} render={children} />
 				<BaseTooltip.Portal>
 					<BaseTooltip.Positioner

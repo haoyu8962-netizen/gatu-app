@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -143,7 +143,7 @@ export function MobilePositionCard({
 	const fundingClass =
 		isDataStale || fundingAmount === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(fundingAmount);
 
-	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
@@ -165,19 +165,7 @@ export function MobilePositionCard({
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
 	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
-	const markPriceDisplay = (
-		<span className="inline-flex items-center gap-1">
-			{formatPrice(markPxRaw, { szDecimals, style: "decimal" })}
-			{markPriceStatus === "loading" || markPriceStatus === "idle" ? (
-				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-			) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
-				<WarningCircleIcon
-					className="size-3 shrink-0 text-warning"
-					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
-				/>
-			) : null}
-		</span>
-	);
+	const markPriceDisplay = formatPrice(markPxRaw, { szDecimals, style: "decimal" });
 
 	function buildReverseRef(): PositionReverseRef | null {
 		if (!canReverse || typeof assetId !== "number") return null;
@@ -210,27 +198,27 @@ export function MobilePositionCard({
 	}
 
 	function handleMarketClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onMarketClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			szDecimals,
 			signedPositionSize: p.szi,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			marginMode: p.leverage.type,
 		});
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onLimitClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			signedPositionSize: p.szi,
 			entryPx: p.entryPx,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			szDecimals,
 			marginMode: p.leverage.type,
 		});
@@ -368,6 +356,13 @@ export function MobilePositionCard({
 			{isExpanded ? (
 				<div id={detailsId} className="flex flex-col gap-3 px-3.5 py-3">
 					<div className="grid min-w-0 grid-cols-3 gap-x-2.5 gap-y-3">
+						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Mark Price`} value={markPriceDisplay} />
+						<PositionMetric
+							label={t`Liquidation Price`}
+							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
+							valueClassName={liqIsNear ? "text-error" : undefined}
+						/>
 						<PositionMetric
 							label={t`Position Value`}
 							value={positionValueDisplay}
@@ -378,31 +373,19 @@ export function MobilePositionCard({
 							<button
 								type="button"
 								onClick={handleAdjustMargin}
+								disabled={isRowClosing}
 								aria-label={t`Adjust isolated margin for ${displayName}`}
-								className="group relative min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
+								className="group relative min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 							>
 								{marginMetric}
 							</button>
 						) : (
 							<div className="min-w-0">{marginMetric}</div>
 						)}
-						<PositionMetric
-							label={t({ message: "Funding", context: "Cumulative position funding" })}
-							value={fundingValue}
-							valueClassName={fundingClass}
-							valueTitle={fundingValue}
-						/>
-						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
-						<PositionMetric label={t`Mark Price`} value={markPriceDisplay} />
-						<PositionMetric
-							label={t`Liquidation Price`}
-							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
-							valueClassName={liqIsNear ? "text-error" : undefined}
-						/>
 						<button
 							type="button"
 							onClick={handleOpenTpSl}
-							disabled={typeof assetId !== "number"}
+							disabled={typeof assetId !== "number" || isRowClosing}
 							className="group relative min-w-0 rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 						>
 							<PositionMetric
@@ -422,9 +405,15 @@ export function MobilePositionCard({
 								wrapValue
 							/>
 						</button>
+						<PositionMetric
+							label={t({ message: "Funding", context: "Cumulative position funding" })}
+							value={fundingValue}
+							valueClassName={fundingClass}
+							valueTitle={fundingValue}
+						/>
 					</div>
 
-					<div className="flex items-center justify-between border-t border-market-close-stroke-card pt-[11px]">
+					<div className="flex items-center border-t border-market-close-stroke-card pt-[11px]">
 						<div className="flex min-w-0 items-center gap-4">
 							<button
 								type="button"
@@ -451,23 +440,6 @@ export function MobilePositionCard({
 								{t`Reverse`}
 							</button>
 						</div>
-						<button
-							type="button"
-							aria-label={t`Collapse ${displayName} position details`}
-							aria-controls={detailsId}
-							onClick={handleToggleDetails}
-							className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
-						>
-							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-								<path
-									d="M3.5 10 8 5.5l4.5 4.5"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</button>
 					</div>
 				</div>
 			) : null}

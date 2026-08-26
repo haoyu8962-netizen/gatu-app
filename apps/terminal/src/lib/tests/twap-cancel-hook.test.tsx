@@ -12,12 +12,16 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
+import { getPendingTradingActionActions } from "@/stores/use-pending-trading-action-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
 
 const mocks = vi.hoisted(() => ({
 	assetId: 7 as number | undefined,
+	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	mutateAsync: vi.fn(),
+	guardPassesBeforeMutation: 2,
 	reset: vi.fn(),
 	successToast: vi.fn(),
 	errorToast: vi.fn(),
@@ -29,8 +33,16 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: () => ({ mutateAsync: mocks.mutateAsync, reset: mocks.reset }),
-	useHyperliquid: () => ({ clientKey: USER, env: "Mainnet" }),
+	useExchange: (_method: string, options?: { executionGuard?: (params: { a: number; t: number }) => void }) => ({
+		mutateAsync: async (params: { a: number; t: number }) => {
+			for (let pass = 0; pass < mocks.guardPassesBeforeMutation; pass += 1) {
+				options?.executionGuard?.(params);
+			}
+			return mocks.mutateAsync(params);
+		},
+		reset: mocks.reset,
+	}),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({ getAssetId: () => mocks.assetId }),
 }));
 
@@ -55,8 +67,12 @@ describe("useTwapCancel", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		getPendingTradingActionActions().reset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.assetId = 7;
+		mocks.clientKey = USER;
+		mocks.env = "Mainnet";
+		mocks.guardPassesBeforeMutation = 2;
 		mocks.mutateAsync.mockReset();
 		mocks.reset.mockReset();
 		mocks.successToast.mockReset();
@@ -77,7 +93,7 @@ describe("useTwapCancel", () => {
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 	});
 
-	it("submits the exact SDK asset and TWAP ID fields and confirms success", async () => {
+	it("submits the exact SDK fields and waits for a fresh TWAP snapshot", async () => {
 		mocks.mutateAsync.mockResolvedValueOnce({
 			status: "ok",
 			response: { type: "twapCancel", data: { status: "success" } },
@@ -88,7 +104,8 @@ describe("useTwapCancel", () => {
 		});
 
 		expect(mocks.mutateAsync).toHaveBeenCalledWith({ a: 7, t: 42 });
-		expect(mocks.successToast).toHaveBeenCalledOnce();
+		expect(mocks.successToast).not.toHaveBeenCalled();
+		expect(hookValue?.cancellingTwapId).toBe(42);
 		expect(hookValue?.feedback).toBeNull();
 	});
 
@@ -114,6 +131,22 @@ describe("useTwapCancel", () => {
 		expect(mocks.warningToast).toHaveBeenCalledOnce();
 		expect(mocks.errorToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("warning");
+		act(() => getPendingTradingActionActions().reset());
+		expect(hookValue?.feedback).toBeNull();
+	});
+
+	it("releases the action when a transport-shaped error occurs before the SDK boundary", async () => {
+		mocks.guardPassesBeforeMutation = 1;
+		mocks.mutateAsync.mockRejectedValueOnce(new HttpRequestError({ detail: "Legal status unavailable" }));
+
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 48);
+		});
+
+		expect(mocks.warningToast).not.toHaveBeenCalled();
+		expect(mocks.errorToast).toHaveBeenCalledOnce();
+		expect(hookValue?.cancellingTwapId).toBeNull();
+		expect(hookValue?.feedback?.tone).toBe("error");
 	});
 
 	it("surfaces a definitive exchange or HTTP rejection", async () => {
@@ -125,6 +158,44 @@ describe("useTwapCancel", () => {
 
 		expect(mocks.errorToast).toHaveBeenCalledWith("TWAP 45 is not active");
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
+	});
+
+	it("hides deterministic feedback after the trading identity changes", async () => {
+		mocks.mutateAsync.mockRejectedValueOnce(new Error("TWAP 65 is not active"));
+		await act(async () => {
+			await hookValue?.cancelTwap("ETH", 65);
+		});
+		expect(hookValue?.feedback?.tone).toBe("error");
+
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(createElement(Probe)));
+
+		expect(hookValue?.feedback).toBeNull();
+	});
+
+	it("does not publish a late failure into a different trading identity", async () => {
+		let rejectRequest: ((reason: Error) => void) | undefined;
+		mocks.mutateAsync.mockImplementationOnce(
+			() =>
+				new Promise((_resolve, reject) => {
+					rejectRequest = reject;
+				}),
+		);
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("ETH", 66);
+			await Promise.resolve();
+		});
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(createElement(Probe)));
+
+		await act(async () => {
+			rejectRequest?.(new Error("TWAP 66 is not active"));
+			await cancellation;
+		});
+
+		expect(hookValue?.feedback).toBeNull();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
 	});
 
 	it("treats HTTP 429 as a definitive cancellation failure", async () => {
@@ -141,7 +212,7 @@ describe("useTwapCancel", () => {
 		expect(hookValue?.feedback?.tone).toBe("error");
 	});
 
-	it("releases the active TWAP asset reservation only after cancellation is confirmed", async () => {
+	it("keeps the active TWAP asset reservation until a fresh snapshot confirms cancellation", async () => {
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				reserveOrderAssets(lease, {
@@ -166,11 +237,11 @@ describe("useTwapCancel", () => {
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				getOrderAssetReservationState(lease, {
-					intentKey: "entry-after-cancel",
-					exclusiveAssetLock: false,
-					isRiskReducing: false,
+					intentKey: "position-close-before-snapshot",
+					exclusiveAssetLock: true,
+					isRiskReducing: true,
 				}),
-			).toBe("clear");
+			).toBe("conflict");
 		});
 	});
 });

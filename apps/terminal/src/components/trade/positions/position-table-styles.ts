@@ -1,17 +1,18 @@
-// Keep the desktop overflow distance aligned with Hyperliquid's compact account table.
-export const POSITION_TABLE_MIN_WIDTH = 1096;
+// Keep every desktop position metric in a dedicated column at compact table density.
+export const POSITION_TABLE_MIN_WIDTH = 1332;
 
-// Combined columns preserve Gatu's information hierarchy while matching the official table density.
 export const POSITION_TABLE_COLUMNS = [
 	{ id: "market", width: 150 },
-	{ id: "size", width: 134 },
-	{ id: "prices", width: 126 },
+	{ id: "size", width: 112 },
+	{ id: "positionValue", width: 132 },
+	{ id: "entryPrice", width: 106 },
+	{ id: "markPrice", width: 106 },
 	{ id: "pnl", width: 144 },
 	{ id: "liquidation", width: 104 },
 	{ id: "tpsl", width: 100 },
 	{ id: "margin", width: 116 },
 	{ id: "funding", width: 78 },
-	{ id: "actions", width: 144 },
+	{ id: "actions", width: 184 },
 ] as const;
 
 export const positionTableHeaderClass = "bg-surface [&_tr]:border-stroke-weak [&_tr]:border-t-0";
@@ -24,4 +25,4 @@ export const positionTableHeadClass =
 export const positionTableCellClass = "h-14 whitespace-nowrap px-[7px] py-2 text-right text-xs leading-4";
 
 export const positionTableInlineActionClass =
-	"h-[26px] min-h-0 rounded-[7px] px-2.5 py-0 text-xs leading-4 font-semibold shadow-none active:not-data-disabled:scale-100";
+	"inline-flex h-[26px] min-h-0 items-center rounded-[4px] px-0.5 py-0 text-xs leading-4 font-semibold text-market-close-success transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle disabled:opacity-50";

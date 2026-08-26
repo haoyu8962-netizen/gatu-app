@@ -1,6 +1,6 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ShareIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -24,7 +24,6 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
-import { PositionActionsDropdown } from "./position-actions-dropdown";
 import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
@@ -33,6 +32,7 @@ import type {
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
+import { PositionInlineActions } from "./position-inline-actions";
 import { createPositionPnlShareData } from "./position-pnl-share-data";
 import { positionTableCellClass } from "./position-table-styles";
 import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
@@ -105,7 +105,7 @@ export function PositionRow({
 
 	const fundingPayment = getPositionFundingPayment(p.cumFunding.sinceOpen);
 	const canManage = typeof assetId === "number";
-	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
@@ -145,20 +145,6 @@ export function PositionRow({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
-	const markStatusIndicator =
-		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
-			<Tooltip content={t`Loading...`} side="top">
-				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-			</Tooltip>
-		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
-			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
-				<WarningCircleIcon
-					className="size-3 shrink-0 text-warning"
-					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
-				/>
-			</Tooltip>
-		) : null;
-
 	function renderTpSlContent() {
 		if (hasTpSl) {
 			return (
@@ -198,27 +184,27 @@ export function PositionRow({
 	}
 
 	function handleMarketClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onMarketClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			szDecimals,
 			signedPositionSize: p.szi,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			marginMode: p.leverage.type,
 		});
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onLimitClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			signedPositionSize: p.szi,
 			entryPx: p.entryPx,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			szDecimals,
 			marginMode: p.leverage.type,
 		});
@@ -269,7 +255,7 @@ export function PositionRow({
 	}
 
 	const marginContent = (
-		<span className="inline-flex flex-col items-end gap-px whitespace-nowrap tabular-nums" title={marginDisplay}>
+		<span className="inline-flex flex-col items-end gap-px whitespace-nowrap tabular-nums">
 			<span className="text-[13px] font-semibold text-market-close-fg">{marginDisplay}</span>
 			<span
 				className={cn(
@@ -321,18 +307,23 @@ export function PositionRow({
 				</div>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
-				<span className="flex flex-col items-end gap-px" title={`${sizeDisplay} / ${positionValueDisplay}`}>
-					<span className="text-[13px] font-semibold text-market-close-fg">{sizeDisplay}</span>
-					<span className="text-[11px] leading-[14px] text-market-close-subtle">{positionValueDisplay}</span>
+				<span className={cn("block text-[13px] font-semibold", sideClass)} title={sizeDisplay}>
+					{sizeDisplay}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
-				<span className="flex flex-col items-end gap-px" title={`${entryPriceDisplay} / ${markPriceDisplay}`}>
-					<span className="text-[13px] text-market-close-fg">{entryPriceDisplay}</span>
-					<span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-market-close-subtle">
-						{markPriceDisplay}
-						{markStatusIndicator}
-					</span>
+				<span className="block text-[13px] text-market-close-fg" title={positionValueDisplay}>
+					{positionValueDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="block text-[13px] text-market-close-fg" title={entryPriceDisplay}>
+					{entryPriceDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="block text-[13px] text-market-close-fg" title={markPriceDisplay}>
+					{markPriceDisplay}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>
@@ -371,7 +362,8 @@ export function PositionRow({
 					<button
 						type="button"
 						onClick={handleOpenTpSl}
-						disabled={!canManage}
+						disabled={!canManage || isRowClosing}
+						aria-label={hasTpSl ? t`Edit TP/SL` : t`Add TP/SL`}
 						className={cn(
 							"group inline-flex min-h-[26px] items-center justify-end rounded-[6px] transition-all duration-[120ms] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50",
 							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
@@ -382,7 +374,21 @@ export function PositionRow({
 				</Tooltip>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "text-market-close-fg")}>
-				{marginContent}
+				{p.leverage.type === "isolated" ? (
+					<Tooltip content={t`Adjust Margin`} side="left">
+						<button
+							type="button"
+							onClick={handleAdjustMargin}
+							disabled={!canManage || isRowClosing}
+							aria-label={t`Adjust Margin`}
+							className="inline-flex min-h-[30px] items-center justify-end rounded-[6px] transition-colors duration-[120ms] hover:bg-market-close-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{marginContent}
+						</button>
+					</Tooltip>
+				) : (
+					marginContent
+				)}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums", fundingClass)}>
 				<span className="block text-xs font-medium tabular-nums" title={fundingDisplay}>
@@ -390,16 +396,12 @@ export function PositionRow({
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "pr-5")}>
-				<PositionActionsDropdown
+				<PositionInlineActions
 					canClose={canClose}
-					canManage={canManage}
 					canReverse={canReverse}
-					isIsolated={p.leverage.type === "isolated"}
 					isRowClosing={isRowClosing}
 					onMarketClose={handleMarketClose}
 					onLimitClose={handleLimitClose}
-					onAdjustMargin={handleAdjustMargin}
-					onOpenTpSl={handleOpenTpSl}
 					onReverse={handleReverse}
 				/>
 			</TableCell>

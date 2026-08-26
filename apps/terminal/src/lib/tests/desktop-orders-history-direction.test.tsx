@@ -1,15 +1,15 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrdersHistoryTab } from "@/components/trade/positions/orders-history-tab";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	address: "0x1111111111111111111111111111111111111111" as `0x${string}`,
 	downloadCsv: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
-	twaps: [] as Array<Record<string, unknown>>,
 }));
 
 function createOrders() {
@@ -44,7 +44,7 @@ function createOrders() {
 }
 
 function getOrderHistoryEntries() {
-	const orderEntries = mocks.orders.map((entry) => {
+	return mocks.orders.map((entry) => {
 		const order = entry.order as Record<string, unknown>;
 		return {
 			coin: order.coin,
@@ -59,22 +59,6 @@ function getOrderHistoryEntries() {
 			updatedAt: entry.statusTimestamp,
 		};
 	});
-	const twapEntries = mocks.twaps.map((twap) => {
-		const state = twap.state as Record<string, unknown>;
-		return {
-			coin: state.coin,
-			createdAt: state.timestamp,
-			key: `twap:${String(twap.twapId)}`,
-			kind: "twap",
-			reduceOnly: state.reduceOnly,
-			side: state.side,
-			size: state.sz,
-			twap,
-			type: "twap",
-			updatedAt: twap.time,
-		};
-	});
-	return [...orderEntries, ...twapEntries];
 }
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
@@ -89,6 +73,14 @@ vi.mock("@/components/trade/components/historical-order-price", () => ({
 	HistoricalOrderPrice: () => <>$100</>,
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({ children, params, to, ...props }: { children?: ReactNode; params?: { address?: string }; to: string }) => (
+		<a href={to.replace("$address", params?.address ?? "")} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/components/ui/scroll-area", () => ({
 	ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	ScrollBar: () => null,
@@ -99,8 +91,17 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 		entries: getOrderHistoryEntries(),
 		error: null,
 		isConnected: true,
+		isOffline: false,
+		isStale: false,
 		status: "ready",
 		orders: mocks.orders,
+	}),
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({
+		address: mocks.address,
+		isConnected: true,
 	}),
 }));
 
@@ -127,6 +128,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useMarkets: () => ({
 		getMarket: () => ({ szDecimals: 3 }),
 	}),
@@ -137,8 +139,8 @@ describe("desktop order history direction semantics", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.orders = createOrders();
-		mocks.twaps = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -192,7 +194,10 @@ describe("desktop order history direction semantics", () => {
 		expect(filledBadge?.className).toContain("bg-success-soft");
 		expect(canceledBadge?.className).toContain("bg-market-close-hover");
 		expect(container.querySelector("tbody td")?.className).toContain("h-[58px]");
-		expect(container.querySelector('[data-testid="order-history-footer"]')).toBeNull();
+		const footer = container.querySelector('[data-testid="order-history-footer"]');
+		expect(
+			footer?.querySelector('a[href="/historicalOrders/0x1111111111111111111111111111111111111111"]'),
+		).not.toBeNull();
 
 		const exportButton = Array.from(container.querySelectorAll("button")).find(
 			(button) => button.textContent === "Export CSV",
@@ -242,6 +247,16 @@ describe("desktop order history direction semantics", () => {
 		expect(container.querySelector('[aria-label="Switch to BTC market, Buy order"]')).toBeNull();
 		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
 		expect(container.textContent).toContain("1 order");
+
+		mocks.orders = createOrders().slice(0, 1);
+		act(() => root.render(<OrdersHistoryTab />));
+		expect(container.querySelectorAll<HTMLButtonElement>('[role="combobox"]')[0]?.textContent).toContain("Stop Market");
+		expect(container.querySelector('[aria-label="Switch to BTC market, Buy order"]')).toBeNull();
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(<OrdersHistoryTab />));
+		expect(container.querySelectorAll<HTMLButtonElement>('[role="combobox"]')[0]?.textContent).toContain("All types");
+		expect(container.querySelector('[aria-label="Switch to BTC market, Buy order"]')).not.toBeNull();
 	});
 
 	it("filters the currently loaded rows by normalized order status", async () => {

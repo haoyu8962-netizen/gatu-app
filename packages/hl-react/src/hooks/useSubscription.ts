@@ -8,7 +8,7 @@ import {
 	getDefaultThrottle,
 	shouldAcceptSubscriptionEvent,
 } from "../registries/subscription";
-import { useHyperliquidTransport } from "../transport-provider";
+import { useConfig, useHyperliquidTransport } from "../transport-provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../types";
 import type { SubEvent, SubMethod, SubParams } from "../types/clients";
 import { useSub } from "./utils/useSub";
@@ -19,6 +19,7 @@ export function useSubscription<M extends SubMethod>(
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<SubEvent<M>> {
 	const { subscription } = useHyperliquidTransport();
+	const { subscribeDisconnect } = useConfig();
 	const { refreshKey, ...subscriptionOptions } = options;
 	const baseKey = subscriptionKeys.method(method, params);
 	const key =
@@ -65,9 +66,47 @@ export function useSubscription<M extends SubMethod>(
 				if (!acceptEvent(event)) return;
 				listener(eventAccumulator?.add(event) ?? event);
 			};
-			return params !== undefined
-				? fn.call(subscription, params, filteredListener, failureOptions)
-				: fn.call(subscription, filteredListener, failureOptions);
+			if (!eventAccumulator) {
+				return params !== undefined
+					? fn.call(subscription, params, filteredListener, failureOptions)
+					: fn.call(subscription, filteredListener, failureOptions);
+			}
+			let detachDisconnect: (() => void) | undefined;
+			const detachAccumulatorReset = () => {
+				detachDisconnect?.();
+				detachDisconnect = undefined;
+			};
+			detachDisconnect = subscribeDisconnect?.(() => eventAccumulator.reset());
+			const guardedFailureOptions = {
+				...failureOptions,
+				onError: (error: unknown) => {
+					detachAccumulatorReset();
+					failureOptions?.onError?.(error);
+				},
+			};
+
+			let promise: Promise<ISubscription>;
+			try {
+				promise =
+					params !== undefined
+						? fn.call(subscription, params, filteredListener, guardedFailureOptions)
+						: fn.call(subscription, filteredListener, guardedFailureOptions);
+			} catch (error) {
+				detachAccumulatorReset();
+				throw error;
+			}
+			return promise.then(
+				(activeSubscription) => ({
+					unsubscribe: async () => {
+						detachAccumulatorReset();
+						await activeSubscription.unsubscribe();
+					},
+				}),
+				(error) => {
+					detachAccumulatorReset();
+					throw error;
+				},
+			);
 		},
 		mergedOptions,
 	);

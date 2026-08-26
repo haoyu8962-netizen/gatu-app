@@ -403,6 +403,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 		expect(sessionMocks.closeAndRemove).toHaveBeenCalledOnce();
 		expect(sessionMocks.closeAndRemove).toHaveBeenCalledWith("Testnet", ADDRESS_A, {
+			preserveIfSubmissionStarted: true,
 			restoreOnFailure: false,
 		});
 		expect(sessionMocks.activate).toHaveBeenLastCalledWith("Testnet", ADDRESS_B);
@@ -433,6 +434,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 		});
 
 		expect(sessionMocks.closeAndRemove).toHaveBeenCalledWith("Testnet", ADDRESS_A, {
+			preserveIfSubmissionStarted: true,
 			restoreOnFailure: false,
 		});
 		expect(sessionMocks.activate).toHaveBeenLastCalledWith("Testnet", ADDRESS_B);

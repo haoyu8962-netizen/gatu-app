@@ -169,7 +169,6 @@ function createSnapshot(): PositionCloseAllSnapshot {
 				assetId: MAIN_ASSET_ID,
 				szDecimals: 3,
 				signedPositionSize: "1.250",
-				markPx: "100",
 				marginMode: "cross",
 				quoteSymbol: "USDC",
 			},
@@ -179,7 +178,6 @@ function createSnapshot(): PositionCloseAllSnapshot {
 				assetId: BUILDER_ASSET_ID,
 				szDecimals: 3,
 				signedPositionSize: "-2.500",
-				markPx: "200",
 				marginMode: "isolated",
 				quoteSymbol: "USDE",
 			},
@@ -320,6 +318,9 @@ describe("usePositionCloseAllSubmit", () => {
 				{ user: USER, dex: "" },
 				{ user: USER, dex: "xyz" },
 			]),
+		);
+		expect(mocks.metaAndAssetCtxs.mock.calls.map(([params]) => params)).toEqual(
+			expect.arrayContaining([{ dex: "" }, { dex: "xyz" }]),
 		);
 		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
 		expect(submitted).toMatchObject({

@@ -36,6 +36,7 @@ import {
 	type OpenOrderModifyTarget,
 	openOrderModifyParamsEqual,
 } from "@/domain/trade/open-order-modification";
+import { isAmbiguousExchangeRequestError } from "@/domain/trade/order-tracking";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	getToolbarOrderMetrics,
@@ -68,7 +69,6 @@ import {
 	useSubscription,
 } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { toBig } from "@/lib/trade/numbers";
 import {
 	isClosePositionOrder,
 	isMarketTriggerOrder,
@@ -78,6 +78,12 @@ import {
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionToastId,
+	usePendingOrderCancellations,
+	usePendingOrderModifications,
+} from "@/stores/use-pending-trading-action-store";
 import { CancelAllOrdersModal } from "./cancel-all-orders-modal";
 import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { OrderInlineEdit } from "./order-inline-edit";
@@ -101,8 +107,6 @@ const ordersTableGridClass =
 	"grid grid-cols-[126px_84px_70px_60px_100px_84px_104px_66px_52px_minmax(0,1fr)_76px_88px] gap-x-3 px-5";
 
 type CancelScope = "row" | "selected" | "all";
-const MODIFY_SUBSCRIPTION_TIMEOUT_MS = 15_000;
-
 interface CancelCallbacks {
 	onSuccess?: () => void;
 	onSettled?: () => void;
@@ -116,6 +120,8 @@ interface CancelAllDialogSnapshot {
 type ModifyPhase = "idle" | "submitting" | "awaiting";
 
 interface ModifyExecutionContext {
+	actionId: string;
+	guardPasses: number;
 	target: OpenOrderModifyTarget;
 	value: string;
 	normalizedValue: string;
@@ -133,6 +139,8 @@ interface ModifyLiveContext {
 }
 
 interface CancelExecutionContext {
+	actionId: string;
+	guardPasses: number;
 	confirmation: CancelAllConfirmationSnapshot;
 	orders: readonly Pick<OpenOrder, "coin" | "oid">[];
 	params: ExchangeParams<"cancel">;
@@ -219,20 +227,30 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		ids: new Set(),
 		ownerKey: selectionSessionKey,
 	}));
+	const pendingModifications = usePendingOrderModifications();
+	const pendingCancellations = usePendingOrderCancellations();
+	const normalizedClientOwner = normalizeSessionOwner(clientKey);
+	const sessionModifications = normalizedClientOwner
+		? pendingModifications.filter((action) => action.env === env && action.owner === normalizedClientOwner)
+		: [];
+	const sessionCancellations = normalizedClientOwner
+		? pendingCancellations.filter((action) => action.env === env && action.owner === normalizedClientOwner)
+		: [];
+	const sharedCancellingOids = new Set(sessionCancellations.flatMap((action) => action.oids));
 	const selectedOrderIds =
 		selectedOrders.ownerKey === selectionSessionKey ? selectedOrders.ids : EMPTY_SELECTED_ORDER_IDS;
-	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 	const [cancelAllOpen, setCancelAllOpen] = useState(false);
 	const [cancelAllSnapshot, setCancelAllSnapshot] = useState<CancelAllDialogSnapshot | null>(null);
 	const [orderTypeFilter, setOrderTypeFilter] = useState<ToolbarOrderTypeFilter>("all");
 	const [orderDirectionFilter, setOrderDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
-	const [cancelValidationError, setCancelValidationError] = useState<string | null>(null);
+	const [cancelValidationError, setCancelValidationErrorState] = useState<string | null>(null);
+	const [cancelValidationActionId, setCancelValidationActionId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<OpenOrderModifyTarget | null>(null);
 	const [editValue, setEditValue] = useState("");
 	const [modifyPhase, setModifyPhaseState] = useState<ModifyPhase>("idle");
-	const [modifyValidationError, setModifyValidationError] = useState<string | null>(null);
-	const [unconfirmedModifyOid, setUnconfirmedModifyOid] = useState<number | null>(null);
+	const [modifyValidationError, setModifyValidationErrorState] = useState<string | null>(null);
+	const [modifyValidationActionId, setModifyValidationActionId] = useState<string | null>(null);
 	const modifyErrorId = useId();
 	const cancelAllSubmittingRef = useRef(false);
 	const cancelExecutionRef = useRef<CancelExecutionContext | null>(null);
@@ -240,12 +258,30 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const editValueRef = useRef("");
 	const modifyPhaseRef = useRef<ModifyPhase>("idle");
 	const modifyExecutionRef = useRef<ModifyExecutionContext | null>(null);
-	const unconfirmedExecutionRef = useRef<ModifyExecutionContext | null>(null);
 	const editReturnTargetRef = useRef<EditReturnTarget | null>(null);
 	const orderTypeFilterRef = useRef<HTMLDivElement>(null);
 	const selectionSessionKeyRef = useRef(selectionSessionKey);
+	const localTradingSessionKeyRef = useRef(selectionSessionKey);
 	const mountedRef = useRef(false);
 	selectionSessionKeyRef.current = selectionSessionKey;
+	const visibleCancelValidationError =
+		cancelValidationActionId && !sessionCancellations.some((action) => action.id === cancelValidationActionId)
+			? null
+			: cancelValidationError;
+	const visibleModifyValidationError =
+		modifyValidationActionId && !sessionModifications.some((action) => action.id === modifyValidationActionId)
+			? null
+			: modifyValidationError;
+
+	function setCancelValidationError(message: string | null, actionId: string | null = null) {
+		setCancelValidationErrorState(message);
+		setCancelValidationActionId(actionId);
+	}
+
+	function setModifyValidationError(message: string | null, actionId: string | null = null) {
+		setModifyValidationErrorState(message);
+		setModifyValidationActionId(actionId);
+	}
 
 	function setSelectedOrderIds(nextIds: Set<number> | ((current: Set<number>) => Set<number>)) {
 		const expectedSessionKey = selectionSessionKey;
@@ -322,6 +358,16 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		orders: openOrders,
 		getMarketBinding,
 	};
+
+	function isCancelExecutionCurrent(execution: CancelExecutionContext): boolean {
+		const live = liveModifyContextRef.current;
+		return (
+			cancelExecutionRef.current === execution &&
+			normalizeSessionOwner(live.clientKey) === execution.confirmation.owner &&
+			normalizeSessionOwner(live.snapshotOwner) === execution.confirmation.owner &&
+			live.env === execution.confirmation.env
+		);
+	}
 
 	function setModifyPhase(nextPhase: ModifyPhase) {
 		modifyPhaseRef.current = nextPhase;
@@ -410,6 +456,10 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		) {
 			throw new Error(t`Trading data changed before the order modification could be submitted.`);
 		}
+		execution.guardPasses += 1;
+		if (execution.guardPasses >= 2) {
+			getPendingTradingActionActions().markModificationRequestStarted(execution.actionId);
+		}
 	}
 
 	function assertCancelExecution(params: ExchangeParams<"cancel">) {
@@ -436,20 +486,18 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			orders: currentOrders,
 		});
 		if (reason) throw new Error(getCancelAllBlockMessage(reason));
+		execution.guardPasses += 1;
+		if (execution.guardPasses >= 2) {
+			getPendingTradingActionActions().markOrderCancellationRequestStarted(execution.actionId);
+		}
 	}
 
-	const {
-		mutate: cancelOrders,
-		error: cancelError,
-		reset: resetCancelError,
-	} = useExchange("cancel", {
+	const { mutateAsync: cancelOrdersAsync, reset: resetCancelError } = useExchange("cancel", {
 		executionGuard: assertCancelExecution,
 	});
-	const {
-		mutateAsync: modifyOrders,
-		error: modifyError,
-		reset: resetModifyError,
-	} = useExchange("batchModify", { executionGuard: assertModifyExecution });
+	const { mutateAsync: modifyOrders, reset: resetModifyError } = useExchange("batchModify", {
+		executionGuard: assertModifyExecution,
+	});
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -457,10 +505,33 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			mountedRef.current = false;
 			cancelExecutionRef.current = null;
 			modifyExecutionRef.current = null;
-			unconfirmedExecutionRef.current = null;
 			modifyPhaseRef.current = "idle";
 		};
 	}, []);
+
+	useLayoutEffect(() => {
+		if (localTradingSessionKeyRef.current === selectionSessionKey) return;
+		localTradingSessionKeyRef.current = selectionSessionKey;
+		cancelExecutionRef.current = null;
+		cancelAllSubmittingRef.current = false;
+		setPendingScopes(new Set());
+		setCancelAllOpen(false);
+		setCancelAllSnapshot(null);
+		setCancelValidationErrorState(null);
+		setCancelValidationActionId(null);
+		editTargetRef.current = null;
+		editValueRef.current = "";
+		modifyExecutionRef.current = null;
+		modifyPhaseRef.current = "idle";
+		editReturnTargetRef.current = null;
+		setEditTarget(null);
+		setEditValue("");
+		setModifyValidationErrorState(null);
+		setModifyValidationActionId(null);
+		setModifyPhaseState("idle");
+		resetCancelError();
+		resetModifyError();
+	}, [selectionSessionKey, resetCancelError, resetModifyError]);
 
 	const openIds = new Set(openOrders.map((order) => order.oid));
 	const displayedOrders = openOrders.filter((order) =>
@@ -522,7 +593,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		}
 		setCancelValidationError(null);
 
-		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
+		const fresh = ordersToCancel.filter((order) => !sharedCancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
 		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
 			setCancelValidationError(t`Open orders changed. Reopen the confirmation and try again.`);
@@ -548,58 +619,83 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return false;
 		}
 
+		const pendingAction = getPendingTradingActionActions().claimOrderCancellation({
+			env: confirmation.snapshot.env,
+			owner: confirmation.snapshot.owner,
+			oids: fresh.map((order) => order.oid),
+		});
+		if (!pendingAction) return false;
 		const execution: CancelExecutionContext = {
+			actionId: pendingAction.id,
+			guardPasses: 0,
 			confirmation: confirmation.snapshot,
 			orders: fresh.map(({ coin, oid }) => ({ coin, oid })),
 			params: { cancels },
 		};
 		cancelExecutionRef.current = execution;
 
-		const oids = fresh.map((order) => order.oid);
-		setCancellingOids((prev) => {
-			const next = new Set(prev);
-			for (const oid of oids) next.add(oid);
-			return next;
-		});
 		setPendingScopes((prev) => {
 			const next = new Set(prev);
 			next.add(nextScope);
 			return next;
 		});
 		resetCancelError();
-		cancelOrders(execution.params, {
-			onSuccess: (response) => {
-				if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
+		void executeCancellation(execution, fresh, nextScope, callbacks);
+		return true;
+	}
+
+	async function executeCancellation(
+		execution: CancelExecutionContext,
+		fresh: OpenOrder[],
+		nextScope: CancelScope,
+		callbacks?: CancelCallbacks,
+	): Promise<void> {
+		try {
+			const response = await cancelOrdersAsync(execution.params);
+			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
+				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
 					setCancelValidationError(
 						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
+						execution.actionId,
 					);
-					return;
 				}
-				setSelectedOrderIds((prev) => {
-					const next = new Set(prev);
-					for (const order of fresh) {
-						next.delete(order.oid);
-					}
-					return next;
-				});
-				callbacks?.onSuccess?.();
-			},
-			onSettled: () => {
-				if (cancelExecutionRef.current === execution) cancelExecutionRef.current = null;
-				setCancellingOids((prev) => {
-					const next = new Set(prev);
-					for (const oid of oids) next.delete(oid);
-					return next;
-				});
+				return;
+			}
+			getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
+			if (!mountedRef.current || !isCancelExecutionCurrent(execution)) return;
+			setSelectedOrderIds((prev) => {
+				const next = new Set(prev);
+				for (const order of fresh) next.delete(order.oid);
+				return next;
+			});
+			callbacks?.onSuccess?.();
+		} catch (cause) {
+			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
+				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
+					setCancelValidationError(
+						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
+						execution.actionId,
+					);
+				}
+			} else {
+				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
+				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
+					setCancelValidationError(cause instanceof Error ? cause.message : t`Failed to cancel order.`);
+				}
+			}
+		} finally {
+			if (mountedRef.current && isCancelExecutionCurrent(execution)) {
+				cancelExecutionRef.current = null;
 				setPendingScopes((prev) => {
 					const next = new Set(prev);
 					next.delete(nextScope);
 					return next;
 				});
 				callbacks?.onSettled?.();
-			},
-		});
-		return true;
+			}
+		}
 	}
 
 	function handleCancelRow(ordersToCancel: OpenOrder[]) {
@@ -686,11 +782,12 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	}
 
 	function handleStartEdit(order: OpenOrder, field: OpenOrderModifyField) {
-		if (modifyPhaseRef.current !== "idle" || pendingScopes.size > 0 || cancellingOids.has(order.oid)) {
-			return;
-		}
-		if (unconfirmedExecutionRef.current) {
-			toast.info(t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`);
+		if (
+			modifyPhaseRef.current !== "idle" ||
+			pendingScopes.size > 0 ||
+			sharedCancellingOids.has(order.oid) ||
+			sessionModifications.some((action) => action.oid === order.oid)
+		) {
 			return;
 		}
 
@@ -743,7 +840,25 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return;
 		}
 
+		const pendingAction = getPendingTradingActionActions().claimModification({
+			env: target.env,
+			owner: target.owner,
+			oid: target.order.oid,
+			originalSize: target.order.sz,
+			originalTriggerPx: target.order.triggerPx,
+			...(target.field === "size"
+				? { expectedSize: plan.normalizedValue }
+				: { expectedTriggerPx: plan.normalizedValue }),
+		});
+		if (!pendingAction) {
+			setModifyValidationError(
+				t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`,
+			);
+			return;
+		}
 		const execution: ModifyExecutionContext = {
+			actionId: pendingAction.id,
+			guardPasses: 0,
 			target,
 			value,
 			normalizedValue: plan.normalizedValue,
@@ -757,22 +872,65 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		try {
 			const result = await modifyOrders(plan.params);
 			throwIfAnyResponseError(result.response?.data?.statuses);
-			if (!mountedRef.current) return;
+			getPendingTradingActionActions().markModificationAwaiting(execution.actionId);
+			if (!mountedRef.current || modifyExecutionRef.current !== execution) return;
 			const live = liveModifyContextRef.current;
 			if (
-				modifyExecutionRef.current !== execution ||
 				getModifyPhase() !== "submitting" ||
 				live.clientKey === "disconnected" ||
 				live.clientKey.toLowerCase() !== execution.target.owner ||
 				live.snapshotOwner.toLowerCase() !== execution.target.owner ||
 				live.env !== execution.target.env
 			) {
-				throw new Error(t`Trading data changed before the order modification could be submitted.`);
+				modifyExecutionRef.current = null;
+				editTargetRef.current = null;
+				editValueRef.current = "";
+				setModifyPhase("idle");
+				setEditTarget(null);
+				setEditValue("");
+				setModifyValidationError(null);
+				return;
 			}
 			setModifyPhase("awaiting");
-			toast.info(t`Order modification submitted. Waiting for the open-orders update.`);
+			toast.info(t`Order modification submitted. Waiting for the open-orders update.`, {
+				id: getPendingTradingActionToastId(execution.actionId),
+			});
 		} catch (cause) {
-			if (!mountedRef.current) return;
+			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
+				getPendingTradingActionActions().markModificationUnconfirmed(execution.actionId);
+				if (!mountedRef.current || modifyExecutionRef.current !== execution) return;
+				const live = liveModifyContextRef.current;
+				if (
+					live.clientKey === "disconnected" ||
+					live.clientKey.toLowerCase() !== execution.target.owner ||
+					live.snapshotOwner.toLowerCase() !== execution.target.owner ||
+					live.env !== execution.target.env
+				) {
+					modifyExecutionRef.current = null;
+					setModifyPhase("idle");
+					return;
+				}
+				const message = t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+				modifyExecutionRef.current = null;
+				setModifyPhase("idle");
+				setModifyValidationError(message, execution.actionId);
+				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
+				return;
+			} else {
+				getPendingTradingActionActions().resolveModification(execution.actionId);
+			}
+			if (!mountedRef.current || modifyExecutionRef.current !== execution) return;
+			const live = liveModifyContextRef.current;
+			if (
+				live.clientKey === "disconnected" ||
+				live.clientKey.toLowerCase() !== execution.target.owner ||
+				live.snapshotOwner.toLowerCase() !== execution.target.owner ||
+				live.env !== execution.target.env
+			) {
+				modifyExecutionRef.current = null;
+				setModifyPhase("idle");
+				return;
+			}
 			const message = cause instanceof Error ? cause.message : t`Failed to modify order.`;
 			modifyExecutionRef.current = null;
 			setModifyPhase("idle");
@@ -785,95 +943,31 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		if (modifyPhase !== "awaiting") return;
 		const execution = modifyExecutionRef.current;
 		if (!execution) return;
+		const pending = pendingModifications.find((action) => action.id === execution.actionId);
+		if (pending?.phase === "awaiting" || pending?.phase === "submitting") return;
 
-		const timeout = window.setTimeout(() => {
-			if (!mountedRef.current || modifyPhaseRef.current !== "awaiting" || modifyExecutionRef.current !== execution) {
-				return;
-			}
-			const message = t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
-			unconfirmedExecutionRef.current = execution;
-			modifyExecutionRef.current = null;
-			editTargetRef.current = null;
-			editValueRef.current = "";
-			modifyPhaseRef.current = "idle";
-			setUnconfirmedModifyOid(execution.target.order.oid);
-			setEditTarget(null);
-			setEditValue("");
-			setModifyPhaseState("idle");
-			setModifyValidationError(message);
-			toast.error(message);
-		}, MODIFY_SUBSCRIPTION_TIMEOUT_MS);
+		editTargetRef.current = null;
+		editValueRef.current = "";
+		modifyExecutionRef.current = null;
+		modifyPhaseRef.current = "idle";
+		setEditTarget(null);
+		setEditValue("");
+		setModifyValidationErrorState(
+			pending?.phase === "unconfirmed"
+				? t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`
+				: null,
+		);
+		setModifyValidationActionId(pending?.phase === "unconfirmed" ? execution.actionId : null);
+		setModifyPhaseState("idle");
+	}, [modifyPhase, pendingModifications, t]);
 
-		return () => window.clearTimeout(timeout);
-	}, [modifyPhase, t]);
-
-	useEffect(() => {
-		const execution = modifyPhase === "awaiting" ? modifyExecutionRef.current : unconfirmedExecutionRef.current;
-		if (!execution) return;
-
-		function finishReconciliation(errorMessage: string | null = null) {
-			editTargetRef.current = null;
-			editValueRef.current = "";
-			modifyExecutionRef.current = null;
-			unconfirmedExecutionRef.current = null;
-			modifyPhaseRef.current = "idle";
-			setEditTarget(null);
-			setEditValue("");
-			setModifyValidationError(errorMessage);
-			setModifyPhaseState("idle");
-			setUnconfirmedModifyOid(null);
-		}
-
-		const liveSessionKey = getTradingSessionKey(clientKey, address, env);
-		const executionSessionKey = `${execution.target.env}:${execution.target.owner}`;
-		if (liveSessionKey !== executionSessionKey) {
-			const message = t`The trading account or network changed. Reopen the editor and try again.`;
-			toast.error(message);
-			finishReconciliation(message);
-			return;
-		}
-		if (status !== "active" || isStale) return;
-
-		const matches = openOrders.filter((order) => order.oid === execution.target.order.oid);
-		if (matches.length === 0) {
-			toast.info(t`The modified order is no longer open.`);
-			finishReconciliation();
-			return;
-		}
-		if (matches.length !== 1) {
-			const message = t`This order changed or is no longer open. Refresh and try again.`;
-			toast.error(message);
-			finishReconciliation();
-			return;
-		}
-
-		const latest = matches[0];
-		if (!latest) return;
-		const latestValue = execution.target.field === "size" ? latest.sz : latest.triggerPx;
-		const latestNumeric = toBig(latestValue);
-		const expectedNumeric = toBig(execution.normalizedValue);
-		if (latestNumeric && expectedNumeric && latestNumeric.eq(expectedNumeric)) {
-			toast.success(t`Order modification confirmed.`);
-			finishReconciliation();
-			return;
-		}
-
-		const originalValue =
-			execution.target.field === "size" ? execution.target.order.sz : execution.target.order.triggerPx;
-		const originalNumeric = toBig(originalValue);
-		if (latestNumeric && originalNumeric && !latestNumeric.eq(originalNumeric)) {
-			const message = t`The order changed before the requested modification was confirmed. Review the latest order before retrying.`;
-			toast.error(message);
-			finishReconciliation();
-		}
-	}, [modifyPhase, openOrders, status, isStale, clientKey, address, env, t]);
-
-	const isModifyLocked = modifyPhase !== "idle";
+	const hasActiveModification = sessionModifications.some((action) => action.phase !== "unconfirmed");
+	const isModifyLocked = modifyPhase !== "idle" || hasActiveModification;
 	const disableCancelSelected = pendingScopes.has("selected") || selectedCount === 0 || isModifyLocked;
 	const disableCancelAll = pendingScopes.size > 0 || openOrders.length === 0 || isModifyLocked;
-	const actionError = cancelValidationError ?? modifyValidationError ?? cancelError?.message ?? modifyError?.message;
+	const actionError = visibleCancelValidationError ?? visibleModifyValidationError;
 	const modifyActionErrorId =
-		modifyValidationError && actionError === modifyValidationError ? modifyErrorId : undefined;
+		visibleModifyValidationError && actionError === visibleModifyValidationError ? modifyErrorId : undefined;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view open orders.`}</Placeholder>;
@@ -1029,18 +1123,18 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 												}
 												quoteSymbol={quoteSymbol}
 												isSelected={validSelectedIds.has(order.oid)}
-												isCancelling={cancellingOids.has(order.oid)}
+												isCancelling={sharedCancellingOids.has(order.oid)}
 												editField={editTarget?.order.oid === order.oid ? editTarget.field : null}
 												editValue={editValue}
 												editDisabled={
 													isModifyLocked ||
-													unconfirmedModifyOid !== null ||
+													sessionModifications.some((action) => action.oid === order.oid) ||
 													pendingScopes.size > 0 ||
-													cancellingOids.has(order.oid)
+													sharedCancellingOids.has(order.oid)
 												}
-												editInvalid={editTarget?.order.oid === order.oid && !!modifyValidationError}
+												editInvalid={editTarget?.order.oid === order.oid && !!visibleModifyValidationError}
 												editErrorId={modifyActionErrorId}
-												cancelDisabled={isModifyLocked || pendingScopes.size > 0 || cancellingOids.has(order.oid)}
+												cancelDisabled={isModifyLocked || pendingScopes.size > 0 || sharedCancellingOids.has(order.oid)}
 												isEven={i % 2 === 1}
 												onToggle={handleToggleOrder}
 												onCancel={handleCancelRow}

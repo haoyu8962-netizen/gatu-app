@@ -5,7 +5,6 @@ import {
 	useHyperliquidTransport,
 	useSubscription,
 } from "@gatu/hl-react";
-import { getFastAssetCtxFieldReceivedAt } from "@gatu/hl-react/registries/subscription";
 import { useEffect, useMemo, useState } from "react";
 import { STORAGE_KEYS } from "@/config/app";
 import { MARKETS_STATS_TTL_MS } from "@/config/time";
@@ -210,6 +209,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		data: fastAssetCtxs,
 		status: fastPriceSubscriptionStatus,
 		isStale: isFastPriceStale,
+		lastMessageAt: fastPriceLastMessageAt,
 	} = useSubscription("fastAssetCtxs", undefined, {
 		enabled: fastPriceSubscriptionEnabled,
 		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
@@ -231,23 +231,18 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			market: T,
 			context: C,
 		): T & C & LiveMarketPriceFields => {
-			const markReceivedAt = getFastAssetCtxFieldReceivedAt(fastAssetCtxs, market.name, "markPx");
-			const midReceivedAt = getFastAssetCtxFieldReceivedAt(fastAssetCtxs, market.name, "midPx");
 			const price = resolveFastMarketPrice({
 				coin: market.name,
 				enabled: fastPriceSubscriptionEnabled,
 				data: fastAssetCtxs,
 				subscriptionStatus: fastPriceSubscriptionStatus,
 				isStale: isFastPriceStale,
-				markReceivedAt,
-				midReceivedAt,
+				lastMessageAt: fastPriceLastMessageAt,
 			});
 			return {
 				...market,
 				...context,
 				...(price.markPx ? { markPx: price.markPx } : null),
-				// A slow statistics snapshot must never leak back in as a live mid.
-				// Undefined means this exact fast field is missing or expired.
 				midPx: price.midPx,
 				markPriceStatus: price.status,
 				markPriceReceivedAt: price.receivedAt,
@@ -296,6 +291,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		fastAssetCtxs,
 		fastPriceSubscriptionStatus,
 		isFastPriceStale,
+		fastPriceLastMessageAt,
 	]);
 
 	const marketLookup = useMemo(() => createMarketLookup(result.markets), [result.markets]);

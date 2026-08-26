@@ -45,6 +45,7 @@ import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
 import { PositionReverseConfirmationController } from "../positions/position-reverse-confirmation-controller";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
+import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import type { MobileDisclosureSetState } from "./use-mobile-disclosure-set";
@@ -65,50 +66,6 @@ interface PositionFiltersState {
 interface OwnedPositionPnlShare {
 	ownerKey: string;
 	position: PositionPnlShareData;
-}
-
-interface MobilePositionBulkDetailsActionsProps {
-	filteredPositionKeys: readonly string[];
-	expandedPositionKeys: ReadonlySet<string>;
-	onExpandAll: () => void;
-	onCollapseAll: () => void;
-}
-
-const mobileBulkActionClass =
-	"relative min-h-0 whitespace-nowrap p-0 text-xs leading-4 transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-fg-disabled";
-
-export function MobilePositionBulkDetailsActions({
-	filteredPositionKeys,
-	expandedPositionKeys,
-	onExpandAll,
-	onCollapseAll,
-}: MobilePositionBulkDetailsActionsProps) {
-	const { t } = useLingui();
-	const canExpand = filteredPositionKeys.some((key) => !expandedPositionKeys.has(key));
-	const canCollapse = filteredPositionKeys.some((key) => expandedPositionKeys.has(key));
-
-	return (
-		<div data-testid="mobile-position-bulk-details-actions" className="flex shrink-0 items-center gap-3">
-			<button
-				type="button"
-				data-testid="expand-all-position-details"
-				onClick={onExpandAll}
-				disabled={!canExpand}
-				className={cn(mobileBulkActionClass, "font-semibold text-market-close-fg")}
-			>
-				{t`Expand all`}
-			</button>
-			<button
-				type="button"
-				data-testid="collapse-all-position-details"
-				onClick={onCollapseAll}
-				disabled={!canCollapse}
-				className={cn(mobileBulkActionClass, "font-normal text-market-close-muted")}
-			>
-				{t`Collapse all`}
-			</button>
-		</div>
-	);
 }
 
 export function MobilePositionsTab({ scrollMode = "contained", disclosureState }: Props) {
@@ -189,12 +146,8 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	const filteredPositionKeys = filteredPositions.map(
 		(position) => `${ownerKey ?? "disconnected"}:${position.dex}:${position.coin}`,
 	);
-	const {
-		expandedKeys: expandedPositionKeys,
-		setExpanded: setPositionExpanded,
-		expandAll: expandAllPositions,
-		collapseAll: collapseAllPositions,
-	} = disclosureState.createController(filteredPositionKeys);
+	const positionsDisclosure = disclosureState.createController(filteredPositionKeys);
+	const { expandedKeys: expandedPositionKeys, setExpanded: setPositionExpanded } = positionsDisclosure;
 
 	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
 		setPositionFilters((current) => ({
@@ -226,14 +179,6 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 	function handlePositionExpandedChange(key: string, expanded: boolean) {
 		if (expandedPositionKeys.has(key) === expanded) return;
 		setPositionExpanded(key, expanded);
-	}
-
-	function handleExpandAllDetails() {
-		expandAllPositions(filteredPositionKeys);
-	}
-
-	function handleCollapseAllDetails() {
-		collapseAllPositions(filteredPositionKeys);
 	}
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
@@ -341,12 +286,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 							onMarketChange={handlePositionMarketChange}
 							mobile
 						/>
-						<MobilePositionBulkDetailsActions
-							filteredPositionKeys={filteredPositionKeys}
-							expandedPositionKeys={expandedPositionKeys}
-							onExpandAll={handleExpandAllDetails}
-							onCollapseAll={handleCollapseAllDetails}
-						/>
+						<MobileBulkDisclosureActions keys={filteredPositionKeys} controller={positionsDisclosure} />
 					</div>
 					<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 						{filteredPositions.length === 0 ? (
