@@ -241,7 +241,13 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										{t`Market`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Size`} / {t`Position Value`}
+										{t`Size`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Position Value`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Entry Price`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
 										<Tooltip
@@ -252,7 +258,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 												type="button"
 												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 											>
-												{t`Entry Price`} / {t`Mark Price`}
+												{t`Mark Price`}
 											</button>
 										</Tooltip>
 									</TableHead>

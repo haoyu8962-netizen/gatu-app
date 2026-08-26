@@ -1,11 +1,12 @@
-// Keep the desktop overflow distance aligned with Hyperliquid's compact account table.
-export const POSITION_TABLE_MIN_WIDTH = 1136;
+// Keep every desktop position metric in a dedicated column at compact table density.
+export const POSITION_TABLE_MIN_WIDTH = 1332;
 
-// Combined columns preserve Gatu's information hierarchy while matching the official table density.
 export const POSITION_TABLE_COLUMNS = [
 	{ id: "market", width: 150 },
-	{ id: "size", width: 134 },
-	{ id: "prices", width: 126 },
+	{ id: "size", width: 112 },
+	{ id: "positionValue", width: 132 },
+	{ id: "entryPrice", width: 106 },
+	{ id: "markPrice", width: 106 },
 	{ id: "pnl", width: 144 },
 	{ id: "liquidation", width: 104 },
 	{ id: "tpsl", width: 100 },

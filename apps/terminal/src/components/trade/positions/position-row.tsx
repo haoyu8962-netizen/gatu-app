@@ -307,15 +307,23 @@ export function PositionRow({
 				</div>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
-				<span className="flex flex-col items-end gap-px" title={`${sizeDisplay} / ${positionValueDisplay}`}>
-					<span className="text-[13px] font-semibold text-market-close-fg">{sizeDisplay}</span>
-					<span className="text-[11px] leading-[14px] text-market-close-subtle">{positionValueDisplay}</span>
+				<span className={cn("block text-[13px] font-semibold", sideClass)} title={sizeDisplay}>
+					{sizeDisplay}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
-				<span className="flex flex-col items-end gap-px" title={`${entryPriceDisplay} / ${markPriceDisplay}`}>
-					<span className="text-[13px] text-market-close-fg">{entryPriceDisplay}</span>
-					<span className="text-[11px] leading-[14px] text-market-close-subtle">{markPriceDisplay}</span>
+				<span className="block text-[13px] text-market-close-fg" title={positionValueDisplay}>
+					{positionValueDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="block text-[13px] text-market-close-fg" title={entryPriceDisplay}>
+					{entryPriceDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
+				<span className="block text-[13px] text-market-close-fg" title={markPriceDisplay}>
+					{markPriceDisplay}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>

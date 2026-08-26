@@ -95,6 +95,15 @@ describe("PositionRow market close entry", () => {
 			);
 		});
 
+		const cells = [...container.querySelectorAll<HTMLTableCellElement>("tbody tr > td")];
+		const metricTitles = cells.slice(1, 5).map((cell) => cell.querySelector<HTMLElement>("[title]")?.title);
+		expect(cells).toHaveLength(11);
+		expect(metricTitles[0]).toContain("CXMT");
+		expect(metricTitles[1]).toContain("USDC");
+		expect(metricTitles[2]).not.toBe(metricTitles[3]);
+		expect(metricTitles.every((title) => title !== undefined && !title.includes(" / "))).toBe(true);
+		expect(cells[1]?.querySelector("span")?.classList).toContain("text-market-close-danger");
+
 		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]');
 		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Desktop market close entry was not rendered");
 

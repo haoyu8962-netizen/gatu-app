@@ -54,12 +54,14 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).not.toContain("positionsPanelTableCaptionRowClass");
 	});
 
-	it("uses the official-density fixed nine-column geometry", () => {
-		expect(POSITION_TABLE_MIN_WIDTH).toBe(1136);
+	it("uses the official-density fixed eleven-column geometry", () => {
+		expect(POSITION_TABLE_MIN_WIDTH).toBe(1332);
 		expect(POSITION_TABLE_COLUMNS.map(({ id, width }) => [id, width])).toEqual([
 			["market", 150],
-			["size", 134],
-			["prices", 126],
+			["size", 112],
+			["positionValue", 132],
+			["entryPrice", 106],
+			["markPrice", 106],
 			["pnl", 144],
 			["liquidation", 104],
 			["tpsl", 100],
@@ -74,11 +76,20 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
 	});
 
-	it("uses the handoff's nine combined position columns", () => {
-		expect(POSITIONS_TAB_SOURCE.match(/<TableHead\b/g)).toHaveLength(9);
-		expect(POSITION_ROW_SOURCE.match(/<TableCell\b/g)).toHaveLength(9);
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`} / {t`Position Value`}");
-		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`} / {t`Mark Price`}");
+	it("uses eleven independent semantic position columns", () => {
+		expect(POSITIONS_TAB_SOURCE.match(/<TableHead\b/g)).toHaveLength(11);
+		expect(POSITION_ROW_SOURCE.match(/<TableCell\b/g)).toHaveLength(11);
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Position Value`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Mark Price`}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Size`} / {t`Position Value`}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Entry Price`} / {t`Mark Price`}");
+		expect(POSITION_ROW_SOURCE).toContain("title={sizeDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={positionValueDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={entryPriceDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain("title={markPriceDisplay}");
+		expect(POSITION_ROW_SOURCE).toContain('cn("block text-[13px] font-semibold", sideClass)');
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Liquidation Price`}");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Margin Ratio`}");
 		expect(POSITION_ROW_SOURCE).toContain("liqIsNear");
