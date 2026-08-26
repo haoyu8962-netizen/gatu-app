@@ -191,6 +191,54 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 	});
 
+	it("orders expanded metrics like the official mobile position card", () => {
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets,
+					markPx: "7.5759",
+					markPriceStatus: "success",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					expanded: true,
+					onMarketClose: vi.fn(),
+					onShare: vi.fn(),
+					onReverse: vi.fn(),
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const disclosure = container.querySelector<HTMLButtonElement>(
+			'button[aria-label="Collapse CXMT-USDC position details"]',
+		);
+		const detailsId = disclosure?.getAttribute("aria-controls");
+		const details = detailsId ? document.getElementById(detailsId) : null;
+		const metrics = details?.querySelector<HTMLDivElement>(":scope > div.grid");
+		if (!metrics) throw new Error("Expanded position metrics were not rendered");
+
+		const labels = [...metrics.children].map((metric) => {
+			const metricRoot = metric instanceof HTMLButtonElement ? metric.firstElementChild : metric;
+			return metricRoot?.firstElementChild?.textContent;
+		});
+		expect(metrics.className).toContain("grid-cols-3");
+		expect(labels).toEqual([
+			"Entry Price",
+			"Mark Price",
+			"Liquidation Price",
+			"Position Value",
+			"Margin",
+			"TP/SL",
+			"Funding",
+		]);
+	});
+
 	it("keeps close and reverse actions available without a toolbar mark", () => {
 		const onMarketClose = vi.fn();
 		const onLimitClose = vi.fn();

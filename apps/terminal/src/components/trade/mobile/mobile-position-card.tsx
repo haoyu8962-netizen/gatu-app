@@ -356,6 +356,13 @@ export function MobilePositionCard({
 			{isExpanded ? (
 				<div id={detailsId} className="flex flex-col gap-3 px-3.5 py-3">
 					<div className="grid min-w-0 grid-cols-3 gap-x-2.5 gap-y-3">
+						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Mark Price`} value={markPriceDisplay} />
+						<PositionMetric
+							label={t`Liquidation Price`}
+							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
+							valueClassName={liqIsNear ? "text-error" : undefined}
+						/>
 						<PositionMetric
 							label={t`Position Value`}
 							value={positionValueDisplay}
@@ -375,19 +382,6 @@ export function MobilePositionCard({
 						) : (
 							<div className="min-w-0">{marginMetric}</div>
 						)}
-						<PositionMetric
-							label={t({ message: "Funding", context: "Cumulative position funding" })}
-							value={fundingValue}
-							valueClassName={fundingClass}
-							valueTitle={fundingValue}
-						/>
-						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
-						<PositionMetric label={t`Mark Price`} value={markPriceDisplay} />
-						<PositionMetric
-							label={t`Liquidation Price`}
-							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
-							valueClassName={liqIsNear ? "text-error" : undefined}
-						/>
 						<button
 							type="button"
 							onClick={handleOpenTpSl}
@@ -411,6 +405,12 @@ export function MobilePositionCard({
 								wrapValue
 							/>
 						</button>
+						<PositionMetric
+							label={t({ message: "Funding", context: "Cumulative position funding" })}
+							value={fundingValue}
+							valueClassName={fundingClass}
+							valueTitle={fundingValue}
+						/>
 					</div>
 
 					<div className="flex items-center border-t border-market-close-stroke-card pt-[11px]">

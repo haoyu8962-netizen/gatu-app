@@ -190,7 +190,7 @@ describe("positions table visual contract", () => {
 		}
 	});
 
-	it("uses the handoff mobile disclosure card without internal cell dividers", () => {
+	it("uses the official mobile disclosure card structure without internal cell dividers", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("<MobileDisclosureHeader");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-3");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px]");
