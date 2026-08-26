@@ -38,7 +38,7 @@ const testState = vi.hoisted(() => ({
 			assetId: 0,
 			szDecimals: 4,
 			signedPositionSize: "2.5",
-			markPx: "100000",
+			markPx: "100000" as string | undefined,
 			marginMode: "cross" as const,
 		},
 		sizingIntent: { kind: "max" } as
@@ -343,6 +343,23 @@ describe("PositionMarketCloseModal", () => {
 		});
 		expect(testState.actionButtonProps?.className).toContain("!rounded-[12px]");
 		expect(testState.actionButtonProps?.className).toContain("!text-market-close-danger-text");
+	});
+
+	it("renders an optional mark preview without blocking the fresh submit flow", async () => {
+		testState.marketsInfo = undefined;
+		testState.session.position.markPx = undefined;
+		render();
+
+		expect(getSummaryValue("Mark price")?.textContent).toBe("-");
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(false);
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+		});
+		expect(testState.submit).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			dismissFutureConfirmation: false,
+		});
 	});
 
 	it("uses the design-sized mobile drawer and keeps the opt-out visible", () => {

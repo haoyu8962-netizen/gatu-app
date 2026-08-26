@@ -12,7 +12,6 @@ export interface PositionCloseAllCandidate {
 	assetId: number | undefined;
 	szDecimals: number | undefined;
 	signedPositionSize: string;
-	markPx: string | undefined;
 	positionValue: string;
 	unrealizedPnl: string;
 	marginMode: MarginMode;
@@ -25,7 +24,6 @@ export interface PositionCloseAllTarget {
 	assetId: number;
 	szDecimals: number;
 	signedPositionSize: string;
-	markPx: string;
 	marginMode: MarginMode;
 	quoteSymbol: string;
 }
@@ -80,7 +78,6 @@ export function resolvePositionCloseAllSnapshot({
 
 	for (const candidate of candidates) {
 		const positionSize = toBig(candidate.signedPositionSize);
-		const markPx = toBig(candidate.markPx);
 		const positionValue = toBig(candidate.positionValue);
 		const unrealizedPnl = toBig(candidate.unrealizedPnl);
 		const quoteSymbol = candidate.quoteSymbol?.trim();
@@ -89,9 +86,7 @@ export function resolvePositionCloseAllSnapshot({
 			(candidate.assetId ?? -1) >= 0 &&
 			Number.isSafeInteger(candidate.szDecimals) &&
 			(candidate.szDecimals ?? -1) >= 0 &&
-			!!quoteSymbol &&
-			markPx !== null &&
-			markPx.gt(0);
+			!!quoteSymbol;
 		const validPosition = positionSize?.abs().gt(0) === true && positionValue !== null && unrealizedPnl !== null;
 
 		if (!validMarket) issues.add("invalid-market");
@@ -117,7 +112,6 @@ export function resolvePositionCloseAllSnapshot({
 			assetId: candidate.assetId,
 			szDecimals: candidate.szDecimals,
 			signedPositionSize: positionSize.toString(),
-			markPx: markPx.toString(),
 			marginMode: candidate.marginMode,
 			quoteSymbol,
 		});

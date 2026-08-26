@@ -21,7 +21,14 @@ const testState = vi.hoisted(() => ({
 		entryPx: "100",
 		unrealizedPnl: "2.5",
 	} as { szi: string; entryPx: string; unrealizedPnl: string } | null,
-	marketInfo: { markPx: "101", midPx: "100.5", shortName: "BTC" },
+	marketInfo: {
+		markPx: "101" as string | undefined,
+		midPx: "100.5" as string | null | undefined,
+		shortName: "BTC",
+		markPriceStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
+		markPriceReceivedAt: Date.now() as number | undefined,
+		midPriceReceivedAt: Date.now() as number | undefined,
+	},
 	numberInputs: new Map<string, Record<string, unknown>>(),
 	phase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
 	positionHasError: false,
@@ -224,6 +231,9 @@ describe("PositionLimitCloseModal", () => {
 		testState.marketInfo.markPx = "101";
 		testState.marketInfo.midPx = "100.5";
 		testState.marketInfo.shortName = "BTC";
+		testState.marketInfo.markPriceStatus = "success";
+		testState.marketInfo.markPriceReceivedAt = Date.now();
+		testState.marketInfo.midPriceReceivedAt = Date.now();
 		testState.numberInputs.clear();
 		testState.phase = "idle";
 		testState.positionHasError = false;
@@ -264,12 +274,55 @@ describe("PositionLimitCloseModal", () => {
 			signedPositionSize: "2.5",
 			marginMode: "cross",
 		});
-		expect(testState.priceInputProps).toMatchObject({ value: "101", midPrice: "100.5", maxAllowedDecimals: 2 });
-		expect(container.querySelector('[data-testid="position-limit-close-summary"]')?.textContent).toContain("$2.50");
+		expect(testState.priceInputProps).toMatchObject({ value: "", midPrice: "100.5", maxAllowedDecimals: 2 });
+		expect(container.querySelector('[data-testid="position-limit-close-summary"]')?.textContent).toContain(
+			"Estimated PnL-",
+		);
 		expect(container.textContent).toContain("Order will rest until filled or canceled.");
 		expect(container.querySelector('input[type="checkbox"]')).toBeNull();
 		expect(testState.actionButtonProps?.holdDurationMs).toBeUndefined();
 		expect(testState.actionButtonProps?.requireReadyConfirmation).toBe(true);
+	});
+
+	it("starts blank and never auto-overwrites the user's price", () => {
+		testState.marketInfo.markPriceStatus = "stale";
+		render();
+
+		expect(testState.priceInputProps).toMatchObject({ value: "", midPrice: undefined });
+		expect(testState.priceInputProps?.onMidClick).toBeUndefined();
+		expect(container.querySelector('[data-testid="position-limit-close-summary"]')?.textContent).toContain(
+			"Mark price$101",
+		);
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+
+		testState.marketInfo.markPriceStatus = "success";
+		testState.marketInfo.markPx = "102";
+		testState.marketInfo.midPx = "101.5";
+		testState.marketInfo.markPriceReceivedAt = Date.now();
+		testState.marketInfo.midPriceReceivedAt = Date.now();
+		render();
+		expect(testState.priceInputProps?.value).toBe("");
+
+		act(() => {
+			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "99" },
+			});
+		});
+		testState.marketInfo.markPx = "103";
+		testState.marketInfo.midPx = "102.5";
+		testState.marketInfo.markPriceReceivedAt = Date.now();
+		testState.marketInfo.midPriceReceivedAt = Date.now();
+		render();
+
+		expect(testState.priceInputProps).toMatchObject({ value: "99", midPrice: "102.5" });
+	});
+
+	it("does not substitute mark price for an unavailable Mid shortcut", () => {
+		testState.marketInfo.midPriceReceivedAt = undefined;
+		render();
+
+		expect(testState.priceInputProps).toMatchObject({ value: "", midPrice: undefined });
+		expect(testState.priceInputProps?.onMidClick).toBeUndefined();
 	});
 
 	it("uses the terminal mobile breakpoint presentation", () => {
@@ -321,6 +374,11 @@ describe("PositionLimitCloseModal", () => {
 
 	it("submits exact strings once and closes only after a confirmed resting or filled response", async () => {
 		render();
+		act(() => {
+			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "101" },
+			});
+		});
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
@@ -347,6 +405,11 @@ describe("PositionLimitCloseModal", () => {
 	it("hands ambiguous submissions to global reconciliation and closes the local dialog", async () => {
 		testState.submit.mockResolvedValue({ state: "reconciling", submissionId: "submission-1" });
 		render();
+		act(() => {
+			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "101" },
+			});
+		});
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();

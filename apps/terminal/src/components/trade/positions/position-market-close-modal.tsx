@@ -115,13 +115,13 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const helperId = `position-market-close-helper-${sessionId}`;
 	const marketInfo = getMarketInfo(position.coin);
 	const sizeSymbol = marketInfo?.shortName ?? position.coin.split(":").pop() ?? position.coin;
-	const markPx = marketInfo?.markPx ?? position.markPx;
+	const displayMarkPx = marketInfo?.markPx ?? position.markPx;
 	const estimatedPnl = estimatePositionMarketClosePnl({
 		signedPositionSize,
 		normalizedCloseSize: sizing.normalizedSize,
 		unrealizedPnl: livePosition?.unrealizedPnl,
 		entryPx: livePosition?.entryPx,
-		markPx,
+		markPx: displayMarkPx,
 	});
 	const formattedCloseSize = formatToken(sizing.normalizedSize, { decimals: position.szDecimals });
 	const pnlColorClass = estimatedPnl
@@ -148,7 +148,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		{
 			key: "mark",
 			label: t`Mark price`,
-			value: formatPrice(markPx, { szDecimals: position.szDecimals }),
+			value: formatPrice(displayMarkPx, { szDecimals: position.szDecimals }),
 			valueClassName: "font-semibold text-market-close-fg min-[1001px]:font-normal",
 		},
 		...(showPnl

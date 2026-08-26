@@ -1,6 +1,6 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ShareIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -105,7 +105,7 @@ export function PositionRow({
 
 	const fundingPayment = getPositionFundingPayment(p.cumFunding.sinceOpen);
 	const canManage = typeof assetId === "number";
-	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
@@ -145,20 +145,6 @@ export function PositionRow({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
-	const markStatusIndicator =
-		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
-			<Tooltip content={t`Loading...`} side="top">
-				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-			</Tooltip>
-		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
-			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
-				<WarningCircleIcon
-					className="size-3 shrink-0 text-warning"
-					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
-				/>
-			</Tooltip>
-		) : null;
-
 	function renderTpSlContent() {
 		if (hasTpSl) {
 			return (
@@ -198,27 +184,27 @@ export function PositionRow({
 	}
 
 	function handleMarketClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onMarketClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			szDecimals,
 			signedPositionSize: p.szi,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			marginMode: p.leverage.type,
 		});
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onLimitClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			signedPositionSize: p.szi,
 			entryPx: p.entryPx,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			szDecimals,
 			marginMode: p.leverage.type,
 		});
@@ -329,10 +315,7 @@ export function PositionRow({
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
 				<span className="flex flex-col items-end gap-px" title={`${entryPriceDisplay} / ${markPriceDisplay}`}>
 					<span className="text-[13px] text-market-close-fg">{entryPriceDisplay}</span>
-					<span className="inline-flex items-center gap-1 text-[11px] leading-[14px] text-market-close-subtle">
-						{markPriceDisplay}
-						{markStatusIndicator}
-					</span>
+					<span className="text-[11px] leading-[14px] text-market-close-subtle">{markPriceDisplay}</span>
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>

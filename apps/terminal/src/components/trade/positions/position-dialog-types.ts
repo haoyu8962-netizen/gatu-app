@@ -38,7 +38,7 @@ export interface PositionMarketCloseRef {
 	assetId: number;
 	szDecimals: number;
 	signedPositionSize: string;
-	markPx: string;
+	markPx?: string;
 	marginMode: MarginMode;
 }
 
@@ -57,7 +57,7 @@ export interface LimitClosePositionData {
 	assetId: number;
 	signedPositionSize: string;
 	entryPx: string;
-	markPx: string;
+	markPx?: string;
 	szDecimals: number;
 	marginMode: MarginMode;
 }

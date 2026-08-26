@@ -21,6 +21,7 @@ describe("fastAssetCtxs subscription", () => {
 	let store: HyperliquidStore;
 	let listeners: Listener[];
 	let failureOptions: SdkSubscriptionOptions[];
+	let disconnectListeners: Set<() => void>;
 	let unsubscribe: () => Promise<void>;
 	let subscription: SubscriptionClient;
 	let captured: ReturnType<typeof useSubscription<"fastAssetCtxs">>;
@@ -32,7 +33,15 @@ describe("fastAssetCtxs subscription", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		container = document.createElement("div");
 		root = createRoot(container);
-		store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		disconnectListeners = new Set();
+		store = createHyperliquidStore({
+			ssr: false,
+			triggerReconnect: vi.fn(),
+			subscribeDisconnect: (listener) => {
+				disconnectListeners.add(listener);
+				return () => disconnectListeners.delete(listener);
+			},
+		});
 		listeners = [];
 		failureOptions = [];
 		unsubscribe = vi.fn(async () => {});
@@ -119,17 +128,46 @@ describe("fastAssetCtxs subscription", () => {
 		expect(captured.isStale).toBe(false);
 	});
 
-	it("starts reconnect and refresh-key generations from a new full snapshot", async () => {
+	it("resets a reused SDK listener to the reconnect snapshot baseline", async () => {
+		await renderConsumer();
+		act(() => listeners[0]?.({ ETH: { markPx: "3000", midPx: "3001" } }));
+
+		act(() => {
+			for (const notifyDisconnect of [...disconnectListeners]) notifyDisconnect();
+		});
+		expect(captured.isStale).toBe(true);
+
+		vi.setSystemTime(2_000);
+		act(() => listeners[0]?.({ BTC: { markPx: "100000", midPx: "100001" } }));
+
+		expect(captured.data).toEqual({ BTC: { markPx: "100000", midPx: "100001" } });
+		expect(captured.lastMessageAt).toBe(2_000);
+		expect(captured.isStale).toBe(false);
+	});
+
+	it("detaches the reconnect reset listener when the subscription is released", async () => {
+		await renderConsumer();
+		expect(disconnectListeners).toHaveLength(2);
+
+		await act(async () => captured.unsubscribe?.());
+
+		expect(disconnectListeners).toHaveLength(0);
+		expect(unsubscribe).toHaveBeenCalledOnce();
+	});
+
+	it("starts error recovery and refresh-key generations from a new full snapshot", async () => {
 		await renderConsumer("first");
 		act(() => listeners[0]?.({ ETH: { markPx: "3000", midPx: "3001" } }));
 
 		act(() => failureOptions[0]?.onError?.(new Error("stream disconnected")));
 		expect(captured.status).toBe("error");
 		expect(captured.isStale).toBe(true);
+		expect(disconnectListeners).toHaveLength(1);
 
 		act(() => listeners[0]?.({ ETH: { markPx: "9999" } }));
 		await act(() => vi.advanceTimersByTimeAsync(250));
 		expect(listeners).toHaveLength(2);
+		expect(disconnectListeners).toHaveLength(2);
 
 		act(() => listeners[1]?.({ BTC: { markPx: "100000", midPx: "100001" } }));
 		expect(captured.data).toEqual({ BTC: { markPx: "100000", midPx: "100001" } });

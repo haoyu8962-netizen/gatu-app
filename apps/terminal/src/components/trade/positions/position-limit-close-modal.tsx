@@ -4,6 +4,7 @@ import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { PriceInput } from "@/components/ui/price-input";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import { formatPriceForOrder } from "@/domain/trade/orders";
 import { estimatePositionLimitClosePnl } from "@/domain/trade/position-limit-close";
 import {
@@ -98,12 +99,18 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const userPositions = useUserPositions();
 	const { getMarketInfo } = useMarketsInfo();
 	const marketInfo = getMarketInfo(position.coin);
+	const displayMarkPx = marketInfo?.markPx ?? position.markPx;
+	const liveMidPx = isLiveMarkPriceReady(
+		marketInfo?.markPriceStatus ?? "loading",
+		marketInfo?.midPx ?? undefined,
+		marketInfo?.midPriceReceivedAt,
+	)
+		? (marketInfo?.midPx ?? undefined)
+		: undefined;
 	const livePosition = userPositions.getPosition(position.coin, position.dex);
 	const { submit, phase, isPending, isReconciling, error, resetError } = usePositionLimitCloseSubmit(openingTarget);
 	const [sizingIntent, setSizingIntentState] = useState<PositionCloseSizingIntent>({ kind: "max" });
-	const [priceInput, setPriceInput] = useState(() =>
-		formatPriceForOrder(position.markPx, { assetId: position.assetId, szDecimals: position.szDecimals }),
-	);
+	const [priceInput, setPriceInput] = useState("");
 	const [showPriceError, setShowPriceError] = useState(false);
 
 	const openingPosition = resolvePositionMarketClosePercent({
@@ -171,8 +178,6 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const helperId = `position-limit-close-helper-${position.assetId}`;
 	const priceInputId = `position-limit-close-price-${position.assetId}`;
 	const sizeSymbol = marketInfo?.shortName ?? position.coin.split(":").pop() ?? position.coin;
-	const markPx = marketInfo?.markPx ?? position.markPx;
-	const midPx = marketInfo?.midPx ?? markPx;
 	const entryPx = livePosition?.entryPx ?? position.entryPx;
 	const estimatedPnl = estimatePositionLimitClosePnl({
 		signedPositionSize,
@@ -204,7 +209,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		{
 			key: "mark",
 			label: t`Mark price`,
-			value: formatPrice(markPx, { szDecimals: position.szDecimals }),
+			value: formatPrice(displayMarkPx, { szDecimals: position.szDecimals }),
 			valueClassName: "font-semibold text-market-close-fg min-[1001px]:font-normal",
 		},
 		{
@@ -329,11 +334,12 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 						value={priceInput}
 						onChange={(event) => setPrice(event.target.value)}
 						onBlur={handlePriceBlur}
-						onMidClick={setMidPrice}
+						onMidClick={liveMidPx ? setMidPrice : undefined}
 						placeholder="0.00"
 						maxAllowedDecimals={szDecimalsToPriceDecimals(position.szDecimals)}
-						midPrice={midPx}
+						midPrice={liveMidPx}
 						szDecimals={position.szDecimals}
+						assetId={position.assetId}
 						disabled={!canEdit}
 						inputSize="xl"
 						mobileSafe

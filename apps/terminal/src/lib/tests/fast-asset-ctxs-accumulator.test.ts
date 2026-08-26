@@ -1,12 +1,7 @@
-import {
-	createSubscriptionEventAccumulator,
-	getFastAssetCtxFieldReceivedAt,
-} from "@gatu/hl-react/registries/subscription";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { createSubscriptionEventAccumulator } from "@gatu/hl-react/registries/subscription";
+import { describe, expect, it } from "vitest";
 
 describe("fastAssetCtxs event accumulator", () => {
-	afterEach(() => vi.useRealTimers());
-
 	it("deep-merges changed coins and fields without mutating prior snapshots", () => {
 		const accumulator = createSubscriptionEventAccumulator("fastAssetCtxs");
 		if (!accumulator) throw new Error("Missing fastAssetCtxs accumulator");
@@ -32,24 +27,17 @@ describe("fastAssetCtxs event accumulator", () => {
 		});
 	});
 
-	it("tracks mark and mid receipt times independently for each coin", () => {
-		vi.useFakeTimers();
-		vi.setSystemTime(1_000);
+	it("replaces the previous generation when the transport disconnects", () => {
 		const accumulator = createSubscriptionEventAccumulator("fastAssetCtxs");
 		if (!accumulator) throw new Error("Missing fastAssetCtxs accumulator");
 
-		const first = accumulator.add({ BTC: { markPx: "100000", midPx: "100001" } });
-		vi.setSystemTime(2_000);
-		const midOnly = accumulator.add({ BTC: { midPx: "100002" }, HYPE: { markPx: "40" } });
-		vi.setSystemTime(3_000);
-		const otherCoin = accumulator.add({ HYPE: { midPx: "40.01" } });
+		accumulator.add({ ETH: { markPx: "3000", midPx: "3001" } });
+		accumulator.add({ ETH: { markPx: "3002" }, HYPE: { markPx: "40" } });
+		accumulator.reset();
 
-		expect(getFastAssetCtxFieldReceivedAt(first, "BTC", "markPx")).toBe(1_000);
-		expect(getFastAssetCtxFieldReceivedAt(midOnly, "BTC", "markPx")).toBe(1_000);
-		expect(getFastAssetCtxFieldReceivedAt(midOnly, "BTC", "midPx")).toBe(2_000);
-		expect(getFastAssetCtxFieldReceivedAt(otherCoin, "BTC", "markPx")).toBe(1_000);
-		expect(getFastAssetCtxFieldReceivedAt(otherCoin, "HYPE", "markPx")).toBe(2_000);
-		expect(getFastAssetCtxFieldReceivedAt(otherCoin, "HYPE", "midPx")).toBe(3_000);
+		expect(accumulator.add({ BTC: { markPx: "100000", midPx: "100001" } })).toEqual({
+			BTC: { markPx: "100000", midPx: "100001" },
+		});
 	});
 
 	it("creates an independent snapshot baseline for every subscription generation", () => {

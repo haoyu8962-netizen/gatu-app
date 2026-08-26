@@ -16,7 +16,6 @@ describe("position close-all snapshot", () => {
 					assetId: 120_031,
 					szDecimals: 3,
 					signedPositionSize: "-2.500",
-					markPx: "149.0200",
 					positionValue: "372.550000000000000001",
 					unrealizedPnl: "-2.675000000000000001",
 					marginMode: "isolated",
@@ -28,7 +27,6 @@ describe("position close-all snapshot", () => {
 					assetId: 1,
 					szDecimals: 5,
 					signedPositionSize: "0.01000",
-					markPx: "100000",
 					positionValue: "-1000.000000000000000009",
 					unrealizedPnl: "12.675000000000000009",
 					marginMode: "cross",
@@ -43,6 +41,7 @@ describe("position close-all snapshot", () => {
 		expect(resolution.snapshot.capturedAtMs).toBe(1_786_000_000_000);
 		expect(resolution.snapshot.targets.map((target) => target.assetId)).toEqual([1, 120_031]);
 		expect(resolution.snapshot.targets.map((target) => target.signedPositionSize)).toEqual(["0.01", "-2.5"]);
+		expect(resolution.snapshot.targets.every((target) => !("markPx" in target))).toBe(true);
 		expect(resolution.snapshot.summaryTotals).toEqual([
 			{ quoteSymbol: "USDC", totalNotional: "1000.000000000000000009", estimatedPnl: "12.675000000000000009" },
 			{
@@ -65,7 +64,6 @@ describe("position close-all snapshot", () => {
 					assetId: undefined,
 					szDecimals: 5,
 					signedPositionSize: "0.01",
-					markPx: "100000",
 					positionValue: "1000",
 					unrealizedPnl: "10",
 					marginMode: "cross",
@@ -89,7 +87,6 @@ describe("position close-all snapshot", () => {
 					assetId: 120_001,
 					szDecimals: 3,
 					signedPositionSize: "1",
-					markPx: "10",
 					positionValue: "10",
 					unrealizedPnl: "0",
 					marginMode: "cross",
@@ -109,7 +106,6 @@ describe("position close-all snapshot", () => {
 			assetId: 1,
 			szDecimals: 5,
 			signedPositionSize: "0.01",
-			markPx: "100000",
 			positionValue: "1000",
 			unrealizedPnl: "10",
 			marginMode: "cross" as const,

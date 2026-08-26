@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -143,7 +143,7 @@ export function MobilePositionCard({
 	const fundingClass =
 		isDataStale || fundingAmount === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(fundingAmount);
 
-	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number";
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
 	const canShare =
@@ -165,19 +165,7 @@ export function MobilePositionCard({
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
 	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
-	const markPriceDisplay = (
-		<span className="inline-flex items-center gap-1">
-			{formatPrice(markPxRaw, { szDecimals, style: "decimal" })}
-			{markPriceStatus === "loading" || markPriceStatus === "idle" ? (
-				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-			) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
-				<WarningCircleIcon
-					className="size-3 shrink-0 text-warning"
-					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
-				/>
-			) : null}
-		</span>
-	);
+	const markPriceDisplay = formatPrice(markPxRaw, { szDecimals, style: "decimal" });
 
 	function buildReverseRef(): PositionReverseRef | null {
 		if (!canReverse || typeof assetId !== "number") return null;
@@ -210,27 +198,27 @@ export function MobilePositionCard({
 	}
 
 	function handleMarketClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onMarketClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			szDecimals,
 			signedPositionSize: p.szi,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			marginMode: p.leverage.type,
 		});
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		if (!canClose || typeof assetId !== "number") return;
 		onLimitClose({
 			coin: p.coin,
 			dex: p.dex,
 			assetId,
 			signedPositionSize: p.szi,
 			entryPx: p.entryPx,
-			markPx: markPxRaw,
+			...(markPxValue?.gt(0) && markPxRaw ? { markPx: markPxRaw } : null),
 			szDecimals,
 			marginMode: p.leverage.type,
 		});

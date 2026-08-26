@@ -99,6 +99,12 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
 	});
 
+	it("keeps Close All readiness independent from the incremental fast mark stream", () => {
+		expect(POSITIONS_TAB_SOURCE).not.toContain("allPositionMarksFresh");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("markPx: marketInfo?.markPx");
+		expect(POSITIONS_TAB_SOURCE).toContain("Close all is unavailable until every position market has loaded.");
+	});
+
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {
 		expect(POSITIONS_TAB_SOURCE).not.toContain("[&_[data-slot=scroll-area-scrollbar]]:hidden");
 		expect(POSITIONS_TAB_SOURCE).toContain("[&_[data-slot=scroll-area-viewport]]:overscroll-x-none");

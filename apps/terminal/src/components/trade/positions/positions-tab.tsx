@@ -112,16 +112,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
 	const signingIdentityReady =
 		isConnected && !!address && clientKey !== "disconnected" && address.toLowerCase() === clientKey.toLowerCase();
-	const allPositionMarksFresh = positions.every(
-		(position) => getMarketInfo(position.coin)?.markPriceStatus === "success",
-	);
 	const closeAllMarketDataReady =
-		!positionsLoading &&
-		!positionsError &&
-		!positionsStale &&
-		!markets.isLoading &&
-		!markets.error &&
-		allPositionMarksFresh;
+		!positionsLoading && !positionsError && !positionsStale && !markets.isLoading && !markets.error;
 	const closeAllDataReady = signingIdentityReady && closeAllMarketDataReady;
 
 	function resolveCurrentCloseAllSnapshot(capturedAtMs = Date.now()) {
@@ -131,14 +123,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 			capturedAtMs,
 			candidates: positions.map((position) => {
 				const market = markets.getMarket(position.coin);
-				const marketInfo = getMarketInfo(position.coin);
 				return {
 					coin: position.coin,
 					dex: position.dex,
 					assetId: market?.assetId,
 					szDecimals: market?.szDecimals,
 					signedPositionSize: position.szi,
-					markPx: marketInfo?.markPx,
 					positionValue: position.positionValue,
 					unrealizedPnl: position.unrealizedPnl,
 					marginMode: position.leverage.type,
@@ -160,7 +150,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 		if (closeAllPreview) return null;
 		if (!signingIdentityReady) return t`Close all is currently unavailable.`;
 		if (!closeAllMarketDataReady || closeAllIssues.includes("invalid-market")) {
-			return t`Close all is unavailable until every position market and mark price has loaded.`;
+			return t`Close all is unavailable until every position market has loaded.`;
 		}
 		if (closeAllIssues.includes("invalid-position")) {
 			return t`Close all is unavailable because position data is incomplete.`;

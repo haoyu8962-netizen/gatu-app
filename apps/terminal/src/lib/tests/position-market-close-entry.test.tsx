@@ -166,6 +166,72 @@ describe("PositionRow market close entry", () => {
 		});
 	});
 
+	it("keeps risk-reducing close entries available without a toolbar mark", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: undefined,
+							markPriceStatus: "loading",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose,
+							onShare: vi.fn(),
+							onLimitClose,
+							onReverse: vi.fn(),
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]');
+		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
+		expect(marketButton?.disabled).toBe(false);
+		expect(limitButton?.disabled).toBe(false);
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
+
+		act(() => {
+			marketButton?.click();
+			limitButton?.click();
+		});
+		expect(onMarketClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			szDecimals: 1,
+			signedPositionSize: "-205.9000",
+			marginMode: "isolated",
+		});
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "-205.9000",
+			entryPx: "7.79995",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
+	});
+
 	it("renders ROE or entry-notional price change from the selected PNL mode", () => {
 		function render(pnlMode: "roe" | "priceChange") {
 			root.render(

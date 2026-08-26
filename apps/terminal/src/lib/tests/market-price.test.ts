@@ -32,9 +32,7 @@ describe("live market price", () => {
 				data: { "xyz:MU": { markPx: "123.45", midPx: null } },
 				subscriptionStatus: "active",
 				isStale: false,
-				markReceivedAt: 1_000,
-				midReceivedAt: 1_000,
-				now: 1_001,
+				lastMessageAt: 1_000,
 			}),
 		).toEqual({
 			markPx: "123.45",
@@ -53,9 +51,7 @@ describe("live market price", () => {
 				data: { BTC: { markPx: "100000" } },
 				subscriptionStatus: "active",
 				isStale: true,
-				markReceivedAt: 1_000,
-				midReceivedAt: undefined,
-				now: 1_001,
+				lastMessageAt: 1_000,
 			}),
 		).toEqual({
 			markPx: "100000",
@@ -66,22 +62,27 @@ describe("live market price", () => {
 		});
 	});
 
-	it("marks one coin stale even while other coins or mid-only fields keep updating", () => {
-		expect(
-			resolveFastMarketPrice({
-				coin: "BTC",
-				enabled: true,
-				data: { BTC: { markPx: "100000", midPx: "100100" }, HYPE: { markPx: "42" } },
-				subscriptionStatus: "active",
-				isStale: false,
-				markReceivedAt: 1_000,
-				midReceivedAt: 11_000,
-				now: 11_001,
-			}).status,
-		).toBe("stale");
+	it("keeps an unchanged coin ready while the aggregate stream remains fresh", () => {
+		const price = resolveFastMarketPrice({
+			coin: "BTC",
+			enabled: true,
+			data: { BTC: { markPx: "100000", midPx: "100100" }, HYPE: { markPx: "42" } },
+			subscriptionStatus: "active",
+			isStale: false,
+			lastMessageAt: 11_000,
+		});
+
+		expect(price).toEqual({
+			markPx: "100000",
+			midPx: "100100",
+			status: "success",
+			receivedAt: 11_000,
+			midReceivedAt: 11_000,
+		});
+		expect(isLiveMarkPriceReady(price.status, price.markPx, price.receivedAt, 11_001)).toBe(true);
 	});
 
-	it("expires mid independently while retaining a fresh mark", () => {
+	it("retains an unchanged midpoint while the aggregate stream remains fresh", () => {
 		expect(
 			resolveFastMarketPrice({
 				coin: "BTC",
@@ -89,16 +90,14 @@ describe("live market price", () => {
 				data: { BTC: { markPx: "100000", midPx: "99990" } },
 				subscriptionStatus: "active",
 				isStale: false,
-				markReceivedAt: 11_000,
-				midReceivedAt: 1_000,
-				now: 11_001,
+				lastMessageAt: 11_000,
 			}),
 		).toEqual({
 			markPx: "100000",
-			midPx: undefined,
+			midPx: "99990",
 			status: "success",
 			receivedAt: 11_000,
-			midReceivedAt: 1_000,
+			midReceivedAt: 11_000,
 		});
 	});
 
@@ -110,11 +109,26 @@ describe("live market price", () => {
 				data: { BTC: { markPx: "0" } },
 				subscriptionStatus: "active",
 				isStale: false,
-				markReceivedAt: 1_000,
-				midReceivedAt: undefined,
-				now: 1_001,
+				lastMessageAt: 1_000,
 			}).status,
 		).toBe("error");
+	});
+
+	it("fails action readiness when the aggregate stream is stale or errored", () => {
+		for (const state of [
+			{ subscriptionStatus: "active" as const, isStale: true },
+			{ subscriptionStatus: "error" as const, isStale: true },
+		]) {
+			const price = resolveFastMarketPrice({
+				coin: "BTC",
+				enabled: true,
+				data: { BTC: { markPx: "100000" } },
+				lastMessageAt: 11_000,
+				...state,
+			});
+
+			expect(isLiveMarkPriceReady(price.status, price.markPx, price.receivedAt, 11_001)).toBe(false);
+		}
 	});
 
 	it("requires the exact active-market identity for order freshness", () => {

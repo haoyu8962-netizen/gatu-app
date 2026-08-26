@@ -191,7 +191,9 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 	});
 
-	it("keeps reverse available while cached mark data is temporarily unavailable", () => {
+	it("keeps close and reverse actions available without a toolbar mark", () => {
+		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
 		const onReverse = vi.fn();
 		act(() => {
 			root.render(
@@ -204,10 +206,10 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPriceStatus: "loading",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					onMarketClose: vi.fn(),
+					onMarketClose,
 					onShare: vi.fn(),
 					onReverse,
-					onLimitClose: vi.fn(),
+					onLimitClose,
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
 					onSelectMarket: vi.fn(),
@@ -220,10 +222,33 @@ describe("MobilePositionCard isolated margin entry", () => {
 		const marketClose = buttons.find((button) => button.textContent?.trim() === "Market Close");
 		const limitClose = buttons.find((button) => button.textContent?.trim() === "Limit Close");
 		const reverse = buttons.find((button) => button.textContent?.trim() === "Reverse");
-		expect(marketClose?.disabled).toBe(true);
-		expect(limitClose?.disabled).toBe(true);
+		expect(marketClose?.disabled).toBe(false);
+		expect(limitClose?.disabled).toBe(false);
 		expect(reverse?.disabled).toBe(false);
-		act(() => reverse?.click());
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
+		act(() => {
+			marketClose?.click();
+			limitClose?.click();
+			reverse?.click();
+		});
+		expect(onMarketClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			szDecimals: 1,
+			signedPositionSize: "205.9",
+			marginMode: "isolated",
+		});
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "205.9",
+			entryPx: "7.79995",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
 		expect(onReverse).toHaveBeenCalledOnce();
 	});
 
