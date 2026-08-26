@@ -76,6 +76,7 @@ export type AgentRegistrationSessionFailureReason =
 	| "storage_unavailable"
 	| "invalid_session"
 	| "registration_in_progress"
+	| "registration_reset_required"
 	| "owner_activation_failed"
 	| "owner_cleanup_failed"
 	| "unsafe_cleanup_target"
@@ -473,7 +474,7 @@ export async function startAgentRegistrationSubmission<T>(
 	const invalidated = { status: "invalidated" } as const;
 	const agentPublicKey = lease.agentPublicKey;
 	if (!agentPublicKey || lease.activeOwner) return invalidated;
-	let markerFailure = false;
+	let markerFailureMessage: string | null = null;
 
 	const result = await withSessionLock<AgentRegistrationExecutionStartResult<T>>(
 		lease.epoch.env,
@@ -513,7 +514,7 @@ export async function startAgentRegistrationSubmission<T>(
 				registrationSubmissionStartedAtMs: submissionStartedAtMs,
 			});
 			if (coordinationWrite.status === "failed") {
-				markerFailure = true;
+				markerFailureMessage = "Agent approval submission state could not be stored safely";
 				return invalidated;
 			}
 
@@ -524,8 +525,11 @@ export async function startAgentRegistrationSubmission<T>(
 				submissionStartedAtMs,
 			);
 			if (marker.status === "failed") {
-				writeSessionRecord(lease.epoch.env, lease.epoch.owner, current.record);
-				markerFailure = true;
+				const rollback = writeSessionRecord(lease.epoch.env, lease.epoch.owner, current.record);
+				markerFailureMessage =
+					rollback.status === "stored"
+						? "Agent approval submission state could not be stored safely"
+						: "Agent approval submission coordination could not be rolled back safely";
 				return invalidated;
 			}
 
@@ -536,7 +540,7 @@ export async function startAgentRegistrationSubmission<T>(
 			}
 		},
 	);
-	if (markerFailure) throw new Error("Agent approval submission state could not be stored safely");
+	if (markerFailureMessage) throw new Error(markerFailureMessage);
 	return result ?? invalidated;
 }
 
@@ -571,9 +575,10 @@ export async function captureAgentRegistrationEpoch(
 		if (current.record?.state === "active" && current.record.registrationPublicKey) {
 			const inspection = inspectAgentStorageRecord(env, owner);
 			if (inspection.status === "failed") return inspection;
+			const hasMatchingCandidate = hasMatchingPendingRegistration(current.record, inspection);
 			if (
 				options.resumePublicKey?.toLowerCase() === current.record.registrationPublicKey.toLowerCase() &&
-				hasMatchingPendingRegistration(current.record, inspection)
+				hasMatchingCandidate
 			) {
 				return {
 					status: "ready",
@@ -581,6 +586,9 @@ export async function captureAgentRegistrationEpoch(
 				};
 			}
 			const pendingAtMs = current.record.registrationPendingAtMs;
+			if (current.record.registrationSubmissionStartedAtMs !== undefined && !hasMatchingCandidate) {
+				return { status: "failed", reason: "registration_reset_required" };
+			}
 			if (
 				current.record.registrationSubmissionStartedAtMs !== undefined ||
 				(pendingAtMs !== undefined && Date.now() - pendingAtMs < AGENT_REGISTRATION_COORDINATION_WINDOW_MS)
@@ -794,6 +802,9 @@ export async function cancelAgentRegistrationEpochAndRemove(
 				return { status: "current" };
 			}
 		}
+		const matchesExpectedCoordinationTarget =
+			expectedPublicKey === undefined ||
+			current.record?.registrationPublicKey?.toLowerCase() === expectedPublicKey.toLowerCase();
 
 		const closing = createSessionRecord("closing");
 		if (!closing) return { status: "failed", reason: "storage_unavailable" };
@@ -803,10 +814,13 @@ export async function cancelAgentRegistrationEpochAndRemove(
 		const inspection = inspectAgentStorageRecord(epoch.env, epoch.owner);
 		if (inspection.status === "failed") return inspection;
 
-		if (!expectedPublicKey) {
-			if (inspection.status !== "absent") {
-				return { status: "failed", reason: "unsafe_cleanup_target" };
-			}
+		// The exact current epoch is still authoritative here, and the preservation
+		// checks above proved that neither coordination record crossed the
+		// submission boundary. A verified marker readback failure removes the Agent
+		// slot before returning. An absent slot is therefore safe to finish closing
+		// only for a pre-persistence cancellation or when the surviving coordination
+		// record still binds the caller's exact expected key.
+		if (inspection.status === "absent" && matchesExpectedCoordinationTarget) {
 			const ownerCleaned = await clearMatchingActiveOwner(epoch.env, epoch.owner);
 			const closed = writeSessionRecord(epoch.env, epoch.owner, {
 				version: SESSION_RECORD_VERSION,
@@ -816,6 +830,7 @@ export async function cancelAgentRegistrationEpochAndRemove(
 			if (closed.status === "failed") return closed;
 			return ownerCleaned ? { status: "cancelled" } : { status: "failed", reason: "owner_cleanup_failed" };
 		}
+		if (!expectedPublicKey) return { status: "failed", reason: "unsafe_cleanup_target" };
 
 		if (inspection.status !== "valid" || inspection.agent.publicKey.toLowerCase() !== expectedPublicKey.toLowerCase()) {
 			return { status: "failed", reason: "unsafe_cleanup_target" };

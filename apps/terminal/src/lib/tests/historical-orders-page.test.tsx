@@ -228,6 +228,30 @@ describe("HistoricalOrdersPage", () => {
 		expect(mocks.history.refresh).not.toHaveBeenCalled();
 	});
 
+	it("keeps selected dynamic filters visible after refreshed data no longer contains them", () => {
+		renderPage();
+		const marketFilter = container.querySelector<HTMLSelectElement>(
+			'select[aria-label="Filter order history by market"]',
+		);
+		const typeFilter = container.querySelector<HTMLSelectElement>('select[aria-label="Filter order history by type"]');
+		if (!marketFilter || !typeFilter) throw new Error("Missing order filters");
+		act(() => {
+			marketFilter.value = "ETH";
+			marketFilter.dispatchEvent(new Event("change", { bubbles: true }));
+			typeFilter.value = "Market";
+			typeFilter.dispatchEvent(new Event("change", { bubbles: true }));
+		});
+		mocks.history.entries = createEntries(1);
+		mocks.history.orders = [createOrder(0)];
+		renderPage();
+
+		expect(marketFilter.value).toBe("ETH");
+		expect(typeFilter.value).toBe("Market");
+		expect([...marketFilter.options].some((option) => option.value === "ETH")).toBe(true);
+		expect([...typeFilter.options].some((option) => option.value === "Market")).toBe(true);
+		expect(container.textContent).toContain("No orders match the selected filters");
+	});
+
 	it.each([
 		["disabled", "Invalid account address"],
 		["loading", "Loading order history"],

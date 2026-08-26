@@ -24,19 +24,25 @@ interface Props {
 const previousAttemptMessage = msg`A previous connection attempt is still being reconciled. Retrying checks the same trading key and does not request another signature.`;
 const missingConnectionMessage = msg`Trading is not connected in this browser. Reconnect to create or replace its trading key.`;
 const ambiguousCompletionMessage = msg`The connection could not be completed. It may already be approved; wait a moment and try again.`;
+const resetRequiredMessage = msg`This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again.`;
 const unsafePreflightMessage = msg`The connection could not be checked safely. No wallet signature was requested; wait a moment and try again.`;
 const identityChangedMessage = msg`Wallet or network changed before the connection completed. Reopen the action for the current account.`;
 const otherTabMessage = msg`A trading connection is already being established in another tab. Finish or cancel it there before trying again.`;
 const unsupportedCoordinationMessage = msg`This browser cannot safely coordinate the trading connection across tabs. Use a supported browser.`;
 const connectionFallbackMessage = msg`Connection could not be established.`;
+const resetFailureMessage = msg`Trading connection could not be reset.`;
 
 export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	const { _ } = useLingui();
 	const isMobile = useIsMobile();
 	const { walletIntent } = useWalletSession();
-	const { register, status, error, agentMissingReason, failurePhase } = useAgentRegistration();
+	const { register, resetConnection, canResetConnection, status, error, agentMissingReason, failurePhase } =
+		useAgentRegistration();
 	const [persistConnection, setPersistConnection] = useState(readPersistTradingConnection);
-	const isPending = status === "approving_agent" || status === "verifying";
+	const [isResetting, setIsResetting] = useState(false);
+	const [resetError, setResetError] = useState<Error | null>(null);
+	const isRegistrationPending = status === "approving_agent" || status === "verifying";
+	const isBusy = isRegistrationPending || isResetting;
 	const missingReasonDescriptor = getMissingReasonMessage(agentMissingReason);
 	const missingReasonMessage = missingReasonDescriptor ? _(missingReasonDescriptor) : null;
 	const errorDescriptor = error ? getConnectionErrorMessage(error, failurePhase) : null;
@@ -45,9 +51,11 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 			? _(errorDescriptor)
 			: formatExchangeActionError(error, _(connectionFallbackMessage))
 		: null;
+	const resetErrorMessage = resetError ? formatExchangeActionError(resetError, _(resetFailureMessage)) : null;
 
 	function handleConnect() {
-		if (isPending) return;
+		if (isBusy) return;
+		setResetError(null);
 		void register({ approval: { applicationReview: "confirmed" }, persistConnection })
 			.then(onConnected)
 			.catch(() => undefined);
@@ -56,6 +64,19 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	function handlePersistConnectionChange(checked: boolean) {
 		setPersistConnection(checked);
 		writePersistTradingConnection(checked);
+	}
+
+	async function handleResetConnection() {
+		if (isBusy) return;
+		setIsResetting(true);
+		setResetError(null);
+		try {
+			await resetConnection();
+		} catch (resetFailure) {
+			setResetError(resetFailure instanceof Error ? resetFailure : new Error("Trading connection reset failed"));
+		} finally {
+			setIsResetting(false);
+		}
 	}
 
 	return (
@@ -84,7 +105,7 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 				<Checkbox
 					size="lg"
 					checked={persistConnection}
-					disabled={isPending}
+					disabled={isBusy}
 					onCheckedChange={handlePersistConnectionChange}
 					description={
 						<Trans>Stored only in this browser profile; other browsers and devices stay disconnected.</Trans>
@@ -100,16 +121,30 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 						{missingReasonMessage}
 					</output>
 				) : null}
-				{errorMessage ? (
+				{(resetErrorMessage ?? errorMessage) ? (
 					<p role="alert" className="text-xs leading-4 text-error">
-						{errorMessage}
+						{resetErrorMessage ?? errorMessage}
 					</p>
 				) : null}
 			</ModalContent>
 
-			<ModalFooter className="px-6 pt-0 pb-5">
-				<Button type="button" size="md" className="h-10 w-full" disabled={isPending} onClick={handleConnect}>
-					{isPending ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
+			<ModalFooter className="flex-col gap-2 px-6 pt-0 pb-5">
+				{canResetConnection ? (
+					<Button
+						type="button"
+						variant="outline"
+						intent="error"
+						size="md"
+						className="h-10 w-full"
+						disabled={isBusy}
+						onClick={() => void handleResetConnection()}
+					>
+						{isResetting ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
+						<Trans>Reset trading connection</Trans>
+					</Button>
+				) : null}
+				<Button type="button" size="md" className="h-10 w-full" disabled={isBusy} onClick={handleConnect}>
+					{isRegistrationPending ? <SpinnerGapIcon className="size-4 animate-spin" /> : null}
 					{status === "approving_agent" ? (
 						walletIntent === "embedded" ? (
 							<Trans>Connecting...</Trans>
@@ -139,6 +174,12 @@ function getConnectionErrorMessage(
 	error: Error,
 	failurePhase: AgentRegistrationFailurePhase | null,
 ): MessageDescriptor | null {
+	if (error.name === "AgentRegistrationResetRequiredError") {
+		return resetRequiredMessage;
+	}
+	if (error.message.startsWith("A trading connection is already being established in another tab")) {
+		return otherTabMessage;
+	}
 	if (failurePhase === "verification" || failurePhase === "persistence") {
 		return ambiguousCompletionMessage;
 	}
@@ -154,9 +195,6 @@ function getConnectionErrorMessage(
 		}
 		if (error.message.startsWith("Wallet or network changed")) {
 			return identityChangedMessage;
-		}
-		if (error.message.startsWith("A trading connection is already being established in another tab")) {
-			return otherTabMessage;
 		}
 		if (error.message.startsWith("Secure Agent registration requires Web Locks support")) {
 			return unsupportedCoordinationMessage;

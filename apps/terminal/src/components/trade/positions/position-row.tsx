@@ -1,6 +1,6 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ShareIcon } from "@phosphor-icons/react";
+import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -145,6 +145,19 @@ export function PositionRow({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
+	const markStatusIndicator =
+		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
+			<Tooltip content={t`Loading...`} side="top">
+				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+			</Tooltip>
+		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
+			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
+				<WarningCircleIcon
+					className="size-3 shrink-0 text-warning"
+					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
+				/>
+			</Tooltip>
+		) : null;
 	function renderTpSlContent() {
 		if (hasTpSl) {
 			return (
@@ -322,8 +335,12 @@ export function PositionRow({
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums")}>
-				<span className="block text-[13px] text-market-close-fg" title={markPriceDisplay}>
+				<span
+					className="inline-flex items-center justify-end gap-1 text-[13px] text-market-close-fg"
+					title={markPriceDisplay}
+				>
 					{markPriceDisplay}
+					{markStatusIndicator}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>

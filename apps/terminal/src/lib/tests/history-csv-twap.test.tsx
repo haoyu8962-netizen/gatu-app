@@ -137,6 +137,33 @@ describe("account history CSV exports", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledWith("fills.csv", [["BTC", "null"]]);
 	});
 
+	it("walks the full fills range and exports the latest 10000 records", async () => {
+		const fills = Array.from({ length: 12_001 }, (_, index) =>
+			createFill({ oid: index + 1, tid: index + 1, time: index + 1 }),
+		);
+		mocks.userFillsByTime.mockImplementation(async ({ endTime, startTime }: { endTime: number; startTime: number }) =>
+			fills.filter((fill) => fill.time >= startTime && fill.time <= endTime).slice(0, 2_000),
+		);
+		let hookValue: ReturnType<typeof useUserFillsCsvExport> | null = null;
+		function Probe() {
+			hookValue = useUserFillsCsvExport({
+				filename: "fills.csv",
+				buildRows: (items) => items.map((fill) => [String(fill.tid)]),
+			});
+			return null;
+		}
+		act(() => root.render(<Probe />));
+		if (!hookValue) throw new Error("Missing fills export hook");
+
+		await act(async () => hookValue?.exportCsv());
+
+		const rows = mocks.downloadCsv.mock.calls[0]?.[1] as string[][];
+		expect(mocks.userFillsByTime).toHaveBeenCalledTimes(7);
+		expect(rows).toHaveLength(10_000);
+		expect(rows.at(0)).toEqual(["2002"]);
+		expect(rows.at(-1)).toEqual(["12001"]);
+	});
+
 	it("keeps ordinary order export separate from TWAP lifecycle history", async () => {
 		mocks.historicalOrders.mockResolvedValue([createOrder()]);
 		let hookValue: ReturnType<typeof useHistoricalOrdersCsvExport> | null = null;

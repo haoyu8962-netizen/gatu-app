@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
+import { PencilIcon, ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -165,7 +165,19 @@ export function MobilePositionCard({
 	});
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
 	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
-	const markPriceDisplay = formatPrice(markPxRaw, { szDecimals, style: "decimal" });
+	const markPriceDisplay = (
+		<span className="inline-flex items-center gap-1">
+			{formatPrice(markPxRaw, { szDecimals, style: "decimal" })}
+			{markPriceStatus === "loading" || markPriceStatus === "idle" ? (
+				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+			) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
+				<WarningCircleIcon
+					className="size-3 shrink-0 text-warning"
+					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
+				/>
+			) : null}
+		</span>
+	);
 
 	function buildReverseRef(): PositionReverseRef | null {
 		if (!canReverse || typeof assetId !== "number") return null;

@@ -10,16 +10,19 @@ const testState = vi.hoisted(() => ({
 	agentMissingReason: null as
 		| "no_local_key"
 		| "remote_named_agent_exists"
+		| "approval_unconfirmed"
 		| "local_key_not_approved"
 		| "remote_key_replaced"
 		| "agent_name_mismatch"
 		| "invalid_local_record"
 		| null,
+	canResetConnection: false,
 	error: null as Error | null,
 	failurePhase: null as "preflight" | "approval" | "persistence" | "verification" | null,
 	isMobile: false,
 	persistConnection: false,
 	register: vi.fn(),
+	resetConnection: vi.fn(),
 	status: "idle" as "idle" | "approving_agent" | "verifying" | "error",
 	walletIntent: "external" as "embedded" | "external",
 	writePersistTradingConnection: vi.fn(),
@@ -37,9 +40,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 	readPersistTradingConnection: () => testState.persistConnection,
 	useAgentRegistration: () => ({
 		agentMissingReason: testState.agentMissingReason,
+		canResetConnection: testState.canResetConnection,
 		error: testState.error,
 		failurePhase: testState.failurePhase,
 		register: testState.register,
+		resetConnection: testState.resetConnection,
 		status: testState.status,
 	}),
 	writePersistTradingConnection: testState.writePersistTradingConnection,
@@ -117,11 +122,14 @@ describe("EstablishConnectionModal", () => {
 		onConnected = vi.fn();
 		testState.error = null;
 		testState.agentMissingReason = null;
+		testState.canResetConnection = false;
 		testState.failurePhase = null;
 		testState.isMobile = false;
 		testState.persistConnection = false;
 		testState.register.mockReset();
 		testState.register.mockResolvedValue("0x1111111111111111111111111111111111111111");
+		testState.resetConnection.mockReset();
+		testState.resetConnection.mockResolvedValue(undefined);
 		testState.status = "idle";
 		testState.walletIntent = "external";
 		testState.writePersistTradingConnection.mockReset();
@@ -259,5 +267,33 @@ describe("EstablishConnectionModal", () => {
 		expect(container.textContent).toContain("could not be checked safely");
 		expect(container.textContent).toContain("No wallet signature was requested");
 		expect(container.textContent).not.toContain("Agent key storage could not be verified");
+	});
+
+	it("offers an explicit verified reset when submitted coordination cannot be resumed", async () => {
+		testState.canResetConnection = true;
+		testState.error = Object.assign(new Error("The previous trading connection cannot be resumed safely"), {
+			name: "AgentRegistrationResetRequiredError",
+		});
+		testState.failurePhase = "preflight";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("no longer has the exact trading key");
+		const resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+		expect(testState.resetConnection).toHaveBeenCalledOnce();
+	});
+
+	it("does not mask an other-tab conflict as an ambiguous approval result", async () => {
+		testState.error = new Error("A trading connection is already being established in another tab.");
+		testState.failurePhase = "verification";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("being established in another tab");
+		expect(container.textContent).not.toContain("It may already be approved");
+		expect(container.textContent).not.toContain("Reset trading connection");
 	});
 });

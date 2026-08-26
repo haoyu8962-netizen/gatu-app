@@ -4739,9 +4739,12 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4945,7 +4948,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "मार्क प्राइस ऑरेकल कीमतों से प्राप्त होता है और अवास्तविक PnL तथा लिक्विडेशन की गणना के लिए उपयोग होता है।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "मार्क प्राइस उपलब्ध नहीं है। बाज़ार डेटा की प्रतीक्षा करें और फिर से प्रयास करें।"
@@ -7334,6 +7340,10 @@ msgstr "रीसेट"
 #~ msgid "Reset phone access"
 #~ msgstr "फ़ोन एक्सेस रीसेट करें"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Reset trading connection"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -9449,6 +9459,10 @@ msgstr "यह ब्राउज़र सभी टैब में धनर�
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "यह ब्राउज़र अलग-अलग टैब में ट्रेडिंग कनेक्शन को सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र का उपयोग करें।"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
+msgstr ""
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "इस क्लोज़-ऑल पूर्वावलोकन की समय-सीमा समाप्त हो गई। वर्तमान मान देखने के लिए इसे बंद करके दोबारा खोलें।"
@@ -10010,6 +10024,10 @@ msgstr "ट्रेडिंग"
 msgid "Trading Account"
 msgstr "ट्रेडिंग खाता"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading connection could not be reset."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10244,10 +10262,6 @@ msgstr "PWA आज़माएँ।"
 msgid "TVL"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts

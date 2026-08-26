@@ -7,14 +7,15 @@ import {
 	isAccountHistoryAddress,
 	isAccountHistoryPageSize,
 } from "@/lib/trade/account-history";
-import type { OrderHistoryEntry, OrderHistoryStatusCategory } from "@/lib/trade/order-history";
+import type { OrderHistoryStatusCategory, OrdinaryOrderHistoryEntry } from "@/lib/trade/order-history";
 import { getOrderHistoryStatusCategory } from "@/lib/trade/order-history";
+
+export type { OrdinaryOrderHistoryEntry } from "@/lib/trade/order-history";
 
 export const ORDER_HISTORY_API_LIMIT = 2_000;
 export const ORDER_HISTORY_PAGE_SIZES = ACCOUNT_HISTORY_PAGE_SIZES;
 export const DEFAULT_ORDER_HISTORY_PAGE_SIZE = DEFAULT_ACCOUNT_HISTORY_PAGE_SIZE;
 
-export type OrdinaryOrderHistoryEntry = Extract<OrderHistoryEntry, { kind: "order" }>;
 export type OrderHistoryPageSize = AccountHistoryPageSize;
 export type OrderHistorySideFilter = "all" | "buy" | "sell";
 export type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;

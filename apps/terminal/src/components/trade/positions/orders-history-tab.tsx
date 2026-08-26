@@ -19,9 +19,8 @@ import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
-	getTwapAverageFillPrice,
-	type OrderHistoryEntry,
 	type OrderHistoryStatusCategory,
+	type OrdinaryOrderHistoryEntry,
 } from "@/lib/trade/order-history";
 import { AssetBadge } from "../components/asset-badge";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
@@ -35,7 +34,7 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-type OrderHistoryType = OrderHistoryEntry["type"];
+type OrderHistoryType = OrdinaryOrderHistoryEntry["type"];
 type OrderHistoryTypeFilter = "all" | OrderHistoryType;
 type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
@@ -93,8 +92,7 @@ interface OrdersHistoryTabContentProps extends Props {
 function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
-		useOrderDisplayLabels();
+	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const malformedHistory = isMalformedHistoryPageError(error);
 	const navigateToMarket = useMarketNavigation();
@@ -115,7 +113,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 		{ value: "all", label: t`All types` },
 		...Array.from(availableTypeFilters).map((value) => ({
 			value,
-			label: value === "twap" ? t`TWAP` : getOrderTypeLabel(value),
+			label: getOrderTypeLabel(value),
 		})),
 	];
 	const availableStatusFilters = new Set(entries.map(getOrderHistoryStatusCategory));
@@ -138,18 +136,12 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 		return t`Other`;
 	}
 
-	function getEntryTypeLabel(entry: OrderHistoryEntry) {
-		return entry.kind === "twap" ? t`TWAP` : getOrderTypeLabel(entry.type);
+	function getEntryTypeLabel(entry: OrdinaryOrderHistoryEntry) {
+		return getOrderTypeLabel(entry.type);
 	}
 
-	function getEntryStatusLabel(entry: OrderHistoryEntry) {
-		return entry.kind === "twap"
-			? getTwapHistoryStatusLabel(entry.twap.status.status)
-			: getHistoricalOrderStatusLabel(entry.order.status);
-	}
-
-	function getEntryPrice(entry: OrderHistoryEntry) {
-		return entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : entry.order.order.limitPx;
+	function getEntryStatusLabel(entry: OrdinaryOrderHistoryEntry) {
+		return getHistoricalOrderStatusLabel(entry.order.status);
 	}
 
 	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
@@ -174,10 +166,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 					{ header: t`Type`, getValue: getEntryTypeLabel },
 					{
 						header: t`Price`,
-						getValue: (entry) => {
-							const price = getEntryPrice(entry);
-							return price ? formatUSD(price, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
-						},
+						getValue: (entry) => formatUSD(entry.order.order.limitPx, { compact: false }),
 					},
 					{
 						header: t`Trigger Price`,
@@ -325,8 +314,6 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 									const isBuy = entry.side === "B";
 									const sideLabel = getOrderSideLabel(entry.side, entry.reduceOnly);
 									const statusCategory = getOrderHistoryStatusCategory(entry);
-									const twapAveragePrice = entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : null;
-
 									return (
 										<TableRow key={entry.key} className="transition-colors duration-[120ms] hover:bg-market-close-card">
 											<TableCell
@@ -371,13 +358,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 													"text-right text-market-close-fg",
 												)}
 											>
-												{entry.kind === "order" ? (
-													<HistoricalOrderPrice order={entry.order.order} />
-												) : twapAveragePrice ? (
-													formatUSD(twapAveragePrice, { compact: false })
-												) : (
-													FALLBACK_VALUE_PLACEHOLDER
-												)}
+												<HistoricalOrderPrice order={entry.order.order} />
 											</TableCell>
 											<TableCell
 												size="dense"

@@ -11,7 +11,7 @@ import {
 	fetchTimeRangeHistory,
 	MalformedHistoryPageError,
 } from "@/lib/trade/history-pagination";
-import { buildOrderHistoryEntries, type OrderHistoryEntry } from "@/lib/trade/order-history";
+import { buildHistoricalOrderEntries, type OrdinaryOrderHistoryEntry } from "@/lib/trade/order-history";
 import { filterNonTwapUserFills, getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
 import {
 	getUserFundingKey,
@@ -171,14 +171,14 @@ export function useUserFillsCsvExport(options: AccountCsvExportOptions<UserFills
 						),
 					getKey: getUserFillKey,
 					getTime: (fill) => fill.time,
-					maxItems: USER_FILLS_EXPORT_LIMIT,
 					pageLimit: USER_FILLS_API_PAGE_LIMIT,
+					retainLatestItems: USER_FILLS_EXPORT_LIMIT,
 					signal,
 					validateItem: isValidUserFillHistoryItem,
 				});
 				return {
 					items: filterNonTwapUserFills(fillsResult.items).sort((left, right) => left.time - right.time),
-					truncated: fillsResult.truncated,
+					truncated: fillsResult.truncated || fillsResult.items.length >= USER_FILLS_EXPORT_LIMIT,
 				};
 			});
 			if (!result) {
@@ -202,14 +202,16 @@ export function useUserFillsCsvExport(options: AccountCsvExportOptions<UserFills
 	return { exportCsv, isExporting };
 }
 
-export function useHistoricalOrdersCsvExport(options: AccountCsvExportOptions<OrderHistoryEntry>): CsvExportResult {
+export function useHistoricalOrdersCsvExport(
+	options: AccountCsvExportOptions<OrdinaryOrderHistoryEntry>,
+): CsvExportResult {
 	const { t } = useLingui();
 	const { isExporting, run } = useHistoryExportRunner(options.address);
 
 	async function exportCsv() {
 		const toastId = toast.loading(t`Exporting order history...`);
 		try {
-			const result = await run<HistoryLoadResult<OrderHistoryEntry>>(async (address, signal) => {
+			const result = await run<HistoryLoadResult<OrdinaryOrderHistoryEntry>>(async (address, signal) => {
 				const client = getInfoClient();
 				const orders = await fetchHistoryPageWithRetry(
 					(requestSignal) => client.historicalOrders({ user: address }, requestSignal),
@@ -223,7 +225,7 @@ export function useHistoricalOrdersCsvExport(options: AccountCsvExportOptions<Or
 					throw new MalformedHistoryPageError();
 				}
 				return {
-					items: buildOrderHistoryEntries(orders as HistoricalOrdersResponse, []),
+					items: buildHistoricalOrderEntries(orders as HistoricalOrdersResponse),
 					truncated: orders.length >= HISTORICAL_ORDERS_API_LIMIT,
 				};
 			});

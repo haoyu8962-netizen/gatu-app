@@ -81,6 +81,54 @@ describe("agent snapshot cache", () => {
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
 	});
 
+	it("detects an invalid Agent record during active pending registration coordination", async () => {
+		const store = installDom();
+		store.set("hyperliquid_agent_Mainnet_0x1234", "not-json");
+		store.set(
+			"hyperliquid_agent_registration_session_Mainnet_0x1234",
+			JSON.stringify({
+				epoch: "11111111-1111-4111-8111-111111111111",
+				registrationPendingAtMs: 1,
+				registrationPublicKey: VALID_PUBLIC_KEY,
+				state: "active",
+				version: 1,
+			}),
+		);
+
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
+	});
+
+	it("does not classify a valid Agent with mismatched coordination as corrupt storage", async () => {
+		const store = installDom();
+		store.set(
+			"hyperliquid_agent_Mainnet_0x1234",
+			JSON.stringify({
+				approvalPendingAtMs: 1,
+				privateKey: VALID_PRIVATE_KEY,
+				publicKey: VALID_PUBLIC_KEY,
+				source: "local-registration",
+			}),
+		);
+		store.set(
+			"hyperliquid_agent_registration_session_Mainnet_0x1234",
+			JSON.stringify({
+				epoch: "11111111-1111-4111-8111-111111111111",
+				registrationPendingAtMs: 1,
+				registrationPublicKey: MISMATCHED_PUBLIC_KEY,
+				state: "active",
+				version: 1,
+			}),
+		);
+
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
+	});
+
 	it("marks partial mobile Agent records without treating them as generic registrations", async () => {
 		const store = installDom();
 		store.set(

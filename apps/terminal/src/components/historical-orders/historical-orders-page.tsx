@@ -73,10 +73,18 @@ export function HistoricalOrdersPage({ address }: Props) {
 	const [rowsPerPage, setRowsPerPage] = useState<OrderHistoryPageSize>(DEFAULT_ORDER_HISTORY_PAGE_SIZE);
 	const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
 	const [selectedSide, setSelectedSide] = useState<OrderHistorySideFilter>("all");
-	const [selectedType, setSelectedType] = useState<string | null>(null);
+	const [selectedType, setSelectedType] = useState<OrdinaryOrderHistoryEntry["type"] | null>(null);
 	const [selectedStatus, setSelectedStatus] = useState<OrderHistoryStatusFilter>("all");
-	const availableMarkets = useMemo(() => getOrderHistoryMarkets(history.entries), [history.entries]);
-	const availableTypes = useMemo(() => getOrderHistoryTypes(history.entries), [history.entries]);
+	const availableMarkets = useMemo(() => {
+		const markets = getOrderHistoryMarkets(history.entries);
+		if (selectedMarket && !markets.includes(selectedMarket)) markets.push(selectedMarket);
+		return markets.sort();
+	}, [history.entries, selectedMarket]);
+	const availableTypes = useMemo(() => {
+		const types = getOrderHistoryTypes(history.entries);
+		if (selectedType && !types.includes(selectedType)) types.push(selectedType);
+		return types.sort();
+	}, [history.entries, selectedType]);
 	const filteredEntries = useMemo(
 		() =>
 			filterOrderHistory(history.entries, {
@@ -111,37 +119,32 @@ export function HistoricalOrdersPage({ address }: Props) {
 		address: exportAddress,
 		filename: "order_history.csv",
 		buildRows: (exportEntries) =>
-			buildCsvRows(
-				exportEntries.filter(
-					(entry): entry is OrdinaryOrderHistoryEntry => entry.kind === "order" && matchesFilters(entry),
-				),
-				[
-					{
-						header: t`Time`,
-						getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
-					},
-					{ header: t`Asset`, getValue: (entry) => entry.coin },
-					{
-						header: t`Direction`,
-						getValue: (entry) => getOrderSideLabel(entry.side, entry.reduceOnly),
-					},
-					{ header: t`Type`, getValue: (entry) => getOrderTypeLabel(entry.type) },
-					{ header: t`Price`, getValue: (entry) => entry.order.order.limitPx },
-					{
-						header: t`Trigger Price`,
-						getValue: (entry) => getOrderHistoryTriggerPrice(entry) ?? "",
-					},
-					{
-						header: t`Size`,
-						getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
-					},
-					{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
-					{
-						header: t`Updated`,
-						getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
-					},
-				],
-			),
+			buildCsvRows(exportEntries.filter(matchesFilters), [
+				{
+					header: t`Time`,
+					getValue: (entry) => formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" }),
+				},
+				{ header: t`Asset`, getValue: (entry) => entry.coin },
+				{
+					header: t`Direction`,
+					getValue: (entry) => getOrderSideLabel(entry.side, entry.reduceOnly),
+				},
+				{ header: t`Type`, getValue: (entry) => getOrderTypeLabel(entry.type) },
+				{ header: t`Price`, getValue: (entry) => entry.order.order.limitPx },
+				{
+					header: t`Trigger Price`,
+					getValue: (entry) => getOrderHistoryTriggerPrice(entry) ?? "",
+				},
+				{
+					header: t`Size`,
+					getValue: (entry) => formatToken(entry.size, markets.getMarket(entry.coin)?.szDecimals),
+				},
+				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.order.status) },
+				{
+					header: t`Updated`,
+					getValue: (entry) => formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" }),
+				},
+			]),
 	});
 
 	function changeRowsPerPage(value: string | null) {
@@ -164,7 +167,13 @@ export function HistoricalOrdersPage({ address }: Props) {
 	}
 
 	function changeType(value: string | null) {
-		setSelectedType(value === null || value === ALL_ORDER_TYPES_VALUE ? null : value);
+		if (value === null || value === ALL_ORDER_TYPES_VALUE) {
+			setSelectedType(null);
+		} else {
+			const nextType = value as OrdinaryOrderHistoryEntry["type"];
+			if (!availableTypes.includes(nextType)) return;
+			setSelectedType(nextType);
+		}
 		setRequestedPage(1);
 	}
 

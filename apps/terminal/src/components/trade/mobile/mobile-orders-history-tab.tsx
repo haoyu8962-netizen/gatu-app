@@ -20,9 +20,8 @@ import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
-	getTwapAverageFillPrice,
-	type OrderHistoryEntry,
 	type OrderHistoryStatusCategory,
+	type OrdinaryOrderHistoryEntry,
 } from "@/lib/trade/order-history";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -32,7 +31,7 @@ import { MobileProgressiveList } from "./mobile-progressive-list";
 import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
-type OrderHistoryType = OrderHistoryEntry["type"];
+type OrderHistoryType = OrdinaryOrderHistoryEntry["type"];
 type OrderHistoryTypeFilter = "all" | OrderHistoryType;
 type OrderHistoryStatusFilter = "all" | OrderHistoryStatusCategory;
 
@@ -64,8 +63,8 @@ function isOrderHistoryType(
 	return value !== null && availableTypes.has(value as OrderHistoryType);
 }
 
-function getOrderHistoryDisclosureKey(entry: OrderHistoryEntry): string {
-	return entry.kind === "order" ? String(entry.order.order.oid) : entry.key;
+function getOrderHistoryDisclosureKey(entry: OrdinaryOrderHistoryEntry): string {
+	return String(entry.order.order.oid);
 }
 
 interface Props {
@@ -103,8 +102,7 @@ function MobileOrdersHistoryTabContent({
 }: MobileOrdersHistoryTabContentProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
-		useOrderDisplayLabels();
+	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { entries, error, isConnected, isOffline, isStale, status } = useHistoricalOrders();
 	const malformedHistory = isMalformedHistoryPageError(error);
 	const navigateToMarket = useMarketNavigation();
@@ -131,7 +129,7 @@ function MobileOrdersHistoryTabContent({
 		{ value: "all", label: t`All types` },
 		...Array.from(availableTypeFilters).map((value) => ({
 			value,
-			label: value === "twap" ? t`TWAP` : getOrderTypeLabel(value),
+			label: getOrderTypeLabel(value),
 		})),
 	];
 	const availableStatusFilters = new Set(entries.map(getOrderHistoryStatusCategory));
@@ -164,18 +162,12 @@ function MobileOrdersHistoryTabContent({
 		return t`Other`;
 	}
 
-	function getEntryTypeLabel(entry: OrderHistoryEntry) {
-		return entry.kind === "twap" ? t`TWAP` : getOrderTypeLabel(entry.type);
+	function getEntryTypeLabel(entry: OrdinaryOrderHistoryEntry) {
+		return getOrderTypeLabel(entry.type);
 	}
 
-	function getEntryStatusLabel(entry: OrderHistoryEntry) {
-		return entry.kind === "twap"
-			? getTwapHistoryStatusLabel(entry.twap.status.status)
-			: getHistoricalOrderStatusLabel(entry.order.status);
-	}
-
-	function getEntryPrice(entry: OrderHistoryEntry) {
-		return entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : entry.order.order.limitPx;
+	function getEntryStatusLabel(entry: OrdinaryOrderHistoryEntry) {
+		return getHistoricalOrderStatusLabel(entry.order.status);
 	}
 
 	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
@@ -201,10 +193,7 @@ function MobileOrdersHistoryTabContent({
 					{ header: t`Type`, getValue: getEntryTypeLabel },
 					{
 						header: t`Price`,
-						getValue: (entry) => {
-							const price = getEntryPrice(entry);
-							return price ? formatUSD(price, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER;
-						},
+						getValue: (entry) => formatUSD(entry.order.order.limitPx, { compact: false }),
 					},
 					{
 						header: t`Trigger Price`,
@@ -371,8 +360,6 @@ function MobileOrdersHistoryTabContent({
 									const orderTypeLabel = getEntryTypeLabel(entry);
 									const sideLabel = getOrderSideLabel(entry.side, entry.reduceOnly);
 									const statusCategory = getOrderHistoryStatusCategory(entry);
-									const twapAveragePrice = entry.kind === "twap" ? getTwapAverageFillPrice(entry.twap) : null;
-
 									function handleToggle() {
 										setExpanded(cardKey, !isExpanded);
 									}
@@ -437,13 +424,7 @@ function MobileOrdersHistoryTabContent({
 														<div className="min-w-0">
 															<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Price`}</div>
 															<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-																{entry.kind === "order" ? (
-																	<HistoricalOrderPrice align="start" order={entry.order.order} />
-																) : twapAveragePrice ? (
-																	formatUSD(twapAveragePrice, { compact: false })
-																) : (
-																	FALLBACK_VALUE_PLACEHOLDER
-																)}
+																<HistoricalOrderPrice align="start" order={entry.order.order} />
 															</div>
 														</div>
 														<div className="min-w-0">

@@ -31,6 +31,7 @@ const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	approveBuilderFee: vi.fn(),
 	clientKey: "0x1111111111111111111111111111111111111111" as Address | "disconnected",
+	coordinatedSubmission: false,
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	refetchAgent: vi.fn(),
 	submissionStarted: true,
@@ -129,9 +130,11 @@ function installExclusiveLockManager() {
 
 let registrationPromise: Promise<Address> | undefined;
 let registrationOptions: AgentRegistrationOptions | undefined;
+let resetConnectionPromise: Promise<void> | undefined;
 
 function RegistrationButtonContent() {
-	const { agentMissingReason, failurePhase, register, reset } = useAgentRegistration();
+	const { agentMissingReason, canResetConnection, error, failurePhase, register, reset, resetConnection } =
+		useAgentRegistration();
 
 	return createElement(
 		"div",
@@ -148,7 +151,20 @@ function RegistrationButtonContent() {
 			"Register",
 		),
 		createElement("button", { onClick: reset, type: "button" }, "Reset"),
+		createElement(
+			"button",
+			{
+				onClick: () => {
+					resetConnectionPromise = resetConnection();
+					resetConnectionPromise.catch(() => {});
+				},
+				type: "button",
+			},
+			"Reset Connection",
+		),
 		createElement("output", { "data-testid": "missing-reason" }, agentMissingReason),
+		createElement("output", { "data-testid": "can-reset" }, String(canResetConnection)),
+		createElement("output", { "data-testid": "error-name" }, error?.name),
 		createElement("output", { "data-testid": "failure-phase" }, failurePhase),
 	);
 }
@@ -170,7 +186,22 @@ function markMockSubmissionStarted(agentAddress: Address): void {
 	window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(registration));
 }
 
-const defaultApproval: AgentApprovalMutateAsync = (params, _options?: AgentApprovalOptions) => {
+const defaultApproval: AgentApprovalMutateAsync = async (params, _options?: AgentApprovalOptions) => {
+	if (testState.coordinatedSubmission) {
+		if (testState.clientKey === "disconnected") throw new Error("Expected connected owner");
+		const agentAddress = params.agentAddress as Address;
+		const lease = captureAgentRegistrationExecutionLease(testState.env, testState.clientKey, {
+			agentPublicKey: agentAddress,
+		});
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => testState.approveAgent(params),
+		);
+		if (submission.status !== "started") throw new Error("Agent approval submission was invalidated");
+		return submission.execution;
+	}
 	markMockSubmissionStarted(params.agentAddress as Address);
 	return testState.approveAgent(params);
 };
@@ -210,7 +241,9 @@ describe("useAgentRegistration logout races", () => {
 		});
 		registrationPromise = undefined;
 		registrationOptions = undefined;
+		resetConnectionPromise = undefined;
 		testState.clientKey = OWNER;
+		testState.coordinatedSubmission = false;
 		testState.env = "Mainnet";
 		testState.approveAgent.mockReset();
 		testState.approveBuilderFee.mockReset();
@@ -439,6 +472,134 @@ describe("useAgentRegistration logout races", () => {
 		await expect(registrationPromise).resolves.toBe(publicKey.toLowerCase());
 		expect(testState.refetchAgent).toHaveBeenLastCalledWith(publicKey.toLowerCase());
 		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("keeps a conflicting pending registration in the preflight phase", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(
+				captured.epoch,
+				privateKey,
+				publicKey,
+				{ source: "local-registration", approvalPendingAtMs: Date.now() },
+				{ scope: "session" },
+			),
+		).toEqual({ status: "stored" });
+		const replacementKey = privateKeyToAccount(generatePrivateKey()).address;
+		const shared = JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}") as Record<string, unknown>;
+		shared.registrationPublicKey = replacementKey.toLowerCase();
+		window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(shared));
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toThrow("already being established in another tab");
+		expect(container.querySelector('[data-testid="failure-phase"]')?.textContent).toBe("preflight");
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("false");
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("explicitly resets an orphaned submitted connection before creating a replacement", async () => {
+		const captured = await captureAgentRegistrationEpoch("Mainnet", OWNER);
+		expect(captured.status).toBe("ready");
+		if (captured.status !== "ready") throw new Error("Expected registration epoch");
+		const privateKey = generatePrivateKey();
+		const publicKey = privateKeyToAccount(privateKey).address;
+		expect(
+			await persistAgentForRegistration(
+				captured.epoch,
+				privateKey,
+				publicKey,
+				{ source: "local-registration", approvalPendingAtMs: Date.now() },
+				{ scope: "session" },
+			),
+		).toEqual({ status: "stored" });
+		const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER, { agentPublicKey: publicKey });
+		if (!lease) throw new Error("Expected exact registration lease");
+		const submission = await startAgentRegistrationSubmission(
+			lease,
+			() => true,
+			async () => undefined,
+		);
+		if (submission.status !== "started") throw new Error("Expected started submission");
+		await submission.execution;
+		window.sessionStorage.clear();
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+		await flushMicrotasks();
+		await expect(registrationPromise).rejects.toMatchObject({ name: "AgentRegistrationResetRequiredError" });
+		expect(container.querySelector('[data-testid="failure-phase"]')?.textContent).toBe("preflight");
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("true");
+
+		const resetButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Reset Connection",
+		);
+		await act(async () => {
+			resetButton?.click();
+			await resetConnectionPromise;
+		});
+		expect(JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}")).toMatchObject({ state: "closed" });
+
+		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+		await flushMicrotasks();
+		await expect(registrationPromise).resolves.toMatch(/^0x[0-9a-f]{40}$/i);
+		expect(testState.approveAgent).toHaveBeenCalledOnce();
+	});
+
+	it("closes the current epoch after an Agent submission marker readback mismatch rolls coordination back", async () => {
+		registrationOptions = { persistConnection: false };
+		testState.coordinatedSubmission = true;
+		testState.approveAgent.mockResolvedValue(undefined);
+		const originalGetItem = Storage.prototype.getItem;
+		let markerReadbackFailed = false;
+		const storageRead = vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (
+			this: Storage,
+			key: string,
+		) {
+			const raw = originalGetItem.call(this, key);
+			if (
+				!markerReadbackFailed &&
+				this === window.sessionStorage &&
+				key === AGENT_STORAGE_KEY &&
+				raw?.includes('"approvalSubmissionStartedAtMs"')
+			) {
+				markerReadbackFailed = true;
+				return null;
+			}
+			return raw;
+		});
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toThrow("Agent approval submission state could not be stored safely");
+		storageRead.mockRestore();
+		expect(markerReadbackFailed).toBe(true);
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(window.sessionStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(JSON.parse(window.localStorage.getItem(SESSION_STORAGE_KEY) ?? "{}")).toMatchObject({
+			state: "closed",
+			version: 1,
+		});
+		expect(container.querySelector('[data-testid="failure-phase"]')?.textContent).toBe("approval");
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("false");
+		expect((await captureAgentRegistrationEpoch("Mainnet", OWNER)).status).toBe("ready");
 	});
 
 	it("reconciles the same pending key after an approval response is lost and the hook remounts", async () => {
@@ -1090,6 +1251,14 @@ describe("useAgentRegistration logout races", () => {
 				container.querySelector("button")?.click();
 			});
 			await flushMicrotasks();
+			const nextRegistration = await captureAgentRegistrationEpoch(nextEnv, nextOwner);
+			expect(nextRegistration.status).toBe("ready");
+			if (nextRegistration.status !== "ready") throw new Error("Expected next registration epoch");
+			const nextPrivateKey = generatePrivateKey();
+			const nextPublicKey = privateKeyToAccount(nextPrivateKey).address;
+			expect(await persistAgentForRegistration(nextRegistration.epoch, nextPrivateKey, nextPublicKey)).toEqual({
+				status: "stored",
+			});
 
 			testState.env = nextEnv;
 			testState.clientKey = nextOwner;
@@ -1118,7 +1287,26 @@ describe("useAgentRegistration logout races", () => {
 				version: 1,
 			});
 			const nextAgentStorageKey = `hyperliquid_agent_${nextEnv}_${nextOwner.toLowerCase()}`;
-			expect(window.localStorage.getItem(nextAgentStorageKey)).toBeNull();
+			const nextSessionStorageKey = `hyperliquid_agent_registration_session_${nextEnv}_${nextOwner.toLowerCase()}`;
+			expect(JSON.parse(window.localStorage.getItem(nextAgentStorageKey) ?? "{}")).toMatchObject({
+				publicKey: nextPublicKey.toLowerCase(),
+			});
+			expect(container.querySelector('[data-testid="error-name"]')?.textContent).toBe("");
+			expect(container.querySelector('[data-testid="failure-phase"]')?.textContent).toBe("");
+			expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("false");
+
+			const resetButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+				(button) => button.textContent === "Reset Connection",
+			);
+			act(() => resetButton?.click());
+			await expect(resetConnectionPromise).rejects.toThrow("reset is not currently required");
+			expect(JSON.parse(window.localStorage.getItem(nextAgentStorageKey) ?? "{}")).toMatchObject({
+				publicKey: nextPublicKey.toLowerCase(),
+			});
+			expect(JSON.parse(window.localStorage.getItem(nextSessionStorageKey) ?? "{}")).toMatchObject({
+				state: "active",
+				version: 1,
+			});
 		},
 	);
 

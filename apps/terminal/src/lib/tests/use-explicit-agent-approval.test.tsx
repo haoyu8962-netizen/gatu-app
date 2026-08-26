@@ -280,17 +280,21 @@ describe("useExplicitAgentApproval", () => {
 	it("revalidates the exact pending Agent at the signed transport submission boundary", async () => {
 		testState.createExchangeClient.mockImplementation(
 			(_signer: unknown, _isTestnet: boolean, _cacheKey: undefined, transport: TestTransport) => ({
-				approveAgent: async () => {
+				approveAgent: async (_params: unknown, options?: { signal?: AbortSignal }) => {
 					if (!testState.beforeSubmit) throw new Error("Missing pre-submit guard");
 					await testState.beforeSubmit();
-					return transport.request("exchange", { action: "approveAgent" });
+					return transport.request("exchange", { action: "approveAgent" }, options?.signal);
 				},
 			}),
 		);
 		const hook = await renderApprovalHook();
+		const controller = new AbortController();
 
 		await act(async () => {
-			await hook.mutateAsync({ agentAddress: AGENT, agentName: "HypeTerminal" }, { registrationPublicKey: AGENT });
+			await hook.mutateAsync(
+				{ agentAddress: AGENT, agentName: "HypeTerminal" },
+				{ registrationPublicKey: AGENT, signal: controller.signal },
+			);
 		});
 
 		expect(testState.captureRegistrationLease).toHaveBeenCalledWith("Mainnet", OWNER, { agentPublicKey: AGENT });

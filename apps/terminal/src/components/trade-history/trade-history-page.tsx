@@ -71,7 +71,11 @@ export function TradeHistoryPage({ address }: Props) {
 	const [selectedDirection, setSelectedDirection] = useState<TradeHistoryDirectionFilter>("all");
 	const [selectedRole, setSelectedRole] = useState<TradeHistoryRoleFilter>("all");
 	const [selectedType, setSelectedType] = useState<TradeHistoryTypeFilter>("all");
-	const availableMarkets = useMemo(() => getTradeHistoryMarkets(history.fills), [history.fills]);
+	const availableMarkets = useMemo(() => {
+		const markets = getTradeHistoryMarkets(history.fills);
+		if (selectedMarket && !markets.includes(selectedMarket)) markets.push(selectedMarket);
+		return markets.sort();
+	}, [history.fills, selectedMarket]);
 	const filteredFills = useMemo(
 		() =>
 			filterTradeHistory(
@@ -333,7 +337,9 @@ export function TradeHistoryPage({ address }: Props) {
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
-											<span className={fill.side === "B" ? "text-success" : "text-error"}>
+											<span
+												className={fill.liquidation ? "text-error" : fill.side === "B" ? "text-success" : "text-error"}
+											>
 												{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
 											</span>
 											<span className="text-fg-muted">{getRoleLabel(fill)}</span>
@@ -437,7 +443,10 @@ export function TradeHistoryPage({ address }: Props) {
 													/>
 												</TableCell>
 												<TableCell
-													className={cn("px-3 py-0 font-semibold", fill.side === "B" ? "text-success" : "text-error")}
+													className={cn(
+														"px-3 py-0 font-semibold",
+														fill.liquidation ? "text-error" : fill.side === "B" ? "text-success" : "text-error",
+													)}
 												>
 													{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
 												</TableCell>
