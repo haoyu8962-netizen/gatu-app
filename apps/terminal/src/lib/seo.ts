@@ -65,7 +65,6 @@ export function buildRootHead(fontPreloadUrls: readonly string[] = []): HeadOutp
 			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 			{ rel: "manifest", href: "/manifest.json" },
-			{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
 			{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
 			...fontPreloadUrls.map(
 				(href): LinkTag => ({ rel: "preload", href, as: "font", type: "font/woff2", crossOrigin: "anonymous" }),

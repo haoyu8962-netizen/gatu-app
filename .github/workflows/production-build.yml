@@ -27,6 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
+      - name: Validate production Caddyfile
+        run: >-
+          docker run --rm
+          --volume "${{ github.workspace }}/deploy:/etc/caddy:ro"
+          caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -45,6 +52,13 @@ jobs:
           deploy/validate-production-env.test.mjs
           deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
+
+      - name: Test Hyperliquid API resource hints
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/seo.test.ts
+          src/lib/tests/hyperliquid-resource-hints.test.ts
 
       - name: Test TradingView integration
         working-directory: apps/terminal

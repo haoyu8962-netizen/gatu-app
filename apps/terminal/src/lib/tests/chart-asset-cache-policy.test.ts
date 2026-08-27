@@ -128,7 +128,7 @@ describe("TradingView asset cache policy", () => {
 		);
 		expect(referralUriGuard).toContain('pathname !== "/join" && !pathname.startsWith("/join/")');
 		expect(referralUriGuard).toContain("decodeURI(pathname)");
-		expect(deployScript).toContain('curl --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS"');
+		expect(deployScript).toContain('curl -q --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS"');
 		expect(deployScript).toMatch(
 			/rollback_to_release[\s\S]*?edge_health_check "\$GATU_MAINNET_PUBLIC_BASE_URL" "\$rollback_expected_commit" "\$rollback_expected_release"[\s\S]*?edge_health_check "\$GATU_TESTNET_PUBLIC_BASE_URL" "\$rollback_expected_commit" "\$rollback_expected_release" true/,
 		);

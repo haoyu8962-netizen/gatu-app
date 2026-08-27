@@ -70,6 +70,14 @@ describe("seo", () => {
 		expect(buildRootHead().links.some((link) => link.rel === "preload")).toBe(false);
 	});
 
+	it("keeps global connection hints DNS-only so the edge can select the correct trading network", () => {
+		const links = buildRootHead().links;
+		expect(links.filter((link) => link.rel === "preconnect")).toEqual([]);
+		expect(links.filter((link) => link.rel === "dns-prefetch")).toEqual([
+			{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
+		]);
+	});
+
 	it("publishes the dedicated vector favicon alongside ICO and Apple fallbacks", () => {
 		const iconLinks = buildRootHead().links.filter((link) => link.rel === "icon" || link.rel === "apple-touch-icon");
 		expect(iconLinks).toEqual([

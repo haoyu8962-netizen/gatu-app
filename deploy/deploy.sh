@@ -25,6 +25,8 @@ REFERRAL_REFERRER_POLICY="no-referrer"
 REFERRAL_ROUTE_MARKER='<meta name="gatu-route" content="referral-join"'
 REFERRAL_RELEASE_CAPABILITY="referral-join-v1"
 NOINDEX_POLICY="noindex, nofollow"
+MAINNET_API_ORIGIN="https://api.hyperliquid.xyz"
+TESTNET_API_ORIGIN="https://api.hyperliquid-testnet.xyz"
 CURL_CONNECT_TIMEOUT_SECONDS=5
 CURL_MAX_TIME_SECONDS=15
 DEPLOY_LOCK_PATH="${SHARED}/deploy.lock"
@@ -111,7 +113,7 @@ sync_and_reexec_deploy() {
 }
 
 curl_with_deadline() {
-	curl --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS" --max-time "$CURL_MAX_TIME_SECONDS" "$@"
+	curl -q --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS" --max-time "$CURL_MAX_TIME_SECONDS" "$@"
 }
 
 clear_inherited_vite_environment() {
@@ -564,6 +566,86 @@ verify_sitewide_noindex() {
 	verify_single_header_value "${tmpdir}/headers" "x-robots-tag" "$NOINDEX_POLICY" "Testnet application page"
 }
 
+verify_api_preconnect_header() {
+	local headers="$1"
+	local expected_origin="$2"
+	local forbidden_origin="$3"
+	local asset_label="$4"
+	local mode="$5"
+
+	node - "$headers" "$expected_origin" "$forbidden_origin" "$asset_label" "$mode" <<'NODE'
+const fs = require("node:fs");
+const [file, expectedOrigin, forbiddenOrigin, assetLabel, mode] = process.argv.slice(2);
+const expectedValue = `<${expectedOrigin}>; rel=preconnect; crossorigin=anonymous`;
+const linkContext = "https://link-context.invalid/";
+const normalizeHostname = (url) =>
+	new URL(url, linkContext).hostname.toLowerCase().replace(/\.+$/, "");
+const expectedHostname = normalizeHostname(expectedOrigin);
+const forbiddenHostname = normalizeHostname(forbiddenOrigin);
+const apiHostnames = new Set([expectedHostname, forbiddenHostname]);
+const apiLinks = fs
+	.readFileSync(file, "utf8")
+	.split(/\r?\n/)
+	.filter((line) => line.toLowerCase().startsWith("link:"))
+	.flatMap((line) => line.slice(line.indexOf(":") + 1).split(/,(?=\s*<)/))
+	.map((value) => value.trim())
+	.flatMap((value) => {
+		const target = /^<([^>]+)>/.exec(value)?.[1];
+		if (!target) return [];
+		try {
+			const hostname = normalizeHostname(target);
+			return apiHostnames.has(hostname) ? [{ hostname, value }] : [];
+		} catch {
+			return [];
+		}
+	});
+
+if (mode === "required") {
+	if (apiLinks.length !== 1 || apiLinks[0].value.toLowerCase() !== expectedValue.toLowerCase()) {
+		throw new Error(`${assetLabel} must return exactly one Link: ${expectedValue}; received ${JSON.stringify(apiLinks)}`);
+	}
+	if (apiLinks.some(({ hostname }) => hostname === forbiddenHostname)) {
+		throw new Error(`${assetLabel} exposed the wrong-network API origin ${forbiddenOrigin}`);
+	}
+} else if (mode === "absent") {
+	if (apiLinks.length !== 0) {
+		throw new Error(`${assetLabel} must not return a Hyperliquid API Link; received ${JSON.stringify(apiLinks)}`);
+	}
+} else {
+	throw new Error(`Unknown API preconnect verification mode: ${mode}`);
+}
+NODE
+}
+
+verify_trade_api_resource_hints() {
+	local base_url="$1"
+	local tmpdir="$2"
+	local is_testnet="$3"
+	local expected_origin="$MAINNET_API_ORIGIN"
+	local forbidden_origin="$TESTNET_API_ORIGIN"
+	local path
+	local asset_label
+
+	if [ "$is_testnet" = "true" ]; then
+		expected_origin="$TESTNET_API_ORIGIN"
+		forbidden_origin="$MAINNET_API_ORIGIN"
+	fi
+	for path in "/trade/HYPE" "/perp" "/spot" "/builders-perp/hyna"; do
+		asset_label="Trade API resource hint (${path})"
+		if ! fetch_typed_asset "$base_url" "$path" "$tmpdir" "text/html" "$asset_label"; then
+			return 1
+		fi
+		verify_exact_http_status "${tmpdir}/headers" "200" "$asset_label" || return 1
+		verify_api_preconnect_header "${tmpdir}/headers" "$expected_origin" "$forbidden_origin" "$asset_label" "required" || return 1
+	done
+
+	if ! fetch_typed_asset "$base_url" "/terms" "$tmpdir" "text/html" "Terms resource hints"; then
+		return 1
+	fi
+	verify_exact_http_status "${tmpdir}/headers" "200" "Terms resource hints" || return 1
+	verify_api_preconnect_header "${tmpdir}/headers" "$expected_origin" "$forbidden_origin" "Terms resource hints" "absent"
+}
+
 extract_js_assets() {
 	local file="$1"
 	node - "$file" <<'NODE'
@@ -776,6 +858,7 @@ edge_health_check() {
 		tmpdir="$(mktemp -d)"
 		if verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release" &&
 			verify_chart_delivery "$base_url" "$tmpdir" &&
+			verify_trade_api_resource_hints "$base_url" "$tmpdir" "$require_sitewide_noindex" &&
 			{ [ "$require_referral_join" != "true" ] || verify_referral_deep_link "$base_url" "$tmpdir"; } &&
 			{ [ "$require_referral_join" != "true" ] || verify_edge_rejects_malformed_referral_deep_link "$base_url" "$tmpdir"; } &&
 			{ [ "$require_sitewide_noindex" != "true" ] || verify_sitewide_noindex "$base_url" "$tmpdir"; }; then

@@ -23,6 +23,28 @@ app.gatu.ai, testnet.gatu.ai {
 	@testnet host testnet.gatu.ai
 	header @testnet >X-Robots-Tag "noindex, nofollow"
 
+	# Mainnet and testnet intentionally share one application build. Select the
+	# critical public API connection at the edge so neither origin warms the
+	# other network, and scope it to terminal navigation responses only.
+	@mainnet_trade {
+		host app.gatu.ai
+		method GET
+		path /trade /trade/* /perp /perp/* /spot /spot/* /builders-perp /builders-perp/*
+	}
+	header @mainnet_trade {
+		+Link "<https://api.hyperliquid.xyz>; rel=preconnect; crossorigin=anonymous"
+		defer
+	}
+	@testnet_trade {
+		host testnet.gatu.ai
+		method GET
+		path /trade /trade/* /perp /perp/* /spot /spot/* /builders-perp /builders-perp/*
+	}
+	header @testnet_trade {
+		+Link "<https://api.hyperliquid-testnet.xyz>; rel=preconnect; crossorigin=anonymous"
+		defer
+	}
+
 	# The application build assets are content-hashed and safe to cache indefinitely.
 	@immutable path /assets/*
 	header @immutable >Cache-Control "public, max-age=31536000, immutable"
