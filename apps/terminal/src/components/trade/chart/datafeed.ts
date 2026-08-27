@@ -62,6 +62,7 @@ const allMidsCache = new Map<string, { value: AllMidsResponse; fetchedAt: number
 const allMidsPromise = new Map<string, Promise<AllMidsResponse>>();
 const HYPERLIQUID_MAX_CANDLES = 5_000;
 const CHART_HISTORY_INLINE_RATE_LIMIT_TIMEOUT_MS = 25_000;
+let datafeedInstanceCount = 0;
 
 export interface HistoryRequestIdentity {
 	requestId: number;
@@ -288,6 +289,7 @@ interface DatafeedOptions {
 
 type ActiveRealtimeSubscription = {
 	streamKey: string;
+	storeListenerId: string;
 	cacheKey: string;
 	coin: string;
 	resolution: ResolutionString;
@@ -302,6 +304,8 @@ export interface ChartDatafeed extends IBasicDataFeed {
 
 export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 	const store = getCandleStore();
+	datafeedInstanceCount += 1;
+	const listenerNamespace = `datafeed-${datafeedInstanceCount}`;
 	const realtimeSubscriptions = new Map<string, ActiveRealtimeSubscription>();
 	const resolvedCoinBySymbol = new Map<string, string>();
 	const activeHistoryRequests = new Set<ActiveHistoryRequest>();
@@ -456,8 +460,8 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			}
 			activeHistoryRequests.clear();
 
-			for (const [listenerGuid, subscription] of realtimeSubscriptions) {
-				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
+			for (const subscription of realtimeSubscriptions.values()) {
+				store.getState().unsubscribe(subscription.streamKey, subscription.storeListenerId);
 			}
 			realtimeSubscriptions.clear();
 			resolvedCoinBySymbol.clear();
@@ -700,13 +704,14 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 
 			const existingSubscription = realtimeSubscriptions.get(listenerGuid);
 			if (existingSubscription) {
-				store.getState().unsubscribe(existingSubscription.streamKey, listenerGuid);
+				store.getState().unsubscribe(existingSubscription.streamKey, existingSubscription.storeListenerId);
 			}
 			const symbolCacheKey = cacheKey(symbolInfo, resolution);
 			const key = streamKey(coin, interval);
 
 			const realtimeSubscription: ActiveRealtimeSubscription = {
 				streamKey: key,
+				storeListenerId: `${listenerNamespace}:${listenerGuid}`,
 				cacheKey: symbolCacheKey,
 				coin,
 				resolution,
@@ -729,7 +734,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				onTick(cloneBar(bar));
 			};
 
-			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, () => {
+			store.getState().subscribe(key, coin, interval, realtimeSubscription.storeListenerId, wrappedOnTick, () => {
 				if (
 					realtimeSubscriptions.get(listenerGuid) !== realtimeSubscription ||
 					!matchesHistoryTarget(coin, resolution)
@@ -748,7 +753,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 		unsubscribeBars: (listenerGuid: string) => {
 			const subscription = realtimeSubscriptions.get(listenerGuid);
 			if (subscription) {
-				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
+				store.getState().unsubscribe(subscription.streamKey, subscription.storeListenerId);
 				realtimeSubscriptions.delete(listenerGuid);
 			}
 		},
