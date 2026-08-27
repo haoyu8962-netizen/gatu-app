@@ -46,6 +46,13 @@ jobs:
           deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
 
+      - name: Test Hyperliquid API resource hints
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/seo.test.ts
+          src/lib/tests/hyperliquid-resource-hints.test.ts
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-

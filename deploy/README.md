@@ -21,6 +21,14 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
 `/join` 和 `/join/**` 在 Nitro 与 Caddy 双层设为 `Cache-Control: no-store`、
 `Referrer-Policy: no-referrer` 和 `X-Robots-Tag: noindex, nofollow`。
 
+`/trade` 和 `/trade/**` 的导航响应由 Caddy 按请求 Host 下发唯一的 Hyperliquid HTTP API
+`Link: rel=preconnect`：主网只指向 `api.hyperliquid.xyz`，测试网只指向
+`api.hyperliquid-testnet.xyz`。两个 origin 共用的应用 HTML 不得写死 API preconnect；法律、文档和
+其他非交易路由也不得提前连接该 API。该提示旨在预热首次无凭证 `/info` 请求使用的 HTTP origin
+连接；提示本身不发送 HTTP 请求或钱包数据，但会在 JavaScript 发起请求前向所选 Hyperliquid origin
+暴露客户端 IP/TLS 握手。它不代表 WebSocket 已预热，也不得包含钱包地址、签名或业务请求体。
+部署健康检查会同时验证正确网络和非交易路由隔离。
+
 ### Privy 与双 origin Agent 隔离
 
 - Privy Dashboard 的 Allowed origins 必须同时精确包含 `https://app.gatu.ai` 和
