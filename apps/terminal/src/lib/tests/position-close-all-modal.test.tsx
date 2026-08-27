@@ -14,7 +14,9 @@ const testState = vi.hoisted(() => ({
 	isPending: false,
 	isReconciling: false,
 	phase: "idle" as "idle" | "validating" | "submitting" | "reconciling" | "partial",
+	onOpenChange: vi.fn(),
 	resetError: vi.fn(),
+	shellProps: null as Record<string, unknown> | null,
 	submit: vi.fn(async () => ({ state: "filled" as const })),
 }));
 
@@ -26,8 +28,10 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/components/trade/positions/position-close-dialog-ui", () => ({
-	PositionCloseDialogShell: ({ children }: { children: ReactNode }) =>
-		createElement("div", { "data-testid": "shell" }, children),
+	PositionCloseDialogShell: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
+		testState.shellProps = props;
+		return createElement("div", { "data-testid": "shell" }, children);
+	},
 	PositionCloseDialogHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
 	PositionCloseDialogContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	PositionCloseDialogFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
@@ -103,7 +107,7 @@ describe("PositionCloseAllController", () => {
 					{ i18n },
 					createElement(PositionCloseAllController, {
 						snapshot: snapshotWith(positionCount),
-						onOpenChange: vi.fn(),
+						onOpenChange: testState.onOpenChange,
 					}),
 				),
 			),
@@ -121,7 +125,9 @@ describe("PositionCloseAllController", () => {
 		testState.isPending = false;
 		testState.isReconciling = false;
 		testState.phase = "idle";
+		testState.onOpenChange.mockReset();
 		testState.resetError.mockReset();
+		testState.shellProps = null;
 		testState.submit.mockClear();
 	});
 
@@ -135,14 +141,30 @@ describe("PositionCloseAllController", () => {
 		expect(testState.actionButtonProps?.holdDurationMs).toBeUndefined();
 		expect(testState.actionButtonProps?.holdProgressClassName).toBeUndefined();
 		expect(testState.actionButtonProps?.requireReadyConfirmation).toBe(true);
+		expect(testState.shellProps).toMatchObject({
+			dismissible: true,
+			showMobileClose: true,
+			closeLabel: "Close close-all confirmation",
+		});
 		expect(container.textContent).toContain("Close 1 position");
 		expect(container.textContent).not.toContain("Hold");
-		expect(container.textContent).toContain("Click to submit · Each market may return a different result");
+		expect(container.textContent).not.toContain("Back");
+		expect(container.textContent).not.toContain("Click to submit · Each market may return a different result");
+		expect(container.querySelector('[data-testid="submit"]')?.getAttribute("aria-describedby")).toBeNull();
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
 		});
 		expect(testState.submit).toHaveBeenCalledTimes(1);
+	});
+
+	it("describes the submit button only with a visible submission error", () => {
+		testState.error = "Close request failed";
+		render();
+
+		const describedBy = container.querySelector('[data-testid="submit"]')?.getAttribute("aria-describedby");
+		expect(describedBy).toMatch(/^position-close-all-error-/);
+		expect(document.getElementById(describedBy ?? "")?.textContent).toContain("Close request failed");
 	});
 
 	it("pluralizes the confirm label without reintroducing a hold gesture", () => {
@@ -158,6 +180,10 @@ describe("PositionCloseAllController", () => {
 
 		const button = container.querySelector<HTMLButtonElement>('[data-testid="submit"]');
 		expect(button?.disabled).toBe(true);
+		expect(testState.shellProps?.dismissible).toBe(false);
+		(testState.shellProps?.onOpenChange as (open: boolean) => void)(false);
+		expect(testState.resetError).not.toHaveBeenCalled();
+		expect(testState.onOpenChange).not.toHaveBeenCalled();
 		await act(async () => button?.click());
 		expect(testState.submit).not.toHaveBeenCalled();
 	});

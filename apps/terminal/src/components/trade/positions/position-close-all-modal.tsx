@@ -49,8 +49,6 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 	const isActionDisabled = submission.isPending || submission.isReconciling || submission.isPartial;
 	const isDismissible = !submission.isPending;
 	const errorId = `position-close-all-error-${getPositionCloseAllSnapshotKey(snapshot)}`;
-	const helperId = `position-close-all-helper-${getPositionCloseAllSnapshotKey(snapshot)}`;
-	const describedBy = submission.error ? `${helperId} ${errorId}` : helperId;
 	const summaryItems: PositionCloseSummaryItem[] = [
 		{
 			key: "count",
@@ -144,6 +142,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 			onOpenChange={handleOpenChange}
 			isMobile={isMobile}
 			dismissible={isDismissible}
+			showMobileClose
 			closeLabel={t`Close close-all confirmation`}
 		>
 			<PositionCloseDialogHeader>
@@ -187,7 +186,7 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 					disabled={isActionDisabled}
 					intent="error"
 					size="lg"
-					aria-describedby={describedBy}
+					aria-describedby={submission.error ? errorId : undefined}
 					aria-busy={submission.isPending || submission.isReconciling}
 					containerClassName="w-full items-stretch"
 					className="relative min-h-11 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger px-3 py-[13px] text-[14px] leading-5 font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-none hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-market-close-muted"
@@ -203,17 +202,6 @@ function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
 						<Plural value={positionCount} one="Close # position" other="Close # positions" />
 					)}
 				</TradingActionButton>
-				<button
-					type="button"
-					disabled={!isDismissible}
-					onClick={() => handleOpenChange(false)}
-					className="min-h-10 rounded-[10px] text-[13px] font-semibold text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle"
-				>
-					{t`Back`}
-				</button>
-				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
-					{t`Click to submit · Each market may return a different result`}
-				</p>
 			</PositionCloseDialogFooter>
 		</PositionCloseDialogShell>
 	);
