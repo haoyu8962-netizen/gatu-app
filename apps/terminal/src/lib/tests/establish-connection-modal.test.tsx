@@ -10,16 +10,21 @@ const testState = vi.hoisted(() => ({
 	agentMissingReason: null as
 		| "no_local_key"
 		| "remote_named_agent_exists"
+		| "approval_unconfirmed"
 		| "local_key_not_approved"
 		| "remote_key_replaced"
 		| "agent_name_mismatch"
 		| "invalid_local_record"
 		| null,
+	canResetConnection: false,
+	clientKey: "0x1111111111111111111111111111111111111111" as string,
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	error: null as Error | null,
 	failurePhase: null as "preflight" | "approval" | "persistence" | "verification" | null,
 	isMobile: false,
 	persistConnection: false,
 	register: vi.fn(),
+	resetConnection: vi.fn(),
 	status: "idle" as "idle" | "approving_agent" | "verifying" | "error",
 	walletIntent: "external" as "embedded" | "external",
 	writePersistTradingConnection: vi.fn(),
@@ -37,11 +42,14 @@ vi.mock("@/lib/hyperliquid", () => ({
 	readPersistTradingConnection: () => testState.persistConnection,
 	useAgentRegistration: () => ({
 		agentMissingReason: testState.agentMissingReason,
+		canResetConnection: testState.canResetConnection,
 		error: testState.error,
 		failurePhase: testState.failurePhase,
 		register: testState.register,
+		resetConnection: testState.resetConnection,
 		status: testState.status,
 	}),
+	useHyperliquid: () => ({ clientKey: testState.clientKey, env: testState.env }),
 	writePersistTradingConnection: testState.writePersistTradingConnection,
 }));
 
@@ -95,6 +103,7 @@ vi.mock("@gatu/ui", () => ({
 			description,
 		),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
@@ -117,11 +126,16 @@ describe("EstablishConnectionModal", () => {
 		onConnected = vi.fn();
 		testState.error = null;
 		testState.agentMissingReason = null;
+		testState.canResetConnection = false;
+		testState.clientKey = "0x1111111111111111111111111111111111111111";
+		testState.env = "Mainnet";
 		testState.failurePhase = null;
 		testState.isMobile = false;
 		testState.persistConnection = false;
 		testState.register.mockReset();
 		testState.register.mockResolvedValue("0x1111111111111111111111111111111111111111");
+		testState.resetConnection.mockReset();
+		testState.resetConnection.mockResolvedValue(undefined);
 		testState.status = "idle";
 		testState.walletIntent = "external";
 		testState.writePersistTradingConnection.mockReset();
@@ -259,5 +273,104 @@ describe("EstablishConnectionModal", () => {
 		expect(container.textContent).toContain("could not be checked safely");
 		expect(container.textContent).toContain("No wallet signature was requested");
 		expect(container.textContent).not.toContain("Agent key storage could not be verified");
+	});
+
+	it("requires identity-bound confirmation before resetting submitted coordination", async () => {
+		testState.canResetConnection = true;
+		testState.error = Object.assign(new Error("The previous trading connection cannot be resumed safely"), {
+			name: "AgentRegistrationResetRequiredError",
+		});
+		testState.failurePhase = "preflight";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("no longer has the exact trading key");
+		const resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+		expect(testState.resetConnection).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("If it was already approved");
+
+		const confirmButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => confirmButton?.click());
+		expect(testState.resetConnection).toHaveBeenCalledOnce();
+	});
+
+	it("invalidates reset confirmation after the wallet identity changes away and back", async () => {
+		testState.canResetConnection = true;
+		await renderModal();
+
+		let resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		act(() => resetButton?.click());
+		expect(container.textContent).toContain("If it was already approved");
+
+		testState.clientKey = "0x2222222222222222222222222222222222222222";
+		await renderModal();
+		testState.clientKey = "0x1111111111111111111111111111111111111111";
+		await renderModal();
+
+		expect(container.textContent).not.toContain("If it was already approved");
+		resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+		expect(testState.resetConnection).not.toHaveBeenCalled();
+	});
+
+	it("invalidates reset confirmation when reset eligibility changes", async () => {
+		testState.canResetConnection = true;
+		await renderModal();
+
+		let resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		act(() => resetButton?.click());
+		expect(container.textContent).toContain("If it was already approved");
+
+		testState.canResetConnection = false;
+		await renderModal();
+		testState.canResetConnection = true;
+		await renderModal();
+
+		expect(container.textContent).not.toContain("If it was already approved");
+		resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+		expect(testState.resetConnection).not.toHaveBeenCalled();
+	});
+
+	it("keeps a reset failure visible in the confirmation step", async () => {
+		testState.canResetConnection = true;
+		testState.resetConnection.mockRejectedValue(new Error("Reset was blocked by active coordination"));
+		await renderModal();
+
+		let resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		act(() => resetButton?.click());
+		resetButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Reset trading connection",
+		);
+		await act(async () => resetButton?.click());
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Reset was blocked");
+		expect(container.textContent).toContain("If it was already approved");
+	});
+
+	it("does not mask an other-tab conflict as an ambiguous approval result", async () => {
+		testState.error = new Error("A trading connection is already being established in another tab.");
+		testState.failurePhase = "verification";
+		testState.status = "error";
+		await renderModal();
+
+		expect(container.textContent).toContain("being established in another tab");
+		expect(container.textContent).not.toContain("It may already be approved");
+		expect(container.textContent).not.toContain("Reset trading connection");
 	});
 });

@@ -150,8 +150,11 @@ resume only when it becomes visible. A late wallet result may complete only
 while the original owner, registration epoch, and generated Agent still match.
 Wallet changes and stale registration epochs fail closed. They remove an
 unverified key only before the submission boundary; once submission has
-started, the exact key and coordination remain under the old owner/environment
-scope for later reconciliation.
+started, shared coordination remains under the old owner/environment scope for
+later reconciliation. The private key remains only as long as its selected
+storage scope; the default session-scoped key can disappear when its tab is
+discarded. That mismatch fails closed and requires a user-authorized, verified
+trading-connection reset before a replacement Agent can be created.
 
 Wallet-backed sessions wait for both Privy's authentication readiness and
 `useWallets().ready`. Linked wallet metadata proves ownership but does not make
@@ -217,11 +220,29 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
   candidate public address and timestamps; it never contains the private key.
   The private key remains in the selected Agent storage scope. Another tab may
   resume only when it already holds that exact candidate; otherwise it fails
-  closed while the attempt is pending. Once the boundary is recorded, a later
-  remote miss never proves non-submission and therefore never expires or
-  replaces the key. Only an old pending record that never reached the boundary
-  may have its marker cleared after the five-minute reconciliation window;
-  that cleanup performs a lock-protected compare-and-set and succeeds only
+  closed while the attempt is pending. Lock-protected progress by a tab holding
+  the exact candidate refreshes the shared activity timestamp. A tab without
+  that candidate receives an in-progress result throughout the five-minute
+  coordination window and cannot reset the active attempt; only after that
+  window becomes stale may it request an explicit reset. Approval cancellation
+  and timeout signals apply only before the signed transport boundary; after
+  the boundary, the in-flight exchange request is allowed to finish and its
+  late result is reconciled against the exact candidate. Once the boundary is
+  recorded, a later remote miss never proves non-submission and therefore never
+  automatically expires or replaces the key. If the exact local candidate is
+  no longer available, or repeated exact-key reconciliation remains ambiguous,
+  the connection dialog offers an explicit reset. A single uncertain result or
+  an `approval_unconfirmed` status alone never enables it; the exact stored key
+  must first be retried and remain ambiguous. The dialog requires a second,
+  owner-and-environment-bound confirmation that warns an already approved key
+  may require another signature. That reset must remove the
+  coordinated local record and close the matching owner/environment session
+  under the registration lock before a replacement can be created. The reset
+  rechecks recent cross-tab activity under that same lock, closing the race
+  between showing and confirming the action. Only an old pending record that
+  never reached the boundary may have its marker cleared after the five-minute
+  reconciliation window; that cleanup performs a lock-protected compare-and-set
+  and succeeds only
   while both the shared and local submission markers are still absent. It
   still fails without signing, and only a later explicit action may replace
   the candidate. Retries recheck the same key and move all pending metadata to

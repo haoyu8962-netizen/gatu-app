@@ -12,6 +12,7 @@ export {
 	type AgentRegistrationOptions,
 	type AgentRegistrationPersistOptions,
 	type AgentRegistrationPersistResult,
+	AgentRegistrationResetRequiredError,
 	type AgentRegistrationSessionFailureReason,
 	type AgentRegistrationSessionResult,
 	type AgentRegistrationShutdownOptions,

@@ -218,7 +218,8 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 				const transport: IRequestTransport = {
 					isTestnet: baseTransport.isTestnet,
 					async request<T>(endpoint: "info" | "exchange", payload: unknown, signal?: AbortSignal): Promise<T> {
-						const execute = () => baseTransport.request<T>(endpoint, payload, signal);
+						const execute = () =>
+							baseTransport.request<T>(endpoint, payload, registrationPublicKey ? undefined : signal);
 						const submission = registrationPublicKey
 							? await startAgentRegistrationSubmission(registrationLease, canSubmit, execute)
 							: await startAgentRegistrationExecution(registrationLease, canSubmit, execute);

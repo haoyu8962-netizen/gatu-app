@@ -10,12 +10,13 @@ import {
 	type AgentRegistrationPersistOptions,
 	cancelAgentRegistrationEpochAndRemove,
 	captureAgentRegistrationEpoch,
+	closeAgentRegistrationSessionAndRemove,
 	isAgentRegistrationEpochCurrent,
 	persistAgentForRegistration,
 	verifyAgentRegistrationOrRemove,
 } from "./agent-registration-session";
 import { type AgentStorageScope, inspectAgentStorageRecord } from "./agent-storage";
-import type { RegistrationStatus } from "./types";
+import type { HyperliquidEnv, RegistrationStatus } from "./types";
 import { type AgentMissingReason, useAgentStatus } from "./use-agent-status";
 import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
@@ -30,12 +31,32 @@ export interface AgentRegistrationOptions {
 
 export interface UseAgentRegistrationResult {
 	register: (options?: AgentRegistrationOptions) => Promise<Address>;
+	resetConnection: () => Promise<void>;
+	canResetConnection: boolean;
 	status: RegistrationStatus;
 	currentStep: RegistrationStep;
 	agentMissingReason: AgentMissingReason | null;
 	failurePhase: AgentRegistrationFailurePhase | null;
 	error: Error | null;
 	reset: () => void;
+}
+
+export class AgentRegistrationResetRequiredError extends Error {
+	constructor() {
+		super("The previous trading connection cannot be resumed safely");
+		this.name = "AgentRegistrationResetRequiredError";
+	}
+}
+
+interface AgentRegistrationIdentity {
+	address: Address | undefined;
+	env: HyperliquidEnv;
+}
+
+interface AgentRegistrationFailureState extends AgentRegistrationIdentity {
+	error: Error;
+	phase: AgentRegistrationFailurePhase;
+	resetAllowed: boolean;
 }
 
 export function resolveAgentRegistrationStorageScope(options?: AgentRegistrationOptions): AgentStorageScope {
@@ -54,6 +75,30 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
+function hasSameRegistrationIdentity(left: AgentRegistrationIdentity, right: AgentRegistrationIdentity): boolean {
+	return (
+		left.env === right.env &&
+		(left.address === undefined
+			? right.address === undefined
+			: right.address !== undefined && left.address.toLowerCase() === right.address.toLowerCase())
+	);
+}
+
+function isOtherTabRegistrationConflict(error: Error | null): boolean {
+	return error?.message.startsWith("A trading connection is already being established in another tab") === true;
+}
+
+function shouldAllowConnectionReset(
+	error: Error | null,
+	resetAllowed: boolean,
+	missingReason: AgentMissingReason | null,
+): boolean {
+	if (isOtherTabRegistrationConflict(error)) return false;
+	return (
+		error?.name === "AgentRegistrationResetRequiredError" || resetAllowed || missingReason === "invalid_local_record"
+	);
+}
+
 function deriveRegistrationStatus(
 	isPending: boolean,
 	isError: boolean,
@@ -70,7 +115,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const identityRef = useRef({ address, env });
 
 	const [currentStep, setCurrentStep] = useState<RegistrationStep>(null);
-	const [failurePhase, setFailurePhase] = useState<AgentRegistrationFailurePhase | null>(null);
+	const [failureState, setFailureState] = useState<AgentRegistrationFailureState | null>(null);
 	const mountedRef = useRef(true);
 
 	useEffect(() => {
@@ -81,35 +126,58 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	}, []);
 
 	useLayoutEffect(() => {
-		identityRef.current = { address, env };
+		const nextIdentity = { address, env };
+		const identityChanged = !hasSameRegistrationIdentity(identityRef.current, nextIdentity);
+		identityRef.current = nextIdentity;
+		if (identityChanged) {
+			setCurrentStep(null);
+			setFailureState(null);
+		}
 	}, [address, env]);
 
 	const agentStatus = useAgentStatus();
 	const approveAgentOverride = useAgentApprovalOverride();
 
-	function safeSetStep(step: RegistrationStep) {
-		if (mountedRef.current) setCurrentStep(step);
+	function safeSetStep(identity: AgentRegistrationIdentity, step: RegistrationStep) {
+		if (mountedRef.current && hasSameRegistrationIdentity(identityRef.current, identity)) setCurrentStep(step);
 	}
 
-	function safeSetFailurePhase(phase: AgentRegistrationFailurePhase | null) {
-		if (mountedRef.current) setFailurePhase(phase);
+	function safeSetFailure(
+		identity: AgentRegistrationIdentity,
+		phase: AgentRegistrationFailurePhase | null,
+		error?: unknown,
+		resetAllowed = false,
+	) {
+		if (!mountedRef.current || !hasSameRegistrationIdentity(identityRef.current, identity)) return;
+		setFailureState(
+			phase === null
+				? null
+				: {
+						...identity,
+						error: error instanceof Error ? error : new Error("Agent registration failed"),
+						phase,
+						resetAllowed,
+					},
+		);
 	}
 
 	const registration = useMutation({
 		mutationKey: ["hl", "registration", env, address],
 		retry: false,
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
+			const registrationIdentity = { address, env };
 			let phase: AgentRegistrationFailurePhase = "preflight";
-			safeSetFailurePhase(null);
+			let resetAllowed = false;
+			safeSetFailure(registrationIdentity, null);
 			const approvalOptions =
 				options?.approval?.applicationReview === "confirmed"
 					? ({ applicationReview: "confirmed" } satisfies AgentApprovalOptions)
 					: undefined;
 			try {
-				const startAddress = address;
+				const startAddress = registrationIdentity.address;
 				if (!startAddress) throw new Error("No wallet connected");
 				const verifiedAddress: Address = startAddress;
-				const registrationEnv = env;
+				const registrationEnv = registrationIdentity.env;
 				const initialStorage = inspectAgentStorageRecord(registrationEnv, verifiedAddress);
 				if (initialStorage.status === "failed") {
 					throw new Error("Agent key storage could not be verified");
@@ -124,14 +192,15 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					initialStorage.agent.approvalPendingAtMs !== undefined
 						? initialStorage.agent.publicKey
 						: undefined;
-				if (pendingPublicKey) phase = "verification";
-
 				const registrationSession = await captureAgentRegistrationEpoch(
 					registrationEnv,
 					verifiedAddress,
 					pendingPublicKey ? { resumePublicKey: pendingPublicKey } : undefined,
 				);
 				if (registrationSession.status === "failed") {
+					if (registrationSession.reason === "registration_reset_required") {
+						throw new AgentRegistrationResetRequiredError();
+					}
 					throw new Error(
 						registrationSession.reason === "lock_unavailable"
 							? "Secure Agent registration requires Web Locks support. Update your browser and try again."
@@ -277,6 +346,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 				phase = pendingPublicKey ? "verification" : "preflight";
 
 				if (pendingPublicKey) {
+					resetAllowed = true;
 					const pendingAgent = requireStoredAgent(pendingPublicKey);
 					const approvalPendingAtMs = pendingAgent.approvalPendingAtMs;
 					if (approvalPendingAtMs === undefined) {
@@ -333,7 +403,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					await persistExactAgent(privateKey, publicKey, approvalPendingAtMs);
 					await verifyStoredAgent(publicKey);
 					phase = "approval";
-					safeSetStep("agent");
+					safeSetStep(registrationIdentity, "agent");
 
 					const approvalParams = {
 						agentAddress: publicKey,
@@ -383,33 +453,65 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 
 				return capturedAgentAddress ?? agentStatus.agentAddress ?? zeroAddress;
 			} catch (error) {
-				safeSetFailurePhase(phase);
+				safeSetFailure(registrationIdentity, phase, error, resetAllowed);
 				throw error;
 			} finally {
-				safeSetStep(null);
+				safeSetStep(registrationIdentity, null);
 			}
 		},
 	});
 
+	const currentIdentity = { address, env };
+	const currentFailureState =
+		failureState && hasSameRegistrationIdentity(failureState, currentIdentity) ? failureState : null;
+	const failurePhase = currentFailureState?.phase ?? null;
+	const error = currentFailureState?.error ?? null;
+	const canResetConnection =
+		address !== undefined &&
+		shouldAllowConnectionReset(error, currentFailureState?.resetAllowed === true, agentStatus.agentMissingReason);
 	const status = deriveRegistrationStatus(registration.isPending, registration.isError, currentStep);
 
 	function reset() {
 		registration.reset();
 		setCurrentStep(null);
-		setFailurePhase(null);
+		setFailureState(null);
 	}
 
 	function register(options?: AgentRegistrationOptions) {
 		return registration.mutateAsync(options);
 	}
 
+	async function resetConnection() {
+		const resetIdentity = currentIdentity;
+		if (!resetIdentity.address) throw new Error("No wallet connected");
+		if (!canResetConnection) throw new Error("Trading connection reset is not currently required");
+		if (!hasSameRegistrationIdentity(identityRef.current, resetIdentity)) {
+			throw new Error("Wallet or network changed before resetting the trading connection");
+		}
+		const shutdown = await closeAgentRegistrationSessionAndRemove(resetIdentity.env, resetIdentity.address, {
+			preserveRecentRegistrationWithoutMatchingCandidate: true,
+		});
+		if (shutdown.status !== "closed") {
+			throw new Error("Trading connection reset could not be verified");
+		}
+		if (
+			identityRef.current.env !== resetIdentity.env ||
+			identityRef.current.address?.toLowerCase() !== resetIdentity.address.toLowerCase()
+		) {
+			throw new Error("Wallet or network changed while resetting the trading connection");
+		}
+		reset();
+	}
+
 	return {
 		register,
+		resetConnection,
+		canResetConnection,
 		status,
 		currentStep,
 		agentMissingReason: agentStatus.agentMissingReason,
 		failurePhase,
-		error: registration.error,
+		error,
 		reset,
 	};
 }

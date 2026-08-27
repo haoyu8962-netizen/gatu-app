@@ -155,6 +155,46 @@ describe("history pagination", () => {
 		expect(result.items.at(1)?.id).toBe("event-401");
 	});
 
+	it("bounds retained matches without excluding raw items from pagination", async () => {
+		const events = Array.from({ length: 12 }, (_, index) => ({
+			id: `event-${index + 1}`,
+			retain: (index + 1) % 2 === 0,
+			time: index + 1,
+		}));
+		const requestedCursors: number[] = [];
+		const validatedIds: string[] = [];
+		const controller = new AbortController();
+
+		const result = await fetchTimeRangeHistory({
+			endTime: 12,
+			fetchPage: async (startTime) => {
+				requestedCursors.push(startTime);
+				return events.filter((event) => event.time >= startTime).slice(0, 5);
+			},
+			getKey: (event) => event.id,
+			getTime: (event) => event.time,
+			pageLimit: 5,
+			retainLatestItems: 3,
+			retainItemsWhere: (event) => event.retain,
+			signal: controller.signal,
+			validateItem: (event) => {
+				validatedIds.push(event.id);
+				return true;
+			},
+		});
+
+		expect(requestedCursors).toEqual([0, 5, 9]);
+		expect(validatedIds).toContain("event-1");
+		expect(result).toEqual({
+			items: [
+				{ id: "event-8", retain: true, time: 8 },
+				{ id: "event-10", retain: true, time: 10 },
+				{ id: "event-12", retain: true, time: 12 },
+			],
+			truncated: false,
+		});
+	});
+
 	it("retries 429 responses and respects the abortable retry path", async () => {
 		const controller = new AbortController();
 		const request = vi

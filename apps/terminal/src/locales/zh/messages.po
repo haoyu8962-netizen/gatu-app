@@ -1177,6 +1177,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -4469,9 +4470,12 @@ msgstr "加载钱包中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4647,7 +4651,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "标记价格由预言机价格推导，用于计算未实现盈亏和强平。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "标记价格不可用。请等待行情更新后重试。"
@@ -6833,11 +6840,21 @@ msgstr "重置"
 #~ msgid "Reset phone access"
 #~ msgstr "重置手机访问"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Reset trading connection"
+msgstr "重置交易连接"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "重置倒计时"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "重置会从此浏览器中移除待确认的交易密钥。若该密钥已获批准，重新连接时需要再次签名。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -8801,6 +8818,10 @@ msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请使用受支持的浏览器。"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
+msgstr "此浏览器已不再保存与待确认授权完全匹配的交易密钥。请先重置交易连接，然后重试。"
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "一键全平预览已过期。请关闭并重新打开以检查当前数值。"
@@ -9330,6 +9351,10 @@ msgstr "交易中"
 msgid "Trading Account"
 msgstr "交易账户"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading connection could not be reset."
+msgstr "无法重置交易连接。"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9560,10 +9585,6 @@ msgstr "试用 PWA。"
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts

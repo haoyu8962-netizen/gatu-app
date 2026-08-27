@@ -1296,6 +1296,7 @@ msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -4739,9 +4740,12 @@ msgstr "Cargando billetera..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4945,7 +4949,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "El precio de marca se deriva de los precios de oráculo y se usa para calcular el PnL no realizado y la liquidación."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "El precio de marca no está disponible. Espera los datos del mercado y vuelve a intentarlo."
@@ -7334,11 +7341,21 @@ msgstr "Restablecer"
 #~ msgid "Reset phone access"
 #~ msgstr "Restablecer acceso del teléfono"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Reset trading connection"
+msgstr "Restablecer conexión de trading"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "Se restablece en"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "Al restablecer, se eliminará de este navegador la clave de trading pendiente. Si ya se había aprobado, tendrás que volver a firmar para reconectarte."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -9449,6 +9466,10 @@ msgstr "Este navegador no puede coordinar de forma segura las operaciones de fon
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "Este navegador no puede coordinar de forma segura la conexión de trading entre pestañas. Usa un navegador compatible."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
+msgstr "Este navegador ya no conserva la clave de trading exacta correspondiente a la aprobación pendiente. Restablece la conexión de trading antes de volver a intentarlo."
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "Esta vista previa de cerrar todo caducó. Ciérrala y vuelve a abrirla para revisar los valores actuales."
@@ -10010,6 +10031,10 @@ msgstr "Operando"
 msgid "Trading Account"
 msgstr "Cuenta de trading"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading connection could not be reset."
+msgstr "No se pudo restablecer la conexión de trading."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10244,10 +10269,6 @@ msgstr "Prueba la PWA."
 msgid "TVL"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts

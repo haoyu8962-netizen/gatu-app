@@ -1300,6 +1300,7 @@ msgstr "Camera preview for desktop wallet QR"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -4756,9 +4757,12 @@ msgstr "Loading wallet..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -4962,7 +4966,10 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-row.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "Mark price is unavailable. Wait for market data and try again."
@@ -7355,11 +7362,21 @@ msgstr "Reset"
 #~ msgid "Reset phone access"
 #~ msgstr "Reset phone access"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Reset trading connection"
+msgstr "Reset trading connection"
+
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "Resets in"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -9470,6 +9487,10 @@ msgstr "This browser cannot safely coordinate funds operations across tabs. Use 
 msgid "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 msgstr "This browser cannot safely coordinate the trading connection across tabs. Use a supported browser."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
+msgstr "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "This close-all preview expired. Close and reopen it to review current values."
@@ -10035,6 +10056,10 @@ msgstr "Trading"
 msgid "Trading Account"
 msgstr "Trading Account"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Trading connection could not be reset."
+msgstr "Trading connection could not be reset."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10269,10 +10294,6 @@ msgstr "Try the PWA."
 msgid "TVL"
 msgstr "TVL"
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts

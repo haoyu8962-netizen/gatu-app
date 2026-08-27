@@ -269,6 +269,7 @@ export type {
 export {
 	type AgentRegistrationFailurePhase,
 	type AgentRegistrationOptions,
+	AgentRegistrationResetRequiredError,
 	type RegistrationStep,
 	resolveAgentRegistrationStorageScope,
 	type UseAgentRegistrationResult,

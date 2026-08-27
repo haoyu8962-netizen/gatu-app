@@ -215,7 +215,7 @@ describe("PositionRow market close entry", () => {
 		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
 		expect(marketButton?.disabled).toBe(false);
 		expect(limitButton?.disabled).toBe(false);
-		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
+		expect(container.querySelector('[aria-label="Loading..."]')).not.toBeNull();
 		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
 
 		act(() => {
@@ -239,6 +239,44 @@ describe("PositionRow market close entry", () => {
 			szDecimals: 1,
 			marginMode: "isolated",
 		});
+	});
+
+	it("labels a cached stale mark without disabling risk-reducing actions", () => {
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: false,
+							markets,
+							markPx: "7.575900",
+							markPriceStatus: "stale",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose: vi.fn(),
+							onShare: vi.fn(),
+							onLimitClose: vi.fn(),
+							onReverse: vi.fn(),
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).not.toBeNull();
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]')?.disabled).toBe(false);
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]')?.disabled).toBe(false);
 	});
 
 	it("renders ROE or entry-notional price change from the selected PNL mode", () => {

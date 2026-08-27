@@ -5,7 +5,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useSubscription } from "@/lib/hyperliquid";
 import { isValidHistoricalOrderHistoryItem, mergeHistoricalOrderSources } from "@/lib/trade/historical-orders";
 import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
-import { buildOrderHistoryEntries, type OrderHistoryEntry } from "@/lib/trade/order-history";
+import { buildHistoricalOrderEntries, type OrdinaryOrderHistoryEntry } from "@/lib/trade/order-history";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -13,7 +13,7 @@ type HistoricalOrdersStatus = "error" | "idle" | "loading" | "offline" | "ready"
 
 interface HistoricalOrdersResult {
 	error: unknown;
-	entries: OrderHistoryEntry[];
+	entries: OrdinaryOrderHistoryEntry[];
 	isConnected: boolean;
 	isOffline: boolean;
 	isStale: boolean;
@@ -46,7 +46,7 @@ export function useHistoricalOrders(): HistoricalOrdersResult {
 		0,
 		RECENT_ACCOUNT_HISTORY_ROWS,
 	);
-	const entries = buildOrderHistoryEntries(orders, []);
+	const entries = buildHistoricalOrderEntries(orders);
 
 	let status: HistoricalOrdersStatus = "loading";
 	if (!enabled) {

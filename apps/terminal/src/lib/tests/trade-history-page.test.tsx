@@ -198,14 +198,50 @@ describe("TradeHistoryPage", () => {
 		const marketFilter = container.querySelector<HTMLSelectElement>(
 			'select[aria-label="Filter trade history by market"]',
 		);
+		if (!marketFilter) throw new Error("Missing market filter");
 		act(() => {
-			if (!marketFilter) throw new Error("Missing market filter");
 			marketFilter.value = "PURR/USDC";
 			marketFilter.dispatchEvent(new Event("change", { bubbles: true }));
 		});
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(4);
 		expect(container.textContent).toContain("1–4 / 4");
 		expect(mocks.history.refresh).not.toHaveBeenCalled();
+	});
+
+	it("keeps a selected market visible after refreshed data no longer contains it", () => {
+		renderPage();
+		const marketFilter = container.querySelector<HTMLSelectElement>(
+			'select[aria-label="Filter trade history by market"]',
+		);
+		if (!marketFilter) throw new Error("Missing market filter");
+		act(() => {
+			marketFilter.value = "PURR/USDC";
+			marketFilter.dispatchEvent(new Event("change", { bubbles: true }));
+		});
+		mocks.history.fills = [createFill(0)];
+		renderPage();
+
+		expect(marketFilter.value).toBe("PURR/USDC");
+		expect([...marketFilter.options].some((option) => option.value === "PURR/USDC")).toBe(true);
+		expect(container.textContent).toContain("No fills match the selected filters");
+	});
+
+	it("renders buy-side liquidations with danger styling", () => {
+		mocks.history.fills = [createFill(0)];
+		mocks.history.fills[0] = {
+			...mocks.history.fills[0],
+			liquidation: { markPx: "90", method: "market" },
+		};
+		renderPage();
+
+		const labels = [...container.querySelectorAll("span, td")].filter(
+			(element) => element.textContent === "Liquidated",
+		);
+		expect(labels).toHaveLength(2);
+		for (const label of labels) {
+			expect(label.className).toContain("text-error");
+			expect(label.className).not.toContain("text-success");
+		}
 	});
 
 	it.each([

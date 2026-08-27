@@ -31,6 +31,8 @@ export type OrderHistoryEntry =
 			type: "twap";
 	  });
 
+export type OrdinaryOrderHistoryEntry = Extract<OrderHistoryEntry, { kind: "order" }>;
+
 const TWAP_HISTORY_STATUSES: ReadonlySet<TwapHistoryStatus> = new Set([
 	"activated",
 	"error",
@@ -110,18 +112,7 @@ export function buildOrderHistoryEntries(
 	orders: HistoricalOrdersResponse,
 	twaps: TwapHistoryResponse,
 ): OrderHistoryEntry[] {
-	const orderEntries: OrderHistoryEntry[] = orders.map((entry) => ({
-		kind: "order",
-		key: `order:${entry.order.oid}`,
-		coin: entry.order.coin,
-		createdAt: entry.order.timestamp,
-		updatedAt: entry.statusTimestamp,
-		reduceOnly: entry.order.reduceOnly,
-		side: entry.order.side,
-		size: entry.order.origSz,
-		type: entry.order.orderType,
-		order: entry,
-	}));
+	const orderEntries = buildHistoricalOrderEntries(orders);
 	const twapEntries: OrderHistoryEntry[] = twaps.map((entry) => ({
 		kind: "twap",
 		key: `twap:${getTwapHistoryKey(entry)}`,
@@ -136,6 +127,23 @@ export function buildOrderHistoryEntries(
 	}));
 
 	return [...orderEntries, ...twapEntries].sort((left, right) => right.updatedAt - left.updatedAt);
+}
+
+export function buildHistoricalOrderEntries(orders: HistoricalOrdersResponse): OrdinaryOrderHistoryEntry[] {
+	return orders
+		.map<OrdinaryOrderHistoryEntry>((entry) => ({
+			kind: "order",
+			key: `order:${entry.order.oid}`,
+			coin: entry.order.coin,
+			createdAt: entry.order.timestamp,
+			updatedAt: entry.statusTimestamp,
+			reduceOnly: entry.order.reduceOnly,
+			side: entry.order.side,
+			size: entry.order.origSz,
+			type: entry.order.orderType,
+			order: entry,
+		}))
+		.sort((left, right) => right.updatedAt - left.updatedAt);
 }
 
 export function getTwapHistoryTimeMs(entry: TwapHistoryEntry): number {

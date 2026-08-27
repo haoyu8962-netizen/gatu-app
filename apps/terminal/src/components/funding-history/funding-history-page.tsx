@@ -58,7 +58,11 @@ export function FundingHistoryPage({ address }: Props) {
 	const [rowsPerPage, setRowsPerPage] = useState<FundingHistoryPageSize>(DEFAULT_FUNDING_HISTORY_PAGE_SIZE);
 	const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
 	const [selectedSide, setSelectedSide] = useState<FundingHistorySideFilter>("all");
-	const availableMarkets = useMemo(() => getFundingHistoryMarkets(history.fundings), [history.fundings]);
+	const availableMarkets = useMemo(() => {
+		const markets = getFundingHistoryMarkets(history.fundings);
+		if (selectedMarket && !markets.includes(selectedMarket)) markets.push(selectedMarket);
+		return markets.sort();
+	}, [history.fundings, selectedMarket]);
 	const filteredFundings = useMemo(
 		() => filterFundingHistory(history.fundings, selectedMarket, selectedSide),
 		[history.fundings, selectedMarket, selectedSide],

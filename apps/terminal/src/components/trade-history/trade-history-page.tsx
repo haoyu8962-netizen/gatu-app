@@ -56,6 +56,12 @@ interface Props {
 
 type UserFill = UserFillsResponse[number];
 
+function getDirectionColorClass(fill: UserFill) {
+	if (fill.liquidation) return "text-error";
+	if (fill.side === "B") return "text-success";
+	return "text-error";
+}
+
 export function TradeHistoryPage({ address }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
@@ -71,7 +77,11 @@ export function TradeHistoryPage({ address }: Props) {
 	const [selectedDirection, setSelectedDirection] = useState<TradeHistoryDirectionFilter>("all");
 	const [selectedRole, setSelectedRole] = useState<TradeHistoryRoleFilter>("all");
 	const [selectedType, setSelectedType] = useState<TradeHistoryTypeFilter>("all");
-	const availableMarkets = useMemo(() => getTradeHistoryMarkets(history.fills), [history.fills]);
+	const availableMarkets = useMemo(() => {
+		const markets = getTradeHistoryMarkets(history.fills);
+		if (selectedMarket && !markets.includes(selectedMarket)) markets.push(selectedMarket);
+		return markets.sort();
+	}, [history.fills, selectedMarket]);
 	const filteredFills = useMemo(
 		() =>
 			filterTradeHistory(
@@ -333,7 +343,7 @@ export function TradeHistoryPage({ address }: Props) {
 											</time>
 										</div>
 										<div className="mt-2 flex items-center gap-2 text-2xs font-semibold">
-											<span className={fill.side === "B" ? "text-success" : "text-error"}>
+											<span className={getDirectionColorClass(fill)}>
 												{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
 											</span>
 											<span className="text-fg-muted">{getRoleLabel(fill)}</span>
@@ -436,9 +446,7 @@ export function TradeHistoryPage({ address }: Props) {
 														fit
 													/>
 												</TableCell>
-												<TableCell
-													className={cn("px-3 py-0 font-semibold", fill.side === "B" ? "text-success" : "text-error")}
-												>
+												<TableCell className={cn("px-3 py-0 font-semibold", getDirectionColorClass(fill))}>
 													{fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)}
 												</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getTypeLabel(fill)}</TableCell>

@@ -211,13 +211,17 @@ function getRegistrationSessionStorageKey(env: HyperliquidEnv, userAddress: stri
 	return `${REGISTRATION_SESSION_STORAGE_PREFIX}_${env}_${userAddress.toLowerCase()}`;
 }
 
-function isAgentRegistrationSessionUsable(raw: string | null, agent?: AgentWallet | null): boolean {
+interface ActiveAgentRegistrationSession {
+	registrationPublicKey?: string;
+	registrationPendingAtMs?: number;
+	registrationSubmissionStartedAtMs?: number;
+}
+
+function parseActiveAgentRegistrationSession(raw: string | null): ActiveAgentRegistrationSession | null | "legacy" {
 	// Existing installations without a session record remain compatible. Once
 	// a record exists, malformed and closing/closed records fail closed. Pending
 	// records are new and are usable only with exact shared coordination.
-	if (raw === null) {
-		return agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined;
-	}
+	if (raw === null) return "legacy";
 	try {
 		const parsed = JSON.parse(raw) as Record<string, unknown>;
 		const registrationPublicKey =
@@ -251,19 +255,29 @@ function isAgentRegistrationSessionUsable(raw: string | null, agent?: AgentWalle
 					(parsed.registrationSubmissionStartedAtMs === undefined ||
 						(registrationSubmissionStartedAtMs !== undefined &&
 							registrationSubmissionStartedAtMs >= registrationPendingAtMs))));
-		if (!isActive) return false;
-		if (registrationPublicKey === undefined) {
-			return agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined;
-		}
-		if (agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined) return false;
-		return (
-			registrationPublicKey === agent.publicKey.toLowerCase() &&
-			registrationPendingAtMs === agent.approvalPendingAtMs &&
-			registrationSubmissionStartedAtMs === agent.approvalSubmissionStartedAtMs
-		);
+		if (!isActive) return null;
+		return {
+			...(registrationPublicKey === undefined ? {} : { registrationPublicKey }),
+			...(registrationPendingAtMs === undefined ? {} : { registrationPendingAtMs }),
+			...(registrationSubmissionStartedAtMs === undefined ? {} : { registrationSubmissionStartedAtMs }),
+		};
 	} catch {
-		return false;
+		return null;
 	}
+}
+
+function isAgentRegistrationSessionUsable(raw: string | null, agent?: AgentWallet | null): boolean {
+	const session = parseActiveAgentRegistrationSession(raw);
+	if (session === null) return false;
+	if (session === "legacy" || session.registrationPublicKey === undefined) {
+		return agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined;
+	}
+	if (agent?.source !== "local-registration" || agent.approvalPendingAtMs === undefined) return false;
+	return (
+		session.registrationPublicKey === agent.publicKey.toLowerCase() &&
+		session.registrationPendingAtMs === agent.approvalPendingAtMs &&
+		session.registrationSubmissionStartedAtMs === agent.approvalSubmissionStartedAtMs
+	);
 }
 
 function readStoredAgentRecord(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
@@ -373,8 +387,8 @@ export function hasInvalidAgentStorageRecord(env: HyperliquidEnv, userAddress: s
 	try {
 		const key = getStorageKey(env, userAddress);
 		if (blockedAgentStorageKeys.has(key)) return false;
-		const sessionRaw = localStorage.getItem(getRegistrationSessionStorageKey(env, userAddress));
-		if (!isAgentRegistrationSessionUsable(sessionRaw)) return false;
+		const sessionRaw = getLocalAgentStorage()?.getItem(getRegistrationSessionStorageKey(env, userAddress)) ?? null;
+		if (parseActiveAgentRegistrationSession(sessionRaw) === null) return false;
 		const records = readStoredAgentRecords(env, userAddress);
 		const raw = records ? getPreferredStoredAgentRaw(records) : null;
 		if (!raw) return false;
