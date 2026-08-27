@@ -52,7 +52,7 @@
 		"typecheck": "tsc --noEmit --pretty false"
 	},
 	"devDependencies": {
-		"@types/react": "19.2.0"
+		"@types/react": "19.2.7"
 	},
 	"peerDependencies": {
 		"@nktkas/hyperliquid": "0.33.3",
