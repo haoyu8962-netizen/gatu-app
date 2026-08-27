@@ -51,6 +51,11 @@ interface FetchTimeRangeHistoryOptions<T> {
 	 */
 	retainLatestItems?: number;
 	/**
+	 * Selects which validated items are eligible for result retention. Excluded
+	 * items still participate in cursor advancement and page-completion checks.
+	 */
+	retainItemsWhere?: (item: T) => boolean;
+	/**
 	 * Keeps matching items in addition to the latest bounded display rows. The
 	 * requested time range and `maxPages` still bound the retained match set.
 	 */
@@ -138,6 +143,7 @@ export async function fetchTimeRangeHistory<T>(
 		maxPages = DEFAULT_MAX_PAGES,
 		retainLatestItems = Number.POSITIVE_INFINITY,
 		retainItemsMatching,
+		retainItemsWhere,
 		signal,
 		startTime: initialStartTime = 0,
 	} = options;
@@ -181,7 +187,7 @@ export async function fetchTimeRangeHistory<T>(
 			};
 		}
 
-		retainLatestHistoryItems(itemsByKey, retainLatestItems, getKey, getTime, retainItemsMatching);
+		retainLatestHistoryItems(itemsByKey, retainLatestItems, getKey, getTime, retainItemsMatching, retainItemsWhere);
 		const nextCursor = requireAscending ? (previousItemTime ?? previousCursor) : maxPageTime;
 
 		// A repeated inclusive page with no new identities cannot advance. If it is a
@@ -209,12 +215,18 @@ function retainLatestHistoryItems<T>(
 	getKey: (item: T) => string,
 	getTime: (item: T) => number,
 	retainItemsMatching?: (item: T) => boolean,
+	retainItemsWhere?: (item: T) => boolean,
 ): void {
-	if (!Number.isFinite(retainLatestItems) || itemsByKey.size <= retainLatestItems) return;
 	const sortedItems = sortHistory(itemsByKey.values(), getTime);
-	const retainedItems = sortedItems.slice(-retainLatestItems);
-	if (retainItemsMatching) {
-		for (const item of sortedItems) {
+	const eligibleItems = retainItemsWhere ? sortedItems.filter(retainItemsWhere) : sortedItems;
+	if (!retainItemsWhere && (!Number.isFinite(retainLatestItems) || eligibleItems.length <= retainLatestItems)) return;
+
+	let retainedItems = eligibleItems;
+	if (Number.isFinite(retainLatestItems) && eligibleItems.length > retainLatestItems) {
+		retainedItems = retainLatestItems > 0 ? eligibleItems.slice(-retainLatestItems) : [];
+	}
+	if (retainItemsMatching && retainedItems.length < eligibleItems.length) {
+		for (const item of eligibleItems) {
 			if (retainItemsMatching(item)) retainedItems.push(item);
 		}
 	}

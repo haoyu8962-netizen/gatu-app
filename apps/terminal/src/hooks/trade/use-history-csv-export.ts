@@ -12,7 +12,7 @@ import {
 	MalformedHistoryPageError,
 } from "@/lib/trade/history-pagination";
 import { buildHistoricalOrderEntries, type OrdinaryOrderHistoryEntry } from "@/lib/trade/order-history";
-import { filterNonTwapUserFills, getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
+import { getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
 import {
 	getUserFundingKey,
 	isValidUserFunding,
@@ -173,11 +173,12 @@ export function useUserFillsCsvExport(options: AccountCsvExportOptions<UserFills
 					getTime: (fill) => fill.time,
 					pageLimit: USER_FILLS_API_PAGE_LIMIT,
 					retainLatestItems: USER_FILLS_EXPORT_LIMIT,
+					retainItemsWhere: (fill) => fill.twapId === null,
 					signal,
 					validateItem: isValidUserFillHistoryItem,
 				});
 				return {
-					items: filterNonTwapUserFills(fillsResult.items).sort((left, right) => left.time - right.time),
+					items: fillsResult.items.sort((left, right) => left.time - right.time),
 					truncated: fillsResult.truncated || fillsResult.items.length >= USER_FILLS_EXPORT_LIMIT,
 				};
 			});

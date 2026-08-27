@@ -1296,6 +1296,7 @@ msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -7341,14 +7342,20 @@ msgstr "Restablecer"
 #~ msgstr "Restablecer acceso del teléfono"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 msgid "Reset trading connection"
-msgstr ""
+msgstr "Restablecer conexión de trading"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "Se restablece en"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "Al restablecer, se eliminará de este navegador la clave de trading pendiente. Si ya se había aprobado, tendrás que volver a firmar para reconectarte."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -9461,7 +9468,7 @@ msgstr "Este navegador no puede coordinar de forma segura la conexión de tradin
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
-msgstr ""
+msgstr "Este navegador ya no conserva la clave de trading exacta correspondiente a la aprobación pendiente. Restablece la conexión de trading antes de volver a intentarlo."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -10026,7 +10033,7 @@ msgstr "Cuenta de trading"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Trading connection could not be reset."
-msgstr ""
+msgstr "No se pudo restablecer la conexión de trading."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

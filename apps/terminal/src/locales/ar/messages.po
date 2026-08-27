@@ -1296,6 +1296,7 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -7341,14 +7342,20 @@ msgstr "إعادة تعيين"
 #~ msgstr "إعادة تعيين وصول الهاتف"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 msgid "Reset trading connection"
-msgstr ""
+msgstr "إعادة تعيين اتصال التداول"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "تُعاد التعيين خلال"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "تؤدي إعادة التعيين إلى إزالة مفتاح التداول المعلّق من هذا المتصفح. إذا كان قد تمت الموافقة عليه بالفعل، فستحتاج إلى التوقيع مرة أخرى لإعادة الاتصال."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -9461,7 +9468,7 @@ msgstr "لا يستطيع هذا المتصفح تنسيق اتصال التدا
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
-msgstr ""
+msgstr "لم يعد هذا المتصفح يحتفظ بمفتاح التداول المطابق تمامًا للموافقة المعلّقة. أعد تعيين اتصال التداول قبل المحاولة مرة أخرى."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -10026,7 +10033,7 @@ msgstr "حساب التداول"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Trading connection could not be reset."
-msgstr ""
+msgstr "تعذّر إعادة تعيين اتصال التداول."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

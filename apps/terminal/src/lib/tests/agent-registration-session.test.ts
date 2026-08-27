@@ -7,6 +7,7 @@ import {
 	type ExchangeRequestStartGate,
 } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import {
+	AGENT_REGISTRATION_COORDINATION_WINDOW_MS,
 	AgentRegistrationPreExecutionGuardTimeoutError,
 	activateAgentOwnerForRegistration,
 	activateAgentRegistrationSession,
@@ -38,6 +39,11 @@ const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OW
 const SESSION_LOCK_NAME = `hyperliquid_agent_registration_session:Mainnet:${OWNER}`;
 const ACTIVE_OWNER_STORAGE_KEY = "hyperliquid_active_agent_owner";
 const ACTIVE_OWNER_LOCK_NAME = `${ACTIVE_OWNER_STORAGE_KEY}:lock`;
+
+function expireSharedRegistrationActivity(): void {
+	const afterCoordinationWindowMs = Date.now() + AGENT_REGISTRATION_COORDINATION_WINDOW_MS + 1;
+	vi.spyOn(Date, "now").mockReturnValue(afterCoordinationWindowMs);
+}
 
 function installExclusiveLockManager() {
 	const queues = new Map<string, Promise<void>>();
@@ -350,6 +356,11 @@ describe("Agent registration session coordination", () => {
 		).toEqual({ status: "skipped" });
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe("{invalid");
 		expect(window.localStorage.getItem(SESSION_STORAGE_KEY)).toBe(shared);
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+		expireSharedRegistrationActivity();
 		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
 			status: "failed",
 			reason: "registration_reset_required",
@@ -842,13 +853,42 @@ describe("Agent registration session coordination", () => {
 		if (submission.status !== "started") throw new Error("Expected started submission");
 		await expect(submission.execution).resolves.toBe("submitted");
 
+		const exactSessionCandidate = window.sessionStorage.getItem(AGENT_STORAGE_KEY);
+		if (!exactSessionCandidate) throw new Error("Expected session-scoped candidate");
 		window.sessionStorage.clear();
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+		expect(
+			await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER, {
+				preserveRecentRegistrationWithoutMatchingCandidate: true,
+			}),
+		).toMatchObject({ status: "preserved" });
+		expireSharedRegistrationActivity();
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual({
+			status: "failed",
+			reason: "registration_reset_required",
+		});
+		window.sessionStorage.setItem(AGENT_STORAGE_KEY, exactSessionCandidate);
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual(captured);
+		window.sessionStorage.clear();
+		expect(
+			await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER, {
+				preserveRecentRegistrationWithoutMatchingCandidate: true,
+			}),
+		).toMatchObject({ status: "preserved" });
+		expireSharedRegistrationActivity();
 		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual({
 			status: "failed",
 			reason: "registration_reset_required",
 		});
 
-		expect(await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER)).toMatchObject({ status: "closed" });
+		expect(
+			await closeAgentRegistrationSessionAndRemove("Mainnet", OWNER, {
+				preserveRecentRegistrationWithoutMatchingCandidate: true,
+			}),
+		).toMatchObject({ status: "closed" });
 		expect((await captureAgentRegistrationEpoch("Mainnet", OWNER)).status).toBe("ready");
 	});
 
@@ -888,6 +928,11 @@ describe("Agent registration session coordination", () => {
 		expect(execute).not.toHaveBeenCalled();
 		storageWrite.mockRestore();
 
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+		expireSharedRegistrationActivity();
 		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER, { resumePublicKey: publicKey })).toEqual({
 			status: "failed",
 			reason: "registration_reset_required",
@@ -1080,6 +1125,11 @@ describe("Agent registration session coordination", () => {
 			registrationPublicKey: publicKey.toLowerCase(),
 			registrationSubmissionStartedAtMs: expect.any(Number),
 		});
+		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "registration_in_progress",
+		});
+		expireSharedRegistrationActivity();
 		expect(await captureAgentRegistrationEpoch("Mainnet", OWNER)).toEqual({
 			status: "failed",
 			reason: "registration_reset_required",

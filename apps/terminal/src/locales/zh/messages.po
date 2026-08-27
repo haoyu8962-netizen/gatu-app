@@ -1177,6 +1177,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6840,14 +6841,20 @@ msgstr "重置"
 #~ msgstr "重置手机访问"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 msgid "Reset trading connection"
-msgstr ""
+msgstr "重置交易连接"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "重置倒计时"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "重置会从此浏览器中移除待确认的交易密钥。若该密钥已获批准，重新连接时需要再次签名。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
@@ -8813,7 +8820,7 @@ msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
-msgstr ""
+msgstr "此浏览器已不再保存与待确认授权完全匹配的交易密钥。请先重置交易连接，然后重试。"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -9346,7 +9353,7 @@ msgstr "交易账户"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 msgid "Trading connection could not be reset."
-msgstr ""
+msgstr "无法重置交易连接。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx

@@ -164,6 +164,34 @@ describe("account history CSV exports", () => {
 		expect(rows.at(-1)).toEqual(["12001"]);
 	});
 
+	it("does not count TWAP fills against the latest 10000 ordinary fills", async () => {
+		const fills = Array.from({ length: 15_000 }, (_, index) => {
+			const id = index + 1;
+			return createFill({ oid: id, tid: id, time: id, twapId: id % 5 === 0 ? 7 : null });
+		});
+		mocks.userFillsByTime.mockImplementation(async ({ endTime, startTime }: { endTime: number; startTime: number }) =>
+			fills.filter((fill) => fill.time >= startTime && fill.time <= endTime).slice(0, 2_000),
+		);
+		let hookValue: ReturnType<typeof useUserFillsCsvExport> | null = null;
+		function Probe() {
+			hookValue = useUserFillsCsvExport({
+				filename: "fills.csv",
+				buildRows: (items) => items.map((fill) => [String(fill.tid)]),
+			});
+			return null;
+		}
+		act(() => root.render(<Probe />));
+		if (!hookValue) throw new Error("Missing fills export hook");
+
+		await act(async () => hookValue?.exportCsv());
+
+		const rows = mocks.downloadCsv.mock.calls[0]?.[1] as string[][];
+		expect(rows).toHaveLength(10_000);
+		expect(rows.at(0)).toEqual(["2501"]);
+		expect(rows.at(-1)).toEqual(["14999"]);
+		expect(rows.every(([tid]) => Number(tid) % 5 !== 0)).toBe(true);
+	});
+
 	it("keeps ordinary order export separate from TWAP lifecycle history", async () => {
 		mocks.historicalOrders.mockResolvedValue([createOrder()]);
 		let hookValue: ReturnType<typeof useHistoricalOrdersCsvExport> | null = null;

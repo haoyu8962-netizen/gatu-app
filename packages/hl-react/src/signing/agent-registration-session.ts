@@ -34,6 +34,8 @@ interface AgentRegistrationSessionRecord {
 	registrationPublicKey?: Address;
 	registrationPendingAtMs?: number;
 	registrationSubmissionStartedAtMs?: number;
+	/** Last lock-protected progress by a tab holding the exact pending key. */
+	registrationActivityAtMs?: number;
 }
 
 export interface AgentRegistrationEpoch {
@@ -97,6 +99,8 @@ export type AgentRegistrationShutdownResult =
 
 export interface AgentRegistrationShutdownOptions {
 	preserveIfSubmissionStarted?: boolean;
+	/** Refuses a reset while another tab may still own a recently active submitted candidate. */
+	preserveRecentRegistrationWithoutMatchingCandidate?: boolean;
 	restoreOnFailure?: boolean;
 }
 
@@ -169,15 +173,23 @@ function parseSessionRecord(value: string | null): AgentRegistrationSessionRecor
 			parsed.registrationSubmissionStartedAtMs > 0
 				? parsed.registrationSubmissionStartedAtMs
 				: undefined;
+		const registrationActivityAtMs =
+			typeof parsed.registrationActivityAtMs === "number" &&
+			Number.isSafeInteger(parsed.registrationActivityAtMs) &&
+			parsed.registrationActivityAtMs > 0
+				? parsed.registrationActivityAtMs
+				: undefined;
 		const hasRegistrationMetadata =
 			parsed.registrationPublicKey !== undefined ||
 			parsed.registrationPendingAtMs !== undefined ||
-			parsed.registrationSubmissionStartedAtMs !== undefined;
+			parsed.registrationSubmissionStartedAtMs !== undefined ||
+			parsed.registrationActivityAtMs !== undefined;
 		if (
 			parsed.version !== SESSION_RECORD_VERSION ||
 			typeof parsed.epoch !== "string" ||
 			parsed.epoch.length < 16 ||
 			(parsed.state !== "active" && parsed.state !== "closed" && parsed.state !== "closing") ||
+			(parsed.registrationActivityAtMs !== undefined && registrationActivityAtMs === undefined) ||
 			(hasRegistrationMetadata &&
 				(parsed.state === "closed" ||
 					registrationPublicKey === undefined ||
@@ -195,6 +207,7 @@ function parseSessionRecord(value: string | null): AgentRegistrationSessionRecor
 			...(registrationPublicKey === undefined ? {} : { registrationPublicKey }),
 			...(registrationPendingAtMs === undefined ? {} : { registrationPendingAtMs }),
 			...(registrationSubmissionStartedAtMs === undefined ? {} : { registrationSubmissionStartedAtMs }),
+			...(registrationActivityAtMs === undefined ? {} : { registrationActivityAtMs }),
 		};
 	} catch {
 		return "invalid";
@@ -331,7 +344,19 @@ function copyRegistrationCoordination(
 		...(source.registrationSubmissionStartedAtMs === undefined
 			? {}
 			: { registrationSubmissionStartedAtMs: source.registrationSubmissionStartedAtMs }),
+		...(source.registrationActivityAtMs === undefined
+			? {}
+			: { registrationActivityAtMs: source.registrationActivityAtMs }),
 	};
+}
+
+function isRecentRegistrationActivity(record: AgentRegistrationSessionRecord, nowMs = Date.now()): boolean {
+	const activityAtMs = Math.max(
+		record.registrationActivityAtMs ?? 0,
+		record.registrationSubmissionStartedAtMs ?? 0,
+		record.registrationPendingAtMs ?? 0,
+	);
+	return activityAtMs > 0 && nowMs - activityAtMs < AGENT_REGISTRATION_COORDINATION_WINDOW_MS;
 }
 
 async function runPreExecutionGuard(guard: AgentRegistrationPreExecutionGuard): Promise<void> {
@@ -512,6 +537,7 @@ export async function startAgentRegistrationSubmission<T>(
 			const coordinationWrite = writeSessionRecord(lease.epoch.env, lease.epoch.owner, {
 				...current.record,
 				registrationSubmissionStartedAtMs: submissionStartedAtMs,
+				registrationActivityAtMs: submissionStartedAtMs,
 			});
 			if (coordinationWrite.status === "failed") {
 				markerFailureMessage = "Agent approval submission state could not be stored safely";
@@ -580,18 +606,25 @@ export async function captureAgentRegistrationEpoch(
 				options.resumePublicKey?.toLowerCase() === current.record.registrationPublicKey.toLowerCase() &&
 				hasMatchingCandidate
 			) {
+				const refreshed = writeSessionRecord(env, owner, {
+					...current.record,
+					registrationActivityAtMs: Date.now(),
+				});
+				if (refreshed.status === "failed") return refreshed;
 				return {
 					status: "ready",
 					epoch: { env, owner: owner.toLowerCase() as Address, epoch: current.record.epoch },
 				};
 			}
-			const pendingAtMs = current.record.registrationPendingAtMs;
 			if (current.record.registrationSubmissionStartedAtMs !== undefined && !hasMatchingCandidate) {
+				if (isRecentRegistrationActivity(current.record)) {
+					return { status: "failed", reason: "registration_in_progress" };
+				}
 				return { status: "failed", reason: "registration_reset_required" };
 			}
 			if (
 				current.record.registrationSubmissionStartedAtMs !== undefined ||
-				(pendingAtMs !== undefined && Date.now() - pendingAtMs < AGENT_REGISTRATION_COORDINATION_WINDOW_MS)
+				isRecentRegistrationActivity(current.record)
 			) {
 				return { status: "failed", reason: "registration_in_progress" };
 			}
@@ -731,6 +764,7 @@ export async function persistAgentForRegistration(
 				state: before.record.state,
 				registrationPublicKey: publicKey.toLowerCase() as Address,
 				registrationPendingAtMs: metadata.approvalPendingAtMs,
+				registrationActivityAtMs: Date.now(),
 				...(approvalSubmissionStartedAtMs === undefined
 					? {}
 					: { registrationSubmissionStartedAtMs: approvalSubmissionStartedAtMs }),
@@ -902,6 +936,19 @@ export async function closeAgentRegistrationSessionAndRemove(
 	const result = await withSessionLock<AgentRegistrationShutdownResult>(env, owner, async () => {
 		const current = readSessionRecord(env, owner);
 		if (current.status === "failed") return current;
+		if (
+			options.preserveRecentRegistrationWithoutMatchingCandidate &&
+			current.record?.registrationSubmissionStartedAtMs !== undefined
+		) {
+			const inspection = inspectAgentStorageRecord(env, owner);
+			if (inspection.status === "failed") return inspection;
+			if (!hasMatchingPendingRegistration(current.record, inspection) && isRecentRegistrationActivity(current.record)) {
+				return {
+					status: "preserved",
+					epoch: { env, owner: owner.toLowerCase() as Address, epoch: current.record.epoch },
+				};
+			}
+		}
 		if (options.preserveIfSubmissionStarted) {
 			const inspection = inspectAgentStorageRecord(env, owner);
 			if (inspection.status === "failed") return inspection;

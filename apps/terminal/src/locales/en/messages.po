@@ -1300,6 +1300,7 @@ msgstr "Camera preview for desktop wallet QR"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -7362,6 +7363,8 @@ msgstr "Reset"
 #~ msgstr "Reset phone access"
 
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
 msgid "Reset trading connection"
 msgstr "Reset trading connection"
 
@@ -7370,6 +7373,10 @@ msgstr "Reset trading connection"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "Resets in"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
+msgstr "Resetting removes the pending trading key from this browser. If it was already approved, you will need to sign again to reconnect."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."

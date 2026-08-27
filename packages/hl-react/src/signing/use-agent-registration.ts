@@ -56,6 +56,7 @@ interface AgentRegistrationIdentity {
 interface AgentRegistrationFailureState extends AgentRegistrationIdentity {
 	error: Error;
 	phase: AgentRegistrationFailurePhase;
+	resetAllowed: boolean;
 }
 
 export function resolveAgentRegistrationStorageScope(options?: AgentRegistrationOptions): AgentStorageScope {
@@ -89,15 +90,12 @@ function isOtherTabRegistrationConflict(error: Error | null): boolean {
 
 function shouldAllowConnectionReset(
 	error: Error | null,
-	failurePhase: AgentRegistrationFailurePhase | null,
+	resetAllowed: boolean,
 	missingReason: AgentMissingReason | null,
 ): boolean {
 	if (isOtherTabRegistrationConflict(error)) return false;
 	return (
-		error?.name === "AgentRegistrationResetRequiredError" ||
-		(error !== null && (failurePhase === "verification" || failurePhase === "persistence")) ||
-		missingReason === "approval_unconfirmed" ||
-		missingReason === "invalid_local_record"
+		error?.name === "AgentRegistrationResetRequiredError" || resetAllowed || missingReason === "invalid_local_record"
 	);
 }
 
@@ -148,6 +146,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		identity: AgentRegistrationIdentity,
 		phase: AgentRegistrationFailurePhase | null,
 		error?: unknown,
+		resetAllowed = false,
 	) {
 		if (!mountedRef.current || !hasSameRegistrationIdentity(identityRef.current, identity)) return;
 		setFailureState(
@@ -157,6 +156,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 						...identity,
 						error: error instanceof Error ? error : new Error("Agent registration failed"),
 						phase,
+						resetAllowed,
 					},
 		);
 	}
@@ -167,6 +167,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
 			const registrationIdentity = { address, env };
 			let phase: AgentRegistrationFailurePhase = "preflight";
+			let resetAllowed = false;
 			safeSetFailure(registrationIdentity, null);
 			const approvalOptions =
 				options?.approval?.applicationReview === "confirmed"
@@ -345,6 +346,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 				phase = pendingPublicKey ? "verification" : "preflight";
 
 				if (pendingPublicKey) {
+					resetAllowed = true;
 					const pendingAgent = requireStoredAgent(pendingPublicKey);
 					const approvalPendingAtMs = pendingAgent.approvalPendingAtMs;
 					if (approvalPendingAtMs === undefined) {
@@ -451,7 +453,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 
 				return capturedAgentAddress ?? agentStatus.agentAddress ?? zeroAddress;
 			} catch (error) {
-				safeSetFailure(registrationIdentity, phase, error);
+				safeSetFailure(registrationIdentity, phase, error, resetAllowed);
 				throw error;
 			} finally {
 				safeSetStep(registrationIdentity, null);
@@ -465,7 +467,8 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const failurePhase = currentFailureState?.phase ?? null;
 	const error = currentFailureState?.error ?? null;
 	const canResetConnection =
-		address !== undefined && shouldAllowConnectionReset(error, failurePhase, agentStatus.agentMissingReason);
+		address !== undefined &&
+		shouldAllowConnectionReset(error, currentFailureState?.resetAllowed === true, agentStatus.agentMissingReason);
 	const status = deriveRegistrationStatus(registration.isPending, registration.isError, currentStep);
 
 	function reset() {
@@ -485,7 +488,9 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		if (!hasSameRegistrationIdentity(identityRef.current, resetIdentity)) {
 			throw new Error("Wallet or network changed before resetting the trading connection");
 		}
-		const shutdown = await closeAgentRegistrationSessionAndRemove(resetIdentity.env, resetIdentity.address);
+		const shutdown = await closeAgentRegistrationSessionAndRemove(resetIdentity.env, resetIdentity.address, {
+			preserveRecentRegistrationWithoutMatchingCandidate: true,
+		});
 		if (shutdown.status !== "closed") {
 			throw new Error("Trading connection reset could not be verified");
 		}

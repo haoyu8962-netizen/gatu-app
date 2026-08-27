@@ -27,7 +27,7 @@ const AGENT_STORAGE_KEY = `hyperliquid_agent_Mainnet_${OWNER}`;
 const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER}`;
 
 const testState = vi.hoisted(() => ({
-	agentMissingReason: "remote_key_replaced" as const,
+	agentMissingReason: "remote_key_replaced" as "approval_unconfirmed" | "remote_key_replaced",
 	approveAgent: vi.fn(),
 	approveBuilderFee: vi.fn(),
 	clientKey: "0x1111111111111111111111111111111111111111" as Address | "disconnected",
@@ -243,6 +243,7 @@ describe("useAgentRegistration logout races", () => {
 		registrationOptions = undefined;
 		resetConnectionPromise = undefined;
 		testState.clientKey = OWNER;
+		testState.agentMissingReason = "remote_key_replaced";
 		testState.coordinatedSubmission = false;
 		testState.env = "Mainnet";
 		testState.approveAgent.mockReset();
@@ -536,6 +537,14 @@ describe("useAgentRegistration logout races", () => {
 
 		await act(async () => {
 			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+		await flushMicrotasks();
+		await expect(registrationPromise).rejects.toThrow("already being established in another tab");
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("false");
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(5 * 60_000);
 		});
 		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 		await flushMicrotasks();
@@ -971,6 +980,7 @@ describe("useAgentRegistration logout races", () => {
 
 	it("never replaces a submitted Agent solely because remote reconciliation is still missing", async () => {
 		registrationOptions = { persistConnection: true };
+		testState.agentMissingReason = "approval_unconfirmed";
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.refetchAgent.mockResolvedValue({
 			isAgentReady: false,
@@ -990,6 +1000,7 @@ describe("useAgentRegistration logout races", () => {
 		await flushMicrotasks();
 		await expect(registrationPromise).rejects.toThrow("Agent approval could not be confirmed");
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toHaveProperty("approvalPendingAtMs");
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("false");
 
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(5 * 60_000);
@@ -1001,6 +1012,7 @@ describe("useAgentRegistration logout races", () => {
 
 		await expect(registrationPromise).rejects.toThrow("Agent approval could not be confirmed");
 		expect(testState.approveAgent).toHaveBeenCalledOnce();
+		expect(container.querySelector('[data-testid="can-reset"]')?.textContent).toBe("true");
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
 			approvalPendingAtMs: expect.any(Number),
 			approvalSubmissionStartedAtMs: expect.any(Number),
