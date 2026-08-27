@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+const mobileOrderbookBrowserMock = fileURLToPath(new URL("./mobile-orderbook-cls.browser.ts", import.meta.url));
 
 export default defineConfig({
 	root,
@@ -17,6 +18,13 @@ export default defineConfig({
 		}),
 		tailwindcss(),
 	],
+	resolve: {
+		alias: [
+			{ find: /^@\/hooks\/trade\/use-orderbook-feed$/u, replacement: mobileOrderbookBrowserMock },
+			{ find: /^@\/hooks\/trade\/use-orderbook-mid-price$/u, replacement: mobileOrderbookBrowserMock },
+			{ find: /^@\/lib\/hyperliquid$/u, replacement: mobileOrderbookBrowserMock },
+		],
+	},
 	server: {
 		fs: {
 			allow: [fileURLToPath(new URL("../../../..", import.meta.url))],

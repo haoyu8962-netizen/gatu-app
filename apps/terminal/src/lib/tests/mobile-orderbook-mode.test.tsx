@@ -4,6 +4,7 @@ import { act, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
+import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 import { createI18nRoot } from "./harness/react";
 
 const ASKS = Array.from({ length: 20 }, (_, index) => ({
@@ -77,6 +78,7 @@ describe("compact mobile orderbook modes", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		getOrderbookActionsStore().actions.clearSelectedPrice();
 		measuredHeight = 304;
 		disconnectCallCount = 0;
 		observedElement = undefined;
@@ -178,16 +180,28 @@ describe("compact mobile orderbook modes", () => {
 		expect(getLadder("asks").children).toHaveLength(13);
 	});
 
-	it("keeps four-pixel row gaps and leaves surplus height away from the midpoint", () => {
+	it("uses rank-positioned rows and leaves surplus height at each far edge", () => {
 		const asks = getLadder("asks");
 		const bids = getLadder("bids");
+		const askRows = [...asks.querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]')];
+		const bidRows = [...bids.querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]')];
 
-		expect(asks.className).toContain("justify-end");
-		expect(bids.className).toContain("justify-start");
-		expect(asks.className).toContain("gap-[4px]");
-		expect(bids.className).toContain("gap-[4px]");
-		expect(asks.className).not.toContain("justify-between");
-		expect(bids.className).not.toContain("justify-between");
+		expect(asks.className).toContain("relative");
+		expect(bids.className).toContain("relative");
+		expect(askRows.map((row) => row.style.transform)).toEqual([
+			"translateY(-112px)",
+			"translateY(-84px)",
+			"translateY(-56px)",
+			"translateY(-28px)",
+			"translateY(0px)",
+		]);
+		expect(bidRows.map((row) => row.style.transform)).toEqual([
+			"translateY(0px)",
+			"translateY(28px)",
+			"translateY(56px)",
+			"translateY(84px)",
+			"translateY(112px)",
+		]);
 	});
 
 	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {
@@ -260,15 +274,78 @@ describe("compact mobile orderbook modes", () => {
 
 	it("fills sparse snapshots from the far edge while keeping each BBO next to the mid", () => {
 		act(() => root.render(<CompactOrderbookHarness asks={ASKS.slice(0, 2)} bids={BIDS.slice(0, 2)} />));
-		const askChildren = [...getLadder("asks").children];
-		const bidChildren = [...getLadder("bids").children];
+		const askChildren = [
+			...getLadder("asks").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
+		const bidChildren = [
+			...getLadder("bids").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
 
 		expect(askChildren).toHaveLength(5);
-		expect(askChildren.slice(0, 3).every((row) => row.getAttribute("aria-hidden") === "true")).toBe(true);
-		expect(askChildren.at(-1)?.getAttribute("aria-label")).toContain("Ask, Price 101.0,");
+		expect(askChildren.slice(0, 3).every((row) => row.firstElementChild?.getAttribute("aria-hidden") === "true")).toBe(
+			true,
+		);
+		expect(askChildren.map((row) => [row.dataset.rank, row.style.transform])).toEqual([
+			["4", "translateY(-112px)"],
+			["3", "translateY(-84px)"],
+			["2", "translateY(-56px)"],
+			["1", "translateY(-28px)"],
+			["0", "translateY(0px)"],
+		]);
+		expect(askChildren.at(-1)?.querySelector("button")?.getAttribute("aria-label")).toContain("Ask, Price 101.0,");
 		expect(bidChildren).toHaveLength(5);
-		expect(bidChildren[0]?.getAttribute("aria-label")).toContain("Bid, Price 99.0,");
-		expect(bidChildren.slice(2).every((row) => row.getAttribute("aria-hidden") === "true")).toBe(true);
+		expect(bidChildren[0]?.querySelector("button")?.getAttribute("aria-label")).toContain("Bid, Price 99.0,");
+		expect(bidChildren.slice(2).every((row) => row.firstElementChild?.getAttribute("aria-hidden") === "true")).toBe(
+			true,
+		);
+		expect(bidChildren.map((row) => [row.dataset.rank, row.style.transform])).toEqual([
+			["0", "translateY(0px)"],
+			["1", "translateY(28px)"],
+			["2", "translateY(56px)"],
+			["3", "translateY(84px)"],
+			["4", "translateY(112px)"],
+		]);
+	});
+
+	it("moves price-keyed rows by one compact stride without losing focus, flash, or click intent", () => {
+		const askPosition = container.querySelector<HTMLElement>('[data-side="ask"][data-price="101"]');
+		const bidPosition = container.querySelector<HTMLElement>('[data-side="bid"][data-price="99"]');
+		const askRow = askPosition?.querySelector<HTMLButtonElement>("button");
+		const bidRow = bidPosition?.querySelector<HTMLButtonElement>("button");
+		expect(askPosition?.style.transform).toBe("translateY(0px)");
+		expect(bidPosition?.style.transform).toBe("translateY(0px)");
+		act(() => askRow?.focus());
+
+		act(() => {
+			root.render(
+				<CompactOrderbookHarness
+					asks={[
+						{ price: "100.5", quoteSize: "100.5", quoteTotal: "100.5", size: "1", total: "1" },
+						{ price: "101", quoteSize: "126.25", quoteTotal: "226.75", size: "1.25", total: "2.25" },
+						ASKS[1],
+					]}
+					bids={[{ price: "99.5", quoteSize: "99.5", quoteTotal: "99.5", size: "1", total: "1" }, BIDS[0], BIDS[1]]}
+				/>,
+			);
+		});
+
+		expect(container.querySelector('[data-side="ask"][data-price="101"]')).toBe(askPosition);
+		expect(container.querySelector('[data-side="bid"][data-price="99"]')).toBe(bidPosition);
+		expect(askPosition?.querySelector("button")).toBe(askRow);
+		expect(bidPosition?.querySelector("button")).toBe(bidRow);
+		expect(askPosition?.style.transform).toBe("translateY(-28px)");
+		expect(bidPosition?.style.transform).toBe("translateY(28px)");
+		expect(document.activeElement).toBe(askRow);
+		expect(askRow?.querySelector('[data-slot="orderbook-size-value"]')?.getAttribute("data-direction")).toBe("up");
+
+		act(() => askRow?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "101" });
+		expect(
+			[...container.querySelectorAll<HTMLElement>('[data-side="ask"][data-price]')].map((row) => row.dataset.price),
+		).toEqual(["102", "101", "100.5"]);
+		expect(
+			[...container.querySelectorAll<HTMLElement>('[data-side="bid"][data-price]')].map((row) => row.dataset.price),
+		).toEqual(["99.5", "99", "98"]);
 	});
 
 	it("observes only the shared fieldset and disconnects on unmount", () => {

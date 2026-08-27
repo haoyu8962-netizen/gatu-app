@@ -5,7 +5,7 @@ const terminalRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
 	testDir: fileURLToPath(new URL(".", import.meta.url)),
-	testMatch: "trade-size-slider-performance.pw.ts",
+	testMatch: "*.pw.ts",
 	fullyParallel: false,
 	workers: 1,
 	reporter: "line",
