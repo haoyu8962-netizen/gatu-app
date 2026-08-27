@@ -71,6 +71,15 @@ jobs:
           src/lib/tests/tradingview-*.test.ts
           src/lib/tests/tradingview-*.test.tsx
 
+      - name: Test recent trade rendering contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/number-format-reactivity-contract.test.ts
+          src/lib/tests/responsive-panel-layout.test.ts
+          src/lib/tests/trade-row.test.tsx
+          src/lib/tests/trades-panel.test.tsx
+
       - name: Test Deposit, CCTP, routing, and geo guards
         working-directory: apps/terminal
         run: >-

@@ -16,6 +16,23 @@ interface Props {
 	initial?: boolean;
 }
 
+function areTradeRowPropsEqual(previous: Props, next: Props): boolean {
+	return (
+		previous.trade.id === next.trade.id &&
+		previous.trade.hash === next.trade.hash &&
+		previous.trade.time === next.trade.time &&
+		previous.trade.price === next.trade.price &&
+		previous.trade.size === next.trade.size &&
+		previous.trade.side === next.trade.side &&
+		previous.priceDecimals === next.priceDecimals &&
+		previous.szDecimals === next.szDecimals &&
+		previous.showInQuote === next.showInQuote &&
+		previous.isTestnet === next.isTestnet &&
+		previous.compact === next.compact &&
+		previous.initial === next.initial
+	);
+}
+
 function TradeRowComponent({
 	trade,
 	priceDecimals,
@@ -25,6 +42,8 @@ function TradeRowComponent({
 	compact = false,
 	initial = false,
 }: Props) {
+	"use no memo";
+	// The compiler cannot infer formatNumber's external-store dependency; the explicit row memo below remains active.
 	useNumberFormatRevision();
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
 	const sizeDisplay = showInQuote
@@ -38,7 +57,7 @@ function TradeRowComponent({
 			rel="noopener noreferrer"
 			data-initial={initial || undefined}
 			className={cn(
-				"grid h-6 items-center tabular-nums hover:bg-fill-hover group",
+				"grid h-6 items-center tabular-nums hover:bg-fill-hover group recent-trade-row",
 				compact ? "grid-cols-2 gap-2 text-2xs" : "trades-grid gap-1 text-xs",
 				trade.side === "buy" ? "trade-row-buy" : "trade-row-sell",
 			)}
@@ -64,4 +83,4 @@ function TradeRowComponent({
 	);
 }
 
-export const TradeRow = memo(TradeRowComponent);
+export const TradeRow = memo(TradeRowComponent, areTradeRowPropsEqual);
