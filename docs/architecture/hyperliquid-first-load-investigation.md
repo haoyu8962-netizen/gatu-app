@@ -550,7 +550,7 @@ Privy → SmartWallets → PersistQuery → Wagmi → Hyperliquid → Markets
 
 #### client-root 静态依赖闭包
 
-`analyze-client-root-deps.mjs` 从 production 输出的 `client-root-*.js` 出发，解析本地静态 ESM import（故意排除 `import()`）并对实际 chunk 做 `gzipSync`。正式 production 闭包为 15 个 chunk、44 条边、`1,197,652 B` gzip。为获得模块级归因，同源 analyze build 产物为 `1,198,272 B`，只因 source-map/build metadata 相差 `620 B`（`0.052%`）。
+本节捕获时，`analyze-client-root-deps.mjs` 从 production 输出的 `client-root-*.js` 出发，解析本地静态 ESM import（故意排除 `import()`）并对实际 chunk 做 `gzipSync`。正式 production 闭包为 15 个 chunk、44 条边、`1,197,652 B` gzip。为获得模块级归因，同源 analyze build 产物为 `1,198,272 B`，只因 source-map/build metadata 相差 `620 B`（`0.052%`）。当前工具改为读取同一次 client production build 生成的 Rollup 语义 graph，并严格校验 graph 与 JS/CSS 产物清单一致；本节数字仍是历史测量，不应与新构建直接混比。
 
 归因将每个 chunk 的实际 gzip 按 visualizer 的单模块 gzip 权重分配，并用 largest-remainder 在每个 chunk 内精确回收到实际字节数；15/15 chunk 均命中，最终 `1,198,272 / 1,198,272 B` 对账，无 unallocated 或 warning。`direct` 只计包自身模块，`inclusive` 还计其闭包内静态子依赖；子树共享 viem、router、UI 等模块，所以各行不能相加。
 

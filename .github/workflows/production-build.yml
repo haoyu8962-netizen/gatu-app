@@ -10,7 +10,10 @@ on:
       - "packages/**"
       - "tests/**"
       - "scripts/check-client-bundle-budget.mjs"
+      - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
+      - "scripts/client-chunk-graph.*"
+      - "scripts/measure/analyze-client-root-deps.mjs"
       - "scripts/generate-og-cards.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -41,6 +44,7 @@ jobs:
           deploy/validate-caddy-forwarded-headers.test.mjs
           deploy/validate-production-env.test.mjs
           deploy/resolve-client-asset.test.mjs
+          scripts/check-client-bundle-budget.test.mjs
 
       - name: Test TradingView integration
         working-directory: apps/terminal
@@ -87,6 +91,9 @@ jobs:
           GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
+
+      - name: Measure client-root startup closure
+        run: pnpm --filter @gatu/terminal perf:startup
 
       - name: Verify production lazy client graph
         run: |
