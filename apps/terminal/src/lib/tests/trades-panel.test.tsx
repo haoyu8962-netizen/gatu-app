@@ -139,6 +139,25 @@ describe("TradesPanel", () => {
 		expect(container.textContent).not.toContain("Waiting for trades");
 	});
 
+	it("keeps all 100 recent trades as links under one subscription", () => {
+		mocks.result.data = Array.from({ length: 100 }, (_, index) => ({
+			coin: "HYPE",
+			hash: `0x${index}`,
+			px: "64.50",
+			side: index % 2 === 0 ? ("B" as const) : ("A" as const),
+			sz: "1.25",
+			tid: index,
+			time: Date.UTC(2026, 6, 22, 12, 0, index),
+			users: ["0xbuyer", "0xseller"],
+		}));
+		mocks.result.status = "active";
+
+		renderPanel();
+
+		expect(container.querySelectorAll("a.recent-trade-row")).toHaveLength(100);
+		expect(mocks.subscriptionMethods.filter((method) => method === "trades")).toHaveLength(1);
+	});
+
 	it("derives its static asset heading and values from the shared order size mode", () => {
 		mocks.result.data = [
 			{

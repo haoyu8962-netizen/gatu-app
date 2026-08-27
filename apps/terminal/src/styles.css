@@ -1111,6 +1111,12 @@
     background-color: transparent;
     transition: background-color 0.4s ease-out;
   }
+
+  .recent-trade-row {
+    content-visibility: auto;
+    contain-intrinsic-block-size: 24px;
+  }
+
   .trade-row-buy:not([data-initial]) {
     @starting-style {
       background-color: oklch(from var(--text-success) l c h / 0.12);
