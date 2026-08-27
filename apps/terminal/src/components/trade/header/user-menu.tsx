@@ -1,16 +1,29 @@
 import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, DeviceMobileIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
+import { createLazyComponent } from "@/lib/lazy";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
-import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
-import { WalletModal } from "../components/wallet-modal";
+import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
+import { loadUserMenuModalModule } from "./user-menu-modal-load";
+
+// Keep successful loads across UserMenu remounts; replace only a wrapper that cached a tagged import failure.
+let MobileAgentSyncModal = createLazyComponent(
+	() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
+	"MobileAgentSyncModal",
+);
+let WalletModal = createLazyComponent(
+	() => loadUserMenuModalModule(() => import("../components/wallet-modal")),
+	"WalletModal",
+);
+let shouldKeepMobileSyncModalMounted = false;
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
@@ -28,9 +41,14 @@ export function UserMenu({ variant = "default" }: Props) {
 	const emailAddress = getPrivyEmailAddress(user);
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
+	const [hasOpenedMobileSync, setHasOpenedMobileSync] = useState(() => shouldKeepMobileSyncModalMounted);
+	const [mobileSyncLoadAttempt, setMobileSyncLoadAttempt] = useState(0);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
+	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
+	const isMobile = useIsMobile();
+	const isMobileQrSurface = useIsMobileQrSurface();
 	const isDesktopNav = variant === "desktop-nav";
 
 	useEffect(() => {
@@ -39,6 +57,32 @@ export function UserMenu({ variant = "default" }: Props) {
 
 	const walletSessionLoading =
 		sessionMode !== "agent-only" && (!ready || isConnecting || isReconnecting || (authenticated && !walletsReady));
+
+	function handleWalletModalErrorOpenChange(open: boolean) {
+		setWalletModalOpen(open);
+		if (!open) resetWalletModalLoad();
+	}
+
+	function handleMobileSyncErrorOpenChange(open: boolean) {
+		setMobileSyncOpen(open);
+		if (!open) resetMobileSyncLoad();
+	}
+
+	function resetWalletModalLoad() {
+		WalletModal = createLazyComponent(
+			() => loadUserMenuModalModule(() => import("../components/wallet-modal")),
+			"WalletModal",
+		);
+		setWalletModalLoadAttempt((attempt) => attempt + 1);
+	}
+
+	function resetMobileSyncLoad() {
+		MobileAgentSyncModal = createLazyComponent(
+			() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
+			"MobileAgentSyncModal",
+		);
+		setMobileSyncLoadAttempt((attempt) => attempt + 1);
+	}
 
 	if (!mounted || walletSessionLoading) {
 		return (
@@ -72,6 +116,8 @@ export function UserMenu({ variant = "default" }: Props) {
 					intent="neutral"
 					size="sm"
 					onClick={() => setWalletModalOpen(true)}
+					onFocus={() => void WalletModal.preload?.()}
+					onPointerEnter={() => void WalletModal.preload?.()}
 					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
@@ -85,7 +131,27 @@ export function UserMenu({ variant = "default" }: Props) {
 						<Trans>Connect Wallet</Trans>
 					</span>
 				</Button>
-				{walletModalOpen && <WalletModal open onOpenChange={setWalletModalOpen} />}
+				{walletModalOpen && (
+					<UserMenuModalErrorBoundary
+						key={walletModalLoadAttempt}
+						onOpenChange={handleWalletModalErrorOpenChange}
+						onRetry={resetWalletModalLoad}
+						open
+						presentation={isMobileQrSurface ? "drawer" : "modal"}
+					>
+						<Suspense
+							fallback={
+								<UserMenuModalLoadingFallback
+									onOpenChange={setWalletModalOpen}
+									open
+									presentation={isMobileQrSurface ? "drawer" : "modal"}
+								/>
+							}
+						>
+							<WalletModal open onOpenChange={setWalletModalOpen} />
+						</Suspense>
+					</UserMenuModalErrorBoundary>
+				)}
 			</>
 		);
 	}
@@ -150,7 +216,11 @@ export function UserMenu({ variant = "default" }: Props) {
 					{
 						label: t`Link mobile device`,
 						icon: <DeviceMobileIcon className="size-3.5" />,
-						onSelect: () => setMobileSyncOpen(true),
+						onSelect: () => {
+							shouldKeepMobileSyncModalMounted = true;
+							setHasOpenedMobileSync(true);
+							setMobileSyncOpen(true);
+						},
 					},
 				]
 			: []),
@@ -221,7 +291,27 @@ export function UserMenu({ variant = "default" }: Props) {
 					},
 				]}
 			/>
-			<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+			{hasOpenedMobileSync && (
+				<UserMenuModalErrorBoundary
+					key={mobileSyncLoadAttempt}
+					onOpenChange={handleMobileSyncErrorOpenChange}
+					onRetry={resetMobileSyncLoad}
+					open={mobileSyncOpen}
+					presentation={isMobile ? "drawer" : "modal"}
+				>
+					<Suspense
+						fallback={
+							<UserMenuModalLoadingFallback
+								onOpenChange={setMobileSyncOpen}
+								open={mobileSyncOpen}
+								presentation={isMobile ? "drawer" : "modal"}
+							/>
+						}
+					>
+						<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+					</Suspense>
+				</UserMenuModalErrorBoundary>
+			)}
 		</>
 	);
 }
