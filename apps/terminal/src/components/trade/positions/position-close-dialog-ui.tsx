@@ -19,6 +19,7 @@ interface PositionCloseDialogShellProps {
 	onOpenChange: (open: boolean) => void;
 	isMobile: boolean;
 	dismissible: boolean;
+	showMobileClose?: boolean;
 	closeLabel: string;
 	children: ReactNode;
 }
@@ -28,6 +29,7 @@ export function PositionCloseDialogShell({
 	onOpenChange,
 	isMobile,
 	dismissible,
+	showMobileClose = false,
 	closeLabel,
 	children,
 }: PositionCloseDialogShellProps) {
@@ -38,7 +40,7 @@ export function PositionCloseDialogShell({
 			presentation={isMobile ? "drawer" : "modal"}
 			size="lg"
 			dismissible={dismissible}
-			showClose={!isMobile && dismissible}
+			showClose={dismissible && (!isMobile || showMobileClose)}
 			showHandle={isMobile && dismissible}
 			closeLabel={closeLabel}
 			handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"

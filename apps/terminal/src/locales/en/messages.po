@@ -1071,7 +1071,6 @@ msgstr "Avg Price"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
-#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1565,8 +1564,8 @@ msgid "Click to learn more about this asset."
 msgstr "Click to learn more about this asset."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-msgid "Click to submit · Each market may return a different result"
-msgstr "Click to submit · Each market may return a different result"
+#~ msgid "Click to submit · Each market may return a different result"
+#~ msgstr "Click to submit · Each market may return a different result"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Click to submit · Filled trades cannot be reversed"

@@ -215,6 +215,7 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	}),
 }));
 
+import { PositionCloseDialogShell } from "@/components/trade/positions/position-close-dialog-ui";
 import { PositionMarketCloseModal } from "@/components/trade/positions/position-market-close-modal";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -286,6 +287,27 @@ describe("PositionMarketCloseModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("supports an explicit mobile close control without changing the default drawer contract", () => {
+		act(() =>
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					<PositionCloseDialogShell open onOpenChange={vi.fn()} isMobile dismissible showMobileClose closeLabel="Close">
+						<div />
+					</PositionCloseDialogShell>,
+				),
+			),
+		);
+
+		expect(testState.adaptiveProps).toMatchObject({
+			presentation: "drawer",
+			dismissible: true,
+			showClose: true,
+			showHandle: true,
+		});
 	});
 
 	it("uses the 440px desktop modal and scales the four-line summary PnL", () => {
