@@ -4,6 +4,7 @@ import {
 	COMPACT_ORDERBOOK_MAX_SLOT_COUNT,
 	COMPACT_ORDERBOOK_MIN_SLOT_COUNT,
 	getCompactOrderbookSlotCount,
+	getMobileOrderbookRowOffsetPx,
 	getMobileOrderbookRowsForLadderHeight,
 	MOBILE_ORDERBOOK_ROW_METRICS,
 } from "@/components/trade/mobile/mobile-orderbook-layout";
@@ -26,6 +27,12 @@ describe("mobile orderbook ladder layout", () => {
 		expect(getMobileOrderbookRowsForLadderHeight(131, MOBILE_ORDERBOOK_ROW_METRICS.default, 3)).toBe(5);
 		expect(getMobileOrderbookRowsForLadderHeight(136, MOBILE_ORDERBOOK_ROW_METRICS.compact, 3)).toBe(5);
 		expect(getMobileOrderbookRowsForLadderHeight(135, MOBILE_ORDERBOOK_ROW_METRICS.compact, 3)).toBe(4);
+	});
+
+	it("uses the compact row height and gap as the only rank offset", () => {
+		expect(getMobileOrderbookRowOffsetPx(0, MOBILE_ORDERBOOK_ROW_METRICS.compact)).toBe(0);
+		expect(getMobileOrderbookRowOffsetPx(1, MOBILE_ORDERBOOK_ROW_METRICS.compact)).toBe(28);
+		expect(getMobileOrderbookRowOffsetPx(4, MOBILE_ORDERBOOK_ROW_METRICS.compact)).toBe(112);
 	});
 
 	it("rejects invalid heights and clamps supported row counts", () => {

@@ -387,7 +387,9 @@ describe("mobile orderbook subscription lifecycle", () => {
 		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
 		expect(asks?.children.length).toBe(11);
 		expect(asks?.querySelectorAll("button")).toHaveLength(5);
-		expect([...(asks?.children ?? [])].filter((child) => child.getAttribute("aria-hidden") === "true")).toHaveLength(6);
+		expect(asks?.querySelectorAll('[data-slot="compact-orderbook-row-position"] > [aria-hidden="true"]')).toHaveLength(
+			6,
+		);
 		expect(errorReportingMocks.reportClientError).toHaveBeenCalledOnce();
 		expect(errorReportingMocks.reportClientError).toHaveBeenCalledWith(expect.any(Error), {
 			kind: "orderbook_l2_fallback",

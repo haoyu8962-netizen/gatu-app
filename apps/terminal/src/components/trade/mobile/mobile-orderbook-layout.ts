@@ -12,6 +12,10 @@ export const MOBILE_ORDERBOOK_ROW_METRICS = {
 export type MobileOrderbookRowMetrics =
 	(typeof MOBILE_ORDERBOOK_ROW_METRICS)[keyof typeof MOBILE_ORDERBOOK_ROW_METRICS];
 
+export function getMobileOrderbookRowOffsetPx(rank: number, metrics: MobileOrderbookRowMetrics): number {
+	return rank * (metrics.rowHeightPx + metrics.rowGapPx);
+}
+
 export function getMobileOrderbookRowsForLadderHeight(
 	height: number,
 	metrics: MobileOrderbookRowMetrics,

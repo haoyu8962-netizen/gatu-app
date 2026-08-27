@@ -1,4 +1,4 @@
-name: Slider Browser Tests
+name: Terminal Browser Tests
 
 on:
   pull_request:
@@ -6,8 +6,8 @@ on:
       - ".github/workflows/slider-browser.yml"
       - "apps/terminal/package.json"
       - "apps/terminal/tests/browser/**"
-      - "apps/terminal/src/components/trade/components/trade-size-slider.tsx"
-      - "packages/ui/src/slider.tsx"
+      - "apps/terminal/src/**"
+      - "packages/ui/src/**"
       - "pnpm-lock.yaml"
   workflow_dispatch:
 
@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  slider-browser:
-    name: Slider browser regression
+  terminal-browser:
+    name: Terminal browser regressions
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -36,3 +36,6 @@ jobs:
 
       - name: Run slider browser regression
         run: pnpm --dir apps/terminal test:browser:slider
+
+      - name: Run mobile orderbook CLS regression
+        run: pnpm --dir apps/terminal test:browser:orderbook-cls
