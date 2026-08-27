@@ -623,16 +623,21 @@ verify_trade_api_resource_hints() {
 	local is_testnet="$3"
 	local expected_origin="$MAINNET_API_ORIGIN"
 	local forbidden_origin="$TESTNET_API_ORIGIN"
+	local path
+	local asset_label
 
 	if [ "$is_testnet" = "true" ]; then
 		expected_origin="$TESTNET_API_ORIGIN"
 		forbidden_origin="$MAINNET_API_ORIGIN"
 	fi
-	if ! fetch_typed_asset "$base_url" "/trade/HYPE" "$tmpdir" "text/html" "Trade API resource hint"; then
-		return 1
-	fi
-	verify_exact_http_status "${tmpdir}/headers" "200" "Trade API resource hint" || return 1
-	verify_api_preconnect_header "${tmpdir}/headers" "$expected_origin" "$forbidden_origin" "Trade API resource hint" "required" || return 1
+	for path in "/trade/HYPE" "/perp" "/spot" "/builders-perp/hyna"; do
+		asset_label="Trade API resource hint (${path})"
+		if ! fetch_typed_asset "$base_url" "$path" "$tmpdir" "text/html" "$asset_label"; then
+			return 1
+		fi
+		verify_exact_http_status "${tmpdir}/headers" "200" "$asset_label" || return 1
+		verify_api_preconnect_header "${tmpdir}/headers" "$expected_origin" "$forbidden_origin" "$asset_label" "required" || return 1
+	done
 
 	if ! fetch_typed_asset "$base_url" "/terms" "$tmpdir" "text/html" "Terms resource hints"; then
 		return 1

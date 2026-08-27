@@ -124,7 +124,7 @@ curl_with_deadline() {
 	done
 	printf '%s\n' "$url" >> "$FAKE_CURL_URLS_FILE"
 	case "$url" in
-	*/trade/HYPE)
+	*/trade/HYPE|*/perp|*/spot|*/builders-perp/hyna)
 		link_headers="$FAKE_TRADE_LINK_HEADERS"
 		prelude_headers="$FAKE_TRADE_PRELUDE_HEADERS"
 		status="$FAKE_TRADE_STATUS"
@@ -264,7 +264,7 @@ test("public edge requires the network-matching API preconnect only on trade pag
 			assert.equal(result.status, 0, result.stderr);
 			assert.deepEqual(
 				result.urls.map((url) => new URL(url).pathname),
-				["/trade/HYPE", "/terms"],
+				["/trade/HYPE", "/perp", "/spot", "/builders-perp/hyna", "/terms"],
 			);
 		});
 	}

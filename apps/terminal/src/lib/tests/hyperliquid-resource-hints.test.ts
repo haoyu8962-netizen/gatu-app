@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAINNET_API_URL, TESTNET_API_URL } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
+import { TRADE_ROUTE_PREFIXES } from "@/config/nav";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = resolve(TEST_DIR, "../../../../..");
@@ -31,16 +32,18 @@ function getHeaderBlock(name: string) {
 }
 
 describe("Hyperliquid API resource hints", () => {
+	const tradePathDirective = `path ${TRADE_ROUTE_PREFIXES.flatMap((prefix) => [prefix, `${prefix}/*`]).join(" ")}`;
+
 	it("maps each canonical trading host to its matching pinned SDK API origin", () => {
 		expect(getDirectiveLines(getNamedMatcher("mainnet_trade"))).toEqual([
 			"host app.gatu.ai",
 			"method GET",
-			"path /trade /trade/*",
+			tradePathDirective,
 		]);
 		expect(getDirectiveLines(getNamedMatcher("testnet_trade"))).toEqual([
 			"host testnet.gatu.ai",
 			"method GET",
-			"path /trade /trade/*",
+			tradePathDirective,
 		]);
 		expect(getDirectiveLines(getHeaderBlock("mainnet_trade"))).toEqual([
 			`+Link "<${MAINNET_API_URL}>; rel=preconnect; crossorigin=anonymous"`,
@@ -52,11 +55,11 @@ describe("Hyperliquid API resource hints", () => {
 		]);
 	});
 
-	it("limits both hints to the exact trade root and descendants", () => {
+	it("limits both hints to the rendered trade route roots and descendants", () => {
 		for (const name of ["mainnet_trade", "testnet_trade"]) {
 			const matcher = getDirectiveLines(getNamedMatcher(name));
 			expect(matcher.filter((directive) => directive.startsWith("method "))).toEqual(["method GET"]);
-			expect(matcher.filter((directive) => directive.startsWith("path "))).toEqual(["path /trade /trade/*"]);
+			expect(matcher.filter((directive) => directive.startsWith("path "))).toEqual([tradePathDirective]);
 		}
 	});
 

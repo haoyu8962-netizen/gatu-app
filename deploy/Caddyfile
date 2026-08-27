@@ -29,7 +29,7 @@ app.gatu.ai, testnet.gatu.ai {
 	@mainnet_trade {
 		host app.gatu.ai
 		method GET
-		path /trade /trade/*
+		path /trade /trade/* /perp /perp/* /spot /spot/* /builders-perp /builders-perp/*
 	}
 	header @mainnet_trade {
 		+Link "<https://api.hyperliquid.xyz>; rel=preconnect; crossorigin=anonymous"
@@ -38,7 +38,7 @@ app.gatu.ai, testnet.gatu.ai {
 	@testnet_trade {
 		host testnet.gatu.ai
 		method GET
-		path /trade /trade/*
+		path /trade /trade/* /perp /perp/* /spot /spot/* /builders-perp /builders-perp/*
 	}
 	header @testnet_trade {
 		+Link "<https://api.hyperliquid-testnet.xyz>; rel=preconnect; crossorigin=anonymous"
