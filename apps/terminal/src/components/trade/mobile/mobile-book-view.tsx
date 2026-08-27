@@ -570,9 +570,7 @@ export function CompactOrderbook({
 									);
 								})
 							) : (
-								<div className="absolute inset-0 flex flex-col justify-end gap-[4px]">
-									<OrderbookSkeletonRows rows={askLevelCount} align="end" compact />
-								</div>
+								<CompactOrderbookSkeletonRows rows={askLevelCount} side="ask" />
 							)}
 						</div>
 
@@ -643,9 +641,7 @@ export function CompactOrderbook({
 									</CompactOrderbookRowPosition>
 								))
 							) : (
-								<div className="absolute inset-0 flex flex-col gap-[4px]">
-									<OrderbookSkeletonRows rows={bidLevelCount} compact />
-								</div>
+								<CompactOrderbookSkeletonRows rows={bidLevelCount} side="bid" />
 							)}
 						</div>
 						{isTransitioning && hasSnapshot && <OrderbookBusyOverlay />}
@@ -927,6 +923,21 @@ function OrderbookLoadingAnnouncement() {
 		<output aria-live="polite" className="sr-only">
 			{t`Waiting for order book...`}
 		</output>
+	);
+}
+
+function CompactOrderbookSkeletonRows({ rows, side }: { rows: number; side: "ask" | "bid" }) {
+	return (
+		<>
+			{PLACEHOLDER_ROW_KEYS.slice(0, rows).map((_, index) => {
+				const rank = side === "ask" ? rows - index - 1 : index;
+				return (
+					<CompactOrderbookRowPosition key={`${side}-skeleton-${rank}`} rank={rank} side={side}>
+						<OrderbookSkeletonRow index={rank} align={side === "ask" ? "end" : undefined} compact />
+					</CompactOrderbookRowPosition>
+				);
+			})}
+		</>
 	);
 }
 

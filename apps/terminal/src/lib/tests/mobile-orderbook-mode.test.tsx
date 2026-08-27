@@ -180,6 +180,43 @@ describe("compact mobile orderbook modes", () => {
 		expect(getLadder("asks").children).toHaveLength(13);
 	});
 
+	it("keeps pending skeleton ranks stable when the measured slot count grows", () => {
+		act(() => {
+			root.render(
+				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="pending" hasSnapshot={false} isInteractive={false} />,
+			);
+		});
+
+		const initialAskRows = [
+			...getLadder("asks").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
+		const initialBidRows = [
+			...getLadder("bids").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
+		const initialAskRowsByRank = new Map(initialAskRows.map((row) => [row.dataset.rank, row]));
+		const initialBidRowsByRank = new Map(initialBidRows.map((row) => [row.dataset.rank, row]));
+
+		expect(initialAskRows.map((row) => row.dataset.rank)).toEqual(["4", "3", "2", "1", "0"]);
+		expect(initialBidRows.map((row) => row.dataset.rank)).toEqual(["0", "1", "2", "3", "4"]);
+		expect(initialAskRows.every((row) => row.querySelector('[data-slot="orderbook-skeleton-row"]'))).toBe(true);
+		expect(initialBidRows.every((row) => row.querySelector('[data-slot="orderbook-skeleton-row"]'))).toBe(true);
+
+		resizeBook(360);
+
+		const resizedAskRows = [
+			...getLadder("asks").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
+		const resizedBidRows = [
+			...getLadder("bids").querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]'),
+		];
+		expect(resizedAskRows.map((row) => row.dataset.rank)).toEqual(["5", "4", "3", "2", "1", "0"]);
+		expect(resizedBidRows.map((row) => row.dataset.rank)).toEqual(["0", "1", "2", "3", "4", "5"]);
+		for (const rank of ["0", "1", "2", "3", "4"]) {
+			expect(resizedAskRows.find((row) => row.dataset.rank === rank)).toBe(initialAskRowsByRank.get(rank));
+			expect(resizedBidRows.find((row) => row.dataset.rank === rank)).toBe(initialBidRowsByRank.get(rank));
+		}
+	});
+
 	it("uses rank-positioned rows and leaves surplus height at each far edge", () => {
 		const asks = getLadder("asks");
 		const bids = getLadder("bids");

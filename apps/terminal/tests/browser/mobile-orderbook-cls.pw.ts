@@ -26,6 +26,8 @@ test("keeps compact orderbook rank updates below the CLS budget", async ({ page 
 	expect(result.controlCls, JSON.stringify(result.controlSamples)).toBeGreaterThan(result.rankClsBudget);
 	expect(result.controlSamples.some((sample) => sample.source === "mobile-orderbook-cls-control-row")).toBe(true);
 	expect(result.controlSamples.every((sample) => !sample.hadRecentInput)).toBe(true);
+	expect(result.initializationCls, JSON.stringify(result.initializationSamples)).toBeLessThanOrEqual(result.rankClsBudget);
+	expect(result.initializationSamples.every((sample) => !sample.hadRecentInput)).toBe(true);
 	expect(result.hiddenChromeDisplay).toBe("none");
 	expect(result.sizeCls, JSON.stringify(result.sizeSamples)).toBeLessThanOrEqual(0.0005);
 	expect(result.sizeSamples.every((sample) => !sample.hadRecentInput)).toBe(true);
@@ -45,6 +47,7 @@ test("keeps compact orderbook rank updates below the CLS budget", async ({ page 
 	expect(result.skeletonRowHeights.length).toBeGreaterThan(0);
 	expect(result.skeletonRowHeights.every((height) => height === 24)).toBe(true);
 	expect(result.skeletonRowGaps.every((gap) => gap === 28)).toBe(true);
+	expect(result.skeletonRowsMatchPosition).toBe(true);
 	expect(result.finalTops).toEqual(result.initialTops);
 	expect(result.finalGeometry).toEqual(result.initialGeometry);
 	expect(result.domOrderMatchesVisualOrder).toBe(true);
@@ -55,6 +58,6 @@ test("keeps compact orderbook rank updates below the CLS budget", async ({ page 
 	expect(result.interactionPrice).toBe("100.10");
 
 	console.log(
-		`Mobile orderbook CLS: control=${result.controlCls.toFixed(6)} size=${result.sizeCls.toFixed(6)} rank=${result.rankCls.toFixed(6)}`,
+		`Mobile orderbook CLS: control=${result.controlCls.toFixed(6)} initialization=${result.initializationCls.toFixed(6)} size=${result.sizeCls.toFixed(6)} rank=${result.rankCls.toFixed(6)}`,
 	);
 });

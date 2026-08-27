@@ -44,6 +44,8 @@ interface FixtureResult {
 	focusPreserved: boolean;
 	hiddenChromeDisplay: string;
 	initialGeometry: Array<{ height: number; slot: string; top: number }>;
+	initializationCls: number;
+	initializationSamples: LayoutShiftSample[];
 	initialTops: number[];
 	interactionPrice: string | null;
 	placeholderContentsMatchPosition: boolean;
@@ -60,6 +62,7 @@ interface FixtureResult {
 	rowHeights: number[];
 	skeletonRowGaps: number[];
 	skeletonRowHeights: number[];
+	skeletonRowsMatchPosition: boolean;
 	sizeCls: number;
 	sizeDirection: string | null;
 	sizeSamples: LayoutShiftSample[];
@@ -261,6 +264,15 @@ async function measureFlexControl() {
 
 const rootElement = document.querySelector<HTMLElement>("#root");
 if (!rootElement) throw new Error("Missing fixture root");
+const initializationSamples: LayoutShiftSample[] = [];
+const initializationObserver = PerformanceObserver.supportedEntryTypes.includes("layout-shift")
+	? new PerformanceObserver((list) => {
+			for (const entry of list.getEntries() as LayoutShiftEntry[]) {
+				initializationSamples.push(serializeLayoutShift(entry));
+			}
+		})
+	: null;
+initializationObserver?.observe({ buffered: true, type: "layout-shift" });
 Object.assign(document.body.style, { margin: "0" });
 Object.assign(rootElement.style, { display: "flex", height: "440px", width: "164px" });
 i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -269,7 +281,7 @@ setBrowserOrderbookPending();
 createI18nRoot(rootElement).render(<MobileBookView active compact inTabLayout view="book" />);
 
 window.runMobileOrderbookClsFixture = async () => {
-	if (!PerformanceObserver.supportedEntryTypes.includes("layout-shift")) {
+	if (!initializationObserver) {
 		throw new Error("LayoutShift PerformanceObserver is unavailable");
 	}
 	await document.fonts.ready;
@@ -279,9 +291,15 @@ window.runMobileOrderbookClsFixture = async () => {
 	const skeletonRows = [...rootElement.querySelectorAll<HTMLElement>('[data-slot="orderbook-skeleton-row"]')];
 	const skeletonRowHeights = skeletonRows.map((row) => row.getBoundingClientRect().height);
 	const skeletonRowGaps = getElementGaps(skeletonRows.slice(0, skeletonRows.length / 2));
+	const skeletonRowsMatchPosition = skeletonRows.every(elementMatchesPosition);
 
 	setBrowserOrderbookEvent(INITIAL_BOOK);
 	await settleLayout();
+	for (const entry of initializationObserver.takeRecords() as LayoutShiftEntry[]) {
+		initializationSamples.push(serializeLayoutShift(entry));
+	}
+	initializationObserver.disconnect();
+	const initializationCls = getMaximumLayoutShiftSession(initializationSamples);
 
 	const control = await measureFlexControl();
 	const initialRows = getRowGeometry(rootElement);
@@ -329,6 +347,8 @@ window.runMobileOrderbookClsFixture = async () => {
 		focusPreserved,
 		hiddenChromeDisplay: getComputedStyle(hiddenChrome).display,
 		initialGeometry,
+		initializationCls,
+		initializationSamples,
 		initialTops,
 		interactionPrice: getOrderbookActionsStore().selectedPrice?.price ?? null,
 		placeholderContentsMatchPosition,
@@ -345,6 +365,7 @@ window.runMobileOrderbookClsFixture = async () => {
 		rowHeights: initialRows.map((row) => row.height),
 		skeletonRowGaps,
 		skeletonRowHeights,
+		skeletonRowsMatchPosition,
 		sizeCls: size.cls,
 		sizeDirection,
 		sizeSamples: size.samples,
