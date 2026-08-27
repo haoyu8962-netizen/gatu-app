@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, createElement, Fragment, type ReactNode } from "react";
+import { act, createElement, Fragment, type ReactNode, useEffect } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "./harness/react";
@@ -13,9 +13,19 @@ const testState = vi.hoisted(() => ({
 	hasWalletAccess: false,
 	isConnected: false,
 	login: vi.fn(),
+	mobileSyncModalModuleGate: null as Promise<void> | null,
+	mobileSyncModalModuleReady: null as (() => void) | null,
+	mobileSyncModalModuleLoads: 0,
+	mobileSyncModalMounts: 0,
+	mobileSyncModalOpen: false,
+	mobileSyncModalUnmounts: 0,
 	ready: true,
 	sessionMode: "disconnected" as "agent-only" | "disconnected" | "wallet",
 	walletModalOpen: false,
+	walletModalModuleGate: null as Promise<void> | null,
+	walletModalModuleReady: null as (() => void) | null,
+	walletModalModuleLoads: 0,
+	walletModalMounts: 0,
 	walletsReady: true,
 }));
 
@@ -26,22 +36,28 @@ vi.mock("@gatu/ui", () => ({
 		children,
 		className,
 		disabled,
+		onFocus,
 		onClick,
+		onPointerEnter,
 	}: {
 		children: ReactNode;
 		className?: string;
 		disabled?: boolean;
+		onFocus?: () => void;
 		onClick?: () => void;
-	}) => createElement("button", { className, disabled, onClick, type: "button" }, children),
+		onPointerEnter?: () => void;
+	}) => createElement("button", { className, disabled, onClick, onFocus, onPointerEnter, type: "button" }, children),
 	ButtonIcon: ({ "aria-label": ariaLabel }: { "aria-label"?: string }) =>
 		createElement("button", { "aria-label": ariaLabel, type: "button" }),
 	Dropdown: ({
 		className,
+		groups = [],
 		trigger,
 		triggerAriaLabel,
 		triggerClassName,
 	}: {
 		className?: string;
+		groups?: Array<{ items: Array<{ label: string; onSelect?: () => void }> }>;
 		trigger?: ReactNode;
 		triggerAriaLabel?: string;
 		triggerClassName?: string;
@@ -50,6 +66,11 @@ vi.mock("@gatu/ui", () => ({
 			"div",
 			{ className, "data-testid": "user-menu-dropdown" },
 			createElement("button", { "aria-label": triggerAriaLabel, className: triggerClassName, type: "button" }, trigger),
+			groups.flatMap((group) =>
+				group.items.map((item) =>
+					createElement("button", { key: item.label, onClick: item.onSelect, type: "button" }, item.label),
+				),
+			),
 		),
 }));
 
@@ -99,16 +120,44 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
 }));
 
-vi.mock("@/components/trade/components/mobile-agent-sync-modal", () => ({
-	MobileAgentSyncModal: () => null,
-}));
+vi.mock("@/components/trade/components/mobile-agent-sync-modal", async () => {
+	testState.mobileSyncModalModuleLoads += 1;
+	await testState.mobileSyncModalModuleGate;
+	testState.mobileSyncModalModuleReady?.();
+	return {
+		MobileAgentSyncModal: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+			useEffect(() => {
+				testState.mobileSyncModalMounts += 1;
+				return () => {
+					testState.mobileSyncModalUnmounts += 1;
+				};
+			}, []);
+			testState.mobileSyncModalOpen = open;
+			return open
+				? createElement("button", {
+						"data-testid": "mobile-sync-modal",
+						onClick: () => onOpenChange(false),
+						type: "button",
+					})
+				: null;
+		},
+	};
+});
 
-vi.mock("@/components/trade/components/wallet-modal", () => ({
-	WalletModal: ({ open }: { open: boolean }) => {
-		testState.walletModalOpen = open;
-		return open ? createElement("div", { "data-testid": "wallet-modal" }) : null;
-	},
-}));
+vi.mock("@/components/trade/components/wallet-modal", async () => {
+	testState.walletModalModuleLoads += 1;
+	await testState.walletModalModuleGate;
+	testState.walletModalModuleReady?.();
+	return {
+		WalletModal: ({ open }: { open: boolean }) => {
+			useEffect(() => {
+				testState.walletModalMounts += 1;
+			}, []);
+			testState.walletModalOpen = open;
+			return open ? createElement("div", { "data-testid": "wallet-modal" }) : null;
+		},
+	};
+});
 
 import { UserMenu } from "@/components/trade/header/user-menu";
 
@@ -123,6 +172,11 @@ describe("UserMenu", () => {
 		testState.ensName = undefined;
 		testState.hasWalletAccess = false;
 		testState.isConnected = false;
+		testState.mobileSyncModalModuleGate = null;
+		testState.mobileSyncModalModuleReady = null;
+		testState.mobileSyncModalMounts = 0;
+		testState.mobileSyncModalOpen = false;
+		testState.mobileSyncModalUnmounts = 0;
 		testState.ready = true;
 		testState.sessionMode = "disconnected";
 		container = document.createElement("div");
@@ -130,6 +184,9 @@ describe("UserMenu", () => {
 		root = createI18nRoot(container);
 		testState.login.mockReset();
 		testState.walletModalOpen = false;
+		testState.walletModalModuleGate = null;
+		testState.walletModalModuleReady = null;
+		testState.walletModalMounts = 0;
 		testState.walletsReady = true;
 	});
 
@@ -139,19 +196,97 @@ describe("UserMenu", () => {
 		vi.clearAllMocks();
 	});
 
-	it("opens the shared wallet modal without waiting for unauthenticated wallet connectors", () => {
+	it("loads the shared wallet modal on demand without waiting for unauthenticated wallet connectors", async () => {
 		testState.walletsReady = false;
+		let releaseModule: (() => void) | undefined;
+		let markModuleReady: (() => void) | undefined;
+		testState.walletModalModuleGate = new Promise((resolve) => {
+			releaseModule = resolve;
+		});
+		const moduleReady = new Promise<void>((resolve) => {
+			markModuleReady = resolve;
+		});
+		testState.walletModalModuleReady = () => markModuleReady?.();
 
-		act(() => {
+		await act(async () => {
 			root.render(createElement(UserMenu));
 		});
-		act(() => {
-			container.querySelector("button")?.click();
-		});
 
+		expect(testState.walletModalModuleLoads).toBe(0);
+		expect(container.querySelector('[data-testid="wallet-modal"]')).toBeNull();
+
+		await act(async () => container.querySelector("button")?.click());
+		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
+			"Connecting...",
+		);
+
+		await act(async () => {
+			releaseModule?.();
+			await moduleReady;
+		});
+		await vi.waitFor(() => expect(testState.walletModalMounts).toBe(1));
+
+		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')).toBeNull();
+		expect(testState.walletModalMounts).toBe(1);
 		expect(testState.walletModalOpen).toBe(true);
 		expect(container.querySelector('[data-testid="wallet-modal"]')).not.toBeNull();
 		expect(testState.login).not.toHaveBeenCalled();
+	});
+
+	it("loads mobile sync on demand and keeps its recovery host mounted after close and remount", async () => {
+		testState.authenticated = true;
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		testState.hasWalletAccess = true;
+		testState.isConnected = true;
+		testState.sessionMode = "wallet";
+		let releaseModule: (() => void) | undefined;
+		let markModuleReady: (() => void) | undefined;
+		testState.mobileSyncModalModuleGate = new Promise((resolve) => {
+			releaseModule = resolve;
+		});
+		const moduleReady = new Promise<void>((resolve) => {
+			markModuleReady = resolve;
+		});
+		testState.mobileSyncModalModuleReady = () => markModuleReady?.();
+
+		await act(async () => {
+			root.render(createElement(UserMenu));
+		});
+
+		expect(testState.mobileSyncModalModuleLoads).toBe(0);
+		const linkMobileButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Link mobile device",
+		);
+		await act(async () => linkMobileButton?.click());
+		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
+			"Connecting...",
+		);
+
+		await act(async () => {
+			releaseModule?.();
+			await moduleReady;
+		});
+		await vi.waitFor(() => expect(testState.mobileSyncModalMounts).toBe(1));
+
+		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')).toBeNull();
+		expect(testState.mobileSyncModalMounts).toBe(1);
+		expect(testState.mobileSyncModalOpen).toBe(true);
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="mobile-sync-modal"]')?.click();
+		});
+		expect(testState.mobileSyncModalOpen).toBe(false);
+		expect(testState.mobileSyncModalUnmounts).toBe(0);
+
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		await act(async () => {
+			root.render(createElement(UserMenu));
+		});
+
+		expect(testState.mobileSyncModalModuleLoads).toBe(1);
+		expect(testState.mobileSyncModalMounts).toBe(2);
+		expect(testState.mobileSyncModalOpen).toBe(false);
 	});
 
 	it("lets the mobile account trigger shrink and truncate without changing the desktop-nav contract", () => {

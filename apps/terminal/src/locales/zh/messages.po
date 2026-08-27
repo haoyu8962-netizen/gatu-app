@@ -2074,6 +2074,7 @@ msgstr "连接中"
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "连接中..."
 

@@ -1,19 +1,44 @@
 import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, DeviceMobileIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
+import { createLazyComponent } from "@/lib/lazy";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
-import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
-import { WalletModal } from "../components/wallet-modal";
+
+const MobileAgentSyncModal = createLazyComponent(
+	() => import("../components/mobile-agent-sync-modal"),
+	"MobileAgentSyncModal",
+);
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
+let shouldKeepMobileSyncModalMounted = false;
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
+
+function UserMenuModalLoadingFallback() {
+	return (
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
+			data-testid="user-menu-modal-loading-fallback"
+			aria-busy="true"
+		>
+			<output
+				className="flex items-center gap-2 rounded-12 border border-stroke-weak bg-modal px-4 py-3 text-sm text-fg shadow-overlay"
+				aria-live="polite"
+			>
+				<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
+				<Trans>Connecting...</Trans>
+			</output>
+		</div>
+	);
+}
 
 interface Props {
 	variant?: "default" | "desktop-nav";
@@ -28,6 +53,7 @@ export function UserMenu({ variant = "default" }: Props) {
 	const emailAddress = getPrivyEmailAddress(user);
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
+	const [hasOpenedMobileSync, setHasOpenedMobileSync] = useState(() => shouldKeepMobileSyncModalMounted);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -72,6 +98,8 @@ export function UserMenu({ variant = "default" }: Props) {
 					intent="neutral"
 					size="sm"
 					onClick={() => setWalletModalOpen(true)}
+					onFocus={() => void WalletModal.preload?.()}
+					onPointerEnter={() => void WalletModal.preload?.()}
 					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
@@ -85,7 +113,11 @@ export function UserMenu({ variant = "default" }: Props) {
 						<Trans>Connect Wallet</Trans>
 					</span>
 				</Button>
-				{walletModalOpen && <WalletModal open onOpenChange={setWalletModalOpen} />}
+				{walletModalOpen && (
+					<Suspense fallback={<UserMenuModalLoadingFallback />}>
+						<WalletModal open onOpenChange={setWalletModalOpen} />
+					</Suspense>
+				)}
 			</>
 		);
 	}
@@ -150,7 +182,11 @@ export function UserMenu({ variant = "default" }: Props) {
 					{
 						label: t`Link mobile device`,
 						icon: <DeviceMobileIcon className="size-3.5" />,
-						onSelect: () => setMobileSyncOpen(true),
+						onSelect: () => {
+							shouldKeepMobileSyncModalMounted = true;
+							setHasOpenedMobileSync(true);
+							setMobileSyncOpen(true);
+						},
 					},
 				]
 			: []),
@@ -221,7 +257,11 @@ export function UserMenu({ variant = "default" }: Props) {
 					},
 				]}
 			/>
-			<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+			{hasOpenedMobileSync && (
+				<Suspense fallback={<UserMenuModalLoadingFallback />}>
+					<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }

@@ -794,6 +794,21 @@ describe("MobileAgentSyncModal", () => {
 		act(() => {
 			root.render(createElement(MobileAgentSyncModal, { open: false, onOpenChange }));
 		});
+
+		const closedBeforeUnload = new Event("beforeunload", { cancelable: true });
+		act(() => window.dispatchEvent(closedBeforeUnload));
+		expect(closedBeforeUnload.defaultPrevented).toBe(true);
+
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: false, onOpenChange }));
+		});
+
+		const remountedBeforeUnload = new Event("beforeunload", { cancelable: true });
+		act(() => window.dispatchEvent(remountedBeforeUnload));
+		expect(remountedBeforeUnload.defaultPrevented).toBe(true);
+
 		act(() => {
 			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange }));
 		});
