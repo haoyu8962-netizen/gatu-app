@@ -822,6 +822,204 @@ describe("TradingView datafeed", () => {
 		await vi.advanceTimersByTimeAsync(5_000);
 	});
 
+	it("isolates duplicate listener guids across datafeed replacement and teardown", async () => {
+		const streamListeners = new Map<string, (event: CandleWsEvent) => void>();
+		const primaryUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		const replacementUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		const subscribeStream = (params: { coin: string; interval: string }, listener: (event: CandleWsEvent) => void) => {
+			streamListeners.set(params.coin, listener);
+			return Promise.resolve({
+				unsubscribe: params.coin === "NAMESPACE" ? primaryUnsubscribe : replacementUnsubscribe,
+			});
+		};
+		subscriptionClient.candle.mockImplementationOnce(subscribeStream).mockImplementationOnce(subscribeStream);
+
+		const getSymbolInfo = (_symbolName: string, coin: string) =>
+			coin === "NAMESPACE" || coin === "NAMESPACE2"
+				? { name: `${coin}-USDC`, ticker: coin, description: `${coin}-USDC`, pricescale: 100 }
+				: undefined;
+		const datafeedA = createDatafeed({ getSymbolInfo });
+		const datafeedB = createDatafeed({ getSymbolInfo });
+		const [primarySymbolA, primarySymbolB, replacementSymbol] = await Promise.all([
+			resolveDatafeedSymbol(datafeedA, "NAMESPACE"),
+			resolveDatafeedSymbol(datafeedB, "NAMESPACE"),
+			resolveDatafeedSymbol(datafeedA, "NAMESPACE2"),
+		]);
+		const sharedGuid = "shared-listener-guid";
+		const ticksA = vi.fn();
+		const ticksB = vi.fn();
+		const replacementTicksA = vi.fn();
+		vi.useFakeTimers();
+
+		datafeedA.subscribeBars(primarySymbolA, "60" as ResolutionString, ticksA, sharedGuid, vi.fn());
+		datafeedB.subscribeBars(primarySymbolB, "60" as ResolutionString, ticksB, sharedGuid, vi.fn());
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(subscriptionClient.candle).toHaveBeenCalledTimes(1);
+		expect(getCandleStore().getState().streams["NAMESPACE:1h"]?.listeners.size).toBe(2);
+		streamListeners.get("NAMESPACE")?.({
+			t: 60_000,
+			o: "100",
+			h: "105",
+			l: "95",
+			c: "102",
+			v: "1",
+		} as CandleWsEvent);
+		expect(ticksA).toHaveBeenCalledOnce();
+		expect(ticksB).toHaveBeenCalledOnce();
+
+		datafeedA.subscribeBars(replacementSymbol, "60" as ResolutionString, replacementTicksA, sharedGuid, vi.fn());
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(subscriptionClient.candle).toHaveBeenCalledTimes(2);
+		expect(getCandleStore().getState().streams["NAMESPACE:1h"]?.listeners.size).toBe(1);
+		expect(getCandleStore().getState().streams["NAMESPACE2:1h"]?.listeners.size).toBe(1);
+		streamListeners.get("NAMESPACE")?.({
+			t: 120_000,
+			o: "102",
+			h: "106",
+			l: "101",
+			c: "104",
+			v: "1",
+		} as CandleWsEvent);
+		streamListeners.get("NAMESPACE2")?.({
+			t: 120_000,
+			o: "20",
+			h: "22",
+			l: "19",
+			c: "21",
+			v: "2",
+		} as CandleWsEvent);
+		expect(ticksA).toHaveBeenCalledOnce();
+		expect(ticksB).toHaveBeenCalledTimes(2);
+		expect(replacementTicksA).toHaveBeenCalledOnce();
+
+		datafeedA.destroy();
+		expect(getCandleStore().getState().streams["NAMESPACE:1h"]?.listeners.size).toBe(1);
+		expect(getCandleStore().getState().streams["NAMESPACE2:1h"]?.listeners.size).toBe(0);
+		expect(primaryUnsubscribe).not.toHaveBeenCalled();
+		expect(replacementUnsubscribe).not.toHaveBeenCalled();
+
+		streamListeners.get("NAMESPACE")?.({
+			t: 180_000,
+			o: "104",
+			h: "108",
+			l: "103",
+			c: "107",
+			v: "1",
+		} as CandleWsEvent);
+		expect(ticksB).toHaveBeenCalledTimes(3);
+		expect(replacementTicksA).toHaveBeenCalledOnce();
+
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(replacementUnsubscribe).toHaveBeenCalledOnce();
+		expect(primaryUnsubscribe).not.toHaveBeenCalled();
+
+		datafeedB.unsubscribeBars(sharedGuid);
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(primaryUnsubscribe).toHaveBeenCalledOnce();
+		datafeedB.destroy();
+		getCandleStore().getState().clearLastBar("NAMESPACE:60");
+		getCandleStore().getState().clearLastBar("NAMESPACE2:60");
+	});
+
+	it("keeps duplicate listener guids isolated through shared stream recovery", async () => {
+		const streamListeners: Array<(event: CandleWsEvent) => void> = [];
+		const streamErrors: Array<(error: unknown) => void> = [];
+		const subscribeStream = (
+			_params: { coin: string; interval: string },
+			listener: (event: CandleWsEvent) => void,
+			options?: { onError?: (error: unknown) => void },
+		) => {
+			streamListeners.push(listener);
+			if (options?.onError) streamErrors.push(options.onError);
+			return Promise.resolve({ unsubscribe: subscriptionClient.unsubscribe });
+		};
+		subscriptionClient.candle
+			.mockImplementationOnce(subscribeStream)
+			.mockImplementationOnce(subscribeStream)
+			.mockImplementationOnce(subscribeStream);
+
+		const getSymbolInfo = (_symbolName: string, coin: string) =>
+			coin === "RECOVERYNAMESPACE"
+				? { name: `${coin}-USDC`, ticker: coin, description: `${coin}-USDC`, pricescale: 100 }
+				: undefined;
+		const resetA = vi.fn();
+		const resetB = vi.fn();
+		const onRealtimeResetA = vi.fn();
+		const onRealtimeResetB = vi.fn();
+		const datafeedA = createDatafeed({ getSymbolInfo, onRealtimeReset: onRealtimeResetA });
+		const datafeedB = createDatafeed({ getSymbolInfo, onRealtimeReset: onRealtimeResetB });
+		const [symbolA, symbolB] = await Promise.all([
+			resolveDatafeedSymbol(datafeedA, "RECOVERYNAMESPACE"),
+			resolveDatafeedSymbol(datafeedB, "RECOVERYNAMESPACE"),
+		]);
+		const ticksA = vi.fn();
+		const ticksB = vi.fn();
+		const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+		vi.useFakeTimers();
+
+		datafeedA.subscribeBars(symbolA, "60" as ResolutionString, ticksA, "shared-recovery-guid", resetA);
+		datafeedB.subscribeBars(symbolB, "60" as ResolutionString, ticksB, "shared-recovery-guid", resetB);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(subscriptionClient.candle).toHaveBeenCalledTimes(1);
+		expect(getCandleStore().getState().streams["RECOVERYNAMESPACE:1h"]?.listeners.size).toBe(2);
+		streamErrors[0]?.(new Error("socket dropped"));
+		await vi.advanceTimersByTimeAsync(250);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(subscriptionClient.candle).toHaveBeenCalledTimes(2);
+		expect(resetA).toHaveBeenCalledOnce();
+		expect(resetB).toHaveBeenCalledOnce();
+		expect(onRealtimeResetA).toHaveBeenCalledOnce();
+		expect(onRealtimeResetB).toHaveBeenCalledOnce();
+
+		streamListeners[1]?.({
+			t: 60_000,
+			o: "100",
+			h: "105",
+			l: "95",
+			c: "102",
+			v: "1",
+		} as CandleWsEvent);
+		expect(ticksA).toHaveBeenCalledOnce();
+		expect(ticksB).toHaveBeenCalledOnce();
+
+		datafeedA.destroy();
+		streamErrors[1]?.(new Error("socket dropped again"));
+		await vi.advanceTimersByTimeAsync(250);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(subscriptionClient.candle).toHaveBeenCalledTimes(3);
+		expect(resetA).toHaveBeenCalledOnce();
+		expect(resetB).toHaveBeenCalledTimes(2);
+		expect(onRealtimeResetA).toHaveBeenCalledOnce();
+		expect(onRealtimeResetB).toHaveBeenCalledTimes(2);
+
+		streamListeners[2]?.({
+			t: 120_000,
+			o: "102",
+			h: "106",
+			l: "101",
+			c: "104",
+			v: "1",
+		} as CandleWsEvent);
+		expect(ticksA).toHaveBeenCalledOnce();
+		expect(ticksB).toHaveBeenCalledTimes(2);
+
+		datafeedB.destroy();
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(subscriptionClient.unsubscribe).toHaveBeenCalledOnce();
+		getCandleStore().getState().clearLastBar("RECOVERYNAMESPACE:60");
+		randomSpy.mockRestore();
+	});
+
 	it("invalidates realtime caches before requesting a TradingView data reset", async () => {
 		const onRealtimeReset = vi.fn();
 		const throwingReset = vi.fn(() => {
@@ -879,7 +1077,8 @@ describe("TradingView datafeed", () => {
 		datafeed.subscribeBars(oldSymbol, "60" as ResolutionString, vi.fn(), "old-listener", oldReset);
 		await Promise.resolve();
 		await Promise.resolve();
-		const oldRecoveryReset = getCandleStore().getState().streams["OLD:1h"]?.listeners.get("old-listener")?.onResetCache;
+		const oldRecoveryReset = getCandleStore().getState().streams["OLD:1h"]?.listeners.values().next()
+			.value?.onResetCache;
 		expect(oldRecoveryReset).toBeTypeOf("function");
 
 		target = { coin: "NEW", resolution: "5" as ResolutionString };
