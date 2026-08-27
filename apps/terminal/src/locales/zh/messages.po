@@ -1178,6 +1178,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -1466,6 +1467,7 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -2073,7 +2075,8 @@ msgstr "连接中"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "连接中..."
@@ -7765,6 +7768,7 @@ msgstr "部分订单已被接受。重试前请检查当前委托。"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "出错了"
@@ -9563,6 +9567,7 @@ msgid "Triggered"
 msgstr "已触发"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "重试"

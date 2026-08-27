@@ -12,6 +12,8 @@ const testState = vi.hoisted(() => ({
 	ensName: undefined as string | undefined,
 	hasWalletAccess: false,
 	isConnected: false,
+	isMobile: false,
+	isMobileQrSurface: false,
 	login: vi.fn(),
 	mobileSyncModalModuleGate: null as Promise<void> | null,
 	mobileSyncModalModuleReady: null as (() => void) | null,
@@ -26,12 +28,44 @@ const testState = vi.hoisted(() => ({
 	walletModalModuleReady: null as (() => void) | null,
 	walletModalModuleLoads: 0,
 	walletModalMounts: 0,
+	walletModalPreloadFailure: undefined as Error | undefined,
+	walletModalPreloads: 0,
+	walletModalWrapperFailures: 0,
 	walletsReady: true,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
+type TestLazyComponent = ((props: Record<string, unknown>) => ReactNode) & {
+	preload?: () => Promise<unknown>;
+};
+
 vi.mock("@gatu/ui", () => ({
+	AdaptiveModal: ({
+		children,
+		closeLabel,
+		onOpenChange,
+		open,
+		presentation,
+	}: {
+		children: ReactNode;
+		closeLabel?: string;
+		onOpenChange: (open: boolean) => void;
+		open: boolean;
+		presentation?: "auto" | "drawer" | "modal";
+	}) =>
+		open
+			? createElement(
+					"div",
+					{ "aria-modal": "true", "data-presentation": presentation, role: "dialog" },
+					children,
+					createElement(
+						"button",
+						{ "aria-label": closeLabel, onClick: () => onOpenChange(false), type: "button" },
+						closeLabel,
+					),
+				)
+			: null,
 	Button: ({
 		children,
 		className,
@@ -72,6 +106,10 @@ vi.mock("@gatu/ui", () => ({
 				),
 			),
 		),
+	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalFooter: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalHeader: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
 vi.mock("@lingui/react/macro", () => ({
@@ -94,6 +132,11 @@ vi.mock("wagmi", () => ({
 
 vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
 	useCopyToClipboard: () => ({ copied: false, copy: vi.fn() }),
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => testState.isMobile,
+	useIsMobileQrSurface: () => testState.isMobileQrSurface,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -120,60 +163,104 @@ vi.mock("@/lib/wallet/privy-wagmi", () => ({
 	getPrivyEmailAddress: () => testState.emailAddress,
 }));
 
-vi.mock("@/components/trade/components/mobile-agent-sync-modal", async () => {
-	testState.mobileSyncModalModuleLoads += 1;
-	await testState.mobileSyncModalModuleGate;
-	testState.mobileSyncModalModuleReady?.();
+vi.mock("@/lib/error-reporting/client", () => ({
+	reportClientError: vi.fn(),
+}));
+
+vi.mock("@/lib/lazy", async () => {
+	const actual = await vi.importActual<typeof import("@/lib/lazy")>("@/lib/lazy");
 	return {
-		MobileAgentSyncModal: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
-			useEffect(() => {
-				testState.mobileSyncModalMounts += 1;
-				return () => {
-					testState.mobileSyncModalUnmounts += 1;
+		...actual,
+		createLazyComponent(importer: () => Promise<Record<string, unknown>>, exportName: string) {
+			const gatedImporter = async () => {
+				if (exportName === "WalletModal") {
+					testState.walletModalModuleLoads += 1;
+					await testState.walletModalModuleGate;
+				} else if (exportName === "MobileAgentSyncModal") {
+					testState.mobileSyncModalModuleLoads += 1;
+					await testState.mobileSyncModalModuleGate;
+				}
+
+				const module = await importer();
+				if (exportName === "WalletModal") testState.walletModalModuleReady?.();
+				if (exportName === "MobileAgentSyncModal") testState.mobileSyncModalModuleReady?.();
+				return module;
+			};
+			const LazyComponent = Reflect.apply(actual.createLazyComponent, undefined, [
+				gatedImporter,
+				exportName,
+			]) as TestLazyComponent;
+			if (exportName === "WalletModal") {
+				let preloadFailure: Error | undefined;
+				const TestWalletModal = (props: Record<string, unknown>) => {
+					if (preloadFailure) throw preloadFailure;
+					return createElement(LazyComponent, props);
 				};
-			}, []);
-			testState.mobileSyncModalOpen = open;
-			return open
-				? createElement("button", {
-						"data-testid": "mobile-sync-modal",
-						onClick: () => onOpenChange(false),
-						type: "button",
-					})
-				: null;
+				return Object.assign(TestWalletModal, {
+					preload: async () => {
+						if (testState.walletModalWrapperFailures > 0) {
+							testState.walletModalWrapperFailures -= 1;
+							testState.walletModalPreloads += 1;
+							preloadFailure = testState.walletModalPreloadFailure;
+							return;
+						}
+						await LazyComponent.preload?.();
+					},
+				});
+			}
+			return LazyComponent;
 		},
 	};
 });
 
-vi.mock("@/components/trade/components/wallet-modal", async () => {
-	testState.walletModalModuleLoads += 1;
-	await testState.walletModalModuleGate;
-	testState.walletModalModuleReady?.();
-	return {
-		WalletModal: ({ open }: { open: boolean }) => {
-			useEffect(() => {
-				testState.walletModalMounts += 1;
-			}, []);
-			testState.walletModalOpen = open;
-			return open ? createElement("div", { "data-testid": "wallet-modal" }) : null;
-		},
-	};
-});
+vi.mock("@/components/trade/components/mobile-agent-sync-modal", () => ({
+	MobileAgentSyncModal: ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+		useEffect(() => {
+			testState.mobileSyncModalMounts += 1;
+			return () => {
+				testState.mobileSyncModalUnmounts += 1;
+			};
+		}, []);
+		testState.mobileSyncModalOpen = open;
+		return open
+			? createElement("button", {
+					"data-testid": "mobile-sync-modal",
+					onClick: () => onOpenChange(false),
+					type: "button",
+				})
+			: null;
+	},
+}));
 
-import { UserMenu } from "@/components/trade/header/user-menu";
+vi.mock("@/components/trade/components/wallet-modal", () => ({
+	WalletModal: ({ open }: { open: boolean }) => {
+		useEffect(() => {
+			testState.walletModalMounts += 1;
+		}, []);
+		testState.walletModalOpen = open;
+		return open ? createElement("div", { "data-testid": "wallet-modal" }) : null;
+	},
+}));
+
+let UserMenu: typeof import("@/components/trade/header/user-menu").UserMenu;
+let UserMenuModalLoadError: typeof import("@/components/trade/header/user-menu-modal-load").UserMenuModalLoadError;
 
 describe("UserMenu", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		testState.authenticated = false;
 		testState.displayAddress = undefined;
 		testState.emailAddress = undefined;
 		testState.ensName = undefined;
 		testState.hasWalletAccess = false;
 		testState.isConnected = false;
+		testState.isMobile = false;
+		testState.isMobileQrSurface = false;
 		testState.mobileSyncModalModuleGate = null;
 		testState.mobileSyncModalModuleReady = null;
+		testState.mobileSyncModalModuleLoads = 0;
 		testState.mobileSyncModalMounts = 0;
 		testState.mobileSyncModalOpen = false;
 		testState.mobileSyncModalUnmounts = 0;
@@ -186,8 +273,17 @@ describe("UserMenu", () => {
 		testState.walletModalOpen = false;
 		testState.walletModalModuleGate = null;
 		testState.walletModalModuleReady = null;
+		testState.walletModalModuleLoads = 0;
 		testState.walletModalMounts = 0;
+		testState.walletModalPreloadFailure = undefined;
+		testState.walletModalPreloads = 0;
+		testState.walletModalWrapperFailures = 0;
 		testState.walletsReady = true;
+		vi.resetModules();
+		[{ UserMenu }, { UserMenuModalLoadError }] = await Promise.all([
+			import("@/components/trade/header/user-menu"),
+			import("@/components/trade/header/user-menu-modal-load"),
+		]);
 	});
 
 	afterEach(() => {
@@ -198,6 +294,7 @@ describe("UserMenu", () => {
 
 	it("loads the shared wallet modal on demand without waiting for unauthenticated wallet connectors", async () => {
 		testState.walletsReady = false;
+		testState.isMobileQrSurface = true;
 		let releaseModule: (() => void) | undefined;
 		let markModuleReady: (() => void) | undefined;
 		testState.walletModalModuleGate = new Promise((resolve) => {
@@ -219,6 +316,7 @@ describe("UserMenu", () => {
 		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
 			"Connecting...",
 		);
+		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
 
 		await act(async () => {
 			releaseModule?.();
@@ -233,11 +331,51 @@ describe("UserMenu", () => {
 		expect(testState.login).not.toHaveBeenCalled();
 	});
 
+	it("contains a poisoned preload locally and retries the wallet modal without replacing the terminal", async () => {
+		testState.walletModalWrapperFailures = 1;
+		testState.walletModalPreloadFailure = new UserMenuModalLoadError(new Error("simulated wallet modal chunk failure"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		await act(async () => {
+			root.render(
+				createElement(
+					Fragment,
+					null,
+					createElement("button", { "data-testid": "terminal-control", type: "button" }, "Terminal control"),
+					createElement(UserMenu),
+				),
+			);
+		});
+
+		const connectWallet = findButtonByText(container, "Connect Wallet");
+		act(() => connectWallet.focus());
+		expect(testState.walletModalPreloads).toBe(1);
+
+		act(() => connectWallet.click());
+		await vi.waitFor(() => expect(findButtonByText(container, "Try again")).not.toBeNull());
+		expect(container.querySelector('[data-testid="terminal-control"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("simulated wallet modal chunk failure");
+
+		let markModuleReady: (() => void) | undefined;
+		const moduleReady = new Promise<void>((resolve) => {
+			markModuleReady = resolve;
+		});
+		testState.walletModalModuleReady = () => markModuleReady?.();
+		await act(async () => {
+			findButtonByText(container, "Try again").click();
+			await moduleReady;
+		});
+		await vi.waitFor(() => expect(container.querySelector('[data-testid="wallet-modal"]')).not.toBeNull());
+		expect(container.querySelector('[data-testid="terminal-control"]')).not.toBeNull();
+		expect(testState.walletModalMounts).toBe(1);
+	});
+
 	it("loads mobile sync on demand and keeps its recovery host mounted after close and remount", async () => {
 		testState.authenticated = true;
 		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
 		testState.hasWalletAccess = true;
 		testState.isConnected = true;
+		testState.isMobile = true;
 		testState.sessionMode = "wallet";
 		let releaseModule: (() => void) | undefined;
 		let markModuleReady: (() => void) | undefined;
@@ -261,6 +399,7 @@ describe("UserMenu", () => {
 		expect(container.querySelector('[data-testid="user-menu-modal-loading-fallback"]')?.textContent).toContain(
 			"Connecting...",
 		);
+		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
 
 		await act(async () => {
 			releaseModule?.();

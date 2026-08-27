@@ -5,40 +5,28 @@ import { Suspense, useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
+import { UserMenuModalErrorBoundary, UserMenuModalLoadingFallback } from "./user-menu-modal-boundary";
+import { loadUserMenuModalModule } from "./user-menu-modal-load";
 
-const MobileAgentSyncModal = createLazyComponent(
-	() => import("../components/mobile-agent-sync-modal"),
+// Keep successful loads across UserMenu remounts; replace only a wrapper that cached a tagged import failure.
+let MobileAgentSyncModal = createLazyComponent(
+	() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
 	"MobileAgentSyncModal",
 );
-const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
-
+let WalletModal = createLazyComponent(
+	() => loadUserMenuModalModule(() => import("../components/wallet-modal")),
+	"WalletModal",
+);
 let shouldKeepMobileSyncModalMounted = false;
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
-
-function UserMenuModalLoadingFallback() {
-	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-scrim"
-			data-testid="user-menu-modal-loading-fallback"
-			aria-busy="true"
-		>
-			<output
-				className="flex items-center gap-2 rounded-12 border border-stroke-weak bg-modal px-4 py-3 text-sm text-fg shadow-overlay"
-				aria-live="polite"
-			>
-				<SpinnerGapIcon className="size-4 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
-				<Trans>Connecting...</Trans>
-			</output>
-		</div>
-	);
-}
 
 interface Props {
 	variant?: "default" | "desktop-nav";
@@ -54,9 +42,13 @@ export function UserMenu({ variant = "default" }: Props) {
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
 	const [hasOpenedMobileSync, setHasOpenedMobileSync] = useState(() => shouldKeepMobileSyncModalMounted);
+	const [mobileSyncLoadAttempt, setMobileSyncLoadAttempt] = useState(0);
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
+	const [walletModalLoadAttempt, setWalletModalLoadAttempt] = useState(0);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
+	const isMobile = useIsMobile();
+	const isMobileQrSurface = useIsMobileQrSurface();
 	const isDesktopNav = variant === "desktop-nav";
 
 	useEffect(() => {
@@ -65,6 +57,32 @@ export function UserMenu({ variant = "default" }: Props) {
 
 	const walletSessionLoading =
 		sessionMode !== "agent-only" && (!ready || isConnecting || isReconnecting || (authenticated && !walletsReady));
+
+	function handleWalletModalErrorOpenChange(open: boolean) {
+		setWalletModalOpen(open);
+		if (!open) resetWalletModalLoad();
+	}
+
+	function handleMobileSyncErrorOpenChange(open: boolean) {
+		setMobileSyncOpen(open);
+		if (!open) resetMobileSyncLoad();
+	}
+
+	function resetWalletModalLoad() {
+		WalletModal = createLazyComponent(
+			() => loadUserMenuModalModule(() => import("../components/wallet-modal")),
+			"WalletModal",
+		);
+		setWalletModalLoadAttempt((attempt) => attempt + 1);
+	}
+
+	function resetMobileSyncLoad() {
+		MobileAgentSyncModal = createLazyComponent(
+			() => loadUserMenuModalModule(() => import("../components/mobile-agent-sync-modal")),
+			"MobileAgentSyncModal",
+		);
+		setMobileSyncLoadAttempt((attempt) => attempt + 1);
+	}
 
 	if (!mounted || walletSessionLoading) {
 		return (
@@ -114,9 +132,25 @@ export function UserMenu({ variant = "default" }: Props) {
 					</span>
 				</Button>
 				{walletModalOpen && (
-					<Suspense fallback={<UserMenuModalLoadingFallback />}>
-						<WalletModal open onOpenChange={setWalletModalOpen} />
-					</Suspense>
+					<UserMenuModalErrorBoundary
+						key={walletModalLoadAttempt}
+						onOpenChange={handleWalletModalErrorOpenChange}
+						onRetry={resetWalletModalLoad}
+						open
+						presentation={isMobileQrSurface ? "drawer" : "modal"}
+					>
+						<Suspense
+							fallback={
+								<UserMenuModalLoadingFallback
+									onOpenChange={setWalletModalOpen}
+									open
+									presentation={isMobileQrSurface ? "drawer" : "modal"}
+								/>
+							}
+						>
+							<WalletModal open onOpenChange={setWalletModalOpen} />
+						</Suspense>
+					</UserMenuModalErrorBoundary>
 				)}
 			</>
 		);
@@ -258,9 +292,25 @@ export function UserMenu({ variant = "default" }: Props) {
 				]}
 			/>
 			{hasOpenedMobileSync && (
-				<Suspense fallback={<UserMenuModalLoadingFallback />}>
-					<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
-				</Suspense>
+				<UserMenuModalErrorBoundary
+					key={mobileSyncLoadAttempt}
+					onOpenChange={handleMobileSyncErrorOpenChange}
+					onRetry={resetMobileSyncLoad}
+					open={mobileSyncOpen}
+					presentation={isMobile ? "drawer" : "modal"}
+				>
+					<Suspense
+						fallback={
+							<UserMenuModalLoadingFallback
+								onOpenChange={setMobileSyncOpen}
+								open={mobileSyncOpen}
+								presentation={isMobile ? "drawer" : "modal"}
+							/>
+						}
+					>
+						<MobileAgentSyncModal open={mobileSyncOpen} onOpenChange={setMobileSyncOpen} />
+					</Suspense>
+				</UserMenuModalErrorBoundary>
 			)}
 		</>
 	);

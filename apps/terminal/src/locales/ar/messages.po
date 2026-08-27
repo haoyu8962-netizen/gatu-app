@@ -1297,6 +1297,7 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -1581,6 +1582,7 @@ msgstr "انقر للإرسال · لا يمكن التراجع عن الصفق�
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -2208,7 +2210,8 @@ msgstr "جارٍ الاتصال"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "جارٍ الاتصال..."
@@ -8373,6 +8376,7 @@ msgstr "تم قبول بعض الأوامر. راجع الأوامر المفت�
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "حدث خطأ ما"
@@ -10247,6 +10251,7 @@ msgid "Triggered"
 msgstr "تم التفعيل"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "حاول مرة أخرى"

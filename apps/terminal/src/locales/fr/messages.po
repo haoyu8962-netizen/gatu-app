@@ -1297,6 +1297,7 @@ msgstr "Aperçu caméra pour le QR du portefeuille de bureau"
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -1581,6 +1582,7 @@ msgstr "Cliquez pour envoyer · Les transactions exécutées sont irréversibles
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
@@ -2208,7 +2210,8 @@ msgstr "Connexion"
 
 #: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "Connexion..."
@@ -8373,6 +8376,7 @@ msgstr "Certains ordres ont été acceptés. Vérifiez les ordres ouverts avant 
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
 msgid "Something went wrong"
 msgstr "Une erreur s'est produite"
@@ -10247,6 +10251,7 @@ msgid "Triggered"
 msgstr "Déclenché"
 
 #: src/components/leaderboard/leaderboard-view.tsx
+#: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Try again"
 msgstr "Réessayer"
