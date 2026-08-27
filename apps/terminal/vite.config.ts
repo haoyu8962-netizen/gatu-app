@@ -9,9 +9,18 @@ import { defineConfig, type Plugin, type PluginOption } from 'vite'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { lingui } from '@lingui/vite-plugin'
 import { visualizer } from 'rollup-plugin-visualizer'
+import {
+  createClientChunkGraph,
+  removeClientChunkGraphFile,
+  resolveClientChunkGraphCacheFile,
+  writeClientChunkGraphFile,
+} from '../../scripts/client-chunk-graph.mjs'
 import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
 
 const isAnalyze = process.env.ANALYZE === 'true'
+const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url))
+const terminalDirectory = fileURLToPath(new URL('.', import.meta.url))
+const clientChunkGraphCacheFile = resolveClientChunkGraphCacheFile(terminalDirectory)
 const terminalPackage = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   version: string
 }
@@ -22,11 +31,28 @@ function resolveBuildSha() {
 
   try {
     return execFileSync('git', ['rev-parse', 'HEAD'], {
-      cwd: fileURLToPath(new URL('../..', import.meta.url)),
+      cwd: repositoryRoot,
       encoding: 'utf8',
     }).trim()
   } catch {
     return 'dev'
+  }
+}
+
+function createClientChunkGraphPlugin(): Plugin {
+  return {
+    name: 'gatu-client-chunk-graph',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    buildStart() {
+      removeClientChunkGraphFile(clientChunkGraphCacheFile)
+    },
+    writeBundle(_options, bundle) {
+      writeClientChunkGraphFile(
+        clientChunkGraphCacheFile,
+        createClientChunkGraph(bundle, repositoryRoot),
+      )
+    },
   }
 }
 
@@ -132,6 +158,7 @@ const config = defineConfig({
   },
   plugins: [
     createReferralJoinDevRequestGuard(),
+    createClientChunkGraphPlugin(),
     nitro({
       compressPublicAssets: true,
       publicAssets: [
