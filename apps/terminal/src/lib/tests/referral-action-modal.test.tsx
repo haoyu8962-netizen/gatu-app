@@ -46,7 +46,7 @@ describe("ReferralActionModal invitation flow", () => {
 			root.render(
 				<ReferralActionModal
 					action="apply"
-					claimableRewards={[]}
+					unclaimedRewards={[]}
 					initialCode="gatuappweb3"
 					onClose={vi.fn()}
 					onSubmit={onSubmit}
@@ -73,7 +73,7 @@ describe("ReferralActionModal invitation flow", () => {
 			root.render(
 				<ReferralActionModal
 					action="apply"
-					claimableRewards={[]}
+					unclaimedRewards={[]}
 					initialCode="ExactCode"
 					onClose={onClose}
 					onSubmit={onSubmit}
@@ -89,5 +89,39 @@ describe("ReferralActionModal invitation flow", () => {
 		expect(onClose).toHaveBeenCalledOnce();
 		expect(onSubmit).not.toHaveBeenCalled();
 		expect(container.querySelector("input")).toBeNull();
+	});
+
+	it("reviews the unclaimed balance and submits a claim without displaying other reward fields", async () => {
+		const onSubmit = vi.fn().mockResolvedValue(undefined);
+		await act(async () => {
+			root.render(
+				<ReferralActionModal
+					action="claim"
+					unclaimedRewards={[
+						{
+							builderRewards: "4.75",
+							claimedRewards: "9.5",
+							cumVlm: "100",
+							name: "USDC",
+							tokenId: 0,
+							unclaimedRewards: "1.25",
+							weiDecimals: 6,
+						},
+					]}
+					onClose={vi.fn()}
+					onSubmit={onSubmit}
+				/>,
+			);
+		});
+
+		expect(container.textContent).toContain("1.25");
+		expect(container.textContent).not.toContain("9.5");
+		expect(container.textContent).not.toContain("4.75");
+
+		const claim = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Claim all");
+		if (!claim) throw new Error("Claim button was not rendered");
+		await act(async () => claim.click());
+
+		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("claim", undefined);
 	});
 });

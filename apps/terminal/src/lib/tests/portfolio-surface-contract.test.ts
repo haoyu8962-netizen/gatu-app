@@ -10,8 +10,13 @@ const DEPOSIT_MODAL = readFileSync(resolve(TEST_DIR, "../..", "components/trade/
 
 describe("portfolio surface contract", () => {
 	it("keeps the portfolio canvas separate from its raised content panels", () => {
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-portfolio-canvas")).toBe("#f1f3f6");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-portfolio-canvas")).toBe("#04251f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-dashboard-canvas")).toBe("#f1f3f6");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-dashboard-canvas")).toBe("#04251f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-portfolio-canvas")).toBe("var(--bg-dashboard-canvas)");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-portfolio-canvas")).toBe("var(--bg-dashboard-canvas)");
+		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-dashboard-canvas")).toBe(
+			"var(--bg-dashboard-canvas)",
+		);
 		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-portfolio-canvas")).toBe(
 			"var(--bg-portfolio-canvas)",
 		);

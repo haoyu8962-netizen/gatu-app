@@ -123,7 +123,6 @@ export interface ReferralTokenMetadata {
 
 export interface ReferralRewardRow {
 	builderRewards: string;
-	claimableRewards: string;
 	claimedRewards: string;
 	cumVlm: string;
 	name: string;
@@ -177,18 +176,17 @@ export function buildReferralRewardRows(
 ): ReferralRewardRow[] {
 	return data.tokenToState.map(([tokenId, state]) => ({
 		...state,
-		claimableRewards: state.unclaimedRewards,
 		name: tokens?.get(tokenId)?.name ?? `Token #${tokenId}`,
 		tokenId,
 		weiDecimals: tokens?.get(tokenId)?.weiDecimals ?? null,
 	}));
 }
 
-export function hasClaimableReferralRewards(data: ReferralData): boolean {
+export function hasUnclaimedReferralRewards(data: ReferralData): boolean {
 	return data.tokenToState.some(([, state]) => Big(state.unclaimedRewards).gt(0));
 }
 
-export function getClaimableReferralRewardRows(rows: readonly ReferralRewardRow[]): ReferralRewardRow[] {
+export function getUnclaimedReferralRewardRows(rows: readonly ReferralRewardRow[]): ReferralRewardRow[] {
 	return rows.filter((row) => Big(row.unclaimedRewards).gt(0));
 }
 

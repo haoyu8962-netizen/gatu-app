@@ -618,8 +618,8 @@ msgstr "Toutes les positions en marge croisée partagent la même marge croisée
 #~ msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "All currently available referral rewards are claimed to your Spot balance."
-msgstr "Toutes les récompenses de parrainage actuellement disponibles sont versées sur votre solde Spot."
+#~ msgid "All currently available referral rewards are claimed to your Spot balance."
+#~ msgstr "Toutes les récompenses de parrainage actuellement disponibles sont versées sur votre solde Spot."
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
@@ -1223,13 +1223,21 @@ msgstr "Échec du bridge"
 #~ msgid "Builder must have at least 100 USDC in perps account value"
 #~ msgstr ""
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards (cumulative)"
+msgstr "Récompenses Builder (cumulées)"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards are a cumulative source breakdown, not an additional reward balance."
+msgstr "Les récompenses Builder sont une ventilation cumulée par source, et non un solde de récompenses supplémentaire."
+
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Builder rewards are shown below"
 #~ msgstr "Les récompenses de Builder sont affichées ci-dessous"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
-msgstr "Les totaux Builder correspondent à une attribution cumulée et ne s’ajoutent pas aux récompenses réclamables."
+#~ msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
+#~ msgstr "Les totaux Builder correspondent à une attribution cumulée et ne s’ajoutent pas aux récompenses réclamables."
 
 #: src/config/nav.tsx
 #~ msgid "Builders"
@@ -1515,14 +1523,18 @@ msgid "Claim all"
 msgstr "Tout réclamer"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Claim all available rewards"
-msgstr "Réclamer toutes les récompenses disponibles"
+#~ msgid "Claim all available rewards"
+#~ msgstr "Réclamer toutes les récompenses disponibles"
 
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-rewards-card.tsx
+#: src/components/referrals/referral-dashboard.tsx
 msgid "Claim rewards"
 msgstr "Réclamer les récompenses"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Claimed"
+msgstr "Réclamé"
 
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Claimed and unclaimed"
@@ -2365,7 +2377,6 @@ msgid "Create a TWAP order from Advanced order settings to execute it in smaller
 msgstr "Créez un ordre TWAP depuis les paramètres d'ordre avancés pour l'exécuter en plus petits lots."
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Create code"
 msgstr "Créer un code"
 
@@ -2477,8 +2488,8 @@ msgstr "CSV exporté."
 #~ msgstr ""
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Cumulative builder"
-msgstr "Builder cumulé"
+#~ msgid "Cumulative builder"
+#~ msgstr "Builder cumulé"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3124,7 +3135,6 @@ msgid "Enter a valid trigger price using the market's price precision."
 msgstr "Saisissez un prix de déclenchement valide selon la précision de prix du marché."
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Enter code"
 msgstr "Saisir le code"
 
@@ -4155,6 +4165,10 @@ msgstr ""
 msgid "Hyperliquid testnet account"
 msgstr ""
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Hyperliquid verifies the listed unclaimed rewards and credits eligible rewards to your Spot balance."
+msgstr "Hyperliquid vérifie les récompenses non réclamées affichées et crédite les récompenses admissibles sur votre solde Spot."
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "Hyperliquid débloquera la création du code une fois le volume requis confirmé."
@@ -4285,6 +4299,10 @@ msgstr "Adresse de destination invalide"
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Invalid funding history address"
 #~ msgstr ""
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Invitation ready to review"
+msgstr "Invitation prête à être vérifiée"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -4460,6 +4478,10 @@ msgstr "Levier"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "L'effet de levier est fixé à {currentLeverage}× pour ce marché."
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Lifetime USDC rewards"
+msgstr "Récompenses USDC cumulées"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Light"
@@ -5772,6 +5794,10 @@ msgstr "Aucun historique TWAP trouvé."
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "Aucun ordre TWAP trouvé."
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "No unclaimed rewards are currently available."
+msgstr "Aucune récompense non réclamée n’est disponible actuellement."
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "No user address"
@@ -7500,8 +7526,7 @@ msgstr "Examinez et importez la clé de trading approuvée sur ordinateur. Aucun
 msgid "Review fresh API wallet data before creating another signed request."
 msgstr ""
 
-#: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-code-card.tsx
 msgid "Review invitation"
 msgstr "Examiner l’invitation"
 
@@ -7532,6 +7557,10 @@ msgstr ""
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "Avant de négocier, consultez les informations disponibles sur le déployeur et nos <0>Conditions d’utilisation</0>."
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Review the code from this invitation before applying it."
+msgstr "Vérifiez le code de cette invitation avant de l’appliquer."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
@@ -9411,8 +9440,12 @@ msgid "The wallet session could not be closed, but the local trading key was rem
 msgstr "La session du portefeuille n'a pas pu être fermée, mais la clé de trading locale a été supprimée. Réessayez de déconnecter le portefeuille."
 
 #: src/lib/errors/format.ts
-msgid "There are no eligible rewards available to claim."
-msgstr "Aucune récompense éligible n’est disponible à la réclamation."
+#~ msgid "There are no eligible rewards available to claim."
+#~ msgstr "Aucune récompense éligible n’est disponible à la réclamation."
+
+#: src/lib/errors/format.ts
+msgid "There are no unclaimed rewards available to claim."
+msgstr "Aucune récompense non réclamée n’est disponible."
 
 #: src/lib/errors/format.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9848,8 +9881,8 @@ msgstr "Total"
 #~ msgstr "Solde total"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Total claimable"
-msgstr "Total à réclamer"
+#~ msgid "Total claimable"
+#~ msgstr "Total à réclamer"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -9877,6 +9910,10 @@ msgstr "Offre totale"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
 msgstr "Durée totale"
+
+#: src/components/referrals/referral-summary-cards.tsx
+#~ msgid "Total USDC rewards"
+#~ msgstr "Total des récompenses en USDC"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Total Value"
@@ -10509,6 +10546,10 @@ msgstr "Indisponible"
 msgid "Unclaimed"
 msgstr "Non réclamé"
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Unclaimed USDC"
+msgstr "USDC non réclamés"
+
 #: src/components/vaults/vaults-list.tsx
 #~ msgid "Unclassified Vaults"
 #~ msgstr ""
@@ -10669,8 +10710,8 @@ msgid "USDC Amount"
 msgstr "Montant en USDC"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC claimable"
-msgstr "USDC à réclamer"
+#~ msgid "USDC claimable"
+#~ msgstr "USDC à réclamer"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
@@ -10685,8 +10726,8 @@ msgstr "USDC sur HyperCore"
 #~ msgstr "USDC reçu. Dépôt sur Hyperliquid..."
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC rewards"
-msgstr "Récompenses en USDC"
+#~ msgid "USDC rewards"
+#~ msgstr "Récompenses en USDC"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

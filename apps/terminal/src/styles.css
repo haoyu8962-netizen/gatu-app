@@ -204,7 +204,8 @@
     --bg-sunken: #f5f6fa;
     --bg-alternate: #f5f6fa;
     --bg-grid-container: #f1f3f6;
-    --bg-portfolio-canvas: #f1f3f6;
+    --bg-dashboard-canvas: #f1f3f6;
+    --bg-portfolio-canvas: var(--bg-dashboard-canvas);
     --bg-brand: var(--action);
     --bg-inverse: #12131a;
 
@@ -394,7 +395,8 @@
     --bg-sunken: #000000;
     --bg-alternate: #0f1a1f;
     --bg-grid-container: #1b2429;
-    --bg-portfolio-canvas: #04251f;
+    --bg-dashboard-canvas: #04251f;
+    --bg-portfolio-canvas: var(--bg-dashboard-canvas);
     --bg-brand: var(--action);
     --bg-inverse: #ffffff;
 
@@ -568,6 +570,7 @@
   --color-sunken: var(--bg-sunken);
   --color-alternate: var(--bg-alternate);
   --color-grid-container: var(--bg-grid-container);
+  --color-dashboard-canvas: var(--bg-dashboard-canvas);
   --color-portfolio-canvas: var(--bg-portfolio-canvas);
   --color-inverse-surface: var(--bg-inverse);
 

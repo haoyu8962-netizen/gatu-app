@@ -40,8 +40,8 @@ const ERROR_PATTERNS = [
 		message: () => t`Hyperliquid does not currently show this account as eligible to create a referral code.`,
 	},
 	{
-		pattern: /there are no eligible rewards available to claim/i,
-		message: () => t`There are no eligible rewards available to claim.`,
+		pattern: /there are no (?:eligible|unclaimed) rewards available to claim/i,
+		message: () => t`There are no unclaimed rewards available to claim.`,
 	},
 	{
 		pattern: /referral access could not be verified for this account/i,

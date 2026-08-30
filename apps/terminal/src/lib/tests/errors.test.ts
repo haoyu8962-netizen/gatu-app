@@ -33,6 +33,17 @@ describe("errors", () => {
 			"This account is not currently permitted to perform trading actions on Hyperliquid.",
 		);
 	});
+
+	it("maps current and legacy no-reward claim errors to the unclaimed-balance message", () => {
+		for (const wording of [
+			"There are no unclaimed rewards available to claim",
+			"There are no eligible rewards available to claim",
+		]) {
+			expect(formatExchangeActionError(new Error(wording), "Claim failed")).toBe(
+				"There are no unclaimed rewards available to claim.",
+			);
+		}
+	});
 	it("formats nested error details for display", () => {
 		const error = new Error("Base error");
 		(error as { shortMessage?: string }).shortMessage = "Short";

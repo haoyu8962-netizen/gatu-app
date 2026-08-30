@@ -96,13 +96,7 @@ export function ReferralActivity({
 							<p className="text-xs text-fg-muted">
 								<Trans>Recent reward claims could not be verified.</Trans>
 							</p>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="sm"
-								className="mt-3 rounded-[10px]"
-								onClick={onRetryClaimHistory}
-							>
+							<Button variant="outline" intent="neutral" size="sm" className="mt-3" onClick={onRetryClaimHistory}>
 								<Trans>Retry</Trans>
 							</Button>
 						</div>

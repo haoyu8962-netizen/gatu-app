@@ -618,8 +618,8 @@ msgstr "सभी क्रॉस पोज़िशन समान क्र�
 #~ msgstr ""
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "All currently available referral rewards are claimed to your Spot balance."
-msgstr "वर्तमान में उपलब्ध सभी रेफ़रल पुरस्कार आपके Spot बैलेंस में प्राप्त किए जाएंगे।"
+#~ msgid "All currently available referral rewards are claimed to your Spot balance."
+#~ msgstr "वर्तमान में उपलब्ध सभी रेफ़रल पुरस्कार आपके Spot बैलेंस में प्राप्त किए जाएंगे।"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
@@ -1223,13 +1223,21 @@ msgstr "ब्रिज विफल"
 #~ msgid "Builder must have at least 100 USDC in perps account value"
 #~ msgstr ""
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards (cumulative)"
+msgstr "बिल्डर पुरस्कार (संचयी)"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards are a cumulative source breakdown, not an additional reward balance."
+msgstr "बिल्डर पुरस्कार स्रोत के अनुसार संचयी विवरण हैं, अतिरिक्त पुरस्कार बैलेंस नहीं।"
+
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Builder rewards are shown below"
 #~ msgstr "बिल्डर पुरस्कार नीचे दिखाए गए हैं"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
-msgstr "Builder के कुल आंकड़े संचयी एट्रिब्यूशन हैं और उन्हें दावा योग्य रिवॉर्ड में नहीं जोड़ा जाता।"
+#~ msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
+#~ msgstr "Builder के कुल आंकड़े संचयी एट्रिब्यूशन हैं और उन्हें दावा योग्य रिवॉर्ड में नहीं जोड़ा जाता।"
 
 #: src/config/nav.tsx
 #~ msgid "Builders"
@@ -1515,14 +1523,18 @@ msgid "Claim all"
 msgstr "सभी प्राप्त करें"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Claim all available rewards"
-msgstr "सभी उपलब्ध पुरस्कार प्राप्त करें"
+#~ msgid "Claim all available rewards"
+#~ msgstr "सभी उपलब्ध पुरस्कार प्राप्त करें"
 
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-rewards-card.tsx
+#: src/components/referrals/referral-dashboard.tsx
 msgid "Claim rewards"
 msgstr "पुरस्कार प्राप्त करें"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Claimed"
+msgstr "दावा किया गया"
 
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Claimed and unclaimed"
@@ -2365,7 +2377,6 @@ msgid "Create a TWAP order from Advanced order settings to execute it in smaller
 msgstr "छोटे-छोटे बैचों में निष्पादन के लिए उन्नत ऑर्डर सेटिंग्स से TWAP ऑर्डर बनाएं।"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Create code"
 msgstr "कोड बनाएं"
 
@@ -2477,8 +2488,8 @@ msgstr "CSV निर्यात हो गया।"
 #~ msgstr ""
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Cumulative builder"
-msgstr "संचयी Builder"
+#~ msgid "Cumulative builder"
+#~ msgstr "संचयी Builder"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3124,7 +3135,6 @@ msgid "Enter a valid trigger price using the market's price precision."
 msgstr "बाज़ार की मूल्य परिशुद्धता के अनुसार मान्य ट्रिगर मूल्य दर्ज करें।"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Enter code"
 msgstr "कोड दर्ज करें"
 
@@ -4155,6 +4165,10 @@ msgstr ""
 msgid "Hyperliquid testnet account"
 msgstr ""
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Hyperliquid verifies the listed unclaimed rewards and credits eligible rewards to your Spot balance."
+msgstr "Hyperliquid सूचीबद्ध दावा न किए गए पुरस्कारों की पुष्टि करता है और योग्य पुरस्कार आपके Spot बैलेंस में जमा करता है।"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "आवश्यक वॉल्यूम की पुष्टि होने पर Hyperliquid कोड बनाना अनलॉक कर देगा।"
@@ -4285,6 +4299,10 @@ msgstr "गंतव्य पता अमान्य है"
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Invalid funding history address"
 #~ msgstr ""
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Invitation ready to review"
+msgstr "आमंत्रण समीक्षा के लिए तैयार है"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -4460,6 +4478,10 @@ msgstr "Leverage"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "इस बाज़ार के लिए लीवरेज {currentLeverage}× पर निर्धारित है।"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Lifetime USDC rewards"
+msgstr "अब तक के कुल USDC पुरस्कार"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Light"
@@ -5772,6 +5794,10 @@ msgstr "कोई TWAP इतिहास नहीं मिला।"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "कोई TWAP ऑर्डर नहीं मिला।"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "No unclaimed rewards are currently available."
+msgstr "फ़िलहाल दावा न किए गए कोई पुरस्कार उपलब्ध नहीं हैं।"
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "No user address"
@@ -7500,8 +7526,7 @@ msgstr "डेस्कटॉप से स्वीकृत ट्रेडि
 msgid "Review fresh API wallet data before creating another signed request."
 msgstr ""
 
-#: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-code-card.tsx
 msgid "Review invitation"
 msgstr "आमंत्रण की समीक्षा करें"
 
@@ -7532,6 +7557,10 @@ msgstr ""
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "ट्रेडिंग से पहले उपलब्ध डिप्लॉयर जानकारी और हमारी <0>उपयोग की शर्तें</0> देखें।"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Review the code from this invitation before applying it."
+msgstr "इसे लागू करने से पहले इस आमंत्रण के कोड की समीक्षा करें।"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
@@ -9411,8 +9440,12 @@ msgid "The wallet session could not be closed, but the local trading key was rem
 msgstr "वॉलेट सत्र बंद नहीं किया जा सका, लेकिन स्थानीय ट्रेडिंग कुंजी हटा दी गई। वॉलेट डिस्कनेक्ट करने का फिर से प्रयास करें।"
 
 #: src/lib/errors/format.ts
-msgid "There are no eligible rewards available to claim."
-msgstr "प्राप्त करने के लिए कोई पात्र पुरस्कार उपलब्ध नहीं है।"
+#~ msgid "There are no eligible rewards available to claim."
+#~ msgstr "प्राप्त करने के लिए कोई पात्र पुरस्कार उपलब्ध नहीं है।"
+
+#: src/lib/errors/format.ts
+msgid "There are no unclaimed rewards available to claim."
+msgstr "दावा करने के लिए कोई दावा न किया गया पुरस्कार उपलब्ध नहीं है।"
 
 #: src/lib/errors/format.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9848,8 +9881,8 @@ msgstr "कुल"
 #~ msgstr "कुल बैलेंस"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Total claimable"
-msgstr "कुल प्राप्त करने योग्य"
+#~ msgid "Total claimable"
+#~ msgstr "कुल प्राप्त करने योग्य"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -9877,6 +9910,10 @@ msgstr "कुल आपूर्ति"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
 msgstr "कुल समय"
+
+#: src/components/referrals/referral-summary-cards.tsx
+#~ msgid "Total USDC rewards"
+#~ msgstr "कुल USDC पुरस्कार"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Total Value"
@@ -10509,6 +10546,10 @@ msgstr "अनुपलब्ध"
 msgid "Unclaimed"
 msgstr "दावा नहीं किया गया"
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Unclaimed USDC"
+msgstr "दावा न किया गया USDC"
+
 #: src/components/vaults/vaults-list.tsx
 #~ msgid "Unclassified Vaults"
 #~ msgstr ""
@@ -10669,8 +10710,8 @@ msgid "USDC Amount"
 msgstr "USDC राशि"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC claimable"
-msgstr "दावा योग्य USDC"
+#~ msgid "USDC claimable"
+#~ msgstr "दावा योग्य USDC"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
@@ -10685,8 +10726,8 @@ msgstr "HyperCore पर USDC"
 #~ msgstr "USDC मिल गया। Hyperliquid में जमा किया जा रहा है..."
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC rewards"
-msgstr "USDC रिवॉर्ड"
+#~ msgid "USDC rewards"
+#~ msgstr "USDC रिवॉर्ड"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

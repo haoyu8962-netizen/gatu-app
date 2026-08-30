@@ -582,8 +582,8 @@ msgid "All cross positions share the same cross margin as collateral. In the eve
 msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发生强制平仓，您的全仓保证金余额及剩余未平仓仓位都可能被没收。"
 
 #: src/components/referrals/referral-action-modal.tsx
-msgid "All currently available referral rewards are claimed to your Spot balance."
-msgstr "当前所有可领取的推荐奖励都将领取至您的 Spot 余额。"
+#~ msgid "All currently available referral rewards are claimed to your Spot balance."
+#~ msgstr "当前所有可领取的推荐奖励都将领取至您的 Spot 余额。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
@@ -1120,13 +1120,21 @@ msgstr "跨链失败"
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
 
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards (cumulative)"
+msgstr "Builder 奖励（累计）"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Builder rewards are a cumulative source breakdown, not an additional reward balance."
+msgstr "Builder 奖励是累计的来源明细，并非额外的奖励余额。"
+
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Builder rewards are shown below"
 #~ msgstr "Builder 奖励显示在下方"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
-msgstr "Builder 总额是累计归因值，不会加入可领取奖励。"
+#~ msgid "Builder totals are cumulative attribution and are not added to claimable rewards."
+#~ msgstr "Builder 总额是累计归因值，不会加入可领取奖励。"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "buy"
@@ -1400,14 +1408,18 @@ msgid "Claim all"
 msgstr "全部领取"
 
 #: src/components/referrals/referral-dashboard.tsx
-msgid "Claim all available rewards"
-msgstr "领取全部可用奖励"
+#~ msgid "Claim all available rewards"
+#~ msgstr "领取全部可用奖励"
 
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-rewards-card.tsx
+#: src/components/referrals/referral-dashboard.tsx
 msgid "Claim rewards"
 msgstr "领取奖励"
+
+#: src/components/referrals/referral-rewards-card.tsx
+msgid "Claimed"
+msgstr "已领取"
 
 #: src/components/referrals/referral-summary-cards.tsx
 #~ msgid "Claimed and unclaimed"
@@ -2225,7 +2237,6 @@ msgid "Create a TWAP order from Advanced order settings to execute it in smaller
 msgstr "在高级委托设置中创建 TWAP，将委托拆分为较小批次执行。"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Create code"
 msgstr "创建推荐码"
 
@@ -2337,8 +2348,8 @@ msgstr "CSV 已导出。"
 #~ msgstr "CSV 已导出。Hyperliquid 最多提供最近 2,000 条委托记录。"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Cumulative builder"
-msgstr "累计 Builder"
+#~ msgid "Cumulative builder"
+#~ msgstr "累计 Builder"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2936,7 +2947,6 @@ msgid "Enter a valid trigger price using the market's price precision."
 msgstr "请按该市场的价格精度输入有效触发价格。"
 
 #: src/components/referrals/referral-code-card.tsx
-#: src/components/referrals/referral-dashboard.tsx
 msgid "Enter code"
 msgstr "输入推荐码"
 
@@ -3922,6 +3932,10 @@ msgstr ""
 msgid "Hyperliquid testnet account"
 msgstr "Hyperliquid 测试网账户"
 
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Hyperliquid verifies the listed unclaimed rewards and credits eligible rewards to your Spot balance."
+msgstr "Hyperliquid 会核验列出的未领取奖励，并将符合条件的奖励计入您的现货余额。"
+
 #: src/components/referrals/referral-code-card.tsx
 msgid "Hyperliquid will unlock code creation when the required volume is confirmed."
 msgstr "Hyperliquid 确认达到所需成交量后，将解锁推荐码创建功能。"
@@ -4036,6 +4050,10 @@ msgstr "目的地址无效"
 #: src/components/funding-history/funding-history-page.tsx
 #~ msgid "Invalid funding history address"
 #~ msgstr ""
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Invitation ready to review"
+msgstr "已有邀请待审核"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Invite traders"
@@ -4202,6 +4220,10 @@ msgstr "杠杆"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage is fixed at {currentLeverage}× for this market."
 msgstr "该市场的杠杆固定为 {currentLeverage}×。"
+
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Lifetime USDC rewards"
+msgstr "累计 USDC 奖励"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit"
@@ -5417,6 +5439,10 @@ msgstr "未找到 TWAP 历史记录。"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "未找到 TWAP 订单。"
+
+#: src/components/referrals/referral-dashboard.tsx
+msgid "No unclaimed rewards are currently available."
+msgstr "当前没有未领取奖励。"
 
 #: src/components/staking/staking-view.tsx
 msgid "No validator matches the selected status filter."
@@ -6999,8 +7025,7 @@ msgstr "检查并导入桌面端已授权的交易密钥。无需手机钱包。
 msgid "Review fresh API wallet data before creating another signed request."
 msgstr "在创建新的签名请求前，请先查看最新的 API 钱包数据。"
 
-#: src/components/referrals/referral-dashboard.tsx
-#: src/components/referrals/referral-dashboard.tsx
+#: src/components/referrals/referral-code-card.tsx
 msgid "Review invitation"
 msgstr "检查邀请"
 
@@ -7031,6 +7056,10 @@ msgstr "每次下单前检查方向、数量和价格。"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条款</0>。"
+
+#: src/components/referrals/referral-code-card.tsx
+msgid "Review the code from this invitation before applying it."
+msgstr "绑定前请先核对该邀请中的推荐码。"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
@@ -8767,8 +8796,12 @@ msgid "The wallet session could not be closed, but the local trading key was rem
 msgstr "钱包会话未能关闭，但本地交易密钥已移除。请重试断开钱包。"
 
 #: src/lib/errors/format.ts
-msgid "There are no eligible rewards available to claim."
-msgstr "暂无符合条件的可领取奖励。"
+#~ msgid "There are no eligible rewards available to claim."
+#~ msgstr "暂无符合条件的可领取奖励。"
+
+#: src/lib/errors/format.ts
+msgid "There are no unclaimed rewards available to claim."
+msgstr "没有未领取奖励可供领取。"
 
 #: src/lib/errors/format.ts
 msgid "This account already has a referral code and cannot apply another one."
@@ -9184,8 +9217,8 @@ msgstr "合计"
 #~ msgstr "总余额"
 
 #: src/components/referrals/referral-rewards-card.tsx
-msgid "Total claimable"
-msgstr "可领取总额"
+#~ msgid "Total claimable"
+#~ msgstr "可领取总额"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -9213,6 +9246,10 @@ msgstr "总供应量"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
 msgstr "总时长"
+
+#: src/components/referrals/referral-summary-cards.tsx
+#~ msgid "Total USDC rewards"
+#~ msgstr "累计 USDC 奖励"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Total value locked"
@@ -9824,6 +9861,10 @@ msgstr "不可用"
 msgid "Unclaimed"
 msgstr "未领取"
 
+#: src/components/referrals/referral-summary-cards.tsx
+msgid "Unclaimed USDC"
+msgstr "未领取 USDC"
+
 #: src/components/vaults/vaults-list.tsx
 #~ msgid "Unclassified Vaults"
 #~ msgstr "未分类金库"
@@ -9984,8 +10025,8 @@ msgid "USDC Amount"
 msgstr "USDC 金额"
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC claimable"
-msgstr "可领取 USDC"
+#~ msgid "USDC claimable"
+#~ msgstr "可领取 USDC"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"
@@ -10000,8 +10041,8 @@ msgstr "HyperCore 上的 USDC"
 #~ msgstr "已收到 USDC，正在存入 Hyperliquid..."
 
 #: src/components/referrals/referral-summary-cards.tsx
-msgid "USDC rewards"
-msgstr "USDC 奖励"
+#~ msgid "USDC rewards"
+#~ msgstr "USDC 奖励"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"

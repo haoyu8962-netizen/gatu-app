@@ -9,8 +9,9 @@ import {
 	getReferralActivationTargetVolume,
 	getReferralCumulativeVolume,
 	getReferralDiscountPercent,
+	getUnclaimedReferralRewardRows,
 	getUsdcRewardsEarned,
-	hasClaimableReferralRewards,
+	hasUnclaimedReferralRewards,
 	isReferralMutationReconciled,
 	isValidReferralCode,
 	normalizeActiveReferralDiscount,
@@ -216,7 +217,6 @@ describe("referral display derivations", () => {
 		expect(buildReferralRewardRows(data, metadata)).toEqual([
 			{
 				builderRewards: "3.250000000000000001",
-				claimableRewards: "1.000000000000000001",
 				claimedRewards: "2.25",
 				cumVlm: "1200.5",
 				name: "USDC",
@@ -226,8 +226,9 @@ describe("referral display derivations", () => {
 			},
 		]);
 		expect(getUsdcRewardsEarned(data)).toBe("3.250000000000000001");
-		expect(hasClaimableReferralRewards(data)).toBe(true);
-		expect(buildReferralRewardRows(data, metadata)[0]?.claimableRewards).toBe(data.unclaimedRewards);
+		expect(hasUnclaimedReferralRewards(data)).toBe(true);
+		expect(getUnclaimedReferralRewardRows(buildReferralRewardRows(data, metadata))).toHaveLength(1);
+		expect(buildReferralRewardRows(data, metadata)[0]).not.toHaveProperty("claimableRewards");
 	});
 
 	it("uses an explicit fallback for unknown token ids", () => {
@@ -350,18 +351,18 @@ describe("referral display derivations", () => {
 		expect(canApplyReferralCode(createReadyReferralResponse())).toBe(false);
 	});
 
-	it("matches the official terminal by offering claims for positive referral rewards", () => {
+	it("offers a claim action only when the protocol reports positive unclaimed rewards", () => {
 		const data = createReadyReferralResponse();
 		const rewardState = data.tokenToState[0]?.[1];
 		if (!rewardState) throw new Error("Expected reward state fixture");
 		expect(
-			hasClaimableReferralRewards({ ...data, tokenToState: [[0, { ...rewardState, unclaimedRewards: "0" }]] }),
+			hasUnclaimedReferralRewards({ ...data, tokenToState: [[0, { ...rewardState, unclaimedRewards: "0" }]] }),
 		).toBe(false);
 		expect(
-			hasClaimableReferralRewards({ ...data, tokenToState: [[0, { ...rewardState, unclaimedRewards: "0.01" }]] }),
+			hasUnclaimedReferralRewards({ ...data, tokenToState: [[0, { ...rewardState, unclaimedRewards: "0.01" }]] }),
 		).toBe(true);
 		expect(
-			hasClaimableReferralRewards({
+			hasUnclaimedReferralRewards({
 				...data,
 				tokenToState: [[0, { ...rewardState, builderRewards: "0.01", unclaimedRewards: "0" }]],
 			}),

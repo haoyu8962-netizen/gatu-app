@@ -10,7 +10,6 @@ import { useReferralLegalGate } from "@/hooks/trade/use-referral-legal-gate";
 import { useReferrals } from "@/hooks/trade/use-referrals";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useAgentStatus } from "@/lib/hyperliquid";
-import { canApplyReferralCode } from "@/lib/trade/referral";
 import { ReferralActionModal } from "./referral-action-modal";
 import { ReferralActivity } from "./referral-activity";
 import { ReferralCodeCard } from "./referral-code-card";
@@ -44,7 +43,7 @@ function ReferralSurface({
 		<section
 			aria-busy={busy || undefined}
 			aria-labelledby={titleId}
-			className="overflow-hidden rounded-[20px] bg-surface shadow-raised min-[1001px]:rounded-[14px]"
+			className="overflow-hidden rounded-32 bg-surface shadow-raised"
 		>
 			{children}
 		</section>
@@ -54,6 +53,7 @@ function ReferralSurface({
 export function ReferralDashboard({ initialReferralCode }: Props) {
 	const { t } = useLingui();
 	const titleId = useId();
+	const claimStatusId = useId();
 	const [claimHistoryEnabled, setClaimHistoryEnabled] = useState(false);
 	const referrals = useReferrals({ claimHistoryEnabled });
 	const referralActions = useReferralActions(referrals);
@@ -100,71 +100,36 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
 	const readyData =
 		referrals.status === "ready" && referrals.data && referrals.usdcRewardsEarned ? referrals.data : null;
-	const invitationCanBeApplied = Boolean(readyData && initialReferralCode && canApplyReferralCode(readyData));
 	const header = (
 		<div className="flex flex-wrap items-start justify-between gap-3">
 			<div>
-				<h1
-					id={titleId}
-					className="text-[18px] leading-6 font-bold text-fg min-[1001px]:text-lg min-[1001px]:leading-7"
-				>
+				<h1 id={titleId} className="text-lg font-bold text-fg">
 					<Trans>Referrals & rewards</Trans>
 				</h1>
 				<p className="mt-1 max-w-2xl text-xs leading-4 text-fg-muted">
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
 				{initialReferralCode ? (
-					<p className="mt-2 rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2 text-xs text-fg">
+					<p className="mt-2 rounded-20 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs text-fg">
 						<Trans>You were invited with referral code {initialReferralCode}. Review it before applying.</Trans>
 					</p>
 				) : null}
 			</div>
 			{readyData ? (
-				<div className="hidden flex-wrap gap-2 min-[1001px]:flex">
-					{invitationCanBeApplied ? (
-						<Button
-							variant="outline"
-							intent="brand"
-							size="sm"
-							className="rounded-[10px] text-2sm"
-							disabled={actionBusy}
-							onClick={() => void requestAction("apply", initialReferralCode)}
-						>
-							<Trans>Review invitation</Trans>
-						</Button>
-					) : null}
-					{canApplyReferralCode(readyData) && !initialReferralCode ? (
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="sm"
-							className="rounded-[10px] text-2sm"
-							disabled={actionBusy}
-							onClick={() => void requestAction("apply")}
-						>
-							<Trans>Enter code</Trans>
-						</Button>
-					) : null}
-					{readyData.referrerState.stage === "needToCreateCode" ? (
-						<Button
-							variant="outline"
-							intent="brand"
-							size="sm"
-							className="rounded-[10px] text-2sm"
-							disabled={actionBusy}
-							onClick={() => void requestAction("create")}
-						>
-							<Trans>Create code</Trans>
-						</Button>
-					) : null}
+				<div className="hidden flex-col items-end gap-1.5 min-[1001px]:flex">
 					<Button
 						size="sm"
-						className="rounded-[10px] text-2sm"
-						disabled={actionBusy || !referrals.hasClaimableRewards}
+						className="text-2sm"
+						data-referral-claim-surface="desktop"
+						aria-describedby={!referrals.hasUnclaimedRewards ? claimStatusId : undefined}
+						disabled={actionBusy || !referrals.hasUnclaimedRewards}
 						onClick={() => void requestAction("claim")}
 					>
 						<Trans>Claim rewards</Trans>
 					</Button>
+					<p id={claimStatusId} className="min-h-4 text-2xs text-fg-muted">
+						{!referrals.hasUnclaimedRewards ? <Trans>No unclaimed rewards are currently available.</Trans> : null}
+					</p>
 				</div>
 			) : null}
 		</div>
@@ -183,7 +148,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				</p>
 				<Button
 					aria-busy={isReconnecting || undefined}
-					className="mt-5 rounded-[10px]"
+					className="mt-5"
 					disabled={isReconnecting}
 					onClick={() => void reconnectWallet()}
 				>
@@ -202,13 +167,13 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						{[0, 1, 2, 3].map((item) => (
 							<div
 								key={item}
-								className="h-[62px] animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px] min-[1001px]:rounded-[12px]"
+								className="h-[62px] animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px] min-[1001px]:rounded-24"
 							/>
 						))}
 					</div>
 					<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4">
-						<div className="h-72 animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-[12px]" />
-						<div className="h-72 animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-[12px]" />
+						<div className="h-72 animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-24" />
+						<div className="h-72 animate-pulse rounded-20 bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-24" />
 						<div className="h-36 animate-pulse bg-fill-weak motion-reduce:animate-none min-[1001px]:col-span-2" />
 					</div>
 				</div>
@@ -227,7 +192,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				<Button
 					variant="outline"
 					intent="neutral"
-					className="mt-5 rounded-[10px]"
+					className="mt-5"
 					iconLeft={<ArrowClockwiseIcon />}
 					onClick={referrals.retry}
 				>
@@ -257,17 +222,15 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 					<div className="order-1">
 						<ReferralCodeCard
+							actionsDisabled={actionBusy}
 							data={readyData}
+							invitationCode={initialReferralCode}
 							onApplyCode={() => void requestAction("apply", initialReferralCode)}
 							onCreateCode={() => void requestAction("create")}
 						/>
 					</div>
 					<div className="order-3 min-[1001px]:order-2">
-						<ReferralRewardsCard
-							claimDisabled={actionBusy || !referrals.hasClaimableRewards}
-							onClaim={() => void requestAction("claim")}
-							rewards={referrals.rewardRows}
-						/>
+						<ReferralRewardsCard rewards={referrals.rewardRows} />
 					</div>
 					<div className="order-2 -mx-4 min-[1001px]:order-3 min-[1001px]:col-span-2 min-[1001px]:-mx-5">
 						<ReferralActivity
@@ -291,19 +254,15 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				{content}
 			</ReferralSurface>
 
-			{readyData && (invitationCanBeApplied || referrals.hasClaimableRewards) ? (
-				<div className="sticky bottom-0 z-20 mt-2 border-t border-stroke-weak bg-portfolio-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">
+			{readyData && referrals.hasUnclaimedRewards ? (
+				<div className="sticky bottom-0 z-20 mt-2 border-t border-stroke-weak bg-dashboard-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">
 					<Button
-						className="w-full rounded-[12px] text-sm font-bold"
+						className="w-full rounded-24 text-sm font-bold"
+						data-referral-claim-surface="mobile"
 						disabled={actionBusy}
-						onClick={() =>
-							void requestAction(
-								invitationCanBeApplied ? "apply" : "claim",
-								invitationCanBeApplied ? initialReferralCode : undefined,
-							)
-						}
+						onClick={() => void requestAction("claim")}
 					>
-						{invitationCanBeApplied ? <Trans>Review invitation</Trans> : <Trans>Claim all available rewards</Trans>}
+						<Trans>Claim rewards</Trans>
 					</Button>
 				</div>
 			) : null}
@@ -312,7 +271,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 				<ReferralActionModal
 					key={`${visibleAction}:${activeAction?.code ?? "manual"}:${actionIdentityKey}`}
 					action={visibleAction}
-					claimableRewards={referrals.claimableRewardRows}
+					unclaimedRewards={referrals.unclaimedRewardRows}
 					initialCode={activeAction?.code}
 					onClose={() => setActiveAction(null)}
 					onSubmit={referralActions.submit}

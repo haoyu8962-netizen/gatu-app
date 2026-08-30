@@ -29,7 +29,8 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 - `bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
 - `bg-background` default page background (light: `#ffffff`, shared dark default: `#12131a`)
 - `bg-grid-container` terminal desktop grid underlay visible through panel gutters (light: `#f1f3f6`, terminal dark: `#1b2429`)
-- `bg-portfolio-canvas` portfolio page canvas behind summary cards (light: `#f1f3f6`, terminal dark: `#04251f`)
+- `bg-dashboard-canvas` branded data-dashboard canvas behind raised page content (light: `#f1f3f6`, terminal dark: `#04251f`)
+- `bg-portfolio-canvas` compatibility alias for the portfolio page; new dashboard pages should use `bg-dashboard-canvas`
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
 - `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
 - `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`)
@@ -93,6 +94,6 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - `bg-sel` selection highlight
 
 ### Border Radius
-- **Always use `rounded-xs`** as the default radius for buttons, inputs, cards, badges, and all interactive elements.
-- `rounded-4`, `rounded-6`, `rounded-8` etc. map to the radius scale (multiplied by `--radius-factor`).
-- Only deviate for pills/tags (`rounded-full`) or specific design exceptions.
+- Use named radius utilities so `--radius-factor` can tune the product consistently; never use arbitrary pixel radii.
+- Shared controls default to the radius provided by `@gatu/ui` (currently `rounded-8`). Page compositions may use named scale values such as `rounded-20`, `rounded-24`, or `rounded-32` for larger cards and surfaces.
+- Use `rounded-full` only for pills, tags, and circular indicators. Document and test any design exception instead of embedding a raw pixel value.
