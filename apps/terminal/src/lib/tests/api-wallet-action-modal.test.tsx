@@ -144,4 +144,45 @@ describe("API wallet action modal", () => {
 		expect(container.textContent).toContain("Verify again");
 		expect(container.textContent).toContain("Discard local key");
 	});
+
+	it("announces the current, completed, and failed action steps", () => {
+		act(() =>
+			root.render(
+				<ApiWalletActionModal
+					action={createAction({ stage: "submitted", locked: true })}
+					onClose={vi.fn()}
+					onConfirm={vi.fn()}
+					onVerifyAgain={vi.fn()}
+					onTogglePrivateKey={vi.fn()}
+					onDownloadCredential={vi.fn()}
+					onCredentialSavedChange={vi.fn()}
+					onFinish={vi.fn()}
+				/>,
+			),
+		);
+
+		const currentStep = container.querySelector('li[aria-current="step"]');
+		expect(currentStep?.textContent).toContain("Submit");
+		const completedSteps = [...container.querySelectorAll("li")].filter((step) =>
+			step.textContent?.includes("Completed"),
+		);
+		expect(completedSteps).toHaveLength(2);
+
+		act(() =>
+			root.render(
+				<ApiWalletActionModal
+					action={createAction({ stage: "done", result: "apiError", errorMessage: "Rejected" })}
+					onClose={vi.fn()}
+					onConfirm={vi.fn()}
+					onVerifyAgain={vi.fn()}
+					onTogglePrivateKey={vi.fn()}
+					onDownloadCredential={vi.fn()}
+					onCredentialSavedChange={vi.fn()}
+					onFinish={vi.fn()}
+				/>,
+			),
+		);
+		const failedStep = [...container.querySelectorAll("li")].find((step) => step.textContent?.includes("Failed"));
+		expect(failedStep?.textContent).toContain("Submit");
+	});
 });

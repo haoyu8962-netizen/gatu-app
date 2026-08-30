@@ -132,6 +132,41 @@ export type VaultOwnerViewState =
 	| { status: "error" }
 	| VaultOwnerView;
 
+export type VaultRequestUnavailableReason = "geo-checking" | "geo-restricted" | "geo-unavailable";
+
+export type VaultActionUnavailableReason =
+	| VaultRequestUnavailableReason
+	| "deposits-disabled"
+	| "detail-unavailable"
+	| "owner-disconnected"
+	| "owner-error"
+	| "owner-loading"
+	| "vault-closed"
+	| "withdrawal-locked"
+	| "withdrawal-unavailable";
+
+export type VaultActionAvailability =
+	| { available: true; reason: null }
+	| { available: false; reason: VaultActionUnavailableReason };
+
+export interface VaultActionsAvailability {
+	deposit: VaultActionAvailability;
+	withdraw: VaultActionAvailability;
+}
+
+export type VaultRequestAvailability =
+	| { available: true; reason: null }
+	| { available: false; reason: VaultRequestUnavailableReason };
+
+interface VaultGeoAvailabilityInput {
+	country: string | null;
+	isError: boolean;
+	isResolving: boolean;
+	isResolved: boolean;
+	proxy: boolean;
+	tradeRestricted: boolean;
+}
+
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const UNSIGNED_DECIMAL_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const SIGNED_DECIMAL_PATTERN = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
@@ -150,6 +185,57 @@ export function isUnsignedDecimal(value: unknown): value is string {
 
 export function isSignedDecimal(value: unknown): value is string {
 	return typeof value === "string" && SIGNED_DECIMAL_PATTERN.test(value);
+}
+
+export function getVaultRequestAvailability({
+	country,
+	isError,
+	isResolving,
+	isResolved,
+	proxy,
+	tradeRestricted,
+}: VaultGeoAvailabilityInput): VaultRequestAvailability {
+	if (proxy || tradeRestricted) return { available: false, reason: "geo-restricted" };
+	if (isError) return { available: false, reason: "geo-unavailable" };
+	if (!isResolved) {
+		return { available: false, reason: isResolving ? "geo-checking" : "geo-unavailable" };
+	}
+	if (country === null) return { available: false, reason: "geo-unavailable" };
+	return { available: true, reason: null };
+}
+
+export function deriveVaultActionsAvailability({
+	detail,
+	owner,
+	request,
+}: {
+	detail: VaultDetail | null;
+	owner: VaultOwnerViewState;
+	request: VaultRequestAvailability;
+}): VaultActionsAvailability {
+	if (!request.available) {
+		const unavailable = { available: false, reason: request.reason } as const;
+		return { deposit: unavailable, withdraw: unavailable };
+	}
+	if (!detail) {
+		const unavailable = { available: false, reason: "detail-unavailable" } as const;
+		return { deposit: unavailable, withdraw: unavailable };
+	}
+
+	const deposit: VaultActionAvailability = detail.isClosed
+		? { available: false, reason: "vault-closed" }
+		: detail.allowDeposits
+			? { available: true, reason: null }
+			: { available: false, reason: "deposits-disabled" };
+	let withdraw: VaultActionAvailability;
+	if (owner.status === "disconnected") withdraw = { available: false, reason: "owner-disconnected" };
+	else if (owner.status === "loading") withdraw = { available: false, reason: "owner-loading" };
+	else if (owner.status === "error") withdraw = { available: false, reason: "owner-error" };
+	else if (owner.isLocked) withdraw = { available: false, reason: "withdrawal-locked" };
+	else if (!owner.canWithdraw) withdraw = { available: false, reason: "withdrawal-unavailable" };
+	else withdraw = { available: true, reason: null };
+
+	return { deposit, withdraw };
 }
 
 export function selectVaultRows({ rows, filter, query, account }: VaultListSelectionInput): VaultListSelection {
@@ -465,6 +551,12 @@ export function formatVaultUsd(value: string | null | undefined, decimals = 2): 
 	const parsed = toBig(value, true);
 	if (!parsed) return "—";
 	return `${parsed.lt(0) ? "-" : ""}$${groupDecimal(parsed.abs().toFixed(decimals))}`;
+}
+
+export function formatVaultSignedUsd(value: string | null | undefined, decimals = 2): string {
+	const parsed = toBig(value, true);
+	if (!parsed) return "—";
+	return `${parsed.gt(0) ? "+" : parsed.lt(0) ? "-" : ""}$${groupDecimal(parsed.abs().toFixed(decimals))}`;
 }
 
 export function formatVaultCompactUsd(value: string | null | undefined): string {

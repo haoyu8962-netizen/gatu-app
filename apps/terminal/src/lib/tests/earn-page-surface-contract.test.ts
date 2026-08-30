@@ -7,8 +7,8 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const EARN_PAGE_SOURCES = [
 	["staking", "components/staking/staking-page.tsx"],
 	["leaderboard", "components/leaderboard/leaderboard-page.tsx"],
-	["vaults", "components/vaults/vaults-page.tsx"],
 ] as const;
+const VAULTS_PAGE_SOURCE = "components/vaults/vaults-page.tsx";
 
 describe("earn page surface contract", () => {
 	it.each(EARN_PAGE_SOURCES)("keeps the %s fixture and live frames on the grid canvas", (_name, path) => {
@@ -16,6 +16,15 @@ describe("earn page surface contract", () => {
 
 		expect(source).toContain('className="min-h-dvh bg-grid-container font-sans text-fg min-[1001px]:pb-8"');
 		expect(source).toContain('"min-h-dvh bg-grid-container font-sans text-fg",');
+		expect(source).not.toContain("bg-portfolio-canvas");
+	});
+
+	it("keeps the Vault fixture and live frames on the dashboard canvas", () => {
+		const source = readFileSync(resolve(TEST_DIR, "../..", VAULTS_PAGE_SOURCE), "utf8");
+
+		expect(source).toContain('className="min-h-dvh bg-dashboard-canvas font-sans text-fg min-[1001px]:pb-8"');
+		expect(source).toContain('"min-h-dvh bg-dashboard-canvas font-sans text-fg",');
+		expect(source).not.toContain("bg-grid-container");
 		expect(source).not.toContain("bg-portfolio-canvas");
 	});
 });

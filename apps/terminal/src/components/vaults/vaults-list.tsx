@@ -51,6 +51,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const mobilePageSummary = t`${currentPage} of ${totalPages}`;
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
+	const ageReferenceTime = fetchedAt ?? Date.now();
 	const fetchedLabel =
 		fetchedAt === null
 			? null
@@ -184,7 +185,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 				) : (
 					<div className="py-3">
 						{groups.map((group) => (
-							<VaultGroup key={group.id} group={group} period={period} account={account} now={Date.now()} />
+							<VaultGroup key={group.id} group={group} period={period} account={account} now={ageReferenceTime} />
 						))}
 						{totalPages > 1 ? (
 							<Pagination
@@ -287,12 +288,12 @@ function VaultDesktopRow({
 		volume: "0",
 	};
 	return (
-		<tr className="group hover:bg-fill-hover">
-			<td className="px-5 py-2.5">
+		<tr>
+			<td className="p-0">
 				<Link
 					to="/vaults/$vaultAddress"
 					params={{ vaultAddress: row.vaultAddress }}
-					className="flex min-w-0 items-center gap-2 focus-visible:outline-2 focus-visible:outline-stroke-focus"
+					className="flex min-w-0 items-center gap-2 px-5 py-2.5 hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-stroke-focus"
 				>
 					<VaultMark name={row.name} />
 					<div className="min-w-0">
@@ -312,7 +313,7 @@ function VaultDesktopRow({
 			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">{formatVaultCompactUsd(row.tvl)}</td>
 			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">{formatVaultUsd(deposit)}</td>
 			<td className="w-28 px-3 py-2.5">
-				<VaultPerformanceChart snapshot={performance} kind="pnl" compact />
+				<VaultPerformanceChart snapshot={performance} kind="pnl" period={period} compact />
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg-muted">
 				{age === null ? "—" : <Trans>{age} days</Trans>}
@@ -368,7 +369,7 @@ function VaultMobileCard({
 				/>
 			</dl>
 			<div className="mt-2 text-signal">
-				<VaultPerformanceChart snapshot={snapshot} kind="pnl" compact />
+				<VaultPerformanceChart snapshot={snapshot} kind="pnl" period={period} compact />
 			</div>
 		</Link>
 	);

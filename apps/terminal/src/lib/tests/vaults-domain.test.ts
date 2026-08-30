@@ -3,10 +3,13 @@ import {
 	createVaultAccountFacts,
 	createVaultListItem,
 	deriveLockProgress,
+	deriveVaultActionsAvailability,
 	deriveVaultOwnerView,
 	formatVaultCompactUsd,
 	formatVaultRatio,
+	formatVaultSignedUsd,
 	formatVaultUsd,
+	getVaultRequestAvailability,
 	groupVaultRows,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
@@ -145,6 +148,9 @@ describe("Vault list domain", () => {
 		});
 		expect(visible.status === "ready" ? visible.rows.some((row) => row.isClosed) : true).toBe(false);
 		expect(formatVaultUsd("9007199254740993.01")).toBe("$9,007,199,254,740,993.01");
+		expect(formatVaultSignedUsd("1250.75")).toBe("+$1,250.75");
+		expect(formatVaultSignedUsd("-1250.75")).toBe("-$1,250.75");
+		expect(formatVaultSignedUsd("0")).toBe("$0.00");
 		expect(formatVaultCompactUsd("125000000.25")).toBe("$125M");
 		expect(formatVaultRatio("0.098", 1, true)).toBe("+9.8%");
 		expect(formatVaultUsd("not-a-number")).toBe("—");
@@ -152,6 +158,65 @@ describe("Vault list domain", () => {
 });
 
 describe("Vault detail runtime validation", () => {
+	it("returns structured fail-closed action reasons without blocking a reconnectable deposit", () => {
+		const geoChecking = getVaultRequestAvailability({
+			country: null,
+			isError: false,
+			isResolving: true,
+			isResolved: false,
+			proxy: false,
+			tradeRestricted: false,
+		});
+		expect(geoChecking).toEqual({ available: false, reason: "geo-checking" });
+		expect(
+			getVaultRequestAvailability({
+				country: "US",
+				isError: false,
+				isResolving: false,
+				isResolved: true,
+				proxy: true,
+				tradeRestricted: false,
+			}),
+		).toEqual({ available: false, reason: "geo-restricted" });
+		expect(
+			getVaultRequestAvailability({
+				country: null,
+				isError: false,
+				isResolving: false,
+				isResolved: true,
+				proxy: false,
+				tradeRestricted: false,
+			}),
+		).toEqual({ available: false, reason: "geo-unavailable" });
+
+		const parsed = parseVaultDetailsSnapshot(createRawDetail());
+		expect(parsed.status).toBe("valid");
+		if (parsed.status !== "valid") return;
+		const request = { available: true, reason: null } as const;
+		expect(
+			deriveVaultActionsAvailability({ detail: parsed.detail, owner: { status: "disconnected" }, request }),
+		).toEqual({
+			deposit: { available: true, reason: null },
+			withdraw: { available: false, reason: "owner-disconnected" },
+		});
+		expect(
+			deriveVaultActionsAvailability({
+				detail: { ...parsed.detail, isClosed: true },
+				owner: { status: "loading" },
+				request,
+			}),
+		).toEqual({
+			deposit: { available: false, reason: "vault-closed" },
+			withdraw: { available: false, reason: "owner-loading" },
+		});
+		expect(
+			deriveVaultActionsAvailability({ detail: parsed.detail, owner: { status: "error" }, request: geoChecking }),
+		).toEqual({
+			deposit: { available: false, reason: "geo-checking" },
+			withdraw: { available: false, reason: "geo-checking" },
+		});
+	});
+
 	it("distinguishes valid, not-found, and malformed responses", () => {
 		const valid = parseVaultDetailsSnapshot(createRawDetail());
 		expect(valid.status).toBe("valid");

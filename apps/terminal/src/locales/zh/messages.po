@@ -86,12 +86,24 @@ msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr ""
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} history"
-msgstr "{label} 历史"
+#~ msgid "{label} history"
+#~ msgstr "{label} 历史"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} trend"
-msgstr "{label} 趋势"
+msgid "{label} over {periodLabel}. Latest value {latestValue}."
+msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。{direction}。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. No performance history."
+msgstr "{periodLabel}内暂无{label}历史数据。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+#~ msgid "{label} trend"
+#~ msgstr "{label} 趋势"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -174,6 +186,10 @@ msgstr "1–20 个字符"
 msgid "14 Day Volume"
 msgstr "14 日交易量"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "24 hours"
+msgstr "24 小时"
+
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "24h"
@@ -212,6 +228,7 @@ msgid "24H VOL"
 msgstr "24小时成交量"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "30 days"
 msgstr "30 天"
 
@@ -229,6 +246,7 @@ msgid "5 days left"
 msgstr "剩余 5 天"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "7 days"
 msgstr "7 天"
 
@@ -244,6 +262,10 @@ msgstr "7 天"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
 msgstr "8小时资金费率"
+
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "90 days"
+msgstr "90 天"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
@@ -617,6 +639,10 @@ msgstr ""
 msgid "All statuses"
 msgstr "全部状态"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "all time"
+msgstr "全部时间"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "全部时间"
@@ -649,8 +675,9 @@ msgid "All-time"
 msgstr "全部时间"
 
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "All-time PNL"
-msgstr "全部时间 PNL"
+msgstr "历史总盈亏"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -1326,6 +1353,10 @@ msgstr "正在检查地区可用性，资金操作暂时不可用。"
 msgid "Checking regional availability. Trading is temporarily unavailable."
 msgstr "正在检查地区可用性，交易暂时不可用。"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Checking regional availability. Vault actions are temporarily unavailable."
+msgstr "正在核验地区可用性，Vault 操作暂不可用。"
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1751,6 +1782,7 @@ msgstr "完成协议要求的各个阶段后，即可分享您的 Hyperliquid �
 #~ msgid "completed"
 #~ msgstr "已完成"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Completed"
@@ -1927,6 +1959,10 @@ msgstr "关联移动设备前，请先连接所选主钱包。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Connect the selected master wallet before resetting mobile access."
 msgstr "重置移动访问权限前，请先连接所选主钱包。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Connect the verified owner wallet to withdraw Vault equity."
+msgstr "请连接已验证的所有者钱包以提取 Vault 权益。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect to trade"
@@ -2378,8 +2414,9 @@ msgid "Current Margin"
 msgstr "当前保证金"
 
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Current PNL"
-msgstr "当前 PNL"
+msgstr "当前盈亏"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Current validity"
@@ -2488,6 +2525,7 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -2592,6 +2630,14 @@ msgid "Depositor"
 msgstr "存款人"
 
 #: src/components/vaults/vault-detail-view.tsx
+msgid "Depositors"
+msgstr "存款人"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Depositors shown"
+msgstr "显示的存款人"
+
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Deposits"
 msgstr "存款"
 
@@ -2632,6 +2678,10 @@ msgstr "主网尚未启用外部钱包存款。"
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Deposits from external wallets are not enabled on Testnet."
 msgstr "测试网尚未启用外部钱包存款。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Deposits open"
+msgstr "开放存款"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
@@ -3009,6 +3059,7 @@ msgid "Environment"
 msgstr "环境"
 
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "净值"
@@ -3152,6 +3203,7 @@ msgstr "展开市场详情"
 #~ msgid "Expand order details"
 #~ msgstr "展开委托详情"
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expired"
 msgstr "已过期"
@@ -3225,6 +3277,7 @@ msgstr "正在导出成交历史……"
 msgid "failed"
 msgstr "失败"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Failed"
 msgstr "失败"
@@ -3910,6 +3963,10 @@ msgstr "Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
 msgstr "Hyperliquid 将投资组合保证金标记为 pre-alpha 阶段，建议使用持有资金低于 $1,000 的新账户或子账户进行测试。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Hyperliquid may return only a subset of depositors."
+msgstr "Hyperliquid 可能只返回部分存款人数据。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -5045,6 +5102,10 @@ msgstr "名称"
 msgid "Navigation"
 msgstr "导航"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Negative PNL"
+msgstr "盈亏为负"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "在最新的 extraAgents 数据中，原名称和旧公开地址均已不存在。"
@@ -5367,6 +5428,10 @@ msgstr ""
 msgid "No performance history"
 msgstr "暂无表现历史"
 
+#: src/components/vaults/vault-performance-chart.tsx
+#~ msgid "No PNL change"
+#~ msgstr "盈亏无变化"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -5467,6 +5532,10 @@ msgstr "未返回任何金库"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
 #~ msgstr "未找到钱包"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No withdrawable Vault equity is available."
+msgstr "当前没有可提取的 Vault 权益。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "No withdrawal queue"
@@ -5572,7 +5641,6 @@ msgstr "只有此转账会启动耗时约 5 分钟的测试网队列。Hyperliqu
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/vaults/vault-detail-view.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
@@ -6140,6 +6208,10 @@ msgstr "盈亏（价格变动 %）"
 msgid "PNL (ROE %)"
 msgstr "盈亏（ROE %）"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "PNL is zero"
+msgstr "盈亏为零"
+
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "PNL share card for {0}"
@@ -6261,6 +6333,10 @@ msgstr "持仓"
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "确认窗口打开期间持仓已变化。请关闭并重新打开后再提交。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Positive PNL"
+msgstr "盈亏为正"
 
 #: src/lib/trade/tif.ts
 msgid "Post Only"
@@ -6765,6 +6841,10 @@ msgstr "正在刷新推荐数据…"
 msgid "Refreshing staking data…"
 msgstr "正在刷新质押数据…"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Refreshing Vault data. Actions are temporarily unavailable."
+msgstr "正在刷新 Vault 数据，操作暂不可用。"
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Refreshing…"
@@ -6960,8 +7040,8 @@ msgstr "收益率（ROE）"
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Returned depositors"
-msgstr "返回的存款人"
+#~ msgid "Returned depositors"
+#~ msgstr "返回的存款人"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Returns delegated HYPE immediately to your available staking balance."
@@ -8907,8 +8987,8 @@ msgid "This gas-free signature creates a dedicated API wallet for fast trading. 
 msgstr "此免 Gas 签名会创建一个用于快速交易的专用 API 钱包。该钱包无法提取资金。"
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "This interface may return at most a subset of all depositors."
-msgstr "此接口最多可能只返回全部存款人的一个子集。"
+#~ msgid "This interface may return at most a subset of all depositors."
+#~ msgstr "此接口最多可能只返回全部存款人的一个子集。"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "This is a definitive empty result for the selected filter."
@@ -9077,6 +9157,14 @@ msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "此交易密钥不是当前获批的移动交易密钥。请创建新的桌面二维码。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This Vault is closed and no longer accepts deposits."
+msgstr "此 Vault 已关闭，不再接受存款。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This Vault is not accepting deposits."
+msgstr "此 Vault 当前不接受存款。"
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
@@ -9799,6 +9887,10 @@ msgstr "无法验证地区可用性，本次资金操作未提交。"
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "无法验证地区可用性，交易暂时不可用。"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+msgstr "无法核验地区可用性，Vault 操作暂不可用。"
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the CCTP authorization."
@@ -10142,6 +10234,14 @@ msgid "Vault"
 msgstr "金库"
 
 #: src/components/vaults/vault-detail-view.tsx
+msgid "Vault actions are not available in your region."
+msgstr "您所在地区不支持 Vault 操作。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault actions are temporarily unavailable."
+msgstr "Vault 操作暂不可用。"
+
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Vault chart metric"
 msgstr "金库图表指标"
 
@@ -10234,6 +10334,10 @@ msgstr "金库"
 msgid "Verification reference"
 msgstr "验证参考"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Verified Vault details are unavailable."
+msgstr "无法获取已验证的 Vault 详情。"
+
 #. placeholder {0}: formatVaultUsd(availableAmount)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
@@ -10265,6 +10369,10 @@ msgstr "正在验证授权…"
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying from history"
 msgstr "正在通过历史记录验证"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Verifying the owner Vault balance before enabling withdrawals."
+msgstr "正在核验所有者的 Vault 余额，核验完成后才能提款。"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -10457,6 +10565,7 @@ msgstr "将在{0}后到账"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "提款"
@@ -10512,6 +10621,14 @@ msgstr "提取可能会取消委托、平掉仓位、产生滑点，最终返回
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal policy"
 msgstr "提取规则"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal remains locked until the server-reported unlock time."
+msgstr "提款仍处于锁定状态，需等待服务器返回的解锁时间。"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal remains unavailable until the owner balance is verified."
+msgstr "在所有者余额完成核验前，提款不可用。"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal route"
@@ -10655,7 +10772,7 @@ msgstr "您的账户推荐人"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Your all-time PNL"
-msgstr "您的全部时间 PNL"
+msgstr "您的历史总盈亏"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your bridge is still processing. Funds are safe."

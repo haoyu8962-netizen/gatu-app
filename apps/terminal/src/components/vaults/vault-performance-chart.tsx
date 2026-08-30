@@ -2,30 +2,43 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import Big from "big.js";
 import { cn } from "@/lib/cn";
 import {
+	formatVaultSignedUsd,
 	formatVaultUsd,
 	getLatestVaultHistoryValue,
 	getVaultValueTone,
+	type VaultPeriod,
 	type VaultPortfolioSnapshot,
 } from "./domain/vaults";
 
 interface VaultPerformanceChartProps {
 	snapshot: VaultPortfolioSnapshot;
 	kind: "accountValue" | "pnl";
+	period: VaultPeriod;
 	compact?: boolean;
 }
 
-export function VaultPerformanceChart({ snapshot, kind, compact = false }: VaultPerformanceChartProps) {
+export function VaultPerformanceChart({ snapshot, kind, period, compact = false }: VaultPerformanceChartProps) {
 	const { t } = useLingui();
 	const history = kind === "accountValue" ? snapshot.accountValueHistory : snapshot.pnlHistory;
 	const latest = getLatestVaultHistoryValue(snapshot, kind);
 	const tone = kind === "pnl" ? getVaultValueTone(latest) : "neutral";
 	const path = createChartPath(history);
 	const label = kind === "accountValue" ? t`Account value` : t`PNL`;
+	const periodLabel =
+		period === "day" ? t`24 hours` : period === "week" ? t`7 days` : period === "month" ? t`30 days` : t`all time`;
+	const direction = tone === "positive" ? t`Positive PNL` : tone === "negative" ? t`Negative PNL` : t`PNL is zero`;
+	const latestValue = kind === "pnl" ? formatVaultSignedUsd(latest) : formatVaultUsd(latest);
+	const accessibleLabel = path
+		? kind === "pnl"
+			? t`${label} over ${periodLabel}. Latest value ${latestValue}. ${direction}.`
+			: t`${label} over ${periodLabel}. Latest value ${latestValue}.`
+		: t`${label} over ${periodLabel}. No performance history.`;
 
 	return (
 		<figure
+			role="img"
 			className={cn("relative w-full overflow-hidden", compact ? "h-9" : "h-52 min-[1001px]:h-64")}
-			aria-label={t`${label} history`}
+			aria-label={accessibleLabel}
 		>
 			{compact ? null : (
 				<figcaption className="absolute top-3 left-3 z-10">
@@ -33,22 +46,22 @@ export function VaultPerformanceChart({ snapshot, kind, compact = false }: Vault
 					<p
 						className={cn(
 							"mt-0.5 text-base font-bold tabular-nums",
-							tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-fg",
+							tone === "positive" ? "text-market-up" : tone === "negative" ? "text-market-down" : "text-fg",
 						)}
 					>
-						{formatVaultUsd(latest)}
+						{latestValue}
 					</p>
 				</figcaption>
 			)}
 			{path ? (
 				<svg
-					role="img"
-					aria-label={t`${label} trend`}
+					aria-hidden="true"
+					focusable="false"
 					viewBox="0 0 100 36"
 					preserveAspectRatio="none"
 					className={cn(
 						"size-full",
-						tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-chart-accent",
+						tone === "positive" ? "text-market-up" : tone === "negative" ? "text-market-down" : "text-chart-accent",
 					)}
 				>
 					{compact ? null : (

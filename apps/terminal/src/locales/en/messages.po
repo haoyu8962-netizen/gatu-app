@@ -94,12 +94,24 @@ msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 msgstr "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} history"
-msgstr "{label} history"
+#~ msgid "{label} history"
+#~ msgstr "{label} history"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} trend"
-msgstr "{label} trend"
+msgid "{label} over {periodLabel}. Latest value {latestValue}."
+msgstr "{label} over {periodLabel}. Latest value {latestValue}."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+msgstr "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. No performance history."
+msgstr "{label} over {periodLabel}. No performance history."
+
+#: src/components/vaults/vault-performance-chart.tsx
+#~ msgid "{label} trend"
+#~ msgstr "{label} trend"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "{orderCount, plural, one {This will cancel the open order, including protective stop orders. Your position may no longer be protected.} other {This will cancel all # open orders, including protective stop orders. Your positions will no longer be protected.}}"
@@ -182,6 +194,10 @@ msgstr "1–20 characters"
 msgid "14 Day Volume"
 msgstr "14 Day Volume"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "24 hours"
+msgstr "24 hours"
+
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "24h"
@@ -224,6 +240,7 @@ msgid "24H VOL"
 msgstr "24H VOL"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "30 days"
 msgstr "30 days"
 
@@ -241,6 +258,7 @@ msgid "5 days left"
 msgstr "5 days left"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/vaults/vault-performance-chart.tsx
 msgid "7 days"
 msgstr "7 days"
 
@@ -256,6 +274,10 @@ msgstr "7D"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
 msgstr "8h Funding"
+
+#: src/components/api-wallet/api-wallet-fixture.tsx
+msgid "90 days"
+msgstr "90 days"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "A confirmation is shown before each market close."
@@ -657,6 +679,10 @@ msgstr "All sides"
 msgid "All statuses"
 msgstr "All statuses"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "all time"
+msgstr "all time"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "All Time"
@@ -688,6 +714,7 @@ msgstr "All Vaults"
 msgid "All-time"
 msgstr "All-time"
 
+#: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "All-time PNL"
 msgstr "All-time PNL"
@@ -1449,6 +1476,10 @@ msgstr "Checking regional availability. Funds actions are temporarily unavailabl
 msgid "Checking regional availability. Trading is temporarily unavailable."
 msgstr "Checking regional availability. Trading is temporarily unavailable."
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Checking regional availability. Vault actions are temporarily unavailable."
+msgstr "Checking regional availability. Vault actions are temporarily unavailable."
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1875,6 +1906,7 @@ msgstr "Complete the protocol stages, then share your official Hyperliquid refer
 #~ msgid "completed"
 #~ msgstr "completed"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Completed"
@@ -2059,6 +2091,10 @@ msgstr "Connect the selected master wallet before linking a mobile device."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Connect the selected master wallet before resetting mobile access."
 msgstr "Connect the selected master wallet before resetting mobile access."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Connect the verified owner wallet to withdraw Vault equity."
+msgstr "Connect the verified owner wallet to withdraw Vault equity."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect to trade"
@@ -2531,6 +2567,7 @@ msgid "Current Margin"
 msgstr "Current Margin"
 
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Current PNL"
 msgstr "Current PNL"
 
@@ -2657,6 +2694,7 @@ msgstr "Deployer"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -2769,6 +2807,14 @@ msgid "Depositor"
 msgstr "Depositor"
 
 #: src/components/vaults/vault-detail-view.tsx
+msgid "Depositors"
+msgstr "Depositors"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Depositors shown"
+msgstr "Depositors shown"
+
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Deposits"
 msgstr "Deposits"
 
@@ -2809,6 +2855,10 @@ msgstr "Deposits from external wallets are not enabled on Mainnet."
 #: src/hooks/trade/use-deposit-availability.ts
 msgid "Deposits from external wallets are not enabled on Testnet."
 msgstr "Deposits from external wallets are not enabled on Testnet."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Deposits open"
+msgstr "Deposits open"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
@@ -3210,6 +3260,7 @@ msgid "Environment"
 msgstr "Environment"
 
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Equity"
@@ -3362,6 +3413,7 @@ msgstr "Expand market details"
 #~ msgid "Expand order details"
 #~ msgstr "Expand order details"
 
+#: src/components/api-wallet/api-wallet-fixture.tsx
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "Expired"
 msgstr "Expired"
@@ -3435,6 +3487,7 @@ msgstr "Exporting trade history..."
 msgid "failed"
 msgstr "failed"
 
+#: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Failed"
 msgstr "Failed"
@@ -4160,6 +4213,10 @@ msgstr "Hyperliquid does not support pausing active TWAP orders."
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
 msgstr "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Hyperliquid may return only a subset of depositors."
+msgstr "Hyperliquid may return only a subset of depositors."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Hyperliquid rejected the request"
@@ -5399,6 +5456,10 @@ msgstr "Name"
 msgid "Navigation"
 msgstr "Navigation"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Negative PNL"
+msgstr "Negative PNL"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Neither the exact name nor the old public address appears in fresh extraAgents data."
 msgstr "Neither the exact name nor the old public address appears in fresh extraAgents data."
@@ -5731,6 +5792,10 @@ msgstr "No ordinary orders found."
 msgid "No performance history"
 msgstr "No performance history"
 
+#: src/components/vaults/vault-performance-chart.tsx
+#~ msgid "No PNL change"
+#~ msgstr "No PNL change"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -5847,6 +5912,10 @@ msgstr "No Vaults were returned"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
 #~ msgstr "No wallets found"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "No withdrawable Vault equity is available."
+msgstr "No withdrawable Vault equity is available."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "No withdrawal queue"
@@ -5969,7 +6038,6 @@ msgstr "Only this transfer starts the Testnet queue, which takes approximately f
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/vaults/vault-detail-view.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
@@ -6602,6 +6670,10 @@ msgstr "PNL (Price Change %)"
 msgid "PNL (ROE %)"
 msgstr "PNL (ROE %)"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "PNL is zero"
+msgstr "PNL is zero"
+
 #. placeholder {0}: position.symbol
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "PNL share card for {0}"
@@ -6736,6 +6808,10 @@ msgstr "Positions"
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "Positions changed while this confirmation was open. Close and reopen it before submitting."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Positive PNL"
+msgstr "Positive PNL"
 
 #: src/lib/trade/tif.ts
 msgid "Post Only"
@@ -7270,6 +7346,10 @@ msgstr "Refreshing referral data…"
 msgid "Refreshing staking data…"
 msgstr "Refreshing staking data…"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Refreshing Vault data. Actions are temporarily unavailable."
+msgstr "Refreshing Vault data. Actions are temporarily unavailable."
+
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Refreshing…"
@@ -7482,8 +7562,8 @@ msgstr "Return on equity (ROE)"
 
 #: src/components/vaults/vault-detail-view.tsx
 #: src/components/vaults/vault-detail-view.tsx
-msgid "Returned depositors"
-msgstr "Returned depositors"
+#~ msgid "Returned depositors"
+#~ msgstr "Returned depositors"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Returns delegated HYPE immediately to your available staking balance."
@@ -9576,8 +9656,8 @@ msgid "This gas-free signature creates a dedicated API wallet for fast trading. 
 msgstr "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
 
 #: src/components/vaults/vault-detail-view.tsx
-msgid "This interface may return at most a subset of all depositors."
-msgstr "This interface may return at most a subset of all depositors."
+#~ msgid "This interface may return at most a subset of all depositors."
+#~ msgstr "This interface may return at most a subset of all depositors."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "This is a definitive empty result for the selected filter."
@@ -9760,6 +9840,14 @@ msgstr "This strict isolated market does not allow margin to be removed from an 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This Vault is closed and no longer accepts deposits."
+msgstr "This Vault is closed and no longer accepts deposits."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "This Vault is not accepting deposits."
+msgstr "This Vault is not accepting deposits."
 
 #: src/components/vaults/vault-action-modal.tsx
 msgid "This Vault uses proportional position closing on withdrawal."
@@ -10509,6 +10597,10 @@ msgstr "Unable to verify regional availability. This funds action was not submit
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "Unable to verify regional availability. Trading is temporarily unavailable."
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Unable to verify regional availability. Vault actions are temporarily unavailable."
+msgstr "Unable to verify regional availability. Vault actions are temporarily unavailable."
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to verify the CCTP authorization."
@@ -10852,6 +10944,14 @@ msgid "Vault"
 msgstr "Vault"
 
 #: src/components/vaults/vault-detail-view.tsx
+msgid "Vault actions are not available in your region."
+msgstr "Vault actions are not available in your region."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Vault actions are temporarily unavailable."
+msgstr "Vault actions are temporarily unavailable."
+
+#: src/components/vaults/vault-detail-view.tsx
 msgid "Vault chart metric"
 msgstr "Vault chart metric"
 
@@ -10944,6 +11044,10 @@ msgstr "Vaults"
 msgid "Verification reference"
 msgstr "Verification reference"
 
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Verified Vault details are unavailable."
+msgstr "Verified Vault details are unavailable."
+
 #. placeholder {0}: formatVaultUsd(availableAmount)
 #: src/components/vaults/vault-action-modal.tsx
 msgid "Verified wallet balance: {0}"
@@ -10975,6 +11079,10 @@ msgstr "Verifying approval..."
 #: src/components/staking/staking-action-modal.tsx
 msgid "Verifying from history"
 msgstr "Verifying from history"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Verifying the owner Vault balance before enabling withdrawals."
+msgstr "Verifying the owner Vault balance before enabling withdrawals."
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "Verifying the result"
@@ -11191,6 +11299,7 @@ msgstr "will arrive in {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/vaults/vault-detail-view.tsx
+#: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Withdraw"
@@ -11246,6 +11355,14 @@ msgstr "Withdrawal may cancel orders, close positions, incur slippage, and retur
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal policy"
 msgstr "Withdrawal policy"
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal remains locked until the server-reported unlock time."
+msgstr "Withdrawal remains locked until the server-reported unlock time."
+
+#: src/components/vaults/vault-detail-view.tsx
+msgid "Withdrawal remains unavailable until the owner balance is verified."
+msgstr "Withdrawal remains unavailable until the owner balance is verified."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdrawal route"

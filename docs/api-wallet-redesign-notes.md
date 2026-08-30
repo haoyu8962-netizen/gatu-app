@@ -105,7 +105,7 @@ The handoff source is `designs/Gatu标志加载动画/tokens.json`. The project'
 | `color.border.checkbox` | Checkbox/dashed helper border | `market-close-stroke-control` | Reuse. |
 | `color.border.divider` | Row divider | `trading-panel-stroke-row` | Reuse. |
 | `color.border.dangerSubtle` | Destructive outline | `stroke-error-weak` | Reuse theme semantic rather than the light literal. |
-| `color.surface.page` | Page canvas | `grid-container` | Reuse; it already has the required light/dark canvas semantics. |
+| `color.surface.page` | Page canvas | `dashboard-canvas` | Reuse the shared branded dashboard canvas rather than the desktop-grid underlay. |
 | `color.surface.card` | Page panel/modal | `surface` / `modal` | Reuse. |
 | `color.surface.sunken` | Inset notice/review surface | `market-close-card` / `fill-weak` | Reuse. |
 | `color.surface.sunkenAlt` | Alternate inset surface | `fill-weaker` | Reuse. |
@@ -119,13 +119,13 @@ The handoff source is `designs/Gatu标志加载动画/tokens.json`. The project'
 | `color.disabledFill.*` | Disabled CTA fills | `trading-panel-*-disabled-fill` | Reuse the neutral variant for this neutral action page. |
 | `color.scrim` | Modal/drawer scrim | `scrim` / `trading-panel-scrim` | Reuse. |
 | `color.depthBar.*` | Order-book depth | Order-book tokens | Not used by this page. |
-| `typography.fontFamily` | IBM Plex Sans | `font-market-close` | Reuse. |
+| `typography.fontFamily` | IBM Plex Sans | `font-sans` | Follow the current product-wide Inter typography contract; keep `font-mono` for addresses and keys. |
 | `typography.size` | 10/11/12/13/14/15/16/17/20/22 scale | Existing `text-3xs` through `text-lg`; `text-lg` is the exact 20px page title, while the 17px modal title has no exact utility | Reuse the page-title utility and add only the modal-title semantic size. |
 | `typography.weight` | 400/500/600/700 | Tailwind font tokens | Reuse. |
 | `typography.rules.tabularNums` | Numeric alignment | `tabular-nums` plus explicit alignment | Reuse. |
 | `typography.rules.nowrap` | Short-label wrapping | `whitespace-nowrap` | Reuse. |
 | `typography.rules.mobileInputMin` | iOS zoom prevention | Mobile form input uses the existing 16px `text-base` | Reuse. |
-| `radius.*` | Page/modal/card/input/chip/badge geometry | Shared radius primitives are globally scaled and do not equal the handoff's physical values | Add page-scoped semantic radius tokens, including the desktop page's 14px radius; reference them through CSS variables, not component literals. |
+| `radius.*` | Page/modal/card/input/chip/badge geometry | Shared named radius primitives | Use `rounded-20`, `rounded-24`, and `rounded-32` so the global radius factor remains effective. |
 | `space.*` | Page/card/mobile gaps and padding | Project 4px spacing scale | Reuse spacing utilities; add semantic page/content padding only where the design value is structural. |
 | `size.desktopViewport` / `size.desktopContent` | 1440px frame / 1360px content | No equivalent semantic maxima | Add `--api-wallet-frame-max` and `--api-wallet-content-max`; the desktop page also uses the design reference's tokenized 700px minimum panel height. |
 | `size.mobileBreakpoint` | Inclusive 1000px | `MOBILE_BREAKPOINT_PX` and existing `min-[1001px]` utilities | Reuse exactly. |
