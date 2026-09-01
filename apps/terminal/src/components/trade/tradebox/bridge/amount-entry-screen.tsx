@@ -100,7 +100,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 			<div className="flex items-center justify-center gap-3 rounded-8 border border-stroke-weak p-3">
 				<div className="flex items-center gap-2">
 					<TokenIcon token={token} />
-					<div className="text-left">
+					<div className="text-start">
 						<p className="text-xs text-fg-muted">
 							<Trans>You send</Trans>
 						</p>
@@ -110,7 +110,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 				<ArrowRightIcon className="size-4 shrink-0 text-fg-muted rtl:rotate-180" />
 				<div className="flex items-center gap-2">
 					<HyperCoreUsdcIcon />
-					<div className="text-left">
+					<div className="text-start">
 						<p className="text-xs text-fg-muted">
 							<Trans>You receive</Trans>
 						</p>

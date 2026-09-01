@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import { act, createElement, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
+import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	closeLabel: "",
 	dismissible: true,
 	onOpenChange: undefined as ((open: boolean) => void) | undefined,
 	presentation: "modal" as "modal" | "drawer",
@@ -15,6 +17,7 @@ const modalHarness = vi.hoisted(() => ({
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
+		closeLabel,
 		dismissible,
 		onOpenChange,
 		open,
@@ -22,12 +25,14 @@ vi.mock("@gatu/ui", () => ({
 		showClose,
 	}: {
 		children: ReactNode;
+		closeLabel: string;
 		dismissible: boolean;
 		onOpenChange: (open: boolean) => void;
 		open: boolean;
 		presentation: "modal" | "drawer";
 		showClose: boolean;
 	}) => {
+		modalHarness.closeLabel = closeLabel;
 		modalHarness.dismissible = dismissible;
 		modalHarness.onOpenChange = onOpenChange;
 		modalHarness.presentation = presentation;
@@ -43,7 +48,7 @@ describe("PendingActionModal", () => {
 	beforeEach(() => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 	});
 
 	afterEach(() => {
@@ -79,6 +84,7 @@ describe("PendingActionModal", () => {
 
 		expect(modalHarness.dismissible).toBe(true);
 		expect(modalHarness.showClose).toBe(true);
+		expect(modalHarness.closeLabel).toBe("Close");
 		act(() => modalHarness.onOpenChange?.(false));
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});

@@ -176,7 +176,7 @@ describe("useOrderSubmit TWAP details", () => {
 		expect(mocks.submitTwap).not.toHaveBeenCalled();
 		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
 			status: "failed",
-			error: "Trigger price is not valid against the live mark price",
+			error: { kind: "order-submission", code: "order-conditions-changed" },
 		});
 		expect(mocks.resetForm).not.toHaveBeenCalled();
 	});

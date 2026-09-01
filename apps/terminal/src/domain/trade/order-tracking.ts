@@ -61,9 +61,26 @@ export class OrderBatchResolutionError extends Error {
 	}
 }
 
+export type OrderTrackingInputErrorReason = "order-request-invalid" | "secure-random-unavailable";
+
+const ORDER_TRACKING_INPUT_ERROR_MESSAGES: Record<OrderTrackingInputErrorReason, string> = {
+	"order-request-invalid": "Order request is invalid",
+	"secure-random-unavailable": "Secure random number generation is unavailable",
+};
+
+export class OrderTrackingInputError extends Error {
+	constructor(
+		readonly reason: OrderTrackingInputErrorReason,
+		message = ORDER_TRACKING_INPUT_ERROR_MESSAGES[reason],
+	) {
+		super(message);
+		this.name = "OrderTrackingInputError";
+	}
+}
+
 export function createClientOrderId(): `0x${string}` {
 	if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
-		throw new Error("Secure random number generation is unavailable");
+		throw new OrderTrackingInputError("secure-random-unavailable");
 	}
 
 	const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -78,7 +95,7 @@ export function trackOrderRequest(params: TrackedOrderParams): TrackedOrderReque
 		cloid: normalizeClientOrderId(order.c),
 	}));
 	if (new Set(children.map((child) => child.cloid.toLowerCase())).size !== children.length) {
-		throw new Error("Duplicate client order ID");
+		throw new OrderTrackingInputError("order-request-invalid", "Duplicate client order ID");
 	}
 
 	return {
@@ -93,13 +110,17 @@ export function trackOrderRequest(params: TrackedOrderParams): TrackedOrderReque
 
 function normalizeAssetId(assetId: string | number): number {
 	const normalized = Number(assetId);
-	if (!Number.isSafeInteger(normalized) || normalized < 0) throw new Error("Invalid order asset ID");
+	if (!Number.isSafeInteger(normalized) || normalized < 0) {
+		throw new OrderTrackingInputError("order-request-invalid", "Invalid order asset ID");
+	}
 	return normalized;
 }
 
 function normalizeClientOrderId(cloid: string | undefined): `0x${string}` {
 	if (cloid === undefined) return createClientOrderId();
-	if (!/^0x[a-fA-F0-9]{32}$/.test(cloid)) throw new Error("Invalid client order ID");
+	if (!/^0x[a-fA-F0-9]{32}$/.test(cloid)) {
+		throw new OrderTrackingInputError("order-request-invalid", "Invalid client order ID");
+	}
 	return cloid as `0x${string}`;
 }
 

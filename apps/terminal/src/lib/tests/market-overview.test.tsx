@@ -263,7 +263,7 @@ describe("MarketOverview", () => {
 	}
 
 	it("gives the overview sole ownership of scrolling and resets it by market identity", () => {
-		expect(MAIN_WORKSPACE_SOURCE).toContain('className="ml-6 min-w-0 flex-1 overflow-hidden"');
+		expect(MAIN_WORKSPACE_SOURCE).toContain('className="ms-6 min-w-0 flex-1 overflow-hidden"');
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<MarketOverview key={marketKey} />");
 
 		renderKeyedOverview();

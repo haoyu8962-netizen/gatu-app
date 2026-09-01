@@ -21,7 +21,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 	const selectedTifLabel = getTifOptionLabel(tif);
 
 	return (
-		<div className={cn("ml-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
+		<div className={cn("ms-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
 			<DefinitionTooltip topic="tif" only={availableTifOptions}>
 				<span
 					className={cn(

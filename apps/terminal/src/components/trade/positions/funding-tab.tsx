@@ -161,7 +161,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 							</colgroup>
 							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "pl-5 text-left")}>
+									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "ps-5 text-start")}>
 										{t`Asset`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "text-right")}>
@@ -173,7 +173,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "text-right")}>
 										{t`Payment`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "pr-5 text-right")}>
+									<TableHead scope="col" size="dense" className={cn(fundingTableHeadClass, "pe-5 text-right")}>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
@@ -193,7 +193,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 										>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, fundingTableCellClass, "pl-5 font-bold")}
+												className={cn(positionsPanelTableCellClass, fundingTableCellClass, "ps-5 font-bold")}
 											>
 												<AssetBadge
 													coin={update.coin}
@@ -234,7 +234,7 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 												className={cn(
 													positionsPanelTableCellClass,
 													fundingTableCellClass,
-													"pr-5 text-right text-xs text-market-close-muted",
+													"pe-5 text-right text-xs text-market-close-muted",
 												)}
 											>
 												<div className="flex flex-col items-end">

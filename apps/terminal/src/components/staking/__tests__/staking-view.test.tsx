@@ -3,6 +3,7 @@
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { shortenAddress } from "@/lib/format";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import type { StakingValidatorView } from "../domain/staking";
 import { StakingView, type StakingViewProps } from "../staking-view";
@@ -119,6 +120,10 @@ function activeTableScrollRegion(container: HTMLElement): HTMLElement | null {
 	);
 }
 
+function ltrValues(container: HTMLElement): string[] {
+	return [...container.querySelectorAll('bdi[dir="ltr"]')].map((element) => element.textContent?.trim() ?? "");
+}
+
 describe("StakingView", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -164,6 +169,20 @@ describe("StakingView", () => {
 		expect(allDelegateButtons.slice(1).every((candidate) => candidate.disabled)).toBe(true);
 		expect(container.querySelector("table")?.className).toContain("min-w-[var(--staking-validator-table-min)]");
 		expect(container.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("Staking detail views");
+	});
+
+	it("isolates account, validator, HYPE, ratio, reward, and transaction values from RTL copy", () => {
+		act(() => root.render(<StakingView {...props()} />));
+
+		expect(ltrValues(container)).toEqual(
+			expect.arrayContaining([shortenAddress(OWNER, 6, 6), "≈ 3 HYPE", "4 HYPE", "1.5 HYPE · 2/5", "≈ 1 HYPE", "99%"]),
+		);
+
+		act(() => button(container, "Staking rewards").click());
+		expect(ltrValues(container)).toContain("+0.1 HYPE");
+
+		act(() => button(container, "Staking actions").click());
+		expect(ltrValues(container)).toEqual(expect.arrayContaining(["1 HYPE", shortenAddress(HASH, 6, 6)]));
 	});
 
 	it("names and makes the validator table scroll region keyboard reachable only when it overflows", () => {

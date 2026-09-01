@@ -161,7 +161,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 						<BaseSelect.Value
 							placeholder={placeholder}
 							className={cn(
-								"flex-1 text-left truncate",
+								"flex-1 truncate text-start",
 								size === "lg" ? "text-sm" : "text-xs",
 								selectedLabel ? "text-fg" : "text-fg-muted",
 							)}

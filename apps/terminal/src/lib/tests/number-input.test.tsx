@@ -104,4 +104,12 @@ describe("NumberInput keyboard stepping", () => {
 		expect(input?.id).toBeTruthy();
 		expect(label?.htmlFor).toBe(input?.id);
 	});
+
+	it("defaults ASCII financial input to LTR while allowing an explicit direction override", () => {
+		act(() => root.render(<NumberInput onChange={vi.fn()} value="123.45" />));
+		expect(container.querySelector<HTMLInputElement>("input")?.dir).toBe("ltr");
+
+		act(() => root.render(<NumberInput dir="auto" onChange={vi.fn()} value="123.45" />));
+		expect(container.querySelector<HTMLInputElement>("input")?.dir).toBe("auto");
+	});
 });

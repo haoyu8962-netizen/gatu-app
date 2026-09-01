@@ -86,5 +86,7 @@ describe("HistoricalOrderPrice", () => {
 
 		expect(markup).toContain("7.40");
 		expect(markup).toContain("6.66");
+		expect(markup).toMatch(/<bdi dir="ltr">[^<]*7\.40<\/bdi>/u);
+		expect(markup).toMatch(/<bdi dir="ltr">[^<]*6\.66<\/bdi>/u);
 	});
 });

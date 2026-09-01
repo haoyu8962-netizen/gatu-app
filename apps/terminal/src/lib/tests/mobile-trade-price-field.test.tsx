@@ -51,7 +51,9 @@ describe("MobileTradePriceField", () => {
 			(button) => button.textContent?.trim() === "Mid",
 		);
 		if (!midButton) throw new Error("Expected midpoint action");
-		expect(midButton.className).toContain("after:size-11");
+		expect(midButton.className).toContain("min-w-11");
+		expect(midButton.className).toContain("after:inset-0");
+		expect(midButton.className).not.toContain("after:size-11");
 		act(() => midButton.click());
 		expect(onMidClick).toHaveBeenCalledWith("12345678901234567890.12");
 	});

@@ -160,7 +160,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					)}
 					{item.label}
 				</span>
-				{item.active && <CheckIcon size={12} weight="bold" className="ml-2 shrink-0 text-icon-action" />}
+				{item.active && <CheckIcon size={12} weight="bold" className="ms-2 shrink-0 text-icon-action" />}
 			</>
 		);
 

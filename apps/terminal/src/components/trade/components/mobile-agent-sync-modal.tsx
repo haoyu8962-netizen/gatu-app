@@ -270,6 +270,7 @@ function MobileAgentSyncSession({
 	walletAddress,
 	hasWalletAccess,
 }: MobileAgentSyncSessionProps) {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { builderConfig } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, walletAddress);
@@ -1156,6 +1157,7 @@ function MobileAgentSyncSession({
 			open={open}
 			onOpenChange={handleOpenChange}
 			size="md"
+			closeLabel={t`Close`}
 			presentation={isMobile ? "drawer" : "modal"}
 			className="max-h-[min(92dvh,48rem)]"
 		>
@@ -1179,7 +1181,9 @@ function MobileAgentSyncSession({
 					<span className="min-w-0 truncate font-medium text-fg">
 						{walletAddress && hasWalletAccess ? (
 							<>
-								<span className="font-mono">{shortenAddress(walletAddress)}</span>
+								<span className="font-mono">
+									<bdi dir="ltr">{shortenAddress(walletAddress)}</bdi>
+								</span>
 								<span className="text-fg-muted"> · {env}</span>
 							</>
 						) : (
@@ -1388,7 +1392,7 @@ function ApprovalReviewPanel() {
 					</p>
 				</div>
 			</div>
-			<ul className="list-disc space-y-1 pl-5 text-xs text-fg-muted">
+			<ul className="list-disc space-y-1 ps-5 text-xs text-fg-muted">
 				<li>
 					<Trans>Anyone who scans or captures the QR can trade as this Agent.</Trans>
 				</li>

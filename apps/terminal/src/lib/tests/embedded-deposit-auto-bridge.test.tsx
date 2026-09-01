@@ -1,14 +1,27 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act, createElement, Fragment, isValidElement, type ReactNode, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
+import { UsdcDepositRouteError } from "@/hooks/trade/use-usdc-routing";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as const;
+const DEPOSIT_ROUTE_CHANGED =
+	"The Hyperliquid deposit route changed before signing. Review the updated route and retry.";
+const DEPOSIT_ROUTE_CHANGED_AR = "تغير مسار إيداع Hyperliquid قبل التوقيع. راجع المسار المحدّث وأعد المحاولة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(DEPOSIT_ROUTE_CHANGED)]: DEPOSIT_ROUTE_CHANGED_AR,
+};
 
 const testState = vi.hoisted(() => ({
 	deposit: vi.fn(),
@@ -78,6 +91,15 @@ vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-usdc-routing", () => ({
+	UsdcDepositRouteError: class UsdcDepositRouteError extends Error {
+		readonly reason: "changed" | "unavailable";
+
+		constructor(reason: "changed" | "unavailable") {
+			super(reason);
+			this.name = "UsdcDepositRouteError";
+			this.reason = reason;
+		}
+	},
 	useUsdcRouting: (enabled: boolean) => {
 		testState.routingQueryEnabled = enabled;
 		return {
@@ -474,6 +496,21 @@ describe("EmbeddedDepositAutoBridge", () => {
 		);
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("rpc.zerodev.app");
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
+	});
+
+	it("localizes typed deposit-route failures instead of exposing their fixed English message", async () => {
+		i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
+		testState.depositStatus = "error";
+		testState.depositError = new UsdcDepositRouteError("changed");
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastError).toHaveBeenCalledWith(DEPOSIT_ROUTE_CHANGED_AR, {
+			id: "embedded-cctp-auto-deposit",
+		});
+		expect(testState.toastError.mock.calls.flat()).not.toContain(DEPOSIT_ROUTE_CHANGED);
 	});
 
 	it("dismisses an active loading toast when the deposit returns to idle", async () => {

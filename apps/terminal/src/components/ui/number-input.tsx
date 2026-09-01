@@ -134,6 +134,7 @@ export function NumberInput({
 	onChange,
 	onKeyDown,
 	disabled,
+	dir,
 	id,
 	label,
 	labelValue,
@@ -248,6 +249,7 @@ export function NumberInput({
 		<BaseInput
 			id={inputId}
 			type="text"
+			dir={dir ?? "ltr"}
 			inputMode={effectiveAllowDecimals ? "decimal" : "numeric"}
 			data-slot="input"
 			data-size={inputSize}

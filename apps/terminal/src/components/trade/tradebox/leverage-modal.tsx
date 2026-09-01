@@ -22,6 +22,7 @@ interface Props {
 }
 
 function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
+	const { t } = useLingui();
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const actionPending = contentProps.isUpdating || submissionLocked;
 
@@ -38,6 +39,7 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 			<ModalPopup
 				size="sm"
 				showClose={!actionPending}
+				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="font-market-close"
 			>

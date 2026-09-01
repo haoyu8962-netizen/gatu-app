@@ -44,7 +44,7 @@ interface TwapCancelExecutionContext {
 }
 
 export function useTwapCancel() {
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	const markets = useMarkets();
 	const { clientKey, env } = useHyperliquid();
 	const liveIdentityRef = useRef({ clientKey, env });
@@ -99,7 +99,7 @@ export function useTwapCancel() {
 					message:
 						storedFeedback.value.kind === "raw"
 							? storedFeedback.value.message
-							: formatOrderSubmissionFeedback(storedFeedback.value.feedback, (descriptor) => i18n._(descriptor)),
+							: formatOrderSubmissionFeedback(storedFeedback.value.feedback, (descriptor) => t(descriptor)),
 				}
 			: null;
 
@@ -116,7 +116,7 @@ export function useTwapCancel() {
 		const assetId = markets.getAssetId(coin);
 		if (typeof assetId !== "number") {
 			const value = localizedFeedback("twap-cancel-market-unavailable");
-			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => t(descriptor));
 			setFeedback({ tone: "error", value, env, owner: normalizedOwner });
 			toast.error(message);
 			return;
@@ -124,7 +124,7 @@ export function useTwapCancel() {
 
 		if (clientKey === "disconnected") {
 			const value = localizedFeedback("coordination-unavailable");
-			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => t(descriptor));
 			setFeedback({ tone: "error", value, env, owner: null });
 			toast.error(message);
 			return;
@@ -157,7 +157,7 @@ export function useTwapCancel() {
 			if (!lockResult.supported || !lockResult.acquired) {
 				getPendingTradingActionActions().resolveTwapCancellation(action.id);
 				const value = localizedFeedback("coordination-unavailable");
-				const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+				const message = formatStoredTwapCancelFeedback(value, (descriptor) => t(descriptor));
 				if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
 					setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
 					toast.error(message);
@@ -169,7 +169,7 @@ export function useTwapCancel() {
 			if (execution.guardPasses >= 2 && isAmbiguousOrderRequestError(error)) {
 				getPendingTradingActionActions().markTwapCancellationUnconfirmed(action.id);
 				const value = localizedFeedback("twap-cancel-unconfirmed");
-				const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+				const message = formatStoredTwapCancelFeedback(value, (descriptor) => t(descriptor));
 				if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
 					setFeedback({
 						tone: "warning",
@@ -190,7 +190,7 @@ export function useTwapCancel() {
 				: error instanceof Error
 					? { kind: "raw", message: error.message }
 					: localizedFeedback("twap-cancel-failed");
-			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => t(descriptor));
 			if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
 				setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
 				toast.error(message);

@@ -91,7 +91,7 @@ function isConfirmedDefaultExchangeResponse(response: unknown): boolean {
 }
 
 function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChange }: BodyProps) {
-	const { i18n, t } = useLingui();
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const [mode, setMode] = useState<AdjustmentMode>("amount");
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
@@ -269,7 +269,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 		(mode !== "target" || supportsTargetLeverage) && (mode !== "amount" || direction !== "remove" || allowsRemoval);
 	const canSubmit = hasLivePosition && inputValid && actionAllowed && !requiresRefresh && !isSubmitting;
 	const submitErrorMessage = submitError
-		? formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor))
+		? formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor))
 		: null;
 
 	function handleModeChange(value: string) {
@@ -346,7 +346,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			}
 			if (lockResult.value.state === "ambiguous") {
 				const feedback = localizedPositionSubmitFeedback("isolated-margin-ambiguous");
-				const message = formatPositionSubmitFeedback(feedback, (descriptor) => i18n._(descriptor));
+				const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
 				setRequiresRefresh(true);
 				setSubmitError(feedback);
 				toast.error(message);
@@ -359,7 +359,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			onOpenChange(false);
 		} catch (error) {
 			const feedback = positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin");
-			const message = formatPositionSubmitFeedback(feedback, (descriptor) => i18n._(descriptor));
+			const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
 			setSubmitError(feedback);
 			toast.error(message);
 		} finally {

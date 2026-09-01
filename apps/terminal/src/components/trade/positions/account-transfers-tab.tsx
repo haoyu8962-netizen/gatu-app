@@ -111,12 +111,12 @@ export function AccountTransfersTab() {
 									<TableHead
 										scope="col"
 										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%]")}
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
 									>{t`Account Value Change`}</TableHead>
 									<TableHead
 										scope="col"
 										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%]")}
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
 									>{t`Fee`}</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -161,17 +161,17 @@ export function AccountTransfersTab() {
 												size="dense"
 												className={cn(
 													positionsPanelTableCellClass,
-													"tabular-nums",
+													"text-right tabular-nums",
 													amount !== null && getValueColorClass(amount),
 												)}
 											>
-												{formatAccountLedgerAmount(row)}
+												<bdi dir="ltr">{formatAccountLedgerAmount(row)}</bdi>
 											</TableCell>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, "tabular-nums", row.fee && "text-error")}
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums", row.fee && "text-error")}
 											>
-												{formatAccountLedgerFee(row)}
+												<bdi dir="ltr">{formatAccountLedgerFee(row)}</bdi>
 											</TableCell>
 										</TableRow>
 									);

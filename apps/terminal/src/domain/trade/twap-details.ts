@@ -13,6 +13,13 @@ export interface TwapPriceFormat {
 	szDecimals: number;
 }
 
+export class TwapOrderDetailsError extends Error {
+	constructor() {
+		super("Trigger price is not valid against the live mark price");
+		this.name = "TwapOrderDetailsError";
+	}
+}
+
 interface BuildTwapOrderDetailsInput {
 	triggerPx: string | null;
 	stopPx: string | null;
@@ -44,6 +51,6 @@ export function buildTwapOrderDetails({
 	if (triggerPx === null && stopPx === null) return undefined;
 	if (triggerPx === null) return { t: null, s: stopPx };
 	const direction = getTwapTriggerDirection(triggerPx, markPx);
-	if (!direction) throw new Error("Trigger price is not valid against the live mark price");
+	if (!direction) throw new TwapOrderDetailsError();
 	return { t: { p: triggerPx, a: direction === "above" }, s: stopPx };
 }

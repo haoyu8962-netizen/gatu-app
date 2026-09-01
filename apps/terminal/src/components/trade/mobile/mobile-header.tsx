@@ -39,13 +39,16 @@ export function MobileHeader({ className }: Props) {
 						to={tradeHomePath}
 						search={{ scope: "all" }}
 						aria-label="GATU"
-						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus max-[359px]:hidden"
 					>
 						<GatuLogo variant="mark" micro className="size-[22px]" />
 					</Link>
 				</div>
 
-				<div data-slot="mobile-header-actions" className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+				<div
+					data-slot="mobile-header-actions"
+					className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 min-[360px]:gap-2"
+				>
 					<div
 						data-slot="mobile-header-account"
 						className="flex min-w-0 flex-1 justify-end [&_button]:h-11 [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
@@ -53,7 +56,7 @@ export function MobileHeader({ className }: Props) {
 						<UserMenu />
 					</div>
 					<ThemeToggle
-						className="ms-2 size-11 min-h-11 text-trading-panel-muted hover:text-trading-panel-fg"
+						className="size-11 min-h-11 text-trading-panel-muted hover:text-trading-panel-fg"
 						iconClassName="size-4.5"
 					/>
 					<LanguageSwitcher

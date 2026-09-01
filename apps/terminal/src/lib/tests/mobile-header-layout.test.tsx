@@ -116,15 +116,15 @@ describe("MobileHeader layout", () => {
 		expect(brand?.className).toContain("shrink-0");
 		expect(actions?.className).toContain("min-w-0");
 		expect(actions?.className).toContain("flex-1");
-		expect(actions?.className).toContain("gap-2");
-		expect(actions?.className).not.toContain("gap-0.5");
+		expect(actions?.className).toContain("gap-1");
+		expect(actions?.className).toContain("min-[360px]:gap-2");
 		expect(account?.className).toContain("min-w-0");
 		expect(account?.className).toContain("flex-1");
 		expect(account?.className).toContain("justify-end");
 		expect(account?.className).toContain("[&_button]:h-11");
 		expect(account?.className).toContain("[&_button]:min-h-11");
 		expect(actions?.className).toContain("ms-auto");
-		expect(theme?.className).toContain("ms-2");
+		expect(theme?.className).not.toContain("ms-2");
 		expect(theme?.className).not.toContain("ml-2");
 		expect(theme?.className).toContain("size-11");
 		expect(account?.querySelector('[data-testid="account"]')).not.toBeNull();

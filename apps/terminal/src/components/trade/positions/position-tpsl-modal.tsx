@@ -489,7 +489,7 @@ function PositionTpSlForm({
 	liveDataMessage,
 	onOpenChange,
 }: FormProps) {
-	const { i18n, t } = useLingui();
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
 	const liveSignedSize = toBig(position.szi);
@@ -533,7 +533,7 @@ function PositionTpSlForm({
 
 	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
 		if (error.kind === "order-submission") {
-			return formatOrderSubmissionFeedback(error, (descriptor) => i18n._(descriptor));
+			return formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
 		}
 		if (error.kind === "blocked") return t`Another order for this market is still being confirmed.`;
 		if (error.kind === "coordination-unavailable") {
@@ -1161,7 +1161,7 @@ function PositionTpSlForm({
 	}
 	const visibleError = submitError
 		? getSubmitErrorMessage(submitError)
-		: (formatOrderSubmissionCause(placeError, (descriptor) => i18n._(descriptor)) ?? cancelError?.message);
+		: (formatOrderSubmissionCause(placeError, (descriptor) => t(descriptor)) ?? cancelError?.message);
 	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
 	const unrealizedPnlDisplay =
 		quoteSymbol === DEFAULT_QUOTE_TOKEN
@@ -1209,7 +1209,7 @@ function PositionTpSlForm({
 						value={
 							<>
 								{unrealizedPnlDisplay}
-								<span className="font-normal text-fg-muted ml-1">({formatPercent(roe, 1)})</span>
+								<span className="ms-1 font-normal text-fg-muted">({formatPercent(roe, 1)})</span>
 							</>
 						}
 						valueClassName={cn("font-semibold", getValueColorClass(unrealizedPnl))}

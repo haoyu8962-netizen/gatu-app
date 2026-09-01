@@ -7,11 +7,12 @@ import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getUsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
-import { useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
+import { UsdcDepositRouteError, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/format";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
+import { formatFundsActionFeedback } from "@/lib/trade/funds-action-feedback";
 import { runWithExclusiveBrowserLock } from "@/lib/wallet/exclusive-browser-lock";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useDepositModalOpen } from "@/stores/use-global-modal-store";
@@ -322,7 +323,16 @@ export function EmbeddedDepositAutoBridge() {
 
 		if (depositStatus === "error") {
 			loadingToastActiveRef.current = false;
-			toast.error(depositError ? formatTransferError(depositError) : t`Automatic USDC deposit failed`, {
+			const depositErrorMessage =
+				depositError instanceof UsdcDepositRouteError
+					? formatFundsActionFeedback(
+							depositError.reason === "changed" ? "deposit-route-changed" : "deposit-route-unavailable",
+							(descriptor) => t(descriptor),
+						)
+					: depositError
+						? formatTransferError(depositError)
+						: t`Automatic USDC deposit failed`;
+			toast.error(depositErrorMessage, {
 				id: AUTO_DEPOSIT_TOAST_ID,
 			});
 		}

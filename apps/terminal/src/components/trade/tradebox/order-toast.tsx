@@ -52,6 +52,8 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 
 	return (
 		<div
+			role={order.status === "failed" ? "alert" : "status"}
+			aria-atomic="true"
 			className={cn(
 				"flex gap-3 py-2.5 px-3 transition-[opacity,transform] duration-300",
 				order.status === "pending" && "animate-pulse",
@@ -164,11 +166,11 @@ export function OrderQueueErrorMessage({
 }: {
 	error: string | OrderReconciliationError | OrderSubmissionFeedback;
 }) {
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	if (typeof error === "string") return error;
 	return error.kind === "order-reconciliation"
-		? formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor))
-		: formatOrderSubmissionFeedback(error, (descriptor) => i18n._(descriptor));
+		? formatOrderReconciliationError(error.code, (descriptor) => t(descriptor))
+		: formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
 }
 
 function CountdownBar({ order }: { order: OrderQueueItem }) {
@@ -199,8 +201,8 @@ export function OrderToast() {
 	const failedCount = orders.filter((o) => o.status === "failed").length;
 
 	return createPortal(
-		<output
-			aria-live="polite"
+		<section
+			aria-label={t`Order Queue`}
 			style={{ "--order-toast-mobile-bottom": ORDER_TOAST_MOBILE_BOTTOM } as CSSProperties}
 			className={cn(
 				ORDER_TOAST_WIDTH,
@@ -288,7 +290,7 @@ export function OrderToast() {
 					</div>
 				))}
 			</div>
-		</output>,
+		</section>,
 		document.body,
 	);
 }

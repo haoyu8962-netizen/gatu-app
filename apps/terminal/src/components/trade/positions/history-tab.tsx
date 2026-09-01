@@ -136,13 +136,13 @@ export function HistoryTab() {
 							</colgroup>
 							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pl-5 text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "ps-5 text-start")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-start")}>
 										{t`Direction`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-start")}>
 										{t`Type`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
@@ -157,7 +157,7 @@ export function HistoryTab() {
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pr-5 text-right")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pe-5 text-right")}>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
@@ -175,7 +175,7 @@ export function HistoryTab() {
 										>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, historyTableCellClass, "pl-5 font-bold")}
+												className={cn(positionsPanelTableCellClass, historyTableCellClass, "ps-5 font-bold")}
 											>
 												<AssetBadge
 													coin={fill.coin}
@@ -253,7 +253,7 @@ export function HistoryTab() {
 												className={cn(
 													positionsPanelTableCellClass,
 													historyTableCellClass,
-													"pr-5 text-right text-xs text-market-close-muted",
+													"pe-5 text-right text-xs text-market-close-muted",
 												)}
 											>
 												<div className="flex flex-col items-end">

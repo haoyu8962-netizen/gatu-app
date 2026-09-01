@@ -1,6 +1,7 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 
@@ -12,6 +13,7 @@ interface Props {
 	balanceStatus: "idle" | "loading" | "success" | "error";
 	balanceError: Error | null;
 	validation: { valid: boolean; error: string | null };
+	amountError?: string | null;
 	isPending: boolean;
 	onSubmit: () => void;
 }
@@ -24,16 +26,18 @@ export function AmountInput({
 	balanceStatus,
 	balanceError,
 	validation,
+	amountError = null,
 	isPending,
 	onSubmit,
 }: Props) {
 	const { t } = useLingui();
+	const helperId = useId();
 	const isBalanceLoading = balanceStatus === "loading";
 	const hasBalanceError = balanceStatus === "error";
 	const isSubmitDisabled = !validation.valid || isPending || isBalanceLoading || hasBalanceError;
-	const helperText = hasBalanceError
-		? balanceError?.message || t`Unable to load Arbitrum USDC balance`
-		: validation.error;
+	const helperText = hasBalanceError ? balanceError?.message || t`Unable to load Arbitrum USDC balance` : amountError;
+	const hasHelper = Boolean(helperText);
+	const hasAmountError = Boolean(amountError);
 
 	return (
 		<div className="flex flex-col gap-2 font-market-close">
@@ -58,6 +62,8 @@ export function AmountInput({
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => onAmountChange(e.target.value)}
+					aria-describedby={hasAmountError ? helperId : undefined}
+					aria-invalid={hasAmountError ? true : undefined}
 					disabled={isPending || isBalanceLoading || hasBalanceError}
 					maxAllowedDecimals={6}
 					mobileSafe
@@ -66,10 +72,14 @@ export function AmountInput({
 						helperText && "border-market-close-danger focus-visible:border-market-close-danger",
 					)}
 				/>
-				<p className={cn("flex h-4 items-center gap-1 text-xs", helperText ? "text-market-close-danger" : "invisible")}>
-					<WarningCircleIcon className="size-3" />
-					{helperText || " "}
-				</p>
+				{hasHelper ? (
+					<p id={helperId} role="alert" className="flex h-4 items-center gap-1 text-xs text-market-close-danger">
+						<WarningCircleIcon className="size-3" />
+						{helperText}
+					</p>
+				) : (
+					<div aria-hidden="true" className="h-4" />
+				)}
 			</div>
 
 			<Button

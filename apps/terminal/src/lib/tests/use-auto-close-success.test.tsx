@@ -1,16 +1,18 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 
 interface HarnessProps {
 	onClose: () => void;
+	onTriggerReady?: (trigger: () => void) => void;
 }
 
-function Harness({ onClose }: HarnessProps) {
+function Harness({ onClose, onTriggerReady }: HarnessProps) {
 	const { showSuccess, trigger, reset } = useAutoCloseSuccess(onClose, 100);
+	useEffect(() => onTriggerReady?.(trigger), [onTriggerReady, trigger]);
 
 	return (
 		<div>
@@ -68,6 +70,27 @@ describe("useAutoCloseSuccess", () => {
 
 		act(() => getButton(container, "Trigger").click());
 		act(() => root.render(null));
+		act(() => vi.advanceTimersByTime(100));
+
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("ignores a stale success callback after its owner unmounts", () => {
+		const onClose = vi.fn();
+		let staleTrigger = () => {};
+		act(() =>
+			root.render(
+				<Harness
+					onClose={onClose}
+					onTriggerReady={(trigger) => {
+						staleTrigger = trigger;
+					}}
+				/>,
+			),
+		);
+
+		act(() => root.render(null));
+		act(() => staleTrigger());
 		act(() => vi.advanceTimersByTime(100));
 
 		expect(onClose).not.toHaveBeenCalled();

@@ -179,7 +179,7 @@ function DesktopAgentTable({
 			</colgroup>
 			<TableHeader>
 				<TableRow>
-					<TableHead size="dense" className="h-[var(--api-wallet-table-head-height)] pl-5" aria-sort={sortDirection}>
+					<TableHead size="dense" className="h-[var(--api-wallet-table-head-height)] ps-5" aria-sort={sortDirection}>
 						<Button
 							type="button"
 							variant="ghost"
@@ -208,7 +208,7 @@ function DesktopAgentTable({
 					<TableHead size="dense" className="text-right">
 						<Trans>Valid until</Trans>
 					</TableHead>
-					<TableHead size="dense" className="pr-5 text-right">
+					<TableHead size="dense" className="pe-5 text-right">
 						<Trans>Action</Trans>
 					</TableHead>
 				</TableRow>
@@ -227,7 +227,7 @@ function DesktopAgentTable({
 				) : (
 					agents.map((agent) => (
 						<TableRow key={agent.id} className="h-[var(--api-wallet-row-min-height)] hover:bg-api-wallet-hover">
-							<TableCell size="dense" className="truncate pl-5 text-2sm font-bold text-api-wallet-fg">
+							<TableCell size="dense" className="truncate ps-5 text-2sm font-bold text-api-wallet-fg">
 								{agent.name}
 							</TableCell>
 							<TableCell size="dense">
@@ -236,7 +236,7 @@ function DesktopAgentTable({
 										className="min-w-0 truncate font-mono text-xs tabular-nums text-api-wallet-muted"
 										title={agent.address}
 									>
-										{agent.address}
+										<bdi dir="ltr">{agent.address}</bdi>
 									</span>
 									<ApiWalletCopyButton value={agent.address} stopPropagation />
 								</div>
@@ -253,7 +253,7 @@ function DesktopAgentTable({
 							>
 								{agent.expiresAt ? <time dateTime={agent.expiresAt}>{agent.expiryLabel}</time> : agent.expiryLabel}
 							</TableCell>
-							<TableCell size="dense" className="pr-5 text-right">
+							<TableCell size="dense" className="pe-5 text-right">
 								<Button
 									type="button"
 									variant="link"
@@ -292,7 +292,7 @@ function MobileAgentCards({ agents, pageState, onRemove, onRetry }: Props) {
 							className="min-w-0 flex-1 truncate font-mono text-xs tabular-nums text-api-wallet-muted"
 							title={agent.address}
 						>
-							{shortenAddress(agent.address, 6, 4)}
+							<bdi dir="ltr">{shortenAddress(agent.address, 6, 4)}</bdi>
 						</span>
 						<ApiWalletCopyButton value={agent.address} />
 					</div>

@@ -213,8 +213,12 @@ function getRunningTwapId(result: ExchangeResponse<"twapOrder">): number | undef
 function createTwapIntent(params: ExchangeParams<"twapOrder">, coin: string): TwapIntent {
 	const assetId = Number(params.twap.a);
 	const minutes = Number(params.twap.m);
-	if (!Number.isSafeInteger(assetId) || assetId < 0) throw new Error("Invalid TWAP asset ID");
-	if (!Number.isSafeInteger(minutes) || minutes <= 0) throw new Error("Invalid TWAP duration");
+	if (!Number.isSafeInteger(assetId) || assetId < 0) {
+		throw orderSubmissionFeedbackCause("market-context-mismatch");
+	}
+	if (!Number.isSafeInteger(minutes) || minutes <= 0) {
+		throw orderSubmissionFeedbackCause("twap-minutes-range");
+	}
 	return {
 		assetId,
 		coin,

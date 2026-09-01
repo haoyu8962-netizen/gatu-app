@@ -13,7 +13,7 @@ export function GeoRestrictionBanner() {
 	return (
 		<div
 			role="alert"
-			className="flex min-h-[50px] w-full shrink-0 items-center gap-2.5 bg-restricted py-2.5 pl-[max(1rem,var(--sal))] pr-[max(1rem,var(--sar))] text-left text-base font-medium text-white"
+			className="flex min-h-[50px] w-full shrink-0 items-center gap-2.5 bg-restricted py-2.5 pl-[max(1rem,var(--sal))] pr-[max(1rem,var(--sar))] text-start text-base font-medium text-white"
 		>
 			<WarningIcon weight="fill" className="size-5 shrink-0" />
 			<p className="leading-snug">

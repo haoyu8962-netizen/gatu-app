@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button, Table } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -99,7 +99,9 @@ export function VaultDetailView({
 						<Trans>Vaults</Trans>
 					</Link>
 					<h1 className="mt-1 break-words text-xl font-bold text-fg min-[1001px]:text-2xl">{detail.name}</h1>
-					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">{detail.vaultAddress}</p>
+					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">
+						<bdi dir="ltr">{detail.vaultAddress}</bdi>
+					</p>
 				</div>
 				<div className="w-full min-[1001px]:w-auto min-[1001px]:max-w-sm">
 					<div className="flex gap-2">
@@ -270,7 +272,7 @@ export function VaultDetailView({
 						rel="noopener"
 						className="mt-3 inline-flex items-center gap-1 font-mono text-xs tabular-nums text-signal hover:text-signal-hover hover:underline"
 					>
-						{shortenAddress(detail.leader)}
+						<bdi dir="ltr">{shortenAddress(detail.leader)}</bdi>
 						<ArrowSquareOutIcon className="size-3" />
 					</a>
 					<p className="mt-3 break-words text-xs leading-5 text-fg-muted">
@@ -330,6 +332,7 @@ export function VaultDetailView({
 }
 
 function VaultFollowers({ followers }: { followers: VaultDetail["followers"] }) {
+	const { t } = useLingui();
 	const titleId = useId();
 	return (
 		<section aria-labelledby={titleId}>
@@ -347,34 +350,36 @@ function VaultFollowers({ followers }: { followers: VaultDetail["followers"] }) 
 				</p>
 			) : (
 				<>
-					<div className="hidden overflow-x-auto min-[1001px]:block">
-						<table className="w-full min-w-4xl border-collapse">
-							<thead>
-								<tr className="border-b border-stroke-weak text-2xs text-fg-muted">
-									<th className="px-5 py-2 text-left font-semibold">
-										<Trans>Depositor</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>Equity</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>Current PNL</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>All-time PNL</Trans>
-									</th>
-									<th className="px-5 py-2 text-right font-semibold">
-										<Trans>Days following</Trans>
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-stroke-weak">
-								{followers.map((follower, index) => (
-									<FollowerDesktopRow key={`${follower.user}:${index}`} follower={follower} />
-								))}
-							</tbody>
-						</table>
-					</div>
+					<Table
+						scrollableRegionLabel={t`Vault depositors`}
+						containerClassName="hidden min-[1001px]:block"
+						className="min-w-4xl"
+					>
+						<thead>
+							<tr className="border-b border-stroke-weak text-2xs text-fg-muted">
+								<th className="px-5 py-2 text-start font-semibold">
+									<Trans>Depositor</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>Equity</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>Current PNL</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>All-time PNL</Trans>
+								</th>
+								<th className="px-5 py-2 text-right font-semibold">
+									<Trans>Days following</Trans>
+								</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-stroke-weak">
+							{followers.map((follower, index) => (
+								<FollowerDesktopRow key={`${follower.user}:${index}`} follower={follower} />
+							))}
+						</tbody>
+					</Table>
 					<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 						{followers.map((follower, index) => (
 							<FollowerMobileRow key={`${follower.user}:${index}`} follower={follower} />
@@ -392,7 +397,7 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 	return (
 		<tr>
 			<td className="px-5 py-2.5 font-mono text-xs tabular-nums text-fg">
-				{follower.user === "Leader" ? <Trans>Leader</Trans> : shortenAddress(follower.user)}
+				{follower.user === "Leader" ? <Trans>Leader</Trans> : <bdi dir="ltr">{shortenAddress(follower.user)}</bdi>}
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
 				<bdi dir="ltr">{formatVaultUsd(follower.vaultEquity)}</bdi>
@@ -415,7 +420,7 @@ function FollowerMobileRow({ follower }: { follower: VaultDetail["followers"][nu
 		<div className="px-4 py-3">
 			<div className="min-w-0">
 				<p className="truncate font-mono text-xs tabular-nums text-fg">
-					{follower.user === "Leader" ? <Trans>Leader</Trans> : shortenAddress(follower.user)}
+					{follower.user === "Leader" ? <Trans>Leader</Trans> : <bdi dir="ltr">{shortenAddress(follower.user)}</bdi>}
 				</p>
 				<p className="mt-0.5 text-2xs text-fg-muted">
 					<Trans>Following {follower.daysFollowing} days</Trans>

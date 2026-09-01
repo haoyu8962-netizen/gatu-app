@@ -4,6 +4,7 @@ import {
 	formatOrderSubmissionCause,
 	formatOrderSubmissionFeedback,
 	getDefaultOrderSubmissionFeedbackMessage,
+	getOrderSubmissionFeedback,
 	type OrderSubmissionFeedback,
 	OrderSubmissionFeedbackCause,
 } from "@/lib/trade/order-submission-feedback";
@@ -131,6 +132,8 @@ export function positionSubmitFeedbackFromCause(
 ): PositionSubmitFeedback {
 	if (cause instanceof PositionSubmitFeedbackCause) return cause.feedback;
 	if (cause instanceof OrderSubmissionFeedbackCause) return cause.feedback;
+	const orderSubmissionFeedback = getOrderSubmissionFeedback(cause);
+	if (orderSubmissionFeedback) return orderSubmissionFeedback;
 	if (cause instanceof Error) return { kind: "raw", message: cause.message };
 	return localizedPositionSubmitFeedback(fallbackCode);
 }
@@ -165,6 +168,9 @@ export function localizePositionSubmitFeedbackCause(
 	if (cause instanceof OrderSubmissionFeedbackCause) {
 		cause.message = message;
 		return cause;
+	}
+	if (getOrderSubmissionFeedback(cause)) {
+		return new PositionSubmitFeedbackCause(feedback, message);
 	}
 	if (cause instanceof Error) return cause;
 	return new PositionSubmitFeedbackCause(feedback, message);

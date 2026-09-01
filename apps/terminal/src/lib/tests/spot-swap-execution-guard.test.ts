@@ -1,6 +1,10 @@
 import type { OrderParameters } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
-import { assertSpotSwapExecutionAllowed, type SpotSwapExecutionState } from "@/domain/trade/spot-swap-execution-guard";
+import {
+	assertSpotSwapExecutionAllowed,
+	SpotSwapExecutionError,
+	type SpotSwapExecutionState,
+} from "@/domain/trade/spot-swap-execution-guard";
 
 const order: OrderParameters["orders"][number] = {
 	a: 10_001,
@@ -67,4 +71,25 @@ describe("spot swap SDK execution guard", () => {
 			assertSpotSwapExecutionAllowed({ ...params, orders: [{ ...order, p: "1.02" }] }, state(), 1_001),
 		).toThrow("quote changed");
 	});
+
+	it("exposes stable reasons and normalizes malformed live balances", () => {
+		expectExecutionReason(
+			() => assertSpotSwapExecutionAllowed(params, state({ currentBalance: "not-a-balance" }), 1_001),
+			"balance-unavailable",
+		);
+		expectExecutionReason(
+			() => assertSpotSwapExecutionAllowed({ ...params, orders: [{ ...order, p: "1.02" }] }, state(), 1_001),
+			"quote-changed",
+		);
+	});
 });
+
+function expectExecutionReason(action: () => void, reason: ConstructorParameters<typeof SpotSwapExecutionError>[0]) {
+	try {
+		action();
+		throw new Error("Expected spot swap execution guard to reject");
+	} catch (error) {
+		expect(error).toBeInstanceOf(SpotSwapExecutionError);
+		expect(error).toMatchObject({ reason });
+	}
+}

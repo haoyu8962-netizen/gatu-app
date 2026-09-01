@@ -71,7 +71,11 @@ export function FundsActionRecoveryHost() {
 
 	return (
 		<>
-			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay">
+			{/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content and review action in this status toast. */}
+			<div
+				role="status"
+				className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-warning-strong bg-overlay p-3 shadow-overlay"
+			>
 				<WarningCircleIcon className="size-5 shrink-0 text-warning" weight="fill" />
 				<div className="min-w-0">
 					<p className="text-xs font-bold text-fg">
@@ -84,7 +88,7 @@ export function FundsActionRecoveryHost() {
 				<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
 					<Trans>Review</Trans>
 				</Button>
-			</output>
+			</div>
 			<AdaptiveModal
 				open={detailsOpen}
 				onOpenChange={(open) => {
@@ -185,7 +189,10 @@ function CorruptMarkerRecovery() {
 
 	return (
 		<>
-			<output className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-error-strong bg-overlay p-3 shadow-overlay">
+			<div
+				role="alert"
+				className="fixed right-4 bottom-[var(--funds-action-toast-offset)] z-[var(--z-toast)] flex max-w-[calc(100vw-var(--funds-action-toast-max))] items-center gap-3 rounded-12 border border-stroke-error-strong bg-overlay p-3 shadow-overlay"
+			>
 				<WarningCircleIcon className="size-5 shrink-0 text-error" weight="fill" />
 				<div className="min-w-0">
 					<p className="text-xs font-bold text-fg">
@@ -198,7 +205,7 @@ function CorruptMarkerRecovery() {
 				<Button size="xs" variant="outline" intent="neutral" onClick={() => setDetailsOpen(true)}>
 					<Trans>Review</Trans>
 				</Button>
-			</output>
+			</div>
 			<AdaptiveModal
 				open={detailsOpen}
 				onOpenChange={(open) => {

@@ -3,6 +3,7 @@
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
@@ -152,6 +153,17 @@ describe("useOrderSubmit surface reset", () => {
 		});
 	});
 
+	it("stores a live execution-guard failure as a locale-independent descriptor", async () => {
+		mocks.submitOrder.mockRejectedValueOnce(new EntryExecutionError("mark-price-unavailable"));
+
+		await submit(marketInput());
+
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			status: "failed",
+			error: { kind: "order-submission", code: "live-trading-data-unavailable" },
+		});
+	});
+
 	it("keeps an external SDK order failure raw", async () => {
 		const sdkMessage = "SDK rejected the order request";
 		mocks.submitOrder.mockRejectedValueOnce(new Error(sdkMessage));
@@ -168,6 +180,16 @@ describe("useOrderSubmit surface reset", () => {
 		expect(params.orders).toHaveLength(2);
 		expect(mocks.addOrder).toHaveBeenCalledWith(expect.objectContaining({ orderType: "scale" }));
 		expect(mocks.onReset).toHaveBeenCalledOnce();
+	});
+
+	it("stores local scale validation as a locale-independent descriptor", async () => {
+		await submit(scaleInput({ scaleLevelsNum: null }));
+
+		expect(mocks.submitOrder).not.toHaveBeenCalled();
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			status: "failed",
+			error: { kind: "order-submission", code: "scale-levels-range" },
+		});
 	});
 
 	it("queues a twap entry and resets both form halves once it is running", async () => {

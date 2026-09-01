@@ -107,7 +107,7 @@ export function GlobalSettingsModal() {
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm">
+			<ModalPopup size="sm" closeLabel={t`Close`}>
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>

@@ -43,12 +43,19 @@ describe("TradeFormScale Mid controls", () => {
 	});
 
 	it("fills both scale boundaries from the provided BBO mid", () => {
-		act(() => root.render(<TradeFormScale midPrice="101.25" szDecimals={2} marketType="perp" disabled={false} />));
+		act(() =>
+			root.render(<TradeFormScale midPrice="101.25" szDecimals={2} marketType="perp" disabled={false} compact />),
+		);
 
 		const midButtons = [...container.querySelectorAll<HTMLButtonElement>("button")].filter(
 			(button) => button.textContent?.trim() === "Mid",
 		);
 		expect(midButtons).toHaveLength(2);
+		expect(midButtons.every((button) => button.className.includes("min-w-11"))).toBe(true);
+		expect(midButtons.every((button) => button.className.includes("after:inset-0"))).toBe(true);
+		expect(midButtons.every((button) => !button.className.includes("after:size-11"))).toBe(true);
+		expect(midButtons.every((button) => button.className.includes("ms-1"))).toBe(true);
+		expect(midButtons.every((button) => !button.className.includes("ml-1"))).toBe(true);
 
 		act(() => midButtons[0]?.click());
 		act(() => midButtons[1]?.click());

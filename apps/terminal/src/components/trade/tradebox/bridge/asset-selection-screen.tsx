@@ -28,7 +28,7 @@ function TokenRow({ token, onSelect }: TokenRowProps) {
 			disabled={token.isDust}
 			onClick={() => onSelect(token)}
 			className={cn(
-				"flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-8 w-full border",
+				"flex items-center gap-3 px-3 py-2.5 text-start transition-colors rounded-8 w-full border",
 				tokenRowStyle(token.isDust),
 			)}
 		>

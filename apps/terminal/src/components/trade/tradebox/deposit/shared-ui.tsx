@@ -1,5 +1,5 @@
 import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle, Select } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
 	CheckCircleIcon,
@@ -79,6 +79,7 @@ export function StatusScreen({
 	closable = true,
 	presentation = "modal",
 }: StatusScreenProps) {
+	const { t } = useLingui();
 	const explorerUrl = txHash ? getExplorerTxUrl(txHash, txChain) : null;
 
 	return (
@@ -89,6 +90,7 @@ export function StatusScreen({
 			size="sm"
 			dismissible={closable}
 			showClose={closable}
+			closeLabel={t`Close`}
 			showHandle={presentation === "drawer" && closable}
 			handleClassName="top-2 h-1 w-9 bg-fill/30"
 			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
@@ -97,33 +99,39 @@ export function StatusScreen({
 				<ModalTitle>{title}</ModalTitle>
 			</ModalHeader>
 			<ModalContent>
-				<output className="flex flex-col items-center gap-4 py-6" aria-live="polite">
-					{icon === "loading" ? (
-						<div className="relative">
-							<div className="absolute inset-0 animate-ping rounded-full bg-signal-soft/20" />
-							<div className="relative flex size-14 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft/10">
-								<SpinnerGapIcon className="size-7 animate-spin text-signal" />
+				<div className="flex flex-col items-center gap-4 py-6">
+					<div
+						role={icon === "error" ? "alert" : "status"}
+						aria-atomic="true"
+						className="flex flex-col items-center gap-4"
+					>
+						{icon === "loading" ? (
+							<div className="relative">
+								<div className="absolute inset-0 animate-ping rounded-full bg-signal-soft/20" />
+								<div className="relative flex size-14 items-center justify-center rounded-full border border-stroke-signal/30 bg-signal-soft/10">
+									<SpinnerGapIcon className="size-7 animate-spin text-signal" />
+								</div>
 							</div>
+						) : (
+							<div
+								className={cn(
+									"flex size-14 items-center justify-center rounded-full border",
+									icon === "success"
+										? "bg-success-soft border-stroke-success-strong/30"
+										: "bg-error-soft border-stroke-error-strong/30",
+								)}
+							>
+								{icon === "success" ? (
+									<CheckCircleIcon className="size-7 text-success" />
+								) : (
+									<WarningCircleIcon className="size-7 text-error" />
+								)}
+							</div>
+						)}
+						<div className="space-y-1.5 text-center">
+							<p className="text-sm font-medium">{heading}</p>
+							{description && <div className="text-xs text-fg-muted">{description}</div>}
 						</div>
-					) : (
-						<div
-							className={cn(
-								"flex size-14 items-center justify-center rounded-full border",
-								icon === "success"
-									? "bg-success-soft border-stroke-success-strong/30"
-									: "bg-error-soft border-stroke-error-strong/30",
-							)}
-						>
-							{icon === "success" ? (
-								<CheckCircleIcon className="size-7 text-success" />
-							) : (
-								<WarningCircleIcon className="size-7 text-error" />
-							)}
-						</div>
-					)}
-					<div className="text-center space-y-1.5">
-						<p className="text-sm font-medium">{heading}</p>
-						{description && <p className="text-xs text-fg-muted">{description}</p>}
 					</div>
 					{explorerUrl && (
 						<a
@@ -137,7 +145,7 @@ export function StatusScreen({
 						</a>
 					)}
 					{children && <div className="w-full pt-2">{children}</div>}
-				</output>
+				</div>
 			</ModalContent>
 		</AdaptiveModal>
 	);

@@ -1,7 +1,7 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -26,7 +26,7 @@ import {
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import {
 	FundsActionFeedbackCause,
@@ -74,7 +74,9 @@ interface BodyProps {
 }
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
-	const { i18n, t } = useLingui();
+	const { t } = useLingui();
+	const submissionSequenceRef = useRef(0);
+	const submissionIdentityRef = useRef<object | null>(null);
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -82,7 +84,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const [error, setError] = useState<SendError | null>(null);
 	const errorMessage = error
 		? error.kind === "local"
-			? formatFundsActionFeedback(error.code, (descriptor) => i18n._(descriptor))
+			? formatFundsActionFeedback(error.code, (descriptor) => t(descriptor))
 			: formatExchangeActionError(error.cause, t`Send failed`)
 		: null;
 
@@ -111,7 +113,25 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		tokenId: "",
 		source: "spot" as "spot" | "perp",
 	});
-	const { address, hasWalletAccess } = useWalletSession();
+	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
+	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const submissionIdentityKey = [
+		env,
+		clientKey.toLowerCase(),
+		exchangeSessionMode,
+		address?.toLowerCase() ?? "disconnected",
+		walletAddress?.toLowerCase() ?? "no-wallet",
+		walletSessionMode,
+		accountAbstraction,
+	].join(":");
+	useLayoutEffect(() => {
+		const identity = { exchangeLifecycle, key: submissionIdentityKey };
+		submissionIdentityRef.current = identity;
+		return () => {
+			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
+			submissionSequenceRef.current += 1;
+		};
+	}, [exchangeLifecycle, submissionIdentityKey]);
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
 	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
 		try {
@@ -233,6 +253,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	};
 
 	const isValidDestination = isAddress(destination);
+	const destinationError = destination && !isValidDestination ? t`Enter a valid Ethereum address.` : undefined;
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
 	const canSend =
 		accountModeReady &&
@@ -274,6 +295,11 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	async function handleSend() {
 		if (!canSend) return;
 
+		const submissionIdentity = submissionIdentityRef.current;
+		if (!submissionIdentity) return;
+		const submissionSequence = ++submissionSequenceRef.current;
+		const isCurrentSubmission = () =>
+			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		setError(null);
 		try {
 			if (usesTradingAccount) {
@@ -299,10 +325,13 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					amount,
 				});
 			}
-			setDestination("");
-			setAmount("");
-			onOpenChange(false);
+			if (isCurrentSubmission()) {
+				setDestination("");
+				setAmount("");
+				onOpenChange(false);
+			}
 		} catch (err) {
+			if (!isCurrentSubmission()) return;
 			setError(
 				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
 			);
@@ -356,16 +385,14 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						aria-label={t`Destination address`}
 						value={destination}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+						dir="auto"
+						autoCapitalize="none"
 						autoComplete="off"
 						spellCheck={false}
+						error={destinationError}
 						disabled={isPending || !accountModeReady || !accountDataReady}
 						mobileSafe
-						className={cn(
-							"max-[1000px]:min-h-11",
-							destination &&
-								!isValidDestination &&
-								"border-stroke-error-strong focus-visible:border-stroke-error-strong",
-						)}
+						className="max-[1000px]:min-h-11"
 					/>
 
 					<div className="flex gap-2">
@@ -373,6 +400,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							value={accountModeReady ? activeAccountType : ""}
 							onValueChange={handleAccountTypeChange}
 							options={accountTypeOptions}
+							triggerAriaLabel={t`Account`}
 							disabled={!accountModeReady || !accountDataReady || usesTradingAccount || isPending}
 							className="flex-1"
 						/>
@@ -381,6 +409,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							value={accountModeReady ? selectedToken : ""}
 							onValueChange={handleTokenChange}
 							options={tokenSelectOptions}
+							triggerAriaLabel={t`Asset`}
 							disabled={isPending || !accountModeReady || !accountDataReady}
 							className="flex-1"
 						/>
@@ -411,15 +440,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					/>
 
 					{errorMessage && (
-						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
+						<div
+							role="alert"
+							className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error"
+						>
 							<WarningCircleIcon className="size-3.5 shrink-0" />
 							<span className="flex-1">{errorMessage}</span>
 						</div>
 					)}
 
 					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
-						{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
-						<PaperPlaneTiltIcon className="size-3.5 mr-2" />
+						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
+						<PaperPlaneTiltIcon className="me-2 size-3.5" />
 						{isPending ? t`Sending...` : t`Send`}
 					</Button>
 				</div>

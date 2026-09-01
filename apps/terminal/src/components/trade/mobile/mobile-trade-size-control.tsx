@@ -77,7 +77,7 @@ export function MobileTradeSizeControl({
 					type="button"
 					onClick={onSizeModeToggle}
 					disabled={disabled}
-					className="relative ms-2 inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] disabled:cursor-not-allowed"
+					className="relative ms-2 inline-flex h-8 min-w-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg after:absolute after:inset-0 after:content-[''] disabled:cursor-not-allowed"
 				>
 					{sizeModeLabel}
 					<CaretDownIcon className="size-3 text-trading-panel-subtle" />

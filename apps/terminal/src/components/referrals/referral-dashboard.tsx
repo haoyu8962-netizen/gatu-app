@@ -158,7 +158,8 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 		);
 	} else if (referrals.status === "loading") {
 		content = (
-			<output aria-live="polite" aria-label={t`Loading referrals`} className="block px-4 pb-4 min-[1001px]:px-5">
+			// biome-ignore lint/a11y/useSemanticElements: output cannot contain this block skeleton.
+			<div role="status" aria-label={t`Loading referrals`} className="block px-4 pb-4 min-[1001px]:px-5">
 				<span className="sr-only">
 					<Trans>Loading referrals</Trans>
 				</span>
@@ -177,7 +178,7 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 						<div className="h-36 animate-pulse bg-fill-weak motion-reduce:animate-none min-[1001px]:col-span-2" />
 					</div>
 				</div>
-			</output>
+			</div>
 		);
 	} else if (!readyData) {
 		content = (

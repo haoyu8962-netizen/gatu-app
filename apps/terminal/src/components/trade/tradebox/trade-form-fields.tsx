@@ -262,7 +262,7 @@ export function TradeFormFields({
 							{isAvailabilityStale ? (
 								<Tooltip content={t`Loading...`} side="top">
 									<SpinnerGapIcon
-										className="ml-1 size-3 shrink-0 animate-spin text-warning"
+										className="ms-1 size-3 shrink-0 animate-spin text-warning"
 										aria-label={t`Loading...`}
 									/>
 								</Tooltip>
@@ -270,7 +270,7 @@ export function TradeFormFields({
 							{hasAvailabilityError ? (
 								<Tooltip content={t`Failed to load balances.`} side="top">
 									<WarningCircleIcon
-										className="ml-1 size-3 shrink-0 text-error"
+										className="ms-1 size-3 shrink-0 text-error"
 										aria-label={t`Failed to load balances.`}
 									/>
 								</Tooltip>
@@ -306,7 +306,7 @@ export function TradeFormFields({
 					<div className={cn(inputFrameClass, triggerHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
 						<label
 							htmlFor={triggerFieldId}
-							className="mr-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
+							className="me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
 						>
 							{t`Trigger Price`} ({quoteToken})
 						</label>
@@ -357,7 +357,7 @@ export function TradeFormFields({
 								className="h-9 min-w-0 flex-1 bg-transparent px-0 text-base font-semibold tabular-nums text-trading-panel-fg"
 								disabled={isFormDisabled}
 							/>
-							<span className="ml-2 shrink-0 whitespace-nowrap text-2sm text-trading-panel-muted">{quoteToken}</span>
+							<span className="ms-2 shrink-0 whitespace-nowrap text-2sm text-trading-panel-muted">{quoteToken}</span>
 						</div>
 						{orderType === "limit" && <TradeTifChips orderType={orderType} disabled={isFormDisabled} />}
 					</div>
@@ -380,7 +380,7 @@ export function TradeFormFields({
 					<div className={cn(inputFrameClass, sizeHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
 						<label
 							htmlFor={sizeFieldId}
-							className="mr-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
+							className="me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
 						>
 							{t`Size`}
 						</label>
@@ -400,7 +400,7 @@ export function TradeFormFields({
 							onClick={onSizeModeToggle}
 							aria-label={t`Toggle size mode`}
 							disabled={isFormDisabled}
-							className="ml-2 inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap text-2sm font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
+							className="ms-2 inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap text-2sm font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
 						>
 							{sizeModeLabel}
 							<CaretDownIcon className="size-3 text-trading-panel-subtle" />

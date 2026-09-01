@@ -1119,7 +1119,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 							aria-label={t`Cancel all orders`}
 							onClick={handleRequestCancelAll}
 							disabled={disableCancelAll}
-							className="ml-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
+							className="ms-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
 						>
 							{pendingScopes.has("all")
 								? t`Canceling...`
@@ -1257,16 +1257,16 @@ interface OrdersTableHeaderProps {
 function OrdersTableHeader({ allSelected, someSelected, disabled, onToggleAll }: OrdersTableHeaderProps) {
 	const { t } = useLingui();
 	const columns: readonly { label: string; className: string; tooltip?: boolean }[] = [
-		{ label: t`Type`, className: "w-[84px] text-left" },
-		{ label: t`Market`, className: "w-[70px] text-left" },
-		{ label: t`Direction`, className: "w-[60px] text-left" },
+		{ label: t`Type`, className: "w-[84px] text-start" },
+		{ label: t`Market`, className: "w-[70px] text-start" },
+		{ label: t`Direction`, className: "w-[60px] text-start" },
 		{ label: t`Size`, className: "w-[100px] justify-end text-right" },
 		{ label: t`Original Size`, className: "w-[84px] justify-end text-right", tooltip: true },
 		{ label: t`Order Value`, className: "w-[104px] justify-end text-right" },
 		{ label: t`Price`, className: "w-[66px] justify-end text-right" },
-		{ label: t`Reduce Only`, className: "w-[52px] text-left", tooltip: true },
-		{ label: t`Trigger Condition`, className: "w-auto text-left", tooltip: true },
-		{ label: t({ message: "TP/SL", context: "Current orders column" }), className: "w-[76px] text-left" },
+		{ label: t`Reduce Only`, className: "w-[52px] text-start", tooltip: true },
+		{ label: t`Trigger Condition`, className: "w-auto text-start", tooltip: true },
+		{ label: t({ message: "TP/SL", context: "Current orders column" }), className: "w-[76px] text-start" },
 		{ label: t`Actions`, className: "w-[88px] justify-end text-right" },
 	];
 
@@ -1282,7 +1282,7 @@ function OrdersTableHeader({ allSelected, someSelected, disabled, onToggleAll }:
 				<TableHead
 					scope="col"
 					size="dense"
-					className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "relative w-[126px] text-left")}
+					className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "relative w-[126px] text-start")}
 				>
 					<span
 						className={cn(
@@ -1461,7 +1461,7 @@ function OrderRow({
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "font-bold")}>
 				<button
 					type="button"
-					className="max-w-full truncate rounded-[4px] text-left text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
+					className="max-w-full truncate rounded-[4px] text-start text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 					onClick={() => onSelectMarket(order.coin, isBuy ? "buy" : "sell")}
 					aria-label={t`Switch to ${order.coin} market, ${sideLabel} order`}
 				>

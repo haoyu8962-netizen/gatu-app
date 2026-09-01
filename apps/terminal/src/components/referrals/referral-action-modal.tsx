@@ -75,6 +75,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 			size="lg"
 			dismissible={!isSubmitting}
 			showClose={!isMobile && !isSubmitting}
+			closeLabel={t`Close`}
 			showHandle={isMobile && !isSubmitting}
 			handleClassName="top-2 h-1 w-9 !rounded-4 bg-fill/30"
 			layer="blocking"
@@ -149,7 +150,8 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 				) : null}
 
 				{step === "submitting" ? (
-					<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
+					/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel. */
+					<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
 						<SpinnerGapIcon className="size-8 animate-spin text-signal motion-reduce:animate-none" />
 						<p className="text-sm font-semibold text-fg">
 							<Trans>Waiting for confirmation</Trans>
@@ -157,11 +159,12 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 						<p className="text-xs text-fg-muted">
 							<Trans>Keep this window open while Hyperliquid processes the request.</Trans>
 						</p>
-					</output>
+					</div>
 				) : null}
 
 				{step === "success" ? (
-					<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
+					/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel. */
+					<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
 						<CheckCircleIcon weight="fill" className="size-9 text-success" />
 						<p className="text-base font-semibold text-fg">
 							{action === "claim" ? (
@@ -175,7 +178,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 						<p className="text-xs leading-5 text-fg-muted">
 							<Trans>The page is refreshing from Hyperliquid. Recent changes can take a moment to appear.</Trans>
 						</p>
-					</output>
+					</div>
 				) : null}
 
 				{step === "error" ? (

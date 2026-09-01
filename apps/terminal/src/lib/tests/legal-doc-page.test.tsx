@@ -14,21 +14,19 @@ import { LegalDocPage } from "@/components/legal/legal-doc-page";
 const testState = vi.hoisted(() => ({
 	hydrated: false,
 	listeners: new Set<() => void>(),
+	pathname: "/docs",
 	persistedLocale: "en",
 }));
 
 vi.mock("@tanstack/react-router", async () => {
-	const { useSyncExternalStore } = await import("react");
+	const { forwardRef, useSyncExternalStore } = await import("react");
 	return {
-		Link: ({
-			children,
-			to,
-			search: _search,
-			...props
-		}: AnchorHTMLAttributes<HTMLAnchorElement> & { to: string; search?: unknown }) => (
-			<a href={to} {...props}>
-				{children}
-			</a>
+		Link: forwardRef<HTMLAnchorElement, AnchorHTMLAttributes<HTMLAnchorElement> & { to: string; search?: unknown }>(
+			({ children, to, search: _search, ...props }, ref) => (
+				<a ref={ref} href={to} {...props}>
+					{children}
+				</a>
+			),
 		),
 		useHydrated: () =>
 			useSyncExternalStore(
@@ -39,7 +37,16 @@ vi.mock("@tanstack/react-router", async () => {
 				() => testState.hydrated,
 				() => false,
 			),
-		useLocation: () => ({ pathname: "/docs" }),
+		useLocation: () => ({
+			pathname: useSyncExternalStore(
+				(listener) => {
+					testState.listeners.add(listener);
+					return () => testState.listeners.delete(listener);
+				},
+				() => testState.pathname,
+				() => "/docs",
+			),
+		}),
 	};
 });
 
@@ -90,13 +97,22 @@ function setHydrated(hydrated: boolean) {
 describe("LegalDocPage", () => {
 	let container: HTMLDivElement;
 	let root: Root | undefined;
+	let scrollIntoView: ReturnType<typeof vi.fn>;
+	let scrollIntoViewDescriptor: PropertyDescriptor | undefined;
 
 	beforeEach(() => {
 		setHydrated(false);
+		testState.pathname = "/docs";
 		testState.persistedLocale = "en";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
+		scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+		scrollIntoView = vi.fn();
+		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+			configurable: true,
+			value: scrollIntoView,
+		});
 	});
 
 	afterEach(() => {
@@ -105,6 +121,11 @@ describe("LegalDocPage", () => {
 			root = undefined;
 		}
 		container.remove();
+		if (scrollIntoViewDescriptor) {
+			Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scrollIntoViewDescriptor);
+		} else {
+			Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+		}
 	});
 
 	it("renders one document landmark inside provider-independent chrome", () => {
@@ -120,6 +141,24 @@ describe("LegalDocPage", () => {
 		expect(container.querySelector("article")?.getAttribute("lang")).toBe("en");
 		expect(container.querySelector("article")?.getAttribute("dir")).toBe("ltr");
 		expect(container.textContent).toContain("Cookie Policy");
+		expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+		const mobileNavigation = [...container.querySelectorAll("header nav")].find((nav) =>
+			nav.className.includes("overflow-x-auto"),
+		);
+		expect(mobileNavigation?.querySelector('[aria-current="page"]')?.className).toContain(
+			"focus-visible:outline-offset-[-2px]",
+		);
+
+		scrollIntoView.mockClear();
+		act(() => root?.render(<TestDocument />));
+		expect(scrollIntoView).not.toHaveBeenCalled();
+
+		act(() => {
+			testState.pathname = "/risk";
+			for (const listener of testState.listeners) listener();
+		});
+		expect(scrollIntoView).toHaveBeenCalledTimes(1);
+		expect(container.querySelector('[aria-current="page"]')?.getAttribute("href")).toBe("/risk");
 	});
 
 	it("keeps the mobile document chrome clear of device safe areas", () => {

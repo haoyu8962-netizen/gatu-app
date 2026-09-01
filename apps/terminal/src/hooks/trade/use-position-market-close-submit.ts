@@ -88,7 +88,7 @@ interface LiveContext {
 }
 
 export function usePositionMarketCloseSubmit() {
-	const { i18n, t } = useLingui();
+	const { t } = useLingui();
 	const phase = usePositionMarketClosePhase();
 	const sessionError = usePositionMarketCloseError();
 	const { clientKey, env, info } = useHyperliquid();
@@ -281,7 +281,7 @@ export function usePositionMarketCloseSubmit() {
 			}
 		} catch (error) {
 			const feedback = positionSubmitFeedbackFromCause(error, "failed-market-close");
-			const message = formatPositionSubmitFeedback(feedback, (descriptor) => i18n._(descriptor));
+			const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
 			const activeSession = getPositionMarketCloseModal();
 			if (activeSession?.sessionId === input.sessionId) {
 				actions.updatePhase(input.sessionId, "idle");
@@ -308,9 +308,9 @@ export function usePositionMarketCloseSubmit() {
 			? typeof sessionError === "string"
 				? sessionError
 				: sessionError.kind === "order-reconciliation"
-					? formatOrderReconciliationError(sessionError.code, (descriptor) => i18n._(descriptor))
-					: formatPositionSubmitFeedback(sessionError, (descriptor) => i18n._(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
+					? formatOrderReconciliationError(sessionError.code, (descriptor) => t(descriptor))
+					: formatPositionSubmitFeedback(sessionError, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }

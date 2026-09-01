@@ -131,13 +131,13 @@ export function TwapTab() {
 													"h-[33px] items-center border-b border-market-close-stroke-card text-[11px] font-semibold text-market-close-subtle",
 												)}
 											>
-												<th scope="col" className="p-0 text-left font-semibold">
+												<th scope="col" className="p-0 text-start font-semibold">
 													{t`Asset`}
 												</th>
-												<th scope="col" className="p-0 text-left font-semibold">
+												<th scope="col" className="p-0 text-start font-semibold">
 													{t`Direction`}
 												</th>
-												<th scope="col" className="p-0 text-left font-semibold">
+												<th scope="col" className="p-0 text-start font-semibold">
 													{t`Execution Progress`}
 												</th>
 												<th scope="col" className="p-0 text-right font-semibold">

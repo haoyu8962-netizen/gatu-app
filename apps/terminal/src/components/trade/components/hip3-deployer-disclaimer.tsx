@@ -8,7 +8,7 @@ import {
 	ModalHeader,
 	ModalTitle,
 } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,6 +22,7 @@ interface Props {
 const LINK_CLASS = "text-signal no-underline hover:text-signal-hover";
 
 export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [isAcknowledged, setIsAcknowledged] = useState(false);
 	const { accept } = useHip3DisclaimerActions();
@@ -37,6 +38,7 @@ export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 			onOpenChange={(open) => !open && onCancel?.()}
 			size="lg"
 			showClose={!!onCancel}
+			closeLabel={t`Close`}
 			dismissible={!!onCancel}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"

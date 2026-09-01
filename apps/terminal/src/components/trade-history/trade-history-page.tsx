@@ -354,7 +354,7 @@ export function TradeHistoryPage({ address }: Props) {
 													<Trans>Price</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													{formatUSD(fill.px)}
+													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0">
@@ -362,7 +362,7 @@ export function TradeHistoryPage({ address }: Props) {
 													<Trans>Size</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
+													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0 text-right">
@@ -393,7 +393,9 @@ export function TradeHistoryPage({ address }: Props) {
 								className="min-w-[68rem] table-fixed font-market-close tabular-nums"
 							>
 								<caption className="sr-only">
-									<Trans>Trade history for {shortenAddress(address, 8, 6)}</Trans>
+									<Trans>
+										Trade history for <bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi>
+									</Trans>
 								</caption>
 								<colgroup>
 									<col className="w-[120px]" />
@@ -408,16 +410,16 @@ export function TradeHistoryPage({ address }: Props) {
 								</colgroup>
 								<TableHeader>
 									<TableRow className="h-9 border-stroke-weak bg-fill-weak/40 hover:bg-fill-weak/40">
-										<TableHead scope="col" className="px-5 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-5 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Asset</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Direction</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Type</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Role</Trans>
 										</TableHead>
 										<TableHead scope="col" className="px-3 text-right text-xs font-semibold text-fg-muted">
@@ -458,12 +460,14 @@ export function TradeHistoryPage({ address }: Props) {
 												</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getTypeLabel(fill)}</TableCell>
 												<TableCell className="px-3 py-0 text-fg-muted">{getRoleLabel(fill)}</TableCell>
-												<TableCell className="px-3 py-0 text-right text-fg">{formatUSD(fill.px)}</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
+													<bdi dir="ltr">{formatUSD(fill.px)}</bdi>
+												</TableCell>
+												<TableCell className="px-3 py-0 text-right text-fg">
+													<bdi dir="ltr">{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
-													{formatToken(fill.fee, { symbol: fill.feeToken })}
+													<bdi dir="ltr">{formatToken(fill.fee, { symbol: fill.feeToken })}</bdi>
 												</TableCell>
 												<TableCell
 													className={cn(
@@ -572,7 +576,8 @@ export function TradeHistoryPage({ address }: Props) {
 								<Trans>Trade history</Trans>
 							</h1>
 							<p className="mt-1 text-xs text-fg-muted">
-								{shortenAddress(address, 8, 6)} · <Trans>Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills</Trans>
+								<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
+								<Trans>Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills</Trans>
 							</p>
 						</div>
 						<div className="flex items-center gap-2">

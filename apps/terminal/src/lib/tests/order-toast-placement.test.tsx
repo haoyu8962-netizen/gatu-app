@@ -142,26 +142,28 @@ describe("OrderToast placement", () => {
 		if (!addButton) throw new Error("Add order button not found");
 		act(() => addButton.click());
 
-		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
-		expect(status).not.toBeNull();
-		expect(container.querySelector('output[aria-live="polite"]')).toBeNull();
-		expect(status?.parentElement).toBe(document.body);
-		expect(status?.getAttribute("aria-live")).toBe("polite");
-		expect(status?.className).toContain("z-[var(--z-toast)]");
-		expect(status?.className).toContain("left-[max(1rem,var(--sal))]");
-		expect(status?.className).toContain("right-[max(1rem,var(--sar))]");
-		expect(status?.className).toContain("w-auto");
-		expect(status?.className).toContain("min-[1001px]:left-auto");
-		expect(status?.className).toContain("min-[1001px]:right-6");
-		expect(status?.className).toContain("min-[1001px]:w-80");
-		expect(status?.className).toContain("bottom-[var(--order-toast-mobile-bottom)]");
-		expect(status?.className).toContain("min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]");
-		expect(status?.className).toContain("bg-overlay/95");
-		expect(status?.style.getPropertyValue("--order-toast-mobile-bottom")).toBe(
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		expect(queue).not.toBeNull();
+		expect(container.querySelector('section[aria-label="Order Queue"]')).toBeNull();
+		expect(queue?.parentElement).toBe(document.body);
+		expect(queue?.hasAttribute("aria-live")).toBe(false);
+		expect(queue?.className).toContain("z-[var(--z-toast)]");
+		expect(queue?.className).toContain("left-[max(1rem,var(--sal))]");
+		expect(queue?.className).toContain("right-[max(1rem,var(--sar))]");
+		expect(queue?.className).toContain("w-auto");
+		expect(queue?.className).toContain("min-[1001px]:left-auto");
+		expect(queue?.className).toContain("min-[1001px]:right-6");
+		expect(queue?.className).toContain("min-[1001px]:w-80");
+		expect(queue?.className).toContain("bottom-[var(--order-toast-mobile-bottom)]");
+		expect(queue?.className).toContain("min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]");
+		expect(queue?.className).toContain("bg-overlay/95");
+		expect(queue?.style.getPropertyValue("--order-toast-mobile-bottom")).toBe(
 			`calc(env(safe-area-inset-bottom) + ${MOBILE_BOTTOM_NAV_HEIGHT_PX + ORDER_TOAST_MOBILE_GAP_PX}px)`,
 		);
+		const orderStatus = queue?.querySelector<HTMLElement>('[role="status"]');
+		expect(orderStatus?.getAttribute("aria-atomic")).toBe("true");
 
-		const list = status?.querySelector<HTMLDivElement>("div.overflow-y-auto");
+		const list = queue?.querySelector<HTMLDivElement>("div.overflow-y-auto");
 		expect(list?.className).toContain("max-h-[min(18rem,40dvh)]");
 	});
 
@@ -180,15 +182,17 @@ describe("OrderToast placement", () => {
 		if (!addButton) throw new Error("Add unconfirmed order button not found");
 		act(() => addButton.click());
 
-		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
-		expect(status?.textContent).toContain("unconfirmed");
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		const status = queue?.querySelector<HTMLElement>('[role="status"]');
+		expect(queue?.textContent).toContain("unconfirmed");
 		expect(status?.textContent).toContain("Review open orders and positions before retrying.");
+		expect(status?.getAttribute("aria-atomic")).toBe("true");
 
-		const dismissButton = status?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
+		const dismissButton = queue?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
 		if (!dismissButton) throw new Error("Dismiss button not found");
 		act(() => dismissButton.click());
 
-		expect(document.body.querySelector('output[aria-live="polite"]')).toBeNull();
+		expect(document.body.querySelector('section[aria-label="Order Queue"]')).toBeNull();
 	});
 
 	it("renders an accepted-then-canceled order as a dismissible canceled state", () => {
@@ -196,11 +200,12 @@ describe("OrderToast placement", () => {
 		if (!addButton) throw new Error("Add canceled order button not found");
 		act(() => addButton.click());
 
-		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		const status = queue?.querySelector<HTMLElement>('[role="status"]');
 		expect(status?.textContent).toContain("Canceled");
 		expect(status?.textContent).not.toContain("unconfirmed");
 
-		const dismissButton = status?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
+		const dismissButton = queue?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
 		expect(dismissButton).not.toBeNull();
 	});
 
@@ -209,8 +214,10 @@ describe("OrderToast placement", () => {
 		if (!addButton) throw new Error("Add client error order button not found");
 		act(() => addButton.click());
 
-		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		const status = queue?.querySelector<HTMLElement>('[role="alert"]');
 		expect(status?.textContent).toContain(COORDINATION_MESSAGE);
+		expect(status?.getAttribute("aria-atomic")).toBe("true");
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 

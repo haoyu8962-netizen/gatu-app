@@ -87,7 +87,7 @@ interface LiveContext {
 }
 
 export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -270,7 +270,7 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 			}
 
 			const submitError = positionSubmitFeedbackFromCause(cause, "failed-submit-close-orders");
-			const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");
 				setError(submitError);
@@ -309,8 +309,8 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 		isReconciling: phase === "reconciling",
 		isPartial: phase === "partial",
 		error: error
-			? formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
+			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }

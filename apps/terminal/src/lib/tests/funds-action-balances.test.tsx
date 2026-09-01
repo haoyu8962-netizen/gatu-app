@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { act, createElement, Fragment, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SendModal } from "@/components/trade/positions/send-modal";
@@ -19,6 +20,8 @@ const ACCOUNT_MODE_CHANGED = "Account mode changed before the request was submit
 const ACCOUNT_MODE_CHANGED_AR = "تغيّر وضع الحساب قبل إرسال الطلب. راجع الأرصدة وحاول مرة أخرى.";
 const GEO_UNAVAILABLE = "Unable to verify regional availability. This funds action was not submitted.";
 const GEO_UNAVAILABLE_AR = "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه.";
+const INVALID_DESTINATION = "Enter a valid Ethereum address.";
+const INVALID_DESTINATION_AR = "أدخل عنوان Ethereum صالحًا.";
 const RAW_EXCHANGE_ERROR = "Exchange rejected the funds action with code TEST-RAW";
 
 function getMessageId(message: string): string {
@@ -30,9 +33,22 @@ const arabicMessages: Messages = {
 	[getMessageId(BALANCE_CHANGED)]: BALANCE_CHANGED_AR,
 	[getMessageId(ACCOUNT_MODE_CHANGED)]: ACCOUNT_MODE_CHANGED_AR,
 	[getMessageId(GEO_UNAVAILABLE)]: GEO_UNAVAILABLE_AR,
+	[getMessageId(INVALID_DESTINATION)]: INVALID_DESTINATION_AR,
 };
 
 const testState = vi.hoisted(() => ({
+	exchangeIdentity: {
+		clientKey: "0x1111111111111111111111111111111111111111",
+		env: "Mainnet" as "Mainnet" | "Testnet",
+		exchangeLifecycle: { active: true, id: Symbol("exchange-lifecycle") },
+		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+	},
+	walletSession: {
+		address: "0x1111111111111111111111111111111111111111" as string | undefined,
+		hasWalletAccess: true,
+		sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+		walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
+	},
 	balances: {
 		accountAbstraction: "disabled",
 		marginSummary: {
@@ -88,13 +104,27 @@ vi.mock("@gatu/ui", () => ({
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
 	ModalPopup: ({ children }: { children: ReactNode }) => createElement("section", null, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
-	Select: ({ options, value }: { options: Array<{ label: string; value: string }>; value: string }) =>
+	Select: ({
+		options,
+		triggerAriaLabel,
+		value,
+	}: {
+		options: Array<{ label: string; value: string }>;
+		triggerAriaLabel?: string;
+		value: string;
+	}) =>
 		createElement(
 			"select",
-			{ "aria-label": "select", value, onChange: () => {} },
+			{ "aria-label": triggerAriaLabel, value, onChange: () => {} },
 			options.map((option) => createElement("option", { key: option.value, value: option.value }, option.label)),
 		),
-	TextInput: ({ mobileSafe: _mobileSafe, ...props }: Record<string, unknown>) => createElement("input", props),
+	TextInput: ({ error, mobileSafe: _mobileSafe, ...props }: Record<string, unknown>) =>
+		createElement(
+			"div",
+			null,
+			createElement("input", { ...props, "aria-invalid": error ? "true" : undefined }),
+			error ? createElement("span", { "data-testid": "field-error" }, error as ReactNode) : null,
+		),
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
@@ -165,14 +195,11 @@ vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
-		hasWalletAccess: true,
-		walletAddress: "0x1111111111111111111111111111111111111111",
-	}),
+	useWalletSession: () => testState.walletSession,
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => testState.exchangeIdentity,
 	useExchange: (
 		method: keyof typeof testState.exchangeMutations,
 		options?: { preExecutionGuard?: (_params: unknown, signal: AbortSignal) => Promise<void> },
@@ -228,6 +255,14 @@ describe("funds action balance wiring", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		testState.exchangeIdentity.clientKey = "0x1111111111111111111111111111111111111111";
+		testState.exchangeIdentity.env = "Mainnet";
+		testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("exchange-lifecycle") };
+		testState.exchangeIdentity.sessionMode = "wallet";
+		testState.walletSession.address = "0x1111111111111111111111111111111111111111";
+		testState.walletSession.hasWalletAccess = true;
+		testState.walletSession.sessionMode = "wallet";
+		testState.walletSession.walletAddress = "0x1111111111111111111111111111111111111111";
 		testState.balances.accountAbstraction = "disabled";
 		testState.balances.withdrawable = "40";
 		testState.balances.spotBalances[0].hold = "3140.833333";
@@ -289,6 +324,8 @@ describe("funds action balance wiring", () => {
 
 		expect(container.textContent).toContain("4964.51 USDC");
 		expect(container.textContent).not.toContain("4947.18 USDC");
+		expect(container.querySelector('select[aria-label="Account"]')).not.toBeNull();
+		expect(container.querySelector('select[aria-label="Asset"]')).not.toBeNull();
 		clickAvailableBalance(container);
 		expect(getAmountInput(container).value).toBe("4964.51");
 	});
@@ -336,6 +373,22 @@ describe("funds action balance wiring", () => {
 		expect(container.textContent).not.toContain("40.00 USDC");
 		expect(container.textContent).not.toContain("4964.51 USDC");
 		expect(getButton(container, "Send").disabled).toBe(true);
+	});
+
+	it("identifies an invalid destination with an associated field error", () => {
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		if (!destinationInput) throw new Error("Destination input not found");
+		expect(destinationInput.dir).toBe("auto");
+		expect(destinationInput.getAttribute("autocapitalize")).toBe("none");
+
+		act(() => setInputValue(destinationInput, "not-an-address"));
+
+		expect(destinationInput.getAttribute("aria-invalid")).toBe("true");
+		expect(container.querySelector('[data-testid="field-error"]')?.textContent).toBe(INVALID_DESTINATION);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.querySelector('[data-testid="field-error"]')?.textContent).toBe(INVALID_DESTINATION_AR);
 	});
 
 	it("wires the fresh mode check into each mode-dependent SDK boundary", async () => {
@@ -470,14 +523,158 @@ describe("funds action balance wiring", () => {
 
 		await clickAndFlush(getButton(container, method === "spotSend" ? "Send" : "Transfer"));
 		await vi.waitFor(() => expect(container.textContent).toContain(RAW_EXCHANGE_ERROR));
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain(RAW_EXCHANGE_ERROR);
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 		expect(container.textContent).toContain(RAW_EXCHANGE_ERROR);
 	});
+
+	it.each([
+		["send", "spotSend"],
+		["transfer", "usdClassTransfer"],
+	] as const)("ignores a stale %s completion after its modal surface is replaced", async (kind, method) => {
+		let settleMutation!: () => void;
+		const mutation = new Promise<void>((resolve) => {
+			settleMutation = resolve;
+		});
+		testState.exchangeMutations[method].mockReturnValueOnce(mutation);
+		const staleOnOpenChange = vi.fn();
+		const currentOnOpenChange = vi.fn();
+
+		if (kind === "send") {
+			renderValidSend(root, container, staleOnOpenChange);
+		} else {
+			renderValidTransfer(root, container, staleOnOpenChange);
+		}
+		act(() => getButton(container, kind === "send" ? "Send" : "Transfer").click());
+		await vi.waitFor(() => expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce());
+
+		act(() => {
+			root.render(
+				kind === "send"
+					? createElement(SendModal, { onOpenChange: currentOnOpenChange, open: false })
+					: createElement(TransferModal, { onOpenChange: currentOnOpenChange, open: false }),
+			);
+		});
+		act(() => {
+			root.render(
+				kind === "send"
+					? createElement(SendModal, { onOpenChange: currentOnOpenChange, open: true })
+					: createElement(TransferModal, { onOpenChange: currentOnOpenChange, open: true }),
+			);
+		});
+
+		await act(async () => {
+			settleMutation();
+			await mutation;
+			await Promise.resolve();
+		});
+
+		expect(staleOnOpenChange).not.toHaveBeenCalled();
+		expect(currentOnOpenChange).not.toHaveBeenCalled();
+	});
+
+	const identityChanges = [
+		[
+			"owner account",
+			() => {
+				testState.exchangeIdentity.clientKey = "0x3333333333333333333333333333333333333333";
+				testState.walletSession.address = "0x3333333333333333333333333333333333333333";
+				testState.walletSession.walletAddress = "0x3333333333333333333333333333333333333333";
+			},
+		],
+		[
+			"network",
+			() => {
+				testState.exchangeIdentity.env = "Testnet";
+			},
+		],
+		[
+			"signing session",
+			() => {
+				testState.exchangeIdentity.sessionMode = "agent-only";
+				testState.walletSession.sessionMode = "agent-only";
+			},
+		],
+		[
+			"provider lifecycle",
+			() => {
+				testState.exchangeIdentity.exchangeLifecycle = {
+					active: true,
+					id: Symbol("replacement-exchange-lifecycle"),
+				};
+			},
+		],
+		[
+			"account abstraction",
+			() => {
+				testState.balances.accountAbstraction = "unifiedAccount";
+			},
+		],
+	] as const;
+
+	it.each(
+		identityChanges.flatMap(([identity, changeIdentity]) =>
+			(["resolve", "reject"] as const).flatMap(
+				(outcome) =>
+					[
+						["send", identity, outcome, changeIdentity, "spotSend"],
+						["transfer", identity, outcome, changeIdentity, "usdClassTransfer"],
+					] as const,
+			),
+		),
+	)("ignores an in-flight %s after the %s changes (%s)", async (kind, _, outcome, changeIdentity, method) => {
+		let resolveMutation!: () => void;
+		let rejectMutation!: (reason: Error) => void;
+		const mutation = new Promise<void>((resolve, reject) => {
+			resolveMutation = resolve;
+			rejectMutation = reject;
+		});
+		testState.exchangeMutations[method].mockReturnValueOnce(mutation);
+		const staleOnOpenChange = vi.fn();
+		const currentOnOpenChange = vi.fn();
+
+		if (kind === "send") {
+			renderValidSend(root, container, staleOnOpenChange);
+		} else {
+			renderValidTransfer(root, container, staleOnOpenChange);
+		}
+		act(() => getButton(container, kind === "send" ? "Send" : "Transfer").click());
+		await vi.waitFor(() => expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce());
+
+		act(() => {
+			changeIdentity();
+			flushSync(() => {
+				root.render(
+					kind === "send"
+						? createElement(SendModal, { onOpenChange: currentOnOpenChange, open: true })
+						: createElement(TransferModal, { onOpenChange: currentOnOpenChange, open: true }),
+				);
+			});
+		});
+
+		await act(async () => {
+			if (outcome === "resolve") resolveMutation();
+			else rejectMutation(new Error("Stale request failed"));
+			await mutation.catch(() => {});
+			await Promise.resolve();
+		});
+
+		expect(staleOnOpenChange).not.toHaveBeenCalled();
+		expect(currentOnOpenChange).not.toHaveBeenCalled();
+		expect(getAmountInput(container).value).toBe("1");
+		expect(container.textContent).not.toContain("Stale request failed");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		if (kind === "send") {
+			expect(container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]')?.value).toBe(
+				"0x2222222222222222222222222222222222222222",
+			);
+		}
+	});
 });
 
-function renderValidSend(root: Root, container: HTMLElement) {
-	act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+function renderValidSend(root: Root, container: HTMLElement, onOpenChange = vi.fn()) {
+	act(() => root.render(createElement(SendModal, { onOpenChange, open: true })));
 	const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
 	if (!destinationInput) throw new Error("Destination input not found");
 	act(() => {
@@ -486,8 +683,8 @@ function renderValidSend(root: Root, container: HTMLElement) {
 	});
 }
 
-function renderValidTransfer(root: Root, container: HTMLElement) {
-	act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+function renderValidTransfer(root: Root, container: HTMLElement, onOpenChange = vi.fn()) {
+	act(() => root.render(createElement(TransferModal, { onOpenChange, open: true })));
 	act(() => setInputValue(getAmountInput(container), "1"));
 }
 

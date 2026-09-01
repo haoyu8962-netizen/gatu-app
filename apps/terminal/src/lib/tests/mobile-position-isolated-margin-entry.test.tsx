@@ -463,7 +463,10 @@ describe("MobilePositionCard isolated margin entry", () => {
 		if (!(summary instanceof HTMLDivElement)) throw new Error("Position summary was not rendered");
 		expect(summary.className).toContain("items-start");
 		expect(summary.className).toContain("[&>svg]:self-center");
-		expect(container.querySelector('button[aria-label="Share PNL for BRENTOIL-USDC"]')).not.toBeNull();
+		const shareButton = container.querySelector<HTMLButtonElement>('button[aria-label="Share PNL for BRENTOIL-USDC"]');
+		expect(shareButton).not.toBeNull();
+		expect(shareButton?.className).toContain("size-11");
+		expect(shareButton?.className).not.toContain("after:size-11");
 	});
 
 	it("does not expose the entry for cross-margin positions", () => {

@@ -9,7 +9,13 @@ import {
 	type OrderType,
 	TRIGGER_MARKET_SLIPPAGE_BPS,
 } from "@/config/trade";
-import { buildFrontendMarketOrder, buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import {
+	buildFrontendMarketOrder,
+	buildOrders,
+	formatPriceForOrder,
+	formatSizeForOrder,
+	isValidSizeDecimalsForAsset,
+} from "@/domain/trade/orders";
 import { resolvePositionMarketCloseSize } from "@/domain/trade/position-market-close";
 import { isPositive, type Numeric, toBig } from "@/lib/trade/numbers";
 import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
@@ -129,6 +135,9 @@ function getCloseSide(isLong: boolean): Side {
 
 function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 	const orderType = intent.orderType;
+	if (!isValidSizeDecimalsForAsset(intent.assetId, intent.szDecimals)) {
+		return { orders: [], grouping: "na", errors: ["Order market precision is invalid"], warnings: [] };
+	}
 
 	if (isTriggerOrderType(orderType) && !isPositive(toBig(intent.triggerPriceInput)?.toNumber() ?? null)) {
 		return { orders: [], grouping: "na", errors: ["Enter trigger price"], warnings: [] };

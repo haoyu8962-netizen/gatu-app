@@ -14,7 +14,7 @@ const tableVariants = cva(["w-full caption-bottom border-collapse"], {
 	},
 });
 
-const tableHeadVariants = cva(["text-left align-middle font-semibold text-fg-muted whitespace-nowrap"], {
+const tableHeadVariants = cva(["text-start align-middle font-semibold text-fg-muted whitespace-nowrap"], {
 	variants: {
 		size: {
 			default: "h-12 px-6 text-xs",

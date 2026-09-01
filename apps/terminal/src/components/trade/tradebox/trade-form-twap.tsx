@@ -30,13 +30,13 @@ interface Props {
 const labelClass = "text-2xs leading-none text-trading-panel-subtle";
 const twapFrameClass = cn(tradingInputFrameClass, "flex-1");
 const priceFrameClass = cn(tradingInputFrameClass, "px-2.5");
-const durationLabelClass = "mr-2 shrink-0 whitespace-nowrap text-xs text-trading-panel-subtle";
-const priceLabelClass = "mr-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle";
+const durationLabelClass = "me-2 shrink-0 whitespace-nowrap text-xs text-trading-panel-subtle";
+const priceLabelClass = "me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle";
 const inputClass =
 	"h-9 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg";
 const compactFrameClass = "h-8 px-2.5";
-const compactDurationLabelClass = "mr-1.5 text-2xs";
-const compactPriceLabelClass = "mr-1.5 min-w-0 shrink truncate text-2xs";
+const compactDurationLabelClass = "me-1.5 text-2xs";
+const compactPriceLabelClass = "me-1.5 min-w-0 shrink truncate text-2xs";
 const compactInputClass = "h-7";
 const MINUTES_PER_DAY = 24 * 60;
 const HOURS_MAX = Math.floor(TWAP_MINUTES_MAX / 60);

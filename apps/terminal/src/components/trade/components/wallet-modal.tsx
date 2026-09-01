@@ -1,5 +1,5 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowLeftIcon,
 	DesktopIcon,
@@ -96,6 +96,7 @@ function MobileWalletChooser({
 	authenticated: boolean;
 	login: (options?: LoginModalOptions) => void;
 }) {
+	const { t } = useLingui();
 	const [view, setView] = useState<"choice" | "pwa" | "scanner">("choice");
 	const [isInstalling, setIsInstalling] = useState(false);
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
@@ -134,6 +135,7 @@ function MobileWalletChooser({
 			onOpenChange={onOpenChange}
 			presentation="drawer"
 			size="sm"
+			closeLabel={t`Close`}
 			showHandle={false}
 			className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-t-16"
 		>

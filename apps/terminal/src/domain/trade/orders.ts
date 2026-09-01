@@ -59,6 +59,14 @@ export interface FrontendMarketOrderParams {
 	reduceOnly: boolean;
 }
 
+export function isValidSizeDecimalsForAsset(assetId: number, szDecimals: number): boolean {
+	if (!Number.isSafeInteger(assetId) || assetId < 0 || !Number.isSafeInteger(szDecimals) || szDecimals < 0) {
+		return false;
+	}
+	const maxDecimals = isSpotAssetId(assetId) ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS;
+	return szDecimals <= maxDecimals;
+}
+
 export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
 	const markPx = toBig(params.markPx);
 	const slippageBps = toBig(params.slippageBps);
@@ -195,6 +203,7 @@ export interface ScaleOrderPlanParams {
 
 export type ScaleOrderPlanIssue =
 	| "invalid-levels"
+	| "invalid-precision"
 	| "invalid-price-range"
 	| "invalid-skew"
 	| "insufficient-size"
@@ -220,6 +229,9 @@ interface ScaleOrderParams extends ScaleOrderPlanParams {
 }
 
 export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOrderLevelPlan {
+	if (!isValidSizeDecimalsForAsset(params.assetId, params.szDecimals)) {
+		return { levels: [], issues: ["invalid-precision"] };
+	}
 	const levels = params.scaleLevelsNum;
 	if (levels === null || !Number.isSafeInteger(levels) || levels < SCALE_LEVELS_MIN || levels > SCALE_LEVELS_MAX) {
 		return { levels: [], issues: ["invalid-levels"] };
@@ -325,6 +337,8 @@ function getScaleOrderPlanError(issue: ScaleOrderPlanIssue): string {
 	switch (issue) {
 		case "invalid-levels":
 			return `Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`;
+		case "invalid-precision":
+			return "Order market precision is invalid";
 		case "invalid-price-range":
 			return "Enter a valid scale price range";
 		case "invalid-skew":
@@ -518,6 +532,7 @@ function formatPriceForOrderWithRounding(
 ): string {
 	const price = toBig(value);
 	if (!price || price.lte(0)) return "0";
+	if (options && !isValidSizeDecimalsForAsset(options.assetId, options.szDecimals)) return "0";
 
 	// price.e is the exponent of the most significant digit, so integerDigits = e + 1.
 	const integerDigits = price.e + 1;
@@ -539,7 +554,9 @@ function formatPriceForOrderWithRounding(
 
 export function formatSizeForOrder(size: Numeric, szDecimals: number): string {
 	const sizeValue = toBig(size);
-	if (!sizeValue) return "0";
+	if (!sizeValue || !Number.isSafeInteger(szDecimals) || szDecimals < 0 || szDecimals > HL_PRICE_MAX_DECIMALS) {
+		return "0";
+	}
 	const fixed = sizeValue.round(szDecimals, Big.roundDown).toFixed(szDecimals);
 	if (!fixed.includes(".")) return fixed;
 	return fixed.replace(/\.?0+$/, "");

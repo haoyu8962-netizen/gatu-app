@@ -121,33 +121,40 @@ function ActionStepper({ action }: { action: ApiWalletActionView }) {
 
 function ReviewContent({ action }: { action: ApiWalletActionView }) {
 	const isRemove = action.kind === "remove";
-	const rows: { key: string; label: ReactNode; value: ReactNode; detail?: ReactNode; danger?: boolean }[] = isRemove
-		? [
-				{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
-				{
-					key: "address",
-					label: <Trans>API wallet address</Trans>,
-					value: shortenAddress(action.agentAddress),
-					detail: action.agentAddress,
-				},
-				{
-					key: "validity",
-					label: <Trans>Current validity</Trans>,
-					value: action.validityLabel ?? <Trans>Not reported</Trans>,
-				},
-				{ key: "result", label: <Trans>After removal</Trans>, value: <Trans>Access disabled</Trans>, danger: true },
-			]
-		: [
-				{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
-				{
-					key: "address",
-					label: <Trans>API wallet address</Trans>,
-					value: shortenAddress(action.agentAddress),
-					detail: action.agentAddress,
-				},
-				{ key: "validity", label: <Trans>Validity</Trans>, value: action.validityLabel ?? <Trans>Not reported</Trans> },
-				{ key: "approval", label: <Trans>Approval</Trans>, value: <Trans>Account-level agent approval</Trans> },
-			];
+	const rows: { key: string; label: ReactNode; value: ReactNode; detail?: string; danger?: boolean; ltr?: boolean }[] =
+		isRemove
+			? [
+					{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
+					{
+						key: "address",
+						label: <Trans>API wallet address</Trans>,
+						value: shortenAddress(action.agentAddress),
+						detail: action.agentAddress,
+						ltr: true,
+					},
+					{
+						key: "validity",
+						label: <Trans>Current validity</Trans>,
+						value: action.validityLabel ?? <Trans>Not reported</Trans>,
+					},
+					{ key: "result", label: <Trans>After removal</Trans>, value: <Trans>Access disabled</Trans>, danger: true },
+				]
+			: [
+					{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
+					{
+						key: "address",
+						label: <Trans>API wallet address</Trans>,
+						value: shortenAddress(action.agentAddress),
+						detail: action.agentAddress,
+						ltr: true,
+					},
+					{
+						key: "validity",
+						label: <Trans>Validity</Trans>,
+						value: action.validityLabel ?? <Trans>Not reported</Trans>,
+					},
+					{ key: "approval", label: <Trans>Approval</Trans>, value: <Trans>Account-level agent approval</Trans> },
+				];
 
 	return (
 		<div className="space-y-3">
@@ -164,14 +171,14 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 							<span
 								className={cn("block truncate text-2sm font-semibold text-api-wallet-fg", row.danger && "text-error")}
 							>
-								{row.value}
+								{row.ltr ? <bdi dir="ltr">{row.value}</bdi> : row.value}
 							</span>
 							{row.detail ? (
 								<span
 									className="block truncate font-mono text-3xs tabular-nums text-api-wallet-subtle"
 									title={String(row.detail)}
 								>
-									{row.detail}
+									{row.ltr ? <bdi dir="ltr">{row.detail}</bdi> : row.detail}
 								</span>
 							) : null}
 						</span>
@@ -298,7 +305,7 @@ function ResultContent({ action }: { action: ApiWalletActionView }) {
 					<p className="mt-2 rounded-20 bg-error-soft px-3 py-2 font-mono text-xs text-error">{action.errorMessage}</p>
 				) : null}
 				{result === "unknown" ? (
-					<div className="mt-3 rounded-20 border border-api-wallet-stroke-card bg-api-wallet-card px-3 py-2 text-left">
+					<div className="mt-3 rounded-20 border border-api-wallet-stroke-card bg-api-wallet-card px-3 py-2 text-start">
 						<p className="text-3xs text-api-wallet-subtle">
 							<Trans>Verification reference</Trans>
 						</p>

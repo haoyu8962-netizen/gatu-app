@@ -130,7 +130,7 @@ export function MobileMarketBar({ className }: Props) {
 					</div>
 
 					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
-						<div data-boneyard="market-price" className="min-w-0 text-left">
+						<div data-boneyard="market-price" className="min-w-0 text-start">
 							<div className="flex min-w-0 flex-col items-start">
 								<span
 									key={priceFlash.sequence}
@@ -279,7 +279,7 @@ function createSpotTokenInfo(
 		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
 			{address ? (
 				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
-					{shortenAddress(address, 4, 4)}
+					<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>
 				</span>
 			) : null}
 			<span data-slot="mobile-spot-token-actions" className="flex min-w-0 max-w-full flex-wrap items-center">
@@ -406,7 +406,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 							onBlur={closeTooltip}
 							onClick={handleTooltipClick}
 							aria-describedby={tooltipPosition ? tooltipId : undefined}
-							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-start text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							<span className="truncate">{label}</span>
 						</button>

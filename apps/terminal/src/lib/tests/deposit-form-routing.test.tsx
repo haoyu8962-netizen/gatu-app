@@ -157,6 +157,22 @@ describe("DepositForm routing gate", () => {
 		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
 	});
 
+	it("announces a changed route even when the refreshed route itself is ready", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			routingPreflightError: "The deposit route changed. Review it before submitting again.",
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const alerts = container.querySelectorAll('[role="alert"]');
+		expect(alerts).toHaveLength(1);
+		expect(alerts[0]?.textContent).toContain("The deposit route changed. Review it before submitting again.");
+	});
+
 	it("keeps the external wallet fee line stable until Circle provides a current quote", async () => {
 		const props = {
 			...createProps("ready", "cctp"),

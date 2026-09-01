@@ -7,25 +7,28 @@ import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { type SpotSwapError, SpotSwapErrorMessage } from "@/components/trade/components/spot-swap-modal";
+import { SpotSwapExecutionError } from "@/domain/trade/spot-swap-execution-guard";
+import { getOrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 
-const BLOCKED_MESSAGE = "Another order for this market is still being confirmed.";
-const ARABIC_BLOCKED_MESSAGE = "لا يزال تأكيد طلب آخر لهذا السوق جارياً.";
+const CONDITIONS_CHANGED_MESSAGE =
+	"Order conditions changed before it was confirmed. Review the order and submit it again.";
+const ARABIC_CONDITIONS_CHANGED_MESSAGE = "تغيرت شروط الأمر قبل تأكيده. راجع الأمر وأرسله مجددًا.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
 }
 
 const arabicMessages: Messages = {
-	[getMessageId(BLOCKED_MESSAGE)]: ARABIC_BLOCKED_MESSAGE,
+	[getMessageId(CONDITIONS_CHANGED_MESSAGE)]: ARABIC_CONDITIONS_CHANGED_MESSAGE,
 };
 
 function ErrorProbe() {
-	const [error] = useState<SpotSwapError>({ kind: "blocked" });
-	return (
-		<div role="alert">
-			<SpotSwapErrorMessage error={error} />
-		</div>
-	);
+	const [error] = useState<SpotSwapError>(() => {
+		const feedback = getOrderSubmissionFeedback(new SpotSwapExecutionError("quote-changed"));
+		if (!feedback) throw new Error("Expected localized swap feedback");
+		return feedback;
+	});
+	return <SpotSwapErrorMessage error={error} />;
 }
 
 describe("SpotSwapErrorMessage", () => {
@@ -52,11 +55,12 @@ describe("SpotSwapErrorMessage", () => {
 				</I18nProvider>,
 			);
 		});
-		expect(container.textContent).toBe(BLOCKED_MESSAGE);
+		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.textContent).toBe(CONDITIONS_CHANGED_MESSAGE);
 
 		act(() => {
 			i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
 		});
-		expect(container.textContent).toBe(ARABIC_BLOCKED_MESSAGE);
+		expect(container.textContent).toBe(ARABIC_CONDITIONS_CHANGED_MESSAGE);
 	});
 });

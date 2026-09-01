@@ -7,6 +7,7 @@ import {
 	isAcceptedOrderStatus,
 	isAmbiguousOrderRequestError,
 	isCanceledOrderStatus,
+	OrderTrackingInputError,
 	resolveFilledOrderBatchResponse,
 	resolveOrderBatchResponse,
 	type TrackedOrderParams,
@@ -57,7 +58,13 @@ describe("order tracking", () => {
 		const cloid = createClientOrderId();
 		params.orders = params.orders.map((order) => ({ ...order, c: cloid }));
 
-		expect(() => trackOrderRequest(params)).toThrow("Duplicate client order ID");
+		try {
+			trackOrderRequest(params);
+			throw new Error("Expected duplicate cloids to be rejected");
+		} catch (error) {
+			expect(error).toBeInstanceOf(OrderTrackingInputError);
+			expect(error).toMatchObject({ reason: "order-request-invalid", message: "Duplicate client order ID" });
+		}
 	});
 
 	it("classifies only accepted exchange states as successful reconciliation", () => {

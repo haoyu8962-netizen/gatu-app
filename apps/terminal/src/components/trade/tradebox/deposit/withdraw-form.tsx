@@ -211,6 +211,8 @@ export function WithdrawForm({
 						placeholder={translate`Destination address`}
 						value={destination}
 						onChange={(e) => onDestinationChange(e.target.value)}
+						dir="auto"
+						autoCapitalize="none"
 						autoComplete="off"
 						spellCheck={false}
 						disabled={isPending}

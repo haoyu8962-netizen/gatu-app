@@ -52,6 +52,21 @@ vi.mock("@/hooks/trade/use-legal-gate", () => ({
 	},
 }));
 
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({
+		walletAddress: "0x1111111111111111111111111111111111111111",
+		walletIntent: "external",
+	}),
+}));
+
+vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({
+		clientKey: "0x1111111111111111111111111111111111111111",
+		env: "Mainnet",
+		sessionMode: "wallet",
+	}),
+}));
+
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
 	Hip3DeployerDisclaimer: (props: Record<string, unknown>) =>
 		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "Hip3DeployerDisclaimer" }),
@@ -308,6 +323,17 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(sendModal).not.toBeNull();
 		expect(sendModal?.getAttribute("data-props")).toContain('"initialAsset":"USDC"');
 		expect(sendModal?.getAttribute("data-props")).toContain('"initialAccountType":"spot"');
+	});
+
+	it("does not let Command-K replace an active funds modal", async () => {
+		testState.activeModal = "send";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals)));
+		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
+
+		expect(testState.openCommandMenu).not.toHaveBeenCalled();
+		expect(testState.closeCommandMenu).not.toHaveBeenCalled();
 	});
 
 	it("mounts market close only in enabled scopes and does not replace it with Command-K", async () => {

@@ -302,6 +302,7 @@ export function MarketAssetInfo({ market }: Props) {
 				open={open}
 				onOpenChange={setOpen}
 				size="lg"
+				closeLabel={t`Close`}
 				presentation={isMobile ? "drawer" : "modal"}
 				handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-trading-panel-stroke-input"
 				overlayClassName="!bg-trading-panel-scrim backdrop-blur-[2px] duration-200"
@@ -398,7 +399,7 @@ export function MarketAssetInfo({ market }: Props) {
 										}
 										className="min-w-0 max-w-[65%] whitespace-normal text-right font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
 									>
-										{row.value}
+										<bdi dir="ltr">{row.value}</bdi>
 									</dd>
 								</div>
 							))}

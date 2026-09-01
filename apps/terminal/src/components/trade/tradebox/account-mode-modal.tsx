@@ -39,6 +39,7 @@ interface AccountModeSubmitError {
 }
 
 export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
+	const { t } = useLingui();
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const actionPending = !!formProps.isUpdating || submissionLocked;
 
@@ -55,6 +56,7 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 			<ModalPopup
 				size="sm"
 				showClose={!actionPending}
+				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[min(90dvh,42rem)] font-market-close"
 			>
@@ -191,7 +193,7 @@ export function AccountModeForm({
 								disabled={isOptionDisabled}
 								aria-pressed={isSelected}
 								className={cn(
-									"min-h-11 w-full rounded-12 border px-3.5 py-3 text-left transition-colors",
+									"min-h-11 w-full rounded-12 border px-3.5 py-3 text-start transition-colors",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 									isSelected
 										? "border-[1.5px] border-trading-panel-control bg-trading-panel-card text-trading-panel-fg"
@@ -214,7 +216,7 @@ export function AccountModeForm({
 									<span className="min-w-0 flex-1 text-2sm font-semibold">
 										{option.label}
 										{option.badge ? (
-											<span className="ml-1 text-2xs font-medium text-trading-panel-muted">({option.badge})</span>
+											<span className="ms-1 text-2xs font-medium text-trading-panel-muted">({option.badge})</span>
 										) : null}
 									</span>
 									{isCurrent ? (

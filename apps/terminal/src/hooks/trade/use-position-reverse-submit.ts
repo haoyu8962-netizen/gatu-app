@@ -24,6 +24,7 @@ import {
 	type OrderAssetLockLease,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import {
 	formatPositionSubmitFeedback,
 	formatTrackedPositionSubmitError,
@@ -98,7 +99,7 @@ const USER_STATE_MAX_AGE_MS = 60_000;
  * invalidates the confirmation and requires the user to reopen the dialog.
  */
 export function usePositionReverseSubmit(target: PositionReverseTarget) {
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -271,7 +272,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 			return lockResult.value;
 		} catch (cause) {
 			const submitError = positionSubmitFeedbackFromCause(cause, "failed-reverse");
-			const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");
 				setError(submitError);
@@ -306,8 +307,8 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		isPending: phase === "validating" || phase === "submitting" || trackedOrder.isPending,
 		isReconciling: phase === "reconciling",
 		error: error
-			? formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
+			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }
@@ -537,6 +538,8 @@ function tradingDataChangedError(): Error {
 
 function getPositionReversePlanError(error: PositionReverseOrderError | undefined): PositionSubmitFeedback {
 	switch (error) {
+		case "invalid-size-precision":
+			return orderSubmissionFeedback("market-precision-invalid");
 		case "position-size-below-precision":
 			return localizedPositionSubmitFeedback("position-size-below-precision");
 		case "invalid-position-size":

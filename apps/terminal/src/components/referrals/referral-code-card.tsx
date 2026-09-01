@@ -225,7 +225,9 @@ export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onAppl
 							<Trans>Your account was referred by</Trans>
 						</span>
 						<span className="font-medium text-fg">
-							{data.referredBy.code} · {shortenAddress(data.referredBy.referrer)}
+							<bdi dir="ltr">
+								{data.referredBy.code} · {shortenAddress(data.referredBy.referrer)}
+							</bdi>
 						</span>
 					</div>
 				) : canApplyCode ? (

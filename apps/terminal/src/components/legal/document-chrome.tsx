@@ -1,7 +1,7 @@
 import { i18n } from "@lingui/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link, useHydrated, useLocation } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { LanguageSwitcher } from "@/components/trade/header/language-switcher";
 import { ThemeToggle } from "@/components/trade/header/theme-toggle";
@@ -94,6 +94,7 @@ function DocumentHeader({ hydrated, translated }: { hydrated: boolean; translate
 				translated={translated}
 				className="flex h-11 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[701px]:hidden"
 				primary
+				scrollActiveIntoView
 			/>
 		</header>
 	);
@@ -104,15 +105,25 @@ function DocumentNavigation({
 	translated,
 	className,
 	primary = false,
+	scrollActiveIntoView = false,
 }: {
 	pathname: string;
 	translated: boolean;
 	className?: string;
 	primary?: boolean;
+	scrollActiveIntoView?: boolean;
 }) {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
+	const activeLinkRef = useRef<HTMLAnchorElement>(null);
+	const navigationIdentity = `${pathname}:${translated ? i18n.locale : "source"}`;
 	const ariaLabel =
 		primary && translated ? t`Primary navigation` : primary ? "Primary navigation" : "Documentation and legal";
+
+	useEffect(() => {
+		const activeLink = activeLinkRef.current;
+		if (!scrollActiveIntoView || activeLink?.dataset.navigationIdentity !== navigationIdentity) return;
+		activeLink.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+	}, [navigationIdentity, scrollActiveIntoView]);
 
 	return (
 		<nav className={cn("items-stretch gap-1", className)} aria-label={ariaLabel}>
@@ -121,10 +132,12 @@ function DocumentNavigation({
 				return (
 					<Link
 						key={item.to}
+						ref={active ? activeLinkRef : undefined}
+						data-navigation-identity={active ? navigationIdentity : undefined}
 						to={item.to}
 						aria-current={active ? "page" : undefined}
 						className={cn(
-							"flex shrink-0 items-center rounded-8 px-2.5 text-xs font-semibold transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+							"flex shrink-0 items-center rounded-8 px-2.5 text-xs font-semibold transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
 							active ? "text-fg" : "text-fg-muted",
 						)}
 					>

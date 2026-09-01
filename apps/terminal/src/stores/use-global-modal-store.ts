@@ -41,6 +41,9 @@ type GlobalModal =
 	| { type: "positionMarketClose"; session: PositionMarketCloseSession }
 	| null;
 
+type OrdinaryGlobalModal = Exclude<GlobalModal, null | { type: "positionMarketClose" }>;
+type OrdinaryGlobalModalType = OrdinaryGlobalModal["type"];
+
 interface DepositActions {
 	open: (tab?: DepositTab) => void;
 	setTab: (tab: DepositTab) => void;
@@ -127,8 +130,9 @@ function isPositionMarketCloseModal(
 }
 
 const useGlobalModalStore = create<GlobalModalState>((set) => {
-	const close = () => set((state) => (isPositionMarketCloseModal(state.modal) ? state : { modal: null }));
-	const open = (modal: Exclude<GlobalModal, null | { type: "positionMarketClose" }>) =>
+	const close = (type: OrdinaryGlobalModalType) =>
+		set((state) => (state.modal?.type === type ? { modal: null } : state));
+	const open = (modal: OrdinaryGlobalModal) =>
 		set((state) => (isPositionMarketCloseModal(state.modal) ? state : { modal }));
 
 	return {
@@ -136,32 +140,32 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 		depositActions: {
 			open: (tab = "deposit") => open({ type: "deposit", tab }),
 			setTab: (tab) => set((state) => (state.modal?.type === "deposit" ? { modal: { type: "deposit", tab } } : state)),
-			close,
+			close: () => close("deposit"),
 		},
 		establishConnectionActions: {
 			open: () => open({ type: "establishConnection" }),
-			close,
+			close: () => close("establishConnection"),
 		},
 		transferActions: {
 			open: (direction = "toPerp") => open({ type: "internalTransfer", direction }),
-			close,
+			close: () => close("internalTransfer"),
 		},
 		sendActions: {
 			open: (asset = DEFAULT_QUOTE_TOKEN, accountType = "spot") => open({ type: "send", asset, accountType }),
-			close,
+			close: () => close("send"),
 		},
 		settingsActions: {
 			open: () => open({ type: "settings" }),
-			close,
+			close: () => close("settings"),
 		},
 		swapActions: {
 			open: (fromToken = DEFAULT_QUOTE_TOKEN, toToken) => open({ type: "swap", fromToken, toToken, mode: "spot" }),
 			openStablecoins: () => open({ type: "swap", fromToken: DEFAULT_QUOTE_TOKEN, mode: "stablecoin" }),
-			close,
+			close: () => close("swap"),
 		},
 		commandMenuActions: {
 			open: () => open({ type: "commandMenu" }),
-			close,
+			close: () => close("commandMenu"),
 		},
 		positionMarketCloseActions: {
 			open: (position, identity, presentation = "confirmation") => {

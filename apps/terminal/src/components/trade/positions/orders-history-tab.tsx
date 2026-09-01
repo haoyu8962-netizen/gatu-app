@@ -285,13 +285,13 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 							</colgroup>
 							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "pl-5 text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "ps-5 text-start")}>
 										{t`Time`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-start")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-start")}>
 										{t`Type`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-right")}>
@@ -300,10 +300,10 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-start")}>
 										{t`Status`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "pr-5 text-right")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "pe-5 text-right")}>
 										{t`Updated`}
 									</TableHead>
 								</TableRow>
@@ -321,7 +321,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 												className={cn(
 													positionsPanelTableCellClass,
 													orderHistoryTableCellClass,
-													"whitespace-nowrap pl-5 text-xs text-market-close-muted",
+													"whitespace-nowrap ps-5 text-xs text-market-close-muted",
 												)}
 											>
 												{formatDateTime(entry.createdAt, { dateStyle: "short", timeStyle: "short" })}
@@ -385,7 +385,7 @@ function OrdersHistoryTabContent({ address, toolbarTarget }: OrdersHistoryTabCon
 												className={cn(
 													positionsPanelTableCellClass,
 													orderHistoryTableCellClass,
-													"whitespace-nowrap pr-5 text-right text-xs text-market-close-muted",
+													"whitespace-nowrap pe-5 text-right text-xs text-market-close-muted",
 												)}
 											>
 												{formatDateTime(entry.updatedAt, { dateStyle: "short", timeStyle: "short" })}

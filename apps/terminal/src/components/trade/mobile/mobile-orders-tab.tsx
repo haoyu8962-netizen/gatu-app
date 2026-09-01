@@ -1050,7 +1050,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 							variant="link"
 							intent="error"
 							size="sm"
-							className="relative ml-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
+							className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
 							onClick={handleRequestCancelAll}
 							disabled={pendingScopes.size > 0 || isModifyBusy}
 						>
@@ -1267,7 +1267,7 @@ function MobileOrderCard({
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
 						aria-label={t`Switch to ${marketLabel} market`}
-						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-left text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
+						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-start text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 					>
 						{marketLabel}
 					</button>

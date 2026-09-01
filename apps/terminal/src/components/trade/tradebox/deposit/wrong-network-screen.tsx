@@ -1,5 +1,5 @@
 import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 
 interface Props {
@@ -12,12 +12,15 @@ interface Props {
 }
 
 export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error, presentation = "modal" }: Props) {
+	const { t } = useLingui();
+
 	return (
 		<AdaptiveModal
 			open={open}
 			onOpenChange={onClose}
 			presentation={presentation}
 			size="sm"
+			closeLabel={t`Close`}
 			showHandle={presentation === "drawer"}
 			handleClassName="top-2 h-1 w-9 bg-fill/30"
 			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
@@ -41,7 +44,11 @@ export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error
 						</p>
 					</div>
 				</div>
-				{error && <p className="text-xs text-error px-1">{error.message}</p>}
+				{error && (
+					<p role="alert" className="px-1 text-xs text-error">
+						{error.message}
+					</p>
+				)}
 				<Button variant="filled" intent="neutral" onClick={onSwitch} disabled={isSwitching} className="w-full">
 					{isSwitching ? (
 						<>

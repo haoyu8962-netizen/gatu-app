@@ -309,7 +309,7 @@ function MobileFundingTabContent({
 												type="button"
 												onClick={() => handleSelectMarket(marketName)}
 												aria-label={t`Switch to ${marketName} market`}
-												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
+												className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-start focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-focus"
 											>
 												<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
 												<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">

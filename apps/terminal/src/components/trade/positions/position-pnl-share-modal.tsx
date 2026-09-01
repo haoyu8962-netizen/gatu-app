@@ -254,7 +254,7 @@ function PositionPnlShareDialog({ position, onOpenChange }: PositionPnlShareDial
 						<div className="flex min-w-0 items-start gap-[18px] border-t border-position-share-divider pt-3 min-[1001px]:gap-6 min-[1001px]:pt-3.5">
 							<SharePrice label={entryLabel} value={entryValue} />
 							<SharePrice label={markLabel} value={markValue} />
-							<div className="ml-auto grid size-[38px] shrink-0 place-items-center overflow-hidden rounded-[6px] bg-position-share-fg min-[1001px]:size-11">
+							<div className="ms-auto grid size-[38px] shrink-0 place-items-center overflow-hidden rounded-[6px] bg-position-share-fg min-[1001px]:size-11">
 								{qrDataUrl ? (
 									<img src={qrDataUrl} alt={t`QR code linking to ${position.symbol} market`} className="size-full" />
 								) : isTestnet ? (

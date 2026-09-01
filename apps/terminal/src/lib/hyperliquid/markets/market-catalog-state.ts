@@ -1,4 +1,5 @@
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
+import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 
 export type MarketCatalogQueryStatus = "pending" | "error" | "success";
 export type MarketCatalogFetchStatus = "fetching" | "paused" | "idle";
@@ -65,13 +66,18 @@ function isFiniteInteger(value: unknown): value is number {
 	return typeof value === "number" && Number.isSafeInteger(value);
 }
 
+function isIntegerInRange(value: unknown, min: number, max: number): value is number {
+	return isFiniteInteger(value) && value >= min && value <= max;
+}
+
 function isSpotTokenValid(value: unknown): boolean {
 	return (
 		isRecord(value) &&
 		typeof value.name === "string" &&
 		value.name.length > 0 &&
-		isFiniteInteger(value.szDecimals) &&
+		isIntegerInRange(value.szDecimals, 0, HL_PRICE_MAX_DECIMALS) &&
 		isFiniteInteger(value.weiDecimals) &&
+		value.weiDecimals >= 0 &&
 		isFiniteInteger(value.index) &&
 		typeof value.tokenId === "string" &&
 		typeof value.isCanonical === "boolean" &&
@@ -117,7 +123,7 @@ function isPerpMetaValid(value: unknown): value is MetaResponse {
 			isRecord(asset) &&
 			typeof asset.name === "string" &&
 			asset.name.length > 0 &&
-			isFiniteInteger(asset.szDecimals) &&
+			isIntegerInRange(asset.szDecimals, 0, HL_PERP_PRICE_MAX_DECIMALS) &&
 			typeof asset.maxLeverage === "number" &&
 			Number.isFinite(asset.maxLeverage) &&
 			isFiniteInteger(asset.marginTableId),

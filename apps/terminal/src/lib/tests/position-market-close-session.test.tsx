@@ -20,7 +20,9 @@ import {
 	type PositionMarketCloseActions,
 	type PositionMarketCloseRef,
 	useCommandMenuActions,
+	useGlobalModalType,
 	usePositionMarketCloseActions,
+	useSendModalActions,
 } from "@/stores/use-global-modal-store";
 
 const POSITION: PositionMarketCloseRef = {
@@ -38,10 +40,14 @@ describe("position market close session", () => {
 	let root: Root;
 	let closeActions: PositionMarketCloseActions;
 	let commandMenuActions: ReturnType<typeof useCommandMenuActions>;
+	let sendActions: ReturnType<typeof useSendModalActions>;
+	let activeModal: ReturnType<typeof useGlobalModalType>;
 
 	function Harness() {
 		closeActions = usePositionMarketCloseActions();
 		commandMenuActions = useCommandMenuActions();
+		sendActions = useSendModalActions();
+		activeModal = useGlobalModalType();
 		return null;
 	}
 
@@ -64,8 +70,12 @@ describe("position market close session", () => {
 	});
 
 	afterEach(() => {
-		clearSession();
-		act(() => root.unmount());
+		act(() => {
+			clearSession();
+			commandMenuActions.close();
+			sendActions.close();
+			root.unmount();
+		});
 		container.remove();
 	});
 
@@ -212,6 +222,20 @@ describe("position market close session", () => {
 		});
 
 		expect(getPositionMarketCloseModal()).toBeNull();
+	});
+
+	it("does not let a stale ordinary-modal close callback dismiss its replacement", () => {
+		act(() => sendActions.open("USDC", "spot"));
+		expect(activeModal).toBe("send");
+
+		act(() => commandMenuActions.open());
+		expect(activeModal).toBe("commandMenu");
+
+		act(() => sendActions.close());
+		expect(activeModal).toBe("commandMenu");
+
+		act(() => commandMenuActions.close());
+		expect(activeModal).toBeNull();
 	});
 
 	it.each(["disconnected", "0xABCDEF"])("fails closed for an invalid Hyperliquid account: %s", (clientKey) => {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	assertEntryOrderExecutionAllowed,
 	assertEntryTwapExecutionAllowed,
+	EntryExecutionError,
 	type EntryOrderExecutionState,
 } from "@/domain/trade/order/entry-execution-guard";
 
@@ -271,6 +272,27 @@ describe("entry order SDK execution guard", () => {
 		);
 	});
 
+	it("exposes stable reasons and never leaks Big.js parse errors", () => {
+		expectExecutionReason(
+			() =>
+				assertEntryOrderExecutionAllowed(
+					{ ...marketOrder(true, "102.5"), orders: [{ ...marketOrder(true, "102.5").orders[0], s: "invalid" }] },
+					executionState(),
+					1_001,
+				),
+			"order-request-invalid",
+		);
+		expectExecutionReason(
+			() =>
+				assertEntryOrderExecutionAllowed(
+					marketOrder(true, "102.5"),
+					executionState({ executionReferencePx: "invalid" }),
+					1_001,
+				),
+			"execution-price-unavailable",
+		);
+	});
+
 	it.each([
 		{
 			label: "same-side child",
@@ -311,6 +333,16 @@ describe("entry order SDK execution guard", () => {
 		);
 	});
 });
+
+function expectExecutionReason(action: () => void, reason: ConstructorParameters<typeof EntryExecutionError>[0]) {
+	try {
+		action();
+		throw new Error("Expected entry execution guard to reject");
+	} catch (error) {
+		expect(error).toBeInstanceOf(EntryExecutionError);
+		expect(error).toMatchObject({ reason });
+	}
+}
 
 describe("entry TWAP SDK execution guard", () => {
 	const params = {

@@ -132,7 +132,7 @@ function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
 									signDisplay: "exceptZero",
 								})}
 							</span>
-							<span className="ml-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
+							<span className="ms-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
 						</>
 					)
 				}
@@ -450,7 +450,7 @@ function createSpotTokenContractValue(
 				className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-trading-panel-fg transition-colors duration-150 hover:text-trading-panel-muted"
 				aria-label={labels.open}
 			>
-				{shortenAddress(address, 4, 4)}
+				<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>
 				<ArrowSquareOutIcon className="size-3 shrink-0 text-trading-panel-muted" aria-hidden="true" />
 			</a>
 			<button

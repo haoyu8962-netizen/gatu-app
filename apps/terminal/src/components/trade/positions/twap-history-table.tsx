@@ -55,8 +55,8 @@ export function TwapHistoryTable() {
 									"h-[33px] items-center border-b border-market-close-stroke-card text-[11px] font-semibold text-market-close-subtle",
 								)}
 							>
-								<th scope="col" className="p-0 text-left font-semibold">{t`Time`}</th>
-								<th scope="col" className="p-0 text-left font-semibold">{t`Market`}</th>
+								<th scope="col" className="p-0 text-start font-semibold">{t`Time`}</th>
+								<th scope="col" className="p-0 text-start font-semibold">{t`Market`}</th>
 								<th scope="col" className="p-0 text-right font-semibold">{t`Total Size`}</th>
 								<th scope="col" className="p-0 text-right font-semibold">{t`Executed Size`}</th>
 								<th scope="col" className="p-0 text-right font-semibold">{t`Average Price`}</th>

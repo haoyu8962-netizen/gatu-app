@@ -76,6 +76,9 @@ describe("WithdrawForm UI", () => {
 		const amountInput = form.querySelector<HTMLInputElement>('input[placeholder="0.00"]');
 		expect(amountInput?.value).toBe("2.5");
 		expect(amountInput?.getAttribute("aria-invalid")).toBeNull();
+		const destinationInput = form.querySelector<HTMLInputElement>('input[aria-label="Destination address"]');
+		expect(destinationInput?.dir).toBe("auto");
+		expect(destinationInput?.getAttribute("autocapitalize")).toBe("none");
 
 		const maxButton = Array.from(form.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
 			button.textContent?.includes("Max: 12.34"),

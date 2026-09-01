@@ -140,7 +140,7 @@ export function ApiWalletView({
 						<div className="min-w-0">
 							<p className="text-3xs text-api-wallet-subtle">{accountLabel ?? <Trans>Hyperliquid account</Trans>}</p>
 							<p className="font-mono text-xs font-semibold tabular-nums text-api-wallet-fg">
-								{shortenAddress(accountAddress)}
+								<bdi dir="ltr">{shortenAddress(accountAddress)}</bdi>
 							</p>
 						</div>
 						<ApiWalletCopyButton value={accountAddress} appearance="icon" />

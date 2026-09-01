@@ -293,7 +293,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 							<Table className="table-fixed min-w-[52rem] w-full">
 								<TableHeader className={balancesTableHeaderClass}>
 									<TableRow className={positionsPanelTableHeaderRowClass}>
-										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-start")}>
 											{t`Asset`}
 										</TableHead>
 										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>

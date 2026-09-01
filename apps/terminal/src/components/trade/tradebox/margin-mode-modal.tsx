@@ -136,7 +136,7 @@ function ModeOption({ option, description, isSelected, isCurrent, isDisabled, is
 			disabled={isUpdating || isDisabled}
 			aria-pressed={isSelected}
 			className={cn(
-				"w-full rounded-12 border px-3.5 py-3 text-left transition-[color,background-color,border-color]",
+				"w-full rounded-12 border px-3.5 py-3 text-start transition-[color,background-color,border-color]",
 				"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 				isSelected
 					? "border-[1.5px] border-trading-panel-control bg-trading-panel-card"
@@ -179,6 +179,7 @@ function MarginModeModalComponent({
 	mobileView = "margin",
 	...formProps
 }: Props) {
+	const { t } = useLingui();
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const marketFormKey = marketIdentity ?? "market";
 	const capabilityKey = `${formProps.maxLeverage}:${formProps.showLeverage ? "leveraged" : "fixed"}`;
@@ -218,6 +219,7 @@ function MarginModeModalComponent({
 				size="sm"
 				dismissible={!dismissBlocked}
 				showClose={!dismissBlocked && mobileView !== "leverage"}
+				closeLabel={t`Close`}
 				showHandle={!dismissBlocked}
 				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
 				overlayClassName="bg-trading-panel-scrim"
@@ -309,6 +311,7 @@ function MarginModeModalComponent({
 			<ModalPopup
 				size="sm"
 				showClose={!dismissBlocked}
+				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="font-market-close"
 			>

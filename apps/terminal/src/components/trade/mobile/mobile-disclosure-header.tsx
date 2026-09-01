@@ -12,7 +12,7 @@ interface Props {
 
 export function MobileDisclosureHeader({ expanded, label, onToggle, children, className, controls }: Props) {
 	return (
-		<div className={cn("relative grid min-h-11 w-full items-center bg-market-close-card text-left", className)}>
+		<div className={cn("relative grid min-h-11 w-full items-center bg-market-close-card text-start", className)}>
 			<button
 				type="button"
 				aria-expanded={expanded}

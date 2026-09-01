@@ -14,6 +14,7 @@ import {
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
+import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import {
 	formatPositionSubmitFeedback,
 	formatTrackedPositionSubmitError,
@@ -77,7 +78,7 @@ interface LiveContext {
  * switch cannot silently redirect an already-open confirmation.
  */
 export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
-	const { i18n } = useLingui();
+	const { t } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -208,7 +209,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			return outcome;
 		} catch (cause) {
 			const submitError = positionSubmitFeedbackFromCause(cause, "failed-limit-close");
-			const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			setPhase("idle");
 			setError(submitError);
 			throw localizePositionSubmitFeedbackCause(cause, submitError, message);
@@ -218,7 +219,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 	}
 
 	function failBeforeSubmission(submitError: PositionSubmitFeedback): never {
-		const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
+		const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 		setError(submitError);
 		throw new PositionSubmitFeedbackCause(submitError, message);
 	}
@@ -235,8 +236,8 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 		isPending: phase === "validating" || phase === "submitting" || trackedOrder.isPending,
 		isReconciling: phase === "reconciling",
 		error: error
-			? formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor))
-			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
+			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }
@@ -395,6 +396,9 @@ function tradingDataChangedError(): Error {
 }
 
 function getLimitClosePlanError(error: string | undefined): PositionSubmitFeedback {
+	if (error?.startsWith("Size decimals must be an integer between 0 and ")) {
+		return orderSubmissionFeedback("market-precision-invalid");
+	}
 	switch (error) {
 		case "Close size is below market precision":
 			return localizedPositionSubmitFeedback("close-size-below-precision");

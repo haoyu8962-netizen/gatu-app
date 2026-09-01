@@ -18,14 +18,16 @@ export function ReferralClaimHistory({ rows }: Props) {
 							<Trans>Rewards claimed</Trans>
 						</p>
 						<p className="mt-0.5 text-2xs text-fg-muted">
-							{formatDateTime(row.time)} · {shortenAddress(row.hash, 6, 6)}
+							<bdi dir="ltr">{formatDateTime(row.time)}</bdi> · <bdi dir="ltr">{shortenAddress(row.hash, 6, 6)}</bdi>
 						</p>
 					</div>
 					<p className="text-xs font-semibold tabular-nums text-success min-[1001px]:text-2sm">
-						{formatToken(row.amount, {
-							symbol: row.token,
-							maximumFractionDigits: row.weiDecimals ?? 8,
-						})}
+						<bdi dir="ltr">
+							{formatToken(row.amount, {
+								symbol: row.token,
+								maximumFractionDigits: row.weiDecimals ?? 8,
+							})}
+						</bdi>
 					</p>
 				</div>
 			))}
