@@ -1,5 +1,4 @@
 import { Button, Select, TextInput } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useId } from "react";
@@ -206,10 +205,10 @@ export function WithdrawForm({
 			{destinationRequired && (
 				<div>
 					<TextInput
-						aria-label={t`Destination address`}
+						aria-label={translate`Destination address`}
 						aria-describedby={destinationError ? destinationErrorId : undefined}
 						aria-invalid={destinationError ? true : undefined}
-						placeholder={t`Destination address`}
+						placeholder={translate`Destination address`}
 						value={destination}
 						onChange={(e) => onDestinationChange(e.target.value)}
 						autoComplete="off"

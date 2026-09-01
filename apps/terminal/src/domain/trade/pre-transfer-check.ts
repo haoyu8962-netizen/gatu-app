@@ -1,4 +1,3 @@
-import { t } from "@lingui/core/macro";
 import Big from "big.js";
 import type { Address } from "viem";
 
@@ -19,10 +18,10 @@ export class PreTransferCheckExecutionError extends Error {
 	constructor(reason: "changed" | "sanctioned" | "unavailable") {
 		super(
 			reason === "changed"
-				? t`The account activation fee changed before signing. Review the updated fee and try again.`
+				? "The account activation fee changed before signing. Review the updated fee and try again."
 				: reason === "sanctioned"
-					? t`Withdrawals are unavailable for this address.`
-					: t`Unable to verify withdrawal eligibility. Request was not submitted.`,
+					? "Withdrawals are unavailable for this address."
+					: "Unable to verify withdrawal eligibility. Request was not submitted.",
 		);
 		this.name = "PreTransferCheckExecutionError";
 		this.reason = reason;

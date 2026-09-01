@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { GatuOrbitLoader } from "@/components/brand/gatu-orbit-loader";
@@ -114,6 +114,7 @@ export function TradingViewChart({
 	locale = CHART_LOCALE,
 	yAxisInside = false,
 }: Props) {
+	const { t } = useLingui();
 	const widgetSymbol = market ? getChartApiSymbol(market) : symbol;
 	const overlayLines = useTradingViewOverlayLines(market, symbol);
 	const containerRef = useRef<HTMLDivElement>(null);

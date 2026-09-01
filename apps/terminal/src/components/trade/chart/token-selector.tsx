@@ -1,6 +1,6 @@
 import { infoKey, infoPersistedKey } from "@gatu/hl-react";
 import { Drawer, DrawerTrigger } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
@@ -30,6 +30,7 @@ export function TokenSelector({
 	showAssetIcon = true,
 	showMetadataBadge = true,
 }: Props) {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { env } = useHyperliquid();
 	const queryClient = useQueryClient();

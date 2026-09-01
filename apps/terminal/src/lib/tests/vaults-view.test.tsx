@@ -182,17 +182,26 @@ describe("Vault views", () => {
 		expect(container.textContent).toContain("-$2.00");
 	});
 
-	it("provides one complete accessible label for each compact performance chart", () => {
+	it("provides one text summary while keeping each compact sparkline decorative", () => {
 		render(
 			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
 		);
-		const charts = [...container.querySelectorAll<HTMLElement>('figure[role="img"]')];
+		const charts = [...container.querySelectorAll<HTMLElement>("[data-vault-compact-chart]")];
 		expect(charts).toHaveLength(2);
 		for (const chart of charts) {
-			expect(chart.getAttribute("aria-label")).toBe("PNL over 30 days. Latest value +$1.00. Positive PNL.");
+			expect(chart.getAttribute("aria-hidden")).toBe("true");
+			expect(chart.hasAttribute("role")).toBe(false);
 			expect(chart.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
 			expect(chart.querySelector('svg[role="img"]')).toBeNull();
 		}
+		const summaries = [...container.querySelectorAll("[data-vault-chart-summary]")].map(
+			(summary) => summary.textContent,
+		);
+		expect(summaries).toEqual([
+			"PNL over 30 days. Latest value +$1.00. Positive PNL.",
+			"PNL over 30 days. Latest value +$1.00. Positive PNL.",
+		]);
+		expect(container.querySelectorAll('[data-vault-chart-summary] bdi[dir="ltr"]')).toHaveLength(2);
 	});
 
 	it("describes a zero latest PNL without inferring that the history was flat", () => {
@@ -213,9 +222,39 @@ describe("Vault views", () => {
 			/>,
 		);
 
-		expect(container.querySelector('figure[role="img"]')?.getAttribute("aria-label")).toBe(
+		expect(container.querySelector("[data-vault-chart-summary]")?.textContent).toBe(
 			"PNL over 30 days. Latest value $0.00. PNL is zero.",
 		);
+		expect(container.querySelector('[role="img"]')).toBeNull();
+	});
+
+	it("gives the detail chart a concise name and a trend description with extrema", () => {
+		render(
+			<VaultPerformanceChart
+				snapshot={{
+					accountValueHistory: [],
+					pnlHistory: [
+						{ timestamp: 1, value: "0" },
+						{ timestamp: 2, value: "5" },
+						{ timestamp: 3, value: "0" },
+					],
+					volume: "0",
+				}}
+				kind="pnl"
+				period="month"
+			/>,
+		);
+
+		const chart = container.querySelector<HTMLElement>('[data-vault-performance-chart][role="img"]');
+		const nameId = chart?.getAttribute("aria-labelledby");
+		const descriptionId = chart?.getAttribute("aria-describedby");
+		expect(nameId ? document.getElementById(nameId)?.textContent : null).toBe("PNL 30 days");
+		expect(descriptionId ? document.getElementById(descriptionId)?.textContent : null).toBe(
+			"Starts at $0.00 and ends at $0.00. The start and end values are unchanged. Minimum $0.00; maximum +$5.00.",
+		);
+		expect(
+			descriptionId ? document.getElementById(descriptionId)?.querySelectorAll('bdi[dir="ltr"]') : [],
+		).toHaveLength(4);
 	});
 
 	it("limits desktop row hover feedback to its actual Vault link", () => {

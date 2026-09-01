@@ -12,8 +12,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
@@ -33,6 +32,7 @@ interface MarginModeToggleProps {
 }
 
 export function MarginModeToggle({ mode, disabled, onClick }: MarginModeToggleProps) {
+	const { t } = useLingui();
 	const label = mode === "cross" ? t`Cross` : t`Isolated`;
 	const Icon = MODE_ICONS[mode];
 
@@ -104,22 +104,14 @@ type FormProps = Omit<
 
 const MODE_OPTIONS: Array<{
 	id: MarginMode;
-	label: () => string;
-	description: () => string;
 	icon: typeof StackIcon;
 }> = [
 	{
 		id: "cross",
-		label: () => t`Cross`,
-		description: () =>
-			t`All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited.`,
 		icon: StackIcon,
 	},
 	{
 		id: "isolated",
-		label: () => t`Isolated`,
-		description: () =>
-			t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually.`,
 		icon: ShieldIcon,
 	},
 ];
@@ -135,6 +127,8 @@ interface ModeOptionProps {
 }
 
 function ModeOption({ option, description, isSelected, isCurrent, isDisabled, isUpdating, onSelect }: ModeOptionProps) {
+	const { t } = useLingui();
+	const label = option.id === "cross" ? t`Cross` : t`Isolated`;
 	return (
 		<button
 			type="button"
@@ -162,7 +156,7 @@ function ModeOption({ option, description, isSelected, isCurrent, isDisabled, is
 				>
 					{isSelected ? <CheckIcon className="size-3" weight="bold" /> : null}
 				</span>
-				<span className="min-w-0 flex-1 text-2sm font-semibold text-trading-panel-fg">{option.label()}</span>
+				<span className="min-w-0 flex-1 text-2sm font-semibold text-trading-panel-fg">{label}</span>
 				{isCurrent ? (
 					<span className="shrink-0 text-2xs font-medium uppercase text-trading-panel-subtle">
 						<Trans>Current</Trans>
@@ -382,6 +376,7 @@ function MarginModeForm({
 	onLeverageDraftChange,
 	onSubmissionLockChange,
 }: FormProps) {
+	const { t } = useLingui();
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
 	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const [leverageInputValid, setLeverageInputValid] = useState(true);
@@ -469,9 +464,12 @@ function MarginModeForm({
 	}
 
 	function getModeDescription(mode: MarginMode): string {
-		return mode === "isolated" && !allowsIsolatedMarginRemoval
-			? t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open.`
-			: (MODE_OPTIONS.find((option) => option.id === mode)?.description() ?? "");
+		if (mode === "isolated" && !allowsIsolatedMarginRemoval) {
+			return t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open.`;
+		}
+		return mode === "cross"
+			? t`All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited.`
+			: t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually.`;
 	}
 
 	return (

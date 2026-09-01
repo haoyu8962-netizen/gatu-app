@@ -1,5 +1,5 @@
 import { Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -69,6 +69,7 @@ const MARKET_OVERVIEW_STAT_WIDTH_CLASS: Record<MarketOverviewStatId, string> = {
 const KEYBOARD_SCROLL_REGION_PROPS = { tabIndex: 0 } as const;
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const rows = [
 		{ label: t`7 days`, rate: rates.sevenDays },
@@ -97,6 +98,7 @@ function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates
 }
 
 function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 	const periodRates = getFundingPeriodRates(fundingRate);
@@ -164,6 +166,7 @@ function formatMarketHeaderPrice(value: string | number | null | undefined, deci
 }
 
 export function MarketOverview() {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { env } = useHyperliquid();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
@@ -409,6 +412,10 @@ export function MarketOverview() {
 									spotTokenAddress,
 									copiedSpotTokenAddress === spotTokenAddress,
 									copySpotTokenAddress,
+									{
+										copy: copiedSpotTokenAddress === spotTokenAddress ? t`Copied` : t`Copy token address`,
+										open: t`Open token in explorer`,
+									},
 								)}
 							/>,
 						)}
@@ -419,7 +426,12 @@ export function MarketOverview() {
 	);
 }
 
-function createSpotTokenContractValue(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+function createSpotTokenContractValue(
+	address: string | null,
+	copied: boolean,
+	onCopy: (value: string) => void,
+	labels: { copy: string; open: string },
+) {
 	function handleCopy() {
 		if (!address) return;
 		onCopy(address);
@@ -436,7 +448,7 @@ function createSpotTokenContractValue(address: string | null, copied: boolean, o
 				target="_blank"
 				rel="noopener noreferrer"
 				className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-trading-panel-fg transition-colors duration-150 hover:text-trading-panel-muted"
-				aria-label={t`Open token in explorer`}
+				aria-label={labels.open}
 			>
 				{shortenAddress(address, 4, 4)}
 				<ArrowSquareOutIcon className="size-3 shrink-0 text-trading-panel-muted" aria-hidden="true" />
@@ -444,7 +456,7 @@ function createSpotTokenContractValue(address: string | null, copied: boolean, o
 			<button
 				type="button"
 				onClick={handleCopy}
-				aria-label={copied ? t`Copied` : t`Copy token address`}
+				aria-label={labels.copy}
 				className="inline-flex size-5 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 			>
 				{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}

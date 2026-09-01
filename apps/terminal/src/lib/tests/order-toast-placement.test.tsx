@@ -1,19 +1,32 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { i18n, type Messages } from "@lingui/core";
 import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OrderToast } from "@/components/trade/tradebox/order-toast";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
+import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import { useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { createI18nRoot } from "./harness/react";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TRADE_COMPONENT_DIR = resolve(TEST_DIR, "../..", "components/trade");
 const ORDER_TOAST_MOBILE_GAP_PX = 12;
+const COORDINATION_MESSAGE = "Safe order coordination across tabs is unavailable in this browser.";
+const COORDINATION_MESSAGE_AR = "تعذر تنسيق الطلبات بأمان عبر علامات التبويب في هذا المتصفح.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(COORDINATION_MESSAGE)]: COORDINATION_MESSAGE_AR,
+};
 
 function OrderToastHarness() {
 	const orders = useOrderQueue();
@@ -76,6 +89,23 @@ function OrderToastHarness() {
 		createElement(
 			"button",
 			{
+				"data-testid": "add-client-error-order",
+				onClick: () =>
+					addOrder({
+						error: orderSubmissionFeedback("coordination-unavailable"),
+						market: "HYPE",
+						orderType: "market",
+						side: "sell",
+						size: "1",
+						status: "failed",
+					}),
+				type: "button",
+			},
+			"Add client error order",
+		),
+		createElement(
+			"button",
+			{
 				"data-testid": "clear-orders",
 				onClick: () => {
 					for (const order of orders) removeOrder(order.id);
@@ -93,6 +123,7 @@ describe("OrderToast placement", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -171,6 +202,20 @@ describe("OrderToast placement", () => {
 
 		const dismissButton = status?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
 		expect(dismissButton).not.toBeNull();
+	});
+
+	it("retranslates a persisted client error when the locale changes", () => {
+		const addButton = container.querySelector<HTMLButtonElement>('[data-testid="add-client-error-order"]');
+		if (!addButton) throw new Error("Add client error order button not found");
+		act(() => addButton.click());
+
+		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
+		expect(status?.textContent).toContain(COORDINATION_MESSAGE);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(status?.textContent).toContain(COORDINATION_MESSAGE_AR);
+		expect(status?.textContent).not.toContain(COORDINATION_MESSAGE);
 	});
 });
 

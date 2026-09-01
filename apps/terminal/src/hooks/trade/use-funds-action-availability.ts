@@ -27,6 +27,17 @@ interface FundsActionAvailabilityState {
 	withdrawal: FundsActionAvailabilityPresentation;
 }
 
+export class FundsActionGeoExecutionError extends Error {
+	constructor(readonly reason: "restricted" | "unavailable") {
+		super(
+			reason === "restricted"
+				? "Funds actions are not available in your region. This funds action was not submitted."
+				: "Unable to verify regional availability. This funds action was not submitted.",
+		);
+		this.name = "FundsActionGeoExecutionError";
+	}
+}
+
 export function useFundsActionAvailability({
 	accountDataReady,
 	accountModeReady,
@@ -72,12 +83,25 @@ export function useFundsActionAvailability({
 	}
 
 	async function assertFreshGeoAllowed(signal: AbortSignal): Promise<void> {
-		await assertFreshFundsActionGeo({
-			refresh: geo.retry,
-			restrictedMessage: t`Funds actions are not available in your region. This funds action was not submitted.`,
-			signal,
-			unavailableMessage: t`Unable to verify regional availability. This funds action was not submitted.`,
-		});
+		const restrictedMessage = t`Funds actions are not available in your region. This funds action was not submitted.`;
+		const unavailableMessage = t`Unable to verify regional availability. This funds action was not submitted.`;
+		try {
+			await assertFreshFundsActionGeo({
+				refresh: geo.retry,
+				restrictedMessage,
+				signal,
+				unavailableMessage,
+			});
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof Error && error.message === restrictedMessage) {
+				throw new FundsActionGeoExecutionError("restricted");
+			}
+			if (error instanceof Error && error.message === unavailableMessage) {
+				throw new FundsActionGeoExecutionError("unavailable");
+			}
+			throw error;
+		}
 	}
 
 	return {

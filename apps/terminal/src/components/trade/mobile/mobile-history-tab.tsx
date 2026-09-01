@@ -303,7 +303,7 @@ function MobileHistoryTabContent({
 							triggerClassName={filterTriggerClassName}
 						/>
 					</div>
-					<MobileBulkDisclosureActions keys={filteredFillKeys} controller={disclosure} className="ml-auto pl-3" />
+					<MobileBulkDisclosureActions keys={filteredFillKeys} controller={disclosure} className="ms-auto ps-3" />
 				</div>
 				<div
 					data-testid="mobile-trade-history-list"

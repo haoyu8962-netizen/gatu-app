@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
@@ -22,6 +22,7 @@ const AUTO_DEPOSIT_RETRY_DELAY_MS = 30_000;
 const AUTO_DEPOSIT_MAX_RETRY_DELAY_MS = 5 * 60_000;
 
 export function EmbeddedDepositAutoBridge() {
+	const { t } = useLingui();
 	const isTestnet = useIsTestnet();
 	const depositModalOpen = useDepositModalOpen();
 	const sponsoredCctpReleaseEnabled = isCctpSponsoredDepositEnabled(isTestnet);
@@ -333,6 +334,7 @@ export function EmbeddedDepositAutoBridge() {
 		isEmbeddedDeposit,
 		usdcRoutingQuery.data?.depositRoute,
 		usdcRoutingStatus,
+		t,
 	]);
 
 	return null;

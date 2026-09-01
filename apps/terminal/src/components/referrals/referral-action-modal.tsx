@@ -20,6 +20,10 @@ import type { ReferralRewardRow } from "@/lib/trade/referral";
 
 type Step = "error" | "form" | "review" | "submitting" | "success";
 
+interface ReferralActionError {
+	cause: unknown;
+}
+
 interface Props {
 	action: ReferralAction;
 	unclaimedRewards: ReferralRewardRow[];
@@ -35,13 +39,16 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 	const isReferralCodeLocked = action === "apply" && initialCode !== undefined;
 	const lockedReferralCode = isReferralCodeLocked ? initialCode : undefined;
 	const [code, setCode] = useState(initialCode ?? "");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<ReferralActionError | null>(null);
 	const [step, setStep] = useState<Step>(action === "claim" || initialCode !== undefined ? "review" : "form");
 	const isSubmitting = step === "submitting";
 	const submittedCode = lockedReferralCode ?? code;
 	const codeValid = submittedCode.length >= 1 && submittedCode.length <= 20;
 	const title =
 		action === "apply" ? t`Enter referral code` : action === "create" ? t`Create referral code` : t`Claim rewards`;
+	const errorMessage = error
+		? formatExchangeActionError(error.cause, t`Referral request could not be completed.`)
+		: null;
 
 	function close() {
 		if (!isSubmitting) onClose();
@@ -55,7 +62,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 			await onSubmit(action, action === "claim" ? undefined : submittedCode);
 			setStep("success");
 		} catch (submitError) {
-			setError(formatExchangeActionError(submitError, t`Referral request could not be completed.`));
+			setError({ cause: submitError });
 			setStep("error");
 		}
 	}
@@ -177,7 +184,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 						<p className="text-base font-semibold text-fg">
 							<Trans>Request not confirmed</Trans>
 						</p>
-						<p className="text-xs leading-5 text-error">{error}</p>
+						<p className="text-xs leading-5 text-error">{errorMessage}</p>
 						<p className="text-xs leading-5 text-fg-muted">
 							<Trans>Refresh referral data before submitting another signed request.</Trans>
 						</p>

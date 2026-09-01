@@ -1,5 +1,4 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -100,7 +99,7 @@ function createProviderDescription(reference: MarketAssetReference | null): Reac
 
 export function MarketAssetInfo({ market }: Props) {
 	useNumberFormatRevision();
-	const { i18n } = useLingui();
+	const { i18n, t } = useLingui();
 	const isMobile = useIsMobile();
 	const [open, setOpen] = useState(false);
 	const reference = getMarketAssetReference(market);

@@ -1,6 +1,5 @@
 import { Divider } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
 import { ClientOnly, Link } from "@tanstack/react-router";
 import { APP_VERSION } from "@/config/app";
@@ -19,7 +18,9 @@ interface Props {
 	mode?: FooterBarMode;
 }
 
-function getStatusDisplay(status: ApiStatus) {
+function useStatusDisplay(status: ApiStatus) {
+	const { t } = useLingui();
+
 	switch (status) {
 		case "connected":
 			return {
@@ -49,8 +50,9 @@ function getStatusDisplay(status: ApiStatus) {
 }
 
 export function FooterBar({ mode = "default" }: Props) {
+	const { t } = useLingui();
 	const { status } = useApiStatus();
-	const { icon, text, className } = getStatusDisplay(status);
+	const { icon, text, className } = useStatusDisplay(status);
 	const { open } = useCommandMenuActions();
 	const isMarketLoading = mode === "market-loading";
 
@@ -82,7 +84,7 @@ export function FooterBar({ mode = "default" }: Props) {
 				</kbd>
 			</button>
 			<div className="flex shrink-0 items-center gap-2.5 text-fg-muted">
-				<nav className="hidden items-center gap-2.5 normal-case md:flex" aria-label="Documentation and legal">
+				<nav className="hidden items-center gap-2.5 normal-case md:flex" aria-label={t`Documentation and legal`}>
 					<Link to="/docs" className={FOOTER_LINK_CLASS}>
 						<Trans>Docs</Trans>
 					</Link>

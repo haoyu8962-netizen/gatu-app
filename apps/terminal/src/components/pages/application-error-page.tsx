@@ -1,21 +1,26 @@
 import { Button } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 
 interface Props {
 	onRetry: () => void;
 }
 
 export function ApplicationErrorPage({ onRetry }: Props) {
+	const { t } = useLingui();
+
 	return (
-		<div className="min-h-screen bg-background text-fg flex items-center justify-center p-6" role="alert">
-			<div className="text-center space-y-3">
+		<main className="min-h-screen bg-background text-fg flex items-center justify-center p-6">
+			<div className="text-center space-y-3" role="alert">
 				<div className="space-y-1">
-					<h1 className="text-sm font-semibold">Something went wrong</h1>
-					<p className="text-xs text-fg-muted">The terminal could not continue safely. Reload it before trading.</p>
+					<h1 className="text-sm font-semibold">{t`Something went wrong`}</h1>
+					<p className="text-xs text-fg-muted">
+						{t`The terminal could not continue safely. Reload it before trading.`}
+					</p>
 				</div>
 				<Button type="button" variant="filled" intent="brand" size="sm" onClick={onRetry}>
-					Reload terminal
+					{t`Reload terminal`}
 				</Button>
 			</div>
-		</div>
+		</main>
 	);
 }

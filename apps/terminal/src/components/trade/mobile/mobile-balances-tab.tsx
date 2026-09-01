@@ -116,7 +116,7 @@ export function MobileBalancesTab() {
 										</span>
 									) : null}
 								</div>
-								<div className="ml-auto flex min-w-0 items-center gap-2.5">
+								<div className="ms-auto flex min-w-0 items-center gap-2.5">
 									<div className="min-w-0 text-right">
 										<div className="truncate text-[13px] font-semibold text-market-close-fg tabular-nums">
 											{formatUSD(row.usdValue, { compact: true })}

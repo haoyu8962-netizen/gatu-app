@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice, PriceInput } from "@/components/ui/price-input";
@@ -35,6 +35,7 @@ const compactInputClass =
 	"h-7 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg";
 
 export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disabled, compact, mobileSafe }: Props) {
+	const { t } = useLingui();
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
@@ -161,6 +162,7 @@ interface MidButtonProps {
 }
 
 function MidButton({ disabled, value, onSelect }: MidButtonProps) {
+	const { t } = useLingui();
 	return (
 		<button
 			type="button"

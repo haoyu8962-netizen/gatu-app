@@ -95,7 +95,7 @@ export function VaultDetailView({
 			<header className="flex flex-wrap items-start justify-between gap-4 border-b border-stroke-weak px-4 py-4 min-[1001px]:px-5">
 				<div className="min-w-0">
 					<Link to="/vaults" className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg">
-						<ArrowLeftIcon className="size-3.5" />
+						<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />
 						<Trans>Vaults</Trans>
 					</Link>
 					<h1 className="mt-1 break-words text-xl font-bold text-fg min-[1001px]:text-2xl">{detail.name}</h1>
@@ -255,7 +255,7 @@ export function VaultDetailView({
 								pnlTone === "positive" ? "text-market-up" : pnlTone === "negative" ? "text-market-down" : "text-fg",
 							)}
 						>
-							{formatVaultSignedUsd(periodPnl)}
+							<bdi dir="ltr">{formatVaultSignedUsd(periodPnl)}</bdi>
 						</span>
 					</div>
 				</section>
@@ -301,7 +301,7 @@ export function VaultDetailView({
 						<h2 id={riskTitleId} className="text-xs font-bold">
 							<Trans>Vault risk</Trans>
 						</h2>
-						<ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-5">
+						<ul className="mt-1 list-disc space-y-1 ps-4 text-xs leading-5">
 							<li>
 								<Trans>You can lose all deposited principal. Vault returns are not guaranteed.</Trans>
 							</li>
@@ -395,13 +395,13 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 				{follower.user === "Leader" ? <Trans>Leader</Trans> : shortenAddress(follower.user)}
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
-				{formatVaultUsd(follower.vaultEquity)}
+				<bdi dir="ltr">{formatVaultUsd(follower.vaultEquity)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs font-semibold tabular-nums", toneClass(pnlTone))}>
-				{formatVaultSignedUsd(follower.pnl)}
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.pnl)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs tabular-nums", toneClass(allTone))}>
-				{formatVaultSignedUsd(follower.allTimePnl)}
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.allTimePnl)}</bdi>
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg">{follower.daysFollowing}</td>
 		</tr>
@@ -450,7 +450,9 @@ function FollowerMobileMetric({
 	return (
 		<div className="flex min-w-0 items-baseline justify-between gap-2">
 			<dt className="shrink-0 text-fg-muted">{label}</dt>
-			<dd className={cn("truncate text-right font-semibold tabular-nums", toneClass(tone))}>{value}</dd>
+			<dd className={cn("truncate text-right font-semibold tabular-nums", toneClass(tone))}>
+				<bdi dir="ltr">{value}</bdi>
+			</dd>
 		</div>
 	);
 }
@@ -468,7 +470,7 @@ function SummaryMetric({
 		<div className="rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:rounded-12 min-[1001px]:py-3">
 			<p className="text-2xs text-fg-muted min-[1001px]:text-xs">{label}</p>
 			<p className={cn("mt-1 truncate text-base font-bold tabular-nums min-[1001px]:text-xl", toneClass(tone))}>
-				{value}
+				<bdi dir="ltr">{value}</bdi>
 			</p>
 		</div>
 	);

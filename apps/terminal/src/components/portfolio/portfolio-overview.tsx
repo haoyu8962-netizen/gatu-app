@@ -1,5 +1,6 @@
 import { Select } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
+import Big from "big.js";
 import { useMemo, useState } from "react";
 import {
 	calculateAllDexPerpEquityUsd,
@@ -188,6 +189,7 @@ export function PortfolioOverview() {
 							value={feeMarket}
 							onValueChange={(value) => value && setFeeMarket(value as FeeMarket)}
 							options={feeMarketOptions}
+							triggerAriaLabel={t`Fee market for taker and maker rates`}
 							size="xxs"
 							className="w-20"
 							triggerClassName="border-0 bg-transparent px-1 shadow-none"
@@ -205,6 +207,7 @@ export function PortfolioOverview() {
 						value={scope}
 						onValueChange={(value) => value && setScope(value as PortfolioScope)}
 						options={scopeOptions}
+						triggerAriaLabel={t`Portfolio account scope`}
 						size="xxs"
 						className="min-w-0 flex-1"
 						triggerClassName="border-0 bg-transparent shadow-none"
@@ -213,6 +216,7 @@ export function PortfolioOverview() {
 						value={period}
 						onValueChange={(value) => value && setPeriod(value as PortfolioPeriod)}
 						options={periodOptions}
+						triggerAriaLabel={t`Portfolio performance period`}
 						size="xxs"
 						className="w-22 shrink-0"
 						triggerClassName="border-0 bg-transparent shadow-none"
@@ -284,19 +288,23 @@ function MetricCard({ label, value, control }: { label: React.ReactNode; value: 
 }
 
 function SummaryRow({ label, value, tone }: { label: React.ReactNode; value: string; tone?: string }) {
-	const numericTone = tone ? Number(tone) : 0;
+	const toneClassName = getMarketToneClass(tone);
 	return (
 		<div className="flex min-h-6 items-center justify-between gap-3">
 			<span className="min-w-0 text-fg-muted">{label}</span>
-			<span
-				className={cn(
-					"shrink-0 font-medium tabular-nums text-fg",
-					numericTone > 0 && "text-success",
-					numericTone < 0 && "text-error",
-				)}
-			>
-				{value}
-			</span>
+			<span className={cn("shrink-0 font-medium tabular-nums", toneClassName)}>{value}</span>
 		</div>
 	);
+}
+
+function getMarketToneClass(value: string | null | undefined): "text-fg" | "text-market-down" | "text-market-up" {
+	if (!value) return "text-fg";
+	try {
+		const parsed = Big(value);
+		if (parsed.gt(0)) return "text-market-up";
+		if (parsed.lt(0)) return "text-market-down";
+	} catch {
+		return "text-fg";
+	}
+	return "text-fg";
 }

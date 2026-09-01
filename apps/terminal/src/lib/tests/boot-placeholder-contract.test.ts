@@ -7,6 +7,7 @@ const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const COMPONENTS_DIR = resolve(TEST_DIR, "../../components");
 
 const BOOT_PLACEHOLDER_SOURCES = [
+	"dashboard/dashboard-shell-skeleton.tsx",
 	"trade/layout/app-shell-skeleton.tsx",
 	"trade/layout/desktop-grid-loading-surface.tsx",
 	"trade/layout/desktop-terminal-surface.tsx",
@@ -54,6 +55,18 @@ describe("boot placeholder contract", () => {
 		expect(shell).toContain('<output className="sr-only">');
 		expect(shell).toContain("<MobileShellSkeleton />");
 		expect(shell).toContain("<DesktopGridLoadingSurface");
+		expect(shell).not.toContain("TopNav");
+		expect(shell).not.toContain("<nav");
+		expect(shell).not.toContain("<button");
+	});
+
+	it("uses an honest route-neutral frame for dashboard startup", () => {
+		const shell = readComponent("dashboard/dashboard-shell-skeleton.tsx");
+
+		expect(shell).toContain('aria-busy="true"');
+		expect(shell).toContain('<output className="sr-only">');
+		expect(shell.match(/<main\b/g)).toHaveLength(1);
+		expect(shell).not.toContain("DesktopGridLoadingSurface");
 		expect(shell).not.toContain("TopNav");
 		expect(shell).not.toContain("<nav");
 		expect(shell).not.toContain("<button");

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -241,7 +242,11 @@ describe("TradingViewChart", () => {
 		testState.gateListeners.clear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		const reactRoot = createRoot(container);
+		root = {
+			render: (children) => reactRoot.render(<I18nProvider i18n={i18n}>{children}</I18nProvider>),
+			unmount: () => reactRoot.unmount(),
+		} as Root;
 		widgets = [];
 		widgetConstructor = vi.fn(function Widget(this: unknown, options: unknown) {
 			void this;

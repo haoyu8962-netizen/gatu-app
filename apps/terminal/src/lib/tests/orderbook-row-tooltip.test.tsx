@@ -93,6 +93,8 @@ describe("compact orderbook cumulative tooltip", () => {
 			renderRow("ask", compact);
 			const askPrice = container.querySelector(".orderbook-price-ask");
 			expect(askPrice).not.toBeNull();
+			expect(askPrice?.getAttribute("data-slot")).toBe("orderbook-price-text");
+			expect(askPrice?.classList.contains("bg-surface")).toBe(true);
 			expect(askPrice?.classList.contains("text-trading-panel-error")).toBe(false);
 
 			renderRow("bid", compact);

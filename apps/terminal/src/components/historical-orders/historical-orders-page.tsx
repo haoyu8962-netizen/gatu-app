@@ -402,7 +402,10 @@ export function HistoricalOrdersPage({ address }: Props) {
 							})}
 						</div>
 						<div className="hidden overflow-x-auto min-[1001px]:block">
-							<Table className="min-w-[72rem] table-fixed font-market-close tabular-nums">
+							<Table
+								scrollableRegionLabel={t`Order history`}
+								className="min-w-[72rem] table-fixed font-market-close tabular-nums"
+							>
 								<caption className="sr-only">
 									<Trans>Ordinary order history for {shortenAddress(address, 8, 6)}</Trans>
 								</caption>
@@ -556,8 +559,8 @@ export function HistoricalOrdersPage({ address }: Props) {
 								variant="ghost"
 								intent="neutral"
 								size="xs"
-								className="-ml-2 mb-2"
-								iconLeft={<ArrowLeftIcon className="size-3.5" />}
+								className="-ms-2 mb-2"
+								iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
 								render={<Link to="/trade" search={{ scope: "all" }} />}
 							>
 								<Trans>Back to trade</Trans>

@@ -1,5 +1,5 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useId, useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -68,6 +68,7 @@ interface OwnedPositionPnlShare {
 }
 
 export function PositionsTab({ directionFilter, marketFilter, currentMarket }: Props) {
+	const { t } = useLingui();
 	const closeAllUnavailableId = useId();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();

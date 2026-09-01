@@ -148,7 +148,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 						onClick={onBack}
 						className="flex items-center gap-1 text-xs text-signal hover:text-signal-hover"
 					>
-						<ArrowLeftIcon className="size-3" />
+						<ArrowLeftIcon className="size-3 rtl:rotate-180" />
 						<Trans>Back</Trans>
 					</button>
 					{quote ? <QuoteCountdown remaining={remainingSeconds} /> : null}

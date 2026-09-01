@@ -1,5 +1,5 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,6 +41,7 @@ interface Props {
 }
 
 function FundingLoadingPlaceholder() {
+	const { t } = useLingui();
 	const [showSkeleton, setShowSkeleton] = useState(false);
 
 	useEffect(() => {
@@ -65,6 +66,7 @@ function FundingLoadingPlaceholder() {
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const navigateToMarket = useMarketNavigation();
 	const { error, fundings: updates, isConnected, isOffline, isStale, status } = useUserFunding();

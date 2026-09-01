@@ -105,9 +105,37 @@ describe("PortfolioPerformanceChart", () => {
 
 		const tickValues = [...container.querySelectorAll("[data-y-tick]")].map((tick) => tick.getAttribute("data-y-tick"));
 		expect(tickValues.filter((value) => value === "0")).toHaveLength(1);
+		expect(container.querySelector("[data-y-tick] text")?.classList).toContain("text-3xs");
 		expect(container.querySelector("[data-zero-line='true']")?.classList).toContain("stroke-stroke-strong");
 		const path = container.querySelector("[data-chart-path]")?.getAttribute("d") ?? "";
 		expect(path).not.toMatch(/NaN|Infinity/);
+	});
+
+	it("uses market direction colors for PNL while account value stays neutral", () => {
+		renderChart(root, {
+			history: [
+				[LOCAL_DATE_TIMESTAMP, "-1"],
+				[LOCAL_DATE_TIMESTAMP + 60 * 60 * 1000, "2"],
+			],
+		});
+		const latest = container.querySelector("[data-portfolio-latest-value]");
+		expect(latest?.classList).toContain("text-market-up");
+
+		const accountValueTab = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Account Value",
+		);
+		act(() => accountValueTab?.click());
+		expect(latest?.classList).toContain("text-fg");
+
+		const pnlTab = [...container.querySelectorAll("button")].find((button) => button.textContent === "PNL");
+		act(() => pnlTab?.click());
+		renderChart(root, {
+			history: [
+				[LOCAL_DATE_TIMESTAMP, "1"],
+				[LOCAL_DATE_TIMESTAMP + 60 * 60 * 1000, "-2"],
+			],
+		});
+		expect(container.querySelector("[data-portfolio-latest-value]")?.classList).toContain("text-market-down");
 	});
 
 	it("keeps zero visible and visually distinct for an all-negative series", () => {

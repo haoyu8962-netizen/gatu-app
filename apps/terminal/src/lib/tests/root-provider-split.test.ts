@@ -41,21 +41,33 @@ describe("root provider startup split", () => {
 		expect(rootProviderSource).toContain("export function ClientRuntimeGate");
 		expect(rootProviderSource).toContain("useHydrated()");
 		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
-		expect(rootProviderSource).toContain("<Suspense fallback={children}>");
-		expect(rootRouteSource).toContain("<ClientRuntimeGate>");
-		expect(rootRouteSource).toContain("if (!clientRuntimeReady) return <AppShellSkeleton />");
+		expect(rootProviderSource).toContain("<Suspense fallback={fallback}>");
+		expect(rootProviderSource).not.toContain("fallback={children}");
+		expect(rootProviderSource).toContain(
+			"if (isServer || !hydrated || !LazyClientRootProvider) return <>{fallback}</>",
+		);
+		expect(rootRouteSource).toContain("<ClientRuntimeGate fallback={fallback}>");
 		expect(rootRouteSource).not.toContain("<ClientOnly");
 	});
 
-	it("retains the client-runtime and persisted-locale gates before mounting route content", () => {
+	it("selects a route-matched startup frame before mounting route content", () => {
+		expect(rootRouteSource).toContain("const routeSurface = getAppRouteSurface(pathname)");
+		expect(rootRouteSource).toMatch(
+			/if \(routeSurface === "document"\)[\s\S]*?<ApplicationErrorBoundary>[\s\S]*?<Outlet \/>/,
+		);
+		expect(rootRouteSource).toMatch(/if \(routeSurface === "document"\)[\s\S]*?<Outlet \/>[\s\S]*?<Toaster \/>/);
+		expect(rootRouteSource).toContain(
+			'const fallback = routeSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />',
+		);
+
 		const appRuntimeSource = rootRouteSource.slice(
 			rootRouteSource.indexOf("function AppRuntime"),
 			rootRouteSource.indexOf("// Gates first render"),
 		);
 
 		expect(appRuntimeSource).toContain("const clientRuntimeReady = useClientRuntimeReady()");
-		expect(appRuntimeSource).toContain("if (!clientRuntimeReady) return <AppShellSkeleton />");
-		expect(appRuntimeSource).toContain("<I18nReadyGate fallback={<AppShellSkeleton />}");
+		expect(appRuntimeSource).toContain("if (!clientRuntimeReady) return <>{fallback}</>");
+		expect(appRuntimeSource).toContain("<I18nReadyGate fallback={fallback}>");
 		expect(appRuntimeSource).toContain("<Outlet />");
 		expect(rootRouteSource).toContain("i18n.locale === getPersistedLocale()");
 		expect(rootRouteSource).toContain("i18nReady.finally(() =>");
@@ -74,7 +86,11 @@ describe("root provider startup split", () => {
 		const themeScript = rootRouteSource.indexOf("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
 		const stylesheet = rootRouteSource.indexOf('<link rel="stylesheet"');
 
-		expect(rootRouteSource).toContain('<html lang="en" dir="ltr" className="dark"');
+		expect(rootRouteSource).toContain("const documentLocale = i18n.locale");
+		expect(rootRouteSource).toContain('const documentDirection = isRtlLocale(documentLocale) ? "rtl" : "ltr"');
+		expect(rootRouteSource).toContain(
+			'<html lang={documentLocale} dir={documentDirection} className="dark" suppressHydrationWarning>',
+		);
 		expect(rootRouteSource).toContain('localStorage.getItem("global-settings-v2")');
 		expect(rootRouteSource).toContain("<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>");
 		expect(themeScript).toBeGreaterThanOrEqual(0);

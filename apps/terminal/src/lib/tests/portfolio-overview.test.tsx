@@ -45,7 +45,11 @@ vi.mock("@gatu/ui", () => ({
 			{children}
 		</button>
 	),
-	Select: ({ value }: { value?: string }) => <span>{value}</span>,
+	Select: ({ value, triggerAriaLabel }: { value?: string; triggerAriaLabel?: string }) => (
+		<button type="button" role="combobox" aria-expanded="false" aria-label={triggerAriaLabel}>
+			{value}
+		</button>
+	),
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
@@ -172,6 +176,16 @@ describe("PortfolioOverview", () => {
 		expect(metricValue(container, "Fees (Taker / Maker)")).toBe("—");
 	});
 
+	it("gives each portfolio selector a purpose-specific accessible name", () => {
+		renderOverview(root);
+
+		expect(
+			container.querySelector('[role="combobox"][aria-label="Fee market for taker and maker rates"]'),
+		).not.toBeNull();
+		expect(container.querySelector('[role="combobox"][aria-label="Portfolio account scope"]')).not.toBeNull();
+		expect(container.querySelector('[role="combobox"][aria-label="Portfolio performance period"]')).not.toBeNull();
+	});
+
 	it("does not present unavailable account balances as real zero values", () => {
 		mocks.accountSummary = {
 			spotAccountValue: 0,
@@ -261,6 +275,20 @@ describe("PortfolioOverview", () => {
 		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
+
+	it("uses market direction colors only for directional values", () => {
+		mocks.portfolioData = createPortfolio("5");
+		renderOverview(root);
+
+		expect(summaryElement(container, "PNL")?.classList).toContain("text-market-up");
+		expect(summaryElement(container, "Total Equity")?.classList).toContain("text-fg");
+
+		mocks.portfolioData = createPortfolio("-5");
+		renderOverview(root);
+
+		expect(summaryElement(container, "PNL")?.classList).toContain("text-market-down");
+		expect(summaryElement(container, "PNL")?.classList).not.toContain("text-error");
+	});
 });
 
 function renderOverview(root: Root) {
@@ -278,15 +306,20 @@ function summaryValue(container: HTMLElement, label: string): string | null | un
 	return labelElement?.nextElementSibling?.textContent;
 }
 
+function summaryElement(container: HTMLElement, label: string): Element | null | undefined {
+	const labelElement = [...container.querySelectorAll("span")].find((element) => element.textContent === label);
+	return labelElement?.nextElementSibling;
+}
+
 function metricValue(container: HTMLElement, label: string): string | null | undefined {
 	const labelElement = [...container.querySelectorAll("span")].find((element) => element.textContent === label);
 	return labelElement?.closest("section")?.querySelector("p")?.textContent;
 }
 
-function createZeroPortfolio(): InfoResponse<"portfolio"> {
+function createPortfolio(pnl: string): InfoResponse<"portfolio"> {
 	const snapshot = {
 		accountValueHistory: [[1, "0"]],
-		pnlHistory: [[1, "0"]],
+		pnlHistory: [[1, pnl]],
 		vlm: "0",
 	} satisfies InfoResponse<"portfolio">[number][1];
 
@@ -300,4 +333,8 @@ function createZeroPortfolio(): InfoResponse<"portfolio"> {
 		["perpMonth", snapshot],
 		["perpAllTime", snapshot],
 	];
+}
+
+function createZeroPortfolio(): InfoResponse<"portfolio"> {
+	return createPortfolio("0");
 }

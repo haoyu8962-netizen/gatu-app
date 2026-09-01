@@ -4,6 +4,7 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -178,5 +179,16 @@ describe("useOrderSubmit TWAP details", () => {
 			error: "Trigger price is not valid against the live mark price",
 		});
 		expect(mocks.resetForm).not.toHaveBeenCalled();
+	});
+
+	it("stores a tracked-TWAP client failure as a locale-independent descriptor", async () => {
+		mocks.submitTwap.mockRejectedValueOnce(orderSubmissionFeedbackCause("market-context-mismatch"));
+
+		await submit(twapInput());
+
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			status: "failed",
+			error: { kind: "order-submission", code: "market-context-mismatch" },
+		});
 	});
 });

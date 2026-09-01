@@ -81,7 +81,9 @@ vi.mock("@gatu/ui", () => ({
 			</select>
 		</label>
 	),
-	Table: (props: ComponentProps<"table">) => <table {...props} />,
+	Table: ({ scrollableRegionLabel, ...props }: ComponentProps<"table"> & { scrollableRegionLabel?: string }) => (
+		<table aria-label={scrollableRegionLabel} {...props} />
+	),
 	TableBody: (props: ComponentProps<"tbody">) => <tbody {...props} />,
 	TableCell: (props: ComponentProps<"td">) => <td {...props} />,
 	TableHead: (props: ComponentProps<"th">) => <th {...props} />,

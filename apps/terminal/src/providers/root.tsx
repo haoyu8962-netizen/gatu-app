@@ -56,19 +56,18 @@ export function RootProvider({ children, queryClient }: { children: React.ReactN
 	);
 }
 
-// Mounted inside <body> by the root route. Swapping between the pre-hydration passthrough and the
-// lazy wallet runtime only re-renders body content, never the document shell.
-export function ClientRuntimeGate({ children }: { children: React.ReactNode }) {
+export function ClientRuntimeGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
 	const hydrated = useHydrated();
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
 	const queryClient = useQueryClient();
 
-	if (isServer || !hydrated || !LazyClientRootProvider || isDocumentRoutePath(pathname)) {
+	if (isDocumentRoutePath(pathname)) {
 		return <>{children}</>;
 	}
+	if (isServer || !hydrated || !LazyClientRootProvider) return <>{fallback}</>;
 
 	return (
-		<Suspense fallback={children}>
+		<Suspense fallback={fallback}>
 			<LazyClientRootProvider queryClient={queryClient}>{children}</LazyClientRootProvider>
 		</Suspense>
 	);

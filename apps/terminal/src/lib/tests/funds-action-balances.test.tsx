@@ -1,11 +1,36 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SendModal } from "@/components/trade/positions/send-modal";
 import { TransferModal } from "@/components/trade/positions/transfer-modal";
+import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
+import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { createI18nRoot } from "./harness/react";
+
+const BALANCE_UNAVAILABLE = "Balance data is unavailable. Try again after the connection recovers.";
+const BALANCE_UNAVAILABLE_AR = "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال.";
+const BALANCE_CHANGED = "Balance changed before submission. Review the updated balance and try again.";
+const BALANCE_CHANGED_AR = "تغيّر الرصيد قبل الإرسال. راجع الرصيد المحدّث وحاول مرة أخرى.";
+const ACCOUNT_MODE_CHANGED = "Account mode changed before the request was submitted. Review balances and try again.";
+const ACCOUNT_MODE_CHANGED_AR = "تغيّر وضع الحساب قبل إرسال الطلب. راجع الأرصدة وحاول مرة أخرى.";
+const GEO_UNAVAILABLE = "Unable to verify regional availability. This funds action was not submitted.";
+const GEO_UNAVAILABLE_AR = "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه.";
+const RAW_EXCHANGE_ERROR = "Exchange rejected the funds action with code TEST-RAW";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(BALANCE_UNAVAILABLE)]: BALANCE_UNAVAILABLE_AR,
+	[getMessageId(BALANCE_CHANGED)]: BALANCE_CHANGED_AR,
+	[getMessageId(ACCOUNT_MODE_CHANGED)]: ACCOUNT_MODE_CHANGED_AR,
+	[getMessageId(GEO_UNAVAILABLE)]: GEO_UNAVAILABLE_AR,
+};
 
 const testState = vi.hoisted(() => ({
 	balances: {
@@ -43,6 +68,7 @@ const testState = vi.hoisted(() => ({
 		usdClassTransfer: vi.fn(),
 	},
 	exchangeGuards: new Map<string, (_params: unknown, signal: AbortSignal) => Promise<void>>(),
+	runGuardsOnMutation: false,
 	assertAccountAbstraction: vi.fn(),
 	assertFreshGeoAllowed: vi.fn(),
 }));
@@ -110,10 +136,20 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
+	AccountAbstractionExecutionError: class AccountAbstractionExecutionError extends Error {
+		constructor(readonly reason: "changed" | "unavailable") {
+			super(reason);
+		}
+	},
 	useAccountAbstractionPreExecutionGuard: () => testState.assertAccountAbstraction,
 }));
 
 vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
+	FundsActionGeoExecutionError: class FundsActionGeoExecutionError extends Error {
+		constructor(readonly reason: "restricted" | "unavailable") {
+			super(reason);
+		}
+	},
 	useFundsActionAvailability: ({ accountModeReady }: { accountModeReady: boolean }) => {
 		const unavailableReason = accountModeReady ? null : "Select a supported account mode before moving funds.";
 		return {
@@ -144,7 +180,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		if (options?.preExecutionGuard) testState.exchangeGuards.set(method, options.preExecutionGuard);
 		return {
 			isPending: false,
-			mutateAsync: testState.exchangeMutations[method],
+			mutateAsync: (params: unknown) => {
+				if (!testState.runGuardsOnMutation) return testState.exchangeMutations[method](params);
+				return (async () => {
+					await options?.preExecutionGuard?.(params, new AbortController().signal);
+					return testState.exchangeMutations[method](params);
+				})();
+			},
 		};
 	},
 }));
@@ -185,13 +227,19 @@ describe("funds action balance wiring", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.balances.accountAbstraction = "disabled";
 		testState.balances.withdrawable = "40";
 		testState.balances.spotBalances[0].hold = "3140.833333";
 		testState.balances.spotBalances[0].total = "8105.34686269";
 		testState.balances.spotStateReceivedAt = Date.now();
 		testState.balances.perpStateReceivedAt = Date.now();
+		testState.balances.spotStateStatus = "success";
+		testState.balances.perpStateStatus = "success";
+		testState.balances.isDataStale = false;
+		testState.balances.hasError = false;
 		testState.exchangeGuards.clear();
+		testState.runGuardsOnMutation = false;
 		testState.assertAccountAbstraction.mockReset();
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
 		testState.assertFreshGeoAllowed.mockReset();
@@ -327,6 +375,7 @@ describe("funds action balance wiring", () => {
 			releasePreflight = resolve;
 		});
 		testState.assertAccountAbstraction.mockReturnValueOnce(preflight);
+		testState.runGuardsOnMutation = true;
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		const signal = new AbortController().signal;
 		const guardPromise = testState.exchangeGuards.get("sendAsset")?.(
@@ -339,6 +388,114 @@ describe("funds action balance wiring", () => {
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
 		releasePreflight();
 
-		await expect(guardPromise).rejects.toThrow("Balance changed before submission");
+		await expect(guardPromise).rejects.toThrow(BALANCE_CHANGED);
+	});
+
+	it.each([
+		["send", () => renderValidSend(root, container), "spotSend"],
+		["transfer", () => renderValidTransfer(root, container), "usdClassTransfer"],
+	] as const)(
+		"retranslates an existing %s balance-change guard after an en-to-ar switch",
+		async (_, render, method) => {
+			let releasePreflight!: () => void;
+			const preflight = new Promise<void>((resolve) => {
+				releasePreflight = resolve;
+			});
+			testState.assertAccountAbstraction.mockReturnValueOnce(preflight);
+			testState.runGuardsOnMutation = true;
+			render();
+
+			act(() => getButton(container, method === "spotSend" ? "Send" : "Transfer").click());
+			await vi.waitFor(() => expect(testState.assertAccountAbstraction).toHaveBeenCalledOnce());
+
+			if (method === "spotSend") {
+				testState.balances.spotBalances[0].total = "3141.333333";
+			} else {
+				testState.balances.withdrawable = "0.5";
+			}
+			act(() => {
+				root.render(
+					method === "spotSend"
+						? createElement(SendModal, { onOpenChange: vi.fn(), open: true })
+						: createElement(TransferModal, { onOpenChange: vi.fn(), open: true }),
+				);
+			});
+			await act(async () => {
+				releasePreflight();
+				await preflight;
+				await Promise.resolve();
+				await Promise.resolve();
+			});
+
+			await vi.waitFor(() => expect(container.textContent).toContain(BALANCE_CHANGED));
+			act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+			expect(container.textContent).toContain(BALANCE_CHANGED_AR);
+			expect(container.textContent).not.toContain(BALANCE_CHANGED);
+		},
+	);
+
+	it("retranslates a stable send account-mode guard code instead of retaining its old Error.message", async () => {
+		testState.assertAccountAbstraction.mockRejectedValueOnce(new AccountAbstractionExecutionError("changed"));
+		testState.runGuardsOnMutation = true;
+		renderValidSend(root, container);
+
+		await clickAndFlush(getButton(container, "Send"));
+		await vi.waitFor(() => expect(container.textContent).toContain(ACCOUNT_MODE_CHANGED));
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.textContent).toContain(ACCOUNT_MODE_CHANGED_AR);
+		expect(container.textContent).not.toContain(ACCOUNT_MODE_CHANGED);
+	});
+
+	it("retranslates a stable transfer geo-guard code instead of retaining its old Error.message", async () => {
+		testState.assertFreshGeoAllowed.mockRejectedValueOnce(new FundsActionGeoExecutionError("unavailable"));
+		testState.runGuardsOnMutation = true;
+		renderValidTransfer(root, container);
+
+		await clickAndFlush(getButton(container, "Transfer"));
+		await vi.waitFor(() => expect(container.textContent).toContain(GEO_UNAVAILABLE));
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.textContent).toContain(GEO_UNAVAILABLE_AR);
+		expect(container.textContent).not.toContain(GEO_UNAVAILABLE);
+	});
+
+	it.each([
+		["send", () => renderValidSend(root, container), "spotSend"],
+		["transfer", () => renderValidTransfer(root, container), "usdClassTransfer"],
+	] as const)("preserves a raw %s exchange error across a locale switch", async (_, render, method) => {
+		testState.exchangeMutations[method].mockRejectedValueOnce(new Error(RAW_EXCHANGE_ERROR));
+		testState.runGuardsOnMutation = true;
+		render();
+
+		await clickAndFlush(getButton(container, method === "spotSend" ? "Send" : "Transfer"));
+		await vi.waitFor(() => expect(container.textContent).toContain(RAW_EXCHANGE_ERROR));
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.textContent).toContain(RAW_EXCHANGE_ERROR);
 	});
 });
+
+function renderValidSend(root: Root, container: HTMLElement) {
+	act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+	const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+	if (!destinationInput) throw new Error("Destination input not found");
+	act(() => {
+		setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
+		setInputValue(getAmountInput(container), "1");
+	});
+}
+
+function renderValidTransfer(root: Root, container: HTMLElement) {
+	act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+	act(() => setInputValue(getAmountInput(container), "1"));
+}
+
+async function clickAndFlush(button: HTMLButtonElement) {
+	await act(async () => {
+		button.click();
+		await Promise.resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+	});
+}

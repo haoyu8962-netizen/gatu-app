@@ -3,6 +3,8 @@ import type { PositionMarketCloseRef } from "@/components/trade/positions/positi
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { PositionCloseSizingIntent } from "@/domain/trade/position-market-close";
 import { type HyperliquidEnv, useHyperliquid } from "@/lib/hyperliquid";
+import type { OrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import type { PositionSubmitFeedback } from "@/lib/trade/position-submit-feedback";
 
 export type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
 
@@ -15,6 +17,7 @@ export type PositionMarketCloseSizingIntent = PositionCloseSizingIntent;
 
 export type PositionMarketClosePhase = "idle" | "validating" | "submitting" | "reconciling";
 export type PositionMarketClosePresentation = "confirmation" | "direct";
+export type PositionMarketCloseError = string | OrderReconciliationError | PositionSubmitFeedback;
 
 export interface PositionMarketCloseSession {
 	sessionId: string;
@@ -24,7 +27,7 @@ export interface PositionMarketCloseSession {
 	sizingIntent: PositionMarketCloseSizingIntent;
 	presentation: PositionMarketClosePresentation;
 	phase: PositionMarketClosePhase;
-	error: string | null;
+	error: PositionMarketCloseError | null;
 }
 
 type GlobalModal =
@@ -89,7 +92,7 @@ export interface PositionMarketCloseStoreActions {
 	close: (sessionId: string) => void;
 	setSizingIntent: (sessionId: string, sizingIntent: PositionMarketCloseSizingIntent) => void;
 	updatePhase: (sessionId: string, phase: PositionMarketClosePhase) => void;
-	setError: (sessionId: string, error: string | null) => void;
+	setError: (sessionId: string, error: PositionMarketCloseError | null) => void;
 }
 
 export interface PositionMarketCloseActions extends Omit<PositionMarketCloseStoreActions, "open"> {
@@ -333,7 +336,7 @@ export function usePositionMarketClosePhase(): PositionMarketClosePhase {
 	);
 }
 
-export function usePositionMarketCloseError(): string | null {
+export function usePositionMarketCloseError(): PositionMarketCloseError | null {
 	return useGlobalModalStore((state) =>
 		state.modal?.type === "positionMarketClose" ? state.modal.session.error : null,
 	);

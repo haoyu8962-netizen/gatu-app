@@ -430,7 +430,8 @@ describe("mobile history disclosure cards", () => {
 			(element) => element.textContent === "Expand allCollapse all",
 		);
 		expect(actionGroup?.className).toContain("gap-3");
-		expect(actionGroup?.className).toContain("pl-3");
+		expect(actionGroup?.className).toContain("ps-3");
+		expect(actionGroup?.className).not.toContain("pl-3");
 
 		const articles = Array.from(container.querySelectorAll<HTMLElement>("article"));
 		expect(articles).toHaveLength(2);

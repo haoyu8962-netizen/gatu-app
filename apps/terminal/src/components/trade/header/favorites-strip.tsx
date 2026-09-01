@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { StarIcon, XIcon } from "@phosphor-icons/react";
 import { get24hChange } from "@/domain/market";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -11,6 +11,7 @@ import { getValueColorClass } from "@/lib/ui/value-color";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 
 export function FavoritesStrip() {
+	const { t } = useLingui();
 	const favorites = useFavoriteMarkets();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const selectedMarketName = useSelectedMarket();
@@ -40,6 +41,7 @@ interface FavoriteChipProps {
 }
 
 function FavoriteChip({ name, isActive }: FavoriteChipProps) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { toggleFavoriteMarket } = useMarketActions();
 	const { getMarketInfo } = useMarketsInfo();

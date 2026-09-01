@@ -339,7 +339,7 @@ function MobileOrdersHistoryTabContent({
 							triggerClassName={filterTriggerClassName}
 						/>
 					</div>
-					<MobileBulkDisclosureActions keys={filteredOrderKeys} controller={disclosure} className="ml-auto pl-3" />
+					<MobileBulkDisclosureActions keys={filteredOrderKeys} controller={disclosure} className="ms-auto ps-3" />
 				</div>
 				<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
 					<div className="flex flex-col gap-2.5 px-3.5 pt-3">

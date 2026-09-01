@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +16,20 @@ const MAIN_COIN = "BTC";
 const BUILDER_COIN = "xyz:CXMT";
 const MAIN_ASSET_ID = 1;
 const BUILDER_ASSET_ID = 120_031;
+const PARTIAL_MESSAGE = "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying.";
+const PARTIAL_MESSAGE_AR =
+	"تم قبول {acceptedCount} من أصل {totalCount} من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.";
+const BELOW_PRECISION_MESSAGE = "Position size is below market precision";
+const BELOW_PRECISION_MESSAGE_AR = "حجم المركز أقل من دقة السوق";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(PARTIAL_MESSAGE)]: PARTIAL_MESSAGE_AR,
+	[getMessageId(BELOW_PRECISION_MESSAGE)]: BELOW_PRECISION_MESSAGE_AR,
+};
 
 interface LivePosition {
 	coin: string;
@@ -217,6 +233,7 @@ describe("usePositionCloseAllSubmit", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
 		window.localStorage.clear();
@@ -370,6 +387,67 @@ describe("usePositionCloseAllSubmit", () => {
 			expect(await currentHook().submit()).toEqual({ state: "blocked" });
 		});
 		expect(mocks.clearinghouseState).toHaveBeenCalledTimes(2);
+	});
+
+	it("retranslates an existing partial result with its counts when the locale changes", async () => {
+		mocks.executeOrder.mockRejectedValueOnce({
+			name: "ApiRequestError",
+			response: {
+				status: "ok",
+				response: {
+					type: "order",
+					data: {
+						statuses: [
+							{ filled: { totalSz: "1.25", avgPx: "99.5", oid: 1 } },
+							{ error: "No liquidity available for market order." },
+						],
+					},
+				},
+			},
+		});
+
+		await act(async () => {
+			await currentHook().submit();
+		});
+		expect(currentHook().error).toContain("1 of 2 close orders were accepted");
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe("تم قبول 1 من أصل 2 من أوامر الإغلاق. راجع المراكز قبل إعادة المحاولة.");
+		expect(currentHook().phase).toBe("partial");
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
+	});
+
+	it("retranslates a stored close-plan validation error when the locale changes", async () => {
+		const snapshot = createSnapshot();
+		currentSnapshot = {
+			...snapshot,
+			targets: snapshot.targets.map((target) =>
+				target.coin === MAIN_COIN ? { ...target, signedPositionSize: "0.0001" } : target,
+			),
+		};
+		mocks.livePositions = createLivePositions().map((position) =>
+			position.coin === MAIN_COIN ? { ...position, szi: "0.0001" } : position,
+		);
+		mocks.freshSizes.set(MAIN_COIN, "0.0001");
+		act(() => root.render(createElement(Probe)));
+
+		let submissionError: unknown;
+		await act(async () => {
+			try {
+				await currentHook().submit();
+			} catch (cause) {
+				submissionError = cause;
+			}
+		});
+		expect(submissionError).toEqual(expect.objectContaining({ message: BELOW_PRECISION_MESSAGE }));
+		expect(currentHook().error).toBe(BELOW_PRECISION_MESSAGE);
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe(BELOW_PRECISION_MESSAGE_AR);
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
 	});
 
 	it("keeps reconciliation and the exclusive locks when filled orders do not leave every target flat", async () => {

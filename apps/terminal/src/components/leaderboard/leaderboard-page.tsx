@@ -18,7 +18,7 @@ export function LeaderboardPage() {
 	const fixture = getLeaderboardFixtureFromLocation();
 	if (fixture) {
 		return (
-			<div className="min-h-dvh bg-grid-container font-sans text-fg min-[1001px]:pb-8">
+			<div className="min-h-dvh bg-dashboard-canvas font-sans text-fg min-[1001px]:pb-8">
 				<main className="mx-auto w-full max-w-[var(--earn-frame-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6">
 					<LeaderboardFixture fixture={fixture} />
 				</main>
@@ -36,7 +36,7 @@ function LeaderboardLivePage() {
 		<>
 			<div
 				className={cn(
-					"min-h-dvh bg-grid-container font-sans text-fg",
+					"min-h-dvh bg-dashboard-canvas font-sans text-fg",
 					!isMobile && "pb-8",
 					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
 					isTestnet && "testnet-bg",

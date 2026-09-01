@@ -1,6 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
@@ -28,6 +27,7 @@ export function AmountInput({
 	isPending,
 	onSubmit,
 }: Props) {
+	const { t } = useLingui();
 	const isBalanceLoading = balanceStatus === "loading";
 	const hasBalanceError = balanceStatus === "error";
 	const isSubmitDisabled = !validation.valid || isPending || isBalanceLoading || hasBalanceError;

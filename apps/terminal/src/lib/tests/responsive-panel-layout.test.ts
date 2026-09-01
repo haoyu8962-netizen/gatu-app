@@ -60,6 +60,10 @@ describe("responsive panel layout contract", () => {
 		expect(TRADE_ROW_SOURCE).toContain("trades-grid");
 		expect(TERMINAL_STYLES).toContain("@container orderbook-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trades-grid > :nth-child(3)");
+		const narrowTradesRule = readCssBlock(TERMINAL_STYLES, "@container orderbook-panel (max-width: 17.4375rem)");
+		expect(narrowTradesRule).toContain(
+			"grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 1fr) minmax(4.5rem, 1fr)",
+		);
 		expect(ORDERBOOK_PANEL_SOURCE).toContain("orderbook-tab-label min-w-0 truncate");
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
@@ -89,6 +93,8 @@ describe("responsive panel layout contract", () => {
 	});
 
 	it("keeps every desktop panel mounted once while responsive grid geometry changes", () => {
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<main ref={containerRef} data-main-workspace");
+		expect(TERMINAL_LOADING_WORKSPACE_SOURCE).toContain("<main");
 		for (const panelKey of [
 			"favoriteCoins",
 			"coinInfo",

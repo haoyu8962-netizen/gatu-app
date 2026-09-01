@@ -172,7 +172,7 @@ describe("OrderReconciliation", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "The exchange did not accept the order.",
+			error: { kind: "order-reconciliation", code: "order-rejected" },
 		});
 	});
 
@@ -199,7 +199,7 @@ describe("OrderReconciliation", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Canceled. Some orders were accepted. Review open orders before retrying.",
+			error: { kind: "order-reconciliation", code: "accepted-orders-canceled" },
 		});
 	});
 
@@ -311,7 +311,7 @@ describe("OrderReconciliation", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "reconciling",
-			error: "The exchange did not return a final order status. Review open orders and positions before retrying.",
+			error: { kind: "order-reconciliation", code: "status-unconfirmed" },
 		});
 	});
 

@@ -34,6 +34,10 @@ interface AccountModeOption {
 	description: string;
 }
 
+interface AccountModeSubmitError {
+	cause: unknown;
+}
+
 export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const actionPending = !!formProps.isUpdating || submissionLocked;
@@ -87,7 +91,7 @@ export function AccountModeForm({
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<AccountModeSubmitError | null>(null);
 	const applyInFlightRef = useRef(false);
 	const mountedRef = useRef(false);
 
@@ -138,6 +142,11 @@ export function AccountModeForm({
 			) : null}
 		</>
 	);
+	const submitErrorMessage = submitError
+		? submitError.cause instanceof Error && submitError.cause.message
+			? submitError.cause.message
+			: t`Failed to update account mode`
+		: null;
 
 	async function handleApply() {
 		if (applyInFlightRef.current) return;
@@ -159,9 +168,7 @@ export function AccountModeForm({
 		} catch (error) {
 			applyInFlightRef.current = false;
 			onSubmissionLockChange?.(false);
-			if (mountedRef.current) {
-				setSubmitError(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
-			}
+			if (mountedRef.current) setSubmitError({ cause: error });
 		}
 	}
 
@@ -236,7 +243,7 @@ export function AccountModeForm({
 					</p>
 				) : null}
 
-				{submitError ? <p className="text-xs text-error">{submitError}</p> : null}
+				{submitErrorMessage ? <p className="text-xs text-error">{submitErrorMessage}</p> : null}
 			</ModalContent>
 
 			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-3")}>

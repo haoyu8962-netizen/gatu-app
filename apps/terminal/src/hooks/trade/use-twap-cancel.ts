@@ -1,9 +1,16 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { isAmbiguousOrderRequestError } from "@/domain/trade/order-tracking";
 import { type ExchangeParams, useExchange, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import {
+	formatOrderSubmissionFeedback,
+	getOrderSubmissionFeedback,
+	type OrderSubmissionFeedback,
+	orderSubmissionFeedback,
+	orderSubmissionFeedbackCause,
+} from "@/lib/trade/order-submission-feedback";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
@@ -16,10 +23,16 @@ export interface TwapCancelFeedback {
 	message: string;
 }
 
-interface StoredTwapCancelFeedback extends TwapCancelFeedback {
+type StoredTwapCancelFeedbackValue =
+	| { kind: "localized"; feedback: OrderSubmissionFeedback }
+	| { kind: "raw"; message: string };
+
+interface StoredTwapCancelFeedback {
 	actionId?: string;
 	env: "Mainnet" | "Testnet";
 	owner: string | null;
+	tone: "error" | "warning";
+	value: StoredTwapCancelFeedbackValue;
 }
 
 interface TwapCancelExecutionContext {
@@ -31,6 +44,7 @@ interface TwapCancelExecutionContext {
 }
 
 export function useTwapCancel() {
+	const { i18n } = useLingui();
 	const markets = useMarkets();
 	const { clientKey, env } = useHyperliquid();
 	const liveIdentityRef = useRef({ clientKey, env });
@@ -56,7 +70,7 @@ export function useTwapCancel() {
 			pending.twapId !== execution.params.t ||
 			pending.assetId !== execution.params.a
 		) {
-			throw new Error(t`The trading account or network changed. Review active TWAP orders before retrying.`);
+			throw orderSubmissionFeedbackCause("twap-cancel-identity-changed");
 		}
 		execution.guardPasses += 1;
 		if (execution.guardPasses >= 2) {
@@ -80,7 +94,13 @@ export function useTwapCancel() {
 		!storedFeedback?.actionId || activeCancellations.some((action) => action.id === storedFeedback.actionId);
 	const feedback =
 		storedFeedback && storedFeedbackMatchesIdentity && storedFeedbackActionActive
-			? { tone: storedFeedback.tone, message: storedFeedback.message }
+			? {
+					tone: storedFeedback.tone,
+					message:
+						storedFeedback.value.kind === "raw"
+							? storedFeedback.value.message
+							: formatOrderSubmissionFeedback(storedFeedback.value.feedback, (descriptor) => i18n._(descriptor)),
+				}
 			: null;
 
 	useEffect(() => {
@@ -95,15 +115,17 @@ export function useTwapCancel() {
 
 		const assetId = markets.getAssetId(coin);
 		if (typeof assetId !== "number") {
-			const message = t`Unable to identify this TWAP market. Refresh market data before retrying.`;
-			setFeedback({ tone: "error", message, env, owner: normalizedOwner });
+			const value = localizedFeedback("twap-cancel-market-unavailable");
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+			setFeedback({ tone: "error", value, env, owner: normalizedOwner });
 			toast.error(message);
 			return;
 		}
 
 		if (clientKey === "disconnected") {
-			const message = t`Safe order coordination across tabs is unavailable in this browser.`;
-			setFeedback({ tone: "error", message, env, owner: null });
+			const value = localizedFeedback("coordination-unavailable");
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
+			setFeedback({ tone: "error", value, env, owner: null });
 			toast.error(message);
 			return;
 		}
@@ -134,9 +156,10 @@ export function useTwapCancel() {
 			);
 			if (!lockResult.supported || !lockResult.acquired) {
 				getPendingTradingActionActions().resolveTwapCancellation(action.id);
-				const message = t`Safe order coordination across tabs is unavailable in this browser.`;
+				const value = localizedFeedback("coordination-unavailable");
+				const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
 				if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
-					setFeedback({ tone: "error", message, env: execution.env, owner: execution.owner });
+					setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
 					toast.error(message);
 				}
 				return;
@@ -145,11 +168,12 @@ export function useTwapCancel() {
 		} catch (error) {
 			if (execution.guardPasses >= 2 && isAmbiguousOrderRequestError(error)) {
 				getPendingTradingActionActions().markTwapCancellationUnconfirmed(action.id);
-				const message = t`TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying.`;
+				const value = localizedFeedback("twap-cancel-unconfirmed");
+				const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
 				if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
 					setFeedback({
 						tone: "warning",
-						message,
+						value,
 						actionId: action.id,
 						env: execution.env,
 						owner: execution.owner,
@@ -160,9 +184,15 @@ export function useTwapCancel() {
 			}
 
 			getPendingTradingActionActions().resolveTwapCancellation(action.id);
-			const message = error instanceof Error ? error.message : t`Failed to cancel TWAP order.`;
+			const knownFeedback = getOrderSubmissionFeedback(error);
+			const value: StoredTwapCancelFeedbackValue = knownFeedback
+				? { kind: "localized", feedback: knownFeedback }
+				: error instanceof Error
+					? { kind: "raw", message: error.message }
+					: localizedFeedback("twap-cancel-failed");
+			const message = formatStoredTwapCancelFeedback(value, (descriptor) => i18n._(descriptor));
 			if (mountedRef.current && isTwapExecutionIdentityCurrent(execution, liveIdentityRef.current)) {
-				setFeedback({ tone: "error", message, env: execution.env, owner: execution.owner });
+				setFeedback({ tone: "error", value, env: execution.env, owner: execution.owner });
 				toast.error(message);
 			}
 		} finally {
@@ -171,6 +201,17 @@ export function useTwapCancel() {
 	}
 
 	return { cancelTwap, cancellingTwapId, feedback };
+}
+
+function localizedFeedback(code: OrderSubmissionFeedback["code"]): StoredTwapCancelFeedbackValue {
+	return { kind: "localized", feedback: orderSubmissionFeedback(code) };
+}
+
+function formatStoredTwapCancelFeedback(
+	value: StoredTwapCancelFeedbackValue,
+	translate: Parameters<typeof formatOrderSubmissionFeedback>[1],
+): string {
+	return value.kind === "raw" ? value.message : formatOrderSubmissionFeedback(value.feedback, translate);
 }
 
 function isTwapExecutionIdentityCurrent(

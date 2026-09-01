@@ -275,10 +275,12 @@ export function FundingHistoryPage({ address }: Props) {
 													<Trans>Rate</Trans>
 												</dt>
 												<dd className="mt-0.5 truncate text-xs font-semibold tabular-nums text-fg">
-													{formatPercent(funding.fundingRate, {
-														maximumFractionDigits: 4,
-														minimumFractionDigits: 4,
-													})}
+													<bdi dir="ltr">
+														{formatPercent(funding.fundingRate, {
+															maximumFractionDigits: 4,
+															minimumFractionDigits: 4,
+														})}
+													</bdi>
 												</dd>
 											</div>
 											<div className="min-w-0 text-right">
@@ -291,7 +293,7 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													{formatToken(funding.usdc, { symbol: "USDC" })}
+													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
 												</dd>
 											</div>
 										</dl>
@@ -300,7 +302,10 @@ export function FundingHistoryPage({ address }: Props) {
 							})}
 						</div>
 						<div className="hidden overflow-x-auto min-[1001px]:block">
-							<Table className="min-w-[52rem] table-fixed font-market-close tabular-nums">
+							<Table
+								scrollableRegionLabel={t`Funding payments`}
+								className="min-w-[52rem] table-fixed font-market-close tabular-nums"
+							>
 								<caption className="sr-only">
 									<Trans>Funding payments for {shortenAddress(address, 8, 6)}</Trans>
 								</caption>
@@ -354,10 +359,12 @@ export function FundingHistoryPage({ address }: Props) {
 													})}
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg-muted">
-													{formatPercent(funding.fundingRate, {
-														maximumFractionDigits: 4,
-														minimumFractionDigits: 4,
-													})}
+													<bdi dir="ltr">
+														{formatPercent(funding.fundingRate, {
+															maximumFractionDigits: 4,
+															minimumFractionDigits: 4,
+														})}
+													</bdi>
 												</TableCell>
 												<TableCell
 													className={cn(
@@ -365,7 +372,7 @@ export function FundingHistoryPage({ address }: Props) {
 														getMarketCloseValueColorClass(funding.usdc),
 													)}
 												>
-													{formatToken(funding.usdc, { symbol: "USDC" })}
+													<bdi dir="ltr">{formatToken(funding.usdc, { symbol: "USDC" })}</bdi>
 												</TableCell>
 												<TableCell className="px-5 py-0 text-right text-xs text-fg-muted">
 													{formatDateTimeShort(funding.time)}
@@ -440,8 +447,8 @@ export function FundingHistoryPage({ address }: Props) {
 								variant="ghost"
 								intent="neutral"
 								size="xs"
-								className="-ml-2 mb-2"
-								iconLeft={<ArrowLeftIcon className="size-3.5" />}
+								className="-ms-2 mb-2"
+								iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
 								render={<Link to="/trade" search={{ scope: "all" }} />}
 							>
 								<Trans>Back to trade</Trans>

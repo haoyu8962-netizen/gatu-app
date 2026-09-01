@@ -11,7 +11,7 @@ HypeTerminal is a web-based trading terminal for Hyperliquid, a decentralized pe
 | Framework | React 19, TanStack Start, TypeScript 5.7, Vite 7 |
 | Routing | TanStack Router (file-based) |
 | State | Zustand (persisted), TanStack Query |
-| Styling | Tailwind CSS 4, Radix UI, shadcn/ui |
+| Styling | Tailwind CSS 4, Base UI, `@gatu/ui` |
 | Web3 | Privy, @privy-io/wagmi, Wagmi 3, Viem, @nktkas/hyperliquid SDK |
 | Charts | TradingView Charting Library |
 | Forms | React Hook Form, Zod |
@@ -73,7 +73,7 @@ Zustand stores in `src/stores/`:
 
 ### Styling
 - Tailwind CSS with custom color tokens in `src/styles.css`
-- Radix UI for accessible primitives
+- Base UI through `@gatu/ui` for accessible primitives
 - CVA for component variants
 - Mobile breakpoint: 1000px (inclusive); desktop layouts start at 1001px
 

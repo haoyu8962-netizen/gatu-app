@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { privateKeyToAccount } from "viem/accounts";
@@ -27,6 +29,15 @@ const REVOKE_VALID_UNTIL_MS = NOW_MS + 10 * 60 * 1000;
 const REVOKE_AGENT_NAME = `Mobile valid_until ${REVOKE_VALID_UNTIL_MS}`;
 const SYNC_EXPIRES_AT_MS = NOW_MS + 5 * 60 * 1000;
 const PHONE_LINK = "https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
+const NO_BALANCE_MESSAGE = "No balance on Hyperliquid. Deposit first.";
+const NO_BALANCE_MESSAGE_AR = "لا يوجد رصيد في Hyperliquid. أودِع أولاً.";
+const APPROVAL_RECHECK_MESSAGE =
+	"The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.";
+const APPROVAL_RECHECK_MESSAGE_AR = "تعذّرت إعادة التحقق من الموافقة. سيظل رمز QR مخفيًا حتى ينجح التحقق للقراءة فقط.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
@@ -284,6 +295,7 @@ describe("MobileAgentSyncModal", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.useFakeTimers({ now: NOW_MS });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -441,6 +453,32 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 
 		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+	});
+
+	it("retranslates an existing preflight error when the locale changes", async () => {
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "0", totalNtlPos: "0", totalRawUsd: "0" },
+			withdrawable: "0",
+		};
+		await renderModal();
+
+		act(() => getButton(container, "Review phone access").click());
+		await flushAsyncWork();
+
+		const alert = container.querySelector('[role="alert"]');
+		expect(alert?.textContent).toContain(NO_BALANCE_MESSAGE);
+
+		act(() => {
+			i18n.loadAndActivate({
+				locale: "ar",
+				messages: { [getMessageId(NO_BALANCE_MESSAGE)]: NO_BALANCE_MESSAGE_AR },
+			});
+		});
+
+		expect(alert?.textContent).toContain(NO_BALANCE_MESSAGE_AR);
+		expect(alert?.textContent).not.toContain(NO_BALANCE_MESSAGE);
 		expect(testState.approveAgent).not.toHaveBeenCalled();
 	});
 
@@ -902,10 +940,28 @@ describe("MobileAgentSyncModal", () => {
 		await advanceTime(4_000);
 		await advanceTime(3_750);
 
-		expect(container.textContent).toContain("could not be rechecked");
+		expect(container.textContent).toContain(APPROVAL_RECHECK_MESSAGE);
 		expect(container.textContent).not.toContain("Press and hold for 4 seconds");
 		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
 		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+		const recoveryMessage = getDesktopApprovalRecovery("Mainnet", USER_ADDRESS)?.submissionErrorMessage;
+		expect(recoveryMessage).toEqual(expect.any(String));
+		expect(recoveryMessage ?? "").not.toContain(APPROVAL_RECHECK_MESSAGE);
+
+		act(() => root.unmount());
+		root = createI18nRoot(container);
+		await renderModal();
+		expect(container.textContent).toContain(APPROVAL_RECHECK_MESSAGE);
+
+		act(() => {
+			i18n.loadAndActivate({
+				locale: "ar",
+				messages: { [getMessageId(APPROVAL_RECHECK_MESSAGE)]: APPROVAL_RECHECK_MESSAGE_AR },
+			});
+		});
+		expect(container.textContent).toContain(APPROVAL_RECHECK_MESSAGE_AR);
+		expect(container.textContent).not.toContain(APPROVAL_RECHECK_MESSAGE);
+		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not trust matching stale extraAgents data when refetch reports an error", async () => {

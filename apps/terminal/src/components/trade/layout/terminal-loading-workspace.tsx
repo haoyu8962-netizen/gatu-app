@@ -3,7 +3,7 @@ import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
 
 export function TerminalLoadingWorkspace() {
 	return (
-		<div
+		<main
 			aria-busy="true"
 			data-terminal-loading-workspace
 			data-testid="terminal-loading-workspace"
@@ -13,6 +13,6 @@ export function TerminalLoadingWorkspace() {
 				<Trans>Loading markets...</Trans>
 			</output>
 			<DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />
-		</div>
+		</main>
 	);
 }

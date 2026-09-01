@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ComponentProps, type MouseEvent, type ReactNode, useCallback } from "react";
 import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
@@ -42,6 +42,7 @@ export function TradingActionButton({
 	onPointerUp,
 	...buttonProps
 }: Props) {
+	const { t } = useLingui();
 	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard({
 		requiresBuilderFee,
 	});

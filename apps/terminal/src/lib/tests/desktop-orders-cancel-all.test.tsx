@@ -1,5 +1,7 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -72,6 +74,19 @@ const outcomeOrder = {
 	coin: "#10",
 	oid: 43,
 } as OpenOrder;
+
+const MODIFICATION_UNCONFIRMED_MESSAGE =
+	"The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.";
+const MODIFICATION_UNCONFIRMED_MESSAGE_AR =
+	"لم تؤكد البيانات المباشرة تحديث الطلب. حدّث الطلبات قبل إعادة المحاولة؛ ولا يزال الإلغاء متاحاً.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(MODIFICATION_UNCONFIRMED_MESSAGE)]: MODIFICATION_UNCONFIRMED_MESSAGE_AR,
+};
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
 	AssetBadge: ({ coin }: { coin: string }) => <span>{coin}</span>,
@@ -228,6 +243,7 @@ describe("desktop cancel all orders confirmation", () => {
 	});
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -586,6 +602,37 @@ describe("desktop cancel all orders confirmation", () => {
 		);
 		expect(container.textContent).toContain("Refresh before retrying; cancellation remains available.");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+	});
+
+	it("retranslates an existing reconciliation error when the locale changes", async () => {
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		await act(async () => {
+			if (pendingModification) {
+				getPendingTradingActionActions().markModificationUnconfirmed(pendingModification.id);
+			}
+			await Promise.resolve();
+		});
+
+		const alert = container.querySelector('[role="alert"]');
+		expect(alert?.textContent).toContain(MODIFICATION_UNCONFIRMED_MESSAGE);
+
+		act(() => {
+			i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
+		});
+
+		expect(alert?.textContent).toContain(MODIFICATION_UNCONFIRMED_MESSAGE_AR);
+		expect(alert?.textContent).not.toContain(MODIFICATION_UNCONFIRMED_MESSAGE);
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
 	});
 
 	it("releases a modification when a transport-shaped error happens before the SDK boundary", async () => {

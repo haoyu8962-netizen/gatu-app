@@ -121,10 +121,15 @@ describe("MobileHeader layout", () => {
 		expect(account?.className).toContain("min-w-0");
 		expect(account?.className).toContain("flex-1");
 		expect(account?.className).toContain("justify-end");
-		expect(theme?.className).toContain("ml-2");
+		expect(account?.className).toContain("[&_button]:h-11");
+		expect(account?.className).toContain("[&_button]:min-h-11");
+		expect(actions?.className).toContain("ms-auto");
+		expect(theme?.className).toContain("ms-2");
+		expect(theme?.className).not.toContain("ml-2");
+		expect(theme?.className).toContain("size-11");
 		expect(account?.querySelector('[data-testid="account"]')).not.toBeNull();
 		expect(theme).not.toBeNull();
-		expect(actions?.querySelector('[data-testid="language"]')).not.toBeNull();
-		expect(actions?.querySelector('button[aria-label="Settings"]')).not.toBeNull();
+		expect(actions?.querySelector('[data-testid="language"]')?.className).toContain("size-11");
+		expect(actions?.querySelector('button[aria-label="Settings"]')?.className).toContain("size-11");
 	});
 });

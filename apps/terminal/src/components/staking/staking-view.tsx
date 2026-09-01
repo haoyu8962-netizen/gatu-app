@@ -253,7 +253,7 @@ export function StakingView(props: StakingViewProps) {
 			<section className="overflow-hidden rounded-12 bg-surface" aria-label={t`Staking details`}>
 				<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as StakingTab)}>
 					<div className="flex flex-col gap-2 px-3 pt-2 min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between">
-						<TabsList className="overflow-x-auto">
+						<TabsList aria-label={t`Staking detail views`} className="overflow-x-auto">
 							<TabsTrigger value="validators">
 								<Trans>Validator performance</Trans>
 							</TabsTrigger>
@@ -448,6 +448,7 @@ function ValidatorContent({
 	onRetry: () => void;
 	onOpenAction: (request: StakingActionRequest) => void;
 }) {
+	const { t } = useLingui();
 	if (publicState === "loading") return <TableSkeleton />;
 	if (publicState === "error") {
 		return (
@@ -468,7 +469,11 @@ function ValidatorContent({
 		);
 	}
 	return (
-		<Table containerClassName="overscroll-x-contain" className="min-w-[var(--staking-validator-table-min)]">
+		<Table
+			scrollableRegionLabel={t`Validator performance table`}
+			containerClassName="overscroll-x-contain"
+			className="min-w-[var(--staking-validator-table-min)]"
+		>
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">
@@ -590,6 +595,7 @@ function RewardsContent({
 	rewards: NonNullable<StakingController["account"]>["rewards"] | undefined;
 	onRetry: () => void;
 }) {
+	const { t } = useLingui();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -618,7 +624,7 @@ function RewardsContent({
 		);
 	}
 	return (
-		<Table className="min-w-[var(--staking-rewards-table-min)]">
+		<Table scrollableRegionLabel={t`Staking rewards table`} className="min-w-[var(--staking-rewards-table-min)]">
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">
@@ -664,6 +670,7 @@ function HistoryContent({
 	isTestnet: boolean;
 	onRetry: () => void;
 }) {
+	const { t } = useLingui();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -692,7 +699,7 @@ function HistoryContent({
 		);
 	}
 	return (
-		<Table className="min-w-[var(--staking-history-table-min)]">
+		<Table scrollableRegionLabel={t`Staking action history table`} className="min-w-[var(--staking-history-table-min)]">
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">

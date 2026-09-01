@@ -1,5 +1,5 @@
 import { Select } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/cn";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
 }
 
 export function AssetSelect({ presentation = "default", className, triggerClassName }: Props) {
+	const { t } = useLingui();
 	const fundingPresentation = presentation === "funding";
 
 	return (

@@ -173,7 +173,6 @@
     --earn-frame-max: 90rem;
     --earn-content-max: 85rem;
     --earn-page-min-height: 35rem;
-    --earn-page-radius: 0.875rem;
     --earn-search-max: 21.25rem;
     --earn-rank-column: 4.375rem;
     --earn-trader-column: 15.625rem;
@@ -298,7 +297,7 @@
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: var(--text-strong);
     --orderbook-spread-bg: var(--bg-alternate);
-    --market-neutral: #8A919A;
+    --market-neutral: #636b75;
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
@@ -306,8 +305,8 @@
 
     /* Trading toolbar and close confirmation — design handoff semantic colors. */
     --market-close-text-strong: #1a2330;
-    --market-close-text-muted: #6b7686;
-    --market-close-text-subtle: #98a2b0;
+    --market-close-text-muted: #596474;
+    --market-close-text-subtle: #626e7d;
     --market-close-stroke-card: #e3e8ee;
     --market-close-stroke-input: #d8dfe7;
     --market-close-stroke-control: #c6cfd9;
@@ -316,11 +315,11 @@
     --market-close-control-active: var(--action);
     --market-close-control-active-text: var(--on-action);
     --market-close-control-focus: var(--focus);
-    --market-close-danger: #d6453d;
+    --market-close-danger: #c73a3a;
     --market-close-danger-text: #ffffff;
     --market-close-danger-disabled: #efc3bf;
-    --market-close-success: #1f8a5a;
-    --market-close-warning: #d98e1f;
+    --market-close-success: #067a57;
+    --market-close-warning: #7f5c0e;
     --market-close-inline-edit-shadow: 0 4px 16px rgba(20, 30, 45, 0.16);
     --legal-acceptance-disabled-fill: #edf1f5;
     --legal-acceptance-pending-fill: #33505e;
@@ -331,8 +330,8 @@
 
     /* Trading panel surfaces and controls — mobile redesign semantic colors. */
     --trading-panel-text-strong: #1a2330;
-    --trading-panel-text-muted: #6b7686;
-    --trading-panel-text-subtle: #98a2b0;
+    --trading-panel-text-muted: #596474;
+    --trading-panel-text-subtle: #626e7d;
     --trading-panel-stroke-card: #e3e8ee;
     --trading-panel-stroke-input: #d8dfe7;
     --trading-panel-stroke-control: #c6cfd9;
@@ -342,9 +341,9 @@
     --trading-panel-control-active: var(--action);
     --trading-panel-control-active-text: var(--on-action);
     --trading-panel-control-focus: var(--focus);
-    --trading-panel-success: #1f8a5a;
-    --trading-panel-error: #d6453d;
-    --trading-panel-warning: #d98e1f;
+    --trading-panel-success: #067a57;
+    --trading-panel-error: #c73a3a;
+    --trading-panel-warning: #7f5c0e;
     --trading-panel-success-fill: #1f8a5a;
     --trading-panel-error-fill: #d6453d;
     --trading-panel-neutral-disabled-fill: #c6cfd9;
@@ -489,7 +488,7 @@
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: #d2dad7;
     --orderbook-spread-bg: #273035;
-    --market-neutral: #6B7280;
+    --market-neutral: #7d8592;
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
@@ -983,7 +982,7 @@
     }
 
     .trades-grid {
-      grid-template-columns: minmax(3.5rem, 1fr) minmax(0, 1fr) minmax(3.5rem, 1fr);
+      grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 1fr) minmax(4.5rem, 1fr);
     }
   }
 

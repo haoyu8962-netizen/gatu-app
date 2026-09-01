@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
 import {
@@ -13,8 +14,19 @@ import {
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
 import { getPendingTradingActionActions } from "@/stores/use-pending-trading-action-store";
+import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
+const MARKET_UNAVAILABLE_MESSAGE = "Unable to identify this TWAP market. Refresh market data before retrying.";
+const MARKET_UNAVAILABLE_MESSAGE_AR = "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق قبل إعادة المحاولة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(MARKET_UNAVAILABLE_MESSAGE)]: MARKET_UNAVAILABLE_MESSAGE_AR,
+};
 
 const mocks = vi.hoisted(() => ({
 	assetId: 7 as number | undefined,
@@ -82,7 +94,7 @@ describe("useTwapCancel", () => {
 		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		act(() => root.render(createElement(Probe)));
 	});
 
@@ -121,6 +133,22 @@ describe("useTwapCancel", () => {
 		expect(hookValue?.feedback?.tone).toBe("error");
 	});
 
+	it("retranslates stored client feedback when the locale changes", async () => {
+		mocks.assetId = undefined;
+
+		await act(async () => {
+			await hookValue?.cancelTwap("missing:COIN", 43);
+		});
+
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: MARKET_UNAVAILABLE_MESSAGE });
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: MARKET_UNAVAILABLE_MESSAGE_AR });
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+	});
+
 	it("reports a transport timeout as unconfirmed instead of a definitive cancellation failure", async () => {
 		mocks.mutateAsync.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out after 10000 ms" }));
 
@@ -157,6 +185,10 @@ describe("useTwapCancel", () => {
 		});
 
 		expect(mocks.errorToast).toHaveBeenCalledWith("TWAP 45 is not active");
+		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
 	});
 

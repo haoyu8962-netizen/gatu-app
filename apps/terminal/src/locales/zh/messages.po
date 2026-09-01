@@ -42,14 +42,11 @@ msgstr "{0} 已作为 Hyperliquid 原生永续市场上线。"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "{0} of {1}"
-msgstr ""
+msgstr "第 {0} 页，共 {1} 页"
 
 #. placeholder {0}: outcome.acceptedCount
-#. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
-#. placeholder {1}: result.totalCount
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
 msgid "{0} of {1} close orders were accepted. Review positions before retrying."
 msgstr "{1} 笔平仓委托中有 {0} 笔已被接受。重试前请检查持仓。"
 
@@ -63,6 +60,10 @@ msgstr "{0}/{1} 笔订单已被接受。重试前请检查当前委托。"
 #: src/components/referrals/referral-action-modal.tsx
 msgid "{0}/20 characters"
 msgstr "{0}/20 个字符"
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying."
+msgstr "{totalCount} 个平仓订单中有 {acceptedCount} 个已接受。重试前请检查持仓。"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "{age} days"
@@ -83,19 +84,27 @@ msgstr "{days} 天"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
-msgstr ""
+msgstr "{FUNDING_HISTORY_WINDOW_DAYS} 天 API 时间窗口"
 
 #: src/components/vaults/vault-performance-chart.tsx
 #~ msgid "{label} history"
 #~ msgstr "{label} 历史"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} over {periodLabel}. Latest value {latestValue}."
-msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。"
+#~ msgid "{label} over {periodLabel}. Latest value {latestValue}."
+#~ msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
-msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。{direction}。"
+#~ msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+#~ msgstr "{periodLabel}内的{label}，最新值为 {latestValue}。{direction}。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value <0>{latestValue}</0>."
+msgstr "{periodLabel}内的{label}，最新值为 <0>{latestValue}</0>。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value <0>{latestValue}</0>. {direction}."
+msgstr "{periodLabel}内的{label}，最新值为 <0>{latestValue}</0>。{direction}。"
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} over {periodLabel}. No performance history."
@@ -311,7 +320,7 @@ msgstr "质押关联无法解除。质押账户将获得交易账户资金的完
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "另一个标签页正在建立交易连接。请先在该标签页完成或取消，然后再试。"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "A TWAP is active for one of these markets."
 msgstr "其中一个市场存在正在执行的 TWAP 委托。"
 
@@ -327,13 +336,11 @@ msgstr "关于此金库"
 #~ msgid "Accept"
 #~ msgstr "接受"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
 msgstr "请先接受这些市场的 HIP-3 部署者免责声明再交易。"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 
@@ -386,7 +393,7 @@ msgstr "账户保证金率"
 msgid "Account mode"
 msgstr "账户模式"
 
-#: src/hooks/trade/use-account-abstraction-guard.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Account mode changed before the request was submitted. Review balances and try again."
 msgstr "提交请求前账户模式已更改。请核对余额后重试。"
 
@@ -463,13 +470,23 @@ msgstr "操作"
 msgid "Activate DEX"
 msgstr "激活 DEX"
 
+#. placeholder {0}: triggerPx ?? ""
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Activates when mark ≤ {triggerPrice}"
-msgstr "标记价 ≤ {triggerPrice} 时激活"
+msgid "Activates when mark ≤ {0}"
+msgstr "标记价格 ≤ {0} 时激活"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Activates when mark ≥ {triggerPrice}"
-msgstr "标记价 ≥ {triggerPrice} 时激活"
+#~ msgid "Activates when mark ≤ {triggerPrice}"
+#~ msgstr "标记价 ≤ {triggerPrice} 时激活"
+
+#. placeholder {0}: triggerPx ?? ""
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≥ {0}"
+msgstr "标记价格 ≥ {0} 时激活"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#~ msgid "Activates when mark ≥ {triggerPrice}"
+#~ msgstr "标记价 ≥ {triggerPrice} 时激活"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "active"
@@ -610,7 +627,7 @@ msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "All directions"
-msgstr ""
+msgstr "所有方向"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -622,7 +639,7 @@ msgstr "全部方向"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "All markets"
-msgstr ""
+msgstr "所有市场"
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -631,7 +648,7 @@ msgstr "全部角色"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "All sides"
-msgstr ""
+msgstr "所有方向"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -725,8 +742,8 @@ msgstr "仅当账户价值低于 $100,000 且历史总交易量低于 $10,000,00
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "已授权的 API 钱包可签署委托的 L1 操作，例如下单、撤单，以及调整杠杆或保证金模式。授权无法按操作细分。包括外部提现在内的仅限主钱包操作仍需由主钱包执行。"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
 msgstr "该市场的另一项操作正在进行中。"
 
@@ -752,29 +769,19 @@ msgid "Another mobile approval is being prepared for this wallet."
 msgstr "正在为此钱包准备另一项移动授权。"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for one of these markets is still being confirmed."
 msgstr "其中一个市场的另一笔委托仍在确认中。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-order-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "该市场的另一笔订单仍在确认中。"
 
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "该市场的另一笔 TWAP 订单仍在确认中。"
 
@@ -1050,7 +1057,7 @@ msgstr "已恢复在线"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Back to trade"
-msgstr ""
+msgstr "返回交易"
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Back to Vaults"
@@ -1064,6 +1071,10 @@ msgstr "余额"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Balance available to trade"
 msgstr "可用于交易的余额"
+
+#: src/lib/trade/funds-action-feedback.ts
+msgid "Balance changed before submission. Review the updated balance and try again."
+msgstr "提交前余额已发生变化。请检查更新后的余额并重试。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1081,15 +1092,9 @@ msgstr "余额数据已过期，相关操作暂时不可用。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "余额数据不可用。请等待连接恢复后重试。"
 
@@ -1270,11 +1275,11 @@ msgstr "取消选中的订单"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Canceled"
 msgstr "已取消"
 
@@ -1322,7 +1327,7 @@ msgstr "图表"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart data is temporarily rate limited"
-msgstr ""
+msgstr "图表数据暂时受到速率限制"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Chart history request timed out"
@@ -1377,15 +1382,15 @@ msgstr "子金库"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Choose another market or side."
-msgstr ""
+msgstr "请选择其他市场或方向。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Choose another market, direction, role, or type."
-msgstr ""
+msgstr "请选择其他市场、方向、角色或类型。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Choose different market, direction, type, or status filters."
-msgstr ""
+msgstr "请选择其他市场、方向、类型或状态筛选条件。"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Choose how much of this position to close with a reduce-only market order."
@@ -1601,12 +1606,12 @@ msgstr "关闭委托修改"
 msgid "Close order submitted"
 msgstr "已提交平仓委托"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders rejected"
 msgstr "平仓委托已被拒绝"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders submitted. Confirming exchange status; do not retry."
 msgstr "平仓委托已提交，正在确认交易所状态，请勿重试。"
 
@@ -1619,10 +1624,12 @@ msgid "Close percentage"
 msgstr "平仓比例"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close percentage must be a decimal number"
 msgstr "平仓比例必须为十进制数"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close percentage must be between 0 and 100"
 msgstr "平仓比例必须在 0 到 100 之间"
 
@@ -1660,23 +1667,23 @@ msgstr "平空"
 msgid "Close size"
 msgstr "平仓数量"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size exceeds current position"
 msgstr "平仓数量超过当前仓位"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size is below market precision"
 msgstr "平仓数量低于市场精度"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size must be a decimal number"
 msgstr "平仓数量必须为十进制数"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size must be greater than zero"
 msgstr "平仓数量必须大于零"
 
@@ -2150,6 +2157,10 @@ msgstr "继续后，这项已验证的公开操作将交由共享资金操作流
 msgid "Contract"
 msgstr "合约"
 
+#: src/components/legal/document-chrome.tsx
+msgid "Cookie Policy"
+msgstr "Cookie 政策"
+
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2499,6 +2510,7 @@ msgstr "部署者"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -2825,9 +2837,15 @@ msgstr "请勿提交另一笔质押资金操作。共享恢复面板会继续检
 msgid "Do not submit this operation again."
 msgstr "请勿再次提交此操作。"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Docs"
 msgstr "文档"
+
+#: src/components/legal/document-chrome.tsx
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Documentation and legal"
+msgstr "文档与法律信息"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -2918,7 +2936,6 @@ msgid "Enable Trading"
 msgstr "启用交易"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Enable trading and approve the builder fee on this desktop before linking a phone."
 msgstr "关联手机前，请先在此桌面端启用交易并批准 Builder 费用。"
 
@@ -2947,22 +2964,21 @@ msgid "Enter a positive amount with up to 6 decimal places."
 msgstr "请输入正数，最多 6 位小数。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Enter a positive target leverage."
 msgstr "请输入大于 0 的目标杠杆。"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Enter a valid 0x account address to view funding payments."
-msgstr ""
+msgstr "请输入有效的 0x 账户地址以查看资金费支付记录。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Enter a valid 0x account address to view ordinary order history."
-msgstr ""
+msgstr "请输入有效的 0x 账户地址以查看普通委托历史。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Enter a valid 0x account address to view trade history."
-msgstr ""
+msgstr "请输入有效的 0x 账户地址以查看成交历史。"
 
 #: src/lib/errors/definitions/twap.ts
 msgid "Enter a valid max price"
@@ -3001,10 +3017,9 @@ msgid "Enter code"
 msgstr "输入推荐码"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Enter limit price"
 msgstr "输入限价"
 
@@ -3155,7 +3170,7 @@ msgstr "执行"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Execution Interval"
-msgstr ""
+msgstr "执行间隔"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
@@ -3263,7 +3278,7 @@ msgstr "正在导出存款和提款记录..."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting funding payments..."
-msgstr ""
+msgstr "正在导出资金费支付记录..."
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Exporting order history..."
@@ -3282,7 +3297,7 @@ msgstr "失败"
 msgid "Failed"
 msgstr "失败"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to build a close order"
 msgstr "无法生成平仓委托"
 
@@ -3291,7 +3306,7 @@ msgstr "无法生成平仓委托"
 msgid "Failed to cancel order."
 msgstr "撤单失败。"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Failed to cancel TWAP order."
 msgstr "TWAP 订单撤销失败。"
 
@@ -3300,8 +3315,7 @@ msgstr "TWAP 订单撤销失败。"
 msgid "Failed to change language"
 msgstr "切换语言失败"
 
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to close position"
 msgstr "平仓失败"
 
@@ -3329,7 +3343,7 @@ msgstr "存款和提款记录导出失败。"
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export funding payments."
-msgstr ""
+msgstr "导出资金费支付记录失败。"
 
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "Failed to export order history."
@@ -3369,7 +3383,7 @@ msgstr "存款和提款记录加载失败。"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Failed to load funding payments."
-msgstr ""
+msgstr "加载资金费支付记录失败。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
@@ -3398,10 +3412,7 @@ msgstr "加载订单历史失败。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to load positions."
 msgstr "加载仓位失败。"
 
@@ -3439,14 +3450,12 @@ msgstr "修改委托失败。"
 #~ msgstr "无法打开存款流程"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to place limit close order"
 msgstr "限价平仓委托下单失败"
 
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to reverse position"
 msgstr "反向开仓失败"
 
@@ -3455,7 +3464,7 @@ msgid "Failed to save share image"
 msgstr "保存分享图片失败"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
 msgstr "提交平仓委托失败"
 
@@ -3463,12 +3472,10 @@ msgstr "提交平仓委托失败"
 msgid "Failed to update account mode"
 msgstr "账户模式更新失败"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "调整逐仓保证金失败"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "更新 TP/SL 委托失败"
@@ -3491,6 +3498,10 @@ msgstr "收藏夹"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "手续费"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Fee market for taker and maker rates"
+msgstr "吃单与挂单费率市场"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -3537,27 +3548,27 @@ msgstr "按 {label} 筛选"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Filter funding payments by market"
-msgstr ""
+msgstr "按市场筛选资金费支付记录"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Filter funding payments by side"
-msgstr ""
+msgstr "按方向筛选资金费支付记录"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Filter order history by direction"
-msgstr ""
+msgstr "按方向筛选委托历史"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Filter order history by market"
-msgstr ""
+msgstr "按市场筛选委托历史"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Filter order history by status"
-msgstr ""
+msgstr "按状态筛选委托历史"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Filter order history by type"
-msgstr ""
+msgstr "按类型筛选委托历史"
 
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #~ msgid "Filter positions by direction"
@@ -3581,19 +3592,19 @@ msgstr "按市场筛选持仓：{ariaValue}"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Filter trade history by direction"
-msgstr ""
+msgstr "按方向筛选成交历史"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Filter trade history by market"
-msgstr ""
+msgstr "按市场筛选成交历史"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Filter trade history by role"
-msgstr ""
+msgstr "按角色筛选成交历史"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Filter trade history by type"
-msgstr ""
+msgstr "按类型筛选成交历史"
 
 #: src/components/staking/staking-view.tsx
 msgid "Filter validators"
@@ -3678,7 +3689,7 @@ msgstr "充值链"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
-msgstr ""
+msgstr "无法验证资金费数据。请刷新后重试。"
 
 #: src/config/trade.ts
 #~ msgid "Funding History"
@@ -3689,8 +3700,9 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments"
-msgstr ""
+msgstr "资金费支付记录"
 
 #: src/config/trade.ts
 msgid "Funding Payments"
@@ -3698,20 +3710,20 @@ msgstr "资金费用"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments are unavailable"
-msgstr ""
+msgstr "资金费支付记录不可用"
 
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments for {0}"
-msgstr ""
+msgstr "{0} 的资金费支付记录"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments pagination"
-msgstr ""
+msgstr "资金费支付记录分页"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments will load automatically when the connection returns."
-msgstr ""
+msgstr "连接恢复后将自动加载资金费支付记录。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -3721,7 +3733,7 @@ msgstr "当前显示资金费"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding updates paused."
-msgstr ""
+msgstr "资金费更新已暂停。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3732,6 +3744,7 @@ msgid "Funds actions are not available in your region."
 msgstr "您所在的地区不支持资金操作。"
 
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Funds actions are not available in your region. This funds action was not submitted."
 msgstr "您所在的地区不支持资金操作，本次资金操作未提交。"
 
@@ -3973,7 +3986,6 @@ msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid 已拒绝请求"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 msgstr "Hyperliquid 显示此交易密钥已被替换、更改或已过期。"
 
@@ -3983,7 +3995,7 @@ msgstr "Hyperliquid 要求符合条件的奖励超过 1 美元后才能领取。
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Hyperliquid returns at most the most recent {ORDER_HISTORY_API_LIMIT} ordinary orders. TWAP history is separate and is not included."
-msgstr ""
+msgstr "Hyperliquid 最多返回最近 {ORDER_HISTORY_API_LIMIT} 笔普通委托；TWAP 历史单独提供，不包含在内。"
 
 #: src/components/api-wallet/use-api-wallet-controller.ts
 msgid "Hyperliquid testnet account"
@@ -4090,7 +4102,7 @@ msgstr "Gas 余额不足"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Invalid account address"
-msgstr ""
+msgstr "账户地址无效"
 
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
@@ -4389,7 +4401,7 @@ msgstr "强平价格"
 
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Live chart data is rate limited. Retrying shortly."
-msgstr ""
+msgstr "实时图表数据受到速率限制，即将重试。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -4400,9 +4412,7 @@ msgstr "实时仓位数据不是最新状态。请等待账户连接恢复。"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "无法获取实时仓位数据。请等待账户连接恢复后再调整保证金。"
 
@@ -4446,12 +4456,12 @@ msgstr "正在加载存款和提款记录..."
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
-msgstr ""
+msgstr "正在加载资金费支付记录"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding payments."
-msgstr ""
+msgstr "正在加载资金费支付记录。"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Loading leaderboard"
@@ -4469,7 +4479,7 @@ msgstr "加载未成交订单中..."
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
-msgstr ""
+msgstr "正在加载委托历史"
 
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Loading order history..."
@@ -4515,7 +4525,7 @@ msgstr "正在加载代币元数据..."
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Loading trade history"
-msgstr ""
+msgstr "正在加载成交历史"
 
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
@@ -4818,6 +4828,10 @@ msgstr "当前浏览器无法恢复市价平仓确认。"
 msgid "Market close confirmation restored."
 msgstr "已恢复市价平仓确认。"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
+msgid "Market data views"
+msgstr "市场数据视图"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Market metadata changed. Refresh and try again."
@@ -4957,6 +4971,12 @@ msgstr "最低价须低于触发价"
 msgid "Minimum"
 msgstr "最小"
 
+#. placeholder {0}: formattedHistorySummary.minimum
+#. placeholder {1}: formattedHistorySummary.maximum
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
+msgstr "最低值 <0>{0}</0>；最高值 <1>{1}</1>。"
+
 #. placeholder {0}: ctx.minDeposit
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
@@ -4999,7 +5019,6 @@ msgstr "分钟"
 msgid "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
 msgstr "移动访问权限已撤销。不可访问的替换密钥将于 {expiresAtLabel} 过期。"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Mobile QR creation is temporarily unavailable."
 msgstr "暂时无法创建移动端二维码。"
@@ -5168,11 +5187,11 @@ msgstr "下一页"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Next funding payments page"
-msgstr ""
+msgstr "下一页资金费支付记录"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Next order history page"
-msgstr ""
+msgstr "下一页委托历史"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Next page"
@@ -5180,7 +5199,7 @@ msgstr "下一页"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Next trade history page"
-msgstr ""
+msgstr "下一页成交历史"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Next Vault page"
@@ -5196,16 +5215,14 @@ msgstr "下一页金库"
 msgid "No"
 msgstr "否"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "No active Hyperliquid account"
+msgstr "没有活跃的 Hyperliquid 账户"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "No active positions."
 msgstr "无活跃仓位。"
 
@@ -5288,11 +5305,11 @@ msgstr "未报告到期时间"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills found"
-msgstr ""
+msgstr "未找到成交记录"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills found in the recent trade snapshot."
-msgstr ""
+msgstr "近期成交快照中未找到成交记录。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5301,7 +5318,7 @@ msgstr "未找到成交记录。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No fills match the selected filters."
-msgstr ""
+msgstr "没有成交记录符合所选筛选条件。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "No fills match these filters."
@@ -5309,11 +5326,11 @@ msgstr "没有符合筛选条件的成交记录。"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found"
-msgstr ""
+msgstr "未找到资金费支付记录"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments found in the confirmed 30-day window."
-msgstr ""
+msgstr "已确认的 30 天时间窗口内未找到资金费支付记录。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -5322,7 +5339,7 @@ msgstr "未找到资金费用记录。"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No funding payments match the selected filters."
-msgstr ""
+msgstr "没有资金费支付记录符合所选筛选条件。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 msgid "No funding payments match this direction."
@@ -5360,15 +5377,15 @@ msgstr "未找到市场。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "No matching fills"
-msgstr ""
+msgstr "没有匹配的成交记录"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "No matching funding payments"
-msgstr ""
+msgstr "没有匹配的资金费支付记录"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "No matching orders"
-msgstr ""
+msgstr "没有匹配的委托"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "No matching trader"
@@ -5393,7 +5410,7 @@ msgstr "未提交任何操作。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "No order history found"
-msgstr ""
+msgstr "未找到委托历史"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -5421,12 +5438,16 @@ msgstr "没有符合筛选条件的委托。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "No ordinary orders found."
-msgstr ""
+msgstr "未找到普通委托。"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr "暂无表现历史"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "No performance history is available for the selected period."
+msgstr "所选周期暂无表现历史。"
 
 #: src/components/vaults/vault-performance-chart.tsx
 #~ msgid "No PNL change"
@@ -5624,7 +5645,7 @@ msgstr "仅会提交公开地址以供授权。最新的 extraAgents 数据确�
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Only this requested time window is shown. Older payments have not been loaded and are not included in this count."
-msgstr ""
+msgstr "仅显示本次请求的时间窗口。更早的资金费支付记录尚未加载，也不计入此数量。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Only this transfer starts the seven-day queue. Hyperliquid allows at most five pending withdrawals per address."
@@ -5698,8 +5719,6 @@ msgid "Open orders are refreshing. Wait for live data and try again."
 msgstr "当前委托正在刷新。请等待实时数据后重试。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open orders changed. Reopen the confirmation and try again."
 msgstr "当前委托已发生变化。请重新打开确认弹窗后再试。"
@@ -5779,7 +5798,7 @@ msgid "Order confirmed by the exchange."
 msgstr "交易所已确认订单。"
 
 #: src/config/ui-text.ts
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Order failed"
 msgstr "下单失败"
 
@@ -5788,8 +5807,9 @@ msgid "Order filled"
 msgstr "委托已成交"
 
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history"
-msgstr ""
+msgstr "委托历史"
 
 #: src/config/trade.ts
 msgid "Order History"
@@ -5797,24 +5817,23 @@ msgstr "委托历史"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history is unavailable"
-msgstr ""
+msgstr "委托历史不可用"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history pagination"
-msgstr ""
+msgstr "委托历史分页"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order history updates paused."
-msgstr ""
+msgstr "委托历史更新已暂停。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history will load automatically when the connection returns."
-msgstr ""
+msgstr "连接恢复后将自动加载委托历史。"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Order market context does not match the submitted asset."
 msgstr "委托的市场上下文与提交的资产不匹配。"
 
@@ -5844,15 +5863,7 @@ msgstr "委托已提交"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 
@@ -5904,7 +5915,7 @@ msgstr "关联止盈止损的委托不能在此修改。"
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Ordinary order history for {0}"
-msgstr ""
+msgstr "{0} 的普通委托历史"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6074,6 +6085,7 @@ msgid "Perps"
 msgstr "永续合约"
 
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
@@ -6228,6 +6240,10 @@ msgstr "热门"
 msgid "Portfolio"
 msgstr "投资组合"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio account scope"
+msgstr "投资组合账户范围"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio history"
 msgstr "投资组合历史"
@@ -6247,6 +6263,10 @@ msgstr "组合保证金"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
 msgstr "投资组合表现"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio performance period"
+msgstr "投资组合表现周期"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio summary"
@@ -6297,12 +6317,13 @@ msgstr "仓位保证金"
 msgid "Position reversed — {marketLabel}"
 msgstr "仓位已反向 — {marketLabel}"
 
-#: src/hooks/trade/use-position-reverse-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Position size is below market precision"
 msgstr "仓位数量低于市场精度"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Position size must be a non-zero number"
 msgstr "仓位数量必须为非零数值"
 
@@ -6330,7 +6351,7 @@ msgstr "仓位价值"
 msgid "Positions"
 msgstr "持仓"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "确认窗口打开期间持仓已变化。请关闭并重新打开后再提交。"
 
@@ -6380,11 +6401,11 @@ msgstr "上一页"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Previous funding payments page"
-msgstr ""
+msgstr "上一页资金费支付记录"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Previous order history page"
-msgstr ""
+msgstr "上一页委托历史"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "Previous page"
@@ -6392,7 +6413,7 @@ msgstr "上一页"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Previous trade history page"
-msgstr ""
+msgstr "上一页成交历史"
 
 #: src/components/vaults/vaults-list.tsx
 msgid "Previous Vault page"
@@ -6462,6 +6483,7 @@ msgstr "价格精度"
 msgid "Price: Market"
 msgstr "价格：市价"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -6472,6 +6494,7 @@ msgstr "主导航"
 msgid "Priority Gas Auction Fee"
 msgstr "优先 Gas 拍卖费"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -6733,6 +6756,10 @@ msgstr "推荐功能启用进度"
 msgid "Referral activity"
 msgstr "推荐活动"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Referral activity views"
+msgstr "推荐活动视图"
+
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral code"
@@ -6815,15 +6842,15 @@ msgstr "刷新"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Refresh failed. Previously loaded funding payments remain visible."
-msgstr ""
+msgstr "刷新失败。此前加载的资金费支付记录仍保持可见。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Refresh failed. Previously loaded order history remains visible."
-msgstr ""
+msgstr "刷新失败。此前加载的委托历史仍保持可见。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Refresh failed. Previously loaded trade history remains visible."
-msgstr ""
+msgstr "刷新失败。此前加载的成交历史仍保持可见。"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
@@ -6856,6 +6883,10 @@ msgstr "刷新中…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "已拒绝"
+
+#: src/components/pages/application-error-page.tsx
+msgid "Reload terminal"
+msgstr "重新加载交易终端"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Remaining"
@@ -7207,6 +7238,7 @@ msgstr "奖励已领取"
 msgid "Rewards compound automatically"
 msgstr "奖励自动复投"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Risk Disclosure"
 msgstr "风险披露"
@@ -7251,7 +7283,7 @@ msgstr "运行中"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
-msgstr ""
+msgstr "运行时间（{TWAP_MINUTES_MIN} 分钟 - {DAYS_MAX} 天）"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -7259,30 +7291,13 @@ msgstr ""
 msgid "Runtime"
 msgstr "运行时长"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Safe action coordination across tabs is unavailable in this browser."
 msgstr "此浏览器不支持跨标签页安全协调操作。"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-twap-cancel.ts
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Safe order coordination across tabs is unavailable in this browser."
 msgstr "当前浏览器无法安全协调多个标签页的订单。"
 
@@ -7530,6 +7545,7 @@ msgstr "卖出 / 做空"
 msgid "Sell Short"
 msgstr "卖出做空"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -7804,6 +7820,7 @@ msgstr "数量不能超过委托的剩余数量。"
 #~ msgstr "每笔子订单数量"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Size precision must be a non-negative integer"
 msgstr "数量精度必须为非负整数"
 
@@ -7871,10 +7888,11 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "部分委托市场暂不可用，请刷新后重试。"
 
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "部分订单已被接受。重试前请检查当前委托。"
 
+#: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
@@ -7986,6 +8004,10 @@ msgid "Staking"
 msgstr "质押"
 
 #: src/components/staking/staking-view.tsx
+msgid "Staking action history table"
+msgstr "质押操作历史表格"
+
+#: src/components/staking/staking-view.tsx
 msgid "Staking action history unavailable"
 msgstr "质押操作历史不可用"
 
@@ -8002,6 +8024,10 @@ msgid "Staking deposit"
 msgstr "质押存入"
 
 #: src/components/staking/staking-view.tsx
+msgid "Staking detail views"
+msgstr "质押详情视图"
+
+#: src/components/staking/staking-view.tsx
 msgid "Staking details"
 msgstr "质押详情"
 
@@ -8016,6 +8042,10 @@ msgstr "质押奖励"
 #: src/components/staking/staking-view.tsx
 msgid "Staking rewards accrue every minute, are distributed daily, and are automatically redelegated. There is no separate staking reward collection action."
 msgstr "质押奖励每分钟累积、每日分发并自动复投，不提供单独领取质押奖励的操作。"
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards table"
+msgstr "质押奖励表格"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking to Spot"
@@ -8057,6 +8087,12 @@ msgstr "开始时间"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "正在启动相机…"
+
+#. placeholder {0}: formattedHistorySummary.start
+#. placeholder {1}: formattedHistorySummary.end
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Starts at <0>{0}</0> and ends at <1>{1}</1>."
+msgstr "起始值为 <0>{0}</0>，结束值为 <1>{1}</1>。"
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
@@ -8212,6 +8248,7 @@ msgstr "成功"
 msgid "Supply"
 msgstr "存入借贷"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Support"
 msgstr "支持"
@@ -8232,6 +8269,7 @@ msgstr "兑换方向"
 msgid "Swap failed"
 msgstr "兑换失败"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap Stablecoins"
@@ -8453,7 +8491,7 @@ msgid "Target Leverage"
 msgstr "目标杠杆"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Target leverage must be below the current effective leverage to add margin."
 msgstr "目标杠杆必须低于当前实际杠杆才能增加保证金。"
 
@@ -8472,6 +8510,7 @@ msgstr "终止 TWAP 委托"
 msgid "Terminating..."
 msgstr "终止中..."
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Terms"
 msgstr "条款"
@@ -8499,21 +8538,21 @@ msgstr "测试网预览；市场链接已禁用"
 msgid "Testnet queue: approximately five minutes"
 msgstr "测试网队列：约 5 分钟"
 
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "账户激活费用在签名前已变化。请检查更新后的费用并重试。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The account has no fills in the public API snapshot."
-msgstr ""
+msgstr "该账户在公开 API 快照中没有成交记录。"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "The account has no funding payments in the confirmed 30-day window."
-msgstr ""
+msgstr "该账户在已确认的 30 天时间窗口内没有资金费支付记录。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The account has no ordinary orders in the available history."
-msgstr ""
+msgstr "该账户在可用历史中没有普通委托。"
 
 #: src/components/api-wallet/api-wallet-view.tsx
 msgid "The active wallet is not this account's master wallet"
@@ -8535,7 +8574,6 @@ msgstr "API 钱包请求已被拒绝。"
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 msgstr "无法重新检查授权。在只读验证成功前，二维码将保持隐藏。"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操作。"
@@ -8565,9 +8603,7 @@ msgid "The Arbitrum transaction was submitted, but its final status could not be
 msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请检查该交易。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "无法确认撤单响应。请刷新当前委托后再试。"
@@ -8592,27 +8628,25 @@ msgstr "无法完成连接。连接可能已获授权；请稍候重试。"
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "最新的 extraAgents 数据中已出现完全匹配的名称和公开地址。"
 
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept every order."
 msgstr "交易所未接受全部订单。"
 
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept the order."
 msgstr "交易所未接受该订单。"
 
-#: src/components/trade/twap-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept the TWAP order."
 msgstr "交易所未接受该 TWAP 订单。"
 
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
 msgstr "交易所未返回最终订单状态。重试前请检查当前委托和持仓。"
 
-#: src/components/trade/twap-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委托。"
 
@@ -8640,8 +8674,8 @@ msgstr "无法验证历史响应。"
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
 msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路由并重试。"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用，然后再次提交。"
 
@@ -8649,7 +8683,7 @@ msgstr "Hyperliquid 提现路由已更改。请检查更新后的路由和费用
 msgid "The leader receives the commission shown above from profits."
 msgstr "管理者会从利润中收取上方显示的佣金。"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "保证金更新可能已生效。请刷新持仓数据后再试。"
 
@@ -8692,9 +8726,7 @@ msgid "The order is still being confirmed."
 msgstr "订单仍在确认中。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "实时数据尚未确认委托更新。重试前请刷新；仍可取消该委托。"
@@ -8709,7 +8741,7 @@ msgstr "页面正在从 Hyperliquid 刷新。最新变更可能需要片刻才�
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The page loads one recent-fill snapshot. Export CSV to request a broader accessible history."
-msgstr ""
+msgstr "本页面加载一份近期成交快照。可导出 CSV 以请求范围更广的可用历史。"
 
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
@@ -8754,9 +8786,8 @@ msgstr "二维码仅保留在此设备上，绝不会上传。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "The recent trade snapshot could not be loaded or validated."
-msgstr ""
+msgstr "无法加载或验证近期成交快照。"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 msgstr "替代密钥在 Hyperliquid 确认前已过期。请重新检查并签署新的撤销操作。"
@@ -8767,11 +8798,11 @@ msgstr "请求已提交，但最终状态仍在更新。重试前请检查推荐
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "The requested 30-day window could not be verified. No partial history is shown."
-msgstr ""
+msgstr "无法验证请求的 30 天时间窗口，因此不显示部分历史。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "The response could not be verified. No partial order history is shown."
-msgstr ""
+msgstr "无法验证响应，因此不显示部分委托历史。"
 
 #: src/components/referrals/referral-dashboard.tsx
 msgid "The response could not be verified. No referral action is available until fresh data loads."
@@ -8807,8 +8838,7 @@ msgid "The selected Hyperliquid environment returned a definitive empty Vault li
 msgstr "所选 Hyperliquid 环境明确返回了空的金库列表。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
 
@@ -8824,6 +8854,10 @@ msgstr "签名请求已提交。请保持此窗口打开。"
 msgid "The signed request may have succeeded, but reconciliation timed out. Do not submit it again; verify against fresh extraAgents data. Closing before verification discards the local key."
 msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；请根据最新的 extraAgents 数据进行验证。在验证完成前关闭窗口会丢弃本地私钥。"
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The start and end values are unchanged."
+msgstr "起始值与结束值相同。"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -8835,6 +8869,10 @@ msgstr "签名请求可能已成功，但对账已超时。请勿重复提交；
 #: src/routes/mobile-agent-sync.tsx
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr "无法清除手机访问二维码的临时副本。请关闭此标签页并清除此网站的数据，然后重新扫描。"
+
+#: src/components/pages/application-error-page.tsx
+msgid "The terminal could not continue safely. Reload it before trading."
+msgstr "交易终端无法安全继续运行。请在交易前重新加载。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "The terms could not be accepted. Confirm the request in the selected wallet and try again."
@@ -8850,7 +8888,7 @@ msgstr "交易账户或网络已发生变化。请重新打开确认弹窗后再
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。"
 
@@ -8858,6 +8896,14 @@ msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trigger price is invalid for this order direction."
 msgstr "该触发价格不符合此委托方向。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The value decreased overall."
+msgstr "数值总体下降。"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The value increased overall."
+msgstr "数值总体上升。"
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "The verified dataset did not contain an eligible account for this network."
@@ -8898,27 +8944,20 @@ msgstr "此账户当前无权使用 Hyperliquid 推荐功能。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "This account reached the {ORDER_HISTORY_API_LIMIT}-order API limit. Older orders are not available from this endpoint."
-msgstr ""
+msgstr "该账户已达到 API 的 {ORDER_HISTORY_API_LIMIT} 笔委托上限。此端点不提供更早的委托。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "This account reached the {TRADE_HISTORY_SNAPSHOT_LIMIT}-fill snapshot limit. Older fills may exist and are not included in this page count."
-msgstr ""
+msgstr "该账户已达到快照的 {TRADE_HISTORY_SNAPSHOT_LIMIT} 笔成交上限。可能仍有更早的成交，且不计入本页面数量。"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "This action cannot be undone after execution."
 msgstr "成交后此操作无法撤销。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer active."
 msgstr "此授权恢复已不再有效。"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer available."
 msgstr "此授权恢复已不可用。"
@@ -8939,7 +8978,7 @@ msgstr "此浏览器无法在多个标签页之间安全协调交易连接。请
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "此浏览器已不再保存与待确认授权完全匹配的交易密钥。请先重置交易连接，然后重试。"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "一键全平预览已过期。请关闭并重新打开以检查当前数值。"
 
@@ -9013,7 +9052,7 @@ msgstr "这里显示旧版已赚取奖励历史。当前领取记录显示在上
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This isolated position is no longer open."
 msgstr "该逐仓仓位已不再持有。"
 
@@ -9045,7 +9084,6 @@ msgstr "此移动交易密钥已过期。"
 msgid "This one-time QR closes automatically within 60 seconds."
 msgstr "此一次性二维码会在 60 秒内自动关闭。"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This one-time QR could not be created. Try revealing a new QR."
 msgstr "无法生成此一次性二维码。请尝试重新生成。"
@@ -9088,7 +9126,7 @@ msgid "This position changed sides. Close and reopen this dialog before submitti
 msgstr "仓位方向已发生变化。请关闭并重新打开此弹窗后再提交。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"
 
@@ -9098,7 +9136,7 @@ msgid "This position is no longer open."
 msgstr "该仓位已不再持有。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This position is no longer using isolated margin."
 msgstr "该仓位已不再使用逐仓保证金。"
 
@@ -9150,7 +9188,7 @@ msgid "This staking account controls trading account {0}."
 msgstr "此质押账户控制交易账户 {0}。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 
@@ -9398,8 +9436,9 @@ msgid "Trade"
 msgstr "交易"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history"
-msgstr ""
+msgstr "成交历史"
 
 #: src/config/trade.ts
 msgid "Trade History"
@@ -9408,24 +9447,24 @@ msgstr "成交历史"
 #. placeholder {0}: shortenAddress(address, 8, 6)
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history for {0}"
-msgstr ""
+msgstr "{0} 的成交历史"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history is unavailable"
-msgstr ""
+msgstr "成交历史不可用"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history pagination"
-msgstr ""
+msgstr "成交历史分页"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trade history updates paused."
-msgstr ""
+msgstr "成交历史更新已暂停。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history will load automatically when the connection returns."
-msgstr ""
+msgstr "连接恢复后将自动加载成交历史。"
 
 #: src/components/referrals/referral-code-card.tsx
 msgid "Trade on Hyperliquid"
@@ -9485,48 +9524,17 @@ msgid "Trading connection could not be reset."
 msgstr "无法重置交易连接。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "委托修改提交前交易数据已变化。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打开后再提交。"
 
@@ -9735,7 +9743,7 @@ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before ret
 msgstr "未能确认 TWAP 撤销。重试前请检查当前 TWAP 委托。"
 
 #: src/components/trade/twap-reconciliation.tsx
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP 撤销请求已提交，但无法确认其状态。重试前请检查当前 TWAP 列表。"
 
@@ -9766,13 +9774,13 @@ msgstr "TWAP 分钟数须为{TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgid "TWAP order confirmed by the exchange."
 msgstr "交易所已确认 TWAP 订单。"
 
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP 订单状态仍在加载中，请稍后重试。"
 
 #: src/lib/errors/definitions/twap.ts
 msgid "TWAP order value must be at least ${TWAP_MIN_NOTIONAL_USD}."
-msgstr ""
+msgstr "TWAP 委托价值必须至少为 ${TWAP_MIN_NOTIONAL_USD}。"
 
 #: src/lib/errors/definitions/twap.ts
 #~ msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
@@ -9822,7 +9830,7 @@ msgstr "类型"
 #~ msgid "Unable to close position."
 #~ msgstr "无法平仓。"
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "无法识别该 TWAP 市场。请刷新市场数据后重试。"
 
@@ -9878,6 +9886,7 @@ msgstr "无法验证地区可用性，本次存款未提交。"
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "无法验证地区可用性，本次资金操作未提交。"
 
@@ -9896,7 +9905,7 @@ msgstr "无法核验地区可用性，Vault 操作暂不可用。"
 msgid "Unable to verify the CCTP authorization."
 msgstr "无法验证 CCTP 授权。"
 
-#: src/hooks/trade/use-account-abstraction-guard.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current account mode. Request was not submitted."
 msgstr "无法验证当前账户模式。请求未提交。"
 
@@ -9926,9 +9935,8 @@ msgstr "无法验证 Hyperliquid 当前的充值路由。充值未提交。"
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "无法验证 Hyperliquid 当前的充值路由。充值已暂停。"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid withdrawal route."
 msgstr "无法验证 Hyperliquid 当前的提现路由。"
 
@@ -9936,7 +9944,7 @@ msgstr "无法验证 Hyperliquid 当前的提现路由。"
 msgid "Unable to verify withdrawal eligibility."
 msgstr "无法验证提款资格。"
 
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."
 msgstr "无法验证提现资格。请求未提交。"
 
@@ -9948,6 +9956,10 @@ msgstr "无法验证提现资格。请求未提交。"
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "不可用"
+
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Unavailable actions"
+msgstr "不可用操作"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Unclaimed"
@@ -10059,11 +10071,11 @@ msgstr "存款金额中最多将扣除 {cctpFee} USDC 手续费。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders"
-msgstr ""
+msgstr "最多显示最近 {ORDER_HISTORY_API_LIMIT} 笔普通委托"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Up to {TRADE_HISTORY_SNAPSHOT_LIMIT} most recent fills"
-msgstr ""
+msgstr "最多显示最近 {TRADE_HISTORY_SNAPSHOT_LIMIT} 笔成交"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-modal.tsx
@@ -10217,6 +10229,10 @@ msgstr "验证者表现"
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance period"
 msgstr "验证者表现周期"
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance table"
+msgstr "验证者表现表格"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -10553,6 +10569,7 @@ msgstr "将在{0}后到账"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -10647,7 +10664,7 @@ msgid "Withdrawal unlocked"
 msgstr "提取已解锁"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "此地址暂不支持提款。"
 
@@ -10678,7 +10695,7 @@ msgstr "您已符合创建推荐码的条件。"
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline"
-msgstr ""
+msgstr "您已离线"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -10687,37 +10704,37 @@ msgstr ""
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "You are offline."
-msgstr ""
+msgstr "您已离线。"
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
-msgstr ""
+msgstr "您已离线。连接恢复后将加载资金费支付记录。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "You are offline. Order history will load when the connection returns."
-msgstr ""
+msgstr "您已离线。连接恢复后将加载委托历史。"
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "You are offline. Previously loaded funding payments remain visible."
-msgstr ""
+msgstr "您已离线。此前加载的资金费支付记录仍保持可见。"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "You are offline. Previously loaded order history remains visible."
-msgstr ""
+msgstr "您已离线。此前加载的委托历史仍保持可见。"
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "You are offline. Previously loaded trade history remains visible."
-msgstr ""
+msgstr "您已离线。此前加载的成交历史仍保持可见。"
 
 #: src/components/trade-history/trade-history-page.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "You are offline. Trade history will load when the connection returns."
-msgstr ""
+msgstr "您已离线。连接恢复后将加载成交历史。"
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

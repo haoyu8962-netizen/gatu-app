@@ -1,12 +1,13 @@
-import { i18n, type Messages } from "@lingui/core";
+import { i18n } from "@lingui/core";
 import { STORAGE_KEYS } from "@/config/app";
 import { defaultLocale, isRtlLocale, isValidLocale, type LocaleCode } from "@/config/i18n";
+import { expandCatalogMessages, type LoadableCatalogModule } from "@/lib/i18n-catalog";
 
 export { resolveNumberFormatLocale } from "@/config/i18n";
 
 import { messages as enMessages } from "@/locales/en/messages.po";
 
-const catalogImports = import.meta.glob<{ messages: Messages }>([
+const catalogImports = import.meta.glob<LoadableCatalogModule>([
 	"../locales/*/messages.po",
 	"!../locales/en/messages.po",
 ]);
@@ -83,8 +84,9 @@ export async function dynamicActivate(locale: string): Promise<boolean> {
 		if (!loader) {
 			throw new Error(`No locale data found for "${locale}"`);
 		}
-		const { messages } = await loader();
+		const catalog = await loader();
 		if (seq !== activationSeq) return false;
+		const messages = expandCatalogMessages(enMessages, catalog);
 		if (!persistLocale(locale)) throw new Error(`Unable to persist locale "${locale}"`);
 		i18n.loadAndActivate({ locale, messages });
 	}

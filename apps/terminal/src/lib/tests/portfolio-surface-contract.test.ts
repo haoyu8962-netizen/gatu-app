@@ -40,6 +40,20 @@ describe("portfolio surface contract", () => {
 		expect(PORTFOLIO_PAGE).toContain("canChange={accountModeControl.canSet}");
 	});
 
+	it("keeps unavailable fund actions fail-closed and exposes persistent reasons", () => {
+		expect(PORTFOLIO_PAGE).toContain("<Trans>Unavailable actions</Trans>");
+		expect(PORTFOLIO_PAGE).toContain('aria-live="polite"');
+		expect(PORTFOLIO_PAGE).toContain("aria-describedby={getUnavailableReasonId(");
+		expect(PORTFOLIO_PAGE).toContain("disabled={modeDependentFundsActionsDisabled}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={transferDisabled}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={!fundsActionAvailability.withdrawal.available}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={depositDisabled}");
+		expect(PORTFOLIO_PAGE).toContain('? () => openDepositModal("withdraw")');
+		expect(PORTFOLIO_PAGE).toContain(
+			'onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}',
+		);
+	});
+
 	it("uses the default withdrawal account instead of the last selected HIP-3 market", () => {
 		expect(DEPOSIT_MODAL).toContain("useDefaultDexBalances");
 		expect(DEPOSIT_MODAL).not.toContain("useSelectedDexBalances");

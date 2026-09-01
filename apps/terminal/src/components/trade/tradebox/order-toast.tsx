@@ -7,6 +7,11 @@ import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
+import {
+	formatOrderReconciliationError,
+	type OrderReconciliationError,
+} from "@/lib/trade/order-reconciliation-feedback";
+import { formatOrderSubmissionFeedback, type OrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 
 const ORDER_TOAST_MOBILE_GAP_PX = 12;
@@ -43,6 +48,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 	const sideBg = order.side === "buy" ? "bg-success-soft" : "bg-error-soft";
 	const orderTypeLabel = getQueueOrderTypeLabel(order.orderType);
 	const hasTpSl = order.tpPrice || order.slPrice;
+	const errorMessage = order.error ? <OrderQueueErrorMessage error={order.error} /> : null;
 
 	return (
 		<div
@@ -121,7 +127,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 						{t`${order.acceptedCount} of ${order.totalCount} orders were accepted. Review open orders before retrying.`}
 					</div>
 				)}
-				{order.error && (
+				{errorMessage && (
 					<div
 						className={cn(
 							"text-xs",
@@ -130,7 +136,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 								: "text-error",
 						)}
 					>
-						{order.error}
+						{errorMessage}
 					</div>
 				)}
 			</div>
@@ -151,6 +157,18 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 			)}
 		</div>
 	);
+}
+
+export function OrderQueueErrorMessage({
+	error,
+}: {
+	error: string | OrderReconciliationError | OrderSubmissionFeedback;
+}) {
+	const { i18n } = useLingui();
+	if (typeof error === "string") return error;
+	return error.kind === "order-reconciliation"
+		? formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor))
+		: formatOrderSubmissionFeedback(error, (descriptor) => i18n._(descriptor));
 }
 
 function CountdownBar({ order }: { order: OrderQueueItem }) {

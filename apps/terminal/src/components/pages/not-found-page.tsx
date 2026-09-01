@@ -1,10 +1,11 @@
 import { buttonVariants } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export function NotFoundPage() {
+	const { t } = useLingui();
+
 	return (
-		<div className="min-h-screen bg-background text-fg flex items-center justify-center p-6">
+		<main className="min-h-screen bg-background text-fg flex items-center justify-center p-6">
 			<div className="text-center space-y-3">
 				<div className="space-y-1">
 					<p className="text-xs uppercase tracking-wider text-fg">404</p>
@@ -23,6 +24,6 @@ export function NotFoundPage() {
 					<Trans>Go to trading terminal</Trans>
 				</a>
 			</div>
-		</div>
+		</main>
 	);
 }

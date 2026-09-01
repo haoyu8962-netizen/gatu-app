@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -90,6 +90,7 @@ export function TpSlSection({
 	quoteSymbol = DEFAULT_QUOTE_TOKEN,
 	linkedReturnInputs,
 }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const normalizedQuoteSymbol = quoteSymbol?.trim() || null;
 	function formatPnlValue(value: string | number): string {
@@ -390,6 +391,7 @@ function FramedTpSlRow({
 	disabled,
 	mobileSafe,
 }: FramedTpSlRowProps) {
+	const { t } = useLingui();
 	const inputId = useId();
 	const errorId = `${inputId}-error`;
 	const returnDisabled = disabled || returnInput?.disabled;

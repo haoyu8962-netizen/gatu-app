@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
 	getPositionMarketCloseActions,
@@ -19,6 +22,19 @@ import { createI18nRoot } from "./harness/react";
 const USER = "0x1111111111111111111111111111111111111111" as const;
 const COIN = "xyz:CXMT";
 const ASSET_ID = 120_031;
+const REJECTED_MESSAGE = "The exchange did not accept the order.";
+const ARABIC_REJECTED_MESSAGE = "لم تقبل البورصة الطلب.";
+const BLOCKED_MESSAGE = "Another order for this market is still being confirmed.";
+const ARABIC_BLOCKED_MESSAGE = "لا يزال هناك طلب آخر لهذا السوق قيد التأكيد.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(REJECTED_MESSAGE)]: ARABIC_REJECTED_MESSAGE,
+	[getMessageId(BLOCKED_MESSAGE)]: ARABIC_BLOCKED_MESSAGE,
+};
 
 interface LivePosition {
 	coin: string;
@@ -250,6 +266,7 @@ describe("usePositionMarketCloseSubmit", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		clearMarketCloseModal();
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
@@ -394,6 +411,56 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.resetMutation).not.toHaveBeenCalled();
 	});
 
+	it("retranslates a stored reconciliation error without changing the market-close session", () => {
+		const sessionId = openSession();
+		act(() => getPositionMarketCloseActions().setError(sessionId, orderReconciliationError("order-rejected")));
+		expect(currentHook().error).toBe(REJECTED_MESSAGE);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(currentHook().error).toBe(ARABIC_REJECTED_MESSAGE);
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			error: { kind: "order-reconciliation", code: "order-rejected" },
+		});
+	});
+
+	it("retranslates a stored client-side error without resubmitting", async () => {
+		mocks.lockRequest.mockImplementationOnce(
+			async (_name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown | PromiseLike<unknown>) =>
+				callback(null),
+		);
+		const sessionId = openSession();
+
+		await act(async () => currentHook().submit({ sessionId }));
+
+		expect(currentHook().error).toBe(BLOCKED_MESSAGE);
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			error: { kind: "localized", code: "blocked-market" },
+		});
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe(ARABIC_BLOCKED_MESSAGE);
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
+	});
+
+	it("keeps an external SDK error message raw when the locale changes", async () => {
+		const sdkMessage = "SDK could not load the close snapshot";
+		mocks.clearinghouseState.mockRejectedValueOnce(new Error(sdkMessage));
+		const sessionId = openSession();
+
+		await act(async () => currentHook().submit({ sessionId }));
+		expect(currentHook().error).toBe(sdkMessage);
+		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, error: sdkMessage });
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe(sdkMessage);
+		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+	});
+
 	it("ignores a rapid second click while fresh validation is still in flight", async () => {
 		const gate = createExecutionGate();
 		mocks.clearinghouseState.mockImplementationOnce(async () => {
@@ -480,7 +547,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Safe order coordination across tabs is unavailable in this browser.",
+			error: { kind: "localized", code: "coordination-unavailable" },
 		});
 	});
 
@@ -500,7 +567,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -525,7 +592,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -547,7 +614,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -578,7 +645,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -605,7 +672,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Safe order coordination across tabs is unavailable in this browser.",
+			error: { kind: "localized", code: "coordination-unavailable" },
 		});
 	});
 
@@ -623,7 +690,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -641,7 +708,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			error: { kind: "localized", code: "trading-data-changed" },
 		});
 	});
 
@@ -658,7 +725,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Accept the HIP-3 deployer disclaimer before trading this market.",
+			error: { kind: "localized", code: "accept-hip3-market" },
 		});
 	});
 
@@ -701,7 +768,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -748,7 +815,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			error: { kind: "localized", code: "trading-data-changed" },
 		});
 	});
 
@@ -765,7 +832,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: expect.any(String),
+			error: { kind: "localized", code: "no-active-positions" },
 		});
 		expect(mocks.toastError).toHaveBeenCalledTimes(1);
 	});
@@ -780,7 +847,11 @@ describe("usePositionMarketCloseSubmit", () => {
 
 		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
 		expect(mocks.mutateOrder).not.toHaveBeenCalled();
-		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, phase: "idle", error: expect.any(String) });
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			phase: "idle",
+			error: { kind: "localized", code: "trading-data-changed" },
+		});
 	});
 
 	it("keeps a reconciling modal open and ignores retry attempts", async () => {
@@ -794,7 +865,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "reconciling",
-			error: "Order submitted. Confirming exchange status; do not retry.",
+			error: { kind: "localized", code: "reconciling-order" },
 		});
 		expect(currentHook().isReconciling).toBe(true);
 		const restCalls = mocks.clearinghouseState.mock.calls.length;
@@ -823,7 +894,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "reconciling",
-			error: "Order submitted. Confirming exchange status; do not retry.",
+			error: { kind: "localized", code: "reconciling-order" },
 		});
 		expect(hasPendingOrderForAssets("Mainnet", USER, [ASSET_ID])).toBe(true);
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
@@ -854,7 +925,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			error: { kind: "localized", code: "trading-data-changed" },
 		});
 	});
 
@@ -884,7 +955,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			error: { kind: "localized", code: "trading-data-changed" },
 		});
 	});
 
@@ -913,7 +984,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Another order for this market is still being confirmed.",
+			error: { kind: "localized", code: "blocked-market" },
 		});
 	});
 
@@ -941,7 +1012,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(getPositionMarketCloseModal()).toMatchObject({
 			sessionId,
 			phase: "idle",
-			error: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+			error: { kind: "localized", code: "trading-data-changed" },
 		});
 	});
 });

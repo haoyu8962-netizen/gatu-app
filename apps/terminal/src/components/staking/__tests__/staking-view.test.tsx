@@ -108,6 +108,17 @@ function button(container: HTMLElement, label: string): HTMLButtonElement {
 	return match;
 }
 
+function activeTableScrollRegion(container: HTMLElement): HTMLElement | null {
+	const activeTab = container.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+	const panelId = activeTab?.getAttribute("aria-controls");
+	if (!panelId) return null;
+	return (
+		container.ownerDocument
+			.getElementById(panelId)
+			?.querySelector<HTMLElement>('[data-slot="table-scroll-container"]') ?? null
+	);
+}
+
 describe("StakingView", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -129,6 +140,7 @@ describe("StakingView", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.restoreAllMocks();
 	});
 
 	it("renders official validator states, aggregate pending data, and four distinct action entry points", () => {
@@ -151,6 +163,37 @@ describe("StakingView", () => {
 		expect(allDelegateButtons).toHaveLength(3);
 		expect(allDelegateButtons.slice(1).every((candidate) => candidate.disabled)).toBe(true);
 		expect(container.querySelector("table")?.className).toContain("min-w-[var(--staking-validator-table-min)]");
+		expect(container.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("Staking detail views");
+	});
+
+	it("names and makes the validator table scroll region keyboard reachable only when it overflows", () => {
+		mockValidatorTableWidths({ clientWidth: 320, scrollWidth: 960 });
+		act(() => root.render(<StakingView {...props()} />));
+
+		let scrollRegion = activeTableScrollRegion(container);
+		expect(scrollRegion?.getAttribute("role")).toBe("region");
+		expect(scrollRegion?.getAttribute("aria-label")).toBe("Validator performance table");
+		expect(scrollRegion?.tabIndex).toBe(0);
+
+		act(() => button(container, "Staking rewards").click());
+		scrollRegion = activeTableScrollRegion(container);
+		expect(scrollRegion?.getAttribute("aria-label")).toBe("Staking rewards table");
+		expect(scrollRegion?.tabIndex).toBe(0);
+
+		act(() => button(container, "Staking actions").click());
+		scrollRegion = activeTableScrollRegion(container);
+		expect(scrollRegion?.getAttribute("aria-label")).toBe("Staking action history table");
+		expect(scrollRegion?.tabIndex).toBe(0);
+	});
+
+	it("does not add a keyboard stop when the validator table fits", () => {
+		mockValidatorTableWidths({ clientWidth: 960, scrollWidth: 960 });
+		act(() => root.render(<StakingView {...props()} />));
+
+		const scrollRegion = container.querySelector<HTMLElement>('[data-slot="table-scroll-container"]');
+		expect(scrollRegion?.hasAttribute("role")).toBe(false);
+		expect(scrollRegion?.hasAttribute("aria-label")).toBe(false);
+		expect(scrollRegion?.tabIndex).toBe(-1);
 	});
 
 	it("describes automatic compounding without offering a reward collection control", () => {
@@ -243,3 +286,12 @@ describe("StakingView", () => {
 		expect(retryAccount).toHaveBeenCalledOnce();
 	});
 });
+
+function mockValidatorTableWidths({ clientWidth, scrollWidth }: { clientWidth: number; scrollWidth: number }) {
+	vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+		return this.dataset.slot === "table-scroll-container" ? clientWidth : 0;
+	});
+	vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+		return this.dataset.slot === "table-scroll-container" ? scrollWidth : 0;
+	});
+}

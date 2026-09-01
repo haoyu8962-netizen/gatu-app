@@ -74,7 +74,7 @@ export function MainWorkspace() {
 	}
 
 	return (
-		<div ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
+		<main ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
 			{mounted ? (
 				<Responsive
 					className="desktop-terminal-grid"
@@ -160,6 +160,6 @@ export function MainWorkspace() {
 			) : (
 				<DesktopWorkspaceSkeleton />
 			)}
-		</div>
+		</main>
 	);
 }

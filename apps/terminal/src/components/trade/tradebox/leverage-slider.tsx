@@ -1,5 +1,5 @@
 import { useDirection } from "@base-ui/react/direction-provider";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
 	type CSSProperties,
 	type FormEvent,
@@ -63,6 +63,7 @@ export function LeverageSlider({
 	indicatorClassName,
 	thumbClassName,
 }: Props) {
+	const { t } = useLingui();
 	const direction = useDirection();
 	const inputId = useId();
 	const controlRef = useRef<HTMLDivElement>(null);

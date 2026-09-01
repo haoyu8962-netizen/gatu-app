@@ -38,7 +38,10 @@ export function ReferralActivity({
 	return (
 		<section className="overflow-hidden border-y border-stroke-weak bg-surface" aria-label={t`Referral activity`}>
 			<Tabs defaultValue="traders" onValueChange={handleActivityChange}>
-				<TabsList className="w-full gap-3 overflow-x-auto px-4 min-[1001px]:gap-[18px] min-[1001px]:px-5">
+				<TabsList
+					aria-label={t`Referral activity views`}
+					className="w-full gap-3 overflow-x-auto px-4 min-[1001px]:gap-[18px] min-[1001px]:px-5"
+				>
 					<TabsTrigger
 						value="traders"
 						className="whitespace-nowrap px-1 py-2.5 text-xs min-[1001px]:py-[11px] min-[1001px]:text-2sm"

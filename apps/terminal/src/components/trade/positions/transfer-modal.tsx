@@ -1,5 +1,5 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -12,18 +12,29 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
-import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import {
+	AccountAbstractionExecutionError,
+	useAccountAbstractionPreExecutionGuard,
+} from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
+import {
+	FundsActionFeedbackCause,
+	type FundsActionFeedbackCode,
+	formatFundsActionFeedback,
+	fundsActionFeedbackCause,
+} from "@/lib/trade/funds-action-feedback";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
+
+type TransferError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
 
 interface Props {
 	open: boolean;
@@ -49,9 +60,15 @@ interface BodyProps {
 }
 
 function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
+	const { i18n, t } = useLingui();
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<TransferError | null>(null);
+	const errorMessage = error
+		? error.kind === "local"
+			? formatFundsActionFeedback(error.code, (descriptor) => i18n._(descriptor))
+			: formatExchangeActionError(error.cause, t`Transfer failed`)
+		: null;
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
 	const {
@@ -82,19 +99,50 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	accountDataReadyRef.current = accountDataReady;
 	const availableBalanceRef = useRef({ value: "0", receivedAt: undefined as number | undefined, direction });
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
+	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
+		try {
+			await assertAccountAbstraction(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof AccountAbstractionExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed" ? "account-mode-changed" : "account-mode-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+	async function assertCurrentGeo(signal: AbortSignal) {
+		try {
+			await fundsActionAvailability.assertFreshGeoAllowed(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof FundsActionGeoExecutionError) {
+				throw fundsActionFeedbackCause(error.reason === "restricted" ? "geo-restricted" : "geo-unavailable");
+			}
+			throw error;
+		}
+	}
+	function assertCurrentFundsAmount(amount: unknown, available: unknown, receivedAt: number | undefined) {
+		try {
+			assertFreshFundsAmount(amount, available, receivedAt);
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer", {
 		preExecutionGuard: async (params, signal) => {
 			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
 				const current = availableBalanceRef.current;
 				if (params.toPerp !== (current.direction === "toPerp")) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+					throw fundsActionFeedbackCause("balance-unavailable");
 				}
-				assertFreshFundsAmount(params.amount, current.value, current.receivedAt);
+				assertCurrentFundsAmount(params.amount, current.value, current.receivedAt);
 			};
 			assertCurrentBalance();
-			await Promise.all([assertAccountAbstraction(signal), fundsActionAvailability.assertFreshGeoAllowed(signal)]);
+			await Promise.all([assertCurrentAccountAbstraction(signal), assertCurrentGeo(signal)]);
 			signal.throwIfAborted();
 			assertCurrentBalance();
 		},
@@ -152,7 +200,9 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			setError(formatExchangeActionError(err, t`Transfer failed`));
+			setError(
+				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
+			);
 		}
 	}
 
@@ -246,10 +296,10 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</>
 					) : null}
 
-					{error && (
+					{errorMessage && (
 						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
 							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{error}</span>
+							<span className="flex-1">{errorMessage}</span>
 						</div>
 					)}
 

@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -27,8 +27,17 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { formatOrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
-import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
+import {
+	formatPositionSubmitFeedback,
+	formatTrackedPositionSubmitError,
+	getPositionMarketClosePlanFeedback,
+	localizedPositionSubmitFeedback,
+	PositionSubmitFeedbackCause,
+	positionSubmitFeedbackCause,
+	positionSubmitFeedbackFromCause,
+} from "@/lib/trade/position-submit-feedback";
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
@@ -79,6 +88,7 @@ interface LiveContext {
 }
 
 export function usePositionMarketCloseSubmit() {
+	const { i18n, t } = useLingui();
 	const phase = usePositionMarketClosePhase();
 	const sessionError = usePositionMarketCloseError();
 	const { clientKey, env, info } = useHyperliquid();
@@ -97,8 +107,7 @@ export function usePositionMarketCloseSubmit() {
 
 	function assertExecutionContext(params: ExchangeParams<"order">) {
 		const execution = executionContextRef.current;
-		if (!execution)
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		if (!execution) throw positionSubmitFeedbackCause("trading-data-changed");
 
 		const currentSession = getPositionMarketCloseModal();
 		const live = liveContextRef.current;
@@ -109,12 +118,12 @@ export function usePositionMarketCloseSubmit() {
 			live.env !== execution.env ||
 			live.clientKey.toLowerCase() !== execution.owner
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw positionSubmitFeedbackCause("trading-data-changed");
 		}
 
 		assertLivePositionMatches(currentSession, live, execution);
 		if (!isLiveExecutionPriceReceiptFresh(execution.priceReceivedAt)) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw positionSubmitFeedbackCause("trading-data-changed");
 		}
 		assertOrderMatchesExecution(params, execution);
 	}
@@ -140,7 +149,7 @@ export function usePositionMarketCloseSubmit() {
 				async (assetLockLease) => {
 					const lockedSession = getPositionMarketCloseModal();
 					if (!lockedSession || lockedSession.sessionId !== input.sessionId || lockedSession.phase !== "validating") {
-						throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+						throw positionSubmitFeedbackCause("trading-data-changed");
 					}
 					assertSessionIdentity(lockedSession, liveContextRef.current.clientKey, liveContextRef.current.env);
 					assertLivePositionReady(lockedSession, liveContextRef.current);
@@ -162,10 +171,10 @@ export function usePositionMarketCloseSubmit() {
 						pendingTwapState === "unavailable" ||
 						pendingOrderState === "unavailable"
 					) {
-						throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+						throw positionSubmitFeedbackCause("coordination-unavailable");
 					}
 					if (reservationState === "conflict" || pendingTwapState === "pending" || pendingOrderState === "pending") {
-						throw new Error(t`Another order for this market is still being confirmed.`);
+						throw positionSubmitFeedbackCause("blocked-market");
 					}
 
 					const currentMarket = liveContextRef.current.markets.getMarket(lockedSession.position.coin);
@@ -176,7 +185,7 @@ export function usePositionMarketCloseSubmit() {
 						refreshedSession.sessionId !== input.sessionId ||
 						refreshedSession.phase !== "validating"
 					) {
-						throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+						throw positionSubmitFeedbackCause("trading-data-changed");
 					}
 					assertSessionIdentity(refreshedSession, liveContextRef.current.clientKey, liveContextRef.current.env);
 					assertFreshSnapshotCompatibleWithLive(refreshedSession, fresh, liveContextRef.current);
@@ -185,7 +194,7 @@ export function usePositionMarketCloseSubmit() {
 						refreshedSession.position.dex,
 					);
 					if (!plannedLivePosition || !toBig(plannedLivePosition.szi)) {
-						throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+						throw positionSubmitFeedbackCause("trading-data-changed");
 					}
 					const closeResolution = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
 					assertPercentageCloseWithinLiveIntent(refreshedSession, plannedLivePosition.szi, closeResolution);
@@ -200,9 +209,7 @@ export function usePositionMarketCloseSubmit() {
 						slippageBps,
 					});
 					if (plan.errors.length > 0 || plan.orders.length !== 1) {
-						throw new Error(
-							plan.errors[0] ? getPositionMarketCloseErrorMessage(plan.errors[0]) : t`Failed to close position`,
-						);
+						throw new PositionSubmitFeedbackCause(getPositionMarketClosePlanFeedback(plan.errors[0]));
 					}
 					if (input.dismissFutureConfirmation) {
 						const preferenceStatus = dismissPositionMarketCloseConfirmation({
@@ -241,12 +248,12 @@ export function usePositionMarketCloseSubmit() {
 					);
 					if (submission.state === "blocked") {
 						actions.updatePhase(input.sessionId, "idle");
-						actions.setError(input.sessionId, t`Another order for this market is still being confirmed.`);
+						actions.setError(input.sessionId, localizedPositionSubmitFeedback("blocked-market"));
 						return;
 					}
 					if (submission.state === "reconciling") {
 						actions.updatePhase(input.sessionId, "reconciling");
-						actions.setError(input.sessionId, t`Order submitted. Confirming exchange status; do not retry.`);
+						actions.setError(input.sessionId, localizedPositionSubmitFeedback("reconciling-order"));
 						return;
 					}
 
@@ -254,7 +261,7 @@ export function usePositionMarketCloseSubmit() {
 					throwIfAnyResponseError(statuses);
 					const filledSize = getFilledSize(statuses);
 					if (!filledSize) {
-						throw new Error(t`Order submitted. Confirming exchange status; do not retry.`);
+						throw positionSubmitFeedbackCause("reconciling-order");
 					}
 					toast.success(t`Close order submitted`, {
 						description: formatToken(filledSize, {
@@ -267,17 +274,18 @@ export function usePositionMarketCloseSubmit() {
 				},
 			);
 			if (!lockResult.supported) {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw positionSubmitFeedbackCause("coordination-unavailable");
 			}
 			if (!lockResult.acquired) {
-				throw new Error(t`Another order for this market is still being confirmed.`);
+				throw positionSubmitFeedbackCause("blocked-market");
 			}
 		} catch (error) {
-			const message = error instanceof Error ? error.message : t`Failed to close position`;
+			const feedback = positionSubmitFeedbackFromCause(error, "failed-market-close");
+			const message = formatPositionSubmitFeedback(feedback, (descriptor) => i18n._(descriptor));
 			const activeSession = getPositionMarketCloseModal();
 			if (activeSession?.sessionId === input.sessionId) {
 				actions.updatePhase(input.sessionId, "idle");
-				actions.setError(input.sessionId, message);
+				actions.setError(input.sessionId, feedback.kind === "raw" ? feedback.message : feedback);
 			}
 			toast.error(message);
 		} finally {
@@ -296,7 +304,13 @@ export function usePositionMarketCloseSubmit() {
 		submit,
 		isPending: phase === "validating" || phase === "submitting",
 		isReconciling: phase === "reconciling",
-		error: sessionError ?? trackedOrder.error?.message ?? null,
+		error: sessionError
+			? typeof sessionError === "string"
+				? sessionError
+				: sessionError.kind === "order-reconciliation"
+					? formatOrderReconciliationError(sessionError.code, (descriptor) => i18n._(descriptor))
+					: formatPositionSubmitFeedback(sessionError, (descriptor) => i18n._(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
 		resetError,
 	};
 }
@@ -307,7 +321,7 @@ function assertSessionIdentity(
 	env: "Mainnet" | "Testnet",
 ): void {
 	if (clientKey === "disconnected" || clientKey.toLowerCase() !== session.owner || env !== session.env) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
@@ -323,14 +337,14 @@ function assertLivePositionReady(session: PositionMarketCloseSession, live: Live
 		market.szDecimals !== session.position.szDecimals ||
 		getPositionDex(market) !== session.position.dex
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 	assertMarketAssetBinding(session, market, market.ctxIndex);
 	if (market.kind === "builderPerp" && !hasAcceptedHip3Disclaimer()) {
-		throw new Error(t`Accept the HIP-3 deployer disclaimer before trading this market.`);
+		throw positionSubmitFeedbackCause("accept-hip3-market");
 	}
 	if (userPositions.isLoading || userPositions.hasError || userPositions.isStale) {
-		throw new Error(t`Failed to load positions.`);
+		throw positionSubmitFeedbackCause("failed-load-positions");
 	}
 	assertNoActiveTwap(session, live);
 
@@ -338,19 +352,19 @@ function assertLivePositionReady(session: PositionMarketCloseSession, live: Live
 	const currentSize = toBig(position?.szi);
 	const openedSize = toBig(session.position.signedPositionSize);
 	if (!position || !currentSize || currentSize.eq(0) || !openedSize || openedSize.eq(0)) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 	if (currentSize.gt(0) !== openedSize.gt(0)) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
 function assertNoActiveTwap(session: PositionMarketCloseSession, live: LiveContext): void {
 	if (live.activeTwaps.status !== "active" || live.activeTwaps.isStale || live.activeTwaps.data === undefined) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 	if (live.activeTwaps.data.states.some(([, state]) => state.coin === session.position.coin)) {
-		throw new Error(t`Another order for this market is still being confirmed.`);
+		throw positionSubmitFeedbackCause("blocked-market");
 	}
 }
 
@@ -369,7 +383,9 @@ function resolveCurrentCloseSize(
 					...input,
 					percent: session.sizingIntent.kind === "max" ? "100" : session.sizingIntent.value,
 				});
-	if (resolution.errors.length > 0) throw new Error(getPositionMarketCloseErrorMessage(resolution.errors[0]));
+	if (resolution.errors.length > 0) {
+		throw new PositionSubmitFeedbackCause(getPositionMarketClosePlanFeedback(resolution.errors[0]));
+	}
 	return resolution;
 }
 
@@ -392,7 +408,7 @@ function assertPercentageCloseWithinLiveIntent(
 		!liveIntentLimit ||
 		plannedCloseSize.gt(liveIntentLimit)
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
@@ -411,7 +427,7 @@ function assertFreshSnapshotCompatibleWithLive(
 		currentSize.gt(0) !== freshSize.gt(0) ||
 		currentPosition?.leverage.type !== fresh.marginMode
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
@@ -436,13 +452,13 @@ function assertLivePositionMatches(
 		currentSize.abs().lt(closeSize) ||
 		currentPosition?.leverage.type !== execution.marginMode
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
 function assertOrderMatchesExecution(params: ExchangeParams<"order">, execution: ExecutionContext): void {
 	if (params.grouping !== execution.grouping || params.orders.length !== 1) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 	const order = params.orders[0];
 	const expected = execution.expectedOrder;
@@ -454,7 +470,7 @@ function assertOrderMatchesExecution(params: ExchangeParams<"order">, execution:
 		order.r !== expected.r ||
 		JSON.stringify(order.t) !== JSON.stringify(expected.t)
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 
@@ -480,7 +496,7 @@ async function fetchFreshCloseSnapshot(
 		!context ||
 		!toBig(referencePx)?.gt(0)
 	) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 	assertMarketAssetBinding(session, expectedMarket, marketIndex);
 
@@ -495,7 +511,7 @@ async function fetchFreshCloseSnapshot(
 		openedPositionSize.eq(0) ||
 		signedPositionSize.gt(0) !== openedPositionSize.gt(0)
 	) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 
 	return {
@@ -512,7 +528,7 @@ function assertMarketAssetBinding(
 	contextIndex: number,
 ): void {
 	if (!market || market.ctxIndex !== contextIndex || market.kind === "spot") {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 	const parsedAssetId = parseAssetId(session.position.assetId);
 	const isValidMainPerp =
@@ -523,7 +539,7 @@ function assertMarketAssetBinding(
 		parsedAssetId.index === contextIndex &&
 		parsedAssetId.dexIndex === market.dexIndex;
 	if (!isValidMainPerp && !isValidBuilderPerp) {
-		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		throw positionSubmitFeedbackCause("trading-data-changed");
 	}
 }
 

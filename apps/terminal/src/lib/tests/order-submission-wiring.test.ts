@@ -25,11 +25,14 @@ describe("order submission wiring", () => {
 			.filter((path) => /useExchange\(\s*["']twapOrder["']\s*,/.test(readFileSync(path, "utf8")))
 			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""));
 		const cancellationMatches = sourceFiles
-			.filter((path) => readFileSync(path, "utf8").includes('useExchange("twapCancel")'))
+			.filter((path) => /useExchange\(\s*["']twapCancel["']\s*[,)]/.test(readFileSync(path, "utf8")))
 			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""));
 
 		expect(placementMatches).toEqual(["hooks/trade/use-tracked-twap-order.ts"]);
 		expect(cancellationMatches).toEqual(["hooks/trade/use-twap-cancel.ts"]);
+		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-twap-cancel.ts"), "utf8")).toContain(
+			"executionGuard: assertTwapCancelExecution",
+		);
 		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-tracked-twap-order.ts"), "utf8")).toContain(
 			'useExchange("twapOrder", { executionGuard: options.executionGuard })',
 		);

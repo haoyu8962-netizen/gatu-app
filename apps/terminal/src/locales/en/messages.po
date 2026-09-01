@@ -49,11 +49,8 @@ msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
 #. placeholder {0}: outcome.acceptedCount
-#. placeholder {0}: result.acceptedCount
 #. placeholder {1}: outcome.totalCount
-#. placeholder {1}: result.totalCount
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
 msgid "{0} of {1} close orders were accepted. Review positions before retrying."
 msgstr "{0} of {1} close orders were accepted. Review positions before retrying."
 
@@ -67,6 +64,10 @@ msgstr "{0} of {1} orders were accepted. Review open orders before retrying."
 #: src/components/referrals/referral-action-modal.tsx
 msgid "{0}/20 characters"
 msgstr "{0}/20 characters"
+
+#: src/lib/trade/position-submit-feedback.ts
+msgid "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying."
+msgstr "{acceptedCount} of {totalCount} close orders were accepted. Review positions before retrying."
 
 #: src/components/vaults/vaults-list.tsx
 msgid "{age} days"
@@ -98,12 +99,20 @@ msgstr "{FUNDING_HISTORY_WINDOW_DAYS}-day API window"
 #~ msgstr "{label} history"
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} over {periodLabel}. Latest value {latestValue}."
-msgstr "{label} over {periodLabel}. Latest value {latestValue}."
+#~ msgid "{label} over {periodLabel}. Latest value {latestValue}."
+#~ msgstr "{label} over {periodLabel}. Latest value {latestValue}."
 
 #: src/components/vaults/vault-performance-chart.tsx
-msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
-msgstr "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+#~ msgid "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+#~ msgstr "{label} over {periodLabel}. Latest value {latestValue}. {direction}."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value <0>{latestValue}</0>."
+msgstr "{label} over {periodLabel}. Latest value <0>{latestValue}</0>."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "{label} over {periodLabel}. Latest value <0>{latestValue}</0>. {direction}."
+msgstr "{label} over {periodLabel}. Latest value <0>{latestValue}</0>. {direction}."
 
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "{label} over {periodLabel}. No performance history."
@@ -327,7 +336,7 @@ msgstr "A staking link cannot be removed. The staking account gains full control
 msgid "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 msgstr "A trading connection is already being established in another tab. Finish or cancel it there before trying again."
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "A TWAP is active for one of these markets."
 msgstr "A TWAP is active for one of these markets."
 
@@ -347,13 +356,11 @@ msgstr "About this Vault"
 #~ msgid "Accept"
 #~ msgstr "Accept"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
 msgstr "Accept the HIP-3 deployer disclaimer before trading these markets."
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr "Accept the HIP-3 deployer disclaimer before trading this market."
 
@@ -406,7 +413,7 @@ msgstr "Account Margin Ratio"
 msgid "Account mode"
 msgstr "Account mode"
 
-#: src/hooks/trade/use-account-abstraction-guard.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Account mode changed before the request was submitted. Review balances and try again."
 msgstr "Account mode changed before the request was submitted. Review balances and try again."
 
@@ -487,13 +494,23 @@ msgstr "Actions"
 msgid "Activate DEX"
 msgstr "Activate DEX"
 
+#. placeholder {0}: triggerPx ?? ""
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Activates when mark ≤ {triggerPrice}"
-msgstr "Activates when mark ≤ {triggerPrice}"
+msgid "Activates when mark ≤ {0}"
+msgstr "Activates when mark ≤ {0}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Activates when mark ≥ {triggerPrice}"
-msgstr "Activates when mark ≥ {triggerPrice}"
+#~ msgid "Activates when mark ≤ {triggerPrice}"
+#~ msgstr "Activates when mark ≤ {triggerPrice}"
+
+#. placeholder {0}: triggerPx ?? ""
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Activates when mark ≥ {0}"
+msgstr "Activates when mark ≥ {0}"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#~ msgid "Activates when mark ≥ {triggerPrice}"
+#~ msgstr "Activates when mark ≥ {triggerPrice}"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "active"
@@ -765,8 +782,8 @@ msgstr "An account is excluded only when both its account value is below $100,00
 msgid "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 msgstr "An approved API wallet can sign delegated L1 actions such as placing and cancelling orders and adjusting leverage or margin mode. Approval is not scoped per action. Master-only actions, including external withdrawals, still require the master wallet."
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/hooks/trade/use-asset-leverage.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another action for this market is already in progress."
 msgstr "Another action for this market is already in progress."
 
@@ -792,29 +809,19 @@ msgid "Another mobile approval is being prepared for this wallet."
 msgstr "Another mobile approval is being prepared for this wallet."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for one of these markets is still being confirmed."
 msgstr "Another order for one of these markets is still being confirmed."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-order-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "Another order for this market is still being confirmed."
 
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Another TWAP order for this market is still being confirmed."
 msgstr "Another TWAP order for this market is still being confirmed."
 
@@ -1132,6 +1139,10 @@ msgstr "Balance"
 msgid "Balance available to trade"
 msgstr "Balance available to trade"
 
+#: src/lib/trade/funds-action-feedback.ts
+msgid "Balance changed before submission. Review the updated balance and try again."
+msgstr "Balance changed before submission. Review the updated balance and try again."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -1148,15 +1159,9 @@ msgstr "Balance data is stale. Actions are temporarily unavailable."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Balance data is unavailable. Try again after the connection recovers."
 msgstr "Balance data is unavailable. Try again after the connection recovers."
 
@@ -1393,11 +1398,11 @@ msgstr "Cancel selected orders"
 
 #: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Canceled"
 msgstr "Canceled"
 
@@ -1724,12 +1729,12 @@ msgstr "Close order modification"
 msgid "Close order submitted"
 msgstr "Close order submitted"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders rejected"
 msgstr "Close orders rejected"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close orders submitted. Confirming exchange status; do not retry."
 msgstr "Close orders submitted. Confirming exchange status; do not retry."
 
@@ -1742,10 +1747,12 @@ msgid "Close percentage"
 msgstr "Close percentage"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close percentage must be a decimal number"
 msgstr "Close percentage must be a decimal number"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close percentage must be between 0 and 100"
 msgstr "Close percentage must be between 0 and 100"
 
@@ -1783,23 +1790,23 @@ msgstr "Close Short"
 msgid "Close size"
 msgstr "Close size"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size exceeds current position"
 msgstr "Close size exceeds current position"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size is below market precision"
 msgstr "Close size is below market precision"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size must be a decimal number"
 msgstr "Close size must be a decimal number"
 
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Close size must be greater than zero"
 msgstr "Close size must be greater than zero"
 
@@ -2298,6 +2305,10 @@ msgstr "Continuing hands this verified public operation to the shared funds-acti
 msgid "Contract"
 msgstr "Contract"
 
+#: src/components/legal/document-chrome.tsx
+msgid "Cookie Policy"
+msgstr "Cookie Policy"
+
 #: src/components/api-wallet/api-wallet-copy-button.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2668,6 +2679,7 @@ msgstr "Deployer"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -3014,9 +3026,15 @@ msgstr "Do not submit another staking funds operation. The shared recovery panel
 msgid "Do not submit this operation again."
 msgstr "Do not submit this operation again."
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Docs"
 msgstr "Docs"
+
+#: src/components/legal/document-chrome.tsx
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Documentation and legal"
+msgstr "Documentation and legal"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/order-confirmation-modal.tsx
@@ -3111,7 +3129,6 @@ msgid "Enable Trading"
 msgstr "Enable Trading"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Enable trading and approve the builder fee on this desktop before linking a phone."
 msgstr "Enable trading and approve the builder fee on this desktop before linking a phone."
 
@@ -3148,8 +3165,7 @@ msgid "Enter a positive amount with up to 6 decimal places."
 msgstr "Enter a positive amount with up to 6 decimal places."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Enter a positive target leverage."
 msgstr "Enter a positive target leverage."
 
@@ -3202,10 +3218,9 @@ msgid "Enter code"
 msgstr "Enter code"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Enter limit price"
 msgstr "Enter limit price"
 
@@ -3492,7 +3507,7 @@ msgstr "failed"
 msgid "Failed"
 msgstr "Failed"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to build a close order"
 msgstr "Failed to build a close order"
 
@@ -3501,7 +3516,7 @@ msgstr "Failed to build a close order"
 msgid "Failed to cancel order."
 msgstr "Failed to cancel order."
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Failed to cancel TWAP order."
 msgstr "Failed to cancel TWAP order."
 
@@ -3510,8 +3525,7 @@ msgstr "Failed to cancel TWAP order."
 msgid "Failed to change language"
 msgstr "Failed to change language"
 
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to close position"
 msgstr "Failed to close position"
 
@@ -3616,10 +3630,7 @@ msgstr "Failed to load order history."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to load positions."
 msgstr "Failed to load positions."
 
@@ -3657,8 +3668,7 @@ msgstr "Failed to modify order."
 #~ msgstr "Failed to open deposit flow"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to place limit close order"
 msgstr "Failed to place limit close order"
 
@@ -3667,8 +3677,7 @@ msgstr "Failed to place limit close order"
 #~ msgstr "Failed to register builder code"
 
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to reverse position"
 msgstr "Failed to reverse position"
 
@@ -3677,7 +3686,7 @@ msgid "Failed to save share image"
 msgstr "Failed to save share image"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to submit close orders"
 msgstr "Failed to submit close orders"
 
@@ -3689,12 +3698,10 @@ msgstr "Failed to submit close orders"
 msgid "Failed to update account mode"
 msgstr "Failed to update account mode"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to update isolated margin"
 msgstr "Failed to update isolated margin"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "Failed to update TP/SL orders"
@@ -3721,6 +3728,10 @@ msgstr "Fee"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Fee Limits:"
 #~ msgstr "Fee Limits:"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Fee market for taker and maker rates"
+msgstr "Fee market for taker and maker rates"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Fee rate must be between 0.001% and 1%"
@@ -3939,6 +3950,7 @@ msgstr "Funding data could not be validated. Refresh and try again."
 #~ msgstr "Funding history pagination"
 
 #: src/components/funding-history/funding-history-page.tsx
+#: src/components/funding-history/funding-history-page.tsx
 msgid "Funding payments"
 msgstr "Funding payments"
 
@@ -3982,6 +3994,7 @@ msgid "Funds actions are not available in your region."
 msgstr "Funds actions are not available in your region."
 
 #: src/hooks/trade/use-funds-action-availability.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Funds actions are not available in your region. This funds action was not submitted."
 msgstr "Funds actions are not available in your region. This funds action was not submitted."
 
@@ -4222,7 +4235,6 @@ msgstr "Hyperliquid may return only a subset of depositors."
 msgid "Hyperliquid rejected the request"
 msgstr "Hyperliquid rejected the request"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 msgstr "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -4687,9 +4699,7 @@ msgstr "Live position data is stale. Wait for the account connection to recover.
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 
@@ -5140,6 +5150,10 @@ msgstr "Market close confirmation could not be restored in this browser."
 msgid "Market close confirmation restored."
 msgstr "Market close confirmation restored."
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
+msgid "Market data views"
+msgstr "Market data views"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Market metadata changed. Refresh and try again."
@@ -5303,6 +5317,12 @@ msgstr "Min price must be below trigger price"
 msgid "Minimum"
 msgstr "Minimum"
 
+#. placeholder {0}: formattedHistorySummary.minimum
+#. placeholder {1}: formattedHistorySummary.maximum
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Minimum <0>{0}</0>; maximum <1>{1}</1>."
+msgstr "Minimum <0>{0}</0>; maximum <1>{1}</1>."
+
 #. placeholder {0}: ctx.minDeposit
 #: src/lib/errors/definitions/deposit.ts
 msgid "Minimum deposit is {0} USDC"
@@ -5345,7 +5365,6 @@ msgstr "Minute(s)"
 msgid "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
 msgstr "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Mobile QR creation is temporarily unavailable."
 msgstr "Mobile QR creation is temporarily unavailable."
@@ -5555,16 +5574,14 @@ msgstr "Next Vault page"
 msgid "No"
 msgstr "No"
 
+#: src/lib/trade/order-submission-feedback.ts
+msgid "No active Hyperliquid account"
+msgstr "No active Hyperliquid account"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "No active positions."
 msgstr "No active positions."
 
@@ -5791,6 +5808,10 @@ msgstr "No ordinary orders found."
 #: src/components/vaults/vault-performance-chart.tsx
 msgid "No performance history"
 msgstr "No performance history"
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "No performance history is available for the selected period."
+msgstr "No performance history is available for the selected period."
 
 #: src/components/vaults/vault-performance-chart.tsx
 #~ msgid "No PNL change"
@@ -6099,8 +6120,6 @@ msgid "Open orders are refreshing. Wait for live data and try again."
 msgstr "Open orders are refreshing. Wait for live data and try again."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open orders changed. Reopen the confirmation and try again."
 msgstr "Open orders changed. Reopen the confirmation and try again."
@@ -6218,7 +6237,7 @@ msgid "Order confirmed by the exchange."
 msgstr "Order confirmed by the exchange."
 
 #: src/config/ui-text.ts
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Order failed"
 msgstr "Order failed"
 
@@ -6226,6 +6245,7 @@ msgstr "Order failed"
 msgid "Order filled"
 msgstr "Order filled"
 
+#: src/components/historical-orders/historical-orders-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history"
 msgstr "Order history"
@@ -6252,8 +6272,7 @@ msgid "Order history will load automatically when the connection returns."
 msgstr "Order history will load automatically when the connection returns."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Order market context does not match the submitted asset."
 msgstr "Order market context does not match the submitted asset."
 
@@ -6283,15 +6302,7 @@ msgstr "Order submitted"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Order submitted. Confirming exchange status; do not retry."
 
@@ -6527,6 +6538,7 @@ msgid "Perps"
 msgstr "Perps"
 
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Perps / Spot"
@@ -6694,6 +6706,10 @@ msgstr "Popular"
 msgid "Portfolio"
 msgstr "Portfolio"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio account scope"
+msgstr "Portfolio account scope"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio history"
 msgstr "Portfolio history"
@@ -6713,6 +6729,10 @@ msgstr "Portfolio Margin"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
 msgstr "Portfolio performance"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio performance period"
+msgstr "Portfolio performance period"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio summary"
@@ -6772,12 +6792,13 @@ msgstr "Position margin"
 msgid "Position reversed — {marketLabel}"
 msgstr "Position reversed — {marketLabel}"
 
-#: src/hooks/trade/use-position-reverse-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Position size is below market precision"
 msgstr "Position size is below market precision"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Position size must be a non-zero number"
 msgstr "Position size must be a non-zero number"
 
@@ -6805,7 +6826,7 @@ msgstr "Position Value"
 msgid "Positions"
 msgstr "Positions"
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "Positions changed while this confirmation was open. Close and reopen it before submitting."
 
@@ -6941,6 +6962,7 @@ msgstr "Price precision"
 msgid "Price: Market"
 msgstr "Price: Market"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -6951,6 +6973,7 @@ msgstr "Primary navigation"
 msgid "Priority Gas Auction Fee"
 msgstr "Priority Gas Auction Fee"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
@@ -7238,6 +7261,10 @@ msgstr "Referral activation progress"
 msgid "Referral activity"
 msgstr "Referral activity"
 
+#: src/components/referrals/referral-activity.tsx
+msgid "Referral activity views"
+msgstr "Referral activity views"
+
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/referrals/referral-code-card.tsx
 msgid "Referral code"
@@ -7370,6 +7397,10 @@ msgstr "Refreshing…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "Rejected"
+
+#: src/components/pages/application-error-page.tsx
+msgid "Reload terminal"
+msgstr "Reload terminal"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Remaining"
@@ -7729,6 +7760,7 @@ msgstr "Rewards claimed"
 msgid "Rewards compound automatically"
 msgstr "Rewards compound automatically"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Risk Disclosure"
 msgstr "Risk Disclosure"
@@ -7781,30 +7813,13 @@ msgstr "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
 msgid "Runtime"
 msgstr "Runtime"
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Safe action coordination across tabs is unavailable in this browser."
 msgstr "Safe action coordination across tabs is unavailable in this browser."
 
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-close-all-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-twap-cancel.ts
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Safe order coordination across tabs is unavailable in this browser."
 msgstr "Safe order coordination across tabs is unavailable in this browser."
 
@@ -8102,6 +8117,7 @@ msgstr "Sell / Short"
 msgid "Sell Short"
 msgstr "Sell Short"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -8420,6 +8436,7 @@ msgstr "Size cannot exceed the order's remaining size."
 #~ msgstr "Size per Suborder"
 
 #: src/lib/trade/position-market-close-errors.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Size precision must be a non-negative integer"
 msgstr "Size precision must be a non-negative integer"
 
@@ -8500,10 +8517,11 @@ msgid "Some order markets are unavailable. Refresh and try again."
 msgstr "Some order markets are unavailable. Refresh and try again."
 
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "Some orders were accepted. Review open orders before retrying."
 
+#: src/components/pages/application-error-page.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
@@ -8619,6 +8637,10 @@ msgid "Staking"
 msgstr "Staking"
 
 #: src/components/staking/staking-view.tsx
+msgid "Staking action history table"
+msgstr "Staking action history table"
+
+#: src/components/staking/staking-view.tsx
 msgid "Staking action history unavailable"
 msgstr "Staking action history unavailable"
 
@@ -8635,6 +8657,10 @@ msgid "Staking deposit"
 msgstr "Staking deposit"
 
 #: src/components/staking/staking-view.tsx
+msgid "Staking detail views"
+msgstr "Staking detail views"
+
+#: src/components/staking/staking-view.tsx
 msgid "Staking details"
 msgstr "Staking details"
 
@@ -8649,6 +8675,10 @@ msgstr "Staking rewards"
 #: src/components/staking/staking-view.tsx
 msgid "Staking rewards accrue every minute, are distributed daily, and are automatically redelegated. There is no separate staking reward collection action."
 msgstr "Staking rewards accrue every minute, are distributed daily, and are automatically redelegated. There is no separate staking reward collection action."
+
+#: src/components/staking/staking-view.tsx
+msgid "Staking rewards table"
+msgstr "Staking rewards table"
 
 #: src/components/staking/staking-view.tsx
 msgid "Staking to Spot"
@@ -8694,6 +8724,12 @@ msgstr "Started"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "Starting camera..."
+
+#. placeholder {0}: formattedHistorySummary.start
+#. placeholder {1}: formattedHistorySummary.end
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "Starts at <0>{0}</0> and ends at <1>{1}</1>."
+msgstr "Starts at <0>{0}</0> and ends at <1>{1}</1>."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Starts the approximately five-minute Testnet transfer queue from staking balance to Spot."
@@ -8849,6 +8885,7 @@ msgstr "Successful"
 msgid "Supply"
 msgstr "Supply"
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Support"
 msgstr "Support"
@@ -8869,6 +8906,7 @@ msgstr "Swap direction"
 msgid "Swap failed"
 msgstr "Swap failed"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap Stablecoins"
@@ -9110,7 +9148,7 @@ msgid "Target Leverage"
 msgstr "Target Leverage"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Target leverage must be below the current effective leverage to add margin."
 msgstr "Target leverage must be below the current effective leverage to add margin."
 
@@ -9129,6 +9167,7 @@ msgstr "Terminate TWAP order"
 msgid "Terminating..."
 msgstr "Terminating..."
 
+#: src/components/legal/document-chrome.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Terms"
 msgstr "Terms"
@@ -9156,7 +9195,7 @@ msgstr "Testnet preview; market link disabled"
 msgid "Testnet queue: approximately five minutes"
 msgstr "Testnet queue: approximately five minutes"
 
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "The account activation fee changed before signing. Review the updated fee and try again."
 msgstr "The account activation fee changed before signing. Review the updated fee and try again."
 
@@ -9193,7 +9232,6 @@ msgid "The approval could not be rechecked. The QR remains hidden until read-onl
 msgstr "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 
@@ -9226,9 +9264,7 @@ msgstr "The Arbitrum transaction was submitted, but its final status could not b
 #~ msgstr "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
 msgstr "The cancellation response could not be confirmed. Refresh open orders before retrying."
@@ -9253,27 +9289,25 @@ msgstr "The connection could not be completed. It may already be approved; wait 
 msgid "The exact name and public address are now present in fresh extraAgents data."
 msgstr "The exact name and public address are now present in fresh extraAgents data."
 
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept every order."
 msgstr "The exchange did not accept every order."
 
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept the order."
 msgstr "The exchange did not accept the order."
 
-#: src/components/trade/twap-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not accept the TWAP order."
 msgstr "The exchange did not accept the TWAP order."
 
-#: src/components/trade/order-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
 msgstr "The exchange did not return a final order status. Review open orders and positions before retrying."
 
-#: src/components/trade/twap-reconciliation.tsx
+#: src/lib/trade/order-reconciliation-feedback.ts
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 
@@ -9301,8 +9335,8 @@ msgstr "The history response could not be verified."
 msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
 msgstr "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/lib/trade/funds-action-feedback.ts
 msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 msgstr "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
 
@@ -9310,7 +9344,7 @@ msgstr "The Hyperliquid withdrawal route changed. Review the updated route and f
 msgid "The leader receives the commission shown above from profits."
 msgstr "The leader receives the commission shown above from profits."
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "The margin update may have been applied. Refresh position data before trying again."
 
@@ -9353,9 +9387,7 @@ msgid "The order is still being confirmed."
 msgstr "The order is still being confirmed."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
 msgstr "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
@@ -9418,7 +9450,6 @@ msgid "The recent trade snapshot could not be loaded or validated."
 msgstr "The recent trade snapshot could not be loaded or validated."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 msgstr "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
 
@@ -9468,8 +9499,7 @@ msgid "The selected Hyperliquid environment returned a definitive empty Vault li
 msgstr "The selected Hyperliquid environment returned a definitive empty Vault list."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
 msgstr "The selected market changed. Reopen the margin dialog before adjusting margin."
 
@@ -9485,6 +9515,10 @@ msgstr "The signed request has been submitted. Keep this window open."
 msgid "The signed request may have succeeded, but reconciliation timed out. Do not submit it again; verify against fresh extraAgents data. Closing before verification discards the local key."
 msgstr "The signed request may have succeeded, but reconciliation timed out. Do not submit it again; verify against fresh extraAgents data. Closing before verification discards the local key."
 
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The start and end values are unchanged."
+msgstr "The start and end values are unchanged."
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -9496,6 +9530,10 @@ msgstr "The signed request may have succeeded, but reconciliation timed out. Do 
 #: src/routes/mobile-agent-sync.tsx
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
+
+#: src/components/pages/application-error-page.tsx
+msgid "The terminal could not continue safely. Reload it before trading."
+msgstr "The terminal could not continue safely. Reload it before trading."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "The terms could not be accepted. Confirm the request in the selected wallet and try again."
@@ -9511,7 +9549,7 @@ msgstr "The trading account or network changed. Reopen the confirmation and try 
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "The trading account or network changed. Reopen the editor and try again."
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "The trading account or network changed. Review active TWAP orders before retrying."
 
@@ -9519,6 +9557,14 @@ msgstr "The trading account or network changed. Review active TWAP orders before
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trigger price is invalid for this order direction."
 msgstr "The trigger price is invalid for this order direction."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The value decreased overall."
+msgstr "The value decreased overall."
+
+#: src/components/vaults/vault-performance-chart.tsx
+msgid "The value increased overall."
+msgstr "The value increased overall."
 
 #: src/components/leaderboard/leaderboard-view.tsx
 msgid "The verified dataset did not contain an eligible account for this network."
@@ -9578,16 +9624,9 @@ msgstr "This action cannot be undone after execution."
 #~ msgstr "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer active."
 msgstr "This approval recovery is no longer active."
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer available."
 msgstr "This approval recovery is no longer available."
@@ -9608,7 +9647,7 @@ msgstr "This browser cannot safely coordinate the trading connection across tabs
 msgid "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 msgstr "This browser no longer has the exact trading key for the pending approval. Reset the trading connection before trying again."
 
-#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
 msgstr "This close-all preview expired. Close and reopen it to review current values."
 
@@ -9694,7 +9733,7 @@ msgstr "This is the legacy earned-reward history. Current claims are shown in th
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This isolated position is no longer open."
 msgstr "This isolated position is no longer open."
 
@@ -9728,7 +9767,6 @@ msgstr "This mobile trading key has expired."
 msgid "This one-time QR closes automatically within 60 seconds."
 msgstr "This one-time QR closes automatically within 60 seconds."
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This one-time QR could not be created. Try revealing a new QR."
 msgstr "This one-time QR could not be created. Try revealing a new QR."
@@ -9771,7 +9809,7 @@ msgid "This position changed sides. Close and reopen this dialog before submitti
 msgstr "This position changed sides. Close and reopen this dialog before submitting."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "This position changed sides. Reopen the margin dialog before adjusting margin."
 
@@ -9781,7 +9819,7 @@ msgid "This position is no longer open."
 msgstr "This position is no longer open."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This position is no longer using isolated margin."
 msgstr "This position is no longer using isolated margin."
 
@@ -9833,7 +9871,7 @@ msgid "This staking account controls trading account {0}."
 msgstr "This staking account controls trading account {0}."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/lib/trade/position-submit-feedback.ts
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "This strict isolated market does not allow margin to be removed from an open position."
 
@@ -10103,6 +10141,7 @@ msgstr "Trade"
 #~ msgstr "Trade ClockCounterClockwise"
 
 #: src/components/trade-history/trade-history-page.tsx
+#: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history"
 msgstr "Trade history"
 
@@ -10190,48 +10229,17 @@ msgid "Trading connection could not be reset."
 msgstr "Trading connection could not be reset."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Trading data changed before the order modification could be submitted."
 msgstr "Trading data changed before the order modification could be submitted."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-position-limit-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/lib/trade/position-submit-feedback.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "Trading data changed while this dialog was open. Close and reopen it before submitting."
 
@@ -10444,7 +10452,7 @@ msgid "TWAP cancellation was not confirmed. Review active TWAP orders before ret
 msgstr "TWAP cancellation was not confirmed. Review active TWAP orders before retrying."
 
 #: src/components/trade/twap-reconciliation.tsx
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 
@@ -10475,7 +10483,7 @@ msgstr "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgid "TWAP order confirmed by the exchange."
 msgstr "TWAP order confirmed by the exchange."
 
-#: src/hooks/trade/use-order-submit.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "TWAP order state is still loading. Please retry in a moment."
 msgstr "TWAP order state is still loading. Please retry in a moment."
 
@@ -10532,7 +10540,7 @@ msgstr "Type"
 #~ msgid "Unable to close position."
 #~ msgstr "Unable to close position."
 
-#: src/hooks/trade/use-twap-cancel.ts
+#: src/lib/trade/order-submission-feedback.ts
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "Unable to identify this TWAP market. Refresh market data before retrying."
 
@@ -10588,6 +10596,7 @@ msgstr "Unable to verify regional availability. This deposit was not submitted."
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/lifi/use-bridge.ts
 #: src/lib/lifi/use-bridge.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "Unable to verify regional availability. This funds action was not submitted."
 
@@ -10606,7 +10615,7 @@ msgstr "Unable to verify regional availability. Vault actions are temporarily un
 msgid "Unable to verify the CCTP authorization."
 msgstr "Unable to verify the CCTP authorization."
 
-#: src/hooks/trade/use-account-abstraction-guard.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current account mode. Request was not submitted."
 msgstr "Unable to verify the current account mode. Request was not submitted."
 
@@ -10636,9 +10645,8 @@ msgstr "Unable to verify the current Hyperliquid deposit route. Deposit was not 
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid withdrawal route."
 msgstr "Unable to verify the current Hyperliquid withdrawal route."
 
@@ -10646,7 +10654,7 @@ msgstr "Unable to verify the current Hyperliquid withdrawal route."
 msgid "Unable to verify withdrawal eligibility."
 msgstr "Unable to verify withdrawal eligibility."
 
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."
 msgstr "Unable to verify withdrawal eligibility. Request was not submitted."
 
@@ -10658,6 +10666,10 @@ msgstr "Unable to verify withdrawal eligibility. Request was not submitted."
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "Unavailable"
+
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Unavailable actions"
+msgstr "Unavailable actions"
 
 #: src/components/referrals/referral-rewards-card.tsx
 msgid "Unclaimed"
@@ -10927,6 +10939,10 @@ msgstr "Validator performance"
 #: src/components/staking/staking-view.tsx
 msgid "Validator performance period"
 msgstr "Validator performance period"
+
+#: src/components/staking/staking-view.tsx
+msgid "Validator performance table"
+msgstr "Validator performance table"
 
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 #: src/components/api-wallet/api-wallet-form.tsx
@@ -11287,6 +11303,7 @@ msgstr "will arrive in {0}"
 
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -11381,7 +11398,7 @@ msgid "Withdrawal unlocked"
 msgstr "Withdrawal unlocked"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/domain/trade/pre-transfer-check.ts
+#: src/lib/trade/funds-action-feedback.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "Withdrawals are unavailable for this address."
 

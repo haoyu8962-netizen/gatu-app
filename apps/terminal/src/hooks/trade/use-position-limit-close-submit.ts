@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import type { ExchangeOrder } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
@@ -14,6 +14,16 @@ import {
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
+import {
+	formatPositionSubmitFeedback,
+	formatTrackedPositionSubmitError,
+	localizedPositionSubmitFeedback,
+	localizePositionSubmitFeedbackCause,
+	type PositionSubmitFeedback,
+	PositionSubmitFeedbackCause,
+	positionSubmitFeedbackCause,
+	positionSubmitFeedbackFromCause,
+} from "@/lib/trade/position-submit-feedback";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 
 export interface PositionLimitCloseTarget {
@@ -67,11 +77,12 @@ interface LiveContext {
  * switch cannot silently redirect an already-open confirmation.
  */
 export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
+	const { i18n } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
 	const [phase, setPhaseState] = useState<PositionLimitCloseSubmitPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<PositionSubmitFeedback | null>(null);
 	const phaseRef = useRef<PositionLimitCloseSubmitPhase>("idle");
 	const targetRef = useRef(target);
 	const liveContextRef = useRef<LiveContext>({ clientKey, env, markets, userPositions });
@@ -117,9 +128,11 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 
 		const requestedPrice = toBig(input.price);
 		const requestedSize = toBig(input.size);
-		if (!requestedPrice || requestedPrice.lte(0)) return failBeforeSubmission(t`Enter limit price`);
+		if (!requestedPrice || requestedPrice.lte(0)) {
+			return failBeforeSubmission(localizedPositionSubmitFeedback("enter-limit-price"));
+		}
 		if (!requestedSize || requestedSize.lte(0)) {
-			return failBeforeSubmission(t`Close size must be greater than zero`);
+			return failBeforeSubmission(localizedPositionSubmitFeedback("close-size-positive"));
 		}
 
 		setPhase("validating");
@@ -155,7 +168,7 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 				price: input.price,
 			});
 			if (plan.errors.length > 0 || plan.orders.length !== 1) {
-				throw new Error(getLimitClosePlanErrorMessage(plan.errors[0]));
+				throw new PositionSubmitFeedbackCause(getLimitClosePlanError(plan.errors[0]));
 			}
 
 			const order = plan.orders[0];
@@ -181,12 +194,12 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			);
 			if (outcome.state === "blocked") {
 				setPhase("idle");
-				setError(t`Another order for this market is still being confirmed.`);
+				setError(localizedPositionSubmitFeedback("blocked-market"));
 				return outcome;
 			}
 			if (outcome.state === "reconciling") {
 				setPhase("reconciling");
-				setError(t`Order submitted. Confirming exchange status; do not retry.`);
+				setError(localizedPositionSubmitFeedback("reconciling-order"));
 				return outcome;
 			}
 
@@ -194,18 +207,20 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 			setPhase("idle");
 			return outcome;
 		} catch (cause) {
-			const message = cause instanceof Error ? cause.message : t`Failed to place limit close order`;
+			const submitError = positionSubmitFeedbackFromCause(cause, "failed-limit-close");
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
 			setPhase("idle");
-			setError(message);
-			throw cause instanceof Error ? cause : new Error(message);
+			setError(submitError);
+			throw localizePositionSubmitFeedbackCause(cause, submitError, message);
 		} finally {
 			executionContextRef.current = null;
 		}
 	}
 
-	function failBeforeSubmission(message: string): never {
-		setError(message);
-		throw new Error(message);
+	function failBeforeSubmission(submitError: PositionSubmitFeedback): never {
+		const message = formatPositionSubmitFeedback(submitError, (descriptor) => i18n._(descriptor));
+		setError(submitError);
+		throw new PositionSubmitFeedbackCause(submitError, message);
 	}
 
 	function resetError(): void {
@@ -219,7 +234,9 @@ export function usePositionLimitCloseSubmit(target: PositionLimitCloseTarget) {
 		phase,
 		isPending: phase === "validating" || phase === "submitting" || trackedOrder.isPending,
 		isReconciling: phase === "reconciling",
-		error: error ?? trackedOrder.error?.message ?? null,
+		error: error
+			? formatPositionSubmitFeedback(error, (descriptor) => i18n._(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => i18n._(descriptor)),
 		resetError,
 	};
 }
@@ -250,10 +267,10 @@ function assertLivePositionReady(
 	}
 	assertMarketAssetBinding(target, market, market.ctxIndex);
 	if (market.kind === "builderPerp" && !hasAcceptedHip3Disclaimer()) {
-		throw new Error(t`Accept the HIP-3 deployer disclaimer before trading this market.`);
+		throw positionSubmitFeedbackCause("accept-hip3-market");
 	}
 	if (live.userPositions.isLoading || live.userPositions.hasError || live.userPositions.isStale) {
-		throw new Error(t`Failed to load positions.`);
+		throw positionSubmitFeedbackCause("failed-load-positions");
 	}
 
 	const position = live.userPositions.getPosition(target.coin, target.dex);
@@ -261,11 +278,11 @@ function assertLivePositionReady(
 	const openedSize = toBig(target.signedPositionSize);
 	const requestedSize = toBig(closeSize);
 	if (!position || !currentSize || currentSize.eq(0) || !openedSize || openedSize.eq(0)) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 	if (currentSize.gt(0) !== openedSize.gt(0)) throw tradingDataChangedError();
 	if (!requestedSize || requestedSize.lte(0) || requestedSize.gt(currentSize.abs())) {
-		throw new Error(t`Close size exceeds current position`);
+		throw positionSubmitFeedbackCause("close-size-exceeds-position");
 	}
 	if (position.leverage.type !== expectedMarginMode) throw tradingDataChangedError();
 }
@@ -318,7 +335,7 @@ async function fetchFreshPositionSnapshot(
 		openedPositionSize.eq(0) ||
 		signedPositionSize.gt(0) !== openedPositionSize.gt(0)
 	) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 
 	return {
@@ -374,19 +391,19 @@ function getTargetKey(target: PositionLimitCloseTarget): string {
 }
 
 function tradingDataChangedError(): Error {
-	return new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+	return positionSubmitFeedbackCause("trading-data-changed");
 }
 
-function getLimitClosePlanErrorMessage(error: string | undefined): string {
+function getLimitClosePlanError(error: string | undefined): PositionSubmitFeedback {
 	switch (error) {
 		case "Close size is below market precision":
-			return t`Close size is below market precision`;
+			return localizedPositionSubmitFeedback("close-size-below-precision");
 		case "Close size must be greater than zero":
-			return t`Close size must be greater than zero`;
+			return localizedPositionSubmitFeedback("close-size-positive");
 		case "Limit price is below market precision":
 		case "Limit price must be greater than zero":
-			return t`Enter limit price`;
+			return localizedPositionSubmitFeedback("enter-limit-price");
 		default:
-			return t`Failed to place limit close order`;
+			return localizedPositionSubmitFeedback("failed-limit-close");
 	}
 }

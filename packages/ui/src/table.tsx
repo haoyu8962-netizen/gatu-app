@@ -40,14 +40,62 @@ const tableCellVariants = cva(["align-middle text-fg-muted"], {
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {
 	containerClassName?: string;
+	scrollableRegionLabel?: string;
 }
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-	({ className, containerClassName, variant, ...props }, ref) => (
-		<div className={cn("w-full overflow-x-auto", containerClassName)}>
-			<table className={cn(tableVariants({ variant, className }))} ref={ref} {...props} />
-		</div>
-	),
+	({ className, containerClassName, scrollableRegionLabel, variant, ...props }, ref) => {
+		const containerRef = React.useRef<HTMLDivElement>(null);
+		const tableRef = React.useRef<HTMLTableElement>(null);
+		const [isHorizontallyScrollable, setIsHorizontallyScrollable] = React.useState(false);
+		const setTableRef = React.useCallback(
+			(node: HTMLTableElement | null) => {
+				tableRef.current = node;
+				if (typeof ref === "function") ref(node);
+				else if (ref) ref.current = node;
+			},
+			[ref],
+		);
+
+		React.useEffect(() => {
+			const container = containerRef.current;
+			if (!container || !scrollableRegionLabel) return;
+
+			const updateScrollableState = () => {
+				const next = container.scrollWidth > container.clientWidth;
+				setIsHorizontallyScrollable((current) => (current === next ? current : next));
+			};
+
+			updateScrollableState();
+			if (typeof ResizeObserver === "undefined") return;
+
+			const observer = new ResizeObserver(updateScrollableState);
+			observer.observe(container);
+			if (tableRef.current) observer.observe(tableRef.current);
+			return () => observer.disconnect();
+		}, [scrollableRegionLabel]);
+
+		const exposesScrollableRegion = Boolean(scrollableRegionLabel && isHorizontallyScrollable);
+		const scrollRegionProps: React.HTMLAttributes<HTMLDivElement> = exposesScrollableRegion
+			? { "aria-label": scrollableRegionLabel, role: "region", tabIndex: 0 }
+			: {};
+
+		return (
+			<div
+				ref={containerRef}
+				data-slot="table-scroll-container"
+				{...scrollRegionProps}
+				className={cn(
+					"w-full overflow-x-auto",
+					scrollableRegionLabel &&
+						"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+					containerClassName,
+				)}
+			>
+				<table className={cn(tableVariants({ variant, className }))} ref={setTableRef} {...props} />
+			</div>
+		);
+	},
 );
 Table.displayName = "Table";
 

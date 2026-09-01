@@ -1,9 +1,9 @@
 import { Checkbox } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
-import { formatTwapPriceInput, getTwapTriggerDirection, type TwapTriggerDirection } from "@/domain/trade/twap-details";
+import { formatTwapPriceInput, getTwapTriggerDirection } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
@@ -52,13 +52,8 @@ function clamp(n: number, min: number, max: number): number {
 	return Math.min(Math.max(n, min), max);
 }
 
-function getTriggerHintText(direction: TwapTriggerDirection | null, triggerPrice: string): string {
-	if (direction === "above") return t`Activates when mark ≥ ${triggerPrice}`;
-	if (direction === "below") return t`Activates when mark ≤ ${triggerPrice}`;
-	return "";
-}
-
 export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szDecimals, compact, mobileSafe }: Props) {
+	const { t } = useLingui();
 	const triggerFieldId = useId();
 	const stopFieldId = useId();
 	const twapMinutesNum = useTwapMinutes();
@@ -71,7 +66,13 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 	const minutes = twapMinutesNum - hours * 60;
 	const stopPriceLabel = getTwapStopPriceLabel(side);
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
-	const triggerHint = getTriggerHintText(getTwapTriggerDirection(triggerPx, markPx), triggerPx ?? "");
+	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
+	const triggerHint =
+		triggerDirection === "above"
+			? t`Activates when mark ≥ ${triggerPx ?? ""}`
+			: triggerDirection === "below"
+				? t`Activates when mark ≤ ${triggerPx ?? ""}`
+				: "";
 	const hoursLabel = t`Hour(s)`;
 	const minutesLabel = t`Minute(s)`;
 	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass);

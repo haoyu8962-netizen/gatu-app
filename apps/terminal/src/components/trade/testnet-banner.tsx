@@ -1,11 +1,12 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { WarningIcon } from "@phosphor-icons/react";
 import { APP_BANNER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { useGlobalSettingsActions, useIsTestnet } from "@/stores/use-global-settings-store";
 
 export function TestnetBanner() {
+	const { t } = useLingui();
 	const isTestnet = useIsTestnet();
 	const { setNetwork } = useGlobalSettingsActions();
 

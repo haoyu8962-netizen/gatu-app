@@ -1,5 +1,7 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -58,6 +60,19 @@ const unsafeTriggerOrder = {
 	triggerCondition: "Price above 170",
 	triggerPx: "170",
 } as OpenOrder;
+
+const MODIFICATION_UNCONFIRMED_MESSAGE =
+	"The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.";
+const MODIFICATION_UNCONFIRMED_MESSAGE_AR =
+	"لم تؤكد البيانات المباشرة تحديث الطلب. حدّث الطلبات قبل إعادة المحاولة؛ ولا يزال الإلغاء متاحاً.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(MODIFICATION_UNCONFIRMED_MESSAGE)]: MODIFICATION_UNCONFIRMED_MESSAGE_AR,
+};
 
 vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: React.ReactNode }) => children,
@@ -164,6 +179,7 @@ describe("mobile order modification", () => {
 	});
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		getPendingTradingActionActions().reset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -321,6 +337,34 @@ describe("mobile order modification", () => {
 		act(() => close?.click());
 		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
 		expect(findButton("Cancel", container)?.disabled).toBe(false);
+	});
+
+	it("retranslates an existing reconciliation error when the locale changes", async () => {
+		const { size } = openEditor();
+		await act(async () => {
+			if (!size) return;
+			changeInput(size, "1.500");
+			pressKey(size, "Enter");
+			await Promise.resolve();
+		});
+		const pendingModification = getPendingTradingActionSnapshot().modifications[0];
+		await act(async () => {
+			if (pendingModification) {
+				getPendingTradingActionActions().markModificationUnconfirmed(pendingModification.id);
+			}
+			await Promise.resolve();
+		});
+
+		const alert = document.body.querySelector('[role="alert"]');
+		expect(alert?.textContent).toContain(MODIFICATION_UNCONFIRMED_MESSAGE);
+
+		act(() => {
+			i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
+		});
+
+		expect(alert?.textContent).toContain(MODIFICATION_UNCONFIRMED_MESSAGE_AR);
+		expect(alert?.textContent).not.toContain(MODIFICATION_UNCONFIRMED_MESSAGE);
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
 	});
 
 	it("releases a modification when a transport-shaped error happens before the SDK boundary", async () => {

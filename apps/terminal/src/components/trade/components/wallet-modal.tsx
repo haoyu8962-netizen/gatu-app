@@ -286,7 +286,7 @@ function MobileWalletChooser({
 							size="md"
 							className="w-full"
 							onClick={() => setView("choice")}
-							iconLeft={<ArrowLeftIcon className="size-4" aria-hidden />}
+							iconLeft={<ArrowLeftIcon className="size-4 rtl:rotate-180" aria-hidden />}
 						>
 							<Trans>Back</Trans>
 						</Button>

@@ -1,5 +1,5 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +38,7 @@ const historyFooterButtonClass =
 	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 export function HistoryTab() {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const { address } = useWalletSession();

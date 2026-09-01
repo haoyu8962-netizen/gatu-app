@@ -1,5 +1,5 @@
 import { Select } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import type { LimitTif } from "@/config/trade";
 import { cn } from "@/lib/cn";
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
+	const { t } = useLingui();
 	const tif = useTif();
 	const { setTif } = useOrderEntryActions();
 

@@ -3,14 +3,16 @@ import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
+import { DashboardShellSkeleton } from "@/components/dashboard/dashboard-shell-skeleton";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
+import { isRtlLocale } from "@/config/i18n";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { createLazyComponent } from "@/lib/lazy";
 import { buildRootHead } from "@/lib/seo";
-import { isDocumentRoutePath, useClientRuntimeReady } from "@/providers/client-runtime";
+import { getAppRouteSurface, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
@@ -54,30 +56,41 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootComponent() {
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
-	const isDocumentRoute = isDocumentRoutePath(pathname);
+	const routeSurface = getAppRouteSurface(pathname);
 
 	useEffect(() => {
 		registerServiceWorker();
 	}, []);
 
-	if (isDocumentRoute) return <Outlet />;
+	if (routeSurface === "document") {
+		return (
+			<ApplicationErrorBoundary>
+				<Outlet />
+				<Suspense fallback={null}>
+					<Toaster />
+				</Suspense>
+			</ApplicationErrorBoundary>
+		);
+	}
+
+	const fallback = routeSurface === "terminal" ? <AppShellSkeleton /> : <DashboardShellSkeleton />;
 
 	return (
 		<ApplicationErrorBoundary>
-			<ClientRuntimeGate>
-				<AppRuntime />
+			<ClientRuntimeGate fallback={fallback}>
+				<AppRuntime fallback={fallback} />
 			</ClientRuntimeGate>
 		</ApplicationErrorBoundary>
 	);
 }
 
-function AppRuntime() {
+function AppRuntime({ fallback }: { fallback: React.ReactNode }) {
 	const clientRuntimeReady = useClientRuntimeReady();
 
-	if (!clientRuntimeReady) return <AppShellSkeleton />;
+	if (!clientRuntimeReady) return <>{fallback}</>;
 
 	return (
-		<I18nReadyGate fallback={<AppShellSkeleton />}>
+		<I18nReadyGate fallback={fallback}>
 			<ExchangeScopeProvider>
 				<MarketsInfoProvider>
 					<Outlet />
@@ -111,11 +124,13 @@ function I18nReadyGate({ children, fallback }: { children: React.ReactNode; fall
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-	// lang/dir default to English here for SSR; on the client they are owned and kept in sync with
-	// the active language by the i18n module (see lib/i18n.ts), which re-asserts them past any
-	// shell re-render.
+	// SSR starts with the eagerly loaded English catalog. During hydration, render the active catalog
+	// locale so localized content never shares a frame with stale page-language metadata. The i18n
+	// module continues to own subsequent live updates.
+	const documentLocale = i18n.locale;
+	const documentDirection = isRtlLocale(documentLocale) ? "rtl" : "ltr";
 	return (
-		<html lang="en" dir="ltr" className="dark" suppressHydrationWarning>
+		<html lang={documentLocale} dir={documentDirection} className="dark" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 				<script suppressHydrationWarning>{THEME_BOOTSTRAP_SCRIPT}</script>

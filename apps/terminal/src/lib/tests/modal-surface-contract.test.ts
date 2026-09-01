@@ -59,9 +59,9 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active")).toBe("var(--action)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active-text")).toBe("var(--on-action)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-focus")).toBe("var(--focus)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger")).toBe("#d6453d");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger")).toBe("#c73a3a");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger-disabled")).toBe("#efc3bf");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-warning")).toBe("#d98e1f");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-warning")).toBe("#7f5c0e");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active")).toBe("var(--action)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active-text")).toBe("var(--on-action)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-focus")).toBe("var(--focus)");

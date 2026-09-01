@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef } from "react";
 import { resolveChartLocale } from "@/config/chart";
@@ -52,6 +51,8 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 }
 
 function ChartLoadingFallback() {
+	const { t } = useLingui();
+
 	return (
 		<output aria-live="polite" className="block h-full w-full bg-surface">
 			<span className="sr-only">{t`Loading...`}</span>

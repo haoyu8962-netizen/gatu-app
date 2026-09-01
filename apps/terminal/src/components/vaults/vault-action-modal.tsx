@@ -199,7 +199,7 @@ function VaultActionRisk({
 	return (
 		<div className="flex items-start gap-2 rounded-10 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-			<ul className="list-disc space-y-1 pl-4">
+			<ul className="list-disc space-y-1 ps-4">
 				{action === "deposit" ? (
 					<>
 						<li>

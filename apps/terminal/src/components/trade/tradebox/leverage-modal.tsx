@@ -1,6 +1,5 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
@@ -74,6 +73,7 @@ function LeverageModalContent({
 	onApply,
 	onSubmissionLockChange,
 }: LeverageModalContentProps) {
+	const { t } = useLingui();
 	const {
 		showSuccess,
 		trigger: triggerAutoClose,

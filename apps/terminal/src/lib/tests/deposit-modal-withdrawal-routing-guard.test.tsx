@@ -1,13 +1,51 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
+import { AccountAbstractionExecutionError } from "@/hooks/trade/use-account-abstraction-guard";
+import { FundsActionGeoExecutionError } from "@/hooks/trade/use-funds-action-availability";
 import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
+
+const WITHDRAWAL_MESSAGES = {
+	accountModeChanged: "Account mode changed before the request was submitted. Review balances and try again.",
+	balanceChanged: "Balance changed before submission. Review the updated balance and try again.",
+	balanceUnavailable: "Balance data is unavailable. Try again after the connection recovers.",
+	geoUnavailable: "Unable to verify regional availability. This funds action was not submitted.",
+	preTransferChanged: "The account activation fee changed before signing. Review the updated fee and try again.",
+	preTransferSanctioned: "Withdrawals are unavailable for this address.",
+	preTransferUnavailable: "Unable to verify withdrawal eligibility. Request was not submitted.",
+	routeChanged: "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.",
+	routeUnavailable: "Unable to verify the current Hyperliquid withdrawal route.",
+} as const;
+
+const WITHDRAWAL_MESSAGES_AR: Record<keyof typeof WITHDRAWAL_MESSAGES, string> = {
+	accountModeChanged: "تغيّر وضع الحساب قبل إرسال الطلب. راجع الأرصدة وحاول مرة أخرى.",
+	balanceChanged: "تغيّر الرصيد قبل الإرسال. راجع الرصيد المحدّث وحاول مرة أخرى.",
+	balanceUnavailable: "بيانات الرصيد غير متاحة. حاول مرة أخرى بعد استعادة الاتصال.",
+	geoUnavailable: "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه.",
+	preTransferChanged: "تغيرت رسوم تفعيل الحساب قبل التوقيع. راجع الرسوم المحدّثة وحاول مرة أخرى.",
+	preTransferSanctioned: "عمليات السحب غير متاحة لهذا العنوان.",
+	preTransferUnavailable: "تعذر التحقق من أهلية السحب. لم يتم إرسال الطلب.",
+	routeChanged: "تغيّر مسار السحب في Hyperliquid. راجع المسار المحدّث والرسوم المحدّثة، ثم أرسل الطلب مرة أخرى.",
+	routeUnavailable: "تعذّر التحقق من مسار السحب الحالي في Hyperliquid.",
+};
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = Object.fromEntries(
+	Object.entries(WITHDRAWAL_MESSAGES).map(([key, message]) => [
+		getMessageId(message),
+		WITHDRAWAL_MESSAGES_AR[key as keyof typeof WITHDRAWAL_MESSAGES_AR],
+	]),
+);
 
 const testState = vi.hoisted(() => ({
 	accountGuard: vi.fn(),
@@ -29,6 +67,7 @@ const testState = vi.hoisted(() => ({
 	submissionOutcomeUnknown: false,
 	exchangeSignal: undefined as AbortSignal | undefined,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
+	exchangeErrors: new Map<string, unknown>(),
 	exchangeMutations: new Map<string, ReturnType<typeof vi.fn>>(),
 	exchangeSdkCalls: new Map<string, ReturnType<typeof vi.fn>>(),
 	fetchFreshRouting: vi.fn(),
@@ -71,6 +110,8 @@ const testState = vi.hoisted(() => ({
 	spotMetaRefetch: vi.fn(),
 	useDepositOptions: null as Record<string, unknown> | null,
 	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
+	withdrawable: "10",
+	withdrawSubmit: null as null | (() => Promise<void> | void),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -92,11 +133,16 @@ vi.mock("@/domain/trade/balances", () => ({
 		isAvailable: true,
 		usesSpotStateForPerps: false,
 		spotUsdcAvailable: 0,
-		withdrawable: "10",
+		withdrawable: testState.withdrawable,
 	}),
 }));
 
 vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
+	AccountAbstractionExecutionError: class AccountAbstractionExecutionError extends Error {
+		constructor(readonly reason: "changed" | "unavailable") {
+			super(reason);
+		}
+	},
 	useAccountAbstractionPreExecutionGuard: () => testState.accountGuard,
 }));
 
@@ -109,7 +155,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		perpSummary: null,
 		spotAvailableAfterMaintenance: null,
 		spotBalances: [],
-		withdrawable: "10",
+		withdrawable: testState.withdrawable,
 		spotStateStatus: "success",
 		perpStateStatus: "success",
 		spotStateReceivedAt: Date.now(),
@@ -180,6 +226,11 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
+	FundsActionGeoExecutionError: class FundsActionGeoExecutionError extends Error {
+		constructor(readonly reason: "restricted" | "unavailable") {
+			super(reason);
+		}
+	},
 	useFundsActionAvailability: () => ({
 		assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
 		internalTransfer: { available: true, reason: null, unavailableReason: null },
@@ -254,18 +305,23 @@ vi.mock("@/lib/hyperliquid", () => ({
 		if (!mutateAsync) {
 			const callSdk = sdkCall as (params: unknown) => unknown;
 			mutateAsync = vi.fn(async (params: unknown) => {
-				const signal = testState.exchangeSignal ?? new AbortController().signal;
-				await options?.preExecutionGuard?.(params, signal);
-				return callSdk(params);
+				try {
+					const signal = testState.exchangeSignal ?? new AbortController().signal;
+					await options?.preExecutionGuard?.(params, signal);
+					return await callSdk(params);
+				} catch (error) {
+					testState.exchangeErrors.set(method, error);
+					throw error;
+				}
 			});
 		}
 		testState.exchangeMutations.set(method, mutateAsync);
 		return {
-			error: null,
+			error: testState.exchangeErrors.get(method) ?? null,
 			isPending: false,
 			isSuccess: false,
 			mutateAsync,
-			reset: vi.fn(),
+			reset: vi.fn(() => testState.exchangeErrors.delete(method)),
 		};
 	},
 	useHyperliquid: () => ({
@@ -437,8 +493,9 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onSubmit: () => void;
 		routingStatus: string;
 		showSpotFundsNotice: boolean;
-	}) =>
-		createElement(
+	}) => {
+		testState.withdrawSubmit = onSubmit;
+		return createElement(
 			"div",
 			{
 				"data-activation-fee": activationFee,
@@ -450,7 +507,8 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 			createElement("button", { onClick: () => onAmountChange("2"), type: "button" }, "Set amount"),
 			createElement("button", { onClick: onSubmit, type: "button" }, "Submit withdrawal"),
 			createElement("button", { onClick: onRetryPrerequisites, type: "button" }, "Retry withdrawal route"),
-		),
+		);
+	},
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/wrong-network-screen", () => ({
@@ -464,7 +522,9 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.exchangeGuards.clear();
+		testState.exchangeErrors.clear();
 		testState.exchangeMutations.clear();
 		testState.exchangeSdkCalls.clear();
 		testState.exchangeSignal = new AbortController().signal;
@@ -527,6 +587,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.spotMetaRefetch.mockReset();
 		testState.useDepositOptions = null;
 		testState.walletIntentOverride = undefined;
+		testState.withdrawable = "10";
+		testState.withdrawSubmit = null;
 		testState.spotMetaRefetch.mockImplementation(async () => ({ data: testState.spotMeta, isError: false }));
 		testState.fetchFreshRouting.mockImplementation(async () => {
 			if (testState.freshRoutingError) throw testState.freshRoutingError;
@@ -582,6 +644,25 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		await act(async () => getButton("Submit withdrawal").click());
 	}
 
+	async function expectWithdrawalErrorRetranslates(
+		messageKey: keyof typeof WITHDRAWAL_MESSAGES,
+		staleMessage?: string,
+	) {
+		await vi.waitFor(() =>
+			expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
+				WITHDRAWAL_MESSAGES[messageKey],
+			),
+		);
+		if (staleMessage) expect(container.textContent).not.toContain(staleMessage);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES_AR[messageKey],
+		);
+		expect(container.textContent).not.toContain(WITHDRAWAL_MESSAGES[messageKey]);
+		if (staleMessage) expect(container.textContent).not.toContain(staleMessage);
+	}
+
 	it("derives the CCTP pre-transfer target from spotMeta and checks it at the SDK boundary", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "withdraw";
@@ -632,6 +713,151 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.assertFreshGeoAllowed).toHaveBeenCalledOnce();
 		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+	});
+
+	it("retranslates a cached withdrawal-route availability guard after an en-to-ar switch", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.fetchFreshRouting
+			.mockReset()
+			.mockResolvedValueOnce({ depositRoute: "bridge", withdrawalRoute: "cctp" })
+			.mockRejectedValueOnce(new Error("raw route HTTP failure"));
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorRetranslates("routeUnavailable", "raw route HTTP failure");
+	});
+
+	it("retranslates a cached withdrawal-route change guard after an en-to-ar switch", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.fetchFreshRouting
+			.mockReset()
+			.mockResolvedValueOnce({ depositRoute: "bridge", withdrawalRoute: "cctp" })
+			.mockResolvedValueOnce({ depositRoute: "bridge", withdrawalRoute: "bridge" });
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorRetranslates("routeChanged");
+	});
+
+	it("retranslates a cached account-mode guard after an en-to-ar switch", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.accountGuard.mockRejectedValueOnce(new AccountAbstractionExecutionError("changed"));
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorRetranslates("accountModeChanged");
+	});
+
+	it("retranslates a cached geo guard after an en-to-ar switch", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.assertFreshGeoAllowed.mockRejectedValueOnce(new FundsActionGeoExecutionError("unavailable"));
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorRetranslates("geoUnavailable");
+	});
+
+	it.each([
+		{
+			messageKey: "preTransferChanged",
+			name: "activation fee change",
+			prepare: () => {
+				testState.preTransferFresh = { ...testState.preTransferFresh, fee: "0.5" };
+			},
+		},
+		{
+			messageKey: "preTransferSanctioned",
+			name: "sanctions change",
+			prepare: () => {
+				testState.preTransferFresh = { ...testState.preTransferFresh, isSanctioned: true };
+			},
+		},
+		{
+			messageKey: "preTransferUnavailable",
+			name: "eligibility request failure",
+			prepare: () => {
+				testState.preTransferInfo.mockRejectedValueOnce(new Error("raw eligibility HTTP failure"));
+			},
+		},
+	] as const)(
+		"retranslates a cached pre-transfer $name guard after an en-to-ar switch",
+		async ({ messageKey, prepare }) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			prepare();
+
+			await submitWithdrawal();
+
+			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+			await expectWithdrawalErrorRetranslates(messageKey);
+		},
+	);
+
+	it.each([
+		{
+			messageKey: "balanceUnavailable",
+			name: "stale",
+			update: () => {
+				testState.balanceStale = true;
+			},
+		},
+		{
+			messageKey: "balanceChanged",
+			name: "changed",
+			update: () => {
+				testState.withdrawable = "1";
+			},
+		},
+	] as const)("retranslates a cached $name balance guard after an en-to-ar switch", async ({ messageKey, update }) => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		let releaseAccountGuard!: () => void;
+		const accountGuard = new Promise<void>((resolve) => {
+			releaseAccountGuard = resolve;
+		});
+		testState.accountGuard.mockReturnValueOnce(accountGuard);
+
+		await rerender();
+		act(() => getButton("Set amount").click());
+		let submission!: Promise<void>;
+		await act(async () => {
+			if (!testState.withdrawSubmit) throw new Error("Missing withdrawal submit handler");
+			submission = Promise.resolve(testState.withdrawSubmit());
+			await vi.waitFor(() => expect(testState.accountGuard).toHaveBeenCalledOnce());
+		});
+
+		update();
+		await rerender();
+		await act(async () => {
+			releaseAccountGuard();
+			await submission;
+		});
+
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		await expectWithdrawalErrorRetranslates(messageKey);
+	});
+
+	it("preserves a raw exchange error across an en-to-ar switch", async () => {
+		const rawExchangeMessage = "Hyperliquid SDK rejected withdrawal TEST-RAW";
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.exchangeSdkCalls.get("sendToEvmWithData")?.mockRejectedValueOnce(new Error(rawExchangeMessage));
+
+		await submitWithdrawal();
+
+		await vi.waitFor(() =>
+			expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(rawExchangeMessage),
+		);
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe(rawExchangeMessage);
 	});
 
 	it("does not expose cached Spot funds when the balance snapshot is stale", async () => {

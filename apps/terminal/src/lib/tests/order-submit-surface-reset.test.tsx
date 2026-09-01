@@ -4,6 +4,7 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -138,6 +139,26 @@ describe("useOrderSubmit surface reset", () => {
 
 		expect(mocks.resetForm).not.toHaveBeenCalled();
 		expect(mocks.onReset).not.toHaveBeenCalled();
+	});
+
+	it("stores a tracked-order client failure as a locale-independent descriptor", async () => {
+		mocks.submitOrder.mockRejectedValueOnce(orderSubmissionFeedbackCause("coordination-unavailable"));
+
+		await submit(marketInput());
+
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", {
+			status: "failed",
+			error: { kind: "order-submission", code: "coordination-unavailable" },
+		});
+	});
+
+	it("keeps an external SDK order failure raw", async () => {
+		const sdkMessage = "SDK rejected the order request";
+		mocks.submitOrder.mockRejectedValueOnce(new Error(sdkMessage));
+
+		await submit(marketInput());
+
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", { status: "failed", error: sdkMessage });
 	});
 
 	it("expands a scale order into one queued plan and resets both form halves", async () => {

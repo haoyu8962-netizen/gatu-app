@@ -1,5 +1,5 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
@@ -13,8 +13,11 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
-import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import {
+	AccountAbstractionExecutionError,
+	useAccountAbstractionPreExecutionGuard,
+} from "@/hooks/trade/use-account-abstraction-guard";
 import {
 	isSupportedAccountAbstraction,
 	isTokenSpotBalance,
@@ -25,11 +28,19 @@ import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
+import {
+	FundsActionFeedbackCause,
+	type FundsActionFeedbackCode,
+	formatFundsActionFeedback,
+	fundsActionFeedbackCause,
+} from "@/lib/trade/funds-action-feedback";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { formatTokenId } from "@/lib/trade/token-id";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type AccountType = "perp" | "spot";
+
+type SendError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
 
 interface Props {
 	open: boolean;
@@ -63,11 +74,17 @@ interface BodyProps {
 }
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
+	const { i18n, t } = useLingui();
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<SendError | null>(null);
+	const errorMessage = error
+		? error.kind === "local"
+			? formatFundsActionFeedback(error.code, (descriptor) => i18n._(descriptor))
+			: formatExchangeActionError(error.cause, t`Send failed`)
+		: null;
 
 	const { getToken } = useSpotTokens();
 	const {
@@ -96,19 +113,39 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	});
 	const { address, hasWalletAccess } = useWalletSession();
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
+	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
+		try {
+			await assertAccountAbstraction(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof AccountAbstractionExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed" ? "account-mode-changed" : "account-mode-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+	function assertCurrentFundsAmount(amount: unknown, available: unknown, receivedAt: number | undefined) {
+		try {
+			assertFreshFundsAmount(amount, available, receivedAt);
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
 		preExecutionGuard: async (params, signal) => {
 			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
 				const current = balanceExecutionRef.current;
 				if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+					throw fundsActionFeedbackCause("balance-unavailable");
 				}
-				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
+				assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
 			};
 			assertCurrentBalance();
-			await assertAccountAbstraction(signal);
+			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
 			assertCurrentBalance();
 		},
@@ -116,16 +153,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend", {
 		preExecutionGuard: async (params, signal) => {
 			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+				if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
 				const current = balanceExecutionRef.current;
 				if (current.source !== "spot" || params.token !== current.tokenId) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
+					throw fundsActionFeedbackCause("balance-unavailable");
 				}
-				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
+				assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
 			};
 			assertCurrentBalance();
-			await assertAccountAbstraction(signal);
+			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
 			assertCurrentBalance();
 		},
@@ -267,7 +303,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			setError(formatExchangeActionError(err, t`Send failed`));
+			setError(
+				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
+			);
 		}
 	}
 
@@ -372,10 +410,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						)}
 					/>
 
-					{error && (
+					{errorMessage && (
 						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
 							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{error}</span>
+							<span className="flex-1">{errorMessage}</span>
 						</div>
 					)}
 

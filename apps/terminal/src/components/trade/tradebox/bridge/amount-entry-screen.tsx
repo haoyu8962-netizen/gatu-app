@@ -56,7 +56,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 				onClick={onBack}
 				className="flex items-center gap-1 text-xs text-signal hover:text-signal-hover self-start"
 			>
-				<ArrowLeftIcon className="size-3" />
+				<ArrowLeftIcon className="size-3 rtl:rotate-180" />
 				<Trans>Back</Trans>
 			</button>
 
@@ -107,7 +107,7 @@ export function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: Pro
 						<p className="text-xs font-medium text-fg">{token.symbol}</p>
 					</div>
 				</div>
-				<ArrowRightIcon className="size-4 text-fg-muted shrink-0" />
+				<ArrowRightIcon className="size-4 shrink-0 text-fg-muted rtl:rotate-180" />
 				<div className="flex items-center gap-2">
 					<HyperCoreUsdcIcon />
 					<div className="text-left">

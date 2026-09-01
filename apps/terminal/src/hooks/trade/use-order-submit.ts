@@ -9,6 +9,7 @@ import { formatOrderPlanError } from "@/lib/errors/format";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toBig } from "@/lib/trade/numbers";
+import { getOrderSubmissionFeedback, orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
@@ -193,8 +194,8 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 						status: "failed",
 						error:
 							submission.reason === "pending"
-								? t`Another TWAP order for this market is still being confirmed.`
-								: t`TWAP order state is still loading. Please retry in a moment.`,
+								? orderSubmissionFeedback("blocked-twap")
+								: orderSubmissionFeedback("twap-state-unavailable"),
 					});
 					return;
 				}
@@ -241,7 +242,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
 						status: "failed",
-						error: t`Another order for this market is still being confirmed.`,
+						error: orderSubmissionFeedback("blocked-order"),
 					});
 					return;
 				}
@@ -280,7 +281,9 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				});
 				return;
 			}
-			const errorMessage = error instanceof Error ? error.message : t`Order failed`;
+			const errorMessage =
+				getOrderSubmissionFeedback(error) ??
+				(error instanceof Error ? error.message : orderSubmissionFeedback("order-failed"));
 			updateOrder(orderId, { status: "failed", error: errorMessage });
 		}
 	}

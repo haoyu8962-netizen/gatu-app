@@ -1,6 +1,5 @@
 import { Button, Drawer, DrawerContent } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { forwardRef, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -25,6 +24,7 @@ interface BadgeProps {
 }
 
 const LeverageBadge = forwardRef<HTMLButtonElement, BadgeProps>(({ leverage, onClick, isLoading, className }, ref) => {
+	const { t } = useLingui();
 	return (
 		<Button
 			ref={ref}
@@ -71,6 +71,7 @@ function LeverageEditor({
 	onCancel,
 	onOpenChange,
 }: EditorProps) {
+	const { t } = useLingui();
 	const displayValue = pendingLeverage ?? currentLeverage;
 	const [inputValue, setInputValue] = useState(String(displayValue));
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(

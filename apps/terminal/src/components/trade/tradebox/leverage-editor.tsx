@@ -1,6 +1,5 @@
 import { useDirection } from "@base-ui/react/direction-provider";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
@@ -50,6 +49,7 @@ export function LeverageEditor({
 	onInputValidityChange,
 	variant = "sheet",
 }: LeverageEditorProps) {
+	const { t } = useLingui();
 	const direction = useDirection();
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);

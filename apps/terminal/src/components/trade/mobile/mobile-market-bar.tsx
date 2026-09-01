@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -54,6 +54,7 @@ function getSafeAreaInset(variable: "--sal" | "--sar"): number {
 }
 
 export function MobileMarketBar({ className }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const {
 		market,
@@ -244,6 +245,10 @@ export function MobileMarketBar({ className }: Props) {
 											copiedSpotTokenAddress === spotTokenAddress,
 											copySpotTokenAddress,
 											spotSocials,
+											{
+												copy: copiedSpotTokenAddress === spotTokenAddress ? t`Copied` : t`Copy token address`,
+												open: t`Open token in explorer`,
+											},
 										)}
 									/>
 								</div>
@@ -261,6 +266,7 @@ function createSpotTokenInfo(
 	copied: boolean,
 	onCopy: (value: string) => void,
 	socials: SpotAssetSocials | null,
+	labels: { copy: string; open: string },
 ) {
 	if (!address && !hasSpotSocialLinks(socials)) return FALLBACK_VALUE_PLACEHOLDER;
 
@@ -283,7 +289,7 @@ function createSpotTokenInfo(
 							href={getExplorerTokenUrl(address)}
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label={t`Open token in explorer`}
+							aria-label={labels.open}
 							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
@@ -291,7 +297,7 @@ function createSpotTokenInfo(
 						<button
 							type="button"
 							onClick={handleCopy}
-							aria-label={copied ? t`Copied` : t`Copy token address`}
+							aria-label={labels.copy}
 							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}

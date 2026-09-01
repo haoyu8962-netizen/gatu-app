@@ -112,6 +112,31 @@ interface CancelCallbacks {
 	onSettled?: () => void;
 }
 
+type OrderValidationErrorCode =
+	| "cancellation-response-unconfirmed"
+	| "failed-to-cancel"
+	| "failed-to-modify"
+	| "order-markets-unavailable"
+	| "previous-modification-unconfirmed"
+	| "trading-data-changed"
+	| "modification-unconfirmed";
+
+type OrderValidationError =
+	| { kind: "cancel-block"; reason: CancelAllConfirmationBlockReason }
+	| { kind: "modify-block"; reason: OpenOrderModifyBlockReason }
+	| { kind: "code"; code: OrderValidationErrorCode }
+	| { kind: "raw"; message: string };
+
+class OrderValidationErrorCause extends Error {
+	constructor(
+		readonly validationError: OrderValidationError,
+		message: string,
+	) {
+		super(message);
+		this.name = "OrderValidationErrorCause";
+	}
+}
+
 interface CancelAllDialogSnapshot {
 	confirmation: CancelAllConfirmationSnapshot;
 	orders: readonly OpenOrder[];
@@ -244,12 +269,12 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const [cancelAllSnapshot, setCancelAllSnapshot] = useState<CancelAllDialogSnapshot | null>(null);
 	const [orderTypeFilter, setOrderTypeFilter] = useState<ToolbarOrderTypeFilter>("all");
 	const [orderDirectionFilter, setOrderDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
-	const [cancelValidationError, setCancelValidationErrorState] = useState<string | null>(null);
+	const [cancelValidationError, setCancelValidationErrorState] = useState<OrderValidationError | null>(null);
 	const [cancelValidationActionId, setCancelValidationActionId] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<OpenOrderModifyTarget | null>(null);
 	const [editValue, setEditValue] = useState("");
 	const [modifyPhase, setModifyPhaseState] = useState<ModifyPhase>("idle");
-	const [modifyValidationError, setModifyValidationErrorState] = useState<string | null>(null);
+	const [modifyValidationError, setModifyValidationErrorState] = useState<OrderValidationError | null>(null);
 	const [modifyValidationActionId, setModifyValidationActionId] = useState<string | null>(null);
 	const modifyErrorId = useId();
 	const cancelAllSubmittingRef = useRef(false);
@@ -264,22 +289,24 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const localTradingSessionKeyRef = useRef(selectionSessionKey);
 	const mountedRef = useRef(false);
 	selectionSessionKeyRef.current = selectionSessionKey;
-	const visibleCancelValidationError =
+	const visibleCancelValidationErrorDescriptor =
 		cancelValidationActionId && !sessionCancellations.some((action) => action.id === cancelValidationActionId)
 			? null
 			: cancelValidationError;
-	const visibleModifyValidationError =
+	const visibleModifyValidationErrorDescriptor =
 		modifyValidationActionId && !sessionModifications.some((action) => action.id === modifyValidationActionId)
 			? null
 			: modifyValidationError;
+	const visibleCancelValidationError = getValidationErrorMessage(visibleCancelValidationErrorDescriptor);
+	const visibleModifyValidationError = getValidationErrorMessage(visibleModifyValidationErrorDescriptor);
 
-	function setCancelValidationError(message: string | null, actionId: string | null = null) {
-		setCancelValidationErrorState(message);
+	function setCancelValidationError(error: OrderValidationError | null, actionId: string | null = null) {
+		setCancelValidationErrorState(error);
 		setCancelValidationActionId(actionId);
 	}
 
-	function setModifyValidationError(message: string | null, actionId: string | null = null) {
-		setModifyValidationErrorState(message);
+	function setModifyValidationError(error: OrderValidationError | null, actionId: string | null = null) {
+		setModifyValidationErrorState(error);
 		setModifyValidationActionId(actionId);
 	}
 
@@ -424,6 +451,48 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		}
 	}
 
+	function getValidationErrorMessage(error: OrderValidationError | null): string | null {
+		if (!error) return null;
+		switch (error.kind) {
+			case "cancel-block":
+				return getCancelAllBlockMessage(error.reason);
+			case "modify-block":
+				return getModifyBlockMessage(error.reason);
+			case "raw":
+				return error.message;
+			case "code":
+				switch (error.code) {
+					case "cancellation-response-unconfirmed":
+						return t`The cancellation response could not be confirmed. Refresh open orders before retrying.`;
+					case "failed-to-cancel":
+						return t`Failed to cancel order.`;
+					case "failed-to-modify":
+						return t`Failed to modify order.`;
+					case "order-markets-unavailable":
+						return t`Some order markets are unavailable. Refresh and try again.`;
+					case "previous-modification-unconfirmed":
+						return t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`;
+					case "trading-data-changed":
+						return t`Trading data changed before the order modification could be submitted.`;
+					case "modification-unconfirmed":
+						return t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+				}
+		}
+	}
+
+	function createValidationErrorCause(error: OrderValidationError): OrderValidationErrorCause {
+		return new OrderValidationErrorCause(error, getValidationErrorMessage(error) ?? "");
+	}
+
+	function getValidationErrorFromCause(
+		cause: unknown,
+		fallbackCode: Extract<OrderValidationError, { kind: "code" }>["code"],
+	): OrderValidationError {
+		if (cause instanceof OrderValidationErrorCause) return cause.validationError;
+		if (cause instanceof Error) return { kind: "raw", message: cause.message };
+		return { kind: "code", code: fallbackCode };
+	}
+
 	function buildPlanFromLive(target: OpenOrderModifyTarget, value: string) {
 		const live = liveModifyContextRef.current;
 		const market = live.getMarketBinding(target.order.coin);
@@ -445,16 +514,18 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	function assertModifyExecution(params: ExchangeParams<"batchModify">) {
 		const execution = modifyExecutionRef.current;
 		if (!execution || getModifyPhase() !== "submitting") {
-			throw new Error(t`Trading data changed before the order modification could be submitted.`);
+			throw createValidationErrorCause({ kind: "code", code: "trading-data-changed" });
 		}
 
 		const currentPlan = buildPlanFromLive(execution.target, execution.value);
-		if (currentPlan.status === "blocked") throw new Error(getModifyBlockMessage(currentPlan.reason));
+		if (currentPlan.status === "blocked") {
+			throw createValidationErrorCause({ kind: "modify-block", reason: currentPlan.reason });
+		}
 		if (
 			!openOrderModifyParamsEqual(currentPlan.params, execution.params) ||
 			!openOrderModifyParamsEqual(params, execution.params)
 		) {
-			throw new Error(t`Trading data changed before the order modification could be submitted.`);
+			throw createValidationErrorCause({ kind: "code", code: "trading-data-changed" });
 		}
 		execution.guardPasses += 1;
 		if (execution.guardPasses >= 2) {
@@ -465,16 +536,20 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	function assertCancelExecution(params: ExchangeParams<"cancel">) {
 		const execution = cancelExecutionRef.current;
 		if (!execution || !cancelParamsEqual(params, execution.params)) {
-			throw new Error(getCancelAllBlockMessage("orders-changed"));
+			throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
 		}
 
 		const live = liveModifyContextRef.current;
 		const currentOrders: Pick<OpenOrder, "coin" | "oid">[] = [];
 		for (const target of execution.orders) {
 			const matches = live.orders.filter((order) => order.coin === target.coin && order.oid === target.oid);
-			if (matches.length !== 1) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			if (matches.length !== 1) {
+				throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
+			}
 			const currentOrder = matches[0];
-			if (!currentOrder) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			if (!currentOrder) {
+				throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
+			}
 			currentOrders.push(currentOrder);
 		}
 
@@ -485,7 +560,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			isSnapshotReady: live.snapshotStatus === "active" && !live.isSnapshotStale,
 			orders: currentOrders,
 		});
-		if (reason) throw new Error(getCancelAllBlockMessage(reason));
+		if (reason) throw createValidationErrorCause({ kind: "cancel-block", reason });
 		execution.guardPasses += 1;
 		if (execution.guardPasses >= 2) {
 			getPendingTradingActionActions().markOrderCancellationRequestStarted(execution.actionId);
@@ -596,13 +671,13 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		const fresh = ordersToCancel.filter((order) => !sharedCancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
 		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
-			setCancelValidationError(t`Open orders changed. Reopen the confirmation and try again.`);
+			setCancelValidationError({ kind: "cancel-block", reason: "orders-changed" });
 			return false;
 		}
 
 		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
 		if (!cancels) {
-			setCancelValidationError(t`Some order markets are unavailable. Refresh and try again.`);
+			setCancelValidationError({ kind: "code", code: "order-markets-unavailable" });
 			return false;
 		}
 
@@ -615,7 +690,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			orders: fresh,
 		});
 		if (confirmation.status === "blocked") {
-			setCancelValidationError(getCancelAllBlockMessage(confirmation.reason));
+			setCancelValidationError({ kind: "cancel-block", reason: confirmation.reason });
 			return false;
 		}
 
@@ -655,10 +730,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
 				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(
-						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
-						execution.actionId,
-					);
+					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 				return;
 			}
@@ -674,15 +746,12 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(
-						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
-						execution.actionId,
-					);
+					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 			} else {
 				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(cause instanceof Error ? cause.message : t`Failed to cancel order.`);
+					setCancelValidationError(getValidationErrorFromCause(cause, "failed-to-cancel"));
 				}
 			}
 		} finally {
@@ -734,7 +803,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		setCancelValidationError(null);
 		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
 		if (result.status === "blocked") {
-			setCancelValidationError(getCancelAllBlockMessage(result.reason));
+			setCancelValidationError({ kind: "cancel-block", reason: result.reason });
 			return;
 		}
 		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
@@ -749,7 +818,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			getCancelAllConfirmationInput(),
 		);
 		if (reason) {
-			setCancelValidationError(getCancelAllBlockMessage(reason));
+			setCancelValidationError({ kind: "cancel-block", reason });
 			return;
 		}
 		cancelAllSubmittingRef.current = true;
@@ -836,7 +905,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		const value = editValueRef.current;
 		const plan = buildPlanFromLive(target, value);
 		if (plan.status === "blocked") {
-			setModifyValidationError(getModifyBlockMessage(plan.reason));
+			setModifyValidationError({ kind: "modify-block", reason: plan.reason });
 			return;
 		}
 
@@ -851,9 +920,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				: { expectedTriggerPx: plan.normalizedValue }),
 		});
 		if (!pendingAction) {
-			setModifyValidationError(
-				t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`,
-			);
+			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });
 			return;
 		}
 		const execution: ModifyExecutionContext = {
@@ -910,10 +977,11 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 					setModifyPhase("idle");
 					return;
 				}
-				const message = t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+				const validationError = { kind: "code", code: "modification-unconfirmed" } as const;
+				const message = getValidationErrorMessage(validationError) ?? "";
 				modifyExecutionRef.current = null;
 				setModifyPhase("idle");
-				setModifyValidationError(message, execution.actionId);
+				setModifyValidationError(validationError, execution.actionId);
 				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
 				return;
 			} else {
@@ -931,10 +999,11 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 				setModifyPhase("idle");
 				return;
 			}
-			const message = cause instanceof Error ? cause.message : t`Failed to modify order.`;
+			const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
+			const message = getValidationErrorMessage(validationError) ?? "";
 			modifyExecutionRef.current = null;
 			setModifyPhase("idle");
-			setModifyValidationError(message);
+			setModifyValidationError(validationError);
 			toast.error(message);
 		}
 	}
@@ -953,13 +1022,11 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		setEditTarget(null);
 		setEditValue("");
 		setModifyValidationErrorState(
-			pending?.phase === "unconfirmed"
-				? t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`
-				: null,
+			pending?.phase === "unconfirmed" ? { kind: "code", code: "modification-unconfirmed" } : null,
 		);
 		setModifyValidationActionId(pending?.phase === "unconfirmed" ? execution.actionId : null);
 		setModifyPhaseState("idle");
-	}, [modifyPhase, pendingModifications, t]);
+	}, [modifyPhase, pendingModifications]);
 
 	const hasActiveModification = sessionModifications.some((action) => action.phase !== "unconfirmed");
 	const isModifyLocked = modifyPhase !== "idle" || hasActiveModification;

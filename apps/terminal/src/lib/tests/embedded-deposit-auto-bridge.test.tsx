@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
-import { act, createElement, Fragment, StrictMode } from "react";
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
+import { act, createElement, Fragment, isValidElement, type ReactNode, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
@@ -37,6 +39,17 @@ const testState = vi.hoisted(() => ({
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+function withI18n(children: ReactNode): ReactNode {
+	if (isValidElement<{ children?: ReactNode }>(children) && children.type === StrictMode) {
+		return (
+			<StrictMode>
+				<I18nProvider i18n={i18n}>{children.props.children}</I18nProvider>
+			</StrictMode>
+		);
+	}
+	return <I18nProvider i18n={i18n}>{children}</I18nProvider>;
+}
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
@@ -129,9 +142,14 @@ describe("EmbeddedDepositAutoBridge", () => {
 
 	beforeEach(() => {
 		vi.useFakeTimers();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		const reactRoot = createRoot(container);
+		root = {
+			render: (children) => reactRoot.render(withI18n(children)),
+			unmount: () => reactRoot.unmount(),
+		} as Root;
 		testState.deposit.mockReset();
 		testState.deposit.mockResolvedValue(undefined);
 		testState.refreshBalance.mockReset();
