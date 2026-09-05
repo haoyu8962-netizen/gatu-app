@@ -173,6 +173,63 @@ describe("DepositForm routing gate", () => {
 		expect(alerts[0]?.textContent).toContain("The deposit route changed. Review it before submitting again.");
 	});
 
+	it.each([
+		{
+			name: "unavailable routing",
+			routingStatus: "error" as const,
+			routingPreflightError: "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.",
+		},
+		{
+			name: "a changed route that is now ready",
+			routingStatus: "ready" as const,
+			routingPreflightError: "The deposit route changed. Review it before submitting again.",
+		},
+	])("lets an embedded deposit recover from $name without resubmitting automatically", async (preflight) => {
+		const props = {
+			...createProps(preflight.routingStatus, "cctp"),
+			routingPreflightError: preflight.routingPreflightError,
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const fundingAddress = container.querySelector('[data-testid="funding-address"]');
+		expect(fundingAddress?.getAttribute("data-address-state")).toBe("unavailable");
+		expect(fundingAddress?.hasAttribute("data-address")).toBe(false);
+		expect(fundingAddress?.textContent).toContain(preflight.routingPreflightError);
+		expect(
+			[...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Deposit 9 USDC")),
+		).toBeUndefined();
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retryButton).toBeDefined();
+		act(() => retryButton?.click());
+		expect(props.onRetryRouting).toHaveBeenCalledOnce();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, { ...props, routingStatus: "ready", routingPreflightError: null }),
+				),
+			);
+		});
+
+		expect(container.querySelector('[data-address-state="ready"]')?.getAttribute("data-address")).toBe(FUNDING_ADDRESS);
+		expect(container.textContent).not.toContain(preflight.routingPreflightError);
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const submitButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(submitButton?.disabled).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
+		act(() => submitButton?.click());
+		expect(props.onSubmit).toHaveBeenCalledOnce();
+	});
+
 	it("keeps the external wallet fee line stable until Circle provides a current quote", async () => {
 		const props = {
 			...createProps("ready", "cctp"),

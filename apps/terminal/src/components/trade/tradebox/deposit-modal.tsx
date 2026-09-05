@@ -165,6 +165,7 @@ export function DepositModal() {
 	const depositPreflightIdRef = useRef(0);
 	const withdrawalPreflightRef = useRef<WithdrawalPreflightAttempt | null>(null);
 	const withdrawalExecutionReviewRef = useRef<WithdrawalExecutionReview | null>(null);
+	const withdrawalRequestReviewsRef = useRef(new WeakMap<object, WithdrawalExecutionReview>());
 	const observedWithdrawalRouteRef = useRef<WithdrawalRoute | null>(null);
 	const queryClient = useQueryClient();
 	const { clientKey, env, info, sessionMode } = useHyperliquid();
@@ -460,9 +461,11 @@ export function DepositModal() {
 		isTestnet,
 	});
 	const cctpWithdrawal = useExchange("sendToEvmWithData", {
+		executionGuard: (params) => assertWithdrawalExecution("arbitrum-cctp", params),
 		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-cctp", params.amount, signal),
 	});
 	const legacyWithdrawal = useExchange("withdraw3", {
+		executionGuard: (params) => assertWithdrawalExecution("arbitrum-legacy", params),
 		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", params.amount, signal),
 	});
 	useLayoutEffect(() => {
@@ -693,21 +696,32 @@ export function DepositModal() {
 		return review;
 	}
 
+	function assertCurrentWithdrawalBalance(amount: unknown): void {
+		if (!withdrawalBalanceReadyRef.current) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		const balance = withdrawalBalanceExecutionRef.current;
+		try {
+			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
+
+	function assertWithdrawalExecution(expectedRoute: WithdrawalRoute, params: { amount: unknown }): void {
+		const review = assertCurrentWithdrawalExecutionReview(expectedRoute, params.amount);
+		const requestReview = withdrawalRequestReviewsRef.current.get(params);
+		if (requestReview && requestReview !== review) {
+			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
+		}
+		assertCurrentWithdrawalBalance(params.amount);
+		withdrawalRequestReviewsRef.current.set(params, review);
+	}
+
 	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, amount: unknown, signal: AbortSignal) {
 		const review = assertCurrentWithdrawalExecutionReview(expectedRoute, amount);
-		const assertCurrentBalance = () => {
-			if (!withdrawalBalanceReadyRef.current) {
-				throw fundsActionFeedbackCause("balance-unavailable");
-			}
-			const balance = withdrawalBalanceExecutionRef.current;
-			try {
-				assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
-			} catch (error) {
-				if (!(error instanceof FundsExecutionError)) throw error;
-				throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
-			}
-		};
-		assertCurrentBalance();
+		assertCurrentWithdrawalBalance(amount);
 		const guards = [
 			assertFreshWithdrawalRoute(expectedRoute, signal),
 			assertFreshWithdrawalAccountMode(signal),
@@ -722,8 +736,10 @@ export function DepositModal() {
 		}
 		await Promise.all(guards);
 		signal.throwIfAborted();
-		assertCurrentWithdrawalExecutionReview(expectedRoute, amount);
-		assertCurrentBalance();
+		if (assertCurrentWithdrawalExecutionReview(expectedRoute, amount) !== review) {
+			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
+		}
+		assertCurrentWithdrawalBalance(amount);
 	}
 
 	function beginWithdrawalPreflight(): WithdrawalPreflightAttempt | null {

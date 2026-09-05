@@ -201,7 +201,7 @@ export function DepositForm({
 
 	if (usesFundingAddressFlow) {
 		const retryRoutingAction =
-			routingStatus === "error" || routingStatus === "unknown" ? (
+			routingPreflightError || routingStatus === "error" || routingStatus === "unknown" ? (
 				<Button
 					variant="link"
 					intent="neutral"
@@ -259,7 +259,7 @@ export function DepositForm({
 				return { message: depositUnavailableReason, state: "unavailable" } as const;
 			}
 			if (routingPreflightError) {
-				return { message: routingPreflightError, state: "unavailable" } as const;
+				return { message: routingPreflightError, action: retryRoutingAction, state: "unavailable" } as const;
 			}
 			if (routingStatus === "loading") {
 				return { message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const;

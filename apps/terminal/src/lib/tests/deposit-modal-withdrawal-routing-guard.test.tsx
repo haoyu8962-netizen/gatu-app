@@ -79,6 +79,7 @@ const testState = vi.hoisted(() => ({
 	submissionOutcomeUnknown: false,
 	exchangeSignal: undefined as AbortSignal | undefined,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
+	exchangeFinalWait: vi.fn(),
 	exchangeErrors: new Map<string, unknown>(),
 	exchangeMutations: new Map<string, ReturnType<typeof vi.fn>>(),
 	exchangeSdkCalls: new Map<string, ReturnType<typeof vi.fn>>(),
@@ -307,7 +308,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useExchange: (
 		method: string,
-		options?: { preExecutionGuard?: (params?: unknown, signal?: AbortSignal) => Promise<void> },
+		options?: {
+			executionGuard?: (params: unknown) => void;
+			preExecutionGuard?: (params?: unknown, signal?: AbortSignal) => Promise<void>;
+		},
 	) => {
 		testState.exchangeGuards.set(method, options?.preExecutionGuard);
 		let sdkCall = testState.exchangeSdkCalls.get(method);
@@ -320,8 +324,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 			const callSdk = sdkCall as (params: unknown) => unknown;
 			mutateAsync = vi.fn(async (params: unknown) => {
 				try {
+					options?.executionGuard?.(params);
 					const signal = testState.exchangeSignal ?? new AbortController().signal;
 					await options?.preExecutionGuard?.(params, signal);
+					await testState.exchangeFinalWait();
+					options?.executionGuard?.(params);
 					return await callSdk(params);
 				} catch (error) {
 					testState.exchangeErrors.set(method, error);
@@ -552,6 +559,8 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.exchangeMutations.clear();
 		testState.exchangeSdkCalls.clear();
 		testState.exchangeSignal = new AbortController().signal;
+		testState.exchangeFinalWait.mockReset();
+		testState.exchangeFinalWait.mockResolvedValue(undefined);
 		testState.accountGuard.mockReset();
 		testState.accountGuard.mockResolvedValue(undefined);
 		testState.assertFreshGeoAllowed.mockReset();
@@ -748,6 +757,108 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.exchangeMutations.get("withdraw3")).not.toHaveBeenCalled();
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
 		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
+	});
+
+	describe.each([
+		{ route: "cctp", method: "sendToEvmWithData" },
+		{ route: "bridge", method: "withdraw3" },
+	] as const)("$method final execution guard", ({ route, method }) => {
+		async function pauseAfterPreflight() {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: route };
+			testState.freshRoutingResponse = testState.routingResponse;
+			let release!: () => void;
+			testState.exchangeFinalWait.mockReturnValueOnce(
+				new Promise<void>((resolve) => {
+					release = resolve;
+				}),
+			);
+			await rerender();
+			act(() => getButton("Set amount").click());
+			let submission!: Promise<void>;
+			await act(async () => {
+				if (!testState.withdrawSubmit) throw new Error("Missing withdrawal submit handler");
+				submission = Promise.resolve(testState.withdrawSubmit());
+				await vi.waitFor(() => expect(testState.exchangeFinalWait).toHaveBeenCalledOnce());
+			});
+			expect(testState.exchangeMutations.get(method)).toHaveBeenCalledOnce();
+			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
+			return { release, submission };
+		}
+
+		it.each([
+			{ change: "unmount", code: "withdrawal-conditions-changed" },
+			{ change: "tab change", code: "withdrawal-conditions-changed" },
+			{ change: "identity change", code: "withdrawal-conditions-changed" },
+			{ change: "balance change", code: "balance-changed" },
+			{ change: "stale balance", code: "balance-unavailable" },
+		] as const)("rejects $change during the final asynchronous wait", async ({ change, code }) => {
+			const { release, submission } = await pauseAfterPreflight();
+			if (change === "unmount") {
+				act(() => root.render(null));
+			} else {
+				if (change === "tab change") testState.activeTab = "deposit";
+				if (change === "identity change") {
+					testState.walletAddress = "0x2222222222222222222222222222222222222222";
+					testState.hyperliquidClientKey = testState.walletAddress;
+				}
+				if (change === "balance change") testState.withdrawable = "1";
+				if (change === "stale balance") testState.balanceStale = true;
+				await rerender();
+			}
+			await act(async () => {
+				release();
+				await submission;
+			});
+			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
+			expect(testState.exchangeErrors.get(method)).toMatchObject({ code });
+		});
+
+		it("executes exactly once after the final wait if the review remains current", async () => {
+			const { release, submission } = await pauseAfterPreflight();
+			await rerender();
+			await act(async () => {
+				release();
+				await submission;
+			});
+			expect(testState.exchangeSdkCalls.get(method)).toHaveBeenCalledOnce();
+			expect(testState.exchangeErrors.get(method)).toBeUndefined();
+		});
+
+		it("does not let a same-amount replacement review revive the old request", async () => {
+			const first = await pauseAfterPreflight();
+			testState.activeTab = "deposit";
+			await rerender();
+			testState.activeTab = "withdraw";
+			await rerender();
+			let releaseSecond!: () => void;
+			testState.exchangeFinalWait.mockReturnValueOnce(
+				new Promise<void>((resolve) => {
+					releaseSecond = resolve;
+				}),
+			);
+			let secondSubmission!: Promise<void>;
+			await act(async () => {
+				if (!testState.withdrawSubmit) throw new Error("Missing withdrawal submit handler");
+				secondSubmission = Promise.resolve(testState.withdrawSubmit());
+				await vi.waitFor(() => expect(testState.exchangeFinalWait).toHaveBeenCalledTimes(2));
+			});
+			expect(testState.exchangeMutations.get(method)?.mock.calls[0]?.[0]).toEqual(
+				testState.exchangeMutations.get(method)?.mock.calls[1]?.[0],
+			);
+			await act(async () => {
+				first.release();
+				await first.submission;
+			});
+			expect(testState.exchangeSdkCalls.get(method)).not.toHaveBeenCalled();
+			expect(testState.exchangeErrors.get(method)).toMatchObject({ code: "withdrawal-conditions-changed" });
+			await act(async () => {
+				releaseSecond();
+				await secondSubmission;
+			});
+			expect(testState.exchangeSdkCalls.get(method)).toHaveBeenCalledOnce();
+		});
 	});
 
 	it("does not enqueue a withdrawal when the signing identity changes during preflight", async () => {
