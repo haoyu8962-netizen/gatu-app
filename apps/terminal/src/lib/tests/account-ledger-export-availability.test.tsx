@@ -90,16 +90,21 @@ describe("account ledger export availability", () => {
 	it.each([
 		["desktop", () => <AccountTransfersTab />],
 		["mobile", () => <MobileAccountTransfersTab scrollMode="page" />],
-	] as const)("shows a retryable unavailable state on %s", (_surface, renderSurface) => {
+	] as const)("keeps export behavior independent of read failures on %s", (surface, renderSurface) => {
 		mocks.status = "unavailable";
 		act(() => root.render(renderSurface()));
 
-		expect(container.textContent).toContain("Failed to load deposits and withdrawals.");
+		if (surface === "mobile") {
+			expect(container.textContent).not.toContain("Failed to load deposits and withdrawals.");
+			expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		} else expect(container.textContent).toContain("Failed to load deposits and withdrawals.");
 		expect(container.textContent).not.toContain("No deposits or withdrawals found.");
 		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(candidate) => candidate.textContent === "Retry",
 		);
-		act(() => retry?.click());
-		expect(mocks.retry).toHaveBeenCalledOnce();
+		if (surface === "desktop") {
+			act(() => retry?.click());
+			expect(mocks.retry).toHaveBeenCalledOnce();
+		} else expect(retry).toBeUndefined();
 	});
 });

@@ -1,10 +1,12 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import { WalletIcon } from "@phosphor-icons/react";
 import { useState } from "react";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { getBalanceRowDisplayAvailable } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useBalanceRows } from "@/hooks/trade/use-balance-rows";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
@@ -24,6 +26,7 @@ export function MobileBalancesTab() {
 	const { getToken } = useSpotTokens();
 	const { open: openDepositModal } = useDepositModalActions();
 	const depositAvailability = useDepositAvailability();
+	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const { hasWalletAccess } = useWalletSession();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -60,8 +63,8 @@ export function MobileBalancesTab() {
 		if (depositAvailability.path === "sponsored") {
 			return (
 				<MobileBalancesState
-					label={depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`}
-					actionLabel={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					label={depositNotice ?? t`Open Deposit to prepare your email wallet.`}
+					actionLabel={t`Deposit`}
 					actionDisabled={!depositAvailability.available}
 					onAction={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 				/>
@@ -69,22 +72,15 @@ export function MobileBalancesTab() {
 		}
 		return <MobileBalancesState label={t`Connect your wallet to view balances.`} />;
 	}
-	if (hasError) return <MobileBalancesState variant="error" label={t`Failed to load balances.`} />;
-	if (isLoading) return <MobileBalancesState loading label={t`Loading balances...`} />;
-	if (!accountModeReady) {
-		return <MobileBalancesState variant="error" label={t`Select a supported account mode to view balances.`} />;
-	}
+	const isDataReady = !hasError && !isLoading && !isDataStale && accountModeReady && accountDataReady;
 	return (
 		<div className="flex min-h-0 flex-col font-market-close">
-			{isDataStale ? (
-				<output className="shrink-0 border-b border-stroke-warning-weak bg-warning-soft px-3.5 py-2 text-xs text-warning">
-					{t`Balance data is stale. Actions are temporarily unavailable.`}
-				</output>
-			) : null}
-			{balances.length === 0 ? (
+			{!isDataReady ? (
+				<DataPendingState loading={isLoading} />
+			) : balances.length === 0 ? (
 				<MobileBalancesState
-					label={depositAvailability.unavailableReason ?? t`No balances found. Deposit funds to start trading.`}
-					actionLabel={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+					label={depositNotice ?? t`No balances found. Deposit funds to start trading.`}
+					actionLabel={t`Deposit`}
 					actionDisabled={!depositAvailability.available}
 					onAction={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
 				/>
@@ -153,15 +149,11 @@ export function MobileBalancesTab() {
 
 function MobileBalancesState({
 	label,
-	loading = false,
-	variant = "muted",
 	actionLabel,
 	actionDisabled = false,
 	onAction,
 }: {
 	label: string;
-	loading?: boolean;
-	variant?: "muted" | "error";
 	actionLabel?: string;
 	actionDisabled?: boolean;
 	onAction?: () => void;
@@ -169,19 +161,9 @@ function MobileBalancesState({
 	return (
 		<div className="flex min-h-60 flex-col items-center justify-center gap-2.5 p-6 text-center font-market-close">
 			<div className="flex size-10 items-center justify-center rounded-full bg-market-close-hover">
-				{loading ? (
-					<SpinnerGapIcon className="size-5 animate-spin text-market-close-subtle" />
-				) : (
-					<WalletIcon className="size-5 text-market-close-subtle" />
-				)}
+				<WalletIcon className="size-5 text-market-close-subtle" />
 			</div>
-			<p
-				className={
-					variant === "error" ? "max-w-xs text-xs text-market-close-danger" : "max-w-xs text-xs text-market-close-muted"
-				}
-			>
-				{label}
-			</p>
+			<p className="max-w-xs text-xs text-market-close-muted">{label}</p>
 			{actionLabel ? (
 				<Button
 					variant="outline"

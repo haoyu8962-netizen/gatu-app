@@ -21,6 +21,11 @@ const testState = vi.hoisted(() => ({
 	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
 	fundsActionAvailable: true,
+	accountDataReady: true,
+	accountModeReady: true,
+	isLoading: false,
+	isDataStale: false,
+	hasError: false,
 	hasBalance: false,
 	isConnected: true,
 	openDeposit: vi.fn(),
@@ -43,14 +48,14 @@ vi.mock("@/hooks/trade/use-balance-rows", () => ({
 				]
 			: [];
 		return {
-			accountDataReady: true,
-			accountModeReady: true,
+			accountDataReady: testState.accountDataReady,
+			accountModeReady: testState.accountModeReady,
 			balances: rows,
-			hasError: false,
+			hasError: testState.hasError,
 			internalTransfersEnabled: true,
 			isConnected: testState.isConnected,
-			isDataStale: false,
-			isLoading: false,
+			isDataStale: testState.isDataStale,
+			isLoading: testState.isLoading,
 			perpBalances: [],
 			perpFundsActionsEnabled: true,
 			showBalanceAccountType: false,
@@ -108,7 +113,9 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 vi.mock("@/components/trade/positions/send-modal", () => ({ SendModal: () => null }));
-vi.mock("@/components/trade/positions/transfer-modal", () => ({ TransferModal: () => null }));
+vi.mock("@/components/trade/positions/transfer-modal", () => ({
+	TransferModal: ({ open }: { open: boolean }) => (open ? <input aria-label="Transfer draft" defaultValue="" /> : null),
+}));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -122,6 +129,11 @@ describe("empty balance Deposit entries", () => {
 		testState.depositUnavailableReason = null;
 		testState.fundsActionAvailable = true;
 		testState.hasBalance = false;
+		testState.accountDataReady = true;
+		testState.accountModeReady = true;
+		testState.isLoading = false;
+		testState.isDataStale = false;
+		testState.hasError = false;
 		testState.isConnected = true;
 		testState.openDeposit.mockReset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -146,6 +158,72 @@ describe("empty balance Deposit entries", () => {
 		});
 	}
 
+	it.each([
+		{ isLoading: true },
+		{ hasError: true },
+		{ isDataStale: true },
+		{ accountModeReady: false },
+		{ accountDataReady: false },
+	])("keeps an incomplete mobile balance snapshot quiet without an empty-account deposit CTA: %o", (state) => {
+		Object.assign(testState, state);
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileBalancesTab />
+				</I18nProvider>,
+			),
+		);
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		expect(container.textContent).toBe("");
+		expect(container.querySelector("button")).toBeNull();
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+		Object.assign(testState, {
+			isLoading: false,
+			hasError: false,
+			isDataStale: false,
+			accountModeReady: true,
+			accountDataReady: true,
+		});
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileBalancesTab />
+				</I18nProvider>,
+			),
+		);
+		expect(container.querySelector('[data-slot="data-pending"]')).toBeNull();
+		expect(container.textContent).toContain("Deposit");
+	});
+
+	it("preserves an open transfer draft while balances reconnect", () => {
+		testState.hasBalance = true;
+		const renderMobile = () =>
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<MobileBalancesTab />
+					</I18nProvider>,
+				),
+			);
+		renderMobile();
+		const transfer = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Transfer",
+		);
+		expect(transfer).toBeDefined();
+		act(() => transfer?.click());
+		const draft = container.querySelector<HTMLInputElement>('input[aria-label="Transfer draft"]');
+		if (!draft) throw new Error("Transfer form not opened");
+		draft.value = "1.25";
+		testState.isDataStale = true;
+		renderMobile();
+		expect(container.querySelector('input[aria-label="Transfer draft"]')).toBe(draft);
+		expect(draft.value).toBe("1.25");
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		testState.isDataStale = false;
+		renderMobile();
+		expect(container.querySelector('input[aria-label="Transfer draft"]')).toBe(draft);
+	});
+
 	it("opens Deposit from both desktop and mobile when the path is available", () => {
 		renderEntries();
 		const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
@@ -162,12 +240,12 @@ describe("empty balance Deposit entries", () => {
 		renderEntries();
 
 		const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
-			(button) => button.textContent === "Deposit unavailable",
+			(button) => button.textContent === "Deposit unavailable" || button.textContent === "Deposit",
 		);
 		expect(buttons).toHaveLength(2);
 		for (const button of buttons) {
 			expect(button.disabled).toBe(true);
-			expect(button.getAttribute("aria-label") ?? button.textContent).toBe("Deposit unavailable");
+			expect(["Deposit", "Deposit unavailable"]).toContain(button.getAttribute("aria-label") ?? button.textContent);
 			act(() => button.click());
 		}
 		expect(container.textContent?.match(/Deposits from external wallets are not enabled on Mainnet\./g)).toHaveLength(

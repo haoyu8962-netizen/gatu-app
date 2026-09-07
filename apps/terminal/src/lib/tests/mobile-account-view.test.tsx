@@ -322,7 +322,7 @@ describe("mobile account view", () => {
 				expect(transfer?.getAttribute("aria-disabled")).toBe("true");
 				expect(transfer?.getAttribute("aria-label")).toBeNull();
 				expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
-				expect(transfer ? getDescriptionText(transfer) : "").toContain("Balance data is unavailable");
+				expect(transfer ? getDescriptionText(transfer) : "").not.toContain("Balance data is unavailable");
 				expect(withdraw?.getAttribute("aria-disabled")).toBe("true");
 				act(() => {
 					transfer?.click();
@@ -442,7 +442,7 @@ describe("mobile account view", () => {
 		});
 
 		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
-			(button) => button.textContent === "Deposit unavailable",
+			(button) => button.textContent === "Deposit",
 		);
 		expect(depositButton?.disabled).toBe(true);
 		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");

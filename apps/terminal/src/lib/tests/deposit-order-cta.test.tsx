@@ -110,12 +110,9 @@ describe("Deposit order CTA", () => {
 			isSubmitting: false,
 			isSwitchingChain: false,
 			labels: {
-				balanceError: "Failed to load balances.",
 				connect: "Connect Wallet",
 				deposit: "Deposit",
-				depositUnavailable: DEPOSIT_UNAVAILABLE,
 				enableTrading: "Enable Trading",
-				loading: "Loading...",
 				signing: "Signing...",
 				switchChain: "Switch to Arbitrum",
 				switching: "Switching...",
@@ -134,7 +131,7 @@ describe("Deposit order CTA", () => {
 		expect(content).toMatchObject({
 			disabled: true,
 			disabledReason: UNAVAILABLE_REASON,
-			text: DEPOSIT_UNAVAILABLE,
+			text: "Deposit",
 		});
 		content.action();
 		expect(onDeposit).not.toHaveBeenCalled();
@@ -177,12 +174,9 @@ describe("Deposit order CTA", () => {
 			isSubmitting: false,
 			isSwitchingChain: false,
 			labels: {
-				balanceError: "Failed to load balances.",
 				connect: "Connect Wallet",
 				deposit: "Deposit",
-				depositUnavailable: DEPOSIT_UNAVAILABLE,
 				enableTrading: "Enable Trading",
-				loading: "Loading...",
 				signing: "Signing...",
 				switchChain: "Switch to Arbitrum",
 				switching: "Switching...",
@@ -196,7 +190,7 @@ describe("Deposit order CTA", () => {
 			onSwitchChain: vi.fn(),
 			side: "buy" as const,
 			sideLabel: "Buy",
-			tradingUnavailableReason: TRADING_UNAVAILABLE_REASON,
+			tradingBlocked: true,
 		};
 		const connectContent = getMobileOrderButtonContent({ ...baseInput, isConnected: false });
 		expect(connectContent).toMatchObject({ disabled: false, text: "Connect Wallet" });
@@ -208,10 +202,7 @@ describe("Deposit order CTA", () => {
 			canSubmit: true,
 			isConnected: true,
 		});
-		expect(orderContent).toMatchObject({
-			disabled: true,
-			disabledReason: TRADING_UNAVAILABLE_REASON,
-			text: "Buy",
-		});
+		expect(orderContent).toMatchObject({ disabled: true, text: "Buy" });
+		expect(orderContent.disabledReason).toBeUndefined();
 	});
 });

@@ -333,7 +333,9 @@ describe("MobileNavDrawer", () => {
 		act(() => root.render(<MobileNavDrawer />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Open navigation"]')?.click());
 
-		const depositButton = container.querySelector<HTMLButtonElement>('button[aria-label="Deposit unavailable"]');
+		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Deposit",
+		);
 		expect(depositButton?.disabled).toBe(true);
 		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
 		await act(async () => depositButton?.click());

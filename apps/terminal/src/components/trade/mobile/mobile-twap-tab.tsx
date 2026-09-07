@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useState } from "react";
 import { type TwapSubview, TwapSubviewTabs } from "@/components/trade/twap/twap-subview-tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getToolbarTwapMetrics } from "@/domain/trade/trading-toolbar-metrics";
@@ -33,7 +33,6 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	const {
 		data: twapStatesEvent,
 		status,
-		error,
 		isStale,
 	} = useSubscription(
 		"twapStates",
@@ -69,6 +68,17 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 					aria-labelledby={`mobile-twap-${subview}-tab`}
 					className="flex min-h-0 flex-1 flex-col"
 				>
+					{feedback ? (
+						<div
+							role={feedback.tone === "error" ? "alert" : "status"}
+							className={cn(
+								"px-3.5 pt-3 text-xs",
+								feedback.tone === "error" ? "text-market-close-danger" : "text-warning",
+							)}
+						>
+							{feedback.message}
+						</div>
+					) : null}
 					{content}
 				</div>
 			</div>
@@ -91,13 +101,8 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 		);
 	}
 
-	if (viewState === "error") {
-		return renderSubview(
-			<div className="flex flex-1 flex-col items-center justify-center gap-1 p-6 text-center text-sm text-market-close-danger">
-				<span>{t`Failed to load TWAP orders.`}</span>
-				{error instanceof Error && <span className="text-xs text-market-close-muted">{error.message}</span>}
-			</div>,
-		);
+	if (viewState !== "ready" || status !== "active") {
+		return renderSubview(<DataPendingState loading={viewState === "loading"} />);
 	}
 
 	if (viewState === "ready" && activeOrders.length === 0) {
@@ -115,153 +120,130 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	}
 
 	return renderSubview(
-		<Skeleton name="twap-tab" loading={viewState === "loading"}>
-			<div className={cn("min-h-0 flex flex-col", !isPageScroll && "flex-1")}>
-				{feedback ? (
-					<div
-						role={feedback.tone === "error" ? "alert" : "status"}
-						className={cn(
-							"px-3.5 pt-3 text-xs",
-							feedback.tone === "error" ? "text-market-close-danger" : "text-warning",
-						)}
-					>
-						{feedback.message}
-					</div>
-				) : null}
-				{viewState === "stale" ? (
-					<output className="block px-3.5 pt-3 text-xs text-warning">
-						{t`TWAP data may be stale while the connection recovers.`}
-					</output>
-				) : null}
-				<div
-					className={cn(
-						"flex flex-col gap-2.5 px-3.5 py-3",
-						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
-					)}
-				>
-					{viewState === "stale" && activeOrders.length === 0 ? (
-						<div className="flex items-center justify-center p-6 text-sm text-market-close-muted">
-							{t`No active TWAP orders.`}
-						</div>
-					) : null}
-					{activeOrders.map(({ twapId, state }) => {
-						const isBuy = state.side === "B";
-						const market = markets.getMarket(state.coin);
-						const marketLabel = market?.shortName ?? state.coin;
-						const szDecimals = markets.getSzDecimals(state.coin);
-						const metrics = getToolbarTwapMetrics({
-							sz: state.sz,
-							executedSz: state.executedSz,
-							executedNtl: state.executedNtl,
-							timestampMs: String(state.timestamp),
-							minutes: String(state.minutes),
-							nowMs: String(renderTimeMs),
-						});
-						const progressRatio = metrics.progressRatio ?? "0";
-						const remainingMs = Number(metrics.remainingMs ?? "0");
-						const isCancelling = cancellingTwapId === twapId;
+		<div className={cn("min-h-0 flex flex-col", !isPageScroll && "flex-1")}>
+			<div
+				className={cn(
+					"flex flex-col gap-2.5 px-3.5 py-3",
+					!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
+				)}
+			>
+				{activeOrders.map(({ twapId, state }) => {
+					const isBuy = state.side === "B";
+					const market = markets.getMarket(state.coin);
+					const marketLabel = market?.shortName ?? state.coin;
+					const szDecimals = markets.getSzDecimals(state.coin);
+					const metrics = getToolbarTwapMetrics({
+						sz: state.sz,
+						executedSz: state.executedSz,
+						executedNtl: state.executedNtl,
+						timestampMs: String(state.timestamp),
+						minutes: String(state.minutes),
+						nowMs: String(renderTimeMs),
+					});
+					const progressRatio = metrics.progressRatio ?? "0";
+					const remainingMs = Number(metrics.remainingMs ?? "0");
+					const isCancelling = cancellingTwapId === twapId;
 
-						return (
-							<article
-								key={twapId}
-								className="flex flex-col gap-2.5 rounded-[14px] border border-market-close-stroke-card bg-modal px-3.5 py-3"
-							>
-								<div className="flex min-w-0 items-center justify-between gap-3">
-									<div className="flex min-w-0 items-center gap-2">
-										<button
-											type="button"
-											onClick={() => handleSelectMarket(state.coin)}
-											aria-label={t`Switch to ${marketLabel} market`}
-											className="-my-3 min-h-11 truncate rounded-[4px] text-sm font-bold text-market-close-fg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
-										>
-											{marketLabel}
-										</button>
-										<span
-											className={cn(
-												"shrink-0 rounded-[4px] px-[7px] py-0.5 text-[10px] font-bold text-market-close-on-control",
-												isBuy ? "bg-market-close-success" : "bg-market-close-danger",
-											)}
-										>
-											{isBuy ? t`Buy` : t`Sell`}
+					return (
+						<article
+							key={twapId}
+							className="flex flex-col gap-2.5 rounded-[14px] border border-market-close-stroke-card bg-modal px-3.5 py-3"
+						>
+							<div className="flex min-w-0 items-center justify-between gap-3">
+								<div className="flex min-w-0 items-center gap-2">
+									<button
+										type="button"
+										onClick={() => handleSelectMarket(state.coin)}
+										aria-label={t`Switch to ${marketLabel} market`}
+										className="-my-3 min-h-11 truncate rounded-[4px] text-sm font-bold text-market-close-fg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
+									>
+										{marketLabel}
+									</button>
+									<span
+										className={cn(
+											"shrink-0 rounded-[4px] px-[7px] py-0.5 text-[10px] font-bold text-market-close-on-control",
+											isBuy ? "bg-market-close-success" : "bg-market-close-danger",
+										)}
+									>
+										{isBuy ? t`Buy` : t`Sell`}
+									</span>
+									{state.reduceOnly ? (
+										<span className="shrink-0 rounded-[4px] bg-market-close-hover px-[7px] py-0.5 text-[10px] font-bold text-market-close-muted">
+											{t`RO`}
 										</span>
-										{state.reduceOnly ? (
-											<span className="shrink-0 rounded-[4px] bg-market-close-hover px-[7px] py-0.5 text-[10px] font-bold text-market-close-muted">
-												{t`RO`}
-											</span>
-										) : null}
-									</div>
-									<span className="shrink-0 whitespace-nowrap text-xs text-market-close-muted tabular-nums">
-										{t`Remaining`}{" "}
-										<TimeTicker
-											startTime={renderTimeMs}
-											durationMs={remainingMs}
-											isActive={remainingMs > 0}
-											format={(elapsedMs) => formatClockDuration(remainingMs - elapsedMs)}
-										/>
+									) : null}
+								</div>
+								<span className="shrink-0 whitespace-nowrap text-xs text-market-close-muted tabular-nums">
+									{t`Remaining`}{" "}
+									<TimeTicker
+										startTime={renderTimeMs}
+										durationMs={remainingMs}
+										isActive={remainingMs > 0}
+										format={(elapsedMs) => formatClockDuration(remainingMs - elapsedMs)}
+									/>
+								</span>
+							</div>
+
+							<div className="flex flex-col gap-1">
+								<div className="flex min-w-0 items-center justify-between gap-2 text-[11px] text-market-close-muted tabular-nums">
+									<span className="min-w-0 truncate whitespace-nowrap">
+										{formatNumber(state.executedSz, szDecimals)} / {formatNumber(state.sz, szDecimals)} {marketLabel}
+										{" · "}
+										{t`Avg Price`}{" "}
+										{formatPrice(metrics.executedAvgPx, {
+											szDecimals,
+											marketType: market?.kind === "spot" ? "spot" : "perp",
+										})}
+									</span>
+									<span className="shrink-0 font-bold text-market-close-fg">
+										{formatPercent(metrics.progressRatio, { decimals: 0, signDisplay: "never" })}
 									</span>
 								</div>
-
-								<div className="flex flex-col gap-1">
-									<div className="flex min-w-0 items-center justify-between gap-2 text-[11px] text-market-close-muted tabular-nums">
-										<span className="min-w-0 truncate whitespace-nowrap">
-											{formatNumber(state.executedSz, szDecimals)} / {formatNumber(state.sz, szDecimals)} {marketLabel}
-											{" · "}
-											{t`Avg Price`}{" "}
-											{formatPrice(metrics.executedAvgPx, {
-												szDecimals,
-												marketType: market?.kind === "spot" ? "spot" : "perp",
-											})}
-										</span>
-										<span className="shrink-0 font-bold text-market-close-fg">
-											{formatPercent(metrics.progressRatio, { decimals: 0, signDisplay: "never" })}
-										</span>
-									</div>
+								<div
+									role="progressbar"
+									aria-label={t`TWAP execution progress`}
+									aria-valuemin={0}
+									aria-valuemax={1}
+									aria-valuenow={Number(progressRatio)}
+									aria-valuetext={formatPercent(metrics.progressRatio, { decimals: 0, signDisplay: "never" })}
+									className="h-[5px] overflow-hidden rounded-[3px] bg-market-close-stroke-card"
+								>
 									<div
-										role="progressbar"
-										aria-label={t`TWAP execution progress`}
-										aria-valuemin={0}
-										aria-valuemax={1}
-										aria-valuenow={Number(progressRatio)}
-										aria-valuetext={formatPercent(metrics.progressRatio, { decimals: 0, signDisplay: "never" })}
-										className="h-[5px] overflow-hidden rounded-[3px] bg-market-close-stroke-card"
-									>
-										<div
-											data-testid="mobile-twap-progress"
-											className={cn(
-												"h-full origin-left rounded-[3px]",
-												isBuy ? "bg-market-close-success" : "bg-market-close-danger",
-											)}
-											style={{ transform: `scaleX(${progressRatio})` }}
-										/>
-									</div>
+										data-testid="mobile-twap-progress"
+										className={cn(
+											"h-full origin-left rounded-[3px]",
+											isBuy ? "bg-market-close-success" : "bg-market-close-danger",
+										)}
+										style={{ transform: `scaleX(${progressRatio})` }}
+									/>
 								</div>
+							</div>
 
-								<div className="grid grid-cols-2 gap-2">
-									<button
-										type="button"
-										disabled
-										aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
-										title={t`Hyperliquid does not support pausing active TWAP orders.`}
-										className="min-h-11 rounded-[8px] border border-market-close-stroke-card bg-modal px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
-									>
-										{t`Pause`}
-									</button>
-									<button
-										type="button"
-										aria-label={t`Terminate TWAP order`}
-										aria-busy={isCancelling}
-										disabled={cancellingTwapId !== null}
-										onClick={() => void cancelTwap(state.coin, twapId)}
-										className="min-h-11 rounded-[8px] border border-stroke-error-weak bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-fg-disabled"
-									>
-										{isCancelling ? t`Terminating...` : t`Terminate`}
-									</button>
-								</div>
-							</article>
-						);
-					})}
-				</div>
+							<div className="grid grid-cols-2 gap-2">
+								<button
+									type="button"
+									disabled
+									aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
+									title={t`Hyperliquid does not support pausing active TWAP orders.`}
+									className="min-h-11 rounded-[8px] border border-market-close-stroke-card bg-modal px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
+								>
+									{t`Pause`}
+								</button>
+								<button
+									type="button"
+									aria-label={t`Terminate TWAP order`}
+									aria-busy={isCancelling}
+									disabled={cancellingTwapId !== null}
+									onClick={() => void cancelTwap(state.coin, twapId)}
+									className="min-h-11 rounded-[8px] border border-stroke-error-weak bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-fg-disabled"
+								>
+									{isCancelling ? t`Terminating...` : t`Terminate`}
+								</button>
+							</div>
+						</article>
+					);
+				})}
 			</div>
-		</Skeleton>,
+		</div>,
 	);
 }

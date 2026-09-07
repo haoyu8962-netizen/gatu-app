@@ -12,6 +12,7 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -109,7 +110,8 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
-	const internalTransfersDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const internalTransfersDisabled = !fundsActionAvailability.internalTransfer.available;
+	const internalTransfersDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer);
 	const availableBalanceValue =
 		accountModeReady && accountDataReady
 			? direction === "toSpot"
@@ -138,13 +140,13 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
-		if (internalTransfersDisabledReason || !accountDataReady || isPending) return;
+		if (internalTransfersDisabled || !accountDataReady || isPending) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabledReason) return;
+		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabled) return;
 
 		setError(null);
 		try {
@@ -161,7 +163,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	}
 
 	function handleMaxClick() {
-		if (!accountDataReady) return;
+		if (internalTransfersDisabled || !accountDataReady || isPending) return;
 		setAmount(floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS));
 	}
 
@@ -187,7 +189,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</div>
 					)}
 
-					{accountModeReady && accountDataReady ? (
+					{accountModeReady ? (
 						<>
 							<div className="flex items-center justify-center gap-3 py-2">
 								<div className="flex flex-col items-center">
@@ -204,7 +206,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 									type="button"
 									onClick={handleFlip}
 									aria-label={t`Flip transfer direction`}
-									disabled={!!internalTransfersDisabledReason || isPending}
+									disabled={internalTransfersDisabled || isPending}
 									className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-action"
 								>
 									<ArrowsLeftRightIcon className="size-4" />
@@ -235,11 +237,12 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 								placeholder="0.00"
 								value={amount}
 								onChange={(e) => handleAmountChange(e.target.value)}
-								disabled={!!internalTransfersDisabledReason || isPending}
+								disabled={internalTransfersDisabled || isPending}
 								mobileSafe
 								className={cn(
 									"w-full tabular-nums max-[1000px]:h-11",
-									exceedsBalance(amount, availableBalanceValue) &&
+									accountDataReady &&
+										exceedsBalance(amount, availableBalanceValue) &&
 										"border-stroke-error-strong focus:border-stroke-error-strong",
 								)}
 							/>

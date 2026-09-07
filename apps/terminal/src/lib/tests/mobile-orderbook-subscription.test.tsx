@@ -336,7 +336,7 @@ describe("mobile orderbook subscription lifecycle", () => {
 
 		expect(initialFieldset).toBe(observedElement);
 		expect(resizeObserverCount).toBe(1);
-		expect(container.querySelector('[role="alert"]')?.className).toContain("text-xs");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 		expect(container.querySelector('[aria-label="Price precision"]')).not.toBeNull();
 		expect(container.querySelectorAll("button[data-mode]")).toHaveLength(3);
 
@@ -461,8 +461,8 @@ describe("mobile orderbook subscription lifecycle", () => {
 		render();
 
 		expect(getAskPrice("101.00")).toBeNull();
-		expect(container.textContent).toContain("Failed to load order book");
-		expect(container.querySelector('[role="alert"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Failed to load order book");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it("shows a same-key cache as busy and prevents cached price selection", async () => {

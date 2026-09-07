@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
@@ -339,36 +340,13 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 			/>
 		);
 	}
-	if (positionError && !currentPosition) {
+	if (((positionLoading || positionError || positionStale) && !currentPosition) || !hasOpenOrdersSnapshot) {
 		return (
 			<PositionTpSlStatus
 				open={open}
 				isMobile={isMobile}
 				position={position}
-				message={t`Failed to load positions.`}
-				onClose={onOpenChange}
-			/>
-		);
-	}
-	if (openOrdersStatus === "error" && !hasOpenOrdersSnapshot) {
-		return (
-			<PositionTpSlStatus
-				open={open}
-				isMobile={isMobile}
-				position={position}
-				message={t`Failed to load open orders.`}
-				onClose={onOpenChange}
-			/>
-		);
-	}
-	if ((positionLoading && !currentPosition) || !hasOpenOrdersSnapshot) {
-		return (
-			<PositionTpSlStatus
-				open={open}
-				isMobile={isMobile}
-				position={position}
-				message={t`Loading...`}
-				loading
+				loading={positionLoading || openOrdersStatus === "subscribing" || openOrdersStatus === "idle"}
 				onClose={onOpenChange}
 			/>
 		);
@@ -393,20 +371,10 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 		openOrdersStatus === "active" &&
 		!openOrdersIsStale &&
 		hasOpenOrdersSnapshot;
-	let liveDataMessage: string | null = null;
-	if (positionError) {
-		liveDataMessage = t`Failed to load positions.`;
-	} else if (positionStale) {
-		liveDataMessage = t`Live position data is stale. Wait for the account connection to recover.`;
-	} else if (!markets.isLoading && !marketBindingReady) {
-		liveDataMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
-	} else if (openOrdersStatus === "error") {
-		liveDataMessage = t`Failed to load open orders.`;
-	} else if (openOrdersIsStale) {
-		liveDataMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
-	} else if (!liveDataReady) {
-		liveDataMessage = t`Loading...`;
-	}
+	const liveDataMessage =
+		!markets.isLoading && !markets.error && !marketBindingReady
+			? t`Trading data changed while this dialog was open. Close and reopen it before submitting.`
+			: null;
 
 	return (
 		<PositionTpSlForm
@@ -1371,7 +1339,7 @@ interface StatusProps {
 	open: boolean;
 	isMobile: boolean;
 	position: TpSlPositionTarget;
-	message: string;
+	message?: string;
 	loading?: boolean;
 	onClose: (open: boolean) => void;
 }
@@ -1381,10 +1349,11 @@ function PositionTpSlStatus({ open, isMobile, position, message, loading = false
 		<PositionRiskDialogShell open={open} onOpenChange={onClose} isMobile={isMobile} dismissible>
 			{renderPositionHeader(position.coin, position.isLong)}
 			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3">
-				<div className="flex min-h-28 items-center justify-center gap-2 text-sm text-fg-muted">
-					{loading && <SpinnerGapIcon className="size-4 animate-spin" />}
-					<span>{message}</span>
-				</div>
+				{message ? (
+					<div className="flex min-h-28 items-center justify-center text-sm text-fg-muted">{message}</div>
+				) : (
+					<DataPendingState loading={loading} />
+				)}
 			</ModalContent>
 			<ModalFooter className="max-[1000px]:px-4 max-[1000px]:pt-0 max-[1000px]:pb-4">
 				<Button

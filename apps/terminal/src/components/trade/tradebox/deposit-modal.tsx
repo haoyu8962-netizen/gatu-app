@@ -21,6 +21,7 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
@@ -454,7 +455,7 @@ export function DepositModal() {
 	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
 	let withdrawalPrerequisiteError: string | null = null;
 	if (!fundsActionAvailability.withdrawal.available) {
-		withdrawalPrerequisiteError = fundsActionAvailability.withdrawal.unavailableReason;
+		withdrawalPrerequisiteError = getFundsAvailabilityNotice(fundsActionAvailability.withdrawal);
 	} else if (
 		withdrawalRoutingStatus === "ready" &&
 		withdrawalRoute === "arbitrum-cctp" &&
@@ -1182,7 +1183,7 @@ export function DepositModal() {
 								networkName={depositNetworkName}
 								sponsoredCctpEnabled={sponsoredCctpEnabled}
 								sponsoredCctpReadiness={sponsoredCctpReadiness}
-								depositUnavailableReason={depositAvailability.unavailableReason}
+								depositUnavailableReason={getFundsAvailabilityNotice(depositAvailability)}
 								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
 								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}

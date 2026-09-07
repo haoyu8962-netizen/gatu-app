@@ -39,6 +39,15 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Offer Link Desktop only when its fail-closed feature flag is enabled. Keep email login and the Ethereum-only Privy wallet directory as the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
 - Show PWA installation only when a real browser install prompt or supported iOS instructions are available. Installed and unsupported states must hide the entry, a captured install prompt is single-use, and wide desktop `beforeinstallprompt` behavior must remain browser-owned.
 
+## Mobile data presentation contract
+
+- Follow `docs/mobile-data-presentation.md` before changing mobile loading, reconnect, empty, or error states, including shared dialogs used on mobile.
+- Passive data fetching must not render loading, stale, unavailable, paused-update, or raw transport-error text, warning icons, warning banners, or error labels in action buttons. Use stable numeric placeholders, blank lists, or skeletons; `aria-busy` and screen-reader-only loading descriptions are allowed.
+- A subscription being active is not proof that its first snapshot arrived. Show empty-list conclusions and deposit suggestions only after a complete, current, successful snapshot. Stale, failed, missing, or mismatched snapshots are never confirmed empty states.
+- Numeric zero placeholders belong only to presentation. Preserve all signing, account-mode, funding, regional, freshness, and action-availability guards; disable actions using availability booleans, never the presence of a displayed explanation.
+- Show confirmed restrictions only after the relevant identity or policy has resolved. Preserve feedback for actions the user actually requested, including uncertain transaction outcomes; do not infer a broken connection, unsupported account, or missing funds from an unfinished request.
+- Cover initial subscription without data, stale/error recovery, genuine empty snapshots, and disabled-action behavior in regression tests. Update this document before introducing a new category of passive data notice.
+
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.

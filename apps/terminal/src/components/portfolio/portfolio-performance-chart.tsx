@@ -296,7 +296,7 @@ export function PortfolioPerformanceChart({
 			<div className="relative min-h-0 flex-1 px-3 pb-3 pt-2">
 				{isLoading || isUnavailable ? (
 					<div
-						className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center"
+						className="absolute inset-0 hidden min-[1001px]:flex flex-col items-center justify-center gap-2 px-4 text-center"
 						role={isUnavailable ? "alert" : "status"}
 					>
 						<p className="text-sm font-medium text-fg">

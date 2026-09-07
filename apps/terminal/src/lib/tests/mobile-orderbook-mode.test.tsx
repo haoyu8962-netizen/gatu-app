@@ -25,14 +25,12 @@ const BIDS = Array.from({ length: 20 }, (_, index) => ({
 function CompactOrderbookHarness({
 	asks = ASKS,
 	bids = BIDS,
-	bookStatus = "active",
 	hasSnapshot = true,
 	isInteractive = true,
 	showOrderbookInQuote = false,
 }: {
 	asks?: typeof ASKS;
 	bids?: typeof BIDS;
-	bookStatus?: string;
 	hasSnapshot?: boolean;
 	isInteractive?: boolean;
 	showOrderbookInQuote?: boolean;
@@ -44,7 +42,6 @@ function CompactOrderbookHarness({
 			asks={asks}
 			baseToken="HYPE"
 			bids={bids}
-			bookStatus={bookStatus}
 			flashResetKey="HYPE:0.1"
 			hasSnapshot={hasSnapshot}
 			isInteractive={isInteractive}
@@ -182,9 +179,7 @@ describe("compact mobile orderbook modes", () => {
 
 	it("keeps pending skeleton ranks stable when the measured slot count grows", () => {
 		act(() => {
-			root.render(
-				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="pending" hasSnapshot={false} isInteractive={false} />,
-			);
+			root.render(<CompactOrderbookHarness asks={[]} bids={[]} hasSnapshot={false} isInteractive={false} />);
 		});
 
 		const initialAskRows = [
@@ -281,19 +276,14 @@ describe("compact mobile orderbook modes", () => {
 	it("keeps compact chrome and typography in the error state", () => {
 		const initialFieldset = observedElement;
 
-		act(() =>
-			root.render(
-				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="error" hasSnapshot={false} isInteractive={false} />,
-			),
-		);
+		act(() => root.render(<CompactOrderbookHarness asks={[]} bids={[]} hasSnapshot={false} isInteractive={false} />));
 
 		const alert = container.querySelector<HTMLElement>('[role="alert"]');
 		const currentFieldset = container.querySelector("fieldset");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(currentFieldset).toBe(initialFieldset);
-		expect(alert?.className).toContain("text-xs");
-		expect(alert?.className).toContain("text-trading-panel-error");
-		expect(currentFieldset?.contains(alert ?? null)).toBe(true);
+		expect(alert).toBeNull();
+		expect(container.querySelector('[data-slot="compact-orderbook-row-position"]')).not.toBeNull();
 		expect(container.querySelector('[data-slot="compact-orderbook-price-token"]')).not.toBeNull();
 		expect(container.querySelector('[data-slot="compact-orderbook-size-token"]')).not.toBeNull();
 		expect(container.querySelector('[aria-label="Price precision"]')).not.toBeNull();

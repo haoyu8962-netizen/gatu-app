@@ -190,13 +190,14 @@ describe("TradesPanel", () => {
 		).toBe("80.63");
 	});
 
-	it("preserves the subscription error state", () => {
+	it("keeps failed subscriptions quiet until a fresh snapshot recovers", () => {
 		mocks.result.error = new Error("Subscription unavailable");
 		mocks.result.status = "error";
 
 		renderPanel();
 
-		expect(container.textContent).toContain("Subscription unavailable");
+		expect(container.textContent).not.toContain("Subscription unavailable");
+		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
 	});
 
 	function renderPanel() {

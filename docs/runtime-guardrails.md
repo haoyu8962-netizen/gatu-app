@@ -373,6 +373,8 @@ not separate app sessions.
 
 ## 6. WebSocket And Account Data
 
+Mobile presentation must follow [Mobile data presentation](mobile-data-presentation.md): subscription readiness and first-snapshot readiness are separate, passive loading/recovery stays quiet, and display placeholders never relax action guards.
+
 ### Boundary
 
 Market data and account data are separate subscription domains sharing the same

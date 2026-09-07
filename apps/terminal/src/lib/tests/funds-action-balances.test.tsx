@@ -73,6 +73,7 @@ vi.mock("@gatu/ui", () => ({
 
 vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: ({
+		disabled,
 		label,
 		labelValue,
 		onChange,
@@ -84,6 +85,7 @@ vi.mock("@/components/ui/number-input", () => ({
 		onChange: (event: { target: { value: string } }) => void;
 		onLabelValueClick: () => void;
 		value: string;
+		disabled?: boolean;
 	}) =>
 		createElement(
 			"div",
@@ -96,6 +98,7 @@ vi.mock("@/components/ui/number-input", () => ({
 			),
 			createElement("input", {
 				"aria-label": label,
+				disabled,
 				onChange,
 				value,
 			}),
@@ -114,13 +117,23 @@ vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
-	useFundsActionAvailability: ({ accountModeReady }: { accountModeReady: boolean }) => {
-		const unavailableReason = accountModeReady ? null : "Select a supported account mode before moving funds.";
+	useFundsActionAvailability: ({
+		accountModeReady,
+		accountDataReady,
+	}: {
+		accountModeReady: boolean;
+		accountDataReady: boolean;
+	}) => {
+		const unavailableReason = !accountModeReady
+			? "Select a supported account mode before moving funds."
+			: !accountDataReady
+				? "Balance data is unavailable."
+				: null;
 		return {
 			assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
 			internalTransfer: {
-				available: accountModeReady,
-				reason: accountModeReady ? null : "account-mode-unavailable",
+				available: accountModeReady && accountDataReady,
+				reason: !accountModeReady ? "account-mode-unavailable" : !accountDataReady ? "account-data-unavailable" : null,
 				unavailableReason,
 			},
 			withdrawal: { available: true, reason: null, unavailableReason: null },
@@ -186,6 +199,8 @@ describe("funds action balance wiring", () => {
 
 	beforeEach(() => {
 		testState.balances.accountAbstraction = "disabled";
+		testState.balances.hasError = false;
+		testState.balances.isDataStale = false;
 		testState.balances.withdrawable = "40";
 		testState.balances.spotBalances[0].hold = "3140.833333";
 		testState.balances.spotBalances[0].total = "8105.34686269";
@@ -273,18 +288,37 @@ describe("funds action balance wiring", () => {
 		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 
+	it.each(["stale", "error"])("blocks transfer controls quietly with a preserved draft during %s data", (status) => {
+		const renderTransfer = () =>
+			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+		renderTransfer();
+		act(() => setInputValue(getAmountInput(container), "1"));
+		testState.balances.isDataStale = status === "stale";
+		testState.balances.hasError = status === "error";
+		renderTransfer();
+		expect(getAmountInput(container).value).toBe("1");
+		expect(getAmountInput(container).disabled).toBe(true);
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Flip transfer direction"]')?.disabled).toBe(
+			true,
+		);
+		expect(container.textContent).not.toContain("Balance data is unavailable");
+		expect(getButton(container, "Transfer").disabled).toBe(true);
+		act(() => getButton(container, "Transfer").click());
+		expect(testState.exchangeMutations.usdClassTransfer).not.toHaveBeenCalled();
+	});
+
 	it("blocks mode-dependent fund actions until the account mode is supported", () => {
 		testState.balances.accountAbstraction = "default";
 		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
 
-		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+		expect(container.textContent).not.toContain("Select a supported account mode before moving funds.");
 		expect(container.textContent).not.toContain("40.00 USDC");
 		expect(container.textContent).not.toContain("4964.51 USDC");
 		expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
 		expect(getButton(container, "Transfer").disabled).toBe(true);
 
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
-		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+		expect(container.textContent).not.toContain("Select a supported account mode before moving funds.");
 		expect(container.textContent).not.toContain("40.00 USDC");
 		expect(container.textContent).not.toContain("4964.51 USDC");
 		expect(getButton(container, "Send").disabled).toBe(true);

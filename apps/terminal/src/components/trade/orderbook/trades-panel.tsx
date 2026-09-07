@@ -17,11 +17,7 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);
-	const {
-		data: trades,
-		status,
-		error,
-	} = useSubscription("trades", params, {
+	const { data: trades, status } = useSubscription("trades", params, {
 		enabled: !!selectedMarket && !!subscriptionCoin,
 	});
 	const isTestnet = useIsTestnet();
@@ -60,9 +56,7 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 			</div>
 
 			{status === "error" ? (
-				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
-					{error instanceof Error ? error.message : t`Failed to load trades.`}
-				</div>
+				<div data-slot="trades-pending" className="flex-1 min-h-0" aria-hidden="true" />
 			) : processed.length > 0 ? (
 				<div className="flex-1 min-h-0 overflow-y-auto">
 					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>

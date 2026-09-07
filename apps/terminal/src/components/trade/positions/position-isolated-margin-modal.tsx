@@ -370,17 +370,12 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 		if (!identityMatches) {
 			return t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 		}
+		if (markets.isLoading || markets.error || positionLoading || positionError || positionStale) return null;
 		if (!hasLiveMarket) {
 			return t`The selected market changed. Reopen the margin dialog before adjusting margin.`;
 		}
-		if (positionError || positionStale) {
-			return t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`;
-		}
-		if (positionLoading) return t`Loading position...`;
 		if (!livePosition) return t`This isolated position is no longer open.`;
-		if (!livePositionSize) {
-			return t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`;
-		}
+		if (!livePositionSize) return null;
 		if (livePositionSize.eq(0)) return t`This isolated position is no longer open.`;
 		if (!isLiveIsolated) return t`This position is no longer using isolated margin.`;
 		if (!liveSideMatches) return t`This position changed sides. Reopen the margin dialog before adjusting margin.`;
@@ -391,8 +386,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const amountInvalid = amountInput !== "" && amountParams === null;
 	const targetInvalid = targetLeverageInput !== "" && targetValidation === "invalid-target";
 	const targetNotBelowCurrent = targetLeverageInput !== "" && targetValidation === "not-below-current";
-	const targetCurrentUnavailable =
-		targetLeverageInput !== "" && targetValidation === "current-leverage-unavailable" && positionStatus === null;
+
 	let submitLabel = t`Remove Margin`;
 	if (mode === "target") {
 		submitLabel = t`Add to Target`;
@@ -523,11 +517,6 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 						{targetNotBelowCurrent ? (
 							<p className="text-xs text-error">
 								{t`Target leverage must be below the current effective leverage to add margin.`}
-							</p>
-						) : null}
-						{targetCurrentUnavailable ? (
-							<p className="text-xs text-error">
-								{t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`}
 							</p>
 						) : null}
 						<p className="text-xs leading-relaxed text-fg-muted">

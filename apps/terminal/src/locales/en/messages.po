@@ -1109,14 +1109,11 @@ msgstr "Balance available to trade"
 msgid "Balance data is stale."
 msgstr "Balance data is stale."
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "Balance data is stale. Actions are temporarily unavailable."
 
-#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -1432,7 +1429,6 @@ msgstr "Checking regional availability. Deposits are temporarily unavailable."
 msgid "Checking regional availability. Funds actions are temporarily unavailable."
 msgstr "Checking regional availability. Funds actions are temporarily unavailable."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Checking regional availability. Trading is temporarily unavailable."
 msgstr "Checking regional availability. Trading is temporarily unavailable."
@@ -2721,7 +2717,6 @@ msgstr "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed.
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/hooks/trade/use-deposit-availability.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit unavailable"
@@ -2762,7 +2757,6 @@ msgstr "Deposits"
 msgid "Deposits & Withdrawals"
 msgstr "Deposits & Withdrawals"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
 msgstr "Deposits and withdrawals are not allowed."
@@ -3494,10 +3488,6 @@ msgstr "Failed to export trade history."
 msgid "Failed to load balances"
 msgstr "Failed to load balances"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3506,7 +3496,6 @@ msgstr "Failed to load balances"
 msgid "Failed to load balances."
 msgstr "Failed to load balances."
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Failed to load deposits and withdrawals."
 msgstr "Failed to load deposits and withdrawals."
@@ -3516,7 +3505,6 @@ msgstr "Failed to load deposits and withdrawals."
 #~ msgid "Failed to load funding history."
 #~ msgstr "Failed to load funding history."
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Failed to load funding payments."
 msgstr "Failed to load funding payments."
@@ -3525,28 +3513,19 @@ msgstr "Failed to load funding payments."
 msgid "Failed to load market categories."
 msgstr "Failed to load market categories."
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "Failed to load open orders."
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "Failed to load order book."
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Failed to load order history."
 msgstr "Failed to load order history."
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-limit-close-submit.ts
@@ -3555,26 +3534,22 @@ msgstr "Failed to load order history."
 msgid "Failed to load positions."
 msgstr "Failed to load positions."
 
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Failed to load trade history."
 msgstr "Failed to load trade history."
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Failed to load trades."
-msgstr "Failed to load trades."
+#~ msgid "Failed to load trades."
+#~ msgstr "Failed to load trades."
 
-#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Failed to load TWAP fill history."
 msgstr "Failed to load TWAP fill history."
 
-#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Failed to load TWAP history."
 msgstr "Failed to load TWAP history."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Failed to load TWAP orders."
 msgstr "Failed to load TWAP orders."
@@ -3857,7 +3832,6 @@ msgstr "FUNDING"
 msgid "Funding chain"
 msgstr "Funding chain"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
 msgstr "Funding data could not be validated. Refresh and try again."
@@ -3900,7 +3874,6 @@ msgstr "Funding payments will load automatically when the connection returns."
 msgid "Funding shown"
 msgstr "Funding shown"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding updates paused."
 msgstr "Funding updates paused."
@@ -4065,8 +4038,6 @@ msgstr "Historical APR does not predict future performance; the displayed APR ca
 msgid "History"
 msgstr "History"
 
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "History data could not be validated. Refresh and try again."
@@ -4597,12 +4568,9 @@ msgstr "Live chart data is rate limited. Retrying shortly."
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Live position data is stale. Wait for the account connection to recover."
-msgstr "Live position data is stale. Wait for the account connection to recover."
+#~ msgid "Live position data is stale. Wait for the account connection to recover."
+#~ msgstr "Live position data is stale. Wait for the account connection to recover."
 
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
@@ -4611,8 +4579,8 @@ msgstr "Live position data is unavailable. Wait for the account connection to re
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Live position data is unavailable. Wait for the account connection to recover."
-msgstr "Live position data is unavailable. Wait for the account connection to recover."
+#~ msgid "Live position data is unavailable. Wait for the account connection to recover."
+#~ msgstr "Live position data is unavailable. Wait for the account connection to recover."
 
 #: src/components/trade/twap-history-feedback.tsx
 msgid "Load more"
@@ -4634,7 +4602,6 @@ msgstr "Loading authorized API wallets"
 msgid "Loading balances across all chains..."
 msgstr "Loading balances across all chains..."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "Loading balances..."
@@ -4651,7 +4618,6 @@ msgstr "Loading deposits and withdrawals..."
 msgid "Loading funding payments"
 msgstr "Loading funding payments"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding payments."
 msgstr "Loading funding payments."
@@ -4679,8 +4645,8 @@ msgid "Loading order history..."
 msgstr "Loading order history..."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Loading position..."
-msgstr "Loading position..."
+#~ msgid "Loading position..."
+#~ msgstr "Loading position..."
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
@@ -4709,8 +4675,8 @@ msgstr "Loading staking table"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Loading the latest position..."
-msgstr "Loading the latest position..."
+#~ msgid "Loading the latest position..."
+#~ msgstr "Loading the latest position..."
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Loading token metadata..."
@@ -4724,12 +4690,10 @@ msgstr "Loading trade history"
 msgid "Loading trade history..."
 msgstr "Loading trade history..."
 
-#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Loading TWAP fill history..."
 msgstr "Loading TWAP fill history..."
 
-#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Loading TWAP history..."
 msgstr "Loading TWAP history..."
@@ -4755,14 +4719,8 @@ msgstr "Loading wallet..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
@@ -4964,7 +4922,6 @@ msgid "Mark price is derived from oracle prices and is used to calculate unreali
 msgstr "Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -5480,7 +5437,6 @@ msgstr "No"
 msgid "No active positions."
 msgstr "No active positions."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
@@ -6143,7 +6099,6 @@ msgstr "Order history is unavailable"
 msgid "Order history pagination"
 msgstr "Order history pagination"
 
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order history updates paused."
 msgstr "Order history updates paused."
@@ -7015,7 +6970,6 @@ msgstr "Realized PNL"
 #~ msgid "Recent"
 #~ msgstr "Recent"
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 msgstr "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
@@ -7411,7 +7365,6 @@ msgstr "Resume tracking"
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/layout/terminal-boot-error.tsx
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7874,17 +7827,14 @@ msgstr "Secure randomness is unavailable. Deposit was not submitted."
 msgid "Select {displayName} market"
 msgstr "Select {displayName} market"
 
-#: src/components/trade/positions/send-modal.tsx
 #: src/hooks/trade/use-funds-action-availability.ts
 msgid "Select a supported account mode before moving funds."
 msgstr "Select a supported account mode before moving funds."
 
-#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Select a supported account mode before using balances or moving funds."
 msgstr "Select a supported account mode before using balances or moving funds."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Select a supported account mode to view balances."
 msgstr "Select a supported account mode to view balances."
@@ -9993,7 +9943,6 @@ msgstr "Trade history is unavailable"
 msgid "Trade history pagination"
 msgstr "Trade history pagination"
 
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trade history updates paused."
 msgstr "Trade history updates paused."
@@ -10068,7 +10017,6 @@ msgstr "Trading data changed before the order modification could be submitted."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -10318,7 +10266,6 @@ msgstr "TWAP cancellation was not confirmed. Review active TWAP orders before re
 msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 msgstr "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP data may be stale while the connection recovers."
 msgstr "TWAP data may be stale while the connection recovers."
@@ -10461,7 +10408,6 @@ msgstr "Unable to verify regional availability. This deposit was not submitted."
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "Unable to verify regional availability. This funds action was not submitted."
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
@@ -10993,8 +10939,6 @@ msgstr "Waiting for confirmation..."
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
 #~ msgstr "Waiting for native USDC to arrive on Arbitrum."
 
-#: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -11255,9 +11199,6 @@ msgstr "You are eligible to create a referral code."
 msgid "You are offline"
 msgstr "You are offline"
 
-#: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -11265,13 +11206,11 @@ msgid "You are offline."
 msgstr "You are offline."
 
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "You are offline. Funding payments will load when the connection returns."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "You are offline. Order history will load when the connection returns."
@@ -11289,7 +11228,6 @@ msgid "You are offline. Previously loaded trade history remains visible."
 msgstr "You are offline. Previously loaded trade history remains visible."
 
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "You are offline. Trade history will load when the connection returns."

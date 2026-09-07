@@ -310,11 +310,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		}
 	}, [accountDataReady, spotMarket, quote, expectedOrder, isSubmitting, submitOrder, triggerAutoClose]);
 
-	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;
+	const insufficientBalance = accountDataReady && (toBig(requiredInput)?.gt(fromBalance) ?? false);
 	const noPairAvailable = fromToken && toToken && !spotMarket;
-	const orderbookLoading =
-		hasPositiveAmount && Boolean(spotMarket) && orderbookStatus !== "error" && !orderbook && !showSuccess;
-	const orderbookFailed = hasPositiveAmount && Boolean(spotMarket) && orderbookStatus === "error" && !showSuccess;
 	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(liveOrderbook) && !quote;
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
 	const partialFill = Boolean(quote?.isPartial);
@@ -348,22 +345,6 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				</ModalHeader>
 
 				<ModalContent className="space-y-3">
-					{!accountModeReady ? (
-						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
-							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
-							<p className="text-xs text-warning">
-								<Trans>Select a supported account mode before using balances or moving funds.</Trans>
-							</p>
-						</div>
-					) : null}
-					{accountModeReady && !accountDataReady ? (
-						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
-							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
-							<p className="text-xs text-warning">
-								<Trans>Balance data is stale. Actions are temporarily unavailable.</Trans>
-							</p>
-						</div>
-					) : null}
 					<div className="relative">
 						<div className="space-y-1">
 							<TokenPanel
@@ -519,22 +500,6 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 									No trading pair available for <AssetDisplay coin={fromToken} hideIcon />/
 									<AssetDisplay coin={toToken} hideIcon />
 								</Trans>
-							</p>
-						</div>
-					)}
-
-					{orderbookLoading && (
-						<div className="flex items-center gap-2 rounded-8 border border-stroke-weak/35 bg-fill-weak/40 p-2.5 text-xs text-fg-muted">
-							<SpinnerGapIcon className="size-3.5 shrink-0 animate-spin" />
-							<Trans>Waiting for order book...</Trans>
-						</div>
-					)}
-
-					{orderbookFailed && (
-						<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/20 bg-error-soft p-2.5">
-							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-error" />
-							<p className="text-xs text-error">
-								<Trans>Failed to load order book.</Trans>
 							</p>
 						</div>
 					)}

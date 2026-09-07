@@ -1,6 +1,6 @@
-import { Button, Tooltip } from "@gatu/ui";
+import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import {
 	type ChangeEvent,
 	type ReactNode,
@@ -19,6 +19,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	assertEntryOrderExecutionAllowed,
@@ -209,11 +210,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const geoRestriction = useGeoRestriction();
 	const tradeActionsBlocked = geoRestriction.actionsBlocked;
 	const tradeRestricted = geoRestriction.tradeRestricted;
-	const tradingUnavailableReason = !geoRestriction.isResolved
-		? geoRestriction.isError
-			? t`Unable to verify regional availability. Trading is temporarily unavailable.`
-			: t`Checking regional availability. Trading is temporarily unavailable.`
-		: null;
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
@@ -715,11 +711,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: depositAvailability.available,
-		depositUnavailableReason: depositAvailability.unavailableReason,
-		tradingUnavailableReason,
+		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
+		tradingBlocked: tradeActionsBlocked,
 		needsApproval: validation.needsApproval,
 		isAgentReady,
 		isApprovalLoading,
@@ -733,10 +729,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			connect: t`Connect Wallet`,
 			switching: t`Switching...`,
 			switchChain: t`Switch to Arbitrum`,
-			loading: t`Loading...`,
-			balanceError: t`Failed to load balances.`,
 			deposit: t`Deposit`,
-			depositUnavailable: t`Deposit unavailable`,
 			signing: t`Signing...`,
 			enableTrading: t`Enable Trading`,
 		},
@@ -752,9 +745,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const priceUnitLabel = quoteToken || "USDC";
 
 	function formatAvailableBalance(): string {
-		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
-		return formatToken(availableBalance, decimals);
+		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : availableBalance, decimals);
 	}
 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
@@ -850,19 +842,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						>
 							<span className="tabular-nums text-trading-panel-fg">{formatAvailableBalance()}</span>
 							<span className="tabular-nums text-trading-panel-muted">{availableBalanceToken}</span>
-							{isAvailabilityStale ? (
-								<Tooltip content={t`Loading...`} side="top">
-									<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-								</Tooltip>
-							) : null}
-							{hasAvailabilityError ? (
-								<Tooltip content={t`Failed to load balances.`} side="top">
-									<WarningCircleIcon
-										className="size-3 shrink-0 text-trading-panel-error"
-										aria-label={t`Failed to load balances.`}
-									/>
-								</Tooltip>
-							) : null}
 						</span>
 					</button>
 
@@ -1126,7 +1105,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{buttonContent.text}
 					</Button>
 				)}
-				{buttonContent.disabledReason ? (
+				{geoRestriction.isResolved && buttonContent.disabledReason ? (
 					<output className="mt-2 text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
 				) : null}
 				{!embedded && <MobileBottomNavSpacer />}
@@ -1202,7 +1181,7 @@ interface MobileButtonContentInput {
 	hasBalanceError: boolean;
 	canDeposit: boolean;
 	depositUnavailableReason?: string | null;
-	tradingUnavailableReason?: string | null;
+	tradingBlocked?: boolean;
 	needsApproval: boolean;
 	isAgentReady: boolean;
 	isApprovalLoading: boolean;
@@ -1224,10 +1203,7 @@ interface MobileOrderButtonLabels {
 	connect: string;
 	switching: string;
 	switchChain: string;
-	loading: string;
-	balanceError: string;
 	deposit: string;
-	depositUnavailable: string;
 	signing: string;
 	enableTrading: string;
 }
@@ -1261,24 +1237,15 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 	}
 	if (stage === "agent" || stage === "builder") {
 		return {
-			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.isApprovalLoading, input.labels),
+			text: input.isRegistering ? input.labels.signing : input.labels.enableTrading,
 			action: input.onApprove,
-			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove || !!input.tradingUnavailableReason,
-			disabledReason: input.tradingUnavailableReason ?? undefined,
+			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove || input.tradingBlocked === true,
 			variant: "cyan",
 		};
 	}
-	if (stage === "balanceError") {
+	if (stage === "balanceError" || stage === "balanceLoading") {
 		return {
-			text: input.labels.balanceError,
-			action: () => {},
-			disabled: true,
-			variant: "cyan",
-		};
-	}
-	if (stage === "balanceLoading") {
-		return {
-			text: input.labels.loading,
+			text: input.sideLabel,
 			action: () => {},
 			disabled: true,
 			variant: "cyan",
@@ -1286,7 +1253,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 	}
 	if (stage === "deposit") {
 		return {
-			text: input.canDeposit ? input.labels.deposit : input.labels.depositUnavailable,
+			text: input.labels.deposit,
 			action: input.canDeposit ? input.onDeposit : () => {},
 			disabled: !input.canDeposit,
 			disabledReason: input.canDeposit ? undefined : (input.depositUnavailableReason ?? undefined),
@@ -1296,19 +1263,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 	return {
 		text: input.sideLabel,
 		action: input.onSubmit,
-		disabled: !input.canSubmit || input.isSubmitting || !!input.tradingUnavailableReason,
-		disabledReason: input.tradingUnavailableReason ?? undefined,
+		disabled: !input.canSubmit || input.isSubmitting || input.tradingBlocked === true,
 		variant: input.side,
 	};
-}
-
-function getApprovalButtonText(
-	isRegistering: boolean,
-	canApprove: boolean,
-	isApprovalLoading: boolean,
-	labels: MobileOrderButtonLabels,
-): string {
-	if (isRegistering) return labels.signing;
-	if (isApprovalLoading || !canApprove) return labels.loading;
-	return labels.enableTrading;
 }

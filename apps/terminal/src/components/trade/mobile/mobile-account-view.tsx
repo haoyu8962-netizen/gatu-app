@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
 import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
@@ -30,6 +31,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const withdrawUnavailableId = useId();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
+	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const {
 		accountEquityValue,
 		accountMode,
@@ -66,8 +68,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
-	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
+	const internalTransferDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer);
+	const withdrawDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.withdrawal);
 	const transferDescriptionIds = internalTransferDisabledReason
 		? `${transferDescriptionId} ${transferUnavailableId}`
 		: transferDescriptionId;
@@ -89,7 +91,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
 						<p className="text-sm text-fg-muted">
 							{showsEmailDeposit
-								? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
+								? (depositNotice ?? t`Open Deposit to prepare your email wallet.`)
 								: t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
@@ -105,13 +107,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									: undefined
 								: () => setWalletModalOpen(true)
 						}
-						title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
+						title={showsEmailDeposit ? (depositNotice ?? undefined) : undefined}
 					>
-						{showsEmailDeposit
-							? depositAvailability.available
-								? t`Deposit`
-								: depositAvailability.unavailableLabel
-							: t`Connect Wallet`}
+						{showsEmailDeposit ? t`Deposit` : t`Connect Wallet`}
 					</Button>
 				</div>
 				{walletModalOpen ? (
@@ -257,26 +255,24 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
 					{depositGeoBlocked ? (
-						<p className="text-center text-sm text-fg-muted">{depositAvailability.unavailableReason}</p>
-					) : !showsFundsActions ? (
-						<p className="text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
-					) : (
+						depositNotice ? (
+							<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
+						) : null
+					) : !showsFundsActions ? null : (
 						<div className="space-y-2">
-							{depositAvailability.unavailableReason ? (
-								<output className="text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</output>
-							) : null}
+							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
 							<Button
 								variant="filled"
 								intent="brand"
 								size="md"
 								disabled={!depositAvailability.available}
 								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-								aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
-								title={depositAvailability.unavailableReason ?? undefined}
+								aria-label={t`Deposit`}
+								title={depositNotice ?? undefined}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 								className="min-h-11 w-full"
 							>
-								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+								{t`Deposit`}
 							</Button>
 							<div className="grid grid-cols-2 gap-2">
 								<Tooltip content={internalTransferDisabledReason} side="top">
@@ -291,7 +287,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 													: undefined
 											}
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-											disabled={!!internalTransferDisabledReason}
+											disabled={!fundsActionAvailability.internalTransfer.available}
 											focusableWhenDisabled
 											aria-describedby={transferDescriptionIds}
 											className="min-h-11 w-full"
@@ -306,7 +302,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											variant="outline"
 											intent="neutral"
 											size="md"
-											disabled={!!withdrawDisabledReason}
+											disabled={!fundsActionAvailability.withdrawal.available}
 											focusableWhenDisabled
 											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
 											onClick={

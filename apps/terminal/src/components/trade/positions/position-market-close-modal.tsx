@@ -79,17 +79,11 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		liveDirectionMatches,
 	});
 	const positionStatusMessage =
-		positionStatus === "loading"
-			? t`Loading the latest position...`
-			: positionStatus === "unavailable"
-				? t`Live position data is unavailable. Wait for the account connection to recover.`
-				: positionStatus === "stale"
-					? t`Live position data is stale. Wait for the account connection to recover.`
-					: positionStatus === "closed"
-						? t`This position is no longer open.`
-						: positionStatus === "direction-changed"
-							? t`This position changed sides. Close and reopen this dialog before submitting.`
-							: null;
+		positionStatus === "closed"
+			? t`This position is no longer open.`
+			: positionStatus === "direction-changed"
+				? t`This position changed sides. Close and reopen this dialog before submitting.`
+				: null;
 	const sizing =
 		sizingIntent.kind === "size"
 			? resolvePositionMarketCloseSize({
@@ -104,10 +98,10 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 				});
 	const sizingViewModel = createPositionCloseSizingViewModel(sizingIntent, sizing, position.szDecimals);
 	const canDismiss = phase === "idle" || phase === "reconciling";
-	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatusMessage === null;
+	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
-	const visibleError = positionStatusMessage ?? error ?? visibleSizingError;
+	const visibleError = positionStatusMessage ?? error ?? (positionStatus === null ? visibleSizingError : null);
 	const canSubmit = canEdit && sizing.errors.length === 0;
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
@@ -133,7 +127,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		{
 			key: "available",
 			label: t`Available to close`,
-			value: formatToken(positionStatusMessage === null ? sizing.maxSize : null, {
+			value: formatToken(positionStatus === null ? sizing.maxSize : null, {
 				decimals: position.szDecimals,
 				symbol: isMobile ? undefined : sizeSymbol,
 			}),

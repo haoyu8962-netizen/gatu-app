@@ -34,7 +34,7 @@ The hook must not subscribe to the selected DEX. `useAccountOverview` adds the s
 
 Unresolved account mode, missing required snapshots, stale streams, request errors, and missing non-USDC collateral prices are unavailable states in the shared model. Desktop and Portfolio consumers render placeholders or an explicit status and must not substitute `$0.00`.
 
-The mobile account overview uses formatted zero placeholders for unavailable metrics without loading, stale, or error banners or warning icons. These placeholders exist only in the mobile rendering layer: they never enter the shared model, classify an account as empty, or enable funds actions. Loading is exposed through `aria-busy`, and disabled funds controls retain their accessible explanations.
+The mobile account overview uses formatted zero placeholders for unavailable metrics without loading, stale, or error banners or warning icons. These placeholders exist only in the mobile rendering layer: they never enter the shared model, classify an account as empty, or enable funds actions. Loading is exposed through `aria-busy`. Disabled funds controls retain action descriptions and confirmed restriction explanations without transient read-status messages. The broader mobile and shared-dialog presentation rules are defined in [Mobile data presentation](../mobile-data-presentation.md).
 
 Outside those mobile placeholders, a numeric zero is displayed only when it comes from a complete current snapshot. Readiness is consumer-specific:
 

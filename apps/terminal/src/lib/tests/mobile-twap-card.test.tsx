@@ -10,6 +10,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
 	hasActiveOrder: true,
+	hasSnapshot: true,
+	status: "active",
+	isStale: false,
+	feedback: null as { message: string; tone: "error" } | null,
 	hasMoreTwapFills: false,
 	hasMoreTwapHistory: false,
 	isTwapFillsRealtimeDegraded: false,
@@ -80,7 +84,7 @@ vi.mock("@/hooks/trade/use-twap-cancel", () => ({
 	useTwapCancel: () => ({
 		cancelTwap: mocks.cancelTwap,
 		cancellingTwapId: null,
-		feedback: null,
+		feedback: mocks.feedback,
 	}),
 }));
 
@@ -130,34 +134,36 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 3,
 	}),
 	useSubscription: () => ({
-		data: {
-			dex: "",
-			user: "0x1111111111111111111111111111111111111111",
-			states: mocks.hasActiveOrder
-				? [
-						[
-							42,
-							{
-								coin: "GOOGL",
-								executedNtl: "2298.76416",
-								executedSz: "6.132",
-								minutes: 30,
-								randomize: false,
-								reduceOnly: false,
-								side: mocks.side,
-								stopPx: null,
-								sz: "15.33",
-								timestamp: Date.now() - 696_000,
-								trigger: null,
-								user: "0x1111111111111111111111111111111111111111",
-							},
-						],
-					]
-				: [],
-		},
-		status: "active",
+		data: mocks.hasSnapshot
+			? {
+					dex: "",
+					user: "0x1111111111111111111111111111111111111111",
+					states: mocks.hasActiveOrder
+						? [
+								[
+									42,
+									{
+										coin: "GOOGL",
+										executedNtl: "2298.76416",
+										executedSz: "6.132",
+										minutes: 30,
+										randomize: false,
+										reduceOnly: false,
+										side: mocks.side,
+										stopPx: null,
+										sz: "15.33",
+										timestamp: Date.now() - 696_000,
+										trigger: null,
+										user: "0x1111111111111111111111111111111111111111",
+									},
+								],
+							]
+						: [],
+				}
+			: undefined,
+		status: mocks.status,
 		error: null,
-		isStale: false,
+		isStale: mocks.isStale,
 	}),
 }));
 
@@ -178,6 +184,10 @@ describe("MobileTwapTab card", () => {
 	beforeEach(() => {
 		mocks.side = "B";
 		mocks.hasActiveOrder = true;
+		mocks.hasSnapshot = true;
+		mocks.status = "active";
+		mocks.isStale = false;
+		mocks.feedback = null;
 		mocks.hasMoreTwapFills = false;
 		mocks.hasMoreTwapHistory = false;
 		mocks.isTwapFillsRealtimeDegraded = false;
@@ -202,6 +212,23 @@ describe("MobileTwapTab card", () => {
 			);
 		});
 	}
+
+	it.each([
+		{ status: "active", hasSnapshot: false, isStale: false },
+		{ status: "subscribing", hasSnapshot: true, isStale: false },
+		{ status: "active", hasSnapshot: true, isStale: true },
+		{ status: "error", hasSnapshot: false, isStale: false },
+	])("keeps missing or stale current TWAP snapshots quiet: %o", (state) => {
+		Object.assign(mocks, state);
+		mocks.hasActiveOrder = false;
+		render();
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("No active TWAP orders.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		mocks.feedback = { tone: "error", message: "Cancellation was rejected." };
+		render();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Cancellation was rejected.");
+	});
 
 	it("renders real TWAP progress metrics and the supported terminate action", () => {
 		render();
@@ -283,7 +310,7 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("+1.25 USDC");
 	});
 
-	it("provides touch-sized recovery and pagination controls for degraded TWAP history", () => {
+	it("keeps history and touch-sized pagination without passive degradation notices", () => {
 		mocks.hasMoreTwapHistory = true;
 		mocks.isTwapHistoryRealtimeDegraded = true;
 		render();
@@ -299,12 +326,11 @@ describe("MobileTwapTab card", () => {
 		const loadMore = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(button) => button.textContent === "Load more",
 		);
-		expect(container.querySelector("output")).not.toBeNull();
-		expect(retry?.className).toContain("max-[1000px]:min-h-11");
+		expect(container.querySelector("output")).toBeNull();
+		expect(retry).toBeUndefined();
 		expect(loadMore?.className).toContain("max-[1000px]:min-h-11");
-		act(() => retry?.click());
 		act(() => loadMore?.click());
-		expect(mocks.retryTwapHistoryRealtime).toHaveBeenCalledTimes(1);
+		expect(mocks.retryTwapHistoryRealtime).not.toHaveBeenCalled();
 		expect(mocks.loadMoreTwapHistory).toHaveBeenCalledTimes(1);
 	});
 });

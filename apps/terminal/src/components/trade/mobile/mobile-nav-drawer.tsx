@@ -5,6 +5,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GatuLogo } from "@/components/brand/gatu-logo";
 import { HYPERSCREENER_URL, isTradeRoutePath } from "@/config/nav";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -24,6 +25,7 @@ export function MobileNavDrawer() {
 	const closingForModalRef = useRef(false);
 	const { hasWalletAccess } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
+	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const tradeHomePath = useTradeHomePath();
@@ -234,7 +236,6 @@ export function MobileNavDrawer() {
 									onClick={depositAvailability.available ? () => requestGlobalModal("deposit") : undefined}
 									disabled={pendingModal !== null || !depositAvailability.available}
 									aria-busy={pendingModal === "deposit" || undefined}
-									aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
 									iconLeft={
 										pendingModal === "deposit" ? (
 											<SpinnerGapIcon className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -244,13 +245,9 @@ export function MobileNavDrawer() {
 									}
 									className="w-full"
 								>
-									{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
+									<Trans>Deposit</Trans>
 								</Button>
-								{depositAvailability.unavailableReason ? (
-									<output className="text-center text-2xs text-fg-muted">
-										{depositAvailability.unavailableReason}
-									</output>
-								) : null}
+								{depositNotice ? <output className="text-center text-2xs text-fg-muted">{depositNotice}</output> : null}
 							</>
 						)}
 						<div className="flex items-center justify-between pt-1">
