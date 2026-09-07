@@ -1101,21 +1101,17 @@ msgstr "الرصيد"
 msgid "Balance available to trade"
 msgstr "الرصيد المتاح للتداول"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "بيانات الرصيد قديمة."
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "بيانات الرصيد قديمة. الإجراءات غير متاحة مؤقتًا."
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -3485,7 +3481,6 @@ msgstr "تعذر تصدير سجل التداول."
 msgid "Failed to load balances"
 msgstr "فشل تحميل الأرصدة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx

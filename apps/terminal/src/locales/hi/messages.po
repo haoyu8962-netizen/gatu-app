@@ -1101,21 +1101,17 @@ msgstr "शेष"
 msgid "Balance available to trade"
 msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale."
 msgstr "शेष राशि का डेटा पुराना है।"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance data is stale. Actions are temporarily unavailable."
 msgstr "शेष राशि का डेटा पुराना है। कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
@@ -3485,7 +3481,6 @@ msgstr "ट्रेड इतिहास निर्यात करने �
 msgid "Failed to load balances"
 msgstr "बैलेंस लोड करने में विफल"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
