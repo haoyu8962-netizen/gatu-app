@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
-import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
+import { act, createElement, Fragment } from "react";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { OrderToast } from "@/components/trade/tradebox/order-toast";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
 import { TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapIntent } from "@/domain/trade/twap";
 import {
@@ -12,13 +14,34 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
+import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 import {
 	getPendingTradingActionActions,
 	getPendingTradingActionSnapshot,
 } from "@/stores/use-pending-trading-action-store";
 import { getPendingTwapActions, hasPendingTwapForAsset } from "@/stores/use-pending-twap-store";
+import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
+const TWAP_UNCONFIRMED = "The exchange did not return a final TWAP status. Review active TWAP orders before retrying.";
+const ARABIC_TWAP_UNCONFIRMED = "لم تُرجع البورصة حالة نهائية لطلب TWAP. راجع طلبات TWAP النشطة قبل إعادة المحاولة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(TWAP_UNCONFIRMED)]: ARABIC_TWAP_UNCONFIRMED,
+};
+
+let queueItems: OrderQueueItem[] = [];
+let queueActions: ReturnType<typeof useOrderQueueActions> | null = null;
+
+function OrderQueueProbe() {
+	queueItems = useOrderQueue();
+	queueActions = useOrderQueueActions();
+	return null;
+}
 const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
 	activeData: undefined as
@@ -84,11 +107,17 @@ function createTwapState(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 function addSubmission(
-	options: { activeKnownIds?: number[]; historyKnownIds?: number[]; intent?: Partial<TwapIntent> } = {},
+	options: {
+		activeKnownIds?: number[];
+		historyKnownIds?: number[];
+		intent?: Partial<TwapIntent>;
+		queueId?: string;
+	} = {},
 ) {
 	return getPendingTwapActions().add({
 		env: "Mainnet",
 		user: USER,
+		queueId: options.queueId,
 		intent: {
 			assetId: 7,
 			coin: "xyz:GOLD",
@@ -158,10 +187,15 @@ describe("TwapReconciliation", () => {
 		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 	});
 
 	afterEach(() => {
+		act(() => {
+			for (const item of queueItems) queueActions?.removeOrder(item.id);
+		});
+		queueItems = [];
+		queueActions = null;
 		act(() => root.unmount());
 		container.remove();
 		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
@@ -255,6 +289,48 @@ describe("TwapReconciliation", () => {
 				}),
 			).toBe("clear");
 		});
+	});
+
+	it("stores a locale-independent timeout error and retranslates the visible queue item", async () => {
+		act(() => root.render(createElement(OrderQueueProbe)));
+		if (!queueActions) throw new Error("Expected order queue actions");
+		let queueId = "";
+		act(() => {
+			queueId =
+				queueActions?.addOrder({
+					market: "GOLD",
+					orderType: "twap",
+					side: "buy",
+					size: "1.25",
+					status: "confirming",
+				}) ?? "";
+		});
+		const submission = addSubmission({ queueId });
+		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS);
+
+		await act(async () => {
+			root.render(
+				createElement(
+					Fragment,
+					null,
+					createElement(TwapReconciliation),
+					createElement(OrderQueueProbe),
+					createElement(OrderToast),
+				),
+			);
+			await Promise.resolve();
+		});
+		expect(queueItems).toEqual([
+			expect.objectContaining({
+				id: queueId,
+				status: "unconfirmed",
+				error: { kind: "order-reconciliation", code: "twap-status-unconfirmed" },
+			}),
+		]);
+		expect(document.body.textContent).toContain(TWAP_UNCONFIRMED);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(document.body.textContent).toContain(ARABIC_TWAP_UNCONFIRMED);
 	});
 
 	it("releases the TWAP lock while the wallet is disconnected", () => {

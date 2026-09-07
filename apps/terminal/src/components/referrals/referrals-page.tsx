@@ -24,7 +24,7 @@ export function ReferralsPage({ initialReferralCode }: Props) {
 		<>
 			<div
 				className={cn(
-					"min-h-dvh bg-portfolio-canvas font-sans text-fg",
+					"min-h-dvh bg-dashboard-canvas font-sans text-fg",
 					!isMobile && "pb-8",
 					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
 					isTestnet && "testnet-bg",

@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
@@ -31,6 +31,18 @@ import {
 	type OrderAssetLockLease,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import {
+	formatPositionSubmitFeedback,
+	formatTrackedPositionSubmitError,
+	getPositionMarketClosePlanFeedback,
+	localizedPositionSubmitFeedback,
+	localizePositionSubmitFeedbackCause,
+	type PositionSubmitFeedback,
+	PositionSubmitFeedbackCause,
+	partialCloseAllFeedback,
+	positionSubmitFeedbackCause,
+	positionSubmitFeedbackFromCause,
+} from "@/lib/trade/position-submit-feedback";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
@@ -75,6 +87,7 @@ interface LiveContext {
 }
 
 export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
+	const { t } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -86,7 +99,7 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 	);
 	const slippageBps = useMarketOrderSlippageBpsString();
 	const [phase, setPhaseState] = useState<PositionCloseAllSubmitPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<PositionSubmitFeedback | null>(null);
 	const phaseRef = useRef<PositionCloseAllSubmitPhase>("idle");
 	const snapshotRef = useRef(snapshot);
 	const slippageBpsRef = useRef(slippageBps);
@@ -210,12 +223,12 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 					assertLifecycleActive(lifecycleEpoch);
 					if (outcome.state === "blocked") {
 						setPhase("idle");
-						setError(t`Another order for one of these markets is still being confirmed.`);
+						setError(localizedPositionSubmitFeedback("blocked-markets"));
 						return outcome;
 					}
 					if (outcome.state === "reconciling") {
 						setPhase("reconciling");
-						setError(t`Close orders submitted. Confirming exchange status; do not retry.`);
+						setError(localizedPositionSubmitFeedback("reconciling-close-orders"));
 						return outcome;
 					}
 
@@ -227,7 +240,10 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 						setPhase("partial");
 						return { ...resolution, state: "partial" as const };
 					}
-					if (resolution?.status === "rejected") throw new Error(resolution.errors[0] ?? t`Close orders rejected`);
+					if (resolution?.status === "rejected") {
+						if (resolution.errors[0]) throw new Error(resolution.errors[0]);
+						throw positionSubmitFeedbackCause("close-orders-rejected");
+					}
 
 					setPhase("idle");
 					return outcome;
@@ -235,11 +251,11 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 			);
 			assertLifecycleActive(lifecycleEpoch);
 			if (!lockResult.supported) {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw positionSubmitFeedbackCause("coordination-unavailable");
 			}
 			if (!lockResult.acquired) {
 				setPhase("idle");
-				setError(t`Another order for one of these markets is still being confirmed.`);
+				setError(localizedPositionSubmitFeedback("blocked-markets"));
 				return { state: "blocked" };
 			}
 			return lockResult.value;
@@ -248,19 +264,18 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 				const result = { state: "partial", ...cause.resolution } as const;
 				if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 					setPhase("partial");
-					setError(
-						t`${result.acceptedCount} of ${result.totalCount} close orders were accepted. Review positions before retrying.`,
-					);
+					setError(partialCloseAllFeedback(result.acceptedCount, result.totalCount));
 				}
 				return result;
 			}
 
-			const message = cause instanceof Error ? cause.message : t`Failed to submit close orders`;
+			const submitError = positionSubmitFeedbackFromCause(cause, "failed-submit-close-orders");
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");
-				setError(message);
+				setError(submitError);
 			}
-			throw cause instanceof Error ? cause : new Error(message);
+			throw localizePositionSubmitFeedbackCause(cause, submitError, message);
 		} finally {
 			executionContextRef.current = null;
 		}
@@ -293,7 +308,9 @@ export function usePositionCloseAllSubmit(snapshot: PositionCloseAllSnapshot) {
 		isPending: phase === "validating" || phase === "submitting" || trackedOrder.isPending,
 		isReconciling: phase === "reconciling",
 		isPartial: phase === "partial",
-		error: error ?? trackedOrder.error?.message ?? null,
+		error: error
+			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }
@@ -309,7 +326,7 @@ function cloneSnapshot(snapshot: PositionCloseAllSnapshot): PositionCloseAllSnap
 function assertSnapshotFresh(snapshot: PositionCloseAllSnapshot): void {
 	const ageMs = Date.now() - snapshot.capturedAtMs;
 	if (!Number.isFinite(snapshot.capturedAtMs) || ageMs < 0 || ageMs > POSITION_CLOSE_ALL_SNAPSHOT_MAX_AGE_MS) {
-		throw new Error(t`This close-all preview expired. Close and reopen it to review current values.`);
+		throw positionSubmitFeedbackCause("close-all-preview-expired");
 	}
 }
 
@@ -368,7 +385,7 @@ function assertSessionIdentity(
 function assertLiveSnapshotReady(snapshot: PositionCloseAllSnapshot, live: LiveContext): void {
 	if (live.markets.isLoading || live.markets.error) throw tradingDataChangedError();
 	if (live.userPositions.isLoading || live.userPositions.hasError || live.userPositions.isStale) {
-		throw new Error(t`Failed to load positions.`);
+		throw positionSubmitFeedbackCause("failed-load-positions");
 	}
 	if (live.activeTwaps.status !== "active" || live.activeTwaps.isStale || live.activeTwaps.data === undefined) {
 		throw tradingDataChangedError();
@@ -394,7 +411,7 @@ function assertLiveSnapshotReady(snapshot: PositionCloseAllSnapshot, live: LiveC
 		}
 		assertMarketAssetBinding(target, market, market.ctxIndex);
 		if (market.kind === "builderPerp" && !hasAcceptedHip3Disclaimer()) {
-			throw new Error(t`Accept the HIP-3 deployer disclaimer before trading these markets.`);
+			throw positionSubmitFeedbackCause("accept-hip3-markets");
 		}
 
 		const position = live.userPositions.getPosition(target.coin, target.dex);
@@ -413,7 +430,7 @@ function assertLiveSnapshotReady(snapshot: PositionCloseAllSnapshot, live: LiveC
 	}
 
 	if (live.activeTwaps.data.states.some(([, state]) => snapshot.targets.some((target) => target.coin === state.coin))) {
-		throw new Error(t`A TWAP is active for one of these markets.`);
+		throw positionSubmitFeedbackCause("active-twap");
 	}
 }
 
@@ -451,14 +468,14 @@ function assertNoPendingCoordination(lease: OrderAssetLockLease, snapshot: Posit
 		pendingOrderState === "unavailable" ||
 		pendingTwapStates.some((state) => state === "unavailable")
 	) {
-		throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+		throw positionSubmitFeedbackCause("coordination-unavailable");
 	}
 	if (
 		reservationState === "conflict" ||
 		pendingOrderState === "pending" ||
 		pendingTwapStates.some((state) => state === "pending")
 	) {
-		throw new Error(t`Another order for one of these markets is still being confirmed.`);
+		throw positionSubmitFeedbackCause("blocked-markets");
 	}
 }
 
@@ -544,7 +561,11 @@ function buildCloseOrders(freshTargets: readonly FreshCloseTarget[], slippageBps
 			slippageBps,
 		});
 		if (plan.errors.length > 0 || plan.orders.length !== 1) {
-			throw new Error(plan.errors[0] ?? t`Failed to build a close order`);
+			throw new PositionSubmitFeedbackCause(
+				plan.errors[0]
+					? getPositionMarketClosePlanFeedback(plan.errors[0])
+					: localizedPositionSubmitFeedback("failed-build-close-order"),
+			);
 		}
 		return plan.orders[0];
 	});
@@ -609,5 +630,5 @@ function getTargetMarketKey(target: PositionCloseAllTarget): string {
 }
 
 function tradingDataChangedError(): Error {
-	return new Error(t`Positions changed while this confirmation was open. Close and reopen it before submitting.`);
+	return positionSubmitFeedbackCause("positions-changed");
 }

@@ -175,9 +175,10 @@ describe("useTrackedOrder", () => {
 
 		try {
 			await act(async () => {
-				await expect(hookValue?.submitOrder(createParams(25), CROSS_PERP_SUBMIT_OPTIONS)).rejects.toThrow(
-					"Safe order coordination across tabs is unavailable in this browser.",
-				);
+				await expect(hookValue?.submitOrder(createParams(25), CROSS_PERP_SUBMIT_OPTIONS)).rejects.toMatchObject({
+					name: "OrderSubmissionFeedbackCause",
+					feedback: { kind: "order-submission", code: "coordination-unavailable" },
+				});
 			});
 		} finally {
 			setItemSpy.mockRestore();
@@ -552,9 +553,12 @@ describe("useTrackedOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitOrder(createParams(18), { riskContext: { marketKind: "spot" } })).rejects.toThrow(
-				"Order market context does not match the submitted asset.",
-			);
+			await expect(
+				hookValue?.submitOrder(createParams(18), { riskContext: { marketKind: "spot" } }),
+			).rejects.toMatchObject({
+				name: "OrderSubmissionFeedbackCause",
+				feedback: { kind: "order-submission", code: "market-context-mismatch" },
+			});
 		});
 
 		expect(mutateAsync).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useId, useState } from "react";
 import { toast } from "sonner";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -38,8 +38,9 @@ const GlobalModals = createLazyComponent(() => import("../trade/components/globa
 const PositionsPanel = createLazyComponent(() => import("../trade/positions/positions-panel"), "PositionsPanel");
 
 export function PortfolioPage() {
-	const { t } = useLingui();
+	const { i18n, t } = useLingui();
 	const isMobile = useIsMobile();
+	const unavailableActionsId = useId();
 	const isTestnet = useIsTestnet();
 	const { hasWalletAccess, isConnected } = useWalletSession();
 	const { reconnectWallet } = useReconnectWallet();
@@ -73,6 +74,28 @@ export function PortfolioPage() {
 	const modeDependentFundsActionsDisabled = fundsActionsDisabled || !accountModeReady;
 	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
 	const transferDisabled = !fundsActionAvailability.internalTransfer.available;
+	const modeDependentFundsActionsDisabledReason = modeDependentFundsActionsDisabled
+		? fundsActionAvailability.withdrawal.unavailableReason
+		: null;
+	const unavailableActionGroups = groupUnavailableActions([
+		{
+			actions: [t`Swap Stablecoins`, t`Send`],
+			reason: modeDependentFundsActionsDisabledReason,
+		},
+		{ actions: [t`Perps / Spot`], reason: transferDisabled ? internalTransferDisabledReason : null },
+		{
+			actions: [t`Withdraw`],
+			reason: fundsActionAvailability.withdrawal.available
+				? null
+				: fundsActionAvailability.withdrawal.unavailableReason,
+		},
+		{ actions: [t`Deposit`], reason: depositDisabled ? depositAvailability.unavailableReason : null },
+	]);
+	const actionListFormatter = new Intl.ListFormat(i18n.locale, { style: "short", type: "conjunction" });
+	const getUnavailableReasonId = (reason: string | null) => {
+		const index = reason ? unavailableActionGroups.findIndex((group) => group.reason === reason) : -1;
+		return index >= 0 ? `${unavailableActionsId}-${index}` : undefined;
+	};
 	const handleAccountModeChange = useCallback(
 		async (nextMode: SelectableAccountAbstraction) => {
 			const didUpdate = await accountModeControl.setAccountAbstraction(nextMode);
@@ -102,82 +125,106 @@ export function PortfolioPage() {
 				)}
 
 				<main className="mx-auto w-full max-w-[1440px] px-4 py-6 min-[1001px]:px-8 min-[1200px]:px-16 min-[1001px]:py-8">
-					<div className="mb-6 flex flex-wrap items-center justify-between gap-4 min-[1001px]:mb-8">
+					<div className="mb-6 flex flex-wrap items-start justify-between gap-4 min-[1001px]:mb-8">
 						<h1 className="text-2xl font-normal tracking-tight text-fg">
 							<Trans>Portfolio</Trans>
 						</h1>
-						<div className="flex flex-wrap items-center gap-2">
-							<Button variant="outline" intent="neutral" size="sm" onClick={() => setAccountModeModalOpen(true)}>
-								<Trans>Account mode</Trans>
-							</Button>
-							<Button
-								variant="outline"
-								intent="brand"
-								size="sm"
-								disabled={modeDependentFundsActionsDisabled}
-								onClick={openStablecoinSwapModal}
-								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
-							>
-								<Trans>Swap Stablecoins</Trans>
-							</Button>
-							<Tooltip content={internalTransferDisabledReason} side="top">
-								<span className="inline-flex">
-									<Button
-										variant="outline"
-										intent="brand"
-										size="sm"
-										disabled={transferDisabled}
-										onClick={
-											fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
-										}
-										iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
-									>
-										<Trans>Perps / Spot</Trans>
-									</Button>
-								</span>
-							</Tooltip>
-							<Button
-								variant="outline"
-								intent="brand"
-								size="sm"
-								disabled={modeDependentFundsActionsDisabled}
-								onClick={() => openSendModal()}
-								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
-							>
-								<Trans>Send</Trans>
-							</Button>
-							<Tooltip content={fundsActionAvailability.withdrawal.unavailableReason} side="top">
-								<span className="inline-flex">
-									<Button
-										variant="outline"
-										intent="brand"
-										size="sm"
-										disabled={!fundsActionAvailability.withdrawal.available}
-										onClick={
-											fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-										}
-										iconLeft={<UploadSimpleIcon className="size-3.5" />}
-									>
-										<Trans>Withdraw</Trans>
-									</Button>
-								</span>
-							</Tooltip>
-							<Tooltip content={depositAvailability.unavailableReason} side="top">
-								<span className="inline-flex">
-									<Button
-										variant="filled"
-										intent="brand"
-										size="sm"
-										disabled={depositDisabled}
-										onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-										aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
-										title={depositAvailability.unavailableReason ?? undefined}
-										iconLeft={<DownloadSimpleIcon className="size-3.5" />}
-									>
-										{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
-									</Button>
-								</span>
-							</Tooltip>
+						<div className="flex max-w-full flex-col items-end gap-2">
+							<div className="flex flex-wrap items-center justify-end gap-2">
+								<Button variant="outline" intent="neutral" size="sm" onClick={() => setAccountModeModalOpen(true)}>
+									<Trans>Account mode</Trans>
+								</Button>
+								<Button
+									variant="outline"
+									intent="brand"
+									size="sm"
+									disabled={modeDependentFundsActionsDisabled}
+									aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
+									onClick={openStablecoinSwapModal}
+									iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+								>
+									<Trans>Swap Stablecoins</Trans>
+								</Button>
+								<Tooltip content={internalTransferDisabledReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="outline"
+											intent="brand"
+											size="sm"
+											disabled={transferDisabled}
+											aria-describedby={getUnavailableReasonId(internalTransferDisabledReason)}
+											onClick={
+												fundsActionAvailability.internalTransfer.available
+													? () => openTransferModal("toPerp")
+													: undefined
+											}
+											iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+										>
+											<Trans>Perps / Spot</Trans>
+										</Button>
+									</span>
+								</Tooltip>
+								<Button
+									variant="outline"
+									intent="brand"
+									size="sm"
+									disabled={modeDependentFundsActionsDisabled}
+									aria-describedby={getUnavailableReasonId(modeDependentFundsActionsDisabledReason)}
+									onClick={() => openSendModal()}
+									iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
+								>
+									<Trans>Send</Trans>
+								</Button>
+								<Tooltip content={fundsActionAvailability.withdrawal.unavailableReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="outline"
+											intent="brand"
+											size="sm"
+											disabled={!fundsActionAvailability.withdrawal.available}
+											aria-describedby={getUnavailableReasonId(fundsActionAvailability.withdrawal.unavailableReason)}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
+											iconLeft={<UploadSimpleIcon className="size-3.5" />}
+										>
+											<Trans>Withdraw</Trans>
+										</Button>
+									</span>
+								</Tooltip>
+								<Tooltip content={depositAvailability.unavailableReason} side="top">
+									<span className="inline-flex">
+										<Button
+											variant="filled"
+											intent="brand"
+											size="sm"
+											disabled={depositDisabled}
+											aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
+											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+											aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
+											title={depositAvailability.unavailableReason ?? undefined}
+											iconLeft={<DownloadSimpleIcon className="size-3.5" />}
+										>
+											{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
+										</Button>
+									</span>
+								</Tooltip>
+							</div>
+							{unavailableActionGroups.length ? (
+								<div
+									aria-live="polite"
+									className="max-w-2xl space-y-0.5 text-start text-2xs leading-4 text-fg-muted min-[1001px]:text-end"
+								>
+									<p className="font-semibold text-fg-muted">
+										<Trans>Unavailable actions</Trans>
+									</p>
+									{unavailableActionGroups.map((group, index) => (
+										<p id={`${unavailableActionsId}-${index}`} key={group.reason}>
+											<span className="font-semibold">{actionListFormatter.format(group.actions)}:</span> {group.reason}
+										</p>
+									))}
+								</div>
+							) : null}
 						</div>
 					</div>
 
@@ -230,6 +277,17 @@ export function PortfolioPage() {
 			</Suspense>
 		</>
 	);
+}
+
+function groupUnavailableActions(
+	entries: readonly { actions: readonly string[]; reason: string | null }[],
+): Array<{ actions: string[]; reason: string }> {
+	const groups = new Map<string, string[]>();
+	for (const entry of entries) {
+		if (!entry.reason) continue;
+		groups.set(entry.reason, [...(groups.get(entry.reason) ?? []), ...entry.actions]);
+	}
+	return [...groups].map(([reason, actions]) => ({ actions, reason }));
 }
 
 function AccountPanelSkeleton() {

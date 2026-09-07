@@ -1,3 +1,4 @@
+import { i18n } from "@lingui/core";
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -12,6 +13,11 @@ import {
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
+import {
+	formatOrderReconciliationError,
+	type OrderReconciliationError,
+	orderReconciliationError,
+} from "@/lib/trade/order-reconciliation-feedback";
 import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
@@ -362,16 +368,16 @@ function markExpiredSubmissions(submissions: PendingOrderSubmission[], now: numb
 
 function completeUnconfirmedReconciliation(submission: PendingOrderSubmission): void {
 	releaseSubmissionAssetReservations(submission);
-	const message = t`The exchange did not return a final order status. Review open orders and positions before retrying.`;
-	updatePositionMarketCloseReconciliation(submission, "unconfirmed", message);
+	const error = orderReconciliationError("status-unconfirmed");
+	updatePositionMarketCloseReconciliation(submission, "unconfirmed", error);
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
 	if (submission.queueId && queueVisible) {
-		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error: message });
+		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error });
 		return;
 	}
 
-	toast.warning(message);
+	toast.warning(formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)));
 }
 
 function completeReconciliation(submission: PendingOrderSubmission): void {
@@ -384,33 +390,34 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	const partiallyAccepted = acceptedCount > 0 && !allAccepted;
 	const hasCanceled = canceledCount > 0;
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
-	const canceledMessage = `${t`Canceled`}. ${t`Some orders were accepted. Review open orders before retrying.`}`;
+	const canceledError = orderReconciliationError("accepted-orders-canceled");
+	const canceledMessage = formatOrderReconciliationError(canceledError.code, (descriptor) => i18n._(descriptor));
 	let marketCloseOutcome: "canceled" | "filled" | "rejected" = "rejected";
 	if (allAccepted && statuses.every((status) => status === "filled")) marketCloseOutcome = "filled";
 	else if (hasCanceled) marketCloseOutcome = "canceled";
-	let marketCloseMessage: string | undefined;
-	if (hasCanceled) marketCloseMessage = canceledMessage;
-	else if (!allAccepted) marketCloseMessage = t`The exchange did not accept the order.`;
-	updatePositionMarketCloseReconciliation(submission, marketCloseOutcome, marketCloseMessage);
+	let marketCloseError: OrderReconciliationError | undefined;
+	if (hasCanceled) marketCloseError = canceledError;
+	else if (!allAccepted) marketCloseError = orderReconciliationError("order-rejected");
+	updatePositionMarketCloseReconciliation(submission, marketCloseOutcome, marketCloseError);
 
 	if (submission.queueId && queueVisible) {
 		if (allAccepted) {
 			updateOrderQueueItem(submission.queueId, { status: "success", outcome: getReconciledOutcome(statuses) });
 		} else if (allCanceled) {
-			updateOrderQueueItem(submission.queueId, { status: "canceled", error: canceledMessage });
+			updateOrderQueueItem(submission.queueId, { status: "canceled", error: canceledError });
 		} else if (hasCanceled) {
-			updateOrderQueueItem(submission.queueId, { status: "partial", error: canceledMessage });
+			updateOrderQueueItem(submission.queueId, { status: "partial", error: canceledError });
 		} else if (partiallyAccepted) {
 			updateOrderQueueItem(submission.queueId, {
 				status: "partial",
 				acceptedCount,
 				totalCount: submission.children.length,
-				error: t`The exchange did not accept every order.`,
+				error: orderReconciliationError("batch-rejected"),
 			});
 		} else {
 			updateOrderQueueItem(submission.queueId, {
 				status: "failed",
-				error: t`The exchange did not accept the order.`,
+				error: orderReconciliationError("order-rejected"),
 			});
 		}
 		return;
@@ -436,7 +443,7 @@ function releaseSubmissionAssetReservations(submission: PendingOrderSubmission):
 function updatePositionMarketCloseReconciliation(
 	submission: PendingOrderSubmission,
 	outcome: "canceled" | "filled" | "rejected" | "unconfirmed",
-	message?: string,
+	error?: OrderReconciliationError,
 ): void {
 	if (submission.origin?.type !== "positionMarketClose") return;
 	const session = getPositionMarketCloseModal();
@@ -448,7 +455,7 @@ function updatePositionMarketCloseReconciliation(
 		return;
 	}
 	if (outcome === "canceled" || outcome === "rejected") actions.updatePhase(session.sessionId, "idle");
-	actions.setError(session.sessionId, message ?? t`The exchange did not accept the order.`);
+	actions.setError(session.sessionId, error ?? orderReconciliationError("order-rejected"));
 }
 
 function getReconciledOutcome(statuses: OrderProcessingStatus[]) {

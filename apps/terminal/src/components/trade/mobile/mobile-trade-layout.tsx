@@ -1,5 +1,5 @@
-import { t } from "@lingui/core/macro";
-import { useState } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { type KeyboardEvent, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import type { SizeMode } from "@/lib/trade/types";
@@ -116,7 +116,14 @@ function MarketsDataView({
 	marketKey: string;
 	disclosureStates: MobilePositionsDisclosureStates;
 }) {
+	const { t } = useLingui();
 	const [topView, setTopView] = useState<TopView>("chart");
+	const tabId = useId();
+	const tabRefs = useRef<Record<TopView, HTMLButtonElement | null>>({
+		chart: null,
+		book: null,
+		trades: null,
+	});
 
 	const tabs: { value: TopView; label: string }[] = [
 		{ value: "chart", label: t`Chart` },
@@ -125,6 +132,30 @@ function MarketsDataView({
 	];
 
 	const bookView = topView === "trades" ? "trades" : "book";
+	const chartPanelId = `${tabId}-chart-panel`;
+	const bookPanelId = `${tabId}-book-panel`;
+	const tradesPanelId = `${tabId}-trades-panel`;
+	const activeBookPanelId = bookView === "book" ? bookPanelId : tradesPanelId;
+	const inactiveBookPanelId = bookView === "book" ? tradesPanelId : bookPanelId;
+	const activeBookTabId = `${tabId}-${bookView}-tab`;
+	const inactiveBookTabId = `${tabId}-${bookView === "book" ? "trades" : "book"}-tab`;
+
+	function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, value: TopView) {
+		const currentIndex = tabs.findIndex((tab) => tab.value === value);
+		const isRtl = document.documentElement.dir === "rtl";
+		let nextIndex: number | null = null;
+
+		if (event.key === "Home") nextIndex = 0;
+		if (event.key === "End") nextIndex = tabs.length - 1;
+		if (event.key === "ArrowRight") nextIndex = currentIndex + (isRtl ? -1 : 1);
+		if (event.key === "ArrowLeft") nextIndex = currentIndex + (isRtl ? 1 : -1);
+		if (nextIndex === null) return;
+
+		event.preventDefault();
+		const nextTab = tabs[(nextIndex + tabs.length) % tabs.length];
+		setTopView(nextTab.value);
+		tabRefs.current[nextTab.value]?.focus();
+	}
 
 	return (
 		<div
@@ -135,17 +166,31 @@ function MarketsDataView({
 		>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
-			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
+			<div
+				role="tablist"
+				aria-label={t`Market data views`}
+				className="relative z-20 flex h-[35px] min-h-[35px] shrink-0"
+			>
 				{tabs.map((tab) => {
-					const active = topView === tab.value;
+					const isSelected = topView === tab.value;
 					return (
 						<button
 							key={tab.value}
+							ref={(node) => {
+								tabRefs.current[tab.value] = node;
+							}}
 							type="button"
+							role="tab"
+							id={`${tabId}-${tab.value}-tab`}
+							aria-selected={isSelected}
+							aria-controls={tab.value === "chart" ? chartPanelId : tab.value === "book" ? bookPanelId : tradesPanelId}
+							tabIndex={isSelected ? 0 : -1}
 							onClick={() => setTopView(tab.value)}
+							onKeyDown={(event) => handleTabKeyDown(event, tab.value)}
 							className={cn(
-								"flex-1 py-2 text-xs font-medium border-b-2 transition-colors motion-reduce:transition-none",
-								active ? "text-fg border-fg" : "text-fg-muted border-stroke-weak hover:text-fg",
+								"relative flex-1 border-b-2 py-2 text-xs font-medium transition-colors after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] motion-reduce:transition-none",
+								"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+								isSelected ? "border-fg text-fg" : "border-stroke-weak text-fg-muted hover:text-fg",
 							)}
 						>
 							{tab.label}
@@ -156,7 +201,11 @@ function MarketsDataView({
 
 			<div className="relative h-[45dvh] min-h-[320px] overflow-hidden">
 				<div
+					role="tabpanel"
+					id={chartPanelId}
+					aria-labelledby={`${tabId}-chart-tab`}
 					aria-hidden={topView !== "chart"}
+					tabIndex={topView === "chart" ? 0 : -1}
 					className={cn(
 						"absolute inset-0 flex min-h-0 flex-col",
 						topView === "chart"
@@ -167,7 +216,11 @@ function MarketsDataView({
 					<MobileChartView active={active && topView === "chart"} />
 				</div>
 				<div
+					role="tabpanel"
+					id={activeBookPanelId}
+					aria-labelledby={activeBookTabId}
 					aria-hidden={topView === "chart"}
+					tabIndex={topView === "chart" ? -1 : 0}
 					className={cn(
 						"absolute inset-0 flex min-h-0 flex-col bg-background",
 						topView === "chart" ? "z-0 invisible pointer-events-none" : "z-10 visible pointer-events-auto",
@@ -180,6 +233,7 @@ function MarketsDataView({
 						className="flex-1 min-h-0"
 					/>
 				</div>
+				<div role="tabpanel" id={inactiveBookPanelId} aria-labelledby={inactiveBookTabId} aria-hidden="true" hidden />
 			</div>
 
 			{active && (

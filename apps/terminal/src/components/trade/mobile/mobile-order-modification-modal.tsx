@@ -90,7 +90,7 @@ export function MobileOrderModificationModal({
 			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 [&>button]:!top-5 [&>button]:!right-4 [&>button]:size-11 [&>button]:rounded-[8px] [&>button]:text-market-close-muted [&>button:active]:bg-market-close-hover"
 		>
 			<form onSubmit={handleSubmit} noValidate>
-				<ModalHeader divider={false} className="px-4 pt-7 pb-0 text-left">
+				<ModalHeader divider={false} className="px-4 pt-7 pb-0 text-start">
 					<ModalTitle className="text-base leading-[22px] font-bold text-market-close-fg">{t`Modify Order`}</ModalTitle>
 				</ModalHeader>
 
@@ -112,7 +112,7 @@ export function MobileOrderModificationModal({
 								triggerPriceInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
 							)}
 						>
-							<span className="mr-2 shrink-0 text-xs text-market-close-subtle">{t`Trigger Price`}</span>
+							<span className="me-2 shrink-0 text-xs text-market-close-subtle">{t`Trigger Price`}</span>
 							<input
 								type="text"
 								inputMode="decimal"
@@ -127,7 +127,7 @@ export function MobileOrderModificationModal({
 								onChange={(event) => onTriggerPriceChange(event.target.value)}
 								onKeyDown={handleInputKeyDown}
 							/>
-							<span className="ml-2 shrink-0 text-xs text-market-close-muted">USDC</span>
+							<span className="ms-2 shrink-0 text-xs text-market-close-muted">USDC</span>
 						</label>
 					) : null}
 
@@ -137,7 +137,7 @@ export function MobileOrderModificationModal({
 							sizeInvalid ? "border-market-close-danger" : "border-market-close-stroke-input",
 						)}
 					>
-						<span className="mr-2 shrink-0 text-xs text-market-close-subtle">{t`Size`}</span>
+						<span className="me-2 shrink-0 text-xs text-market-close-subtle">{t`Size`}</span>
 						<input
 							ref={sizeInputRef}
 							type="text"
@@ -153,7 +153,7 @@ export function MobileOrderModificationModal({
 							onChange={(event) => onSizeChange(event.target.value)}
 							onKeyDown={handleInputKeyDown}
 						/>
-						<span className="ml-2 max-w-[35%] shrink-0 truncate text-xs text-market-close-muted">{marketLabel}</span>
+						<span className="ms-2 max-w-[35%] shrink-0 truncate text-xs text-market-close-muted">{marketLabel}</span>
 					</label>
 
 					{errorMessage ? (

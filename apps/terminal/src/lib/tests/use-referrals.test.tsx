@@ -132,6 +132,37 @@ describe("useReferrals query state", () => {
 		expect(result.isRefreshing).toBe(true);
 	});
 
+	it("exposes only positive unclaimed reward rows through the renamed hook fields", () => {
+		const data = createReferralData();
+		data.tokenToState = [
+			[
+				0,
+				{
+					builderRewards: "3",
+					claimedRewards: "2",
+					cumVlm: "10",
+					unclaimedRewards: "0",
+				},
+			],
+			[
+				1,
+				{
+					builderRewards: "4",
+					claimedRewards: "1",
+					cumVlm: "20",
+					unclaimedRewards: "1.25",
+				},
+			],
+		];
+		testState.referralQuery.data = data;
+
+		const result = renderHook();
+
+		expect(result.hasUnclaimedRewards).toBe(true);
+		expect(result.unclaimedRewardRows.map((row) => row.tokenId)).toEqual([1]);
+		expect(result.unclaimedRewardRows[0]?.unclaimedRewards).toBe("1.25");
+	});
+
 	it("distinguishes disconnected and failed states from unavailable queries", () => {
 		testState.isConnected = false;
 		expect(renderHook().status).toBe("idle");

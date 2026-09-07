@@ -105,7 +105,7 @@ export function TradeHeader({
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
 	const controlButtonClass = cn(
-		"trade-control-button group flex min-w-0 cursor-pointer flex-col items-start gap-px rounded-[10px] border border-trading-panel-stroke-card bg-surface py-1.5 text-left transition-colors",
+		"trade-control-button group flex min-w-0 cursor-pointer flex-col items-start gap-px rounded-[10px] border border-trading-panel-stroke-card bg-surface py-1.5 text-start transition-colors",
 		"hover:border-trading-panel-stroke-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 		compact && "py-1",

@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
 
 import { act, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useMobilePositionsDisclosureStates } from "@/components/trade/mobile/use-mobile-disclosure-set";
+import { createI18nRoot } from "./harness/react";
 
 const marketState = vi.hoisted(() => ({
 	routeMarketName: "xyz:GOOGL" as string | undefined,
@@ -49,13 +50,13 @@ vi.mock("@/components/trade/mobile/mobile-trade-view", async () => {
 });
 
 vi.mock("@/components/trade/mobile/mobile-book-view", () => ({
-	MobileBookView: ({ showOrderbookInQuote }: { showOrderbookInQuote?: boolean }) => (
-		<div data-mobile-book data-show-in-quote={String(showOrderbookInQuote)} />
+	MobileBookView: ({ showOrderbookInQuote, view }: { showOrderbookInQuote?: boolean; view?: string }) => (
+		<div data-mobile-book data-show-in-quote={String(showOrderbookInQuote)} data-view={view} />
 	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-chart-view", () => ({
-	MobileChartView: () => null,
+	MobileChartView: () => <div data-mobile-chart />,
 }));
 
 vi.mock("@/components/trade/mobile/mobile-market-bar", async () => {
@@ -107,7 +108,7 @@ describe("MobileTradeLayout market identity", () => {
 	beforeEach(() => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		marketState.routeMarketName = "xyz:GOOGL";
 		marketState.selectedMarketName = "xyz:GOOGL";
 		marketState.mountCount = 0;
@@ -117,6 +118,7 @@ describe("MobileTradeLayout market identity", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		document.documentElement.removeAttribute("dir");
 	});
 
 	function render(active = true, showOrderForm = true) {
@@ -185,5 +187,55 @@ describe("MobileTradeLayout market identity", () => {
 			'button[aria-label="Toggle mobile size mode"]',
 		);
 		expect(nextSizeModeButton?.dataset.sizeMode).toBe("base");
+	});
+
+	it("exposes an RTL-aware tab model without remounting chart or book content", () => {
+		render(true, false);
+
+		const tablist = container.querySelector<HTMLElement>('[role="tablist"]');
+		const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+		const chart = container.querySelector<HTMLElement>("[data-mobile-chart]");
+		const book = container.querySelector<HTMLElement>("[data-mobile-book]");
+		const chartPanel = chart?.closest<HTMLElement>('[role="tabpanel"]');
+		const bookPanel = book?.closest<HTMLElement>('[role="tabpanel"]');
+		const bookPanelId = tabs[1]?.getAttribute("aria-controls");
+		const tradesPanelId = tabs[2]?.getAttribute("aria-controls");
+
+		expect(tablist?.getAttribute("aria-label")).toBe("Market data views");
+		expect(tabs.map((tab) => tab.textContent)).toEqual(["Chart", "Order Book", "Trades"]);
+		expect(tabs.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
+		expect(tabs.map((tab) => tab.tabIndex)).toEqual([0, -1, -1]);
+		expect(tabs[0]?.getAttribute("aria-controls")).toBe(chartPanel?.id);
+		expect(bookPanelId).toBe(bookPanel?.id);
+		expect(tradesPanelId).not.toBe(bookPanelId);
+		expect(container.querySelectorAll('[role="tabpanel"]')).toHaveLength(3);
+		expect(container.ownerDocument.getElementById(tradesPanelId ?? "")?.hidden).toBe(true);
+		expect(chartPanel?.tabIndex).toBe(0);
+		expect(bookPanel?.tabIndex).toBe(-1);
+
+		act(() => tabs[1]?.click());
+
+		expect(container.querySelector("[data-mobile-chart]")).toBe(chart);
+		expect(container.querySelector("[data-mobile-book]")).toBe(book);
+		expect(book?.dataset.view).toBe("book");
+		expect(tabs.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["false", "true", "false"]);
+		expect(bookPanel?.getAttribute("aria-labelledby")).toBe(tabs[1]?.id);
+		expect(bookPanel?.tabIndex).toBe(0);
+
+		act(() => tabs[1]?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+
+		expect(container.querySelector("[data-mobile-chart]")).toBe(chart);
+		expect(container.querySelector("[data-mobile-book]")).toBe(book);
+		expect(book?.dataset.view).toBe("trades");
+		expect(tabs.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["false", "false", "true"]);
+		expect(bookPanel?.id).toBe(tradesPanelId);
+		expect(bookPanel?.getAttribute("aria-labelledby")).toBe(tabs[2]?.id);
+		expect(container.ownerDocument.getElementById(bookPanelId ?? "")?.hidden).toBe(true);
+		expect(document.activeElement).toBe(tabs[2]);
+
+		document.documentElement.dir = "rtl";
+		act(() => tabs[2]?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
+		expect(tabs.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["false", "true", "false"]);
+		expect(document.activeElement).toBe(tabs[1]);
 	});
 });

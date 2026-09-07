@@ -17,12 +17,14 @@ import {
 import { isSafeReferralJoinCode } from "@/lib/trade/referral-join";
 
 interface Props {
+	actionsDisabled: boolean;
 	data: ReferralData;
+	invitationCode?: string;
 	onApplyCode: () => void;
 	onCreateCode: () => void;
 }
 
-export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
+export function ReferralCodeCard({ actionsDisabled, data, invitationCode, onApplyCode, onCreateCode }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
@@ -63,7 +65,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 	}
 
 	return (
-		<article className="h-full rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-3 min-[1001px]:rounded-[12px] min-[1001px]:px-4 min-[1001px]:py-3.5">
+		<article className="h-full rounded-20 border border-stroke-weak bg-surface px-3 py-3 min-[1001px]:rounded-24 min-[1001px]:px-4 min-[1001px]:py-3.5">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h2 className="text-xs font-bold text-fg min-[1001px]:text-2sm">
@@ -88,8 +90,8 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 							key={label}
 							className={
 								active
-									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-[8px] border border-stroke-weak bg-fill-weak px-2 py-2"
-									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-[8px] border border-stroke-weak px-2 py-2"
+									? "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 bg-fill-weaker px-2 py-2"
+									: "flex min-w-0 items-center gap-1.5 overflow-hidden rounded-16 px-2 py-2"
 							}
 						>
 							<span
@@ -110,7 +112,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 			</ol>
 
 			{data.referrerState.stage === "needToTrade" ? (
-				<div className="mt-3 rounded-[10px] bg-warning-soft px-3 py-2.5">
+				<div className="mt-3 rounded-20 bg-warning-soft px-3 py-2.5">
 					<div className="flex items-center justify-between gap-3 text-xs">
 						<span className="text-fg-muted">
 							<Trans>Trading volume progress</Trans>
@@ -136,14 +138,19 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 			) : null}
 
 			{data.referrerState.stage === "needToCreateCode" ? (
-				<div className="mt-3 rounded-[10px] border border-stroke-weak bg-fill-weak p-3">
+				<div className="mt-3 rounded-20 border border-stroke-weak bg-fill-weaker p-3">
 					<p className="text-xs font-semibold text-fg">
 						<Trans>You are eligible to create a referral code.</Trans>
 					</p>
 					<p className="mt-1 text-2xs leading-4 text-fg-muted">
 						<Trans>Codes support 1–20 characters. Availability is confirmed by Hyperliquid when submitted.</Trans>
 					</p>
-					<Button size="sm" className="mt-3 w-full min-[1001px]:w-auto" onClick={onCreateCode}>
+					<Button
+						size="sm"
+						className="mt-3 w-full min-[1001px]:w-auto"
+						disabled={actionsDisabled}
+						onClick={onCreateCode}
+					>
 						<Trans>Create referral code</Trans>
 					</Button>
 				</div>
@@ -155,7 +162,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							<Trans>Referral code</Trans>
 						</p>
-						<div className="mt-1 flex min-h-[50px] items-center gap-2 rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2.5">
+						<div className="mt-1 flex min-h-[50px] items-center gap-2 rounded-20 border border-stroke-weak bg-fill-weaker px-3 py-2.5">
 							<span className="min-w-0 flex-1 truncate text-lg font-bold tracking-wider text-fg">{code}</span>
 							<ButtonIcon
 								variant="ghost"
@@ -172,7 +179,7 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 						<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
 							{usesGatuInvitationLink ? <Trans>Gatu invitation link</Trans> : <Trans>Official referral link</Trans>}
 						</p>
-						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-[10px] border border-stroke-weak px-3 py-2">
+						<div className="mt-1 flex min-h-[39px] items-center gap-2 rounded-20 border border-stroke-weak px-3 py-2">
 							<LinkSimpleIcon className="size-4 shrink-0 text-fg-muted" />
 							<span className="min-w-0 flex-1 truncate text-xs text-fg min-[1001px]:text-2sm">{referralUrl}</span>
 							<ButtonIcon
@@ -191,7 +198,6 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 							variant="outline"
 							intent="neutral"
 							size="sm"
-							className="rounded-[10px]"
 							iconLeft={<ShareNetworkIcon />}
 							onClick={() => void share()}
 						>
@@ -202,7 +208,6 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="sm"
-								className="rounded-[10px]"
 								iconLeft={<ArrowSquareOutIcon />}
 								onClick={() => officialReferralUrl && window.open(officialReferralUrl, "_blank", "noopener,noreferrer")}
 							>
@@ -220,21 +225,27 @@ export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
 							<Trans>Your account was referred by</Trans>
 						</span>
 						<span className="font-medium text-fg">
-							{data.referredBy.code} · {shortenAddress(data.referredBy.referrer)}
+							<bdi dir="ltr">
+								{data.referredBy.code} · {shortenAddress(data.referredBy.referrer)}
+							</bdi>
 						</span>
 					</div>
 				) : canApplyCode ? (
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<p className="text-xs font-medium text-fg">
-								<Trans>Have a referral code?</Trans>
+								{invitationCode ? <Trans>Invitation ready to review</Trans> : <Trans>Have a referral code?</Trans>}
 							</p>
 							<p className="mt-0.5 text-2xs text-fg-muted">
-								<Trans>A valid code may unlock the active referral fee discount.</Trans>
+								{invitationCode ? (
+									<Trans>Review the code from this invitation before applying it.</Trans>
+								) : (
+									<Trans>A valid code may unlock the active referral fee discount.</Trans>
+								)}
 							</p>
 						</div>
-						<Button variant="outline" intent="brand" size="sm" className="rounded-[10px]" onClick={onApplyCode}>
-							<Trans>Enter code</Trans>
+						<Button variant="outline" intent="brand" size="sm" disabled={actionsDisabled} onClick={onApplyCode}>
+							{invitationCode ? <Trans>Review invitation</Trans> : <Trans>Enter code</Trans>}
 						</Button>
 					</div>
 				) : (

@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import type { ExchangeExecutionGuard } from "@gatu/hl-react";
 import { useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
@@ -17,6 +17,7 @@ import {
 	reserveOrderAssets,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import {
 	getTwapOrderAssetReservationIntent,
 	promoteTwapReservationToActive,
@@ -81,9 +82,9 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 		params: ExchangeParams<"twapOrder">,
 		options: SubmitTwapOptions,
 	): Promise<TrackedTwapResult> {
-		if (!address) throw new Error("No active Hyperliquid account");
+		if (!address) throw orderSubmissionFeedbackCause("no-active-account");
 		if (!doesOrderBatchMatchRiskContext([params.twap], options.riskContext)) {
-			throw new Error(t`Order market context does not match the submitted asset.`);
+			throw orderSubmissionFeedbackCause("market-context-mismatch");
 		}
 
 		const intent = createTwapIntent(params, options.coin);
@@ -98,7 +99,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 				pendingTwapState === "unavailable" ||
 				pendingOrderState === "unavailable"
 			) {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}
 			if (reservationState === "conflict" || pendingOrderState === "pending" || pendingTwapState === "pending") {
 				return { state: "blocked", reason: "pending" } as const;
@@ -132,7 +133,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 				});
 			} catch (error) {
 				if (error instanceof PendingTwapPersistenceError) {
-					throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+					throw orderSubmissionFeedbackCause("coordination-unavailable");
 				}
 				throw error;
 			}
@@ -144,7 +145,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 				})
 			) {
 				getPendingTwapActions().remove(submission.id);
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}
 			getPendingTwapActions().markActive(submission.id);
 			let retainPendingReservation = false;
@@ -185,7 +186,7 @@ export function useTrackedTwapOrder(options: UseTrackedTwapOrderOptions = {}) {
 			}
 		});
 		if (!lockResult.supported) {
-			throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+			throw orderSubmissionFeedbackCause("coordination-unavailable");
 		}
 		if (!lockResult.acquired) return { state: "blocked", reason: "pending" };
 		return lockResult.value;
@@ -212,8 +213,12 @@ function getRunningTwapId(result: ExchangeResponse<"twapOrder">): number | undef
 function createTwapIntent(params: ExchangeParams<"twapOrder">, coin: string): TwapIntent {
 	const assetId = Number(params.twap.a);
 	const minutes = Number(params.twap.m);
-	if (!Number.isSafeInteger(assetId) || assetId < 0) throw new Error("Invalid TWAP asset ID");
-	if (!Number.isSafeInteger(minutes) || minutes <= 0) throw new Error("Invalid TWAP duration");
+	if (!Number.isSafeInteger(assetId) || assetId < 0) {
+		throw orderSubmissionFeedbackCause("market-context-mismatch");
+	}
+	if (!Number.isSafeInteger(minutes) || minutes <= 0) {
+		throw orderSubmissionFeedbackCause("twap-minutes-range");
+	}
 	return {
 		assetId,
 		coin,
@@ -232,5 +237,3 @@ function createTwapIntent(params: ExchangeParams<"twapOrder">, coin: string): Tw
 					},
 	};
 }
-
-import type { ExchangeExecutionGuard } from "@gatu/hl-react";

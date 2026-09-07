@@ -33,7 +33,7 @@ export function DepositModalLoadingFallback() {
 				divider={!usesFundsRedesign}
 				className={
 					usesFundsRedesign
-						? "px-4 pt-7 pr-14 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
+						? "px-4 pt-7 pr-14 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
 						: undefined
 				}
 			>
@@ -61,7 +61,9 @@ export function DepositModalLoadingFallback() {
 					usesFundsRedesign ? "px-4 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-3.5 min-[1001px]:pb-6" : "space-y-4"
 				}
 			>
-				<output
+				{/* biome-ignore lint/a11y/useSemanticElements: output cannot contain this block loading skeleton. */}
+				<div
+					role="status"
 					className={
 						activeTab === "deposit" ? "block min-[1001px]:h-[37.5rem]" : "flex min-h-72 items-center justify-center"
 					}
@@ -126,7 +128,7 @@ export function DepositModalLoadingFallback() {
 					) : (
 						<SpinnerGapIcon className="size-5 animate-spin text-signal motion-reduce:animate-none" aria-hidden="true" />
 					)}
-				</output>
+				</div>
 			</ModalContent>
 		</PendingActionModal>
 	);

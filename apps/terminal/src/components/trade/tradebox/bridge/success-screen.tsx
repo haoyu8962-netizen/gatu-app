@@ -71,12 +71,12 @@ export function SuccessScreen({
 						txHash ? (
 							<ExplorerLink href={`${LIFI_EXPLORER_URL}/${txHash}`}>
 								<WalletIcon className="size-3" />
-								{shortenAddress(address)}
+								<bdi dir="ltr">{shortenAddress(address)}</bdi>
 							</ExplorerLink>
 						) : (
 							<span className="flex items-center gap-1.5">
 								<WalletIcon className="size-3" />
-								{shortenAddress(address)}
+								<bdi dir="ltr">{shortenAddress(address)}</bdi>
 							</span>
 						)
 					}
@@ -90,7 +90,7 @@ export function SuccessScreen({
 					value={
 						<span className="flex items-center gap-1.5">
 							<HyperCoreUsdcIcon size="sm" />
-							{formatted} USDC
+							<bdi dir="ltr">{formatted} USDC</bdi>
 						</span>
 					}
 				/>
@@ -111,7 +111,7 @@ export function SuccessScreen({
 									label={processTypeLabel(detail.type)}
 									value={
 										<ExplorerLink href={detail.txLink || `${LIFI_EXPLORER_URL}/${detail.txHash}`}>
-											{shortenAddress(detail.txHash)}
+											<bdi dir="ltr">{shortenAddress(detail.txHash)}</bdi>
 										</ExplorerLink>
 									}
 								/>

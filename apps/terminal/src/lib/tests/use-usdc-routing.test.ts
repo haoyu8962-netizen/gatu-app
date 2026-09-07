@@ -159,6 +159,22 @@ describe("fresh USDC routing", () => {
 		expect(execute).toHaveBeenCalledTimes(1);
 	});
 
+	it("honors lifecycle cancellation before executing a withdrawal", async () => {
+		const controller = new AbortController();
+		const execute = vi.fn().mockResolvedValue(undefined);
+		const fetchRouting = vi.fn(async (signal?: AbortSignal) => {
+			controller.abort();
+			signal?.throwIfAborted();
+			return { depositRoute: "cctp" as const, withdrawalRoute: "cctp" as const };
+		});
+
+		await expect(
+			executeWithFreshWithdrawalRoute("arbitrum-cctp", fetchRouting, execute, controller.signal),
+		).rejects.toMatchObject({ name: "AbortError" });
+		expect(fetchRouting).toHaveBeenCalledWith(controller.signal);
+		expect(execute).not.toHaveBeenCalled();
+	});
+
 	it.each([
 		{
 			expectedStatus: "changed",

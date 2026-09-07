@@ -195,7 +195,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const [sizeInput, setSizeInput] = useState("");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
 	const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);
-	const [approvalError, setApprovalError] = useState<string | null>(null);
+	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
@@ -601,7 +601,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		try {
 			await authorize();
 		} catch (error) {
-			setApprovalError(error instanceof Error ? error.message : t`Failed to enable trading`);
+			setApprovalError({ cause: error });
 		}
 	}
 
@@ -1104,7 +1104,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						{validationSnapshot.text}
 					</p>
 				)}
-				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
+				{approvalError && (
+					<p className="text-xs text-error mb-2">
+						<MobileTradingApprovalErrorMessage cause={approvalError.cause} />
+					</p>
+				)}
 				{tradeRestricted && !buttonContent.disabledReason ? (
 					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">
 						{t`Trading is not available in your region`}
@@ -1151,6 +1155,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			)}
 		</div>
 	);
+}
+
+export function MobileTradingApprovalErrorMessage({ cause }: { cause: unknown }) {
+	const { t } = useLingui();
+	return cause instanceof Error ? cause.message : t`Failed to enable trading`;
 }
 
 function SummaryRow({

@@ -1,5 +1,4 @@
 import { infoQueryOptions, useHyperliquid, useInfo } from "@gatu/hl-react";
-import { t } from "@lingui/core/macro";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { getWithdrawalRoute, normalizeUsdcRouting, type UsdcRouting } from "@/domain/trade/usdc-routing";
@@ -13,8 +12,8 @@ export class UsdcDepositRouteError extends Error {
 	constructor(reason: "changed" | "unavailable") {
 		super(
 			reason === "changed"
-				? t`The Hyperliquid deposit route changed before signing. Review the updated route and retry.`
-				: t`Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.`,
+				? "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
+				: "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.",
 		);
 		this.name = "UsdcDepositRouteError";
 		this.reason = reason;
@@ -85,15 +84,20 @@ export async function executeWithFreshWithdrawalRoute(
 	expectedRoute: WithdrawalRoute,
 	fetchFreshRouting: (signal?: AbortSignal) => Promise<UsdcRouting | null>,
 	execute: () => Promise<void>,
+	signal?: AbortSignal,
 ): Promise<"executed" | "changed" | "unavailable"> {
 	let freshRoute: WithdrawalRoute | null;
 	try {
-		freshRoute = getWithdrawalRoute(await fetchFreshRouting());
-	} catch {
+		signal?.throwIfAborted();
+		freshRoute = getWithdrawalRoute(await fetchFreshRouting(signal));
+		signal?.throwIfAborted();
+	} catch (error) {
+		if (signal?.aborted) throw signal.reason ?? error;
 		return "unavailable";
 	}
 	if (!freshRoute) return "unavailable";
 	if (freshRoute !== expectedRoute) return "changed";
+	signal?.throwIfAborted();
 	await execute();
 	return "executed";
 }

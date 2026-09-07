@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +13,16 @@ import { createI18nRoot } from "./harness/react";
 const USER = "0x1111111111111111111111111111111111111111" as const;
 const COIN = "xyz:CXMT";
 const ASSET_ID = 120_031;
+const BLOCKED_MESSAGE = "Another order for this market is still being confirmed.";
+const BLOCKED_MESSAGE_AR = "لا يزال تأكيد طلب آخر لهذا السوق جارياً.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(BLOCKED_MESSAGE)]: BLOCKED_MESSAGE_AR,
+};
 
 interface LivePosition {
 	coin: string;
@@ -247,6 +259,7 @@ describe("usePositionReverseSubmit", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
 		window.localStorage.clear();
@@ -643,6 +656,24 @@ describe("usePositionReverseSubmit", () => {
 			phase: "idle",
 			error: "Another order for this market is still being confirmed.",
 		});
+		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
+	});
+
+	it("retranslates an existing coordinated block when the locale changes", async () => {
+		mocks.lockRequest.mockImplementationOnce(
+			async (_name: string, _options: LockOptions, callback: (lock: Lock | null) => unknown | PromiseLike<unknown>) =>
+				callback(null),
+		);
+
+		await act(async () => {
+			await currentHook().submit();
+		});
+		expect(currentHook().error).toBe(BLOCKED_MESSAGE);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe(BLOCKED_MESSAGE_AR);
+		expect(currentHook().phase).toBe("idle");
 		expect(mocks.clearinghouseState).not.toHaveBeenCalled();
 	});
 });

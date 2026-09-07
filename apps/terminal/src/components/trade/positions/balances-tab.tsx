@@ -1,5 +1,5 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -42,6 +42,7 @@ interface Props {
 }
 
 export function BalancesTab({ toolbarTarget }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
@@ -292,7 +293,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 							<Table className="table-fixed min-w-[52rem] w-full">
 								<TableHeader className={balancesTableHeaderClass}>
 									<TableRow className={positionsPanelTableHeaderRowClass}>
-										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
+										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-start")}>
 											{t`Asset`}
 										</TableHead>
 										<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>

@@ -71,7 +71,7 @@ export function SizePercentInput({
 				)}
 				disabled={disabled}
 			/>
-			<span className="ml-1 shrink-0 text-2xs text-trading-panel-subtle">%</span>
+			<span className="ms-1 shrink-0 text-2xs text-trading-panel-subtle">%</span>
 		</div>
 	);
 }

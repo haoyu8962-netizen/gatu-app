@@ -148,13 +148,15 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 						onClick={onBack}
 						className="flex items-center gap-1 text-xs text-signal hover:text-signal-hover"
 					>
-						<ArrowLeftIcon className="size-3" />
+						<ArrowLeftIcon className="size-3 rtl:rotate-180" />
 						<Trans>Back</Trans>
 					</button>
 					{quote ? <QuoteCountdown remaining={remainingSeconds} /> : null}
 				</div>
 
-				<p className="text-4xl font-semibold text-fg tabular-nums text-center py-2">{usdDisplay}</p>
+				<p className="text-4xl font-semibold text-fg tabular-nums text-center py-2">
+					<bdi dir="ltr">{usdDisplay}</bdi>
+				</p>
 
 				<InfoRowGroup className="text-xs">
 					<InfoRow
@@ -162,7 +164,9 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 						value={
 							<span className="flex items-center gap-1.5">
 								<WalletIcon className="size-3" />
-								<Trans>Wallet ({shortenAddress(address)})</Trans>
+								<Trans>
+									Wallet (<bdi dir="ltr">{shortenAddress(address)}</bdi>)
+								</Trans>
 							</span>
 						}
 					/>
@@ -194,7 +198,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 							<span className="flex items-center gap-1.5">
 								<HyperCoreUsdcIcon size="sm" />
 								{receiveAmount} USDC
-								{receiveAmountUSD ? <span className="text-fg-muted ml-1">{receiveAmountUSD}</span> : null}
+								{receiveAmountUSD ? <span className="ms-1 text-fg-muted">{receiveAmountUSD}</span> : null}
 							</span>
 						}
 					/>

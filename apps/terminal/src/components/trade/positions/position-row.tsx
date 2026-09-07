@@ -163,13 +163,13 @@ export function PositionRow({
 			return (
 				<span className="flex flex-col items-end gap-px text-xs leading-4 tabular-nums">
 					<span>
-						<span className="mr-1 text-[10px] text-market-close-subtle">TP</span>
+						<span className="me-1 text-[10px] text-market-close-subtle">TP</span>
 						<span className={tpSlInfo?.tpPrice ? "font-semibold text-market-close-success" : "text-fg-disabled"}>
 							{tpSlInfo?.tpPrice ? formatPrice(tpSlInfo.tpPrice, { szDecimals, style: "decimal" }) : "—"}
 						</span>
 					</span>
 					<span>
-						<span className="mr-1 text-[10px] text-market-close-subtle">SL</span>
+						<span className="me-1 text-[10px] text-market-close-subtle">SL</span>
 						<span className={tpSlInfo?.slPrice ? "font-semibold text-market-close-danger" : "text-fg-disabled"}>
 							{tpSlInfo?.slPrice ? formatPrice(tpSlInfo.slPrice, { szDecimals, style: "decimal" }) : "—"}
 						</span>
@@ -285,7 +285,7 @@ export function PositionRow({
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell size="dense" className={cn(positionTableCellClass, "pl-5 text-left text-market-close-fg")}>
+			<TableCell size="dense" className={cn(positionTableCellClass, "ps-5 text-start text-market-close-fg")}>
 				<div className="flex items-center gap-2 whitespace-nowrap">
 					<span
 						className={cn(
@@ -412,7 +412,7 @@ export function PositionRow({
 					{fundingDisplay}
 				</span>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionTableCellClass, "pr-5")}>
+			<TableCell size="dense" className={cn(positionTableCellClass, "pe-5")}>
 				<PositionInlineActions
 					canClose={canClose}
 					canReverse={canReverse}

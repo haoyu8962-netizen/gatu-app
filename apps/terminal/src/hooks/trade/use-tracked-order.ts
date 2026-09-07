@@ -1,5 +1,4 @@
 import type { ExchangeExecutionGuard } from "@gatu/hl-react";
-import { t } from "@lingui/core/macro";
 import { useRef, useState } from "react";
 import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
 import {
@@ -20,6 +19,7 @@ import {
 	reserveOrderAssets,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingOrderActions,
@@ -69,9 +69,9 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 	}
 
 	async function submitOrderOnce(params: TrackedOrderParams, options: SubmitOptions): Promise<TrackedOrderResult> {
-		if (clientKey === "disconnected") throw new Error("No active Hyperliquid account");
+		if (clientKey === "disconnected") throw orderSubmissionFeedbackCause("no-active-account");
 		if (!doesOrderBatchMatchRiskContext(params.orders, options.riskContext)) {
-			throw new Error(t`Order market context does not match the submitted asset.`);
+			throw orderSubmissionFeedbackCause("market-context-mismatch");
 		}
 
 		const user = clientKey.toLowerCase() as `0x${string}`;
@@ -82,7 +82,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 
 		async function submitWithLease(lease: OrderAssetLockLease): Promise<TrackedOrderResult> {
 			if (!doesOrderAssetLockLeaseCover(lease, lockIdentity)) {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}
 			const reservationIntent = {
 				intentKey: tracked.intentKey,
@@ -91,7 +91,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 			};
 			const reservationState = getOrderAssetReservationState(lease, reservationIntent);
 			if (reservationState === "unavailable") {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}
 			if (reservationState === "conflict") return { state: "blocked" };
 
@@ -120,7 +120,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 				});
 			} catch (error) {
 				if (error instanceof PendingOrderPersistenceError) {
-					throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+					throw orderSubmissionFeedbackCause("coordination-unavailable");
 				}
 				throw error;
 			}
@@ -132,7 +132,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 				})
 			) {
 				getPendingOrderActions().remove(submission.id);
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw orderSubmissionFeedbackCause("coordination-unavailable");
 			}
 			getPendingOrderActions().markActive(submission.id);
 			let retainReservation = false;
@@ -201,7 +201,7 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 		if (options.assetLockLease) return submitWithLease(options.assetLockLease);
 		const lockResult = await runWithAvailableOrderAssetLocks(lockIdentity, submitWithLease);
 		if (!lockResult.supported) {
-			throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+			throw orderSubmissionFeedbackCause("coordination-unavailable");
 		}
 		if (!lockResult.acquired) return { state: "blocked" };
 		return lockResult.value;

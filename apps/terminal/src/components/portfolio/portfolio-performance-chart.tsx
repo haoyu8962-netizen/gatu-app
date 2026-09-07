@@ -125,6 +125,7 @@ export function PortfolioPerformanceChart({
 	const activePoint = activeInteraction ? chart.points[activeInteraction.index] : undefined;
 	const latestValue = chart.points.at(-1)?.rawValue ?? null;
 	const formattedLatestValue = formatLatestValue(latestValue, metric);
+	const latestValueTone = metric === "accountValue" ? "text-fg" : getMarketToneClass(latestValue);
 	const activeLabel = activePoint ? formatPointLabel(activePoint) : null;
 	const hasRenderableChart = !isLoading && !isUnavailable && chart.points.length > 0;
 	const tooltipAnchor =
@@ -288,7 +289,7 @@ export function PortfolioPerformanceChart({
 						<Trans>Perps PNL</Trans>
 					</ChartTab>
 				</div>
-				<span className={cn("text-xs font-medium tabular-nums", Number(latestValue) < 0 ? "text-error" : "text-fg")}>
+				<span data-portfolio-latest-value className={cn("text-xs font-medium tabular-nums", latestValueTone)}>
 					{formattedLatestValue}
 				</span>
 			</div>
@@ -363,7 +364,7 @@ export function PortfolioPerformanceChart({
 										<text
 											x={chart.plotLeft - 7}
 											y={tick.y}
-											className="fill-fg-muted text-[10px] tabular-nums"
+											className="fill-fg-muted text-3xs tabular-nums"
 											textAnchor="end"
 											dominantBaseline="middle"
 										>
@@ -386,7 +387,7 @@ export function PortfolioPerformanceChart({
 									<text
 										x={tick.x}
 										y={chart.plotBottom + 15}
-										className="fill-fg-muted text-[10px] tabular-nums"
+										className="fill-fg-muted text-3xs tabular-nums"
 										textAnchor={index === 0 ? "start" : index === chart.timeTicks.length - 1 ? "end" : "middle"}
 									>
 										{tick.label}
@@ -681,6 +682,18 @@ function formatTimeTick(timestamp: number, period: PortfolioPeriod): string {
 		return `${date.getFullYear()}-${month}`;
 	}
 	return `${month}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function getMarketToneClass(value: string | null): "text-fg" | "text-market-down" | "text-market-up" {
+	if (!value) return "text-fg";
+	try {
+		const parsed = Big(value);
+		if (parsed.gt(0)) return "text-market-up";
+		if (parsed.lt(0)) return "text-market-down";
+	} catch {
+		return "text-fg";
+	}
+	return "text-fg";
 }
 
 export function findNearestPortfolioPointIndex(

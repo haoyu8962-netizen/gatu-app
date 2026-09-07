@@ -91,7 +91,7 @@ describe("root provider runtime boundary", () => {
 			act(() => {
 				root.render(
 					<RootProvider queryClient={queryClient}>
-						<ClientRuntimeGate>
+						<ClientRuntimeGate fallback={<span>Loading document</span>}>
 							<MountProbe label="Document" counters={counters} />
 						</ClientRuntimeGate>
 					</RootProvider>,
@@ -111,42 +111,54 @@ describe("root provider runtime boundary", () => {
 		expect(runtime.clientProviderRenders).toBe(0);
 	});
 
-	it("keeps fallback content visible for a trading route before hydration", () => {
+	it("does not mount business route content outside its client providers before hydration", () => {
 		runtime.pathname = "/trade/HYPE";
+		const counters = { mounts: 0, unmounts: 0 };
 
 		act(() => {
 			root.render(
 				<RootProvider queryClient={queryClient}>
-					<ClientRuntimeGate>
-						<span>Terminal frame</span>
+					<ClientRuntimeGate fallback={<span>Terminal frame</span>}>
+						<MountProbe label="Trading route" counters={counters} />
 					</ClientRuntimeGate>
 				</RootProvider>,
 			);
 		});
 		expect(container.textContent).toBe("Terminal frame");
+		expect(counters).toEqual({ mounts: 0, unmounts: 0 });
 		expect(runtime.clientProviderRenders).toBe(0);
 	});
 
-	it("activates the wallet runtime for a trading route after hydration", async () => {
+	it("mounts business route content once after the client provider is ready", async () => {
 		runtime.pathname = "/trade/HYPE";
-		runtime.hydrated = true;
+		const counters = { mounts: 0, unmounts: 0 };
 
-		await act(async () => {
+		function render() {
 			root.render(
 				<RootProvider queryClient={queryClient}>
-					<ClientRuntimeGate>
-						<span>Terminal frame</span>
+					<ClientRuntimeGate fallback={<span>Terminal frame</span>}>
+						<MountProbe label="Trading route" counters={counters} />
 					</ClientRuntimeGate>
 				</RootProvider>,
 			);
+		}
+
+		act(render);
+		expect(container.textContent).toBe("Terminal frame");
+		expect(counters.mounts).toBe(0);
+
+		runtime.hydrated = true;
+		await act(async () => {
+			render();
 		});
-		for (let attempt = 0; attempt < 20 && runtime.clientProviderRenders === 0; attempt += 1) {
+		for (let attempt = 0; attempt < 20 && counters.mounts === 0; attempt += 1) {
 			await act(async () => {
 				await new Promise((resolve) => setTimeout(resolve, 10));
 			});
 		}
 
-		expect(container.textContent).toBe("Terminal frame");
+		expect(container.textContent).toBe("Trading route");
+		expect(counters).toEqual({ mounts: 1, unmounts: 0 });
 		expect(runtime.clientProviderRenders).toBeGreaterThan(0);
 	});
 });

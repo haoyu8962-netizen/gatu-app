@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { positionTableInlineActionClass } from "./position-table-styles";
 
 interface Props {
@@ -18,6 +18,7 @@ export function PositionInlineActions({
 	onLimitClose,
 	onReverse,
 }: Props) {
+	const { t } = useLingui();
 	return (
 		<div className="flex items-center justify-end gap-2 whitespace-nowrap">
 			<button

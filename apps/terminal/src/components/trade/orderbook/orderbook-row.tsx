@@ -1,5 +1,5 @@
 import { Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { memo } from "react";
 import { useLongPressTooltip } from "@/hooks/ui/use-long-press-tooltip";
 import { cn } from "@/lib/cn";
@@ -38,6 +38,7 @@ function OrderbookRowComponent({
 	baseAsset,
 	quoteAsset,
 }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
@@ -72,7 +73,7 @@ function OrderbookRowComponent({
 			aria-label={ariaLabel}
 			{...longPressTooltip.handlers}
 			className={cn(
-				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
+				"group relative block w-full shrink-0 cursor-pointer bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
 				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
 				compact ? "h-[24px]" : "h-[23px]",
 			)}
@@ -90,14 +91,17 @@ function OrderbookRowComponent({
 					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
 				)}
 			>
-				<span
-					title={compact ? undefined : priceText}
-					className={cn(
-						"min-w-0 truncate text-left justify-start",
-						isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
-					)}
-				>
-					{priceText}
+				<span title={compact ? undefined : priceText} className="min-w-0 truncate text-left">
+					<span
+						data-slot="orderbook-price-text"
+						className={cn(
+							"inline-block max-w-full truncate align-top bg-surface",
+							compact ? "group-hover:bg-trading-panel-card" : "group-hover:bg-fill-hover",
+							isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
+						)}
+					>
+						{priceText}
+					</span>
 				</span>
 				<OrderbookSizeCell
 					className={cn("min-w-0 truncate text-right", compact ? "text-trading-panel-muted" : "orderbook-value-text")}

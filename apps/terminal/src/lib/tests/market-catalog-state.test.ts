@@ -64,6 +64,21 @@ describe("market catalog state", () => {
 		expect(arePerpDexsValid([null, { name: "test" }])).toBe(true);
 	});
 
+	it("rejects size precision outside Hyperliquid protocol bounds", () => {
+		const spotToken = SPOT_META.tokens[0];
+		expect(isSpotMetaValid({ ...SPOT_META, tokens: [{ ...spotToken, szDecimals: -1 }] })).toBe(false);
+		expect(isSpotMetaValid({ ...SPOT_META, tokens: [{ ...spotToken, szDecimals: 9 }] })).toBe(false);
+		expect(isSpotMetaValid({ ...SPOT_META, tokens: [{ ...spotToken, weiDecimals: -1 }] })).toBe(false);
+
+		const perpAsset = { name: "BTC", szDecimals: 5, maxLeverage: 50, marginTableId: 0 };
+		expect(
+			areAllPerpMetasValid([{ universe: [{ ...perpAsset, szDecimals: -1 }], marginTables: [], collateralToken: 0 }]),
+		).toBe(false);
+		expect(
+			areAllPerpMetasValid([{ universe: [{ ...perpAsset, szDecimals: 7 }], marginTables: [], collateralToken: 0 }]),
+		).toBe(false);
+	});
+
 	it("keeps an empty catalog in restoring state until persistence finishes", () => {
 		const queries = createQueries({
 			spotMeta: createQuery<SpotMetaResponse>(undefined),

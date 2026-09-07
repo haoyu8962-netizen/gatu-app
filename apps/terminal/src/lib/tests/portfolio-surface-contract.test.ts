@@ -10,8 +10,13 @@ const DEPOSIT_MODAL = readFileSync(resolve(TEST_DIR, "../..", "components/trade/
 
 describe("portfolio surface contract", () => {
 	it("keeps the portfolio canvas separate from its raised content panels", () => {
-		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-portfolio-canvas")).toBe("#f1f3f6");
-		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-portfolio-canvas")).toBe("#04251f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-dashboard-canvas")).toBe("#f1f3f6");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-dashboard-canvas")).toBe("#04251f");
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-portfolio-canvas")).toBe("var(--bg-dashboard-canvas)");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-portfolio-canvas")).toBe("var(--bg-dashboard-canvas)");
+		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-dashboard-canvas")).toBe(
+			"var(--bg-dashboard-canvas)",
+		);
 		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-portfolio-canvas")).toBe(
 			"var(--bg-portfolio-canvas)",
 		);
@@ -33,6 +38,20 @@ describe("portfolio surface contract", () => {
 		expect(PORTFOLIO_PAGE).toContain("<Trans>Account mode</Trans>");
 		expect(PORTFOLIO_PAGE).toContain("<AccountModeModal");
 		expect(PORTFOLIO_PAGE).toContain("canChange={accountModeControl.canSet}");
+	});
+
+	it("keeps unavailable fund actions fail-closed and exposes persistent reasons", () => {
+		expect(PORTFOLIO_PAGE).toContain("<Trans>Unavailable actions</Trans>");
+		expect(PORTFOLIO_PAGE).toContain('aria-live="polite"');
+		expect(PORTFOLIO_PAGE).toContain("aria-describedby={getUnavailableReasonId(");
+		expect(PORTFOLIO_PAGE).toContain("disabled={modeDependentFundsActionsDisabled}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={transferDisabled}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={!fundsActionAvailability.withdrawal.available}");
+		expect(PORTFOLIO_PAGE).toContain("disabled={depositDisabled}");
+		expect(PORTFOLIO_PAGE).toContain('? () => openDepositModal("withdraw")');
+		expect(PORTFOLIO_PAGE).toContain(
+			'onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}',
+		);
 	});
 
 	it("uses the default withdrawal account instead of the last selected HIP-3 market", () => {

@@ -58,7 +58,7 @@ interface PositionCloseDialogHeaderProps {
 
 export function PositionCloseDialogHeader({ children }: PositionCloseDialogHeaderProps) {
 	return (
-		<ModalHeader divider={false} className="gap-1 px-5 pt-7 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pt-6">
+		<ModalHeader divider={false} className="gap-1 px-5 pt-7 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pt-6">
 			{children}
 		</ModalHeader>
 	);
@@ -114,8 +114,8 @@ export function PositionCloseSummary({ testId, ariaLabel, items }: PositionClose
 					<div
 						key={item.key}
 						className={cn(
-							"flex min-w-0 flex-col gap-[3px] text-left min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4",
-							item.emphasized && "items-end text-right min-[1001px]:items-center min-[1001px]:text-left",
+							"flex min-w-0 flex-col gap-[3px] text-start min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4",
+							item.emphasized && "items-end text-right min-[1001px]:items-center min-[1001px]:text-start",
 							item.emphasized &&
 								"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-market-close-stroke-card min-[1001px]:pt-2.5",
 						)}

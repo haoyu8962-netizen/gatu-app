@@ -4,6 +4,8 @@ import { Suspense, useEffect } from "react";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useHyperliquid } from "@/lib/hyperliquid";
 import {
 	discardPositionMarketCloseModal,
 	useCommandMenuActions,
@@ -145,6 +147,9 @@ function SharedGlobalModals({
 	const sendModalAsset = useSendModalAsset();
 	const sendAccountType = useSendModalAccountType();
 	const { close: closeSendModal } = useSendModalActions();
+	const { clientKey, env, sessionMode } = useHyperliquid();
+	const { walletAddress, walletIntent } = useWalletSession();
+	const fundsSessionKey = `${env}:${clientKey.toLowerCase()}:${sessionMode}:${walletAddress?.toLowerCase() ?? "disconnected"}:${walletIntent}`;
 
 	useEffect(() => {
 		if (!enablePositionMarketClose && activeModal === "positionMarketClose") {
@@ -161,7 +166,7 @@ function SharedGlobalModals({
 			if (isHip3DisclaimerRequired || activeModal === "positionMarketClose") return;
 			if (activeModal === "commandMenu") {
 				closeCommandMenu();
-			} else {
+			} else if (activeModal === null) {
 				openCommandMenu();
 			}
 		}
@@ -184,9 +189,10 @@ function SharedGlobalModals({
 
 	return (
 		<Suspense fallback={activeModal === "deposit" ? <DepositModalSuspenseFallback /> : <GlobalModalLoadingFallback />}>
-			{activeModal === "deposit" && <DepositModal />}
+			{activeModal === "deposit" && <DepositModal key={`deposit:${fundsSessionKey}`} />}
 			{activeModal === "internalTransfer" && (
 				<TransferModal
+					key={`transfer:${fundsSessionKey}`}
 					open
 					onOpenChange={(open) => !open && closeTransferModal()}
 					initialDirection={transferDirection}
@@ -194,6 +200,7 @@ function SharedGlobalModals({
 			)}
 			{activeModal === "send" && (
 				<SendModal
+					key={`send:${fundsSessionKey}`}
 					open
 					onOpenChange={(open) => !open && closeSendModal()}
 					initialAsset={sendModalAsset}
@@ -201,7 +208,7 @@ function SharedGlobalModals({
 				/>
 			)}
 			{activeModal === "settings" && <GlobalSettingsModal />}
-			{activeModal === "swap" && <SpotSwapModal />}
+			{activeModal === "swap" && <SpotSwapModal key={`swap:${fundsSessionKey}`} />}
 			{activeModal === "commandMenu" && <CommandMenu />}
 			{activeModal === "positionMarketClose" &&
 				enablePositionMarketClose &&

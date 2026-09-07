@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReferralActionModal } from "@/components/referrals/referral-action-modal";
 import { createI18nRoot } from "@/lib/tests/harness/react";
+
+const REFERRAL_FAILURE = "Referral request could not be completed.";
+const ARABIC_REFERRAL_FAILURE = "تعذر إكمال طلب الإحالة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(REFERRAL_FAILURE)]: ARABIC_REFERRAL_FAILURE,
+};
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -30,6 +43,7 @@ describe("ReferralActionModal invitation flow", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -46,7 +60,7 @@ describe("ReferralActionModal invitation flow", () => {
 			root.render(
 				<ReferralActionModal
 					action="apply"
-					claimableRewards={[]}
+					unclaimedRewards={[]}
 					initialCode="gatuappweb3"
 					onClose={vi.fn()}
 					onSubmit={onSubmit}
@@ -73,7 +87,7 @@ describe("ReferralActionModal invitation flow", () => {
 			root.render(
 				<ReferralActionModal
 					action="apply"
-					claimableRewards={[]}
+					unclaimedRewards={[]}
 					initialCode="ExactCode"
 					onClose={onClose}
 					onSubmit={onSubmit}
@@ -89,5 +103,58 @@ describe("ReferralActionModal invitation flow", () => {
 		expect(onClose).toHaveBeenCalledOnce();
 		expect(onSubmit).not.toHaveBeenCalled();
 		expect(container.querySelector("input")).toBeNull();
+	});
+
+	it("reviews the unclaimed balance and submits a claim without displaying other reward fields", async () => {
+		const onSubmit = vi.fn().mockResolvedValue(undefined);
+		await act(async () => {
+			root.render(
+				<ReferralActionModal
+					action="claim"
+					unclaimedRewards={[
+						{
+							builderRewards: "4.75",
+							claimedRewards: "9.5",
+							cumVlm: "100",
+							name: "USDC",
+							tokenId: 0,
+							unclaimedRewards: "1.25",
+							weiDecimals: 6,
+						},
+					]}
+					onClose={vi.fn()}
+					onSubmit={onSubmit}
+				/>,
+			);
+		});
+
+		expect(container.textContent).toContain("1.25");
+		expect(container.textContent).not.toContain("9.5");
+		expect(container.textContent).not.toContain("4.75");
+
+		const claim = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Claim all");
+		if (!claim) throw new Error("Claim button was not rendered");
+		await act(async () => claim.click());
+
+		expect(onSubmit).toHaveBeenCalledExactlyOnceWith("claim", undefined);
+	});
+
+	it("retranslates a fallback submission error without resubmitting", async () => {
+		const onSubmit = vi.fn().mockRejectedValue(undefined);
+		await act(async () => {
+			root.render(<ReferralActionModal action="claim" unclaimedRewards={[]} onClose={vi.fn()} onSubmit={onSubmit} />);
+		});
+
+		const claim = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Claim all");
+		if (!claim) throw new Error("Claim button was not rendered");
+		await act(async () => {
+			claim.click();
+			await Promise.resolve();
+		});
+		expect(container.textContent).toContain(REFERRAL_FAILURE);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.textContent).toContain(ARABIC_REFERRAL_FAILURE);
+		expect(onSubmit).toHaveBeenCalledOnce();
 	});
 });

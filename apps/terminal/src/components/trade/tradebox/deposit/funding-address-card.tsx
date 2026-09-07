@@ -1,6 +1,5 @@
 import { ButtonIcon } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, QrCodeIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -27,6 +26,7 @@ interface UnavailableProps {
 type Props = LoadingProps | ReadyProps | UnavailableProps;
 
 export function FundingAddressCard(props: Props) {
+	const { t } = useLingui();
 	const address = props.state === "ready" ? props.address : null;
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const { copied, copy } = useCopyToClipboard(1500);

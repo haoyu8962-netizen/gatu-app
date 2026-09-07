@@ -79,7 +79,7 @@ function ListMessage({ pageState, onRetry, isMobile }: Pick<Props, "pageState" |
 						className={cn(
 							"animate-pulse border-api-wallet-stroke-card",
 							isMobile
-								? "space-y-2 rounded-[var(--api-wallet-card-radius)] border p-3"
+								? "space-y-2 rounded-24 border p-3"
 								: "grid h-[var(--api-wallet-row-min-height)] grid-cols-5 items-center gap-4 border-b",
 						)}
 					>
@@ -119,7 +119,7 @@ function ListMessage({ pageState, onRetry, isMobile }: Pick<Props, "pageState" |
 				<Button
 					type="button"
 					size="sm"
-					className="mt-1 rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100"
+					className="mt-1 rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
 					onClick={onRetry}
 				>
 					<Trans>Retry</Trans>
@@ -179,7 +179,7 @@ function DesktopAgentTable({
 			</colgroup>
 			<TableHeader>
 				<TableRow>
-					<TableHead size="dense" className="h-[var(--api-wallet-table-head-height)] pl-5" aria-sort={sortDirection}>
+					<TableHead size="dense" className="h-[var(--api-wallet-table-head-height)] ps-5" aria-sort={sortDirection}>
 						<Button
 							type="button"
 							variant="ghost"
@@ -208,7 +208,7 @@ function DesktopAgentTable({
 					<TableHead size="dense" className="text-right">
 						<Trans>Valid until</Trans>
 					</TableHead>
-					<TableHead size="dense" className="pr-5 text-right">
+					<TableHead size="dense" className="pe-5 text-right">
 						<Trans>Action</Trans>
 					</TableHead>
 				</TableRow>
@@ -227,7 +227,7 @@ function DesktopAgentTable({
 				) : (
 					agents.map((agent) => (
 						<TableRow key={agent.id} className="h-[var(--api-wallet-row-min-height)] hover:bg-api-wallet-hover">
-							<TableCell size="dense" className="truncate pl-5 text-2sm font-bold text-api-wallet-fg">
+							<TableCell size="dense" className="truncate ps-5 text-2sm font-bold text-api-wallet-fg">
 								{agent.name}
 							</TableCell>
 							<TableCell size="dense">
@@ -236,7 +236,7 @@ function DesktopAgentTable({
 										className="min-w-0 truncate font-mono text-xs tabular-nums text-api-wallet-muted"
 										title={agent.address}
 									>
-										{agent.address}
+										<bdi dir="ltr">{agent.address}</bdi>
 									</span>
 									<ApiWalletCopyButton value={agent.address} stopPropagation />
 								</div>
@@ -253,7 +253,7 @@ function DesktopAgentTable({
 							>
 								{agent.expiresAt ? <time dateTime={agent.expiresAt}>{agent.expiryLabel}</time> : agent.expiryLabel}
 							</TableCell>
-							<TableCell size="dense" className="pr-5 text-right">
+							<TableCell size="dense" className="pe-5 text-right">
 								<Button
 									type="button"
 									variant="link"
@@ -282,10 +282,7 @@ function MobileAgentCards({ agents, pageState, onRemove, onRetry }: Props) {
 	return (
 		<div className="flex flex-col gap-2.5 px-4 pb-4">
 			{agents.map((agent) => (
-				<article
-					key={agent.id}
-					className="flex flex-col gap-2.5 rounded-[var(--api-wallet-card-radius)] border border-api-wallet-stroke-card p-3"
-				>
+				<article key={agent.id} className="flex flex-col gap-2.5 rounded-24 border border-api-wallet-stroke-card p-3">
 					<div className="flex min-w-0 flex-wrap items-center gap-2">
 						<h3 className="min-w-0 truncate text-sm font-bold text-api-wallet-fg">{agent.name}</h3>
 						<AgentStatus agent={agent} />
@@ -295,7 +292,7 @@ function MobileAgentCards({ agents, pageState, onRemove, onRetry }: Props) {
 							className="min-w-0 flex-1 truncate font-mono text-xs tabular-nums text-api-wallet-muted"
 							title={agent.address}
 						>
-							{shortenAddress(agent.address, 6, 4)}
+							<bdi dir="ltr">{shortenAddress(agent.address, 6, 4)}</bdi>
 						</span>
 						<ApiWalletCopyButton value={agent.address} />
 					</div>
@@ -318,7 +315,7 @@ function MobileAgentCards({ agents, pageState, onRemove, onRetry }: Props) {
 							variant="outline"
 							intent="error"
 							size="md"
-							className="min-h-[var(--api-wallet-mobile-control-height)] shrink-0 rounded-[var(--api-wallet-control-radius)] active:scale-100"
+							className="min-h-[var(--api-wallet-mobile-control-height)] shrink-0 rounded-20 active:scale-100"
 							disabled={pageState !== "normal"}
 							onClick={() => onRemove(agent)}
 						>

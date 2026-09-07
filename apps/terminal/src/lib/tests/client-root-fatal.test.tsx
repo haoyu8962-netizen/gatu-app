@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 describe("client root fatal fallback", () => {
 	beforeEach(() => {
 		vi.resetModules();
+		window.localStorage.clear();
 		document.body.innerHTML = "<main>Server shell</main>";
 		vi.spyOn(console, "error").mockImplementation(() => {});
 	});
@@ -16,6 +17,7 @@ describe("client root fatal fallback", () => {
 		vi.doUnmock("../error-reporting/client");
 		vi.doUnmock("../mobile-sync/draft-storage");
 		vi.restoreAllMocks();
+		window.localStorage.clear();
 		document.body.replaceChildren();
 	});
 

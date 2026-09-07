@@ -1,5 +1,5 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +38,7 @@ const historyFooterButtonClass =
 	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 export function HistoryTab() {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { error, fills, isConnected, isOffline, isStale, status } = useUserFills();
 	const { address } = useWalletSession();
@@ -135,13 +136,13 @@ export function HistoryTab() {
 							</colgroup>
 							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pl-5 text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "ps-5 text-start")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-start")}>
 										{t`Direction`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-start")}>
 										{t`Type`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
@@ -156,7 +157,7 @@ export function HistoryTab() {
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pr-5 text-right")}>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "pe-5 text-right")}>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
@@ -174,7 +175,7 @@ export function HistoryTab() {
 										>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, historyTableCellClass, "pl-5 font-bold")}
+												className={cn(positionsPanelTableCellClass, historyTableCellClass, "ps-5 font-bold")}
 											>
 												<AssetBadge
 													coin={fill.coin}
@@ -252,7 +253,7 @@ export function HistoryTab() {
 												className={cn(
 													positionsPanelTableCellClass,
 													historyTableCellClass,
-													"pr-5 text-right text-xs text-market-close-muted",
+													"pe-5 text-right text-xs text-market-close-muted",
 												)}
 											>
 												<div className="flex flex-col items-end">

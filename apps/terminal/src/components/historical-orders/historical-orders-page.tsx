@@ -372,7 +372,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 													<Trans>Size</Trans>
 												</dt>
 												<dd className="mt-0.5 text-xs font-semibold tabular-nums text-fg">
-													{formatToken(entry.size, market?.szDecimals)}
+													<bdi dir="ltr">{formatToken(entry.size, market?.szDecimals)}</bdi>
 												</dd>
 											</div>
 											<div>
@@ -402,9 +402,14 @@ export function HistoricalOrdersPage({ address }: Props) {
 							})}
 						</div>
 						<div className="hidden overflow-x-auto min-[1001px]:block">
-							<Table className="min-w-[72rem] table-fixed font-market-close tabular-nums">
+							<Table
+								scrollableRegionLabel={t`Order history`}
+								className="min-w-[72rem] table-fixed font-market-close tabular-nums"
+							>
 								<caption className="sr-only">
-									<Trans>Ordinary order history for {shortenAddress(address, 8, 6)}</Trans>
+									<Trans>
+										Ordinary order history for <bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi>
+									</Trans>
 								</caption>
 								<colgroup>
 									<col className="w-[180px]" />
@@ -418,16 +423,16 @@ export function HistoricalOrdersPage({ address }: Props) {
 								</colgroup>
 								<TableHeader>
 									<TableRow className="h-9 border-stroke-weak bg-fill-weak/40 hover:bg-fill-weak/40">
-										<TableHead scope="col" className="px-5 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-5 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Time</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Asset</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Direction</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Type</Trans>
 										</TableHead>
 										<TableHead scope="col" className="px-3 text-right text-xs font-semibold text-fg-muted">
@@ -436,7 +441,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 										<TableHead scope="col" className="px-3 text-right text-xs font-semibold text-fg-muted">
 											<Trans>Size</Trans>
 										</TableHead>
-										<TableHead scope="col" className="px-3 text-left text-xs font-semibold text-fg-muted">
+										<TableHead scope="col" className="px-3 text-start text-xs font-semibold text-fg-muted">
 											<Trans>Status</Trans>
 										</TableHead>
 										<TableHead scope="col" className="px-5 text-right text-xs font-semibold text-fg-muted">
@@ -471,7 +476,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 													<HistoricalOrderPrice order={entry.order.order} />
 												</TableCell>
 												<TableCell className="px-3 py-0 text-right text-fg">
-													{formatToken(entry.size, market?.szDecimals)}
+													<bdi dir="ltr">{formatToken(entry.size, market?.szDecimals)}</bdi>
 												</TableCell>
 												<TableCell className="px-3 py-0">
 													<span
@@ -556,8 +561,8 @@ export function HistoricalOrdersPage({ address }: Props) {
 								variant="ghost"
 								intent="neutral"
 								size="xs"
-								className="-ml-2 mb-2"
-								iconLeft={<ArrowLeftIcon className="size-3.5" />}
+								className="-ms-2 mb-2"
+								iconLeft={<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />}
 								render={<Link to="/trade" search={{ scope: "all" }} />}
 							>
 								<Trans>Back to trade</Trans>
@@ -566,7 +571,7 @@ export function HistoricalOrdersPage({ address }: Props) {
 								<Trans>Order history</Trans>
 							</h1>
 							<p className="mt-1 text-xs text-fg-muted">
-								{shortenAddress(address, 8, 6)} ·{" "}
+								<bdi dir="ltr">{shortenAddress(address, 8, 6)}</bdi> ·{" "}
 								<Trans>Up to {ORDER_HISTORY_API_LIMIT} most recent ordinary orders</Trans>
 							</p>
 						</div>

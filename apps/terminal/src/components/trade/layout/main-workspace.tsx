@@ -74,7 +74,7 @@ export function MainWorkspace() {
 	}
 
 	return (
-		<div ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
+		<main ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
 			{mounted ? (
 				<Responsive
 					className="desktop-terminal-grid"
@@ -110,11 +110,11 @@ export function MainWorkspace() {
 							<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} showAssetIcon={false} />
 						</div>
 						{spotSocials ? (
-							<div className="ml-6">
+							<div className="ms-6">
 								<SpotMarketSocialLinks socials={spotSocials} />
 							</div>
 						) : null}
-						<div className="ml-6 min-w-0 flex-1 overflow-hidden">
+						<div className="ms-6 min-w-0 flex-1 overflow-hidden">
 							<MarketOverview key={marketKey} />
 						</div>
 					</div>
@@ -160,6 +160,6 @@ export function MainWorkspace() {
 			) : (
 				<DesktopWorkspaceSkeleton />
 			)}
-		</div>
+		</main>
 	);
 }

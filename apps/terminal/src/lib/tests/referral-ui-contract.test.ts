@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -13,11 +13,15 @@ function readTerminalSource(file: string): string {
 	return readFileSync(resolve(TEST_DIR, "../..", file), "utf8");
 }
 
-describe("referral 18C and 18D visual contract", () => {
+const REFERRAL_COMPONENTS = readdirSync(resolve(TEST_DIR, "../..", "components/referrals"))
+	.filter((file) => file.endsWith(".tsx"))
+	.sort();
+
+describe("referral UI governance contract", () => {
 	it("keeps every data state inside one compact responsive surface", () => {
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
 
-		expect(dashboard).toContain("overflow-hidden rounded-[20px] bg-surface shadow-raised min-[1001px]:rounded-[14px]");
+		expect(dashboard).toContain("overflow-hidden rounded-32 bg-surface shadow-raised");
 		expect(dashboard.match(/<ReferralSurface/g)).toHaveLength(1);
 		expect(dashboard).not.toContain('<div className="mb-4">{header}</div>');
 		expect(dashboard).toContain("aria-busy={busy || undefined}");
@@ -37,33 +41,87 @@ describe("referral 18C and 18D visual contract", () => {
 		expect(dashboard).toContain("order-3 min-[1001px]:order-2");
 	});
 
-	it("uses the design typography, exact radii, and accessible activation progress", () => {
+	it("uses named typography and radius tokens with accessible activation progress", () => {
 		const dashboard = readReferralComponent("referral-dashboard.tsx");
 		const summary = readReferralComponent("referral-summary-cards.tsx");
 		const code = readReferralComponent("referral-code-card.tsx");
 
-		expect(dashboard).toContain("text-[18px] leading-6 font-bold text-fg min-[1001px]:text-lg min-[1001px]:leading-7");
+		expect(dashboard).toContain("text-lg font-bold text-fg");
 		expect(summary).toContain("grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4");
-		expect(summary).toContain("min-h-[62px] rounded-[10px] border border-stroke-weak bg-fill-weak");
-		expect(summary).toContain("min-[1001px]:text-[22px] min-[1001px]:leading-[1.1]");
+		expect(summary).toContain("min-h-[62px] rounded-20 border border-stroke-weak bg-fill-weaker");
+		expect(summary).toContain("min-[1001px]:text-lg");
 		expect(code).toContain('role="progressbar"');
 		expect(code).toContain("aria-valuenow={activationProgress ?? 0}");
 	});
 
-	it("does not use undefined referral radius utilities", () => {
-		const sources = [
-			"referral-dashboard.tsx",
-			"referral-summary-cards.tsx",
-			"referral-code-card.tsx",
-			"referral-rewards-card.tsx",
-			"referral-activity.tsx",
-			"referred-traders.tsx",
-			"referral-action-modal.tsx",
-		].map(readReferralComponent);
+	it("does not reintroduce arbitrary pixel type or radius values", () => {
+		const sources = REFERRAL_COMPONENTS.map(readReferralComponent);
 
 		for (const source of sources) {
-			expect(source).not.toMatch(/rounded-(?:10|14)(?:\s|"|')/);
+			expect(source).not.toMatch(/text-\[/);
+			expect(source).not.toMatch(/!?rounded(?:-[a-z]+)?-\[/);
 		}
+	});
+
+	it("keeps global claims responsive and referral-code actions contextual", () => {
+		const dashboard = readReferralComponent("referral-dashboard.tsx");
+		const code = readReferralComponent("referral-code-card.tsx");
+		const rewards = readReferralComponent("referral-rewards-card.tsx");
+
+		expect(dashboard.match(/<Trans>Claim rewards<\/Trans>/g)).toHaveLength(2);
+		expect(dashboard.match(/data-referral-claim-surface=/g)).toHaveLength(2);
+		expect(dashboard).toContain('data-referral-claim-surface="desktop"');
+		expect(dashboard).toContain('data-referral-claim-surface="mobile"');
+		expect(dashboard).toContain("hidden flex-col items-end gap-1.5 min-[1001px]:flex");
+		expect(dashboard).toContain("backdrop-blur min-[1001px]:hidden");
+		expect(dashboard).toContain("No unclaimed rewards are currently available.");
+		expect(dashboard).toContain("aria-describedby={!referrals.hasUnclaimedRewards ? claimStatusId : undefined}");
+		expect(dashboard).not.toContain("Claim all available rewards");
+		expect(dashboard).not.toContain("canApplyReferralCode");
+		expect(dashboard).not.toContain("<Trans>Enter code</Trans>");
+		expect(dashboard).not.toContain("<Trans>Create code</Trans>");
+		expect(code).toContain("<Trans>Review invitation</Trans>");
+		expect(code).toContain("<Trans>Enter code</Trans>");
+		expect(code).toContain("disabled={actionsDisabled}");
+		expect(rewards).not.toContain("Claim rewards");
+		expect(rewards).not.toContain("onClaim");
+	});
+
+	it("labels reward balances by lifecycle and does not duplicate unclaimed rewards", () => {
+		const summary = readReferralComponent("referral-summary-cards.tsx");
+		const rewards = readReferralComponent("referral-rewards-card.tsx");
+
+		expect(summary).toContain("Lifetime USDC rewards");
+		expect(summary).toContain("Unclaimed USDC");
+		expect(rewards).toContain("<Trans>Unclaimed</Trans>");
+		expect(rewards).toContain("<Trans>Claimed</Trans>");
+		expect(rewards).toContain("Builder rewards (cumulative)");
+		expect(rewards.match(/reward\.unclaimedRewards/g)).toHaveLength(1);
+		expect(rewards).not.toContain("claimableRewards");
+		expect(rewards).not.toContain("Total claimable");
+	});
+
+	it("keeps structural cards outlined without stacking translucent fills", () => {
+		const code = readReferralComponent("referral-code-card.tsx");
+		const rewards = readReferralComponent("referral-rewards-card.tsx");
+
+		expect(code).toContain("rounded-20 border border-stroke-weak bg-surface");
+		expect(rewards).toContain("rounded-20 border border-stroke-weak bg-surface");
+		expect(code).toContain("rounded-16 bg-fill-weaker");
+		expect(rewards).toContain("group mt-3 rounded-20 bg-fill-weaker");
+		expect(rewards).toContain("divide-y divide-stroke-weak border-y border-stroke-weak");
+		expect(rewards).toContain("min-[1200px]:grid-cols-4");
+		expect(rewards).not.toContain("min-[1001px]:grid-cols-4");
+	});
+
+	it("uses a shared dashboard canvas without coupling referrals to portfolio", () => {
+		const page = readReferralComponent("referrals-page.tsx");
+		const dashboard = readReferralComponent("referral-dashboard.tsx");
+
+		expect(page).toContain("bg-dashboard-canvas");
+		expect(dashboard).toContain("bg-dashboard-canvas/95");
+		expect(page).not.toContain("portfolio-canvas");
+		expect(dashboard).not.toContain("portfolio-canvas");
 	});
 
 	it("keeps activity flush with the page surface instead of nesting another card", () => {
@@ -79,9 +137,9 @@ describe("referral 18C and 18D visual contract", () => {
 
 		expect(actionModal).toContain('presentation={isMobile ? "drawer" : "modal"}');
 		expect(actionModal).toContain("min-[1001px]:max-w-[25rem]");
-		expect(actionModal).toContain("rounded-t-[18px]");
-		expect(actionModal).toContain("min-[1001px]:rounded-[16px]");
-		expect(actionModal).toContain('handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-fill/30"');
+		expect(actionModal).toContain("rounded-t-32");
+		expect(actionModal).toContain("min-[1001px]:rounded-32");
+		expect(actionModal).toContain('handleClassName="top-2 h-1 w-9 !rounded-4 bg-fill/30"');
 		expect(actionModal).toContain("dismissible={!isSubmitting}");
 	});
 

@@ -276,7 +276,7 @@ export function TokenSelectorContent({
 			<div className="shrink-0 border-b border-trading-panel-stroke-card bg-surface">
 				{mobile ? (
 					<div className="grid w-full grid-cols-[minmax(0,1fr)_74px_72px] items-end gap-x-2 px-4 py-2 text-[10px] text-trading-panel-subtle min-[390px]:grid-cols-[minmax(0,1fr)_102px_84px]">
-						<div className="min-w-0 pb-0.5 text-left font-medium">{t`Market`}</div>
+						<div className="min-w-0 pb-0.5 text-start font-medium">{t`Market`}</div>
 						<div className="flex min-w-0 flex-col items-end text-right">
 							{renderMobileSortHeader("volume")}
 							{renderMobileSortHeader(scope === "spot" ? "market-cap" : "oi")}
@@ -293,7 +293,7 @@ export function TokenSelectorContent({
 							getMarketTableGridClass(tableLayout),
 						)}
 					>
-						<div className="min-w-0 text-left font-medium">{t`Market`}</div>
+						<div className="min-w-0 text-start font-medium">{t`Market`}</div>
 						{headerGroup?.headers
 							.filter((h) => h.id !== "pairName")
 							.map((header) => {

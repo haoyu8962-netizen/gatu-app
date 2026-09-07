@@ -52,7 +52,7 @@ export function LeaderboardView(props: LeaderboardViewProps) {
 			aria-busy={props.pageState === "loading" || props.isRefreshing}
 			className={cn(
 				"mx-auto flex min-h-[var(--earn-page-min-height)] w-full max-w-[var(--earn-content-max)] flex-col bg-surface text-fg shadow-raised",
-				!isMobile && "overflow-hidden rounded-[var(--earn-page-radius)]",
+				!isMobile && "overflow-hidden rounded-24",
 			)}
 		>
 			<header
@@ -231,7 +231,7 @@ function DesktopLeaderboard(props: CommonLeaderboardProps) {
 			<Table containerClassName="overflow-visible">
 				<TableHeader>
 					<TableRow>
-						<TableHead size="dense" className="w-[var(--earn-rank-column)] pl-5">
+						<TableHead size="dense" className="w-[var(--earn-rank-column)] ps-5">
 							<Trans>Rank</Trans>
 						</TableHead>
 						<TableHead size="dense" className="w-[var(--earn-trader-column)]">
@@ -246,7 +246,7 @@ function DesktopLeaderboard(props: CommonLeaderboardProps) {
 				<TableBody>
 					{props.rows.map((row) => (
 						<TableRow key={row.address} className="transition-colors hover:bg-fill-hover">
-							<TableCell size="dense" className="pl-5 font-semibold tabular-nums text-fg">
+							<TableCell size="dense" className="ps-5 font-semibold tabular-nums text-fg">
 								<Rank rank={row.rank} />
 							</TableCell>
 							<TableCell size="dense">
@@ -307,7 +307,7 @@ function NumericCell({ children, tone = "neutral" }: NumericCellProps) {
 				tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-fg",
 			)}
 		>
-			{children}
+			<bdi dir="ltr">{children}</bdi>
 		</TableCell>
 	);
 }
@@ -392,7 +392,7 @@ function MobileMetric({ label, value, tone = "neutral" }: MobileMetricProps) {
 					tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-fg",
 				)}
 			>
-				{value}
+				<bdi dir="ltr">{value}</bdi>
 			</span>
 		</div>
 	);
@@ -415,7 +415,7 @@ function TraderLink({ href, address, displayName }: TraderLinkProps) {
 			<span className="grid size-6 shrink-0 place-items-center rounded-full bg-fill-weak text-icon">
 				{displayName ? <UserCircleIcon className="size-4" /> : <TrophyIcon className="size-4" />}
 			</span>
-			<span className="min-w-0 truncate">{displayName ?? shortenAddress(address, 6, 4)}</span>
+			<span className="min-w-0 truncate">{displayName ?? <bdi dir="ltr">{shortenAddress(address, 6, 4)}</bdi>}</span>
 			<ArrowSquareOutIcon className="size-3.5 shrink-0" />
 		</a>
 	);
@@ -452,7 +452,7 @@ function LeaderboardPagination(props: CommonLeaderboardProps) {
 					disabled={props.isRefreshing || props.page <= 1}
 					aria-label={t`Previous page`}
 				>
-					<CaretLeftIcon className="size-4" />
+					<CaretLeftIcon className="size-4 rtl:rotate-180" />
 				</ButtonIcon>
 				<ButtonIcon
 					type="button"
@@ -463,7 +463,7 @@ function LeaderboardPagination(props: CommonLeaderboardProps) {
 					disabled={props.isRefreshing || props.page >= props.totalPages}
 					aria-label={t`Next page`}
 				>
-					<CaretRightIcon className="size-4" />
+					<CaretRightIcon className="size-4 rtl:rotate-180" />
 				</ButtonIcon>
 			</div>
 		</div>

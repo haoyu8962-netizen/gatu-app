@@ -1,5 +1,4 @@
 import { infoQueryOptions, useHyperliquid } from "@gatu/hl-react";
-import { t } from "@lingui/core/macro";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { type AccountAbstraction, isSupportedAccountAbstraction } from "@/hooks/trade/use-account-balances";
@@ -10,8 +9,8 @@ export class AccountAbstractionExecutionError extends Error {
 	constructor(reason: "changed" | "unavailable") {
 		super(
 			reason === "changed"
-				? t`Account mode changed before the request was submitted. Review balances and try again.`
-				: t`Unable to verify the current account mode. Request was not submitted.`,
+				? "Account mode changed before the request was submitted. Review balances and try again."
+				: "Unable to verify the current account mode. Request was not submitted.",
 		);
 		this.name = "AccountAbstractionExecutionError";
 		this.reason = reason;

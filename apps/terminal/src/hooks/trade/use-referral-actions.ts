@@ -8,7 +8,7 @@ import { infoKey, infoPersistedKey, useExchange, useHyperliquid, useLegalStatus 
 import type { ReferralData } from "@/lib/trade/referral";
 import {
 	canApplyReferralCode,
-	hasClaimableReferralRewards,
+	hasUnclaimedReferralRewards,
 	isReferralMutationReconciled,
 	isValidReferralCode,
 } from "@/lib/trade/referral";
@@ -65,7 +65,7 @@ function assertActionAvailable(action: ReferralAction, data: ReferralData, code?
 		}
 		return;
 	}
-	if (!hasClaimableReferralRewards(data)) throw new Error("There are no eligible rewards available to claim");
+	if (!hasUnclaimedReferralRewards(data)) throw new Error("There are no unclaimed rewards available to claim");
 }
 
 function assertIdentityUnchanged(startIdentity: ReferralActionIdentity, currentIdentity: ReferralActionIdentity): void {

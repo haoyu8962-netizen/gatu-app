@@ -1,6 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
@@ -21,9 +20,11 @@ interface Props {
 	balanceStatus: "idle" | "loading" | "success" | "error";
 	balanceError: Error | null;
 	validation: { valid: boolean; error: string | null };
+	amountError?: string | null;
 	isPending: boolean;
 	onSubmit: () => void;
 	routingStatus: UsdcRoutingQueryStatus;
+	routingPreflightError?: string | null;
 	depositRoute: UsdcTransferRoute | null;
 	onRetryRouting: () => void;
 	networkName: string;
@@ -52,9 +53,11 @@ export function DepositForm({
 	balanceStatus,
 	balanceError,
 	validation,
+	amountError = null,
 	isPending,
 	onSubmit,
 	routingStatus,
+	routingPreflightError = null,
 	depositRoute,
 	onRetryRouting,
 	networkName,
@@ -73,6 +76,7 @@ export function DepositForm({
 	onRetryFundingAddress,
 	onDone,
 }: Props) {
+	const { t } = useLingui();
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
@@ -91,7 +95,7 @@ export function DepositForm({
 		cctpFeeLoading ||
 		pendingCctpRecovery;
 	const routingNotice = (() => {
-		if (routingStatus === "loading" || (cctpRoutingReady && !fundingAddress)) {
+		if (!routingPreflightError && (routingStatus === "loading" || (cctpRoutingReady && !fundingAddress))) {
 			return null;
 		}
 		return (
@@ -100,13 +104,20 @@ export function DepositForm({
 				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 			>
 				<p>
-					{bridgeRoutingReady ? (
+					{routingPreflightError ? (
+						routingPreflightError
+					) : bridgeRoutingReady ? (
 						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
 					) : (
 						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
 					)}
 				</p>
-				{!bridgeRoutingReady ? (
+				{routingPreflightError && bridgeRoutingReady ? (
+					<p className="mt-1">
+						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
+					</p>
+				) : null}
+				{routingPreflightError || !bridgeRoutingReady ? (
 					<Button
 						variant="link"
 						intent="neutral"
@@ -120,6 +131,15 @@ export function DepositForm({
 			</div>
 		);
 	})();
+	const formValidationNotice =
+		!routingNotice && validation.error && validation.error !== amountError ? (
+			<div
+				role="alert"
+				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+			>
+				{validation.error}
+			</div>
+		) : null;
 	const embeddedDepositStatus = (() => {
 		if (!sponsoredCctpEnabled) {
 			return {
@@ -186,7 +206,7 @@ export function DepositForm({
 
 	if (usesFundingAddressFlow) {
 		const retryRoutingAction =
-			routingStatus === "error" || routingStatus === "unknown" ? (
+			routingPreflightError || routingStatus === "error" || routingStatus === "unknown" ? (
 				<Button
 					variant="link"
 					intent="neutral"
@@ -242,6 +262,9 @@ export function DepositForm({
 		const fundingAddressState = (() => {
 			if (depositUnavailableReason) {
 				return { message: depositUnavailableReason, state: "unavailable" } as const;
+			}
+			if (routingPreflightError) {
+				return { message: routingPreflightError, action: retryRoutingAction, state: "unavailable" } as const;
 			}
 			if (routingStatus === "loading") {
 				return { message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const;
@@ -445,6 +468,7 @@ export function DepositForm({
 			{transferSelectors}
 
 			{routingNotice}
+			{formValidationNotice}
 			{pendingCctpRecovery ? (
 				<div className="rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
@@ -459,6 +483,7 @@ export function DepositForm({
 				balanceStatus={balanceStatus}
 				balanceError={balanceError}
 				validation={validation}
+				amountError={amountError}
 				isPending={isPending}
 				onSubmit={onSubmit}
 			/>

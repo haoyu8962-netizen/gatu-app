@@ -226,8 +226,10 @@ export function StakingView(props: StakingViewProps) {
 										</h2>
 									</div>
 									<span className="text-xs font-semibold text-warning tabular-nums">
-										{formatStakingAmount(account.summary.totalPendingWithdrawal)} HYPE ·{" "}
-										{account.summary.nPendingWithdrawals}/5
+										<bdi dir="ltr">
+											{formatStakingAmount(account.summary.totalPendingWithdrawal)} HYPE ·{" "}
+											{account.summary.nPendingWithdrawals}/5
+										</bdi>
 									</span>
 								</div>
 								<p className="mt-2 text-2xs leading-4 text-fg-muted">
@@ -253,7 +255,7 @@ export function StakingView(props: StakingViewProps) {
 			<section className="overflow-hidden rounded-12 bg-surface" aria-label={t`Staking details`}>
 				<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as StakingTab)}>
 					<div className="flex flex-col gap-2 px-3 pt-2 min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between">
-						<TabsList className="overflow-x-auto">
+						<TabsList aria-label={t`Staking detail views`} className="overflow-x-auto">
 							<TabsTrigger value="validators">
 								<Trans>Validator performance</Trans>
 							</TabsTrigger>
@@ -424,7 +426,9 @@ function AccountStatePanel(props: StakingViewProps) {
 				<h2 className="text-xs font-semibold text-fg">
 					<Trans>Master wallet verified</Trans>
 				</h2>
-				<p className="mt-1 text-2xs text-fg-muted">{shortenAddress(props.ownerAddress ?? "", 6, 6)}</p>
+				<p className="mt-1 text-2xs text-fg-muted">
+					<bdi dir="ltr">{shortenAddress(props.ownerAddress ?? "", 6, 6)}</bdi>
+				</p>
 			</div>
 			<Badge tone="success" size="xs" dot>
 				<Trans>Signing ready</Trans>
@@ -448,6 +452,7 @@ function ValidatorContent({
 	onRetry: () => void;
 	onOpenAction: (request: StakingActionRequest) => void;
 }) {
+	const { t } = useLingui();
 	if (publicState === "loading") return <TableSkeleton />;
 	if (publicState === "error") {
 		return (
@@ -468,7 +473,11 @@ function ValidatorContent({
 		);
 	}
 	return (
-		<Table containerClassName="overscroll-x-contain" className="min-w-[var(--staking-validator-table-min)]">
+		<Table
+			scrollableRegionLabel={t`Validator performance table`}
+			containerClassName="overscroll-x-contain"
+			className="min-w-[var(--staking-validator-table-min)]"
+		>
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">
@@ -509,7 +518,7 @@ function ValidatorContent({
 						<TableRow key={validator.validator}>
 							<TableCell size="dense" className="max-w-64">
 								<p className="truncate font-semibold text-fg">
-									{validator.name || shortenAddress(validator.validator)}
+									{validator.name || <bdi dir="ltr">{shortenAddress(validator.validator)}</bdi>}
 								</p>
 								<p className="mt-0.5 truncate text-2xs text-fg-muted">{validator.description}</p>
 							</TableCell>
@@ -517,10 +526,10 @@ function ValidatorContent({
 								<ValidatorStatusBadge status={validator.status} />
 							</TableCell>
 							<TableCell size="dense" className="text-right text-fg tabular-nums">
-								≈ {formatStakingAmount(validator.stakeApproximateHype, 0)} HYPE
+								<bdi dir="ltr">≈ {formatStakingAmount(validator.stakeApproximateHype, 0)} HYPE</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right text-fg tabular-nums">
-								{formatStakingAmount(validator.delegatedAmount)} HYPE
+								<bdi dir="ltr">{formatStakingAmount(validator.delegatedAmount)} HYPE</bdi>
 								{validator.lockedUntilTimestamp && validator.lockedUntilTimestamp > Date.now() ? (
 									<span className="mt-0.5 block text-2xs text-warning">
 										<Trans>Locked until {formatDateTime(validator.lockedUntilTimestamp)}</Trans>
@@ -528,13 +537,13 @@ function ValidatorContent({
 								) : null}
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								{formatStakingRatio(validator.selectedStats.uptimeFraction)}
+								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.uptimeFraction)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								{formatStakingRatio(validator.selectedStats.predictedApr)}
+								<bdi dir="ltr">{formatStakingRatio(validator.selectedStats.predictedApr)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-right tabular-nums">
-								{formatStakingRatio(validator.commission)}
+								<bdi dir="ltr">{formatStakingRatio(validator.commission)}</bdi>
 							</TableCell>
 							<TableCell size="dense">
 								<div className="flex justify-end gap-1">
@@ -590,6 +599,7 @@ function RewardsContent({
 	rewards: NonNullable<StakingController["account"]>["rewards"] | undefined;
 	onRetry: () => void;
 }) {
+	const { t } = useLingui();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -618,7 +628,7 @@ function RewardsContent({
 		);
 	}
 	return (
-		<Table className="min-w-[var(--staking-rewards-table-min)]">
+		<Table scrollableRegionLabel={t`Staking rewards table`} className="min-w-[var(--staking-rewards-table-min)]">
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">
@@ -642,7 +652,7 @@ function RewardsContent({
 							{reward.source === "delegation" ? <Trans>Delegation</Trans> : <Trans>Validator commission</Trans>}
 						</TableCell>
 						<TableCell size="dense" className="text-right font-semibold text-success tabular-nums">
-							+{formatStakingAmount(reward.totalAmount, 8)} HYPE
+							<bdi dir="ltr">+{formatStakingAmount(reward.totalAmount, 8)} HYPE</bdi>
 						</TableCell>
 					</TableRow>
 				))}
@@ -664,6 +674,7 @@ function HistoryContent({
 	isTestnet: boolean;
 	onRetry: () => void;
 }) {
+	const { t } = useLingui();
 	if (accountState === "disconnected") {
 		return (
 			<EmptyState
@@ -692,7 +703,7 @@ function HistoryContent({
 		);
 	}
 	return (
-		<Table className="min-w-[var(--staking-history-table-min)]">
+		<Table scrollableRegionLabel={t`Staking action history table`} className="min-w-[var(--staking-history-table-min)]">
 			<TableHeader>
 				<TableRow>
 					<TableHead size="dense">
@@ -717,7 +728,7 @@ function HistoryContent({
 						</TableCell>
 						<TableCell size="dense">{getHistoryActionLabel(entry.action, validatorNames)}</TableCell>
 						<TableCell size="dense" className="text-right text-fg tabular-nums">
-							{formatStakingAmount(entry.action.amount, 8)} HYPE
+							<bdi dir="ltr">{formatStakingAmount(entry.action.amount, 8)} HYPE</bdi>
 						</TableCell>
 						<TableCell size="dense" className="text-right">
 							{isSystemFinalizedWithdrawal(entry) ? (
@@ -731,7 +742,7 @@ function HistoryContent({
 									rel="noopener"
 									className="inline-flex items-center gap-1 text-signal hover:text-signal-hover hover:underline"
 								>
-									{shortenAddress(entry.hash, 6, 6)}
+									<bdi dir="ltr">{shortenAddress(entry.hash, 6, 6)}</bdi>
 									<ArrowRightIcon aria-hidden="true" className="size-3" />
 								</a>
 							)}
@@ -747,7 +758,8 @@ function getHistoryActionLabel(action: StakingHistoryAction, validatorNames: Rea
 	if (action.type === "cDeposit") return <Trans>Spot to staking available</Trans>;
 	if (action.type === "withdrawalInitiated") return <Trans>Staking to Spot · initiated</Trans>;
 	if (action.type === "withdrawalFinalized") return <Trans>Staking to Spot · finalized</Trans>;
-	const validator = validatorNames.get(action.validator.toLowerCase()) || shortenAddress(action.validator);
+	const validatorName = validatorNames.get(action.validator.toLowerCase());
+	const validator = validatorName || <bdi dir="ltr">{shortenAddress(action.validator)}</bdi>;
 	return action.type === "delegate" ? (
 		<Trans>Delegated to {validator}</Trans>
 	) : (
@@ -781,10 +793,22 @@ function StakingLinkCard({ link }: { link: StakingLink }) {
 function getStakingLinkLabel(link: StakingLink) {
 	if (!link) return <Trans>No separate staking account is linked.</Trans>;
 	if (link.type === "requested")
-		return <Trans>Permanent link requested for {shortenAddress(link.stakingUser, 6, 6)}.</Trans>;
+		return (
+			<Trans>
+				Permanent link requested for <bdi dir="ltr">{shortenAddress(link.stakingUser, 6, 6)}</bdi>.
+			</Trans>
+		);
 	if (link.type === "tradingUser")
-		return <Trans>Linked staking account: {shortenAddress(link.stakingUser, 6, 6)}.</Trans>;
-	return <Trans>This staking account controls trading account {shortenAddress(link.tradingUser, 6, 6)}.</Trans>;
+		return (
+			<Trans>
+				Linked staking account: <bdi dir="ltr">{shortenAddress(link.stakingUser, 6, 6)}</bdi>.
+			</Trans>
+		);
+	return (
+		<Trans>
+			This staking account controls trading account <bdi dir="ltr">{shortenAddress(link.tradingUser, 6, 6)}</bdi>.
+		</Trans>
+	);
 }
 
 function ValidatorStatusBadge({ status }: { status: StakingValidatorStatus }) {
@@ -812,7 +836,9 @@ function MetricCard({ label, value, description }: { label: ReactNode; value: st
 	return (
 		<div className="rounded-8 border border-stroke-weak bg-fill-weaker p-3">
 			<p className="text-2xs text-fg-muted">{label}</p>
-			<p className="mt-1 text-base font-bold text-fg tabular-nums">{value}</p>
+			<p className="mt-1 text-base font-bold text-fg tabular-nums">
+				<bdi dir="ltr">{value}</bdi>
+			</p>
 			<p className="mt-1 text-2xs leading-4 text-fg-muted">{description}</p>
 		</div>
 	);
@@ -822,7 +848,9 @@ function BalanceRow({ label, value }: { label: ReactNode; value: string }) {
 	return (
 		<div className="flex items-center justify-between gap-3 py-2 text-xs">
 			<span className="text-fg-muted">{label}</span>
-			<span className="font-semibold text-fg tabular-nums">{value}</span>
+			<span className="font-semibold text-fg tabular-nums">
+				<bdi dir="ltr">{value}</bdi>
+			</span>
 		</div>
 	);
 }

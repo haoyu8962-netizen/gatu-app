@@ -1,4 +1,5 @@
 import { AdaptiveModal } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -23,6 +24,8 @@ export function PendingActionModal({
 	handleClassName,
 	overlayClassName,
 }: Props) {
+	const { t } = useLingui();
+
 	return (
 		<AdaptiveModal
 			open={open}
@@ -31,6 +34,7 @@ export function PendingActionModal({
 			size="sm"
 			dismissible={!isPending}
 			showClose={!isPending}
+			closeLabel={t`Close`}
 			showHandle={presentation === "drawer"}
 			handleClassName={cn("top-2 h-1 w-9 bg-fill/30", handleClassName)}
 			overlayClassName={overlayClassName}

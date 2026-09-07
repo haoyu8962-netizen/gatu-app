@@ -41,7 +41,7 @@ function renderInline(text: string): ReactNode[] {
 					key={key++}
 					href={href}
 					{...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-					className="text-signal hover:text-signal-hover hover:underline"
+					className="text-signal underline underline-offset-2 hover:text-signal-hover focus-visible:rounded-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 				>
 					{match[1]}
 				</a>,
@@ -130,7 +130,7 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 			blocks.push(
 				<blockquote
 					key={key++}
-					className="my-4 rounded-xs border-l-2 border-stroke-signal/40 bg-fill-weak px-4 py-2 text-sm text-fg-muted"
+					className="my-4 rounded-xs border-s-2 border-stroke-signal/40 bg-fill-weak px-4 py-2 text-sm text-fg-muted"
 				>
 					{renderInline(buffer.join(" "))}
 				</blockquote>,
@@ -161,7 +161,7 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 								{keyedHeader.map(({ key: cellKey, value: cell }) => (
 									<th
 										key={cellKey}
-										className="border border-stroke-weak bg-fill-weak px-3 py-2 text-left font-semibold text-fg"
+										className="border border-stroke-weak bg-fill-weak px-3 py-2 text-start font-semibold text-fg"
 									>
 										{renderInline(cell)}
 									</th>
@@ -196,7 +196,7 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 				i++;
 			}
 			blocks.push(
-				<ul key={key++} className="my-3 list-disc space-y-1 pl-6 text-sm text-fg-muted">
+				<ul key={key++} className="my-3 list-disc space-y-1 ps-6 text-sm text-fg-muted">
 					{items}
 				</ul>,
 			);
@@ -214,7 +214,7 @@ export function renderMarkdown(markdown: string): ReactNode[] {
 				i++;
 			}
 			blocks.push(
-				<ol key={key++} className="my-3 list-decimal space-y-1 pl-6 text-sm text-fg-muted">
+				<ol key={key++} className="my-3 list-decimal space-y-1 ps-6 text-sm text-fg-muted">
 					{items}
 				</ol>,
 			);

@@ -28,6 +28,17 @@ test("website does not restore legacy blue gradients or glow treatments", () => 
 	}
 });
 
+test("website faint text remains WCAG AA on every supported dark surface", () => {
+	const foreground = readCssVariable(WEBSITE_STYLES, ":root", "--text-faint");
+	for (const surfaceVariable of ["--bg-base", "--bg-raised", "--bg-overlay", "--bg-sunken"]) {
+		const surface = readCssVariable(WEBSITE_STYLES, ":root", surfaceVariable);
+		assert.ok(
+			contrastRatio(compositeHex(foreground, surface), surface) >= 4.5,
+			`${foreground} must remain AA on ${surfaceVariable} (${surface})`,
+		);
+	}
+});
+
 test("website ships its declared large social card", () => {
 	const image = readFileSync(resolve(WEBSITE_ROOT, "public/og-website-1200x630.png"));
 	assert.equal(image.toString("ascii", 12, 16), "IHDR");
@@ -47,4 +58,34 @@ function readCssVariable(source, selector, variable) {
 	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
 	assert.ok(declaration?.[1], `missing variable: ${selector} ${variable}`);
 	return declaration[1].trim();
+}
+
+function compositeHex(foreground, background) {
+	const foregroundChannels = parseHex(foreground);
+	const backgroundChannels = parseHex(background);
+	const alpha = foregroundChannels[3];
+	return foregroundChannels.slice(0, 3).map((channel, index) =>
+		Math.round(channel * alpha + backgroundChannels[index] * (1 - alpha)),
+	);
+}
+
+function contrastRatio(foreground, background) {
+	const foregroundLuminance = relativeLuminance(foreground);
+	const backgroundLuminance = relativeLuminance(parseHex(background).slice(0, 3));
+	return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+		(Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+}
+
+function parseHex(hex) {
+	assert.match(hex, /^#[0-9a-f]{6}([0-9a-f]{2})?$/i);
+	const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+	return [...channels, hex.length === 9 ? Number.parseInt(hex.slice(7, 9), 16) / 255 : 1];
+}
+
+function relativeLuminance(channels) {
+	const [red, green, blue] = channels.map((channel) => {
+		const normalized = channel / 255;
+		return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 }

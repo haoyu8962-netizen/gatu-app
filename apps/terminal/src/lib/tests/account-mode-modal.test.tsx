@@ -17,6 +17,7 @@ const zhTranslations: Record<string, string> = {
 	Current: "当前",
 	Unavailable: "不可用",
 	Confirm: "确认",
+	"Failed to update account mode": "更新账户模式失败",
 	"Unable to load the current account mode. Reconnect your wallet and try again.":
 		"无法加载当前账户模式。请重新连接钱包后重试。",
 };
@@ -178,6 +179,35 @@ describe("AccountModeModal", () => {
 
 		expect(actionButton?.textContent?.trim()).toBe("确认");
 		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
+	});
+
+	it("retranslates a fallback submission error without losing the selected mode", async () => {
+		const onApply = vi.fn().mockRejectedValue(undefined);
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={() => {}} currentMode="disabled" canChange onApply={onApply} />
+				</I18nProvider>,
+			),
+		);
+
+		const unifiedOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Unified account"),
+		);
+		act(() => unifiedOption?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Confirm",
+		);
+		await act(async () => {
+			confirmButton?.click();
+			await Promise.resolve();
+		});
+		expect(document.body.textContent).toContain("Failed to update account mode");
+
+		act(() => activateLocale("zh"));
+		expect(document.body.textContent).toContain("更新账户模式失败");
+		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
+		expect(onApply).toHaveBeenCalledOnce();
 	});
 
 	it("disables new portfolio margin activation and explains the gate", () => {

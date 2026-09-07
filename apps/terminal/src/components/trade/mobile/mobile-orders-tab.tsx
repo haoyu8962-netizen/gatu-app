@@ -75,6 +75,31 @@ interface Props {
 type CancelScope = "row" | "all";
 type ModifyPhase = "idle" | "submitting" | "awaiting";
 
+type OrderValidationErrorCode =
+	| "cancellation-response-unconfirmed"
+	| "failed-to-cancel"
+	| "failed-to-modify"
+	| "order-markets-unavailable"
+	| "previous-modification-unconfirmed"
+	| "trading-data-changed"
+	| "modification-unconfirmed";
+
+type OrderValidationError =
+	| { kind: "cancel-block"; reason: CancelAllConfirmationBlockReason }
+	| { kind: "modify-block"; reason: OpenOrderModifyBlockReason }
+	| { kind: "code"; code: OrderValidationErrorCode }
+	| { kind: "raw"; message: string };
+
+class OrderValidationErrorCause extends Error {
+	constructor(
+		readonly validationError: OrderValidationError,
+		message: string,
+	) {
+		super(message);
+		this.name = "OrderValidationErrorCause";
+	}
+}
+
 interface CancelCallbacks {
 	onSuccess?: () => void;
 	onSettled?: () => void;
@@ -221,7 +246,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 	const [cancelAllOpen, setCancelAllOpen] = useState(false);
 	const [cancelAllSnapshot, setCancelAllSnapshot] = useState<CancelAllDialogSnapshot | null>(null);
-	const [cancelValidationError, setCancelValidationErrorState] = useState<string | null>(null);
+	const [cancelValidationError, setCancelValidationErrorState] = useState<OrderValidationError | null>(null);
 	const [cancelValidationActionId, setCancelValidationActionId] = useState<string | null>(null);
 	const ownerKey = address?.toLowerCase() ?? null;
 	const [filters, setFilters] = useState<MobileOrderFiltersState>({
@@ -235,7 +260,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const [modifySize, setModifySize] = useState("");
 	const [modifyTriggerPrice, setModifyTriggerPrice] = useState<string | undefined>(undefined);
 	const [modifyPhase, setModifyPhaseState] = useState<ModifyPhase>("idle");
-	const [modifyValidationError, setModifyValidationErrorState] = useState<string | null>(null);
+	const [modifyValidationError, setModifyValidationErrorState] = useState<OrderValidationError | null>(null);
 	const [modifyValidationActionId, setModifyValidationActionId] = useState<string | null>(null);
 	const cancelAllSubmittingRef = useRef(false);
 	const cancelExecutionRef = useRef<CancelExecutionContext | null>(null);
@@ -248,22 +273,24 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const mountedRef = useRef(false);
 
 	const openOrders = openOrdersEvent?.orders ?? [];
-	const visibleCancelValidationError =
+	const visibleCancelValidationErrorDescriptor =
 		cancelValidationActionId && !sessionCancellations.some((action) => action.id === cancelValidationActionId)
 			? null
 			: cancelValidationError;
-	const visibleModifyValidationError =
+	const visibleModifyValidationErrorDescriptor =
 		modifyValidationActionId && !sessionModifications.some((action) => action.id === modifyValidationActionId)
 			? null
 			: modifyValidationError;
+	const visibleCancelValidationError = getValidationErrorMessage(visibleCancelValidationErrorDescriptor);
+	const visibleModifyValidationError = getValidationErrorMessage(visibleModifyValidationErrorDescriptor);
 
-	function setCancelValidationError(message: string | null, actionId: string | null = null) {
-		setCancelValidationErrorState(message);
+	function setCancelValidationError(error: OrderValidationError | null, actionId: string | null = null) {
+		setCancelValidationErrorState(error);
 		setCancelValidationActionId(actionId);
 	}
 
-	function setModifyValidationError(message: string | null, actionId: string | null = null) {
-		setModifyValidationErrorState(message);
+	function setModifyValidationError(error: OrderValidationError | null, actionId: string | null = null) {
+		setModifyValidationErrorState(error);
 		setModifyValidationActionId(actionId);
 	}
 	const isPageScroll = scrollMode === "page";
@@ -353,16 +380,20 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function assertCancelExecution(params: ExchangeParams<"cancel">) {
 		const execution = cancelExecutionRef.current;
 		if (!execution || !cancelParamsEqual(params, execution.params)) {
-			throw new Error(getCancelAllBlockMessage("orders-changed"));
+			throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
 		}
 
 		const live = liveModifyContextRef.current;
 		const currentOrders: Pick<OpenOrder, "coin" | "oid">[] = [];
 		for (const target of execution.orders) {
 			const matches = live.orders.filter((order) => order.coin === target.coin && order.oid === target.oid);
-			if (matches.length !== 1) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			if (matches.length !== 1) {
+				throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
+			}
 			const currentOrder = matches[0];
-			if (!currentOrder) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			if (!currentOrder) {
+				throw createValidationErrorCause({ kind: "cancel-block", reason: "orders-changed" });
+			}
 			currentOrders.push(currentOrder);
 		}
 
@@ -373,7 +404,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			isSnapshotReady: live.snapshotStatus === "active" && !live.isSnapshotStale,
 			orders: currentOrders,
 		});
-		if (reason) throw new Error(getCancelAllBlockMessage(reason));
+		if (reason) throw createValidationErrorCause({ kind: "cancel-block", reason });
 		execution.guardPasses += 1;
 		if (execution.guardPasses >= 2) {
 			getPendingTradingActionActions().markOrderCancellationRequestStarted(execution.actionId);
@@ -439,6 +470,48 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		}
 	}
 
+	function getValidationErrorMessage(error: OrderValidationError | null): string | null {
+		if (!error) return null;
+		switch (error.kind) {
+			case "cancel-block":
+				return getCancelAllBlockMessage(error.reason);
+			case "modify-block":
+				return getModifyBlockMessage(error.reason);
+			case "raw":
+				return error.message;
+			case "code":
+				switch (error.code) {
+					case "cancellation-response-unconfirmed":
+						return t`The cancellation response could not be confirmed. Refresh open orders before retrying.`;
+					case "failed-to-cancel":
+						return t`Failed to cancel order.`;
+					case "failed-to-modify":
+						return t`Failed to modify order.`;
+					case "order-markets-unavailable":
+						return t`Some order markets are unavailable. Refresh and try again.`;
+					case "previous-modification-unconfirmed":
+						return t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`;
+					case "trading-data-changed":
+						return t`Trading data changed before the order modification could be submitted.`;
+					case "modification-unconfirmed":
+						return t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+				}
+		}
+	}
+
+	function createValidationErrorCause(error: OrderValidationError): OrderValidationErrorCause {
+		return new OrderValidationErrorCause(error, getValidationErrorMessage(error) ?? "");
+	}
+
+	function getValidationErrorFromCause(
+		cause: unknown,
+		fallbackCode: Extract<OrderValidationError, { kind: "code" }>["code"],
+	): OrderValidationError {
+		if (cause instanceof OrderValidationErrorCause) return cause.validationError;
+		if (cause instanceof Error) return { kind: "raw", message: cause.message };
+		return { kind: "code", code: fallbackCode };
+	}
+
 	function buildPlanFromLive(target: OpenOrderModifyFormTarget, size: string, triggerPrice: string | undefined) {
 		const live = liveModifyContextRef.current;
 		const market = live.getMarketBinding(target.size.order.coin);
@@ -461,18 +534,20 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function assertModifyExecution(params: ExchangeParams<"batchModify">) {
 		const execution = modifyExecutionRef.current;
 		if (!execution || modifyPhaseRef.current !== "submitting") {
-			throw new Error(t`Trading data changed before the order modification could be submitted.`);
+			throw createValidationErrorCause({ kind: "code", code: "trading-data-changed" });
 		}
 		if (!isModifyExecutionSessionCurrent(execution, liveModifyContextRef.current)) {
-			throw new Error(getModifyBlockMessage("session-changed"));
+			throw createValidationErrorCause({ kind: "modify-block", reason: "session-changed" });
 		}
 		const currentPlan = buildPlanFromLive(execution.target, execution.size, execution.triggerPrice);
-		if (currentPlan.status === "blocked") throw new Error(getModifyBlockMessage(currentPlan.reason));
+		if (currentPlan.status === "blocked") {
+			throw createValidationErrorCause({ kind: "modify-block", reason: currentPlan.reason });
+		}
 		if (
 			!openOrderModifyParamsEqual(currentPlan.params, execution.params) ||
 			!openOrderModifyParamsEqual(params, execution.params)
 		) {
-			throw new Error(t`Trading data changed before the order modification could be submitted.`);
+			throw createValidationErrorCause({ kind: "code", code: "trading-data-changed" });
 		}
 		execution.guardPasses += 1;
 		if (execution.guardPasses >= 2) {
@@ -519,7 +594,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		resetModifyError();
 	}, [tradingSessionKey, resetCancelError, resetModifyError]);
 
-	function clearModifyModal(errorMessage: string | null = null) {
+	function clearModifyModal(error: OrderValidationError | null = null) {
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
@@ -527,7 +602,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
-		setModifyValidationError(errorMessage);
+		setModifyValidationError(error);
 		setModifyPhase("idle");
 	}
 
@@ -542,12 +617,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		}
 		const market = getMarketBinding(order.coin);
 		if (!market) {
-			setModifyValidationError(getModifyBlockMessage("invalid-market-binding"));
+			setModifyValidationError({ kind: "modify-block", reason: "invalid-market-binding" });
 			return;
 		}
 		const result = createOpenOrderModifyFormTarget({ owner: clientKey, env, market, order });
 		if (result.status === "blocked") {
-			setModifyValidationError(getModifyBlockMessage(result.reason));
+			setModifyValidationError({ kind: "modify-block", reason: result.reason });
 			return;
 		}
 
@@ -597,12 +672,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		const triggerPrice = modifyTriggerPriceRef.current;
 		const plan = buildPlanFromLive(target, size, triggerPrice);
 		if (plan.status === "blocked") {
-			setModifyValidationError(getModifyBlockMessage(plan.reason));
+			setModifyValidationError({ kind: "modify-block", reason: plan.reason });
 			return;
 		}
 		const session = getModifyExecutionSession(liveModifyContextRef.current);
 		if (!session || session.clientKey !== target.size.owner || session.env !== target.size.env) {
-			setModifyValidationError(getModifyBlockMessage("session-changed"));
+			setModifyValidationError({ kind: "modify-block", reason: "session-changed" });
 			return;
 		}
 
@@ -616,9 +691,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			...(plan.normalizedTriggerPrice === null ? {} : { expectedTriggerPx: plan.normalizedTriggerPrice }),
 		});
 		if (!pendingAction) {
-			setModifyValidationError(
-				t`The previous order modification is still unconfirmed. Refresh open orders before retrying.`,
-			);
+			setModifyValidationError({ kind: "code", code: "previous-modification-unconfirmed" });
 			return;
 		}
 		const execution: ModifyExecutionContext = {
@@ -661,10 +734,11 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 				) {
 					return;
 				}
-				const message = t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`;
+				const validationError = { kind: "code", code: "modification-unconfirmed" } as const;
+				const message = getValidationErrorMessage(validationError) ?? "";
 				modifyExecutionRef.current = null;
 				setModifyPhase("idle");
-				setModifyValidationError(message, execution.actionId);
+				setModifyValidationError(validationError, execution.actionId);
 				toast.warning(message, { id: getPendingTradingActionToastId(execution.actionId) });
 				return;
 			} else {
@@ -677,10 +751,11 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			) {
 				return;
 			}
-			const message = cause instanceof Error ? cause.message : t`Failed to modify order.`;
+			const validationError = getValidationErrorFromCause(cause, "failed-to-modify");
+			const message = getValidationErrorMessage(validationError) ?? "";
 			modifyExecutionRef.current = null;
 			setModifyPhase("idle");
-			setModifyValidationError(message);
+			setModifyValidationError(validationError);
 			toast.error(message);
 		}
 	}
@@ -701,13 +776,11 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
 		setModifyValidationErrorState(
-			pending?.phase === "unconfirmed"
-				? t`The order update was not confirmed by live data. Refresh before retrying; cancellation remains available.`
-				: null,
+			pending?.phase === "unconfirmed" ? { kind: "code", code: "modification-unconfirmed" } : null,
 		);
 		setModifyValidationActionId(pending?.phase === "unconfirmed" ? execution.actionId : null);
 		setModifyPhaseState("idle");
-	}, [modifyPhase, pendingModifications, t]);
+	}, [modifyPhase, pendingModifications]);
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope, callbacks?: CancelCallbacks): boolean {
 		if (ordersToCancel.length === 0 || modifyPhaseRef.current !== "idle" || cancelExecutionRef.current !== null) {
@@ -718,13 +791,13 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		const fresh = ordersToCancel.filter((order) => !sharedCancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
 		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
-			setCancelValidationError(t`Open orders changed. Reopen the confirmation and try again.`);
+			setCancelValidationError({ kind: "cancel-block", reason: "orders-changed" });
 			return false;
 		}
 
 		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
 		if (!cancels) {
-			setCancelValidationError(t`Some order markets are unavailable. Refresh and try again.`);
+			setCancelValidationError({ kind: "code", code: "order-markets-unavailable" });
 			return false;
 		}
 
@@ -737,7 +810,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			orders: fresh,
 		});
 		if (confirmation.status === "blocked") {
-			setCancelValidationError(getCancelAllBlockMessage(confirmation.reason));
+			setCancelValidationError({ kind: "cancel-block", reason: confirmation.reason });
 			return false;
 		}
 		const pendingAction = getPendingTradingActionActions().claimOrderCancellation({
@@ -775,10 +848,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
 				getPendingTradingActionActions().markOrderCancellationAwaiting(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(
-						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
-						execution.actionId,
-					);
+					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 				return;
 			}
@@ -788,15 +858,12 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			if (execution.guardPasses >= 2 && isAmbiguousExchangeRequestError(cause)) {
 				getPendingTradingActionActions().markOrderCancellationUnconfirmed(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(
-						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
-						execution.actionId,
-					);
+					setCancelValidationError({ kind: "code", code: "cancellation-response-unconfirmed" }, execution.actionId);
 				}
 			} else {
 				getPendingTradingActionActions().releaseOrderCancellation(execution.actionId);
 				if (mountedRef.current && isCancelExecutionCurrent(execution)) {
-					setCancelValidationError(cause instanceof Error ? cause.message : t`Failed to cancel order.`);
+					setCancelValidationError(getValidationErrorFromCause(cause, "failed-to-cancel"));
 				}
 			}
 		} finally {
@@ -815,7 +882,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	function handleCancelRow(ordersToCancel: OpenOrder[]) {
 		const reason = getCancelRowBlockReason(ordersToCancel);
 		if (reason) {
-			setCancelValidationError(getCancelAllBlockMessage(reason));
+			setCancelValidationError({ kind: "cancel-block", reason });
 			return;
 		}
 		handleCancel(ordersToCancel, "row");
@@ -873,7 +940,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		setCancelValidationError(null);
 		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
 		if (result.status === "blocked") {
-			setCancelValidationError(getCancelAllBlockMessage(result.reason));
+			setCancelValidationError({ kind: "cancel-block", reason: result.reason });
 			return;
 		}
 		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
@@ -888,7 +955,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 			getCancelAllConfirmationInput(),
 		);
 		if (reason) {
-			setCancelValidationError(getCancelAllBlockMessage(reason));
+			setCancelValidationError({ kind: "cancel-block", reason });
 			return;
 		}
 		cancelAllSubmittingRef.current = true;
@@ -983,7 +1050,7 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 							variant="link"
 							intent="error"
 							size="sm"
-							className="relative ml-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
+							className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
 							onClick={handleRequestCancelAll}
 							disabled={pendingScopes.size > 0 || isModifyBusy}
 						>
@@ -1200,7 +1267,7 @@ function MobileOrderCard({
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
 						aria-label={t`Switch to ${marketLabel} market`}
-						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-left text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
+						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-start text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus"
 					>
 						{marketLabel}
 					</button>

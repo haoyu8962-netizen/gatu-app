@@ -5,12 +5,18 @@ import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { VaultDetail, VaultListItem } from "@/components/vaults/domain/vaults";
+import type { VaultActionsAvailability, VaultDetail, VaultListItem } from "@/components/vaults/domain/vaults";
 import { VaultDetailView } from "@/components/vaults/vault-detail-view";
+import { VaultPerformanceChart } from "@/components/vaults/vault-performance-chart";
 import { VaultsList } from "@/components/vaults/vaults-list";
 
 const VAULT = "0x0000000000000000000000000000000000000001" as const;
 const LEADER = "0x0000000000000000000000000000000000000002" as const;
+const FOLLOWER = "0x0000000000000000000000000000000000000003" as const;
+const AVAILABLE_ACTIONS = {
+	deposit: { available: true, reason: null },
+	withdraw: { available: true, reason: null },
+} satisfies VaultActionsAvailability;
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -62,7 +68,14 @@ describe("Vault views", () => {
 	});
 
 	it("shows every required Vault risk without inventing a minimum deposit or fixed lock", () => {
-		render(<VaultDetailView detail={createDetail()} owner={{ status: "disconnected" }} isTestnet={false} />);
+		render(
+			<VaultDetailView
+				detail={createDetail()}
+				owner={{ status: "disconnected" }}
+				actionAvailability={AVAILABLE_ACTIONS}
+				isTestnet={false}
+			/>,
+		);
 		const text = container.textContent ?? "";
 		expect(text).toContain("lose all deposited principal");
 		expect(text).toContain("Historical APR does not predict future performance");
@@ -71,6 +84,10 @@ describe("Vault views", () => {
 		expect(text).toContain("cancel orders, close positions, incur slippage");
 		expect(text).not.toContain("20 USDC");
 		expect(text).not.toContain("4 days");
+		const description = [...container.querySelectorAll("p")].find(
+			(paragraph) => paragraph.textContent === "Market-making Vault",
+		);
+		expect(description?.className).toContain("break-words");
 		const leaderLink = container.querySelector<HTMLAnchorElement>('a[target="_blank"]');
 		expect(leaderLink?.rel).toBe("noopener");
 	});
@@ -81,6 +98,7 @@ describe("Vault views", () => {
 			<VaultDetailView
 				detail={createDetail()}
 				owner={{ status: "error" }}
+				actionAvailability={AVAILABLE_ACTIONS}
 				isTestnet={false}
 				onRetryOwner={onRetryOwner}
 			/>,
@@ -91,6 +109,176 @@ describe("Vault views", () => {
 		expect(retry).toBeDefined();
 		act(() => retry?.click());
 		expect(onRetryOwner).toHaveBeenCalledOnce();
+	});
+
+	it("uses Vault-specific deposit status copy and visibly explains disabled actions", () => {
+		const onRequestAction = vi.fn();
+		render(
+			<VaultDetailView
+				detail={createDetail()}
+				owner={{
+					status: "ready",
+					equity: "10",
+					pnl: "1",
+					allTimePnl: "2",
+					entryTime: 1,
+					lockedUntil: 3,
+					isLocked: true,
+					lockProgress: "0.5",
+					maxWithdrawable: "0",
+					canWithdraw: false,
+				}}
+				actionAvailability={{
+					deposit: { available: true, reason: null },
+					withdraw: { available: false, reason: "withdrawal-locked" },
+				}}
+				isTestnet={false}
+				onRequestAction={onRequestAction}
+			/>,
+		);
+
+		const depositsTerm = [...container.querySelectorAll("dt")].find((term) => term.textContent === "Deposits");
+		expect(depositsTerm?.nextElementSibling?.textContent).toBe("Deposits open");
+		const deposit = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Deposit",
+		);
+		const withdraw = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Withdraw",
+		);
+		expect(deposit?.disabled).toBe(false);
+		expect(withdraw?.disabled).toBe(true);
+		const reasonId = withdraw?.getAttribute("aria-describedby");
+		expect(reasonId).not.toBeNull();
+		expect(reasonId ? document.getElementById(reasonId)?.textContent : null).toContain("server-reported unlock time");
+		act(() => deposit?.click());
+		expect(onRequestAction).toHaveBeenCalledWith("deposit");
+	});
+
+	it("labels every mobile depositor amount and includes a signed all-time PNL", () => {
+		render(
+			<VaultDetailView
+				detail={createDetail({
+					followers: [
+						{
+							user: FOLLOWER,
+							vaultEquity: "100",
+							pnl: "5",
+							allTimePnl: "-2",
+							daysFollowing: 4,
+							vaultEntryTime: 1,
+							lockupUntil: 2,
+						},
+					],
+				})}
+				owner={{ status: "disconnected" }}
+				actionAvailability={AVAILABLE_ACTIONS}
+				isTestnet={false}
+			/>,
+		);
+
+		const mobileTerms = [...container.querySelectorAll("dt")].map((term) => term.textContent);
+		expect(mobileTerms).toEqual(expect.arrayContaining(["Equity", "Current PNL", "All-time PNL"]));
+		expect(container.textContent).toContain("+$5.00");
+		expect(container.textContent).toContain("-$2.00");
+	});
+
+	it("provides one text summary while keeping each compact sparkline decorative", () => {
+		render(
+			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
+		);
+		const charts = [...container.querySelectorAll<HTMLElement>("[data-vault-compact-chart]")];
+		expect(charts).toHaveLength(2);
+		for (const chart of charts) {
+			expect(chart.getAttribute("aria-hidden")).toBe("true");
+			expect(chart.hasAttribute("role")).toBe(false);
+			expect(chart.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+			expect(chart.querySelector('svg[role="img"]')).toBeNull();
+		}
+		const summaries = [...container.querySelectorAll("[data-vault-chart-summary]")].map(
+			(summary) => summary.textContent,
+		);
+		expect(summaries).toEqual([
+			"PNL over 30 days. Latest value +$1.00. Positive PNL.",
+			"PNL over 30 days. Latest value +$1.00. Positive PNL.",
+		]);
+		expect(container.querySelectorAll('[data-vault-chart-summary] bdi[dir="ltr"]')).toHaveLength(2);
+	});
+
+	it("describes a zero latest PNL without inferring that the history was flat", () => {
+		render(
+			<VaultPerformanceChart
+				snapshot={{
+					accountValueHistory: [],
+					pnlHistory: [
+						{ timestamp: 1, value: "-5" },
+						{ timestamp: 2, value: "5" },
+						{ timestamp: 3, value: "0" },
+					],
+					volume: "0",
+				}}
+				kind="pnl"
+				period="month"
+				compact
+			/>,
+		);
+
+		expect(container.querySelector("[data-vault-chart-summary]")?.textContent).toBe(
+			"PNL over 30 days. Latest value $0.00. PNL is zero.",
+		);
+		expect(container.querySelector('[role="img"]')).toBeNull();
+	});
+
+	it("gives the detail chart a concise name and a trend description with extrema", () => {
+		render(
+			<VaultPerformanceChart
+				snapshot={{
+					accountValueHistory: [],
+					pnlHistory: [
+						{ timestamp: 1, value: "0" },
+						{ timestamp: 2, value: "5" },
+						{ timestamp: 3, value: "0" },
+					],
+					volume: "0",
+				}}
+				kind="pnl"
+				period="month"
+			/>,
+		);
+
+		const chart = container.querySelector<HTMLElement>('[data-vault-performance-chart][role="img"]');
+		const nameId = chart?.getAttribute("aria-labelledby");
+		const descriptionId = chart?.getAttribute("aria-describedby");
+		expect(nameId ? document.getElementById(nameId)?.textContent : null).toBe("PNL 30 days");
+		expect(descriptionId ? document.getElementById(descriptionId)?.textContent : null).toBe(
+			"Starts at $0.00 and ends at $0.00. The start and end values are unchanged. Minimum $0.00; maximum +$5.00.",
+		);
+		expect(
+			descriptionId ? document.getElementById(descriptionId)?.querySelectorAll('bdi[dir="ltr"]') : [],
+		).toHaveLength(4);
+	});
+
+	it("limits desktop row hover feedback to its actual Vault link", () => {
+		render(
+			<VaultsList state="normal" rows={[createListRow()]} account={{ status: "disconnected" }} onRetry={vi.fn()} />,
+		);
+		const row = container.querySelector("tbody tr");
+		const link = row?.querySelector("a");
+		expect(row?.className).not.toContain("hover:bg-fill-hover");
+		expect(link?.className).toContain("hover:bg-fill-hover");
+	});
+
+	it("derives Vault age from the fetched snapshot time", () => {
+		const fetchedAt = 1_800_000_000_000;
+		render(
+			<VaultsList
+				state="normal"
+				rows={[{ ...createListRow(), createdAt: fetchedAt - 2 * 86_400_000 }]}
+				account={{ status: "disconnected" }}
+				fetchedAt={fetchedAt}
+				onRetry={vi.fn()}
+			/>,
+		);
+		expect(container.querySelector("tbody tr td:last-child")?.textContent).toBe("2 days");
 	});
 
 	it("paginates the officially sorted discovery rows with localized navigation labels", () => {
@@ -131,7 +319,7 @@ function createListRow(): VaultListItem {
 	};
 }
 
-function createDetail(): VaultDetail {
+function createDetail(overrides: Partial<VaultDetail> = {}): VaultDetail {
 	const snapshot = {
 		accountValueHistory: [
 			{ timestamp: 1, value: "100" },
@@ -160,5 +348,6 @@ function createDetail(): VaultDetail {
 		relationship: "normal",
 		allowDeposits: true,
 		alwaysCloseOnWithdraw: false,
+		...overrides,
 	};
 }

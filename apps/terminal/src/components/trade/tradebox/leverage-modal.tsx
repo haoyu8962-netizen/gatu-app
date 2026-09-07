@@ -1,6 +1,5 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
@@ -23,6 +22,7 @@ interface Props {
 }
 
 function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
+	const { t } = useLingui();
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const actionPending = contentProps.isUpdating || submissionLocked;
 
@@ -39,6 +39,7 @@ function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...content
 			<ModalPopup
 				size="sm"
 				showClose={!actionPending}
+				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="font-market-close"
 			>
@@ -74,6 +75,7 @@ function LeverageModalContent({
 	onApply,
 	onSubmissionLockChange,
 }: LeverageModalContentProps) {
+	const { t } = useLingui();
 	const {
 		showSuccess,
 		trigger: triggerAutoClose,

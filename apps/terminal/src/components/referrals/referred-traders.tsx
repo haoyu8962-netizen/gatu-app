@@ -51,7 +51,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 					{desktopTraders.map((trader) => (
 						<TableRow key={trader.user} className="h-[42px]">
 							<TableCell size="dense" className="text-2sm font-medium text-fg">
-								{shortenAddress(trader.user, 6, 4)}
+								<bdi dir="ltr">{shortenAddress(trader.user, 6, 4)}</bdi>
 							</TableCell>
 							<TableCell size="dense" className="text-2sm">
 								{formatDateTime(trader.timeJoined)}
@@ -116,7 +116,9 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 							<article key={trader.user} className="px-4 py-3">
 								<div className="flex items-start justify-between gap-3">
 									<div>
-										<p className="text-2sm font-medium text-fg">{shortenAddress(trader.user, 6, 4)}</p>
+										<p className="text-2sm font-medium text-fg">
+											<bdi dir="ltr">{shortenAddress(trader.user, 6, 4)}</bdi>
+										</p>
 										<p className="mt-0.5 text-2xs tabular-nums text-fg-muted">
 											{formatDateTime(trader.timeJoined)} · <Trans>Volume</Trans> {formatUSD(trader.cumVlm)}
 										</p>
@@ -132,7 +134,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 									<span className="tabular-nums text-fg">{formatUSD(trader.cumRewardedFeesSinceReferred)}</span>
 								</div>
 								{trader.tokenToState.length ? (
-									<details className="mt-2 rounded-[8px] bg-fill-weak px-2.5 py-2">
+									<details className="mt-2 rounded-16 bg-fill-weak px-2.5 py-2">
 										<summary className="cursor-pointer text-2xs font-medium text-fg-muted">
 											<Trans>Reward assets</Trans>
 										</summary>

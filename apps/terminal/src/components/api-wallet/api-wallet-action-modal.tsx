@@ -69,7 +69,11 @@ function ActionStepper({ action }: { action: ApiWalletActionView }) {
 			{ACTION_STAGE_ORDER.map((step) => {
 				const status = getStepStatus(action, step);
 				return (
-					<li key={step} className="flex min-w-0 flex-col items-center gap-1 text-center">
+					<li
+						key={step}
+						className="flex min-w-0 flex-col items-center gap-1 text-center"
+						aria-current={status === "current" ? "step" : undefined}
+					>
 						<span
 							className={cn(
 								"grid size-[var(--api-wallet-step-dot-size)] place-items-center rounded-full text-3xs font-bold",
@@ -96,6 +100,17 @@ function ActionStepper({ action }: { action: ApiWalletActionView }) {
 							)}
 						>
 							{getStepLabel(step)}
+							{status === "complete" ? (
+								<span className="sr-only">
+									{" "}
+									— <Trans>Completed</Trans>
+								</span>
+							) : status === "failed" ? (
+								<span className="sr-only">
+									{" "}
+									— <Trans>Failed</Trans>
+								</span>
+							) : null}
 						</span>
 					</li>
 				);
@@ -106,45 +121,49 @@ function ActionStepper({ action }: { action: ApiWalletActionView }) {
 
 function ReviewContent({ action }: { action: ApiWalletActionView }) {
 	const isRemove = action.kind === "remove";
-	const rows: { key: string; label: ReactNode; value: ReactNode; detail?: ReactNode; danger?: boolean }[] = isRemove
-		? [
-				{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
-				{
-					key: "address",
-					label: <Trans>API wallet address</Trans>,
-					value: shortenAddress(action.agentAddress),
-					detail: action.agentAddress,
-				},
-				{
-					key: "validity",
-					label: <Trans>Current validity</Trans>,
-					value: action.validityLabel ?? <Trans>Not reported</Trans>,
-				},
-				{ key: "result", label: <Trans>After removal</Trans>, value: <Trans>Access disabled</Trans>, danger: true },
-			]
-		: [
-				{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
-				{
-					key: "address",
-					label: <Trans>API wallet address</Trans>,
-					value: shortenAddress(action.agentAddress),
-					detail: action.agentAddress,
-				},
-				{ key: "validity", label: <Trans>Validity</Trans>, value: action.validityLabel ?? <Trans>Not reported</Trans> },
-				{ key: "approval", label: <Trans>Approval</Trans>, value: <Trans>Account-level agent approval</Trans> },
-			];
+	const rows: { key: string; label: ReactNode; value: ReactNode; detail?: string; danger?: boolean; ltr?: boolean }[] =
+		isRemove
+			? [
+					{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
+					{
+						key: "address",
+						label: <Trans>API wallet address</Trans>,
+						value: shortenAddress(action.agentAddress),
+						detail: action.agentAddress,
+						ltr: true,
+					},
+					{
+						key: "validity",
+						label: <Trans>Current validity</Trans>,
+						value: action.validityLabel ?? <Trans>Not reported</Trans>,
+					},
+					{ key: "result", label: <Trans>After removal</Trans>, value: <Trans>Access disabled</Trans>, danger: true },
+				]
+			: [
+					{ key: "name", label: <Trans>Name</Trans>, value: action.agentName },
+					{
+						key: "address",
+						label: <Trans>API wallet address</Trans>,
+						value: shortenAddress(action.agentAddress),
+						detail: action.agentAddress,
+						ltr: true,
+					},
+					{
+						key: "validity",
+						label: <Trans>Validity</Trans>,
+						value: action.validityLabel ?? <Trans>Not reported</Trans>,
+					},
+					{ key: "approval", label: <Trans>Approval</Trans>, value: <Trans>Account-level agent approval</Trans> },
+				];
 
 	return (
 		<div className="space-y-3">
 			{action.errorMessage ? (
-				<p
-					role="alert"
-					className="rounded-[var(--api-wallet-control-radius)] bg-error-soft px-3 py-2 text-xs leading-5 text-error"
-				>
+				<p role="alert" className="rounded-20 bg-error-soft px-3 py-2 text-xs leading-5 text-error">
 					{action.errorMessage}
 				</p>
 			) : null}
-			<div className="space-y-2 rounded-[var(--api-wallet-card-radius)] border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3">
+			<div className="space-y-2 rounded-24 border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3">
 				{rows.map((row) => (
 					<div key={row.key} className="flex items-start justify-between gap-3">
 						<span className="shrink-0 text-xs text-api-wallet-muted">{row.label}</span>
@@ -152,14 +171,14 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 							<span
 								className={cn("block truncate text-2sm font-semibold text-api-wallet-fg", row.danger && "text-error")}
 							>
-								{row.value}
+								{row.ltr ? <bdi dir="ltr">{row.value}</bdi> : row.value}
 							</span>
 							{row.detail ? (
 								<span
 									className="block truncate font-mono text-3xs tabular-nums text-api-wallet-subtle"
 									title={String(row.detail)}
 								>
-									{row.detail}
+									{row.ltr ? <bdi dir="ltr">{row.detail}</bdi> : row.detail}
 								</span>
 							) : null}
 						</span>
@@ -175,7 +194,7 @@ function ReviewContent({ action }: { action: ApiWalletActionView }) {
 					</Trans>
 				</p>
 			) : (
-				<div className="rounded-[var(--api-wallet-control-radius)] border border-dashed border-api-wallet-stroke-input px-3 py-2.5">
+				<div className="rounded-20 border border-dashed border-api-wallet-stroke-input px-3 py-2.5">
 					<p className="text-xs font-semibold text-api-wallet-fg">
 						<Trans>Private-key handling</Trans>
 					</p>
@@ -283,12 +302,10 @@ function ResultContent({ action }: { action: ApiWalletActionView }) {
 				<p className="text-sm font-bold text-api-wallet-fg">{title}</p>
 				<p className="mt-1 text-xs leading-5 text-api-wallet-muted">{description}</p>
 				{result === "apiError" && action.errorMessage ? (
-					<p className="mt-2 rounded-[var(--api-wallet-control-radius)] bg-error-soft px-3 py-2 font-mono text-xs text-error">
-						{action.errorMessage}
-					</p>
+					<p className="mt-2 rounded-20 bg-error-soft px-3 py-2 font-mono text-xs text-error">{action.errorMessage}</p>
 				) : null}
 				{result === "unknown" ? (
-					<div className="mt-3 rounded-[var(--api-wallet-control-radius)] border border-api-wallet-stroke-card bg-api-wallet-card px-3 py-2 text-left">
+					<div className="mt-3 rounded-20 border border-api-wallet-stroke-card bg-api-wallet-card px-3 py-2 text-start">
 						<p className="text-3xs text-api-wallet-subtle">
 							<Trans>Verification reference</Trans>
 						</p>
@@ -346,9 +363,7 @@ export function ApiWalletActionModal({
 			closeLabel={t`Close API wallet action`}
 			className={cn(
 				"max-h-[calc(100dvh-var(--api-wallet-modal-viewport-gap))] bg-modal shadow-api-wallet-modal data-starting-style:scale-100 data-ending-style:scale-100",
-				isMobile
-					? "rounded-t-[var(--api-wallet-sheet-radius)]"
-					: "max-w-[var(--api-wallet-modal-width)] rounded-[var(--api-wallet-modal-radius)]",
+				isMobile ? "rounded-t-32" : "max-w-[var(--api-wallet-modal-width)] rounded-32",
 			)}
 		>
 			<ModalHeader divider={false} className="px-4 pt-6 pb-2">
@@ -404,7 +419,7 @@ export function ApiWalletActionModal({
 							variant="outline"
 							intent="neutral"
 							size={isMobile ? "lg" : "md"}
-							className="flex-1 rounded-[var(--api-wallet-control-radius)] active:scale-100"
+							className="flex-1 rounded-20 active:scale-100"
 							disabled={action.locked}
 							onClick={onClose}
 						>
@@ -415,7 +430,7 @@ export function ApiWalletActionModal({
 							intent={action.kind === "remove" ? "error" : "brand"}
 							size={isMobile ? "lg" : "md"}
 							className={cn(
-								"flex-1 rounded-[var(--api-wallet-control-radius)] active:scale-100",
+								"flex-1 rounded-20 active:scale-100",
 								action.kind === "authorize" && "bg-api-wallet-control text-api-wallet-on-control",
 							)}
 							disabled={action.locked}
@@ -434,7 +449,7 @@ export function ApiWalletActionModal({
 					<Button
 						type="button"
 						size={isMobile ? "lg" : "md"}
-						className="w-full rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100"
+						className="w-full rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
 						disabled
 						iconLeft={<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />}
 					>
@@ -444,7 +459,7 @@ export function ApiWalletActionModal({
 					<Button
 						type="button"
 						size={isMobile ? "lg" : "md"}
-						className="w-full rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100"
+						className="w-full rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
 						disabled={action.kind === "authorize" && !credentialReady}
 						onClick={onFinish}
 					>
@@ -457,7 +472,7 @@ export function ApiWalletActionModal({
 							variant="outline"
 							intent={action.kind === "authorize" ? "error" : "neutral"}
 							size={isMobile ? "lg" : "md"}
-							className="flex-1 rounded-[var(--api-wallet-control-radius)] active:scale-100"
+							className="flex-1 rounded-20 active:scale-100"
 							onClick={onClose}
 						>
 							{action.kind === "authorize" ? <Trans>Discard local key</Trans> : <Trans>Close</Trans>}
@@ -465,7 +480,7 @@ export function ApiWalletActionModal({
 						<Button
 							type="button"
 							size={isMobile ? "lg" : "md"}
-							className="flex-1 rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100"
+							className="flex-1 rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
 							onClick={onVerifyAgain}
 						>
 							<Trans>Verify again</Trans>
@@ -478,7 +493,7 @@ export function ApiWalletActionModal({
 							variant="outline"
 							intent="neutral"
 							size={isMobile ? "lg" : "md"}
-							className="flex-1 rounded-[var(--api-wallet-control-radius)] active:scale-100"
+							className="flex-1 rounded-20 active:scale-100"
 							onClick={onClose}
 						>
 							<Trans>Close</Trans>
@@ -486,7 +501,7 @@ export function ApiWalletActionModal({
 						<Button
 							type="button"
 							size={isMobile ? "lg" : "md"}
-							className="flex-1 rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100"
+							className="flex-1 rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100"
 							onClick={onConfirm}
 						>
 							<Trans>Review request</Trans>

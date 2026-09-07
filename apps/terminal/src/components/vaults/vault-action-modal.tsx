@@ -80,6 +80,7 @@ export function VaultActionModal({
 			size="lg"
 			dismissible={!locked}
 			showClose={!isMobile && !locked}
+			closeLabel={t`Close`}
 			showHandle={isMobile && !locked}
 			layer="blocking"
 			className="max-h-[calc(100dvh-var(--funds-action-modal-inset))] min-[1001px]:max-w-md"
@@ -199,7 +200,7 @@ function VaultActionRisk({
 	return (
 		<div className="flex items-start gap-2 rounded-10 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-			<ul className="list-disc space-y-1 pl-4">
+			<ul className="list-disc space-y-1 ps-4">
 				{action === "deposit" ? (
 					<>
 						<li>
@@ -242,7 +243,8 @@ function VaultPendingStage({
 	action: "deposit" | "withdraw";
 }) {
 	return (
-		<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
+		// biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel.
+		<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
 			<SpinnerGapIcon className="size-8 animate-spin text-signal motion-reduce:animate-none" />
 			<p className="text-sm font-bold text-fg">
 				{stage === "awaiting" ? (
@@ -266,7 +268,7 @@ function VaultPendingStage({
 					</Trans>
 				)}
 			</p>
-		</output>
+		</div>
 	);
 }
 
@@ -284,7 +286,8 @@ function VaultActionResultView({
 >) {
 	if (result === "success") {
 		return (
-			<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
+			// biome-ignore lint/a11y/useSemanticElements: output cannot contain the block content in this status panel.
+			<div role="status" className="flex flex-col items-center gap-3 py-8 text-center">
 				<CheckCircleIcon className="size-9 text-success" weight="fill" />
 				<p className="text-sm font-bold text-fg">
 					<Trans>Vault transfer confirmed</Trans>
@@ -302,7 +305,7 @@ function VaultActionResultView({
 						{operationReference}
 					</p>
 				) : null}
-			</output>
+			</div>
 		);
 	}
 	return (
@@ -344,7 +347,7 @@ function ReviewRow({ label, value, mono = false }: { label: React.ReactNode; val
 						: "text-right font-semibold tabular-nums text-fg"
 				}
 			>
-				{value}
+				{mono ? <bdi dir="ltr">{value}</bdi> : value}
 			</dd>
 		</div>
 	);

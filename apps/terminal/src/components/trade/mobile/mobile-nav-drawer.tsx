@@ -288,7 +288,7 @@ function UpcomingMobileNavItem({ label, soonLabel }: UpcomingMobileNavItemProps)
 		<button
 			type="button"
 			disabled
-			className="flex cursor-default items-center justify-between rounded-8 px-3 py-2.5 text-left text-sm text-fg-disabled"
+			className="flex cursor-default items-center justify-between rounded-8 px-3 py-2.5 text-start text-sm text-fg-disabled"
 		>
 			<span>{label}</span>
 			<Badge tone="neutral" size="xxs" className="text-fg-disabled">

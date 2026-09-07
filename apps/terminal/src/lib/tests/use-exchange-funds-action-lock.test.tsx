@@ -4,13 +4,14 @@ import type { ExchangeParams } from "@gatu/hl-react";
 import { useExchange } from "@gatu/hl-react/hooks/useExchange";
 import { FundsActionLockTimeoutError } from "@gatu/hl-react/internal/exchange/funds-action-lock";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act } from "react";
+import { act, useLayoutEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const OWNER = "0x1234567890abcdef1234567890abcdef12345678";
 const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER}`;
 const FUNDS_LOCK_NAME = `hyperliquid_funds_action:Mainnet:${OWNER}`;
+const LEGAL_ACCESS = { acceptedTerms: true, userAllowed: true, restrictions: "n" } as const;
 
 const clients = vi.hoisted(() => {
 	const response = { status: "ok", response: { type: "default" } } as const;
@@ -33,6 +34,7 @@ const providerState = vi.hoisted(() => ({
 	exchangeLifecycle: { id: Symbol("funds-lock-integration-test"), active: true },
 	legalCheck: vi.fn(),
 	preExecutionGuard: vi.fn(),
+	executionGuard: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/hooks/useClients", () => ({
@@ -179,9 +181,10 @@ describe("useExchange funds action lock integration", () => {
 		providerState.enforceLegalActions = false;
 		providerState.exchangeLifecycle.active = true;
 		providerState.legalCheck.mockReset();
-		providerState.legalCheck.mockResolvedValue({ acceptedTerms: true, userAllowed: true, restrictions: "n" });
+		providerState.legalCheck.mockResolvedValue(LEGAL_ACCESS);
 		providerState.preExecutionGuard.mockReset();
 		providerState.preExecutionGuard.mockResolvedValue(undefined);
+		providerState.executionGuard.mockReset();
 		window.localStorage.clear();
 		window.localStorage.setItem(
 			SESSION_STORAGE_KEY,
@@ -207,9 +210,25 @@ describe("useExchange funds action lock integration", () => {
 		setLockManager(undefined);
 	});
 
-	function Probe() {
+	function Probe({ hasAvailableFunds = true }: { hasAvailableFunds?: boolean }) {
+		const attempt = useRef({ active: false, hasAvailableFunds });
+		useLayoutEffect(() => {
+			const currentAttempt = attempt.current;
+			currentAttempt.active = true;
+			return () => {
+				currentAttempt.active = false;
+			};
+		}, []);
+		useLayoutEffect(() => {
+			attempt.current.hasAvailableFunds = hasAvailableFunds;
+		}, [hasAvailableFunds]);
 		const first = useExchange("withdraw3", {
 			preExecutionGuard: providerState.preExecutionGuard,
+			executionGuard: (params) => {
+				providerState.executionGuard(params);
+				if (!attempt.current.active) throw new Error("Withdrawal attempt is no longer active");
+				if (!attempt.current.hasAvailableFunds) throw new Error("Withdrawal balance changed");
+			},
 			retry: 3,
 			retryDelay: 0,
 		});
@@ -223,16 +242,27 @@ describe("useExchange funds action lock integration", () => {
 		return null;
 	}
 
-	function renderProbe(): CapturedMutations {
+	function renderProbe(hasAvailableFunds = true): CapturedMutations {
 		act(() => {
 			root.render(
 				<QueryClientProvider client={queryClient}>
-					<Probe />
+					<Probe hasAvailableFunds={hasAvailableFunds} />
 				</QueryClientProvider>,
 			);
 		});
 		if (!capturedMutations) throw new Error("Mutation hooks were not captured");
 		return capturedMutations;
+	}
+
+	function deferLegalCheck(): () => void {
+		let releaseLegalCheck = () => {};
+		providerState.legalCheck.mockImplementationOnce(
+			() =>
+				new Promise<typeof LEGAL_ACCESS>((resolve) => {
+					releaseLegalCheck = () => resolve(LEGAL_ACCESS);
+				}),
+		);
+		return () => releaseLegalCheck();
 	}
 
 	it("serializes separate hook and ExchangeClient instances until the first SDK promise settles", async () => {
@@ -288,6 +318,89 @@ describe("useExchange funds action lock integration", () => {
 		expect(providerState.legalCheck.mock.invocationCallOrder[0]).toBeLessThan(
 			clients.firstWithdraw.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
 		);
+	});
+
+	it("rechecks the mounted attempt at the SDK boundary after deferred legal verification", async () => {
+		installExclusiveLockManager();
+		providerState.enforceLegalActions = true;
+		const releaseLegalCheck = deferLegalCheck();
+		const mutations = renderProbe();
+		let request: Promise<unknown> | undefined;
+
+		await act(async () => {
+			request = mutations.first({ destination: OWNER, amount: "10" });
+			await waitUntil(() => providerState.legalCheck.mock.calls.length === 1);
+		});
+		expect(providerState.preExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(1);
+		expect(clients.firstWithdraw).not.toHaveBeenCalled();
+
+		await act(async () => {
+			releaseLegalCheck();
+			await expect(request).resolves.toEqual(clients.response);
+		});
+
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(2);
+		expect(providerState.executionGuard.mock.calls[1]?.[0]).toBe(providerState.executionGuard.mock.calls[0]?.[0]);
+		expect(providerState.executionGuard.mock.invocationCallOrder[1]).toBeGreaterThan(
+			providerState.legalCheck.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(providerState.executionGuard.mock.invocationCallOrder[1]).toBeLessThan(
+			clients.firstWithdraw.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
+		expect(clients.firstWithdraw).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not call the SDK when the attempt unmounts while legal verification is pending", async () => {
+		installExclusiveLockManager();
+		providerState.enforceLegalActions = true;
+		const releaseLegalCheck = deferLegalCheck();
+		const mutations = renderProbe();
+		let request: Promise<unknown> | undefined;
+
+		await act(async () => {
+			request = mutations.first({ destination: OWNER, amount: "10" });
+			await waitUntil(() => providerState.legalCheck.mock.calls.length === 1);
+		});
+		expect(providerState.preExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(<QueryClientProvider client={queryClient}>{null}</QueryClientProvider>);
+		});
+		expect(providerState.exchangeLifecycle.active).toBe(true);
+
+		await act(async () => {
+			releaseLegalCheck();
+			await expect(request).rejects.toThrow("Withdrawal attempt is no longer active");
+		});
+
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(2);
+		expect(clients.firstWithdraw).not.toHaveBeenCalled();
+	});
+
+	it("rejects changed funds at the SDK boundary after the preflight and legal wait", async () => {
+		installExclusiveLockManager();
+		providerState.enforceLegalActions = true;
+		const releaseLegalCheck = deferLegalCheck();
+		const mutations = renderProbe();
+		let request: Promise<unknown> | undefined;
+
+		await act(async () => {
+			request = mutations.first({ destination: OWNER, amount: "10" });
+			await waitUntil(() => providerState.legalCheck.mock.calls.length === 1);
+		});
+		expect(providerState.preExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(1);
+		renderProbe(false);
+
+		await act(async () => {
+			releaseLegalCheck();
+			await expect(request).rejects.toThrow("Withdrawal balance changed");
+		});
+
+		expect(providerState.executionGuard).toHaveBeenCalledTimes(2);
+		expect(clients.firstWithdraw).not.toHaveBeenCalled();
 	});
 
 	it("fails closed before the SDK write when legal access cannot be verified", async () => {

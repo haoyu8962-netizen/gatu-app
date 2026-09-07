@@ -29,8 +29,8 @@ describe("trading panel theme contract", () => {
 
 	it("maps the light trading panel to the design handoff palette", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-strong")).toBe("#1a2330");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-muted")).toBe("#6b7686");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-subtle")).toBe("#98a2b0");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-muted")).toBe("#596474");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-text-subtle")).toBe("#626e7d");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-stroke-card")).toBe("#e3e8ee");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-stroke-input")).toBe("#d8dfe7");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-stroke-control")).toBe("#c6cfd9");
@@ -41,12 +41,44 @@ describe("trading panel theme contract", () => {
 			"var(--on-action)",
 		);
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-control-focus")).toBe("var(--focus)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-success")).toBe("#1f8a5a");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-error")).toBe("#d6453d");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-success")).toBe("#067a57");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-error")).toBe("#c73a3a");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-neutral-disabled-fill")).toBe("#c6cfd9");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-success-disabled-fill")).toBe("#b9dccb");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-error-disabled-fill")).toBe("#efc3bf");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-scrim")).toBe("rgb(20 30 45 / 42%)");
+	});
+
+	it("keeps meaningful light panel text above AA contrast on every panel surface", () => {
+		const surfaces = ["--bg-raised", "--trading-panel-surface-card", "--trading-panel-surface-hover"].map((variable) =>
+			resolveCssColor(":root", variable),
+		);
+		const foregrounds = [
+			"--market-close-text-muted",
+			"--market-close-text-subtle",
+			"--market-close-danger",
+			"--market-close-success",
+			"--market-close-warning",
+			"--trading-panel-text-muted",
+			"--trading-panel-text-subtle",
+			"--trading-panel-success",
+			"--trading-panel-error",
+			"--trading-panel-warning",
+			"--market-neutral",
+		].map((variable) => resolveCssColor(":root", variable));
+
+		for (const foreground of foregrounds) {
+			for (const surface of surfaces) expect(getContrastRatio(foreground, surface)).toBeGreaterThanOrEqual(4.5);
+		}
+	});
+
+	it("keeps the neutral market text readable in both themes", () => {
+		expect(
+			getContrastRatio(resolveCssColor(":root", "--market-neutral"), resolveCssColor(":root", "--bg-raised")),
+		).toBeGreaterThanOrEqual(4.5);
+		expect(
+			getContrastRatio(resolveCssColor(".dark", "--market-neutral"), resolveCssColor(".dark", "--bg-raised")),
+		).toBeGreaterThanOrEqual(4.5);
 	});
 
 	it("keeps the dark panel mapped to terminal semantic colors", () => {

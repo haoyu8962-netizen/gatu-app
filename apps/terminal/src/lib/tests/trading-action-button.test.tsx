@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,9 +35,14 @@ describe("TradingActionButton", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		const reactRoot = createRoot(container);
+		root = {
+			render: (children) => reactRoot.render(<I18nProvider i18n={i18n}>{children}</I18nProvider>),
+			unmount: () => reactRoot.unmount(),
+		} as Root;
 		testState.error = null;
 		testState.enableTrading.mockReset();
 		testState.guardAction.mockReset();

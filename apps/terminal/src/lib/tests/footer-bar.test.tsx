@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { i18n } from "@lingui/core";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +11,13 @@ import { createI18nRoot } from "./harness/react";
 const testState = vi.hoisted(() => ({
 	openCommandMenu: vi.fn(),
 }));
+
+const DOCUMENTATION_AND_LEGAL = "Documentation and legal";
+const DOCUMENTATION_AND_LEGAL_AR = "الوثائق والمعلومات القانونية";
+const arabicMessages: Messages = {
+	[createHash("sha256").update(`${DOCUMENTATION_AND_LEGAL}\x1f`).digest("base64").slice(0, 6)]:
+		DOCUMENTATION_AND_LEGAL_AR,
+};
 
 vi.mock("@gatu/ui", () => ({
 	Divider: ({ className }: { className?: string }) => <hr className={className} />,
@@ -108,5 +116,17 @@ describe("FooterBar", () => {
 
 		act(() => commandButton.click());
 		expect(testState.openCommandMenu).toHaveBeenCalledTimes(1);
+	});
+
+	it("retranslates the legal navigation landmark when the locale changes", () => {
+		renderFooter("default");
+		const navigation = container.querySelector("nav");
+		expect(navigation?.getAttribute("aria-label")).toBe(DOCUMENTATION_AND_LEGAL);
+
+		act(() => {
+			i18n.loadAndActivate({ locale: "ar", messages: arabicMessages });
+		});
+
+		expect(navigation?.getAttribute("aria-label")).toBe(DOCUMENTATION_AND_LEGAL_AR);
 	});
 });

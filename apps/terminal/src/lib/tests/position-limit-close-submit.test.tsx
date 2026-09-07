@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +14,16 @@ import { createI18nRoot } from "./harness/react";
 const USER = "0x1111111111111111111111111111111111111111";
 const COIN = "xyz:CXMT";
 const ASSET_ID = 120_031;
+const RECONCILING_MESSAGE = "Order submitted. Confirming exchange status; do not retry.";
+const RECONCILING_MESSAGE_AR = "تم إرسال الطلب. جارٍ تأكيد حالة البورصة؛ لا تُعد المحاولة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(RECONCILING_MESSAGE)]: RECONCILING_MESSAGE_AR,
+};
 
 interface OrderParams {
 	grouping: "na" | "normalTpsl" | "positionTpsl";
@@ -161,6 +173,7 @@ describe("usePositionLimitCloseSubmit", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.clientKey = USER;
 		mocks.env = "Mainnet";
 		mocks.marketLoading = false;
@@ -345,6 +358,21 @@ describe("usePositionLimitCloseSubmit", () => {
 		});
 		expect(retryState).toBe("blocked");
 		expect(mocks.submitOrder).toHaveBeenCalledTimes(1);
+	});
+
+	it("retranslates an existing reconciliation state when the locale changes", async () => {
+		mocks.submitOrder.mockResolvedValueOnce({ state: "reconciling", submissionId: "submission-1" });
+
+		await act(async () => {
+			await currentHook().submit({ price: "100", size: "1" });
+		});
+		expect(currentHook().error).toBe(RECONCILING_MESSAGE);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(currentHook().error).toBe(RECONCILING_MESSAGE_AR);
+		expect(currentHook().phase).toBe("reconciling");
+		expect(mocks.submitOrder).toHaveBeenCalledOnce();
 	});
 
 	it("surfaces a coordinated blocked result without leaving the hook pending", async () => {

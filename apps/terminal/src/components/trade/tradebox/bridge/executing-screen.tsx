@@ -101,7 +101,7 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 							value={
 								<ExplorerLink href={`${LIFI_EXPLORER_URL}/${txHash}`}>
 									<WalletIcon className="size-3" />
-									{shortenAddress(address)}
+									<bdi dir="ltr">{shortenAddress(address)}</bdi>
 								</ExplorerLink>
 							}
 						/>

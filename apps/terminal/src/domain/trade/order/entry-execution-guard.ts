@@ -12,6 +12,63 @@ import type { AssetAvailabilityStatus } from "./availability";
 
 export const ENTRY_POSITION_MAX_AGE_MS = 60_000;
 
+export type EntryExecutionErrorReason =
+	| "execution-price-unavailable"
+	| "inactive"
+	| "mark-price-unavailable"
+	| "market-context-mismatch"
+	| "order-request-invalid"
+	| "position-data-unavailable"
+	| "reduce-only-position-changed"
+	| "slippage-limit-exceeded"
+	| "slippage-setting-invalid"
+	| "stop-price-invalidated"
+	| "trading-availability-changed"
+	| "trading-availability-unavailable"
+	| "trigger-price-invalidated"
+	| "twap-duration-invalid"
+	| "twap-notional-too-small";
+
+const ENTRY_EXECUTION_ERROR_MESSAGES: Record<EntryExecutionErrorReason, string> = {
+	"execution-price-unavailable": "Live execution price is unavailable",
+	inactive: "Order entry is no longer active",
+	"mark-price-unavailable": "Live mark price is unavailable",
+	"market-context-mismatch": "Order no longer matches the selected market",
+	"order-request-invalid": "Order request is invalid",
+	"position-data-unavailable": "Live position data is unavailable",
+	"reduce-only-position-changed": "Reduce-only trigger no longer matches the current position",
+	"slippage-limit-exceeded": "Market price moved beyond the confirmed slippage limit",
+	"slippage-setting-invalid": "Market slippage setting is invalid",
+	"stop-price-invalidated": "Stop price is no longer valid against the live mark price",
+	"trading-availability-changed": "Trading availability changed before submission",
+	"trading-availability-unavailable": "Trading availability data is unavailable",
+	"trigger-price-invalidated": "Trigger price is no longer valid against the live mark price",
+	"twap-duration-invalid": `TWAP duration must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX} minutes`,
+	"twap-notional-too-small": `TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}`,
+};
+
+export class EntryExecutionError extends Error {
+	constructor(
+		readonly reason: EntryExecutionErrorReason,
+		message = ENTRY_EXECUTION_ERROR_MESSAGES[reason],
+	) {
+		super(message);
+		this.name = "EntryExecutionError";
+	}
+}
+
+function failEntryExecution(reason: EntryExecutionErrorReason, message?: string): never {
+	throw new EntryExecutionError(reason, message);
+}
+
+function readEntryBig(value: unknown, reason: EntryExecutionErrorReason): Big {
+	try {
+		return new Big(String(value));
+	} catch {
+		return failEntryExecution(reason);
+	}
+}
+
 export interface EntryOrderExecutionState {
 	active: boolean;
 	assetId: number | undefined;
@@ -57,20 +114,14 @@ function assertReduceOnlyTriggerPosition(
 		positionAge > ENTRY_POSITION_MAX_AGE_MS ||
 		state.positionSignedSize === undefined
 	) {
-		throw new Error("Live position data is unavailable");
+		failEntryExecution("position-data-unavailable");
 	}
 
-	let positionSize: Big;
-	let orderSize: Big;
-	try {
-		positionSize = new Big(state.positionSignedSize);
-		orderSize = new Big(order.s);
-	} catch {
-		throw new Error("Live position data is unavailable");
-	}
+	const positionSize = readEntryBig(state.positionSignedSize, "position-data-unavailable");
+	const orderSize = readEntryBig(order.s, "order-request-invalid");
 	const reducesPosition = order.b ? positionSize.lt(0) : positionSize.gt(0);
 	if (positionSize.eq(0) || !orderSize.gt(0) || !reducesPosition || orderSize.gt(positionSize.abs())) {
-		throw new Error("Reduce-only trigger no longer matches the current position");
+		failEntryExecution("reduce-only-position-changed");
 	}
 }
 
@@ -80,40 +131,49 @@ function assertMarketCapStillSafe(
 	now: number,
 ): void {
 	if (typeof state.assetId !== "number" || !Number.isSafeInteger(state.assetId)) {
-		throw new Error("Order no longer matches the selected market");
+		failEntryExecution("market-context-mismatch");
 	}
 	if (!isLiveMarkPriceReady(state.markPriceStatus, state.executionReferencePx, state.executionPriceReceivedAt, now)) {
-		throw new Error("Live execution price is unavailable");
+		failEntryExecution("execution-price-unavailable");
 	}
-	const reference = state.executionReferencePx ? new Big(state.executionReferencePx) : null;
-	const submitted = new Big(order.p);
-	if (!reference?.gt(0) || !submitted.gt(0)) throw new Error("Live execution price is unavailable");
+	const reference = state.executionReferencePx
+		? readEntryBig(state.executionReferencePx, "execution-price-unavailable")
+		: null;
+	const submitted = readEntryBig(order.p, "order-request-invalid");
+	if (!reference?.gt(0)) failEntryExecution("execution-price-unavailable");
+	if (!submitted.gt(0)) failEntryExecution("order-request-invalid");
 	if (
 		!Number.isFinite(state.slippageBps) ||
 		state.slippageBps < 0 ||
 		state.slippageBps > MARKET_ORDER_SLIPPAGE_MAX_PERCENT * 100
 	) {
-		throw new Error("Market slippage setting is invalid");
+		failEntryExecution("slippage-setting-invalid");
 	}
 
 	const multiplier = order.b
 		? Big(1).plus(Big(state.slippageBps).div(10_000))
 		: Big(1).minus(Big(state.slippageBps).div(10_000));
-	const currentLimit = new Big(
-		formatPriceForOrder(reference.times(multiplier), {
-			assetId: state.assetId,
-			szDecimals: state.szDecimals ?? 0,
-		}),
-	);
+	let currentLimit: Big;
+	try {
+		currentLimit = new Big(
+			formatPriceForOrder(reference.times(multiplier), {
+				assetId: state.assetId,
+				szDecimals: state.szDecimals ?? 0,
+			}),
+		);
+	} catch {
+		failEntryExecution("execution-price-unavailable");
+	}
 	const safe = order.b ? submitted.lte(currentLimit) : submitted.gte(currentLimit);
-	if (!safe) throw new Error("Market price moved beyond the confirmed slippage limit");
+	if (!safe) failEntryExecution("slippage-limit-exceeded");
 }
 
 function assertTriggerOrderDirection(order: OrderParameters["orders"][number], referencePx: string | undefined): void {
 	if (!("trigger" in order.t)) return;
-	const mark = referencePx ? new Big(referencePx) : null;
-	const trigger = new Big(order.t.trigger.triggerPx);
-	if (!mark?.gt(0) || !trigger.gt(0)) throw new Error("Live mark price is unavailable");
+	const mark = referencePx ? readEntryBig(referencePx, "mark-price-unavailable") : null;
+	const trigger = readEntryBig(order.t.trigger.triggerPx, "order-request-invalid");
+	if (!mark?.gt(0)) failEntryExecution("mark-price-unavailable");
+	if (!trigger.gt(0)) failEntryExecution("order-request-invalid");
 
 	const isTakeProfit = order.t.trigger.tpsl === "tp";
 	const directionValid = isTakeProfit
@@ -123,16 +183,16 @@ function assertTriggerOrderDirection(order: OrderParameters["orders"][number], r
 		: order.b
 			? trigger.gt(mark)
 			: trigger.lt(mark);
-	if (!directionValid) throw new Error("Trigger price is no longer valid against the live mark price");
+	if (!directionValid) failEntryExecution("trigger-price-invalidated");
 }
 
 function assertAttachedTriggerDirections(params: OrderParameters, state: EntryOrderExecutionState): void {
 	if (params.grouping !== "normalTpsl") return;
 	if (params.orders.length < 2 || params.orders.length > 3) {
-		throw new Error("Attached TP/SL order structure is invalid");
+		failEntryExecution("order-request-invalid", "Attached TP/SL order structure is invalid");
 	}
 	const parent = params.orders[0];
-	if (!("limit" in parent.t)) throw new Error("Attached TP/SL parent order is invalid");
+	if (!("limit" in parent.t)) failEntryExecution("order-request-invalid", "Attached TP/SL parent order is invalid");
 	const referencePx = isFrontendMarketOrder(parent) ? state.markPx : String(parent.p);
 	const seenTypes = new Set<"tp" | "sl">();
 	for (const order of params.orders.slice(1)) {
@@ -141,10 +201,10 @@ function assertAttachedTriggerDirections(params: OrderParameters, state: EntryOr
 			order.t.trigger.isMarket !== true ||
 			order.b === parent.b ||
 			order.r !== true ||
-			!new Big(order.s).eq(parent.s) ||
+			!readEntryBig(order.s, "order-request-invalid").eq(readEntryBig(parent.s, "order-request-invalid")) ||
 			seenTypes.has(order.t.trigger.tpsl)
 		) {
-			throw new Error("Attached TP/SL order structure is invalid");
+			failEntryExecution("order-request-invalid", "Attached TP/SL order structure is invalid");
 		}
 		seenTypes.add(order.t.trigger.tpsl);
 		assertTriggerOrderDirection(order, referencePx);
@@ -152,7 +212,7 @@ function assertAttachedTriggerDirections(params: OrderParameters, state: EntryOr
 }
 
 function getPrimaryOrders(params: OrderParameters): OrderParameters["orders"] {
-	if (params.grouping === "positionTpsl") throw new Error("Order entry grouping is invalid");
+	if (params.grouping === "positionTpsl") failEntryExecution("order-request-invalid");
 	return params.grouping === "normalTpsl" ? params.orders.slice(0, 1) : params.orders;
 }
 
@@ -160,27 +220,27 @@ function assertOrderSizesWithinCurrentAvailability(params: OrderParameters, stat
 	const totals = { buy: Big(0), sell: Big(0) };
 	const quoteTotals = { buy: Big(0), sell: Big(0) };
 	for (const order of getPrimaryOrders(params)) {
-		const size = new Big(order.s);
-		const price = new Big(order.p);
-		if (!size.gt(0) || !price.gt(0)) throw new Error("Order size is invalid");
+		const size = readEntryBig(order.s, "order-request-invalid");
+		const price = readEntryBig(order.p, "order-request-invalid");
+		if (!size.gt(0) || !price.gt(0)) failEntryExecution("order-request-invalid");
 		const side = order.b ? "buy" : "sell";
 		totals[side] = totals[side].plus(size);
 		quoteTotals[side] = quoteTotals[side].plus(size.times(price));
 	}
 	if (state.availability.kind === "spot") {
 		if (
-			new Big(state.availability.quoteAvailable).lt(quoteTotals.buy) ||
-			new Big(state.availability.baseAvailable).lt(totals.sell)
+			readEntryBig(state.availability.quoteAvailable, "trading-availability-unavailable").lt(quoteTotals.buy) ||
+			readEntryBig(state.availability.baseAvailable, "trading-availability-unavailable").lt(totals.sell)
 		) {
-			throw new Error("Trading availability changed before submission");
+			failEntryExecution("trading-availability-changed");
 		}
 		return;
 	}
 	for (const side of ["buy", "sell"] as const) {
 		if (totals[side].eq(0)) continue;
 		const available = state.availability.maxBaseBySide[side];
-		if (available === undefined || new Big(available).lt(totals[side])) {
-			throw new Error("Trading availability changed before submission");
+		if (available === undefined || readEntryBig(available, "trading-availability-unavailable").lt(totals[side])) {
+			failEntryExecution("trading-availability-changed");
 		}
 	}
 }
@@ -190,14 +250,14 @@ export function assertEntryOrderExecutionAllowed(
 	state: EntryOrderExecutionState,
 	now = Date.now(),
 ): void {
-	if (!state.active) throw new Error("Order entry is no longer active");
+	if (!state.active) failEntryExecution("inactive");
 	if (
 		typeof state.assetId !== "number" ||
 		!Number.isSafeInteger(state.assetId) ||
 		params.orders.length === 0 ||
 		params.orders.some((order) => order.a !== state.assetId)
 	) {
-		throw new Error("Order no longer matches the selected market");
+		failEntryExecution("market-context-mismatch");
 	}
 	const availabilityAge =
 		state.availabilityReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.availabilityReceivedAt;
@@ -208,7 +268,7 @@ export function assertEntryOrderExecutionAllowed(
 		availabilityAge < 0 ||
 		availabilityAge > state.availabilityMaxAgeMs
 	) {
-		throw new Error("Trading availability data is unavailable");
+		failEntryExecution("trading-availability-unavailable");
 	}
 	assertOrderSizesWithinCurrentAvailability(params, state);
 
@@ -221,7 +281,7 @@ export function assertEntryOrderExecutionAllowed(
 		(marketOrders.length > 0 || entryTrigger) &&
 		!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now)
 	) {
-		throw new Error("Live mark price is unavailable");
+		failEntryExecution("mark-price-unavailable");
 	}
 
 	for (const order of marketOrders) assertMarketCapStillSafe(order, state, now);
@@ -233,19 +293,19 @@ function assertTwapDetailsStillValid(params: TwapOrderParameters, state: EntryOr
 	const details = params.details;
 	if (!details || (details.t === null && details.s === null)) return;
 	if (!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now) || !state.markPx) {
-		throw new Error("Live mark price is unavailable");
+		failEntryExecution("mark-price-unavailable");
 	}
-	const mark = new Big(state.markPx);
+	const mark = readEntryBig(state.markPx, "mark-price-unavailable");
 	if (details.t !== null) {
-		const trigger = new Big(details.t.p);
+		const trigger = readEntryBig(details.t.p, "order-request-invalid");
 		if (!trigger.gt(0) || trigger.eq(mark) || trigger.gt(mark) !== details.t.a) {
-			throw new Error("Trigger price is no longer valid against the live mark price");
+			failEntryExecution("trigger-price-invalidated");
 		}
 	}
 	if (details.s !== null) {
-		const stop = new Big(details.s);
+		const stop = readEntryBig(details.s, "order-request-invalid");
 		const stopValid = params.twap.b ? stop.gt(mark) : stop.lt(mark);
-		if (!stopValid) throw new Error("Stop price is no longer valid against the live mark price");
+		if (!stopValid) failEntryExecution("stop-price-invalidated");
 	}
 }
 
@@ -254,47 +314,48 @@ function assertTwapSizeWithinCurrentAvailability(
 	state: EntryOrderExecutionState,
 	markPx: Big,
 ): void {
-	const size = new Big(params.twap.s);
-	if (!size.gt(0)) throw new Error("Trading availability changed before submission");
+	const size = readEntryBig(params.twap.s, "order-request-invalid");
+	if (!size.gt(0)) failEntryExecution("order-request-invalid");
 
 	const side = params.twap.b ? "buy" : "sell";
 	if (state.availability.kind === "perp") {
 		const available = state.availability.maxBaseBySide[side];
-		if (available === undefined || new Big(available).lt(size)) {
-			throw new Error("Trading availability changed before submission");
+		if (available === undefined) failEntryExecution("trading-availability-changed");
+		if (readEntryBig(available, "trading-availability-unavailable").lt(size)) {
+			failEntryExecution("trading-availability-changed");
 		}
 		return;
 	}
 
 	if (!params.twap.b) {
-		if (new Big(state.availability.baseAvailable).lt(size)) {
-			throw new Error("Trading availability changed before submission");
+		if (readEntryBig(state.availability.baseAvailable, "trading-availability-unavailable").lt(size)) {
+			failEntryExecution("trading-availability-changed");
 		}
 		return;
 	}
 
-	if (new Big(state.availability.quoteAvailable).lt(size.times(markPx))) {
-		throw new Error("Trading availability changed before submission");
+	if (readEntryBig(state.availability.quoteAvailable, "trading-availability-unavailable").lt(size.times(markPx))) {
+		failEntryExecution("trading-availability-changed");
 	}
 }
 
 function getFreshTwapMark(state: EntryOrderExecutionState, now: number): Big {
 	if (!isLiveMarkPriceReady(state.markPriceStatus, state.markPx, state.markPriceReceivedAt, now) || !state.markPx) {
-		throw new Error("Live mark price is unavailable");
+		failEntryExecution("mark-price-unavailable");
 	}
-	const mark = new Big(state.markPx);
-	if (!mark.gt(0)) throw new Error("Live mark price is unavailable");
+	const mark = readEntryBig(state.markPx, "mark-price-unavailable");
+	if (!mark.gt(0)) failEntryExecution("mark-price-unavailable");
 	return mark;
 }
 
 function assertTwapProtocolLimits(params: TwapOrderParameters, markPx: Big): void {
 	const minutes = Number(params.twap.m);
 	if (!Number.isSafeInteger(minutes) || minutes < TWAP_MINUTES_MIN || minutes > TWAP_MINUTES_MAX) {
-		throw new Error(`TWAP duration must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX} minutes`);
+		failEntryExecution("twap-duration-invalid");
 	}
-	const size = new Big(params.twap.s);
+	const size = readEntryBig(params.twap.s, "order-request-invalid");
 	if (!size.gt(0) || size.times(markPx).lt(TWAP_MIN_NOTIONAL_USD)) {
-		throw new Error(`TWAP order value must be at least $${TWAP_MIN_NOTIONAL_USD}`);
+		failEntryExecution("twap-notional-too-small");
 	}
 }
 
@@ -304,7 +365,7 @@ export function assertEntryTwapExecutionAllowed(
 	now = Date.now(),
 ): void {
 	if (!state.active || typeof state.assetId !== "number" || Number(params.twap.a) !== state.assetId) {
-		throw new Error("TWAP no longer matches the selected market");
+		failEntryExecution("market-context-mismatch");
 	}
 	const availabilityAge =
 		state.availabilityReceivedAt === undefined ? Number.POSITIVE_INFINITY : now - state.availabilityReceivedAt;
@@ -315,7 +376,7 @@ export function assertEntryTwapExecutionAllowed(
 		availabilityAge < 0 ||
 		availabilityAge > state.availabilityMaxAgeMs
 	) {
-		throw new Error("Trading availability data is unavailable");
+		failEntryExecution("trading-availability-unavailable");
 	}
 	const markPx = getFreshTwapMark(state, now);
 	assertTwapProtocolLimits(params, markPx);

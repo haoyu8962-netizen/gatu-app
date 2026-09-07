@@ -1,5 +1,5 @@
 import { Select } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import type { LimitTif } from "@/config/trade";
 import { cn } from "@/lib/cn";
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
+	const { t } = useLingui();
 	const tif = useTif();
 	const { setTif } = useOrderEntryActions();
 
@@ -20,7 +21,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 	const selectedTifLabel = getTifOptionLabel(tif);
 
 	return (
-		<div className={cn("ml-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
+		<div className={cn("ms-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
 			<DefinitionTooltip topic="tif" only={availableTifOptions}>
 				<span
 					className={cn(

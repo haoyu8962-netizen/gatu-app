@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
@@ -9,6 +11,17 @@ import { PositionIsolatedMarginModal } from "@/components/trade/positions/positi
 import type { Position } from "@/lib/hyperliquid";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
 import { createI18nRoot } from "./harness/react";
+
+const AMBIGUOUS_MESSAGE = "The margin update may have been applied. Refresh position data before trying again.";
+const AMBIGUOUS_MESSAGE_AR = "ربما تم تطبيق تحديث الهامش. حدّث بيانات المركز قبل إعادة المحاولة.";
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const arabicMessages: Messages = {
+	[getMessageId(AMBIGUOUS_MESSAGE)]: AMBIGUOUS_MESSAGE_AR,
+};
 
 const testState = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
@@ -325,6 +338,7 @@ describe("PositionIsolatedMarginModal", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		container = document.createElement("div");
@@ -484,6 +498,39 @@ describe("PositionIsolatedMarginModal", () => {
 
 		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
 		expect(container.textContent).toContain("Another action for this market is already in progress.");
+	});
+
+	it("retranslates an existing ambiguous result when the locale changes", async () => {
+		testState.updateMargin.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+
+		expect(container.textContent).toContain(AMBIGUOUS_MESSAGE);
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(container.textContent).toContain(AMBIGUOUS_MESSAGE_AR);
+		expect(container.textContent).not.toContain(AMBIGUOUS_MESSAGE);
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(testState.updateMargin).toHaveBeenCalledOnce();
+	});
+
+	it("keeps an external SDK error message raw when the locale changes", async () => {
+		const sdkMessage = "SDK rejected the isolated margin update";
+		testState.updateMargin.mockRejectedValueOnce(new Error(sdkMessage));
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+		expect(container.textContent).toContain(sdkMessage);
+
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+
+		expect(container.textContent).toContain(sdkMessage);
+		expect(testState.updateMargin).toHaveBeenCalledOnce();
 	});
 
 	it("fails closed when the exchange returns a malformed success response", async () => {

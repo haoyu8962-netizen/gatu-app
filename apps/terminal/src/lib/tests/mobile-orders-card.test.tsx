@@ -287,7 +287,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(distanceLabel?.parentElement?.className).toContain("gap-0.5");
 
 		const market = container.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]');
-		expect(market?.className).toContain("text-left");
+		expect(market?.className).toContain("text-start");
 		expect(market?.className).toContain("after:h-11");
 		expect(market?.className).toContain("after:min-w-11");
 	});

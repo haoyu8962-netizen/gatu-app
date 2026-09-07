@@ -1,6 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, CameraIcon, QrCodeIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
@@ -13,6 +12,14 @@ import { classifyQrValue, shouldShowQrFeedback } from "@/lib/mobile-sync/qr-clas
 import { MOBILE_SYNC_ROUTE_PATH, parseMobileSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 type ScannerStatus = "idle" | "starting" | "scanning";
+type ScannerFeedback =
+	| "camera-access"
+	| "expired"
+	| "feature-unavailable"
+	| "invalid-link"
+	| "invalid-payload"
+	| "storage-unavailable"
+	| "wallet-connect";
 
 interface MobileAgentQrScannerProps {
 	onCancel: () => void;
@@ -37,13 +44,14 @@ export function MobileAgentQrScanner({
 	onSyncReady = openMobileSyncRoute,
 	startScanner = startBrowserQrScanner,
 }: MobileAgentQrScannerProps) {
+	const { t } = useLingui();
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const controlsRef = useRef<{ stop: () => void } | null>(null);
 	const scanGenerationRef = useRef(0);
 	const didCompleteRef = useRef(false);
 	const lastFeedbackRef = useRef<{ atMs: number; message: string } | null>(null);
 	const [status, setStatus] = useState<ScannerStatus>("idle");
-	const [feedback, setFeedback] = useState<string | null>(null);
+	const [feedback, setFeedback] = useState<ScannerFeedback | null>(null);
 
 	const stopScanner = useCallback(() => {
 		scanGenerationRef.current++;
@@ -72,11 +80,11 @@ export function MobileAgentQrScanner({
 		};
 	}, [stopScanner]);
 
-	function showFeedback(message: string) {
+	function showFeedback(code: ScannerFeedback) {
 		const nowMs = Date.now();
-		if (!shouldShowQrFeedback(lastFeedbackRef.current, message, nowMs, QR_FEEDBACK_THROTTLE_MS)) return;
-		lastFeedbackRef.current = { atMs: nowMs, message };
-		setFeedback(message);
+		if (!shouldShowQrFeedback(lastFeedbackRef.current, code, nowMs, QR_FEEDBACK_THROTTLE_MS)) return;
+		lastFeedbackRef.current = { atMs: nowMs, message: code };
+		setFeedback(code);
 	}
 
 	async function handleStartScanner() {
@@ -84,7 +92,7 @@ export function MobileAgentQrScanner({
 		clearMobileSyncDraft();
 		if (!MOBILE_PAIRING_FEATURES.importFromQr) {
 			setStatus("idle");
-			setFeedback(t`Mobile QR import is temporarily unavailable.`);
+			setFeedback("feature-unavailable");
 			return;
 		}
 		didCompleteRef.current = false;
@@ -109,11 +117,11 @@ export function MobileAgentQrScanner({
 
 					const classification = classifyQrValue(value, window.location.origin);
 					if (classification.type === "walletconnect") {
-						showFeedback(t`This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead.`);
+						showFeedback("wallet-connect");
 						return;
 					}
 					if (classification.type !== "phoneAccessLink") {
-						showFeedback(t`This QR is not a valid desktop wallet link.`);
+						showFeedback("invalid-link");
 						return;
 					}
 
@@ -122,12 +130,12 @@ export function MobileAgentQrScanner({
 						if (isMobileSyncEnvelopeExpired(parsed.envelope)) {
 							parsed.keyBytes.fill(0);
 							clearMobileSyncDraft();
-							showFeedback(t`This desktop wallet QR expired. Create a new QR on desktop.`);
+							showFeedback("expired");
 							return;
 						}
 						if (!saveMobileSyncDraft(parsed.envelope, parsed.encodedKey)) {
 							parsed.keyBytes.fill(0);
-							showFeedback(t`This device could not securely hold the QR. Check browser storage and retry.`);
+							showFeedback("storage-unavailable");
 							return;
 						}
 						parsed.keyBytes.fill(0);
@@ -145,7 +153,7 @@ export function MobileAgentQrScanner({
 						onSyncReady();
 					} catch {
 						clearMobileSyncDraft();
-						showFeedback(t`This QR is invalid or incomplete. Create a new QR on desktop.`);
+						showFeedback("invalid-payload");
 					}
 				},
 			);
@@ -167,7 +175,7 @@ export function MobileAgentQrScanner({
 			if (generation !== scanGenerationRef.current) return;
 			stopScanner();
 			setStatus("idle");
-			setFeedback(t`Camera access failed. Allow camera access and try again, or scan the QR with your system camera.`);
+			setFeedback("camera-access");
 		}
 	}
 
@@ -177,6 +185,21 @@ export function MobileAgentQrScanner({
 	}
 
 	const cameraActive = status === "starting" || status === "scanning";
+	const feedbackMessage = feedback ? getFeedbackMessage(feedback) : null;
+
+	function getFeedbackMessage(code: ScannerFeedback): string {
+		if (code === "camera-access") {
+			return t`Camera access failed. Allow camera access and try again, or scan the QR with your system camera.`;
+		}
+		if (code === "expired") return t`This desktop wallet QR expired. Create a new QR on desktop.`;
+		if (code === "feature-unavailable") return t`Mobile QR import is temporarily unavailable.`;
+		if (code === "invalid-link") return t`This QR is not a valid desktop wallet link.`;
+		if (code === "invalid-payload") return t`This QR is invalid or incomplete. Create a new QR on desktop.`;
+		if (code === "storage-unavailable") {
+			return t`This device could not securely hold the QR. Check browser storage and retry.`;
+		}
+		return t`This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead.`;
+	}
 
 	return (
 		<div className="space-y-4">
@@ -206,13 +229,13 @@ export function MobileAgentQrScanner({
 				</div>
 			</div>
 
-			{feedback && (
+			{feedbackMessage && (
 				<div
 					role="alert"
 					className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
-					<p>{feedback}</p>
+					<p>{feedbackMessage}</p>
 				</div>
 			)}
 
@@ -248,7 +271,7 @@ export function MobileAgentQrScanner({
 					size="sm"
 					className="w-full"
 					onClick={handleCancel}
-					iconLeft={<ArrowLeftIcon className="size-4" aria-hidden />}
+					iconLeft={<ArrowLeftIcon className="size-4 rtl:rotate-180" aria-hidden />}
 				>
 					<Trans>Back</Trans>
 				</Button>

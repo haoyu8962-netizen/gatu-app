@@ -1,8 +1,7 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsDownUpIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -36,6 +35,11 @@ import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
+	formatOrderSubmissionFeedback,
+	getOrderSubmissionFeedback,
+	type OrderSubmissionFeedback,
+} from "@/lib/trade/order-submission-feedback";
+import {
 	type SwapMode,
 	useSwapModalActions,
 	useSwapModalFromToken,
@@ -48,6 +52,15 @@ import { TokenSelectorDropdown } from "./token-selector-dropdown";
 import { TradingActionButton } from "./trading-action-button";
 
 const DEFAULT_SWAP_SLIPPAGE_PERCENT = DEFAULT_SWAP_SLIPPAGE_BPS / 100;
+
+export type SpotSwapError =
+	| OrderSubmissionFeedback
+	| { kind: "blocked" }
+	| { kind: "no-liquidity" }
+	| { kind: "raw"; message: string }
+	| { kind: "reconciling" }
+	| { kind: "swap-failed" };
+
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
 	const initialFromToken = useSwapModalFromToken() ?? DEFAULT_QUOTE_TOKEN;
@@ -75,6 +88,7 @@ interface Props {
 }
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const { spotMarkets } = useMarketsInfo();
 	const {
@@ -88,14 +102,15 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	} = useDefaultDexBalances();
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const accountDataReady = accountModeReady && spotStateStatus === "success" && !isDataStale && !hasBalanceError;
-	const { builderConfig } = useHyperliquid();
+	const { builderConfig, clientKey, env, sessionMode } = useHyperliquid();
+	const executionSessionIdentity = `${env}:${clientKey.toLowerCase()}:${sessionMode}:${accountAbstraction ?? "unavailable"}`;
 	const { takerRate } = useFeeRates("spot");
 	const isStablecoinSwap = mode === "stablecoin";
 
 	const [fromToken, setFromToken] = useState(initialFromToken);
 	const [selectedToToken, setSelectedToToken] = useState(initialToToken ?? "");
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<SpotSwapError | null>(null);
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, SWAP_SUCCESS_DURATION_MS);
 	const getToTokens = useCallback(
 		(token: string) =>
@@ -204,6 +219,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		requiredInput,
 		expectedOrder,
 	});
+	const submissionSequenceRef = useRef(0);
+	const executionSessionIdentityRef = useRef<string | null>(null);
 	executionStateRef.current = {
 		active: true,
 		accountDataReady,
@@ -218,12 +235,18 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		requiredInput,
 		expectedOrder,
 	};
-	useEffect(() => {
+	useLayoutEffect(() => {
+		executionSessionIdentityRef.current = executionSessionIdentity;
 		executionStateRef.current.active = true;
+		submissionSequenceRef.current += 1;
 		return () => {
+			if (executionSessionIdentityRef.current === executionSessionIdentity) {
+				executionSessionIdentityRef.current = null;
+			}
 			executionStateRef.current.active = false;
+			submissionSequenceRef.current += 1;
 		};
-	}, []);
+	}, [executionSessionIdentity]);
 	const executionGuard = useCallback(
 		(params: ExchangeParams<"order">) => assertSpotSwapExecutionAllowed(params, executionStateRef.current),
 		[],
@@ -282,6 +305,13 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 	const handleSubmit = useCallback(async () => {
 		if (!accountDataReady || !spotMarket || !quote || !expectedOrder || isSubmitting) return;
+		const submissionSequence = ++submissionSequenceRef.current;
+		const submissionIdentity = executionSessionIdentityRef.current;
+		if (submissionIdentity !== executionSessionIdentity) return;
+		const isCurrentSubmission = () =>
+			executionStateRef.current.active &&
+			submissionSequenceRef.current === submissionSequence &&
+			executionSessionIdentityRef.current === submissionIdentity;
 
 		setError(null);
 
@@ -290,25 +320,45 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				{ orders: [expectedOrder], grouping: "na" },
 				{ riskContext: { marketKind: "spot" } },
 			);
+			if (!isCurrentSubmission()) return;
 			if (submission.state === "blocked") {
-				setError(t`Another order for this market is still being confirmed.`);
+				setError({ kind: "blocked" });
 				return;
 			}
 			if (submission.state === "reconciling") {
-				setError(t`Order submitted. Confirming exchange status; do not retry.`);
+				setError({ kind: "reconciling" });
 				return;
 			}
 			throwIfAnyResponseError(submission.result.response?.data?.statuses);
 
 			triggerAutoClose();
 		} catch (err) {
-			const rawMessage = err instanceof Error ? err.message : t`Swap failed`;
-			const message = rawMessage.includes("could not immediately match")
-				? t`No liquidity was available within the ${DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit.`
-				: rawMessage;
-			setError(message);
+			if (!isCurrentSubmission()) return;
+			if (!(err instanceof Error)) {
+				setError({ kind: "swap-failed" });
+				return;
+			}
+			const trackedOrderFeedback = getOrderSubmissionFeedback(err);
+			if (trackedOrderFeedback) {
+				setError(trackedOrderFeedback);
+				return;
+			}
+			setError(
+				err.message.includes("could not immediately match")
+					? { kind: "no-liquidity" }
+					: { kind: "raw", message: err.message },
+			);
 		}
-	}, [accountDataReady, spotMarket, quote, expectedOrder, isSubmitting, submitOrder, triggerAutoClose]);
+	}, [
+		accountDataReady,
+		executionSessionIdentity,
+		expectedOrder,
+		isSubmitting,
+		quote,
+		spotMarket,
+		submitOrder,
+		triggerAutoClose,
+	]);
 
 	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;
 	const noPairAvailable = fromToken && toToken && !spotMarket;
@@ -330,7 +380,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 	return (
 		<Modal open onOpenChange={handleOpenChange}>
-			<ModalPopup size={isStablecoinSwap ? "md" : "sm"}>
+			<ModalPopup size={isStablecoinSwap ? "md" : "sm"} closeLabel={t`Close`}>
 				<ModalHeader
 					divider={!isStablecoinSwap}
 					className={isStablecoinSwap ? "items-center px-14 py-5 text-center" : undefined}
@@ -551,12 +601,19 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 					{error && !showSuccess && (
 						<div className="flex items-center gap-2 p-2.5 bg-error-soft border border-stroke-error-strong/20 rounded-8 text-xs text-error">
 							<WarningIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{error}</span>
+							<div className="flex-1">
+								<SpotSwapErrorMessage error={error} />
+							</div>
 						</div>
 					)}
 
 					{showSuccess && (
-						<div className="flex flex-col items-center gap-1.5 p-3 bg-success-soft border border-stroke-success-strong/20 rounded-8 text-success">
+						/* biome-ignore lint/a11y/useSemanticElements: output cannot contain the block-formatted swap result. */
+						<div
+							role="status"
+							aria-live="polite"
+							className="flex flex-col items-center gap-1.5 rounded-8 border border-stroke-success-strong/20 bg-success-soft p-3 text-success"
+						>
 							<div className="flex items-center gap-2 text-xs">
 								<CheckIcon className="size-3.5" />
 								<Trans>Swap submitted</Trans>
@@ -582,6 +639,25 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 			</ModalPopup>
 		</Modal>
 	);
+}
+
+export function SpotSwapErrorMessage({ error }: { error: SpotSwapError }) {
+	const { t } = useLingui();
+	let message: ReactNode;
+	if (error.kind === "order-submission") {
+		message = formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
+	} else if (error.kind === "blocked") {
+		message = <Trans>Another order for this market is still being confirmed.</Trans>;
+	} else if (error.kind === "reconciling") {
+		message = <Trans>Order submitted. Confirming exchange status; do not retry.</Trans>;
+	} else if (error.kind === "no-liquidity") {
+		message = <Trans>No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit.</Trans>;
+	} else if (error.kind === "swap-failed") {
+		message = <Trans>Swap failed</Trans>;
+	} else {
+		message = error.message;
+	}
+	return <span role="alert">{message}</span>;
 }
 
 interface TokenPanelProps {

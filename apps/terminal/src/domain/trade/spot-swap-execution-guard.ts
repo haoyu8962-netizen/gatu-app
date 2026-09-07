@@ -4,6 +4,26 @@ import Big from "big.js";
 export const SWAP_ORDERBOOK_MAX_AGE_MS = 15_000;
 export const SWAP_BALANCE_MAX_AGE_MS = 60_000;
 
+export type SpotSwapExecutionErrorReason =
+	| "balance-changed"
+	| "balance-unavailable"
+	| "quote-changed"
+	| "swap-data-unavailable";
+
+const SPOT_SWAP_EXECUTION_ERROR_MESSAGES: Record<SpotSwapExecutionErrorReason, string> = {
+	"balance-changed": "Spot balance changed before submission",
+	"balance-unavailable": "Live swap balance is unavailable",
+	"quote-changed": "Swap quote changed before submission",
+	"swap-data-unavailable": "Live swap data is unavailable",
+};
+
+export class SpotSwapExecutionError extends Error {
+	constructor(readonly reason: SpotSwapExecutionErrorReason) {
+		super(SPOT_SWAP_EXECUTION_ERROR_MESSAGES[reason]);
+		this.name = "SpotSwapExecutionError";
+	}
+}
+
 export interface SpotSwapExecutionState {
 	active: boolean;
 	accountDataReady: boolean;
@@ -42,15 +62,15 @@ export function assertSpotSwapExecutionAllowed(
 		params.grouping !== "na" ||
 		params.orders.length !== 1
 	) {
-		throw new Error("Live swap data is unavailable");
+		throw new SpotSwapExecutionError("swap-data-unavailable");
 	}
 	try {
 		if (new Big(state.requiredInput).lte(0) || new Big(state.requiredInput).gt(new Big(state.currentBalance))) {
-			throw new Error("Spot balance changed before submission");
+			throw new SpotSwapExecutionError("balance-changed");
 		}
 	} catch (error) {
-		if (error instanceof Error && error.message === "Spot balance changed before submission") throw error;
-		throw new Error("Live swap balance is unavailable");
+		if (error instanceof SpotSwapExecutionError) throw error;
+		throw new SpotSwapExecutionError("balance-unavailable");
 	}
 
 	const [order] = params.orders;
@@ -65,6 +85,6 @@ export function assertSpotSwapExecutionAllowed(
 		!("limit" in order.t) ||
 		order.t.limit.tif !== "FrontendMarket"
 	) {
-		throw new Error("Swap quote changed before submission");
+		throw new SpotSwapExecutionError("quote-changed");
 	}
 }

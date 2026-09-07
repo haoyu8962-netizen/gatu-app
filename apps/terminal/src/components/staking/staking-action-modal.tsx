@@ -106,6 +106,7 @@ export function StakingActionModal({
 						<TextInput
 							label={t`Amount`}
 							inputMode="decimal"
+							dir="ltr"
 							autoComplete="off"
 							value={amount}
 							onChange={(event) => {
@@ -120,7 +121,7 @@ export function StakingActionModal({
 						/>
 						<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
 							<span>
-								<Trans>Available</Trans>: {formatStakingAmount(action.maxAmount)} HYPE
+								<Trans>Available</Trans>: <bdi dir="ltr">{formatStakingAmount(action.maxAmount)} HYPE</bdi>
 							</span>
 							<Button variant="ghost" intent="brand" size="xs" onClick={() => setAmount(action.maxAmount)}>
 								<Trans>Max</Trans>
@@ -131,14 +132,15 @@ export function StakingActionModal({
 				) : visibleStage === "review" ? (
 					<>
 						<div className="space-y-2 rounded-8 border border-stroke-weak bg-fill-weaker p-3 text-xs">
-							<ReviewRow label={t`Signing account`} value={shortenAddress(ownerAddress, 6, 6)} />
+							<ReviewRow label={t`Signing account`} value={shortenAddress(ownerAddress, 6, 6)} ltr />
 							{action.validator ? (
 								<ReviewRow
 									label={t`Validator`}
 									value={action.validatorName || shortenAddress(action.validator, 6, 6)}
+									ltr={!action.validatorName}
 								/>
 							) : null}
-							<ReviewRow label={t`Amount`} value={`${formatStakingAmount(submission?.amount ?? "0", 8)} HYPE`} />
+							<ReviewRow label={t`Amount`} value={`${formatStakingAmount(submission?.amount ?? "0", 8)} HYPE`} ltr />
 						</div>
 						<ActionRisk action={action} isTestnet={isTestnet} />
 						<Alert
@@ -258,7 +260,7 @@ function ActionStatus({
 						rel="noopener"
 						className="text-signal hover:text-signal-hover hover:underline"
 					>
-						{shortenAddress(match.hash, 6, 6)}
+						<bdi dir="ltr">{shortenAddress(match.hash, 6, 6)}</bdi>
 					</a>
 				</p>
 			</Alert>
@@ -302,19 +304,31 @@ function StakingOperationReference({ reference }: { reference: FundsActionRefere
 			<ReferenceRow label={<Trans>SDK method</Trans>} value={reference.method} mono />
 			<ReferenceRow label={<Trans>Target</Trans>} value={reference.target} mono />
 			<ReferenceRow label={<Trans>Direction</Trans>} value={<DirectionLabel direction={reference.direction} />} />
-			<ReferenceRow label={<Trans>Amount</Trans>} value={`${reference.displayAmount} ${reference.asset}`} />
+			<ReferenceRow label={<Trans>Amount</Trans>} value={`${reference.displayAmount} ${reference.asset}`} ltr />
 			<ReferenceRow label={<Trans>Atomic amount</Trans>} value={reference.atomicAmount} mono />
-			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt)} />
+			<ReferenceRow label={<Trans>Started</Trans>} value={formatDateTime(reference.startedAt)} ltr />
 			<ReferenceRow label={<Trans>Identity epoch</Trans>} value={reference.identityEpoch} mono />
 		</dl>
 	);
 }
 
-function ReferenceRow({ label, value, mono = false }: { label: ReactNode; value: ReactNode; mono?: boolean }) {
+function ReferenceRow({
+	label,
+	value,
+	mono = false,
+	ltr = false,
+}: {
+	label: ReactNode;
+	value: ReactNode;
+	mono?: boolean;
+	ltr?: boolean;
+}) {
 	return (
 		<div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 py-2">
 			<dt className="text-fg-muted">{label}</dt>
-			<dd className={mono ? "break-all text-right font-mono text-fg" : "text-right text-fg"}>{value}</dd>
+			<dd className={mono ? "break-all text-right font-mono text-fg" : "text-right text-fg"}>
+				{mono || ltr ? <bdi dir="ltr">{value}</bdi> : value}
+			</dd>
 		</div>
 	);
 }
@@ -481,11 +495,13 @@ function ActionRisk({ action, isTestnet }: { action: StakingActionRequest; isTes
 	);
 }
 
-function ReviewRow({ label, value }: { label: string; value: string }) {
+function ReviewRow({ label, value, ltr = false }: { label: string; value: string; ltr?: boolean }) {
 	return (
 		<div className="flex items-center justify-between gap-3">
 			<span className="text-fg-muted">{label}</span>
-			<span className="min-w-0 truncate font-semibold text-fg tabular-nums">{value}</span>
+			<span className="min-w-0 truncate font-semibold text-fg tabular-nums">
+				{ltr ? <bdi dir="ltr">{value}</bdi> : value}
+			</span>
 		</div>
 	);
 }

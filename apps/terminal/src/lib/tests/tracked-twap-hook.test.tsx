@@ -221,7 +221,10 @@ describe("useTrackedTwapOrder", () => {
 						coin: "BTC",
 						riskContext: CROSS_PERP_RISK_CONTEXT,
 					}),
-				).rejects.toThrow("Safe order coordination across tabs is unavailable in this browser.");
+				).rejects.toMatchObject({
+					name: "OrderSubmissionFeedbackCause",
+					feedback: { kind: "order-submission", code: "coordination-unavailable" },
+				});
 			});
 		} finally {
 			setItemSpy.mockRestore();
@@ -351,7 +354,10 @@ describe("useTrackedTwapOrder", () => {
 					coin: "BTC",
 					riskContext: { marketKind: "spot" },
 				}),
-			).rejects.toThrow("Order market context does not match the submitted asset.");
+			).rejects.toMatchObject({
+				name: "OrderSubmissionFeedbackCause",
+				feedback: { kind: "order-submission", code: "market-context-mismatch" },
+			});
 		});
 
 		expect(mocks.mutateAsync).not.toHaveBeenCalled();

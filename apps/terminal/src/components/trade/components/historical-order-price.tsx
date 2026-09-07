@@ -16,18 +16,18 @@ export function HistoricalOrderPrice({ align = "end", order }: Props) {
 	const display = getHistoricalOrderPriceDisplay(order);
 
 	if (display.kind === "limit") {
-		return <span>{formatUSD(display.price, { compact: false })}</span>;
+		return <bdi dir="ltr">{formatUSD(display.price, { compact: false })}</bdi>;
 	}
 
 	if (display.kind === "market") {
 		return (
 			<span className={cn("flex flex-col gap-0.5 leading-tight", align === "end" ? "items-end" : "items-start")}>
 				<span className="whitespace-nowrap text-fg">
-					<span className="mr-1 text-3xs font-normal text-fg-muted">{t`Execution`}</span>
+					<span className="me-1 text-3xs font-normal text-fg-muted">{t`Execution`}</span>
 					{t({ message: "Market", context: "Order type" })}
 				</span>
 				<span className="whitespace-nowrap text-3xs font-normal text-fg-muted">
-					{t`Protection price`} {formatUSD(display.protectionPrice, { compact: false })}
+					{t`Protection price`} <bdi dir="ltr">{formatUSD(display.protectionPrice, { compact: false })}</bdi>
 				</span>
 			</span>
 		);
@@ -42,12 +42,13 @@ export function HistoricalOrderPrice({ align = "end", order }: Props) {
 		return (
 			<span className={cn("flex flex-col gap-0.5 leading-tight", align === "end" ? "items-end" : "items-start")}>
 				<span className="whitespace-nowrap text-fg">
-					<span className="mr-1 text-3xs font-normal text-fg-muted">{t`Execution`}</span>
-					{execution}
+					<span className="me-1 text-3xs font-normal text-fg-muted">{t`Execution`}</span>
+					{display.execution.kind === "market" ? execution : <bdi dir="ltr">{execution}</bdi>}
 				</span>
 				{display.execution.kind === "market" ? (
 					<span className="whitespace-nowrap text-3xs font-normal text-fg-muted">
-						{t`Protection price`} {formatUSD(display.execution.protectionPrice, { compact: false })}
+						{t`Protection price`}{" "}
+						<bdi dir="ltr">{formatUSD(display.execution.protectionPrice, { compact: false })}</bdi>
 					</span>
 				) : null}
 			</span>
@@ -57,11 +58,11 @@ export function HistoricalOrderPrice({ align = "end", order }: Props) {
 	return (
 		<span className={cn("flex flex-col gap-0.5 leading-tight", align === "end" ? "items-end" : "items-start")}>
 			<span className="whitespace-nowrap text-fg">
-				<span className="mr-1 text-3xs font-normal text-fg-muted">{t`Trigger`}</span>
-				{formatUSD(display.triggerPrice, { compact: false })}
+				<span className="me-1 text-3xs font-normal text-fg-muted">{t`Trigger`}</span>
+				<bdi dir="ltr">{formatUSD(display.triggerPrice, { compact: false })}</bdi>
 			</span>
 			<span className="whitespace-nowrap text-3xs font-normal text-fg-muted">
-				{t`Execution`} {execution}
+				{t`Execution`} {display.execution.kind === "market" ? execution : <bdi dir="ltr">{execution}</bdi>}
 			</span>
 		</span>
 	);

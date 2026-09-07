@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type {
 	VaultAccountFactsState,
+	VaultActionsAvailability,
 	VaultDetail,
 	VaultListItem,
 	VaultOwnerViewState,
@@ -22,6 +23,10 @@ const LEADER_BETA = "0x0000000000000000000000000000000000000202" as const;
 const LEADER_GAMMA = "0x0000000000000000000000000000000000000203" as const;
 const FOLLOWER = "0x0000000000000000000000000000000000000301" as const;
 const FIXTURE_UPDATED_AT = Date.UTC(2026, 0, 15, 12, 0, 0);
+const AVAILABLE_ACTIONS = {
+	deposit: { available: true, reason: null },
+	withdraw: { available: true, reason: null },
+} satisfies VaultActionsAvailability;
 
 export function getVaultsFixtureFromLocation(): VaultsFixtureState | null {
 	return resolveVaultsFixture(typeof window === "undefined" ? "" : window.location.search, import.meta.env.DEV);
@@ -75,7 +80,9 @@ export function VaultDetailFixture() {
 				description: t`Placeholder Vault data for visual review.`,
 			})}
 			owner={createVaultOwner()}
+			actionAvailability={AVAILABLE_ACTIONS}
 			isTestnet={false}
+			onRequestAction={() => undefined}
 		/>
 	);
 }

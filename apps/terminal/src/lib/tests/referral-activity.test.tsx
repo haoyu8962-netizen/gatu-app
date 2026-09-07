@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +23,11 @@ vi.mock("@gatu/ui", () => ({
 		return <div>{children}</div>;
 	},
 	TabsContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	TabsList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	TabsList: ({ children, ...props }: HTMLAttributes<HTMLDivElement>) => (
+		<div role="tablist" {...props}>
+			{children}
+		</div>
+	),
 	TabsTrigger: ({ children, value }: { children: ReactNode; value: string }) => (
 		<button type="button" data-tab={value} onClick={() => tabsHarness.onValueChange?.(value)}>
 			{children}
@@ -72,6 +76,7 @@ describe("ReferralActivity", () => {
 		});
 
 		expect(onClaimHistoryRequested).not.toHaveBeenCalled();
+		expect(container.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("Referral activity views");
 		act(() => container.querySelector<HTMLButtonElement>('[data-tab="traders"]')?.click());
 		expect(onClaimHistoryRequested).not.toHaveBeenCalled();
 

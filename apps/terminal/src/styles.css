@@ -129,7 +129,6 @@
     --api-wallet-content-max: 85rem;
     --api-wallet-description-max: 48.75rem;
     --api-wallet-page-min-height: 43.75rem;
-    --api-wallet-page-radius: 0.875rem;
     --api-wallet-modal-title-font-size: 1.0625rem;
     --api-wallet-modal-title-line-height: 1.5rem;
     --api-wallet-form-columns: 21.25rem minmax(0, 1fr) 12.5rem 9.375rem;
@@ -137,10 +136,6 @@
     --api-wallet-table-head-height: 1.75rem;
     --api-wallet-modal-width: 26.25rem;
     --api-wallet-modal-viewport-gap: 1rem;
-    --api-wallet-modal-radius: 1rem;
-    --api-wallet-sheet-radius: 1.125rem;
-    --api-wallet-card-radius: 0.75rem;
-    --api-wallet-control-radius: 0.625rem;
     --api-wallet-control-height: 2.5rem;
     --api-wallet-mobile-control-height: 3rem;
     --api-wallet-state-icon-size: 2.75rem;
@@ -157,10 +152,10 @@
     --api-wallet-col-expiry: 20%;
     --api-wallet-col-action: 12%;
     --api-wallet-fg: var(--market-close-text-strong);
-    --api-wallet-muted: var(--market-close-text-muted);
-    --api-wallet-subtle: var(--market-close-text-subtle);
+    --api-wallet-muted: var(--text-weak);
+    --api-wallet-subtle: var(--text-weak);
     --api-wallet-stroke-card: var(--market-close-stroke-card);
-    --api-wallet-stroke-input: var(--market-close-stroke-input);
+    --api-wallet-stroke-input: var(--stroke-strong);
     --api-wallet-stroke-control: var(--market-close-stroke-control);
     --api-wallet-surface-card: var(--market-close-surface-card);
     --api-wallet-surface-hover: var(--market-close-surface-hover);
@@ -169,7 +164,7 @@
     --api-wallet-danger: var(--market-close-danger);
     --api-wallet-danger-on: var(--market-close-danger-text);
     --api-wallet-success: var(--market-close-success);
-    --api-wallet-warning: var(--market-close-warning);
+    --api-wallet-warning: var(--text-warning);
     --api-wallet-disabled: var(--text-disabled);
     --api-wallet-page-shadow: var(--shadow-raised);
     --api-wallet-modal-shadow: var(--shadow-overlay);
@@ -178,7 +173,6 @@
     --earn-frame-max: 90rem;
     --earn-content-max: 85rem;
     --earn-page-min-height: 35rem;
-    --earn-page-radius: 0.875rem;
     --earn-search-max: 21.25rem;
     --earn-rank-column: 4.375rem;
     --earn-trader-column: 15.625rem;
@@ -204,7 +198,8 @@
     --bg-sunken: #f5f6fa;
     --bg-alternate: #f5f6fa;
     --bg-grid-container: #f1f3f6;
-    --bg-portfolio-canvas: #f1f3f6;
+    --bg-dashboard-canvas: #f1f3f6;
+    --bg-portfolio-canvas: var(--bg-dashboard-canvas);
     --bg-brand: var(--action);
     --bg-inverse: #12131a;
 
@@ -302,7 +297,7 @@
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: var(--text-strong);
     --orderbook-spread-bg: var(--bg-alternate);
-    --market-neutral: #8A919A;
+    --market-neutral: #636b75;
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
@@ -310,8 +305,8 @@
 
     /* Trading toolbar and close confirmation — design handoff semantic colors. */
     --market-close-text-strong: #1a2330;
-    --market-close-text-muted: #6b7686;
-    --market-close-text-subtle: #98a2b0;
+    --market-close-text-muted: #596474;
+    --market-close-text-subtle: #626e7d;
     --market-close-stroke-card: #e3e8ee;
     --market-close-stroke-input: #d8dfe7;
     --market-close-stroke-control: #c6cfd9;
@@ -320,11 +315,11 @@
     --market-close-control-active: var(--action);
     --market-close-control-active-text: var(--on-action);
     --market-close-control-focus: var(--focus);
-    --market-close-danger: #d6453d;
+    --market-close-danger: #c73a3a;
     --market-close-danger-text: #ffffff;
     --market-close-danger-disabled: #efc3bf;
-    --market-close-success: #1f8a5a;
-    --market-close-warning: #d98e1f;
+    --market-close-success: #067a57;
+    --market-close-warning: #7f5c0e;
     --market-close-inline-edit-shadow: 0 4px 16px rgba(20, 30, 45, 0.16);
     --legal-acceptance-disabled-fill: #edf1f5;
     --legal-acceptance-pending-fill: #33505e;
@@ -335,8 +330,8 @@
 
     /* Trading panel surfaces and controls — mobile redesign semantic colors. */
     --trading-panel-text-strong: #1a2330;
-    --trading-panel-text-muted: #6b7686;
-    --trading-panel-text-subtle: #98a2b0;
+    --trading-panel-text-muted: #596474;
+    --trading-panel-text-subtle: #626e7d;
     --trading-panel-stroke-card: #e3e8ee;
     --trading-panel-stroke-input: #d8dfe7;
     --trading-panel-stroke-control: #c6cfd9;
@@ -346,9 +341,9 @@
     --trading-panel-control-active: var(--action);
     --trading-panel-control-active-text: var(--on-action);
     --trading-panel-control-focus: var(--focus);
-    --trading-panel-success: #1f8a5a;
-    --trading-panel-error: #d6453d;
-    --trading-panel-warning: #d98e1f;
+    --trading-panel-success: #067a57;
+    --trading-panel-error: #c73a3a;
+    --trading-panel-warning: #7f5c0e;
     --trading-panel-success-fill: #1f8a5a;
     --trading-panel-error-fill: #d6453d;
     --trading-panel-neutral-disabled-fill: #c6cfd9;
@@ -394,7 +389,8 @@
     --bg-sunken: #000000;
     --bg-alternate: #0f1a1f;
     --bg-grid-container: #1b2429;
-    --bg-portfolio-canvas: #04251f;
+    --bg-dashboard-canvas: #04251f;
+    --bg-portfolio-canvas: var(--bg-dashboard-canvas);
     --bg-brand: var(--action);
     --bg-inverse: #ffffff;
 
@@ -492,7 +488,7 @@
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: #d2dad7;
     --orderbook-spread-bg: #273035;
-    --market-neutral: #6B7280;
+    --market-neutral: #7d8592;
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
@@ -568,6 +564,7 @@
   --color-sunken: var(--bg-sunken);
   --color-alternate: var(--bg-alternate);
   --color-grid-container: var(--bg-grid-container);
+  --color-dashboard-canvas: var(--bg-dashboard-canvas);
   --color-portfolio-canvas: var(--bg-portfolio-canvas);
   --color-inverse-surface: var(--bg-inverse);
 
@@ -985,7 +982,7 @@
     }
 
     .trades-grid {
-      grid-template-columns: minmax(3.5rem, 1fr) minmax(0, 1fr) minmax(3.5rem, 1fr);
+      grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 1fr) minmax(4.5rem, 1fr);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Button, Pagination, SearchInput, Select } from "@gatu/ui";
+import { Button, Pagination, SearchInput, Select, Table } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, CrownIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -51,6 +51,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 	const mobilePageSummary = t`${currentPage} of ${totalPages}`;
 	const pageRows = selectedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 	const groups = getVisibleGroups(pageRows, filter, selection.status === "ready" && selection.classificationAvailable);
+	const ageReferenceTime = fetchedAt ?? Date.now();
 	const fetchedLabel =
 		fetchedAt === null
 			? null
@@ -184,7 +185,7 @@ export function VaultsList({ state, rows, account, isRefreshing = false, fetched
 				) : (
 					<div className="py-3">
 						{groups.map((group) => (
-							<VaultGroup key={group.id} group={group} period={period} account={account} now={Date.now()} />
+							<VaultGroup key={group.id} group={group} period={period} account={account} now={ageReferenceTime} />
 						))}
 						{totalPages > 1 ? (
 							<Pagination
@@ -219,45 +220,48 @@ function VaultGroup({
 	account: VaultAccountFactsState;
 	now: number;
 }) {
+	const { t } = useLingui();
 	return (
 		<section className="mt-3 first:mt-0" aria-labelledby={`vault-group-${group.id}`}>
 			<h2 id={`vault-group-${group.id}`} className="px-4 pb-2 text-xs font-bold text-fg min-[1001px]:px-5">
 				<GroupLabel group={group.id} />
 			</h2>
-			<div className="hidden overflow-x-auto min-[1001px]:block">
-				<table className="w-full min-w-4xl border-collapse text-left">
-					<thead>
-						<tr className="border-y border-stroke-weak text-2xs text-fg-muted">
-							<th className="px-5 py-2 font-semibold">
-								<Trans>Vault</Trans>
-							</th>
-							<th className="px-3 py-2 font-semibold">
-								<Trans>Leader</Trans>
-							</th>
-							<th className="px-3 py-2 text-right font-semibold">
-								<Trans>APR</Trans>
-							</th>
-							<th className="px-3 py-2 text-right font-semibold">
-								<Trans>TVL</Trans>
-							</th>
-							<th className="px-3 py-2 text-right font-semibold">
-								<Trans>Your equity</Trans>
-							</th>
-							<th className="px-3 py-2 text-right font-semibold">
-								<Trans>Performance</Trans>
-							</th>
-							<th className="px-5 py-2 text-right font-semibold">
-								<Trans>Age</Trans>
-							</th>
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-stroke-weak">
-						{group.rows.map((row) => (
-							<VaultDesktopRow key={row.vaultAddress} row={row} period={period} account={account} now={now} />
-						))}
-					</tbody>
-				</table>
-			</div>
+			<Table
+				scrollableRegionLabel={t`Vaults`}
+				containerClassName="hidden min-[1001px]:block"
+				className="min-w-4xl text-start"
+			>
+				<thead>
+					<tr className="border-y border-stroke-weak text-2xs text-fg-muted">
+						<th className="px-5 py-2 font-semibold">
+							<Trans>Vault</Trans>
+						</th>
+						<th className="px-3 py-2 font-semibold">
+							<Trans>Leader</Trans>
+						</th>
+						<th className="px-3 py-2 text-right font-semibold">
+							<Trans>APR</Trans>
+						</th>
+						<th className="px-3 py-2 text-right font-semibold">
+							<Trans>TVL</Trans>
+						</th>
+						<th className="px-3 py-2 text-right font-semibold">
+							<Trans>Your equity</Trans>
+						</th>
+						<th className="px-3 py-2 text-right font-semibold">
+							<Trans>Performance</Trans>
+						</th>
+						<th className="px-5 py-2 text-right font-semibold">
+							<Trans>Age</Trans>
+						</th>
+					</tr>
+				</thead>
+				<tbody className="divide-y divide-stroke-weak">
+					{group.rows.map((row) => (
+						<VaultDesktopRow key={row.vaultAddress} row={row} period={period} account={account} now={now} />
+					))}
+				</tbody>
+			</Table>
 			<div className="grid gap-2 px-4 min-[1001px]:hidden">
 				{group.rows.map((row) => (
 					<VaultMobileCard key={row.vaultAddress} row={row} period={period} account={account} now={now} />
@@ -287,17 +291,17 @@ function VaultDesktopRow({
 		volume: "0",
 	};
 	return (
-		<tr className="group hover:bg-fill-hover">
-			<td className="px-5 py-2.5">
+		<tr>
+			<td className="p-0">
 				<Link
 					to="/vaults/$vaultAddress"
 					params={{ vaultAddress: row.vaultAddress }}
-					className="flex min-w-0 items-center gap-2 focus-visible:outline-2 focus-visible:outline-stroke-focus"
+					className="flex min-w-0 items-center gap-2 px-5 py-2.5 hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-stroke-focus"
 				>
 					<VaultMark name={row.name} />
 					<div className="min-w-0">
 						<p className="max-w-72 truncate text-xs font-semibold text-fg">
-							{row.name || shortenAddress(row.vaultAddress)}
+							{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
 						</p>
 						<div className="mt-0.5 flex gap-1">
 							<VaultBadges row={row} leading={leading} />
@@ -305,14 +309,20 @@ function VaultDesktopRow({
 					</div>
 				</Link>
 			</td>
-			<td className="px-3 py-2.5 font-mono text-xs tabular-nums text-fg-muted">{shortenAddress(row.leader)}</td>
-			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
-				{formatVaultRatio(row.apr, 2, true)}
+			<td className="px-3 py-2.5 font-mono text-xs tabular-nums text-fg-muted">
+				<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>
 			</td>
-			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">{formatVaultCompactUsd(row.tvl)}</td>
-			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">{formatVaultUsd(deposit)}</td>
+			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
+				<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
+			</td>
+			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">
+				<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>
+			</td>
+			<td className="px-3 py-2.5 text-right text-xs tabular-nums text-fg">
+				<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>
+			</td>
 			<td className="w-28 px-3 py-2.5">
-				<VaultPerformanceChart snapshot={performance} kind="pnl" compact />
+				<VaultPerformanceChart snapshot={performance} kind="pnl" period={period} compact />
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg-muted">
 				{age === null ? "—" : <Trans>{age} days</Trans>}
@@ -350,25 +360,29 @@ function VaultMobileCard({
 			<div className="flex min-w-0 items-center gap-2">
 				<VaultMark name={row.name} />
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-sm font-bold text-fg">{row.name || shortenAddress(row.vaultAddress)}</p>
+					<p className="truncate text-sm font-bold text-fg">
+						{row.name || <bdi dir="ltr">{shortenAddress(row.vaultAddress)}</bdi>}
+					</p>
 					<div className="mt-0.5 flex flex-wrap gap-1">
 						<VaultBadges row={row} leading={leading} />
 					</div>
 				</div>
-				<p className="shrink-0 text-sm font-bold tabular-nums text-fg">{formatVaultRatio(row.apr, 2, true)}</p>
+				<p className="shrink-0 text-sm font-bold tabular-nums text-fg">
+					<bdi dir="ltr">{formatVaultRatio(row.apr, 2, true)}</bdi>
+				</p>
 			</div>
 			<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-				<MobileMetric label={<Trans>TVL</Trans>} value={formatVaultCompactUsd(row.tvl)} />
-				<MobileMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(deposit)} />
-				<MobileMetric label={<Trans>Leader</Trans>} value={shortenAddress(row.leader)} mono />
+				<MobileMetric label={<Trans>TVL</Trans>} value={<bdi dir="ltr">{formatVaultCompactUsd(row.tvl)}</bdi>} />
+				<MobileMetric label={<Trans>Your equity</Trans>} value={<bdi dir="ltr">{formatVaultUsd(deposit)}</bdi>} />
+				<MobileMetric label={<Trans>Leader</Trans>} value={<bdi dir="ltr">{shortenAddress(row.leader)}</bdi>} mono />
 				<MobileMetric
 					label={<Trans>Age</Trans>}
-					value={age === null ? "—" : `${age}`}
+					value={age === null ? "—" : <bdi dir="ltr">{age}</bdi>}
 					suffix={age === null ? undefined : <Trans>days</Trans>}
 				/>
 			</dl>
 			<div className="mt-2 text-signal">
-				<VaultPerformanceChart snapshot={snapshot} kind="pnl" compact />
+				<VaultPerformanceChart snapshot={snapshot} kind="pnl" period={period} compact />
 			</div>
 		</Link>
 	);
@@ -381,7 +395,7 @@ function MobileMetric({
 	mono = false,
 }: {
 	label: React.ReactNode;
-	value: string;
+	value: React.ReactNode;
 	suffix?: React.ReactNode;
 	mono?: boolean;
 }) {

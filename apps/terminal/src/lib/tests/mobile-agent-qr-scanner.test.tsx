@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
+import { i18n } from "@lingui/core";
 import { act, createElement, Fragment, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -78,6 +79,7 @@ describe("MobileAgentQrScanner", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		vi.stubGlobal("crypto", webcrypto);
 		Object.defineProperty(window, "crypto", { value: webcrypto, configurable: true });
 		vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
@@ -178,6 +180,42 @@ describe("MobileAgentQrScanner", () => {
 		expect(container.textContent).toContain("not a valid desktop wallet link");
 		expect(container.textContent).not.toContain("evil.example");
 		expect(container.textContent).not.toContain("secret");
+	});
+
+	it("retranslates visible scan feedback when the active locale changes", async () => {
+		const { MobileAgentQrScanner } = await import("@/components/trade/components/mobile-agent-qr-scanner");
+		act(() => {
+			root.render(
+				createElement(MobileAgentQrScanner, {
+					onCancel: vi.fn(),
+					startScanner: scannerState.startScanner,
+				}),
+			);
+		});
+		act(() => findButton(container, "Start camera")?.click());
+		await flushAsyncWork();
+
+		act(() => {
+			scannerState.callback?.("https://evil.example/not-a-wallet-link", { stop: scannerState.controlsStop });
+		});
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+			"This QR is not a valid desktop wallet link.",
+		);
+
+		const messageId = createHash("sha256")
+			.update("This QR is not a valid desktop wallet link.\x1f")
+			.digest("base64")
+			.slice(0, 6);
+		act(() => {
+			i18n.loadAndActivate({
+				locale: "ar",
+				messages: { [messageId]: "رمز QR هذا ليس رابطًا صالحًا لمحفظة سطح المكتب." },
+			});
+		});
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+			"رمز QR هذا ليس رابطًا صالحًا لمحفظة سطح المكتب.",
+		);
 	});
 
 	it("stops controls and camera tracks when the page becomes hidden", async () => {

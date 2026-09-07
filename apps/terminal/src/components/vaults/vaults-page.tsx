@@ -108,13 +108,11 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 				<VaultDetailView
 					detail={controller.detail}
 					owner={controller.owner}
+					actionAvailability={vaultAction.actionAvailability}
 					isTestnet={isTestnet}
 					isRefreshing={controller.isRefreshing}
 					onRetryOwner={controller.onRetry}
-					onRequestAction={
-						onRequestAction ??
-						(vaultAction.canRequestAction ? (action) => void vaultAction.requestAction(action) : undefined)
-					}
+					onRequestAction={onRequestAction ?? ((action) => void vaultAction.requestAction(action))}
 				/>
 			) : null}
 			{activeAction ? (
@@ -150,7 +148,7 @@ function VaultDetailLive({ vaultAddress, onRequestAction }: VaultDetailPageProps
 
 function VaultFixtureFrame({ children }: { children: ReactNode }) {
 	return (
-		<div className="min-h-dvh bg-grid-container font-sans text-fg min-[1001px]:pb-8">
+		<div className="min-h-dvh bg-dashboard-canvas font-sans text-fg min-[1001px]:pb-8">
 			<main className="mx-auto w-full max-w-[var(--earn-frame-wide-max)] py-4 min-[1001px]:px-10 min-[1001px]:py-6">
 				{children}
 			</main>
@@ -165,7 +163,7 @@ function VaultPageFrame({ children }: { children: ReactNode }) {
 		<>
 			<div
 				className={cn(
-					"min-h-dvh bg-grid-container font-sans text-fg",
+					"min-h-dvh bg-dashboard-canvas font-sans text-fg",
 					!isMobile && "pb-8",
 					!isMobile && (isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS),
 					isTestnet && "testnet-bg",

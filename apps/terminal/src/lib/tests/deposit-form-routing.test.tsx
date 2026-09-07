@@ -157,6 +157,126 @@ describe("DepositForm routing gate", () => {
 		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
 	});
 
+	it("announces a changed route even when the refreshed route itself is ready", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			routingPreflightError: "The deposit route changed. Review it before submitting again.",
+			usesFundingAddressFlow: false,
+		};
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const alerts = container.querySelectorAll('[role="alert"]');
+		expect(alerts).toHaveLength(1);
+		expect(alerts[0]?.textContent).toContain("The deposit route changed. Review it before submitting again.");
+	});
+
+	it("keeps the Bridge2 pause visible and refreshes a changed external route without submitting funds", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			cctpFee: "0.2",
+			fundingAddress: undefined,
+			usesFundingAddressFlow: false,
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+
+		const routingPreflightError = "The deposit route changed. Review it before submitting again.";
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, { ...props, depositRoute: "bridge", routingPreflightError }),
+				),
+			);
+		});
+
+		const alerts = container.querySelectorAll('[role="alert"]');
+		expect(alerts).toHaveLength(1);
+		expect(alerts[0]?.textContent).toContain(routingPreflightError);
+		expect(alerts[0]?.textContent).toContain("Legacy Bridge2 deposits are no longer accepted. Deposits are paused.");
+		expect(container.textContent).not.toContain("0.2 USDC in fees");
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retryButton).toBeDefined();
+		act(() => retryButton?.click());
+		expect(props.onRetryRouting).toHaveBeenCalledOnce();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain(routingPreflightError);
+		expect(container.textContent).not.toContain("Legacy Bridge2 deposits are no longer accepted.");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		expect(container.textContent).toContain("Up to 0.2 USDC in fees will be deducted from your deposit.");
+		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{
+			name: "unavailable routing",
+			routingStatus: "error" as const,
+			routingPreflightError: "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted.",
+		},
+		{
+			name: "a changed route that is now ready",
+			routingStatus: "ready" as const,
+			routingPreflightError: "The deposit route changed. Review it before submitting again.",
+		},
+	])("lets an embedded deposit recover from $name without resubmitting automatically", async (preflight) => {
+		const props = {
+			...createProps(preflight.routingStatus, "cctp"),
+			routingPreflightError: preflight.routingPreflightError,
+			requiresExplicitFundingDeposit: true,
+			validation: { valid: true, error: null },
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		const fundingAddress = container.querySelector('[data-testid="funding-address"]');
+		expect(fundingAddress?.getAttribute("data-address-state")).toBe("unavailable");
+		expect(fundingAddress?.hasAttribute("data-address")).toBe(false);
+		expect(fundingAddress?.textContent).toContain(preflight.routingPreflightError);
+		expect(
+			[...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Deposit 9 USDC")),
+		).toBeUndefined();
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retryButton).toBeDefined();
+		act(() => retryButton?.click());
+		expect(props.onRetryRouting).toHaveBeenCalledOnce();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, { ...props, routingStatus: "ready", routingPreflightError: null }),
+				),
+			);
+		});
+
+		expect(container.querySelector('[data-address-state="ready"]')?.getAttribute("data-address")).toBe(FUNDING_ADDRESS);
+		expect(container.textContent).not.toContain(preflight.routingPreflightError);
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		const submitButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Deposit 9 USDC"),
+		);
+		expect(submitButton?.disabled).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
+		act(() => submitButton?.click());
+		expect(props.onSubmit).toHaveBeenCalledOnce();
+	});
+
 	it("keeps the external wallet fee line stable until Circle provides a current quote", async () => {
 		const props = {
 			...createProps("ready", "cctp"),
@@ -201,6 +321,9 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.textContent).not.toContain("0.2 USDC in fees");
 		expect(container.textContent).not.toContain("Circle's latest quote");
+		expect(container.textContent).toContain("Legacy Bridge2 deposits are no longer accepted. Deposits are paused.");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
 	});
 
 	it("withholds a ready funding address when deposit capability is unavailable", async () => {

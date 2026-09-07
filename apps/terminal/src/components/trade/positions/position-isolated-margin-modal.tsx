@@ -8,7 +8,7 @@ import {
 	SegmentedControlItem,
 	SegmentedControls,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type {
 	TopUpIsolatedOnlyMarginParameters,
 	UpdateIsolatedMarginParameters,
@@ -40,6 +40,13 @@ import {
 	reserveOrderAssets,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import {
+	formatPositionSubmitFeedback,
+	localizedPositionSubmitFeedback,
+	type PositionSubmitFeedback,
+	positionSubmitFeedbackCause,
+	positionSubmitFeedbackFromCause,
+} from "@/lib/trade/position-submit-feedback";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
@@ -84,12 +91,13 @@ function isConfirmedDefaultExchangeResponse(response: unknown): boolean {
 }
 
 function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChange }: BodyProps) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const [mode, setMode] = useState<AdjustmentMode>("amount");
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
 	const [amountInput, setAmountInput] = useState("");
 	const [targetLeverageInput, setTargetLeverageInput] = useState("");
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<PositionSubmitFeedback | null>(null);
 	const [requiresRefresh, setRequiresRefresh] = useState(false);
 	const [isCoordinating, setIsCoordinating] = useState(false);
 	const coordinatingRef = useRef(false);
@@ -123,7 +131,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			current.walletOwner !== sessionIdentity.owner ||
 			current.env !== sessionIdentity.env
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw positionSubmitFeedbackCause("trading-data-changed");
 		}
 		const currentMarket = current.markets.getMarket(current.position.coin);
 		const currentMarketDex = currentMarket ? getPositionDex(currentMarket) : undefined;
@@ -137,70 +145,64 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			currentMarketDex !== current.position.dex ||
 			params.asset !== current.position.assetId
 		) {
-			throw new Error(t`The selected market changed. Reopen the margin dialog before adjusting margin.`);
+			throw positionSubmitFeedbackCause("isolated-margin-market-changed");
 		}
 
 		if (current.userPositions.isLoading || current.userPositions.hasError || current.userPositions.isStale) {
-			throw new Error(
-				t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
-			);
+			throw positionSubmitFeedbackCause("isolated-margin-position-unavailable");
 		}
 		const positionSnapshotAge =
 			current.userPositions.receivedAt === undefined
 				? Number.POSITIVE_INFINITY
 				: Date.now() - current.userPositions.receivedAt;
 		if (positionSnapshotAge < 0 || positionSnapshotAge > POSITION_SNAPSHOT_MAX_AGE_MS) {
-			throw new Error(
-				t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
-			);
+			throw positionSubmitFeedbackCause("isolated-margin-position-unavailable");
 		}
 
 		const currentPosition = current.userPositions.getPosition(current.position.coin, current.position.dex);
 		const currentSize = toBig(currentPosition?.szi);
 		if (!currentPosition || !currentSize || currentSize.eq(0)) {
-			throw new Error(t`This isolated position is no longer open.`);
+			throw positionSubmitFeedbackCause("isolated-position-closed");
 		}
 		if (currentPosition.leverage.type !== "isolated") {
-			throw new Error(t`This position is no longer using isolated margin.`);
+			throw positionSubmitFeedbackCause("isolated-position-not-isolated");
 		}
 
 		const currentIsLong = currentSize.gt(0);
 		if (currentIsLong !== current.position.isLong || ("isBuy" in params && params.isBuy !== currentIsLong)) {
-			throw new Error(t`This position changed sides. Reopen the margin dialog before adjusting margin.`);
+			throw positionSubmitFeedbackCause("isolated-margin-side-changed");
 		}
 
 		const marginConstraint = getPerpMarginConstraint(currentMarket);
 		if (action === "target" && marginConstraint === undefined) {
-			throw new Error(t`The selected market changed. Reopen the margin dialog before adjusting margin.`);
+			throw positionSubmitFeedbackCause("isolated-margin-market-changed");
 		}
 		if (action === "target") {
-			if (!("leverage" in params)) throw new Error(t`Enter a positive target leverage.`);
+			if (!("leverage" in params)) throw positionSubmitFeedbackCause("isolated-margin-target-positive");
 
 			const validation = validateIsolatedMarginTarget(
 				params.leverage,
 				currentPosition.positionValue,
 				currentPosition.marginUsed,
 			);
-			if (validation === "invalid-target") throw new Error(t`Enter a positive target leverage.`);
+			if (validation === "invalid-target") throw positionSubmitFeedbackCause("isolated-margin-target-positive");
 			if (validation === "current-leverage-unavailable") {
-				throw new Error(
-					t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
-				);
+				throw positionSubmitFeedbackCause("isolated-margin-position-unavailable");
 			}
 			if (validation === "not-below-current") {
-				throw new Error(t`Target leverage must be below the current effective leverage to add margin.`);
+				throw positionSubmitFeedbackCause("isolated-margin-target-not-below-current");
 			}
 		}
 		if ("ntli" in params) {
 			const marginDelta = toBig(params.ntli);
 			if (!marginDelta || marginDelta.eq(0)) {
-				throw new Error(t`Failed to update isolated margin`);
+				throw positionSubmitFeedbackCause("failed-update-isolated-margin");
 			}
 			if (
 				marginDelta.lt(0) &&
 				(!canRemoveIsolatedMargin(current.position.marginConstraint) || !canRemoveIsolatedMargin(marginConstraint))
 			) {
-				throw new Error(t`This strict isolated market does not allow margin to be removed from an open position.`);
+				throw positionSubmitFeedbackCause("isolated-margin-removal-disallowed");
 			}
 		}
 	}
@@ -266,6 +268,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const actionAllowed =
 		(mode !== "target" || supportsTargetLeverage) && (mode !== "amount" || direction !== "remove" || allowsRemoval);
 	const canSubmit = hasLivePosition && inputValid && actionAllowed && !requiresRefresh && !isSubmitting;
+	const submitErrorMessage = submitError
+		? formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor))
+		: null;
 
 	function handleModeChange(value: string) {
 		setMode(value as AdjustmentMode);
@@ -331,18 +336,19 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 				},
 			);
 			if (!lockResult.supported) {
-				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (!lockResult.acquired || lockResult.value.state === "blocked") {
-				throw new Error(t`Another action for this market is already in progress.`);
+				throw positionSubmitFeedbackCause("isolated-margin-blocked");
 			}
 			if (lockResult.value.state === "coordination-unavailable") {
-				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+				throw positionSubmitFeedbackCause("isolated-margin-coordination-unavailable");
 			}
 			if (lockResult.value.state === "ambiguous") {
-				const message = t`The margin update may have been applied. Refresh position data before trying again.`;
+				const feedback = localizedPositionSubmitFeedback("isolated-margin-ambiguous");
+				const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
 				setRequiresRefresh(true);
-				setSubmitError(message);
+				setSubmitError(feedback);
 				toast.error(message);
 				return;
 			}
@@ -352,8 +358,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			});
 			onOpenChange(false);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : t`Failed to update isolated margin`;
-			setSubmitError(message);
+			const feedback = positionSubmitFeedbackFromCause(error, "failed-update-isolated-margin");
+			const message = formatPositionSubmitFeedback(feedback, (descriptor) => t(descriptor));
+			setSubmitError(feedback);
 			toast.error(message);
 		} finally {
 			coordinatingRef.current = false;
@@ -546,9 +553,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 					</div>
 				) : null}
 
-				{submitError ? (
+				{submitErrorMessage ? (
 					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
-						{submitError}
+						{submitErrorMessage}
 					</div>
 				) : null}
 			</ModalContent>

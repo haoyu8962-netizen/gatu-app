@@ -1,4 +1,5 @@
 import { Modal, ModalDescription, ModalPopup, ModalTitle } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { Command as CommandPrimitive } from "cmdk";
 import type * as React from "react";
@@ -33,9 +34,16 @@ function CommandDialog({
 	showCloseButton?: boolean;
 	shouldFilter?: boolean;
 }) {
+	const { t } = useLingui();
+
 	return (
 		<Modal {...props}>
-			<ModalPopup className={cn("overflow-hidden p-0", className)} showClose={showCloseButton} size="md">
+			<ModalPopup
+				className={cn("overflow-hidden p-0", className)}
+				showClose={showCloseButton}
+				closeLabel={t`Close`}
+				size="md"
+			>
 				<div className="sr-only">
 					<ModalTitle>{title}</ModalTitle>
 					<ModalDescription>{description}</ModalDescription>
@@ -124,7 +132,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
 	return (
 		<span
 			data-slot="command-shortcut"
-			className={cn("text-fg-muted ml-auto text-xs tracking-widest", className)}
+			className={cn("ms-auto text-xs tracking-widest text-fg-muted", className)}
 			{...props}
 		/>
 	);

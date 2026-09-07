@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import type { MouseEvent } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
 	value: string;
@@ -13,6 +14,7 @@ interface Props {
 export function ApiWalletCopyButton({ value, appearance = "text", stopPropagation = false }: Props) {
 	const { t } = useLingui();
 	const { copied, copy } = useCopyToClipboard();
+	const isMobile = useIsMobile();
 
 	function handleClick(event: MouseEvent<HTMLButtonElement>) {
 		if (stopPropagation) event.stopPropagation();
@@ -45,7 +47,7 @@ export function ApiWalletCopyButton({ value, appearance = "text", stopPropagatio
 			variant="link"
 			intent={copied ? "neutral" : "brand"}
 			size="xxs"
-			className="shrink-0 p-0 active:scale-100"
+			className={isMobile ? "touch-target shrink-0 p-0 active:scale-100" : "shrink-0 p-0 active:scale-100"}
 			onClick={handleClick}
 		>
 			{copied ? <Trans>Copied</Trans> : <Trans>Copy</Trans>}

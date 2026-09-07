@@ -1,5 +1,4 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -100,7 +99,7 @@ function createProviderDescription(reference: MarketAssetReference | null): Reac
 
 export function MarketAssetInfo({ market }: Props) {
 	useNumberFormatRevision();
-	const { i18n } = useLingui();
+	const { i18n, t } = useLingui();
 	const isMobile = useIsMobile();
 	const [open, setOpen] = useState(false);
 	const reference = getMarketAssetReference(market);
@@ -303,6 +302,7 @@ export function MarketAssetInfo({ market }: Props) {
 				open={open}
 				onOpenChange={setOpen}
 				size="lg"
+				closeLabel={t`Close`}
 				presentation={isMobile ? "drawer" : "modal"}
 				handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-trading-panel-stroke-input"
 				overlayClassName="!bg-trading-panel-scrim backdrop-blur-[2px] duration-200"
@@ -399,7 +399,7 @@ export function MarketAssetInfo({ market }: Props) {
 										}
 										className="min-w-0 max-w-[65%] whitespace-normal text-right font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
 									>
-										{row.value}
+										<bdi dir="ltr">{row.value}</bdi>
 									</dd>
 								</div>
 							))}

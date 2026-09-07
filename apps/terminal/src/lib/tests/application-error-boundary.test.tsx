@@ -7,6 +7,8 @@ import {
 	ExchangeRequestInvalidatedError,
 	ExchangeRequestScheduler,
 } from "@gatu/hl-react/internal/exchange/request-scheduler";
+import { i18n } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +25,7 @@ describe("application error boundaries", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.append(container);
 		root = createRoot(container);
@@ -40,13 +43,18 @@ describe("application error boundaries", () => {
 	it("renders a safe recovery page when a provider child throws", () => {
 		act(() => {
 			root.render(
-				<ApplicationErrorBoundary>
-					<BrokenProvider />
-				</ApplicationErrorBoundary>,
+				<I18nProvider i18n={i18n}>
+					<ApplicationErrorBoundary>
+						<BrokenProvider />
+					</ApplicationErrorBoundary>
+				</I18nProvider>,
 			);
 		});
 
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Something went wrong");
+		expect(container.querySelectorAll("main")).toHaveLength(1);
+		expect(container.querySelector("main")?.getAttribute("role")).toBeNull();
+		expect(container.querySelector("main")?.querySelector('[role="alert"]')).not.toBeNull();
 		expect(container.textContent).not.toContain(FAILURE.message);
 		expect(fetch).toHaveBeenCalledTimes(1);
 	});
@@ -75,9 +83,11 @@ describe("application error boundaries", () => {
 
 		act(() => {
 			root.render(
-				<ApplicationErrorBoundary>
-					<BrokenProvider />
-				</ApplicationErrorBoundary>,
+				<I18nProvider i18n={i18n}>
+					<ApplicationErrorBoundary>
+						<BrokenProvider />
+					</ApplicationErrorBoundary>
+				</I18nProvider>,
 			);
 		});
 
@@ -99,7 +109,7 @@ describe("application error boundaries", () => {
 		const bodyStart = rootRouteSource.indexOf("<body>");
 		const boundaryInRoot = rootRouteSource.indexOf("<ApplicationErrorBoundary>");
 		expect(boundaryInRoot).toBeGreaterThanOrEqual(0);
-		expect(rootRouteSource).toContain("<ApplicationErrorBoundary>\n\t\t\t<ClientRuntimeGate>");
+		expect(rootRouteSource).toContain("<ApplicationErrorBoundary>\n\t\t\t<ClientRuntimeGate fallback={fallback}>");
 		expect(rootRouteSource).toContain("errorComponent: RouterErrorPage");
 		expect(bodyStart).toBeGreaterThan(boundaryInRoot);
 	});

@@ -1,9 +1,11 @@
+import { i18n } from "@lingui/core";
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { formatOrderReconciliationError, orderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
 import {
 	reconcileTwapOrderAssetReservation,
 	releaseActiveTwapOrderAssetReservation,
@@ -287,15 +289,15 @@ function completeUnconfirmedTwapReconciliation(submission: PendingTwapSubmission
 		intent: submission.intent,
 		pendingSubmissionId: submission.id,
 	});
-	const message = t`The exchange did not return a final TWAP status. Review active TWAP orders before retrying.`;
+	const error = orderReconciliationError("twap-status-unconfirmed");
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
 	if (submission.queueId && queueVisible) {
-		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error: message });
+		updateOrderQueueItem(submission.queueId, { status: "unconfirmed", error });
 		return;
 	}
 
-	toast.warning(message);
+	toast.warning(formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)));
 }
 
 function findMatchingCandidate(
@@ -353,18 +355,23 @@ async function coordinateTwapReconciliation(
 
 function completeTwapReconciliation(submission: PendingTwapSubmission, candidate: TwapCandidate): void {
 	const accepted = candidate.status !== "error";
-	const errorMessage = candidate.error ?? t`The exchange did not accept the TWAP order.`;
+	const error = candidate.error ?? orderReconciliationError("twap-order-rejected");
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
 	if (submission.queueId && queueVisible) {
 		if (accepted) {
 			updateOrderQueueItem(submission.queueId, { status: "success", outcome: "twapStarted" });
 		} else {
-			updateOrderQueueItem(submission.queueId, { status: "failed", error: errorMessage });
+			updateOrderQueueItem(submission.queueId, { status: "failed", error });
 		}
 		return;
 	}
 
 	if (accepted) toast.success(t`TWAP order confirmed by the exchange.`);
-	else toast.error(errorMessage);
+	else
+		toast.error(
+			typeof error === "string"
+				? error
+				: formatOrderReconciliationError(error.code, (descriptor) => i18n._(descriptor)),
+		);
 }

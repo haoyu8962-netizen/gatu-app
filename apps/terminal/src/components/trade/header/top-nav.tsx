@@ -98,8 +98,8 @@ export function TopNav({ mode = "default" }: Props) {
 					search={{ scope: "all" }}
 					aria-label="GATU"
 					className={cn(
-						"mr-6 flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-						hasWalletAccess ? "max-[1181px]:mr-7" : "max-[1181px]:mr-8",
+						"me-6 flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+						hasWalletAccess ? "max-[1181px]:me-7" : "max-[1181px]:me-8",
 					)}
 				>
 					<GatuLogo className={cn("h-[18px] w-auto shrink-0", hasWalletAccess && "max-[1181px]:hidden")} />
@@ -204,7 +204,7 @@ export function TopNav({ mode = "default" }: Props) {
 				</div>
 			</div>
 
-			<div className="ml-auto flex min-h-[34px] items-center gap-2">
+			<div className="ms-auto flex min-h-[34px] items-center gap-2">
 				{showsDepositEntry && (
 					<Button
 						key="deposit"

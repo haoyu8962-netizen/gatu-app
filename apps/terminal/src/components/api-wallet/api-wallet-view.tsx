@@ -112,9 +112,8 @@ export function ApiWalletView({
 		<section
 			data-api-wallet-state={pageState}
 			className={cn(
-				"mx-auto flex w-full max-w-[var(--api-wallet-content-max)] flex-col bg-surface font-market-close text-api-wallet-fg shadow-api-wallet-page",
-				!isMobile &&
-					"min-h-[var(--api-wallet-page-min-height)] overflow-hidden rounded-[var(--api-wallet-page-radius)]",
+				"mx-auto flex w-full max-w-[var(--api-wallet-content-max)] flex-col bg-surface text-api-wallet-fg shadow-api-wallet-page",
+				!isMobile && "min-h-[var(--api-wallet-page-min-height)] overflow-hidden rounded-32",
 			)}
 		>
 			<header className={cn("flex flex-wrap items-start justify-between gap-4 pt-4 pb-3", isMobile ? "px-4" : "px-5")}>
@@ -136,12 +135,12 @@ export function ApiWalletView({
 				</div>
 
 				{accountAddress ? (
-					<div className="flex items-center gap-2 rounded-[var(--api-wallet-control-radius)] border border-api-wallet-stroke-input px-3 py-2">
+					<div className="flex items-center gap-2 rounded-20 border border-api-wallet-stroke-input px-3 py-2">
 						<WalletIcon className="size-4 shrink-0 text-api-wallet-subtle" />
 						<div className="min-w-0">
 							<p className="text-3xs text-api-wallet-subtle">{accountLabel ?? <Trans>Hyperliquid account</Trans>}</p>
 							<p className="font-mono text-xs font-semibold tabular-nums text-api-wallet-fg">
-								{shortenAddress(accountAddress)}
+								<bdi dir="ltr">{shortenAddress(accountAddress)}</bdi>
 							</p>
 						</div>
 						<ApiWalletCopyButton value={accountAddress} appearance="icon" />
@@ -151,7 +150,7 @@ export function ApiWalletView({
 
 			<div
 				className={cn(
-					"mb-4 flex items-start gap-3 rounded-[var(--api-wallet-card-radius)] border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3",
+					"mb-4 flex items-start gap-3 rounded-24 border border-api-wallet-stroke-card bg-api-wallet-card px-3.5 py-3",
 					isMobile ? "mx-4" : "mx-5",
 				)}
 			>
@@ -188,10 +187,7 @@ export function ApiWalletView({
 			{pageState === "nonMaster" ? (
 				<div
 					role="alert"
-					className={cn(
-						"mb-3 flex items-start gap-3 rounded-[var(--api-wallet-card-radius)] bg-error-soft px-3.5 py-3",
-						isMobile ? "mx-4" : "mx-5",
-					)}
+					className={cn("mb-3 flex items-start gap-3 rounded-24 bg-error-soft px-3.5 py-3", isMobile ? "mx-4" : "mx-5")}
 				>
 					<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-error" weight="fill" />
 					<div>

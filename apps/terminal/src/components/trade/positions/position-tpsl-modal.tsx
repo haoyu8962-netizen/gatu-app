@@ -1,5 +1,5 @@
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -56,6 +56,12 @@ import {
 	reserveOrderAssets,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import {
+	formatOrderSubmissionCause,
+	formatOrderSubmissionFeedback,
+	getOrderSubmissionFeedback,
+	type OrderSubmissionFeedback,
+} from "@/lib/trade/order-submission-feedback";
 import {
 	calculateEstimatedPnlExact,
 	calculateRoeMagnitudeFromPriceExact,
@@ -123,6 +129,16 @@ interface PositionTpSlLiveExecutionContext {
 	openOrders: readonly OpenOrder[];
 }
 
+type PositionTpSlSubmitError =
+	| OrderSubmissionFeedback
+	| { kind: "blocked" }
+	| { kind: "coordination-unavailable" }
+	| { kind: "failed" }
+	| { kind: "market-context-mismatch" }
+	| { kind: "raw"; message: string }
+	| { kind: "reconciling" }
+	| { kind: "trading-data-changed" };
+
 type PositionTpSlCancelResolution =
 	| { status: "accepted"; errors: string[] }
 	| { status: "partial"; errors: string[] }
@@ -139,9 +155,20 @@ class PositionTpSlMutationResponseError extends Error {
 }
 
 class PositionTpSlFreshStateError extends Error {
-	constructor(message: string) {
-		super(message);
+	constructor() {
+		super("Trading data changed while this dialog was open. Close and reopen it before submitting.");
 		this.name = "PositionTpSlFreshStateError";
+	}
+}
+
+class PositionTpSlExecutionContextError extends Error {
+	constructor(readonly reason: "market-context-mismatch" | "trading-data-changed") {
+		super(
+			reason === "market-context-mismatch"
+				? "Order market context does not match the submitted asset."
+				: "Trading data changed while this dialog was open. Close and reopen it before submitting.",
+		);
+		this.name = "PositionTpSlExecutionContextError";
 	}
 }
 
@@ -226,6 +253,7 @@ function resolvePositionTpSlCancelResponse(
 }
 
 function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyProps) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env, info } = useHyperliquid();
 	const sessionIdentity = useRef<PositionTpSlSessionIdentity>({
@@ -461,6 +489,7 @@ function PositionTpSlForm({
 	liveDataMessage,
 	onOpenChange,
 }: FormProps) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
 	const liveSignedSize = toBig(position.szi);
@@ -495,12 +524,43 @@ function PositionTpSlForm({
 	const [returnUnit, setReturnUnit] = useState<"pnl" | "roe">("roe");
 	const [tpReturnDraft, setTpReturnDraft] = useState<string | null>(null);
 	const [slReturnDraft, setSlReturnDraft] = useState<string | null>(null);
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<PositionTpSlSubmitError | null>(null);
 	const [requiresRefresh, setRequiresRefresh] = useState(false);
 	const allowedTpSlSnapshotsRef = useRef<Array<TpSlOrderInfo | undefined>>([initialTpSlInfo]);
 	const expectedTpSlSnapshotRef = useRef<TpSlOrderInfo | undefined>(initialTpSlInfo);
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
+
+	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
+		if (error.kind === "order-submission") {
+			return formatOrderSubmissionFeedback(error, (descriptor) => t(descriptor));
+		}
+		if (error.kind === "blocked") return t`Another order for this market is still being confirmed.`;
+		if (error.kind === "coordination-unavailable") {
+			return t`Safe action coordination across tabs is unavailable in this browser.`;
+		}
+		if (error.kind === "reconciling") {
+			return t`Order submitted. Confirming exchange status; do not retry.`;
+		}
+		if (error.kind === "trading-data-changed") {
+			return t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
+		}
+		if (error.kind === "market-context-mismatch") {
+			return t`Order market context does not match the submitted asset.`;
+		}
+		if (error.kind === "failed") return t`Failed to update TP/SL orders`;
+		return error.message;
+	}
+
+	function toSubmitError(error: unknown, uncertain = false): PositionTpSlSubmitError {
+		if (uncertain) return { kind: "reconciling" };
+		if (error instanceof PositionTpSlFreshStateError) return { kind: "trading-data-changed" };
+		if (error instanceof PositionTpSlExecutionContextError) return { kind: error.reason };
+		const trackedOrderFeedback = getOrderSubmissionFeedback(error);
+		if (trackedOrderFeedback) return trackedOrderFeedback;
+		if (error instanceof Error && error.message) return { kind: "raw", message: error.message };
+		return { kind: "failed" };
+	}
 
 	function appendAllowedTpSlSnapshot(snapshot: TpSlOrderInfo | undefined): void {
 		expectedTpSlSnapshotRef.current = snapshot;
@@ -531,9 +591,7 @@ function PositionTpSlForm({
 			current.openOrdersIsStale ||
 			!current.hasOpenOrdersSnapshot
 		) {
-			throw new PositionTpSlFreshStateError(
-				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
-			);
+			throw new PositionTpSlFreshStateError();
 		}
 
 		const currentPosition = current.userPositions.getPosition(positionRef.coin, positionRef.dex);
@@ -547,7 +605,7 @@ function PositionTpSlForm({
 			currentSize.gt(0) !== positionRef.isLong ||
 			currentPosition.leverage.type !== positionRef.marginMode
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 		const currentMarket = current.markets.getMarket(positionRef.coin);
 		const currentDex = currentMarket?.kind === "builderPerp" ? currentMarket.dex : "";
@@ -558,13 +616,13 @@ function PositionTpSlForm({
 			currentMarket.szDecimals !== positionRef.szDecimals ||
 			currentDex !== positionRef.dex
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 		const liveTpSlInfo = buildTpSlOrdersByCoin(current.openOrders).get(positionRef.coin);
 		// The stream may lag behind a multi-request workflow, but it must match the initial
 		// snapshot or one of the exact successful prefixes recorded from exchange responses.
 		if (!allowedTpSlSnapshotsRef.current.some((allowed) => areTpSlOrderInfosEqual(allowed, liveTpSlInfo))) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 		return { position: currentPosition, size: currentSize.abs() };
 	}
@@ -597,16 +655,12 @@ function PositionTpSlForm({
 				return !orderSize || orderSize.lt(0) || (orderSize.gt(0) && orderSize.gt(freshSize.abs()));
 			})
 		) {
-			throw new PositionTpSlFreshStateError(
-				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
-			);
+			throw new PositionTpSlFreshStateError();
 		}
 
 		const freshTpSlInfo = buildTpSlOrdersByCoin(freshOrders).get(positionRef.coin);
 		if (!areTpSlOrderInfosEqual(expectedTpSlSnapshotRef.current, freshTpSlInfo)) {
-			throw new PositionTpSlFreshStateError(
-				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
-			);
+			throw new PositionTpSlFreshStateError();
 		}
 	}
 
@@ -614,7 +668,7 @@ function PositionTpSlForm({
 		const resolution = resolveOrderBatchResponse(response, expectedCount);
 		if (resolution?.status === "accepted") return;
 		const uncertain = resolution === null || resolution?.status === "partial";
-		const message = resolution?.errors.join("; ") || t`Order submitted. Confirming exchange status; do not retry.`;
+		const message = resolution?.errors.join("; ") ?? "";
 		throw new PositionTpSlMutationResponseError(message, uncertain);
 	}
 
@@ -622,7 +676,7 @@ function PositionTpSlForm({
 		const resolution = resolvePositionTpSlCancelResponse(response, expectedCount);
 		if (resolution?.status === "accepted") return;
 		const uncertain = resolution === null || resolution.status === "partial";
-		const message = resolution?.errors.join("; ") || t`Order submitted. Confirming exchange status; do not retry.`;
+		const message = resolution?.errors.join("; ") ?? "";
 		throw new PositionTpSlMutationResponseError(message, uncertain);
 	}
 
@@ -642,7 +696,7 @@ function PositionTpSlForm({
 				execution.markReceivedAt,
 			)
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 		const liveMarkPrice = toBig(execution.markPx);
 		const hasInvalidOrder = orders.some((order) => {
@@ -674,21 +728,21 @@ function PositionTpSlForm({
 			);
 		});
 		if (hasInvalidOrder) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 	}
 
 	function assertOrderExecution(params: ExchangeParams<"order">): void {
 		assertOrdersMatchPosition(params.orders);
 		if (params.grouping !== "positionTpsl") {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 	}
 
 	function assertCancelExecution(params: ExchangeParams<"cancel">): void {
 		assertLiveExecutionContext();
 		if (params.cancels.some((cancel) => cancel.a !== positionRef.assetId)) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlExecutionContextError("trading-data-changed");
 		}
 	}
 
@@ -977,7 +1031,7 @@ function PositionTpSlForm({
 					const workflowCancels = [...replacementCancels, ...updatePlan.cancels];
 					const workflowOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
 					if (!doesOrderBatchMatchRiskContext(workflowOrders, riskContext)) {
-						throw new Error(t`Order market context does not match the submitted asset.`);
+						throw new PositionTpSlExecutionContextError("market-context-mismatch");
 					}
 					await assertFreshWorkflowContext(workflowOrders);
 
@@ -991,10 +1045,7 @@ function PositionTpSlForm({
 						assertCompleteCancelResponse(result, activeExpectedCount);
 						completedMutation = true;
 						if (!recordCompletedCancels(workflowCancels)) {
-							throw new PositionTpSlMutationResponseError(
-								t`Order submitted. Confirming exchange status; do not retry.`,
-								true,
-							);
+							throw new PositionTpSlMutationResponseError("", true);
 						}
 					}
 					if (workflowOrders.length > 0) {
@@ -1011,10 +1062,7 @@ function PositionTpSlForm({
 						);
 						if (submission.state === "blocked") {
 							if (completedMutation) {
-								throw new PositionTpSlMutationResponseError(
-									t`Order submitted. Confirming exchange status; do not retry.`,
-									true,
-								);
+								throw new PositionTpSlMutationResponseError("", true);
 							}
 							return { state: "blocked" } as const;
 						}
@@ -1052,35 +1100,39 @@ function PositionTpSlForm({
 			});
 
 			if (!lockResult.supported) {
-				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+				const error = { kind: "coordination-unavailable" } as const;
+				setSubmitError(error);
+				toast.error(getSubmitErrorMessage(error));
+				return;
 			}
 			if (!lockResult.acquired || lockResult.value.state === "blocked") {
-				setSubmitError(t`Another order for this market is still being confirmed.`);
+				setSubmitError({ kind: "blocked" });
 				return;
 			}
 			if (lockResult.value.state === "coordination-unavailable") {
-				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+				const error = { kind: "coordination-unavailable" } as const;
+				setSubmitError(error);
+				toast.error(getSubmitErrorMessage(error));
+				return;
 			}
 			if (lockResult.value.state === "uncertain") {
-				setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+				setSubmitError({ kind: "reconciling" });
 				setRequiresRefresh(true);
 				return;
 			}
 			if (lockResult.value.state === "failed") {
-				const message = lockResult.value.uncertain
-					? t`Order submitted. Confirming exchange status; do not retry.`
-					: lockResult.value.error instanceof Error
-						? lockResult.value.error.message
-						: t`Failed to update TP/SL orders`;
-				setSubmitError(message);
+				const error = toSubmitError(lockResult.value.error, lockResult.value.uncertain);
+				const message = getSubmitErrorMessage(error);
+				setSubmitError(error);
 				if (lockResult.value.requiresRefresh) setRequiresRefresh(true);
 				toast.error(message);
 				return;
 			}
 			shouldClose = true;
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
-			setSubmitError(message);
+			const error = toSubmitError(err);
+			const message = getSubmitErrorMessage(error);
+			setSubmitError(error);
 			toast.error(message);
 		} finally {
 			workflowSubmittingRef.current = false;
@@ -1107,7 +1159,9 @@ function PositionTpSlForm({
 	} else if ((tpNeedsMark || slNeedsMark) && !markReady) {
 		guardMessage = t`Loading...`;
 	}
-	const visibleError = submitError ?? placeError?.message ?? cancelError?.message;
+	const visibleError = submitError
+		? getSubmitErrorMessage(submitError)
+		: (formatOrderSubmissionCause(placeError, (descriptor) => t(descriptor)) ?? cancelError?.message);
 	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
 	const unrealizedPnlDisplay =
 		quoteSymbol === DEFAULT_QUOTE_TOKEN
@@ -1121,7 +1175,7 @@ function PositionTpSlForm({
 			isMobile={isMobile}
 			dismissible={!isSubmitting}
 		>
-			{renderPositionHeader(positionRef.coin, isLong)}
+			<PositionHeader coin={positionRef.coin} isLong={isLong} />
 
 			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3 max-[1000px]:pb-0">
 				<div className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-3 space-y-1 text-xs">
@@ -1155,7 +1209,7 @@ function PositionTpSlForm({
 						value={
 							<>
 								{unrealizedPnlDisplay}
-								<span className="font-normal text-fg-muted ml-1">({formatPercent(roe, 1)})</span>
+								<span className="ms-1 font-normal text-fg-muted">({formatPercent(roe, 1)})</span>
 							</>
 						}
 						valueClassName={cn("font-semibold", getValueColorClass(unrealizedPnl))}
@@ -1377,9 +1431,10 @@ interface StatusProps {
 }
 
 function PositionTpSlStatus({ open, isMobile, position, message, loading = false, onClose }: StatusProps) {
+	const { t } = useLingui();
 	return (
 		<PositionRiskDialogShell open={open} onOpenChange={onClose} isMobile={isMobile} dismissible>
-			{renderPositionHeader(position.coin, position.isLong)}
+			<PositionHeader coin={position.coin} isLong={position.isLong} />
 			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3">
 				<div className="flex min-h-28 items-center justify-center gap-2 text-sm text-fg-muted">
 					{loading && <SpinnerGapIcon className="size-4 animate-spin" />}
@@ -1401,7 +1456,8 @@ function PositionTpSlStatus({ open, isMobile, position, message, loading = false
 	);
 }
 
-function renderPositionHeader(coin: string, isLong: boolean) {
+function PositionHeader({ coin, isLong }: { coin: string; isLong: boolean }) {
+	const { t } = useLingui();
 	return (
 		<ModalHeader className="max-[1000px]:gap-1 max-[1000px]:border-b-0 max-[1000px]:px-4 max-[1000px]:pt-7 max-[1000px]:pr-4 max-[1000px]:pb-0">
 			<ModalTitle>{t`Manage TP/SL`}</ModalTitle>

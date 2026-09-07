@@ -34,7 +34,12 @@ interface AccountModeOption {
 	description: string;
 }
 
+interface AccountModeSubmitError {
+	cause: unknown;
+}
+
 export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
+	const { t } = useLingui();
 	const [submissionLocked, setSubmissionLocked] = useState(false);
 	const actionPending = !!formProps.isUpdating || submissionLocked;
 
@@ -51,6 +56,7 @@ export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
 			<ModalPopup
 				size="sm"
 				showClose={!actionPending}
+				closeLabel={t`Close`}
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[min(90dvh,42rem)] font-market-close"
 			>
@@ -87,7 +93,7 @@ export function AccountModeForm({
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<AccountModeSubmitError | null>(null);
 	const applyInFlightRef = useRef(false);
 	const mountedRef = useRef(false);
 
@@ -138,6 +144,11 @@ export function AccountModeForm({
 			) : null}
 		</>
 	);
+	const submitErrorMessage = submitError
+		? submitError.cause instanceof Error && submitError.cause.message
+			? submitError.cause.message
+			: t`Failed to update account mode`
+		: null;
 
 	async function handleApply() {
 		if (applyInFlightRef.current) return;
@@ -159,9 +170,7 @@ export function AccountModeForm({
 		} catch (error) {
 			applyInFlightRef.current = false;
 			onSubmissionLockChange?.(false);
-			if (mountedRef.current) {
-				setSubmitError(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
-			}
+			if (mountedRef.current) setSubmitError({ cause: error });
 		}
 	}
 
@@ -184,7 +193,7 @@ export function AccountModeForm({
 								disabled={isOptionDisabled}
 								aria-pressed={isSelected}
 								className={cn(
-									"min-h-11 w-full rounded-12 border px-3.5 py-3 text-left transition-colors",
+									"min-h-11 w-full rounded-12 border px-3.5 py-3 text-start transition-colors",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 									isSelected
 										? "border-[1.5px] border-trading-panel-control bg-trading-panel-card text-trading-panel-fg"
@@ -207,7 +216,7 @@ export function AccountModeForm({
 									<span className="min-w-0 flex-1 text-2sm font-semibold">
 										{option.label}
 										{option.badge ? (
-											<span className="ml-1 text-2xs font-medium text-trading-panel-muted">({option.badge})</span>
+											<span className="ms-1 text-2xs font-medium text-trading-panel-muted">({option.badge})</span>
 										) : null}
 									</span>
 									{isCurrent ? (
@@ -236,7 +245,7 @@ export function AccountModeForm({
 					</p>
 				) : null}
 
-				{submitError ? <p className="text-xs text-error">{submitError}</p> : null}
+				{submitErrorMessage ? <p className="text-xs text-error">{submitErrorMessage}</p> : null}
 			</ModalContent>
 
 			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-3")}>

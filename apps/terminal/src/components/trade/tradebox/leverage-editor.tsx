@@ -1,6 +1,5 @@
 import { useDirection } from "@base-ui/react/direction-provider";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
@@ -50,6 +49,7 @@ export function LeverageEditor({
 	onInputValidityChange,
 	variant = "sheet",
 }: LeverageEditorProps) {
+	const { t } = useLingui();
 	const direction = useDirection();
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);
@@ -156,7 +156,7 @@ export function LeverageEditor({
 					className="h-9 min-w-0 flex-1 bg-transparent px-0 text-base font-semibold tabular-nums text-trading-panel-fg"
 					disabled={disabled}
 				/>
-				<span className="ml-2 shrink-0 text-xs text-trading-panel-muted">x</span>
+				<span className="ms-2 shrink-0 text-xs text-trading-panel-muted">x</span>
 			</div>
 			{riskValue > 10 && (
 				<p className="rounded-[10px] border border-stroke-error-weak bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">

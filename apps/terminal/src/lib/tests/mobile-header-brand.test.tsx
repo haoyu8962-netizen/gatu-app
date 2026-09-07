@@ -77,6 +77,7 @@ describe("MobileHeader brand link", () => {
 
 		expect(logoLink?.className).toContain("touch-target");
 		expect(logoLink?.className).toContain("focus-visible:outline-stroke-focus");
+		expect(logoLink?.className).toContain("max-[359px]:hidden");
 		expect(brandMark?.getAttribute("class")).toContain("size-[22px]");
 		expect(brandMark?.querySelector("path")?.getAttribute("stroke-width")).toBe("6.5");
 	});

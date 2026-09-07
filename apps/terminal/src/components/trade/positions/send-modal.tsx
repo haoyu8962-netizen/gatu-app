@@ -1,7 +1,8 @@
+import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -13,8 +14,11 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
-import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import {
+	AccountAbstractionExecutionError,
+	useAccountAbstractionPreExecutionGuard,
+} from "@/hooks/trade/use-account-abstraction-guard";
 import {
 	isSupportedAccountAbstraction,
 	isTokenSpotBalance,
@@ -23,13 +27,32 @@ import {
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
+import {
+	FundsActionFeedbackCause,
+	type FundsActionFeedbackCode,
+	formatFundsActionFeedback,
+	fundsActionFeedbackCause,
+} from "@/lib/trade/funds-action-feedback";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { formatTokenId } from "@/lib/trade/token-id";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type AccountType = "perp" | "spot";
+
+type SendError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
+
+interface SendSubmission {
+	identity: object;
+	sequence: number;
+	method: "sendAsset" | "spotSend";
+	amount: string;
+	destination: string;
+	token: string;
+	sourceDex: string | undefined;
+	destinationDex: string | undefined;
+}
 
 interface Props {
 	open: boolean;
@@ -63,11 +86,21 @@ interface BodyProps {
 }
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
+	const { t } = useLingui();
+	const submissionSequenceRef = useRef(0);
+	const submissionIdentityRef = useRef<object | null>(null);
+	const submissionRef = useRef<SendSubmission | null>(null);
+	const requestSubmissionsRef = useRef(new WeakMap<object, SendSubmission>());
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<SendError | null>(null);
+	const errorMessage = error
+		? error.kind === "local"
+			? formatFundsActionFeedback(error.code, (descriptor) => t(descriptor))
+			: formatExchangeActionError(error.cause, t`Send failed`)
+		: null;
 
 	const { getToken } = useSpotTokens();
 	const {
@@ -94,40 +127,109 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		tokenId: "",
 		source: "spot" as "spot" | "perp",
 	});
-	const { address, hasWalletAccess } = useWalletSession();
+	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
+	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const submissionIdentityKey = [
+		env,
+		clientKey.toLowerCase(),
+		exchangeSessionMode,
+		address?.toLowerCase() ?? "disconnected",
+		walletAddress?.toLowerCase() ?? "no-wallet",
+		walletSessionMode,
+		accountAbstraction,
+	].join(":");
+	useLayoutEffect(() => {
+		const identity = { exchangeLifecycle, key: submissionIdentityKey };
+		submissionIdentityRef.current = identity;
+		return () => {
+			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
+			if (submissionRef.current?.identity === identity) submissionRef.current = null;
+			submissionSequenceRef.current += 1;
+		};
+	}, [exchangeLifecycle, submissionIdentityKey]);
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
-	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
-		preExecutionGuard: async (params, signal) => {
-			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				const current = balanceExecutionRef.current;
-				if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				}
-				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
-			};
-			assertCurrentBalance();
+	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
+		try {
 			await assertAccountAbstraction(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof AccountAbstractionExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed" ? "account-mode-changed" : "account-mode-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+	function assertCurrentFundsAmount(amount: unknown, available: unknown, receivedAt: number | undefined) {
+		try {
+			assertFreshFundsAmount(amount, available, receivedAt);
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
+	function assertCurrentSendAssetBalance(params: ExchangeParams<"sendAsset">) {
+		if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
+		const current = balanceExecutionRef.current;
+		if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
+	}
+	function assertCurrentSpotSendBalance(params: ExchangeParams<"spotSend">) {
+		if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
+		const current = balanceExecutionRef.current;
+		if (current.source !== "spot" || params.token !== current.tokenId) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
+	}
+	function assertCurrentSendSubmission(
+		method: SendSubmission["method"],
+		params: ExchangeParams<"sendAsset"> | ExchangeParams<"spotSend">,
+	): void {
+		const submission = submissionRef.current;
+		const boundSubmission = requestSubmissionsRef.current.get(params);
+		if (
+			!submission ||
+			!exchangeLifecycle.active ||
+			submission.identity !== submissionIdentityRef.current ||
+			submission.sequence !== submissionSequenceRef.current ||
+			(boundSubmission && boundSubmission !== submission) ||
+			submission.method !== method ||
+			submission.amount !== params.amount ||
+			submission.destination !== params.destination ||
+			submission.token !== params.token ||
+			submission.sourceDex !== ("sourceDex" in params ? params.sourceDex : undefined) ||
+			submission.destinationDex !== ("destinationDex" in params ? params.destinationDex : undefined)
+		) {
+			throw new ExchangeRequestInvalidatedError();
+		}
+		requestSubmissionsRef.current.set(params, submission);
+	}
+	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
+		executionGuard: (params) => {
+			assertCurrentSendSubmission("sendAsset", params);
+			assertCurrentSendAssetBalance(params);
+		},
+		preExecutionGuard: async (params, signal) => {
+			assertCurrentSendAssetBalance(params);
+			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
-			assertCurrentBalance();
+			assertCurrentSendAssetBalance(params);
 		},
 	});
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend", {
+		executionGuard: (params) => {
+			assertCurrentSendSubmission("spotSend", params);
+			assertCurrentSpotSendBalance(params);
+		},
 		preExecutionGuard: async (params, signal) => {
-			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				const current = balanceExecutionRef.current;
-				if (current.source !== "spot" || params.token !== current.tokenId) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				}
-				assertFreshFundsAmount(params.amount, current.available, current.receivedAt);
-			};
-			assertCurrentBalance();
-			await assertAccountAbstraction(signal);
+			assertCurrentSpotSendBalance(params);
+			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
-			assertCurrentBalance();
+			assertCurrentSpotSendBalance(params);
 		},
 	});
 
@@ -197,6 +299,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	};
 
 	const isValidDestination = isAddress(destination);
+	const destinationError = destination && !isValidDestination ? t`Enter a valid Ethereum address.` : undefined;
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
 	const canSend =
 		accountModeReady &&
@@ -238,6 +341,24 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	async function handleSend() {
 		if (!canSend) return;
 
+		const submissionIdentity = submissionIdentityRef.current;
+		if (!submissionIdentity || submissionRef.current) return;
+		const submissionSequence = ++submissionSequenceRef.current;
+		const method = usesTradingAccount || activeAccountType === "perp" ? "sendAsset" : "spotSend";
+		const dex = usesTradingAccount ? "spot" : "";
+		const submission: SendSubmission = {
+			identity: submissionIdentity,
+			sequence: submissionSequence,
+			method,
+			amount,
+			destination,
+			token: tokenId,
+			sourceDex: method === "sendAsset" ? dex : undefined,
+			destinationDex: method === "sendAsset" ? dex : undefined,
+		};
+		submissionRef.current = submission;
+		const isCurrentSubmission = () =>
+			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		setError(null);
 		try {
 			if (usesTradingAccount) {
@@ -263,11 +384,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 					amount,
 				});
 			}
-			setDestination("");
-			setAmount("");
-			onOpenChange(false);
+			if (isCurrentSubmission()) {
+				setDestination("");
+				setAmount("");
+				onOpenChange(false);
+			}
 		} catch (err) {
-			setError(formatExchangeActionError(err, t`Send failed`));
+			if (!isCurrentSubmission()) return;
+			setError(
+				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
+			);
+		} finally {
+			if (submissionRef.current === submission) submissionRef.current = null;
 		}
 	}
 
@@ -318,16 +446,14 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						aria-label={t`Destination address`}
 						value={destination}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+						dir="auto"
+						autoCapitalize="none"
 						autoComplete="off"
 						spellCheck={false}
+						error={destinationError}
 						disabled={isPending || !accountModeReady || !accountDataReady}
 						mobileSafe
-						className={cn(
-							"max-[1000px]:min-h-11",
-							destination &&
-								!isValidDestination &&
-								"border-stroke-error-strong focus-visible:border-stroke-error-strong",
-						)}
+						className="max-[1000px]:min-h-11"
 					/>
 
 					<div className="flex gap-2">
@@ -335,6 +461,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							value={accountModeReady ? activeAccountType : ""}
 							onValueChange={handleAccountTypeChange}
 							options={accountTypeOptions}
+							triggerAriaLabel={t`Account`}
 							disabled={!accountModeReady || !accountDataReady || usesTradingAccount || isPending}
 							className="flex-1"
 						/>
@@ -343,6 +470,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							value={accountModeReady ? selectedToken : ""}
 							onValueChange={handleTokenChange}
 							options={tokenSelectOptions}
+							triggerAriaLabel={t`Asset`}
 							disabled={isPending || !accountModeReady || !accountDataReady}
 							className="flex-1"
 						/>
@@ -372,16 +500,19 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						)}
 					/>
 
-					{error && (
-						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
+					{errorMessage && (
+						<div
+							role="alert"
+							className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error"
+						>
 							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{error}</span>
+							<span className="flex-1">{errorMessage}</span>
 						</div>
 					)}
 
 					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
-						{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
-						<PaperPlaneTiltIcon className="size-3.5 mr-2" />
+						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
+						<PaperPlaneTiltIcon className="me-2 size-3.5" />
 						{isPending ? t`Sending...` : t`Send`}
 					</Button>
 				</div>

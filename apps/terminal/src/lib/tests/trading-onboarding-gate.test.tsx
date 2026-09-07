@@ -276,6 +276,26 @@ describe("TradingOnboardingGate", () => {
 		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
 	});
 
+	it("does not replace another modal while a pending empty-account deposit intent resolves", () => {
+		testState.balances.hasSpotStateSnapshot = false;
+		testState.balances.isLoading = true;
+		testState.activeModal = "establishConnection";
+		renderGate();
+		act(() => testState.connectionProps?.onConnected());
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+
+		testState.activeModal = "settings";
+		testState.balances.hasSpotStateSnapshot = true;
+		testState.balances.isLoading = false;
+		renderGate();
+		expect(testState.openDeposit).not.toHaveBeenCalled();
+
+		testState.activeModal = null;
+		renderGate();
+		expect(testState.openDeposit).toHaveBeenCalledOnce();
+		expect(testState.openDeposit).toHaveBeenCalledWith("deposit");
+	});
+
 	it("discards a pending deposit intent after the wallet identity changes", () => {
 		testState.balances.hasSpotStateSnapshot = false;
 		testState.balances.isLoading = true;

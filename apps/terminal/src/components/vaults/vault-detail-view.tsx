@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button, Table } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowSquareOutIcon, LockKeyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -9,9 +9,12 @@ import { getExplorerAddressUrl } from "@/lib/hyperliquid";
 import {
 	formatVaultCompactUsd,
 	formatVaultRatio,
+	formatVaultSignedUsd,
 	formatVaultUsd,
 	getLatestVaultHistoryValue,
 	getVaultValueTone,
+	type VaultActionsAvailability,
+	type VaultActionUnavailableReason,
 	type VaultDetail,
 	type VaultOwnerViewState,
 	type VaultPeriod,
@@ -23,6 +26,7 @@ export type VaultRequestedAction = "deposit" | "withdraw";
 export interface VaultDetailViewProps {
 	detail: VaultDetail;
 	owner: VaultOwnerViewState;
+	actionAvailability: VaultActionsAvailability;
 	isTestnet: boolean;
 	isRefreshing?: boolean;
 	onRetryOwner?: () => void;
@@ -32,6 +36,7 @@ export interface VaultDetailViewProps {
 export function VaultDetailView({
 	detail,
 	owner,
+	actionAvailability,
 	isTestnet,
 	isRefreshing = false,
 	onRetryOwner,
@@ -39,6 +44,9 @@ export function VaultDetailView({
 }: VaultDetailViewProps) {
 	const { t, i18n } = useLingui();
 	const riskTitleId = useId();
+	const depositReasonId = useId();
+	const withdrawReasonId = useId();
+	const sharedActionReasonId = useId();
 	const [period, setPeriod] = useState<VaultPeriod>("month");
 	const [chartKind, setChartKind] = useState<"accountValue" | "pnl">("accountValue");
 	const snapshot = detail.portfolio[period];
@@ -48,8 +56,35 @@ export function VaultDetailView({
 	const ownerEquity = owner.status === "ready" ? owner.equity : null;
 	const ownerPnl = owner.status === "ready" ? owner.allTimePnl : null;
 	const ownerPnlTone = getVaultValueTone(ownerPnl);
-	const canDeposit = Boolean(onRequestAction) && !detail.isClosed && detail.allowDeposits;
-	const canWithdraw = Boolean(onRequestAction) && owner.status === "ready" && owner.canWithdraw;
+
+	function getUnavailableReason(reason: VaultActionUnavailableReason): string {
+		if (reason === "geo-checking") return t`Checking regional availability. Vault actions are temporarily unavailable.`;
+		if (reason === "geo-restricted") return t`Vault actions are not available in your region.`;
+		if (reason === "geo-unavailable") {
+			return t`Unable to verify regional availability. Vault actions are temporarily unavailable.`;
+		}
+		if (reason === "detail-unavailable") return t`Verified Vault details are unavailable.`;
+		if (reason === "vault-closed") return t`This Vault is closed and no longer accepts deposits.`;
+		if (reason === "deposits-disabled") return t`This Vault is not accepting deposits.`;
+		if (reason === "owner-disconnected") return t`Connect the verified owner wallet to withdraw Vault equity.`;
+		if (reason === "owner-loading") return t`Verifying the owner Vault balance before enabling withdrawals.`;
+		if (reason === "owner-error") return t`Withdrawal remains unavailable until the owner balance is verified.`;
+		if (reason === "withdrawal-locked") return t`Withdrawal remains locked until the server-reported unlock time.`;
+		return t`No withdrawable Vault equity is available.`;
+	}
+
+	function getActionUnavailableReason(action: VaultRequestedAction): string | null {
+		if (isRefreshing) return t`Refreshing Vault data. Actions are temporarily unavailable.`;
+		const availability = actionAvailability[action];
+		if (!availability.available) return getUnavailableReason(availability.reason);
+		if (!onRequestAction) return t`Vault actions are temporarily unavailable.`;
+		return null;
+	}
+
+	const depositUnavailableReason = getActionUnavailableReason("deposit");
+	const withdrawUnavailableReason = getActionUnavailableReason("withdraw");
+	const actionsShareReason =
+		depositUnavailableReason !== null && depositUnavailableReason === withdrawUnavailableReason;
 
 	return (
 		<article
@@ -60,29 +95,63 @@ export function VaultDetailView({
 			<header className="flex flex-wrap items-start justify-between gap-4 border-b border-stroke-weak px-4 py-4 min-[1001px]:px-5">
 				<div className="min-w-0">
 					<Link to="/vaults" className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg">
-						<ArrowLeftIcon className="size-3.5" />
+						<ArrowLeftIcon className="size-3.5 rtl:rotate-180" />
 						<Trans>Vaults</Trans>
 					</Link>
 					<h1 className="mt-1 break-words text-xl font-bold text-fg min-[1001px]:text-2xl">{detail.name}</h1>
-					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">{detail.vaultAddress}</p>
+					<p className="mt-1 font-mono text-2xs tabular-nums text-fg-muted">
+						<bdi dir="ltr">{detail.vaultAddress}</bdi>
+					</p>
 				</div>
-				<div className="flex w-full gap-2 min-[1001px]:w-auto">
-					<Button
-						className="flex-1 min-[1001px]:flex-none"
-						disabled={!canDeposit || isRefreshing}
-						onClick={() => onRequestAction?.("deposit")}
-					>
-						<Trans>Deposit</Trans>
-					</Button>
-					<Button
-						className="flex-1 min-[1001px]:flex-none"
-						variant="outline"
-						intent="neutral"
-						disabled={!canWithdraw || isRefreshing}
-						onClick={() => onRequestAction?.("withdraw")}
-					>
-						<Trans>Withdraw</Trans>
-					</Button>
+				<div className="w-full min-[1001px]:w-auto min-[1001px]:max-w-sm">
+					<div className="flex gap-2">
+						<Button
+							className="flex-1 min-[1001px]:flex-none"
+							aria-describedby={
+								depositUnavailableReason ? (actionsShareReason ? sharedActionReasonId : depositReasonId) : undefined
+							}
+							disabled={depositUnavailableReason !== null}
+							onClick={() => onRequestAction?.("deposit")}
+						>
+							<Trans>Deposit</Trans>
+						</Button>
+						<Button
+							className="flex-1 min-[1001px]:flex-none"
+							variant="outline"
+							intent="neutral"
+							aria-describedby={
+								withdrawUnavailableReason ? (actionsShareReason ? sharedActionReasonId : withdrawReasonId) : undefined
+							}
+							disabled={withdrawUnavailableReason !== null}
+							onClick={() => onRequestAction?.("withdraw")}
+						>
+							<Trans>Withdraw</Trans>
+						</Button>
+					</div>
+					{actionsShareReason ? (
+						<p id={sharedActionReasonId} className="mt-1.5 text-2xs leading-4 text-fg-muted">
+							{depositUnavailableReason}
+						</p>
+					) : (
+						<div className="mt-1.5 space-y-1 text-2xs leading-4 text-fg-muted">
+							{depositUnavailableReason ? (
+								<p id={depositReasonId}>
+									<span className="font-semibold text-fg">
+										<Trans>Deposit</Trans>:
+									</span>{" "}
+									{depositUnavailableReason}
+								</p>
+							) : null}
+							{withdrawUnavailableReason ? (
+								<p id={withdrawReasonId}>
+									<span className="font-semibold text-fg">
+										<Trans>Withdraw</Trans>:
+									</span>{" "}
+									{withdrawUnavailableReason}
+								</p>
+							) : null}
+						</div>
+					)}
 				</div>
 			</header>
 
@@ -90,7 +159,11 @@ export function VaultDetailView({
 				<SummaryMetric label={<Trans>Vault value</Trans>} value={formatVaultCompactUsd(totalValue)} />
 				<SummaryMetric label={<Trans>APR</Trans>} value={formatVaultRatio(detail.apr, 2, true)} />
 				<SummaryMetric label={<Trans>Your equity</Trans>} value={formatVaultUsd(ownerEquity)} />
-				<SummaryMetric label={<Trans>Your all-time PNL</Trans>} value={formatVaultUsd(ownerPnl)} tone={ownerPnlTone} />
+				<SummaryMetric
+					label={<Trans>Your all-time PNL</Trans>}
+					value={formatVaultSignedUsd(ownerPnl)}
+					tone={ownerPnlTone}
+				/>
 			</div>
 
 			{owner.status === "ready" && getVaultValueTone(owner.equity) !== "neutral" ? (
@@ -173,7 +246,7 @@ export function VaultDetailView({
 							))}
 						</fieldset>
 					</div>
-					<VaultPerformanceChart snapshot={snapshot} kind={chartKind} />
+					<VaultPerformanceChart snapshot={snapshot} kind={chartKind} period={period} />
 					<div className="flex items-center justify-between border-t border-stroke-weak px-3 py-2 text-xs">
 						<span className="text-fg-muted">
 							<Trans>Selected-period PNL</Trans>
@@ -181,10 +254,10 @@ export function VaultDetailView({
 						<span
 							className={cn(
 								"font-semibold tabular-nums",
-								pnlTone === "positive" ? "text-success" : pnlTone === "negative" ? "text-error" : "text-fg",
+								pnlTone === "positive" ? "text-market-up" : pnlTone === "negative" ? "text-market-down" : "text-fg",
 							)}
 						>
-							{formatVaultUsd(periodPnl)}
+							<bdi dir="ltr">{formatVaultSignedUsd(periodPnl)}</bdi>
 						</span>
 					</div>
 				</section>
@@ -199,23 +272,23 @@ export function VaultDetailView({
 						rel="noopener"
 						className="mt-3 inline-flex items-center gap-1 font-mono text-xs tabular-nums text-signal hover:text-signal-hover hover:underline"
 					>
-						{shortenAddress(detail.leader)}
+						<bdi dir="ltr">{shortenAddress(detail.leader)}</bdi>
 						<ArrowSquareOutIcon className="size-3" />
 					</a>
-					<p className="mt-3 text-xs leading-5 text-fg-muted">
+					<p className="mt-3 break-words text-xs leading-5 text-fg-muted">
 						{detail.description || <Trans>No description was provided by the Vault.</Trans>}
 					</p>
 					<dl className="mt-4 divide-y divide-stroke-weak border-t border-stroke-weak text-xs">
 						<AboutRow label={<Trans>Leader commission</Trans>} value={formatVaultRatio(detail.leaderCommission)} />
 						<AboutRow
 							label={<Trans>Deposits</Trans>}
-							value={detail.allowDeposits && !detail.isClosed ? t`Open` : t`Unavailable`}
+							value={detail.allowDeposits && !detail.isClosed ? t`Deposits open` : t`Unavailable`}
 						/>
 						<AboutRow
 							label={<Trans>Withdrawal policy</Trans>}
 							value={detail.alwaysCloseOnWithdraw ? t`Proportional position close` : t`As-needed position close`}
 						/>
-						<AboutRow label={<Trans>Returned depositors</Trans>} value={`${detail.followers.length}`} />
+						<AboutRow label={<Trans>Depositors shown</Trans>} value={`${detail.followers.length}`} />
 					</dl>
 				</aside>
 			</div>
@@ -230,7 +303,7 @@ export function VaultDetailView({
 						<h2 id={riskTitleId} className="text-xs font-bold">
 							<Trans>Vault risk</Trans>
 						</h2>
-						<ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-5">
+						<ul className="mt-1 list-disc space-y-1 ps-4 text-xs leading-5">
 							<li>
 								<Trans>You can lose all deposited principal. Vault returns are not guaranteed.</Trans>
 							</li>
@@ -259,15 +332,16 @@ export function VaultDetailView({
 }
 
 function VaultFollowers({ followers }: { followers: VaultDetail["followers"] }) {
+	const { t } = useLingui();
 	const titleId = useId();
 	return (
 		<section aria-labelledby={titleId}>
 			<div className="border-b border-stroke-weak px-4 pb-2 min-[1001px]:px-5">
 				<h2 id={titleId} className="text-sm font-bold text-fg">
-					<Trans>Returned depositors</Trans>
+					<Trans>Depositors</Trans>
 				</h2>
 				<p className="mt-0.5 text-2xs text-fg-muted">
-					<Trans>This interface may return at most a subset of all depositors.</Trans>
+					<Trans>Hyperliquid may return only a subset of depositors.</Trans>
 				</p>
 			</div>
 			{followers.length === 0 ? (
@@ -276,34 +350,36 @@ function VaultFollowers({ followers }: { followers: VaultDetail["followers"] }) 
 				</p>
 			) : (
 				<>
-					<div className="hidden overflow-x-auto min-[1001px]:block">
-						<table className="w-full min-w-4xl border-collapse">
-							<thead>
-								<tr className="border-b border-stroke-weak text-2xs text-fg-muted">
-									<th className="px-5 py-2 text-left font-semibold">
-										<Trans>Depositor</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>Equity</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>Current PNL</Trans>
-									</th>
-									<th className="px-3 py-2 text-right font-semibold">
-										<Trans>All-time PNL</Trans>
-									</th>
-									<th className="px-5 py-2 text-right font-semibold">
-										<Trans>Days following</Trans>
-									</th>
-								</tr>
-							</thead>
-							<tbody className="divide-y divide-stroke-weak">
-								{followers.map((follower, index) => (
-									<FollowerDesktopRow key={`${follower.user}:${index}`} follower={follower} />
-								))}
-							</tbody>
-						</table>
-					</div>
+					<Table
+						scrollableRegionLabel={t`Vault depositors`}
+						containerClassName="hidden min-[1001px]:block"
+						className="min-w-4xl"
+					>
+						<thead>
+							<tr className="border-b border-stroke-weak text-2xs text-fg-muted">
+								<th className="px-5 py-2 text-start font-semibold">
+									<Trans>Depositor</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>Equity</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>Current PNL</Trans>
+								</th>
+								<th className="px-3 py-2 text-right font-semibold">
+									<Trans>All-time PNL</Trans>
+								</th>
+								<th className="px-5 py-2 text-right font-semibold">
+									<Trans>Days following</Trans>
+								</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-stroke-weak">
+							{followers.map((follower, index) => (
+								<FollowerDesktopRow key={`${follower.user}:${index}`} follower={follower} />
+							))}
+						</tbody>
+					</Table>
 					<div className="divide-y divide-stroke-weak min-[1001px]:hidden">
 						{followers.map((follower, index) => (
 							<FollowerMobileRow key={`${follower.user}:${index}`} follower={follower} />
@@ -321,16 +397,16 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 	return (
 		<tr>
 			<td className="px-5 py-2.5 font-mono text-xs tabular-nums text-fg">
-				{follower.user === "Leader" ? <Trans>Leader</Trans> : shortenAddress(follower.user)}
+				{follower.user === "Leader" ? <Trans>Leader</Trans> : <bdi dir="ltr">{shortenAddress(follower.user)}</bdi>}
 			</td>
 			<td className="px-3 py-2.5 text-right text-xs font-semibold tabular-nums text-fg">
-				{formatVaultUsd(follower.vaultEquity)}
+				<bdi dir="ltr">{formatVaultUsd(follower.vaultEquity)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs font-semibold tabular-nums", toneClass(pnlTone))}>
-				{formatVaultUsd(follower.pnl)}
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.pnl)}</bdi>
 			</td>
 			<td className={cn("px-3 py-2.5 text-right text-xs tabular-nums", toneClass(allTone))}>
-				{formatVaultUsd(follower.allTimePnl)}
+				<bdi dir="ltr">{formatVaultSignedUsd(follower.allTimePnl)}</bdi>
 			</td>
 			<td className="px-5 py-2.5 text-right text-xs tabular-nums text-fg">{follower.daysFollowing}</td>
 		</tr>
@@ -338,22 +414,50 @@ function FollowerDesktopRow({ follower }: { follower: VaultDetail["followers"][n
 }
 
 function FollowerMobileRow({ follower }: { follower: VaultDetail["followers"][number] }) {
+	const currentPnlTone = getVaultValueTone(follower.pnl);
+	const allTimePnlTone = getVaultValueTone(follower.allTimePnl);
 	return (
-		<div className="flex items-center justify-between gap-4 px-4 py-3">
+		<div className="px-4 py-3">
 			<div className="min-w-0">
 				<p className="truncate font-mono text-xs tabular-nums text-fg">
-					{follower.user === "Leader" ? <Trans>Leader</Trans> : shortenAddress(follower.user)}
+					{follower.user === "Leader" ? <Trans>Leader</Trans> : <bdi dir="ltr">{shortenAddress(follower.user)}</bdi>}
 				</p>
 				<p className="mt-0.5 text-2xs text-fg-muted">
 					<Trans>Following {follower.daysFollowing} days</Trans>
 				</p>
 			</div>
-			<div className="text-right">
-				<p className="text-xs font-semibold tabular-nums text-fg">{formatVaultUsd(follower.vaultEquity)}</p>
-				<p className={cn("mt-0.5 text-2xs font-semibold tabular-nums", toneClass(getVaultValueTone(follower.pnl)))}>
-					{formatVaultUsd(follower.pnl)}
-				</p>
-			</div>
+			<dl className="mt-2 grid gap-1.5 text-2xs">
+				<FollowerMobileMetric label={<Trans>Equity</Trans>} value={formatVaultUsd(follower.vaultEquity)} />
+				<FollowerMobileMetric
+					label={<Trans>Current PNL</Trans>}
+					value={formatVaultSignedUsd(follower.pnl)}
+					tone={currentPnlTone}
+				/>
+				<FollowerMobileMetric
+					label={<Trans>All-time PNL</Trans>}
+					value={formatVaultSignedUsd(follower.allTimePnl)}
+					tone={allTimePnlTone}
+				/>
+			</dl>
+		</div>
+	);
+}
+
+function FollowerMobileMetric({
+	label,
+	value,
+	tone = "neutral",
+}: {
+	label: React.ReactNode;
+	value: string;
+	tone?: "positive" | "negative" | "neutral";
+}) {
+	return (
+		<div className="flex min-w-0 items-baseline justify-between gap-2">
+			<dt className="shrink-0 text-fg-muted">{label}</dt>
+			<dd className={cn("truncate text-right font-semibold tabular-nums", toneClass(tone))}>
+				<bdi dir="ltr">{value}</bdi>
+			</dd>
 		</div>
 	);
 }
@@ -371,7 +475,7 @@ function SummaryMetric({
 		<div className="rounded-10 border border-stroke-weak bg-fill-weak px-3 py-2.5 min-[1001px]:rounded-12 min-[1001px]:py-3">
 			<p className="text-2xs text-fg-muted min-[1001px]:text-xs">{label}</p>
 			<p className={cn("mt-1 truncate text-base font-bold tabular-nums min-[1001px]:text-xl", toneClass(tone))}>
-				{value}
+				<bdi dir="ltr">{value}</bdi>
 			</p>
 		</div>
 	);
@@ -418,7 +522,7 @@ function PeriodLabel({ period }: { period: VaultPeriod }) {
 }
 
 function toneClass(tone: "positive" | "negative" | "neutral"): string {
-	return tone === "positive" ? "text-success" : tone === "negative" ? "text-error" : "text-fg";
+	return tone === "positive" ? "text-market-up" : tone === "negative" ? "text-market-down" : "text-fg";
 }
 
 function formatTimestamp(timestamp: number, locale: string): string {

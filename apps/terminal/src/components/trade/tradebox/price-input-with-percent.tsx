@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { Icon } from "@phosphor-icons/react";
 import { useId } from "react";
 import { FieldLabel } from "@/components/ui/field-label";
@@ -56,6 +56,7 @@ export function PriceInputWithPercent({
 	linkedReturnInput,
 	formatPnlValue = (pnl) => formatUSD(pnl, { signDisplay: "exceptZero" }),
 }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const priceInputId = useId();
 	const errorId = `${priceInputId}-error`;

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
+import type { OrderReconciliationError } from "@/lib/trade/order-reconciliation-feedback";
+import type { OrderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
 
 export interface OrderQueueItem {
 	id: string;
@@ -12,7 +14,7 @@ export interface OrderQueueItem {
 	slPrice?: string;
 	status: "pending" | "confirming" | "unconfirmed" | "partial" | "success" | "canceled" | "failed";
 	outcome?: OrderOutcome;
-	error?: string;
+	error?: string | OrderReconciliationError | OrderSubmissionFeedback;
 	acceptedCount?: number;
 	totalCount?: number;
 	createdAt: number;

@@ -266,11 +266,11 @@ export function UserMenu({ variant = "default" }: Props) {
 								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold max-[1181px]:hidden",
 							)}
 						>
-							{displayLabel}
+							<bdi dir="ltr">{displayLabel}</bdi>
 						</span>
 						{isDesktopNav && (
 							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg max-[1181px]:block">
-								{compactDisplayLabel}
+								<bdi dir="ltr">{compactDisplayLabel}</bdi>
 							</span>
 						)}
 					</>

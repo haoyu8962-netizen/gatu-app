@@ -27,7 +27,7 @@ export function ApiWalletCredentialBox({
 	onSavedChange,
 }: Props) {
 	return (
-		<div className="w-full space-y-3 rounded-[var(--api-wallet-card-radius)] border border-api-wallet-stroke-card bg-api-wallet-card p-3.5">
+		<div className="w-full space-y-3 rounded-24 border border-api-wallet-stroke-card bg-api-wallet-card p-3.5">
 			<div className="flex items-center justify-between gap-3">
 				<div className="min-w-0">
 					<p className="text-2xs text-api-wallet-muted">
@@ -58,7 +58,7 @@ export function ApiWalletCredentialBox({
 						{privateKeyVisible ? <Trans>Hide</Trans> : <Trans>Reveal</Trans>}
 					</Button>
 				</div>
-				<div className="overflow-hidden rounded-[var(--api-wallet-control-radius)] border border-api-wallet-stroke-input bg-surface px-3 py-2.5">
+				<div className="overflow-hidden rounded-20 border border-api-wallet-stroke-input bg-surface px-3 py-2.5">
 					{privateKeyVisible && privateKey ? (
 						<code className="block break-all font-mono text-xs leading-5 text-api-wallet-fg">{privateKey}</code>
 					) : (
@@ -79,7 +79,7 @@ export function ApiWalletCredentialBox({
 
 			<div
 				role="alert"
-				className="flex items-start gap-2 rounded-[var(--api-wallet-control-radius)] bg-warning-soft p-2.5 text-xs leading-5 text-warning"
+				className="flex items-start gap-2 rounded-20 bg-warning-soft p-2.5 text-xs leading-5 text-warning"
 			>
 				<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
 				<p>
@@ -96,7 +96,7 @@ export function ApiWalletCredentialBox({
 					variant="outline"
 					intent="neutral"
 					size="sm"
-					className="rounded-[var(--api-wallet-control-radius)] active:scale-100"
+					className="rounded-20 active:scale-100"
 					disabled={!privateKey}
 					onClick={onDownload}
 					iconLeft={<DownloadSimpleIcon className="size-4" />}

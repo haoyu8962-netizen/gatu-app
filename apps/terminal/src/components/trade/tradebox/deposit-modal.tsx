@@ -1,8 +1,7 @@
 import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useQueryClient } from "@tanstack/react-query";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -21,7 +20,7 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
+import { assertFreshFundsAmountWithFee, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
 	getCanonicalSpotSystemAddress,
@@ -29,14 +28,22 @@ import {
 	PreTransferCheckExecutionError,
 } from "@/domain/trade/pre-transfer-check";
 import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
-import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import {
+	AccountAbstractionExecutionError,
+	useAccountAbstractionPreExecutionGuard,
+} from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
-import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
-import { executeWithFreshWithdrawalRoute, useFreshUsdcRouting, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
+import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import {
+	executeWithFreshWithdrawalRoute,
+	UsdcDepositRouteError,
+	useFreshUsdcRouting,
+	useUsdcRouting,
+} from "@/hooks/trade/use-usdc-routing";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -50,6 +57,12 @@ import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
+import {
+	FundsActionFeedbackCause,
+	formatFundsActionFeedback,
+	fundsActionFeedbackCause,
+} from "@/lib/trade/funds-action-feedback";
+import { toBig } from "@/lib/trade/numbers";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -93,12 +106,26 @@ interface CctpPreTransferReview {
 	};
 }
 
-function normalizeError(error: unknown): Error {
+interface WithdrawalPreflightAttempt {
+	controller: AbortController;
+	contextIdentity: string;
+}
+
+interface WithdrawalExecutionReview {
+	amount: string;
+	attempt: WithdrawalPreflightAttempt;
+	cctpPreTransfer: CctpPreTransferReview | null;
+	route: WithdrawalRoute;
+	routeFee: string;
+}
+
+function normalizeError(error: unknown, fallbackMessage: string): Error {
 	if (error instanceof Error) return error;
-	return new Error(typeof error === "string" ? error : t`Unknown error`);
+	return new Error(typeof error === "string" ? error : fallbackMessage);
 }
 
 export function DepositModal() {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
@@ -112,16 +139,36 @@ export function DepositModal() {
 	const [withdrawDestination, setWithdrawDestination] = useState("");
 	const [withdrawalAttempt, setWithdrawalAttempt] = useState<WithdrawalAttempt | null>(null);
 	const [withdrawalRouteChanged, setWithdrawalRouteChanged] = useState(false);
-	const [depositRoutingPreflightFailed, setDepositRoutingPreflightFailed] = useState(false);
-	const [depositCctpPreflightError, setDepositCctpPreflightError] = useState<string | null>(null);
+	const [depositRoutingPreflightErrorCode, setDepositRoutingPreflightErrorCode] = useState<
+		"changed" | "unavailable" | null
+	>(null);
+	const depositRoutingPreflightError = depositRoutingPreflightErrorCode
+		? formatFundsActionFeedback(
+				depositRoutingPreflightErrorCode === "changed" ? "deposit-route-changed" : "deposit-route-unavailable",
+				(descriptor) => t(descriptor),
+			)
+		: null;
+	const [depositCctpPreflightErrorCode, setDepositCctpPreflightErrorCode] = useState<
+		"capacity-unavailable" | "fee-changed" | "verification-unavailable" | null
+	>(null);
+	const depositCctpPreflightError =
+		depositCctpPreflightErrorCode === "verification-unavailable"
+			? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+			: depositCctpPreflightErrorCode === "capacity-unavailable"
+				? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+				: depositCctpPreflightErrorCode === "fee-changed"
+					? t`Circle fees changed. Review the updated fee, then submit again.`
+					: null;
 	const [withdrawalRoutingPreflightFailed, setWithdrawalRoutingPreflightFailed] = useState(false);
 	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
 	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const depositPreflightIdRef = useRef(0);
-	const cctpPreTransferReviewRef = useRef<CctpPreTransferReview | null>(null);
+	const withdrawalPreflightRef = useRef<WithdrawalPreflightAttempt | null>(null);
+	const withdrawalExecutionReviewRef = useRef<WithdrawalExecutionReview | null>(null);
+	const withdrawalRequestReviewsRef = useRef(new WeakMap<object, WithdrawalExecutionReview>());
 	const observedWithdrawalRouteRef = useRef<WithdrawalRoute | null>(null);
 	const queryClient = useQueryClient();
-	const { env, info } = useHyperliquid();
+	const { clientKey, env, info, sessionMode } = useHyperliquid();
 	const isTestnet = useIsTestnet();
 	const depositAvailability = useDepositAvailability();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
@@ -132,7 +179,7 @@ export function DepositModal() {
 		isError: usdcRoutingQuery.isError,
 		isFetching: usdcRoutingQuery.isFetching,
 	});
-	const depositRoutingStatus = depositRoutingPreflightFailed ? "error" : usdcRoutingStatus;
+	const depositRoutingStatus = depositRoutingPreflightErrorCode === "unavailable" ? "error" : usdcRoutingStatus;
 	const withdrawalRoutingStatus = withdrawalRoutingPreflightFailed ? "error" : usdcRoutingStatus;
 	const routedWithdrawalRoute = getWithdrawalRoute(usdcRoutingQuery.data);
 	const withdrawalRoute = routedWithdrawalRoute ?? "arbitrum-cctp";
@@ -300,7 +347,7 @@ export function DepositModal() {
 	const baseDepositValidation = validateDeposit(reviewedDepositAmount);
 	const embeddedWalletValidationError =
 		isEmbeddedDeposit && embeddedWalletError
-			? formatTransferError(normalizeError(embeddedWalletError))
+			? formatTransferError(normalizeError(embeddedWalletError, t`Unknown error`))
 			: isEmbeddedDeposit && (needsEmbeddedWallet || isCreatingEmbeddedWallet || !depositEmbeddedWalletAddress)
 				? t`Creating your wallet. Please wait...`
 				: null;
@@ -376,6 +423,8 @@ export function DepositModal() {
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
+	const fundsModalContextIdentity = `${env}:${clientKey.toLowerCase()}:${sessionMode}:${walletAddress?.toLowerCase() ?? "disconnected"}:${depositEmbeddedWalletAddress?.toLowerCase() ?? "none"}:${walletIntent}:${accountAbstraction ?? "unavailable"}:${open ? "open" : "closed"}:${visibleTab}:${selectedDepositRoute}:${withdrawalRoute}`;
+	const fundsModalContextIdentityRef = useRef<string | null>(null);
 	const usesFundsRedesign = visibleTab !== "bridge";
 	const withdrawalQueriesEnabled =
 		open &&
@@ -412,11 +461,30 @@ export function DepositModal() {
 		isTestnet,
 	});
 	const cctpWithdrawal = useExchange("sendToEvmWithData", {
+		executionGuard: (params) => assertWithdrawalExecution("arbitrum-cctp", params),
 		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-cctp", params.amount, signal),
 	});
 	const legacyWithdrawal = useExchange("withdraw3", {
+		executionGuard: (params) => assertWithdrawalExecution("arbitrum-legacy", params),
 		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", params.amount, signal),
 	});
+	useLayoutEffect(() => {
+		fundsModalContextIdentityRef.current = fundsModalContextIdentity;
+		depositPreflightIdRef.current += 1;
+		withdrawalPreflightRef.current?.controller.abort();
+		withdrawalPreflightRef.current = null;
+		withdrawalExecutionReviewRef.current = null;
+		setIsDepositPreflighting(false);
+		setIsWithdrawalPreflighting(false);
+		return () => {
+			if (fundsModalContextIdentityRef.current !== fundsModalContextIdentity) return;
+			fundsModalContextIdentityRef.current = null;
+			depositPreflightIdRef.current += 1;
+			withdrawalPreflightRef.current?.controller.abort();
+			withdrawalPreflightRef.current = null;
+			withdrawalExecutionReviewRef.current = null;
+		};
+	}, [fundsModalContextIdentity]);
 	const isWithdrawPending = isWithdrawalPreflighting || cctpWithdrawal.isPending || legacyWithdrawal.isPending;
 	const isWithdrawSuccess = cctpWithdrawal.isSuccess || legacyWithdrawal.isSuccess;
 	const withdrawError = cctpWithdrawal.error ?? legacyWithdrawal.error;
@@ -517,14 +585,39 @@ export function DepositModal() {
 		let freshRoute: WithdrawalRoute | null;
 		try {
 			freshRoute = getWithdrawalRoute(await fetchFreshUsdcRouting(signal));
-		} catch {
-			throw new Error(t`Unable to verify the current Hyperliquid withdrawal route.`);
+		} catch (error) {
+			if (signal?.aborted) throw signal.reason ?? error;
+			throw fundsActionFeedbackCause("withdrawal-route-unavailable");
 		}
-		if (!freshRoute) throw new Error(t`Unable to verify the current Hyperliquid withdrawal route.`);
+		if (!freshRoute) throw fundsActionFeedbackCause("withdrawal-route-unavailable");
 		if (freshRoute !== expectedRoute) {
-			throw new Error(
-				t`The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.`,
-			);
+			throw fundsActionFeedbackCause("withdrawal-route-changed");
+		}
+	}
+
+	async function assertFreshWithdrawalAccountMode(signal: AbortSignal) {
+		try {
+			await assertAccountAbstraction(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof AccountAbstractionExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed" ? "account-mode-changed" : "account-mode-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+
+	async function assertFreshWithdrawalGeo(signal: AbortSignal) {
+		try {
+			await fundsActionAvailability.assertFreshGeoAllowed(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof FundsActionGeoExecutionError) {
+				throw fundsActionFeedbackCause(error.reason === "restricted" ? "geo-restricted" : "geo-unavailable");
+			}
+			throw error;
 		}
 	}
 
@@ -547,31 +640,140 @@ export function DepositModal() {
 		}
 	}
 
-	async function assertFreshCctpPreTransferCheck(signal: AbortSignal) {
-		const review = cctpPreTransferReviewRef.current;
-		if (!review) throw new PreTransferCheckExecutionError("unavailable");
-		const current = await fetchFreshPreTransferCheck(review, signal);
-		assertPreTransferCheckMatchesReview(review.fee, current);
+	async function assertFreshCctpPreTransferCheck(review: CctpPreTransferReview, signal: AbortSignal) {
+		try {
+			const current = await fetchFreshPreTransferCheck(review, signal);
+			assertPreTransferCheckMatchesReview(review.fee, current);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof PreTransferCheckExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed"
+						? "withdrawal-activation-fee-changed"
+						: error.reason === "sanctioned"
+							? "withdrawal-sanctioned"
+							: "withdrawal-eligibility-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+
+	async function assertFreshCctpWithdrawalFee(reviewedFee: string, signal: AbortSignal) {
+		try {
+			signal.throwIfAborted();
+			const result = await cctpFeeQuery.refetch();
+			signal.throwIfAborted();
+			const reviewed = toBig(reviewedFee);
+			const current = result.data ? toBig(result.data) : null;
+			if (!reviewed || !current || result.isError) throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
+			if (!current.eq(reviewed)) throw fundsActionFeedbackCause("withdrawal-fee-changed");
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof FundsActionFeedbackCause) throw error;
+			throw fundsActionFeedbackCause("withdrawal-fee-unavailable");
+		}
+	}
+
+	function assertCurrentWithdrawalExecutionReview(
+		expectedRoute: WithdrawalRoute,
+		amount: unknown,
+	): WithdrawalExecutionReview {
+		const review = withdrawalExecutionReviewRef.current;
+		const submittedAmount = typeof amount === "string" ? toBig(amount) : null;
+		const reviewedAmount = review ? toBig(review.amount) : null;
+		if (
+			!review ||
+			review.attempt !== withdrawalPreflightRef.current ||
+			review.attempt.contextIdentity !== fundsModalContextIdentityRef.current ||
+			review.attempt.controller.signal.aborted ||
+			review.route !== expectedRoute ||
+			!submittedAmount ||
+			!reviewedAmount?.eq(submittedAmount)
+		) {
+			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
+		}
+		return review;
+	}
+
+	function assertCurrentWithdrawalBalance(review: WithdrawalExecutionReview): void {
+		if (!withdrawalBalanceReadyRef.current) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		if (review.route === "arbitrum-cctp" && !review.cctpPreTransfer) {
+			throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
+		}
+		const balance = withdrawalBalanceExecutionRef.current;
+		try {
+			assertFreshFundsAmountWithFee({
+				amount: review.amount,
+				fee: review.route === "arbitrum-cctp" ? review.cctpPreTransfer?.fee : "0",
+				available: balance.available,
+				receivedAt: balance.receivedAt,
+			});
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
+
+	function assertWithdrawalExecution(expectedRoute: WithdrawalRoute, params: { amount: unknown }): void {
+		const review = assertCurrentWithdrawalExecutionReview(expectedRoute, params.amount);
+		const requestReview = withdrawalRequestReviewsRef.current.get(params);
+		if (requestReview && requestReview !== review) {
+			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
+		}
+		assertCurrentWithdrawalBalance(review);
+		withdrawalRequestReviewsRef.current.set(params, review);
 	}
 
 	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, amount: unknown, signal: AbortSignal) {
-		const assertCurrentBalance = () => {
-			if (!withdrawalBalanceReadyRef.current) {
-				throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-			}
-			const balance = withdrawalBalanceExecutionRef.current;
-			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
-		};
-		assertCurrentBalance();
+		const review = assertCurrentWithdrawalExecutionReview(expectedRoute, amount);
+		assertCurrentWithdrawalBalance(review);
 		const guards = [
 			assertFreshWithdrawalRoute(expectedRoute, signal),
-			assertAccountAbstraction(signal),
-			fundsActionAvailability.assertFreshGeoAllowed(signal),
+			assertFreshWithdrawalAccountMode(signal),
+			assertFreshWithdrawalGeo(signal),
 		];
-		if (expectedRoute === "arbitrum-cctp") guards.push(assertFreshCctpPreTransferCheck(signal));
+		if (expectedRoute === "arbitrum-cctp") {
+			if (!review.cctpPreTransfer) throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
+			guards.push(
+				assertFreshCctpPreTransferCheck(review.cctpPreTransfer, signal),
+				assertFreshCctpWithdrawalFee(review.routeFee, signal),
+			);
+		}
 		await Promise.all(guards);
 		signal.throwIfAborted();
-		assertCurrentBalance();
+		if (assertCurrentWithdrawalExecutionReview(expectedRoute, amount) !== review) {
+			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
+		}
+		assertCurrentWithdrawalBalance(review);
+	}
+
+	function beginWithdrawalPreflight(): WithdrawalPreflightAttempt | null {
+		const contextIdentity = fundsModalContextIdentityRef.current;
+		if (contextIdentity !== fundsModalContextIdentity) return null;
+		withdrawalPreflightRef.current?.controller.abort();
+		const attempt = { contextIdentity, controller: new AbortController() };
+		withdrawalPreflightRef.current = attempt;
+		withdrawalExecutionReviewRef.current = null;
+		return attempt;
+	}
+
+	function assertWithdrawalPreflightCurrent(attempt: WithdrawalPreflightAttempt): void {
+		attempt.controller.signal.throwIfAborted();
+		if (
+			withdrawalPreflightRef.current !== attempt ||
+			fundsModalContextIdentityRef.current !== attempt.contextIdentity
+		) {
+			throw new Error("Withdrawal preflight is no longer active");
+		}
+	}
+
+	function invalidateWithdrawalPreflight(): void {
+		withdrawalPreflightRef.current?.controller.abort();
+		withdrawalPreflightRef.current = null;
+		withdrawalExecutionReviewRef.current = null;
 	}
 
 	function handleClose() {
@@ -590,6 +792,7 @@ export function DepositModal() {
 			}
 		}
 		depositPreflightIdRef.current += 1;
+		invalidateWithdrawalPreflight();
 		resetDeposit();
 		cctpWithdrawal.reset();
 		legacyWithdrawal.reset();
@@ -598,12 +801,11 @@ export function DepositModal() {
 		setWithdrawDestination("");
 		setWithdrawalAttempt(null);
 		setWithdrawalRouteChanged(false);
-		setDepositRoutingPreflightFailed(false);
-		setDepositCctpPreflightError(null);
+		setDepositRoutingPreflightErrorCode(null);
+		setDepositCctpPreflightErrorCode(null);
 		setWithdrawalRoutingPreflightFailed(false);
 		setIsDepositPreflighting(false);
 		setIsWithdrawalPreflighting(false);
-		cctpPreTransferReviewRef.current = null;
 		observedWithdrawalRouteRef.current = null;
 		close();
 	}
@@ -632,52 +834,61 @@ export function DepositModal() {
 			return;
 		}
 
-		setDepositCctpPreflightError(null);
+		setDepositCctpPreflightErrorCode(null);
+		setDepositRoutingPreflightErrorCode(null);
 		const preflightId = depositPreflightIdRef.current + 1;
+		const preflightContextIdentity = fundsModalContextIdentityRef.current;
+		if (preflightContextIdentity !== fundsModalContextIdentity) return;
 		depositPreflightIdRef.current = preflightId;
+		const isCurrentPreflight = () =>
+			depositPreflightIdRef.current === preflightId &&
+			fundsModalContextIdentityRef.current === preflightContextIdentity;
 		setIsDepositPreflighting(true);
 		try {
 			const freshRouting = await fetchFreshUsdcRouting();
-			if (depositPreflightIdRef.current !== preflightId) return;
+			if (!isCurrentPreflight()) return;
 			if (!freshRouting) {
-				setDepositRoutingPreflightFailed(true);
+				setDepositRoutingPreflightErrorCode("unavailable");
 				return;
 			}
-			setDepositRoutingPreflightFailed(false);
-			if (freshRouting.depositRoute !== selectedDepositRoute) return;
+			if (freshRouting.depositRoute !== selectedDepositRoute) {
+				setDepositRoutingPreflightErrorCode("changed");
+				return;
+			}
 			if (selectedDepositRoute === "cctp") {
 				const reviewedCalculation = displayedCctpDepositFeeQuery.calculation;
 				if (!reviewedCalculation || reviewedDepositAmountRaw === undefined) return;
 				const freshFeeResult = await displayedCctpDepositFeeQuery.refetch();
-				if (depositPreflightIdRef.current !== preflightId) return;
+				if (!isCurrentPreflight()) return;
 				if (!freshFeeResult.data || freshFeeResult.isError) {
-					setDepositCctpPreflightError(t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`);
+					setDepositCctpPreflightErrorCode("verification-unavailable");
 					return;
 				}
 				if (freshFeeResult.data.fastAllowanceRaw < reviewedDepositAmountRaw) {
-					setDepositCctpPreflightError(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+					setDepositCctpPreflightErrorCode("capacity-unavailable");
 					return;
 				}
 				const freshCalculation = calculateCctpDepositFee(reviewedDepositAmountRaw, freshFeeResult.data.feeQuote);
 				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
-					setDepositCctpPreflightError(t`Circle fees changed. Review the updated fee, then submit again.`);
+					setDepositCctpPreflightErrorCode("fee-changed");
 					return;
 				}
 			}
+			if (!isCurrentPreflight()) return;
 			await deposit(reviewedDepositAmount, {
 				expectedBalanceRaw: isEmbeddedDeposit ? reviewedDepositAmountRaw : undefined,
 				expectedCctpMaxFeeRaw: displayedCctpDepositFeeQuery.calculation?.maxFeeRaw,
 			});
 		} catch {
-			if (depositPreflightIdRef.current === preflightId) setDepositRoutingPreflightFailed(true);
+			if (isCurrentPreflight()) setDepositRoutingPreflightErrorCode("unavailable");
 			return;
 		} finally {
-			if (depositPreflightIdRef.current === preflightId) setIsDepositPreflighting(false);
+			if (isCurrentPreflight()) setIsDepositPreflighting(false);
 		}
 	}
 
 	function handleDepositAmountChange(value: string) {
-		setDepositCctpPreflightError(null);
+		setDepositCctpPreflightErrorCode(null);
 		setDepositAmount(value);
 	}
 
@@ -686,10 +897,14 @@ export function DepositModal() {
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
 		if (!isAddress(destination)) return;
 
+		const attempt = beginWithdrawalPreflight();
+		if (!attempt) return;
+		const reviewedAmount = withdrawAmount;
 		setIsWithdrawalPreflighting(true);
 		try {
 			const expectedWithdrawalRoute = routedWithdrawalRoute;
 			if (!expectedWithdrawalRoute) return;
+			assertWithdrawalPreflightCurrent(attempt);
 
 			let cctpPreTransferReview: CctpPreTransferReview | null = null;
 			if (expectedWithdrawalRoute === "arbitrum-cctp") {
@@ -697,6 +912,7 @@ export function DepositModal() {
 				if (!reviewedPreTransferCheck || reviewedPreTransferCheck.isSanctioned || !cctpUsdcSystemAddress) return;
 
 				const spotMetaResult = await spotMetaQuery.refetch();
+				assertWithdrawalPreflightCurrent(attempt);
 				if (!spotMetaResult.data || spotMetaResult.isError) return;
 				let freshUsdcSystemAddress: Address;
 				try {
@@ -707,6 +923,7 @@ export function DepositModal() {
 				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress.toLowerCase()) return;
 
 				const preTransferResult = await preTransferCheckQuery.refetch();
+				assertWithdrawalPreflightCurrent(attempt);
 				if (!preTransferResult.data || preTransferResult.isError) return;
 				try {
 					assertPreTransferCheckMatchesReview(reviewedPreTransferCheck.fee, preTransferResult.data);
@@ -722,13 +939,14 @@ export function DepositModal() {
 			let freshRouteFee = getWithdrawalRouteFee(expectedWithdrawalRoute, cctpFee);
 			if (expectedWithdrawalRoute === "arbitrum-cctp") {
 				const cctpFeeResult = await cctpFeeQuery.refetch();
+				assertWithdrawalPreflightCurrent(attempt);
 				if (!cctpFeeResult.data || cctpFeeResult.isError) return;
 				freshRouteFee = cctpFeeResult.data;
 			}
 			if (freshRouteFee === null) return;
 
 			const freshValidation = validateWithdrawal({
-				amount: withdrawAmount,
+				amount: reviewedAmount,
 				available: withdrawable,
 				route: expectedWithdrawalRoute,
 				routeFee: freshRouteFee,
@@ -740,28 +958,37 @@ export function DepositModal() {
 				expectedWithdrawalRoute,
 				fetchFreshUsdcRouting,
 				async () => {
+					assertWithdrawalPreflightCurrent(attempt);
 					setWithdrawalRouteChanged(false);
 					setWithdrawalAttempt({
 						activationFee: cctpPreTransferReview?.fee ?? "0",
-						amount: withdrawAmount,
+						amount: reviewedAmount,
 						route: expectedWithdrawalRoute,
 						routeFee: freshRouteFee,
 					});
+					withdrawalExecutionReviewRef.current = {
+						amount: reviewedAmount,
+						attempt,
+						cctpPreTransfer: cctpPreTransferReview,
+						route: expectedWithdrawalRoute,
+						routeFee: freshRouteFee,
+					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
-						cctpPreTransferReviewRef.current = cctpPreTransferReview;
 						await cctpWithdrawal.mutateAsync(
 							buildCctpWithdrawalParameters({
-								amount: withdrawAmount,
+								amount: reviewedAmount,
 								destination,
 								sourceDex: getWithdrawalSourceDex(accountSummary.usesSpotStateForPerps),
 							}),
 						);
 						return;
 					}
-					await legacyWithdrawal.mutateAsync({ destination, amount: withdrawAmount });
+					await legacyWithdrawal.mutateAsync({ destination, amount: reviewedAmount });
 				},
+				attempt.controller.signal,
 			);
+			assertWithdrawalPreflightCurrent(attempt);
 			if (executionStatus === "changed") {
 				setWithdrawalRoutingPreflightFailed(false);
 				setWithdrawalRouteChanged(true);
@@ -773,13 +1000,19 @@ export function DepositModal() {
 		} catch {
 			// Query and mutation state render the actionable error without duplicating the request.
 		} finally {
-			cctpPreTransferReviewRef.current = null;
-			setIsWithdrawalPreflighting(false);
+			if (withdrawalPreflightRef.current === attempt) {
+				withdrawalPreflightRef.current = null;
+				withdrawalExecutionReviewRef.current = null;
+				setIsWithdrawalPreflighting(false);
+			}
 		}
 	}
 
 	async function handleWithdrawalPrerequisiteRetry() {
+		const contextIdentity = fundsModalContextIdentityRef.current;
+		if (contextIdentity !== fundsModalContextIdentity) return;
 		const routingResult = await usdcRoutingQuery.refetch();
+		if (fundsModalContextIdentityRef.current !== contextIdentity) return;
 		const freshWithdrawalRoute = getWithdrawalRoute(routingResult.data);
 		if (routingResult.isError || !freshWithdrawalRoute) {
 			setWithdrawalRoutingPreflightFailed(true);
@@ -788,6 +1021,7 @@ export function DepositModal() {
 		setWithdrawalRoutingPreflightFailed(false);
 		if (freshWithdrawalRoute === "arbitrum-cctp") {
 			const spotMetaResult = await spotMetaQuery.refetch();
+			if (fundsModalContextIdentityRef.current !== contextIdentity) return;
 			if (spotMetaResult.isError || !spotMetaResult.data) return;
 			let freshUsdcSystemAddress: Address;
 			try {
@@ -797,12 +1031,16 @@ export function DepositModal() {
 			}
 			if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress?.toLowerCase()) return;
 			await Promise.all([preTransferCheckQuery.refetch(), cctpFeeQuery.refetch()]);
+			if (fundsModalContextIdentityRef.current !== contextIdentity) return;
 		}
 	}
 
 	async function handleDepositRoutingRetry() {
+		const contextIdentity = fundsModalContextIdentityRef.current;
+		if (contextIdentity !== fundsModalContextIdentity) return;
 		const result = await usdcRoutingQuery.refetch();
-		setDepositRoutingPreflightFailed(result.isError || !result.data);
+		if (fundsModalContextIdentityRef.current !== contextIdentity) return;
+		setDepositRoutingPreflightErrorCode(result.isError || !result.data ? "unavailable" : null);
 	}
 
 	function handleWithdrawalErrorRetry() {
@@ -919,6 +1157,12 @@ export function DepositModal() {
 
 	if (depositStatus === "error") {
 		const hasSubmittedDeposit = !!depositHash;
+		const depositRouteFeedbackCode =
+			depositError instanceof UsdcDepositRouteError
+				? depositError.reason === "changed"
+					? "deposit-route-changed"
+					: "deposit-route-unavailable"
+				: null;
 		const depositStatusUnknown =
 			submissionOutcomeUnknown || (hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError));
 
@@ -935,6 +1179,8 @@ export function DepositModal() {
 							The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction
 							before retrying.
 						</Trans>
+					) : depositRouteFeedbackCode ? (
+						formatFundsActionFeedback(depositRouteFeedbackCode, (descriptor) => t(descriptor))
 					) : (
 						formatTransferError(depositError)
 					)
@@ -1087,7 +1333,8 @@ export function DepositModal() {
 	}
 
 	if (withdrawError) {
-		const isAmbiguousWithdrawal = isAmbiguousExchangeActionError(withdrawError);
+		const withdrawalFeedbackCode = withdrawError instanceof FundsActionFeedbackCause ? withdrawError.code : null;
+		const isAmbiguousWithdrawal = !withdrawalFeedbackCode && isAmbiguousExchangeActionError(withdrawError);
 		return (
 			<StatusScreen
 				open={open}
@@ -1095,7 +1342,11 @@ export function DepositModal() {
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
 				heading={isAmbiguousWithdrawal ? <Trans>Withdrawal status unknown</Trans> : <Trans>Withdrawal failed</Trans>}
-				description={formatExchangeActionError(withdrawError, t`Withdrawal failed`)}
+				description={
+					withdrawalFeedbackCode
+						? formatFundsActionFeedback(withdrawalFeedbackCode, (descriptor) => t(descriptor))
+						: formatExchangeActionError(withdrawError, t`Withdrawal failed`)
+				}
 				onClose={handleClose}
 			>
 				{isAmbiguousWithdrawal ? (
@@ -1134,7 +1385,7 @@ export function DepositModal() {
 				divider={!usesFundsRedesign}
 				className={
 					usesFundsRedesign
-						? "px-4 pt-7 pr-14 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
+						? "px-4 pt-7 pr-14 pb-0 text-start min-[1001px]:px-6 min-[1001px]:pr-14 min-[1001px]:pt-6"
 						: undefined
 				}
 			>
@@ -1174,9 +1425,11 @@ export function DepositModal() {
 								balanceStatus={depositBalanceStatus}
 								balanceError={depositBalanceError}
 								validation={depositValidation}
+								amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
 								isPending={isDepositPending}
 								onSubmit={handleDepositSubmit}
 								routingStatus={depositRoutingStatus}
+								routingPreflightError={depositRoutingPreflightError}
 								depositRoute={usdcRoutingQuery.data?.depositRoute ?? null}
 								onRetryRouting={handleDepositRoutingRetry}
 								networkName={depositNetworkName}

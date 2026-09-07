@@ -11,7 +11,7 @@ import {
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui as useLinguiMacro } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -44,6 +44,7 @@ const resetFailureMessage = msg`Trading connection could not be reset.`;
 
 export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	const { _ } = useLingui();
+	const { t } = useLinguiMacro();
 	const isMobile = useIsMobile();
 	const { walletIntent } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();
@@ -129,6 +130,7 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 			open
 			onOpenChange={handleOpenChange}
 			size="lg"
+			closeLabel={t`Close`}
 			dismissible={!isResetting}
 			showHandle={false}
 			presentation={isMobile ? "drawer" : "modal"}

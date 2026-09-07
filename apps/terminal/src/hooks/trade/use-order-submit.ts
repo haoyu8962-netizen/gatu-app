@@ -1,14 +1,17 @@
 import type { ExchangeExecutionGuard } from "@gatu/hl-react";
-import { t } from "@lingui/core/macro";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
-import { formatOrderPlanError } from "@/lib/errors/format";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toBig } from "@/lib/trade/numbers";
+import {
+	getOrderPlanSubmissionFeedback,
+	getOrderSubmissionFeedback,
+	orderSubmissionFeedback,
+} from "@/lib/trade/order-submission-feedback";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
@@ -165,7 +168,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				) {
 					updateOrder(orderId, {
 						status: "failed",
-						error: t`TWAP minutes must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX}`,
+						error: orderSubmissionFeedback("twap-minutes-range"),
 					});
 					return;
 				}
@@ -193,8 +196,8 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 						status: "failed",
 						error:
 							submission.reason === "pending"
-								? t`Another TWAP order for this market is still being confirmed.`
-								: t`TWAP order state is still loading. Please retry in a moment.`,
+								? orderSubmissionFeedback("blocked-twap")
+								: orderSubmissionFeedback("twap-state-unavailable"),
 					});
 					return;
 				}
@@ -230,7 +233,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				});
 
 				if (plan.errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: plan.errors.map(formatOrderPlanError).join("; ") });
+					updateOrder(orderId, { status: "failed", error: getOrderPlanSubmissionFeedback(plan.errors[0]) });
 					return;
 				}
 
@@ -241,7 +244,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
 						status: "failed",
-						error: t`Another order for this market is still being confirmed.`,
+						error: orderSubmissionFeedback("blocked-order"),
 					});
 					return;
 				}
@@ -276,11 +279,13 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				}
 				updateOrder(orderId, {
 					status: "failed",
-					error: resolution.errors.join("; ") || t`The exchange did not accept the order.`,
+					error: resolution.errors.join("; ") || orderSubmissionFeedback("exchange-order-rejected"),
 				});
 				return;
 			}
-			const errorMessage = error instanceof Error ? error.message : t`Order failed`;
+			const errorMessage =
+				getOrderSubmissionFeedback(error) ??
+				(error instanceof Error ? error.message : orderSubmissionFeedback("order-failed"));
 			updateOrder(orderId, { status: "failed", error: errorMessage });
 		}
 	}

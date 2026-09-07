@@ -3,10 +3,10 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useInfo } from "@/lib/hyperliquid";
 import {
 	buildReferralRewardRows,
-	getClaimableReferralRewardRows,
 	getDisplayedReferralDiscountPercent,
+	getUnclaimedReferralRewardRows,
 	getUsdcRewardsEarned,
-	hasClaimableReferralRewards,
+	hasUnclaimedReferralRewards,
 	normalizeActiveReferralDiscount,
 	normalizeReferralResponse,
 	normalizeReferralTokenMetadata,
@@ -33,11 +33,11 @@ export interface ReferralClaimHistoryRow {
 export interface ReferralsResult {
 	claimHistory: ReferralClaimHistoryRow[];
 	claimHistoryStatus: AccountLedgerStatus;
-	claimableRewardRows: ReferralRewardRow[];
+	unclaimedRewardRows: ReferralRewardRow[];
 	data: ReferralData | null;
 	discountPercent: string | null;
 	error: unknown;
-	hasClaimableRewards: boolean;
+	hasUnclaimedRewards: boolean;
 	isRefreshing: boolean;
 	refetchReferral: () => Promise<ReferralData>;
 	refreshAfterAction: (includeLedger: boolean) => Promise<void>;
@@ -125,11 +125,11 @@ export function useReferrals({ claimHistoryEnabled = false }: UseReferralsOption
 	return {
 		claimHistory,
 		claimHistoryStatus: accountLedger.status,
-		claimableRewardRows: getClaimableReferralRewardRows(rewardRows),
+		unclaimedRewardRows: getUnclaimedReferralRewardRows(rewardRows),
 		data,
 		discountPercent: data ? getDisplayedReferralDiscountPercent(data, userFeesQuery.data ?? null) : null,
 		error: referralQuery.error ?? (malformedReferral ? new Error("Referral response was invalid") : null),
-		hasClaimableRewards: data ? hasClaimableReferralRewards(data) : false,
+		hasUnclaimedRewards: data ? hasUnclaimedReferralRewards(data) : false,
 		isRefreshing: Boolean(data) && referralQuery.fetchStatus === "fetching",
 		refetchReferral,
 		refreshAfterAction,

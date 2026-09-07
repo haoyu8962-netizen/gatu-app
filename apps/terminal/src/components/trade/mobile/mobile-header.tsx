@@ -1,5 +1,5 @@
 import { ButtonIcon } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { GatuLogo } from "@/components/brand/gatu-logo";
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function MobileHeader({ className }: Props) {
+	const { t } = useLingui();
 	const tradeHomePath = useTradeHomePath();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 
@@ -38,20 +39,26 @@ export function MobileHeader({ className }: Props) {
 						to={tradeHomePath}
 						search={{ scope: "all" }}
 						aria-label="GATU"
-						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						className="touch-target grid shrink-0 place-items-center rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus max-[359px]:hidden"
 					>
 						<GatuLogo variant="mark" micro className="size-[22px]" />
 					</Link>
 				</div>
 
-				<div data-slot="mobile-header-actions" className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+				<div
+					data-slot="mobile-header-actions"
+					className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 min-[360px]:gap-2"
+				>
 					<div
 						data-slot="mobile-header-account"
-						className="flex min-w-0 flex-1 justify-end [&_button]:h-7 [&_button]:min-h-7 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
+						className="flex min-w-0 flex-1 justify-end [&_button]:h-11 [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:rounded-8 [&_button]:border-trading-panel-stroke-card [&_button]:px-2.5 [&_button]:text-xs"
 					>
 						<UserMenu />
 					</div>
-					<ThemeToggle className="ml-2 text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
+					<ThemeToggle
+						className="size-11 min-h-11 text-trading-panel-muted hover:text-trading-panel-fg"
+						iconClassName="size-4.5"
+					/>
 					<LanguageSwitcher
 						sideOffset={14}
 						alignOffset={-36}
@@ -60,7 +67,7 @@ export function MobileHeader({ className }: Props) {
 					<ButtonIcon
 						variant="ghost"
 						intent="neutral"
-						className="size-8 shrink-0 text-trading-panel-muted hover:text-trading-panel-fg"
+						className="size-11 min-h-11 shrink-0 text-trading-panel-muted hover:text-trading-panel-fg"
 						onClick={openSettingsDialog}
 						aria-label={t`Settings`}
 					>

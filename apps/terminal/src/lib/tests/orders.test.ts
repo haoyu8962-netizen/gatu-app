@@ -88,6 +88,13 @@ describe("orders", () => {
 		expect(formatSizeForOrder(1.2, 0)).toBe("1");
 	});
 
+	it("fails closed for invalid market precision", () => {
+		expect(formatSizeForOrder("1.23", -1)).toBe("0");
+		expect(formatSizeForOrder("1.23", 9)).toBe("0");
+		expect(formatPriceForOrder("1.23", { assetId: 0, szDecimals: 7 })).toBe("0");
+		expect(formatPriceForOrder("1.23", { assetId: 10_000, szDecimals: 9 })).toBe("0");
+	});
+
 	it("keeps integer trailing zeros when size decimals are zero", () => {
 		expect(formatSizeForOrder(100, 0)).toBe("100");
 		expect(formatSizeForOrder(1000000, 0)).toBe("1000000");
@@ -99,6 +106,20 @@ describe("orders", () => {
 });
 
 describe("scale order planning", () => {
+	it("rejects invalid precision before Big.js exponent arithmetic", () => {
+		expect(
+			createScaleOrderLevelPlan({
+				assetId: 0,
+				sizeValue: 1,
+				szDecimals: -1,
+				scaleStartPriceInput: "10",
+				scaleEndPriceInput: "20",
+				scaleLevelsNum: 2,
+				scaleSkew: 1,
+			}),
+		).toEqual({ levels: [], issues: ["invalid-precision"] });
+	});
+
 	it("distributes size units without dropping the remainder", () => {
 		const plan = createScaleOrderLevelPlan({
 			assetId: 0,

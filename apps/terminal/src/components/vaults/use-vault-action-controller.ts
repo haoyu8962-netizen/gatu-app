@@ -40,9 +40,12 @@ import {
 	useLegalStatus,
 } from "@/lib/hyperliquid";
 import {
+	deriveVaultActionsAvailability,
 	deriveVaultOwnerView,
+	getVaultRequestAvailability,
 	parseVaultDetailsSnapshot,
 	parseVaultEquitiesSnapshot,
+	type VaultActionsAvailability,
 	type VaultDetail,
 	type VaultOwnerViewState,
 } from "./domain/vaults";
@@ -108,9 +111,9 @@ interface VaultRequestLease {
 export interface VaultActionController {
 	action: ActiveVaultAction | null;
 	availableAmount: string | null;
+	actionAvailability: VaultActionsAvailability;
 	canReview: boolean;
 	canConfirm: boolean;
-	canRequestAction: boolean;
 	requestAction: (action: VaultFundsAction) => Promise<void>;
 	setAmount: (amount: string) => void;
 	review: () => void;
@@ -327,7 +330,11 @@ export function useVaultActionController({
 			!findPendingFundsAction(hyperliquid.env, visibleAction.ownerAddress),
 	);
 	const canConfirm = Boolean(visibleAction?.state.stage === "review" && !visibleAction.isPreflighting);
-	const canRequestAction = geo.isResolved && !geo.isError && !geo.tradeRestricted && !geo.proxy && geo.country !== null;
+	const actionAvailability = deriveVaultActionsAvailability({
+		detail,
+		owner,
+		request: getVaultRequestAvailability(geo),
+	});
 
 	function updateAction(next: ActiveVaultAction | null) {
 		actionRef.current = next;
@@ -337,6 +344,7 @@ export function useVaultActionController({
 	async function requestAction(action: VaultFundsAction): Promise<void> {
 		const startRoute = routeIdentityRef.current;
 		if (
+			!actionAvailability[action].available ||
 			!detail ||
 			startRoute.vaultAddress === zeroAddress ||
 			detail.vaultAddress.toLowerCase() !== startRoute.vaultAddress ||
@@ -759,9 +767,9 @@ export function useVaultActionController({
 	return {
 		action: visibleAction,
 		availableAmount,
+		actionAvailability,
 		canReview,
 		canConfirm,
-		canRequestAction,
 		requestAction,
 		setAmount,
 		review,

@@ -14,6 +14,7 @@ interface RenderOverrides {
 	onSizeChange?: (value: string) => void;
 	onSizeModeToggle?: () => void;
 	sizeInput?: string;
+	sizeModeLabel?: string;
 	sliderValue?: number;
 }
 
@@ -51,7 +52,7 @@ describe("MobileTradeSizeControl", () => {
 					sizeAriaLabel="Order size"
 					sizeInput={overrides.sizeInput ?? "0.12345678"}
 					sizeLabel="Size"
-					sizeModeLabel="USDC"
+					sizeModeLabel={overrides.sizeModeLabel ?? "USDC"}
 					sliderValue={overrides.sliderValue ?? 25}
 				/>,
 			);
@@ -73,8 +74,21 @@ describe("MobileTradeSizeControl", () => {
 			button.textContent?.includes("USDC"),
 		);
 		expect(unitButton?.disabled).toBe(false);
+		expect(unitButton?.className).toContain("min-w-11");
+		expect(unitButton?.className).toContain("after:inset-0");
+		expect(unitButton?.className).not.toContain("after:size-11");
 		act(() => unitButton?.click());
 		expect(onSizeModeToggle).toHaveBeenCalledOnce();
+	});
+
+	it("reserves a contained horizontal target slot for a one-character asset label", () => {
+		renderControl({ sizeModeLabel: "H" });
+
+		const unitButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+			button.textContent?.includes("H"),
+		);
+		expect(unitButton?.className).toContain("min-w-11");
+		expect(unitButton?.className).toContain("after:inset-0");
 	});
 
 	it("clamps an entered percentage to the supported 0-100 range", () => {

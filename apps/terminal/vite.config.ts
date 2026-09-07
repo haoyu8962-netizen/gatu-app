@@ -16,6 +16,7 @@ import {
   writeClientChunkGraphFile,
 } from '../../scripts/client-chunk-graph.mjs'
 import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
+import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
 
 const isAnalyze = process.env.ANALYZE === 'true'
 const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url))
@@ -89,6 +90,39 @@ function createReferralJoinDevRequestGuard(): Plugin {
           response.end('Not Found')
         }
       })
+    },
+  }
+}
+
+const compiledLinguiCatalogPattern =
+  /^\/\*eslint-disable\*\/export const messages=JSON\.parse\((.+)\);?\s*$/s
+
+export function compactLinguiCatalogModule(code: string) {
+  const match = code.match(compiledLinguiCatalogPattern)
+  if (!match?.[1]) throw new Error('Lingui emitted an unsupported catalog module')
+
+  const serializedCatalog = JSON.parse(match[1]) as string
+  const messages = JSON.parse(serializedCatalog) as Record<string, unknown>
+  if (!messages || typeof messages !== 'object' || Array.isArray(messages)) {
+    throw new Error('Lingui emitted an invalid message catalog')
+  }
+
+  const messageIds = Object.keys(messages)
+  const compactMessages = messageIds.map((messageId) => messages[messageId])
+  const serializedMessages = JSON.stringify(JSON.stringify(compactMessages))
+  return `/*eslint-disable*/export const messages=JSON.parse(${serializedMessages});export const messageIdsHash=${hashCatalogMessageIds(messageIds)};`
+}
+
+function createCompactLinguiCatalogPlugin(): Plugin {
+  return {
+    name: 'gatu-compact-lingui-catalog',
+    enforce: 'post',
+    transform(code, id) {
+      const pathname = id.replace(/\?.*$/, '').replaceAll('\\', '/')
+      const localeMatch = pathname.match(/\/src\/locales\/([^/]+)\/messages\.po$/)
+      if (!localeMatch || localeMatch[1] === 'en') return
+
+      return { code: compactLinguiCatalogModule(code), map: null }
     },
   }
 }
@@ -211,6 +245,7 @@ const config = defineConfig({
       },
     }),
     lingui(),
+    createCompactLinguiCatalogPlugin(),
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),

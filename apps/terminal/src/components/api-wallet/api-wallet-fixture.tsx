@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import type { ApiWalletViewProps } from "./api-wallet-view";
 import { ApiWalletView } from "./api-wallet-view";
 
@@ -7,6 +8,7 @@ export const API_WALLET_FIXTURE_NAMES = ["normal", "empty", "loading", "error", 
 export type ApiWalletFixtureName = (typeof API_WALLET_FIXTURE_NAMES)[number];
 
 const ACCOUNT_ADDRESS = "0x1111111111111111111111111111111111111111";
+const DAY_IN_MS = 86_400_000;
 
 export function getApiWalletFixtureFromLocation(): ApiWalletFixtureName | null {
 	if (!import.meta.env.DEV || typeof window === "undefined") return null;
@@ -21,18 +23,13 @@ interface Props {
 }
 
 export function ApiWalletFixture({ fixture }: Props) {
-	const { t, i18n } = useLingui();
+	const { t } = useLingui();
 	const pageState = fixture === "non-master" ? "nonMaster" : fixture;
+	const [fixtureNow] = useState(() => Date.now());
+	const activeExpiresAt = new Date(fixtureNow + 90 * DAY_IN_MS).toISOString();
+	const expiringExpiresAt = new Date(fixtureNow + 5 * DAY_IN_MS).toISOString();
+	const expiredExpiresAt = new Date(fixtureNow - DAY_IN_MS).toISOString();
 	const noop = () => undefined;
-	const activeExpiry = new Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium" }).format(
-		new Date("2026-10-12T00:00:00.000Z"),
-	);
-	const expiringExpiry = new Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium" }).format(
-		new Date("2026-08-18T00:00:00.000Z"),
-	);
-	const expiredExpiry = new Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium" }).format(
-		new Date("2026-07-31T00:00:00.000Z"),
-	);
 	const props: ApiWalletViewProps = {
 		pageState,
 		accountAddress: fixture === "disconnected" ? undefined : ACCOUNT_ADDRESS,
@@ -47,25 +44,24 @@ export function ApiWalletFixture({ fixture }: Props) {
 							id: "market-maker",
 							name: "market-maker",
 							address: "0x2222222222222222222222222222222222222222",
-							expiresAt: "2026-10-12T00:00:00.000Z",
-							expiryLabel: activeExpiry,
+							expiresAt: activeExpiresAt,
+							expiryLabel: t`90 days`,
 							status: "active",
 						},
 						{
 							id: "grid-bot",
 							name: "grid-bot",
 							address: "0x3333333333333333333333333333333333333333",
-							expiresAt: "2026-08-18T00:00:00.000Z",
-							expiryLabel: expiringExpiry,
+							expiresAt: expiringExpiresAt,
+							expiryLabel: t`5 days left`,
 							status: "expiring",
-							statusDetail: t`5 days left`,
 						},
 						{
 							id: "expired-bot",
 							name: "expired-bot",
 							address: "0x4444444444444444444444444444444444444444",
-							expiresAt: "2026-07-31T00:00:00.000Z",
-							expiryLabel: expiredExpiry,
+							expiresAt: expiredExpiresAt,
+							expiryLabel: t`Expired`,
 							status: "expired",
 						},
 					]

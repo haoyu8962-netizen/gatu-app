@@ -88,7 +88,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="flex items-center gap-2 px-3 py-2 text-xs text-fg-muted">
 					<span className="uppercase tracking-wider">{t`Deposits & Withdrawals`}</span>
-					<span className="ml-auto tabular-nums text-fg">{rows.length}</span>
+					<span className="ms-auto tabular-nums text-fg">{rows.length}</span>
 					<Button
 						variant="ghost"
 						intent="neutral"

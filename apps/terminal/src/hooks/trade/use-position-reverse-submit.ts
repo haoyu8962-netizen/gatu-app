@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import type { ExchangeOrder } from "@/config/trade";
@@ -24,6 +24,17 @@ import {
 	type OrderAssetLockLease,
 	runWithAvailableOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
+import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
+import {
+	formatPositionSubmitFeedback,
+	formatTrackedPositionSubmitError,
+	localizedPositionSubmitFeedback,
+	localizePositionSubmitFeedbackCause,
+	type PositionSubmitFeedback,
+	PositionSubmitFeedbackCause,
+	positionSubmitFeedbackCause,
+	positionSubmitFeedbackFromCause,
+} from "@/lib/trade/position-submit-feedback";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
@@ -88,6 +99,7 @@ const USER_STATE_MAX_AGE_MS = 60_000;
  * invalidates the confirmation and requires the user to reopen the dialog.
  */
 export function usePositionReverseSubmit(target: PositionReverseTarget) {
+	const { t } = useLingui();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -99,7 +111,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 	);
 	const slippageBps = useMarketOrderSlippageBpsString();
 	const [phase, setPhaseState] = useState<PositionReverseSubmitPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<PositionSubmitFeedback | null>(null);
 	const phaseRef = useRef<PositionReverseSubmitPhase>("idle");
 	const targetRef = useRef(target);
 	const slippageBpsRef = useRef(slippageBps);
@@ -203,7 +215,7 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 						slippageBps: submittedSlippageBps,
 					});
 					if (plan.errors.length > 0 || plan.orders.length !== 1) {
-						throw new Error(getPositionReversePlanErrorMessage(plan.errors[0]));
+						throw new PositionSubmitFeedbackCause(getPositionReversePlanError(plan.errors[0]));
 					}
 
 					const order = plan.orders[0];
@@ -234,12 +246,12 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 					assertLifecycleActive(lifecycleEpoch);
 					if (outcome.state === "blocked") {
 						setPhase("idle");
-						setError(t`Another order for this market is still being confirmed.`);
+						setError(localizedPositionSubmitFeedback("blocked-market"));
 						return outcome;
 					}
 					if (outcome.state === "reconciling") {
 						setPhase("reconciling");
-						setError(t`Order submitted. Confirming exchange status; do not retry.`);
+						setError(localizedPositionSubmitFeedback("reconciling-order"));
 						return outcome;
 					}
 
@@ -250,21 +262,22 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 			);
 			assertLifecycleActive(lifecycleEpoch);
 			if (!lockResult.supported) {
-				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+				throw positionSubmitFeedbackCause("coordination-unavailable");
 			}
 			if (!lockResult.acquired) {
 				setPhase("idle");
-				setError(t`Another order for this market is still being confirmed.`);
+				setError(localizedPositionSubmitFeedback("blocked-market"));
 				return { state: "blocked" };
 			}
 			return lockResult.value;
 		} catch (cause) {
-			const message = cause instanceof Error ? cause.message : t`Failed to reverse position`;
+			const submitError = positionSubmitFeedbackFromCause(cause, "failed-reverse");
+			const message = formatPositionSubmitFeedback(submitError, (descriptor) => t(descriptor));
 			if (lifecycleRef.current.mounted && lifecycleRef.current.epoch === lifecycleEpoch) {
 				setPhase("idle");
-				setError(message);
+				setError(submitError);
 			}
-			throw cause instanceof Error ? cause : new Error(message);
+			throw localizePositionSubmitFeedbackCause(cause, submitError, message);
 		} finally {
 			executionContextRef.current = null;
 		}
@@ -293,7 +306,9 @@ export function usePositionReverseSubmit(target: PositionReverseTarget) {
 		phase,
 		isPending: phase === "validating" || phase === "submitting" || trackedOrder.isPending,
 		isReconciling: phase === "reconciling",
-		error: error ?? trackedOrder.error?.message ?? null,
+		error: error
+			? formatPositionSubmitFeedback(error, (descriptor) => t(descriptor))
+			: formatTrackedPositionSubmitError(trackedOrder.error, (descriptor) => t(descriptor)),
 		resetError,
 	};
 }
@@ -319,7 +334,7 @@ function assertLivePositionReady(target: PositionReverseTarget, live: LiveContex
 	}
 	assertMarketAssetBinding(target, market, market.ctxIndex);
 	if (market.kind === "builderPerp" && !hasAcceptedHip3Disclaimer()) {
-		throw new Error(t`Accept the HIP-3 deployer disclaimer before trading this market.`);
+		throw positionSubmitFeedbackCause("accept-hip3-market");
 	}
 	const positionAge =
 		live.userPositions.receivedAt === undefined ? Number.POSITIVE_INFINITY : Date.now() - live.userPositions.receivedAt;
@@ -330,7 +345,7 @@ function assertLivePositionReady(target: PositionReverseTarget, live: LiveContex
 		positionAge < 0 ||
 		positionAge > USER_STATE_MAX_AGE_MS
 	) {
-		throw new Error(t`Failed to load positions.`);
+		throw positionSubmitFeedbackCause("failed-load-positions");
 	}
 	assertNoActiveTwap(target, live);
 
@@ -338,7 +353,7 @@ function assertLivePositionReady(target: PositionReverseTarget, live: LiveContex
 	const currentSize = toBig(position?.szi);
 	const openedSize = toBig(target.signedPositionSize);
 	if (!position || !currentSize || currentSize.eq(0) || !openedSize || openedSize.eq(0)) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 	if (!currentSize.eq(openedSize) || position.leverage.type !== target.marginMode) {
 		throw tradingDataChangedError();
@@ -360,7 +375,7 @@ function assertNoActiveTwap(target: PositionReverseTarget, live: LiveContext): v
 		throw tradingDataChangedError();
 	}
 	if (live.activeTwaps.data.states.some(([, state]) => state.coin === target.coin)) {
-		throw new Error(t`Another order for this market is still being confirmed.`);
+		throw positionSubmitFeedbackCause("blocked-market");
 	}
 }
 
@@ -373,10 +388,10 @@ function assertNoPendingCoordination(lease: OrderAssetLockLease, target: Positio
 	const pendingTwapState = getPersistedPendingTwapAssetState(target.env, target.owner, target.assetId);
 	const pendingOrderState = getPersistedPendingOrderAssetState(target.env, target.owner, [target.assetId]);
 	if (reservationState === "unavailable" || pendingTwapState === "unavailable" || pendingOrderState === "unavailable") {
-		throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
+		throw positionSubmitFeedbackCause("coordination-unavailable");
 	}
 	if (reservationState === "conflict" || pendingTwapState === "pending" || pendingOrderState === "pending") {
-		throw new Error(t`Another order for this market is still being confirmed.`);
+		throw positionSubmitFeedbackCause("blocked-market");
 	}
 }
 
@@ -456,7 +471,7 @@ async function fetchFreshReverseSnapshot(
 	const signedPositionSize = toBig(position?.szi);
 	const openedPositionSize = toBig(target.signedPositionSize);
 	if (!position || !signedPositionSize || signedPositionSize.eq(0) || !openedPositionSize || openedPositionSize.eq(0)) {
-		throw new Error(t`No active positions.`);
+		throw positionSubmitFeedbackCause("no-active-positions");
 	}
 	if (!signedPositionSize.eq(openedPositionSize) || position.leverage.type !== target.marginMode) {
 		throw tradingDataChangedError();
@@ -518,16 +533,18 @@ function getTargetKey(target: PositionReverseTarget): string {
 }
 
 function tradingDataChangedError(): Error {
-	return new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+	return positionSubmitFeedbackCause("trading-data-changed");
 }
 
-function getPositionReversePlanErrorMessage(error: PositionReverseOrderError | undefined): string {
+function getPositionReversePlanError(error: PositionReverseOrderError | undefined): PositionSubmitFeedback {
 	switch (error) {
+		case "invalid-size-precision":
+			return orderSubmissionFeedback("market-precision-invalid");
 		case "position-size-below-precision":
-			return t`Position size is below market precision`;
+			return localizedPositionSubmitFeedback("position-size-below-precision");
 		case "invalid-position-size":
-			return t`No active positions.`;
+			return localizedPositionSubmitFeedback("no-active-positions");
 		default:
-			return t`Failed to reverse position`;
+			return localizedPositionSubmitFeedback("failed-reverse");
 	}
 }

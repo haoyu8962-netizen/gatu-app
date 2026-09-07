@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -54,6 +54,7 @@ function getSafeAreaInset(variable: "--sal" | "--sar"): number {
 }
 
 export function MobileMarketBar({ className }: Props) {
+	const { t } = useLingui();
 	useNumberFormatRevision();
 	const {
 		market,
@@ -129,7 +130,7 @@ export function MobileMarketBar({ className }: Props) {
 					</div>
 
 					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
-						<div data-boneyard="market-price" className="min-w-0 text-left">
+						<div data-boneyard="market-price" className="min-w-0 text-start">
 							<div className="flex min-w-0 flex-col items-start">
 								<span
 									key={priceFlash.sequence}
@@ -244,6 +245,10 @@ export function MobileMarketBar({ className }: Props) {
 											copiedSpotTokenAddress === spotTokenAddress,
 											copySpotTokenAddress,
 											spotSocials,
+											{
+												copy: copiedSpotTokenAddress === spotTokenAddress ? t`Copied` : t`Copy token address`,
+												open: t`Open token in explorer`,
+											},
 										)}
 									/>
 								</div>
@@ -261,6 +266,7 @@ function createSpotTokenInfo(
 	copied: boolean,
 	onCopy: (value: string) => void,
 	socials: SpotAssetSocials | null,
+	labels: { copy: string; open: string },
 ) {
 	if (!address && !hasSpotSocialLinks(socials)) return FALLBACK_VALUE_PLACEHOLDER;
 
@@ -273,7 +279,7 @@ function createSpotTokenInfo(
 		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
 			{address ? (
 				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
-					{shortenAddress(address, 4, 4)}
+					<bdi dir="ltr">{shortenAddress(address, 4, 4)}</bdi>
 				</span>
 			) : null}
 			<span data-slot="mobile-spot-token-actions" className="flex min-w-0 max-w-full flex-wrap items-center">
@@ -283,7 +289,7 @@ function createSpotTokenInfo(
 							href={getExplorerTokenUrl(address)}
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label={t`Open token in explorer`}
+							aria-label={labels.open}
 							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
@@ -291,7 +297,7 @@ function createSpotTokenInfo(
 						<button
 							type="button"
 							onClick={handleCopy}
-							aria-label={copied ? t`Copied` : t`Copy token address`}
+							aria-label={labels.copy}
 							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
@@ -400,7 +406,7 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 							onBlur={closeTooltip}
 							onClick={handleTooltipClick}
 							aria-describedby={tooltipPosition ? tooltipId : undefined}
-							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-start text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							<span className="truncate">{label}</span>
 						</button>

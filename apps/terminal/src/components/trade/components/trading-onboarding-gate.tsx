@@ -66,6 +66,7 @@ export function TradingOnboardingGate({ children }: Props) {
 		if (!depositAvailable && depositAvailabilityReason === "geo-unresolved" && geoResolutionStatus === "loading") {
 			return;
 		}
+		if (activeModal !== null && activeModal !== "establishConnection") return;
 		setPendingDepositIdentity(null);
 		if (depositAvailable) {
 			deposit.open("deposit");
@@ -73,6 +74,7 @@ export function TradingOnboardingGate({ children }: Props) {
 		}
 		if (depositUnavailableReason) toast.error(depositUnavailableReason);
 	}, [
+		activeModal,
 		deposit,
 		depositAvailabilityReason,
 		depositAvailable,

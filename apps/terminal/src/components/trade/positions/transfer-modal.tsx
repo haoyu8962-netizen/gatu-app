@@ -1,7 +1,8 @@
+import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
@@ -12,18 +13,36 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount } from "@/domain/trade/funds-execution-guard";
-import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import {
+	AccountAbstractionExecutionError,
+	useAccountAbstractionPreExecutionGuard,
+} from "@/hooks/trade/use-account-abstraction-guard";
 import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
+import { FundsActionGeoExecutionError, useFundsActionAvailability } from "@/hooks/trade/use-funds-action-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import {
+	FundsActionFeedbackCause,
+	type FundsActionFeedbackCode,
+	formatFundsActionFeedback,
+	fundsActionFeedbackCause,
+} from "@/lib/trade/funds-action-feedback";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { PendingActionModal } from "../components/pending-action-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
+
+type TransferError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
+
+interface TransferSubmission {
+	identity: object;
+	sequence: number;
+	amount: string;
+	toPerp: boolean;
+}
 
 interface Props {
 	open: boolean;
@@ -49,11 +68,21 @@ interface BodyProps {
 }
 
 function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
+	const { t } = useLingui();
+	const submissionSequenceRef = useRef(0);
+	const submissionIdentityRef = useRef<object | null>(null);
+	const submissionRef = useRef<TransferSubmission | null>(null);
+	const requestSubmissionsRef = useRef(new WeakMap<object, TransferSubmission>());
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<TransferError | null>(null);
+	const errorMessage = error
+		? error.kind === "local"
+			? formatFundsActionFeedback(error.code, (descriptor) => t(descriptor))
+			: formatExchangeActionError(error.cause, t`Transfer failed`)
+		: null;
 
-	const { hasWalletAccess, walletAddress } = useWalletSession();
+	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
 	const {
 		marginSummary,
 		perpSummary,
@@ -71,6 +100,25 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const accountDataReady =
 		spotStateStatus === "success" && perpStateStatus === "success" && !isDataStale && !hasBalanceError;
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const { clientKey, env, exchangeLifecycle, sessionMode: exchangeSessionMode } = useHyperliquid();
+	const submissionIdentityKey = [
+		env,
+		clientKey.toLowerCase(),
+		exchangeSessionMode,
+		address?.toLowerCase() ?? "disconnected",
+		walletAddress?.toLowerCase() ?? "no-wallet",
+		walletSessionMode,
+		accountAbstraction,
+	].join(":");
+	useLayoutEffect(() => {
+		const identity = { exchangeLifecycle, key: submissionIdentityKey };
+		submissionIdentityRef.current = identity;
+		return () => {
+			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
+			if (submissionRef.current?.identity === identity) submissionRef.current = null;
+			submissionSequenceRef.current += 1;
+		};
+	}, [exchangeLifecycle, submissionIdentityKey]);
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
 		accountModeReady,
@@ -82,21 +130,72 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	accountDataReadyRef.current = accountDataReady;
 	const availableBalanceRef = useRef({ value: "0", receivedAt: undefined as number | undefined, direction });
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
+	async function assertCurrentAccountAbstraction(signal: AbortSignal) {
+		try {
+			await assertAccountAbstraction(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof AccountAbstractionExecutionError) {
+				throw fundsActionFeedbackCause(
+					error.reason === "changed" ? "account-mode-changed" : "account-mode-unavailable",
+				);
+			}
+			throw error;
+		}
+	}
+	async function assertCurrentGeo(signal: AbortSignal) {
+		try {
+			await fundsActionAvailability.assertFreshGeoAllowed(signal);
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			if (error instanceof FundsActionGeoExecutionError) {
+				throw fundsActionFeedbackCause(error.reason === "restricted" ? "geo-restricted" : "geo-unavailable");
+			}
+			throw error;
+		}
+	}
+	function assertCurrentFundsAmount(amount: unknown, available: unknown, receivedAt: number | undefined) {
+		try {
+			assertFreshFundsAmount(amount, available, receivedAt);
+		} catch (error) {
+			if (!(error instanceof FundsExecutionError)) throw error;
+			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
+		}
+	}
+	function assertCurrentTransferBalance(params: ExchangeParams<"usdClassTransfer">) {
+		if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
+		const current = availableBalanceRef.current;
+		if (params.toPerp !== (current.direction === "toPerp")) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		assertCurrentFundsAmount(params.amount, current.value, current.receivedAt);
+	}
+	function assertCurrentTransferSubmission(params: ExchangeParams<"usdClassTransfer">): void {
+		const submission = submissionRef.current;
+		const boundSubmission = requestSubmissionsRef.current.get(params);
+		if (
+			!submission ||
+			!exchangeLifecycle.active ||
+			submission.identity !== submissionIdentityRef.current ||
+			submission.sequence !== submissionSequenceRef.current ||
+			(boundSubmission && boundSubmission !== submission) ||
+			submission.amount !== params.amount ||
+			submission.toPerp !== params.toPerp
+		) {
+			throw new ExchangeRequestInvalidatedError();
+		}
+		requestSubmissionsRef.current.set(params, submission);
+	}
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer", {
+		executionGuard: (params) => {
+			assertCurrentTransferSubmission(params);
+			assertCurrentTransferBalance(params);
+		},
 		preExecutionGuard: async (params, signal) => {
-			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current)
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				const current = availableBalanceRef.current;
-				if (params.toPerp !== (current.direction === "toPerp")) {
-					throw new Error(t`Balance data is unavailable. Try again after the connection recovers.`);
-				}
-				assertFreshFundsAmount(params.amount, current.value, current.receivedAt);
-			};
-			assertCurrentBalance();
-			await Promise.all([assertAccountAbstraction(signal), fundsActionAvailability.assertFreshGeoAllowed(signal)]);
+			assertCurrentTransferBalance(params);
+			await Promise.all([assertCurrentAccountAbstraction(signal), assertCurrentGeo(signal)]);
 			signal.throwIfAborted();
-			assertCurrentBalance();
+			assertCurrentTransferBalance(params);
 		},
 	});
 
@@ -146,13 +245,32 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	async function handleTransfer() {
 		if (!isValidAmount || !accountDataReady || isPending || !walletAddress || internalTransfersDisabledReason) return;
 
+		const submissionIdentity = submissionIdentityRef.current;
+		if (!submissionIdentity || submissionRef.current) return;
+		const submissionSequence = ++submissionSequenceRef.current;
+		const submission: TransferSubmission = {
+			identity: submissionIdentity,
+			sequence: submissionSequence,
+			amount,
+			toPerp: direction === "toPerp",
+		};
+		submissionRef.current = submission;
+		const isCurrentSubmission = () =>
+			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		setError(null);
 		try {
 			await usdClassTransfer({ amount, toPerp: direction === "toPerp" });
-			setAmount("");
-			onOpenChange(false);
+			if (isCurrentSubmission()) {
+				setAmount("");
+				onOpenChange(false);
+			}
 		} catch (err) {
-			setError(formatExchangeActionError(err, t`Transfer failed`));
+			if (!isCurrentSubmission()) return;
+			setError(
+				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
+			);
+		} finally {
+			if (submissionRef.current === submission) submissionRef.current = null;
 		}
 	}
 
@@ -246,10 +364,13 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</>
 					) : null}
 
-					{error && (
-						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
+					{errorMessage && (
+						<div
+							role="alert"
+							className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error"
+						>
 							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{error}</span>
+							<span className="flex-1">{errorMessage}</span>
 						</div>
 					)}
 
@@ -260,7 +381,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						disabled={!isValidAmount || isPending}
 						className="w-full"
 					>
-						{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
+						{isPending && <SpinnerGapIcon className="me-2 size-3.5 animate-spin" />}
 						{isPending ? t`Transferring...` : t`Transfer`}
 					</Button>
 				</div>

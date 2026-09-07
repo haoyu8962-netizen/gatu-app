@@ -8,8 +8,7 @@ import {
 	type MobileAgentApproval,
 } from "@gatu/hl-react/signing/mobile-agent";
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
 import {
 	CheckIcon,
@@ -84,11 +83,11 @@ type SyncState =
 	| { status: "review" }
 	| { status: "approving" }
 	| { status: "verifying" }
-	| { status: "pending-verification"; approval: MobileAgentApproval; message: string }
-	| { status: "concealed"; approval: MobileAgentApproval; message?: string }
+	| { status: "pending-verification"; approval: MobileAgentApproval; message: MobileAgentSyncMessage }
+	| { status: "concealed"; approval: MobileAgentApproval; message?: MobileAgentSyncMessage }
 	| { status: "revalidating"; approval: MobileAgentApproval }
 	| { status: "visible"; payload: QrPayload }
-	| { status: "error"; message: string };
+	| { status: "error"; message: MobileAgentSyncMessage };
 
 type ResetState =
 	| { status: "idle" }
@@ -100,16 +99,71 @@ type ResetState =
 			status: "pending";
 			oldAgentAddresses: string[];
 			replacement: ExpectedRevocationAgent;
-			message: string;
+			message: MobileAgentSyncMessage;
 	  }
 	| { status: "success"; localCleanupIncomplete: boolean; replacementExpiresAtMs: number | null }
-	| { status: "error"; message: string };
+	| { status: "error"; message: MobileAgentSyncMessage };
+
+const LOCALIZED_MESSAGE_CODES = [
+	"approval-already-in-progress",
+	"approval-already-preparing",
+	"approval-recheck-failed",
+	"approval-recovery-inactive",
+	"approval-recovery-unavailable",
+	"approval-verification-pending",
+	"builder-fee-required",
+	"mobile-key-expired",
+	"mobile-key-invalidated",
+	"no-balance",
+	"qr-creation-unavailable",
+	"qr-render-failed",
+	"qr-reveal-unavailable",
+	"qr-service-unavailable",
+	"qr-ticket-rejected",
+	"recovery-capacity",
+	"review-before-approve",
+	"revocation-expired",
+	"revocation-pending",
+	"verify-mobile-access-failed",
+	"wallet-required-link",
+	"wallet-required-reset",
+] as const;
+
+type LocalizedMessageCode = (typeof LOCALIZED_MESSAGE_CODES)[number];
+type MobileAgentSyncMessage =
+	| { kind: "external-error"; rawMessage: string }
+	| { kind: "localized"; code: LocalizedMessageCode };
+
+const RECOVERY_MESSAGE_CODE_PREFIX = "\u0000gatu-mobile-sync-message:v1:";
 
 const QR_REVEAL_HOLD_MS = 4_000;
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function normalizeError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error));
+}
+
+function localizedMessage(code: LocalizedMessageCode): MobileAgentSyncMessage {
+	return { kind: "localized", code };
+}
+
+function externalErrorMessage(error: unknown): MobileAgentSyncMessage {
+	return { kind: "external-error", rawMessage: normalizeError(error).message };
+}
+
+function serializeRecoveryMessage(message: MobileAgentSyncMessage): string {
+	return message.kind === "localized" ? `${RECOVERY_MESSAGE_CODE_PREFIX}${message.code}` : message.rawMessage;
+}
+
+function deserializeRecoveryMessage(value: string | undefined): MobileAgentSyncMessage {
+	if (!value) return localizedMessage("approval-verification-pending");
+	if (value.startsWith(RECOVERY_MESSAGE_CODE_PREFIX)) {
+		const code = value.slice(RECOVERY_MESSAGE_CODE_PREFIX.length);
+		if ((LOCALIZED_MESSAGE_CODES as readonly string[]).includes(code)) {
+			return localizedMessage(code as LocalizedMessageCode);
+		}
+	}
+	return { kind: "external-error", rawMessage: value };
 }
 
 function parseNumeric(value: unknown): number | null {
@@ -179,9 +233,7 @@ function createSyncStateFromRecovery(recovery: DesktopApprovalRecovery | null): 
 	return {
 		status: "pending-verification",
 		approval: recovery.approval,
-		message:
-			recovery.submissionErrorMessage ??
-			t`The approval result is not confirmed. Retry the read-only verification before doing anything else.`,
+		message: deserializeRecoveryMessage(recovery.submissionErrorMessage),
 	};
 }
 
@@ -218,6 +270,7 @@ function MobileAgentSyncSession({
 	walletAddress,
 	hasWalletAccess,
 }: MobileAgentSyncSessionProps) {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { builderConfig } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, walletAddress);
@@ -392,7 +445,7 @@ function MobileAgentSyncSession({
 			} catch {
 				if (!cancelled) {
 					clearQrCanvas(canvas);
-					setSyncState({ status: "error", message: t`Could not render QR. Create a new key.` });
+					setSyncState({ status: "error", message: localizedMessage("qr-render-failed") });
 				}
 			}
 		}
@@ -518,20 +571,20 @@ function MobileAgentSyncSession({
 	): Promise<boolean> {
 		if (await isAgentRegistrationExecutionLeaseCurrent(lease)) return true;
 		if (walletAddress) clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
-		setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+		setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 		return false;
 	}
 
-	function retainApprovalForVerification(approval: MobileAgentApproval, message: string) {
+	function retainApprovalForVerification(approval: MobileAgentApproval, message: MobileAgentSyncMessage) {
 		const retained = updateDesktopApprovalRecovery({
 			env,
 			ownerAddress: walletAddress ?? zeroAddress,
 			expectedAgentAddress: approval.publicKey,
 			phase: "pending-verification",
-			submissionErrorMessage: message,
+			submissionErrorMessage: serializeRecoveryMessage(message),
 		});
 		if (!retained) {
-			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 			return;
 		}
 		setSyncState({ status: "pending-verification", approval, message });
@@ -541,17 +594,17 @@ function MobileAgentSyncSession({
 		approval: MobileAgentApproval,
 		signal: AbortSignal,
 		registrationLease: AgentRegistrationExecutionLease,
-		submissionErrorMessage?: string,
+		submissionErrorMessage?: MobileAgentSyncMessage,
 	) {
 		if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 		if (approval.agentValidUntilMs <= Date.now()) {
 			clearDesktopApprovalRecovery(env, walletAddress ?? zeroAddress, approval.publicKey);
-			setSyncState({ status: "error", message: t`This mobile trading key has expired.` });
+			setSyncState({ status: "error", message: localizedMessage("mobile-key-expired") });
 			return;
 		}
 		const recoveryBeforeVerification = getDesktopApprovalRecovery(env, walletAddress ?? zeroAddress);
 		if (!recoveryBeforeVerification) {
-			setSyncState({ status: "error", message: t`This approval recovery is no longer available.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-unavailable") });
 			return;
 		}
 
@@ -566,7 +619,7 @@ function MobileAgentSyncSession({
 				phase: "approved-unrevealed",
 			});
 			if (!retained) {
-				setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+				setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 				return;
 			}
 			setSyncState({ status: "concealed", approval });
@@ -580,15 +633,14 @@ function MobileAgentSyncSession({
 			clearDesktopApprovalRecovery(env, walletAddress ?? zeroAddress, approval.publicKey);
 			setSyncState({
 				status: "error",
-				message: t`Hyperliquid reports that this trading key was replaced, changed, or expired.`,
+				message: localizedMessage("mobile-key-invalidated"),
 			});
 			return;
 		}
 
 		retainApprovalForVerification(
 			approval,
-			submissionErrorMessage ??
-				t`The approval result is not confirmed. Retry the read-only verification before doing anything else.`,
+			submissionErrorMessage ?? localizedMessage("approval-verification-pending"),
 		);
 	}
 
@@ -607,13 +659,13 @@ function MobileAgentSyncSession({
 
 	async function handleReviewSync() {
 		if (!MOBILE_PAIRING_FEATURES.createAndReveal) {
-			setSyncState({ status: "error", message: t`Mobile QR creation is temporarily unavailable.` });
+			setSyncState({ status: "error", message: localizedMessage("qr-creation-unavailable") });
 			return;
 		}
 		if (!walletAddress || !hasWalletAccess) {
 			setSyncState({
 				status: "error",
-				message: t`Connect the selected master wallet before linking a mobile device.`,
+				message: localizedMessage("wallet-required-link"),
 			});
 			return;
 		}
@@ -625,7 +677,7 @@ function MobileAgentSyncSession({
 		if (hasDesktopApprovalRecovery(env, walletAddress)) {
 			setSyncState({
 				status: "error",
-				message: t`Another mobile approval is being prepared for this wallet.`,
+				message: localizedMessage("approval-already-preparing"),
 			});
 			return;
 		}
@@ -649,14 +701,14 @@ function MobileAgentSyncSession({
 			if (!hasFunding) {
 				setSyncState({
 					status: "error",
-					message: t`No balance on Hyperliquid. Deposit first.`,
+					message: localizedMessage("no-balance"),
 				});
 				return;
 			}
 			if (builderConfig?.b && !isBuilderFeeApproved(builderFeeResult?.data, builderConfig.f)) {
 				setSyncState({
 					status: "error",
-					message: t`Enable trading and approve the builder fee on this desktop before linking a phone.`,
+					message: localizedMessage("builder-fee-required"),
 				});
 				return;
 			}
@@ -664,7 +716,7 @@ function MobileAgentSyncSession({
 			setSyncState({ status: "review" });
 		} catch (error) {
 			if (!operation.signal.aborted) {
-				setSyncState({ status: "error", message: formatTransferError(normalizeError(error)) });
+				setSyncState({ status: "error", message: externalErrorMessage(error) });
 			}
 		} finally {
 			finishOperation(operation);
@@ -673,19 +725,19 @@ function MobileAgentSyncSession({
 
 	async function handleApproveSync() {
 		if (!MOBILE_PAIRING_FEATURES.createAndReveal) {
-			setSyncState({ status: "error", message: t`Mobile QR creation is temporarily unavailable.` });
+			setSyncState({ status: "error", message: localizedMessage("qr-creation-unavailable") });
 			return;
 		}
 		if (!walletAddress || !hasWalletAccess || syncState.status !== "review") {
 			setSyncState({
 				status: "error",
-				message: t`Review phone access with the selected master wallet before approving it.`,
+				message: localizedMessage("review-before-approve"),
 			});
 			return;
 		}
 		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
 		if (!registrationLease) {
-			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 			return;
 		}
 
@@ -699,13 +751,13 @@ function MobileAgentSyncSession({
 				if (!isBuilderFeeApproved(builderFeeResult.data, builderConfig.f)) {
 					setSyncState({
 						status: "error",
-						message: t`Enable trading and approve the builder fee on this desktop before linking a phone.`,
+						message: localizedMessage("builder-fee-required"),
 					});
 					return;
 				}
 			} catch (error) {
 				if (!preflightOperation.signal.aborted) {
-					setSyncState({ status: "error", message: formatTransferError(normalizeError(error)) });
+					setSyncState({ status: "error", message: externalErrorMessage(error) });
 				}
 				return;
 			} finally {
@@ -721,21 +773,21 @@ function MobileAgentSyncSession({
 				createApproval: createMobileAgentApproval,
 			});
 		} catch (error) {
-			setSyncState({ status: "error", message: formatTransferError(normalizeError(error)) });
+			setSyncState({ status: "error", message: externalErrorMessage(error) });
 			return;
 		}
 		if (submission.status === "blocked") {
 			setSyncState(
 				submission.recovery
 					? createSyncStateFromRecovery(submission.recovery)
-					: { status: "error", message: t`Another mobile approval is already in progress for this wallet.` },
+					: { status: "error", message: localizedMessage("approval-already-in-progress") },
 			);
 			return;
 		}
 		if (submission.status === "capacity") {
 			setSyncState({
 				status: "error",
-				message: t`Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first.`,
+				message: localizedMessage("recovery-capacity"),
 			});
 			return;
 		}
@@ -744,7 +796,7 @@ function MobileAgentSyncSession({
 		const operation = startOperation();
 		setSyncState({ status: "approving" });
 
-		let submissionErrorMessage: string | undefined;
+		let submissionErrorMessage: MobileAgentSyncMessage | undefined;
 		try {
 			try {
 				await approveAgent.mutateAsync(
@@ -755,7 +807,7 @@ function MobileAgentSyncSession({
 					{ signal: operation.signal },
 				);
 			} catch (error) {
-				submissionErrorMessage = formatTransferError(normalizeError(error));
+				submissionErrorMessage = externalErrorMessage(error);
 			}
 			if (operation.signal.aborted) return;
 
@@ -763,7 +815,7 @@ function MobileAgentSyncSession({
 			await reconcileApproval(approval, operation.signal, registrationLease, submissionErrorMessage);
 		} catch (error) {
 			if (!operation.signal.aborted) {
-				retainApprovalForVerification(approval, formatTransferError(normalizeError(error)));
+				retainApprovalForVerification(approval, externalErrorMessage(error));
 			}
 		} finally {
 			finishOperation(operation);
@@ -776,23 +828,28 @@ function MobileAgentSyncSession({
 		const approval = syncState.approval;
 		const recovery = getDesktopApprovalRecovery(env, walletAddress);
 		if (!recovery || recovery.approval.publicKey.toLowerCase() !== approval.publicKey.toLowerCase()) {
-			setSyncState({ status: "error", message: t`This approval recovery is no longer available.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-unavailable") });
 			return;
 		}
 		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
 		if (!registrationLease) {
 			clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
-			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 			return;
 		}
 
 		const operation = startOperation();
 		setSyncState({ status: "verifying" });
 		try {
-			await reconcileApproval(approval, operation.signal, registrationLease, recovery.submissionErrorMessage);
+			await reconcileApproval(
+				approval,
+				operation.signal,
+				registrationLease,
+				deserializeRecoveryMessage(recovery.submissionErrorMessage),
+			);
 		} catch (error) {
 			if (!operation.signal.aborted) {
-				retainApprovalForVerification(approval, formatTransferError(normalizeError(error)));
+				retainApprovalForVerification(approval, externalErrorMessage(error));
 			}
 		} finally {
 			finishOperation(operation);
@@ -804,7 +861,7 @@ function MobileAgentSyncSession({
 			setSyncState({
 				status: "concealed",
 				approval,
-				message: t`Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it.`,
+				message: localizedMessage("qr-reveal-unavailable"),
 			});
 			return;
 		}
@@ -816,7 +873,7 @@ function MobileAgentSyncSession({
 		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
 		if (!registrationLease) {
 			clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
-			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			setSyncState({ status: "error", message: localizedMessage("approval-recovery-inactive") });
 			return;
 		}
 
@@ -827,7 +884,7 @@ function MobileAgentSyncSession({
 		try {
 			const recovery = getDesktopApprovalRecovery(env, walletAddress);
 			if (!recovery || recovery.approval.publicKey.toLowerCase() !== approval.publicKey.toLowerCase()) {
-				setSyncState({ status: "error", message: t`This approval recovery is no longer available.` });
+				setSyncState({ status: "error", message: localizedMessage("approval-recovery-unavailable") });
 				return;
 			}
 			const verification = await verifyApproval(approval, operation.signal);
@@ -845,14 +902,11 @@ function MobileAgentSyncSession({
 					clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
 					setSyncState({
 						status: "error",
-						message: t`Hyperliquid reports that this trading key was replaced, changed, or expired.`,
+						message: localizedMessage("mobile-key-invalidated"),
 					});
 					return;
 				}
-				retainApprovalForVerification(
-					approval,
-					t`The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.`,
-				);
+				retainApprovalForVerification(approval, localizedMessage("approval-recheck-failed"));
 				return;
 			}
 
@@ -878,8 +932,8 @@ function MobileAgentSyncSession({
 					approval,
 					message:
 						ticketResult.status === "rejected"
-							? t`This one-time QR could not be created. Try revealing a new QR.`
-							: t`The one-time QR service is unavailable. Check your connection and retry.`,
+							? localizedMessage("qr-ticket-rejected")
+							: localizedMessage("qr-service-unavailable"),
 				});
 				return;
 			}
@@ -895,7 +949,7 @@ function MobileAgentSyncSession({
 				setSyncState({
 					status: "concealed",
 					approval,
-					message: t`This one-time QR could not be created. Try revealing a new QR.`,
+					message: localizedMessage("qr-ticket-rejected"),
 				});
 				return;
 			}
@@ -917,7 +971,7 @@ function MobileAgentSyncSession({
 				setSyncState({
 					status: "concealed",
 					approval,
-					message: formatTransferError(normalizeError(error)),
+					message: externalErrorMessage(error),
 				});
 			}
 		} finally {
@@ -929,7 +983,7 @@ function MobileAgentSyncSession({
 		if (!walletAddress || !hasWalletAccess) {
 			setResetState({
 				status: "error",
-				message: t`Connect the selected master wallet before resetting mobile access.`,
+				message: localizedMessage("wallet-required-reset"),
 			});
 			return;
 		}
@@ -942,7 +996,10 @@ function MobileAgentSyncSession({
 		try {
 			const extraAgents = await loadExtraAgents();
 			if (operation.signal.aborted) return;
-			if (!extraAgents) throw new Error(t`Could not verify current mobile access.`);
+			if (!extraAgents) {
+				setResetState({ status: "error", message: localizedMessage("verify-mobile-access-failed") });
+				return;
+			}
 
 			const recovery = getDesktopApprovalRecovery(env, walletAddress);
 			const oldAgentAddresses = [
@@ -956,7 +1013,7 @@ function MobileAgentSyncSession({
 			setResetState({ status: "confirm", oldAgentAddresses });
 		} catch (error) {
 			if (!operation.signal.aborted) {
-				setResetState({ status: "error", message: formatTransferError(normalizeError(error)) });
+				setResetState({ status: "error", message: externalErrorMessage(error) });
 			}
 		} finally {
 			finishOperation(operation);
@@ -1029,7 +1086,7 @@ function MobileAgentSyncSession({
 			if (verification.status === "expired-unverified") {
 				setResetState({
 					status: "error",
-					message: t`The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation.`,
+					message: localizedMessage("revocation-expired"),
 				});
 				return;
 			}
@@ -1038,9 +1095,7 @@ function MobileAgentSyncSession({
 				status: "pending",
 				oldAgentAddresses,
 				replacement,
-				message: submissionError
-					? formatTransferError(normalizeError(submissionError))
-					: t`Revocation was submitted but is not yet confirmed.`,
+				message: submissionError ? externalErrorMessage(submissionError) : localizedMessage("revocation-pending"),
 			});
 		} finally {
 			finishOperation(operation);
@@ -1064,7 +1119,7 @@ function MobileAgentSyncSession({
 			if (verification.status === "expired-unverified") {
 				setResetState({
 					status: "error",
-					message: t`The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation.`,
+					message: localizedMessage("revocation-expired"),
 				});
 				return;
 			}
@@ -1102,6 +1157,7 @@ function MobileAgentSyncSession({
 			open={open}
 			onOpenChange={handleOpenChange}
 			size="md"
+			closeLabel={t`Close`}
 			presentation={isMobile ? "drawer" : "modal"}
 			className="max-h-[min(92dvh,48rem)]"
 		>
@@ -1125,7 +1181,9 @@ function MobileAgentSyncSession({
 					<span className="min-w-0 truncate font-medium text-fg">
 						{walletAddress && hasWalletAccess ? (
 							<>
-								<span className="font-mono">{shortenAddress(walletAddress)}</span>
+								<span className="font-mono">
+									<bdi dir="ltr">{shortenAddress(walletAddress)}</bdi>
+								</span>
 								<span className="text-fg-muted"> · {env}</span>
 							</>
 						) : (
@@ -1184,7 +1242,7 @@ function MobileAgentSyncSession({
 							)
 						}
 					>
-						{getPrimaryButtonLabel(syncState.status)}
+						<PrimaryButtonLabel status={syncState.status} />
 					</Button>
 				</ModalFooter>
 			)}
@@ -1192,13 +1250,68 @@ function MobileAgentSyncSession({
 	);
 }
 
-function getPrimaryButtonLabel(status: SyncState["status"]): string {
+function PrimaryButtonLabel({ status }: { status: SyncState["status"] }) {
+	const { t } = useLingui();
 	if (status === "checking") return t`Checking account...`;
 	if (status === "review") return t`Approve mobile trading key`;
 	if (status === "approving") return t`Approve in wallet...`;
 	if (status === "verifying") return t`Verifying approval...`;
 	if (status === "error") return t`Review again`;
 	return t`Review phone access`;
+}
+
+function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessage }) {
+	const { t } = useLingui();
+	if (message.kind === "external-error") {
+		return formatTransferError(new Error(message.rawMessage));
+	}
+
+	switch (message.code) {
+		case "approval-already-in-progress":
+			return t`Another mobile approval is already in progress for this wallet.`;
+		case "approval-already-preparing":
+			return t`Another mobile approval is being prepared for this wallet.`;
+		case "approval-recheck-failed":
+			return t`The approval could not be rechecked. The QR remains hidden until read-only verification succeeds.`;
+		case "approval-recovery-inactive":
+			return t`This approval recovery is no longer active.`;
+		case "approval-recovery-unavailable":
+			return t`This approval recovery is no longer available.`;
+		case "approval-verification-pending":
+			return t`The approval result is not confirmed. Retry the read-only verification before doing anything else.`;
+		case "builder-fee-required":
+			return t`Enable trading and approve the builder fee on this desktop before linking a phone.`;
+		case "mobile-key-expired":
+			return t`This mobile trading key has expired.`;
+		case "mobile-key-invalidated":
+			return t`Hyperliquid reports that this trading key was replaced, changed, or expired.`;
+		case "no-balance":
+			return t`No balance on Hyperliquid. Deposit first.`;
+		case "qr-creation-unavailable":
+			return t`Mobile QR creation is temporarily unavailable.`;
+		case "qr-render-failed":
+			return t`Could not render QR. Create a new key.`;
+		case "qr-reveal-unavailable":
+			return t`Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it.`;
+		case "qr-service-unavailable":
+			return t`The one-time QR service is unavailable. Check your connection and retry.`;
+		case "qr-ticket-rejected":
+			return t`This one-time QR could not be created. Try revealing a new QR.`;
+		case "recovery-capacity":
+			return t`Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first.`;
+		case "review-before-approve":
+			return t`Review phone access with the selected master wallet before approving it.`;
+		case "revocation-expired":
+			return t`The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation.`;
+		case "revocation-pending":
+			return t`Revocation was submitted but is not yet confirmed.`;
+		case "verify-mobile-access-failed":
+			return t`Could not verify current mobile access.`;
+		case "wallet-required-link":
+			return t`Connect the selected master wallet before linking a mobile device.`;
+		case "wallet-required-reset":
+			return t`Connect the selected master wallet before resetting mobile access.`;
+	}
 }
 
 function PendingApprovalVerificationPanel({
@@ -1216,7 +1329,9 @@ function PendingApprovalVerificationPanel({
 					<p className="font-semibold">
 						<Trans>Approval verification pending</Trans>
 					</p>
-					<p>{state.message}</p>
+					<p>
+						<MobileAgentSyncMessageText message={state.message} />
+					</p>
 					<p>
 						<Trans>The generated key remains only in this tab. Do not approve another key or reload the page.</Trans>
 					</p>
@@ -1277,7 +1392,7 @@ function ApprovalReviewPanel() {
 					</p>
 				</div>
 			</div>
-			<ul className="list-disc space-y-1 pl-5 text-xs text-fg-muted">
+			<ul className="list-disc space-y-1 ps-5 text-xs text-fg-muted">
 				<li>
 					<Trans>Anyone who scans or captures the QR can trade as this Agent.</Trans>
 				</li>
@@ -1299,6 +1414,7 @@ function ConcealedQrPanel({
 	state: Extract<SyncState, { status: "concealed" | "revalidating" }>;
 	onReveal: (approval: MobileAgentApproval) => void;
 }) {
+	const { t } = useLingui();
 	const isRevalidating = state.status === "revalidating";
 	const approval = state.approval;
 	const descriptionId = useId();
@@ -1383,6 +1499,7 @@ function VisibleQrPanel({
 	payload: QrPayload;
 	canvasRef: RefObject<HTMLCanvasElement | null>;
 }) {
+	const { t } = useLingui();
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error">
@@ -1414,14 +1531,16 @@ function VisibleQrPanel({
 	);
 }
 
-function InlineError({ message }: { message: string }) {
+function InlineError({ message }: { message: MobileAgentSyncMessage }) {
 	return (
 		<div
 			role="alert"
 			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
-			<p>{message}</p>
+			<p>
+				<MobileAgentSyncMessageText message={message} />
+			</p>
 		</div>
 	);
 }
@@ -1492,7 +1611,9 @@ function ResetMobileAccessPanel({
 
 			{state.status === "pending" && (
 				<div className="mt-3 space-y-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-2.5 text-xs text-error">
-					<p>{state.message}</p>
+					<p>
+						<MobileAgentSyncMessageText message={state.message} />
+					</p>
 					<p>
 						<Trans>Do not submit another revocation. Retry the read-only verification.</Trans>
 					</p>

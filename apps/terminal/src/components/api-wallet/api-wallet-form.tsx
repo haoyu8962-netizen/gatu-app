@@ -1,6 +1,7 @@
-import { Button, Select, TextInput } from "@gatu/ui";
+import { Button, RadioGroup, RadioGroupItem, Select, TextInput } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { KeyIcon } from "@phosphor-icons/react";
+import { useId } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import type { ApiWalletPageState, ApiWalletValidityDays } from "./api-wallet-view";
@@ -42,6 +43,7 @@ export function ApiWalletForm({
 }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
+	const validityLegendId = useId();
 	const isDisconnected = pageState === "disconnected";
 	const isOperable = pageState === "normal" || pageState === "empty";
 	const validityOptions = VALIDITY_OPTIONS.map((days) => ({
@@ -54,7 +56,9 @@ export function ApiWalletForm({
 			<div
 				className={cn(
 					"items-end gap-2.5",
-					isMobile ? "flex flex-col" : "grid [grid-template-columns:var(--api-wallet-form-columns)]",
+					isMobile
+						? "flex flex-col"
+						: "grid grid-cols-2 min-[1200px]:[grid-template-columns:var(--api-wallet-form-columns)]",
 				)}
 			>
 				<TextInput
@@ -70,7 +74,7 @@ export function ApiWalletForm({
 					placeholder={t`For example: grid-bot`}
 					size={isMobile ? "lg" : "md"}
 					className={cn(
-						"rounded-[var(--api-wallet-control-radius)] border-api-wallet-stroke-input bg-surface",
+						"rounded-20 border-api-wallet-stroke-input bg-surface",
 						isMobile ? "min-h-[var(--api-wallet-mobile-control-height)]" : "h-[var(--api-wallet-control-height)]",
 					)}
 					inputClassName="font-semibold"
@@ -85,8 +89,10 @@ export function ApiWalletForm({
 					placeholder={t`Generate a new local key pair`}
 					size={isMobile ? "lg" : "md"}
 					className={cn(
-						"rounded-[var(--api-wallet-control-radius)] border-api-wallet-stroke-input bg-surface",
-						isMobile ? "min-h-[var(--api-wallet-mobile-control-height)]" : "h-[var(--api-wallet-control-height)]",
+						"rounded-20 border-api-wallet-stroke-input bg-surface",
+						isMobile
+							? "min-h-[var(--api-wallet-mobile-control-height)] py-0 pr-1"
+							: "h-[var(--api-wallet-control-height)]",
 					)}
 					inputClassName="truncate font-mono tabular-nums"
 					iconLeft={<KeyIcon className="size-4" />}
@@ -96,7 +102,7 @@ export function ApiWalletForm({
 							variant="link"
 							intent="brand"
 							size="xs"
-							className="shrink-0 p-0 active:scale-100"
+							className={cn("shrink-0 active:scale-100", isMobile ? "touch-target px-2 py-0" : "p-0")}
 							disabled={!isOperable || !canGenerate}
 							onClick={onGenerate}
 						>
@@ -108,28 +114,37 @@ export function ApiWalletForm({
 				<div className="w-full">
 					{isMobile ? (
 						<fieldset disabled={!isOperable}>
-							<legend className="mb-1 text-xs font-semibold text-api-wallet-fg">
+							<legend id={validityLegendId} className="mb-1 text-xs font-semibold text-api-wallet-fg">
 								<Trans>Validity</Trans>
 							</legend>
-							<div className="grid grid-cols-3 gap-1.5">
+							<RadioGroup
+								value={String(validityDays)}
+								orientation="horizontal"
+								aria-labelledby={validityLegendId}
+								className="grid grid-cols-3 gap-1.5"
+								onValueChange={(value) => {
+									if (typeof value === "string" && isValidityDays(value)) {
+										onValidityChange(Number(value) as ApiWalletValidityDays);
+									}
+								}}
+							>
 								{VALIDITY_OPTIONS.map((days) => {
-									const selected = days === validityDays;
 									return (
-										<Button
+										<RadioGroupItem
 											key={days}
-											type="button"
-											variant={selected ? "filled" : "outline"}
-											intent={selected ? "neutral" : "neutral"}
-											size="md"
+											value={String(days)}
+											size="sm"
+											label={<Trans>{days} days</Trans>}
 											disabled={!isOperable}
-											className="min-h-[var(--api-wallet-mobile-control-height)] rounded-[var(--api-wallet-control-radius)] active:scale-100"
-											onClick={() => onValidityChange(days)}
-										>
-											<Trans>{days} days</Trans>
-										</Button>
+											className={cn(
+												"min-h-[var(--api-wallet-mobile-control-height)] min-w-0 items-center justify-center rounded-20 border border-api-wallet-stroke-input bg-surface px-2 py-1",
+												"hover:bg-api-wallet-hover [&:has([data-checked])]:border-api-wallet-control [&:has([data-checked])]:bg-api-wallet-card",
+												"[&>div]:min-w-0 [&>div>span]:truncate [&>div>span]:font-semibold",
+											)}
+										/>
 									);
 								})}
-							</div>
+							</RadioGroup>
 						</fieldset>
 					) : (
 						<Select
@@ -140,7 +155,7 @@ export function ApiWalletForm({
 							onValueChange={(value) => {
 								if (isValidityDays(value)) onValidityChange(Number(value) as ApiWalletValidityDays);
 							}}
-							triggerClassName="h-[var(--api-wallet-control-height)] rounded-[var(--api-wallet-control-radius)] border-api-wallet-stroke-input bg-surface"
+							triggerClassName="h-[var(--api-wallet-control-height)] rounded-20 border-api-wallet-stroke-input bg-surface"
 							popupClassName="data-starting-style:scale-100 data-ending-style:scale-100"
 						/>
 					)}
@@ -150,7 +165,7 @@ export function ApiWalletForm({
 					type="button"
 					size={isMobile ? "lg" : "md"}
 					className={cn(
-						"w-full rounded-[var(--api-wallet-control-radius)] bg-api-wallet-control text-api-wallet-on-control active:scale-100",
+						"w-full rounded-20 bg-api-wallet-control text-api-wallet-on-control active:scale-100",
 						isMobile ? "min-h-[var(--api-wallet-mobile-control-height)]" : "h-[var(--api-wallet-control-height)]",
 					)}
 					disabled={!isDisconnected && (!isOperable || !canAuthorize)}
