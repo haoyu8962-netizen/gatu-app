@@ -4,10 +4,12 @@ import {
 	calculateCoreAccountEquity,
 	calculateEarnBalance,
 	calculateFourteenDayVolume,
-	calculateMaxDrawdown,
 	calculateVaultEquity,
 	getLatestHistoryValue,
+	getPortfolioQueryStatus,
 	getPortfolioSnapshot,
+	hasBorrowLendExposure,
+	PORTFOLIO_MAX_AGE_MS,
 	resolveCurrentTotalEquity,
 } from "@/domain/portfolio";
 import type { InfoResponse } from "@/lib/hyperliquid";
@@ -31,7 +33,7 @@ describe("portfolio data", () => {
 		expect(getPortfolioSnapshot(portfolio, "perps", "month")?.vlm).toBe("250");
 	});
 
-	it("reads the newest history value and calculates peak-to-trough drawdown", () => {
+	it("reads the newest valid history value", () => {
 		const history: InfoResponse<"portfolio">[number][1]["accountValueHistory"] = [
 			[1, "100"],
 			[2, "125"],
@@ -40,9 +42,8 @@ describe("portfolio data", () => {
 		];
 
 		expect(getLatestHistoryValue(history)).toBe("120");
-		expect(calculateMaxDrawdown(history)).toBe("-0.2");
 		expect(getLatestHistoryValue([])).toBeNull();
-		expect(calculateMaxDrawdown([])).toBeNull();
+		expect(getLatestHistoryValue([[1, "invalid"]])).toBeNull();
 	});
 
 	it("sums maker and taker volume for the latest fourteen calendar entries", () => {
@@ -108,7 +109,7 @@ describe("portfolio data", () => {
 		).toBeNull();
 	});
 
-	it("prefers current account sources and uses portfolio history while they are unavailable", () => {
+	it("requires complete current account sources without falling back to history", () => {
 		const vaults = [
 			{ vaultAddress: "0x0000000000000000000000000000000000000001", equity: "25", lockedUntilTimestamp: 0 },
 		] as InfoResponse<"userVaultEquities">;
@@ -116,7 +117,6 @@ describe("portfolio data", () => {
 		expect(calculateVaultEquity(vaults)).toBe("25");
 		expect(
 			resolveCurrentTotalEquity({
-				portfolioValue: "900",
 				coreEquity: "750",
 				vaultEquity: "25",
 				earnBalance: "10",
@@ -125,21 +125,116 @@ describe("portfolio data", () => {
 		).toBe("785");
 		expect(
 			resolveCurrentTotalEquity({
-				portfolioValue: "900",
-				coreEquity: "750",
-				vaultEquity: "25",
-				earnBalance: "10",
-				currentSourcesAvailable: false,
-			}),
-		).toBe("900");
-		expect(
-			resolveCurrentTotalEquity({
-				portfolioValue: null,
 				coreEquity: "750",
 				vaultEquity: "25",
 				earnBalance: "10",
 				currentSourcesAvailable: false,
 			}),
 		).toBeNull();
+		expect(
+			resolveCurrentTotalEquity({
+				coreEquity: "750",
+				vaultEquity: "25",
+				earnBalance: "10",
+				currentSourcesAvailable: false,
+			}),
+		).toBeNull();
+	});
+});
+
+describe("portfolio valuation completeness", () => {
+	const state = (supply: string, borrow = "0") =>
+		({
+			tokenToState: [[150, { supply: { basis: supply, value: supply }, borrow: { basis: borrow, value: borrow } }]],
+			health: "healthy",
+			healthFactor: null,
+		}) as InfoResponse<"borrowLendUserState">;
+	const reserves = (oraclePx: string) => [[150, { oraclePx }]] as InfoResponse<"allBorrowLendReserveStates">;
+
+	it("requires valid prices for both assets and liabilities", () => {
+		for (const data of [state("2"), state("0", "2"), state("2", "2")]) {
+			expect(calculateEarnBalance(data, [])).toBeNull();
+			for (const price of ["0", "-1", "invalid"]) expect(calculateEarnBalance(data, reserves(price))).toBeNull();
+		}
+		expect(calculateEarnBalance(state("0", "2"), reserves("86.82"))).toBe("-173.64");
+		expect(hasBorrowLendExposure(state("2", "2"))).toBe(true);
+	});
+
+	it("distinguishes zero lending from unavailable and invalid lending", () => {
+		expect(calculateEarnBalance(state("0"), undefined)).toBe("0");
+		expect(calculateEarnBalance(undefined, reserves("1"))).toBeNull();
+		for (const value of ["invalid", "-1", ""]) expect(calculateEarnBalance(state(value), reserves("1"))).toBeNull();
+		expect(calculateVaultEquity(undefined)).toBeNull();
+		expect(calculateVaultEquity([])).toBe("0");
+		expect(calculateVaultEquity([{ equity: "invalid" }] as InfoResponse<"userVaultEquities">)).toBeNull();
+	});
+
+	it("never drops an unpriced token from a partially valued lending portfolio", () => {
+		const data = state("2");
+		data.tokenToState.push([0, { supply: { basis: "100", value: "100" }, borrow: { basis: "0", value: "0" } }]);
+		expect(
+			calculateEarnBalance(data, [[0, { oraclePx: "1" }]] as InfoResponse<"allBorrowLendReserveStates">),
+		).toBeNull();
+	});
+
+	it("preserves decimal precision and negative total equity", () => {
+		expect(
+			resolveCurrentTotalEquity({
+				coreEquity: "9007199254740993.01",
+				vaultEquity: "0.02",
+				earnBalance: "0",
+				currentSourcesAvailable: true,
+			}),
+		).toBe("9007199254740993.03");
+		expect(
+			resolveCurrentTotalEquity({
+				coreEquity: "100",
+				vaultEquity: "0",
+				earnBalance: "-200",
+				currentSourcesAvailable: true,
+			}),
+		).toBe("-100");
+		expect(
+			resolveCurrentTotalEquity({
+				coreEquity: "100",
+				vaultEquity: null,
+				earnBalance: "0",
+				currentSourcesAvailable: true,
+			}),
+		).toBeNull();
+		expect(
+			calculateCoreAccountEquity({ spotEquity: "100", perpEquity: null, usesSharedQuoteBalance: false }),
+		).toBeNull();
+		expect(
+			calculateAllDexPerpEquityUsd({
+				accounts: [{ dex: "", accountValue: "invalid" }],
+				collaterals: [],
+				tokenUsdPrices: {},
+			}),
+		).toBeNull();
+	});
+});
+
+describe("portfolio query freshness", () => {
+	const now = 1_800_000_000_000;
+	const query = {
+		data: [],
+		dataUpdatedAt: now,
+		isError: false,
+		isPending: false,
+		isPlaceholderData: false,
+		isFetchedAfterMount: true,
+	};
+	it("keeps fresh data during a normal refresh and rejects expired or failed cached data", () => {
+		expect(getPortfolioQueryStatus(query, true, now)).toBe("ready");
+		expect(getPortfolioQueryStatus(query, true, now + PORTFOLIO_MAX_AGE_MS)).toBe("stale");
+		expect(getPortfolioQueryStatus({ ...query, isError: true }, true, now)).toBe("error");
+		expect(getPortfolioQueryStatus({ ...query, dataUpdatedAt: now + 1 }, true, now)).toBe("stale");
+	});
+	it("does not reuse disabled, placeholder, missing, or pending data", () => {
+		expect(getPortfolioQueryStatus(query, false, now)).toBe("unavailable");
+		expect(getPortfolioQueryStatus({ ...query, isPlaceholderData: true }, true, now)).toBe("loading");
+		expect(getPortfolioQueryStatus({ ...query, data: undefined }, true, now)).toBe("unavailable");
+		expect(getPortfolioQueryStatus({ ...query, isPending: true }, true, now)).toBe("loading");
 	});
 });

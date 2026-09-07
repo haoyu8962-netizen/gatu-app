@@ -2914,8 +2914,8 @@ msgid "Earn"
 msgstr "收益"
 
 #: src/components/portfolio/portfolio-overview.tsx
-msgid "Earn Balance"
-msgstr "理财余额"
+#~ msgid "Earn Balance"
+#~ msgstr "理财余额"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -4309,6 +4309,10 @@ msgstr "旧版 DEX"
 msgid "Legacy reward history"
 msgstr "旧版奖励历史"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Lending Net Balance"
+msgstr "借贷净余额"
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
@@ -4938,6 +4942,10 @@ msgstr "最大"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
 msgstr "最大回撤"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
+msgstr "尚无法验证剔除资金流影响后的历史净值，暂不显示最大回撤。"
 
 #: src/lib/trade/twap-labels.ts
 msgid "Max Price"
@@ -7074,6 +7082,7 @@ msgstr "继续跟踪"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -7945,6 +7954,10 @@ msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Some balances cannot be valued with current data."
+msgstr "当前数据不足，部分余额暂时无法估值。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9417,6 +9430,10 @@ msgstr "合计"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "总权益"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total equity is unavailable because lending and trading balances may overlap."
+msgstr "借贷余额与交易余额可能重叠，暂不显示总权益。"
 
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx

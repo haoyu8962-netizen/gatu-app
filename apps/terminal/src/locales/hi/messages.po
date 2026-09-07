@@ -3094,8 +3094,8 @@ msgid "Earn"
 msgstr "अर्न"
 
 #: src/components/portfolio/portfolio-overview.tsx
-msgid "Earn Balance"
-msgstr "अर्न बैलेंस"
+#~ msgid "Earn Balance"
+#~ msgstr "अर्न बैलेंस"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -4567,6 +4567,10 @@ msgstr "लीगेसी DEX"
 msgid "Legacy reward history"
 msgstr "पुराना पुरस्कार इतिहास"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Lending Net Balance"
+msgstr "शुद्ध उधार शेष"
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
@@ -5259,6 +5263,10 @@ msgstr "अधिकतम"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
 msgstr "अधिकतम गिरावट"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
+msgstr "नकदी प्रवाह के प्रभाव से समायोजित इतिहास की पुष्टि होने तक अधिकतम गिरावट उपलब्ध नहीं है।"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -7575,6 +7583,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -8553,6 +8562,10 @@ msgstr "स्मार्ट वॉलेट जमा स्थिति स�
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "सोलाना स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए उच्च-थ्रूपुट निष्पादन हेतु डिज़ाइन किया गया ब्लॉकचेन है।"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Some balances cannot be valued with current data."
+msgstr "वर्तमान डेटा से कुछ शेष राशियों का मूल्यांकन नहीं किया जा सकता।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10081,6 +10094,10 @@ msgstr "कुल"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "कुल इक्विटी"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total equity is unavailable because lending and trading balances may overlap."
+msgstr "कुल इक्विटी उपलब्ध नहीं है क्योंकि उधार और ट्रेडिंग शेष में एक ही राशि शामिल हो सकती है।"
 
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx

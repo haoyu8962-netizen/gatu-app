@@ -1,8 +1,15 @@
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import type { TokenUsdPrices } from "@/domain/trade/balances";
+import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
+import {
+	getSpotAccountValueUsdValue,
+	isQuoteBalanceSharedWithPerps,
+	type TokenUsdPrices,
+} from "@/domain/trade/balances";
+import type { AssetAvailabilityStatus } from "@/domain/trade/order/availability";
+import type { AccountBalances } from "@/hooks/trade/use-account-balances";
 import type { InfoResponse } from "@/lib/hyperliquid";
-import { toBig, toSafeBig } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 
 export type PortfolioPeriod = "day" | "week" | "month" | "allTime";
 export type PortfolioScope = "combined" | "perps";
@@ -48,62 +55,63 @@ export function getPortfolioSnapshot(
 }
 
 export function getLatestHistoryValue(history: PortfolioSnapshot["accountValueHistory"] | undefined): string | null {
-	return history?.at(-1)?.[1] ?? null;
-}
-
-export function calculateMaxDrawdown(history: PortfolioSnapshot["accountValueHistory"] | undefined): string | null {
-	if (!history?.length) return null;
-
-	let peak = Big(0);
-	let largestDrawdown = Big(0);
-
-	for (const [, value] of history) {
-		const current = toSafeBig(value);
-		if (current.gt(peak)) {
-			peak = current;
-			continue;
-		}
-		if (peak.lte(0)) continue;
-
-		const drawdown = peak.minus(current).div(peak);
-		if (drawdown.gt(largestDrawdown)) largestDrawdown = drawdown;
-	}
-
-	return largestDrawdown.times(-1).toString();
+	return toBig(history?.at(-1)?.[1])?.toString() ?? null;
 }
 
 export function calculateFourteenDayVolume(dailyVolume: DailyUserVolume | null | undefined): string | null {
 	if (dailyVolume == null) return null;
-	if (!dailyVolume.length) return "0";
-
-	return [...dailyVolume]
-		.sort((a, b) => a.date.localeCompare(b.date))
-		.slice(-14)
-		.reduce((total, day) => total.plus(toSafeBig(day.userCross)).plus(toSafeBig(day.userAdd)), Big(0))
-		.toString();
+	let total = Big(0);
+	for (const day of [...dailyVolume].sort((a, b) => a.date.localeCompare(b.date)).slice(-14)) {
+		const cross = toBig(day.userCross);
+		const add = toBig(day.userAdd);
+		if (!cross || !add || cross.lt(0) || add.lt(0)) return null;
+		total = total.plus(cross).plus(add);
+	}
+	return total.toString();
 }
 
-export function calculateVaultEquity(vaults: UserVaultEquities | null | undefined): string {
-	return (vaults ?? []).reduce((total, vault) => total.plus(toSafeBig(vault.equity)), Big(0)).toString();
+export function calculateVaultEquity(vaults: UserVaultEquities | null | undefined): string | null {
+	if (!vaults) return null;
+	let total = Big(0);
+	for (const vault of vaults) {
+		const equity = toBig(vault.equity);
+		if (!equity) return null;
+		total = total.plus(equity);
+	}
+	return total.toString();
+}
+
+export function hasBorrowLendExposure(userState: BorrowLendUserState | null | undefined): boolean | null {
+	if (!userState || !Array.isArray(userState.tokenToState)) return null;
+	let hasExposure = false;
+	for (const [, state] of userState.tokenToState) {
+		const supply = toBig(state.supply?.value);
+		const borrow = toBig(state.borrow?.value);
+		if (!supply || !borrow || supply.lt(0) || borrow.lt(0)) return null;
+		hasExposure ||= supply.gt(0) || borrow.gt(0);
+	}
+	return hasExposure;
 }
 
 export function calculateEarnBalance(
 	userState: BorrowLendUserState | null | undefined,
 	reserveStates: BorrowLendReserveStates | null | undefined,
-): string {
-	if (!userState?.tokenToState.length || !reserveStates?.length) return "0";
-
-	const oraclePrices = new Map(reserveStates.map(([tokenId, state]) => [tokenId, toSafeBig(state.oraclePx)]));
-
-	return userState.tokenToState
-		.reduce((total, [tokenId, state]) => {
-			const oraclePrice = oraclePrices.get(tokenId);
-			if (!oraclePrice) return total;
-
-			const netTokenValue = toSafeBig(state.supply.value).minus(toSafeBig(state.borrow.value));
-			return total.plus(netTokenValue.times(oraclePrice));
-		}, Big(0))
-		.toString();
+): string | null {
+	const exposure = hasBorrowLendExposure(userState);
+	if (exposure === null || !userState) return null;
+	if (!exposure) return "0";
+	const oraclePrices = new Map((reserveStates ?? []).map(([tokenId, state]) => [tokenId, toBig(state.oraclePx)]));
+	let total = Big(0);
+	for (const [tokenId, state] of userState.tokenToState) {
+		const supply = toBig(state.supply?.value);
+		const borrow = toBig(state.borrow?.value);
+		if (!supply || !borrow) return null;
+		if (supply.eq(0) && borrow.eq(0)) continue;
+		const price = oraclePrices.get(tokenId);
+		if (!price?.gt(0)) return null;
+		total = total.plus(supply.minus(borrow).times(price));
+	}
+	return total.toString();
 }
 
 export function calculateCoreAccountEquity({
@@ -111,12 +119,13 @@ export function calculateCoreAccountEquity({
 	perpEquity,
 	usesSharedQuoteBalance,
 }: {
-	spotEquity: string | number;
-	perpEquity: string | number;
+	spotEquity: string | null;
+	perpEquity: string | null;
 	usesSharedQuoteBalance: boolean;
-}): string {
-	const spotValue = toSafeBig(spotEquity);
-	return (usesSharedQuoteBalance ? spotValue : spotValue.plus(toSafeBig(perpEquity))).toString();
+}): string | null {
+	const spot = toBig(spotEquity);
+	const perps = usesSharedQuoteBalance ? Big(0) : toBig(perpEquity);
+	return spot && perps ? spot.plus(perps).toString() : null;
 }
 
 export function calculateAllDexPerpEquityUsd({
@@ -135,7 +144,8 @@ export function calculateAllDexPerpEquityUsd({
 
 	let total = Big(0);
 	for (const { dex, accountValue } of accounts) {
-		const value = toSafeBig(accountValue);
+		const value = toBig(accountValue);
+		if (!value) return null;
 		if (value.eq(0)) continue;
 
 		const collateralToken = collateralByDex.get(dex);
@@ -152,19 +162,89 @@ export function calculateAllDexPerpEquityUsd({
 }
 
 export function resolveCurrentTotalEquity({
-	portfolioValue,
 	coreEquity,
 	vaultEquity,
 	earnBalance,
 	currentSourcesAvailable,
 }: {
-	portfolioValue: string | null | undefined;
-	coreEquity: string | number;
-	vaultEquity: string | number;
-	earnBalance: string | number;
+	coreEquity: string | null;
+	vaultEquity: string | null;
+	earnBalance: string | null;
 	currentSourcesAvailable: boolean;
 }): string | null {
-	if (!currentSourcesAvailable) return portfolioValue == null ? null : toSafeBig(portfolioValue).toString();
+	if (!currentSourcesAvailable) return null;
+	const core = toBig(coreEquity);
+	const vault = toBig(vaultEquity);
+	const earn = toBig(earnBalance);
+	return core && vault && earn ? core.plus(vault).plus(earn).toString() : null;
+}
 
-	return toSafeBig(coreEquity).plus(toSafeBig(vaultEquity)).plus(toSafeBig(earnBalance)).toString();
+export const PORTFOLIO_REFRESH_INTERVAL_MS = 60_000;
+export const PORTFOLIO_MAX_AGE_MS = 120_000;
+export type PortfolioSourceStatus = "loading" | "error" | "stale" | "unavailable" | "ready";
+
+export function getPortfolioQueryStatus(
+	query: {
+		data: unknown;
+		dataUpdatedAt: number;
+		isError: boolean;
+		isPending: boolean;
+		isPlaceholderData: boolean;
+		isFetchedAfterMount: boolean;
+	},
+	enabled: boolean,
+	now: number,
+): PortfolioSourceStatus {
+	if (!enabled) return "unavailable";
+	if (query.isError) return "error";
+	if (query.isPending || query.isPlaceholderData || !query.isFetchedAfterMount) return "loading";
+	if (query.data === undefined || !Number.isFinite(query.dataUpdatedAt) || query.dataUpdatedAt <= 0)
+		return "unavailable";
+	const age = now - query.dataUpdatedAt;
+	return age < 0 || age >= PORTFOLIO_MAX_AGE_MS ? "stale" : "ready";
+}
+
+export function derivePortfolioAccountEquity({
+	balances,
+	collaterals,
+	tokenUsdPrices,
+	tokenUsdPriceStatus,
+	isConnected,
+	borrowLendState,
+}: {
+	balances: AccountBalances;
+	collaterals: readonly PerpDexCollateral[];
+	tokenUsdPrices: TokenUsdPrices;
+	tokenUsdPriceStatus: AssetAvailabilityStatus;
+	isConnected: boolean;
+	borrowLendState: BorrowLendUserState | undefined;
+}) {
+	const modeReady = isConnected && isSupportedAccountAbstraction(balances.accountAbstraction);
+	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(balances.accountAbstraction);
+	const prices = tokenUsdPriceStatus === "success" ? tokenUsdPrices : undefined;
+	const spotReady = modeReady && balances.hasSpotStateSnapshot && balances.spotStateStatus === "success";
+	const perpsReady = modeReady && balances.hasAllDexsSnapshot && balances.perpStateStatus === "success";
+	const spotEquity = spotReady ? getSpotAccountValueUsdValue(balances.spotBalances, prices) : null;
+	const perpEquity =
+		perpsReady && !usesSharedQuoteBalance
+			? calculateAllDexPerpEquityUsd({
+					accounts: balances.allDexClearinghouseStates.map(([dex, state]) => ({
+						dex,
+						accountValue: state.marginSummary.accountValue,
+					})),
+					collaterals,
+					tokenUsdPrices: prices,
+				})
+			: null;
+	const exposure = hasBorrowLendExposure(borrowLendState);
+	const hasSpotLending = balances.spotBalances.some((balance) => {
+		const amounts = [
+			"supplied" in balance ? balance.supplied : undefined,
+			"borrowed" in balance ? balance.borrowed : undefined,
+		];
+		return amounts.some((amount) => amount !== undefined && toBig(amount)?.eq(0) !== true);
+	});
+	const hasUnresolvedLendingOverlap = hasSpotLending || (usesSharedQuoteBalance && exposure === true);
+	const coreEquity = calculateCoreAccountEquity({ spotEquity, perpEquity, usesSharedQuoteBalance });
+	return { spotEquity, perpEquity, coreEquity, usesSharedQuoteBalance, hasUnresolvedLendingOverlap };
 }

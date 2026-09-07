@@ -12,16 +12,20 @@ const mocks = vi.hoisted(() => ({
 	isConnected: true,
 	portfolioData: undefined as InfoResponse<"portfolio"> | undefined,
 	portfolioError: true,
-	accountSummary: {
-		spotAccountValue: 42,
-		perpAccountValue: 0,
-		usesSpotStateForPerps: true,
-	},
+	queryAge: 0,
+	fixedUpdatedAt: null as number | null,
+	auxiliaryError: false,
+	priceStatus: "success",
+	borrowLendData: { tokenToState: [], health: "healthy", healthFactor: null } as InfoResponse<"borrowLendUserState">,
+	reserveData: [] as InfoResponse<"allBorrowLendReserveStates">,
 	balances: {
 		accountAbstraction: "unifiedAccount",
 		allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
 		hasAllDexsSnapshot: true,
 		hasSpotStateSnapshot: true,
+		spotStateStatus: "success",
+		perpStateStatus: "success",
+		spotBalances: [{ coin: "USDC", token: 0, total: "42", hold: "0", entryNtl: "0" }],
 	},
 	builderPerpMarkets: [] as Array<{ dex: string; quoteToken?: { index: number; name: string } }>,
 	tokenUsdPrices: undefined as Record<string, string> | undefined,
@@ -52,10 +56,6 @@ vi.mock("@gatu/ui", () => ({
 	),
 }));
 
-vi.mock("@/domain/trade/balances", () => ({
-	getAccountBalanceSummary: () => mocks.accountSummary,
-}));
-
 vi.mock("@/hooks/trade/use-account-balances", () => ({
 	isSupportedAccountAbstraction: (value: unknown) =>
 		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
@@ -63,7 +63,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
-	useSpotTokenUsdPriceState: () => ({ prices: mocks.tokenUsdPrices, status: "success" }),
+	useSpotTokenUsdPriceState: () => ({ prices: mocks.tokenUsdPrices, status: mocks.priceStatus }),
 	useSpotTokenUsdPrices: () => mocks.tokenUsdPrices,
 }));
 
@@ -76,14 +76,21 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
+		spot: [],
 		builderPerp: mocks.builderPerpMarkets,
 		getToken: (name: string) => (name === "USDC" ? { index: 0, name } : undefined),
 	}),
-	useInfo: (method: string) => {
+}));
+
+vi.mock("@/hooks/portfolio/use-portfolio-info", () => ({
+	usePortfolioInfo: (method: string) => {
 		if (method === "portfolio") {
 			return {
 				data: mocks.portfolioData,
 				isError: mocks.portfolioError,
+				dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+				isPlaceholderData: false,
+				isFetchedAfterMount: true,
 				isFetching: false,
 				isPending: false,
 				refetch: mocks.refetchPortfolio,
@@ -93,20 +100,32 @@ vi.mock("@/lib/hyperliquid", () => ({
 		if (method === "userFees") {
 			return {
 				data: mocks.feesData,
-				isError: false,
+				isError: mocks.auxiliaryError,
+				dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+				isPlaceholderData: false,
+				isFetchedAfterMount: true,
 				isFetching: false,
 				isPending: false,
 				refetch: mocks.refetchFees,
 			};
 		}
 
-		const auxiliaryData = method === "borrowLendUserState" ? { tokenToState: [] } : [];
+		const auxiliaryData =
+			method === "borrowLendUserState"
+				? mocks.borrowLendData
+				: method === "allBorrowLendReserveStates"
+					? mocks.reserveData
+					: [];
 
 		return {
 			data: mocks.auxiliaryDataAvailable ? auxiliaryData : undefined,
-			isError: false,
+			isError: mocks.auxiliaryError,
+			dataUpdatedAt: mocks.fixedUpdatedAt ?? Date.now() - mocks.queryAge,
+			isPlaceholderData: false,
+			isFetchedAfterMount: true,
 			isFetching: false,
 			isPending: false,
+			refetch: vi.fn(),
 		};
 	},
 }));
@@ -119,14 +138,18 @@ describe("PortfolioOverview", () => {
 
 	beforeEach(() => {
 		mocks.isConnected = true;
+		mocks.queryAge = 0;
+		mocks.fixedUpdatedAt = null;
+		mocks.auxiliaryError = false;
+		mocks.priceStatus = "success";
+		mocks.borrowLendData = { tokenToState: [], health: "healthy", healthFactor: null };
+		mocks.reserveData = [];
 		mocks.portfolioData = undefined;
 		mocks.portfolioError = true;
-		mocks.accountSummary = {
-			spotAccountValue: 42,
-			perpAccountValue: 0,
-			usesSpotStateForPerps: true,
-		};
 		mocks.balances = {
+			spotStateStatus: "success",
+			perpStateStatus: "success",
+			spotBalances: [{ coin: "USDC", token: 0, total: "42", hold: "0", entryNtl: "0" }],
 			accountAbstraction: "unifiedAccount",
 			allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
 			hasAllDexsSnapshot: true,
@@ -153,6 +176,7 @@ describe("PortfolioOverview", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.useRealTimers();
 	});
 
 	it("does not present unavailable portfolio history as real zero values", () => {
@@ -187,12 +211,10 @@ describe("PortfolioOverview", () => {
 	});
 
 	it("does not present unavailable account balances as real zero values", () => {
-		mocks.accountSummary = {
-			spotAccountValue: 0,
-			perpAccountValue: 0,
-			usesSpotStateForPerps: false,
-		};
 		mocks.balances = {
+			spotStateStatus: "success",
+			perpStateStatus: "success",
+			spotBalances: [{ coin: "USDC", token: 0, total: "42", hold: "0", entryNtl: "0" }],
 			accountAbstraction: "disabled",
 			allDexClearinghouseStates: [],
 			hasAllDexsSnapshot: false,
@@ -204,7 +226,7 @@ describe("PortfolioOverview", () => {
 		expect(summaryValue(container, "Total Equity")).toBe("—");
 		expect(summaryValue(container, "Perps Account Equity")).toBe("—");
 		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Earn Balance")).toBe("—");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
 	});
 
 	it("does not retain account values after the wallet disconnects", () => {
@@ -213,16 +235,14 @@ describe("PortfolioOverview", () => {
 
 		expect(summaryValue(container, "Total Equity")).toBe("—");
 		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Earn Balance")).toBe("—");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
 	});
 
 	it("includes every separately collateralized DEX in standard account equity", () => {
-		mocks.accountSummary = {
-			spotAccountValue: 42,
-			perpAccountValue: 500,
-			usesSpotStateForPerps: false,
-		};
 		mocks.balances = {
+			spotStateStatus: "success",
+			perpStateStatus: "success",
+			spotBalances: [{ coin: "USDC", token: 0, total: "42", hold: "0", entryNtl: "0" }],
 			accountAbstraction: "disabled",
 			allDexClearinghouseStates: [
 				["", { marginSummary: { accountValue: "500" } }],
@@ -241,11 +261,7 @@ describe("PortfolioOverview", () => {
 	});
 
 	it("does not expose a non-additive perps equity row in unified account mode", () => {
-		mocks.accountSummary = {
-			spotAccountValue: 500,
-			perpAccountValue: 500,
-			usesSpotStateForPerps: true,
-		};
+		mocks.balances.spotBalances[0].total = "500";
 		renderOverview(root);
 
 		expect(summaryValue(container, "Total Equity")).toBe("$500.00");
@@ -256,28 +272,25 @@ describe("PortfolioOverview", () => {
 	it("does not present raw spot equity while the account mode is unresolved", () => {
 		mocks.balances.accountAbstraction = "default";
 		mocks.balances.hasSpotStateSnapshot = true;
-		mocks.accountSummary = {
-			...mocks.accountSummary,
-			spotAccountValue: 42,
-			usesSpotStateForPerps: false,
-		};
 		renderOverview(root);
 
 		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
 	});
 
-	it("keeps valid zero values visible even after a background refresh error", () => {
+	it("keeps valid zero values visible after a successful refresh", () => {
 		mocks.portfolioData = createZeroPortfolio();
+		mocks.portfolioError = false;
 		renderOverview(root);
 
 		expect(summaryValue(container, "PNL")).toMatch(/0\.00/);
 		expect(summaryValue(container, "Volume")).toMatch(/0\.00/);
-		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
+		expect(summaryValue(container, "Max Drawdown")).toBe("—");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it("uses market direction colors only for directional values", () => {
 		mocks.portfolioData = createPortfolio("5");
+		mocks.portfolioError = false;
 		renderOverview(root);
 
 		expect(summaryElement(container, "PNL")?.classList).toContain("text-market-up");
@@ -288,6 +301,88 @@ describe("PortfolioOverview", () => {
 
 		expect(summaryElement(container, "PNL")?.classList).toContain("text-market-down");
 		expect(summaryElement(container, "PNL")?.classList).not.toContain("text-error");
+	});
+	it("does not classify a withdrawal as performance drawdown", () => {
+		mocks.portfolioError = false;
+		mocks.portfolioData = createZeroPortfolio();
+		for (const [, snapshot] of mocks.portfolioData)
+			snapshot.accountValueHistory = [
+				[1, "1000"],
+				[2, "500"],
+			];
+		renderOverview(root);
+		expect(summaryValue(container, "Max Drawdown")).toBe("—");
+		expect(container.textContent).toContain("cash-flow-adjusted history");
+		expect(container.textContent).not.toContain("-50.00%");
+	});
+
+	it("does not use entry cost when an airdrop or held asset has no price", () => {
+		mocks.balances.spotBalances = [{ coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "100" }];
+		mocks.portfolioData = createPortfolio("5");
+		mocks.portfolioError = false;
+		renderOverview(root);
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "PNL")).toContain("5.00");
+		mocks.balances.spotBalances[0].entryNtl = "0";
+		renderOverview(root);
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+	});
+
+	it("does not require market prices for USDC-only or empty balances", () => {
+		mocks.priceStatus = "error";
+		renderOverview(root);
+		expect(summaryValue(container, "Total Equity")).toBe("$42.00");
+		mocks.balances.spotBalances = [];
+		renderOverview(root);
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
+	});
+
+	it.each(["error", "stale"])("rejects %s balance snapshots even when cached data exists", (status) => {
+		mocks.balances.spotStateStatus = status;
+		renderOverview(root);
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+	});
+
+	it("rejects failed cached history and lending without substituting historical equity", () => {
+		mocks.portfolioData = createPortfolio("5");
+		mocks.auxiliaryError = true;
+		renderOverview(root);
+		expect(summaryValue(container, "PNL")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$42.00");
+	});
+
+	it("expires successful cached responses", () => {
+		mocks.queryAge = 120_000;
+		mocks.portfolioError = false;
+		mocks.portfolioData = createPortfolio("5");
+		renderOverview(root);
+		expect(summaryValue(container, "PNL")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+	});
+
+	it.each(["unifiedAccount", "portfolioMargin"])("does not add unverified lending to %s spot equity", (mode) => {
+		mocks.balances.accountAbstraction = mode;
+		mocks.borrowLendData.tokenToState = [
+			[0, { supply: { basis: "100", value: "100" }, borrow: { basis: "0", value: "0" } }],
+		];
+		mocks.reserveData = [[0, { oraclePx: "1" }]] as InfoResponse<"allBorrowLendReserveStates">;
+		renderOverview(root);
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("$100.00");
+		expect(container.textContent).toContain("may overlap");
+	});
+	it("expires data on the clock without waiting for another network response", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-09-07T00:00:00Z"));
+		mocks.fixedUpdatedAt = Date.now();
+		renderOverview(root);
+		expect(summaryValue(container, "Total Equity")).toBe("$42.00");
+		act(() => vi.advanceTimersByTime(120_000));
+		expect(summaryValue(container, "Total Equity")).toBe("—");
 	});
 });
 
