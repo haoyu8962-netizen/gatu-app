@@ -20,7 +20,7 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
+import { assertFreshFundsAmountWithFee, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
 	getCanonicalSpotSystemAddress,
@@ -696,13 +696,21 @@ export function DepositModal() {
 		return review;
 	}
 
-	function assertCurrentWithdrawalBalance(amount: unknown): void {
+	function assertCurrentWithdrawalBalance(review: WithdrawalExecutionReview): void {
 		if (!withdrawalBalanceReadyRef.current) {
 			throw fundsActionFeedbackCause("balance-unavailable");
 		}
+		if (review.route === "arbitrum-cctp" && !review.cctpPreTransfer) {
+			throw fundsActionFeedbackCause("withdrawal-eligibility-unavailable");
+		}
 		const balance = withdrawalBalanceExecutionRef.current;
 		try {
-			assertFreshFundsAmount(amount, balance.available, balance.receivedAt);
+			assertFreshFundsAmountWithFee({
+				amount: review.amount,
+				fee: review.route === "arbitrum-cctp" ? review.cctpPreTransfer?.fee : "0",
+				available: balance.available,
+				receivedAt: balance.receivedAt,
+			});
 		} catch (error) {
 			if (!(error instanceof FundsExecutionError)) throw error;
 			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
@@ -715,13 +723,13 @@ export function DepositModal() {
 		if (requestReview && requestReview !== review) {
 			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
 		}
-		assertCurrentWithdrawalBalance(params.amount);
+		assertCurrentWithdrawalBalance(review);
 		withdrawalRequestReviewsRef.current.set(params, review);
 	}
 
 	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, amount: unknown, signal: AbortSignal) {
 		const review = assertCurrentWithdrawalExecutionReview(expectedRoute, amount);
-		assertCurrentWithdrawalBalance(amount);
+		assertCurrentWithdrawalBalance(review);
 		const guards = [
 			assertFreshWithdrawalRoute(expectedRoute, signal),
 			assertFreshWithdrawalAccountMode(signal),
@@ -739,7 +747,7 @@ export function DepositModal() {
 		if (assertCurrentWithdrawalExecutionReview(expectedRoute, amount) !== review) {
 			throw fundsActionFeedbackCause("withdrawal-conditions-changed");
 		}
-		assertCurrentWithdrawalBalance(amount);
+		assertCurrentWithdrawalBalance(review);
 	}
 
 	function beginWithdrawalPreflight(): WithdrawalPreflightAttempt | null {

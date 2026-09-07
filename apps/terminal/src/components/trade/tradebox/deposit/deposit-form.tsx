@@ -112,7 +112,12 @@ export function DepositForm({
 						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
 					)}
 				</p>
-				{!bridgeRoutingReady ? (
+				{routingPreflightError && bridgeRoutingReady ? (
+					<p className="mt-1">
+						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
+					</p>
+				) : null}
+				{routingPreflightError || !bridgeRoutingReady ? (
 					<Button
 						variant="link"
 						intent="neutral"

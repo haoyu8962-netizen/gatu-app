@@ -84,6 +84,7 @@ const testState = vi.hoisted(() => ({
 		usdClassTransfer: vi.fn(),
 	},
 	exchangeGuards: new Map<string, (_params: unknown, signal: AbortSignal) => Promise<void>>(),
+	beforeSdk: vi.fn(),
 	runGuardsOnMutation: false,
 	assertAccountAbstraction: vi.fn(),
 	assertFreshGeoAllowed: vi.fn(),
@@ -202,7 +203,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => testState.exchangeIdentity,
 	useExchange: (
 		method: keyof typeof testState.exchangeMutations,
-		options?: { preExecutionGuard?: (_params: unknown, signal: AbortSignal) => Promise<void> },
+		options?: {
+			executionGuard?: (_params: unknown) => void;
+			preExecutionGuard?: (_params: unknown, signal: AbortSignal) => Promise<void>;
+		},
 	) => {
 		if (options?.preExecutionGuard) testState.exchangeGuards.set(method, options.preExecutionGuard);
 		return {
@@ -210,8 +214,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 			mutateAsync: (params: unknown) => {
 				if (!testState.runGuardsOnMutation) return testState.exchangeMutations[method](params);
 				return (async () => {
-					await options?.preExecutionGuard?.(params, new AbortController().signal);
-					return testState.exchangeMutations[method](params);
+					const requestParams = { ...(params as Record<string, unknown>) };
+					options?.executionGuard?.(requestParams);
+					await options?.preExecutionGuard?.(requestParams, new AbortController().signal);
+					await testState.beforeSdk(method, requestParams);
+					options?.executionGuard?.(requestParams);
+					return testState.exchangeMutations[method](requestParams);
 				})();
 			},
 		};
@@ -274,6 +282,8 @@ describe("funds action balance wiring", () => {
 		testState.balances.isDataStale = false;
 		testState.balances.hasError = false;
 		testState.exchangeGuards.clear();
+		testState.beforeSdk.mockReset();
+		testState.beforeSdk.mockResolvedValue(undefined);
 		testState.runGuardsOnMutation = false;
 		testState.assertAccountAbstraction.mockReset();
 		testState.assertAccountAbstraction.mockResolvedValue(undefined);
@@ -332,6 +342,7 @@ describe("funds action balance wiring", () => {
 
 	it("uses the unified trading account and the generalized spot-to-spot send action", async () => {
 		testState.balances.accountAbstraction = "unifiedAccount";
+		testState.runGuardsOnMutation = true;
 		testState.exchangeMutations.sendAsset.mockResolvedValueOnce({ status: "ok" });
 
 		act(() => root.render(createElement(SendModal, { initialAccountType: "perp", onOpenChange: vi.fn(), open: true })));
@@ -442,6 +453,155 @@ describe("funds action balance wiring", () => {
 		releasePreflight();
 
 		await expect(guardPromise).rejects.toThrow(BALANCE_CHANGED);
+	});
+
+	const guardedMethods = ["spotSend", "sendAsset", "usdClassTransfer"] as const;
+	function renderGuardedModal(method: (typeof guardedMethods)[number], onOpenChange = vi.fn()) {
+		if (method === "usdClassTransfer") renderValidTransfer(root, container, onOpenChange);
+		else renderValidSend(root, container, onOpenChange, method === "sendAsset" ? "perp" : "spot");
+	}
+	function rerenderGuardedModal(method: (typeof guardedMethods)[number], onOpenChange = vi.fn()) {
+		const rerenderOnOpenChange = (open: boolean) => onOpenChange(open);
+		act(() => {
+			root.render(
+				method === "usdClassTransfer"
+					? createElement(TransferModal, { open: true, onOpenChange: rerenderOnOpenChange })
+					: createElement(SendModal, {
+							open: true,
+							onOpenChange: rerenderOnOpenChange,
+							initialAccountType: method === "sendAsset" ? "perp" : "spot",
+						}),
+			);
+		});
+	}
+	function getGuardedSubmitButton(method: (typeof guardedMethods)[number]) {
+		return getButton(container, method === "usdClassTransfer" ? "Transfer" : "Send");
+	}
+
+	it.each(guardedMethods)("blocks %s when the balance changes during the final legal check", async (method) => {
+		let releaseLegal!: () => void;
+		testState.beforeSdk.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				releaseLegal = resolve;
+			}),
+		);
+		testState.runGuardsOnMutation = true;
+		const onOpenChange = vi.fn();
+		renderGuardedModal(method, onOpenChange);
+		act(() => getGuardedSubmitButton(method).click());
+		await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledOnce());
+		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
+		if (method === "spotSend") testState.balances.spotBalances[0].total = "3141.333333";
+		else testState.balances.withdrawable = "0.5";
+		rerenderGuardedModal(method, onOpenChange);
+		expect(container.textContent).toContain("0.50 USDC");
+		await act(async () => {
+			releaseLegal();
+		});
+		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalled();
+		await vi.waitFor(() => expect(container.textContent).toContain(BALANCE_CHANGED));
+		if (method === "spotSend") testState.balances.spotBalances[0].total = "8105.34686269";
+		else testState.balances.withdrawable = "40";
+		rerenderGuardedModal(method, onOpenChange);
+		await clickAndFlush(getGuardedSubmitButton(method));
+		expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it.each(guardedMethods)("blocks %s if its surface unmounts during the final legal check", async (method) => {
+		let releaseLegal!: () => void;
+		testState.beforeSdk.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				releaseLegal = resolve;
+			}),
+		);
+		testState.runGuardsOnMutation = true;
+		const onOpenChange = vi.fn();
+		renderGuardedModal(method, onOpenChange);
+		act(() => getGuardedSubmitButton(method).click());
+		await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledOnce());
+		act(() => root.render(null));
+		await act(async () => {
+			releaseLegal();
+		});
+		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalled();
+	});
+
+	it.each(guardedMethods)(
+		"keeps an old %s request from adopting an identical replacement after the legal check",
+		async (method) => {
+			let releaseOldLegal!: () => void;
+			let releaseCurrentLegal!: () => void;
+			testState.beforeSdk
+				.mockReturnValueOnce(
+					new Promise<void>((resolve) => {
+						releaseOldLegal = resolve;
+					}),
+				)
+				.mockReturnValueOnce(
+					new Promise<void>((resolve) => {
+						releaseCurrentLegal = resolve;
+					}),
+				);
+			testState.runGuardsOnMutation = true;
+			const oldOnOpenChange = vi.fn();
+			const currentOnOpenChange = vi.fn();
+			renderGuardedModal(method, oldOnOpenChange);
+			act(() => getGuardedSubmitButton(method).click());
+			await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledTimes(1));
+			testState.exchangeIdentity.exchangeLifecycle = { active: true, id: Symbol("replacement") };
+			rerenderGuardedModal(method, currentOnOpenChange);
+			act(() => getGuardedSubmitButton(method).click());
+			await vi.waitFor(() => expect(testState.beforeSdk).toHaveBeenCalledTimes(2));
+			expect(testState.beforeSdk.mock.calls[0]?.[1]).toEqual(testState.beforeSdk.mock.calls[1]?.[1]);
+			expect(testState.beforeSdk.mock.calls[0]?.[1]).not.toBe(testState.beforeSdk.mock.calls[1]?.[1]);
+			await act(async () => {
+				releaseOldLegal();
+			});
+			expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
+			expect(oldOnOpenChange).not.toHaveBeenCalled();
+			expect(currentOnOpenChange).not.toHaveBeenCalled();
+			await act(async () => {
+				releaseCurrentLegal();
+			});
+			expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce();
+			expect(currentOnOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+		},
+	);
+
+	it.each(guardedMethods)("submits %s once after all guards pass", async (method) => {
+		testState.runGuardsOnMutation = true;
+		const onOpenChange = vi.fn();
+		renderGuardedModal(method, onOpenChange);
+		await clickAndFlush(getGuardedSubmitButton(method));
+		expect(testState.exchangeMutations[method]).toHaveBeenCalledOnce();
+		expect(testState.assertAccountAbstraction).toHaveBeenCalledOnce();
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it("rechecks and submits the Spot to Perp transfer using its original direction", async () => {
+		testState.runGuardsOnMutation = true;
+		const onOpenChange = vi.fn();
+		act(() => root.render(createElement(TransferModal, { initialDirection: "toPerp", open: true, onOpenChange })));
+		act(() => setInputValue(getAmountInput(container), "1"));
+		await clickAndFlush(getButton(container, "Transfer"));
+		expect(testState.exchangeMutations.usdClassTransfer).toHaveBeenCalledExactlyOnceWith({ amount: "1", toPerp: true });
+		expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+	});
+
+	it.each(guardedMethods)("rejects modified %s request parameters after the final legal check", async (method) => {
+		testState.runGuardsOnMutation = true;
+		testState.beforeSdk.mockImplementationOnce((_method, params) => {
+			params.amount = "2";
+		});
+		const onOpenChange = vi.fn();
+		renderGuardedModal(method, onOpenChange);
+		await clickAndFlush(getGuardedSubmitButton(method));
+		expect(testState.exchangeMutations[method]).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(getAmountInput(container).value).toBe("1");
 	});
 
 	it.each([
@@ -673,8 +833,13 @@ describe("funds action balance wiring", () => {
 	});
 });
 
-function renderValidSend(root: Root, container: HTMLElement, onOpenChange = vi.fn()) {
-	act(() => root.render(createElement(SendModal, { onOpenChange, open: true })));
+function renderValidSend(
+	root: Root,
+	container: HTMLElement,
+	onOpenChange = vi.fn(),
+	initialAccountType: "spot" | "perp" = "spot",
+) {
+	act(() => root.render(createElement(SendModal, { onOpenChange, open: true, initialAccountType })));
 	const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
 	if (!destinationInput) throw new Error("Destination input not found");
 	act(() => {

@@ -28,7 +28,8 @@ export type IsolatedManagementExchangeMethod = "topUpIsolatedOnlyMargin" | "upda
 export type ExchangeExecutionGuard<M extends ExchangeMethod> = (params: ExchangeParams<M>) => void;
 
 /**
- * Runs for user-signed methods under the signing-session lock after queueing and immediately before the SDK call.
+ * Runs for user-signed methods under the signing-session lock after queueing.
+ * Funds actions can await legal verification afterward; use executionGuard for final synchronous SDK-boundary checks.
  * Honor the signal and do not call another Exchange mutation or signing-session API from this guard.
  */
 export type ExchangePreExecutionGuard<M extends ExchangeMethod> = (

@@ -4568,6 +4568,7 @@ msgstr "Legacy Bridge2 deposits are no longer accepted. Automatic deposits are p
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
 msgstr "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
 

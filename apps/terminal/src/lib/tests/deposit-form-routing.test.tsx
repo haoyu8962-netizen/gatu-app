@@ -173,6 +173,53 @@ describe("DepositForm routing gate", () => {
 		expect(alerts[0]?.textContent).toContain("The deposit route changed. Review it before submitting again.");
 	});
 
+	it("keeps the Bridge2 pause visible and refreshes a changed external route without submitting funds", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			cctpFee: "0.2",
+			fundingAddress: undefined,
+			usesFundingAddressFlow: false,
+		};
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+
+		const routingPreflightError = "The deposit route changed. Review it before submitting again.";
+		await act(async () => {
+			root.render(
+				createElement(
+					I18nProvider,
+					{ i18n },
+					createElement(DepositForm, { ...props, depositRoute: "bridge", routingPreflightError }),
+				),
+			);
+		});
+
+		const alerts = container.querySelectorAll('[role="alert"]');
+		expect(alerts).toHaveLength(1);
+		expect(alerts[0]?.textContent).toContain(routingPreflightError);
+		expect(alerts[0]?.textContent).toContain("Legacy Bridge2 deposits are no longer accepted. Deposits are paused.");
+		expect(container.textContent).not.toContain("0.2 USDC in fees");
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(retryButton).toBeDefined();
+		act(() => retryButton?.click());
+		expect(props.onRetryRouting).toHaveBeenCalledOnce();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+
+		await act(async () => {
+			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
+		});
+
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain(routingPreflightError);
+		expect(container.textContent).not.toContain("Legacy Bridge2 deposits are no longer accepted.");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		expect(container.textContent).toContain("Up to 0.2 USDC in fees will be deducted from your deposit.");
+		expect(container.querySelector('[data-testid="amount-input"]')).not.toBeNull();
+		expect(props.onSubmit).not.toHaveBeenCalled();
+	});
+
 	it.each([
 		{
 			name: "unavailable routing",
@@ -274,6 +321,9 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.textContent).not.toContain("0.2 USDC in fees");
 		expect(container.textContent).not.toContain("Circle's latest quote");
+		expect(container.textContent).toContain("Legacy Bridge2 deposits are no longer accepted. Deposits are paused.");
+		expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+		expect(props.onSubmit).not.toHaveBeenCalled();
 	});
 
 	it("withholds a ready funding address when deposit capability is unavailable", async () => {

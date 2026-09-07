@@ -4293,6 +4293,7 @@ msgstr "不再接受旧版 Bridge2 充值。自动充值已暂停。"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
 msgstr "不再接受旧版 Bridge2 充值。充值已暂停。"
 

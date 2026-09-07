@@ -4551,6 +4551,7 @@ msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إ�
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Legacy Bridge2 deposits are no longer accepted. Deposits are paused."
 msgstr "لم تعد إيداعات Bridge2 القديمة مقبولة. تم إيقاف الإيداعات مؤقتًا."
 

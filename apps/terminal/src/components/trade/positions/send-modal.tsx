@@ -1,3 +1,4 @@
+import { ExchangeRequestInvalidatedError } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
@@ -26,7 +27,7 @@ import {
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import { type ExchangeParams, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import {
 	FundsActionFeedbackCause,
@@ -41,6 +42,17 @@ import { PendingActionModal } from "../components/pending-action-modal";
 type AccountType = "perp" | "spot";
 
 type SendError = { kind: "local"; code: FundsActionFeedbackCode } | { kind: "raw"; cause: unknown };
+
+interface SendSubmission {
+	identity: object;
+	sequence: number;
+	method: "sendAsset" | "spotSend";
+	amount: string;
+	destination: string;
+	token: string;
+	sourceDex: string | undefined;
+	destinationDex: string | undefined;
+}
 
 interface Props {
 	open: boolean;
@@ -77,6 +89,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const { t } = useLingui();
 	const submissionSequenceRef = useRef(0);
 	const submissionIdentityRef = useRef<object | null>(null);
+	const submissionRef = useRef<SendSubmission | null>(null);
+	const requestSubmissionsRef = useRef(new WeakMap<object, SendSubmission>());
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -129,6 +143,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		submissionIdentityRef.current = identity;
 		return () => {
 			if (submissionIdentityRef.current === identity) submissionIdentityRef.current = null;
+			if (submissionRef.current?.identity === identity) submissionRef.current = null;
 			submissionSequenceRef.current += 1;
 		};
 	}, [exchangeLifecycle, submissionIdentityKey]);
@@ -154,36 +169,67 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			throw fundsActionFeedbackCause(error.reason === "balance-changed" ? "balance-changed" : "balance-unavailable");
 		}
 	}
+	function assertCurrentSendAssetBalance(params: ExchangeParams<"sendAsset">) {
+		if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
+		const current = balanceExecutionRef.current;
+		if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
+	}
+	function assertCurrentSpotSendBalance(params: ExchangeParams<"spotSend">) {
+		if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
+		const current = balanceExecutionRef.current;
+		if (current.source !== "spot" || params.token !== current.tokenId) {
+			throw fundsActionFeedbackCause("balance-unavailable");
+		}
+		assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
+	}
+	function assertCurrentSendSubmission(
+		method: SendSubmission["method"],
+		params: ExchangeParams<"sendAsset"> | ExchangeParams<"spotSend">,
+	): void {
+		const submission = submissionRef.current;
+		const boundSubmission = requestSubmissionsRef.current.get(params);
+		if (
+			!submission ||
+			!exchangeLifecycle.active ||
+			submission.identity !== submissionIdentityRef.current ||
+			submission.sequence !== submissionSequenceRef.current ||
+			(boundSubmission && boundSubmission !== submission) ||
+			submission.method !== method ||
+			submission.amount !== params.amount ||
+			submission.destination !== params.destination ||
+			submission.token !== params.token ||
+			submission.sourceDex !== ("sourceDex" in params ? params.sourceDex : undefined) ||
+			submission.destinationDex !== ("destinationDex" in params ? params.destinationDex : undefined)
+		) {
+			throw new ExchangeRequestInvalidatedError();
+		}
+		requestSubmissionsRef.current.set(params, submission);
+	}
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
+		executionGuard: (params) => {
+			assertCurrentSendSubmission("sendAsset", params);
+			assertCurrentSendAssetBalance(params);
+		},
 		preExecutionGuard: async (params, signal) => {
-			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
-				const current = balanceExecutionRef.current;
-				if (params.token !== current.tokenId || params.sourceDex !== (current.source === "spot" ? "spot" : "")) {
-					throw fundsActionFeedbackCause("balance-unavailable");
-				}
-				assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
-			};
-			assertCurrentBalance();
+			assertCurrentSendAssetBalance(params);
 			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
-			assertCurrentBalance();
+			assertCurrentSendAssetBalance(params);
 		},
 	});
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend", {
+		executionGuard: (params) => {
+			assertCurrentSendSubmission("spotSend", params);
+			assertCurrentSpotSendBalance(params);
+		},
 		preExecutionGuard: async (params, signal) => {
-			const assertCurrentBalance = () => {
-				if (!accountDataReadyRef.current) throw fundsActionFeedbackCause("balance-unavailable");
-				const current = balanceExecutionRef.current;
-				if (current.source !== "spot" || params.token !== current.tokenId) {
-					throw fundsActionFeedbackCause("balance-unavailable");
-				}
-				assertCurrentFundsAmount(params.amount, current.available, current.receivedAt);
-			};
-			assertCurrentBalance();
+			assertCurrentSpotSendBalance(params);
 			await assertCurrentAccountAbstraction(signal);
 			signal.throwIfAborted();
-			assertCurrentBalance();
+			assertCurrentSpotSendBalance(params);
 		},
 	});
 
@@ -296,8 +342,21 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		if (!canSend) return;
 
 		const submissionIdentity = submissionIdentityRef.current;
-		if (!submissionIdentity) return;
+		if (!submissionIdentity || submissionRef.current) return;
 		const submissionSequence = ++submissionSequenceRef.current;
+		const method = usesTradingAccount || activeAccountType === "perp" ? "sendAsset" : "spotSend";
+		const dex = usesTradingAccount ? "spot" : "";
+		const submission: SendSubmission = {
+			identity: submissionIdentity,
+			sequence: submissionSequence,
+			method,
+			amount,
+			destination,
+			token: tokenId,
+			sourceDex: method === "sendAsset" ? dex : undefined,
+			destinationDex: method === "sendAsset" ? dex : undefined,
+		};
+		submissionRef.current = submission;
 		const isCurrentSubmission = () =>
 			submissionIdentityRef.current === submissionIdentity && submissionSequenceRef.current === submissionSequence;
 		setError(null);
@@ -335,6 +394,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 			setError(
 				err instanceof FundsActionFeedbackCause ? { kind: "local", code: err.code } : { kind: "raw", cause: err },
 			);
+		} finally {
+			if (submissionRef.current === submission) submissionRef.current = null;
 		}
 	}
 

@@ -32,3 +32,28 @@ export function assertFreshFundsAmount(
 		throw new FundsExecutionError("balance-unavailable");
 	}
 }
+
+export function assertFreshFundsAmountWithFee({
+	amount,
+	fee,
+	available,
+	receivedAt,
+	now = Date.now(),
+}: {
+	amount: unknown;
+	fee: unknown;
+	available: unknown;
+	receivedAt: number | undefined;
+	now?: number;
+}): void {
+	assertFreshFundsAmount(amount, available, receivedAt, now);
+	try {
+		const normalizedFee = new Big(String(fee));
+		if (normalizedFee.lt(0)) throw new FundsExecutionError("balance-unavailable");
+		const totalDebit = new Big(String(amount)).plus(normalizedFee).toFixed();
+		assertFreshFundsAmount(totalDebit, available, receivedAt, now);
+	} catch (error) {
+		if (error instanceof FundsExecutionError) throw error;
+		throw new FundsExecutionError("balance-unavailable");
+	}
+}
