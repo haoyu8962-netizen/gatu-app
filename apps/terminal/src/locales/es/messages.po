@@ -5080,6 +5080,8 @@ msgstr "Caída máxima"
 #~ msgid "Max Fee Rate (%)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Max Price"
 msgstr ""
@@ -5126,8 +5128,8 @@ msgid "Meme"
 msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -5141,6 +5143,8 @@ msgstr "Orden mínima ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "Orden mín. $10"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Min Price"
 msgstr ""
@@ -10174,6 +10178,8 @@ msgstr "La orden de activación debe reducir su posición actual"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -10659,7 +10665,7 @@ msgid "Use max available balance"
 msgstr "Usar el saldo máximo disponible"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "Usar precio medio"
 

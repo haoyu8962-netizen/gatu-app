@@ -646,6 +646,7 @@ export function TradePanel() {
 		if (twapOrder) {
 			return (
 				<TwapOrderSummary
+					compact
 					twapMinutesNum={twapMinutesNum}
 					twapTriggerPriceNum={twapTriggerPriceNum}
 					twapStopPriceNum={twapStopPriceNum}
@@ -658,6 +659,7 @@ export function TradePanel() {
 		if (scaleOrder) {
 			return (
 				<ScaleOrderSummary
+					compact
 					scaleStart={scaleStartPriceNum}
 					scaleEnd={scaleEndPriceNum}
 					scaleLevels={scaleLevelsNum}
@@ -672,6 +674,7 @@ export function TradePanel() {
 		}
 		return (
 			<OrderSummary
+				compact
 				liqPrice={liqPrice}
 				liqWarning={liqWarning}
 				orderValue={orderValue}
@@ -746,6 +749,26 @@ export function TradePanel() {
 			)}
 
 			<TradePanelBody
+				header={
+					<TradeHeader
+						compact
+						orderType={orderType}
+						side={side}
+						sideLabels={sideLabels}
+						marketKind={market?.kind}
+						onOrderTypeChange={setOrderType}
+						onSideChange={setSide}
+						marginMode={marginMode}
+						leverage={leverage}
+						onMarginModeClick={() => setActiveModal("marginMode")}
+						onLeverageClick={() => setActiveModal("leverage")}
+						isLeveraged={capabilities.isLeveraged}
+						accountMode={accountModeControl.accountAbstraction}
+						isAccountModeLoading={accountModeControl.isLoading}
+						isAccountModeUpdating={accountModeControl.isUpdating}
+						onAccountModeClick={() => setActiveModal("accountMode")}
+					/>
+				}
 				footer={
 					<>
 						<div className="flex flex-col gap-3">
@@ -759,7 +782,7 @@ export function TradePanel() {
 									size="xs"
 									intent="neutral"
 									disabled
-									className="w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
+									className="w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
 									aria-label={t`Trading is not available in your region`}
 								>
 									{t`Trading is not available in your region`}
@@ -772,7 +795,7 @@ export function TradePanel() {
 									onClick={buttonContent.action}
 									disabled={buttonContent.disabled}
 									className={cn(
-										"w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
+										"w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
 										getTradingCtaClass(buttonContent.variant),
 									)}
 									aria-label={buttonContent.text}
@@ -791,24 +814,6 @@ export function TradePanel() {
 					</>
 				}
 			>
-				<TradeHeader
-					orderType={orderType}
-					side={side}
-					sideLabels={sideLabels}
-					marketKind={market?.kind}
-					onOrderTypeChange={setOrderType}
-					onSideChange={setSide}
-					marginMode={marginMode}
-					leverage={leverage}
-					onMarginModeClick={() => setActiveModal("marginMode")}
-					onLeverageClick={() => setActiveModal("leverage")}
-					isLeveraged={capabilities.isLeveraged}
-					accountMode={accountModeControl.accountAbstraction}
-					isAccountModeLoading={accountModeControl.isLoading}
-					isAccountModeUpdating={accountModeControl.isUpdating}
-					onAccountModeClick={() => setActiveModal("accountMode")}
-				/>
-
 				<TradeFormFields
 					orderEntryData={orderEntryData}
 					price={price}

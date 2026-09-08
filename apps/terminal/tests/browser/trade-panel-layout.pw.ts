@@ -32,7 +32,7 @@ async function expectFooterAtBottom(page: Page) {
 				const bounds = panel.getBoundingClientRect();
 				const footerBounds = footer.getBoundingClientRect();
 				return Math.max(
-					Math.abs(bounds.bottom - fees.bottom - 16),
+					Math.abs(bounds.bottom - fees.bottom - 12),
 					Math.abs(footerBounds.bottom - bounds.bottom),
 					Math.max(0, top.bottom - footerBounds.top),
 				);

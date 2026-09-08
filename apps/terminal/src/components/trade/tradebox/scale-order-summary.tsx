@@ -9,6 +9,7 @@ import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
+	compact?: boolean;
 	scaleStart: number | null;
 	scaleEnd: number | null;
 	scaleLevels: number;
@@ -30,6 +31,7 @@ export function ScaleOrderSummary({
 	feeQuote,
 	szDecimals,
 	marketKind = "perp",
+	compact,
 }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
@@ -37,7 +39,7 @@ export function ScaleOrderSummary({
 
 	return (
 		<div className="flex min-w-0 flex-col">
-			<SummaryRow label={t`Start Price`}>
+			<SummaryRow compact={compact} label={t`Start Price`}>
 				<span
 					className={cn(
 						"whitespace-nowrap",
@@ -47,7 +49,7 @@ export function ScaleOrderSummary({
 					{scaleStart !== null && scaleStart > 0 ? formatPrice(scaleStart, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
-			<SummaryRow label={t`End Price`}>
+			<SummaryRow compact={compact} label={t`End Price`}>
 				<span
 					className={cn(
 						"whitespace-nowrap",
@@ -57,34 +59,38 @@ export function ScaleOrderSummary({
 					{scaleEnd !== null && scaleEnd > 0 ? formatPrice(scaleEnd, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
-			<SummaryRow label={t`Number of Orders`}>
-				<span className={cn("whitespace-nowrap", scaleLevels > 0 ? "" : "font-normal text-trading-panel-muted")}>
-					{scaleLevels > 0 ? scaleLevels : FALLBACK_VALUE_PLACEHOLDER}
-				</span>
-			</SummaryRow>
-			<SummaryRow label={t`Size Skew`}>
-				<span
-					className={cn(
-						"whitespace-nowrap",
-						scaleSkew !== null && scaleSkew > 0 ? "" : "font-normal text-trading-panel-muted",
-					)}
-				>
-					{scaleSkew !== null && scaleSkew > 0 ? scaleSkew : FALLBACK_VALUE_PLACEHOLDER}
-				</span>
-			</SummaryRow>
-			<SummaryRow label={t`Order Value`}>
+			{!compact && (
+				<>
+					<SummaryRow compact={compact} label={t`Number of Orders`}>
+						<span className={cn("whitespace-nowrap", scaleLevels > 0 ? "" : "font-normal text-trading-panel-muted")}>
+							{scaleLevels > 0 ? scaleLevels : FALLBACK_VALUE_PLACEHOLDER}
+						</span>
+					</SummaryRow>
+					<SummaryRow compact={compact} label={t`Size Skew`}>
+						<span
+							className={cn(
+								"whitespace-nowrap",
+								scaleSkew !== null && scaleSkew > 0 ? "" : "font-normal text-trading-panel-muted",
+							)}
+						>
+							{scaleSkew !== null && scaleSkew > 0 ? scaleSkew : FALLBACK_VALUE_PLACEHOLDER}
+						</span>
+					</SummaryRow>
+				</>
+			)}
+			<SummaryRow compact={compact} label={t`Order Value`}>
 				<span className={cn("whitespace-nowrap", orderValue > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
-				<SummaryRow label={t`Margin Req.`}>
+				<SummaryRow compact={compact} label={t`Margin Req.`}>
 					<span className={cn("whitespace-nowrap", marginRequired > 0 ? "" : "font-normal text-trading-panel-muted")}>
 						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
-			<SummaryRow label={t`Est. Fee`}>
+			<SummaryRow compact={compact} label={t`Est. Fee`}>
 				<OrderFeeSummaryValue quote={feeQuote} />
 			</SummaryRow>
 		</div>

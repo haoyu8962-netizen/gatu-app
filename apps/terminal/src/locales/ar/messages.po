@@ -5080,6 +5080,8 @@ msgstr "أقصى تراجع"
 #~ msgid "Max Fee Rate (%)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Max Price"
 msgstr ""
@@ -5126,8 +5128,8 @@ msgid "Meme"
 msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "المتوسط"
@@ -5141,6 +5143,8 @@ msgstr "أدنى أمر ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "الحد الأدنى $10"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Min Price"
 msgstr ""
@@ -10174,6 +10178,8 @@ msgstr "يجب أن يقلل الأمر المشروط مركزك الحالي"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -10659,7 +10665,7 @@ msgid "Use max available balance"
 msgstr "استخدام الحد الأقصى للرصيد المتاح"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "استخدام السعر الأوسط"
 

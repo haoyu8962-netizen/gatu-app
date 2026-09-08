@@ -1,9 +1,9 @@
 import { Checkbox } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
-import { formatTwapPriceInput, getTwapTriggerDirection, type TwapTriggerDirection } from "@/domain/trade/twap-details";
+import { formatTwapPriceInput, getTwapTriggerDirection } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { Side } from "@/lib/trade/types";
@@ -24,6 +24,7 @@ interface Props {
 	assetId: number | undefined;
 	szDecimals: number;
 	compact?: boolean;
+	desktop?: boolean;
 	mobileSafe?: boolean;
 }
 
@@ -52,13 +53,18 @@ function clamp(n: number, min: number, max: number): number {
 	return Math.min(Math.max(n, min), max);
 }
 
-function getTriggerHintText(direction: TwapTriggerDirection | null, triggerPrice: string): string {
-	if (direction === "above") return t`Activates when mark ≥ ${triggerPrice}`;
-	if (direction === "below") return t`Activates when mark ≤ ${triggerPrice}`;
-	return "";
-}
-
-export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szDecimals, compact, mobileSafe }: Props) {
+export function TradeFormTwap({
+	disabled,
+	side,
+	quoteToken,
+	markPx,
+	assetId,
+	szDecimals,
+	compact,
+	desktop,
+	mobileSafe,
+}: Props) {
+	const { t } = useLingui();
 	const triggerFieldId = useId();
 	const stopFieldId = useId();
 	const twapMinutesNum = useTwapMinutes();
@@ -69,17 +75,24 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 
 	const hours = Math.floor(twapMinutesNum / 60);
 	const minutes = twapMinutesNum - hours * 60;
-	const stopPriceLabel = getTwapStopPriceLabel(side);
+	const stopPriceLabel = getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` });
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
-	const triggerHint = getTriggerHintText(getTwapTriggerDirection(triggerPx, markPx), triggerPx ?? "");
+	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
+	const triggerPrice = triggerPx ?? "";
+	const triggerHint =
+		triggerDirection === "above"
+			? t`Activates when mark ≥ ${triggerPrice}`
+			: triggerDirection === "below"
+				? t`Activates when mark ≤ ${triggerPrice}`
+				: "";
 	const hoursLabel = t`Hour(s)`;
 	const minutesLabel = t`Minute(s)`;
-	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass);
-	const durationTextClass = cn(durationLabelClass, compact && compactDurationLabelClass);
-	const priceFieldClass = cn(priceFrameClass, compact && compactFrameClass);
-	const priceTextClass = cn(priceLabelClass, compact && compactPriceLabelClass);
-	const fieldInputClass = cn(inputClass, compact && compactInputClass);
-	const quoteUnitClass = compact ? "trade-card-label-full" : undefined;
+	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass, desktop && "h-9 px-2.5");
+	const durationTextClass = cn(durationLabelClass, (compact || desktop) && compactDurationLabelClass);
+	const priceFieldClass = cn(priceFrameClass, compact && compactFrameClass, desktop && "h-9");
+	const priceTextClass = cn(priceLabelClass, (compact || desktop) && compactPriceLabelClass);
+	const fieldInputClass = cn(inputClass, compact && compactInputClass, desktop && "h-8");
+	const quoteUnitClass = compact || desktop ? "trade-card-label-full" : undefined;
 
 	function handleHoursChange(value: string) {
 		const h = clamp(Math.floor(Number(value) || 0), 0, HOURS_MAX);
@@ -100,7 +113,7 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${DAYS_MAX}d)`}</span>
 				<div className="flex gap-2">
 					<div className={cn(durationFrameClass, disabled && "opacity-50")}>
-						<span className={durationTextClass}>{compact ? t`Hrs` : hoursLabel}</span>
+						<span className={durationTextClass}>{compact || desktop ? t`Hrs` : hoursLabel}</span>
 						<NumberInput
 							aria-label={hoursLabel}
 							placeholder="0"
@@ -115,7 +128,7 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 						/>
 					</div>
 					<div className={cn(durationFrameClass, (disabled || hours >= HOURS_MAX) && "opacity-50")}>
-						<span className={durationTextClass}>{compact ? t`Mins` : minutesLabel}</span>
+						<span className={durationTextClass}>{compact || desktop ? t`Mins` : minutesLabel}</span>
 						<NumberInput
 							aria-label={minutesLabel}
 							placeholder="30"
@@ -148,6 +161,7 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 					</label>
 					<NumberInput
 						id={triggerFieldId}
+						aria-label={`${t`Trigger Price`} (${quoteToken})`}
 						placeholder="0.00"
 						value={twapTriggerPrice}
 						onChange={(e) => setTwapTriggerPrice(e.target.value)}
@@ -165,6 +179,7 @@ export function TradeFormTwap({ disabled, side, quoteToken, markPx, assetId, szD
 				</label>
 				<NumberInput
 					id={stopFieldId}
+					aria-label={`${stopPriceLabel} (${quoteToken})`}
 					placeholder="0.00"
 					value={twapStopPrice}
 					onChange={(e) => setTwapStopPrice(e.target.value)}

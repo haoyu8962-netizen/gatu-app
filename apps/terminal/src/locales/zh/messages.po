@@ -4755,6 +4755,8 @@ msgstr "最大"
 msgid "Max Drawdown"
 msgstr "最大回撤"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Max Price"
 msgstr "最高价"
@@ -4801,8 +4803,8 @@ msgid "Meme"
 msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "中间价"
@@ -4816,6 +4818,8 @@ msgstr "最小委托 ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "最小订单 $10"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Min Price"
 msgstr "最低价"
@@ -7095,7 +7099,7 @@ msgstr "运行中"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
-msgstr ""
+msgstr "运行时间（{TWAP_MINUTES_MIN} 分钟–{DAYS_MAX} 天）"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
@@ -9494,6 +9498,8 @@ msgstr "触发订单必须减少当前仓位"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -9974,7 +9980,7 @@ msgid "Use max available balance"
 msgstr "使用全部可用余额"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "使用中间价"
 

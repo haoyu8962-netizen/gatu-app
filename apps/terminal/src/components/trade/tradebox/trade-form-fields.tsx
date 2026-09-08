@@ -81,7 +81,7 @@ interface Props {
 	onSwapClick: () => void;
 }
 
-const inputFrameClass = cn(tradingInputFrameClass, "px-2.5");
+const inputFrameClass = cn(tradingInputFrameClass, "h-9 px-2.5");
 const ERROR_LINGER_MS = 1500;
 
 const inputFrameErrorClass =
@@ -241,8 +241,8 @@ export function TradeFormFields({
 	const accentBorderClass = isBuy ? "border-trading-panel-success" : "border-trading-panel-error";
 
 	return (
-		<div className="flex min-w-0 flex-col gap-5">
-			<div className="flex min-w-0 flex-col gap-3">
+		<div className="flex min-w-0 flex-col gap-2">
+			<div className="flex min-w-0 flex-col gap-2">
 				<div className="flex min-w-0 items-baseline justify-between gap-2 text-xs leading-snug">
 					<div className="inline-flex min-w-0 flex-1 items-baseline gap-x-1.5">
 						<Tooltip content={t`Balance available to trade`} side="top">
@@ -309,14 +309,15 @@ export function TradeFormFields({
 							htmlFor={triggerFieldId}
 							className="mr-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
 						>
-							{t`Trigger Price`} ({quoteToken})
+							{t`Trigger Price`} <span className="trade-card-label-full">({quoteToken})</span>
 						</label>
 						<NumberInput
 							id={triggerFieldId}
+							aria-label={`${t`Trigger Price`} (${quoteToken})`}
 							placeholder="0.00"
 							value={triggerPriceInput}
 							onChange={(e) => setTriggerPrice(e.target.value)}
-							className="h-9 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
+							className="h-8 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 							disabled={isFormDisabled}
 						/>
 					</div>
@@ -324,6 +325,7 @@ export function TradeFormFields({
 
 				{twapOrder && (
 					<TradeFormTwap
+						desktop
 						disabled={isFormDisabled}
 						side={side}
 						quoteToken={quoteToken}
@@ -335,30 +337,31 @@ export function TradeFormFields({
 
 				{usesLimitPrice && (
 					<div className="flex min-w-0 flex-col gap-2">
-						<div className="flex min-w-0 items-baseline justify-between gap-2">
-							<label htmlFor={limitFieldId} className="whitespace-nowrap text-2sm font-semibold text-trading-panel-fg">
+						<div className={cn(inputFrameClass, limitHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
+							<label
+								htmlFor={limitFieldId}
+								className="mr-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
+							>
 								{t`Price`}
 							</label>
-							<button
-								type="button"
-								onClick={() => formattedMid && setLimitPrice(formattedMid)}
-								disabled={isFormDisabled || !formattedMid}
-								aria-pressed={!!formattedMid && limitPriceInput === formattedMid}
-								className={chipClass(!!formattedMid && limitPriceInput === formattedMid)}
-							>
-								{t`Mid`}
-							</button>
-						</div>
-						<div className={cn(inputFrameClass, limitHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
 							<NumberInput
 								id={limitFieldId}
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e) => setLimitPrice(e.target.value)}
-								className="h-9 min-w-0 flex-1 bg-transparent px-0 text-base font-semibold tabular-nums text-trading-panel-fg"
+								className="h-8 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 								disabled={isFormDisabled}
 							/>
-							<span className="ml-2 shrink-0 whitespace-nowrap text-2sm text-trading-panel-muted">{quoteToken}</span>
+							<span className="ml-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-muted">{quoteToken}</span>
+							<button
+								type="button"
+								onClick={() => formattedMid && setLimitPrice(formattedMid)}
+								disabled={isFormDisabled || !formattedMid}
+								aria-pressed={!!formattedMid && limitPriceInput === formattedMid}
+								className="ml-2 h-8 shrink-0 cursor-pointer whitespace-nowrap text-xs font-semibold text-trading-panel-success disabled:cursor-not-allowed"
+							>
+								{t`Mid`}
+							</button>
 						</div>
 						{orderType === "limit" && <TradeTifChips orderType={orderType} disabled={isFormDisabled} />}
 					</div>
@@ -367,6 +370,7 @@ export function TradeFormFields({
 				{scaleOrder && (
 					<>
 						<TradeFormScale
+							desktop
 							midPrice={midReferencePrice}
 							szDecimals={szDecimals}
 							marketType={marketType}
@@ -377,7 +381,7 @@ export function TradeFormFields({
 					</>
 				)}
 
-				<div className="flex flex-col gap-2.5">
+				<div className="flex flex-col gap-2">
 					<div className={cn(inputFrameClass, sizeHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
 						<label
 							htmlFor={sizeFieldId}
@@ -393,7 +397,7 @@ export function TradeFormFields({
 							value={sizeInput}
 							onChange={(e) => setSize(e.target.value)}
 							maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
-							className="h-9 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
+							className="h-8 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 							disabled={isFormDisabled}
 						/>
 						<button
@@ -401,7 +405,7 @@ export function TradeFormFields({
 							onClick={onSizeModeToggle}
 							aria-label={t`Toggle size mode`}
 							disabled={isFormDisabled}
-							className="ml-2 inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap text-2sm font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
+							className="ml-2 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap text-2sm font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
 						>
 							{sizeModeLabel}
 							<CaretDownIcon className="size-3 text-trading-panel-subtle" />
@@ -463,7 +467,7 @@ export function TradeFormFields({
 			</div>
 
 			{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
-				<div className="space-y-3.5 py-0.5">
+				<div className="space-y-2 py-0.5">
 					<TradeOptionCheckboxes
 						className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
 						tradingPanel

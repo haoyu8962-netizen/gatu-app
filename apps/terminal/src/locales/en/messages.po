@@ -5097,6 +5097,8 @@ msgstr "Max Drawdown"
 #~ msgid "Max Fee Rate (%)"
 #~ msgstr "Max Fee Rate (%)"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Max Price"
 msgstr "Max Price"
@@ -5147,8 +5149,8 @@ msgid "Meme"
 msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -5162,6 +5164,8 @@ msgstr "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "Min order $10"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/lib/trade/twap-labels.ts
 msgid "Min Price"
 msgstr "Min Price"
@@ -10199,6 +10203,8 @@ msgstr "Trigger order must reduce your current position"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -10684,7 +10690,7 @@ msgid "Use max available balance"
 msgstr "Use max available balance"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
-#: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "Use mid price"
 

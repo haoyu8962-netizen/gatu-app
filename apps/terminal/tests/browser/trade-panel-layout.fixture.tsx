@@ -62,6 +62,11 @@ function Fixture() {
 							<div style={{ height: "100%" }}>
 								<div className="trade-panel-container flex h-full flex-col bg-surface">
 									<TradePanelBody
+										header={
+											<div data-slot="fixture-trade-header" style={{ height: 150 }}>
+												Trade controls
+											</div>
+										}
 										footer={
 											<>
 												<div className="flex flex-col gap-3">
@@ -78,6 +83,7 @@ function Fixture() {
 												</div>
 												<div className="border-t border-trading-panel-stroke-row pt-1">
 													<OrderSummary
+														compact
 														liqPrice={null}
 														liqWarning={false}
 														orderValue={0}
@@ -93,9 +99,6 @@ function Fixture() {
 											</>
 										}
 									>
-										<div data-slot="fixture-trade-header" style={{ height: 150 }}>
-											Trade controls
-										</div>
 										<div
 											data-slot="fixture-trade-fields"
 											className="flex flex-col"

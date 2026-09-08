@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import type { ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice, PriceInput } from "@/components/ui/price-input";
 import {
@@ -11,7 +10,6 @@ import {
 } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import type { Numeric } from "@/lib/trade/numbers";
-import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import {
 	useOrderEntryActions,
 	useScaleEnd,
@@ -20,6 +18,9 @@ import {
 	useScaleStart,
 } from "@/stores/use-order-entry-store";
 
+import { ScaleField } from "./scale-field";
+import { ScaleMidButton } from "./scale-mid-button";
+
 interface Props {
 	midPrice: Numeric;
 	szDecimals: number;
@@ -27,6 +28,7 @@ interface Props {
 	assetId?: number;
 	disabled: boolean;
 	compact?: boolean;
+	desktop?: boolean;
 	mobileSafe?: boolean;
 }
 
@@ -34,7 +36,17 @@ const defaultInputClass = "w-full text-xs tabular-nums";
 const compactInputClass =
 	"h-7 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg";
 
-export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disabled, compact, mobileSafe }: Props) {
+export function TradeFormScale({
+	midPrice,
+	szDecimals,
+	marketType,
+	assetId,
+	disabled,
+	compact,
+	desktop,
+	mobileSafe,
+}: Props) {
+	const { t } = useLingui();
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
@@ -46,24 +58,26 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disa
 	const levelsLabel = t`Number of Orders`;
 	const skewLabel = t`Size Skew`;
 	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType, assetId);
-	const inputClass = compact ? compactInputClass : defaultInputClass;
-	const hoistedMid = compact ? formattedMid : undefined;
+	const inline = compact || desktop;
+	const inputClass = inline ? cn(compactInputClass, desktop && "h-8") : defaultInputClass;
+	const hoistedMid = inline ? formattedMid : undefined;
 
 	return (
 		<>
 			<ScaleField
 				compact={compact}
+				desktop={desktop}
 				disabled={disabled}
 				label={startPriceLabel}
-				action={hoistedMid ? <MidButton disabled={disabled} value={hoistedMid} onSelect={setScaleStart} /> : null}
+				action={hoistedMid ? <ScaleMidButton disabled={disabled} value={hoistedMid} onSelect={setScaleStart} /> : null}
 			>
 				<PriceInput
-					label={compact ? undefined : startPriceLabel}
+					label={inline ? undefined : startPriceLabel}
 					aria-label={startPriceLabel}
 					placeholder="0.00"
 					value={scaleStartPriceInput}
 					onChange={(e) => setScaleStart(e.target.value)}
-					onMidClick={compact ? undefined : setScaleStart}
+					onMidClick={inline ? undefined : setScaleStart}
 					midPrice={midPrice}
 					szDecimals={szDecimals}
 					marketType={marketType}
@@ -75,17 +89,18 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disa
 			</ScaleField>
 			<ScaleField
 				compact={compact}
+				desktop={desktop}
 				disabled={disabled}
 				label={endPriceLabel}
-				action={hoistedMid ? <MidButton disabled={disabled} value={hoistedMid} onSelect={setScaleEnd} /> : null}
+				action={hoistedMid ? <ScaleMidButton disabled={disabled} value={hoistedMid} onSelect={setScaleEnd} /> : null}
 			>
 				<PriceInput
-					label={compact ? undefined : endPriceLabel}
+					label={inline ? undefined : endPriceLabel}
 					aria-label={endPriceLabel}
 					placeholder="0.00"
 					value={scaleEndPriceInput}
 					onChange={(e) => setScaleEnd(e.target.value)}
-					onMidClick={compact ? undefined : setScaleEnd}
+					onMidClick={inline ? undefined : setScaleEnd}
 					midPrice={midPrice}
 					szDecimals={szDecimals}
 					marketType={marketType}
@@ -95,81 +110,53 @@ export function TradeFormScale({ midPrice, szDecimals, marketType, assetId, disa
 					mobileSafe={mobileSafe}
 				/>
 			</ScaleField>
-			<ScaleField compact={compact} disabled={disabled} label={levelsLabel}>
-				<NumberInput
-					label={compact ? undefined : levelsLabel}
-					aria-label={levelsLabel}
-					labelValue={`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}
-					placeholder="4"
-					value={String(scaleLevelsNum)}
-					onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
-					allowDecimals={false}
-					min={SCALE_LEVELS_MIN}
-					max={SCALE_LEVELS_MAX}
-					className={inputClass}
+			<div className={desktop ? "grid min-w-0 grid-cols-2 gap-2" : "contents"}>
+				<ScaleField
+					compact={compact}
+					desktop={desktop}
 					disabled={disabled}
-					mobileSafe={mobileSafe}
-				/>
-			</ScaleField>
-			<ScaleField compact={compact} disabled={disabled} label={skewLabel}>
-				<NumberInput
-					label={compact ? undefined : skewLabel}
-					aria-label={skewLabel}
-					labelValue={`${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}`}
-					placeholder="1"
-					value={scaleSkewInput}
-					onChange={(e) => setScaleSkew(e.target.value)}
-					allowDecimals
-					maxAllowedDecimals={SCALE_SKEW_MAX_DECIMALS}
-					min={SCALE_SKEW_MIN}
-					max={SCALE_SKEW_MAX}
-					className={inputClass}
+					label={levelsLabel}
+					range={desktop ? `${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}` : undefined}
+				>
+					<NumberInput
+						label={inline ? undefined : levelsLabel}
+						aria-label={levelsLabel}
+						labelValue={`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}
+						placeholder="4"
+						value={String(scaleLevelsNum)}
+						onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
+						allowDecimals={false}
+						min={SCALE_LEVELS_MIN}
+						max={SCALE_LEVELS_MAX}
+						className={inputClass}
+						disabled={disabled}
+						mobileSafe={mobileSafe}
+					/>
+				</ScaleField>
+				<ScaleField
+					compact={compact}
+					desktop={desktop}
 					disabled={disabled}
-					mobileSafe={mobileSafe}
-				/>
-			</ScaleField>
+					label={skewLabel}
+					range={desktop ? `${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}` : undefined}
+				>
+					<NumberInput
+						label={inline ? undefined : skewLabel}
+						aria-label={skewLabel}
+						labelValue={`${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}`}
+						placeholder="1"
+						value={scaleSkewInput}
+						onChange={(e) => setScaleSkew(e.target.value)}
+						allowDecimals
+						maxAllowedDecimals={SCALE_SKEW_MAX_DECIMALS}
+						min={SCALE_SKEW_MIN}
+						max={SCALE_SKEW_MAX}
+						className={inputClass}
+						disabled={disabled}
+						mobileSafe={mobileSafe}
+					/>
+				</ScaleField>
+			</div>
 		</>
-	);
-}
-
-interface ScaleFieldProps {
-	compact: boolean | undefined;
-	disabled: boolean;
-	label: string;
-	action?: ReactNode;
-	children: ReactNode;
-}
-
-function ScaleField({ compact, disabled, label, action, children }: ScaleFieldProps) {
-	if (!compact) return <>{children}</>;
-
-	return (
-		<div className={cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")}>
-			<span className="mr-1.5 min-w-0 shrink truncate whitespace-nowrap text-2xs text-trading-panel-subtle">
-				{label}
-			</span>
-			<div className="min-w-0 flex-1">{children}</div>
-			{action}
-		</div>
-	);
-}
-
-interface MidButtonProps {
-	disabled: boolean;
-	value: string;
-	onSelect: (formattedPrice: string) => void;
-}
-
-function MidButton({ disabled, value, onSelect }: MidButtonProps) {
-	return (
-		<button
-			type="button"
-			onClick={() => onSelect(value)}
-			disabled={disabled}
-			aria-label={`${t`Use mid price`} ${value}`}
-			className="relative ml-1 h-8 shrink-0 whitespace-nowrap text-xs font-semibold text-trading-panel-success transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:text-trading-panel-success/80 disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			{t`Mid`}
-		</button>
 	);
 }
