@@ -162,12 +162,12 @@ describe("compact mobile orderbook modes", () => {
 		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
 	});
 
-	it("grows from eleven to thirteen slots when the shared fieldset grows", () => {
+	it("covers fractional extra height before another complete row fits", () => {
 		expect(getLadder("asks").children).toHaveLength(5);
 		expect(getLadder("bids").children).toHaveLength(5);
 		resizeBook(359);
-		expect(getLadder("asks").children).toHaveLength(5);
-		expect(getLadder("bids").children).toHaveLength(5);
+		expect(getLadder("asks").children).toHaveLength(6);
+		expect(getLadder("bids").children).toHaveLength(6);
 
 		resizeBook(360);
 
@@ -212,7 +212,7 @@ describe("compact mobile orderbook modes", () => {
 		}
 	});
 
-	it("uses rank-positioned rows and leaves surplus height at each far edge", () => {
+	it("anchors rank-positioned rows toward the midpoint", () => {
 		const asks = getLadder("asks");
 		const bids = getLadder("bids");
 		const askRows = [...asks.querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]')];
@@ -234,6 +234,38 @@ describe("compact mobile orderbook modes", () => {
 			"translateY(84px)",
 			"translateY(112px)",
 		]);
+	});
+
+	it("updates clipped-row safety even when the rendered count stays the same", () => {
+		resizeBook(359);
+		const ask = getLadder("asks").querySelector<HTMLButtonElement>("button");
+		const bid = [...getLadder("bids").querySelectorAll<HTMLButtonElement>("button")].at(-1);
+		expect(ask?.disabled).toBe(true);
+		expect(bid?.disabled).toBe(true);
+		act(() => {
+			ask?.click();
+			bid?.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+		resizeBook(360);
+		expect(getLadder("asks").querySelector("button")).toBe(ask);
+		expect(ask?.disabled).toBe(false);
+		expect(bid?.disabled).toBe(false);
+		resizeBook(359.5);
+		expect(ask?.disabled).toBe(true);
+		expect(bid?.disabled).toBe(true);
+	});
+
+	it("recomputes clipping for single-side modes and fills beyond the feed depth", () => {
+		resizeBook(700);
+		expect(getLadder("asks").children).toHaveLength(13);
+		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
+		expect(getLadder("asks").children).toHaveLength(26);
+		expect(getLadder("asks").querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(6);
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
+		resizeBook(331.5);
+		expect(getLadder("asks").children).toHaveLength(12);
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(1);
 	});
 
 	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {

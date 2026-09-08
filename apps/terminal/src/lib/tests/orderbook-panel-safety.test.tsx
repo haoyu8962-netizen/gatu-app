@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
+import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 
 const mocks = vi.hoisted(() => ({
 	book: undefined as
@@ -64,7 +65,7 @@ vi.mock("@/lib/performance/render-profile", () => ({
 }));
 
 vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
-	useOrderbookRows: () => [4, { current: null }],
+	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: 3 }, { current: null }],
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -154,6 +155,28 @@ describe("OrderbookPanel safety", () => {
 		expect(container.textContent).not.toContain("Waiting for order book...");
 		const bidDepth = container.querySelectorAll<HTMLElement>(".depth-bar-bid");
 		expect(bidDepth[bidDepth.length - 1]?.style.width).toBe("100%");
+	});
+
+	it("disables clipped edge prices while keeping complete rows selectable", () => {
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		mocks.status = "active";
+		mocks.book = snapshot(
+			"HYPE",
+			Array.from({ length: 4 }, (_, rank) => ({ n: 1, px: String(99 - rank), sz: "1" })),
+			Array.from({ length: 4 }, (_, rank) => ({ n: 1, px: String(101 + rank), sz: "1" })),
+		);
+		renderPanel();
+		const asks = [...container.querySelectorAll<HTMLButtonElement>('[data-slot="orderbook-asks"] button')];
+		const bids = [...container.querySelectorAll<HTMLButtonElement>('[data-slot="orderbook-bids"] button')];
+		expect(asks.map((row) => row.disabled)).toEqual([true, false, false, false]);
+		expect(bids.map((row) => row.disabled)).toEqual([false, false, false, true]);
+		act(() => {
+			asks[0]?.click();
+			bids[3]?.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+		act(() => asks[3]?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "101" });
 	});
 
 	it("uses the unaggregated event spread with the BBO midpoint", () => {

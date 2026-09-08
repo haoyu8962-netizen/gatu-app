@@ -18,7 +18,9 @@ import {
 	getSnapshotPriceDecimals,
 	processLevels,
 } from "@/lib/trade/orderbook";
+import { getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
+import { OrderbookPlaceholderRow } from "./orderbook-placeholder-row";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
@@ -30,7 +32,7 @@ export function OrderbookPanel() {
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const sizeMode = useSizeMode();
 	const showOrderbookInQuote = sizeMode === "quote";
-	const [visibleRows, orderbookContainerRef] = useOrderbookRows();
+	const [{ rowCount: visibleRows, fullRowCount }, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -182,21 +184,30 @@ export function OrderbookPanel() {
 				</div>
 
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div className="flex-1 min-h-0 flex flex-col justify-end gap-[2px]">
+					<div
+						data-slot="orderbook-asks"
+						className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end gap-[2px]"
+					>
 						{hasCurrentSnapshot && asks.length > 0 ? (
-							asksReversed.map((level) => (
-								<OrderbookRow
-									key={`ask-${level.price}`}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={subscriptionParams.coin}
-									side="ask"
-									maxTotal={askMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-								/>
-							))
+							<>
+								{getOrderbookPlaceholderKeys(visibleRows - asks.length).map((key) => (
+									<OrderbookPlaceholderRow key={key} />
+								))}
+								{asksReversed.map((level, index) => (
+									<OrderbookRow
+										key={`ask-${level.price}`}
+										disabled={asks.length - index - 1 >= fullRowCount}
+										flashResetKey={flashResetKey}
+										level={level}
+										marketName={subscriptionParams.coin}
+										side="ask"
+										maxTotal={askMaxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+							</>
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
 						) : (
@@ -214,21 +225,27 @@ export function OrderbookPanel() {
 						<span className="tabular-nums font-medium text-fg-muted">{spreadText}</span>
 					</div>
 
-					<div className="flex-1 min-h-0 flex flex-col gap-[2px]">
+					<div data-slot="orderbook-bids" className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]">
 						{hasCurrentSnapshot && bids.length > 0 ? (
-							bids.map((level) => (
-								<OrderbookRow
-									key={`bid-${level.price}`}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={subscriptionParams.coin}
-									side="bid"
-									maxTotal={bidMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-								/>
-							))
+							<>
+								{bids.map((level, rank) => (
+									<OrderbookRow
+										key={`bid-${level.price}`}
+										disabled={rank >= fullRowCount}
+										flashResetKey={flashResetKey}
+										level={level}
+										marketName={subscriptionParams.coin}
+										side="bid"
+										maxTotal={bidMaxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+								{getOrderbookPlaceholderKeys(visibleRows - bids.length).map((key) => (
+									<OrderbookPlaceholderRow key={key} />
+								))}
+							</>
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
 						) : null}

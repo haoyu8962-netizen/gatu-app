@@ -85,8 +85,9 @@ export function useSelectedMarketInfo() {
 	return selectedMarket;
 }
 
-export function useSubscription() {
-	return pendingSubscription;
+export function useSubscription(method: string) {
+	const snapshot = useOrderbookFeed();
+	return method === "l2Book" ? snapshot : pendingSubscription;
 }
 
 export function useOrderbookMidPrice() {

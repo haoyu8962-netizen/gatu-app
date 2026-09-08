@@ -28,25 +28,23 @@ import {
 	type L2BookPriceGroupOption,
 	processLevels,
 } from "@/lib/trade/orderbook";
+import { getOrderbookLadderLayout, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+import { OrderbookPlaceholderRow } from "../orderbook/orderbook-placeholder-row";
 import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { CompactOrderbookRowPosition } from "./compact-orderbook-row-position";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import {
 	COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT,
-	getCompactOrderbookSlotCount,
-	getMobileOrderbookRowsForLadderHeight,
+	getCompactOrderbookLayout,
 	MOBILE_ORDERBOOK_ROW_METRICS,
 	type MobileOrderbookRowMetrics,
 } from "./mobile-orderbook-layout";
 
 const DEFAULT_LEVEL_COUNT = 12;
-const MIN_LEVEL_COUNT = 3;
-const LADDER_RESIZE_SETTLE_MS = 120;
-const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
 const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_TTL_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_MAX_KEYS = 12;
@@ -467,10 +465,18 @@ export function CompactOrderbook({
 }: CompactOrderbookProps) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const [slotCount, orderbookRef] = useCompactOrderbookSlotCount();
-	const splitLevelCount = Math.floor((slotCount - 1) / 2);
-	const askLevelCount = mode === "asks" ? slotCount : mode === "both" ? splitLevelCount : 0;
-	const bidLevelCount = mode === "bids" ? slotCount : mode === "both" ? splitLevelCount : 0;
+	const [height, orderbookRef] = useOrderbookHeight<HTMLFieldSetElement>();
+	const measuredLayout = getCompactOrderbookLayout(height, mode);
+	const { rowCount, fullRowCount } =
+		height > 0
+			? measuredLayout
+			: {
+					rowCount:
+						mode === "both" ? (COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT - 1) / 2 : COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT,
+					fullRowCount: 0,
+				};
+	const askLevelCount = mode === "bids" ? 0 : rowCount;
+	const bidLevelCount = mode === "asks" ? 0 : rowCount;
 	const visibleAsks = useMemo(() => asks.slice(0, askLevelCount), [asks, askLevelCount]);
 	const visibleBids = useMemo(() => bids.slice(0, bidLevelCount), [bids, bidLevelCount]);
 	const hasAsks = visibleAsks.length > 0;
@@ -512,7 +518,7 @@ export function CompactOrderbook({
 				>
 					{hasAsks ? (
 						<>
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - visibleAsks.length)).map((key, index) => {
+							{getOrderbookPlaceholderKeys(askLevelCount - visibleAsks.length).map((key, index) => {
 								const rank = askLevelCount - index - 1;
 								return (
 									<CompactOrderbookRowPosition key={`ask-${key}`} rank={rank} side="ask">
@@ -528,7 +534,7 @@ export function CompactOrderbook({
 									return (
 										<CompactOrderbookRowPosition key={`ask-${level.price}`} price={level.price} rank={rank} side="ask">
 											<OrderbookRow
-												disabled={!isInteractive}
+												disabled={!isInteractive || rank >= fullRowCount}
 												flashResetKey={flashResetKey}
 												level={level}
 												marketName={marketName}
@@ -546,7 +552,7 @@ export function CompactOrderbook({
 								})}
 						</>
 					) : hasSnapshot ? (
-						PLACEHOLDER_ROW_KEYS.slice(0, askLevelCount).map((key, index) => {
+						getOrderbookPlaceholderKeys(askLevelCount).map((key, index) => {
 							const rank = askLevelCount - index - 1;
 							return (
 								<CompactOrderbookRowPosition key={`ask-${key}`} rank={rank} side="ask">
@@ -595,7 +601,7 @@ export function CompactOrderbook({
 							{visibleBids.map((level, rank) => (
 								<CompactOrderbookRowPosition key={`bid-${level.price}`} price={level.price} rank={rank} side="bid">
 									<OrderbookRow
-										disabled={!isInteractive}
+										disabled={!isInteractive || rank >= fullRowCount}
 										flashResetKey={flashResetKey}
 										level={level}
 										marketName={marketName}
@@ -610,7 +616,7 @@ export function CompactOrderbook({
 									/>
 								</CompactOrderbookRowPosition>
 							))}
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - visibleBids.length)).map((key, index) => {
+							{getOrderbookPlaceholderKeys(bidLevelCount - visibleBids.length).map((key, index) => {
 								const rank = visibleBids.length + index;
 								return (
 									<CompactOrderbookRowPosition key={`bid-${key}`} rank={rank} side="bid">
@@ -620,7 +626,7 @@ export function CompactOrderbook({
 							})}
 						</>
 					) : hasSnapshot ? (
-						PLACEHOLDER_ROW_KEYS.slice(0, bidLevelCount).map((key, rank) => (
+						getOrderbookPlaceholderKeys(bidLevelCount).map((key, rank) => (
 							<CompactOrderbookRowPosition key={`bid-${key}`} rank={rank} side="bid">
 								<OrderbookPlaceholderRow compact />
 							</CompactOrderbookRowPosition>
@@ -738,12 +744,12 @@ function SplitOrderbook({
 	spreadText,
 }: SplitOrderbookProps) {
 	const { t } = useLingui();
-	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(
+	const [{ rowCount: askLevelCount, fullRowCount: askFullRowCount }, askLadderRef] = useOrderbookLadderRows(
 		DEFAULT_LEVEL_COUNT,
 		enabled,
 		MOBILE_ORDERBOOK_ROW_METRICS.default,
 	);
-	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(
+	const [{ rowCount: bidLevelCount, fullRowCount: bidFullRowCount }, bidLadderRef] = useOrderbookLadderRows(
 		DEFAULT_LEVEL_COUNT,
 		enabled,
 		MOBILE_ORDERBOOK_ROW_METRICS.default,
@@ -793,13 +799,17 @@ function SplitOrderbook({
 					!isInteractive && "pointer-events-none",
 				)}
 			>
-				<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1 flex flex-col gap-[2px]">
+				<div
+					ref={bidLadderRef}
+					data-slot="split-orderbook-bids"
+					className="min-h-0 overflow-hidden flex flex-col gap-[2px]"
+				>
 					{hasBids ? (
 						<>
-							{visibleBids.map((level) => (
+							{visibleBids.map((level, rank) => (
 								<SplitOrderbookRow
 									key={`bid-${level.price}`}
-									disabled={!isInteractive}
+									disabled={!isInteractive || rank >= bidFullRowCount}
 									level={level}
 									marketName={marketName}
 									side="bid"
@@ -809,7 +819,7 @@ function SplitOrderbook({
 									szDecimals={szDecimals}
 								/>
 							))}
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - visibleBids.length)).map((key) => (
+							{getOrderbookPlaceholderKeys(bidLevelCount - visibleBids.length).map((key) => (
 								<OrderbookPlaceholderRow key={`bid-${key}`} />
 							))}
 						</>
@@ -820,13 +830,17 @@ function SplitOrderbook({
 					)}
 				</div>
 
-				<div ref={askLadderRef} className="min-h-0 overflow-hidden py-1 flex flex-col gap-[2px]">
+				<div
+					ref={askLadderRef}
+					data-slot="split-orderbook-asks"
+					className="min-h-0 overflow-hidden flex flex-col gap-[2px]"
+				>
 					{hasAsks ? (
 						<>
-							{visibleAsks.map((level) => (
+							{visibleAsks.map((level, rank) => (
 								<SplitOrderbookRow
 									key={`ask-${level.price}`}
-									disabled={!isInteractive}
+									disabled={!isInteractive || rank >= askFullRowCount}
 									level={level}
 									marketName={marketName}
 									side="ask"
@@ -836,7 +850,7 @@ function SplitOrderbook({
 									szDecimals={szDecimals}
 								/>
 							))}
-							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - visibleAsks.length)).map((key) => (
+							{getOrderbookPlaceholderKeys(askLevelCount - visibleAsks.length).map((key) => (
 								<OrderbookPlaceholderRow key={`ask-${key}`} />
 							))}
 						</>
@@ -887,7 +901,7 @@ function OrderbookLoadingAnnouncement() {
 function CompactOrderbookSkeletonRows({ rows, side }: { rows: number; side: "ask" | "bid" }) {
 	return (
 		<>
-			{PLACEHOLDER_ROW_KEYS.slice(0, rows).map((_, index) => {
+			{getOrderbookPlaceholderKeys(rows).map((_, index) => {
 				const rank = side === "ask" ? rows - index - 1 : index;
 				return (
 					<CompactOrderbookRowPosition key={`${side}-skeleton-${rank}`} rank={rank} side={side}>
@@ -902,7 +916,7 @@ function CompactOrderbookSkeletonRows({ rows, side }: { rows: number; side: "ask
 function OrderbookSkeletonRows({ rows, align, compact }: { rows: number; align?: "end"; compact?: boolean }) {
 	return (
 		<>
-			{PLACEHOLDER_ROW_KEYS.slice(0, rows).map((key, index) => (
+			{getOrderbookPlaceholderKeys(rows).map((key, index) => (
 				<OrderbookSkeletonRow key={key} index={index} align={align} compact={compact} />
 			))}
 		</>
@@ -1014,83 +1028,30 @@ export function SplitOrderbookRow({
 }
 
 function useOrderbookLadderRows(defaultRows: number, enabled: boolean, metrics: MobileOrderbookRowMetrics) {
-	const ladderRef = useRef<HTMLDivElement>(null);
-	const [rows, setRows] = useState(defaultRows);
-	const minRows = Math.min(defaultRows, MIN_LEVEL_COUNT);
-
-	useEffect(() => {
-		if (!enabled) {
-			setRows(defaultRows);
-			return;
-		}
-
-		const el = ladderRef.current;
-		if (!el) return;
-
-		let settleTimer: ReturnType<typeof setTimeout> | null = null;
-
-		function updateRows(height: number, settle: boolean) {
-			const nextRows = getMobileOrderbookRowsForLadderHeight(height, metrics, minRows);
-			if (nextRows == null) return;
-			if (settleTimer) clearTimeout(settleTimer);
-			if (!settle) {
-				setRows(nextRows);
-				return;
-			}
-			settleTimer = setTimeout(() => setRows(nextRows), LADDER_RESIZE_SETTLE_MS);
-		}
-
-		updateRows(el.getBoundingClientRect().height, false);
-
-		if (typeof ResizeObserver === "undefined") return;
-
-		const observer = new ResizeObserver(([entry]) => {
-			if (!entry) return;
-			updateRows(entry.target.getBoundingClientRect().height, true);
-		});
-		observer.observe(el);
-		return () => {
-			observer.disconnect();
-			if (settleTimer) clearTimeout(settleTimer);
-		};
-	}, [defaultRows, enabled, minRows, metrics]);
-
-	return [rows, ladderRef] as const;
+	const [height, ladderRef] = useOrderbookHeight<HTMLDivElement>(enabled);
+	const layout = height > 0 ? getOrderbookLadderLayout(height, metrics) : { rowCount: defaultRows, fullRowCount: 0 };
+	return [layout, ladderRef] as const;
 }
 
-function OrderbookPlaceholderRow({ compact }: { compact?: boolean }) {
-	return (
-		<div
-			data-slot="orderbook-placeholder-row"
-			className={cn("shrink-0", compact ? "h-[24px]" : "h-[23px]")}
-			aria-hidden="true"
-		/>
-	);
-}
-
-function useCompactOrderbookSlotCount() {
-	const orderbookRef = useRef<HTMLFieldSetElement>(null);
-	const [slotCount, setSlotCount] = useState(COMPACT_ORDERBOOK_DEFAULT_SLOT_COUNT);
+function useOrderbookHeight<T extends HTMLElement>(enabled = true) {
+	const elementRef = useRef<T>(null);
+	const [height, setHeight] = useState(0);
 
 	useEffect(() => {
-		const element = orderbookRef.current;
+		if (!enabled) return;
+		const element = elementRef.current;
 		if (!element) return;
 
-		function updateSlotCount(height: number) {
-			const nextSlotCount = getCompactOrderbookSlotCount(height);
-			if (nextSlotCount != null) setSlotCount(nextSlotCount);
+		function measure() {
+			if (element) setHeight(element.getBoundingClientRect().height);
 		}
 
-		updateSlotCount(element.getBoundingClientRect().height);
+		measure();
 		if (typeof ResizeObserver === "undefined") return;
-
-		const observer = new ResizeObserver(([entry]) => {
-			if (!entry) return;
-			updateSlotCount(entry.target.getBoundingClientRect().height);
-		});
+		const observer = new ResizeObserver(measure);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, []);
+	}, [enabled]);
 
-	return [slotCount, orderbookRef] as const;
+	return [enabled ? height : 0, elementRef] as const;
 }
