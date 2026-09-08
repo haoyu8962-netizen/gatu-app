@@ -9,6 +9,7 @@ import {
 	type OrderbookFeedSource,
 	useOrderbookFeed,
 } from "@/hooks/trade/use-orderbook-feed";
+import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -33,9 +34,11 @@ import {
 	getOrderbookLadderStyle,
 	getOrderbookPlaceholderKeys,
 } from "@/lib/ui/orderbook-layout";
+import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+import { OrderbookLevelPulse } from "../orderbook/orderbook-level-pulse";
 import { OrderbookPlaceholderRow } from "../orderbook/orderbook-placeholder-row";
 import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
@@ -368,6 +371,8 @@ export function MobileBookView({
 					<CompactOrderbook
 						asks={asks}
 						bids={bids}
+						pulseIdentity={bookCacheKey ?? ""}
+						pulseSnapshot={currentLiveBook}
 						flashResetKey={flashResetKey}
 						hasSnapshot={!!book}
 						isInteractive={isBookInteractive}
@@ -393,6 +398,8 @@ export function MobileBookView({
 					<SplitOrderbook
 						asks={asks}
 						bids={bids}
+						pulseIdentity={bookCacheKey ?? ""}
+						pulseSnapshot={currentLiveBook}
 						enabled={isBookViewActive}
 						hasSnapshot={!!book}
 						isInteractive={isBookInteractive}
@@ -418,6 +425,8 @@ export function MobileBookView({
 interface OrderbookLayoutProps {
 	asks: BookLevel[];
 	bids: BookLevel[];
+	pulseIdentity?: string;
+	pulseSnapshot?: OrderbookFeedSnapshot;
 	hasSnapshot: boolean;
 	isInteractive: boolean;
 	isTransitioning: boolean;
@@ -446,6 +455,8 @@ interface CompactOrderbookProps extends OrderbookLayoutProps {
 export function CompactOrderbook({
 	asks,
 	bids,
+	pulseIdentity = "",
+	pulseSnapshot,
 	flashResetKey,
 	hasSnapshot,
 	isInteractive,
@@ -490,10 +501,30 @@ export function CompactOrderbook({
 	const showBids = mode !== "asks";
 	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
 	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
+	const visiblePulseLevels = useMemo(
+		() => [
+			...visibleAsks
+				.slice(0, fullRowCount)
+				.reverse()
+				.map((level) => ({ side: "ask" as const, price: level.price })),
+			...visibleBids.slice(0, fullRowCount).map((level) => ({ side: "bid" as const, price: level.price })),
+		],
+		[visibleAsks, visibleBids, fullRowCount],
+	);
+	const { panelRef, getPulse, onAnimationEnd } = useOrderbookLevelPulses({
+		identity: pulseIdentity,
+		snapshot: pulseSnapshot,
+		visibleLevels: visiblePulseLevels,
+		viewKey: `compact:${mode}:${fullRowCount}`,
+		active: isInteractive && fullRowCount > 0,
+	});
 
 	return (
-		<div className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
-			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal text-trading-panel-subtle uppercase">
+		<div
+			ref={panelRef}
+			className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg"
+		>
+			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal orderbook-header-text uppercase">
 				<div className="min-w-0 truncate" title={`${t`Price`} (${priceToken})`}>
 					{t`Price`}{" "}
 					<span data-slot="compact-orderbook-price-token" className="orderbook-asset-heading normal-case">
@@ -548,6 +579,8 @@ export function CompactOrderbook({
 											<OrderbookRow
 												disabled={!isInteractive || rank >= fullRowCount}
 												flashResetKey={flashResetKey}
+												pulse={getPulse("ask", level.price)}
+												onPulseEnd={onAnimationEnd}
 												level={level}
 												marketName={marketName}
 												side="ask"
@@ -597,7 +630,7 @@ export function CompactOrderbook({
 						</span>
 						<span
 							data-slot="compact-orderbook-spread"
-							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums text-trading-panel-subtle"
+							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums orderbook-header-text"
 						>
 							{spreadText}
 						</span>
@@ -621,6 +654,8 @@ export function CompactOrderbook({
 									<OrderbookRow
 										disabled={!isInteractive || rank >= fullRowCount}
 										flashResetKey={flashResetKey}
+										pulse={getPulse("bid", level.price)}
+										onPulseEnd={onAnimationEnd}
 										level={level}
 										marketName={marketName}
 										side="bid"
@@ -751,6 +786,8 @@ interface SplitOrderbookProps extends OrderbookLayoutProps {
 function SplitOrderbook({
 	asks,
 	bids,
+	pulseIdentity = "",
+	pulseSnapshot,
 	enabled,
 	hasSnapshot,
 	isInteractive,
@@ -772,17 +809,31 @@ function SplitOrderbook({
 	const hasBids = visibleBids.length > 0;
 	const askMaxTotal = getVisibleMaxTotal(visibleAsks, askLevelCount, showOrderbookInQuote);
 	const bidMaxTotal = getVisibleMaxTotal(visibleBids, bidLevelCount, showOrderbookInQuote);
+	const visiblePulseLevels = useMemo(
+		() => [
+			...visibleAsks.slice(0, askFullRowCount).map((level) => ({ side: "ask" as const, price: level.price })),
+			...visibleBids.slice(0, bidFullRowCount).map((level) => ({ side: "bid" as const, price: level.price })),
+		],
+		[visibleAsks, visibleBids, askFullRowCount, bidFullRowCount],
+	);
+	const { panelRef, getPulse, onAnimationEnd } = useOrderbookLevelPulses({
+		identity: pulseIdentity,
+		snapshot: pulseSnapshot,
+		visibleLevels: visiblePulseLevels,
+		viewKey: `split:${askFullRowCount}:${bidFullRowCount}`,
+		active: isInteractive && (askFullRowCount > 0 || bidFullRowCount > 0),
+	});
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+		<div ref={panelRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
-				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs text-fg-muted">
+				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs orderbook-header-text">
 					<span>{t`Spread`}</span>
-					<span className="tabular-nums text-trading-panel-subtle">{spreadText}</span>
+					<span className="tabular-nums">{spreadText}</span>
 				</div>
 				<div
 					data-slot="split-orderbook-column-headings"
-					className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px pb-1.5 text-2xs uppercase tracking-wider text-fg-muted"
+					className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px pb-1.5 text-2xs uppercase tracking-wider orderbook-header-text"
 				>
 					<div
 						data-slot="split-orderbook-bid-headings"
@@ -823,6 +874,8 @@ function SplitOrderbook({
 								<SplitOrderbookRow
 									key={`bid-${level.price}`}
 									disabled={!isInteractive || rank >= bidFullRowCount}
+									pulse={getPulse("bid", level.price)}
+									onPulseEnd={onAnimationEnd}
 									level={level}
 									marketName={marketName}
 									side="bid"
@@ -855,6 +908,8 @@ function SplitOrderbook({
 								<SplitOrderbookRow
 									key={`ask-${level.price}`}
 									disabled={!isInteractive || rank >= askFullRowCount}
+									pulse={getPulse("ask", level.price)}
+									onPulseEnd={onAnimationEnd}
 									level={level}
 									marketName={marketName}
 									side="ask"
@@ -984,6 +1039,8 @@ function OrderbookSkeletonRow({ index, align, compact }: { index: number; align?
 
 interface SplitOrderbookRowProps {
 	disabled?: boolean;
+	pulse?: OrderbookLevelPulseEvent;
+	onPulseEnd?: (id: number) => void;
 	level: BookLevel;
 	marketName: string;
 	side: "ask" | "bid";
@@ -995,6 +1052,8 @@ interface SplitOrderbookRowProps {
 
 export function SplitOrderbookRow({
 	disabled = false,
+	pulse,
+	onPulseEnd,
 	level,
 	marketName,
 	side,
@@ -1037,12 +1096,15 @@ export function SplitOrderbookRow({
 			onClick={() => setSelectedPrice(marketName, level.price)}
 			title={priceText}
 			aria-label={`${sideLabel}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`}
-			className="group relative block h-[var(--orderbook-row-height,23px)] w-full shrink-0 cursor-pointer overflow-hidden text-left hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default"
+			className="orderbook-row group relative block h-[var(--orderbook-row-height,23px)] w-full shrink-0 cursor-pointer overflow-hidden text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default"
 		>
 			<span
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, [isAsk ? "left" : "right"]: 0, [isAsk ? "right" : "left"]: "auto" }}
 			/>
+			{!disabled && pulse && onPulseEnd && (
+				<OrderbookLevelPulse key={pulse.id} event={pulse} onAnimationEnd={onPulseEnd} />
+			)}
 			<span className="relative z-10 grid h-full items-center grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2 py-0.5 text-2xs">
 				{isAsk ? (
 					<>

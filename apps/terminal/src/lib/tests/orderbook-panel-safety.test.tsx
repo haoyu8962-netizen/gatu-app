@@ -41,6 +41,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useSelectedMarketInfo: () => ({ data: mocks.market }),
 	useSubscription: (method: string, params: Record<string, unknown>, options?: { enabled?: boolean }) => {
 		if (method === "l2Book") {

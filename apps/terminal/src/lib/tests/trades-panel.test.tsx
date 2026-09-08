@@ -2,7 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
@@ -31,11 +31,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useSelectedMarketInfo: () => ({
 		data: { kind: "perp", markPx: "64.5", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	}),
 	useSubscription: (method: string) => {
-		mocks.subscriptionMethods.push(method);
+		useEffect(() => {
+			mocks.subscriptionMethods.push(method);
+		}, [method]);
 		return mocks.result;
 	},
 }));
@@ -45,7 +48,7 @@ vi.mock("@/lib/performance/render-profile", () => ({
 }));
 
 vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
-	useOrderbookRows: () => [4, { current: null }],
+	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: 4, rowHeightPx: 23 }, { current: null }],
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
