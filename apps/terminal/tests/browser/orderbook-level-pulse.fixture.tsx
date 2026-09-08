@@ -5,7 +5,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages as englishMessages } from "@/locales/en/messages.po";
 import { messages as chineseMessages } from "@/locales/zh/messages.po";
-import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { useAnimateOrderbook, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 import {
@@ -53,7 +53,8 @@ function OrderbookPulseFixture() {
 		active: true,
 		quote: false,
 	});
-	const { setTheme } = useGlobalSettingsActions();
+	const animateOrderbook = useAnimateOrderbook();
+	const { setAnimateOrderbook, setTheme } = useGlobalSettingsActions();
 	const { setSizeMode } = useOrderEntryActions();
 
 	useEffect(() => {
@@ -88,6 +89,14 @@ function OrderbookPulseFixture() {
 				)}
 			</main>
 			<footer data-slot="pulse-fixture-footer">Account boundary</footer>
+			<label>
+				<input
+					type="checkbox"
+					checked={animateOrderbook}
+					onChange={(event) => setAnimateOrderbook(event.target.checked)}
+				/>
+				Animate order book
+			</label>
 		</>
 	);
 }

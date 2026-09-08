@@ -5620,6 +5620,11 @@ msgstr "订单簿"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book animations"
+msgstr "订单簿动画"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "以计价资产显示订单簿"
 

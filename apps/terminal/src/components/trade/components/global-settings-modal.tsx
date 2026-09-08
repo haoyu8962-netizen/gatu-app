@@ -25,6 +25,7 @@ import {
 } from "@/lib/trade/position-market-close-confirmation-preference";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
+	useAnimateOrderbook,
 	useGlobalSettings,
 	useGlobalSettingsActions,
 	useMarketOrderSlippagePercent,
@@ -38,9 +39,15 @@ export function GlobalSettingsModal() {
 	const { t } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote } = useGlobalSettings();
+	const animateOrderbook = useAnimateOrderbook();
 	const skipOrderConfirmation = useSkipOrderConfirmation();
-	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork, setSkipOrderConfirmation } =
-		useGlobalSettingsActions();
+	const {
+		setShowOrderbookInQuote,
+		setAnimateOrderbook,
+		setMarketOrderSlippagePercent,
+		setNetwork,
+		setSkipOrderConfirmation,
+	} = useGlobalSettingsActions();
 	const network = useNetwork();
 	const isMobile = useIsMobile();
 	const { clientKey, env } = useHyperliquid();
@@ -182,6 +189,14 @@ export function GlobalSettingsModal() {
 					</SettingsGroup>
 
 					<SettingsGroup label={t`Display`}>
+						<SettingRow label={t`Order book animations`}>
+							<Toggle
+								size="xs"
+								aria-label={t`Order book animations`}
+								checked={animateOrderbook}
+								onCheckedChange={setAnimateOrderbook}
+							/>
+						</SettingRow>
 						{isMobile && (
 							<SettingRow label={t`Order book in quote asset`}>
 								<Toggle

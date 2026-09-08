@@ -29,6 +29,7 @@ describe("OrderbookLevelPulse", () => {
 
 	beforeEach(() => {
 		currentTime = 100;
+		vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
 		vi.spyOn(performance, "now").mockImplementation(() => currentTime);
 		onAnimationEnd.mockClear();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -41,6 +42,7 @@ describe("OrderbookLevelPulse", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 

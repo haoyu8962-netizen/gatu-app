@@ -6038,6 +6038,11 @@ msgstr "Libro de órdenes"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book animations"
+msgstr "Animaciones del libro de órdenes"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "Libro de órdenes en el activo de cotización"
 

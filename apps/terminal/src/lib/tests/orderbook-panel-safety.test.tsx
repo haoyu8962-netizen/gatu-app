@@ -71,6 +71,7 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	useAnimateOrderbook: () => true,
 	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));

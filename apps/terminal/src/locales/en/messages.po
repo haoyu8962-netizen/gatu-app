@@ -6059,6 +6059,11 @@ msgstr "Order Book"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book animations"
+msgstr "Order book animations"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "Order book in quote asset"
 

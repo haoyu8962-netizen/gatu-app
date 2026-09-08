@@ -1,6 +1,7 @@
 import { type RefCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getOrderbookLevelKey, type OrderbookPulseSide } from "@/lib/trade/orderbook-new-levels";
 import { createOrderbookLevelPulseController, type OrderbookLevelPulseInput } from "@/lib/ui/orderbook-level-pulses";
+import { useAnimateOrderbook } from "@/stores/use-global-settings-store";
 
 export function useOrderbookLevelPulses({
 	active,
@@ -9,6 +10,7 @@ export function useOrderbookLevelPulses({
 	viewKey,
 	visibleLevels,
 }: OrderbookLevelPulseInput) {
+	const animateOrderbook = useAnimateOrderbook();
 	const [controller] = useState(() => createOrderbookLevelPulseController({ environmentActive: false }));
 	const [panel, setPanel] = useState<HTMLElement | null>(null);
 	const refreshEnvironmentRef = useRef<(() => void) | null>(null);
@@ -51,11 +53,19 @@ export function useOrderbookLevelPulses({
 	useEffect(() => {
 		if (!panel) return;
 		refreshEnvironmentRef.current?.();
-		controller.commit({ active, identity, snapshot, viewKey, visibleLevels });
-	}, [active, controller, identity, panel, snapshot, viewKey, visibleLevels]);
+		controller.commit({ active: active && animateOrderbook, identity, snapshot, viewKey, visibleLevels });
+	}, [active, animateOrderbook, controller, identity, panel, snapshot, viewKey, visibleLevels]);
 
 	function getPulse(side: OrderbookPulseSide, price: string) {
-		if (!active || !snapshot || pulseState.identity !== identity || pulseState.viewKey !== viewKey) return undefined;
+		if (
+			!animateOrderbook ||
+			!active ||
+			!snapshot ||
+			pulseState.identity !== identity ||
+			pulseState.viewKey !== viewKey
+		) {
+			return undefined;
+		}
 		const key = getOrderbookLevelKey(side, price);
 		return key === null ? undefined : pulseState.events.get(key);
 	}

@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
 const pulseSelector = '[data-slot="orderbook-level-pulse"]';
+const quantityFeedbackSelector = '[data-slot="orderbook-size-value"].orderbook-color-change';
 const fixtures = [
 	{ name: "wide desktop", view: "desktop", width: 280, height: 677, viewport: { width: 1661, height: 1265 } },
 	{ name: "medium desktop", view: "desktop", width: 240, height: 677.5, viewport: { width: 1238, height: 1305 } },
@@ -49,6 +50,120 @@ async function geometry(page: Page) {
 			return { x, y, width, height };
 		}),
 	);
+}
+
+for (const view of ["desktop", "compact", "split"] as const) {
+	test(`${view} cancels both animation layers through the persisted setting without remounting rows`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: view === "desktop" ? 1661 : 390, height: 844 });
+		await openFixture(page, view, view === "compact" ? 164 : 390, 425);
+		const toggle = page.getByRole("checkbox", { name: "Animate order book" });
+		await expect(toggle).toBeChecked();
+		const before = await geometry(page);
+		const retained = page.locator('button[aria-label*="Use 99."]').first();
+		await retained.evaluate((element) => element.setAttribute("data-fixture-setting-row", "retained"));
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.5", bid: "99.5", size: "2" }));
+		await expect(page.locator(pulseSelector)).toHaveCount(2);
+		if (view !== "split") await expect(page.locator(quantityFeedbackSelector).first()).toBeVisible();
+		await toggle.uncheck();
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.25", bid: "99.75", size: "3" }));
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		await toggle.check();
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.25", bid: "99.75", size: "3" }));
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.2", bid: "99.8", size: "4" }));
+		await expect(page.locator(pulseSelector)).toHaveCount(2);
+		if (view === "split") await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		else await expect(page.locator(quantityFeedbackSelector).first()).toBeVisible();
+		await expect(page.locator('[data-fixture-setting-row="retained"]')).toHaveCount(1);
+		expect(await geometry(page)).toEqual(before);
+		await page.emulateMedia({ reducedMotion: "reduce" });
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+		await toggle.uncheck();
+		await toggle.check();
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.1", bid: "99.9", size: "5" }));
+		await expect(toggle).toBeChecked();
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+	});
+}
+
+test("keeps the disabled animation preference after a reload and layout changes", async ({ page }) => {
+	await openFixture(page, "desktop");
+	await page.getByRole("checkbox", { name: "Animate order book" }).uncheck();
+	await page.reload();
+	await page.waitForFunction(() => typeof window.configureOrderbookPulse === "function");
+	await expect(page.getByRole("checkbox", { name: "Animate order book" })).not.toBeChecked();
+	for (const view of ["desktop", "compact", "split"] as const) {
+		await page.evaluate(
+			(view) => window.configureOrderbookPulse({ view, width: view === "compact" ? 164 : 390 }),
+			view,
+		);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot());
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ ask: "100.5", bid: "99.5", size: "2" }));
+		await expect(page.locator(pulseSelector)).toHaveCount(0);
+		await expect(page.locator(quantityFeedbackSelector)).toHaveCount(0);
+	}
+});
+
+for (const view of ["desktop", "compact"] as const) {
+	test(`${view} preserves the quantity fade through quote and presentation rerenders and restarts on numeric changes`, async ({
+		page,
+	}) => {
+		await openFixture(page, view, view === "compact" ? 164 : 390, 425);
+		await page
+			.locator('button[aria-label*="Use 99."]')
+			.first()
+			.evaluate((element) => element.setAttribute("data-fixture-quantity-row", "retained"));
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ size: "2" }));
+		const quantity = page
+			.locator('[data-fixture-quantity-row="retained"]')
+			.locator('[data-slot="orderbook-size-value"]');
+		await expect(quantity).toHaveAttribute("data-direction", "up");
+		const first = await quantity.evaluate(async (element) => {
+			element.setAttribute("data-fixture-quantity", "retained");
+			const animation = element.getAnimations()[0];
+			if (!animation) throw new Error("Missing quantity animation");
+			await animation.ready;
+			return { startTime: animation.startTime, duration: animation.effect?.getTiming().duration };
+		});
+		expect(first.duration).toBe(1800);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ size: "2.0" }));
+		await page.evaluate(() => window.setOrderbookPulsePresentation("light", "zh", true));
+		const retained = page.locator('[data-fixture-quantity="retained"]');
+		await expect(retained).toHaveCount(1);
+		await expect(retained).toHaveAttribute("data-direction", "up");
+		expect(await retained.evaluate((element) => element.getAnimations()[0]?.startTime)).toBe(first.startTime);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ size: "3" }));
+		const updated = page
+			.locator('[data-fixture-quantity-row="retained"]')
+			.locator('[data-slot="orderbook-size-value"]');
+		await expect(updated).toHaveAttribute("data-direction", "up");
+		const restarted = await updated.evaluate(async (element) => {
+			const animation = element.getAnimations()[0];
+			if (!animation) throw new Error("Missing restarted quantity animation");
+			await animation.ready;
+			return animation.startTime;
+		});
+		expect(restarted).not.toBe(first.startTime);
+		await updated.evaluate(async (element) => {
+			const animation = element.getAnimations()[0];
+			if (!animation) throw new Error("Missing quantity animation to finish");
+			await animation.ready;
+			animation.finish();
+		});
+		await expect(updated).not.toHaveClass(/orderbook-color-change/);
+		await page.evaluate(() => window.publishOrderbookPulseSnapshot({ size: "3" }));
+		await expect(updated).not.toHaveClass(/orderbook-color-change/);
+	});
 }
 
 for (const fixture of fixtures) {

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import type { OrderbookPulseSnapshot, OrderbookVisibleLevel } from "@/lib/trade/orderbook-new-levels";
 import type { OrderbookLevelPulseInput } from "@/lib/ui/orderbook-level-pulses";
+import { useAnimateOrderbook, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 
 function book(bids: string[]): OrderbookPulseSnapshot {
 	return { levels: [bids.map((px) => ({ px })), [{ px: "101" }]] };
@@ -21,8 +22,13 @@ function visible(snapshot: OrderbookPulseSnapshot | undefined): OrderbookVisible
 
 function Harness(input: OrderbookLevelPulseInput & { panelKey?: string }) {
 	const { panelRef, getPulse, onAnimationEnd } = useOrderbookLevelPulses(input);
+	const animateOrderbook = useAnimateOrderbook();
+	const { setAnimateOrderbook } = useGlobalSettingsActions();
 	return (
 		<div key={input.panelKey} ref={panelRef}>
+			<button type="button" data-setting={animateOrderbook} onClick={() => setAnimateOrderbook(!animateOrderbook)}>
+				Toggle animations
+			</button>
 			{input.visibleLevels.map(({ side, price }) => {
 				const pulse = getPulse(side, price);
 				return (
@@ -114,6 +120,8 @@ describe("orderbook level pulse hook", () => {
 	});
 
 	afterEach(() => {
+		const disabledSetting = container.querySelector<HTMLButtonElement>('[data-setting="false"]');
+		if (disabledSetting) act(() => disabledSetting.click());
 		act(() => root.unmount());
 		container.remove();
 		vi.restoreAllMocks();
@@ -160,6 +168,41 @@ describe("orderbook level pulse hook", () => {
 		expect(observers.filter((observer) => !observer.disconnected)).toHaveLength(1);
 		act(() => vi.advanceTimersByTime(100));
 		expect(pulse()).toBeUndefined();
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it("cancels immediately when disabled and enables from a quiet baseline without remounting price buttons", () => {
+		render(book(["99"]));
+		render(book(["100", "99"]));
+		expect(pulse()).toBeDefined();
+		const row = container.querySelector('[data-price="bid:100"]');
+		const setting = container.querySelector<HTMLButtonElement>("[data-setting]");
+		act(() => setting?.click());
+		act(() => vi.advanceTimersByTime(0));
+		expect(pulse()).toBeUndefined();
+		expect(vi.getTimerCount()).toBe(0);
+		expect(container.querySelector('[data-price="bid:100"]')).toBe(row);
+		render(book(["110", "100", "99"]));
+		expect(pulse("110")).toBeUndefined();
+		act(() => setting?.click());
+		act(() => vi.advanceTimersByTime(0));
+		expect(pulse("110")).toBeUndefined();
+		expect(vi.getTimerCount()).toBe(0);
+		expect(container.querySelector('[data-price="bid:100"]')).toBe(row);
+		render(book(["111", "110", "100", "99"]));
+		expect(pulse("111")).toBeDefined();
+	});
+
+	it("does not override reduced motion when the user enables animations", () => {
+		reducedMotion = true;
+		render(book(["99"]));
+		const setting = container.querySelector<HTMLButtonElement>("[data-setting]");
+		act(() => setting?.click());
+		render(book(["100", "99"]));
+		act(() => setting?.click());
+		render(book(["110", "100", "99"]));
+		act(() => vi.advanceTimersByTime(0));
+		expect(container.querySelectorAll("[data-pulse]")).toHaveLength(0);
 		expect(vi.getTimerCount()).toBe(0);
 	});
 

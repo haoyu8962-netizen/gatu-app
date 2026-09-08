@@ -6038,6 +6038,11 @@ msgstr "دفتر الأوامر"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book animations"
+msgstr "رسوم دفتر الأوامر المتحركة"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Order book in quote asset"
 msgstr "دفتر الأوامر بعملة التسعير"
 
