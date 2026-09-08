@@ -55,6 +55,7 @@ const testState = {
 	accountAbstraction: "disabled",
 	builderCollateral: "USDC",
 	depositAvailable: true,
+	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
@@ -146,7 +147,7 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 		const geoReason = testState.geoStatus === "allowed" ? null : `geo-${testState.geoStatus}`;
 		return {
 			available: testState.depositAvailable && geoReason === null,
-			path: "external",
+			path: testState.depositPath,
 			reason: geoReason ?? (testState.depositAvailable ? null : "external-deposit-disabled"),
 			unavailableLabel: "Deposit unavailable",
 			unavailableReason:
@@ -194,6 +195,7 @@ describe("desktop account panel", () => {
 		testState.accountAbstraction = "disabled";
 		testState.builderCollateral = "USDC";
 		testState.depositAvailable = true;
+		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
 		testState.geoStatus = "allowed";
 		testState.hasError = false;
@@ -236,18 +238,77 @@ describe("desktop account panel", () => {
 		});
 	}
 
-	it("renders an actionable empty state without account metrics while disconnected", () => {
+	it("keeps a neutral zero-value overview and disabled funding controls while disconnected", () => {
 		testState.hasWalletAccess = false;
 		testState.isConnected = false;
 		renderPanel();
+		expect(container.querySelector('[data-slot="account-panel-empty"]')).toBeNull();
+		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Connect Wallet");
+		expect(container.textContent).not.toContain("Select mode");
+		expect(getMetricRowText(container, "Portfolio Value")).toContain("$0.00");
+		expect(getMetricRowText(container, "Unrealized PNL")).toContain("$0.00");
+		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$0.00");
+		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("0.00%");
+		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
+		for (const label of ["Deposit", "Withdraw"]) {
+			const button = findButton(container, label);
+			expect(button.disabled).toBe(true);
+			act(() => button.click());
+		}
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+	});
 
-		const emptyState = container.querySelector('[data-slot="account-panel-empty"]');
-		expect(emptyState?.textContent).toContain(
-			"Connect your wallet to view your account, positions, and start trading.",
-		);
-		expect(emptyState?.querySelector("button")?.textContent).toBe("Connect Wallet");
-		expect(container.querySelector('[data-slot="account-panel-actions"]')).toBeNull();
-		expect(getMetricRowText(container, "Account Value")).toBeNull();
+	it("clears connected figures on disconnect even while old snapshots remain in memory", () => {
+		renderPanel();
+		expect(getMetricRowText(container, "Account Value")).toContain("$115.75");
+		testState.isConnected = false;
+		testState.hasWalletAccess = false;
+		testState.hasError = true;
+		testState.isDataStale = true;
+		renderPanel();
+		expect(container.textContent).not.toContain("$115.75");
+		expect(container.textContent).not.toContain("-$64.50");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(getMetricRowText(container, "Portfolio Value")).toContain("$0.00");
+		expect(findButton(container, "Deposit").disabled).toBe(true);
+	});
+
+	it("preserves the sponsored email deposit entry before a signing wallet is ready", () => {
+		testState.isConnected = false;
+		testState.hasWalletAccess = false;
+		testState.depositPath = "sponsored";
+		renderPanel();
+		expect(findButton(container, "Deposit").disabled).toBe(false);
+		expect(findButton(container, "Withdraw").disabled).toBe(true);
+		act(() => findButton(container, "Deposit").click());
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("deposit");
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+	});
+
+	it.each(["feature", "restricted", "unresolved"] as const)(
+		"keeps sponsored deposit disabled when %s blocks it",
+		(reason) => {
+			testState.isConnected = false;
+			testState.hasWalletAccess = false;
+			testState.depositPath = "sponsored";
+			if (reason === "feature") testState.depositAvailable = false;
+			else testState.geoStatus = reason;
+			renderPanel();
+			expect(findButton(container, "Deposit").disabled).toBe(true);
+			act(() => findButton(container, "Deposit").click());
+			expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		},
+	);
+
+	it("keeps Agent-only sessions on the connected overview with their funding guards", () => {
+		testState.hasWalletAccess = false;
+		renderPanel();
+		expect(container.querySelector('[data-slot="disconnected-account-overview"]')).toBeNull();
+		expect(getMetricRowText(container, "Account Value")).toContain("$115.75");
+		expect(container.textContent).toContain("Deposits and withdrawals are not allowed.");
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 	});
 
 	it("uses cross-only standard account fields and preserves the existing action routes", () => {

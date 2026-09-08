@@ -370,6 +370,7 @@ msgstr ""
 #~ msgid "Account Equity"
 #~ msgstr "खाता इक्विटी"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
@@ -2062,8 +2063,6 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -2176,7 +2175,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "TWAP ऑर्डर देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
 
@@ -2414,6 +2412,7 @@ msgstr "आपका वॉलेट बनाया जा रहा है। 
 msgid "Cross"
 msgstr "क्रॉस"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
@@ -2422,6 +2421,7 @@ msgstr "क्रॉस खाता लेवरेज"
 msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "क्रॉस मेंटेनेंस मार्जिन"
@@ -2613,7 +2613,6 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2624,6 +2623,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -2710,7 +2710,6 @@ msgid "Deposit unavailable"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr ""
 
@@ -5894,7 +5893,6 @@ msgstr "कमांड मेन्यू खोलें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr ""
 
@@ -6202,6 +6200,7 @@ msgstr "अन्य लेजर अपडेट"
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "अवलोकन"
@@ -6549,6 +6548,7 @@ msgstr "पोर्टफोलियो प्रदर्शन"
 msgid "Portfolio summary"
 msgstr "पोर्टफोलियो सारांश"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
@@ -10528,6 +10528,7 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -11063,6 +11064,7 @@ msgstr "{0} में पहुँचेगा"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"

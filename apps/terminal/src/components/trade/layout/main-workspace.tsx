@@ -102,7 +102,7 @@ export function MainWorkspace() {
 
 					<div key="tradingInterface" className="desktop-grid-panel overflow-hidden bg-surface">
 						<Suspense fallback={panelFallback}>
-							<div ref={tradeContentRef}>
+							<div ref={tradeContentRef} className="h-full">
 								<TradePanel key={marketKey} />
 							</div>
 						</Suspense>

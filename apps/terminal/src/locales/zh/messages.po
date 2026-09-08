@@ -354,6 +354,7 @@ msgstr "账户数据不可用"
 #~ msgid "Account Equity"
 #~ msgstr "账户权益"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "账户保证金率"
@@ -1943,8 +1944,6 @@ msgstr "连接钱包"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -2049,7 +2048,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "连接钱包查看 TWAP 订单。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "连接钱包以查看账户、仓位并开始交易。"
 
@@ -2274,6 +2272,7 @@ msgstr "正在创建你的钱包，请稍候..."
 msgid "Cross"
 msgstr "全仓"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
@@ -2282,6 +2281,7 @@ msgstr "全仓账户杠杆"
 msgid "Cross Leverage"
 msgstr "全仓杠杆"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "全仓维持保证金"
@@ -2457,7 +2457,6 @@ msgstr "部署者"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2468,6 +2467,7 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -2546,7 +2546,6 @@ msgid "Deposit unavailable"
 msgstr "存款不可用"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr "存入 USDC"
 
@@ -5514,7 +5513,6 @@ msgstr "打开命令菜单"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr "打开存款功能以准备您的邮箱钱包。"
 
@@ -5780,6 +5778,7 @@ msgstr "其他"
 msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "概览"
@@ -6104,6 +6103,7 @@ msgstr "投资组合表现"
 msgid "Portfolio summary"
 msgstr "投资组合摘要"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "投资组合价值"
@@ -9843,6 +9843,7 @@ msgstr "请解锁钱包后重试。"
 msgid "Unrealized P&L"
 msgstr "未实现盈亏"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -10354,6 +10355,7 @@ msgstr "将在{0}后到账"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"

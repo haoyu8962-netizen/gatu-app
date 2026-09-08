@@ -370,6 +370,7 @@ msgstr ""
 #~ msgid "Account Equity"
 #~ msgstr "حقوق ملكية الحساب"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "نسبة هامش الحساب"
@@ -2062,8 +2063,6 @@ msgstr "ربط المحفظة"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -2176,7 +2175,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "اربط محفظتك لعرض أوامر TWAP."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "اربط محفظتك لعرض حسابك ومراكزك وبدء التداول."
 
@@ -2414,6 +2412,7 @@ msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 msgid "Cross"
 msgstr "متقاطع"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "رافعة هامش المحفظة"
@@ -2422,6 +2421,7 @@ msgstr "رافعة هامش المحفظة"
 msgid "Cross Leverage"
 msgstr "الرافعة المتقاطعة"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "هامش الصيانة المتقاطع"
@@ -2613,7 +2613,6 @@ msgstr "جهة النشر"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2624,6 +2623,7 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -2710,7 +2710,6 @@ msgid "Deposit unavailable"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr ""
 
@@ -5894,7 +5893,6 @@ msgstr "فتح قائمة الأوامر"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr ""
 
@@ -6202,6 +6200,7 @@ msgstr "تحديث آخر في دفتر الحسابات"
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "نظرة عامة"
@@ -6549,6 +6548,7 @@ msgstr "أداء المحفظة الاستثمارية"
 msgid "Portfolio summary"
 msgstr "ملخص المحفظة الاستثمارية"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "قيمة المحفظة"
@@ -10528,6 +10528,7 @@ msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 msgid "Unrealized P&L"
 msgstr "الأرباح والخسائر غير المحققة"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -11063,6 +11064,7 @@ msgstr "ستصل خلال {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"

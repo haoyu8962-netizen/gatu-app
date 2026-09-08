@@ -370,6 +370,7 @@ msgstr ""
 #~ msgid "Account Equity"
 #~ msgstr "Patrimonio de la cuenta"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Account Margin Ratio"
 msgstr "Ratio de margen de la cuenta"
@@ -2062,8 +2063,6 @@ msgstr "Conectar monedero"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -2176,7 +2175,6 @@ msgid "Connect your wallet to view TWAP orders."
 msgstr "Conecta tu billetera para ver órdenes TWAP."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "Conecta tu monedero para ver tu cuenta, posiciones y empezar a operar."
 
@@ -2414,6 +2412,7 @@ msgstr "Creando tu billetera. Espera..."
 msgid "Cross"
 msgstr "Cruzado"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Account Leverage"
 msgstr "Apalancamiento de cuenta cruzada"
@@ -2422,6 +2421,7 @@ msgstr "Apalancamiento de cuenta cruzada"
 msgid "Cross Leverage"
 msgstr "Apalancamiento cruzado"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Cross Maintenance Margin"
 msgstr "Margen de mantenimiento cruzado"
@@ -2613,7 +2613,6 @@ msgstr "Desplegador"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2624,6 +2623,7 @@ msgstr "Desplegador"
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -2710,7 +2710,6 @@ msgid "Deposit unavailable"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposit USDC"
 msgstr ""
 
@@ -5894,7 +5893,6 @@ msgstr "Abrir menú de comandos"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Open Deposit to prepare your email wallet."
 msgstr ""
 
@@ -6202,6 +6200,7 @@ msgstr "Otra actualización del registro"
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Overview"
 msgstr "Resumen"
@@ -6549,6 +6548,7 @@ msgstr "Rendimiento de la cartera"
 msgid "Portfolio summary"
 msgstr "Resumen de la cartera"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Portfolio Value"
 msgstr "Valor de la cartera"
@@ -10528,6 +10528,7 @@ msgstr "Desbloquea tu billetera y vuelve a intentarlo."
 msgid "Unrealized P&L"
 msgstr "P&L no realizado"
 
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Unrealized PNL"
@@ -11063,6 +11064,7 @@ msgstr "llegará en {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/disconnected-account-overview.tsx
 #: src/components/vaults/vault-detail-view.tsx
 #: src/config/ui-text.ts
 msgid "Withdraw"

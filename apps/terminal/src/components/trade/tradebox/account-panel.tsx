@@ -1,13 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import {
-	ArrowsLeftRightIcon,
-	DownloadSimpleIcon,
-	UploadSimpleIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
-import { type ReactNode, Suspense, useId, useState } from "react";
+import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { type ReactNode, useId } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
@@ -18,12 +12,11 @@ import { useFundsActionAvailability } from "@/hooks/trade/use-funds-action-avail
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
-import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
-const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+import { DisconnectedAccountOverview } from "./disconnected-account-overview";
 
 type SummaryRow = {
 	key: string;
@@ -39,7 +32,6 @@ export function AccountPanel() {
 	const transferDescriptionId = useId();
 	const transferUnavailableId = useId();
 	const withdrawUnavailableId = useId();
-	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
@@ -196,50 +188,11 @@ export function AccountPanel() {
 			</div>
 
 			{!isConnected ? (
-				<>
-					<div data-slot="account-panel-empty" className="flex flex-1 flex-col justify-center">
-						<div data-grid-content-part className="shrink-0 flex flex-col items-center gap-4 p-6 text-center">
-							<div className="flex size-12 items-center justify-center rounded-full bg-fill-weak">
-								<WalletIcon className="size-6 text-fg-muted" />
-							</div>
-							<div className="max-w-64 space-y-1.5">
-								<h3 className="text-sm font-semibold text-fg">
-									{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}
-								</h3>
-								<p className="text-xs leading-5 text-fg-muted">
-									{showsEmailDeposit
-										? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
-										: t`Connect your wallet to view your account, positions, and start trading.`}
-								</p>
-							</div>
-							<Button
-								variant="outline"
-								intent="brand"
-								size="sm"
-								disabled={showsEmailDeposit && !depositAvailability.available}
-								onClick={
-									showsEmailDeposit
-										? depositAvailability.available
-											? () => openDepositModal("deposit")
-											: undefined
-										: () => setWalletModalOpen(true)
-								}
-								title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
-							>
-								{showsEmailDeposit
-									? depositAvailability.available
-										? t`Deposit`
-										: depositAvailability.unavailableLabel
-									: t`Connect Wallet`}
-							</Button>
-						</div>
-					</div>
-					{walletModalOpen ? (
-						<Suspense fallback={null}>
-							<WalletModal open onOpenChange={setWalletModalOpen} />
-						</Suspense>
-					) : null}
-				</>
+				<DisconnectedAccountOverview
+					depositEnabled={showsEmailDeposit && depositAvailability.available}
+					depositDisabledReason={showsEmailDeposit ? depositAvailability.unavailableReason : undefined}
+					onDeposit={showsEmailDeposit && depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+				/>
 			) : (
 				<div className="flex flex-1 flex-col">
 					<div data-grid-content-part className="shrink-0 flow-root px-2 pt-2">

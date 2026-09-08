@@ -64,7 +64,7 @@ describe("responsive panel layout contract", () => {
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
 		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container");
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex flex-col bg-surface font-market-close");
+		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
 		expect(TERMINAL_STYLES).toContain("container-name: trade-panel");
 		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trade-compact-label");

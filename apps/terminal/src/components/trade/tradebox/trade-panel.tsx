@@ -106,6 +106,7 @@ import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
 import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
+import { TradePanelBody } from "./trade-panel-body";
 import { TwapOrderSummary } from "./twap-order-summary";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
@@ -689,7 +690,7 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="trade-panel-container flex flex-col bg-surface font-market-close">
+		<div className="trade-panel-container flex h-full flex-col bg-surface font-market-close">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
 				onOpenChange={handleMarginModalOpenChange}
@@ -745,7 +746,52 @@ export function TradePanel() {
 				/>
 			)}
 
-			<div className="flex flex-col gap-5 px-3 py-3">
+			<TradePanelBody
+				footer={
+					<>
+						<div className="flex flex-col gap-3">
+							{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
+
+							{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+
+							{tradeRestricted && !buttonContent.disabledReason ? (
+								<Button
+									variant="filled"
+									size="xs"
+									intent="neutral"
+									disabled
+									className="w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
+									aria-label={t`Trading is not available in your region`}
+								>
+									{t`Trading is not available in your region`}
+								</Button>
+							) : (
+								<Button
+									variant="filled"
+									size="xs"
+									intent={getTradingCtaIntent(buttonContent.variant)}
+									onClick={buttonContent.action}
+									disabled={buttonContent.disabled}
+									className={cn(
+										"w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
+										getTradingCtaClass(buttonContent.variant),
+									)}
+									aria-label={buttonContent.text}
+									iconLeft={
+										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
+									}
+								>
+									{buttonContent.text}
+								</Button>
+							)}
+							{buttonContent.disabledReason ? (
+								<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
+							) : null}
+						</div>
+						<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
+					</>
+				}
+			>
 				<TradeHeader
 					orderType={orderType}
 					side={side}
@@ -775,50 +821,7 @@ export function TradePanel() {
 						if (swapTargetToken) openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken);
 					}}
 				/>
-
-				<div className="flex flex-col gap-4 pt-5 pb-1">
-					<div className="flex flex-col gap-3">
-						{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
-
-						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
-
-						{tradeRestricted && !buttonContent.disabledReason ? (
-							<Button
-								variant="filled"
-								size="xs"
-								intent="neutral"
-								disabled
-								className="w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
-								aria-label={t`Trading is not available in your region`}
-							>
-								{t`Trading is not available in your region`}
-							</Button>
-						) : (
-							<Button
-								variant="filled"
-								size="xs"
-								intent={getTradingCtaIntent(buttonContent.variant)}
-								onClick={buttonContent.action}
-								disabled={buttonContent.disabled}
-								className={cn(
-									"w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
-									getTradingCtaClass(buttonContent.variant),
-								)}
-								aria-label={buttonContent.text}
-								iconLeft={
-									isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
-								}
-							>
-								{buttonContent.text}
-							</Button>
-						)}
-						{buttonContent.disabledReason ? (
-							<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
-						) : null}
-					</div>
-					<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
-				</div>
-			</div>
+			</TradePanelBody>
 
 			{activeModal === "wallet" && (
 				<Suspense fallback={null}>
