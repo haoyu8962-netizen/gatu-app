@@ -75,16 +75,17 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(() => expect(runtimeErrors).toEqual([]));
 
-test("keeps paired panel edges aligned during natural content growth, contraction and breakpoint changes", async ({
-	page,
-}) => {
+test("keeps trading geometry fixed while account content adapts across breakpoints", async ({ page }) => {
 	await expectAligned(page);
 	const initial = await bounds(page);
 	const mounts = await page
 		.locator("[data-mount-id]")
 		.evaluateAll((elements) => elements.map((element) => element.getAttribute("data-mount-id")));
 	await page.getByRole("button", { name: "Expand trade" }).click();
-	await expect.poll(async () => (await bounds(page)).tradingInterface.height).toBeGreaterThan(849);
+	await expect
+		.poll(() => page.locator('[data-slot="fixture-trade-scroll"]').evaluate((element) => element.scrollHeight))
+		.toBe(850);
+	expect(await bounds(page)).toEqual(initial);
 	await expectAligned(page);
 	await page.getByRole("button", { name: "Expand account" }).click();
 	await expect.poll(async () => (await bounds(page)).accountInfo.height).toBeGreaterThan(729);
@@ -116,7 +117,10 @@ test("resizes the shared area in both directions and restores user geometry with
 	await expectAligned(page);
 	const resized = await bounds(page);
 	await page.getByRole("button", { name: "Expand trade" }).click();
-	await expect.poll(async () => (await bounds(page)).tradingInterface.height).toBeGreaterThan(849);
+	await expect
+		.poll(() => page.locator('[data-slot="fixture-trade-scroll"]').evaluate((element) => element.scrollHeight))
+		.toBe(850);
+	expect(await bounds(page)).toEqual(resized);
 	await page.reload();
 	await expectAligned(page);
 	await expect.poll(async () => (await bounds(page)).chart.height).toBe(resized.chart.height);

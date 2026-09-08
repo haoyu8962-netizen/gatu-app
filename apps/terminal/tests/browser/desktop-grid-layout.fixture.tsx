@@ -14,7 +14,7 @@ function PanelContent({ name }: { name: string }) {
 
 function Fixture() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-	const { gridProps, tradeContentRef, accountContentRef } = useDesktopGridLayout(width, mounted);
+	const { gridProps, accountContentRef } = useDesktopGridLayout(width, mounted);
 	const [tradeHeight, setTradeHeight] = useState(644);
 	const [accountHeight, setAccountHeight] = useState(200);
 	return (
@@ -52,8 +52,10 @@ function Fixture() {
 							<PanelContent name="Market data" />
 						</div>
 						<div key="tradingInterface" data-panel="tradingInterface">
-							<div ref={tradeContentRef} style={{ height: tradeHeight }}>
-								<PanelContent name="Trading form" />
+							<div data-slot="fixture-trade-scroll" style={{ height: "100%", overflowY: "auto" }}>
+								<div style={{ height: tradeHeight }}>
+									<PanelContent name="Trading form" />
+								</div>
 							</div>
 						</div>
 						<div key="accountTable" data-panel="accountTable">

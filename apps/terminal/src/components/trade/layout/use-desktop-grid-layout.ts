@@ -23,7 +23,6 @@ export function useDesktopGridLayout(width: number, mounted: boolean) {
 	const [contentHeights, setContentHeights] = useState<DesktopGridContentHeights>({});
 	const renderedLayouts = useMemo(() => getDesktopGridLayouts(layouts, contentHeights), [layouts, contentHeights]);
 	const breakpoint = getDesktopGridBreakpoint(width);
-	const tradeContentRef = useGridContentHeight(mounted, breakpoint, "tradingInterface", setContentHeights);
 	const accountContentRef = useGridContentHeight(mounted, breakpoint, "accountInfo", setContentHeights);
 
 	useEffect(() => writeDesktopGridLayouts(layouts), [layouts]);
@@ -57,5 +56,5 @@ export function useDesktopGridLayout(width: number, mounted: boolean) {
 		},
 	} satisfies Omit<ResponsiveGridLayoutProps, "children">;
 
-	return { gridProps, tradeContentRef, accountContentRef };
+	return { gridProps, accountContentRef };
 }

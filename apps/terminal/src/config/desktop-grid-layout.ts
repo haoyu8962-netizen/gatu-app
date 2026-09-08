@@ -161,7 +161,7 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 	],
 } satisfies ResponsiveLayouts<DesktopGridBreakpoint>;
 
-export type DesktopGridContentHeights = Partial<Record<DesktopGridBreakpoint, Record<string, number>>>;
+export type DesktopGridContentHeights = Partial<Record<DesktopGridBreakpoint, { accountInfo?: number }>>;
 
 export const desktopGridCompactor: Compactor = {
 	type: "vertical",
@@ -176,6 +176,7 @@ export function getDesktopGridLayouts(
 	return Object.fromEntries(
 		(["lg", "md"] as const).map((breakpoint) => {
 			const measured = layouts[breakpoint]?.map((item) => {
+				if (item.i !== "accountInfo") return item;
 				const contentHeight = contentHeights[breakpoint]?.[item.i];
 				if (contentHeight === undefined) return item;
 				const minH = Math.max(item.minH ?? 0, pixelsToGridHeight(contentHeight));
@@ -189,7 +190,7 @@ export function getDesktopGridLayouts(
 export function syncGridItemContentHeight(
 	heights: DesktopGridContentHeights,
 	breakpoint: DesktopGridBreakpoint,
-	itemId: string,
+	itemId: "accountInfo",
 	contentHeightPx: number,
 ): DesktopGridContentHeights {
 	if (!Number.isFinite(contentHeightPx) || contentHeightPx <= 0) return heights;

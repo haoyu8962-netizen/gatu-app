@@ -249,25 +249,16 @@ describe("desktop grid layout", () => {
 		expect(syncGridItemResize(layouts, "md", { ...chart, w: 100 })).toBe(layouts);
 		expect(syncGridItemResize(layouts, "md", { ...chart, i: "missing", w: 9 })).toBe(layouts);
 	});
-	it.each(["lg", "md"] as const)(
-		"aligns both tiers in %s and shrinks after natural content contracts",
-		(breakpoint) => {
-			const layouts = cloneDefaultLayouts();
-			const heights = syncGridItemContentHeight({}, breakpoint, "tradingInterface", 850);
-			const large = getDesktopGridLayouts(layouts, heights)[breakpoint];
-			expect(large?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
-			expectAligned(large ?? []);
-			const small = getDesktopGridLayouts(
-				layouts,
-				syncGridItemContentHeight(heights, breakpoint, "tradingInterface", 166),
-			);
-			expect(small[breakpoint]?.find((item) => item.i === "tradingInterface")?.h).toBe(
-				DEFAULT_DESKTOP_GRID_LAYOUTS[breakpoint].find((item) => item.i === "tradingInterface")?.h,
-			);
-			expectAligned(small[breakpoint] ?? []);
-			expect(layouts).toEqual(cloneDefaultLayouts());
-		},
-	);
+	it.each(["lg", "md"] as const)("ignores trading content heights in %s", (breakpoint) => {
+		const layouts = cloneDefaultLayouts();
+		for (const tradingInterface of [850, 166, 1400]) {
+			const heights = { [breakpoint]: { accountInfo: 200, tradingInterface } };
+			const rendered = getDesktopGridLayouts(layouts, heights);
+			expect(rendered).toEqual(layouts);
+			expectAligned(rendered[breakpoint] ?? []);
+		}
+		expect(layouts).toEqual(cloneDefaultLayouts());
+	});
 
 	it("keeps measurements separate from saved user geometry and inactive breakpoints", () => {
 		const layouts = cloneDefaultLayouts();
@@ -336,11 +327,12 @@ describe("desktop grid layout", () => {
 
 	it("does not save a content-expanded height when a user only resizes width", () => {
 		const layouts = cloneDefaultLayouts();
-		const rendered = getDesktopGridLayouts(layouts, { lg: { tradingInterface: 850 } });
+		const rendered = getDesktopGridLayouts(layouts, { lg: { accountInfo: 850 } });
 		const chart = rendered.lg?.find((item) => item.i === "chart");
 		if (!chart) throw new Error("Missing chart");
 		const next = syncGridItemResize(layouts, "lg", { ...chart, w: 9 }, chart);
 		expect(next.lg?.find((item) => item.i === "chart")?.h).toBe(17.7);
+		expect(next.lg?.find((item) => item.i === "accountInfo")?.h).toBe(14);
 		expect(next.lg?.find((item) => item.i === "chart")?.w).toBe(9);
 		expect(next.lg?.find((item) => item.i === "marketData")).toMatchObject({ x: 9, w: 4 });
 	});

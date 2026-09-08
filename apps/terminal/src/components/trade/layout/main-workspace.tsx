@@ -46,7 +46,7 @@ function DesktopWorkspaceSkeleton() {
 export function MainWorkspace() {
 	useRenderCommitTrack("main-workspace");
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-	const { gridProps, tradeContentRef, accountContentRef } = useDesktopGridLayout(width, mounted);
+	const { gridProps, accountContentRef } = useDesktopGridLayout(width, mounted);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
@@ -102,9 +102,7 @@ export function MainWorkspace() {
 
 					<div key="tradingInterface" className="desktop-grid-panel overflow-hidden bg-surface">
 						<Suspense fallback={panelFallback}>
-							<div ref={tradeContentRef} className="h-full">
-								<TradePanel key={marketKey} />
-							</div>
+							<TradePanel key={marketKey} />
 						</Suspense>
 					</div>
 

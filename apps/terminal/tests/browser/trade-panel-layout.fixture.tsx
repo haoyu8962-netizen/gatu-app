@@ -21,9 +21,10 @@ const feeQuote = buildOrderFeeQuote({
 
 function Fixture() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-	const { gridProps, tradeContentRef } = useDesktopGridLayout(width, mounted);
+	const { gridProps } = useDesktopGridLayout(width, mounted);
 	const [mode, setMode] = useState<"market" | "limit" | "tall">("market");
 	const [showFeedback, setShowFeedback] = useState(false);
+	const [longFeedback, setLongFeedback] = useState(false);
 	const [connectClicks, setConnectClicks] = useState(0);
 	const [price, setPrice] = useState("");
 	return (
@@ -36,6 +37,9 @@ function Fixture() {
 				))}
 				<button type="button" onClick={() => setShowFeedback((value) => !value)}>
 					Toggle feedback
+				</button>
+				<button type="button" onClick={() => setLongFeedback((value) => !value)}>
+					Toggle long feedback
 				</button>
 				<output aria-label="Connection requests">{connectClicks}</output>
 			</nav>
@@ -55,13 +59,15 @@ function Fixture() {
 							Market data
 						</div>
 						<div key="tradingInterface" data-panel="tradingInterface">
-							<div ref={tradeContentRef} style={{ height: "100%" }}>
+							<div style={{ height: "100%" }}>
 								<div className="trade-panel-container flex h-full flex-col bg-surface">
 									<TradePanelBody
 										footer={
 											<>
 												<div className="flex flex-col gap-3">
-													{showFeedback ? <div style={{ height: 60 }}>Requested action feedback</div> : null}
+													{showFeedback || longFeedback ? (
+														<div style={{ height: longFeedback ? 950 : 60 }}>Requested action feedback</div>
+													) : null}
 													<button
 														type="button"
 														style={{ height: 44 }}
@@ -92,6 +98,7 @@ function Fixture() {
 										</div>
 										<div
 											data-slot="fixture-trade-fields"
+											className="flex flex-col"
 											style={{ height: mode === "tall" ? 850 : mode === "limit" ? 300 : 200 }}
 										>
 											{mode === "limit" ? (
@@ -106,6 +113,10 @@ function Fixture() {
 											) : (
 												"Order size"
 											)}
+											<label className="mt-auto">
+												Last field
+												<input aria-label="Last field" />
+											</label>
 										</div>
 									</TradePanelBody>
 								</div>

@@ -36,7 +36,7 @@ function flushAnimationFrames() {
 
 function SuspenseSwapHarness({ contentReady }: { contentReady: boolean }) {
 	const [, setLayouts] = useState<DesktopGridContentHeights>({});
-	const ref = useGridContentHeight(true, "lg", "tradingInterface", setLayouts);
+	const ref = useGridContentHeight(true, "lg", "accountInfo", setLayouts);
 
 	if (!contentReady) return <div className="h-[41rem] w-full" />;
 
@@ -57,7 +57,7 @@ function GridContentHeightHarness({
 	onLayouts: (layouts: DesktopGridContentHeights) => void;
 }) {
 	const [layouts, setLayouts] = useState<DesktopGridContentHeights>({});
-	const ref = useGridContentHeight(mounted, breakpoint, "tradingInterface", setLayouts);
+	const ref = useGridContentHeight(mounted, breakpoint, "accountInfo", setLayouts);
 
 	useEffect(() => onLayouts(layouts), [layouts, onLayouts]);
 
@@ -131,7 +131,7 @@ describe("grid content height observer", () => {
 		});
 
 		const observedMd = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
-		expect(observedMd.md?.tradingInterface).toBe(850);
+		expect(observedMd.md?.accountInfo).toBe(850);
 		expect(observedMd.lg).toBeUndefined();
 
 		act(() => root?.render(<GridContentHeightHarness mounted breakpoint="lg" onLayouts={onLayouts} />));
@@ -173,7 +173,7 @@ describe("grid content height observer", () => {
 		});
 
 		const observed = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
-		expect(observed.md?.tradingInterface).toBe(166);
+		expect(observed.md?.accountInfo).toBe(166);
 	});
 
 	it("coalesces repeated measurements and cancels pending work on cleanup", () => {
@@ -194,7 +194,7 @@ describe("grid content height observer", () => {
 		});
 
 		const observed = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
-		expect(observed.md?.tradingInterface).toBe(850);
+		expect(observed.md?.accountInfo).toBe(850);
 		expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
 
 		act(() => {

@@ -8,7 +8,7 @@ import {
 export function useGridContentHeight(
 	mounted: boolean,
 	breakpoint: DesktopGridBreakpoint,
-	itemId: string,
+	itemId: "accountInfo",
 	setContentHeights: Dispatch<SetStateAction<DesktopGridContentHeights>>,
 ) {
 	return useCallback(
