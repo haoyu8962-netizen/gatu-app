@@ -494,10 +494,10 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
     --orderbook-depth-ask: #ed7088;
-    --orderbook-price-bid: #83d1b9;
-    --orderbook-price-ask: #ff9c9c;
-    --orderbook-flash-bid: #83d1b9;
-    --orderbook-flash-ask: #ffadad;
+    --orderbook-price-bid: #27d29f;
+    --orderbook-price-ask: #f08b9e;
+    --orderbook-flash-bid: #27d29f;
+    --orderbook-flash-ask: #f4a4b3;
     --orderbook-level-pulse-bid: #1e5d52;
     --orderbook-level-pulse-ask: #732a36;
     --orderbook-text: #d2dad7;
