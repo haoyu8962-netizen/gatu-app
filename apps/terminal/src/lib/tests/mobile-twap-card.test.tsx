@@ -133,7 +133,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		}),
 		getSzDecimals: () => 3,
 	}),
-	useSubscription: () => ({
+	useSubscription: vi.fn(() => ({
 		data: mocks.hasSnapshot
 			? {
 					dex: "",
@@ -162,9 +162,9 @@ vi.mock("@/lib/hyperliquid", () => ({
 				}
 			: undefined,
 		status: mocks.status,
-		error: null,
+		error: mocks.status === "error" ? new Error("TWAP transport details") : null,
 		isStale: mocks.isStale,
-	}),
+	})),
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
@@ -176,6 +176,7 @@ vi.mock("@/components/trade/mobile/use-mobile-terminal-tab", () => ({
 }));
 
 import { MobileTwapTab } from "@/components/trade/mobile/mobile-twap-tab";
+import { useSubscription } from "@/lib/hyperliquid";
 
 describe("MobileTwapTab card", () => {
 	let container: HTMLDivElement;
@@ -218,21 +219,52 @@ describe("MobileTwapTab card", () => {
 		{ status: "subscribing", hasSnapshot: true, isStale: false },
 		{ status: "active", hasSnapshot: true, isStale: true },
 		{ status: "error", hasSnapshot: false, isStale: false },
+		{ status: "error", hasSnapshot: true, isStale: false },
 	])("keeps missing or stale current TWAP snapshots quiet: %o", (state) => {
 		Object.assign(mocks, state);
-		mocks.hasActiveOrder = false;
+		mocks.hasActiveOrder = true;
 		render();
 		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("No active TWAP orders.");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("TWAP transport details");
+		expect(container.querySelector('button[aria-label="Terminate TWAP order"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Switch to GOOGL market"]')).toBeNull();
+		expect(mocks.cancelTwap).not.toHaveBeenCalled();
+	});
+
+	it("preserves requested cancellation feedback while passive TWAP data is pending", () => {
+		mocks.status = "error";
+		mocks.isStale = true;
 		mocks.feedback = { tone: "error", message: "Cancellation was rejected." };
 		render();
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("TWAP transport details");
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Cancellation was rejected.");
+	});
+
+	it("restores exact cancellation actions only after stale data becomes current", () => {
+		mocks.isStale = true;
+		mocks.status = "error";
+		render();
+		expect(container.querySelector('button[aria-label="Terminate TWAP order"]')).toBeNull();
+		mocks.isStale = false;
+		mocks.status = "active";
+		render();
+		const terminate = container.querySelector<HTMLButtonElement>('button[aria-label="Terminate TWAP order"]');
+		expect(terminate?.disabled).toBe(false);
+		act(() => terminate?.click());
+		expect(mocks.cancelTwap).toHaveBeenCalledExactlyOnceWith("GOOGL", 42);
 	});
 
 	it("renders real TWAP progress metrics and the supported terminate action", () => {
 		render();
 
+		expect(useSubscription).toHaveBeenCalledWith(
+			"twapStates",
+			{ user: "0x1111111111111111111111111111111111111111", dex: "ALL_DEXS" },
+			{ enabled: true },
+		);
 		expect(container.textContent).toContain("GOOGL");
 		expect(container.textContent).toContain("Buy");
 		expect(container.textContent).toContain("Remaining 18:24");

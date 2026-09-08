@@ -1,0 +1,12 @@
+# Runtime localization
+
+Terminal language changes must update visible text, tooltips and accessible names without reloading the page, remounting panels or resetting user input. Apply these rules before changing localized presentation.
+
+- React components and hooks that render translated text normally use `useLingui` or `Trans` from `@lingui/react/macro`. When a helper requires a reactive translation function, use the public `useLingui` hook from `@lingui/react` and its `_` function with `msg` descriptors from `@lingui/core/macro`. The macro hook exposes `t`, not `_`; do not combine two locale subscriptions or assert past that API difference. A core translation call alone does not subscribe its component to locale changes.
+- A translation helper called during rendering must receive its translated label or reactive translation dependency explicitly. React Compiler may retain a helper result when its arguments do not change; reading the global locale inside the helper does not make that dependency visible.
+- Keep protocol values such as `Alo`, `Gtc` and `Ioc` separate from their displayed labels. A language switch must not change order values, selected options, wallet identity, routes or theme preferences.
+- Pending confirmation drafts retain semantic values such as market kind and order side, not translated side text. Derive the confirmation side row and CTA from those values in the active locale while preserving the draft and submission payload.
+- Inspect the existing locale catalog before adding translations. If the translation exists but remains in the previous language, repair the render dependency instead of duplicating strings or forcing remounts.
+- Include `aria-label`, `title` and hidden accessible descriptions in localization checks. Theme controls describe the action for the current theme in the active language.
+
+Regression tests switch an already mounted surface from English to Chinese and back, preserving the same interactive DOM nodes and selected values. Cover TIF chips and selectors, a fixed order-confirmation draft, disconnected position text and theme-control accessible names. Confirmation rows receive the reactive translation function explicitly so a stable draft cannot retain its old order type or TIF labels. Check the Chinese catalog entries used by these tests so a synthetic test catalog cannot conceal missing production translations. Validate the actual terminal after switching language while leaving the current route and order form intact.

@@ -8,6 +8,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Keep business calculations out of components and use `Big.js` for financial arithmetic.
 - Follow the existing TypeScript, React, Tailwind, Biome, and Conventional Commit conventions described in `agent.md`.
 - Do not change behavior outside the requested surface while making visual-alignment changes.
+- Follow `docs/i18n-presentation.md`: rendered translations must subscribe to locale changes, and presentation helpers must receive their translation dependencies explicitly. Language switches must preserve mounted panels, input values and protocol values.
 
 ## Wallet signing contract
 
@@ -95,6 +96,8 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Bump the desktop grid storage key when default geometry changes incompatibly, and preserve a user-visible reset path for valid but unwanted saved layouts.
 
 ## Verification
+
+Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
 
 Run checks proportional to the touched surface before committing:
 

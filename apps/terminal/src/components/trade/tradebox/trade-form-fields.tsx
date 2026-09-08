@@ -98,6 +98,7 @@ function chipClass(active: boolean): string {
 
 function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled: boolean }) {
 	const { t } = useLingui();
+	const postOnlyLabel = t`Post Only`;
 	const tif = useTif();
 	const { setTif } = useOrderEntryActions();
 	const options = getAvailableTifOptions(orderType);
@@ -116,7 +117,7 @@ function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled
 					aria-pressed={tif === option}
 					className={chipClass(tif === option)}
 				>
-					{getTifOptionLabel(option)}
+					{getTifOptionLabel(option, postOnlyLabel)}
 				</button>
 			))}
 		</div>

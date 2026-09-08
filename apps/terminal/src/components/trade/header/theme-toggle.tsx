@@ -1,5 +1,5 @@
 import { ButtonIcon } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
@@ -19,6 +19,7 @@ export function ThemeToggle({ className, iconClassName }: Props) {
 }
 
 function ThemeToggleButton({ className, iconClassName }: Props) {
+	const { t } = useLingui();
 	const theme = useTheme();
 	const setTheme = useSetTheme();
 

@@ -136,12 +136,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 		}),
 		getSzDecimals: () => 2,
 	}),
-	useSubscription: () => ({
+	useSubscription: vi.fn(() => ({
 		data: { states: testState.hasActiveOrder ? [[45, testState.twap]] : [] },
 		status: "active",
 		error: null,
 		isStale: false,
-	}),
+	})),
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
@@ -149,12 +149,14 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 }));
 
 import { TwapTab } from "@/components/trade/positions/twap-tab";
+import { useSubscription } from "@/lib/hyperliquid";
 
 describe("desktop TWAP toolbar", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		vi.mocked(useSubscription).mockClear();
 		vi.useFakeTimers();
 		vi.setSystemTime(testState.twap.timestamp + 5 * 60_000);
 		testState.twap.side = "B";
@@ -197,6 +199,7 @@ describe("desktop TWAP toolbar", () => {
 	it("renders the seven design columns from SDK state and Big.js-derived metrics", () => {
 		render();
 
+		expect(useSubscription).toHaveBeenCalledWith("twapStates", { user: "0x1234", dex: "ALL_DEXS" }, { enabled: true });
 		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
 			"Asset",
 			"Direction",

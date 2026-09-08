@@ -473,6 +473,37 @@ have an install capability.
 - `apps/terminal/src/lib/tests/pwa-manifest.test.ts`
 - `apps/terminal/src/lib/tests/privy-config.test.ts`
 
+## 9. Development And Browser Test Caches
+
+### Boundary
+
+The application dev server and the browser-fixture server have independent
+dependency graphs and must not write to the same Vite optimizer cache. A
+different HTML root or port does not isolate the cache: Vite resolves its
+default beneath the nearest package directory.
+
+### Rules
+
+- Keep the application cache at its default `node_modules/.vite` and give
+  `tests/browser/vite.config.ts` an explicit `node_modules/.vite-browser`
+  cache under the terminal package. The paths must be distinct and neither
+  may contain the other.
+- Do not work around an `Outdated Optimize Dep` response by changing wallet
+  login methods, remounting authentication providers, patching SDK internals,
+  or adding a second wallet chooser.
+- If another server has already replaced the application cache, restart the
+  development server to regenerate it, then reload the affected browser page.
+  Do not clear wallet storage or credentials as part of cache recovery.
+- Verify cache isolation using resolved Vite configurations. With the dev
+  server still running, execute browser-fixture tests and then open a lazy
+  application surface such as Privy login. Check actual dialog content and
+  successful module responses, not merely an open backdrop or a mocked login
+  callback. Repeat this check for desktop and mobile connection entry points.
+
+The [Vite cacheDir option](https://vite.dev/config/shared-options#cachedir)
+controls optimizer storage. Privy's screen loader can hide a failed dynamic
+import, so a blank login overlay also requires checking its module requests.
+
 ## Required Review Checklist
 
 Before merging any change that touches the areas above:

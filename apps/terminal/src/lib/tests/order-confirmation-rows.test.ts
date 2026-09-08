@@ -13,7 +13,6 @@ const BASE_DRAFT: OrderConfirmationDraft = {
 	marketKind: "perp",
 	isLeveraged: true,
 	side: "buy",
-	sideLabel: "Buy / Long",
 	orderType: "market",
 	tif: "Gtc",
 	baseToken: "BTC",
@@ -89,10 +88,10 @@ describe("buildOrderConfirmationRows", () => {
 
 	it("colors the side row by direction", () => {
 		expect(byKey(buildOrderConfirmationRows(BASE_DRAFT), "side")?.tone).toBe("up");
-		expect(byKey(buildOrderConfirmationRows(draft({ side: "sell", sideLabel: "Sell / Short" })), "side")).toEqual({
+		expect(byKey(buildOrderConfirmationRows(draft({ side: "sell" })), "side")).toEqual({
 			key: "side",
 			label: "Side",
-			value: "Sell / Short",
+			value: "Short",
 			tone: "down",
 		});
 	});

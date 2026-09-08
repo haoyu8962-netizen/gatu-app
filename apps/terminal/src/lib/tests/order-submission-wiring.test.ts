@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const SOURCE_ROOT = resolve(import.meta.dirname, "../..");
@@ -10,26 +11,12 @@ const ORDER_ENTRY_SURFACES = [
 
 describe("order submission wiring", () => {
 	it("routes every production order action through the tracked submitter", () => {
-		const matches = collectSourceFiles(SOURCE_ROOT)
-			.filter((path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"))
-			.filter((path) => /useExchange\(\s*["']order["']\s*[,)]/.test(readFileSync(path, "utf8")));
-
-		expect(matches.map((path) => path.replace(`${SOURCE_ROOT}/`, ""))).toEqual(["hooks/trade/use-tracked-order.ts"]);
+		expect(findExchangeEntryPoints("order")).toEqual(["hooks/trade/use-tracked-order.ts"]);
 	});
 
 	it("routes TWAP placement and cancellation through their guarded hooks", () => {
-		const sourceFiles = collectSourceFiles(SOURCE_ROOT).filter(
-			(path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"),
-		);
-		const placementMatches = sourceFiles
-			.filter((path) => /useExchange\(\s*["']twapOrder["']\s*,/.test(readFileSync(path, "utf8")))
-			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""));
-		const cancellationMatches = sourceFiles
-			.filter((path) => readFileSync(path, "utf8").includes('useExchange("twapCancel")'))
-			.map((path) => path.replace(`${SOURCE_ROOT}/`, ""));
-
-		expect(placementMatches).toEqual(["hooks/trade/use-tracked-twap-order.ts"]);
-		expect(cancellationMatches).toEqual(["hooks/trade/use-twap-cancel.ts"]);
+		expect(findExchangeEntryPoints("twapOrder")).toEqual(["hooks/trade/use-tracked-twap-order.ts"]);
+		expect(findExchangeEntryPoints("twapCancel")).toEqual(["hooks/trade/use-twap-cancel.ts"]);
 		expect(readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-tracked-twap-order.ts"), "utf8")).toContain(
 			'useExchange("twapOrder", { executionGuard: options.executionGuard })',
 		);
@@ -131,15 +118,6 @@ describe("order submission wiring", () => {
 
 		expect(mobileTradeView).toContain("async function executeSubmit(input: OrderSubmitDraftInput) {");
 	});
-
-	it("keeps desktop and mobile TWAP views wired to shared subscription and cancellation boundaries", () => {
-		for (const path of ["components/trade/positions/twap-tab.tsx", "components/trade/mobile/mobile-twap-tab.tsx"]) {
-			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
-			expect(source).toContain("getTwapViewState({");
-			expect(source).toContain("useTwapCancel()");
-			expect(source).toContain('viewState === "error"');
-		}
-	});
 });
 
 function collectSourceFiles(directory: string): string[] {
@@ -147,4 +125,26 @@ function collectSourceFiles(directory: string): string[] {
 		const path = resolve(directory, entry);
 		return statSync(path).isDirectory() ? collectSourceFiles(path) : [path];
 	});
+}
+
+function findExchangeEntryPoints(method: string): string[] {
+	return collectSourceFiles(SOURCE_ROOT)
+		.filter((path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"))
+		.filter((path) => {
+			const source = readFileSync(path, "utf8");
+			if (!source.includes("useExchange")) return false;
+			const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+			let found = false;
+			function visit(node: ts.Node) {
+				if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "useExchange") {
+					const firstArgument = node.arguments[0];
+					if (firstArgument && ts.isStringLiteral(firstArgument) && firstArgument.text === method) found = true;
+				}
+				ts.forEachChild(node, visit);
+			}
+			visit(file);
+			return found;
+		})
+		.map((path) => path.replace(`${SOURCE_ROOT}/`, ""))
+		.sort();
 }

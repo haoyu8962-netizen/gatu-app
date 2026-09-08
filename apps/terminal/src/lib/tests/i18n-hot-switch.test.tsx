@@ -3,20 +3,34 @@
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act, useState } from "react";
+import { act, type ReactNode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "@/components/trade/header/language-switcher";
+import { ThemeToggle } from "@/components/trade/header/theme-toggle";
 import { MobileBottomNav } from "@/components/trade/mobile/mobile-bottom-nav";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
+import { PositionsTab } from "@/components/trade/positions/positions-tab";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
+import { OrderConfirmationModal } from "@/components/trade/tradebox/order-confirmation-modal";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
+import { TradeFormTif } from "@/components/trade/tradebox/trade-form-tif";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
+import { useOrderEntryActions, useTif } from "@/stores/use-order-entry-store";
 
 const zhTranslations: Record<string, string> = {
+	Type: "类型",
+	Side: "方向",
+	Long: "多",
+	Short: "空",
+	"Post Only": "只挂单",
+	"Connect your wallet to view positions.": "连接钱包查看仓位。",
+	"Switch to dark mode": "切换到深色模式",
+	"Switch to light mode": "切换到浅色模式",
 	"Reduce Only": "只减仓",
 	"Take Profit / Stop Loss": "止盈 / 止损",
 	"TP/SL": "止盈止损",
@@ -50,13 +64,14 @@ const zhTranslations: Record<string, string> = {
 	Trigger: "触发",
 };
 
-function getMessageId(message: string): string {
-	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+function getMessageId(message: string, context = ""): string {
+	return createHash("sha256").update(`${message}\x1f${context}`).digest("base64").slice(0, 6);
 }
 
 const zhMessages: Messages = Object.fromEntries(
 	Object.entries(zhTranslations).map(([message, translation]) => [getMessageId(message), translation]),
 );
+zhMessages[getMessageId("Limit", "Order type")] = "限价";
 
 function activateLocale(locale: "en" | "zh") {
 	i18n.loadAndActivate({ locale, messages: locale === "zh" ? zhMessages : {} });
@@ -64,7 +79,10 @@ function activateLocale(locale: "en" | "zh") {
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useHyperliquid: () => ({ clientKey: "disconnected", env: "Mainnet" }),
 	useMarkets: () => ({ builderPerp: [], getToken: () => ({ index: 0 }) }),
+	useMarketsInfo: () => ({ getMarketInfo: () => undefined }),
+	useUserPositions: () => ({ positions: [], isLoading: false, hasError: false, isStale: false }),
 	useSelectedMarketInfo: () => ({
 		data: { kind: "perp", markPx: "70", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	}),
@@ -85,7 +103,7 @@ vi.mock("@/lib/i18n", () => ({
 }));
 
 vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
-	useOrderbookRows: () => [4, { current: null }],
+	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: 4, rowHeightPx: 23 }, { current: null }],
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -93,6 +111,30 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	useGlobalSettings: () => ({ numberFormatLocale: "en-US", showOrderbookInQuote: false }),
 	useGlobalSettingsActions: () => ({ setNumberFormatLocale: vi.fn(), setShowOrderbookInQuote: vi.fn() }),
 	useIsTestnet: () => false,
+	useTheme: () => "light",
+	useSetTheme: () => vi.fn(),
+}));
+
+vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () => vi.fn() }));
+vi.mock("@/hooks/trade/use-position-market-close-action", () => ({
+	usePositionMarketCloseAction: () => ({ open: vi.fn(), pendingAssetId: null }),
+}));
+vi.mock("@/components/trade/positions/position-close-all-modal", () => ({ PositionCloseAllController: () => null }));
+vi.mock("@/components/trade/positions/position-isolated-margin-modal", () => ({
+	PositionIsolatedMarginModal: () => null,
+}));
+vi.mock("@/components/trade/positions/position-limit-close-modal", () => ({ PositionLimitCloseModal: () => null }));
+vi.mock("@/components/trade/positions/position-pnl-share-modal", () => ({ PositionPnlShareModal: () => null }));
+vi.mock("@/components/trade/positions/position-reverse-confirmation-controller", () => ({
+	PositionReverseConfirmationController: () => null,
+}));
+vi.mock("@/components/trade/positions/position-tpsl-modal", () => ({ PositionTpSlModal: () => null }));
+vi.mock("@/components/trade/components/trading-action-button", () => ({
+	TradingActionButton: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => (
+		<button type="button" onClick={onClick}>
+			{children}
+		</button>
+	),
 }));
 
 const balanceSnapshot = {
@@ -121,6 +163,8 @@ const balanceSnapshot = {
 const bridgeEntryState = vi.hoisted(() => ({
 	hasExistingExecution: false,
 }));
+
+const walletState = vi.hoisted(() => ({ isConnected: true }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
 	isSupportedAccountAbstraction: (value: unknown) =>
@@ -155,7 +199,7 @@ vi.mock("@/domain/trade/balances", () => ({
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		hasWalletAccess: true,
-		isConnected: true,
+		isConnected: walletState.isConnected,
 		sessionMode: "wallet",
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
@@ -272,6 +316,62 @@ function OrderLabelsProbe() {
 	);
 }
 
+function TifSurface() {
+	const { setTif } = useOrderEntryActions();
+	const tif = useTif();
+	return (
+		<>
+			<button type="button" onClick={() => setTif("Alo")}>
+				Select Alo
+			</button>
+			<output data-testid="tif-value">{tif}</output>
+			<TradeFormTif orderType="limit" disabled={false} />
+		</>
+	);
+}
+
+const confirmationDraft: OrderConfirmationDraft = {
+	assetId: 0,
+	marketLabel: "BTC-USDC",
+	marketKind: "perp",
+	isLeveraged: false,
+	side: "buy",
+	orderType: "limit",
+	tif: "Alo",
+	baseToken: "BTC",
+	szDecimals: 4,
+	sizeValue: 0.5,
+	orderValue: 50_000,
+	limitPrice: 100_000,
+	triggerPrice: null,
+	scaleStartPrice: null,
+	scaleEndPrice: null,
+	scaleLevels: null,
+	scaleSkew: null,
+	twapMinutes: null,
+	twapRandomize: false,
+	twapTriggerPrice: null,
+	twapStopPrice: null,
+	tpSlEnabled: false,
+	tpPrice: null,
+	slPrice: null,
+	reduceOnly: false,
+	leverage: null,
+	marginMode: "cross",
+	marginRequired: 0,
+	feeQuote: buildOrderFeeQuote({
+		orderValue: 50_000,
+		protocolRate: 0.00015,
+		builderFeeTenthsBps: 10,
+		marketKind: "perp",
+		side: "buy",
+		execution: "order",
+	}),
+	liqPrice: null,
+	liqWarning: false,
+	slippagePercent: 2.5,
+};
+
 describe("language hot switching", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -279,6 +379,7 @@ describe("language hot switching", () => {
 	beforeEach(() => {
 		activateLocale("en");
 		bridgeEntryState.hasExistingExecution = false;
+		walletState.isConnected = true;
 		Object.defineProperty(window, "matchMedia", {
 			configurable: true,
 			value: vi.fn().mockReturnValue({
@@ -292,6 +393,86 @@ describe("language hot switching", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 	});
+
+	it("updates disconnected position text, theme aria and the selected TIF without remounting", () => {
+		walletState.isConnected = false;
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<ThemeToggle />
+					<TifSurface />
+					<PositionsTab directionFilter="all" marketFilter={{ type: "all" }} currentMarket={null} />
+				</I18nProvider>,
+			),
+		);
+		const selectAlo = [...container.querySelectorAll("button")].find((button) => button.textContent === "Select Alo");
+		act(() => selectAlo?.click());
+		const selector = container.querySelector('[aria-label="TIF: Post Only"]');
+		const theme = container.querySelector('[aria-label="Switch to dark mode"]');
+		expect(selector).not.toBeNull();
+		expect(theme).not.toBeNull();
+		expect(container.textContent).toContain("Connect your wallet to view positions.");
+
+		act(() => activateLocale("zh"));
+		expect(container.textContent).toContain("连接钱包查看仓位。");
+		expect(container.textContent).not.toContain("Connect your wallet to view positions.");
+		expect(container.querySelector('[aria-label="TIF: 只挂单"]')).toBe(selector);
+		expect(container.querySelector('[aria-label="切换到深色模式"]')).toBe(theme);
+		expect(container.querySelector('[data-testid="tif-value"]')?.textContent).toBe("Alo");
+
+		act(() => activateLocale("en"));
+		expect(container.textContent).toContain("Connect your wallet to view positions.");
+		expect(container.querySelector('[aria-label="TIF: Post Only"]')).toBe(selector);
+		expect(container.querySelector('[aria-label="Switch to dark mode"]')).toBe(theme);
+		expect(container.querySelector('[data-testid="tif-value"]')?.textContent).toBe("Alo");
+	});
+
+	it.each([
+		{ marketKind: "perp", side: "buy", english: "Long", chinese: "多" },
+		{ marketKind: "perp", side: "sell", english: "Short", chinese: "空" },
+		{ marketKind: "spot", side: "buy", english: "Buy", chinese: "买入" },
+		{ marketKind: "spot", side: "sell", english: "Sell", chinese: "卖出" },
+	] as const)(
+		"hot-switches a stable $marketKind $side confirmation without sending it",
+		({ marketKind, side, english, chinese }) => {
+			const onConfirm = vi.fn();
+			const draft = { ...confirmationDraft, marketKind, side };
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<OrderConfirmationModal
+							open
+							draft={draft}
+							isSubmitting={false}
+							dontShowAgain={false}
+							onDontShowAgainChange={() => {}}
+							onConfirm={onConfirm}
+							onOpenChange={() => {}}
+						/>
+					</I18nProvider>,
+				),
+			);
+			const rows = document.querySelector('[data-testid="order-confirmation-rows"]');
+			expect(rows?.textContent).toContain("Limit · Post Only");
+			expect(rows?.textContent).toContain(`Side${english}`);
+			const cta = [...document.querySelectorAll("button")].find((button) => button.textContent === english);
+			expect(cta).not.toBeUndefined();
+			act(() => activateLocale("zh"));
+			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
+			expect(rows?.textContent).toContain("类型限价 · 只挂单");
+			expect(rows?.textContent).toContain(`方向${chinese}`);
+			expect(cta?.textContent).toBe(chinese);
+			expect(rows?.textContent).toContain("$50,000.00");
+			act(() => activateLocale("en"));
+			expect(document.querySelector('[data-testid="order-confirmation-rows"]')).toBe(rows);
+			expect(rows?.textContent).toContain("TypeLimit · Post Only");
+			expect(rows?.textContent).toContain(`Side${english}`);
+			expect(cta?.textContent).toBe(english);
+			expect(draft.tif).toBe("Alo");
+			expect(draft.side).toBe(side);
+			expect(onConfirm).not.toHaveBeenCalled();
+		},
+	);
 
 	afterEach(() => {
 		act(() => root.unmount());

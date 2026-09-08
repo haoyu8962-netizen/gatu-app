@@ -1245,6 +1245,7 @@ msgstr "Builder totals are cumulative attribution and are not added to claimable
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4760,6 +4761,7 @@ msgstr "Log in with Email"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "Long"
@@ -4969,6 +4971,7 @@ msgstr "Market"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6661,7 +6664,9 @@ msgstr "Positions"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "Positions changed while this confirmation was open. Close and reopen it before submitting."
 
-#: src/lib/trade/tif.ts
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-tif.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Post Only"
 msgstr "Post Only"
 
@@ -7922,6 +7927,7 @@ msgstr "Selected-period PNL"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -8072,6 +8078,7 @@ msgstr "Share PNL for {displayName}"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "Short"

@@ -12,7 +12,10 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
-import { getPendingTradingActionActions } from "@/stores/use-pending-trading-action-store";
+import {
+	getPendingTradingActionActions,
+	getPendingTradingActionSnapshot,
+} from "@/stores/use-pending-trading-action-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
 
@@ -21,6 +24,9 @@ const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	mutateAsync: vi.fn(),
+	exchange: vi.fn(),
+	beforeSdkBoundary: vi.fn(),
+	sdkParamsOverride: {} as Partial<{ a: number; t: number }>,
 	guardPassesBeforeMutation: 2,
 	reset: vi.fn(),
 	successToast: vi.fn(),
@@ -33,15 +39,20 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: (_method: string, options?: { executionGuard?: (params: { a: number; t: number }) => void }) => ({
-		mutateAsync: async (params: { a: number; t: number }) => {
-			for (let pass = 0; pass < mocks.guardPassesBeforeMutation; pass += 1) {
-				options?.executionGuard?.(params);
-			}
-			return mocks.mutateAsync(params);
-		},
-		reset: mocks.reset,
-	}),
+	useExchange: (method: string, options?: { executionGuard?: (params: { a: number; t: number }) => void }) => {
+		mocks.exchange(method, options);
+		return {
+			mutateAsync: async (params: { a: number; t: number }) => {
+				const requestParams = { ...params, ...mocks.sdkParamsOverride };
+				for (let pass = 0; pass < mocks.guardPassesBeforeMutation; pass += 1) {
+					if (pass === 1) await mocks.beforeSdkBoundary();
+					options?.executionGuard?.(requestParams);
+				}
+				return mocks.mutateAsync(requestParams);
+			},
+			reset: mocks.reset,
+		};
+	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({ getAssetId: () => mocks.assetId }),
 }));
@@ -74,6 +85,9 @@ describe("useTwapCancel", () => {
 		mocks.env = "Mainnet";
 		mocks.guardPassesBeforeMutation = 2;
 		mocks.mutateAsync.mockReset();
+		mocks.exchange.mockReset();
+		mocks.beforeSdkBoundary.mockReset();
+		mocks.sdkParamsOverride = {};
 		mocks.reset.mockReset();
 		mocks.successToast.mockReset();
 		mocks.errorToast.mockReset();
@@ -103,10 +117,67 @@ describe("useTwapCancel", () => {
 			await hookValue?.cancelTwap("xyz:GOLD", 42);
 		});
 
+		expect(mocks.exchange).toHaveBeenLastCalledWith("twapCancel", { executionGuard: expect.any(Function) });
 		expect(mocks.mutateAsync).toHaveBeenCalledWith({ a: 7, t: 42 });
+		expect(getPendingTradingActionSnapshot().twapCancellations[0]).toMatchObject({
+			phase: "awaiting",
+			requestStartedAt: expect.any(Number),
+		});
 		expect(mocks.successToast).not.toHaveBeenCalled();
 		expect(hookValue?.cancellingTwapId).toBe(42);
 		expect(hookValue?.feedback).toBeNull();
+	});
+
+	it.each([
+		{ clientKey: "0x2222222222222222222222222222222222222222", env: "Mainnet" },
+		{ clientKey: USER, env: "Testnet" },
+		{ clientKey: "disconnected", env: "Mainnet" },
+	] as const)("blocks the SDK request if identity changes after the first guard: %o", async (identity) => {
+		let releaseBoundary = () => {};
+		mocks.beforeSdkBoundary.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				releaseBoundary = resolve;
+			}),
+		);
+		let cancellation: Promise<void> | undefined;
+		await act(async () => {
+			cancellation = hookValue?.cancelTwap("BTC", 42);
+			await Promise.resolve();
+		});
+		expect(mocks.beforeSdkBoundary).toHaveBeenCalledOnce();
+		Object.assign(mocks, identity);
+		act(() => root.render(createElement(Probe)));
+		await act(async () => {
+			releaseBoundary();
+			await cancellation;
+		});
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(hookValue?.feedback).toBeNull();
+		expect(mocks.errorToast).not.toHaveBeenCalled();
+	});
+
+	it.each([{ a: 8 }, { t: 99 }])("blocks modified SDK cancellation fields: %o", async (fields) => {
+		mocks.sdkParamsOverride = fields;
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 42);
+		});
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(getPendingTradingActionSnapshot().twapCancellations).toEqual([]);
+		expect(hookValue?.feedback?.tone).toBe("error");
+	});
+
+	it("blocks a cancellation whose pending claim is invalidated before the SDK boundary", async () => {
+		mocks.beforeSdkBoundary.mockImplementationOnce(() => {
+			const action = getPendingTradingActionSnapshot().twapCancellations[0];
+			if (!action) throw new Error("Expected a claimed cancellation");
+			getPendingTradingActionActions().resolveTwapCancellation(action.id);
+		});
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 42);
+		});
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(hookValue?.feedback?.tone).toBe("error");
 	});
 
 	it("fails closed when the selected market has no resolved asset ID", async () => {
@@ -131,6 +202,10 @@ describe("useTwapCancel", () => {
 		expect(mocks.warningToast).toHaveBeenCalledOnce();
 		expect(mocks.errorToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("warning");
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 44);
+		});
+		expect(mocks.mutateAsync).toHaveBeenCalledOnce();
 		act(() => getPendingTradingActionActions().reset());
 		expect(hookValue?.feedback).toBeNull();
 	});

@@ -1134,6 +1134,7 @@ msgstr "Builder 总额是累计归因值，不会加入可领取奖励。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4473,6 +4474,7 @@ msgstr "使用邮箱登录"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "多"
@@ -4647,6 +4649,7 @@ msgstr "市场"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6186,7 +6189,9 @@ msgstr "持仓"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "确认窗口打开期间持仓已变化。请关闭并重新打开后再提交。"
 
-#: src/lib/trade/tif.ts
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-tif.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Post Only"
 msgstr "只挂单"
 
@@ -7350,6 +7355,7 @@ msgstr "所选周期 PNL"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -7484,6 +7490,7 @@ msgstr "分享 {displayName} 的盈亏"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "空"

@@ -1241,6 +1241,7 @@ msgstr "Builder के कुल आंकड़े संचयी एट्र
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4743,6 +4744,7 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "लॉन्ग"
@@ -4952,6 +4954,7 @@ msgstr "बाज़ार"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6640,7 +6643,9 @@ msgstr "पोज़िशन"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "यह पुष्टि खुली रहने के दौरान पोज़िशन बदल गईं। सबमिट करने से पहले इसे बंद करके फिर से खोलें।"
 
-#: src/lib/trade/tif.ts
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-tif.tsx
+#: src/domain/trade/order-confirmation.ts
 msgid "Post Only"
 msgstr "पोस्ट ओनली"
 
@@ -7901,6 +7906,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -8051,6 +8057,7 @@ msgstr "{displayName} का PNL साझा करें"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
+#: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "शॉर्ट"

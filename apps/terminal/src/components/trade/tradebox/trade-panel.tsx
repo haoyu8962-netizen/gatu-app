@@ -546,7 +546,6 @@ export function TradePanel() {
 			marketKind: market.kind === "spot" ? "spot" : "perp",
 			isLeveraged: capabilities.isLeveraged,
 			side,
-			sideLabel: sideLabels[side],
 			orderType,
 			tif,
 			baseToken,

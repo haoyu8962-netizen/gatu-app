@@ -9,6 +9,7 @@ const mobileOrderbookBrowserMock = fileURLToPath(new URL("./mobile-orderbook-cls
 
 export default defineConfig({
 	root,
+	cacheDir: fileURLToPath(new URL("../../node_modules/.vite-browser", import.meta.url)),
 	define: { "process.env.DRAGGABLE_DEBUG": "false" },
 	plugins: [
 		viteTsConfigPaths({ projects: [fileURLToPath(new URL("../../tsconfig.json", import.meta.url))] }),

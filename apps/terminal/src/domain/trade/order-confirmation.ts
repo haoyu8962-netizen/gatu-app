@@ -1,4 +1,5 @@
-import { t } from "@lingui/core/macro";
+import { i18n, type MessageDescriptor } from "@lingui/core";
+import { msg, t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { LimitTif, OrderType } from "@/config/trade";
 import { formatOrderFeeRatePercent, type OrderFeeQuote } from "@/domain/trade/order-fee-quote";
@@ -31,7 +32,6 @@ export interface OrderConfirmationDraft {
 	marketKind: "perp" | "spot";
 	isLeveraged: boolean;
 	side: Side;
-	sideLabel: string;
 	orderType: OrderType;
 	tif: LimitTif;
 	baseToken: string;
@@ -61,11 +61,19 @@ export interface OrderConfirmationDraft {
 	slippagePercent: number;
 }
 
-export function buildOrderConfirmationRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+export function buildOrderConfirmationRows(
+	draft: OrderConfirmationDraft,
+	translate: (message: MessageDescriptor) => string = translateOrderMessage,
+): OrderConfirmationRow[] {
 	return [
 		{ key: "market", label: t`Market`, value: draft.marketLabel },
-		{ key: "side", label: t`Side`, value: draft.sideLabel, tone: draft.side === "buy" ? "up" : "down" },
-		{ key: "orderType", label: t`Type`, value: getOrderTypeValue(draft) },
+		{
+			key: "side",
+			label: t`Side`,
+			value: getOrderConfirmationSideLabel(draft, translate),
+			tone: draft.side === "buy" ? "up" : "down",
+		},
+		{ key: "orderType", label: t`Type`, value: getOrderTypeValue(draft, translate) },
 		{ key: "size", label: t`Size`, value: getSizeValue(draft) },
 		...getPriceRows(draft),
 		...getTpSlRows(draft),
@@ -77,30 +85,42 @@ export function buildOrderConfirmationRows(draft: OrderConfirmationDraft): Order
 	];
 }
 
-function getOrderTypeValue(draft: OrderConfirmationDraft): string {
-	const label = getOrderTypeLabel(draft.orderType);
-	if (draft.orderType !== "limit") return label;
-	return `${label} · ${getTifOptionLabel(draft.tif)}`;
+function translateOrderMessage(message: MessageDescriptor): string {
+	return i18n._(message);
 }
 
-function getOrderTypeLabel(orderType: OrderType): string {
+export function getOrderConfirmationSideLabel(
+	draft: Pick<OrderConfirmationDraft, "marketKind" | "side">,
+	translate: (message: MessageDescriptor) => string = translateOrderMessage,
+): string {
+	if (draft.marketKind === "spot") return translate(draft.side === "buy" ? msg`Buy` : msg`Sell`);
+	return translate(draft.side === "buy" ? msg`Long` : msg`Short`);
+}
+
+function getOrderTypeValue(draft: OrderConfirmationDraft, translate: (message: MessageDescriptor) => string): string {
+	const label = getOrderTypeLabel(draft.orderType, translate);
+	if (draft.orderType !== "limit") return label;
+	return `${label} · ${getTifOptionLabel(draft.tif, translate(msg`Post Only`))}`;
+}
+
+function getOrderTypeLabel(orderType: OrderType, translate: (message: MessageDescriptor) => string): string {
 	switch (orderType) {
 		case "market":
-			return getMarketExecutionLabel();
+			return translate(msg({ message: "Market", context: "Order type" }));
 		case "limit":
-			return t({ message: "Limit", context: "Order type" });
+			return translate(msg({ message: "Limit", context: "Order type" }));
 		case "stopMarket":
-			return t`Stop Market`;
+			return translate(msg`Stop Market`);
 		case "stopLimit":
-			return t`Stop Limit`;
+			return translate(msg`Stop Limit`);
 		case "takeProfitMarket":
-			return t`Take Profit Market`;
+			return translate(msg`Take Profit Market`);
 		case "takeProfitLimit":
-			return t`Take Profit Limit`;
+			return translate(msg`Take Profit Limit`);
 		case "twap":
-			return t`TWAP`;
+			return translate(msg`TWAP`);
 		case "scale":
-			return t`Scale`;
+			return translate(msg`Scale`);
 	}
 }
 
