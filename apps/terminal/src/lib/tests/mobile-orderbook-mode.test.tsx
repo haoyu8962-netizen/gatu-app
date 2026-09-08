@@ -162,12 +162,12 @@ describe("compact mobile orderbook modes", () => {
 		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
 	});
 
-	it("covers fractional extra height before another complete row fits", () => {
+	it("adds another row only after its complete minimum height fits", () => {
 		expect(getLadder("asks").children).toHaveLength(5);
 		expect(getLadder("bids").children).toHaveLength(5);
 		resizeBook(359);
-		expect(getLadder("asks").children).toHaveLength(6);
-		expect(getLadder("bids").children).toHaveLength(6);
+		expect(getLadder("asks").children).toHaveLength(5);
+		expect(getLadder("bids").children).toHaveLength(5);
 
 		resizeBook(360);
 
@@ -236,36 +236,36 @@ describe("compact mobile orderbook modes", () => {
 		]);
 	});
 
-	it("updates clipped-row safety even when the rendered count stays the same", () => {
-		resizeBook(359);
+	it("resizes complete rows while preserving price identity and selection", () => {
 		const ask = getLadder("asks").querySelector<HTMLButtonElement>("button");
-		const bid = [...getLadder("bids").querySelectorAll<HTMLButtonElement>("button")].at(-1);
-		expect(ask?.disabled).toBe(true);
-		expect(bid?.disabled).toBe(true);
-		act(() => {
-			ask?.click();
-			bid?.click();
-		});
-		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
-		resizeBook(360);
+		const position = ask?.parentElement;
+		expect(position?.style.height).toBe("24px");
+		resizeBook(359);
 		expect(getLadder("asks").querySelector("button")).toBe(ask);
+		expect(position?.style.height).toBe("29.5px");
+		expect(position?.style.transform).toBe("translateY(-134px)");
 		expect(ask?.disabled).toBe(false);
-		expect(bid?.disabled).toBe(false);
+		act(() => ask?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "105" });
 		resizeBook(359.5);
-		expect(ask?.disabled).toBe(true);
-		expect(bid?.disabled).toBe(true);
+		expect(getLadder("asks").querySelector("button")).toBe(ask);
+		expect(position?.style.height).toBe("29.55px");
+		resizeBook(360);
+		expect([...getLadder("asks").querySelectorAll("button")]).toContain(ask);
+		expect(position?.style.height).toBe("24px");
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
 	});
 
-	it("recomputes clipping for single-side modes and fills beyond the feed depth", () => {
+	it("fills single-side modes beyond the feed depth with complete placeholders", () => {
 		resizeBook(700);
-		expect(getLadder("asks").children).toHaveLength(13);
+		expect(getLadder("asks").children).toHaveLength(12);
 		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
-		expect(getLadder("asks").children).toHaveLength(26);
-		expect(getLadder("asks").querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(6);
+		expect(getLadder("asks").children).toHaveLength(25);
+		expect(getLadder("asks").querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(5);
 		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
 		resizeBook(331.5);
-		expect(getLadder("asks").children).toHaveLength(12);
-		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(1);
+		expect(getLadder("asks").children).toHaveLength(11);
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
 	});
 
 	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {

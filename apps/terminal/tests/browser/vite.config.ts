@@ -1,6 +1,6 @@
-import viteReact from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
+import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
@@ -9,6 +9,7 @@ const mobileOrderbookBrowserMock = fileURLToPath(new URL("./mobile-orderbook-cls
 
 export default defineConfig({
 	root,
+	define: { "process.env.DRAGGABLE_DEBUG": "false" },
 	plugins: [
 		viteTsConfigPaths({ projects: [fileURLToPath(new URL("../../tsconfig.json", import.meta.url))] }),
 		viteReact({

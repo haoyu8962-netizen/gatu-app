@@ -2,10 +2,9 @@
 
 import { act, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { ResponsiveLayouts } from "react-grid-layout";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useGridContentHeight } from "@/components/trade/layout/use-grid-content-height";
-import { DEFAULT_DESKTOP_GRID_LAYOUTS, type DesktopGridBreakpoint } from "@/config/desktop-grid-layout";
+import type { DesktopGridBreakpoint, DesktopGridContentHeights } from "@/config/desktop-grid-layout";
 
 interface ObserverInstance {
 	callback: ResizeObserverCallback;
@@ -36,10 +35,7 @@ function flushAnimationFrames() {
 }
 
 function SuspenseSwapHarness({ contentReady }: { contentReady: boolean }) {
-	const [, setLayouts] = useState<ResponsiveLayouts<DesktopGridBreakpoint>>(() => ({
-		lg: DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.map((item) => ({ ...item })),
-		md: DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => ({ ...item })),
-	}));
+	const [, setLayouts] = useState<DesktopGridContentHeights>({});
 	const ref = useGridContentHeight(true, "lg", "tradingInterface", setLayouts);
 
 	if (!contentReady) return <div className="h-[41rem] w-full" />;
@@ -58,17 +54,28 @@ function GridContentHeightHarness({
 }: {
 	mounted: boolean;
 	breakpoint: DesktopGridBreakpoint;
-	onLayouts: (layouts: ResponsiveLayouts<DesktopGridBreakpoint>) => void;
+	onLayouts: (layouts: DesktopGridContentHeights) => void;
 }) {
-	const [layouts, setLayouts] = useState<ResponsiveLayouts<DesktopGridBreakpoint>>(() => ({
-		lg: DEFAULT_DESKTOP_GRID_LAYOUTS.lg?.map((item) => ({ ...item })),
-		md: DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => ({ ...item })),
-	}));
+	const [layouts, setLayouts] = useState<DesktopGridContentHeights>({});
 	const ref = useGridContentHeight(mounted, breakpoint, "tradingInterface", setLayouts);
 
 	useEffect(() => onLayouts(layouts), [layouts, onLayouts]);
 
 	return <div ref={ref} />;
+}
+
+function AccountPartsHarness({ onHeights }: { onHeights: (heights: DesktopGridContentHeights) => void }) {
+	const [heights, setHeights] = useState<DesktopGridContentHeights>({});
+	const ref = useGridContentHeight(true, "lg", "accountInfo", setHeights);
+	useEffect(() => onHeights(heights), [heights, onHeights]);
+	return (
+		<div ref={ref} style={{ height: 900 }}>
+			<div data-grid-content-part>Header</div>
+			<div style={{ height: "100%" }}>
+				<div data-grid-content-part>Natural account content</div>
+			</div>
+		</div>
+	);
 }
 
 describe("grid content height observer", () => {
@@ -123,9 +130,9 @@ describe("grid content height observer", () => {
 			flushAnimationFrames();
 		});
 
-		const observedMd = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
-		expect(observedMd.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
-		expect(observedMd.lg?.find((item) => item.i === "tradingInterface")?.h).toBe(20.4);
+		const observedMd = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
+		expect(observedMd.md?.tradingInterface).toBe(850);
+		expect(observedMd.lg).toBeUndefined();
 
 		act(() => root?.render(<GridContentHeightHarness mounted breakpoint="lg" onLayouts={onLayouts} />));
 		expect(mdObserver?.disconnect).toHaveBeenCalledTimes(1);
@@ -165,8 +172,8 @@ describe("grid content height observer", () => {
 			flushAnimationFrames();
 		});
 
-		const observed = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
-		expect(observed.md?.find((item) => item.i === "tradingInterface")?.h).toBe(5.13);
+		const observed = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
+		expect(observed.md?.tradingInterface).toBe(166);
 	});
 
 	it("coalesces repeated measurements and cancels pending work on cleanup", () => {
@@ -186,8 +193,8 @@ describe("grid content height observer", () => {
 			flushAnimationFrames();
 		});
 
-		const observed = onLayouts.mock.lastCall?.[0] as ResponsiveLayouts<DesktopGridBreakpoint>;
-		expect(observed.md?.find((item) => item.i === "tradingInterface")?.h).toBe(25.85);
+		const observed = onLayouts.mock.lastCall?.[0] as DesktopGridContentHeights;
+		expect(observed.md?.tradingInterface).toBe(850);
 		expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
 
 		act(() => {
@@ -200,5 +207,34 @@ describe("grid content height observer", () => {
 		root = null;
 		expect(cancelAnimationFrame).toHaveBeenCalledWith(3);
 		expect(animationFrames).toHaveLength(0);
+	});
+
+	it("measures every natural content part before publishing and ignores stretched wrappers", () => {
+		const onHeights = vi.fn();
+		act(() => root?.render(<AccountPartsHarness onHeights={onHeights} />));
+		const observer = observers[0];
+		const parts = [...container.querySelectorAll("[data-grid-content-part]")];
+		expect(observer?.observe.mock.calls.map(([node]) => node)).toEqual(parts);
+		function measure(index: number, height: number) {
+			act(() => {
+				observer?.callback(
+					[
+						{
+							target: parts[index],
+							borderBoxSize: [{ blockSize: height }],
+							contentRect: { height },
+						} as unknown as ResizeObserverEntry,
+					],
+					observer as unknown as ResizeObserver,
+				);
+				flushAnimationFrames();
+			});
+		}
+		measure(0, 30);
+		expect(onHeights.mock.lastCall?.[0]).toEqual({});
+		measure(1, 700);
+		expect(onHeights.mock.lastCall?.[0]).toEqual({ lg: { accountInfo: 730 } });
+		measure(1, 200);
+		expect(onHeights.mock.lastCall?.[0]).toEqual({ lg: { accountInfo: 230 } });
 	});
 });

@@ -18,7 +18,7 @@ import {
 	getSnapshotPriceDecimals,
 	processLevels,
 } from "@/lib/trade/orderbook";
-import { getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
+import { getOrderbookLadderStyle, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
 import { OrderbookPlaceholderRow } from "./orderbook-placeholder-row";
 import { OrderbookRow } from "./orderbook-row";
@@ -32,7 +32,7 @@ export function OrderbookPanel() {
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const sizeMode = useSizeMode();
 	const showOrderbookInQuote = sizeMode === "quote";
-	const [{ rowCount: visibleRows, fullRowCount }, orderbookContainerRef] = useOrderbookRows();
+	const [{ rowCount: visibleRows, fullRowCount, rowHeightPx }, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -186,6 +186,7 @@ export function OrderbookPanel() {
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 					<div
 						data-slot="orderbook-asks"
+						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
 						className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end gap-[2px]"
 					>
 						{hasCurrentSnapshot && asks.length > 0 ? (
@@ -225,7 +226,11 @@ export function OrderbookPanel() {
 						<span className="tabular-nums font-medium text-fg-muted">{spreadText}</span>
 					</div>
 
-					<div data-slot="orderbook-bids" className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]">
+					<div
+						data-slot="orderbook-bids"
+						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
+						className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]"
+					>
 						{hasCurrentSnapshot && bids.length > 0 ? (
 							<>
 								{bids.map((level, rank) => (

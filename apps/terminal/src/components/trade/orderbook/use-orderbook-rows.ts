@@ -28,6 +28,6 @@ export function useOrderbookRows() {
 	const layout =
 		sideHeight > 0
 			? getOrderbookLadderLayout(sideHeight, ORDERBOOK_ROW_METRICS.default)
-			: { rowCount: 20, fullRowCount: 0 };
+			: { rowCount: 20, fullRowCount: 0, rowHeightPx: ORDERBOOK_ROW_METRICS.default.rowHeightPx };
 	return [layout, containerRef] as const;
 }

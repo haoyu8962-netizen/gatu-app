@@ -1,15 +1,5 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
-import {
-	DESKTOP_GRID_BREAKPOINTS,
-	DESKTOP_GRID_COLS,
-	DESKTOP_GRID_GAP_PX,
-	DESKTOP_GRID_ROW_HEIGHT_PX,
-	getDesktopGridBreakpoint,
-	readDesktopGridLayouts,
-	syncGridItemResize,
-	writeDesktopGridLayouts,
-} from "@/config/desktop-grid-layout";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -23,7 +13,7 @@ import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
 import { DesktopGridLoadingSurface } from "./desktop-grid-loading-surface";
-import { useGridContentHeight } from "./use-grid-content-height";
+import { useDesktopGridLayout } from "./use-desktop-grid-layout";
 
 const AccountPanel = createLazyComponent(() => import("../tradebox/account-panel"), "AccountPanel");
 const ChartPanel = createLazyComponent(() => import("../chart/chart-panel"), "ChartPanel");
@@ -31,7 +21,6 @@ const OrderbookPanel = createLazyComponent(() => import("../orderbook/orderbook-
 const PositionsPanel = createLazyComponent(() => import("../positions/positions-panel"), "PositionsPanel");
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
-const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
 const panelFallback = <div aria-hidden="true" className="h-full w-full bg-surface" />;
 
 function preloadPrimaryWorkspacePanels() {
@@ -57,17 +46,12 @@ function DesktopWorkspaceSkeleton() {
 export function MainWorkspace() {
 	useRenderCommitTrack("main-workspace");
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
-	const activeBreakpoint = getDesktopGridBreakpoint(width);
-	const tradeContentRef = useGridContentHeight(mounted, activeBreakpoint, "tradingInterface", setLayouts);
-	const accountContentRef = useGridContentHeight(mounted, activeBreakpoint, "accountInfo", setLayouts);
+	const { gridProps, tradeContentRef, accountContentRef } = useDesktopGridLayout(width, mounted);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 	const spotSocials = getSpotAssetSocials(selectedMarket);
-
-	useEffect(() => writeDesktopGridLayouts(layouts), [layouts]);
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
@@ -76,22 +60,7 @@ export function MainWorkspace() {
 	return (
 		<div ref={containerRef} data-main-workspace className="min-h-0 flex-1 bg-grid-container">
 			{mounted ? (
-				<Responsive
-					className="desktop-terminal-grid"
-					width={width}
-					layouts={layouts}
-					breakpoints={DESKTOP_GRID_BREAKPOINTS}
-					cols={DESKTOP_GRID_COLS}
-					rowHeight={DESKTOP_GRID_ROW_HEIGHT_PX}
-					margin={gridSpacing}
-					containerPadding={gridSpacing}
-					dragConfig={{ enabled: false }}
-					resizeConfig={{ enabled: true }}
-					onResizeStop={(_, _oldItem, resizedItem) => {
-						if (!resizedItem) return;
-						setLayouts((prev) => syncGridItemResize(prev, activeBreakpoint, resizedItem));
-					}}
-				>
+				<Responsive className="desktop-terminal-grid" {...gridProps}>
 					<div
 						key="favoriteCoins"
 						className="desktop-grid-panel flex items-center overflow-hidden border-b border-stroke-weak bg-surface px-2"
@@ -151,7 +120,7 @@ export function MainWorkspace() {
 						className="account-panel-container desktop-grid-panel overflow-hidden bg-surface"
 					>
 						<Suspense fallback={panelFallback}>
-							<div ref={accountContentRef}>
+							<div ref={accountContentRef} className="h-full">
 								<AccountPanel />
 							</div>
 						</Suspense>

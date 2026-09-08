@@ -74,7 +74,7 @@ function OrderbookRowComponent({
 			className={cn(
 				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
 				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
-				compact ? "h-[24px]" : "h-[23px]",
+				compact ? "h-[var(--orderbook-row-height,24px)]" : "h-[var(--orderbook-row-height,23px)]",
 			)}
 		>
 			<span
@@ -86,7 +86,7 @@ function OrderbookRowComponent({
 			/>
 			<span
 				className={cn(
-					"grid gap-1 tabular-nums py-0.5 relative z-10",
+					"grid h-full items-center gap-1 tabular-nums py-0.5 relative z-10",
 					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
 				)}
 			>

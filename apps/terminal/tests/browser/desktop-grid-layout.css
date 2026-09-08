@@ -1,0 +1,38 @@
+body {
+	margin: 0;
+	background: #f1f3f6;
+	font: 14px sans-serif;
+}
+nav {
+	height: 40px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+[data-panel] {
+	background: white;
+	overflow: hidden;
+}
+.account-shell {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+.account-heading {
+	height: 30px;
+	flex-shrink: 0;
+}
+.account-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	justify-content: center;
+}
+.account-body > div {
+	flex-shrink: 0;
+}
+
+.react-grid-layout,
+.react-grid-layout .react-grid-item {
+	transition-property: none;
+}
