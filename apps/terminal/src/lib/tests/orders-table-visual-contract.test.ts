@@ -57,7 +57,7 @@ describe("orders toolbar visual contract", () => {
 		expect(MOBILE_SOURCE).toContain("h-[18px] items-center");
 		expect(MOBILE_SOURCE).toContain("after:h-11");
 		expect(MOBILE_SOURCE).toContain("after:top-[calc(50%_-_1px)]");
-		expect(MOBILE_SOURCE).toContain("after:size-11");
+		expect(MOBILE_SOURCE).toContain("after:min-w-11");
 		expect(MOBILE_SOURCE).toContain("text-market-close-warning");
 		expect(MOBILE_SOURCE).toContain("Submitted limit and trigger orders will appear here.");
 		expect(MOBILE_SOURCE).not.toContain("MobileOrderBulkDetailsActions");

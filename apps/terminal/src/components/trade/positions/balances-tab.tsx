@@ -68,6 +68,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	});
 
 	const {
+		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
 		balances,
@@ -83,7 +84,7 @@ export function BalancesTab({ toolbarTarget }: Props) {
 	} = useBalanceRows();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: accountDataReady && !isDataStale,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled,

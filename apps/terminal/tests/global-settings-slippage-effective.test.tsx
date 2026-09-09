@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { type ReactNode, act, createElement } from "react";
+import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -17,13 +17,8 @@ const slippageHarness = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
-	Button: ({
-		children,
-		intent: _intent,
-		size: _size,
-		variant: _variant,
-		...props
-	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
+	Button: ({ children, intent: _intent, size: _size, variant: _variant, ...props }: Record<string, unknown>) =>
+		createElement("button", { ...props, type: "button" }, children as ReactNode),
 	Modal: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("div", props, children),
@@ -69,18 +64,23 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useSettingsDialogOpen: () => true,
 }));
 
-vi.mock("@/stores/use-global-settings-store", () => ({
-	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
-	useGlobalSettingsActions: () => ({
-		setMarketOrderSlippagePercent: slippageHarness.setStoreValue,
-		setNetwork: vi.fn(),
-		setShowOrderbookInQuote: vi.fn(),
-		setSkipOrderConfirmation: vi.fn(),
-	}),
-	useMarketOrderSlippagePercent: () => slippageHarness.storeValue,
-	useNetwork: () => "mainnet",
-	useSkipOrderConfirmation: () => false,
-}));
+vi.mock(import("../src/stores/use-global-settings-store"), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useGlobalSettings: () => ({ ...actual.useGlobalSettings(), showOrderbookInQuote: false }),
+		useGlobalSettingsActions: () => ({
+			...actual.useGlobalSettingsActions(),
+			setMarketOrderSlippagePercent: slippageHarness.setStoreValue,
+			setNetwork: vi.fn(),
+			setShowOrderbookInQuote: vi.fn(),
+			setSkipOrderConfirmation: vi.fn(),
+		}),
+		useMarketOrderSlippagePercent: () => slippageHarness.storeValue,
+		useNetwork: () => "mainnet" as const,
+		useSkipOrderConfirmation: () => false,
+	};
+});
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
 

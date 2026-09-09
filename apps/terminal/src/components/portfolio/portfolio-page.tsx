@@ -61,7 +61,7 @@ export function PortfolioPage() {
 		!defaultBalances.hasError;
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),

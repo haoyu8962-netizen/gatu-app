@@ -987,7 +987,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							)}
 							{isPositive(twapStopPriceNum) && (
 								<SummaryRow
-									label={getTwapStopPriceLabel(side)}
+									label={getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` })}
 									value={formatSummaryPrice(twapStopPriceNum, market?.szDecimals, marketType)}
 									compact={embedded}
 								/>

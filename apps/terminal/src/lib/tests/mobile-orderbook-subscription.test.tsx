@@ -197,6 +197,17 @@ describe("mobile orderbook subscription lifecycle", () => {
 		return container.querySelector<HTMLButtonElement>(`button[aria-label^="Ask, Price ${price},"]`);
 	}
 
+	async function selectPriceGrouping(label: string) {
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Price precision"]');
+		if (!trigger) throw new Error("Missing price grouping control");
+		await act(async () => trigger.click());
+		const item = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+			(node) => node.textContent === label,
+		);
+		if (!item) throw new Error(`Missing price grouping ${label}`);
+		await act(async () => item.click());
+	}
+
 	function setSubscriptionState(state: SubscriptionState) {
 		act(() => {
 			mocks.subscriptionState = state;
@@ -517,6 +528,49 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(container.textContent).not.toContain("101.0");
 		expect(container.querySelector('fieldset[aria-busy="true"]')).not.toBeNull();
 	});
+
+	it.each([
+		{ first: "0.01", second: "0.1", firstParams: {}, secondParams: { nSigFigs: 4 }, secondPrice: "111.0" },
+		{
+			first: "0.02",
+			second: "0.05",
+			firstParams: { nSigFigs: 5, mantissa: 2 },
+			secondParams: { nSigFigs: 5, mantissa: 5 },
+			secondPrice: "111.00",
+		},
+	])(
+		"isolates cached snapshots when price grouping changes from $first to $second",
+		async ({ first, second, firstParams, secondParams, secondPrice }) => {
+			render();
+			await selectPriceGrouping(first);
+			expect(latestL2SubscriptionCall().params).toEqual({ coin: mocks.market.name, ...firstParams });
+			setSubscriptionState({ data: createBook(mocks.market.name), isStale: false, status: "active" });
+			await act(async () => {});
+			expect(getAskPrice("101.00")).not.toBeNull();
+			setSubscriptionState({ data: undefined, isStale: false, status: "subscribing" });
+
+			await selectPriceGrouping(second);
+			expect(latestL2SubscriptionCall().params).toEqual({ coin: mocks.market.name, ...secondParams });
+			expect(getAskPrice("101.00")).toBeNull();
+			expect(container.querySelector('fieldset[aria-busy="true"]')).not.toBeNull();
+
+			const secondBook = createBook(mocks.market.name);
+			secondBook.levels = [[{ n: 1, px: "109", sz: "4" }], [{ n: 1, px: "111", sz: "5" }]];
+			setSubscriptionState({ data: secondBook, isStale: false, status: "active" });
+			await act(async () => {});
+			expect(getAskPrice(secondPrice)).not.toBeNull();
+			setSubscriptionState({ data: undefined, isStale: false, status: "subscribing" });
+
+			await selectPriceGrouping(first);
+			const firstCachedPrice = getAskPrice("101.00");
+			expect(firstCachedPrice).not.toBeNull();
+			expect(firstCachedPrice?.matches(":disabled")).toBe(true);
+			expect(getAskPrice(secondPrice)).toBeNull();
+			act(() => firstCachedPrice?.click());
+			expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+			expect(container.querySelector('[data-slot="orderbook-level-pulse"]')).toBeNull();
+		},
+	);
 
 	it("removes a disabled cached snapshot when its local receipt TTL expires", async () => {
 		vi.useFakeTimers();

@@ -33,6 +33,7 @@ export function MobileBalancesTab() {
 		direction: TransferDirection;
 	}>({ open: false, direction: "toSpot" });
 	const {
+		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
 		balances,
@@ -46,7 +47,7 @@ export function MobileBalancesTab() {
 	} = useBalanceRows();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: accountDataReady && !isDataStale,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled,

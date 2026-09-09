@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 import {
 	assertFreshFundsActionGeo,
 	type FundsActionAvailability,
@@ -8,6 +9,7 @@ import {
 	getWithdrawalAvailability,
 } from "@/domain/trade/funds-action-availability";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import type { AccountAbstraction } from "./use-account-balances";
 
 export type FundsActionAvailabilityPresentation = FundsActionAvailability & {
 	unavailableReason: string | null;
@@ -15,7 +17,7 @@ export type FundsActionAvailabilityPresentation = FundsActionAvailability & {
 
 interface FundsActionAvailabilityInput {
 	accountDataReady: boolean;
-	accountModeReady: boolean;
+	accountAbstraction: AccountAbstraction;
 	fundsActionsEnabled: boolean;
 	hasWalletAccess: boolean;
 	internalTransfersEnabled: boolean;
@@ -29,7 +31,7 @@ interface FundsActionAvailabilityState {
 
 export function useFundsActionAvailability({
 	accountDataReady,
-	accountModeReady,
+	accountAbstraction,
 	fundsActionsEnabled,
 	hasWalletAccess,
 	internalTransfersEnabled,
@@ -37,16 +39,17 @@ export function useFundsActionAvailability({
 	const { t } = useLingui();
 	const geo = useGeoRestriction();
 	const geoStatus = getFundsActionGeoStatus(geo);
+	const accountModeStatus = getAccountModeAvailability(accountAbstraction);
 	const withdrawal = getWithdrawalAvailability({
 		accountDataReady,
-		accountModeReady,
+		accountModeStatus,
 		fundsActionsEnabled,
 		geoStatus,
 		hasWalletAccess,
 	});
 	const internalTransfer = getInternalTransferAvailability({
 		accountDataReady,
-		accountModeReady,
+		accountModeStatus,
 		geoStatus,
 		hasWalletAccess,
 		internalTransfersEnabled,
@@ -60,7 +63,8 @@ export function useFundsActionAvailability({
 				? t`Unable to verify regional availability. Funds actions are temporarily unavailable.`
 				: t`Checking regional availability. Funds actions are temporarily unavailable.`;
 		}
-		if (reason === "account-mode-unavailable") return t`Select a supported account mode before moving funds.`;
+		if (reason === "account-mode-unresolved" || reason === "account-mode-unsupported")
+			return t`Select a supported account mode before moving funds.`;
 		if (reason === "account-data-unavailable") {
 			return t`Balance data is unavailable. Try again after the connection recovers.`;
 		}

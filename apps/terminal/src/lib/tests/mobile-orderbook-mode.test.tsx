@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
+import { stubReducedMotion } from "./harness/media-query";
 import { createI18nRoot } from "./harness/react";
 
 const ASKS = Array.from({ length: 20 }, (_, index) => ({
@@ -73,8 +74,10 @@ describe("compact mobile orderbook modes", () => {
 	let observerInstance: ResizeObserver | undefined;
 	let measuredHeight: number;
 	let root: Root;
+	let motion: ReturnType<typeof stubReducedMotion>;
 
 	beforeEach(() => {
+		motion = stubReducedMotion();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		measuredHeight = 304;
 		disconnectCallCount = 0;
@@ -414,5 +417,32 @@ describe("compact mobile orderbook modes", () => {
 		act(() => root.unmount());
 		expect(disconnectCallCount).toBe(1);
 		root = createI18nRoot(container);
+	});
+
+	it("cancels quantity feedback when reduced motion is enabled and resumes from a quiet baseline", () => {
+		function renderSize(size: string) {
+			act(() => root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], size }]} />));
+			return container.querySelector('[data-side="ask"][data-price="101"] [data-slot="orderbook-size-value"]');
+		}
+		expect(renderSize("2")?.getAttribute("data-direction")).toBe("up");
+		act(() => motion.setReducedMotion(true));
+		expect(renderSize("3")?.getAttribute("data-direction")).toBeNull();
+		act(() => motion.setReducedMotion(false));
+		expect(renderSize("3")?.getAttribute("data-direction")).toBeNull();
+		expect(renderSize("4")?.getAttribute("data-direction")).toBe("up");
+	});
+
+	it("keeps quantity feedback disabled when matchMedia is unavailable", () => {
+		act(() => root.unmount());
+		vi.stubGlobal("matchMedia", undefined);
+		root = createI18nRoot(container);
+		act(() => root.render(<CompactOrderbookHarness />));
+		act(() => root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], size: "2" }]} />));
+		expect(container.querySelector('[data-slot="orderbook-size-value"][data-direction]')).toBeNull();
+		expect(container.querySelector(".orderbook-color-change")).toBeNull();
+		const row = container.querySelector<HTMLButtonElement>('[data-side="ask"][data-price="101"] button');
+		expect(row?.disabled).toBe(false);
+		act(() => row?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "101" });
 	});
 });

@@ -86,6 +86,7 @@ All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*
 - `text-icon-inverse` / `text-icon-inverse-strong` / `text-icon-inverse-disabled` inverse icons
 
 ### Market / Trading Extensions
+- Order-book tokens are scoped to `apps/terminal/src/styles.css`: `--orderbook-depth-bid/ask` for 15% solid depth fills, `--orderbook-price-bid/ask` for price text, `--orderbook-flash-bid/ask` for quantity changes, `--orderbook-level-pulse-bid/ask` for full-row pulses, and `--orderbook-muted` for secondary text. Do not replace these with global market colors. Both themes and all desktop/mobile layouts share their semantic roles; palettes and composed contrast requirements are documented in `docs/orderbook-new-level-animation.md`.
 - `text-market-up` / `bg-market-up` positive PnL, price up (green)
 - `text-market-down` / `bg-market-down` negative PnL, price down (red)
 - `text-market-neutral` / `bg-market-neutral` unchanged

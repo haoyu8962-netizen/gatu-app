@@ -60,6 +60,8 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 ## Order book contract
 
+- Public `l2Book` transports must isolate network, grouping and fast/full identities before events reach the shared store. Frames do not identify their grouping; UI keys, generation counters and unsubscribe acknowledgements cannot prove their origin. Use the bounded shared transport pool, preserve same-identity sharing and SDK failure cleanup, and route reconnect attempts through its connection budget. See `docs/terminal-review-remediation.md` for protocol evidence and lifecycle tests.
+
 - Order-book depth bars and view-mode icons use the shared `--orderbook-depth-bid` and `--orderbook-depth-ask` tokens. The dark theme resolves them to `#1FA67D` and `#ED7088`; the light theme resolves them to `--text-success` (`#067A57`) and `--text-error` (`#C73A3A`). Depth bars are solid fills at `0.15` opacity, not gradients. Prices use separate `--orderbook-price-bid/ask` foreground tokens; numeric text, headers and size-change colors must retain at least 4.5:1 contrast throughout depth, hover and pulse combinations in both themes. Keep these changes scoped to order-book tokens, not global market colors.
 - A row's depth width is its cumulative total divided by the largest visible cumulative total on that side. Bid and ask rows must therefore have independently varying lengths.
 - Desktop and compact depth bars are left-aligned. Preserve the existing mirrored direction in the mobile split layout.

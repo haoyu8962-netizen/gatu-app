@@ -187,6 +187,10 @@ function getDescriptionText(button: HTMLButtonElement): string {
 		.join(" ");
 }
 
+function expectActionDisabled(button: HTMLButtonElement) {
+	expect(button.disabled || button.getAttribute("aria-disabled") === "true").toBe(true);
+}
+
 describe("desktop account panel", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -253,7 +257,7 @@ describe("desktop account panel", () => {
 		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
 		for (const label of ["Deposit", "Withdraw"]) {
 			const button = findButton(container, label);
-			expect(button.disabled).toBe(true);
+			expectActionDisabled(button);
 			act(() => button.click());
 		}
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
@@ -272,7 +276,7 @@ describe("desktop account panel", () => {
 		expect(container.textContent).not.toContain("-$64.50");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$0.00");
-		expect(findButton(container, "Deposit").disabled).toBe(true);
+		expectActionDisabled(findButton(container, "Deposit"));
 	});
 
 	it("preserves the sponsored email deposit entry before a signing wallet is ready", () => {
@@ -296,7 +300,7 @@ describe("desktop account panel", () => {
 			if (reason === "feature") testState.depositAvailable = false;
 			else testState.geoStatus = reason;
 			renderPanel();
-			expect(findButton(container, "Deposit").disabled).toBe(true);
+			expectActionDisabled(findButton(container, "Deposit"));
 			act(() => findButton(container, "Deposit").click());
 			expect(modalActions.openDeposit).not.toHaveBeenCalled();
 		},

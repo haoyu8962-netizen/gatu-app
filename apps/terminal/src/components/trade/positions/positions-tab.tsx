@@ -205,7 +205,6 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view positions.`}</Placeholder>;
-		if (positionsLoading) return <Placeholder>{t`Loading positions...`}</Placeholder>;
 		if (positionsError) {
 			return (
 				<Placeholder variant="error">
@@ -213,6 +212,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				</Placeholder>
 			);
 		}
+		if (positionsLoading) return <Placeholder>{t`Loading positions...`}</Placeholder>;
 		if (positions.length === 0) return <Placeholder>{t`No active positions.`}</Placeholder>;
 		return null;
 	}

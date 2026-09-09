@@ -75,7 +75,7 @@ export function buildOrderConfirmationRows(
 		},
 		{ key: "orderType", label: t`Type`, value: getOrderTypeValue(draft, translate) },
 		{ key: "size", label: t`Size`, value: getSizeValue(draft) },
-		...getPriceRows(draft),
+		...getPriceRows(draft, translate),
 		...getTpSlRows(draft),
 		...getReduceOnlyRows(draft),
 		...getLeverageRows(draft),
@@ -136,8 +136,11 @@ function getSizeValue(draft: OrderConfirmationDraft): string {
 	return `${size} (${formatUSD(draft.orderValue, { compact: false })})`;
 }
 
-function getPriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
-	if (isTwapOrderType(draft.orderType)) return getTwapPriceRows(draft);
+function getPriceRows(
+	draft: OrderConfirmationDraft,
+	translate: (message: MessageDescriptor) => string,
+): OrderConfirmationRow[] {
+	if (isTwapOrderType(draft.orderType)) return getTwapPriceRows(draft, translate);
 	if (isScaleOrderType(draft.orderType)) return getScalePriceRows(draft);
 	if (isTriggerOrderType(draft.orderType)) return getTriggerPriceRows(draft);
 	if (usesLimitPriceForOrder(draft.orderType)) {
@@ -149,7 +152,10 @@ function getPriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
 	];
 }
 
-function getTwapPriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[] {
+function getTwapPriceRows(
+	draft: OrderConfirmationDraft,
+	translate: (message: MessageDescriptor) => string,
+): OrderConfirmationRow[] {
 	const rows: OrderConfirmationRow[] = [
 		{ key: "price", label: t`Price`, value: getMarketExecutionLabel() },
 		{ key: "twapRuntime", label: t`Runtime`, value: getRuntimeValue(draft.twapMinutes) },
@@ -165,7 +171,7 @@ function getTwapPriceRows(draft: OrderConfirmationDraft): OrderConfirmationRow[]
 	if (isPositive(draft.twapStopPrice)) {
 		rows.push({
 			key: "twapStop",
-			label: getTwapStopPriceLabel(draft.side),
+			label: getTwapStopPriceLabel(draft.side, { buy: translate(msg`Max Price`), sell: translate(msg`Min Price`) }),
 			value: formatSubmittedPrice(draft, draft.twapStopPrice),
 		});
 	}

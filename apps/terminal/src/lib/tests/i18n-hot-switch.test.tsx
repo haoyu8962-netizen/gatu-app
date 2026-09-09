@@ -106,14 +106,26 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: 4, rowHeightPx: 23 }, { current: null }],
 }));
 
-vi.mock("@/stores/use-global-settings-store", () => ({
-	getResolvedFormatLocale: () => "en-US",
-	useGlobalSettings: () => ({ numberFormatLocale: "en-US", showOrderbookInQuote: false }),
-	useGlobalSettingsActions: () => ({ setNumberFormatLocale: vi.fn(), setShowOrderbookInQuote: vi.fn() }),
-	useIsTestnet: () => false,
-	useTheme: () => "light",
-	useSetTheme: () => vi.fn(),
-}));
+vi.mock(import("../../stores/use-global-settings-store"), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		getResolvedFormatLocale: () => "en-US",
+		useGlobalSettings: () => ({
+			...actual.useGlobalSettings(),
+			numberFormatLocale: "en-US" as const,
+			showOrderbookInQuote: false,
+		}),
+		useGlobalSettingsActions: () => ({
+			...actual.useGlobalSettingsActions(),
+			setNumberFormatLocale: vi.fn(),
+			setShowOrderbookInQuote: vi.fn(),
+		}),
+		useIsTestnet: () => false,
+		useTheme: () => "light" as const,
+		useSetTheme: () => vi.fn(),
+	};
+});
 
 vi.mock("@/hooks/trade/use-market-navigation", () => ({ useMarketNavigation: () => vi.fn() }));
 vi.mock("@/hooks/trade/use-position-market-close-action", () => ({

@@ -312,6 +312,29 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(market?.className).toContain("after:min-w-11");
 	});
 
+	it("retains 44px minimum touch targets on every compact card action", () => {
+		renderOrders();
+		const article = container.querySelector("article");
+		const actions = [
+			article?.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]'),
+			...["Modify Order", "Cancel"].map((label) =>
+				[...(article?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find(
+					(button) => button.textContent?.trim() === label,
+				),
+			),
+		];
+		for (const action of actions) {
+			expect(action).toBeInstanceOf(HTMLButtonElement);
+			expect(action?.classList.contains("relative")).toBe(true);
+			expect(action?.classList.contains("after:absolute")).toBe(true);
+			expect(action?.classList.contains("after:h-11")).toBe(true);
+			expect(action?.classList.contains("after:min-w-11")).toBe(true);
+			expect(action?.classList.contains("after:w-full")).toBe(true);
+			expect(action?.classList.contains("after:content-['']")).toBe(true);
+			expect(action?.disabled).toBe(false);
+		}
+	});
+
 	it("uses the spot market price cap for low-priced limit orders", () => {
 		mocks.marketKind = "spot";
 		mocks.marketSzDecimals = 0;

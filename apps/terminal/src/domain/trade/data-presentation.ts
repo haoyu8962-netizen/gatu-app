@@ -5,7 +5,7 @@ interface FundsAvailability {
 
 const PASSIVE_DATA_REASONS = new Set([
 	"account-data-unavailable",
-	"account-mode-unavailable",
+	"account-mode-unresolved",
 	"geo-unresolved",
 	"wallet-session-required",
 ]);

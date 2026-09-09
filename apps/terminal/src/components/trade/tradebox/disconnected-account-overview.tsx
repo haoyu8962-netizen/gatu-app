@@ -15,6 +15,7 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const titleId = useId();
+	const depositDescriptionId = `${titleId}-deposit`;
 	const rows = [
 		{ key: "margin-ratio", label: t`Account Margin Ratio`, value: formatPercent(0, 2) },
 		{ key: "portfolio-value", label: t`Portfolio Value`, value: formatUSD(0, { compact: false }) },
@@ -30,16 +31,23 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 					variant="filled"
 					intent="neutral"
 					disabled={!depositEnabled}
+					focusableWhenDisabled
+					aria-describedby={depositDisabledReason ? depositDescriptionId : undefined}
 					onClick={depositEnabled ? onDeposit : undefined}
 					title={depositDisabledReason ?? undefined}
-					className="min-w-0 rounded-[8px] font-semibold shadow-none"
+					className="min-w-0 rounded-8 font-semibold shadow-none"
 				>
 					{t`Deposit`}
 				</Button>
-				<Button variant="outline" intent="neutral" disabled className="min-w-0 rounded-[8px] font-semibold shadow-none">
+				<Button variant="outline" intent="neutral" disabled className="min-w-0 rounded-8 font-semibold shadow-none">
 					{t`Withdraw`}
 				</Button>
 			</div>
+			{depositDisabledReason ? (
+				<span id={depositDescriptionId} className="sr-only">
+					{depositDisabledReason}
+				</span>
+			) : null}
 			<section aria-labelledby={titleId} className="mt-3 border-t border-trading-panel-stroke-row pt-3">
 				<h3 id={titleId} className="mb-1 text-2sm font-bold text-trading-panel-fg">
 					{t`Overview`}

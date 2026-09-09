@@ -56,4 +56,42 @@ describe("TradeFormScale Mid controls", () => {
 		expect(mocks.setScaleStart).toHaveBeenCalledWith("101.2500");
 		expect(mocks.setScaleEnd).toHaveBeenCalledWith("101.2500");
 	});
+
+	it("keeps compact mobile fields readable with exactly one working mid control per boundary", () => {
+		function render(disabled: boolean) {
+			act(() =>
+				root.render(
+					<TradeFormScale midPrice="101.25" szDecimals={2} marketType="perp" disabled={disabled} compact mobileSafe />,
+				),
+			);
+		}
+		render(false);
+		const inputs = [...container.querySelectorAll<HTMLInputElement>("input")];
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.classList.contains("h-7")).toBe(true);
+			expect(input.closest(".h-8")?.classList.contains("px-2.5")).toBe(true);
+			expect(input.classList.contains("max-[1000px]:text-base")).toBe(true);
+			expect(input.classList.contains("max-[1000px]:leading-5")).toBe(true);
+			expect(input.disabled).toBe(false);
+		}
+		const midButtons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		expect(midButtons).toHaveLength(2);
+		for (const button of midButtons) {
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.2500");
+			expect(button.classList.contains("text-trading-panel-success")).toBe(true);
+			expect(button.disabled).toBe(false);
+			act(() => button.click());
+		}
+		expect(mocks.setScaleStart).toHaveBeenCalledExactlyOnceWith("101.2500");
+		expect(mocks.setScaleEnd).toHaveBeenCalledExactlyOnceWith("101.2500");
+		render(true);
+		for (const input of inputs) expect(input.disabled).toBe(true);
+		for (const button of midButtons) {
+			expect(button.disabled).toBe(true);
+			act(() => button.click());
+		}
+		expect(mocks.setScaleStart).toHaveBeenCalledTimes(1);
+		expect(mocks.setScaleEnd).toHaveBeenCalledTimes(1);
+	});
 });

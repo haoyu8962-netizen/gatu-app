@@ -62,6 +62,7 @@ const balanceSnapshot = {
 const testState = {
 	accountAbstraction: "unifiedAccount" as string | null,
 	depositAvailable: true,
+	depositPath: "external" as "external" | "sponsored",
 	depositUnavailableReason: null as string | null,
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
@@ -155,7 +156,7 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 		const geoReason = testState.geoStatus === "allowed" ? null : `geo-${testState.geoStatus}`;
 		return {
 			available: testState.depositAvailable && geoReason === null,
-			path: "external",
+			path: testState.depositPath,
 			reason: geoReason ?? (testState.depositAvailable ? null : "external-deposit-disabled"),
 			unavailableLabel: "Deposit unavailable",
 			unavailableReason:
@@ -194,6 +195,7 @@ describe("mobile account view", () => {
 	beforeEach(() => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.depositAvailable = true;
+		testState.depositPath = "external";
 		testState.depositUnavailableReason = null;
 		testState.geoStatus = "allowed";
 		testState.hasError = false;
@@ -241,6 +243,41 @@ describe("mobile account view", () => {
 		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
 		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
 	});
+
+	it.each([null, "unknown", "default", "dexAbstraction"])(
+		"distinguishes unresolved and unsupported %s modes in funding controls",
+		(mode) => {
+			testState.accountAbstraction = mode;
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<MobileAccountView />
+					</I18nProvider>,
+				),
+			);
+			const buttons = Array.from(
+				container.querySelectorAll<HTMLButtonElement>('[data-slot="mobile-account-actions"] button'),
+			);
+			const transfer = buttons.find((button) => button.textContent === "Perps / Spot");
+			const withdraw = buttons.find((button) => button.textContent === "Withdraw");
+			expect(transfer?.getAttribute("aria-disabled")).toBe("true");
+			expect(withdraw?.getAttribute("aria-disabled")).toBe("true");
+			if (!transfer || !withdraw) throw new Error("Missing funding controls");
+			const confirmed = mode === "default" || mode === "dexAbstraction";
+			expect(getDescriptionText(transfer).includes("Select a supported account mode before moving funds.")).toBe(
+				confirmed,
+			);
+			expect(getDescriptionText(withdraw).includes("Select a supported account mode before moving funds.")).toBe(
+				confirmed,
+			);
+			act(() => {
+				transfer?.click();
+				withdraw?.click();
+			});
+			expect(modalActions.openTransfer).not.toHaveBeenCalled();
+			expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		},
+	);
 
 	it("uses the SDK portfolio margin ratio when the account is in portfolio margin mode", () => {
 		testState.accountAbstraction = "portfolioMargin";
@@ -448,6 +485,34 @@ describe("mobile account view", () => {
 		expect(container.textContent).toContain("Deposits from external wallets are not enabled on Mainnet.");
 		act(() => depositButton?.click());
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+	});
+
+	it("does not invite an email deposit while its action is unavailable", () => {
+		testState.isConnected = false;
+		testState.hasWalletAccess = false;
+		testState.depositPath = "sponsored";
+		testState.geoStatus = "unresolved";
+		function render() {
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<MobileAccountView />
+					</I18nProvider>,
+				),
+			);
+		}
+		render();
+		expect(container.textContent).not.toContain("Open Deposit to prepare your email wallet.");
+		const button = container.querySelector<HTMLButtonElement>("button");
+		expect(button?.disabled).toBe(true);
+		act(() => button?.click());
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		testState.geoStatus = "allowed";
+		render();
+		expect(container.textContent).toContain("Open Deposit to prepare your email wallet.");
+		expect(container.querySelector("button")).toBe(button);
+		act(() => button?.click());
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("deposit");
 	});
 
 	it("leaves wallet identity controls to the shared mobile header", () => {

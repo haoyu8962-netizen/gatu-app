@@ -89,10 +89,10 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
 	const markets = useMarkets();
-	const { accountModeReady, defaultBalances, fundsActionsReady } = useAccountOverview();
+	const { accountAbstraction, defaultBalances, fundsActionsReady } = useAccountOverview();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: false,

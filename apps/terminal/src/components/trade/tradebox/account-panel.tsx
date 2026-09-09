@@ -37,9 +37,9 @@ export function AccountPanel() {
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
 	const {
+		accountAbstraction,
 		accountEquityValue,
 		accountMode,
-		accountModeReady,
 		accountRisk,
 		crossLeverage,
 		fundsActionsReady,
@@ -57,7 +57,7 @@ export function AccountPanel() {
 	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !usesSharedQuoteBalance,
@@ -313,7 +313,7 @@ export function AccountPanel() {
 											aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 											title={depositAvailability.unavailableReason ?? undefined}
 											iconLeft={<DownloadSimpleIcon className="size-4" />}
-											className="w-full min-w-0 rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
+											className="w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
 										>
 											{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
 										</Button>
@@ -334,7 +334,7 @@ export function AccountPanel() {
 												iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 												disabled={!!internalTransferDisabledReason}
 												focusableWhenDisabled
-												className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
+												className="w-full min-w-0 rounded-8 border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
 											>
 												{overviewLabels.perpsSpot}
 											</Button>
@@ -353,7 +353,7 @@ export function AccountPanel() {
 												aria-label={t`Withdraw`}
 												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
 												iconLeft={<UploadSimpleIcon className="size-4" />}
-												className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+												className="w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
 											>
 												{t`Withdraw`}
 											</Button>
@@ -367,7 +367,7 @@ export function AccountPanel() {
 										onClick={() => openDepositModal("bridge")}
 										aria-label={t`Bridge`}
 										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-										className="w-full min-w-0 rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+										className="w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
 									>
 										{t`Bridge`}
 									</Button>

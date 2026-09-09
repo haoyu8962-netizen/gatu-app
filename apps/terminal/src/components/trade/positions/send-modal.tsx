@@ -1,11 +1,12 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useMemo, useRef, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
+import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 import {
 	type BalanceRow,
 	getAccountBalanceSummary,
@@ -63,6 +64,7 @@ interface BodyProps {
 }
 
 function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
+	const { t } = useLingui();
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -300,6 +302,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
 						</div>
 					)}
+					{hasWalletAccess && getAccountModeAvailability(accountAbstraction) === "unsupported" ? (
+						<p className="text-xs text-fg-muted">{t`Select a supported account mode before moving funds.`}</p>
+					) : null}
 					<TextInput
 						placeholder={t`Destination address`}
 						aria-label={t`Destination address`}

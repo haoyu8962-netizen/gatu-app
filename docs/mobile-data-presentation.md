@@ -21,6 +21,18 @@
 
 屏幕阅读器专用的简短加载说明与 `aria-busy` 可以保留。禁用按钮可关联准确的无障碍说明，但不得把首次加载描述成连接故障。全局真实离线/恢复提示、已确认地区限制、签名确认、法律条款、交易提交结果均不属于普通数据加载文案。
 
+## 账户模式与资金限制
+
+资金能力必须区分 `supported`、`unresolved` 与 `unsupported`，不能仅凭 `accountModeReady` 布尔决定限制文案。
+
+- `disabled`、`unifiedAccount`、`portfolioMargin` 属于当前终端支持的模式；可操作性仍由钱包、地区、余额新鲜度和具体动作规则共同决定。
+- 明确解析出的 `default`、`dexAbstraction` 使用 `account-mode-unsupported`，保留“移动资金前请选择支持的账户模式”的限制说明。`default` 不能当成 Standard / `disabled`，也不能当成尚未收到数据。
+- 缺少模式、未识别值以及 HTTP / WebSocket 模式冲突使用 `account-mode-unresolved`，保持静默并禁用动作。当前归一化的 `unknown` 也包括来源冲突，不能把它全部当成已确认的不支持模式。
+- 两类禁用原因不改变 `available`、资金分类或提交前账户模式与身份复核。恢复和切换模式不得卸载已打开的弹窗或丢失输入草稿。
+- 桌面持仓的读取错误优先于加载占位；移动持仓继续安静展示。订阅已 active 但首份快照未到达的保护必须保留，错误和未知快照不得显示确认空持仓。
+
+依据：2026-09-09 核对 [Hyperliquid 账户模式文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)，Standard / Manual、统一账户与组合保证金为当前模式，DEX abstraction 已停用；[官方 Python SDK 示例](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/examples/user_abstraction.py) 将 `default` 明确作为 Agent 设置模式前的状态。项目锁定的 [SDK 0.33.3 userAbstraction](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/userAbstraction.ts) 返回类型包含 `default`；该方法只校验请求并直接返回传输结果，因此终端仍须防御未识别响应。以上区分仅修正展示与原因分类，不新增模式支持。
+
 ## 数据与操作边界
 
 - 数据模型继续保留 loading、error、stale、unavailable 等状态，供重试、恢复与安全检查使用。删除的是不合理的展示代码，不是数据校验。
@@ -49,6 +61,7 @@
 5. 操作安全：缺数据时点击禁用动作不能提交请求；真实用户操作失败仍有反馈。
 6. 布局：检查普通手机、窄屏以及共享弹窗的桌面布局，不得残留空警告条或移动操作区域。
 7. 自动检查：运行相关行为测试和移动数据提示契约检查，再运行 Biome 与 TypeScript 检查。
+8. 模式限制：覆盖未解析、来源冲突、明确不支持、支持模式、地区限制和恢复；在手机账户页及共享划转/提款入口验证提示、禁用状态与请求未发送，不能只检查源码或构造好的 reason。
 
 新增被动数据提示必须先明确修改本规范并取得产品需求依据；不得仅为了调试或展示内部状态而添加用户可见提示。
 
@@ -56,9 +69,16 @@
 
 `apps/terminal/src/lib/tests/mobile-data-presentation-contract.test.ts` 检查已移除的移动文案、共享弹窗被动警告和规范入口；`user-positions-readiness.test.tsx` 验证订阅确认与首份数据的区别。余额、委托、TWAP、历史和仓位弹窗的组件测试同时验证静默展示、恢复和操作保护。
 
+`account-mode-query.test.ts` 验证模式来源解析与三态分类；`mobile-account-view.test.tsx`、`funds-action-balances.test.tsx` 和 `deposit-modal-withdrawal-routing-guard.test.tsx` 使用真实资金能力计算验证未解析静默、确认限制、按钮禁用和未发起请求。`desktop-positions-readiness.test.tsx` 连接真实持仓 hook 与桌面页，验证首快照等待、错误优先和恢复，不依赖源码匹配。
+
 ```bash
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/mobile-data-presentation-contract.test.ts \
+  src/lib/tests/account-mode-query.test.ts \
+  src/lib/tests/funds-action-availability.test.ts \
+  src/lib/tests/funds-action-balances.test.tsx \
+  src/lib/tests/deposit-modal-withdrawal-routing-guard.test.tsx \
+  src/lib/tests/desktop-positions-readiness.test.tsx \
   src/lib/tests/user-positions-readiness.test.tsx \
   src/lib/tests/mobile-account-view.test.tsx \
   src/lib/tests/deposit-empty-balances-entry.test.tsx \

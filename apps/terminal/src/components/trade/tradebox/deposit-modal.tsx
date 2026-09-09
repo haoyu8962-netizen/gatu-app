@@ -31,7 +31,7 @@ import {
 } from "@/domain/trade/pre-transfer-check";
 import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
@@ -268,7 +268,7 @@ export function DepositModal() {
 	});
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: withdrawalBalanceReady,
-		accountModeReady: isSupportedAccountAbstraction(accountAbstraction),
+		accountAbstraction,
 		fundsActionsEnabled: accountSummary.isAvailable,
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),

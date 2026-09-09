@@ -7,7 +7,7 @@ const root = resolve(import.meta.dirname, "../../../../..");
 const mobile = resolve(root, "apps/terminal/src/components/trade/mobile");
 
 describe("mobile passive data presentation contract", () => {
-	it.each(["account-data-unavailable", "account-mode-unavailable", "geo-unresolved", "wallet-session-required"])(
+	it.each(["account-data-unavailable", "account-mode-unresolved", "geo-unresolved", "wallet-session-required"])(
 		"suppresses %s without making the action available",
 		(reason) => {
 			const availability = { available: false, reason, unavailableReason: "Internal data status" };
@@ -16,14 +16,16 @@ describe("mobile passive data presentation contract", () => {
 		},
 	);
 
-	it.each(["geo-restricted", "external-deposit-disabled", "internal-transfers-unavailable"])(
-		"preserves a confirmed restriction: %s",
-		(reason) => {
-			expect(getFundsAvailabilityNotice({ reason, unavailableReason: "Confirmed restriction" })).toBe(
-				"Confirmed restriction",
-			);
-		},
-	);
+	it.each([
+		"account-mode-unsupported",
+		"geo-restricted",
+		"external-deposit-disabled",
+		"internal-transfers-unavailable",
+	])("preserves a confirmed restriction: %s", (reason) => {
+		expect(getFundsAvailabilityNotice({ reason, unavailableReason: "Confirmed restriction" })).toBe(
+			"Confirmed restriction",
+		);
+	});
 
 	it("does not reintroduce retired passive warning copy in mobile components", () => {
 		const retired = [

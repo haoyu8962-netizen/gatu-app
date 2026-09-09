@@ -79,12 +79,9 @@ export function TradeFormTwap({
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
 	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
 	const triggerPrice = triggerPx ?? "";
-	const triggerHint =
-		triggerDirection === "above"
-			? t`Activates when mark ≥ ${triggerPrice}`
-			: triggerDirection === "below"
-				? t`Activates when mark ≤ ${triggerPrice}`
-				: "";
+	let triggerHint = "";
+	if (triggerDirection === "above") triggerHint = t`Activates when mark ≥ ${triggerPrice}`;
+	if (triggerDirection === "below") triggerHint = t`Activates when mark ≤ ${triggerPrice}`;
 	const hoursLabel = t`Hour(s)`;
 	const minutesLabel = t`Minute(s)`;
 	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass, desktop && "h-9 px-2.5");

@@ -33,9 +33,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const depositAvailability = useDepositAvailability();
 	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const {
+		accountAbstraction,
 		accountEquityValue,
 		accountMode,
-		accountModeReady,
 		accountRisk,
 		crossLeverage,
 		fundsActionsReady,
@@ -57,7 +57,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { open: openTransferModal } = useTransferModalActions();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !usesSharedQuoteBalance,
@@ -81,6 +81,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 	if (!isConnected) {
 		const showsEmailDeposit = depositAvailability.path === "sponsored";
+		let description: string | null = t`Connect your wallet to view your account, positions, and start trading.`;
+		if (showsEmailDeposit) {
+			description = depositNotice;
+			if (depositAvailability.available) description ??= t`Open Deposit to prepare your email wallet.`;
+		}
 		return (
 			<div className={cn("flex h-full min-h-0 flex-col bg-background", className)}>
 				<div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
@@ -89,11 +94,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</div>
 					<div className="max-w-xs space-y-2 text-center">
 						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
-						<p className="text-sm text-fg-muted">
-							{showsEmailDeposit
-								? (depositNotice ?? t`Open Deposit to prepare your email wallet.`)
-								: t`Connect your wallet to view your account, positions, and start trading.`}
-						</p>
+						{description ? <p className="text-sm text-fg-muted">{description}</p> : null}
 					</div>
 					<Button
 						variant="outline"
@@ -254,11 +255,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				) : null}
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
-					{depositGeoBlocked ? (
-						depositNotice ? (
-							<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
-						) : null
-					) : !showsFundsActions ? null : (
+					{depositGeoBlocked && depositNotice ? (
+						<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
+					) : null}
+					{!depositGeoBlocked && showsFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
 							<Button
@@ -331,7 +331,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								</Button>
 							) : null}
 						</div>
-					)}
+					) : null}
 				</div>
 			</div>
 		</div>

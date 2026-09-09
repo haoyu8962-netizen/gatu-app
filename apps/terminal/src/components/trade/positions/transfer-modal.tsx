@@ -1,5 +1,5 @@
 import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
@@ -50,6 +50,7 @@ interface BodyProps {
 }
 
 function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
+	const { t } = useLingui();
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -74,7 +75,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
