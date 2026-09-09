@@ -109,7 +109,8 @@ function deriveRegistrationStatus(
 	return "verifying";
 }
 
-export function useAgentRegistration(): UseAgentRegistrationResult {
+export function useAgentRegistration(options: { enabled?: boolean } = {}): UseAgentRegistrationResult {
+	const enabled = options.enabled !== false;
 	const { env, agentName, clientKey } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const identityRef = useRef({ address, env });
@@ -135,7 +136,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		}
 	}, [address, env]);
 
-	const agentStatus = useAgentStatus();
+	const agentStatus = useAgentStatus({ enableAgent: enabled });
 	const approveAgentOverride = useAgentApprovalOverride();
 
 	function safeSetStep(identity: AgentRegistrationIdentity, step: RegistrationStep) {
@@ -165,6 +166,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		mutationKey: ["hl", "registration", env, address],
 		retry: false,
 		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
+			if (!enabled) throw new Error("Agent registration is disabled for owner-wallet trading");
 			const registrationIdentity = { address, env };
 			let phase: AgentRegistrationFailurePhase = "preflight";
 			let resetAllowed = false;

@@ -60,9 +60,9 @@ import { cn } from "@/lib/cn";
 import { formatDuration, formatNumber, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
-	useAgentStatus,
 	useSelectedMarketInfo,
 	useTradingAuthorization,
+	useTradingStatus,
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -170,13 +170,13 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const orderType = useOrderType();
 	const twapOrder = isTwapOrderType(orderType);
 	const requiresBuilderFee = !twapOrder;
-	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
-	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { isReady, isSignerReady, isSignerLoading, isBuilderFeeLoading, signerMode } = useTradingStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const canApprove = !!walletClient && !!address;
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
-	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
+	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 	const scaleOrder = isScaleOrderType(orderType);
 	const side = useOrderSide();
 	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
@@ -591,8 +591,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			return;
 		}
 		setApprovalError(null);
-		if (!isAgentReady) {
-			openEstablishConnectionModal();
+		if (!isSignerReady) {
+			if (signerMode === "agent") openEstablishConnectionModal();
 			return;
 		}
 		try {
@@ -717,7 +717,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
 		tradingBlocked: tradeActionsBlocked,
 		needsApproval: validation.needsApproval,
-		isAgentReady,
+		isSignerReady,
 		isApprovalLoading,
 		canSubmit: validation.canSubmit,
 		isRegistering,
@@ -1174,7 +1174,7 @@ interface MobileButtonContentInput {
 	depositUnavailableReason?: string | null;
 	tradingBlocked?: boolean;
 	needsApproval: boolean;
-	isAgentReady: boolean;
+	isSignerReady: boolean;
 	isApprovalLoading: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
@@ -1204,7 +1204,7 @@ export function getMobileOrderButtonContent(input: MobileButtonContentInput): Bu
 		isConnected: input.isConnected,
 		needsChainSwitch: input.needsChainSwitch,
 		needsApproval: input.needsApproval,
-		isAgentReady: input.isAgentReady,
+		isSignerReady: input.isSignerReady,
 		hasBalanceError: input.hasBalanceError,
 		isBalanceLoading: input.isBalanceLoading,
 		availableBalance: input.availableBalance,

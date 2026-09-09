@@ -1,3 +1,4 @@
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -33,11 +34,11 @@ import {
 	readPersistTradingConnection,
 	useActiveAgentOwner,
 	useAgentRegistration,
-	useAgentStatus,
 	useExchange,
 	useHyperliquid,
 	useInfo,
 	useLegalStatus,
+	useTradingStatus,
 } from "@/lib/hyperliquid";
 import {
 	deriveVaultOwnerView,
@@ -141,8 +142,8 @@ export function useVaultActionController({
 	const legalStatus = useLegalStatus();
 	const geo = useGeoRestriction();
 	const activeAgentOwner = useActiveAgentOwner();
-	const agentStatus = useAgentStatus();
-	const agentRegistration = useAgentRegistration();
+	const tradingStatus = useTradingStatus();
+	const agentRegistration = useAgentRegistration({ enabled: tradingStatus.signerMode === "agent" });
 	const fundsActionMarkers = useFundsActionMarkers();
 	const [activeAction, setActiveAction] = useState<ActiveVaultAction | null>(null);
 	const actionRef = useRef<ActiveVaultAction | null>(null);
@@ -378,17 +379,17 @@ export function useVaultActionController({
 				throw new Error("Vault location eligibility could not be verified");
 			}
 
-			let requirements = await agentStatus.refetchAgent();
+			let requirements = await tradingStatus.refetchSigner();
 			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			if (requirements.needsAgent) {
 				const registeredAgent = await agentRegistration.register({
 					persistConnection: readPersistTradingConnection(),
 				});
 				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
-				requirements = await agentStatus.refetchAgent(registeredAgent);
+				requirements = await tradingStatus.refetchSigner(registeredAgent);
 				assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			}
-			if (!requirements.isAgentReady) throw new Error("Approved Agent could not be verified");
+			if (!requirements.isSignerReady) throw new Error("Trading signer could not be verified");
 
 			assertVaultRequestCurrent(requestLease, requestLeaseRef.current, routeIdentityRef.current, mountedRef.current);
 			updateAction({
@@ -473,7 +474,7 @@ export function useVaultActionController({
 				await Promise.all([
 					legalStatus.refetch(),
 					geo.retry(),
-					agentStatus.refetchAgent(),
+					tradingStatus.refetchSigner(),
 					detailQuery.refetch({ cancelRefetch: true }),
 					equitiesQuery.refetch({ cancelRefetch: true }),
 					clearinghouseQuery.refetch({ cancelRefetch: true }),
@@ -502,8 +503,8 @@ export function useVaultActionController({
 			) {
 				throw new Error("Vault location eligibility could not be verified");
 			}
-			if (!requirements.isAgentReady) {
-				throw new Error("The approved Agent is missing or could not be freshly verified");
+			if (!requirements.isSignerReady) {
+				throw new Error("The trading signer is missing or could not be freshly verified");
 			}
 			if (freshDetail.error || freshEquities.error || freshClearinghouse.error) {
 				throw new Error("Fresh Vault account data could not be verified");
@@ -1120,7 +1121,9 @@ function getVaultActionErrorMessage(error: unknown, t: ReturnType<typeof useLing
 		if (/user rejected|user denied/i.test(error.message)) return t`Authorization was rejected in the wallet.`;
 		if (/location eligibility/i.test(error.message)) return t`Location eligibility could not be verified.`;
 		if (/legal eligibility/i.test(error.message)) return t`Legal eligibility could not be verified.`;
-		if (/agent/i.test(error.message)) return t`The approved Agent could not be verified for this owner and network.`;
+		if (/agent|trading signer/i.test(error.message)) {
+			return t(msg`The trading wallet could not be verified for this owner and network.`);
+		}
 		if (/pending vault operation could not be stored/i.test(error.message)) {
 			return t`The operation reference could not be stored safely, so nothing was signed.`;
 		}

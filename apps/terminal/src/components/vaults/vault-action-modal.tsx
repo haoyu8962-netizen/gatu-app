@@ -256,7 +256,7 @@ function VaultPendingStage({
 			<p className="max-w-sm text-xs leading-5 text-fg-muted">
 				{stage === "awaiting" ? (
 					<Trans>
-						The approved Agent signs this Vault transfer. Closing is disabled while authorization is active.
+						Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active.
 					</Trans>
 				) : stage === "submitted" ? (
 					<Trans>The signed {action} request is dispatched once and will not be retried automatically.</Trans>

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { useAgentStatus } from "../signing/use-agent-status";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useHyperliquid } from "../provider";
+import { useHyperliquidOwnerSigner } from "../signing/owner-signer-provider";
 import { useTradingAuthorization } from "../signing/use-trading-authorization";
+import { useTradingStatus } from "../signing/use-trading-status";
 
 type PendingAction = () => void | Promise<void>;
 
@@ -20,9 +22,11 @@ interface UseTradingGuardOptions {
 
 export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradingGuardResult {
 	const requiresBuilderFee = options.requiresBuilderFee !== false;
-	const agentStatus = useAgentStatus();
-	const isReady = agentStatus.isAgentReady && (!requiresBuilderFee || agentStatus.isBuilderFeeReady);
-	const isLoading = agentStatus.isAgentLoading || (requiresBuilderFee && agentStatus.isBuilderFeeLoading);
+	const agentStatus = useTradingStatus();
+	const { clientKey, env, sessionMode } = useHyperliquid();
+	const ownerSigner = useHyperliquidOwnerSigner();
+	const isReady = agentStatus.isSignerReady && (!requiresBuilderFee || agentStatus.isBuilderFeeReady);
+	const isLoading = agentStatus.isSignerLoading || (requiresBuilderFee && agentStatus.isBuilderFeeLoading);
 	const signaturesRequired = Number(agentStatus.needsAgent) + Number(requiresBuilderFee && agentStatus.needsBuilderFee);
 	const {
 		authorize,
@@ -31,8 +35,19 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 	} = useTradingAuthorization({
 		requiresBuilderFee,
 	});
-	const pendingActionRef = useRef<PendingAction | null>(null);
-	const prevIsReadyRef = useRef(isReady);
+	const identityRef = useRef({ clientKey, env, sessionMode, ownerSigner, requiresBuilderFee });
+	const previous = identityRef.current;
+	if (
+		previous.clientKey !== clientKey ||
+		previous.env !== env ||
+		previous.sessionMode !== sessionMode ||
+		previous.ownerSigner !== ownerSigner ||
+		previous.requiresBuilderFee !== requiresBuilderFee
+	) {
+		identityRef.current = { clientKey, env, sessionMode, ownerSigner, requiresBuilderFee };
+	}
+	const mounted = useRef(true);
+	const inFlight = useRef<symbol | null>(null);
 	const [localError, setLocalError] = useState<Error | null>(null);
 
 	const isEnabling =
@@ -41,44 +56,42 @@ export function useTradingGuard(options: UseTradingGuardOptions = {}): UseTradin
 		authorizationStatus === "verifying";
 	const needsTrading = !isLoading && signaturesRequired > 0;
 
-	useEffect(() => {
-		const wasReady = prevIsReadyRef.current;
+	useLayoutEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+			inFlight.current = null;
+		};
+	}, []);
 
-		if (!wasReady && isReady && pendingActionRef.current) {
-			const action = pendingActionRef.current;
-			pendingActionRef.current = null;
-			Promise.resolve(action()).catch((err) => {
-				setLocalError(err instanceof Error ? err : new Error(String(err)));
-			});
-		}
-
-		if (wasReady && !isReady) {
-			pendingActionRef.current = null;
-		}
-
-		prevIsReadyRef.current = isReady;
-	}, [isReady]);
+	function runExplicitAction(action?: PendingAction, requireAuthorization = true) {
+		if (isEnabling || inFlight.current) return;
+		const identity = identityRef.current;
+		const attempt = Symbol("explicit-trading-action");
+		inFlight.current = attempt;
+		setLocalError(null);
+		const isCurrent = () => mounted.current && inFlight.current === attempt && identityRef.current === identity;
+		void (async () => {
+			try {
+				identity.ownerSigner?.assertCurrent();
+				if (requireAuthorization) await authorize();
+				if (!isCurrent()) return;
+				identity.ownerSigner?.assertCurrent();
+				await action?.();
+			} catch (error) {
+				if (isCurrent()) setLocalError(error instanceof Error ? error : new Error(String(error)));
+			} finally {
+				if (inFlight.current === attempt) inFlight.current = null;
+			}
+		})();
+	}
 
 	function enableTrading() {
-		if (isEnabling) return;
-		setLocalError(null);
-		authorize().catch((err) => {
-			pendingActionRef.current = null;
-			const error = err instanceof Error ? err : new Error(String(err));
-			setLocalError(error);
-		});
+		runExplicitAction();
 	}
 
 	function guardAction(action: PendingAction) {
-		setLocalError(null);
-		if (isReady) {
-			Promise.resolve(action()).catch((err) => {
-				setLocalError(err instanceof Error ? err : new Error(String(err)));
-			});
-			return;
-		}
-		pendingActionRef.current = action;
-		enableTrading();
+		runExplicitAction(action, !isReady);
 	}
 
 	function clearError() {

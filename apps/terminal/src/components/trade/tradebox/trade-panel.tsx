@@ -41,10 +41,10 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
-	useAgentStatus,
 	useMarketsInfo,
 	useSelectedMarketInfo,
 	useTradingAuthorization,
+	useTradingStatus,
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -281,8 +281,8 @@ export function TradePanel() {
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
 	const requiresBuilderFee = !twapOrder;
-	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
-	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { isReady, isSignerReady, isSignerLoading, isBuilderFeeLoading, signerMode } = useTradingStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
 	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
@@ -389,7 +389,7 @@ export function TradePanel() {
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
 	const canApprove = !!walletClient && !!address;
-	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
+	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,
@@ -524,8 +524,8 @@ export function TradePanel() {
 			return;
 		}
 		setApprovalError(null);
-		if (!isAgentReady) {
-			openEstablishConnectionModal();
+		if (!isSignerReady) {
+			if (signerMode === "agent") openEstablishConnectionModal();
 			return;
 		}
 
@@ -629,7 +629,7 @@ export function TradePanel() {
 		depositUnavailableReason: depositAvailability.unavailableReason,
 		tradingUnavailableReason,
 		validation,
-		isAgentReady,
+		isSignerReady,
 		isApprovalLoading,
 		registerStatus,
 		canApprove,

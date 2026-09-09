@@ -27,9 +27,10 @@ export type TermsAcceptanceWalletResolver = (
 
 export interface UseTermsAcceptanceOptions {
 	resolveWallet?: TermsAcceptanceWalletResolver;
+	assertSigningSessionCurrent?: (context: TermsAcceptanceWalletContext) => void;
 }
 
-export function useTermsAcceptance({ resolveWallet }: UseTermsAcceptanceOptions = {}) {
+export function useTermsAcceptance({ resolveWallet, assertSigningSessionCurrent }: UseTermsAcceptanceOptions = {}) {
 	const { clientKey, env, info } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
 	const { data: walletClient } = useWalletClient();
@@ -43,6 +44,7 @@ export function useTermsAcceptance({ resolveWallet }: UseTermsAcceptanceOptions 
 		if (currentIdentity.env !== startEnv || currentIdentity.address?.toLowerCase() !== startAddress.toLowerCase()) {
 			throw new Error("Wallet changed while accepting terms");
 		}
+		assertSigningSessionCurrent?.({ address: startAddress, env: startEnv });
 	}
 
 	return useMutation<LegalStatus, Error, void>({
@@ -65,7 +67,13 @@ export function useTermsAcceptance({ resolveWallet }: UseTermsAcceptanceOptions 
 
 			await acceptHyperliquidTerms({
 				wallet,
-				transport,
+				transport: {
+					isTestnet: transport.isTestnet,
+					request<T>(endpoint: "info" | "exchange", payload: unknown, signal?: AbortSignal): Promise<T> {
+						assertIdentityCurrent(startAddress, startEnv);
+						return transport.request<T>(endpoint, payload, signal);
+					},
+				},
 				env: startEnv,
 				user: startAddress,
 				beforeSubmit: async () => {
@@ -75,6 +83,7 @@ export function useTermsAcceptance({ resolveWallet }: UseTermsAcceptanceOptions 
 					);
 					assertIdentityCurrent(startAddress, startEnv);
 					assertLegalStatusAllowsTermsAcceptance(parseLegalStatus(freshResponse as unknown));
+					assertIdentityCurrent(startAddress, startEnv);
 				},
 			});
 			assertIdentityCurrent(startAddress, startEnv);

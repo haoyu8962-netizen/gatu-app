@@ -7355,14 +7355,6 @@ msgstr "The approval could not be rechecked. The QR remains hidden until read-on
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 
-#: src/components/vaults/vault-action-modal.tsx
-msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-msgstr "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-
-#: src/components/referrals/referral-action-modal.tsx
-msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-msgstr "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
@@ -7664,6 +7656,10 @@ msgstr "The trading account or network changed. Reopen the editor and try again.
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "The trading account or network changed. Review active TWAP orders before retrying."
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The trading wallet could not be verified for this owner and network."
+msgstr "The trading wallet could not be verified for this owner and network."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9409,6 +9405,14 @@ msgstr "Your rewards"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr "Your stake"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Your trading wallet signs this request. Signed requests are never retried automatically."
+msgstr "Your trading wallet signs this request. Signed requests are never retried automatically."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

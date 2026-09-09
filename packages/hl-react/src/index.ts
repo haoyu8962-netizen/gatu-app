@@ -259,6 +259,11 @@ export {
 	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "./signing/mobile-agent";
+export {
+	type HyperliquidOwnerSigner,
+	HyperliquidOwnerSignerProvider,
+	useHyperliquidOwnerSigner,
+} from "./signing/owner-signer-provider";
 export type {
 	AgentWallet,
 	AgentWalletSource,
@@ -307,6 +312,7 @@ export {
 	type UseTradingAuthorizationResult,
 	useTradingAuthorization,
 } from "./signing/use-trading-authorization";
+export { type TradingRequirements, type UseTradingStatusResult, useTradingStatus } from "./signing/use-trading-status";
 export {
 	buildL2SubscriptionPayload,
 	canUseL2Decompression,

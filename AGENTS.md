@@ -18,12 +18,12 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 ## First-use trading onboarding contract
 
-- Preserve this order: connect owner wallet, verify/accept legal terms, approve and verify the Agent/API wallet, classify complete account funding snapshots, then open deposit only for a definitively empty account.
-- Legal status, Agent approval, local Agent key, builder-fee approval, and funding state are separate gates. Errors or missing snapshots must fail closed and must not be treated as acceptance, approval, or an empty account.
+- Preserve this order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Email sessions use their exact active Privy embedded owner directly; external wallets and Agent-only sessions require a verified Agent/API wallet. Ordinary email trading must not generate or approve a local Agent.
+- Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval, and funding state are separate gates. Errors or missing snapshots must fail closed and must not be treated as acceptance, approval, or an empty account.
 - Agent registration must not approve the builder fee. Builder-fee approval belongs to the first trading action that requires the configured builder code.
 - `Stay Connected` is off by default. Off stores the generated Agent in `sessionStorage`; on stores it in `localStorage`. Every Agent-registration entry point must honor the same `hyperliquid.persist_trading_connection` preference.
 - Mobile wallet approval timeouts pause while the page is hidden. A late approval may be committed only after revalidating the owner, registration epoch, stored key, and server-approved Agent address.
-- Keep `docs/trading-onboarding.md` synchronized with changes to this flow.
+- Keep `docs/trading-onboarding.md` and `docs/email-trading-signing.md` synchronized with changes to this flow. Email signing follows explicit application actions and suppresses duplicate Privy confirmation; login, refresh, and status checks must never sign. Keep real Agent verification for explicit API-wallet and desktop-link management.
 
 ## Wallet connection UI contract
 

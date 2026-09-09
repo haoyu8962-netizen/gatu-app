@@ -181,6 +181,7 @@ export {
 	useTermsAcceptance,
 	useTradingAuthorization,
 	useTradingGuard,
+	useTradingStatus,
 	useUserPositions,
 	useUserWallet,
 	verifyAgentRegistrationOrRemove,

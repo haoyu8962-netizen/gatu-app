@@ -9,7 +9,7 @@ import { type ReferralAction, useReferralActions } from "@/hooks/trade/use-refer
 import { useReferralLegalGate } from "@/hooks/trade/use-referral-legal-gate";
 import { useReferrals } from "@/hooks/trade/use-referrals";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useAgentStatus } from "@/lib/hyperliquid";
+import { useTradingStatus } from "@/lib/hyperliquid";
 import { canApplyReferralCode } from "@/lib/trade/referral";
 import { ReferralActionModal } from "./referral-action-modal";
 import { ReferralActivity } from "./referral-activity";
@@ -58,11 +58,11 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 	const referrals = useReferrals({ claimHistoryEnabled });
 	const referralActions = useReferralActions(referrals);
 	const legalGate = useReferralLegalGate();
-	const agentStatus = useAgentStatus();
+	const tradingStatus = useTradingStatus();
 	const { hasWalletAccess } = useWalletSession();
 	const { reconnectWallet, isReconnecting } = useReconnectWallet();
 	const [activeAction, setActiveAction] = useState<ActiveAction | null>(null);
-	const [connectionModalOpen, setConnectionModalOpen] = useState(false);
+	const [connectionIdentityKey, setConnectionIdentityKey] = useState<string | null>(null);
 	const [legalModalOpen, setLegalModalOpen] = useState(false);
 	const [isPreparingAction, setIsPreparingAction] = useState(false);
 
@@ -82,9 +82,11 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 
 		setIsPreparingAction(true);
 		try {
-			const requirements = await agentStatus.refetchAgent();
-			if (requirements.needsAgent || !requirements.isAgentReady) {
-				setConnectionModalOpen(true);
+			const requirements = await tradingStatus.refetchSigner();
+			if (!requirements.isSignerReady) {
+				if (tradingStatus.signerMode === "agent") {
+					setConnectionIdentityKey(getActionIdentityKey(referralActions.identity));
+				}
 				return;
 			}
 			setActiveAction({ action, code, identityKey: getActionIdentityKey(referralActions.identity) });
@@ -318,11 +320,11 @@ export function ReferralDashboard({ initialReferralCode }: Props) {
 					onSubmit={referralActions.submit}
 				/>
 			) : null}
-			{readyData && connectionModalOpen ? (
+			{readyData && tradingStatus.signerMode === "agent" && connectionIdentityKey === actionIdentityKey ? (
 				<EstablishConnectionModal
-					onClose={() => setConnectionModalOpen(false)}
+					onClose={() => setConnectionIdentityKey(null)}
 					onConnected={() => {
-						setConnectionModalOpen(false);
+						setConnectionIdentityKey(null);
 						toast.success(t`Secure connection established. Continue with the referral action.`);
 					}}
 				/>

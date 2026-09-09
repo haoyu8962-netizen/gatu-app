@@ -4,6 +4,7 @@ import type { User } from "@privy-io/react-auth";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearEmailOnboardingIntent, useEmailOnboardingIntent } from "@/lib/wallet/email-onboarding-intent";
 import {
 	getPrivyLoginIntent,
 	getPrivyLoginIntentStorageKey,
@@ -22,12 +23,18 @@ interface LoginCompleteParams {
 }
 
 const testState = vi.hoisted(() => ({
+	network: "mainnet" as "mainnet" | "testnet",
 	onComplete: undefined as ((params: LoginCompleteParams) => void) | undefined,
+	privy: { ready: true, authenticated: false, user: null as User | null },
 }));
 
 const PRIVY_USER_ID = "did:privy:test-user";
+const OWNER = "0x1111111111111111111111111111111111111111";
+
+vi.mock("@/lib/network", () => ({ getNetwork: () => testState.network }));
 
 vi.mock("@privy-io/react-auth", () => ({
+	usePrivy: () => testState.privy,
 	useLogin: (callbacks: { onComplete?: (params: LoginCompleteParams) => void }) => {
 		testState.onComplete = callbacks.onComplete;
 		return { login: vi.fn() };
@@ -39,8 +46,19 @@ function LoginIntentProbe() {
 	return createElement("output", null, intent?.method ?? "missing");
 }
 
+function DepositIntentProbe() {
+	const intent = useEmailOnboardingIntent();
+	return createElement("output", { "data-testid": "deposit-intent" }, JSON.stringify(intent));
+}
+
 function TestHarness() {
-	return createElement("div", null, createElement(PrivyLoginMethodObserver), createElement(LoginIntentProbe));
+	return createElement(
+		"div",
+		null,
+		createElement(PrivyLoginMethodObserver),
+		createElement(LoginIntentProbe),
+		createElement(DepositIntentProbe),
+	);
 }
 
 describe("PrivyLoginMethodObserver", () => {
@@ -50,10 +68,110 @@ describe("PrivyLoginMethodObserver", () => {
 	beforeEach(() => {
 		window.localStorage.clear();
 		window.sessionStorage.clear();
+		clearEmailOnboardingIntent();
 		testState.onComplete = undefined;
+		testState.network = "mainnet";
+		testState.privy = { ready: true, authenticated: false, user: null };
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
+	});
+
+	it.each([true, false])("records one deposit intent for a fresh email login (new user: %s)", (isNewUser) => {
+		act(() => root.render(createElement(TestHarness)));
+		act(() => {
+			testState.onComplete?.({
+				isNewUser,
+				loginAccount: null,
+				loginMethod: "email",
+				user: { id: PRIVY_USER_ID, email: {} } as User,
+				wasAlreadyAuthenticated: false,
+			});
+		});
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe(
+			JSON.stringify({ userId: PRIVY_USER_ID, env: "Mainnet" }),
+		);
+	});
+
+	it("binds delayed wallet creation to the same authenticated user and clears on logout", () => {
+		act(() => root.render(createElement(TestHarness)));
+		act(() => {
+			testState.onComplete?.({
+				isNewUser: true,
+				loginAccount: null,
+				loginMethod: "email",
+				user: { id: PRIVY_USER_ID } as User,
+				wasAlreadyAuthenticated: false,
+			});
+		});
+		testState.privy = {
+			ready: true,
+			authenticated: true,
+			user: {
+				id: PRIVY_USER_ID,
+				wallet: { address: OWNER, walletClientType: "privy" },
+			} as User,
+		};
+		act(() => root.render(createElement(TestHarness)));
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toContain(OWNER);
+		testState.privy = { ready: true, authenticated: false, user: null };
+		act(() => root.render(createElement(TestHarness)));
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe("null");
+	});
+
+	it("does not create a deposit intent for a restored authenticated email session", () => {
+		act(() => root.render(createElement(TestHarness)));
+		act(() => {
+			testState.onComplete?.({
+				isNewUser: false,
+				loginAccount: null,
+				loginMethod: "email",
+				user: { id: PRIVY_USER_ID } as User,
+				wasAlreadyAuthenticated: true,
+			});
+		});
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe("null");
+	});
+
+	it("discards a pending signup intent when another account becomes authenticated", () => {
+		act(() => root.render(createElement(TestHarness)));
+		act(() => {
+			testState.onComplete?.({
+				isNewUser: true,
+				loginAccount: null,
+				loginMethod: "email",
+				user: { id: PRIVY_USER_ID } as User,
+				wasAlreadyAuthenticated: false,
+			});
+		});
+		testState.privy = {
+			ready: true,
+			authenticated: true,
+			user: { id: "did:privy:other-user" } as User,
+		};
+		act(() => root.render(createElement(TestHarness)));
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe("null");
+	});
+
+	it("discards an unconsumed signup intent when a network change restarts the runtime before legal completion", () => {
+		act(() => root.render(createElement(TestHarness)));
+		act(() => {
+			testState.onComplete?.({
+				isNewUser: true,
+				loginAccount: null,
+				loginMethod: "email",
+				user: { id: PRIVY_USER_ID } as User,
+				wasAlreadyAuthenticated: false,
+			});
+		});
+		testState.network = "testnet";
+		act(() => root.unmount());
+		root = createRoot(container);
+		act(() => root.render(createElement(TestHarness)));
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe("null");
+		testState.network = "mainnet";
+		act(() => root.render(createElement(TestHarness)));
+		expect(container.querySelector('[data-testid="deposit-intent"]')?.textContent).toBe("null");
 	});
 
 	afterEach(() => {

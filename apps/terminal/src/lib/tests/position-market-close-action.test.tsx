@@ -57,7 +57,7 @@ vi.mock("@/stores/use-hip3-disclaimer-store", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
-	useAgentStatus: () => ({ isReady: mocks.agentReady, isLoading: mocks.agentLoading }),
+	useTradingStatus: () => ({ isReady: mocks.agentReady, isLoading: mocks.agentLoading }),
 	useMarkets: () => ({
 		isLoading: mocks.marketLoading,
 		error: mocks.marketError,

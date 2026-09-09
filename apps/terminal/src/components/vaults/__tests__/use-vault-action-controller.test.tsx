@@ -79,7 +79,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	readPersistTradingConnection: () => true,
 	useActiveAgentOwner: () => mocks.activeAgentOwner,
 	useAgentRegistration: () => ({ register: mocks.agentRegister, status: "idle", error: null }),
-	useAgentStatus: () => ({ refetchAgent: mocks.agentRefetch }),
+	useTradingStatus: () => ({ signerMode: "agent", refetchSigner: mocks.agentRefetch }),
 	useExchange: (_method: string, options: { executionGuard: typeof mocks.exchangeGuard }) => {
 		mocks.exchangeGuard = options.executionGuard;
 		return {
@@ -159,7 +159,7 @@ describe("useVaultActionController", () => {
 			clearinghouse: { withdrawable: "49" },
 		};
 		mocks.agentRegister.mockReset();
-		mocks.agentRefetch.mockReset().mockResolvedValue({ isAgentReady: true, needsAgent: false });
+		mocks.agentRefetch.mockReset().mockResolvedValue({ isSignerReady: true, needsAgent: false });
 		mocks.exchangeMutate.mockReset().mockImplementation(async () => {
 			expect(getFundsActionMarkers()).toHaveLength(1);
 			return { status: "ok", response: { type: "default" } };
@@ -420,8 +420,8 @@ describe("useVaultActionController", () => {
 	it("registers only the Agent when one is missing, without a builder-fee path", async () => {
 		const agentAddress = "0x4444444444444444444444444444444444444444" as const;
 		mocks.agentRefetch
-			.mockResolvedValueOnce({ isAgentReady: false, needsAgent: true })
-			.mockResolvedValueOnce({ isAgentReady: true, needsAgent: false });
+			.mockResolvedValueOnce({ isSignerReady: false, needsAgent: true })
+			.mockResolvedValueOnce({ isSignerReady: true, needsAgent: false });
 		mocks.agentRegister.mockResolvedValueOnce(agentAddress);
 		await act(async () => current().requestAction("deposit"));
 
@@ -432,8 +432,8 @@ describe("useVaultActionController", () => {
 
 	it("refuses to dispatch when the approved Agent is not freshly verified at confirmation", async () => {
 		mocks.agentRefetch
-			.mockResolvedValueOnce({ isAgentReady: true, needsAgent: false })
-			.mockResolvedValueOnce({ isAgentReady: false, needsAgent: true });
+			.mockResolvedValueOnce({ isSignerReady: true, needsAgent: false })
+			.mockResolvedValueOnce({ isSignerReady: false, needsAgent: true });
 		await openAndReview();
 		await act(async () => current().confirm());
 

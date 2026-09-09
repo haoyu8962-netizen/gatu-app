@@ -7355,14 +7355,6 @@ msgstr "No se pudo volver a comprobar la aprobación. El QR permanece oculto has
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "El resultado de la aprobación no está confirmado. Reintenta la verificación de solo lectura antes de hacer nada más."
 
-#: src/components/vaults/vault-action-modal.tsx
-msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-msgstr ""
-
-#: src/components/referrals/referral-action-modal.tsx
-msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-msgstr "El Agent de Hyperliquid aprobado firma esta solicitud. Las solicitudes firmadas nunca se reintentan automáticamente."
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "La transacción de Arbitrum está confirmada, pero el estado de Circle no está disponible temporalmente. Puedes cerrar esta ventana; el seguimiento se reanudará cuando vuelvas."
@@ -7664,6 +7656,10 @@ msgstr "La cuenta de trading o la red cambió. Vuelve a abrir el editor e intén
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr ""
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The trading wallet could not be verified for this owner and network."
+msgstr "No se pudo verificar la cartera de trading para este propietario y esta red."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9409,6 +9405,14 @@ msgstr "Tus recompensas"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr ""
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Your trading wallet signs this request. Signed requests are never retried automatically."
+msgstr "Tu cartera de trading firma esta solicitud. Las solicitudes firmadas nunca se reintentan automáticamente."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr "Tu cartera de trading firma esta transferencia de la bóveda. No se puede cerrar la ventana durante la autorización."
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

@@ -7355,14 +7355,6 @@ msgstr "无法重新检查授权。在只读验证成功前，二维码将保持
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操作。"
 
-#: src/components/vaults/vault-action-modal.tsx
-msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-msgstr "此金库转账由已批准的 Agent 签名。授权进行期间无法关闭。"
-
-#: src/components/referrals/referral-action-modal.tsx
-msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-msgstr "此请求由已批准的 Hyperliquid Agent 签名。已签名的请求绝不会自动重试。"
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "Arbitrum 交易已确认，但暂时无法获取 Circle 状态。你可以关闭此窗口；返回时将继续跟踪。"
@@ -7664,6 +7656,10 @@ msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr "交易账户或网络已变化。重试前请检查当前 TWAP 委托。"
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The trading wallet could not be verified for this owner and network."
+msgstr "无法验证此账户和网络的交易钱包。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9409,6 +9405,14 @@ msgstr "您的奖励"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr "您的质押"
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Your trading wallet signs this request. Signed requests are never retried automatically."
+msgstr "此请求由你的交易钱包签名。已签名的请求不会自动重试。"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr "此金库转账由你的交易钱包签名。授权期间无法关闭窗口。"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

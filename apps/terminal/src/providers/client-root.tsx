@@ -32,6 +32,7 @@ import { createQueryPersistenceCallbacks, createQueryPersistenceOptions } from "
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
 import { ClientRuntimeProvider } from "@/providers/client-runtime";
+import { HyperliquidOwnerSignerBridge } from "@/providers/hyperliquid-owner-signer-bridge";
 import { PrivyLoginMethodObserver } from "@/providers/privy-login-method-observer";
 import { PwaInstallProvider } from "@/providers/pwa-install";
 
@@ -76,10 +77,12 @@ function HyperliquidBridge({ children }: { children: ReactNode }) {
 					);
 				}}
 			>
-				<HyperliquidAgentApprovalBridge>
-					<HyperliquidLegalLifecycle />
-					<MarketsProvider>{children}</MarketsProvider>
-				</HyperliquidAgentApprovalBridge>
+				<HyperliquidOwnerSignerBridge>
+					<HyperliquidAgentApprovalBridge>
+						<HyperliquidLegalLifecycle />
+						<MarketsProvider>{children}</MarketsProvider>
+					</HyperliquidAgentApprovalBridge>
+				</HyperliquidOwnerSignerBridge>
 			</HyperliquidProvider>
 		</HyperliquidExchangePolicyProvider>
 	);

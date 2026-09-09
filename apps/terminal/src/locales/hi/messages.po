@@ -7355,14 +7355,6 @@ msgstr "स्वीकृति की दोबारा जाँच नह�
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "स्वीकृति परिणाम की पुष्टि नहीं हुई है। कुछ और करने से पहले रीड-ओनली सत्यापन फिर से करें।"
 
-#: src/components/vaults/vault-action-modal.tsx
-msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-msgstr ""
-
-#: src/components/referrals/referral-action-modal.tsx
-msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-msgstr "स्वीकृत Hyperliquid Agent इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने-आप दोबारा प्रयास कभी नहीं किया जाता।"
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
@@ -7664,6 +7656,10 @@ msgstr "ट्रेडिंग खाता या नेटवर्क ब�
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr ""
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The trading wallet could not be verified for this owner and network."
+msgstr "इस स्वामी और नेटवर्क के लिए ट्रेडिंग वॉलेट सत्यापित नहीं किया जा सका।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9409,6 +9405,14 @@ msgstr "आपके पुरस्कार"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr ""
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Your trading wallet signs this request. Signed requests are never retried automatically."
+msgstr "आपका ट्रेडिंग वॉलेट इस अनुरोध पर हस्ताक्षर करता है। हस्ताक्षरित अनुरोधों का अपने आप दोबारा प्रयास नहीं किया जाता।"
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr "आपका ट्रेडिंग वॉलेट इस वॉल्ट ट्रांसफ़र पर हस्ताक्षर करता है। प्राधिकरण के दौरान विंडो बंद नहीं की जा सकती।"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

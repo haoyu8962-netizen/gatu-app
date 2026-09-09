@@ -7355,14 +7355,6 @@ msgstr "تعذر إعادة التحقق من الموافقة. يظل رمز QR
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "نتيجة الموافقة غير مؤكدة. أعد محاولة التحقق للقراءة فقط قبل القيام بأي شيء آخر."
 
-#: src/components/vaults/vault-action-modal.tsx
-msgid "The approved Agent signs this Vault transfer. Closing is disabled while authorization is active."
-msgstr ""
-
-#: src/components/referrals/referral-action-modal.tsx
-msgid "The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically."
-msgstr "يوقّع Agent المعتمد من Hyperliquid هذا الطلب. لا تُعاد محاولة الطلبات الموقّعة تلقائيًا مطلقًا."
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
 msgstr "تم تأكيد معاملة Arbitrum، لكن حالة Circle غير متاحة مؤقتًا. يمكنك إغلاق هذه النافذة؛ سيُستأنف التتبع عند عودتك."
@@ -7664,6 +7656,10 @@ msgstr "تغيّر حساب التداول أو الشبكة. أعد فتح ال
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "The trading account or network changed. Review active TWAP orders before retrying."
 msgstr ""
+
+#: src/components/vaults/use-vault-action-controller.ts
+msgid "The trading wallet could not be verified for this owner and network."
+msgstr "تعذّر التحقق من محفظة التداول لهذا المالك وهذه الشبكة."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -9409,6 +9405,14 @@ msgstr "مكافآتك"
 #: src/components/staking/staking-view.tsx
 msgid "Your stake"
 msgstr ""
+
+#: src/components/referrals/referral-action-modal.tsx
+msgid "Your trading wallet signs this request. Signed requests are never retried automatically."
+msgstr "توقّع محفظة التداول الخاصة بك هذا الطلب. لا تُعاد محاولة الطلبات الموقّعة تلقائيًا."
+
+#: src/components/vaults/vault-action-modal.tsx
+msgid "Your trading wallet signs this Vault transfer. Closing is disabled while authorization is active."
+msgstr "توقّع محفظة التداول الخاصة بك تحويل الخزنة هذا. لا يمكن إغلاق النافذة أثناء التفويض."
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"

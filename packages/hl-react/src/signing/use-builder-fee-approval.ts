@@ -4,8 +4,9 @@ import type { Address } from "viem";
 import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
 import { convertFeeToPercentageString } from "./agent-utils";
+import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
 import type { RegistrationStatus } from "./types";
-import { useAgentStatus } from "./use-agent-status";
+import { useTradingStatus } from "./use-trading-status";
 import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
 export interface UseBuilderFeeApprovalResult {
@@ -17,12 +18,13 @@ export interface UseBuilderFeeApprovalResult {
 
 export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 	const { builderConfig, clientKey } = useHyperliquid();
+	const ownerSigner = useHyperliquidOwnerSigner();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const addressRef = useRef(address);
 	addressRef.current = address;
 	const [isAwaitingWallet, setIsAwaitingWallet] = useState(false);
 	const mountedRef = useRef(true);
-	const agentStatus = useAgentStatus();
+	const agentStatus = useTradingStatus();
 	const approveBuilderFee = useExchange("approveBuilderFee");
 
 	useEffect(() => {
@@ -37,6 +39,7 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 	}
 
 	function assertSameWallet(startAddress: Address) {
+		ownerSigner?.assertCurrent();
 		if (addressRef.current?.toLowerCase() !== startAddress.toLowerCase()) {
 			throw new Error("Wallet changed during builder fee approval");
 		}
@@ -47,6 +50,7 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 		mutationFn: async (): Promise<void> => {
 			const startAddress = address;
 			if (!startAddress) throw new Error("No wallet connected");
+			assertSameWallet(startAddress);
 
 			const requirements = await agentStatus.refetchBuilderFee();
 			assertSameWallet(startAddress);
@@ -62,7 +66,12 @@ export function useBuilderFeeApproval(): UseBuilderFeeApprovalResult {
 			try {
 				await withWalletApprovalTimeout(approvalPromise);
 			} catch (error) {
-				void approvalPromise.then(() => agentStatus.refetchBuilderFee()).catch(() => undefined);
+				void approvalPromise
+					.then(() => {
+						assertSameWallet(startAddress);
+						return agentStatus.refetchBuilderFee();
+					})
+					.catch(() => undefined);
 				throw error;
 			} finally {
 				setAwaitingWallet(false);
