@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 export type BrowserOrderbookLevel = { n: number; px: string; sz: string };
 export type BrowserOrderbookEvent = {
 	coin: string;
-	fast: true;
+	fast?: true;
 	levels: [BrowserOrderbookLevel[], BrowserOrderbookLevel[]];
 	time: number;
 };
@@ -35,16 +35,16 @@ const midPrice = {
 	status: "active",
 };
 
-let orderbookSnapshot:
-	| typeof pendingSubscription
-	| {
-			data: BrowserOrderbookEvent;
-			error: undefined;
-			isStale: false;
-			lastMessageAt: number;
-			source: "l2Book-fast";
-			status: "active";
-	  } = pendingSubscription;
+interface BrowserOrderbookSnapshot {
+	data: BrowserOrderbookEvent | undefined;
+	error: Error | undefined;
+	isStale: boolean;
+	lastMessageAt: number | undefined;
+	source?: "l2" | "l2Book-fast" | "l2Book-full";
+	status: string;
+}
+
+let orderbookSnapshot: BrowserOrderbookSnapshot = pendingSubscription;
 
 function notifyOrderbookListeners() {
 	for (const listener of listeners) listener();
@@ -55,14 +55,28 @@ export function setBrowserOrderbookPending() {
 	notifyOrderbookListeners();
 }
 
-export function setBrowserOrderbookEvent(data: BrowserOrderbookEvent) {
+export function setBrowserOrderbookEvent(
+	data: BrowserOrderbookEvent,
+	source: "l2" | "l2Book-fast" | "l2Book-full" = "l2Book-fast",
+) {
 	orderbookSnapshot = {
 		data,
 		error: undefined,
 		isStale: false,
 		lastMessageAt: performance.now(),
-		source: "l2Book-fast",
+		source,
 		status: "active",
+	};
+	notifyOrderbookListeners();
+}
+
+export function setBrowserOrderbookUnavailable(state: "pending" | "stale" | "error") {
+	orderbookSnapshot = {
+		...orderbookSnapshot,
+		data: state === "pending" ? undefined : orderbookSnapshot.data,
+		error: state === "error" ? new Error("Fixture feed failure") : undefined,
+		isStale: state === "stale",
+		status: state === "stale" ? "active" : state,
 	};
 	notifyOrderbookListeners();
 }
@@ -85,8 +99,9 @@ export function useSelectedMarketInfo() {
 	return selectedMarket;
 }
 
-export function useSubscription() {
-	return pendingSubscription;
+export function useSubscription(method: string) {
+	const snapshot = useOrderbookFeed();
+	return method === "l2Book" ? snapshot : pendingSubscription;
 }
 
 export function useOrderbookMidPrice() {

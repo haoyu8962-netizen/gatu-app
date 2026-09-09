@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,10 @@ const testState = vi.hoisted(() => ({
 		testState.marketOrderSlippagePercent = value;
 	}),
 	setShowOrderbookInQuote: vi.fn(),
+	animateOrderbook: true,
+	setAnimateOrderbook: vi.fn((value: boolean) => {
+		testState.animateOrderbook = value;
+	}),
 	skipOrderConfirmation: false,
 	setSkipOrderConfirmation: vi.fn((value: boolean) => {
 		testState.skipOrderConfirmation = value;
@@ -43,14 +48,24 @@ vi.mock("@gatu/ui", () => ({
 	},
 	Toggle: (props: Record<string, unknown>) => {
 		testState.toggleProps.push(props);
-		return createElement("div");
+		return createElement("button", {
+			type: "button",
+			role: "switch",
+			"aria-label": props["aria-label"],
+			"aria-checked": props.checked,
+			onClick: () => (props.onCheckedChange as (next: boolean) => void)(!props.checked),
+		});
 	},
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: (props: Record<string, unknown>) => {
 		testState.numberInputProps = props;
-		return createElement("input", { readOnly: true, value: String(props.value ?? "") });
+		return createElement("input", {
+			readOnly: true,
+			value: String(props.value ?? ""),
+			"aria-label": props["aria-label"],
+		});
 	},
 }));
 
@@ -78,11 +93,13 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 		setMarketOrderSlippagePercent: testState.setMarketOrderSlippagePercent,
 		setNetwork: vi.fn(),
 		setShowOrderbookInQuote: testState.setShowOrderbookInQuote,
+		setAnimateOrderbook: testState.setAnimateOrderbook,
 		setSkipOrderConfirmation: testState.setSkipOrderConfirmation,
 	}),
 	useMarketOrderSlippagePercent: () => testState.marketOrderSlippagePercent,
 	useNetwork: () => "mainnet",
 	useSkipOrderConfirmation: () => testState.skipOrderConfirmation,
+	useAnimateOrderbook: () => testState.animateOrderbook,
 }));
 
 import { GlobalSettingsModal } from "@/components/trade/components/global-settings-modal";
@@ -97,6 +114,8 @@ describe("GlobalSettingsModal", () => {
 		testState.marketOrderSlippagePercent = 0.5;
 		testState.setMarketOrderSlippagePercent.mockClear();
 		testState.setShowOrderbookInQuote.mockClear();
+		testState.animateOrderbook = true;
+		testState.setAnimateOrderbook.mockClear();
 		testState.skipOrderConfirmation = false;
 		testState.setSkipOrderConfirmation.mockClear();
 		testState.numberInputProps = null;
@@ -163,7 +182,10 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.numberInputProps?.["aria-label"]).toBe("Slippage tolerance");
 		expect(testState.numberInputProps?.mobileSafe).toBe(true);
 		expect(testState.numberInputProps?.className).toContain("max-[1000px]:h-8");
-		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual(["Order confirmation"]);
+		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
+			"Order confirmation",
+			"Order book animations",
+		]);
 
 		testState.isMobile = true;
 		testState.toggleProps = [];
@@ -173,6 +195,7 @@ describe("GlobalSettingsModal", () => {
 
 		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
 			"Order confirmation",
+			"Order book animations",
 			"Order book in quote asset",
 		]);
 	});
@@ -195,6 +218,71 @@ describe("GlobalSettingsModal", () => {
 		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledTimes(1);
 		expect(testState.setShowOrderbookInQuote).toHaveBeenCalledWith(true);
 		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
+	});
+
+	it.each([false, true])("changes the shared animation preference on the mobile=%s layout", (isMobile) => {
+		testState.isMobile = isMobile;
+		renderModal();
+		const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Order book animations"]');
+
+		expect(toggle?.getAttribute("aria-checked")).toBe("true");
+		act(() => toggle?.click());
+		renderModal();
+
+		expect(testState.setAnimateOrderbook).toHaveBeenCalledExactlyOnceWith(false);
+		expect(toggle?.getAttribute("aria-checked")).toBe("false");
+		expect(container.querySelector('[aria-label="Order book animations"]')).toBe(toggle);
+
+		act(() => toggle?.click());
+		renderModal();
+
+		expect(testState.setAnimateOrderbook).toHaveBeenLastCalledWith(true);
+		expect(toggle?.getAttribute("aria-checked")).toBe("true");
+		expect(testState.setShowOrderbookInQuote).not.toHaveBeenCalled();
+		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
+	});
+
+	it.each([false, true])("hot-switches animation labels without resetting the mobile=%s modal", (isMobile) => {
+		testState.isMobile = isMobile;
+		renderModal();
+		const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Order book animations"]');
+		const input = container.querySelector("input");
+		act(() => toggle?.click());
+		act(() => (testState.sliderProps?.onValueChange as (value: number) => void)(1.2));
+		expect(input?.value).toBe("1.2");
+
+		const messageId = createHash("sha256").update("Order book animations\x1f").digest("base64").slice(0, 6);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [messageId]: "订单簿动画" } }));
+
+		expect(container.textContent).toContain("订单簿动画");
+		expect(container.querySelector('[aria-label="订单簿动画"]')).toBe(toggle);
+		expect(toggle?.getAttribute("aria-checked")).toBe("false");
+		expect(container.querySelector("input")).toBe(input);
+		expect(input?.value).toBe("1.2");
+
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+
+		expect(container.querySelector('[aria-label="Order book animations"]')).toBe(toggle);
+		expect(toggle?.getAttribute("aria-checked")).toBe("false");
+		expect(container.querySelector("input")).toBe(input);
+		expect(input?.value).toBe("1.2");
+		expect(testState.setAnimateOrderbook).toHaveBeenCalledExactlyOnceWith(false);
+		expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
+	});
+
+	it("ships the animation label in every locale catalog", () => {
+		const translations = {
+			en: "Order book animations",
+			zh: "订单簿动画",
+			hi: "ऑर्डर बुक एनिमेशन",
+			es: "Animaciones del libro de órdenes",
+			fr: "Animations du carnet d’ordres",
+			ar: "رسوم دفتر الأوامر المتحركة",
+		};
+		for (const [locale, translation] of Object.entries(translations)) {
+			const catalog = readFileSync(resolve(TEST_DIR, "../..", "locales", locale, "messages.po"), "utf8");
+			expect(catalog).toContain(`msgid "Order book animations"\nmsgstr "${translation}"`);
+		}
 	});
 
 	it("keeps the desktop order book unit source decoupled from the global setting", () => {

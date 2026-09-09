@@ -9,6 +9,7 @@ import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
 import { MobilePositionsView } from "./mobile-positions-view";
+import { MobileTradeOrderSplit } from "./mobile-trade-order-split";
 import { MobileTradeView } from "./mobile-trade-view";
 import type { MobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
@@ -70,16 +71,8 @@ function TradeOrderView({
 		>
 			{showMarketBar && <MobileMarketBar key={marketKey} className="min-h-[61px]" />}
 
-			<div data-slot="mobile-trade-order-split" className="w-full min-w-0 min-h-[370px] flex items-stretch">
-				<MobileTradeView
-					key={marketKey}
-					active={active}
-					embedded
-					sizeMode={sizeMode}
-					onSizeModeChange={setSizeMode}
-					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
-				/>
-				<div className="relative flex-1 min-w-0 self-stretch">
+			<MobileTradeOrderSplit
+				orderbook={
 					<MobileBookView
 						active={active}
 						compact
@@ -88,8 +81,17 @@ function TradeOrderView({
 						view="book"
 						className="absolute inset-0"
 					/>
-				</div>
-			</div>
+				}
+			>
+				<MobileTradeView
+					key={marketKey}
+					active={active}
+					embedded
+					sizeMode={sizeMode}
+					onSizeModeChange={setSizeMode}
+					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
+				/>
+			</MobileTradeOrderSplit>
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">

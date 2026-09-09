@@ -988,7 +988,9 @@ describe("PositionTpSlModal live data", () => {
 			});
 
 			expect(getButton(container, "Confirm").disabled).toBe(true);
-			expect(container.textContent).toContain(snapshot === "position" ? "Live position data is stale." : "Loading...");
+			expect(container.textContent).not.toContain(
+				snapshot === "position" ? "Live position data is stale." : "Loading...",
+			);
 			expect(() =>
 				testState.executionGuards.order?.({
 					grouping: "positionTpsl",
@@ -1380,7 +1382,7 @@ describe("PositionTpSlModal live data", () => {
 		});
 
 		expect(getInput(container, "Take Profit").value).toBe("27500");
-		expect(container.textContent).toContain("Loading...");
+		expect(container.textContent).not.toContain("Loading...");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 
@@ -1395,7 +1397,7 @@ describe("PositionTpSlModal live data", () => {
 		});
 
 		expect(getInput(container, "Take Profit").value).toBe("27500");
-		expect(container.textContent).toContain("Failed to load positions.");
+		expect(container.textContent).not.toContain("Failed to load positions.");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 });

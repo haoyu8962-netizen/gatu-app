@@ -17,7 +17,7 @@ interface ButtonContentInput {
 	depositUnavailableReason?: string | null;
 	tradingUnavailableReason?: string | null;
 	validation: FormValidationResult;
-	isAgentReady: boolean;
+	isSignerReady: boolean;
 	isApprovalLoading: boolean;
 	registerStatus: RegistrationStatus;
 	canApprove: boolean;
@@ -51,7 +51,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			isConnected: input.isConnected,
 			needsChainSwitch: input.needsChainSwitch,
 			needsApproval: input.validation.needsApproval,
-			isAgentReady: input.isAgentReady,
+			isSignerReady: input.isSignerReady,
 			hasBalanceError: input.hasBalanceError === true,
 			isBalanceLoading: input.isBalanceLoading === true,
 			availableBalance: input.availableBalance,
@@ -127,7 +127,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.tradingUnavailableReason,
 		input.validation.needsApproval,
 		input.validation.canSubmit,
-		input.isAgentReady,
+		input.isSignerReady,
 		registerText,
 		isRegistering,
 		input.canApprove,

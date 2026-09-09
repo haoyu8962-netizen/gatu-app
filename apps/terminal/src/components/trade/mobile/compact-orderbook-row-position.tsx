@@ -5,12 +5,19 @@ interface Props {
 	children: ReactNode;
 	price?: string;
 	rank: number;
+	rowHeightPx?: number;
 	side: "ask" | "bid";
 }
 
-export function CompactOrderbookRowPosition({ children, price, rank, side }: Props) {
+export function CompactOrderbookRowPosition({
+	children,
+	price,
+	rank,
+	side,
+	rowHeightPx = MOBILE_ORDERBOOK_ROW_METRICS.compact.rowHeightPx,
+}: Props) {
 	const metrics = MOBILE_ORDERBOOK_ROW_METRICS.compact;
-	const offsetPx = getMobileOrderbookRowOffsetPx(rank, metrics);
+	const offsetPx = getMobileOrderbookRowOffsetPx(rank, metrics, rowHeightPx);
 
 	return (
 		<div
@@ -21,7 +28,7 @@ export function CompactOrderbookRowPosition({ children, price, rank, side }: Pro
 			className="absolute inset-x-0"
 			style={{
 				[side === "ask" ? "bottom" : "top"]: 0,
-				height: metrics.rowHeightPx,
+				height: rowHeightPx,
 				transform: `translateY(${side === "ask" ? -offsetPx : offsetPx}px)`,
 			}}
 		>

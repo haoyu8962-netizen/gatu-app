@@ -13,6 +13,7 @@ import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
+	compact?: boolean;
 	twapMinutesNum: number | null;
 	twapTriggerPriceNum: number | null;
 	twapStopPriceNum: number | null;
@@ -28,35 +29,36 @@ export function TwapOrderSummary({
 	side,
 	feeQuote,
 	szDecimals,
+	compact,
 }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const minutes = getTwapRuntimeMinutes(twapMinutesNum);
-	const stopPriceLabel = getTwapStopPriceLabel(side);
+	const stopPriceLabel = getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` });
 
 	return (
 		<div className="flex min-w-0 flex-col">
-			<SummaryRow label={t`Frequency`}>
+			<SummaryRow compact={compact} label={t`Frequency`}>
 				<span className="inline-block max-w-40 whitespace-normal text-right leading-tight">
 					{t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
 				</span>
 			</SummaryRow>
-			<SummaryRow label={t`Runtime`}>
+			<SummaryRow compact={compact} label={t`Runtime`}>
 				<span className={cn("whitespace-nowrap", minutes > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{minutes > 0 ? formatDuration(minutes) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isPositive(twapTriggerPriceNum) && (
-				<SummaryRow label={t`Trigger Price`}>
+				<SummaryRow compact={compact} label={t`Trigger Price`}>
 					<span className="whitespace-nowrap">{formatPrice(twapTriggerPriceNum, { szDecimals })}</span>
 				</SummaryRow>
 			)}
 			{isPositive(twapStopPriceNum) && (
-				<SummaryRow label={stopPriceLabel}>
+				<SummaryRow compact={compact} label={stopPriceLabel}>
 					<span className="whitespace-nowrap">{formatPrice(twapStopPriceNum, { szDecimals })}</span>
 				</SummaryRow>
 			)}
-			<SummaryRow label={t`Fees`}>
+			<SummaryRow compact={compact} label={t`Fees`}>
 				<OrderFeeSummaryValue quote={feeQuote} />
 			</SummaryRow>
 		</div>

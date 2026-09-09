@@ -5,6 +5,7 @@ import { Suspense, useCallback, useId, useState } from "react";
 import { toast } from "sonner";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -61,7 +62,7 @@ export function PortfolioPage() {
 		!defaultBalances.hasError;
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
@@ -72,7 +73,15 @@ export function PortfolioPage() {
 	const fundsActionsDisabled = !hasWalletAccess || geoBlocked;
 	const depositDisabled = !depositAvailability.available;
 	const modeDependentFundsActionsDisabled = fundsActionsDisabled || !accountModeReady;
-	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
+	const internalTransferDisabledReason = isMobile
+		? getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer)
+		: fundsActionAvailability.internalTransfer.unavailableReason;
+	const withdrawalNotice = isMobile
+		? getFundsAvailabilityNotice(fundsActionAvailability.withdrawal)
+		: fundsActionAvailability.withdrawal.unavailableReason;
+	const depositNotice = isMobile
+		? getFundsAvailabilityNotice(depositAvailability)
+		: depositAvailability.unavailableReason;
 	const transferDisabled = !fundsActionAvailability.internalTransfer.available;
 	const modeDependentFundsActionsDisabledReason = modeDependentFundsActionsDisabled
 		? fundsActionAvailability.withdrawal.unavailableReason
@@ -175,7 +184,7 @@ export function PortfolioPage() {
 								>
 									<Trans>Send</Trans>
 								</Button>
-								<Tooltip content={fundsActionAvailability.withdrawal.unavailableReason} side="top">
+								<Tooltip content={withdrawalNotice} side="top">
 									<span className="inline-flex">
 										<Button
 											variant="outline"
@@ -192,7 +201,7 @@ export function PortfolioPage() {
 										</Button>
 									</span>
 								</Tooltip>
-								<Tooltip content={depositAvailability.unavailableReason} side="top">
+								<Tooltip content={depositNotice} side="top">
 									<span className="inline-flex">
 										<Button
 											variant="filled"
@@ -201,16 +210,22 @@ export function PortfolioPage() {
 											disabled={depositDisabled}
 											aria-describedby={getUnavailableReasonId(depositAvailability.unavailableReason)}
 											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-											aria-label={depositAvailability.available ? undefined : depositAvailability.unavailableLabel}
-											title={depositAvailability.unavailableReason ?? undefined}
+											aria-label={
+												depositAvailability.available || isMobile ? undefined : depositAvailability.unavailableLabel
+											}
+											title={depositNotice ?? undefined}
 											iconLeft={<DownloadSimpleIcon className="size-3.5" />}
 										>
-											{depositAvailability.available ? <Trans>Deposit</Trans> : depositAvailability.unavailableLabel}
+											{depositAvailability.available || isMobile ? (
+												<Trans>Deposit</Trans>
+											) : (
+												depositAvailability.unavailableLabel
+											)}
 										</Button>
 									</span>
 								</Tooltip>
 							</div>
-							{unavailableActionGroups.length ? (
+							{!isMobile && unavailableActionGroups.length ? (
 								<div
 									aria-live="polite"
 									className="max-w-2xl space-y-0.5 text-start text-2xs leading-4 text-fg-muted min-[1001px]:text-end"

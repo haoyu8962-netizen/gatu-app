@@ -55,8 +55,8 @@ const arabicMessages: Messages = Object.fromEntries(
 );
 
 const testState = vi.hoisted(() => ({
-	accountAbstraction: "disabled" as "disabled" | "unifiedAccount" | "portfolioMargin",
 	accountGuard: vi.fn(),
+	accountAbstraction: "disabled" as string | null,
 	activeTab: "deposit" as "deposit" | "withdraw",
 	cctpDepositFeeCalculation: { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n } as {
 		maxFeeRaw: bigint;
@@ -242,22 +242,25 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 	}),
 }));
 
-vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
-	FundsActionGeoExecutionError: class FundsActionGeoExecutionError extends Error {
-		constructor(readonly reason: "restricted" | "unavailable") {
-			super(reason);
-		}
-	},
-	useFundsActionAvailability: () => ({
-		assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
-		internalTransfer: { available: true, reason: null, unavailableReason: null },
-		withdrawal: {
-			available: testState.fundsActionAvailable,
-			reason: testState.fundsActionAvailable ? null : "geo-unresolved",
-			unavailableReason: testState.fundsActionUnavailableReason,
-		},
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({
+		isResolved: testState.fundsActionAvailable,
+		proxy: false,
+		tradeRestricted: false,
+		isError: false,
 	}),
 }));
+
+vi.mock(import("../../hooks/trade/use-funds-action-availability"), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useFundsActionAvailability: (input: Parameters<typeof actual.useFundsActionAvailability>[0]) => ({
+			...actual.useFundsActionAvailability(input),
+			assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
+		}),
+	};
+});
 
 vi.mock("@/hooks/trade/use-usdc-routing", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/hooks/trade/use-usdc-routing")>();
@@ -518,7 +521,11 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		onSubmit,
 		routingStatus,
 		showSpotFundsNotice,
+		prerequisiteError,
+		canSubmit,
 	}: {
+		prerequisiteError: string | null;
+		canSubmit: boolean;
 		activationFee: string;
 		maxAmount: string;
 		onAmountChange: (amount: string) => void;
@@ -538,7 +545,8 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 				"data-status": routingStatus,
 			},
 			createElement("button", { onClick: () => onAmountChange("2"), type: "button" }, "Set amount"),
-			createElement("button", { onClick: onSubmit, type: "button" }, "Submit withdrawal"),
+			createElement("p", { "data-testid": "withdrawal-prerequisite" }, prerequisiteError),
+			createElement("button", { disabled: !canSubmit, onClick: onSubmit, type: "button" }, "Submit withdrawal"),
 			createElement("button", { onClick: onRetryPrerequisites, type: "button" }, "Retry withdrawal route"),
 		);
 	},
@@ -569,6 +577,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.assertFreshGeoAllowed.mockReset();
 		testState.assertFreshGeoAllowed.mockResolvedValue(undefined);
 		testState.balanceStale = false;
+		testState.accountAbstraction = "disabled";
 		testState.freshRoutingError = null;
 		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
 		testState.fundsActionAvailable = true;
@@ -706,6 +715,23 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.textContent).not.toContain(WITHDRAWAL_MESSAGES[messageKey]);
 		if (staleMessage) expect(container.textContent).not.toContain(staleMessage);
 	}
+
+	it.each([null, "unknown", "default", "dexAbstraction"])(
+		"preserves only confirmed %s account-mode restrictions in withdrawal",
+		async (mode) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState.accountAbstraction = mode;
+			await rerender();
+			act(() => getButton("Set amount").click());
+			expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+				mode === "default" || mode === "dexAbstraction" ? "Select a supported account mode before moving funds." : "",
+			);
+			expect(getButton("Submit withdrawal").disabled).toBe(true);
+			await act(async () => getButton("Submit withdrawal").click());
+			for (const mutation of testState.exchangeSdkCalls.values()) expect(mutation).not.toHaveBeenCalled();
+		},
+	);
 
 	it("derives the CCTP pre-transfer target from spotMeta and checks it at the SDK boundary", async () => {
 		testState.modalOpen = true;

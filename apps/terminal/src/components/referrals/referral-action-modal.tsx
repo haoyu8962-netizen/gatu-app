@@ -141,9 +141,7 @@ export function ReferralActionModal({ action, unclaimedRewards, initialCode, onC
 						<p className="flex items-start gap-2 rounded-20 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 							<WarningCircleIcon className="mt-0.5 size-4 shrink-0" />
 							<span>
-								<Trans>
-									The approved Hyperliquid Agent signs this request. Signed requests are never retried automatically.
-								</Trans>
+								<Trans>Your trading wallet signs this request. Signed requests are never retried automatically.</Trans>
 							</span>
 						</p>
 					</div>

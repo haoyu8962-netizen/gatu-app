@@ -50,7 +50,7 @@ const testState = vi.hoisted(() => ({
 		walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
 	},
 	balances: {
-		accountAbstraction: "disabled",
+		accountAbstraction: "disabled" as string | null,
 		marginSummary: {
 			accountValue: "1620.34",
 			totalMarginUsed: "1564.34",
@@ -130,6 +130,7 @@ vi.mock("@gatu/ui", () => ({
 
 vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: ({
+		disabled,
 		label,
 		labelValue,
 		onChange,
@@ -141,6 +142,7 @@ vi.mock("@/components/ui/number-input", () => ({
 		onChange: (event: { target: { value: string } }) => void;
 		onLabelValueClick: () => void;
 		value: string;
+		disabled?: boolean;
 	}) =>
 		createElement(
 			"div",
@@ -153,6 +155,7 @@ vi.mock("@/components/ui/number-input", () => ({
 			),
 			createElement("input", {
 				"aria-label": label,
+				disabled,
 				onChange,
 				value,
 			}),
@@ -175,25 +178,20 @@ vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
 	useAccountAbstractionPreExecutionGuard: () => testState.assertAccountAbstraction,
 }));
 
-vi.mock("@/hooks/trade/use-funds-action-availability", () => ({
-	FundsActionGeoExecutionError: class FundsActionGeoExecutionError extends Error {
-		constructor(readonly reason: "restricted" | "unavailable") {
-			super(reason);
-		}
-	},
-	useFundsActionAvailability: ({ accountModeReady }: { accountModeReady: boolean }) => {
-		const unavailableReason = accountModeReady ? null : "Select a supported account mode before moving funds.";
-		return {
-			assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
-			internalTransfer: {
-				available: accountModeReady,
-				reason: accountModeReady ? null : "account-mode-unavailable",
-				unavailableReason,
-			},
-			withdrawal: { available: true, reason: null, unavailableReason: null },
-		};
-	},
+vi.mock("@/hooks/use-geo-restriction", () => ({
+	useGeoRestriction: () => ({ isResolved: true, proxy: false, tradeRestricted: false, isError: false }),
 }));
+
+vi.mock(import("../../hooks/trade/use-funds-action-availability"), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useFundsActionAvailability: (input: Parameters<typeof actual.useFundsActionAvailability>[0]) => ({
+			...actual.useFundsActionAvailability(input),
+			assertFreshGeoAllowed: testState.assertFreshGeoAllowed,
+		}),
+	};
+});
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => testState.walletSession,
@@ -272,6 +270,8 @@ describe("funds action balance wiring", () => {
 		testState.walletSession.sessionMode = "wallet";
 		testState.walletSession.walletAddress = "0x1111111111111111111111111111111111111111";
 		testState.balances.accountAbstraction = "disabled";
+		testState.balances.hasError = false;
+		testState.balances.isDataStale = false;
 		testState.balances.withdrawable = "40";
 		testState.balances.spotBalances[0].hold = "3140.833333";
 		testState.balances.spotBalances[0].total = "8105.34686269";
@@ -369,20 +369,54 @@ describe("funds action balance wiring", () => {
 		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 
-	it("blocks mode-dependent fund actions until the account mode is supported", () => {
-		testState.balances.accountAbstraction = "default";
-		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
-
-		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
-		expect(container.textContent).not.toContain("40.00 USDC");
-		expect(container.textContent).not.toContain("4964.51 USDC");
-		expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
+	it.each(["stale", "error"])("blocks transfer controls quietly with a preserved draft during %s data", (status) => {
+		const renderTransfer = () =>
+			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+		renderTransfer();
+		act(() => setInputValue(getAmountInput(container), "1"));
+		testState.balances.isDataStale = status === "stale";
+		testState.balances.hasError = status === "error";
+		renderTransfer();
+		expect(getAmountInput(container).value).toBe("1");
+		expect(getAmountInput(container).disabled).toBe(true);
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Flip transfer direction"]')?.disabled).toBe(
+			true,
+		);
+		expect(container.textContent).not.toContain("Balance data is unavailable");
 		expect(getButton(container, "Transfer").disabled).toBe(true);
+		act(() => getButton(container, "Transfer").click());
+		expect(testState.exchangeMutations.usdClassTransfer).not.toHaveBeenCalled();
+	});
 
+	it.each(["default", "dexAbstraction"])(
+		"explains confirmed unsupported %s mode without enabling fund actions",
+		(mode) => {
+			testState.balances.accountAbstraction = mode;
+			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+
+			expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+			expect(container.textContent).not.toContain("40.00 USDC");
+			expect(container.textContent).not.toContain("4964.51 USDC");
+			expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
+			expect(getButton(container, "Transfer").disabled).toBe(true);
+
+			act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+			expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+			expect(container.textContent).not.toContain("40.00 USDC");
+			expect(container.textContent).not.toContain("4964.51 USDC");
+			expect(getButton(container, "Send").disabled).toBe(true);
+		},
+	);
+
+	it.each([null, "unknown"])("keeps unresolved %s mode quiet while disabling transfer and send", (mode) => {
+		testState.balances.accountAbstraction = mode;
+		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+		expect(container.textContent).not.toContain("Select a supported account mode before moving funds.");
+		expect(getButton(container, "Transfer").disabled).toBe(true);
+		act(() => getButton(container, "Transfer").click());
+		expect(testState.exchangeMutations.usdClassTransfer).not.toHaveBeenCalled();
 		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
-		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
-		expect(container.textContent).not.toContain("40.00 USDC");
-		expect(container.textContent).not.toContain("4964.51 USDC");
+		expect(container.textContent).not.toContain("Select a supported account mode before moving funds.");
 		expect(getButton(container, "Send").disabled).toBe(true);
 	});
 
@@ -400,6 +434,28 @@ describe("funds action balance wiring", () => {
 
 		act(() => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
 		expect(container.querySelector('[data-testid="field-error"]')?.textContent).toBe(INVALID_DESTINATION_AR);
+	});
+
+	it("updates mode restrictions without replacing the open transfer dialog or losing its draft", () => {
+		const renderTransfer = () =>
+			act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+		renderTransfer();
+		act(() => setInputValue(getAmountInput(container), "1"));
+		const title = container.querySelector("h2");
+		for (const mode of [null, "unknown", "default", "dexAbstraction"]) {
+			testState.balances.accountAbstraction = mode;
+			renderTransfer();
+			expect(container.querySelector("h2")).toBe(title);
+			expect(getButton(container, "Transfer").disabled).toBe(true);
+			expect(container.textContent?.includes("Select a supported account mode before moving funds.")).toBe(
+				mode === "default" || mode === "dexAbstraction",
+			);
+		}
+		testState.balances.accountAbstraction = "disabled";
+		renderTransfer();
+		expect(getAmountInput(container).value).toBe("1");
+		expect(getButton(container, "Transfer").disabled).toBe(false);
+		expect(container.querySelector("h2")).toBe(title);
 	});
 
 	it("wires the fresh mode check into each mode-dependent SDK boundary", async () => {

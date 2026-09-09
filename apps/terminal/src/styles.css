@@ -293,9 +293,15 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: var(--text-success);
     --orderbook-depth-ask: var(--text-error);
-    --orderbook-flash-bid: #0a9981;
-    --orderbook-flash-ask: #ed7088;
-    --orderbook-text: var(--text-strong);
+    --orderbook-price-bid: #056445;
+    --orderbook-price-ask: #a62b2b;
+    --orderbook-flash-bid: #056445;
+    --orderbook-flash-ask: #a62b2b;
+    --orderbook-level-pulse-bid: #abd8c9;
+    --orderbook-level-pulse-ask: #f4c3cb;
+    --orderbook-text: #344054;
+    --orderbook-header: #526174;
+    --orderbook-hover: #0015800a;
     --orderbook-spread-bg: var(--bg-alternate);
     --market-neutral: #636b75;
     --scope-perp: #2563EB;
@@ -484,9 +490,15 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
     --orderbook-depth-ask: #ed7088;
-    --orderbook-flash-bid: #0a9981;
-    --orderbook-flash-ask: #ed7088;
+    --orderbook-price-bid: #27d29f;
+    --orderbook-price-ask: #f08b9e;
+    --orderbook-flash-bid: #27d29f;
+    --orderbook-flash-ask: #f4a4b3;
+    --orderbook-level-pulse-bid: #1e5d52;
+    --orderbook-level-pulse-ask: #732a36;
     --orderbook-text: #d2dad7;
+    --orderbook-header: #949e9c;
+    --orderbook-hover: #ffffff08;
     --orderbook-spread-bg: #273035;
     --market-neutral: #7d8592;
     --scope-perp: #4F7DFF;
@@ -1085,16 +1097,44 @@
 
   .orderbook-price-ask,
   .orderbook-price-ask:hover {
-    color: var(--orderbook-depth-ask);
+    color: var(--orderbook-price-ask);
   }
 
   .orderbook-price-bid,
   .orderbook-price-bid:hover {
-    color: var(--orderbook-depth-bid);
+    color: var(--orderbook-price-bid);
   }
 
   .orderbook-value-text {
     color: var(--orderbook-text);
+  }
+
+  .orderbook-header-text {
+    color: var(--orderbook-header);
+  }
+
+  .orderbook-row:hover:not(:disabled) {
+    background-color: var(--orderbook-hover);
+  }
+
+  .orderbook-level-pulse {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .orderbook-level-pulse-bid {
+    background-color: var(--orderbook-level-pulse-bid);
+  }
+
+  .orderbook-level-pulse-ask {
+    background-color: var(--orderbook-level-pulse-ask);
+  }
+
+  .orderbook-level-pulse[data-active="true"] {
+    animation: orderbook-level-pulse 800ms ease var(--orderbook-pulse-delay, 0ms) 1 normal both;
   }
 
   .orderbook-spread-bg {
@@ -1173,9 +1213,24 @@
     }
   }
 
+  @keyframes orderbook-level-pulse {
+    0% {
+      opacity: 0;
+    }
+
+    20% {
+      opacity: 0.7;
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .use-color-change,
-    .orderbook-color-change {
+    .orderbook-color-change,
+    .orderbook-level-pulse[data-active="true"] {
       animation: none;
     }
   }

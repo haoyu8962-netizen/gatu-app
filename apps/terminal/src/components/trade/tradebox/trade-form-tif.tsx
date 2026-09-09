@@ -18,7 +18,8 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 	const { setTif } = useOrderEntryActions();
 
 	const availableTifOptions = getAvailableTifOptions(orderType);
-	const selectedTifLabel = getTifOptionLabel(tif);
+	const postOnlyLabel = t`Post Only`;
+	const selectedTifLabel = getTifOptionLabel(tif, postOnlyLabel);
 
 	return (
 		<div className={cn("ms-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
@@ -46,7 +47,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 				)}
 				options={availableTifOptions.map((opt) => ({
 					value: opt,
-					label: getTifOptionLabel(opt),
+					label: getTifOptionLabel(opt, postOnlyLabel),
 				}))}
 			/>
 		</div>

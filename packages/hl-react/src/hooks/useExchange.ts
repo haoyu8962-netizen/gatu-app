@@ -18,6 +18,7 @@ import {
 	captureAgentRegistrationExecutionLease,
 	startAgentRegistrationExecution,
 } from "../signing/agent-registration-session";
+import { useHyperliquidOwnerSigner } from "../signing/owner-signer-provider";
 import type { HyperliquidQueryError, MutationParameter } from "../types";
 import type { ExchangeMethod, ExchangeParams, ExchangeResponse } from "../types/clients";
 import { useHyperliquidClients } from "./useClients";
@@ -89,6 +90,7 @@ export function useExchange<M extends ExchangeMethod>(
 	options: ExchangeMutationOptions<M> = {},
 ): UseMutationResult<ExchangeResponse<M>, HyperliquidQueryError, ExchangeParams<M>> {
 	const { agentPublicKey, trading, user, userWalletMismatch } = useHyperliquidClients();
+	const ownerSigner = useHyperliquidOwnerSigner();
 	const { builderConfig, clientKey, enforceLegalActions, env, exchangeLifecycle, info, sessionMode } = useHyperliquid();
 	const queryClient = useQueryClient();
 	const portfolioMarginActivationEnabled = usePortfolioMarginActivationPolicy();
@@ -101,6 +103,7 @@ export function useExchange<M extends ExchangeMethod>(
 	const mutationKey = config.useClientKey ? ["hl", method, clientKey] : ["hl", method];
 
 	const mutationFn = (params: ExchangeParams<M>): Promise<ExchangeResponse<M>> => {
+		ownerSigner?.assertCurrent();
 		if (preExecutionGuard && config.client !== "user") throw new Error(PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE);
 		assertExchangeMutationAllowed(method, params, portfolioMarginActivationEnabled);
 		const requestParams =
@@ -111,11 +114,12 @@ export function useExchange<M extends ExchangeMethod>(
 		if (config.client === "user" && userWalletMismatch) throw new WalletAccountMismatchError();
 		assertExchange(exchange);
 		if (clientKey === "disconnected") throw new ExchangeRequestInvalidatedError();
-		if (config.client === "trading" && !agentPublicKey) throw new ExchangeRequestInvalidatedError();
+		const requiresAgent = config.client === "trading" && !ownerSigner;
+		if (requiresAgent && !agentPublicKey) throw new ExchangeRequestInvalidatedError();
 		const registrationLease = captureAgentRegistrationExecutionLease(
 			env,
 			clientKey as `0x${string}`,
-			config.client === "trading"
+			requiresAgent
 				? {
 						agentPublicKey: agentPublicKey ?? undefined,
 						requireActiveOwner: sessionMode === "agent-only",
@@ -151,7 +155,10 @@ export function useExchange<M extends ExchangeMethod>(
 		) => {
 			const guarded = await startAgentRegistrationExecution(
 				registrationLease,
-				() => exchangeLifecycle.active,
+				() => {
+					ownerSigner?.assertCurrent();
+					return exchangeLifecycle.active;
+				},
 				() => Promise.resolve(start()),
 				guard,
 			);
@@ -183,6 +190,7 @@ export function useExchange<M extends ExchangeMethod>(
 			exchange,
 			priority,
 			() => {
+				ownerSigner?.assertCurrent();
 				assertExchangeMutationAllowed(method, requestParams, portfolioMarginActivationEnabled);
 				assertExecutionAllowed(method, requestParams as ExchangeParams<M>, executionGuard);
 				return requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange);

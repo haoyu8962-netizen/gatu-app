@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 	clientKey: "0x1111111111111111111111111111111111111111",
 	env: "Mainnet" as "Mainnet" | "Testnet",
 	isStale: false,
+	hasSnapshot: true,
 	marketKind: "builderPerp" as "builderPerp" | "perp" | "spot",
 	marketSzDecimals: 3,
 	modifyError: null as Error | null,
@@ -30,7 +31,7 @@ const mocks = vi.hoisted(() => ({
 	resetModifyError: vi.fn(),
 	setActiveTab: vi.fn(),
 	setSide: vi.fn(),
-	status: "active" as "active" | "subscribing",
+	status: "active" as "active" | "subscribing" | "idle" | "error",
 	orders: [] as OpenOrder[],
 	openOrdersEvent: null as { orders: OpenOrder[] } | null,
 }));
@@ -164,7 +165,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		}),
 	}),
 	useSubscription: () => ({
-		data: mocks.openOrdersEvent ?? { orders: mocks.orders },
+		data: mocks.hasSnapshot ? (mocks.openOrdersEvent ?? { orders: mocks.orders }) : undefined,
 		error: null,
 		isStale: mocks.isStale,
 		status: mocks.status,
@@ -217,6 +218,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		mocks.orders = [order];
 		mocks.openOrdersEvent = null;
 		mocks.status = "active";
+		mocks.hasSnapshot = true;
 	});
 
 	afterEach(() => {
@@ -234,6 +236,24 @@ describe("MobileOrdersTab disclosure card", () => {
 		);
 		act(() => expand?.click());
 	}
+
+	it.each(["active", "idle", "subscribing", "error"] as const)(
+		"keeps %s without a first snapshot quiet and cannot cancel",
+		(status) => {
+			mocks.status = status;
+			mocks.hasSnapshot = false;
+			renderOrders({ expandFirst: false });
+			expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+			expect(container.textContent).toBe("");
+			expect(container.querySelector("button")).toBeNull();
+			expect(mocks.cancelOrders).not.toHaveBeenCalled();
+			mocks.status = "active";
+			mocks.hasSnapshot = true;
+			mocks.orders = [];
+			renderOrders({ expandFirst: false });
+			expect(container.textContent).toContain("No open orders.");
+		},
+	);
 
 	it("uses remaining size and keeps disclosure controls scoped to each card", () => {
 		renderOrders({ expandFirst: false });
@@ -290,6 +310,29 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(market?.className).toContain("text-start");
 		expect(market?.className).toContain("after:h-11");
 		expect(market?.className).toContain("after:min-w-11");
+	});
+
+	it("retains 44px minimum touch targets on every compact card action", () => {
+		renderOrders();
+		const article = container.querySelector("article");
+		const actions = [
+			article?.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]'),
+			...["Modify Order", "Cancel"].map((label) =>
+				[...(article?.querySelectorAll<HTMLButtonElement>("button") ?? [])].find(
+					(button) => button.textContent?.trim() === label,
+				),
+			),
+		];
+		for (const action of actions) {
+			expect(action).toBeInstanceOf(HTMLButtonElement);
+			expect(action?.classList.contains("relative")).toBe(true);
+			expect(action?.classList.contains("after:absolute")).toBe(true);
+			expect(action?.classList.contains("after:h-11")).toBe(true);
+			expect(action?.classList.contains("after:min-w-11")).toBe(true);
+			expect(action?.classList.contains("after:w-full")).toBe(true);
+			expect(action?.classList.contains("after:content-['']")).toBe(true);
+			expect(action?.disabled).toBe(false);
+		}
 	});
 
 	it("uses the spot market price cap for low-priced limit orders", () => {
@@ -437,9 +480,24 @@ describe("MobileOrdersTab disclosure card", () => {
 		act(() => cancel?.click());
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain(
-			"Open orders are refreshing. Wait for live data and try again.",
+		expect(cancel).toBeUndefined();
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+	});
+
+	it("retains a submitted cancellation error if the subscription becomes stale", async () => {
+		renderOrders();
+		const cancel = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent?.trim() === "Cancel",
 		);
+		act(() => cancel?.click());
+		expect(mocks.cancelOrders).toHaveBeenCalledOnce();
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as { onError: (cause: Error) => void };
+		mocks.isStale = true;
+		await act(async () => callbacks.onError(new Error("Cancellation rejected")));
+		renderOrders({ expandFirst: false });
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Cancellation rejected");
 	});
 
 	it("fails closed when the cancellation owner does not match the trading client", () => {

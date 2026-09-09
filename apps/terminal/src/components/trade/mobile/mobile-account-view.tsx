@@ -1,15 +1,9 @@
 import { Badge, Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import {
-	ArrowsLeftRightIcon,
-	DownloadSimpleIcon,
-	UploadSimpleIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
-import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { useAccountOverview } from "@/hooks/trade/use-account-overview";
 import { useAccountOverviewLabels } from "@/hooks/trade/use-account-overview-labels";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
@@ -37,10 +31,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const withdrawUnavailableId = useId();
 	const { hasWalletAccess, isConnected, walletAddress } = useWalletSession();
 	const depositAvailability = useDepositAvailability();
+	const depositNotice = getFundsAvailabilityNotice(depositAvailability);
 	const {
+		accountAbstraction,
 		accountEquityValue,
 		accountMode,
-		accountModeReady,
 		accountRisk,
 		crossLeverage,
 		fundsActionsReady,
@@ -53,19 +48,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
-		valuationUnavailable,
 	} = useAccountOverview();
 	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const metricLoading = accountOverviewStatus === "loading";
-	const metricsHaveError = accountOverviewStatus === "error";
-	const metricsAreStale = accountOverviewStatus === "stale";
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: fundsActionsReady,
-		accountModeReady,
+		accountAbstraction,
 		fundsActionsEnabled: true,
 		hasWalletAccess,
 		internalTransfersEnabled: !usesSharedQuoteBalance,
@@ -76,8 +68,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const internalTransferDisabledReason = fundsActionAvailability.internalTransfer.unavailableReason;
-	const withdrawDisabledReason = fundsActionAvailability.withdrawal.unavailableReason;
+	const internalTransferDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer);
+	const withdrawDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.withdrawal);
 	const transferDescriptionIds = internalTransferDisabledReason
 		? `${transferDescriptionId} ${transferUnavailableId}`
 		: transferDescriptionId;
@@ -89,6 +81,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 	if (!isConnected) {
 		const showsEmailDeposit = depositAvailability.path === "sponsored";
+		let description: string | null = t`Connect your wallet to view your account, positions, and start trading.`;
+		if (showsEmailDeposit) {
+			description = depositNotice;
+			if (depositAvailability.available) description ??= t`Open Deposit to prepare your email wallet.`;
+		}
 		return (
 			<div className={cn("flex h-full min-h-0 flex-col bg-background", className)}>
 				<div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
@@ -97,11 +94,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</div>
 					<div className="max-w-xs space-y-2 text-center">
 						<h2 className="text-lg font-semibold">{showsEmailDeposit ? t`Deposit USDC` : t`Connect Wallet`}</h2>
-						<p className="text-sm text-fg-muted">
-							{showsEmailDeposit
-								? (depositAvailability.unavailableReason ?? t`Open Deposit to prepare your email wallet.`)
-								: t`Connect your wallet to view your account, positions, and start trading.`}
-						</p>
+						{description ? <p className="text-sm text-fg-muted">{description}</p> : null}
 					</div>
 					<Button
 						variant="outline"
@@ -115,13 +108,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									: undefined
 								: () => setWalletModalOpen(true)
 						}
-						title={showsEmailDeposit ? (depositAvailability.unavailableReason ?? undefined) : undefined}
+						title={showsEmailDeposit ? (depositNotice ?? undefined) : undefined}
 					>
-						{showsEmailDeposit
-							? depositAvailability.available
-								? t`Deposit`
-								: depositAvailability.unavailableLabel
-							: t`Connect Wallet`}
+						{showsEmailDeposit ? t`Deposit` : t`Connect Wallet`}
 					</Button>
 				</div>
 				{walletModalOpen ? (
@@ -133,40 +122,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		);
 	}
 
-	const marginRatioLabel = marginRatioReady
-		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
-		: "—";
-	const crossLeverageLabel = crossLeverage === null ? "—" : `${formatNumber(crossLeverage, 2)}x`;
+	const marginRatioLabel = formatPercent(marginRatioReady ? maintenanceMarginRatio : "0", {
+		maximumFractionDigits: 2,
+		signDisplay: "never",
+	});
+	const crossLeverageLabel = `${formatNumber(crossLeverage ?? "0", 2)}x`;
 
 	return (
 		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
 			<div className="flex min-h-full flex-col gap-3 p-3">
-				{metricsHaveError ? (
-					<div
-						role="alert"
-						className="flex items-center gap-2 rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2 text-xs text-error"
-					>
-						<WarningCircleIcon className="size-4 shrink-0" />
-						<span>{t`Failed to load balances.`}</span>
-					</div>
-				) : null}
-				{metricsAreStale && !metricsHaveError ? (
-					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
-						<WarningCircleIcon className="size-4 shrink-0" />
-						<span>
-							{fundsActionsReady
-								? t`Balance data is stale.`
-								: t`Balance data is stale. Actions are temporarily unavailable.`}
-						</span>
-					</output>
-				) : null}
-				{valuationUnavailable && !metricsHaveError && !metricsAreStale ? (
-					<output className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
-						<WarningCircleIcon className="size-4 shrink-0" />
-						<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
-					</output>
-				) : null}
-				{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
 				{showsTransferEntry ? (
 					<span id={transferDescriptionId} className="sr-only">
 						{overviewLabels.transferBetweenPerpsAndSpot}
@@ -183,7 +147,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</span>
 				) : null}
 
-				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId}>
+				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId} aria-busy={metricLoading}>
 					<div className="mb-4 flex items-start justify-between gap-3">
 						<div className="min-w-0">
 							<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
@@ -191,23 +155,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							</h2>
 							<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
 						</div>
-						<div className="flex shrink-0 items-center gap-1.5">
+						<div className="shrink-0">
 							<Badge tone="neutral" size="sm">
 								{overviewLabels.accountMode}
 							</Badge>
-							{metricsAreStale && !metricsHaveError ? (
-								<WarningCircleIcon className="size-3.5 text-warning" aria-label={t`Balance data is stale.`} />
-							) : null}
 						</div>
 					</div>
 
 					<div className="space-y-2 pb-4">
-						<MetricRow
-							label={overviewLabels.accountMarginRatio}
-							value={marginRatioLabel}
-							loading={metricLoading}
-							emphasized
-						/>
+						<MetricRow label={overviewLabels.accountMarginRatio} value={marginRatioLabel} emphasized />
 						<div
 							role="progressbar"
 							aria-label={overviewLabels.accountMarginRatio}
@@ -239,16 +195,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							value={
 								accountSummaryReady && accountEquityValue !== null
 									? formatUSD(accountEquityValue, { compact: false })
-									: "—"
+									: formatUSD("0", { compact: false })
 							}
-							loading={metricLoading}
 						/>
 						<MetricRow
 							label={overviewLabels.unrealizedPnl}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
-									: "—"
+									: formatUSD("0", { compact: false })
 							}
 							valueClassName={
 								unrealizedPnlTone === "positive"
@@ -257,18 +212,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 										? "text-error"
 										: undefined
 							}
-							loading={metricLoading}
 						/>
 						<MetricRow
 							label={overviewLabels.crossMaintenanceMargin}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
-									: "—"
+									: formatUSD("0", { compact: false })
 							}
-							loading={metricLoading}
 						/>
-						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} loading={metricLoading} />
+						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} />
 					</div>
 				</section>
 
@@ -302,27 +255,24 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				) : null}
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
-					{depositGeoBlocked ? (
-						<p className="text-center text-sm text-fg-muted">{depositAvailability.unavailableReason}</p>
-					) : !showsFundsActions ? (
-						<p className="text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
-					) : (
+					{depositGeoBlocked && depositNotice ? (
+						<p className="text-center text-sm text-fg-muted">{depositNotice}</p>
+					) : null}
+					{!depositGeoBlocked && showsFundsActions ? (
 						<div className="space-y-2">
-							{depositAvailability.unavailableReason ? (
-								<output className="text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</output>
-							) : null}
+							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
 							<Button
 								variant="filled"
 								intent="brand"
 								size="md"
 								disabled={!depositAvailability.available}
 								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-								aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
-								title={depositAvailability.unavailableReason ?? undefined}
+								aria-label={t`Deposit`}
+								title={depositNotice ?? undefined}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 								className="min-h-11 w-full"
 							>
-								{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+								{t`Deposit`}
 							</Button>
 							<div className="grid grid-cols-2 gap-2">
 								<Tooltip content={internalTransferDisabledReason} side="top">
@@ -337,7 +287,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 													: undefined
 											}
 											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-											disabled={!!internalTransferDisabledReason}
+											disabled={!fundsActionAvailability.internalTransfer.available}
 											focusableWhenDisabled
 											aria-describedby={transferDescriptionIds}
 											className="min-h-11 w-full"
@@ -352,7 +302,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 											variant="outline"
 											intent="neutral"
 											size="md"
-											disabled={!!withdrawDisabledReason}
+											disabled={!fundsActionAvailability.withdrawal.available}
 											focusableWhenDisabled
 											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
 											onClick={
@@ -381,7 +331,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								</Button>
 							) : null}
 						</div>
-					)}
+					) : null}
 				</div>
 			</div>
 		</div>
@@ -391,20 +341,17 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 interface MetricRowProps {
 	emphasized?: boolean;
 	label: string;
-	loading: boolean;
 	value: string;
 	valueClassName?: string;
 }
 
-function MetricRow({ emphasized = false, label, loading, value, valueClassName }: MetricRowProps) {
+function MetricRow({ emphasized = false, label, value, valueClassName }: MetricRowProps) {
 	return (
 		<div className="flex min-h-11 items-center justify-between gap-4 py-2.5 text-sm">
 			<span className="text-fg-muted">{label}</span>
-			<Skeleton name="mobile-account-overview-metric" loading={loading} fallback={<SkeletonValue className="w-20" />}>
-				<span className={cn("font-medium tabular-nums text-fg", emphasized && "font-semibold", valueClassName)}>
-					{value}
-				</span>
-			</Skeleton>
+			<span className={cn("font-medium tabular-nums text-fg", emphasized && "font-semibold", valueClassName)}>
+				{value}
+			</span>
 		</div>
 	);
 }

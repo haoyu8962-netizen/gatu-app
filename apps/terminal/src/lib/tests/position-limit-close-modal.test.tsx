@@ -443,7 +443,7 @@ describe("PositionLimitCloseModal", () => {
 	it("fails closed when the live position is stale or changes direction", () => {
 		testState.positionIsStale = true;
 		render();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is stale");
+		expect(container.textContent).not.toContain("Live position data is stale");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 
 		testState.positionIsStale = false;

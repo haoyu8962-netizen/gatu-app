@@ -135,10 +135,12 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
-	it("keeps the split minimum compatible with the eleven-slot compact book", () => {
+	it("keeps the split viewport-based and independent of form content", () => {
 		render();
 
-		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain("min-h-[370px]");
+		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain(
+			"h-[clamp(370px,60svh,480px)]",
+		);
 	});
 
 	it("controls the order-book unit from the order form without synchronizing effects", () => {

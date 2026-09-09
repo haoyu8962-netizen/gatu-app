@@ -1,0 +1,123 @@
+# Email Trading Signer and Registration
+
+## Decision and Evidence
+
+Ordinary email sessions use the exact authenticated Privy embedded owner
+wallet to sign both Hyperliquid L1 trading actions and user-signed actions.
+External wallets continue to approve a local Agent; Agent-only desktop-link
+sessions continue to use their verified imported key. Agent readiness always
+means a real approved Agent, not an alias for an authenticated email session.
+
+Sources checked on 2026-09-09:
+
+- [Hyperliquid onboarding](https://hyperliquid.gitbook.io/hyperliquid-docs/onboarding/how-to-start-trading): email OTP proceeds to deposit; external wallets separately enable trading.
+- [Hyperliquid nonces and API wallets](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets): L1 actions can be signed by the user or an authorized API wallet.
+- [Privy typed-data signing](https://docs.privy.io/wallets/using-wallets/ethereum/sign-typed-data): provide the exact signing address.
+- [Privy confirmation UI](https://docs.privy.io/recipes/react/manage-wallet-UIs): per-call `showWalletUIs` overrides provider configuration; hiding UI still produces a signature.
+- [Hyperliquid SDK v0.33.3 signing](https://github.com/nktkas/hyperliquid/tree/v0.33.3/src/signing): L1 and user-signed typed-data domains differ; the L1 primary type `Agent` does not identify the actual signer.
+
+The official terminal's publicly served `config-Bpe33jOl.js` selects the
+Privy wallet directly in the email trading branch, while external wallets use
+their local Agent. `index-EmwO7V05.js` disables wallet confirmation UI and signs
+`acceptTerms2` after application policy acknowledgement. These are observed
+frontend implementation details, not a stable public API. A fresh email login,
+explicit policy acceptance and session restoration were observed without a
+second wallet confirmation. No order, transfer or funding transaction was
+submitted for this audit; trading signer selection was verified in public code.
+No real user email address, OTP, wallet secret, authentication token or live
+signature belongs in this document or regression fixtures. Tests use invented
+identities and stub or fixture-generated signatures.
+
+## Implementation Boundaries
+
+1. Provide an explicit embedded-owner signing strategy to the shared SDK layer.
+   A missing embedded signer fails closed and never falls back to an Agent or
+   an unrelated browser wallet. Keep real Agent state separate from trading
+   signer readiness.
+2. Construct owner clients per live authenticated session, not in the global
+   address-keyed Agent client cache. Bind signatures to the authenticated user,
+   selected owner, active wallet, exact embedded wallet, environment and live
+   provider lifetime. Revalidate before signing, after signing and at submission.
+3. Preserve every shared execution guard and order scheduler. Retain the SDK's
+   nonce source and serialize requests as before. Do not hand-build signatures
+   or emulate official frontend signing prewarm.
+4. Hide only duplicate embedded-wallet confirmations for explicit application
+   actions. Policy acceptance still needs both acknowledgements; builder fees
+   still require the first relevant trading action. Explicit Agent management
+   and desktop-link approvals retain their own permission review and verification.
+5. Route desktop, mobile, shared trading dialogs, referrals and vault actions
+   through trading signer readiness. Agent management continues to query real
+   Agent approval. Preserve exact owner signing for withdrawals and other funds
+   actions, including existing dedicated confirmation and environment gates.
+6. Preserve Privy's email OTP registration and exact-wallet activation. Keep
+   `users-without-wallets`, wallet/email login only, and no parallel registration
+   form. A fresh email login may create a once-only deposit intent; restoration
+   must not recreate it. Bind intent to user, owner and environment, wait for
+   legal success and complete current funding snapshots, and preserve all
+   existing deposit eligibility and routing requirements.
+
+## Validation Matrix
+
+- Fresh email user and returning email login; delayed embedded-wallet creation
+  and activation; refresh without repeat setup or signing.
+- Exact owner match, account/user/environment switch during signing, missing
+  wallet, logout, provider unmount, and no fallback to a stored Agent.
+- L1 order/cancel/leverage selection; user-signed builder fee remains separate;
+  legal, policy and execution invalidation guards remain effective.
+- External wallet and Agent-only flows retain real registration, verification,
+  persistence and cancellation behavior.
+- Terms acceptance produces one silent signature only after explicit review.
+- First-login deposit waits for legal, funding and geo readiness; funded, stale,
+  failed, mismatched, restored and dismissed sessions do not open a deposit.
+- Desktop/mobile CTA parity and shared action consumers; no real financial
+  transaction is required for automated tests or browser verification.
+
+## Implementation Map
+
+- `use-privy-owner-signer.ts` and `privy-owner-signer.ts` select the exact Privy
+  owner and apply per-call confirmation settings. `HyperliquidOwnerSignerBridge`
+  supplies that strategy without remounting the authentication provider.
+- `owner-signer-provider.tsx` binds the current session;
+  `owner-signer-client.ts` shares its guarded SDK client across actions.
+  `useTradingStatus` reports signer readiness separately from Agent approval.
+- `useTradingGuard` resumes an action only from its explicit, successful
+  authorization promise and the same live session. Readiness changes cannot
+  execute a retained action.
+- `useExplicitTermsAcceptance` preserves the application policy review and
+  rechecks the same signing session before the final `acceptTerms2` request.
+- `PrivyLoginMethodObserver` records the fresh-login intent;
+  `TradingOnboardingGate` consumes it after the legal gate and account checks.
+  Deposit routing and sponsored submission checks remain in the existing
+  deposit flow.
+
+The owner signer/status and trading-guard tests exercise the real Hyperliquid
+SDK against a stub transport, including L1 order/cancel/leverage and
+user-signed builder approval. Privy signer tests verify exact address selection,
+silent per-call UI and invalidation on session changes. Observer/onboarding
+tests render the login and funding transitions, including delayed wallets,
+failed snapshots and dismissed deposits.
+
+## Verification Record — 2026-09-09
+
+- The complete terminal suite (`pnpm --dir apps/terminal exec vitest run
+  --maxWorkers=4`) passed: 504 files and 5,036 tests; the opt-in long-running
+  WebSocket soak test was skipped. The final run includes the adapted builder
+  status and client-root theme mocks as well as the new signing regressions.
+- `@gatu/hl-react` and terminal typechecks passed. Biome passed for all changed
+  TypeScript files.
+- The complete production build passed using Node 22.15.0 and the fixed build
+  identity from `terminal-performance-baseline.md`. It verified 379 client
+  chunks without circular static imports. Total client gzip was 3,110,380 B,
+  44,327 B below the existing baseline; static trade startup was 1,553,948 B,
+  with mobile/desktop increments of 111,258 B and 198,270 B. No budget or
+  dependency version was changed.
+- At `localhost:3006/trade/HYPE`, a fresh anonymous browser loaded desktop and
+  390 × 844 mobile layouts, switched Market/Limit, opened the desktop Privy
+  directory, and followed mobile Connect → Email. The mobile drawer closed
+  before the Privy email form appeared. No runtime errors were captured.
+- Read-only inspection of the existing local authenticated email session
+  showed account data and the ordinary order form without an Agent onboarding
+  dialog. Existing form values and positions were left untouched.
+- Browser verification did not submit an order, transfer, withdrawal, builder
+  approval or new Agent approval. The new signed-action paths were exercised
+  with the real SDK and stub transport in automated tests.

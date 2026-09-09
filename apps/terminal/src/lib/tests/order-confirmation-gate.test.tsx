@@ -37,7 +37,6 @@ const DRAFT: OrderConfirmationDraft = {
 	marketKind: "perp",
 	isLeveraged: true,
 	side: "buy",
-	sideLabel: "Buy / Long",
 	orderType: "market",
 	tif: "Gtc",
 	baseToken: "BTC",

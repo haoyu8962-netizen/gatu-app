@@ -8,6 +8,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Keep business calculations out of components and use `Big.js` for financial arithmetic.
 - Follow the existing TypeScript, React, Tailwind, Biome, and Conventional Commit conventions described in `agent.md`.
 - Do not change behavior outside the requested surface while making visual-alignment changes.
+- Follow `docs/i18n-presentation.md`: rendered translations must subscribe to locale changes, and presentation helpers must receive their translation dependencies explicitly. Language switches must preserve mounted panels, input values and protocol values.
 
 ## Wallet signing contract
 
@@ -17,12 +18,12 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 ## First-use trading onboarding contract
 
-- Preserve this order: connect owner wallet, verify/accept legal terms, approve and verify the Agent/API wallet, classify complete account funding snapshots, then open deposit only for a definitively empty account.
-- Legal status, Agent approval, local Agent key, builder-fee approval, and funding state are separate gates. Errors or missing snapshots must fail closed and must not be treated as acceptance, approval, or an empty account.
+- Preserve this order: connect the exact owner wallet, verify/accept legal terms, establish the trading signer, classify complete account funding snapshots, then open deposit only for a definitively empty account. Email sessions use their exact active Privy embedded owner directly; external wallets and Agent-only sessions require a verified Agent/API wallet. Ordinary email trading must not generate or approve a local Agent.
+- Legal status, embedded-owner signer readiness, Agent approval, local Agent key, builder-fee approval, and funding state are separate gates. Errors or missing snapshots must fail closed and must not be treated as acceptance, approval, or an empty account.
 - Agent registration must not approve the builder fee. Builder-fee approval belongs to the first trading action that requires the configured builder code.
 - `Stay Connected` is off by default. Off stores the generated Agent in `sessionStorage`; on stores it in `localStorage`. Every Agent-registration entry point must honor the same `hyperliquid.persist_trading_connection` preference.
 - Mobile wallet approval timeouts pause while the page is hidden. A late approval may be committed only after revalidating the owner, registration epoch, stored key, and server-approved Agent address.
-- Keep `docs/trading-onboarding.md` synchronized with changes to this flow.
+- Keep `docs/trading-onboarding.md` and `docs/email-trading-signing.md` synchronized with changes to this flow. Email signing follows explicit application actions and suppresses duplicate Privy confirmation; login, refresh, and status checks must never sign. Keep real Agent verification for explicit API-wallet and desktop-link management.
 
 ## Wallet connection UI contract
 
@@ -39,6 +40,15 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Offer Link Desktop only when its fail-closed feature flag is enabled. Keep email login and the Ethereum-only Privy wallet directory as the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
 - Show PWA installation only when a real browser install prompt or supported iOS instructions are available. Installed and unsupported states must hide the entry, a captured install prompt is single-use, and wide desktop `beforeinstallprompt` behavior must remain browser-owned.
 
+## Mobile data presentation contract
+
+- Follow `docs/mobile-data-presentation.md` before changing mobile loading, reconnect, empty, or error states, including shared dialogs used on mobile.
+- Passive data fetching must not render loading, stale, unavailable, paused-update, or raw transport-error text, warning icons, warning banners, or error labels in action buttons. Use stable numeric placeholders, blank lists, or skeletons; `aria-busy` and screen-reader-only loading descriptions are allowed.
+- A subscription being active is not proof that its first snapshot arrived. Show empty-list conclusions and deposit suggestions only after a complete, current, successful snapshot. Stale, failed, missing, or mismatched snapshots are never confirmed empty states.
+- Numeric zero placeholders belong only to presentation. Preserve all signing, account-mode, funding, regional, freshness, and action-availability guards; disable actions using availability booleans, never the presence of a displayed explanation.
+- Show confirmed restrictions only after the relevant identity or policy has resolved. Preserve feedback for actions the user actually requested, including uncertain transaction outcomes; do not infer a broken connection, unsupported account, or missing funds from an unfinished request.
+- Cover initial subscription without data, stale/error recovery, genuine empty snapshots, and disabled-action behavior in regression tests. Update this document before introducing a new category of passive data notice.
+
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.
@@ -50,16 +60,23 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 ## Order book contract
 
-- Order-book prices, depth bars, and view-mode icons use the shared `--orderbook-depth-bid` and `--orderbook-depth-ask` tokens. The dark theme resolves them to `#1FA67D` and `#ED7088`; the light theme resolves them to the WCAG-AA `--text-success` (`#067A57`) and `--text-error` (`#C73A3A`) colors. Depth bars are solid fills at `0.15` opacity, not gradients.
+- Public `l2Book` transports must isolate network, grouping and fast/full identities before events reach the shared store. Frames do not identify their grouping; UI keys, generation counters and unsubscribe acknowledgements cannot prove their origin. Use the bounded shared transport pool, preserve same-identity sharing and SDK failure cleanup, and route reconnect attempts through its connection budget. See `docs/terminal-review-remediation.md` for protocol evidence and lifecycle tests.
+
+- Order-book depth bars and view-mode icons use the shared `--orderbook-depth-bid` and `--orderbook-depth-ask` tokens. The dark theme resolves them to `#1FA67D` and `#ED7088`; the light theme resolves them to `--text-success` (`#067A57`) and `--text-error` (`#C73A3A`). Depth bars are solid fills at `0.15` opacity, not gradients. Prices use separate `--orderbook-price-bid/ask` foreground tokens; numeric text, headers and size-change colors must retain at least 4.5:1 contrast throughout depth, hover and pulse combinations in both themes. Keep these changes scoped to order-book tokens, not global market colors.
 - A row's depth width is its cumulative total divided by the largest visible cumulative total on that side. Bid and ask rows must therefore have independently varying lengths.
 - Desktop and compact depth bars are left-aligned. Preserve the existing mirrored direction in the mobile split layout.
-- Size-change feedback is a one-shot `1.8s ease` color fade: increases start at `#0A9981`, decreases start at `#ED7088`, then return to the normal text color. It must restart for every qualifying value update and must not loop.
+- Dark price and size-change starting colors preserve the corresponding depth palette's hue and saturation, adjusting lightness only as needed for composed contrast. Do not wash these colors out with white or shift the ask hue toward pure red. Keep the final palette and contrast results in `docs/orderbook-new-level-animation.md`.
+- Light new-level pulses darken both the white row surface and existing depth fills while retaining dark, readable text. Use shared theme tokens across desktop, compact and split layouts; keep the same timing and opacity curve as the dark theme.
+- Size-change feedback is a one-shot `1.8s ease` color fade using theme-aware `--orderbook-flash-bid/ask` tokens for quantity increases/decreases, then returning to normal numeric text. Validate both change colors on both book sides, including during a background pulse. It must restart for every qualifying value update and must not loop.
+- Follow `docs/orderbook-new-level-animation.md`: new price levels in consecutive valid live snapshots receive a shared one-shot `800ms ease` full-row pulse, with opacity `0 / 0.7 / 0` and a fixed 0–450ms stagger. Compare full available snapshots before visible slicing using network, market, grouping and actual feed identity; animate only measured, visible, interactive rows. Initial snapshots, empty-side recovery, cache, stale/error recovery, visibility and view changes must remain quiet. Keep pulse events independent of ordinary quote updates, size-change feedback and row keys. The overlay stays below text, ignores pointers, respects reduced motion and never changes geometry or subscriptions.
 - Reset size-change comparison state when the market or grouping identity changes so stale values cannot flash after switching context.
+- Preserve an active quantity color fade through same-value and presentation-only rerenders; only a new numeric change restarts it. The shared persisted `animateOrderbook` setting defaults to true and controls both level backgrounds and quantity feedback across desktop and mobile. Disabling cancels current feedback; enabling establishes a quiet baseline without remounting panels. System reduced-motion always takes precedence. Follow `docs/orderbook-new-level-animation.md`.
 - In the mobile split layout, cumulative `Total` is static data; do not animate or color it from the individual level `size`.
 - Preserve WebSocket `px` and `sz` values as decimal strings. Use Big.js outside React components for cumulative base size and cumulative quote notional; quote `Total` is the running sum of each level's `size * price`, not cumulative base size multiplied by the current row price.
-- Compact order books derive one shared odd slot count from the measured ladder height: both-side mode uses half for asks, one slot for the mid price, and half for bids; single-side modes reuse every slot and omit the mid price. Keep the twenty-level incremental `l2` feed primary and the public five-level `l2Book + fast` stream as the feature-gated and automatic fallback; full books continue using the default `l2Book` feed. Fill sparse snapshots with non-interactive placeholders so the footer stays fixed, and filter same-coin fast/full cross-talk before writing subscription state because the pinned SDK does not distinguish those callbacks itself.
+- Compact order books derive their layout from one measured ladder height: both-side mode reserves the mid price and its two gaps, then covers each half independently; single-side modes use the full height and omit the mid price. Render enough slots to cover the container, independently of the feed depth, and fill sparse snapshots with non-interactive placeholders so the footer stays fixed. Keep the twenty-level incremental `l2` feed primary and the public five-level `l2Book + fast` stream as the feature-gated and automatic fallback; full books continue using the default `l2Book` feed. Filter same-coin fast/full cross-talk before writing subscription state because the pinned SDK does not distinguish those callbacks itself.
 - Error, stale, cached, or market/grouping-mismatched snapshots must never be interactive. Cache identity includes network, market, grouping, and the actual feed source (`l2`, fast `l2Book`, or full `l2Book`), and cache expiry uses local receipt time rather than comparing the user's wall clock with exchange timestamps.
-- Full-width order-book rows use a `23px` row height and a `2px` gap. The compact split mobile book uses a `24px` row height and a `4px` gap; keep surplus ladder height at the far edge instead of distributing it between rows. If any value changes, update every real, skeleton, placeholder, visible-row, and panel-height formula that depends on it in the same change.
+- Follow `docs/orderbook-layout.md` before changing ladder geometry. Full-width order-book rows use a `23px` row height and a `2px` gap; the compact split mobile book uses a `24px` row height and a `4px` gap. Treat those row heights as readable minimums: round the number of complete rows down, then distribute remaining height uniformly within their row containers while keeping the font size and gaps fixed. Never crop a visible price to fill an edge. Keep best prices anchored toward the spread/mid price (or at the top of each side-by-side ladder), and share the resolved row height across real rows, skeletons, placeholders and rank offsets. Layout changes depend only on container geometry, never snapshot depth or quote updates; unmeasured rows and unavailable data must remain non-interactive. Verify complete text visibility, resizing and all view modes.
+- The mobile order-entry split has a viewport-based height independent of order type. Longer forms scroll inside the form without resizing the adjacent book or moving the account section; preserve action and field reachability. Follow `docs/desktop-grid-layout.md`.
 - Compact order-book headers respond to the order-book container width, not the page viewport, when deciding whether asset unit labels fit.
 - Desktop resizing uses react-grid-layout grid units. Preserve panel min/max constraints and container-aware compact order-book behavior so manual resizing cannot reintroduce overlap.
 
@@ -77,13 +94,19 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 
 - The terminal switches to its mobile surface at `1000px` and below. Keep the runtime media query, skeleton visibility, navigation visibility, mobile-only typography, and bottom-navigation-aware overlays on the same inclusive breakpoint.
 - At widths above `1420px`, use the 16-column three-column desktop grid. From `1001px` through `1420px`, use a 14-column `8 / 3 / 3` top row so the chart, market data, and trading panel remain visible together; use an `11 / 3` lower row for account panels.
+- Desktop disconnected accounts show a compact zero-value overview with disabled funding controls, preserving the sponsored email-deposit exception. Keep order-entry CTA and summary at the bottom of the panel, with natural content measurements separated from the stretched layout; follow `docs/desktop-grid-layout.md` before changing these surfaces.
+- Follow `docs/desktop-grid-layout.md`: the chart (including its upper toolbars), market data and trading panel share the upper region’s bottom edge; the account table and account information share the lower region’s top and bottom edges. Use the same layout constraints during measurement, live resizing, breakpoint changes and saved-layout restoration. Keep natural content measurements separate from stretched panel geometry to avoid height feedback loops.
 - Keep favorites, market information, chart, market data, trading interface, account table, and account information as stable keyed grid children. Responsive desktop changes must move and resize those instances rather than conditionally remounting them.
+- Default desktop geometry must fit all eight ordinary order-entry types without internal scrolling; keep the order-type header outside the overflow region and validate real forms, not only synthetic tall content. Follow `docs/order-entry-layout-audit.md`.
+- Order-entry content must not resize the desktop grid. Market/Limit, advanced-order fields and feedback adapt within the trading panel; preserve chart, order-book and account boundaries, internal scrolling and user-selected grid geometry. Follow `docs/desktop-grid-layout.md`.
 - Persist desktop grid geometry in grid units and validate stored geometry against current panel constraints before restoring it. Do not let stale persisted data override panel identities or min/max constraints.
 - Desktop grid item gutters and outer container spacing are both `3px`. Keep `margin` and react-grid-layout `containerPadding` aligned; the latter is geometry, not CSS padding.
 - The desktop grid underlay uses `#F1F3F6` behind white panels in the light theme and `#1B2429` behind `#0F1A1F` panels in the dark theme. Keep react-grid-layout transparent so the underlay remains visible through every gutter; do not replace this separation with panel borders.
 - Bump the desktop grid storage key when default geometry changes incompatibly, and preserve a user-visible reset path for valid but unwanted saved layouts.
 
 ## Verification
+
+Browser-fixture servers must use a Vite dependency cache separate from the application dev server, with neither cache nested inside the other. Follow `docs/runtime-guardrails.md` when changing browser-test configuration; a different root or port does not isolate Vite's default cache.
 
 Run checks proportional to the touched surface before committing:
 

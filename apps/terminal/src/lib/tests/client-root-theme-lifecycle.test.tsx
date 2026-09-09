@@ -19,6 +19,7 @@ const runtime = vi.hoisted(() => ({
 vi.mock("@gatu/hl-react", () => ({
 	HyperliquidAgentApprovalProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidExchangePolicyProvider: ({ children }: { children: React.ReactNode }) => children,
+	HyperliquidOwnerSignerProvider: ({ children }: { children: React.ReactNode }) => children,
 	HyperliquidProvider: ({ children }: { children: React.ReactNode }) => children,
 	useLegalStatusLifecycle: () => undefined,
 }));
@@ -52,6 +53,9 @@ vi.mock("@/components/trade/twap-reconciliation", () => ({ TwapReconciliation: (
 
 vi.mock("@/hooks/wallet/use-explicit-agent-approval", () => ({
 	useExplicitAgentApproval: () => ({ mutateAsync: vi.fn() }),
+}));
+vi.mock("@/hooks/wallet/use-privy-owner-signer", () => ({
+	usePrivyOwnerSigner: () => null,
 }));
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({

@@ -43,13 +43,7 @@ Apply this workflow to every task that may modify files in a Git repository.
 ## Commit rules
 
 1. Create one focused commit for the completed task unless separate commits are clearly required for reviewability.
-2. Use a concise Conventional Commit message when practical:
-   - `feat: ...`
-   - `fix: ...`
-   - `refactor: ...`
-   - `test: ...`
-   - `docs: ...`
-   - `chore: ...`
+2. Use a concise Conventional Commit message with a non-empty scope, as required by this repository's commitlint and `.claude/rules/git.md`, for example `fix(terminal): ...`, `test(orderbook): ...`, or `docs(trading): ...`.
 3. Write the message from the actual staged diff, not merely from the user's original request.
 4. Do not amend an existing commit unless the user explicitly asks.
 5. Do not push, force-push, rebase, merge, open a pull request, or deploy unless the user explicitly asks.

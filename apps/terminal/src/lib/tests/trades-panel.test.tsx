@@ -2,7 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
-import { act } from "react";
+import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
@@ -31,11 +31,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useSelectedMarketInfo: () => ({
 		data: { kind: "perp", markPx: "64.5", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	}),
 	useSubscription: (method: string) => {
-		mocks.subscriptionMethods.push(method);
+		useEffect(() => {
+			mocks.subscriptionMethods.push(method);
+		}, [method]);
 		return mocks.result;
 	},
 }));
@@ -45,10 +48,11 @@ vi.mock("@/lib/performance/render-profile", () => ({
 }));
 
 vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
-	useOrderbookRows: () => [4, { current: null }],
+	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: 4, rowHeightPx: 23 }, { current: null }],
 }));
 
-vi.mock("@/stores/use-global-settings-store", () => ({
+vi.mock(import("../../stores/use-global-settings-store"), async (importOriginal) => ({
+	...(await importOriginal()),
 	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));
@@ -190,20 +194,35 @@ describe("TradesPanel", () => {
 		).toBe("80.63");
 	});
 
-	it("preserves the subscription error state", () => {
+	it("shows a localized desktop error without exposing transport details", () => {
 		mocks.result.error = new Error("Subscription unavailable");
 		mocks.result.status = "error";
 
 		renderPanel();
 
-		expect(container.textContent).toContain("Subscription unavailable");
+		expect(container.textContent).not.toContain("Subscription unavailable");
+		expect(container.textContent).toContain("Failed to load trades.");
+		expect(container.querySelector('[data-slot="trades-pending"]')).toBeNull();
 	});
 
-	function renderPanel() {
+	it("keeps mobile errors quiet until a fresh snapshot recovers", () => {
+		mocks.result.error = new Error("Subscription unavailable");
+		mocks.result.status = "error";
+		renderPanel(true);
+		expect(container.textContent).not.toContain("Subscription unavailable");
+		expect(container.textContent).not.toContain("Failed to load trades.");
+		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
+		mocks.result.status = "active";
+		mocks.result.data = [];
+		renderPanel(true);
+		expect(container.textContent).toContain("No recent trades.");
+	});
+
+	function renderPanel(quietErrors = false) {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<TradesPanel showInQuote={mocks.sizeMode === "quote"} />
+					<TradesPanel quietErrors={quietErrors} showInQuote={mocks.sizeMode === "quote"} />
 				</I18nProvider>,
 			),
 		);

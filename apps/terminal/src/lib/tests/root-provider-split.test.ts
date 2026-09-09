@@ -121,9 +121,11 @@ describe("root provider startup split", () => {
 			clientRootProviderSource.indexOf("function HyperliquidAgentApprovalBridge"),
 		);
 		const hyperliquidProviderIndex = hyperliquidBridgeBody.indexOf("<HyperliquidProvider");
+		const ownerSignerBridgeIndex = hyperliquidBridgeBody.indexOf("<HyperliquidOwnerSignerBridge>");
 		const agentApprovalBridgeIndex = hyperliquidBridgeBody.indexOf("<HyperliquidAgentApprovalBridge>");
 		expect(hyperliquidProviderIndex).toBeGreaterThanOrEqual(0);
-		expect(agentApprovalBridgeIndex).toBeGreaterThan(hyperliquidProviderIndex);
+		expect(ownerSignerBridgeIndex).toBeGreaterThan(hyperliquidProviderIndex);
+		expect(agentApprovalBridgeIndex).toBeGreaterThan(ownerSignerBridgeIndex);
 		expect(clientRootProviderSource).toContain("<HyperliquidAgentApprovalProvider mutateAsync={approval.mutateAsync}>");
 		expect(clientRootProviderSource).toContain("<EmbeddedDepositAutoBridge />");
 		expect(clientRootProviderSource).toContain("<OrderReconciliation />");

@@ -17,8 +17,17 @@ import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
+import { createL2BookTransportPool } from "./subscriptions/l2-book-transport-pool";
 
 const cache = new Map<string, unknown>();
+const bookTransports = createL2BookTransportPool(
+	(isTestnet) =>
+		new WebSocketTransport({
+			isTestnet,
+			resubscribe: false,
+			reconnect: { maxRetries: 0, connectionTimeout: 10_000 },
+		}),
+);
 
 function getOrCreate<T>(key: string, create: () => T): T {
 	let value = cache.get(key) as T | undefined;
@@ -88,10 +97,16 @@ export function getInfoClient(isTestnet: boolean): InfoClient {
 }
 
 export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
-	return getOrCreate(
-		`subscription:${isTestnet}`,
-		() => new SubscriptionClient({ transport: getWsTransport(isTestnet) }),
-	);
+	return getOrCreate(`subscription:${isTestnet}`, () => {
+		const primary = getWsTransport(isTestnet);
+		const transport: ISubscriptionTransport = {
+			subscribe: (channel, payload, listener, options) =>
+				channel === "l2Book"
+					? bookTransports.subscribe(isTestnet, payload, listener, options)
+					: primary.subscribe(channel, payload, listener, options),
+		};
+		return new SubscriptionClient({ transport });
+	});
 }
 
 export function createExchangeClient(

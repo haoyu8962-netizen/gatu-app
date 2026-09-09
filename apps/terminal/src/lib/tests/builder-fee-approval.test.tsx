@@ -25,8 +25,8 @@ vi.mock("@gatu/hl-react/hooks/useExchange", () => ({
 	useExchange: () => ({ mutateAsync: testState.approveBuilderFee }),
 }));
 
-vi.mock("@gatu/hl-react/signing/use-agent-status", () => ({
-	useAgentStatus: () => ({ refetchBuilderFee: testState.refetchBuilderFee }),
+vi.mock("../../../../../packages/hl-react/src/signing/use-trading-status", () => ({
+	useTradingStatus: () => ({ refetchBuilderFee: testState.refetchBuilderFee }),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -40,7 +40,7 @@ function Probe() {
 
 function requirements(needsBuilderFee: boolean) {
 	return {
-		isAgentReady: false,
+		isSignerReady: false,
 		isBuilderFeeReady: !needsBuilderFee,
 		isReady: false,
 		needsAgent: true,

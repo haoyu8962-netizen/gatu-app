@@ -8,7 +8,7 @@ import {
 
 const allowedInput = {
 	accountDataReady: true,
-	accountModeReady: true,
+	accountModeStatus: "supported" as const,
 	geoStatus: "allowed" as const,
 	hasWalletAccess: true,
 };
@@ -31,8 +31,12 @@ describe("funds action availability", () => {
 			input: { ...allowedInput, geoStatus: "unresolved" as const },
 		},
 		{
-			expected: "account-mode-unavailable",
-			input: { ...allowedInput, accountModeReady: false },
+			expected: "account-mode-unresolved",
+			input: { ...allowedInput, accountModeStatus: "unresolved" as const },
+		},
+		{
+			expected: "account-mode-unsupported",
+			input: { ...allowedInput, accountModeStatus: "unsupported" as const },
 		},
 		{
 			expected: "account-data-unavailable",

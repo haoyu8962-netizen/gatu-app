@@ -9,19 +9,16 @@ import { TradeRow } from "./trade-row";
 
 interface Props {
 	compact?: boolean;
+	quietErrors?: boolean;
 	showInQuote: boolean;
 }
 
-export function TradesPanel({ compact = false, showInQuote }: Props) {
+export function TradesPanel({ compact = false, quietErrors = false, showInQuote }: Props) {
 	const { t } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);
-	const {
-		data: trades,
-		status,
-		error,
-	} = useSubscription("trades", params, {
+	const { data: trades, status } = useSubscription("trades", params, {
 		enabled: !!selectedMarket && !!subscriptionCoin,
 	});
 	const isTestnet = useIsTestnet();
@@ -40,6 +37,9 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
 	}
 	const displayAsset = showInQuote ? quoteToken : baseToken;
+	const showError = status === "error" && !quietErrors;
+	const showRows = status !== "error" && processed.length > 0;
+	const showEmpty = status === "active" && trades !== undefined && processed.length === 0;
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
@@ -59,11 +59,12 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
 			</div>
 
-			{status === "error" ? (
+			{showError ? (
 				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
-					{error instanceof Error ? error.message : t`Failed to load trades.`}
+					{t`Failed to load trades.`}
 				</div>
-			) : processed.length > 0 ? (
+			) : null}
+			{showRows ? (
 				<div className="flex-1 min-h-0 overflow-y-auto">
 					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>
 						{processed.map((trade) => (
@@ -80,13 +81,15 @@ export function TradesPanel({ compact = false, showInQuote }: Props) {
 						))}
 					</div>
 				</div>
-			) : status === "active" && trades !== undefined ? (
+			) : null}
+			{showEmpty ? (
 				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg-muted">
 					{t`No recent trades.`}
 				</div>
-			) : (
+			) : null}
+			{!showError && !showRows && !showEmpty ? (
 				<div data-slot="trades-pending" className="flex-1 min-h-0" aria-hidden="true" />
-			)}
+			) : null}
 		</div>
 	);
 }
