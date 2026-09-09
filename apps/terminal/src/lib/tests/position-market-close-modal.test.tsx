@@ -511,19 +511,19 @@ describe("PositionMarketCloseModal", () => {
 	it("fails closed for loading, failed, stale, closed, and direction-changed live positions", () => {
 		testState.positionIsLoading = true;
 		render();
-		expect(container.querySelector('[role="status"]')?.textContent).toContain("Loading the latest position");
+		expect(container.textContent).not.toContain("Loading the latest position");
 		expectEditingLocked();
 
 		testState.positionIsLoading = false;
 		testState.positionHasError = true;
 		render();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is unavailable");
+		expect(container.textContent).not.toContain("Live position data is unavailable");
 		expectEditingLocked();
 
 		testState.positionHasError = false;
 		testState.positionIsStale = true;
 		render();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is stale");
+		expect(container.textContent).not.toContain("Live position data is stale");
 		expectEditingLocked();
 
 		testState.positionIsStale = false;

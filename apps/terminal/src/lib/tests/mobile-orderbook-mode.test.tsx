@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
+import { stubReducedMotion } from "./harness/media-query";
 import { createI18nRoot } from "./harness/react";
 
 const ASKS = Array.from({ length: 20 }, (_, index) => ({
@@ -25,14 +26,12 @@ const BIDS = Array.from({ length: 20 }, (_, index) => ({
 function CompactOrderbookHarness({
 	asks = ASKS,
 	bids = BIDS,
-	bookStatus = "active",
 	hasSnapshot = true,
 	isInteractive = true,
 	showOrderbookInQuote = false,
 }: {
 	asks?: typeof ASKS;
 	bids?: typeof BIDS;
-	bookStatus?: string;
 	hasSnapshot?: boolean;
 	isInteractive?: boolean;
 	showOrderbookInQuote?: boolean;
@@ -44,7 +43,6 @@ function CompactOrderbookHarness({
 			asks={asks}
 			baseToken="HYPE"
 			bids={bids}
-			bookStatus={bookStatus}
 			flashResetKey="HYPE:0.1"
 			hasSnapshot={hasSnapshot}
 			isInteractive={isInteractive}
@@ -76,8 +74,10 @@ describe("compact mobile orderbook modes", () => {
 	let observerInstance: ResizeObserver | undefined;
 	let measuredHeight: number;
 	let root: Root;
+	let motion: ReturnType<typeof stubReducedMotion>;
 
 	beforeEach(() => {
+		motion = stubReducedMotion();
 		getOrderbookActionsStore().actions.clearSelectedPrice();
 		measuredHeight = 304;
 		disconnectCallCount = 0;
@@ -165,7 +165,7 @@ describe("compact mobile orderbook modes", () => {
 		expect(controls.map((button) => button.getAttribute("aria-pressed"))).toEqual(["false", "false", "true"]);
 	});
 
-	it("grows from eleven to thirteen slots when the shared fieldset grows", () => {
+	it("adds another row only after its complete minimum height fits", () => {
 		expect(getLadder("asks").children).toHaveLength(5);
 		expect(getLadder("bids").children).toHaveLength(5);
 		resizeBook(359);
@@ -182,9 +182,7 @@ describe("compact mobile orderbook modes", () => {
 
 	it("keeps pending skeleton ranks stable when the measured slot count grows", () => {
 		act(() => {
-			root.render(
-				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="pending" hasSnapshot={false} isInteractive={false} />,
-			);
+			root.render(<CompactOrderbookHarness asks={[]} bids={[]} hasSnapshot={false} isInteractive={false} />);
 		});
 
 		const initialAskRows = [
@@ -217,7 +215,7 @@ describe("compact mobile orderbook modes", () => {
 		}
 	});
 
-	it("uses rank-positioned rows and leaves surplus height at each far edge", () => {
+	it("anchors rank-positioned rows toward the midpoint", () => {
 		const asks = getLadder("asks");
 		const bids = getLadder("bids");
 		const askRows = [...asks.querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"]')];
@@ -239,6 +237,38 @@ describe("compact mobile orderbook modes", () => {
 			"translateY(84px)",
 			"translateY(112px)",
 		]);
+	});
+
+	it("resizes complete rows while preserving price identity and selection", () => {
+		const ask = getLadder("asks").querySelector<HTMLButtonElement>("button");
+		const position = ask?.parentElement;
+		expect(position?.style.height).toBe("24px");
+		resizeBook(359);
+		expect(getLadder("asks").querySelector("button")).toBe(ask);
+		expect(position?.style.height).toBe("29.5px");
+		expect(position?.style.transform).toBe("translateY(-134px)");
+		expect(ask?.disabled).toBe(false);
+		act(() => ask?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "105" });
+		resizeBook(359.5);
+		expect(getLadder("asks").querySelector("button")).toBe(ask);
+		expect(position?.style.height).toBe("29.55px");
+		resizeBook(360);
+		expect([...getLadder("asks").querySelectorAll("button")]).toContain(ask);
+		expect(position?.style.height).toBe("24px");
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
+	});
+
+	it("fills single-side modes beyond the feed depth with complete placeholders", () => {
+		resizeBook(700);
+		expect(getLadder("asks").children).toHaveLength(12);
+		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
+		expect(getLadder("asks").children).toHaveLength(25);
+		expect(getLadder("asks").querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(5);
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
+		resizeBook(331.5);
+		expect(getLadder("asks").children).toHaveLength(11);
+		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
 	});
 
 	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {
@@ -281,19 +311,14 @@ describe("compact mobile orderbook modes", () => {
 	it("keeps compact chrome and typography in the error state", () => {
 		const initialFieldset = observedElement;
 
-		act(() =>
-			root.render(
-				<CompactOrderbookHarness asks={[]} bids={[]} bookStatus="error" hasSnapshot={false} isInteractive={false} />,
-			),
-		);
+		act(() => root.render(<CompactOrderbookHarness asks={[]} bids={[]} hasSnapshot={false} isInteractive={false} />));
 
 		const alert = container.querySelector<HTMLElement>('[role="alert"]');
 		const currentFieldset = container.querySelector("fieldset");
 		expect(container.firstElementChild?.className).toContain("font-market-close");
 		expect(currentFieldset).toBe(initialFieldset);
-		expect(alert?.className).toContain("text-xs");
-		expect(alert?.className).toContain("text-trading-panel-error");
-		expect(currentFieldset?.contains(alert ?? null)).toBe(true);
+		expect(alert).toBeNull();
+		expect(container.querySelector('[data-slot="compact-orderbook-row-position"]')).not.toBeNull();
 		expect(container.querySelector('[data-slot="compact-orderbook-price-token"]')).not.toBeNull();
 		expect(container.querySelector('[data-slot="compact-orderbook-size-token"]')).not.toBeNull();
 		expect(container.querySelector('[aria-label="Price precision"]')).not.toBeNull();
@@ -392,5 +417,32 @@ describe("compact mobile orderbook modes", () => {
 		act(() => root.unmount());
 		expect(disconnectCallCount).toBe(1);
 		root = createI18nRoot(container);
+	});
+
+	it("cancels quantity feedback when reduced motion is enabled and resumes from a quiet baseline", () => {
+		function renderSize(size: string) {
+			act(() => root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], size }]} />));
+			return container.querySelector('[data-side="ask"][data-price="101"] [data-slot="orderbook-size-value"]');
+		}
+		expect(renderSize("2")?.getAttribute("data-direction")).toBe("up");
+		act(() => motion.setReducedMotion(true));
+		expect(renderSize("3")?.getAttribute("data-direction")).toBeNull();
+		act(() => motion.setReducedMotion(false));
+		expect(renderSize("3")?.getAttribute("data-direction")).toBeNull();
+		expect(renderSize("4")?.getAttribute("data-direction")).toBe("up");
+	});
+
+	it("keeps quantity feedback disabled when matchMedia is unavailable", () => {
+		act(() => root.unmount());
+		vi.stubGlobal("matchMedia", undefined);
+		root = createI18nRoot(container);
+		act(() => root.render(<CompactOrderbookHarness />));
+		act(() => root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], size: "2" }]} />));
+		expect(container.querySelector('[data-slot="orderbook-size-value"][data-direction]')).toBeNull();
+		expect(container.querySelector(".orderbook-color-change")).toBeNull();
+		const row = container.querySelector<HTMLButtonElement>('[data-side="ask"][data-price="101"] button');
+		expect(row?.disabled).toBe(false);
+		act(() => row?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "101" });
 	});
 });

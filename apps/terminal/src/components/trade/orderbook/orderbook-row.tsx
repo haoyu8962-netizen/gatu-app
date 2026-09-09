@@ -6,7 +6,9 @@ import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
+import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+import { OrderbookLevelPulse } from "./orderbook-level-pulse";
 import { OrderbookSizeCell } from "./orderbook-size-cell";
 
 interface Props {
@@ -22,6 +24,8 @@ interface Props {
 	disabled?: boolean;
 	baseAsset?: string;
 	quoteAsset?: string;
+	pulse?: OrderbookLevelPulseEvent;
+	onPulseEnd?: (id: number) => void;
 }
 
 function OrderbookRowComponent({
@@ -37,6 +41,8 @@ function OrderbookRowComponent({
 	disabled = false,
 	baseAsset,
 	quoteAsset,
+	pulse,
+	onPulseEnd,
 }: Props) {
 	const { t } = useLingui();
 	useNumberFormatRevision();
@@ -73,9 +79,8 @@ function OrderbookRowComponent({
 			aria-label={ariaLabel}
 			{...longPressTooltip.handlers}
 			className={cn(
-				"group relative block w-full shrink-0 cursor-pointer bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
-				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
-				compact ? "h-[24px]" : "h-[23px]",
+				"orderbook-row group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
+				compact ? "h-[var(--orderbook-row-height,24px)]" : "h-[var(--orderbook-row-height,23px)]",
 			)}
 		>
 			<span
@@ -85,9 +90,12 @@ function OrderbookRowComponent({
 					left: 0,
 				}}
 			/>
+			{!disabled && pulse && onPulseEnd && (
+				<OrderbookLevelPulse key={pulse.id} event={pulse} onAnimationEnd={onPulseEnd} />
+			)}
 			<span
 				className={cn(
-					"grid gap-1 tabular-nums py-0.5 relative z-10",
+					"grid h-full items-center gap-1 tabular-nums py-0.5 relative z-10",
 					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
 				)}
 			>
@@ -104,7 +112,7 @@ function OrderbookRowComponent({
 					</span>
 				</span>
 				<OrderbookSizeCell
-					className={cn("min-w-0 truncate text-right", compact ? "text-trading-panel-muted" : "orderbook-value-text")}
+					className="min-w-0 truncate text-right orderbook-value-text"
 					displayValue={sizeText}
 					resetKey={flashResetKey}
 					value={level.size}
@@ -148,6 +156,8 @@ function OrderbookRowComponent({
 
 function areEqual(prev: Props, next: Props): boolean {
 	return (
+		prev.pulse === next.pulse &&
+		prev.onPulseEnd === next.onPulseEnd &&
 		prev.flashResetKey === next.flashResetKey &&
 		prev.marketName === next.marketName &&
 		prev.side === next.side &&

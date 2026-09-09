@@ -47,22 +47,33 @@ The terminal must preserve this ordering:
 3. **Accept required policies.** The blocking legal dialog requires both
    policy acknowledgements. Acceptance signs and submits Hyperliquid's
    `acceptTerms2` request, then re-queries `legalCheck` before continuing.
-   Email sessions sign through Privy's exact embedded-wallet address with the
-   per-call confirmation UI enabled. Identity and environment are rechecked
+   Email sessions sign through Privy's exact embedded-wallet address after the
+   application policy review, with the duplicate per-call confirmation UI hidden.
+   Identity and environment are rechecked
    before signing, after signing, after server confirmation, and before the
    legal cache is updated.
-4. **Establish the trading connection.** A user must explicitly invoke
+4. **Select the trading signer.** An authenticated email session uses its exact
+   active Privy embedded owner wallet directly for L1 trading and user-signed
+   actions. It does not create or approve a local Agent for ordinary trading,
+   and Agent storage or `extraAgents` availability cannot authorize or block
+   that signer. Missing or mismatched embedded wallets fail closed without
+   falling back to a connected wallet or stored Agent. External wallets and
+   Agent-only sessions retain the Agent flow below.
+
+   **Establish an external-wallet trading connection.** A user must explicitly invoke
    **Enable Trading** before the connection dialog is presented. Only a
    completed `extraAgents` response may establish that no locally available
    Agent is approved for this exact owner and environment. Loading, refreshing,
    absent, and failed responses remain non-definitive and must not trigger
-   `approveAgent`. The application dialog is the permission review for this
-   entry point. After that review, the exact Privy email embedded wallet may
-   suppress Privy's duplicate per-call confirmation UI. All other Agent
-   approval entry points retain confirmation by default, and external wallets
-   are unchanged. Page load and status checks never sign. Agent registration
-   is separate from builder-fee approval.
-5. **Verify the new Agent.** Before opening the wallet signing request, persist
+   `approveAgent`. This onboarding dialog applies to external-wallet trading.
+   Explicit API-wallet management and desktop linking remain separate
+   owner-approved operations. An embedded wallet may hide a duplicate Privy
+   confirmation only when that entry point already completed its own application
+   permission review; other Agent approvals retain confirmation by default.
+   Page load and status checks never sign. Agent registration is separate from
+   builder-fee approval.
+5. **Verify a requested new Agent (external-wallet flow).** Before opening the
+   wallet signing request, persist
    the generated key in the selected storage scope as approval-pending and
    therefore unverified. Refetch the server-side Agent status after approval,
    confirm the exact generated public address and deployment-scoped Agent name,
@@ -97,11 +108,16 @@ The terminal must preserve this ordering:
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
 
-The legal gate has priority over Agent setup and ordinary global dialogs. A
-required HIP-3 deployer disclaimer retains priority over ordinary dialogs once
-legal and Agent onboarding are complete.
+The legal gate has priority over signer readiness, Agent setup and ordinary
+global dialogs. A required HIP-3 deployer disclaimer retains priority over
+ordinary dialogs once legal review and signer setup are complete.
 
 ## Stay Connected
+
+Email sessions use Privy authentication persistence and do not show the Agent
+connection dialog or generate a trading key. Existing locally stored Agents are
+not selected by an email session. Explicit API-wallet management and desktop
+linking remain separate owner-approved operations with real Agent verification.
 
 `Stay connected in this browser` controls only the storage lifetime of the
 generated Agent private key. It does not change the owner wallet or Agent
@@ -186,7 +202,7 @@ only network, timeout, 408, 429, and 5xx failures receive bounded retries.
 
 ## State Boundaries
 
-- Wallet connection, legal acceptance, Agent approval, local Agent key,
+- Wallet connection, embedded-owner signer readiness, legal acceptance, Agent approval, local Agent key,
   builder-fee approval, and account funding are separate states.
 - Agent/API wallet keys can trade but cannot withdraw. Withdrawals and other
   user-signed actions continue to require the matching owner wallet.
@@ -365,7 +381,7 @@ At minimum, changes to this flow must cover:
   data, offline action rejection, focus/reconnect refresh, BFCache invalidation,
   schema drift, bounded retry, and exact-owner Exchange write enforcement;
 - email and external login intent, cross-user session isolation, exact embedded
-  wallet selection, and per-call Privy terms confirmation;
+  wallet selection, and silent Privy terms signing after explicit application confirmation;
 - both policy checkboxes and the non-dismissible blocking dialog;
 - an existing approved Agent without a redundant signature;
 - new Agent verification using the newly generated address;
@@ -410,3 +426,28 @@ At minimum, changes to this flow must cover:
 Production deployment preflight validation also requires a non-empty, unquoted
 `IPDATA_API_KEY`. Configure and rotate it in the runtime secret store; never
 commit, log, or expose its value through a `VITE_` client variable.
+
+## Email Registration and Direct Signing
+
+Follow [Email trading design](email-trading-signing.md). Login and registration
+share Privy's email OTP flow and create embedded Ethereum wallets only for
+users without a wallet. Authentication alone never establishes a signer. Wait
+for the exact wallet directory entry and active account, then verify legal
+status before allowing actions. Do not add a second registration form, create
+wallets for external-wallet users, or imitate the official site's signing
+prewarm. Page load and session restoration never sign.
+
+A fresh successful email login creates an in-memory, user-bound onboarding
+intent. Once its exact owner and environment resolve, legal and funding checks
+may consume that intent once to guide a confirmed empty account to an eligible
+deposit surface. The intent does not survive refresh, logout, a different user,
+owner, or environment. Failed or incomplete legal, funding, geo, or routing
+checks never imply acceptance or an empty account. Passive failures stay quiet;
+manual Deposit remains available under the same capability checks.
+
+Direct signing retains the shared write scheduler, fresh legal enforcement,
+identity invalidation, account-mode policy, funds locks, and uncertain-outcome
+handling. The embedded owner must be revalidated before and after asynchronous
+signing and before submission. Ordinary L1 writes and explicitly requested
+builder-fee approval use the same owner wallet; builder approval remains tied
+to the first action needing the configured builder, never login or registration.

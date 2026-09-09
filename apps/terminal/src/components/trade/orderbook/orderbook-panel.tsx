@@ -3,9 +3,10 @@ import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import { useHyperliquid, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumber } from "@/lib/trade/numbers";
@@ -18,7 +19,9 @@ import {
 	getSnapshotPriceDecimals,
 	processLevels,
 } from "@/lib/trade/orderbook";
+import { getOrderbookLadderStyle, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
+import { OrderbookPlaceholderRow } from "./orderbook-placeholder-row";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
@@ -26,11 +29,12 @@ import { useOrderbookRows } from "./use-orderbook-rows";
 export function OrderbookPanel() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
+	const { env } = useHyperliquid();
 	useRenderCommitTrack("orderbook");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const sizeMode = useSizeMode();
 	const showOrderbookInQuote = sizeMode === "quote";
-	const [visibleRows, orderbookContainerRef] = useOrderbookRows();
+	const [{ rowCount: visibleRows, fullRowCount, rowHeightPx }, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -101,7 +105,24 @@ export function OrderbookPanel() {
 	const spreadText = spreadInfo
 		? `${formatNumber(spreadInfo.spread, priceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`
 		: "—";
-	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
+	const flashResetKey = `${env}:${subscriptionParams.coin}:${getPriceGroupingKey(subscriptionParams)}:l2Book-full`;
+	const visiblePulseLevels = useMemo(
+		() => [
+			...asks
+				.slice(0, fullRowCount)
+				.reverse()
+				.map((level) => ({ side: "ask" as const, price: level.price })),
+			...bids.slice(0, fullRowCount).map((level) => ({ side: "bid" as const, price: level.price })),
+		],
+		[asks, bids, fullRowCount],
+	);
+	const { panelRef, getPulse, onAnimationEnd } = useOrderbookLevelPulses({
+		identity: flashResetKey,
+		snapshot: currentOrderbook,
+		visibleLevels: visiblePulseLevels,
+		viewKey: `desktop:${tab}:${fullRowCount}`,
+		active: tab === "book" && hasCurrentSnapshot && fullRowCount > 0,
+	});
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 
@@ -115,6 +136,7 @@ export function OrderbookPanel() {
 
 	return (
 		<Tabs
+			ref={panelRef}
 			value={tab}
 			onValueChange={setTab}
 			className="orderbook-panel-container h-full min-h-0 flex flex-col overflow-hidden bg-surface"
@@ -148,7 +170,7 @@ export function OrderbookPanel() {
 				aria-busy={!hasCurrentSnapshot && !hasFailure}
 				className="flex-1 min-h-0 mt-0 pt-0 flex flex-col"
 			>
-				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs text-fg-muted border-b border-stroke-weak shrink-0">
+				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs orderbook-header-text border-b border-stroke-weak shrink-0">
 					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
 						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
 						<Dropdown
@@ -182,21 +204,33 @@ export function OrderbookPanel() {
 				</div>
 
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div className="flex-1 min-h-0 flex flex-col justify-end gap-[2px]">
+					<div
+						data-slot="orderbook-asks"
+						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
+						className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end gap-[2px]"
+					>
 						{hasCurrentSnapshot && asks.length > 0 ? (
-							asksReversed.map((level) => (
-								<OrderbookRow
-									key={`ask-${level.price}`}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={subscriptionParams.coin}
-									side="ask"
-									maxTotal={askMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-								/>
-							))
+							<>
+								{getOrderbookPlaceholderKeys(visibleRows - asks.length).map((key) => (
+									<OrderbookPlaceholderRow key={key} />
+								))}
+								{asksReversed.map((level, index) => (
+									<OrderbookRow
+										key={`ask-${level.price}`}
+										disabled={asks.length - index - 1 >= fullRowCount}
+										flashResetKey={flashResetKey}
+										pulse={getPulse("ask", level.price)}
+										onPulseEnd={onAnimationEnd}
+										level={level}
+										marketName={subscriptionParams.coin}
+										side="ask"
+										maxTotal={askMaxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+							</>
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
 						) : (
@@ -214,21 +248,33 @@ export function OrderbookPanel() {
 						<span className="tabular-nums font-medium text-fg-muted">{spreadText}</span>
 					</div>
 
-					<div className="flex-1 min-h-0 flex flex-col gap-[2px]">
+					<div
+						data-slot="orderbook-bids"
+						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
+						className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]"
+					>
 						{hasCurrentSnapshot && bids.length > 0 ? (
-							bids.map((level) => (
-								<OrderbookRow
-									key={`bid-${level.price}`}
-									flashResetKey={flashResetKey}
-									level={level}
-									marketName={subscriptionParams.coin}
-									side="bid"
-									maxTotal={bidMaxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-								/>
-							))
+							<>
+								{bids.map((level, rank) => (
+									<OrderbookRow
+										key={`bid-${level.price}`}
+										disabled={rank >= fullRowCount}
+										flashResetKey={flashResetKey}
+										pulse={getPulse("bid", level.price)}
+										onPulseEnd={onAnimationEnd}
+										level={level}
+										marketName={subscriptionParams.coin}
+										side="bid"
+										maxTotal={bidMaxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+								{getOrderbookPlaceholderKeys(visibleRows - bids.length).map((key) => (
+									<OrderbookPlaceholderRow key={key} />
+								))}
+							</>
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
 						) : null}

@@ -7,6 +7,7 @@ import { cleanupAgentRegistrationIfMatches } from "./agent-registration-session"
 import { readAgentFromStorage, useAgentWalletStorage, useInvalidAgentStorageRecord } from "./agent-storage";
 import { isAgentApproved, isBuilderFeeApproved } from "./agent-utils";
 import { isStoredMobileAgent, type MobileAgentStaleReason, verifyMobileAgent } from "./mobile-agent";
+import { useHyperliquidOwnerSigner } from "./owner-signer-provider";
 import type { AgentWallet, BuilderConfig } from "./types";
 
 export interface AgentRequirements {
@@ -259,7 +260,9 @@ export function deriveAgentRequirements(
 	};
 }
 
-export function useAgentStatus(): UseAgentStatusResult {
+export function useAgentStatus(options: { enableAgent?: boolean } = {}): UseAgentStatusResult {
+	const ownerSigner = useHyperliquidOwnerSigner();
+	const enableAgent = options.enableAgent ?? !ownerSigner;
 	const { env, builderConfig, clientKey, agentName } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 
@@ -274,7 +277,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 		{ enabled: !!address && hasBuilderConfig },
 	);
 
-	const extraAgentsQuery = useInfo("extraAgents", { user: userAddress }, { enabled: !!address });
+	const extraAgentsQuery = useInfo("extraAgents", { user: userAddress }, { enabled: !!address && enableAgent });
 	const staleMobileReason = hasInvalidStorageRecord
 		? "invalid_local"
 		: address
@@ -286,7 +289,12 @@ export function useAgentStatus(): UseAgentStatusResult {
 			: null;
 
 	useEffect(() => {
-		if (!address || (!hasInvalidStorageRecord && localAgent?.source !== "mobile-sync") || !staleMobileReason) {
+		if (
+			!enableAgent ||
+			!address ||
+			(!hasInvalidStorageRecord && localAgent?.source !== "mobile-sync") ||
+			!staleMobileReason
+		) {
 			return;
 		}
 		const target = hasInvalidStorageRecord
@@ -296,7 +304,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 				: null;
 		if (!target) return;
 		void cleanupAgentRegistrationIfMatches(env, address, target);
-	}, [address, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
+	}, [address, enableAgent, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
 	const nowMs = Date.now();
 	const currentRequirements = deriveAgentRequirements(
@@ -309,7 +317,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 		agentName,
 	);
 	const agentVerificationStatus = deriveAgentVerificationStatus(
-		!!address,
+		!!address && enableAgent,
 		extraAgentsQuery.data,
 		extraAgentsQuery.error,
 		extraAgentsQuery.isFetching,
@@ -328,7 +336,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 	// Keep the action-level loading state scoped to the initial fetch. Background
 	// revalidation remains fail-closed through agentVerificationStatus without
 	// repeatedly disabling the trading action.
-	const isAgentLoading = extraAgentsQuery.isLoading;
+	const isAgentLoading = enableAgent && extraAgentsQuery.isLoading;
 	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
 	const requirements = deriveAgentRequirements(
@@ -342,6 +350,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 	);
 
 	async function refetchAgent(agentAddressOverride?: Address): Promise<AgentRequirements> {
+		if (!enableAgent) throw new Error("Agent verification is disabled for owner-wallet trading");
 		const agentsResult = await extraAgentsQuery.refetch();
 		if (agentsResult.error || agentsResult.data === undefined) {
 			throw createAgentStatusError(agentsResult.error);
@@ -386,6 +395,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 	}
 
 	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {
+		if (!enableAgent) throw new Error("Agent verification is disabled for owner-wallet trading");
 		const [builderFeeResult, agentsResult] = await Promise.all([
 			hasBuilderConfig ? builderFeeQuery.refetch() : Promise.resolve({ data: undefined, error: null }),
 			extraAgentsQuery.refetch(),

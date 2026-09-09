@@ -169,9 +169,9 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useAgentStatus: () => ({
-		isAgentLoading: false,
-		isAgentReady: true,
+	useTradingStatus: () => ({
+		isSignerLoading: false,
+		isSignerReady: true,
 		isBuilderFeeLoading: false,
 		isReady: true,
 	}),

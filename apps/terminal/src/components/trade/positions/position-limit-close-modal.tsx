@@ -137,17 +137,11 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		liveDirectionMatches,
 	});
 	const positionStatusMessage =
-		positionStatus === "loading"
-			? t`Loading the latest position...`
-			: positionStatus === "unavailable"
-				? t`Live position data is unavailable. Wait for the account connection to recover.`
-				: positionStatus === "stale"
-					? t`Live position data is stale. Wait for the account connection to recover.`
-					: positionStatus === "closed"
-						? t`This position is no longer open.`
-						: positionStatus === "direction-changed"
-							? t`This position changed sides. Close and reopen this dialog before submitting.`
-							: null;
+		positionStatus === "closed"
+			? t`This position is no longer open.`
+			: positionStatus === "direction-changed"
+				? t`This position changed sides. Close and reopen this dialog before submitting.`
+				: null;
 	const sizing =
 		sizingIntent.kind === "size"
 			? resolvePositionMarketCloseSize({
@@ -171,8 +165,9 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const canDismiss = phase === "idle" || phase === "reconciling";
-	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatusMessage === null;
-	const visibleError = positionStatusMessage ?? error ?? priceError ?? visibleSizingError;
+	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
+	const visibleError =
+		positionStatusMessage ?? error ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
 	const canSubmit = canEdit && priceValid && sizing.errors.length === 0;
 	const errorId = `position-limit-close-error-${position.assetId}`;
 	const helperId = `position-limit-close-helper-${position.assetId}`;
@@ -194,7 +189,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		{
 			key: "available",
 			label: t`Available to close`,
-			value: formatToken(positionStatusMessage === null ? sizing.maxSize : null, {
+			value: formatToken(positionStatus === null ? sizing.maxSize : null, {
 				decimals: position.szDecimals,
 				symbol: isMobile ? undefined : sizeSymbol,
 			}),

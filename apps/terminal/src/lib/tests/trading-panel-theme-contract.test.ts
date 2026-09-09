@@ -20,8 +20,8 @@ describe("trading panel theme contract", () => {
 
 	it("keeps light order book prices at WCAG AA contrast on the light surface", () => {
 		const surface = resolveCssColor(":root", "--bg-raised");
-		const bid = resolveCssColor(":root", "--orderbook-depth-bid");
-		const ask = resolveCssColor(":root", "--orderbook-depth-ask");
+		const bid = resolveCssColor(":root", "--orderbook-price-bid");
+		const ask = resolveCssColor(":root", "--orderbook-price-ask");
 
 		expect(getContrastRatio(bid, surface)).toBeGreaterThanOrEqual(4.5);
 		expect(getContrastRatio(ask, surface)).toBeGreaterThanOrEqual(4.5);

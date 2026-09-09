@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
-import { TwapHistoryLoadMore, TwapRealtimeWarning } from "@/components/trade/twap-history-feedback";
+import { TwapHistoryLoadMore } from "@/components/trade/twap-history-feedback";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -20,8 +21,7 @@ interface Props {
 export function MobileTwapHistoryList({ className, scrollMode = "contained" }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { error, hasMore, history, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
-		useTwapHistory();
+	const { hasMore, history, isConnected, isRealtimeDegraded, loadMore, status } = useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -39,25 +39,13 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 		);
 	}
 
-	if (status === "error") {
-		return (
-			<div className="flex flex-1 flex-col items-center justify-center gap-1 p-6 text-center text-sm text-market-close-danger">
-				<span>{t`Failed to load TWAP history.`}</span>
-				{error instanceof Error && <span className="text-xs text-market-close-muted">{error.message}</span>}
-			</div>
-		);
-	}
-
-	if (status === "loading" || status === "idle") {
-		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">{t`Loading TWAP history...`}</div>
-		);
+	if (status !== "ready" || (isRealtimeDegraded && history.length === 0)) {
+		return <DataPendingState loading={status === "loading" || status === "idle"} />;
 	}
 
 	if (history.length === 0) {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col">
-				{isRealtimeDegraded ? <TwapRealtimeWarning error={realtimeError} onRetry={retryRealtime} /> : null}
 				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 					{t`No TWAP history found.`}
 				</div>
@@ -73,9 +61,6 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 				className,
 			)}
 		>
-			{isRealtimeDegraded ? (
-				<TwapRealtimeWarning className="-mx-3.5 -mt-3" error={realtimeError} onRetry={retryRealtime} />
-			) : null}
 			{history.map((entry) => {
 				const market = markets.getMarket(entry.state.coin);
 				const marketLabel = market?.shortName ?? entry.state.coin;

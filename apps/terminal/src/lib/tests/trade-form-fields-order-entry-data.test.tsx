@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import { createHash } from "node:crypto";
+import { i18n } from "@lingui/core";
 import Big from "big.js";
 import { act, Fragment } from "react";
 import type { Root } from "react-dom/client";
@@ -146,6 +148,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 	}
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		localStorage.clear();
 		useOrderEntryDataMock.mockReset();
 		useOrderEntryDataMock
@@ -161,6 +164,35 @@ describe("TradeFormFields order-entry data ownership", () => {
 		act(() => root.unmount());
 		container.remove();
 		localStorage.clear();
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
+	it("hot-switches TIF chip labels while preserving selection, input and focus", () => {
+		act(() => root.render(<ParentHarness />));
+		act(() => {
+			actions.setOrderType("limit");
+			actions.setLimitPrice("101.25");
+		});
+		const chip = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Post Only",
+		);
+		if (!chip) throw new Error("Expected Post Only chip");
+		act(() => chip.click());
+		chip.focus();
+		expect(chip.getAttribute("aria-pressed")).toBe("true");
+		const priceInput = container.querySelector<HTMLInputElement>('input[value="101.25"]');
+		expect(priceInput).not.toBeNull();
+		const postOnlyId = createHash("sha256").update("Post Only\x1f").digest("base64").slice(0, 6);
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [postOnlyId]: "只挂单" } }));
+		expect(chip.textContent).toBe("只挂单");
+		expect(chip.getAttribute("aria-pressed")).toBe("true");
+		expect(document.activeElement).toBe(chip);
+		expect(container.querySelector('input[value="101.25"]')).toBe(priceInput);
+		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
+		expect(chip.textContent).toBe("Post Only");
+		expect(chip.getAttribute("aria-pressed")).toBe("true");
+		expect(document.activeElement).toBe(chip);
+		expect(priceInput?.value).toBe("101.25");
 	});
 
 	it("keeps TP/SL conversion on the committed leverage while the authoritative subscription is stale", () => {

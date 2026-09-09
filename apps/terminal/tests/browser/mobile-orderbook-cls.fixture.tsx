@@ -132,7 +132,9 @@ function serializeLayoutShift(entry: LayoutShiftEntry): LayoutShiftSample {
 }
 
 function getMaximumLayoutShiftSession(samples: LayoutShiftSample[]): number {
-	const scored = samples.filter((sample) => !sample.hadRecentInput).sort((left, right) => left.startTime - right.startTime);
+	const scored = samples
+		.filter((sample) => !sample.hadRecentInput)
+		.sort((left, right) => left.startTime - right.startTime);
 	let maximum = 0;
 	let sessionValue = 0;
 	let sessionStart = 0;
@@ -193,7 +195,7 @@ function getVerticalGeometry(elements: HTMLElement[]) {
 
 function getElementGaps(elements: HTMLElement[]) {
 	const geometry = getVerticalGeometry(elements);
-	return geometry.slice(1).map((row, index) => Math.round(row.top - (geometry[index]?.top ?? row.top)));
+	return geometry.slice(1).map((row, index) => row.top - (geometry[index]?.top ?? row.top));
 }
 
 function elementMatchesPosition(element: HTMLElement) {
@@ -220,7 +222,7 @@ function getSortedTops(rows: RowGeometry[]) {
 function getRowGaps(rows: RowGeometry[]) {
 	return (["ask", "bid"] as const).flatMap((side) => {
 		const sideRows = rows.filter((row) => row.side === side);
-		return sideRows.slice(1).map((row, index) => Math.round(row.top - sideRows[index].top));
+		return sideRows.slice(1).map((row, index) => row.top - sideRows[index].top);
 	});
 }
 
@@ -304,13 +306,9 @@ window.runMobileOrderbookClsFixture = async () => {
 	const control = await measureFlexControl();
 	const initialRows = getRowGeometry(rootElement);
 	const realRows = [
-		...rootElement.querySelectorAll<HTMLElement>(
-			'[data-slot="compact-orderbook-row-position"][data-price] button',
-		),
+		...rootElement.querySelectorAll<HTMLElement>('[data-slot="compact-orderbook-row-position"][data-price] button'),
 	];
-	const placeholderRows = [
-		...rootElement.querySelectorAll<HTMLElement>('[data-slot="orderbook-placeholder-row"]'),
-	];
+	const placeholderRows = [...rootElement.querySelectorAll<HTMLElement>('[data-slot="orderbook-placeholder-row"]')];
 	const realRowContentsMatchPosition = realRows.every(elementMatchesPosition);
 	const realRowHeights = realRows.map((row) => row.getBoundingClientRect().height);
 	const placeholderContentsMatchPosition = placeholderRows.every(elementMatchesPosition);

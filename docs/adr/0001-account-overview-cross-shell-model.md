@@ -32,9 +32,11 @@ The hook must not subscribe to the selected DEX. `useAccountOverview` adds the s
 
 ### Fail closed
 
-Unresolved account mode, missing required snapshots, stale streams, request errors, and missing non-USDC collateral prices are unavailable states. Consumers render placeholders or an explicit status and must not substitute `$0.00`.
+Unresolved account mode, missing required snapshots, stale streams, request errors, and missing non-USDC collateral prices are unavailable states in the shared model. Desktop and Portfolio consumers render placeholders or an explicit status and must not substitute `$0.00`.
 
-A numeric zero is displayed only when it comes from a complete current snapshot. Readiness is consumer-specific:
+The mobile account overview uses formatted zero placeholders for unavailable metrics without loading, stale, or error banners or warning icons. These placeholders exist only in the mobile rendering layer: they never enter the shared model, classify an account as empty, or enable funds actions. Loading is exposed through `aria-busy`. Disabled funds controls retain action descriptions and confirmed restriction explanations without transient read-status messages. The broader mobile and shared-dialog presentation rules are defined in [Mobile data presentation](../mobile-data-presentation.md).
+
+Outside those mobile placeholders, a numeric zero is displayed only when it comes from a complete current snapshot. Readiness is consumer-specific:
 
 - Trading account overview readiness may depend on the selected DEX and the account abstraction mode.
 - Portfolio current-equity readiness additionally requires its all-Dex, Vault, Earn, and reserve-price sources; history remains a separate fallback when those current sources are unavailable.
@@ -73,7 +75,7 @@ Rejected because it subscribes to selected-Dex balances and models trading-panel
 
 ### Treat missing data as zero
 
-Rejected because an unconnected, loading, stale, or failed account cannot be distinguished from a confirmed empty account. This can mislead users and can incorrectly enable funding actions.
+Rejected in the shared business model because an unconnected, loading, stale, or failed account cannot be distinguished from a confirmed empty account and can incorrectly enable funding actions. Mobile display placeholders do not change this data contract.
 
 ## Consequences
 

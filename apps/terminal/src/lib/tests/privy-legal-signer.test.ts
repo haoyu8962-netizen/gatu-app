@@ -7,7 +7,7 @@ const EXPECTED_ADDRESS = "0x1111111111111111111111111111111111111111";
 const OTHER_ADDRESS = "0x2222222222222222222222222222222222222222";
 
 describe("createPrivyLegalSigner", () => {
-	it("signs for the exact embedded wallet with an explicit Privy UI on every call", async () => {
+	it("signs for the exact embedded wallet after application review without another Privy prompt", async () => {
 		const rawSignature = `0x${"11".repeat(64)}1b` as const;
 		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });
 		const request = vi.fn().mockResolvedValue(null);
@@ -45,14 +45,13 @@ describe("createPrivyLegalSigner", () => {
 		});
 
 		expect(signTypedData).toHaveBeenCalledTimes(2);
-		expect(beforeSubmit).toHaveBeenCalledTimes(2);
+		expect(beforeSubmit).toHaveBeenCalledTimes(4);
 		for (const [, options] of signTypedData.mock.calls) {
 			expect(options).toEqual(
 				expect.objectContaining({
 					address: EXPECTED_ADDRESS,
 					uiOptions: expect.objectContaining({
-						showWalletUIs: true,
-						isCancellable: true,
+						showWalletUIs: false,
 					}),
 				}),
 			);
@@ -65,15 +64,19 @@ describe("createPrivyLegalSigner", () => {
 	});
 
 	it("does not release a Privy signature when the post-sign wallet guard fails", async () => {
+		const beforeSubmit = vi
+			.fn()
+			.mockImplementationOnce(() => {})
+			.mockImplementation(() => {
+				throw new Error("wallet changed");
+			});
 		const signer = createPrivyLegalSigner({
 			expectedAddress: EXPECTED_ADDRESS,
 			activeAddress: EXPECTED_ADDRESS,
 			embeddedWalletAddress: EXPECTED_ADDRESS,
 			chainId: 42161,
 			signTypedData: vi.fn().mockResolvedValue({ signature: `0x${"11".repeat(64)}1b` }),
-			beforeSubmit: () => {
-				throw new Error("wallet changed");
-			},
+			beforeSubmit,
 		});
 
 		await expect(

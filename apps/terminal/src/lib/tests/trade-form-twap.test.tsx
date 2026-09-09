@@ -141,4 +141,30 @@ describe("TradeFormTwap trigger and stop prices", () => {
 		expect(getInputByLabel(container, "Trigger Price").disabled).toBe(true);
 		expect(getInputByLabel(container, "Max Price").disabled).toBe(true);
 	});
+
+	it.each([
+		{ compact: true, desktop: false, frameClass: "h-8", inputClass: "h-7" },
+		{ compact: false, desktop: true, frameClass: "h-9", inputClass: "h-8" },
+	])("preserves $inputClass input geometry and values in the $frameClass frame", (layout) => {
+		mocks.twapTriggerPrice = "105.5";
+		mocks.twapStopPrice = "110";
+		act(() => root.render(<TradeFormTwap {...defaultProps} {...layout} mobileSafe={layout.compact} />));
+		const inputs = [...container.querySelectorAll<HTMLInputElement>("input[data-slot='input']")];
+		expect(inputs).toHaveLength(4);
+		for (const input of inputs) {
+			expect(input.classList.contains(layout.inputClass)).toBe(true);
+			expect(input.parentElement?.classList.contains(layout.frameClass)).toBe(true);
+			expect(input.classList.contains("max-[1000px]:text-base")).toBe(layout.compact);
+			expect(input.classList.contains("max-[1000px]:leading-5")).toBe(layout.compact);
+			expect(input.disabled).toBe(false);
+		}
+		expect(inputs.map((input) => input.value)).toEqual(["", "30", "105.5", "110"]);
+		act(() => changeInput(getInputByLabel(container, "Trigger Price"), "106.5"));
+		expect(mocks.setTwapTriggerPrice).toHaveBeenCalledWith("106.5");
+		act(() => changeInput(getInputByLabel(container, "Max Price"), "111"));
+		expect(mocks.setTwapStopPrice).toHaveBeenCalledWith("111");
+		act(() => root.render(<TradeFormTwap {...defaultProps} {...layout} mobileSafe={layout.compact} disabled />));
+		for (const input of inputs) expect(input.disabled).toBe(true);
+		expect(inputs.map((input) => input.value)).toEqual(["", "30", "105.5", "110"]);
+	});
 });

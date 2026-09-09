@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
+import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 
 const mocks = vi.hoisted(() => ({
 	book: undefined as
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 		| undefined,
 	error: undefined as Error | undefined,
 	isStale: false,
+	measured: true,
 	lastL2Subscription: undefined as { enabled: boolean; params: Record<string, unknown> } | undefined,
 	market: { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	midPx: "100.5" as string | undefined,
@@ -39,6 +41,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useSelectedMarketInfo: () => ({ data: mocks.market }),
 	useSubscription: (method: string, params: Record<string, unknown>, options?: { enabled?: boolean }) => {
 		if (method === "l2Book") {
@@ -64,10 +67,11 @@ vi.mock("@/lib/performance/render-profile", () => ({
 }));
 
 vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
-	useOrderbookRows: () => [4, { current: null }],
+	useOrderbookRows: () => [{ rowCount: 4, fullRowCount: mocks.measured ? 4 : 0, rowHeightPx: 24.5 }, { current: null }],
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
+	useAnimateOrderbook: () => true,
 	getResolvedFormatLocale: () => "en-US",
 	useIsTestnet: () => false,
 }));
@@ -95,6 +99,7 @@ describe("OrderbookPanel safety", () => {
 		mocks.book = undefined;
 		mocks.error = undefined;
 		mocks.isStale = false;
+		mocks.measured = true;
 		mocks.lastL2Subscription = undefined;
 		mocks.market = { kind: "perp", markPx: "100", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 };
 		mocks.midPx = "100.5";
@@ -154,6 +159,36 @@ describe("OrderbookPanel safety", () => {
 		expect(container.textContent).not.toContain("Waiting for order book...");
 		const bidDepth = container.querySelectorAll<HTMLElement>(".depth-bar-bid");
 		expect(bidDepth[bidDepth.length - 1]?.style.width).toBe("100%");
+	});
+
+	it("hides unmeasured prices and enables every complete row after measurement", () => {
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		mocks.status = "active";
+		mocks.book = snapshot(
+			"HYPE",
+			Array.from({ length: 4 }, (_, rank) => ({ n: 1, px: String(99 - rank), sz: "1" })),
+			Array.from({ length: 4 }, (_, rank) => ({ n: 1, px: String(101 + rank), sz: "1" })),
+		);
+		mocks.measured = false;
+		renderPanel();
+		expect(container.querySelector<HTMLElement>('[data-slot="orderbook-asks"]')?.style.visibility).toBe("hidden");
+		const asks = [...container.querySelectorAll<HTMLButtonElement>('[data-slot="orderbook-asks"] button')];
+		const bids = [...container.querySelectorAll<HTMLButtonElement>('[data-slot="orderbook-bids"] button')];
+		expect(asks.map((row) => row.disabled)).toEqual([true, true, true, true]);
+		expect(bids.map((row) => row.disabled)).toEqual([true, true, true, true]);
+		act(() => {
+			asks[0]?.click();
+			bids[3]?.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+		mocks.measured = true;
+		renderPanel();
+		expect(container.querySelector<HTMLElement>('[data-slot="orderbook-asks"]')?.style.visibility).toBe("");
+		expect([...asks, ...bids].every((row) => !row.disabled)).toBe(true);
+		act(() => asks[0]?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "104" });
+		act(() => asks[3]?.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "101" });
 	});
 
 	it("uses the unaggregated event spread with the BBO midpoint", () => {

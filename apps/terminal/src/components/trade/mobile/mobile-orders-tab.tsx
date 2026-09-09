@@ -3,7 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ListIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import {
@@ -217,7 +217,6 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 	const {
 		data: openOrdersEvent,
 		status,
-		error,
 		isStale,
 	} = useSubscription(
 		"openOrders",
@@ -979,7 +978,9 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 
 	const draftModifyPlan = modifyTarget ? buildPlanFromLive(modifyTarget, modifySize, modifyTriggerPrice) : null;
 	const draftModifyError =
-		draftModifyPlan?.status === "blocked" && draftModifyPlan.reason !== "no-change"
+		draftModifyPlan?.status === "blocked" &&
+		draftModifyPlan.reason !== "no-change" &&
+		draftModifyPlan.reason !== "snapshot-not-ready"
 			? getModifyBlockMessage(draftModifyPlan.reason)
 			: null;
 	const draftInvalidField = draftModifyPlan?.status === "blocked" ? draftModifyPlan.field : null;
@@ -1001,161 +1002,160 @@ export function MobileOrdersTab({ className, disclosureState, scrollMode = "cont
 		);
 	}
 
-	if (status === "error") {
-		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
-				<span>{t`Failed to load open orders.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
-			</div>
-		);
-	}
+	const isDataReady = status === "active" && openOrdersEvent !== undefined && !isStale;
 
 	return (
-		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
-				<div
-					data-testid="mobile-orders-filter-toolbar"
-					className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5"
-				>
-					<Select
-						size="xxs"
-						label={t`Order type`}
-						value={typeFilter}
-						onValueChange={handleTypeFilterChange}
-						options={[
-							{ value: "all", label: t`Type` },
-							{ value: "limit", label: t`Limit` },
-							{ value: "trigger", label: t`Trigger` },
-						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
-						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-						className="w-auto shrink-0 [&>label]:sr-only"
-					/>
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={handleDirectionFilterChange}
-						options={[
-							{ value: "all", label: t`Direction` },
-							{ value: "buy", label: t`Buy` },
-							{ value: "sell", label: t`Sell` },
-						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
-						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-						className="w-auto shrink-0 [&>label]:sr-only"
-					/>
-					{openOrders.length > 0 ? (
-						<Button
-							variant="link"
-							intent="error"
-							size="sm"
-							className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
-							onClick={handleRequestCancelAll}
-							disabled={pendingScopes.size > 0 || isModifyBusy}
-						>
-							{pendingScopes.has("all")
-								? t`Canceling...`
-								: t({ message: "Cancel all", context: "Current orders toolbar" })}
-						</Button>
-					) : null}
+		<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+			{actionError && (
+				<div role="alert" className="px-3 pb-1 text-xs text-error">
+					{actionError}
 				</div>
-				{actionError && (
-					<div role="alert" className="px-3 pb-1 text-xs text-error">
-						{actionError}
+			)}
+			{isDataReady ? (
+				<>
+					<div
+						data-testid="mobile-orders-filter-toolbar"
+						className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5"
+					>
+						<Select
+							size="xxs"
+							label={t`Order type`}
+							value={typeFilter}
+							onValueChange={handleTypeFilterChange}
+							options={[
+								{ value: "all", label: t`Type` },
+								{ value: "limit", label: t`Limit` },
+								{ value: "trigger", label: t`Trigger` },
+							]}
+							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+							className="w-auto shrink-0 [&>label]:sr-only"
+						/>
+						<Select
+							size="xxs"
+							label={t`Direction`}
+							value={directionFilter}
+							onValueChange={handleDirectionFilterChange}
+							options={[
+								{ value: "all", label: t`Direction` },
+								{ value: "buy", label: t`Buy` },
+								{ value: "sell", label: t`Sell` },
+							]}
+							triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-focus focus-visible:!outline-none data-popup-open:border-market-close-control"
+							popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+							className="w-auto shrink-0 [&>label]:sr-only"
+						/>
+						{openOrders.length > 0 ? (
+							<Button
+								variant="link"
+								intent="error"
+								size="sm"
+								className="relative ms-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
+								onClick={handleRequestCancelAll}
+								disabled={pendingScopes.size > 0 || isModifyBusy}
+							>
+								{pendingScopes.has("all")
+									? t`Canceling...`
+									: t({ message: "Cancel all", context: "Current orders toolbar" })}
+							</Button>
+						) : null}
 					</div>
-				)}
-				<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{openOrders.length === 0 ? (
-						<div className="flex min-h-44 flex-col items-center justify-center gap-2 py-11 text-center">
-							<div className="flex size-10 items-center justify-center rounded-full bg-market-close-hover">
-								<ListIcon className="size-4 text-market-close-subtle" aria-hidden="true" />
+					<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+						{openOrders.length === 0 ? (
+							<div className="flex min-h-44 flex-col items-center justify-center gap-2 py-11 text-center">
+								<div className="flex size-10 items-center justify-center rounded-full bg-market-close-hover">
+									<ListIcon className="size-4 text-market-close-subtle" aria-hidden="true" />
+								</div>
+								<div className="space-y-0.5">
+									<p className="text-[13px] font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
+									<p className="text-xs leading-4 text-market-close-subtle">
+										{t`Submitted limit and trigger orders will appear here.`}
+									</p>
+								</div>
 							</div>
-							<div className="space-y-0.5">
-								<p className="text-[13px] font-semibold leading-[18px] text-market-close-muted">{t`No open orders.`}</p>
-								<p className="text-xs leading-4 text-market-close-subtle">
-									{t`Submitted limit and trigger orders will appear here.`}
-								</p>
-							</div>
-						</div>
-					) : displayedOrders.length === 0 ? (
-						<div className="py-11 text-center text-xs text-market-close-muted">{t`No orders match the filters.`}</div>
-					) : null}
-					{displayedOrders.map((order) => {
-						const orderKey = `${order.coin}:${order.oid}`;
-						const modifyCapability = getOpenOrderModifyCapabilities(order).size;
-						const market = markets.getMarket(order.coin);
-						return (
-							<MobileOrderCard
-								key={orderKey}
-								order={order}
-								szDecimals={market?.szDecimals ?? markets.getSzDecimals(order.coin)}
-								marketType={market?.kind === "spot" ? "spot" : "perp"}
-								marketLabel={market?.shortName ?? order.coin}
-								markPx={(() => {
-									const marketInfo = getMarketInfo(order.coin);
-									return isLiveMarkPriceReady(
-										marketInfo?.markPriceStatus ?? "loading",
-										marketInfo?.markPx,
-										marketInfo?.markPriceReceivedAt,
-									)
-										? (marketInfo?.markPx ?? "")
-										: "";
-								})()}
-								expanded={expandedOrderKeys.has(orderKey)}
-								isCancelling={sharedCancellingOids.has(order.oid)}
-								actionsDisabled={isModifyBusy || pendingScopes.size > 0}
-								canModify={modifyCapability.supported}
-								modifyDisabled={
-									isModifyBusy ||
-									sessionModifications.some((action) => action.oid === order.oid) ||
-									pendingScopes.size > 0 ||
-									sharedCancellingOids.has(order.oid)
-								}
-								modifyUnavailableReason={
-									modifyCapability.reason ? getModifyBlockMessage(modifyCapability.reason) : undefined
-								}
-								onCancel={handleCancelRow}
-								onModify={handleRequestModify}
-								onModifyUnavailable={handleModifyUnavailable}
-								onSelectMarket={handleSelectMarket}
-								onExpandedChange={(expanded) => setOrderExpanded(orderKey, expanded)}
-							/>
-						);
-					})}
-				</div>
-				<CancelAllOrdersModal
-					open={cancelAllOpen}
-					orderCount={cancelAllSnapshot?.orders.length ?? 0}
-					isSubmitting={pendingScopes.has("all")}
-					errorMessage={cancelAllOpen ? actionError : null}
-					onOpenChange={handleCancelAllOpenChange}
-					onConfirm={handleConfirmCancelAll}
+						) : displayedOrders.length === 0 ? (
+							<div className="py-11 text-center text-xs text-market-close-muted">{t`No orders match the filters.`}</div>
+						) : null}
+						{displayedOrders.map((order) => {
+							const orderKey = `${order.coin}:${order.oid}`;
+							const modifyCapability = getOpenOrderModifyCapabilities(order).size;
+							const market = markets.getMarket(order.coin);
+							return (
+								<MobileOrderCard
+									key={orderKey}
+									order={order}
+									szDecimals={market?.szDecimals ?? markets.getSzDecimals(order.coin)}
+									marketType={market?.kind === "spot" ? "spot" : "perp"}
+									marketLabel={market?.shortName ?? order.coin}
+									markPx={(() => {
+										const marketInfo = getMarketInfo(order.coin);
+										return isLiveMarkPriceReady(
+											marketInfo?.markPriceStatus ?? "loading",
+											marketInfo?.markPx,
+											marketInfo?.markPriceReceivedAt,
+										)
+											? (marketInfo?.markPx ?? "")
+											: "";
+									})()}
+									expanded={expandedOrderKeys.has(orderKey)}
+									isCancelling={sharedCancellingOids.has(order.oid)}
+									actionsDisabled={isModifyBusy || pendingScopes.size > 0}
+									canModify={modifyCapability.supported}
+									modifyDisabled={
+										isModifyBusy ||
+										sessionModifications.some((action) => action.oid === order.oid) ||
+										pendingScopes.size > 0 ||
+										sharedCancellingOids.has(order.oid)
+									}
+									modifyUnavailableReason={
+										modifyCapability.reason ? getModifyBlockMessage(modifyCapability.reason) : undefined
+									}
+									onCancel={handleCancelRow}
+									onModify={handleRequestModify}
+									onModifyUnavailable={handleModifyUnavailable}
+									onSelectMarket={handleSelectMarket}
+									onExpandedChange={(expanded) => setOrderExpanded(orderKey, expanded)}
+								/>
+							);
+						})}
+					</div>
+				</>
+			) : (
+				<DataPendingState
+					loading={status === "idle" || status === "subscribing" || (status === "active" && !openOrdersEvent)}
 				/>
-				{modifyOrder ? (
-					<MobileOrderModificationModal
-						open
-						marketLabel={modifyMarketLabel}
-						directionLabel={getOrderSideLabel(modifyOrder.side, modifyOrder.reduceOnly)}
-						directionTone={modifyOrder.side === "B" ? "positive" : "negative"}
-						typeLabel={getFullOrderTypeLabel(modifyOrder)}
-						sizeValue={modifySize}
-						triggerPriceValue={modifyTriggerPrice}
-						sizeInvalid={draftInvalidField === "size"}
-						triggerPriceInvalid={draftInvalidField === "triggerPrice"}
-						isSubmitting={modifyPhase === "submitting"}
-						isAwaitingConfirmation={modifyPhase === "awaiting"}
-						isInteractionLocked={isModifyBusy}
-						isConfirmDisabled={isModifyConfirmDisabled}
-						errorMessage={modalError}
-						onSizeChange={handleModifySizeChange}
-						onTriggerPriceChange={handleModifyTriggerPriceChange}
-						onOpenChange={handleModifyOpenChange}
-						onConfirm={handleConfirmModify}
-					/>
-				) : null}
-			</div>
-		</Skeleton>
+			)}
+			<CancelAllOrdersModal
+				open={cancelAllOpen}
+				orderCount={cancelAllSnapshot?.orders.length ?? 0}
+				isSubmitting={pendingScopes.has("all")}
+				errorMessage={cancelAllOpen ? actionError : null}
+				onOpenChange={handleCancelAllOpenChange}
+				onConfirm={handleConfirmCancelAll}
+			/>
+			{modifyOrder ? (
+				<MobileOrderModificationModal
+					open
+					marketLabel={modifyMarketLabel}
+					directionLabel={getOrderSideLabel(modifyOrder.side, modifyOrder.reduceOnly)}
+					directionTone={modifyOrder.side === "B" ? "positive" : "negative"}
+					typeLabel={getFullOrderTypeLabel(modifyOrder)}
+					sizeValue={modifySize}
+					triggerPriceValue={modifyTriggerPrice}
+					sizeInvalid={draftInvalidField === "size"}
+					triggerPriceInvalid={draftInvalidField === "triggerPrice"}
+					isSubmitting={modifyPhase === "submitting"}
+					isAwaitingConfirmation={modifyPhase === "awaiting"}
+					isInteractionLocked={isModifyBusy}
+					isConfirmDisabled={isModifyConfirmDisabled}
+					errorMessage={modalError}
+					onSizeChange={handleModifySizeChange}
+					onTriggerPriceChange={handleModifyTriggerPriceChange}
+					onOpenChange={handleModifyOpenChange}
+					onConfirm={handleConfirmModify}
+				/>
+			) : null}
+		</div>
 	);
 }
 

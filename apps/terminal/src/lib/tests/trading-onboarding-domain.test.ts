@@ -6,7 +6,7 @@ const READY_ACTION = {
 	isConnected: true,
 	needsChainSwitch: false,
 	needsApproval: false,
-	isAgentReady: true,
+	isSignerReady: true,
 	hasBalanceError: false,
 	isBalanceLoading: false,
 	availableBalance: 100,
@@ -28,7 +28,7 @@ describe("trading onboarding state", () => {
 			getOrderActionStage({
 				...READY_ACTION,
 				needsApproval: true,
-				isAgentReady: false,
+				isSignerReady: false,
 				availableBalance: 0,
 			}),
 		).toBe("agent");

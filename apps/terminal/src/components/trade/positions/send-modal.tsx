@@ -7,6 +7,7 @@ import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
+import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 import {
 	type BalanceRow,
 	getAccountBalanceSummary,
@@ -428,19 +429,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
 						</div>
 					)}
-					{!accountModeReady && (
-						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
-							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{t`Select a supported account mode before moving funds.`}</span>
-						</div>
-					)}
-					{accountModeReady && !accountDataReady && (
-						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
-							<WarningCircleIcon className="size-3.5 shrink-0" />
-							<span className="flex-1">{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
-						</div>
-					)}
-
+					{hasWalletAccess && getAccountModeAvailability(accountAbstraction) === "unsupported" ? (
+						<p className="text-xs text-fg-muted">{t`Select a supported account mode before moving funds.`}</p>
+					) : null}
 					<TextInput
 						placeholder={t`Destination address`}
 						aria-label={t`Destination address`}
@@ -496,7 +487,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						mobileSafe
 						className={cn(
 							"w-full tabular-nums max-[1000px]:h-11",
-							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",
+							accountDataReady &&
+								exceedsBalance(amount, availableBalance) &&
+								"border-stroke-error-strong focus:border-stroke-error-strong",
 						)}
 					/>
 

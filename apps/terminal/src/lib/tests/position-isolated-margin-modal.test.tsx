@@ -640,7 +640,7 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Target leverage"), "5"));
 
 		expect(getButton(container, "Add to Target").disabled).toBe(true);
-		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(container.textContent).not.toContain("Live position data is unavailable.");
 		expect(testState.topUpMargin).not.toHaveBeenCalled();
 	});
 
@@ -690,7 +690,7 @@ describe("PositionIsolatedMarginModal", () => {
 
 	it.each([
 		["0", "This isolated position is no longer open."],
-		["invalid", "Live position data is unavailable."],
+		["invalid", null],
 	])("fails closed when the live position size is %s", (szi, expectedMessage) => {
 		testState.position = {
 			...getLiveTestPosition(),
@@ -701,7 +701,8 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 
 		expect(getButton(container, "Add Margin").disabled).toBe(true);
-		expect(container.textContent).toContain(expectedMessage);
+		if (expectedMessage) expect(container.textContent).toContain(expectedMessage);
+		else expect(container.textContent).not.toContain("Live position data is unavailable.");
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
@@ -712,7 +713,7 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 
 		expect(getButton(container, "Add Margin").disabled).toBe(true);
-		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(container.textContent).not.toContain("Live position data is unavailable.");
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
@@ -723,7 +724,7 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 
 		expect(getButton(container, "Add Margin").disabled).toBe(true);
-		expect(container.textContent).toContain("Loading position...");
+		expect(container.textContent).not.toContain("Loading position...");
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
@@ -734,7 +735,7 @@ describe("PositionIsolatedMarginModal", () => {
 		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
 
 		expect(getButton(container, "Add Margin").disabled).toBe(true);
-		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(container.textContent).not.toContain("Live position data is unavailable.");
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 

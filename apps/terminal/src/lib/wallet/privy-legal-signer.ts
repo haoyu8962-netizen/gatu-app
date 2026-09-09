@@ -9,16 +9,11 @@ interface CreatePrivyLegalSignerOptions {
 	embeddedWalletAddress: `0x${string}` | undefined;
 	chainId: number;
 	signTypedData: PrivySignTypedData;
-	beforeSubmit: () => void | Promise<void>;
+	beforeSubmit: () => void;
 }
 
 type HyperliquidTypedData = Parameters<AbstractViemJsonRpcAccount["signTypedData"]>[0];
 
-/**
- * Creates the narrow wallet adapter used only for explicit Hyperliquid terms
- * acceptance. Every signature is bound to the exact active embedded wallet
- * and forces Privy's per-call confirmation UI.
- */
 export function createPrivyLegalSigner({
 	expectedAddress,
 	activeAddress,
@@ -39,17 +34,12 @@ export function createPrivyLegalSigner({
 
 	return {
 		async signTypedData(typedData: HyperliquidTypedData): Promise<`0x${string}`> {
+			beforeSubmit();
 			const result = await signTypedData(typedData as SignTypedDataParams, {
 				address: expectedAddress,
-				uiOptions: {
-					showWalletUIs: true,
-					title: "Accept Hyperliquid terms",
-					description: "Review and accept the Hyperliquid terms for this account.",
-					buttonText: "Accept terms",
-					isCancellable: true,
-				},
+				uiOptions: { showWalletUIs: false },
 			});
-			await beforeSubmit();
+			beforeSubmit();
 			return result.signature as `0x${string}`;
 		},
 		async getAddresses(): Promise<`0x${string}`[]> {

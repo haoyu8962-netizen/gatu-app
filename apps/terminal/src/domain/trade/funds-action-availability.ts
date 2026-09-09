@@ -1,8 +1,11 @@
+import type { AccountModeAvailability } from "./account-abstraction";
+
 export type FundsActionGeoStatus = "allowed" | "restricted" | "unresolved";
 
 export type FundsActionAvailabilityReason =
 	| "account-data-unavailable"
-	| "account-mode-unavailable"
+	| "account-mode-unresolved"
+	| "account-mode-unsupported"
 	| "funds-actions-unavailable"
 	| "geo-restricted"
 	| "geo-unresolved"
@@ -16,7 +19,7 @@ export interface FundsActionAvailability {
 
 interface BaseFundsActionAvailabilityInput {
 	accountDataReady: boolean;
-	accountModeReady: boolean;
+	accountModeStatus: AccountModeAvailability;
 	geoStatus: FundsActionGeoStatus;
 	hasWalletAccess: boolean;
 }
@@ -62,14 +65,14 @@ export function getFundsActionGeoStatus({
 
 export function getWithdrawalAvailability({
 	accountDataReady,
-	accountModeReady,
+	accountModeStatus,
 	fundsActionsEnabled,
 	geoStatus,
 	hasWalletAccess,
 }: WithdrawalAvailabilityInput): FundsActionAvailability {
 	const baseReason = getBaseFundsActionUnavailableReason({
 		accountDataReady,
-		accountModeReady,
+		accountModeStatus,
 		geoStatus,
 		hasWalletAccess,
 	});
@@ -80,14 +83,14 @@ export function getWithdrawalAvailability({
 
 export function getInternalTransferAvailability({
 	accountDataReady,
-	accountModeReady,
+	accountModeStatus,
 	geoStatus,
 	hasWalletAccess,
 	internalTransfersEnabled,
 }: InternalTransferAvailabilityInput): FundsActionAvailability {
 	const baseReason = getBaseFundsActionUnavailableReason({
 		accountDataReady,
-		accountModeReady,
+		accountModeStatus,
 		geoStatus,
 		hasWalletAccess,
 	});
@@ -129,14 +132,15 @@ export async function assertFreshFundsActionGeo({
 
 function getBaseFundsActionUnavailableReason({
 	accountDataReady,
-	accountModeReady,
+	accountModeStatus,
 	geoStatus,
 	hasWalletAccess,
 }: BaseFundsActionAvailabilityInput): FundsActionAvailabilityReason | null {
 	if (geoStatus === "restricted") return "geo-restricted";
 	if (geoStatus === "unresolved") return "geo-unresolved";
 	if (!hasWalletAccess) return "wallet-session-required";
-	if (!accountModeReady) return "account-mode-unavailable";
+	if (accountModeStatus === "unsupported") return "account-mode-unsupported";
+	if (accountModeStatus !== "supported") return "account-mode-unresolved";
 	if (!accountDataReady) return "account-data-unavailable";
 	return null;
 }

@@ -29,6 +29,7 @@ const globalSettingsSchema = z.object({
 	state: z.object({
 		hideSmallBalances: z.boolean().optional(),
 		showOrderbookInQuote: z.boolean().optional(),
+		animateOrderbook: z.boolean().optional(),
 		showChartScanlines: z.boolean().optional(),
 		skipOrderConfirmation: z.boolean().optional(),
 		numberFormatLocale: z.string().optional(),
@@ -46,6 +47,7 @@ const validatedStorage = createValidatedStorage(globalSettingsSchema, "global se
 const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
 	showOrderbookInQuote: false,
+	animateOrderbook: true,
 	showChartScanlines: false,
 	skipOrderConfirmation: false,
 	numberFormatLocale: defaultNumberFormatLocale,
@@ -60,6 +62,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 interface GlobalSettingsStore {
 	hideSmallBalances: boolean;
 	showOrderbookInQuote: boolean;
+	animateOrderbook: boolean;
 	showChartScanlines: boolean;
 	skipOrderConfirmation: boolean;
 	numberFormatLocale: NumberFormatLocale;
@@ -72,6 +75,7 @@ interface GlobalSettingsStore {
 	actions: {
 		setHideSmallBalances: (next: boolean) => void;
 		setShowOrderbookInQuote: (next: boolean) => void;
+		setAnimateOrderbook: (next: boolean) => void;
 		setShowChartScanlines: (next: boolean) => void;
 		setSkipOrderConfirmation: (next: boolean) => void;
 		setNumberFormatLocale: (next: NumberFormatLocale) => void;
@@ -91,6 +95,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			actions: {
 				setHideSmallBalances: (next) => set({ hideSmallBalances: next }),
 				setShowOrderbookInQuote: (next) => set({ showOrderbookInQuote: next }),
+				setAnimateOrderbook: (next) => set({ animateOrderbook: next }),
 				setShowChartScanlines: (next) => set({ showChartScanlines: next }),
 				setSkipOrderConfirmation: (next) => set({ skipOrderConfirmation: next }),
 				setNumberFormatLocale: (next) => set({ numberFormatLocale: next }),
@@ -124,6 +129,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
 				showOrderbookInQuote: state.showOrderbookInQuote,
+				animateOrderbook: state.animateOrderbook,
 				showChartScanlines: state.showChartScanlines,
 				skipOrderConfirmation: state.skipOrderConfirmation,
 				...(state.numberFormatLocale === defaultNumberFormatLocale
@@ -165,6 +171,8 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...p,
 					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
 					showOrderbookInQuote,
+					animateOrderbook:
+						typeof p.animateOrderbook === "boolean" ? p.animateOrderbook : DEFAULT_GLOBAL_SETTINGS.animateOrderbook,
 					skipOrderConfirmation,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
@@ -257,6 +265,10 @@ export function useGlobalSettings() {
 
 export function useGlobalSettingsActions() {
 	return useGlobalSettingsStore((state) => state.actions);
+}
+
+export function useAnimateOrderbook() {
+	return useGlobalSettingsStore((state) => state.animateOrderbook);
 }
 
 export function useMarketOrderSlippagePercent() {

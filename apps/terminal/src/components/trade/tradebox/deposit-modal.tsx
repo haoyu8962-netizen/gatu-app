@@ -20,6 +20,7 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { assertFreshFundsAmountWithFee, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
 import {
 	assertPreTransferCheckMatchesReview,
@@ -32,7 +33,7 @@ import {
 	AccountAbstractionExecutionError,
 	useAccountAbstractionPreExecutionGuard,
 } from "@/hooks/trade/use-account-abstraction-guard";
-import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
 import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
@@ -314,7 +315,7 @@ export function DepositModal() {
 	});
 	const fundsActionAvailability = useFundsActionAvailability({
 		accountDataReady: withdrawalBalanceReady,
-		accountModeReady: isSupportedAccountAbstraction(accountAbstraction),
+		accountAbstraction,
 		fundsActionsEnabled: accountSummary.isAvailable,
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
@@ -522,7 +523,7 @@ export function DepositModal() {
 	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
 	let withdrawalPrerequisiteError: string | null = null;
 	if (!fundsActionAvailability.withdrawal.available) {
-		withdrawalPrerequisiteError = fundsActionAvailability.withdrawal.unavailableReason;
+		withdrawalPrerequisiteError = getFundsAvailabilityNotice(fundsActionAvailability.withdrawal);
 	} else if (
 		withdrawalRoutingStatus === "ready" &&
 		withdrawalRoute === "arbitrum-cctp" &&
@@ -1435,7 +1436,7 @@ export function DepositModal() {
 								networkName={depositNetworkName}
 								sponsoredCctpEnabled={sponsoredCctpEnabled}
 								sponsoredCctpReadiness={sponsoredCctpReadiness}
-								depositUnavailableReason={depositAvailability.unavailableReason}
+								depositUnavailableReason={getFundsAvailabilityNotice(depositAvailability)}
 								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
 								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}

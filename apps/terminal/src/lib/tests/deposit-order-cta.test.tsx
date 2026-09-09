@@ -25,7 +25,7 @@ function createDesktopInput(overrides: Partial<ButtonContentInput> = {}): Button
 		canDeposit: false,
 		depositUnavailableReason: UNAVAILABLE_REASON,
 		hasBalanceError: false,
-		isAgentReady: true,
+		isSignerReady: true,
 		isApprovalLoading: false,
 		isBalanceLoading: false,
 		isConnected: true,
@@ -80,6 +80,61 @@ describe("Deposit order CTA", () => {
 		return observed;
 	}
 
+	it.each(["desktop", "mobile"] as const)(
+		"offers deposit without Agent setup for a ready email signer on %s, preserving funding and fee gates",
+		(surface) => {
+			let input = createDesktopInput({
+				canDeposit: true,
+				depositUnavailableReason: null,
+				validation: { canSubmit: false, errors: [], validationErrors: [], needsApproval: true, valid: false },
+			});
+			function content(): ButtonContent {
+				if (surface === "desktop") return renderDesktop(input);
+				return getMobileOrderButtonContent({
+					...input,
+					hasBalanceError: input.hasBalanceError === true,
+					isBalanceLoading: input.isBalanceLoading === true,
+					canSubmit: input.validation.canSubmit,
+					needsApproval: input.validation.needsApproval,
+					isRegistering: false,
+					onApprove: input.onRegister,
+					onConnect: input.onConnectWallet,
+					onSwitchChain: () => {},
+					labels: {
+						connect: "Connect Wallet",
+						deposit: "Deposit",
+						enableTrading: "Enable Trading",
+						signing: "Signing...",
+						switchChain: "Switch to Arbitrum",
+						switching: "Switching...",
+					},
+				});
+			}
+
+			expect(content()).toMatchObject({ text: "Deposit", disabled: false });
+			content().action();
+			expect(input.onDeposit).toHaveBeenCalledOnce();
+			expect(input.onRegister).not.toHaveBeenCalled();
+
+			input = { ...input, isBalanceLoading: true };
+			expect(content().disabled).toBe(true);
+			content().action();
+			expect(input.onDeposit).toHaveBeenCalledOnce();
+			expect(input.onRegister).not.toHaveBeenCalled();
+
+			input = { ...input, isBalanceLoading: false, availableBalance: 100 };
+			expect(content()).toMatchObject({ text: "Enable Trading", disabled: false });
+			content().action();
+			expect(input.onRegister).toHaveBeenCalledOnce();
+			expect(input.onSubmit).not.toHaveBeenCalled();
+
+			input = { ...input, validation: { ...input.validation, needsApproval: false, canSubmit: true, valid: true } };
+			expect(content().disabled).toBe(false);
+			content().action();
+			expect(input.onSubmit).toHaveBeenCalledOnce();
+		},
+	);
+
 	it("keeps the desktop CTA inert and exposes the unavailable reason", () => {
 		const input = createDesktopInput();
 		const content = renderDesktop(input);
@@ -102,7 +157,7 @@ describe("Deposit order CTA", () => {
 			canSubmit: false,
 			depositUnavailableReason: UNAVAILABLE_REASON,
 			hasBalanceError: false,
-			isAgentReady: true,
+			isSignerReady: true,
 			isApprovalLoading: false,
 			isBalanceLoading: false,
 			isConnected: true,
@@ -110,12 +165,9 @@ describe("Deposit order CTA", () => {
 			isSubmitting: false,
 			isSwitchingChain: false,
 			labels: {
-				balanceError: "Failed to load balances.",
 				connect: "Connect Wallet",
 				deposit: "Deposit",
-				depositUnavailable: DEPOSIT_UNAVAILABLE,
 				enableTrading: "Enable Trading",
-				loading: "Loading...",
 				signing: "Signing...",
 				switchChain: "Switch to Arbitrum",
 				switching: "Switching...",
@@ -134,7 +186,7 @@ describe("Deposit order CTA", () => {
 		expect(content).toMatchObject({
 			disabled: true,
 			disabledReason: UNAVAILABLE_REASON,
-			text: DEPOSIT_UNAVAILABLE,
+			text: "Deposit",
 		});
 		content.action();
 		expect(onDeposit).not.toHaveBeenCalled();
@@ -170,19 +222,16 @@ describe("Deposit order CTA", () => {
 			canDeposit: false,
 			canSubmit: false,
 			hasBalanceError: false,
-			isAgentReady: true,
+			isSignerReady: true,
 			isApprovalLoading: false,
 			isBalanceLoading: false,
 			isRegistering: false,
 			isSubmitting: false,
 			isSwitchingChain: false,
 			labels: {
-				balanceError: "Failed to load balances.",
 				connect: "Connect Wallet",
 				deposit: "Deposit",
-				depositUnavailable: DEPOSIT_UNAVAILABLE,
 				enableTrading: "Enable Trading",
-				loading: "Loading...",
 				signing: "Signing...",
 				switchChain: "Switch to Arbitrum",
 				switching: "Switching...",
@@ -196,7 +245,7 @@ describe("Deposit order CTA", () => {
 			onSwitchChain: vi.fn(),
 			side: "buy" as const,
 			sideLabel: "Buy",
-			tradingUnavailableReason: TRADING_UNAVAILABLE_REASON,
+			tradingBlocked: true,
 		};
 		const connectContent = getMobileOrderButtonContent({ ...baseInput, isConnected: false });
 		expect(connectContent).toMatchObject({ disabled: false, text: "Connect Wallet" });
@@ -208,10 +257,7 @@ describe("Deposit order CTA", () => {
 			canSubmit: true,
 			isConnected: true,
 		});
-		expect(orderContent).toMatchObject({
-			disabled: true,
-			disabledReason: TRADING_UNAVAILABLE_REASON,
-			text: "Buy",
-		});
+		expect(orderContent).toMatchObject({ disabled: true, text: "Buy" });
+		expect(orderContent.disabledReason).toBeUndefined();
 	});
 });

@@ -41,10 +41,10 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
-	useAgentStatus,
 	useMarketsInfo,
 	useSelectedMarketInfo,
 	useTradingAuthorization,
+	useTradingStatus,
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -106,6 +106,7 @@ import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
 import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
+import { TradePanelBody } from "./trade-panel-body";
 import { TwapOrderSummary } from "./twap-order-summary";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
@@ -280,8 +281,8 @@ export function TradePanel() {
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
 	const requiresBuilderFee = !twapOrder;
-	const { isReady, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
-	const isTradingAuthorized = requiresBuilderFee ? isReady : isAgentReady;
+	const { isReady, isSignerReady, isSignerLoading, isBuilderFeeLoading, signerMode } = useTradingStatus();
+	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
 	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
@@ -388,7 +389,7 @@ export function TradePanel() {
 	const needsAgentApproval = !isTradingAuthorized;
 	const isReadyToTrade = isTradingAuthorized;
 	const canApprove = !!walletClient && !!address;
-	const isApprovalLoading = isAgentReady ? requiresBuilderFee && isBuilderFeeLoading : isAgentLoading;
+	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,
@@ -523,8 +524,8 @@ export function TradePanel() {
 			return;
 		}
 		setApprovalError(null);
-		if (!isAgentReady) {
-			openEstablishConnectionModal();
+		if (!isSignerReady) {
+			if (signerMode === "agent") openEstablishConnectionModal();
 			return;
 		}
 
@@ -545,7 +546,6 @@ export function TradePanel() {
 			marketKind: market.kind === "spot" ? "spot" : "perp",
 			isLeveraged: capabilities.isLeveraged,
 			side,
-			sideLabel: sideLabels[side],
 			orderType,
 			tif,
 			baseToken,
@@ -629,7 +629,7 @@ export function TradePanel() {
 		depositUnavailableReason: depositAvailability.unavailableReason,
 		tradingUnavailableReason,
 		validation,
-		isAgentReady,
+		isSignerReady,
 		isApprovalLoading,
 		registerStatus,
 		canApprove,
@@ -646,6 +646,7 @@ export function TradePanel() {
 		if (twapOrder) {
 			return (
 				<TwapOrderSummary
+					compact
 					twapMinutesNum={twapMinutesNum}
 					twapTriggerPriceNum={twapTriggerPriceNum}
 					twapStopPriceNum={twapStopPriceNum}
@@ -658,6 +659,7 @@ export function TradePanel() {
 		if (scaleOrder) {
 			return (
 				<ScaleOrderSummary
+					compact
 					scaleStart={scaleStartPriceNum}
 					scaleEnd={scaleEndPriceNum}
 					scaleLevels={scaleLevelsNum}
@@ -672,6 +674,7 @@ export function TradePanel() {
 		}
 		return (
 			<OrderSummary
+				compact
 				liqPrice={liqPrice}
 				liqWarning={liqWarning}
 				orderValue={orderValue}
@@ -689,7 +692,7 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="trade-panel-container flex flex-col bg-surface font-market-close">
+		<div className="trade-panel-container flex h-full flex-col bg-surface font-market-close">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
 				onOpenChange={handleMarginModalOpenChange}
@@ -745,25 +748,72 @@ export function TradePanel() {
 				/>
 			)}
 
-			<div className="flex flex-col gap-5 px-3 py-3">
-				<TradeHeader
-					orderType={orderType}
-					side={side}
-					sideLabels={sideLabels}
-					marketKind={market?.kind}
-					onOrderTypeChange={setOrderType}
-					onSideChange={setSide}
-					marginMode={marginMode}
-					leverage={leverage}
-					onMarginModeClick={() => setActiveModal("marginMode")}
-					onLeverageClick={() => setActiveModal("leverage")}
-					isLeveraged={capabilities.isLeveraged}
-					accountMode={accountModeControl.accountAbstraction}
-					isAccountModeLoading={accountModeControl.isLoading}
-					isAccountModeUpdating={accountModeControl.isUpdating}
-					onAccountModeClick={() => setActiveModal("accountMode")}
-				/>
+			<TradePanelBody
+				header={
+					<TradeHeader
+						compact
+						orderType={orderType}
+						side={side}
+						sideLabels={sideLabels}
+						marketKind={market?.kind}
+						onOrderTypeChange={setOrderType}
+						onSideChange={setSide}
+						marginMode={marginMode}
+						leverage={leverage}
+						onMarginModeClick={() => setActiveModal("marginMode")}
+						onLeverageClick={() => setActiveModal("leverage")}
+						isLeveraged={capabilities.isLeveraged}
+						accountMode={accountModeControl.accountAbstraction}
+						isAccountModeLoading={accountModeControl.isLoading}
+						isAccountModeUpdating={accountModeControl.isUpdating}
+						onAccountModeClick={() => setActiveModal("accountMode")}
+					/>
+				}
+				footer={
+					<>
+						<div className="flex flex-col gap-3">
+							{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
 
+							{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+
+							{tradeRestricted && !buttonContent.disabledReason ? (
+								<Button
+									variant="filled"
+									size="xs"
+									intent="neutral"
+									disabled
+									className="w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
+									aria-label={t`Trading is not available in your region`}
+								>
+									{t`Trading is not available in your region`}
+								</Button>
+							) : (
+								<Button
+									variant="filled"
+									size="xs"
+									intent={getTradingCtaIntent(buttonContent.variant)}
+									onClick={buttonContent.action}
+									disabled={buttonContent.disabled}
+									className={cn(
+										"w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
+										getTradingCtaClass(buttonContent.variant),
+									)}
+									aria-label={buttonContent.text}
+									iconLeft={
+										isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
+									}
+								>
+									{buttonContent.text}
+								</Button>
+							)}
+							{buttonContent.disabledReason ? (
+								<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
+							) : null}
+						</div>
+						<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
+					</>
+				}
+			>
 				<TradeFormFields
 					orderEntryData={orderEntryData}
 					price={price}
@@ -775,50 +825,7 @@ export function TradePanel() {
 						if (swapTargetToken) openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken);
 					}}
 				/>
-
-				<div className="flex flex-col gap-4 pt-5 pb-1">
-					<div className="flex flex-col gap-3">
-						{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
-
-						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
-
-						{tradeRestricted && !buttonContent.disabledReason ? (
-							<Button
-								variant="filled"
-								size="xs"
-								intent="neutral"
-								disabled
-								className="w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
-								aria-label={t`Trading is not available in your region`}
-							>
-								{t`Trading is not available in your region`}
-							</Button>
-						) : (
-							<Button
-								variant="filled"
-								size="xs"
-								intent={getTradingCtaIntent(buttonContent.variant)}
-								onClick={buttonContent.action}
-								disabled={buttonContent.disabled}
-								className={cn(
-									"w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
-									getTradingCtaClass(buttonContent.variant),
-								)}
-								aria-label={buttonContent.text}
-								iconLeft={
-									isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
-								}
-							>
-								{buttonContent.text}
-							</Button>
-						)}
-						{buttonContent.disabledReason ? (
-							<output className="text-center text-xs text-trading-panel-muted">{buttonContent.disabledReason}</output>
-						) : null}
-					</div>
-					<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
-				</div>
-			</div>
+			</TradePanelBody>
 
 			{activeModal === "wallet" && (
 				<Suspense fallback={null}>

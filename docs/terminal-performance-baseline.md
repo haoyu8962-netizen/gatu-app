@@ -81,6 +81,25 @@ These profiles cover the default mobile Trade surface and desktop Positions surf
 - Keep runtime source roots semantic and narrow. Do not replace them with generated chunk names.
 - Preserve wallet signing, onboarding, provider ordering, responsive layout, and subscription ownership contracts while optimizing startup.
 
+## Translation catalog maintenance
+
+Lingui 5.7.0 retains obsolete messages after ordinary extraction, and its catalog compiler includes those retained messages in the generated locale modules. Removing a rendered notice from source therefore does not necessarily remove its translations from the production bundle. This is catalog data maintenance; it must not change locale loading, mounted views, signing clients, or subscription ownership.
+
+After removing or restoring translated source text, run a complete extraction from the current terminal source before cleaning catalogs:
+
+```bash
+pnpm --dir apps/terminal exec lingui extract --clean
+pnpm --dir apps/terminal i18n:compile
+```
+
+The official [Lingui extraction documentation](https://lingui.dev/ref/cli#extract) defines `--clean` as removing obsolete messages while extraction merges existing translations. Do not delete `#~` entries manually before extraction: a message restored in source must first recover its existing translations. The pinned [Lingui 5.7.0 catalog implementation](https://github.com/lingui/js-lingui/blob/v5.7.0/packages/cli/src/api/catalog/getTranslationsForCatalog.ts) explains why retained obsolete entries affect compiled output.
+
+Validate all six locales after cleaning: currently extracted IDs must be present, existing translations for retained and restored IDs must be unchanged, dynamic message descriptors must still be extracted, and compilation and locale-switch tests must pass. Only the complete production build determines budget acceptance; a standalone catalog gzip comparison is diagnostic and does not justify changing a baseline.
+
+The 2026-09-09 diagnostic with Node 22.15.0 first compared the existing catalogs with an in-memory obsolete-only cleanup. The subsequent complete extraction preserved all 1,919 previously active source IDs and restored `Failed to load trades.` with its existing six translations, producing 1,920 active IDs per locale. Every retained translation was unchanged, including 81 descriptors from navigation, account-ledger, trade configuration, and order-confirmation helpers. No obsolete entries remained, and compilation succeeded. Minified standalone locale modules decreased by 58,436 gzip bytes in total (en 8,211; zh 9,697; hi 10,841; es 9,591; fr 9,612; ar 10,484). Catalog, reactive-presentation, locale-switch, and TWAP-label regression suites passed 79 tests across six files.
+
+The subsequent complete `pnpm build`, with the fixed build identity and Node 22.15.0 used by this baseline, passed all budget and circular-import checks after the audit fixes. Client gzip total was 3,106,750 bytes: 47,957 below the existing 3,154,707-byte baseline and 57,957 below its 10,000-byte allowance. This is 59,174 bytes below the pre-fix 3,165,924-byte build. Trade static startup was 1,551,380 bytes; incremental mobile startup was 110,612 bytes; incremental desktop startup was 197,591 bytes. The complete build verified 378 client chunks. No baseline, allowance, startup threshold, or validation script was changed.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

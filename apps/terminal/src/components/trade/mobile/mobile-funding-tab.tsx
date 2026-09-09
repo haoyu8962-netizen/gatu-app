@@ -1,10 +1,9 @@
 import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { DataPendingState } from "@/components/ui/data-pending-state";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { FUNDING_SKELETON_DELAY_MS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -20,7 +19,6 @@ import {
 	getFundingHistorySide,
 	isFundingHistorySideFilter,
 } from "@/lib/trade/funding-history";
-import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileBulkDisclosureActions } from "./mobile-bulk-disclosure-actions";
@@ -40,42 +38,6 @@ const filterTriggerClassName =
 	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-focus focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
 const footerActionClassName =
 	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-focus disabled:cursor-not-allowed disabled:text-market-close-subtle";
-interface FundingLoadingStateProps {
-	className?: string;
-	isPageScroll: boolean;
-}
-
-function FundingLoadingState({ className, isPageScroll }: FundingLoadingStateProps) {
-	const { t } = useLingui();
-	const [showSkeleton, setShowSkeleton] = useState(false);
-
-	useEffect(() => {
-		const timeoutId = window.setTimeout(() => setShowSkeleton(true), FUNDING_SKELETON_DELAY_MS);
-		return () => window.clearTimeout(timeoutId);
-	}, []);
-
-	return (
-		<div
-			className={cn(
-				"font-market-close min-h-64 flex min-w-0 flex-col",
-				isPageScroll ? "min-h-64" : "flex-1",
-				className,
-			)}
-		>
-			<output aria-live="polite" className="sr-only">
-				{t`Loading funding payments.`}
-			</output>
-			{showSkeleton ? (
-				<div data-testid="funding-loading-skeleton" className="min-h-64 flex-1">
-					<Skeleton name="funding-tab" loading>
-						<div className="min-h-64 w-full" />
-					</Skeleton>
-				</div>
-			) : null}
-		</div>
-	);
-}
-
 export function MobileFundingTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
@@ -113,7 +75,6 @@ function MobileFundingTabContent({
 	const { setActiveTab } = useMobileTerminalTab();
 	const { error, fundings: updates, isOffline, isStale, status } = useUserFunding();
 	const markets = useMarkets();
-	const malformedHistory = isMalformedHistoryPageError(error);
 	const [directionFilter, setDirectionFilter] = useState<FundingHistorySideFilter>("all");
 
 	const filteredUpdates = updates.filter(
@@ -171,15 +132,6 @@ function MobileFundingTabContent({
 			</button>
 		</div>
 	);
-	const updateWarning =
-		error || isOffline || isStale ? (
-			<output
-				aria-live="polite"
-				className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-3.5 text-xs text-market-close-danger"
-			>
-				{isOffline ? t`You are offline.` : t`Funding updates paused.`}
-			</output>
-		) : null;
 
 	if (!isConnected) {
 		return (
@@ -189,33 +141,10 @@ function MobileFundingTabContent({
 		);
 	}
 
-	if (status === "offline") {
+	if (status !== "ready" || ((error || isOffline || isStale) && updates.length === 0)) {
 		return (
-			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
-				<output
-					aria-live="polite"
-					className="flex flex-1 items-center justify-center p-6 text-center text-sm text-market-close-muted"
-				>
-					{t`You are offline. Funding payments will load when the connection returns.`}
-				</output>
-				{exportFooter}
-			</div>
-		);
-	}
-
-	if (status === "error") {
-		return (
-			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
-				<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
-					<span>{t`Failed to load funding payments.`}</span>
-					{malformedHistory ? (
-						<span className="mt-1 text-center text-xs text-market-close-muted">
-							{t`Funding data could not be validated. Refresh and try again.`}
-						</span>
-					) : (
-						error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>
-					)}
-				</div>
+			<div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+				<DataPendingState loading={status === "loading" || status === "idle"} />
 				{exportFooter}
 			</div>
 		);
@@ -224,7 +153,6 @@ function MobileFundingTabContent({
 	if (status === "ready" && updates.length === 0) {
 		return (
 			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
-				{updateWarning}
 				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 					{t`No funding payments found.`}
 				</div>
@@ -233,13 +161,8 @@ function MobileFundingTabContent({
 		);
 	}
 
-	if (status === "loading" || status === "idle") {
-		return <FundingLoadingState className={className} isPageScroll={isPageScroll} />;
-	}
-
 	return (
 		<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-			{updateWarning}
 			<div
 				data-testid="mobile-funding-history-filter-row"
 				className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

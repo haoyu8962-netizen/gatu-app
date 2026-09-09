@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getAccountModeAvailability } from "@/domain/trade/account-abstraction";
 
 const testState = vi.hoisted(() => ({
 	useInfo: vi.fn(),
@@ -88,5 +89,23 @@ describe("user abstraction query", () => {
 		expect(isSupportedAccountAbstraction("dexAbstraction")).toBe(false);
 		expect(isSupportedAccountAbstraction("unknown")).toBe(false);
 		expect(isSupportedAccountAbstraction(null)).toBe(false);
+	});
+});
+
+describe("resolved account mode availability", () => {
+	it.each(["disabled", "unifiedAccount", "portfolioMargin"])("accepts supported %s modes", (mode) => {
+		expect(getAccountModeAvailability(resolveAccountAbstraction(mode, mode))).toBe("supported");
+	});
+	it.each(["default", "dexAbstraction"])("preserves a confirmed %s restriction", (mode) => {
+		expect(getAccountModeAvailability(resolveAccountAbstraction(mode, mode))).toBe("unsupported");
+	});
+	it.each([
+		[undefined, undefined],
+		["disabled", "unifiedAccount"],
+		["default", "unifiedAccount"],
+		["unexpected", "disabled"],
+		[null, "unifiedAccount"],
+	])("keeps missing, conflicting, or unknown values unresolved: %j / %j", (info, webData) => {
+		expect(getAccountModeAvailability(resolveAccountAbstraction(info, webData))).toBe("unresolved");
 	});
 });

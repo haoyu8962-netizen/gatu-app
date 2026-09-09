@@ -158,6 +158,7 @@ export function createManualChunks(id: string) {
 
 const config = defineConfig({
   define: {
+    'process.env.DRAGGABLE_DEBUG': 'false',
     'import.meta.env.VITE_GATU_APP_VERSION': JSON.stringify(terminalPackage.version),
     'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildSha),
     'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(releaseId),

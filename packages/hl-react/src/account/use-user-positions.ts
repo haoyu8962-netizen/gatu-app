@@ -105,7 +105,7 @@ export function useUserPositions(): UserPositions {
 		{ enabled, refreshKey: ledgerRefreshKey },
 	);
 
-	const isLoading = enabled && (status === "subscribing" || status === "idle");
+	const isLoading = enabled && (status === "subscribing" || status === "idle" || data === undefined);
 	const hasError = status === "error";
 
 	if (!enabled) return EMPTY;

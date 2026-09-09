@@ -10,11 +10,12 @@ import {
 import { getDirectionalAvailableToTrade } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useOrderSide } from "@/stores/use-order-entry-store";
-import { isSupportedAccountAbstraction, useSelectedDexBalances } from "./use-account-balances";
+import { type AccountAbstraction, isSupportedAccountAbstraction, useSelectedDexBalances } from "./use-account-balances";
 import { useActiveAssetData } from "./use-active-asset-data";
 import { useSpotTokenUsdPrices } from "./use-spot-token-usd-prices";
 
 interface BalanceRowsState {
+	accountAbstraction: AccountAbstraction;
 	accountDataReady: boolean;
 	accountModeReady: boolean;
 	balances: BalanceRow[];
@@ -87,6 +88,7 @@ export function useBalanceRows(): BalanceRowsState {
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
 
 	return {
+		accountAbstraction,
 		accountDataReady,
 		accountModeReady,
 		balances,

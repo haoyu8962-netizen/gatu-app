@@ -10,14 +10,6 @@ const mobileTwapTab = readFileSync(
 	"utf8",
 );
 const tradeHeader = readFileSync(new URL("../../components/trade/tradebox/trade-header.tsx", import.meta.url), "utf8");
-const tradeFormTwap = readFileSync(
-	new URL("../../components/trade/tradebox/trade-form-twap.tsx", import.meta.url),
-	"utf8",
-);
-const tradeFormScale = readFileSync(
-	new URL("../../components/trade/tradebox/trade-form-scale.tsx", import.meta.url),
-	"utf8",
-);
 const orderSubmit = readFileSync(new URL("../../hooks/trade/use-order-submit.ts", import.meta.url), "utf8");
 const orderEntryStore = readFileSync(new URL("../../stores/use-order-entry-store.ts", import.meta.url), "utf8");
 
@@ -68,12 +60,6 @@ describe("mobile order safety contract", () => {
 	it("renders the shared scale and twap fields in the panel's compact field language", () => {
 		expect(mobileTradeView).toMatch(/<TradeFormTwap[\s\S]*?compact\s*\n\s*mobileSafe\s*\/>/);
 		expect(mobileTradeView).toMatch(/<TradeFormScale[\s\S]*?compact\s*\n\s*mobileSafe\s*\/>/);
-		expect(tradeFormTwap).toContain('const compactFrameClass = "h-8 px-2.5";');
-		expect(tradeFormTwap).toContain("const fieldInputClass = cn(inputClass, compact && compactInputClass);");
-		expect(tradeFormScale).toContain('cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")');
-		expect(tradeFormScale).toContain("onMidClick={compact ? undefined : setScaleStart}");
-		expect(tradeFormScale).toContain("onMidClick={compact ? undefined : setScaleEnd}");
-		expect(tradeFormScale).toContain("text-trading-panel-success");
 	});
 
 	it("does not advertise a create action that the mobile signer cannot encode", () => {

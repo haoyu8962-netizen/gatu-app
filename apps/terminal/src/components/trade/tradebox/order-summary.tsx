@@ -12,6 +12,7 @@ import { OrderFeeRatePairValue } from "../components/order-fee-summary-value";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
+	compact?: boolean;
 	liqPrice: number | null;
 	liqWarning: boolean;
 	orderValue: number;
@@ -39,6 +40,7 @@ export function OrderSummary({
 	onSlippageClick,
 	orderType,
 	marketKind = "perp",
+	compact,
 }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
@@ -51,7 +53,7 @@ export function OrderSummary({
 	return (
 		<div className="flex min-w-0 flex-col">
 			{isLeveraged && (
-				<SummaryRow label={t`Liq. Price`}>
+				<SummaryRow compact={compact} label={t`Liq. Price`}>
 					<span
 						className={cn(
 							"whitespace-nowrap",
@@ -62,13 +64,13 @@ export function OrderSummary({
 					</span>
 				</SummaryRow>
 			)}
-			<SummaryRow label={t`Order Value`}>
+			<SummaryRow compact={compact} label={t`Order Value`}>
 				<span className={cn("whitespace-nowrap", orderValue <= 0 && "font-normal text-trading-panel-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
-				<SummaryRow label={t`Margin Req.`}>
+				<SummaryRow compact={compact} label={t`Margin Req.`}>
 					<span className={cn("whitespace-nowrap", marginRequired <= 0 && "font-normal text-trading-panel-muted")}>
 						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
@@ -76,12 +78,12 @@ export function OrderSummary({
 			)}
 			{showSlippage && (
 				<>
-					<SummaryRow label={t`Est. Slippage`}>
+					<SummaryRow compact={compact} label={t`Est. Slippage`}>
 						<span className={cn("whitespace-nowrap", !estimatedSlippageText && "font-normal text-trading-panel-muted")}>
 							{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
 						</span>
 					</SummaryRow>
-					<SummaryRow label={t`Slippage`}>
+					<SummaryRow compact={compact} label={t`Slippage`}>
 						<button
 							type="button"
 							onClick={onSlippageClick}
@@ -93,7 +95,7 @@ export function OrderSummary({
 					</SummaryRow>
 				</>
 			)}
-			<SummaryRow label={t`Fees`}>
+			<SummaryRow compact={compact} label={t`Fees`}>
 				<span
 					title={`${t`Taker`} / ${t`Maker`}`}
 					className="cursor-help whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control font-normal text-trading-panel-muted"

@@ -629,47 +629,40 @@ describe("mobile history disclosure cards", () => {
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
-		expect(container.textContent).toContain("Funding updates paused.");
+		expect(container.textContent).not.toContain("Funding updates paused.");
 	});
 
-	it("warns while mobile funding cards await a fresh reconnect snapshot", () => {
+	it("keeps funding records quiet while awaiting a fresh reconnect snapshot", () => {
 		mocks.fundingStale = true;
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
-		expect(container.textContent).toContain("Funding updates paused.");
+		expect(container.textContent).not.toContain("Funding updates paused.");
 	});
 
-	it("shows mobile funding offline state without discarding an existing snapshot", () => {
+	it("keeps funding records through offline transitions without a passive notice", () => {
 		mocks.fundingOffline = true;
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
-		expect(container.textContent).toContain("You are offline.");
+		expect(container.textContent).not.toContain("You are offline.");
 
 		mocks.fundings = [];
 		mocks.fundingStatus = "offline";
 		render(<MobileFundingTab scrollMode="page" />);
-		expect(container.textContent).toContain("Funding payments will load when the connection returns.");
+		expect(container.textContent).not.toContain("Funding payments will load when the connection returns.");
+		expect(container.querySelector('[data-slot="data-pending"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
 	});
 
-	it("delays the mobile funding skeleton while announcing loading accessibly", () => {
-		vi.useFakeTimers();
+	it("keeps initial funding loading blank and exposes aria-busy", () => {
 		mocks.fundings = [];
 		mocks.fundingStatus = "loading";
 		render(<MobileFundingTab scrollMode="page" />);
-
-		const status = container.querySelector("output");
-		expect(status?.className).toContain("sr-only");
-		expect(status?.textContent).toContain("Loading funding payments.");
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
-
-		act(() => vi.advanceTimersByTime(249));
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
-
-		act(() => vi.advanceTimersByTime(1));
-		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).not.toBeNull();
+		expect(container.querySelector('[data-slot="data-pending"]')?.getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector("output")).toBeNull();
+		expect(container.textContent).not.toContain("No funding payments found.");
+		expect(container.textContent).not.toContain("Loading funding payments.");
 	});
 
 	it("keeps historical order labels and expands cards independently", () => {
@@ -717,20 +710,20 @@ describe("mobile history disclosure cards", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
-	it("keeps degraded warnings visible when cached recent snapshots are empty", () => {
+	it("does not mistake degraded empty caches for successful empty history", () => {
 		mocks.fills = [];
 		mocks.fillsStale = true;
 		render(<MobileHistoryTab scrollMode="page" />);
 
-		expect(container.textContent).toContain("Trade history updates paused.");
-		expect(container.textContent).toContain("No fills found.");
+		expect(container.textContent).not.toContain("Trade history updates paused.");
+		expect(container.textContent).not.toContain("No fills found.");
 
 		mocks.orders = [];
 		mocks.ordersOffline = true;
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
 
-		expect(container.textContent).toContain("You are offline.");
-		expect(container.textContent).toContain("No order history found.");
+		expect(container.textContent).not.toContain("You are offline.");
+		expect(container.textContent).not.toContain("No order history found.");
 	});
 
 	it("filters non-TWAP trade history by type, side, and maker/taker role without carrying state to another owner", async () => {

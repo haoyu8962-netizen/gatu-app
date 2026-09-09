@@ -273,7 +273,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(marketClose?.disabled).toBe(false);
 		expect(limitClose?.disabled).toBe(false);
 		expect(reverse?.disabled).toBe(false);
-		expect(container.querySelector('[aria-label="Loading..."]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
 		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
 		act(() => {
 			marketClose?.click();
@@ -300,7 +300,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(onReverse).toHaveBeenCalledOnce();
 	});
 
-	it("labels a cached stale mark without disabling mobile close actions", () => {
+	it("keeps stale mark presentation quiet while close dialogs perform their own data checks", () => {
 		act(() => {
 			root.render(
 				createElement(MobilePositionCard, {
@@ -324,7 +324,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 		expandPositionDetails();
 
-		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
 		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
 		expect(buttons.find((button) => button.textContent?.trim() === "Market Close")?.disabled).toBe(false);
 		expect(buttons.find((button) => button.textContent?.trim() === "Limit Close")?.disabled).toBe(false);

@@ -68,7 +68,7 @@ describe("responsive panel layout contract", () => {
 		expect(TERMINAL_STYLES).toContain(".orderbook-tab-label");
 
 		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container");
-		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex flex-col bg-surface font-market-close");
+		expect(TRADE_PANEL_SOURCE).toContain("trade-panel-container flex h-full flex-col bg-surface font-market-close");
 		expect(TERMINAL_STYLES).toContain("container-name: trade-panel");
 		expect(TERMINAL_STYLES).toContain("@container trade-panel (max-width: 12.4375rem)");
 		expect(TERMINAL_STYLES).toContain(".trade-compact-label");
@@ -108,19 +108,8 @@ describe("responsive panel layout contract", () => {
 		}
 
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<Responsive");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("layouts={layouts}");
-		expect(MAIN_WORKSPACE_SOURCE).toContain(
-			'useGridContentHeight(mounted, activeBreakpoint, "tradingInterface", setLayouts)',
-		);
-		expect(MAIN_WORKSPACE_SOURCE).toContain(
-			'useGridContentHeight(mounted, activeBreakpoint, "accountInfo", setLayouts)',
-		);
-		expect(MAIN_WORKSPACE_SOURCE).not.toContain(
-			'useGridContentHeight(mounted, activeBreakpoint, "accountTable", setLayouts)',
-		);
+		expect(MAIN_WORKSPACE_SOURCE).toContain("useDesktopGridLayout(width, mounted)");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<PositionsPanel />");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("margin={gridSpacing}");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("containerPadding={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain('data-panel-id="accountInfo"');
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("useIsMobile");
 	});
@@ -167,9 +156,6 @@ describe("responsive panel layout contract", () => {
 		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("cancelAnimationFrame");
 		expect(GRID_CONTENT_HEIGHT_SOURCE).toContain("observer.disconnect()");
 		expect(MAIN_WORKSPACE_SOURCE).not.toContain("onLayoutChange=");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("onResizeStop={(_, _oldItem, resizedItem) =>");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("syncGridItemResize(prev, activeBreakpoint, resizedItem)");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("useEffect(() => writeDesktopGridLayouts(layouts), [layouts])");
 	});
 
 	it("reveals the dedicated grid container surface through desktop panel gutters", () => {

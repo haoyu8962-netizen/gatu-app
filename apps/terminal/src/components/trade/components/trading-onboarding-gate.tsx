@@ -4,7 +4,13 @@ import { getTradingAccountFundingState } from "@/domain/trade/onboarding";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useDepositAvailability } from "@/hooks/trade/use-deposit-availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useAgentStatus, useHyperliquid } from "@/lib/hyperliquid";
+import { useHyperliquid, useTradingStatus } from "@/lib/hyperliquid";
+import {
+	consumeEmailOnboardingIntent,
+	reconcileEmailOnboardingIntent,
+	useEmailOnboardingIntent,
+} from "@/lib/wallet/email-onboarding-intent";
+import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
 	useEstablishConnectionModalActions,
@@ -17,9 +23,11 @@ interface Props {
 }
 
 export function TradingOnboardingGate({ children }: Props) {
-	const { hasWalletAccess, walletAddress } = useWalletSession();
+	const { authenticated, embeddedWalletAddress, hasWalletAccess, ready, user, walletAddress, walletIntent } =
+		useWalletSession();
 	const { env } = useHyperliquid();
-	const { isAgentReady } = useAgentStatus();
+	const { isSignerReady, signerMode } = useTradingStatus();
+	const emailIntent = useEmailOnboardingIntent();
 	const balances = useDefaultDexBalances();
 	const {
 		available: depositAvailable,
@@ -46,9 +54,57 @@ export function TradingOnboardingGate({ children }: Props) {
 	});
 
 	useEffect(() => {
-		if (activeModal !== "establishConnection" || (hasWalletAccess && !isAgentReady)) return;
+		if (activeModal !== "establishConnection" || (signerMode === "agent" && hasWalletAccess && !isSignerReady)) return;
 		establishConnection.close();
-	}, [activeModal, establishConnection, hasWalletAccess, isAgentReady]);
+	}, [activeModal, establishConnection, hasWalletAccess, isSignerReady, signerMode]);
+
+	useEffect(() => {
+		reconcileEmailOnboardingIntent({
+			authenticated,
+			embeddedWalletAddress,
+			env,
+			ready,
+			userId: user?.id,
+			walletIntent,
+		});
+	}, [authenticated, embeddedWalletAddress, env, ready, user?.id, walletIntent]);
+
+	useEffect(() => {
+		if (!emailIntent || emailIntent.env !== env || emailIntent.userId !== user?.id || walletIntent !== "embedded") {
+			return;
+		}
+		if (activeModal === "deposit") {
+			consumeEmailOnboardingIntent(emailIntent);
+			return;
+		}
+		if (
+			!emailIntent.ownerAddress ||
+			!hasWalletAccess ||
+			!isSignerReady ||
+			!hasSameWalletAddress(emailIntent.ownerAddress, walletAddress) ||
+			!hasSameWalletAddress(emailIntent.ownerAddress, embeddedWalletAddress)
+		) {
+			return;
+		}
+		if (activeModal || fundingState === "loading" || fundingState === "error") return;
+		if (fundingState === "empty" && geoResolutionStatus === "loading") return;
+		if (!consumeEmailOnboardingIntent(emailIntent)) return;
+		if (fundingState === "empty" && depositAvailable) deposit.open("deposit");
+	}, [
+		activeModal,
+		deposit,
+		depositAvailable,
+		emailIntent,
+		embeddedWalletAddress,
+		env,
+		fundingState,
+		geoResolutionStatus,
+		hasWalletAccess,
+		isSignerReady,
+		user?.id,
+		walletAddress,
+		walletIntent,
+	]);
 
 	useEffect(() => {
 		if (!pendingDepositIdentity) return;
@@ -85,7 +141,8 @@ export function TradingOnboardingGate({ children }: Props) {
 		pendingDepositIdentity,
 	]);
 
-	const shouldShowConnection = activeModal === "establishConnection" && hasWalletAccess && !!identity && !isAgentReady;
+	const shouldShowConnection =
+		signerMode === "agent" && activeModal === "establishConnection" && hasWalletAccess && !!identity && !isSignerReady;
 
 	function handleClose() {
 		establishConnection.close();

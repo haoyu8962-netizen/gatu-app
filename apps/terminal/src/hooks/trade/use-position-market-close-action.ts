@@ -2,7 +2,7 @@ import type { PositionMarketCloseRef } from "@/components/trade/positions/positi
 import { getPositionDex } from "@/domain/market";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
-import { type UnifiedMarket, useAgentStatus, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
+import { type UnifiedMarket, useHyperliquid, useMarkets, useTradingStatus } from "@/lib/hyperliquid";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { usePendingPositionMarketCloseAssetId, usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useHasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
@@ -20,7 +20,7 @@ export function usePositionMarketCloseAction() {
 	const { clientKey, env } = useHyperliquid();
 	const markets = useMarkets();
 	const legalGate = useLegalGate();
-	const agentStatus = useAgentStatus();
+	const tradingStatus = useTradingStatus();
 	const hasAcceptedHip3 = useHasAcceptedHip3Disclaimer();
 
 	function open(position: PositionMarketCloseRef): string | null {
@@ -31,8 +31,8 @@ export function usePositionMarketCloseAction() {
 			EVM_ADDRESS_PATTERN.test(owner) &&
 			preference === "dismissed" &&
 			legalGate.state === "accepted" &&
-			agentStatus.isReady &&
-			!agentStatus.isLoading &&
+			tradingStatus.isReady &&
+			!tradingStatus.isLoading &&
 			!markets.isLoading &&
 			!markets.error &&
 			isSameTradableMarket(position, market) &&
