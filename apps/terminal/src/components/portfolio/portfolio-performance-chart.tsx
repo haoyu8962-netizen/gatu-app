@@ -16,6 +16,7 @@ interface Props {
 	perpsPnlHistory: History;
 	isLoading: boolean;
 	isUnavailable: boolean;
+	hasConfirmedHistory: boolean;
 	onRetry: () => void;
 	period?: PortfolioPeriod;
 }
@@ -96,6 +97,7 @@ export function PortfolioPerformanceChart({
 	perpsPnlHistory,
 	isLoading,
 	isUnavailable,
+	hasConfirmedHistory,
 	onRetry,
 	period,
 }: Props) {
@@ -297,7 +299,7 @@ export function PortfolioPerformanceChart({
 			<div className="relative min-h-0 flex-1 px-3 pb-3 pt-2">
 				{isLoading || isUnavailable ? (
 					<div
-						className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center"
+						className="absolute inset-0 hidden flex-col items-center justify-center gap-2 px-4 text-center min-[1001px]:flex"
 						role={isUnavailable ? "alert" : "status"}
 					>
 						<p className="text-sm font-medium text-fg">
@@ -455,11 +457,11 @@ export function PortfolioPerformanceChart({
 							</span>
 						) : null}
 					</div>
-				) : (
+				) : hasConfirmedHistory ? (
 					<output className="absolute inset-0 grid place-items-center px-4 text-center text-xs text-fg-muted">
 						<Trans>No performance history</Trans>
 					</output>
-				)}
+				) : null}
 			</div>
 		</section>
 	);

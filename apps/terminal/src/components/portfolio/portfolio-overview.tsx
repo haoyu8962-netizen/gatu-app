@@ -1,149 +1,45 @@
-import { Select } from "@gatu/ui";
+import { Button, Select } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import Big from "big.js";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-	calculateAllDexPerpEquityUsd,
-	calculateCoreAccountEquity,
-	calculateEarnBalance,
 	calculateFourteenDayVolume,
-	calculateMaxDrawdown,
-	calculateVaultEquity,
 	getLatestHistoryValue,
 	getPortfolioSnapshot,
 	type PortfolioPeriod,
 	type PortfolioScope,
-	resolveCurrentTotalEquity,
 } from "@/domain/portfolio";
-import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
-import { isSupportedAccountAbstraction } from "@/hooks/trade/use-account-balances";
-import { useDefaultAccountSnapshot } from "@/hooks/trade/use-default-account-snapshot";
+import { usePortfolioData } from "@/hooks/portfolio/use-portfolio-data";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { PortfolioPerformanceChart } from "./portfolio-performance-chart";
 
 type FeeMarket = "perps" | "spot";
 
-const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-
 export function PortfolioOverview() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const {
-		address,
-		collaterals,
-		defaultBalances: balances,
-		isConnected,
-		tokenUsdPrices,
-		tokenUsdPriceStatus,
-	} = useDefaultAccountSnapshot();
+	const data = usePortfolioData();
 	const [scope, setScope] = useState<PortfolioScope>("combined");
 	const [period, setPeriod] = useState<PortfolioPeriod>("month");
 	const [feeMarket, setFeeMarket] = useState<FeeMarket>("perps");
-	const user = address ?? EMPTY_ADDRESS;
-	const queryOptions = {
-		enabled: isConnected && !!address,
-		staleTime: 30_000,
-		refetchInterval: 60_000,
-		retry: 1,
-	} as const;
-
-	const portfolioQuery = useInfo("portfolio", { user }, queryOptions);
-	const feesQuery = useInfo("userFees", { user }, queryOptions);
-	const vaultsQuery = useInfo("userVaultEquities", { user }, queryOptions);
-	const borrowLendQuery = useInfo("borrowLendUserState", { user }, queryOptions);
-	const reserveStatesQuery = useInfo("allBorrowLendReserveStates", undefined, queryOptions);
-	const accountSummary = useMemo(
-		() =>
-			getAccountBalanceSummary({
-				accountAbstraction: balances.accountAbstraction,
-				marginSummary: balances.marginSummary,
-				perpSummary: balances.perpSummary,
-				withdrawable: balances.withdrawable,
-				spotBalances: balances.spotBalances,
-				spotAvailableAfterMaintenance: balances.spotAvailableAfterMaintenance,
-				tokenUsdPrices,
-			}),
-		[
-			balances.accountAbstraction,
-			balances.marginSummary,
-			balances.perpSummary,
-			balances.spotAvailableAfterMaintenance,
-			balances.spotBalances,
-			balances.withdrawable,
-			tokenUsdPrices,
-		],
-	);
-
-	const snapshot = getPortfolioSnapshot(portfolioQuery.data, scope, period);
-	const combinedSnapshot = getPortfolioSnapshot(portfolioQuery.data, "combined", period);
-	const perpsSnapshot = getPortfolioSnapshot(portfolioQuery.data, "perps", period);
-	const earnBalance = calculateEarnBalance(borrowLendQuery.data, reserveStatesQuery.data);
-	const vaultEquity = calculateVaultEquity(vaultsQuery.data);
-	const accountModeReady = isSupportedAccountAbstraction(balances.accountAbstraction);
-	let perpAccountEquity: string | null = null;
-	if (!accountSummary.usesSpotStateForPerps && accountModeReady && balances.hasAllDexsSnapshot) {
-		perpAccountEquity =
-			balances.accountAbstraction === "disabled"
-				? calculateAllDexPerpEquityUsd({
-						accounts: balances.allDexClearinghouseStates.map(([dex, state]) => ({
-							dex,
-							accountValue: state.marginSummary.accountValue,
-						})),
-						collaterals: collaterals.map((collateral) => ({
-							dex: collateral.dex,
-							collateralToken: collateral.tokenName,
-						})),
-						tokenUsdPrices,
-					})
-				: accountSummary.perpAccountValue.toString();
-	}
-	const coreEquity = calculateCoreAccountEquity({
-		spotEquity: accountSummary.spotAccountValue,
-		perpEquity: perpAccountEquity ?? 0,
-		usesSharedQuoteBalance: accountSummary.usesSpotStateForPerps,
-	});
-	const hasResolvedBalanceSources =
-		isConnected &&
-		accountModeReady &&
-		!balances.isDataStale &&
-		tokenUsdPriceStatus === "success" &&
-		balances.hasSpotStateSnapshot &&
-		(accountSummary.usesSpotStateForPerps || (balances.hasAllDexsSnapshot && perpAccountEquity !== null));
-	const currentEquitySourcesAvailable =
-		hasResolvedBalanceSources &&
-		vaultsQuery.data !== undefined &&
-		borrowLendQuery.data !== undefined &&
-		reserveStatesQuery.data !== undefined;
-	const totalEquity = isConnected
-		? resolveCurrentTotalEquity({
-				portfolioValue: getLatestHistoryValue(combinedSnapshot?.accountValueHistory),
-				coreEquity,
-				vaultEquity,
-				earnBalance,
-				currentSourcesAvailable: currentEquitySourcesAvailable,
-			})
-		: null;
-	const spotAccountEquity =
-		isConnected && accountModeReady && balances.hasSpotStateSnapshot ? accountSummary.spotAccountValue : null;
-	const displayedEarnBalance =
-		isConnected && borrowLendQuery.data !== undefined && reserveStatesQuery.data !== undefined ? earnBalance : null;
-	const fourteenDayVolume = calculateFourteenDayVolume(feesQuery.data?.dailyUserVlm);
+	const snapshot = getPortfolioSnapshot(data.portfolio, scope, period);
+	const perpsSnapshot = getPortfolioSnapshot(data.portfolio, "perps", period);
+	const fourteenDayVolume = calculateFourteenDayVolume(data.fees?.dailyUserVlm);
 	const pnl = getLatestHistoryValue(snapshot?.pnlHistory);
-	const maxDrawdown = calculateMaxDrawdown(snapshot?.accountValueHistory);
-	const isPortfolioLoading = isConnected && !snapshot && (portfolioQuery.isPending || portfolioQuery.isFetching);
-	const isPortfolioUnavailable = isConnected && !isPortfolioLoading && (snapshot === null || perpsSnapshot === null);
-	const isFeesLoading = isConnected && !feesQuery.data && (feesQuery.isPending || feesQuery.isFetching);
-	const activeReferralDiscount = feesQuery.data?.activeReferralDiscount;
+	const isPortfolioLoading = data.portfolioStatus === "loading";
+	const isPortfolioUnavailable =
+		data.isConnected && !isPortfolioLoading && (snapshot === null || perpsSnapshot === null);
+	const isFeesLoading = data.feesStatus === "loading";
+	const activeReferralDiscount = data.fees?.activeReferralDiscount;
 	const takerFee = applyReferralDiscountToFeeRate(
-		feeMarket === "perps" ? feesQuery.data?.userCrossRate : feesQuery.data?.userSpotCrossRate,
+		feeMarket === "perps" ? data.fees?.userCrossRate : data.fees?.userSpotCrossRate,
 		activeReferralDiscount,
 	);
 	const makerFee = applyReferralDiscountToFeeRate(
-		feeMarket === "perps" ? feesQuery.data?.userAddRate : feesQuery.data?.userSpotAddRate,
+		feeMarket === "perps" ? data.fees?.userAddRate : data.fees?.userSpotAddRate,
 		activeReferralDiscount,
 	);
 
@@ -229,28 +125,24 @@ export function PortfolioOverview() {
 						tone={pnl ?? undefined}
 					/>
 					<SummaryRow label={<Trans>Volume</Trans>} value={snapshot === null ? "—" : formatUSD(snapshot.vlm)} />
-					<SummaryRow
-						label={<Trans>Max Drawdown</Trans>}
-						value={maxDrawdown === null ? "—" : formatPercent(maxDrawdown)}
-						tone={maxDrawdown ?? undefined}
-					/>
+					<SummaryRow label={<Trans>Max Drawdown</Trans>} value="—" />
 					<SummaryRow
 						label={<Trans>Total Equity</Trans>}
-						value={totalEquity === null ? "—" : formatUSD(totalEquity, { compact: false })}
+						value={data.totalEquity === null ? "—" : formatUSD(data.totalEquity, { compact: false })}
 					/>
-					{!accountSummary.usesSpotStateForPerps ? (
+					{!data.usesSharedQuoteBalance ? (
 						<SummaryRow
 							label={<Trans>Perps Account Equity</Trans>}
-							value={perpAccountEquity === null ? "—" : formatUSD(perpAccountEquity, { compact: false })}
+							value={data.perpEquity === null ? "—" : formatUSD(data.perpEquity, { compact: false })}
 						/>
 					) : null}
 					<SummaryRow
 						label={<Trans>Spot Account Equity</Trans>}
-						value={spotAccountEquity === null ? "—" : formatUSD(spotAccountEquity, { compact: false })}
+						value={data.spotEquity === null ? "—" : formatUSD(data.spotEquity, { compact: false })}
 					/>
 					<SummaryRow
-						label={<Trans>Earn Balance</Trans>}
-						value={displayedEarnBalance === null ? "—" : formatUSD(displayedEarnBalance, { compact: false })}
+						label={<Trans>Lending Net Balance</Trans>}
+						value={data.earnBalance === null ? "—" : formatUSD(data.earnBalance, { compact: false })}
 					/>
 				</div>
 			</section>
@@ -263,11 +155,28 @@ export function PortfolioOverview() {
 					period={period}
 					isLoading={isPortfolioLoading}
 					isUnavailable={isPortfolioUnavailable}
-					onRetry={() => {
-						void portfolioQuery.refetch();
-						void feesQuery.refetch();
-					}}
+					hasConfirmedHistory={data.portfolioStatus === "ready" && snapshot !== null && perpsSnapshot !== null}
+					onRetry={data.retry}
 				/>
+			</div>
+			<div className="col-span-full hidden space-y-1 px-1 text-2xs text-fg-muted min-[1001px]:block" aria-live="polite">
+				<p>
+					<Trans>Max drawdown is unavailable until cash-flow-adjusted history can be verified.</Trans>
+				</p>
+				{data.isConnected && data.totalEquity === null ? (
+					<p>
+						{data.hasUnresolvedLendingOverlap ? (
+							<Trans>Total equity is unavailable because lending and trading balances may overlap.</Trans>
+						) : (
+							<Trans>Some balances cannot be valued with current data.</Trans>
+						)}
+					</p>
+				) : null}
+				{data.isConnected && data.totalEquity === null && !data.hasUnresolvedLendingOverlap ? (
+					<Button variant="outline" intent="neutral" size="xs" onClick={data.retry}>
+						<Trans>Retry</Trans>
+					</Button>
+				) : null}
 			</div>
 		</div>
 	);

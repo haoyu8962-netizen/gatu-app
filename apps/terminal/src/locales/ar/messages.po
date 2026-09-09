@@ -3094,8 +3094,8 @@ msgid "Earn"
 msgstr "العوائد"
 
 #: src/components/portfolio/portfolio-overview.tsx
-msgid "Earn Balance"
-msgstr "رصيد Earn"
+#~ msgid "Earn Balance"
+#~ msgstr "رصيد Earn"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -4567,6 +4567,10 @@ msgstr "DEX القديم"
 msgid "Legacy reward history"
 msgstr "سجل المكافآت القديم"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Lending Net Balance"
+msgstr "صافي رصيد الإقراض والاقتراض"
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
@@ -5259,6 +5263,10 @@ msgstr "الأقصى"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
 msgstr "أقصى تراجع"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
+msgstr "الحد الأقصى للتراجع غير متاح حتى يتم التحقق من السجل المعدّل لاستبعاد أثر التدفقات النقدية."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -7575,6 +7583,7 @@ msgstr "استئناف التتبع"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -8553,6 +8562,10 @@ msgstr "تجري مزامنة حالة إيداع المحفظة الذكية. �
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "سولانا سلسلة كتل للعقود الذكية والتطبيقات اللامركزية، مصممة للتنفيذ عالي الإنتاجية."
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Some balances cannot be valued with current data."
+msgstr "لا يمكن تقييم بعض الأرصدة بالبيانات الحالية."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10081,6 +10094,10 @@ msgstr "الإجمالي"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "إجمالي القيمة"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total equity is unavailable because lending and trading balances may overlap."
+msgstr "إجمالي حقوق الملكية غير متاح لأن أرصدة الإقراض والاقتراض والتداول قد تتداخل."
 
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx

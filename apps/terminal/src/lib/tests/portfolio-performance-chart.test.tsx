@@ -72,6 +72,26 @@ describe("PortfolioPerformanceChart", () => {
 		expect(container.querySelector("[data-x-axis]")).toBeNull();
 	});
 
+	it("does not infer empty history before a confirmed response", () => {
+		renderChart(root, { history: [], hasConfirmedHistory: false });
+		expect(container.textContent).not.toContain("No performance history");
+		renderChart(root, { history: [], hasConfirmedHistory: true });
+		expect(container.textContent).toContain("No performance history");
+	});
+
+	it.each(["loading", "unavailable"])("keeps passive %s feedback desktop-only", (state) => {
+		renderChart(root, {
+			history: [],
+			hasConfirmedHistory: false,
+			isLoading: state === "loading",
+			isUnavailable: state === "unavailable",
+		});
+		const notice = container.querySelector('[role="alert"], [role="status"]');
+		expect(notice?.classList.contains("hidden")).toBe(true);
+		expect(notice?.classList.contains("min-[1001px]:flex")).toBe(true);
+		expect(container.textContent).not.toContain("No performance history");
+	});
+
 	it("renders and reads a single local-time point", () => {
 		renderChart(root, { history: [[LOCAL_DATE_TIMESTAMP, "-7"]], period: "day" });
 
@@ -348,10 +368,14 @@ function renderChart(
 		history,
 		period = "day",
 		isLoading = false,
+		isUnavailable = false,
+		hasConfirmedHistory = true,
 	}: {
 		history: History;
 		period?: PortfolioPeriod;
 		isLoading?: boolean;
+		isUnavailable?: boolean;
+		hasConfirmedHistory?: boolean;
 	},
 ) {
 	act(() =>
@@ -362,7 +386,8 @@ function renderChart(
 					pnlHistory={history}
 					perpsPnlHistory={history}
 					isLoading={isLoading}
-					isUnavailable={false}
+					isUnavailable={isUnavailable}
+					hasConfirmedHistory={hasConfirmedHistory}
 					onRetry={vi.fn()}
 					period={period}
 				/>

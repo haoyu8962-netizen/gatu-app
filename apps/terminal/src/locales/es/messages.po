@@ -3094,8 +3094,8 @@ msgid "Earn"
 msgstr "Rendimiento"
 
 #: src/components/portfolio/portfolio-overview.tsx
-msgid "Earn Balance"
-msgstr "Saldo de Earn"
+#~ msgid "Earn Balance"
+#~ msgstr "Saldo de Earn"
 
 #: src/components/referrals/referral-legacy-history.tsx
 msgid "Earned"
@@ -4567,6 +4567,10 @@ msgstr "DEX heredado"
 msgid "Legacy reward history"
 msgstr "Historial anterior de recompensas"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Lending Net Balance"
+msgstr "Saldo neto de préstamos"
+
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-editor.tsx
@@ -5259,6 +5263,10 @@ msgstr "Máx"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
 msgstr "Caída máxima"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
+msgstr "La caída máxima no está disponible hasta verificar el historial ajustado por flujos de capital."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -7575,6 +7583,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/historical-orders/historical-orders-page.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/referrals/referral-activity.tsx
 #: src/components/referrals/referral-dashboard.tsx
@@ -8553,6 +8562,10 @@ msgstr "El estado del depósito de la billetera inteligente se está sincronizan
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana es una cadena de bloques para contratos inteligentes y aplicaciones descentralizadas, diseñada para una ejecución de alto rendimiento."
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Some balances cannot be valued with current data."
+msgstr "Algunos saldos no se pueden valorar con los datos actuales."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -10081,6 +10094,10 @@ msgstr "Total"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "Patrimonio total"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total equity is unavailable because lending and trading balances may overlap."
+msgstr "El patrimonio total no está disponible porque los saldos de préstamos y de trading podrían solaparse."
 
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
