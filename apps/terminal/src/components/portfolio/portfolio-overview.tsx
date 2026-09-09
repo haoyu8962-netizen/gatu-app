@@ -155,10 +155,11 @@ export function PortfolioOverview() {
 					period={period}
 					isLoading={isPortfolioLoading}
 					isUnavailable={isPortfolioUnavailable}
+					hasConfirmedHistory={data.portfolioStatus === "ready" && snapshot !== null && perpsSnapshot !== null}
 					onRetry={data.retry}
 				/>
 			</div>
-			<div className="col-span-full space-y-1 px-1 text-2xs text-fg-muted" aria-live="polite">
+			<div className="col-span-full hidden space-y-1 px-1 text-2xs text-fg-muted min-[1001px]:block" aria-live="polite">
 				<p>
 					<Trans>Max drawdown is unavailable until cash-flow-adjusted history can be verified.</Trans>
 				</p>

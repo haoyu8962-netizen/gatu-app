@@ -29,7 +29,7 @@ Financial arithmetic stays in domain functions using Big.js and decimal strings.
 
 The SDK names `total`, `supplied`, and `borrowed`, but those type declarations alone do not establish how every account mode reconciles these fields with `borrowLendUserState`. Do not infer additive independence from the names.
 
-For shared account modes, any nonzero borrow or supply makes current total equity unavailable pending validated reconciliation. Any nonzero or invalid `supplied`/`borrowed` field in spot state also prevents aggregation, including during mode transitions. Equal supply and borrow still count as exposure. Separately valid spot and lending net values remain visible, with an explicit explanation that they may overlap. Unknown or malformed lending data cannot be treated as zero.
+For shared account modes, any nonzero borrow or supply makes current total equity unavailable pending validated reconciliation. Any nonzero or invalid `supplied`/`borrowed` field in spot state also prevents aggregation, including during mode transitions. Equal supply and borrow still count as exposure. Separately valid spot and lending net values remain visible, with an explicit desktop explanation that they may overlap. Unknown or malformed lending data cannot be treated as zero.
 
 For standard accounts with no spot lending fields indicating overlap, the separately held lending net balance may be added. Before relaxing the shared-mode guard, verify same-account responses covering standard, unified and portfolio-margin modes, empty lending, supply-only, borrowing, offsetting supply/borrow, and transitions. Record the field relationship and add fixture-based regression tests. The current implementation intentionally does not claim such reconciliation is verified.
 
@@ -43,10 +43,12 @@ Fresh data remains visible during a normal background refresh. A refresh error, 
 
 ## Maximum drawdown
 
-Maximum drawdown is intentionally unavailable, with a visible explanation. The previous calculation measured peak-to-trough cash balance and treated withdrawals as trading losses. It has been removed rather than replaced with a PNL-denominated percentage.
+Maximum drawdown is intentionally unavailable, with a visible explanation on desktop. The previous calculation measured peak-to-trough cash balance and treated withdrawals as trading losses. It has been removed rather than replaced with a PNL-denominated percentage.
 
 Re-enabling it requires a validated cash-flow-adjusted unit-value/return series. Define external flows for the chosen scope (perp-to-spot transfers are internal to combined scope), prove ledger coverage, align valuation and flow times, and handle empty/zero/negative starting equity. Missing ledger coverage or ambiguous timing must not produce a numeric result. If only sampled returns can be established, explicitly label the metric an estimate. No precise drawdown is inferred from `portfolio` samples alone.
 
 ## Verification
 
 Regression tests cover pricing completeness, valid zero balances, malformed values, liabilities, decimal precision, independent DEX collateral conversion, shared lending overlap, query expiration/errors, cash withdrawals, and wallet/network/mode cache isolation. UI checks cover desktop and mobile summaries and explanatory text. SDK response samples are evidence for field shape, not a guarantee of valuation completeness.
+
+On mobile (1000px and below), passive loading, error, stale-data and unavailable explanations and their retry controls remain hidden. Numeric placeholders and blank chart areas preserve layout; an empty-history conclusion requires a complete successful history response. Desktop explanations remain available. These presentation rules do not change any valuation, freshness or action-availability guards.

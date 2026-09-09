@@ -131,6 +131,7 @@ function renderChart(root: Root) {
 					perpsPnlHistory={HISTORY}
 					isLoading={false}
 					isUnavailable={false}
+					hasConfirmedHistory={true}
 					onRetry={vi.fn()}
 					period="day"
 				/>
