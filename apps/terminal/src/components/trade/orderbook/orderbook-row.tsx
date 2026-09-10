@@ -103,8 +103,7 @@ function OrderbookRowComponent({
 					<span
 						data-slot="orderbook-price-text"
 						className={cn(
-							"inline-block max-w-full truncate align-top bg-surface",
-							compact ? "group-hover:bg-trading-panel-card" : "group-hover:bg-fill-hover",
+							"inline-block max-w-full truncate align-top",
 							isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
 						)}
 					>

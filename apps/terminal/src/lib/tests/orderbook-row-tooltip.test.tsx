@@ -94,12 +94,13 @@ describe("compact orderbook cumulative tooltip", () => {
 			const askPrice = container.querySelector(".orderbook-price-ask");
 			expect(askPrice).not.toBeNull();
 			expect(askPrice?.getAttribute("data-slot")).toBe("orderbook-price-text");
-			expect(askPrice?.classList.contains("bg-surface")).toBe(true);
+			expect(askPrice?.className).not.toMatch(/(?:^|:)bg-/);
 			expect(askPrice?.classList.contains("text-trading-panel-error")).toBe(false);
 
 			renderRow("bid", compact);
 			const bidPrice = container.querySelector(".orderbook-price-bid");
 			expect(bidPrice).not.toBeNull();
+			expect(bidPrice?.className).not.toMatch(/(?:^|:)bg-/);
 			expect(bidPrice?.classList.contains("text-trading-panel-success")).toBe(false);
 		}
 	});
