@@ -320,6 +320,7 @@ msgstr "الوصول معطّل"
 msgid "Access restricted"
 msgstr "الوصول مقيّد"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -940,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "متوسط سعر التنفيذ"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "متوسط السعر"
@@ -1100,6 +1102,7 @@ msgstr "معاينة الكاميرا لرمز QR الخاص بمحفظة سطح
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -1630,6 +1633,7 @@ msgid "Configured TP/SL amount"
 msgstr "مبلغ TP/SL المحدد"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2412,7 +2416,6 @@ msgstr "تجاهل المفتاح المحلي"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "قطع الاتصال"
 
@@ -2429,6 +2432,10 @@ msgstr "تجاهل"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "العرض"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "البُعد عن السعر الوسطي"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -6049,6 +6056,11 @@ msgstr "جارٍ التحديث…"
 msgid "Rejected"
 msgstr "مرفوض"
 
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "إعادة تحميل الصفحة"
+
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
 msgstr "إعادة تحميل منصة التداول"
@@ -6874,6 +6886,11 @@ msgstr "جاري التوقيع..."
 msgid "Size"
 msgstr "الحجم"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Size (%)"
+msgstr "الحجم (%)"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
@@ -6920,7 +6937,6 @@ msgstr "سعر SL"
 msgid "Slippage"
 msgstr "الانزلاق"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -8282,8 +8298,9 @@ msgstr "هناك عدد كبير جدًا من موافقات الهاتف با�
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8302,7 +8319,6 @@ msgstr "إجمالي القيمة"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "إجمالي حقوق الملكية غير متاح لأن أرصدة الإقراض والاقتراض والتداول قد تتداخل."
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "إجمالي القيمة الاسمية"

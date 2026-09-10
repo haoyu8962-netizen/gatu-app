@@ -101,7 +101,7 @@ describe("orderbook price selection", () => {
 				/>,
 			);
 		});
-		expect(container.querySelector('[title="98.25"]')).not.toBeNull();
+		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("98.25");
 
 		act(() => {
 			root.render(
@@ -118,7 +118,7 @@ describe("orderbook price selection", () => {
 			);
 		});
 
-		expect(container.querySelector('[title="99.25"]')).not.toBeNull();
+		expect(container.querySelectorAll(".orderbook-value-text")[1]?.textContent).toBe("99.25");
 	});
 
 	it("does not select a price while the snapshot is disabled", () => {

@@ -298,6 +298,12 @@ export function TradePanel() {
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
+	const sizeInteractionRef = useRef(false);
+	function handleSizeInteractionChange(active: boolean) {
+		sizeInteractionRef.current = active;
+		setIsSizeInteracting(active);
+	}
 
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
@@ -447,6 +453,7 @@ export function TradePanel() {
 	);
 
 	function canExecuteOrder() {
+		if (sizeInteractionRef.current) return false;
 		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
 		if (isAvailabilityBlocked) return false;
@@ -793,7 +800,7 @@ export function TradePanel() {
 									size="xs"
 									intent={getTradingCtaIntent(buttonContent.variant)}
 									onClick={buttonContent.action}
-									disabled={buttonContent.disabled}
+									disabled={buttonContent.disabled || isSizeInteracting}
 									className={cn(
 										"w-full rounded-[12px] px-3 py-2.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
 										getTradingCtaClass(buttonContent.variant),
@@ -821,6 +828,7 @@ export function TradePanel() {
 					swapTargetToken={swapTargetToken}
 					onSizeModeToggle={handleSizeModeToggle}
 					onSizePercentApply={handleSizePercentApply}
+					onSizeInteractionChange={handleSizeInteractionChange}
 					onSwapClick={() => {
 						if (swapTargetToken) openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken);
 					}}

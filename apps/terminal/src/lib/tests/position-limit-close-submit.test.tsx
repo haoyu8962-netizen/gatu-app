@@ -9,6 +9,7 @@ import {
 	type PositionLimitCloseTarget,
 	usePositionLimitCloseSubmit,
 } from "@/hooks/trade/use-position-limit-close-submit";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111";
@@ -255,6 +256,34 @@ describe("usePositionLimitCloseSubmit", () => {
 		);
 		expect(currentHook().phase).toBe("idle");
 		expect(currentHook().error).toBeNull();
+	});
+
+	it("passes the guarded limit-close order through the real SDK as exact base quantity", async () => {
+		const exchange = createExchangeHarness(false);
+		mocks.submitOrder.mockImplementation(async (params) => {
+			mocks.executionGuard?.(params);
+			return { state: "confirmed", result: await exchange.client.order(params) };
+		});
+		await act(async () => {
+			await currentHook().submit({ price: "123.45", size: "1.575" });
+		});
+
+		expect(exchange.request).toHaveBeenCalledOnce();
+		expect(exchange.getAction()).toEqual({
+			type: "order",
+			grouping: "na",
+			orders: [
+				{
+					a: ASSET_ID,
+					b: false,
+					p: "123.45",
+					s: "1.575",
+					r: true,
+					t: { limit: { tif: "Gtc" } },
+				},
+			],
+		});
+		expect(currentHook().phase).toBe("idle");
 	});
 
 	it("fails closed before REST or Exchange when the active owner changes", async () => {

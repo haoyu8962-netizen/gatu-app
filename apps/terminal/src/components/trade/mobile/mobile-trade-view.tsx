@@ -195,6 +195,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const [sizeInput, setSizeInput] = useState("");
+	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
+	const sizeInteractionRef = useRef(false);
+	function handleSizeInteractionChange(active: boolean) {
+		sizeInteractionRef.current = active;
+		setIsSizeInteracting(active);
+	}
 	const [limitPriceInput, setLimitPriceInput] = useState("");
 	const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);
 	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
@@ -505,8 +511,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setSizeInput(getSizeForPercent(pct));
 	}
 
-	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${sizeMode}`;
+	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 	const sliderInteraction = useSizeSliderInteraction({
+		onInteractionChange: handleSizeInteractionChange,
 		applyPercent: applySizeFromPercent,
 		interactionIdentity: sliderInteractionIdentity,
 		setSizeInput,
@@ -612,6 +619,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}
 
 	function canExecuteOrder() {
+		if (sizeInteractionRef.current) return false;
 		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
 		if (isAvailabilityBlocked) return false;
@@ -719,7 +727,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		needsApproval: validation.needsApproval,
 		isSignerReady,
 		isApprovalLoading,
-		canSubmit: validation.canSubmit,
+		canSubmit: validation.canSubmit && !isSizeInteracting,
 		isRegistering,
 		canApprove,
 		isSubmitting,
@@ -911,6 +919,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					onPercentCancel={sliderInteraction.onPercentCancel}
 					onPercentCommit={sliderInteraction.onPercentCommit}
 					onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
+					onPercentInteractionEnd={sliderInteraction.onPercentInteractionEnd}
 					onSizeChange={handleSizeInputChange}
 					onSizeModeToggle={handleSizeModeToggle}
 					percentAriaLabel={`${t`Size`} (%)`}

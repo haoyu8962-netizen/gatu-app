@@ -505,7 +505,7 @@ function MarginModeForm({
 						value={displayLeverage}
 						riskValue={showSuccess ? successfulLeverage : (leverageDraft ?? canonicalLeverage)}
 						max={maxLeverage}
-						disabled={isUpdating || showSuccess}
+						disabled={isUpdating || showSuccess || !sessionOpen}
 						onChange={handleLeverageChange}
 						onDraftChange={onLeverageDraftChange}
 						onInputValidityChange={setLeverageInputValid}

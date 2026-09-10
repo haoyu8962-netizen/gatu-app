@@ -320,6 +320,7 @@ msgstr "Acceso deshabilitado"
 msgid "Access restricted"
 msgstr "Acceso restringido"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -940,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "Precio medio de ejecución"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "Precio medio"
@@ -1100,6 +1102,7 @@ msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -1630,6 +1633,7 @@ msgid "Configured TP/SL amount"
 msgstr "Cantidad de TP/SL configurada"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2412,7 +2416,6 @@ msgstr "Descartar clave local"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Desconectar"
 
@@ -2429,6 +2432,10 @@ msgstr "Descartar"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "Pantalla"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "Distancia al precio medio"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -6049,6 +6056,11 @@ msgstr "Actualizando…"
 msgid "Rejected"
 msgstr "Rechazada"
 
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "Recargar página"
+
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
 msgstr "Recargar terminal"
@@ -6874,6 +6886,11 @@ msgstr "Firmando..."
 msgid "Size"
 msgstr "Tamaño"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Size (%)"
+msgstr "Tamaño (%)"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
@@ -6920,7 +6937,6 @@ msgstr "Precio SL"
 msgid "Slippage"
 msgstr "Deslizamiento"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -8282,8 +8298,9 @@ msgstr "Demasiadas aprobaciones móviles esperan recuperación en esta pestaña.
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8302,7 +8319,6 @@ msgstr "Patrimonio total"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "El patrimonio total no está disponible porque los saldos de préstamos y de trading podrían solaparse."
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "Nocional total"

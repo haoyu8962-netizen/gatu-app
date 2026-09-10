@@ -1,23 +1,9 @@
-import { useDirection } from "@base-ui/react/direction-provider";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
-import { SliderTickMarks } from "../components/slider-tick-marks";
 import { LeverageSlider } from "./leverage-slider";
-
-function getLeverageStops(max: number): number[] {
-	if (max <= 1) return [1];
-	const quarter = (max - 1) / 4;
-	const stops = [1, Math.round(1 + quarter), Math.round(1 + 2 * quarter), Math.round(1 + 3 * quarter), max];
-	return [...new Set(stops)];
-}
-
-function getLeverageStopFraction(stop: number, max: number): number {
-	if (max <= 1) return 0;
-	return ((stop - 1) / (max - 1)) * 100;
-}
 
 type LeverageEditorVariant = "sheet" | "modal";
 
@@ -50,22 +36,14 @@ export function LeverageEditor({
 	variant = "sheet",
 }: LeverageEditorProps) {
 	const { t } = useLingui();
-	const direction = useDirection();
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);
-	const stops = getLeverageStops(max);
-	const controlInsetClassName = isSheet ? "mx-3" : "mx-2.5";
 
 	useEffect(() => {
 		if (!disabled || draftText === null) return;
 		setDraftText(null);
 		onInputValidityChange?.(true);
 	}, [disabled, draftText, onInputValidityChange]);
-
-	function getPhysicalStopFraction(stop: number): number {
-		const fraction = getLeverageStopFraction(stop, max);
-		return direction === "rtl" ? 100 - fraction : fraction;
-	}
 
 	function handlePick(next: number) {
 		clearTextDraft();
@@ -120,25 +98,11 @@ export function LeverageEditor({
 					value={value}
 					onChange={handleSliderDrag}
 					onCommit={handlePick}
+					onInteractionStart={(startValue) => onDraftChange?.(startValue)}
+					onInteractionEnd={() => onDraftChange?.(null)}
 					onCancel={onDraftChange ? handleSliderCancel : undefined}
 					max={max}
 					disabled={disabled}
-					controlClassName={cn("w-auto", controlInsetClassName, isSheet ? "h-9" : "h-8")}
-					trackClassName="h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
-					indicatorClassName="min-w-0 rounded-xs bg-trading-panel-control shadow-none inset-shadow-none"
-					thumbClassName={cn(
-						"border-[3px] border-trading-panel-control bg-trading-panel-slider-thumb shadow-trading-panel-slider",
-						isSheet ? "size-6" : "size-5",
-					)}
-				/>
-				<SliderTickMarks
-					insetClassName={isSheet ? "inset-x-3" : "inset-x-2.5"}
-					activeClassName="border-trading-panel-control bg-trading-panel-control"
-					positions={stops.map((stop) => ({
-						key: stop,
-						leftPercent: getPhysicalStopFraction(stop),
-						active: value >= stop,
-					}))}
 				/>
 			</div>
 			<div className={cn(tradingInputFrameClass, disabled && "opacity-50")}>

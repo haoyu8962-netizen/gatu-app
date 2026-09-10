@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ComponentProps } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
@@ -19,6 +19,33 @@ type SubscriptionState = {
 	isStale: boolean;
 	status: "idle" | "subscribing" | "active" | "error";
 };
+
+vi.mock("@/components/trade/orderbook/orderbook-hover-tooltip", () => ({
+	OrderbookHoverTooltip: ({
+		hover,
+		baseAsset,
+		quoteAsset,
+	}: ComponentProps<typeof import("@/components/trade/orderbook/orderbook-hover-tooltip").OrderbookHoverTooltip>) => (
+		<div
+			role="tooltip"
+			id={hover.tooltipId}
+			data-price={hover.activeLevel?.price}
+			data-total={hover.activeLevel?.total}
+		>
+			{baseAsset}/{quoteAsset}
+		</div>
+	),
+}));
+
+function createPointerEvent(type: string, pointerType = "mouse"): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: 0, clientX: 12, clientY: 8 });
+	Object.defineProperties(event, {
+		isPrimary: { value: true },
+		pointerId: { value: 1 },
+		pointerType: { value: pointerType },
+	});
+	return event;
+}
 
 const mocks = vi.hoisted(() => ({
 	env: "Mainnet",
@@ -244,6 +271,88 @@ describe("mobile orderbook subscription lifecycle", () => {
 		expect(latestSubscriptionCall().options.enabled).toBe(true);
 		expect(latestSubscriptionCall().params.fast).toBeUndefined();
 		expect(container.textContent).not.toContain("101.0");
+	});
+
+	it("shares one split summary across both sides without changing the feed or click behavior", () => {
+		vi.useFakeTimers();
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+			bottom: 304,
+			height: 304,
+			left: 0,
+			right: 400,
+			top: 0,
+			width: 400,
+			x: 0,
+			y: 0,
+			toJSON: () => ({}),
+		});
+		vi.stubGlobal(
+			"ResizeObserver",
+			class implements ResizeObserver {
+				disconnect() {}
+				observe() {}
+				unobserve() {}
+			},
+		);
+		setSubscriptionState({
+			data: createBook(mocks.market.name, Date.now(), false, 3),
+			isStale: false,
+			status: "active",
+		});
+		render({ compact: false });
+		const ask = container.querySelector<HTMLButtonElement>(
+			'button[data-orderbook-side="ask"][data-orderbook-rank="1"]',
+		);
+		const bid = container.querySelector<HTMLButtonElement>(
+			'button[data-orderbook-side="bid"][data-orderbook-rank="1"]',
+		);
+		if (!ask || !bid) throw new Error("Missing split rows");
+		const subscription = latestSubscriptionCall();
+		const listeners = mocks.subscriptionListeners.size;
+		expect(ask.disabled).toBe(false);
+		expect(bid.disabled).toBe(false);
+
+		act(() => ask.dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-total")).toBe("6");
+		expect(container.querySelector('[role="tooltip"]')?.textContent).toBe(`${mocks.market.name}/USDC`);
+		expect(ask.dataset.orderbookHover).toBe("active");
+		expect(ask.dataset.orderbookHoverEdge).toBe("bottom");
+		expect(ask.hasAttribute("title")).toBe(false);
+		expect(
+			container
+				.querySelector('button[data-orderbook-side="ask"][data-orderbook-rank="0"]')
+				?.getAttribute("data-orderbook-hover"),
+		).toBe("range");
+		act(() => bid.dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("98");
+		expect(ask.dataset.orderbookHover).toBeUndefined();
+		expect(bid.dataset.orderbookHoverEdge).toBe("bottom");
+		act(() => bid.click());
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: mocks.market.name, price: "98" });
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+
+		act(() => {
+			ask.dispatchEvent(createPointerEvent("pointerdown", "touch"));
+			vi.advanceTimersByTime(450);
+		});
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		act(() => {
+			ask.dispatchEvent(createPointerEvent("pointerup", "touch"));
+			ask.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+		expect(latestSubscriptionCall()).toEqual(subscription);
+		expect(mocks.subscriptionListeners.size).toBe(listeners);
+		expect(latestL2SubscriptionCall().options.enabled).toBe(false);
+		setSubscriptionState({
+			data: createBook(mocks.market.name, Date.now(), false, 3),
+			isStale: true,
+			status: "active",
+		});
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
 	});
 
 	it("insets each split heading half to match the mobile data rows", () => {

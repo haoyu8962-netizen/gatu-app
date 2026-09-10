@@ -1,12 +1,10 @@
 import { CaretDownIcon } from "@phosphor-icons/react";
 import type { ChangeEvent } from "react";
 import { NumberInput } from "@/components/ui/number-input";
-import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { SizePercentInput } from "../components/size-percent-input";
-import { SliderTickMarks } from "../components/slider-tick-marks";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 
 interface Props {
@@ -20,6 +18,7 @@ interface Props {
 	onPercentCancel: (percent: number) => void;
 	onPercentCommit: (percent: number) => void;
 	onPercentInteractionStart?: (percent: number) => void;
+	onPercentInteractionEnd?: () => void;
 	onSizeChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	onSizeModeToggle: () => void;
 	percentAriaLabel: string;
@@ -42,19 +41,16 @@ export function MobileTradeSizeControl({
 	onPercentCancel,
 	onPercentCommit,
 	onPercentInteractionStart,
+	onPercentInteractionEnd,
 	onSizeChange,
 	onSizeModeToggle,
 	percentAriaLabel,
-	side,
 	sizeAriaLabel,
 	sizeInput,
 	sizeLabel,
 	sizeModeLabel,
 	sliderValue,
 }: Props) {
-	const accentBgClass = side === "buy" ? "bg-trading-panel-success" : "bg-trading-panel-error";
-	const accentBorderClass = side === "buy" ? "border-trading-panel-success" : "border-trading-panel-error";
-
 	return (
 		<div className="space-y-2">
 			<div className={cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")}>
@@ -93,32 +89,16 @@ export function MobileTradeSizeControl({
 						onPercentCancel={onPercentCancel}
 						onPercentCommit={onPercentCommit}
 						onPercentInteractionStart={onPercentInteractionStart}
+						onPercentInteractionEnd={onPercentInteractionEnd}
 						disabled={!canUsePercent}
 						ariaLabel={percentAriaLabel}
 						ariaDescribedBy={hasError ? errorId : undefined}
 						ariaInvalid={hasError || undefined}
-						thumbSize="md"
-						thumbAlignment="edge"
-						controlClassName="h-[33px]"
-						trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
-						indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
-						thumbClassName={cn(
-							"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
-							accentBorderClass,
-						)}
-					/>
-					<SliderTickMarks
-						insetClassName="inset-x-[9px]"
-						activeClassName={cn(accentBorderClass, accentBgClass)}
-						positions={SIZE_PERCENT_OPTIONS.map((percent) => ({
-							key: percent,
-							leftPercent: percent,
-							active: sliderValue >= percent,
-						}))}
 					/>
 				</div>
 
 				<SizePercentInput
+					interactionIdentity={interactionIdentity}
 					value={sliderValue}
 					onPercentChange={onPercentChange}
 					disabled={!canUsePercent}

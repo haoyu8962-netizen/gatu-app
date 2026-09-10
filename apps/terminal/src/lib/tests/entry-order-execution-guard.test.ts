@@ -64,6 +64,20 @@ function limitWithAttachedTpSl(tpPx = "110", slPx = "90"): OrderParameters {
 }
 
 describe("entry order SDK execution guard", () => {
+	it.each([
+		[true, "1380.2", "1380.3"],
+		[false, "1377.6", "1377.5"],
+	] as const)(
+		"rejects a half-up protection tick outside the exact slippage bound for buy=%s",
+		(isBuy, safePrice, unsafePrice) => {
+			const state = executionState({ markPx: "1378.9", executionReferencePx: "1378.9", slippageBps: 10 });
+			expect(() => assertEntryOrderExecutionAllowed(marketOrder(isBuy, safePrice), state, 1_001)).not.toThrow();
+			expect(() => assertEntryOrderExecutionAllowed(marketOrder(isBuy, unsafePrice), state, 1_001)).toThrow(
+				"Market price moved beyond the confirmed slippage limit",
+			);
+		},
+	);
+
 	it("accepts a fresh market cap and rejects it after the exact mark expires", () => {
 		const params = marketOrder(true, "102.5");
 		expect(() => assertEntryOrderExecutionAllowed(params, executionState(), 1_001)).not.toThrow();

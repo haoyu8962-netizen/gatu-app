@@ -96,9 +96,9 @@ describe("MobileTradeSizeControl", () => {
 		renderControl({ onPercentChange, sliderValue: 37.5 });
 
 		const percentInput = getInput(container, "Order size percentage");
-		expect(percentInput.value).toBe("37.5");
+		expect(percentInput.value).toBe("38");
 
-		changeInput(percentInput, "125.5");
+		changeInput(percentInput, "125");
 		expect(onPercentChange).toHaveBeenLastCalledWith(100);
 		expect(percentInput.value).toBe("100");
 
@@ -106,17 +106,17 @@ describe("MobileTradeSizeControl", () => {
 		expect(onPercentChange).toHaveBeenLastCalledWith(0);
 	});
 
-	it("reserves mobile-safe width for one-decimal percentages", () => {
+	it("uses integer percentages while preserving mobile-safe width", () => {
 		renderControl({ sliderValue: 80.7 });
 
 		const percentInput = getInput(container, "Order size percentage");
-		expect(percentInput.value).toBe("80.7");
+		expect(percentInput.value).toBe("81");
 		expect(percentInput.className).toContain("max-[1000px]:text-base");
 		expect(percentInput.parentElement?.className).toContain("w-20");
 		expect(percentInput.nextElementSibling?.textContent).toBe("%");
 
-		changeInput(percentInput, "100.0");
-		expect(percentInput.value).toBe("100.0");
+		changeInput(percentInput, "100");
+		expect(percentInput.value).toBe("100");
 	});
 
 	it("disables percent-based sizing without disabling manual size entry or the unit switch", () => {

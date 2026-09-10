@@ -6,7 +6,7 @@ import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { ORDER_MIN_NOTIONAL_USD, type OrderType, SIZE_PERCENT_OPTIONS } from "@/config/trade";
+import { ORDER_MIN_NOTIONAL_USD, type OrderType } from "@/config/trade";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import type { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
@@ -42,7 +42,6 @@ import {
 	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import { SizePercentInput } from "../components/size-percent-input";
-import { SliderTickMarks } from "../components/slider-tick-marks";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradeFormScale } from "./trade-form-scale";
 import { TradeFormTpSl } from "./trade-form-tp-sl";
@@ -72,6 +71,7 @@ type TradeFormOrderEntryData = Pick<
 >;
 
 interface Props {
+	onSizeInteractionChange?: (active: boolean) => void;
 	orderEntryData: TradeFormOrderEntryData;
 	price: number;
 	positionSize: number;
@@ -131,6 +131,7 @@ export function TradeFormFields({
 	swapTargetToken,
 	onSizeModeToggle,
 	onSizePercentApply,
+	onSizeInteractionChange,
 	onSwapClick,
 }: Props) {
 	useNumberFormatRevision();
@@ -193,7 +194,7 @@ export function TradeFormFields({
 	const limitHasError = usesLimitPrice && !price && sizeValue > 0;
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
-	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${sizeMode}`;
+	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 
 	function getSizeErrorText(): string {
 		if (!sizeHasError) return "";
@@ -224,6 +225,7 @@ export function TradeFormFields({
 
 	const sliderInteraction = useSizeSliderInteraction({
 		applyPercent: handleSizePercentApply,
+		onInteractionChange: onSizeInteractionChange,
 		interactionIdentity: sliderInteractionIdentity,
 		setSizeInput: setSize,
 		sizeInput,
@@ -235,10 +237,6 @@ export function TradeFormFields({
 		const decimals = isBaseToken ? szDecimals : 2;
 		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
 	}
-
-	const isBuy = side === "buy";
-	const accentBgClass = isBuy ? "bg-trading-panel-success" : "bg-trading-panel-error";
-	const accentBorderClass = isBuy ? "border-trading-panel-success" : "border-trading-panel-error";
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
@@ -426,31 +424,15 @@ export function TradeFormFields({
 								onPercentCancel={sliderInteraction.onPercentCancel}
 								onPercentCommit={sliderInteraction.onPercentCommit}
 								onPercentInteractionStart={sliderInteraction.onPercentInteractionStart}
+								onPercentInteractionEnd={sliderInteraction.onPercentInteractionEnd}
 								disabled={isFormDisabled || maxSize <= 0}
 								ariaLabel={`${t`Size`} (%)`}
 								ariaDescribedBy={hasDisplayedSizeError ? sizeErrorId : undefined}
 								ariaInvalid={hasDisplayedSizeError || undefined}
-								thumbSize="md"
-								thumbAlignment="edge"
-								controlClassName="h-8"
-								trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
-								indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
-								thumbClassName={cn(
-									"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
-									accentBorderClass,
-								)}
-							/>
-							<SliderTickMarks
-								insetClassName="inset-x-[9px]"
-								activeClassName={cn(accentBorderClass, accentBgClass)}
-								positions={SIZE_PERCENT_OPTIONS.map((pct) => ({
-									key: pct,
-									leftPercent: pct,
-									active: sliderValue >= pct,
-								}))}
 							/>
 						</div>
 						<SizePercentInput
+							interactionIdentity={sliderInteractionIdentity}
 							value={sliderValue}
 							onPercentChange={handleSizePercentApply}
 							disabled={isFormDisabled || maxSize <= 0}

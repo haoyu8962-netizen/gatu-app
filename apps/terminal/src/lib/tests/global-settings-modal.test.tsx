@@ -13,6 +13,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 
 const testState = vi.hoisted(() => ({
+	open: true,
+	close: vi.fn(() => {
+		testState.open = false;
+	}),
+	modalProps: null as Record<string, unknown> | null,
 	isMobile: false,
 	marketOrderSlippagePercent: 0.5,
 	setMarketOrderSlippagePercent: vi.fn((value: number) => {
@@ -28,24 +33,22 @@ const testState = vi.hoisted(() => ({
 		testState.skipOrderConfirmation = value;
 	}),
 	numberInputProps: null as Record<string, unknown> | null,
-	sliderProps: null as Record<string, unknown> | null,
 	toggleProps: [] as Record<string, unknown>[],
 }));
 
 vi.mock("@gatu/ui", () => ({
 	Button: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("button", { type: "button", ...props }, children),
-	Modal: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+	Modal: (props: { children: ReactNode } & Record<string, unknown>) => {
+		testState.modalProps = props;
+		return createElement("div", { role: "dialog" }, props.children);
+	},
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalPopup: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 	SegmentedControlItem: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	SegmentedControls: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-	Slider: (props: Record<string, unknown>) => {
-		testState.sliderProps = props;
-		return createElement("div", { "data-testid": "slider" });
-	},
 	Toggle: (props: Record<string, unknown>) => {
 		testState.toggleProps.push(props);
 		return createElement("button", {
@@ -62,9 +65,12 @@ vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: (props: Record<string, unknown>) => {
 		testState.numberInputProps = props;
 		return createElement("input", {
-			readOnly: true,
 			value: String(props.value ?? ""),
 			"aria-label": props["aria-label"],
+			"aria-describedby": props["aria-describedby"],
+			"aria-invalid": props["aria-invalid"],
+			onChange: props.onChange,
+			onBlur: props.onBlur,
 		});
 	},
 }));
@@ -83,8 +89,8 @@ vi.mock("@/lib/trade/position-market-close-confirmation-preference", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
-	useSettingsDialogActions: () => ({ close: vi.fn() }),
-	useSettingsDialogOpen: () => true,
+	useSettingsDialogActions: () => ({ close: testState.close }),
+	useSettingsDialogOpen: () => testState.open,
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -110,6 +116,9 @@ describe("GlobalSettingsModal", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		testState.open = true;
+		testState.close.mockClear();
+		testState.modalProps = null;
 		testState.isMobile = false;
 		testState.marketOrderSlippagePercent = 0.5;
 		testState.setMarketOrderSlippagePercent.mockClear();
@@ -119,7 +128,6 @@ describe("GlobalSettingsModal", () => {
 		testState.skipOrderConfirmation = false;
 		testState.setSkipOrderConfirmation.mockClear();
 		testState.numberInputProps = null;
-		testState.sliderProps = null;
 		testState.toggleProps = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -130,27 +138,100 @@ describe("GlobalSettingsModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.useRealTimers();
 	});
 
 	function renderModal() {
-		act(() => root.render(createElement(I18nProvider, { i18n }, createElement(GlobalSettingsModal))));
+		act(() =>
+			root.render(createElement(I18nProvider, { i18n }, testState.open ? createElement(GlobalSettingsModal) : null)),
+		);
 	}
 
-	it("keeps drag updates local and persists only the committed slippage", () => {
-		const onValueChange = testState.sliderProps?.onValueChange as ((value: number) => void) | undefined;
-		const onValueCommitted = testState.sliderProps?.onValueCommitted as ((value: number) => void) | undefined;
-
-		act(() => onValueChange?.(1.2));
+	it("keeps edits and blur local until the explicit confirmation", () => {
+		const input = getSlippageInput(container);
+		act(() => input.focus());
+		changeInput(input, "1.25");
+		act(() => input.blur());
 
 		expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
-		expect(testState.sliderProps?.value).toBe(1.2);
-		expect(testState.numberInputProps?.value).toBe("1.2");
+		expect(input.value).toBe("1.25");
 
-		act(() => onValueCommitted?.(1.2));
+		const confirm = getButton(container, "Confirm");
+		act(() => confirm.click());
+		act(() => confirm.click());
 
-		expect(testState.setMarketOrderSlippagePercent).toHaveBeenCalledTimes(1);
-		expect(testState.setMarketOrderSlippagePercent).toHaveBeenCalledWith(1.2);
-		expect(testState.sliderProps?.value).toBe(1.2);
+		expect(testState.setMarketOrderSlippagePercent).toHaveBeenCalledExactlyOnceWith(1.25);
+		expect(input.value).toBe("1.25");
+		expect(confirm.disabled).toBe(true);
+		expect(testState.close).not.toHaveBeenCalled();
+	});
+
+	it.each(["", ".", "0", "0.09", "5.01", "9"])(
+		"rejects the invalid draft %j without changing the risk setting",
+		(draft) => {
+			const input = getSlippageInput(container);
+			changeInput(input, draft);
+			act(() => input.blur());
+			const confirm = getButton(container, "Confirm");
+			act(() => confirm.click());
+
+			expect(confirm.disabled).toBe(true);
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+			expect(input.value).toBe(draft);
+			expect(testState.marketOrderSlippagePercent).toBe(0.5);
+			expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["0.1", "5"])("allows confirmation at the %s percent boundary", (draft) => {
+		changeInput(getSlippageInput(container), draft);
+		act(() => getButton(container, "Confirm").click());
+
+		expect(testState.setMarketOrderSlippagePercent).toHaveBeenCalledExactlyOnceWith(Number(draft));
+	});
+
+	it("cancels a draft without persisting or disturbing other settings", () => {
+		const input = getSlippageInput(container);
+		changeInput(input, "2.35");
+		act(() => getButton(container, "Cancel").click());
+
+		expect(input.value).toBe("0.5");
+		expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
+		expect(testState.setSkipOrderConfirmation).not.toHaveBeenCalled();
+		expect(testState.setAnimateOrderbook).not.toHaveBeenCalled();
+	});
+
+	it("discards a dismissed draft and restores the persisted value when reopened", () => {
+		changeInput(getSlippageInput(container), "2.35");
+		act(() => (testState.modalProps?.onOpenChange as (open: boolean) => void)(false));
+		renderModal();
+
+		expect(testState.close).toHaveBeenCalledTimes(1);
+		expect(container.querySelector("input")).toBeNull();
+		expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
+
+		testState.open = true;
+		testState.marketOrderSlippagePercent = 0.75;
+		renderModal();
+
+		expect(getSlippageInput(container).value).toBe("0.75");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("has no slider or delayed pointer callbacks that can persist a canceled edit", () => {
+		vi.useFakeTimers();
+		changeInput(getSlippageInput(container), "4.5");
+		act(() => getButton(container, "Cancel").click());
+		act(() => {
+			document.dispatchEvent(new Event("pointercancel", { bubbles: true }));
+			document.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 500 }));
+			document.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, clientX: 500 }));
+			vi.runOnlyPendingTimers();
+		});
+
+		expect(container.querySelector('[role="slider"], input[type="range"]')).toBeNull();
+		expect(getSlippageInput(container).value).toBe("0.5");
+		expect(testState.setMarketOrderSlippagePercent).not.toHaveBeenCalled();
 	});
 
 	it("shows the order confirmation toggle on and writes the inverted skip flag when turned off", () => {
@@ -181,6 +262,9 @@ describe("GlobalSettingsModal", () => {
 	it("names the slippage input and every settings toggle", () => {
 		expect(testState.numberInputProps?.["aria-label"]).toBe("Slippage tolerance");
 		expect(testState.numberInputProps?.mobileSafe).toBe(true);
+		expect(testState.numberInputProps?.maxAllowedDecimals).toBe(2);
+		const rangeId = getSlippageInput(container).getAttribute("aria-describedby");
+		expect(document.getElementById(rangeId ?? "")?.textContent).toBe("0.1% – 5%");
 		expect(testState.numberInputProps?.className).toContain("max-[1000px]:h-8");
 		expect(testState.toggleProps.map((props) => props["aria-label"])).toEqual([
 			"Order confirmation",
@@ -248,7 +332,7 @@ describe("GlobalSettingsModal", () => {
 		const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Order book animations"]');
 		const input = container.querySelector("input");
 		act(() => toggle?.click());
-		act(() => (testState.sliderProps?.onValueChange as (value: number) => void)(1.2));
+		changeInput(getSlippageInput(container), "1.2");
 		expect(input?.value).toBe("1.2");
 
 		const messageId = createHash("sha256").update("Order book animations\x1f").digest("base64").slice(0, 6);
@@ -300,6 +384,26 @@ describe("GlobalSettingsModal", () => {
 		expect(orderbookPanelSource).not.toContain("use-global-settings-store");
 	});
 });
+
+function getSlippageInput(container: HTMLElement): HTMLInputElement {
+	const input = container.querySelector<HTMLInputElement>('input[aria-label="Slippage tolerance"]');
+	if (!input) throw new Error("Expected the slippage input");
+	return input;
+}
+
+function getButton(container: HTMLElement, text: string): HTMLButtonElement {
+	const button = [...container.querySelectorAll("button")].find((element) => element.textContent === text);
+	if (!button) throw new Error(`Expected the ${text} button`);
+	return button;
+}
+
+function changeInput(input: HTMLInputElement, value: string) {
+	const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+	act(() => {
+		setter?.call(input, value);
+		input.dispatchEvent(new Event("input", { bubbles: true }));
+	});
+}
 
 function findOrderConfirmationToggle(): Record<string, unknown> | undefined {
 	return testState.toggleProps.find((props) => props["aria-label"] === "Order confirmation");

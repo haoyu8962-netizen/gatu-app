@@ -13,7 +13,7 @@ import {
 	SCALE_LEVELS_MIN,
 	SCALE_SKEW_DEFAULT,
 } from "@/config/trade";
-import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
+import { getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { formatDecimalFloor, isPositive, type Numeric, toBig, toNumber } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
@@ -421,22 +421,28 @@ interface StandardOrderParams {
 }
 
 function buildStandardOrder(orders: ExchangeOrder[], params: StandardOrderParams): void {
-	const orderPrice = getExecutedPrice(
-		params.orderType,
-		params.isBuy ? "buy" : "sell",
-		params.markPx,
-		params.slippageBps,
-		params.price,
-	);
-	const formattedPrice = formatPriceForOrder(orderPrice, params);
+	if (params.orderType === "market") {
+		orders.push(
+			buildFrontendMarketOrder({
+				assetId: params.assetId,
+				side: params.isBuy ? "buy" : "sell",
+				size: params.formattedSize,
+				szDecimals: params.szDecimals,
+				markPx: params.markPx,
+				slippageBps: params.slippageBps,
+				reduceOnly: params.reduceOnly,
+			}),
+		);
+		return;
+	}
 
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
-		p: formattedPrice,
+		p: formatPriceForOrder(params.price, params),
 		s: params.formattedSize,
 		r: params.reduceOnly,
-		t: params.orderType === "market" ? { limit: { tif: "FrontendMarket" as const } } : { limit: { tif: params.tif } },
+		t: { limit: { tif: params.tif } },
 	});
 }
 

@@ -320,6 +320,7 @@ msgstr "एक्सेस अक्षम है"
 msgid "Access restricted"
 msgstr "पहुँच प्रतिबंधित"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -940,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "औसत निष्पादन मूल्य"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "औसत मूल्य"
@@ -1100,6 +1102,7 @@ msgstr "डेस्कटॉप वॉलेट QR के लिए कैम�
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -1630,6 +1633,7 @@ msgid "Configured TP/SL amount"
 msgstr "कॉन्फ़िगर की गई TP/SL राशि"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2412,7 +2416,6 @@ msgstr "स्थानीय कुंजी हटाएँ"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
-#: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
@@ -2429,6 +2432,10 @@ msgstr "खारिज करें"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "डिस्प्ले"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "मध्य मूल्य से दूरी"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -6049,6 +6056,11 @@ msgstr "रीफ़्रेश हो रहा है…"
 msgid "Rejected"
 msgstr "अस्वीकृत"
 
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "पेज फिर से लोड करें"
+
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
 msgstr "टर्मिनल फिर से लोड करें"
@@ -6874,6 +6886,11 @@ msgstr "साइन हो रहा है..."
 msgid "Size"
 msgstr "आकार"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Size (%)"
+msgstr "आकार (%)"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
@@ -6920,7 +6937,6 @@ msgstr "SL मूल्य"
 msgid "Slippage"
 msgstr "स्लिपेज"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -8282,8 +8298,9 @@ msgstr "इस टैब में बहुत सारी मोबाइल 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8302,7 +8319,6 @@ msgstr "कुल इक्विटी"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "कुल इक्विटी उपलब्ध नहीं है क्योंकि उधार और ट्रेडिंग शेष में एक ही राशि शामिल हो सकती है।"
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "कुल नोशनल"

@@ -19,6 +19,7 @@ loading, or deposit behavior changes.
 - [Circle: USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)
 - [Privy React setup](https://docs.privy.io/basics/react/setup)
 - [Privy connected-wallet lifecycle](https://docs.privy.io/wallets/wallets/get-a-wallet/get-connected-wallet)
+- [Privy authentication tokens and session restoration](https://docs.privy.io/authentication/user-authentication/tokens)
 - [Privy login callbacks](https://docs.privy.io/authentication/user-authentication/ui-component)
 - [Privy embedded-wallet confirmation UI](https://docs.privy.io/recipes/react/manage-wallet-UIs)
 - [TanStack Query `useQuery` status contract](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery)
@@ -172,7 +173,7 @@ storage scope; the default session-scoped key can disappear when its tab is
 discarded. That mismatch fails closed and requires a user-authorized, verified
 trading-connection reset before a replacement Agent can be created.
 
-Wallet-backed sessions wait for both Privy's authentication readiness and
+Wallet-backed signing waits for both `usePrivy().ready` and
 `useWallets().ready`. Linked wallet metadata proves ownership but does not make
 an embedded or external wallet available for signing; the exact wallet must
 also be present in Privy's connected-wallet directory and active in Wagmi.
@@ -182,6 +183,24 @@ transient state also must not delete the last confirmed owner's Agent. Agent
 cleanup belongs to verified explicit logout, confirmed owner replacement, or
 an explicit security reset for ordinary keys; an uncertain submitted candidate
 remains preserved until it can be reconciled or explicitly removed.
+
+Authentication UI uses `usePrivy().ready` separately from signing readiness.
+Once authentication is ready, the logged-in identity menu remains accessible
+while the wallet directory initializes; an unauthenticated login entry does
+not wait for `useWallets().ready`. This does not make a signer ready.
+
+After 30 seconds of unresolved authentication, or unresolved
+wallet-directory initialization for an authenticated user, offer an explicit
+**Reload page** action; the authenticated menu uses a neutral wallet
+indicator until ready. Readiness or identity changes reset the timer. Wallet
+reconnection and secure disconnect remain disabled while the wallet
+directory is unresolved. This is an application recovery affordance, not a
+Privy SDK retry/deadline or a reproduced Hyperliquid timeout. Only the
+user's click reloads the page through normal Privy session restoration;
+never automatically reload, log out, remount the provider, or mark readiness
+complete. Keep raw errors and warning banners hidden, and preserve every
+signing, approval and funding gate. See [mobile presentation
+rules](mobile-data-presentation.md).
 
 Login intent is recorded only from Privy's public login callback in an
 application-owned, `user.id`-bound `sessionStorage` record. Do not read or scan
@@ -389,6 +408,9 @@ At minimum, changes to this flow must cover:
 - page load, refresh, and route remount never automatically presenting Agent
   approval, with an explicitly requested dialog remaining mounted through
   missing, loading, and error states until cancellation or readiness;
+- independent authentication/menu and wallet-signing readiness; the 30-second
+  explicit reload entry, readiness/identity timer resets, and no automatic
+  reload, logout, provider remount, signing or funding side effects;
 - session-only and persistent Agent storage;
 - temporary signer loss and restoration, confirmed wallet changes, explicit
   logout, duplicate registration, timeout, and background/foreground transitions;

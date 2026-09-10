@@ -1,12 +1,39 @@
 // @vitest-environment jsdom
 
-import { act, useState } from "react";
+import { act, type ComponentProps, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/mobile/mobile-book-view";
 import { getOrderbookActionsStore } from "@/stores/use-orderbook-actions-store";
 import { stubReducedMotion } from "./harness/media-query";
 import { createI18nRoot } from "./harness/react";
+
+vi.mock("@/components/trade/orderbook/orderbook-hover-tooltip", () => ({
+	OrderbookHoverTooltip: ({
+		hover,
+		baseAsset,
+		quoteAsset,
+	}: ComponentProps<typeof import("@/components/trade/orderbook/orderbook-hover-tooltip").OrderbookHoverTooltip>) => (
+		<div
+			role="tooltip"
+			id={hover.tooltipId}
+			data-price={hover.activeLevel?.price}
+			data-total={hover.activeLevel?.total}
+		>
+			{baseAsset}/{quoteAsset}
+		</div>
+	),
+}));
+
+function createPointerEvent(type: string, pointerType = "mouse", clientY = 8): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: 0, clientX: 12, clientY });
+	Object.defineProperties(event, {
+		isPrimary: { value: true },
+		pointerId: { value: 1 },
+		pointerType: { value: pointerType },
+	});
+	return event;
+}
 
 const ASKS = Array.from({ length: 20 }, (_, index) => ({
 	price: String(101 + index),
@@ -126,6 +153,7 @@ describe("compact mobile orderbook modes", () => {
 		container.remove();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
+		vi.useRealTimers();
 	});
 
 	function resizeBook(height: number) {
@@ -141,6 +169,106 @@ describe("compact mobile orderbook modes", () => {
 		if (!ladder) throw new Error(`Missing ${side} ladder`);
 		return ladder;
 	}
+
+	function getRow(side: "ask" | "bid", rank: number) {
+		const row = container.querySelector<HTMLButtonElement>(
+			`button[data-orderbook-side="${side}"][data-orderbook-rank="${rank}"]`,
+		);
+		if (!row) throw new Error(`Missing ${side} row ${rank}`);
+		return row;
+	}
+
+	it("shares one live rank tooltip and highlights only the cumulative range on the hovered side", () => {
+		const ask = getRow("ask", 2);
+		expect(container.querySelectorAll("button[aria-describedby]")).toHaveLength(0);
+		act(() => ask.dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("103");
+		expect(container.querySelector('[role="tooltip"]')?.textContent).toBe("HYPE/USDC");
+		expect(getRow("ask", 0).dataset.orderbookHover).toBe("range");
+		expect(getRow("ask", 1).dataset.orderbookHover).toBe("range");
+		expect(ask.dataset.orderbookHover).toBe("active");
+		expect(getRow("ask", 3).dataset.orderbookHover).toBeUndefined();
+		expect(getRow("bid", 0).dataset.orderbookHover).toBeUndefined();
+		expect(ask.getAttribute("aria-describedby")).toBe(container.querySelector('[role="tooltip"]')?.id);
+		expect(container.querySelectorAll("button[aria-describedby]")).toHaveLength(1);
+
+		act(() => {
+			root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], price: "100.5" }, ...ASKS]} />);
+		});
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		expect(getRow("ask", 2).dataset.orderbookHover).toBe("active");
+		expect(getRow("ask", 3)).toBe(ask);
+
+		act(() => getRow("bid", 1).dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("98");
+		expect(getRow("ask", 0).dataset.orderbookHover).toBeUndefined();
+		expect(getRow("bid", 0).dataset.orderbookHover).toBe("range");
+	});
+
+	it("keeps keyboard focus and touch holds on their price across a live rank change", () => {
+		vi.useFakeTimers();
+		const row = getRow("ask", 1);
+		act(() => row.focus());
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		act(() => root.render(<CompactOrderbookHarness asks={[{ ...ASKS[0], price: "100.5" }, ...ASKS]} />));
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		expect(getRow("ask", 2)).toBe(row);
+		expect(document.activeElement).toBe(row);
+		act(() => row.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" })));
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+
+		act(() => {
+			row.dispatchEvent(createPointerEvent("pointerdown", "touch"));
+			vi.advanceTimersByTime(449);
+		});
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		act(() =>
+			root.render(
+				<CompactOrderbookHarness asks={[{ ...ASKS[0], price: "100.25" }, { ...ASKS[0], price: "100.5" }, ...ASKS]} />,
+			),
+		);
+		act(() => vi.advanceTimersByTime(1));
+		expect(container.querySelector('[role="tooltip"]')?.getAttribute("data-price")).toBe("102");
+		expect(getRow("ask", 3)).toBe(row);
+		expect(row.dataset.orderbookHover).toBe("active");
+		act(() => {
+			row.dispatchEvent(createPointerEvent("pointerup", "touch"));
+			row.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+		act(() => vi.advanceTimersByTime(2_500));
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		act(() => {
+			row.dispatchEvent(createPointerEvent("pointerdown", "touch"));
+			row.dispatchEvent(createPointerEvent("pointerup", "touch"));
+			row.click();
+		});
+		expect(getOrderbookActionsStore().selectedPrice).toEqual({ marketName: "HYPE", price: "102" });
+	});
+
+	it("cancels touch holds on scrolling and removes summaries when geometry or availability changes", () => {
+		vi.useFakeTimers();
+		const row = getRow("bid", 1);
+		act(() => {
+			row.dispatchEvent(createPointerEvent("pointerdown", "touch"));
+			row.dispatchEvent(createPointerEvent("pointermove", "touch", 20));
+			vi.advanceTimersByTime(450);
+		});
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		act(() => row.dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelector('[role="tooltip"]')).not.toBeNull();
+		resizeBook(359);
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		act(() => row.dispatchEvent(createPointerEvent("pointermove")));
+		act(() => container.querySelector<HTMLButtonElement>('button[data-mode="asks"]')?.click());
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		act(() => root.render(<CompactOrderbookHarness isInteractive={false} />));
+		act(() => getRow("ask", 1).dispatchEvent(createPointerEvent("pointermove")));
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		expect(getOrderbookActionsStore().selectedPrice).toBeNull();
+	});
 
 	it("keeps one fixed slot budget across the three persistent view controls", () => {
 		const controls = [...container.querySelectorAll<HTMLButtonElement>("button[data-mode]")];

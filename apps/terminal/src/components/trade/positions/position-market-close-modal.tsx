@@ -1,7 +1,7 @@
 import { Checkbox, ModalDescription, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
 	estimatePositionMarketClosePnl,
 	resolvePositionMarketClosePercent,
@@ -11,7 +11,7 @@ import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
+import { useHyperliquid, useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
@@ -43,10 +43,13 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
+	const [isSizingInteractionActive, setIsSizingInteractionActive] = useState(false);
+	const sizingInteractionActiveRef = useRef(false);
 	const session = usePositionMarketCloseSession();
 	const actions = usePositionMarketCloseActions();
 	const { submit, isPending, isReconciling, error, resetError } = usePositionMarketCloseSubmit();
 	const userPositions = useUserPositions();
+	const { clientKey, env } = useHyperliquid();
 	const { getMarketInfo } = useMarketsInfo();
 	const positionCoin = session?.position.coin ?? "";
 	const positionDex = session?.position.dex;
@@ -97,12 +100,25 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					szDecimals: position.szDecimals,
 				});
 	const sizingViewModel = createPositionCloseSizingViewModel(sizingIntent, sizing, position.szDecimals);
+	const sizingInteractionIdentity = JSON.stringify([
+		sessionId,
+		session.owner.toLowerCase(),
+		session.env,
+		position.coin,
+		position.dex,
+		position.assetId,
+		position.szDecimals,
+		position.marginMode,
+		openingPosition.side,
+		clientKey.toLowerCase(),
+		env,
+	]);
 	const canDismiss = phase === "idle" || phase === "reconciling";
 	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
 	const visibleError = positionStatusMessage ?? error ?? (positionStatus === null ? visibleSizingError : null);
-	const canSubmit = canEdit && sizing.errors.length === 0;
+	const canSubmit = canEdit && !isSizingInteractionActive && sizing.errors.length === 0;
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
 	const errorId = `position-market-close-error-${sessionId}`;
@@ -168,8 +184,13 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 		if (!open) actions.close(sessionId);
 	}
 
+	function handleSizingInteractionChange(interacting: boolean) {
+		sizingInteractionActiveRef.current = interacting;
+		setIsSizingInteractionActive(interacting);
+	}
+
 	function handleSubmit() {
-		if (!canSubmit) return;
+		if (!canSubmit || sizingInteractionActiveRef.current) return;
 		return submit({ sessionId, dismissFutureConfirmation });
 	}
 
@@ -217,6 +238,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 				<PositionCloseSizingControls
 					testId="position-market-close-sizing"
 					sliderTestId="position-market-close-slider"
+					interactionIdentity={sizingInteractionIdentity}
 					intent={sizingIntent}
 					resolution={sizing}
 					viewModel={sizingViewModel}
@@ -228,6 +250,7 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 					visibleSizingError={visibleSizingError}
 					priceLabel={t`Price: Market`}
 					onIntentChange={setSizingIntent}
+					onInteractionChange={handleSizingInteractionChange}
 				>
 					<Checkbox
 						data-testid="position-market-close-confirmation-preference"

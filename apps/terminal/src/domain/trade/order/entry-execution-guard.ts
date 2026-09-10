@@ -7,7 +7,7 @@ import {
 	TWAP_MINUTES_MIN,
 } from "@/config/trade";
 import { isLiveMarkPriceReady, type MarkPriceStatus } from "@/domain/trade/market-price";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { isValidSizeDecimalsForAsset } from "@/domain/trade/orders";
 import type { AssetAvailabilityStatus } from "./availability";
 
 export const ENTRY_POSITION_MAX_AGE_MS = 60_000;
@@ -142,6 +142,9 @@ function assertMarketCapStillSafe(
 	const submitted = readEntryBig(order.p, "order-request-invalid");
 	if (!reference?.gt(0)) failEntryExecution("execution-price-unavailable");
 	if (!submitted.gt(0)) failEntryExecution("order-request-invalid");
+	if (!isValidSizeDecimalsForAsset(state.assetId, state.szDecimals ?? 0)) {
+		failEntryExecution("market-context-mismatch");
+	}
 	if (
 		!Number.isFinite(state.slippageBps) ||
 		state.slippageBps < 0 ||
@@ -153,17 +156,7 @@ function assertMarketCapStillSafe(
 	const multiplier = order.b
 		? Big(1).plus(Big(state.slippageBps).div(10_000))
 		: Big(1).minus(Big(state.slippageBps).div(10_000));
-	let currentLimit: Big;
-	try {
-		currentLimit = new Big(
-			formatPriceForOrder(reference.times(multiplier), {
-				assetId: state.assetId,
-				szDecimals: state.szDecimals ?? 0,
-			}),
-		);
-	} catch {
-		failEntryExecution("execution-price-unavailable");
-	}
+	const currentLimit = reference.times(multiplier);
 	const safe = order.b ? submitted.lte(currentLimit) : submitted.gte(currentLimit);
 	if (!safe) failEntryExecution("slippage-limit-exceeded");
 }

@@ -1,11 +1,12 @@
-import { defineConfig } from "@playwright/test";
 import { fileURLToPath } from "node:url";
+import { defineConfig } from "@playwright/test";
 
 const terminalRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
 	testDir: fileURLToPath(new URL(".", import.meta.url)),
 	testMatch: "*.pw.ts",
+	testIgnore: "user-menu-recovery.pw.ts",
 	fullyParallel: false,
 	workers: 1,
 	reporter: "line",

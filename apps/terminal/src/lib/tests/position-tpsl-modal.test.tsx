@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 
 import { ApiRequestError, type FrontendOpenOrdersResponse, HttpRequestError } from "@nktkas/hyperliquid";
-import { act, createElement, type ReactNode } from "react";
+import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import type { TpSlPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-modal";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -57,7 +59,18 @@ const testState = vi.hoisted(() => ({
 	isMobile: false,
 	pendingMethods: new Set<string>(),
 	executionGuards: {} as Record<string, ((params: unknown) => void) | undefined>,
+	amountSliderProps: null as ComponentProps<typeof TradeSizeSlider> | null,
 }));
+
+vi.mock("@/components/trade/components/trade-size-slider", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/components/trade/components/trade-size-slider")>();
+	return {
+		TradeSizeSlider: (props: ComponentProps<typeof TradeSizeSlider>) => {
+			testState.amountSliderProps = props;
+			return createElement(original.TradeSizeSlider, props);
+		},
+	};
+});
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
@@ -475,6 +488,7 @@ describe("PositionTpSlModal live data", () => {
 		}));
 		testState.trackedOrderOptions = [];
 		testState.executionGuards = {};
+		testState.amountSliderProps = null;
 	});
 
 	afterEach(() => {
@@ -578,6 +592,234 @@ describe("PositionTpSlModal live data", () => {
 		expect(getInput(container, "Take Profit").value).toBe("27601");
 		expect(container.querySelector('[data-testid="position-size"]')?.textContent).toBe("0.1");
 		expect(getButton(container, "Confirm").disabled).toBe(false);
+	});
+
+	it.each([false, true])("shows percentage sizing only for a configured amount on mobile=%s", (isMobile) => {
+		testState.isMobile = isMobile;
+		renderModal();
+		expect(container.querySelector('input[type="range"]')).toBeNull();
+
+		act(() => getInput(container, "Configure amount").click());
+		expect(container.querySelectorAll('input[type="range"]')).toHaveLength(1);
+		expect(getInput(container, "Size (%)").value).toBe("100");
+
+		act(() => setInputValue(getInput(container, "Size (%)"), "63"));
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.189");
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+
+		act(() => getInput(container, "Configure amount").click());
+		expect(container.querySelector('input[type="range"]')).toBeNull();
+		expect(container.querySelector('input[aria-label="Size (%)"]')).toBeNull();
+	});
+
+	it.each([
+		[false, "0"],
+		[true, "0.301"],
+	])("submits the distinct configured=%s protection intent", async (configured, expectedSize) => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		if (configured) {
+			act(() => getInput(container, "Configure amount").click());
+			act(() => setInputValue(getInput(container, "Size (%)"), "100"));
+		}
+
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.placeOrder).toHaveBeenCalledExactlyOnceWith({
+			orders: [expect.objectContaining({ s: expectedSize, r: true })],
+			grouping: "positionTpsl",
+		});
+	});
+
+	it.each([
+		{ percent: null, executionMode: "market", expectedSize: "0", expectedPrice: "30250" },
+		{ percent: "63", executionMode: "market", expectedSize: "0.189", expectedPrice: "30250" },
+		{ percent: "100", executionMode: "market", expectedSize: "0.301", expectedPrice: "30250" },
+		{ percent: null, executionMode: "limit", expectedSize: "0", expectedPrice: "27600" },
+		{ percent: "63", executionMode: "limit", expectedSize: "0.189", expectedPrice: "27600" },
+		{ percent: "100", executionMode: "limit", expectedSize: "0.301", expectedPrice: "27600" },
+	])("serializes configured $percent% $executionMode protection through the real SDK", async (sample) => {
+		const exchange = createExchangeHarness(false);
+		testState.placeOrder.mockImplementation((params) => exchange.client.order(params));
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		if (sample.percent !== null) {
+			act(() => getInput(container, "Configure amount").click());
+			act(() => setInputValue(getInput(container, "Size (%)"), sample.percent ?? ""));
+		}
+		if (sample.executionMode === "limit") {
+			act(() => getInput(container, "Limit execution").click());
+			act(() => setInputValue(getInput(container, "Take profit limit price"), "27600"));
+		}
+		expect(exchange.signTypedData).not.toHaveBeenCalled();
+		expect(exchange.request).not.toHaveBeenCalled();
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(exchange.request).toHaveBeenCalledOnce();
+		expect(exchange.getAction()).toEqual({
+			type: "order",
+			grouping: "positionTpsl",
+			orders: [
+				{
+					a: positionRef.assetId,
+					b: true,
+					p: sample.expectedPrice,
+					s: sample.expectedSize,
+					r: true,
+					t: { trigger: { isMarket: sample.executionMode === "market", triggerPx: "27500", tpsl: "tp" } },
+				},
+			],
+		});
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+	});
+
+	it("serializes a fixed-size replacement as cancel then order through the real SDK", async () => {
+		const exchange = createExchangeHarness(false);
+		testState.orders = [openOrder({ triggerPx: "27500", limitPx: "30250" })];
+		testState.placeOrder.mockImplementation((params) => exchange.client.order(params));
+		testState.cancelOrders.mockImplementation((params) => exchange.client.cancel(params));
+		renderModal();
+		act(() => getInput(container, "Configure amount").click());
+		act(() => setInputValue(getInput(container, "Size (%)"), "63"));
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(exchange.request).toHaveBeenCalledTimes(2);
+		expect(exchange.getAction(0)).toEqual({ type: "cancel", cancels: [{ a: positionRef.assetId, o: 7 }] });
+		expect(exchange.getAction(1)).toMatchObject({
+			type: "order",
+			grouping: "positionTpsl",
+			orders: [{ a: positionRef.assetId, b: true, s: "0.189", r: true }],
+		});
+	});
+
+	it("blocks zero percent without replacing or deleting existing protection", () => {
+		testState.orders = [openOrder({ triggerPx: "27500" })];
+		renderModal();
+		act(() => getInput(container, "Configure amount").click());
+		act(() => setInputValue(getInput(container, "Size (%)"), "0"));
+		act(() => getButton(container, "Confirm").click());
+
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.000");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(container.textContent).toContain("Amount must be greater than zero");
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+	});
+
+	it("preserves the exact quantity text and quote-PnL draft when a preview is canceled", () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take profit return"), "25"));
+		act(() => getButton(container, "%").click());
+		act(() => setInputValue(getInput(container, "Take profit return"), "100"));
+		act(() => getInput(container, "Configure amount").click());
+		act(() => setInputValue(getInput(container, "Configured TP/SL amount"), ".100"));
+		const slider = testState.amountSliderProps;
+		if (!slider) throw new Error("Expected the configured amount slider");
+
+		act(() => slider.onPercentInteractionStart?.(slider.value));
+		act(() => slider.onPercentChange(33));
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.099");
+		expect(getInput(container, "Take profit return").value).toBe("100");
+		expect(getInput(container, "Take Profit").value).toBe("27591");
+		act(() => testState.amountSliderProps?.onPercentCancel(slider.value));
+		act(() => testState.amountSliderProps?.onPercentInteractionEnd?.());
+
+		expect(getInput(container, "Configured TP/SL amount").value).toBe(".100");
+		expect(getInput(container, "Take profit return").value).toBe("100");
+		expect(getInput(container, "Take Profit").value).toBe("27601");
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+	});
+
+	it("blocks confirmation synchronously until a quantity gesture ends", async () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => getInput(container, "Configure amount").click());
+		const slider = testState.amountSliderProps;
+		if (!slider) throw new Error("Expected the configured amount slider");
+		const confirm = getButton(container, "Confirm");
+		act(() => {
+			slider.onPercentInteractionStart?.(slider.value);
+			confirm.click();
+		});
+
+		expect(confirm.disabled).toBe(true);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		act(() => slider.onPercentChange(50));
+		act(() => confirm.click());
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+
+		act(() => testState.amountSliderProps?.onPercentCommit(25, { reason: "drag", event: new Event("pointerup") }));
+		act(() => testState.amountSliderProps?.onPercentInteractionEnd?.());
+		expect(confirm.disabled).toBe(false);
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.075");
+		await act(async () => confirm.click());
+		expect(testState.placeOrder).toHaveBeenCalledExactlyOnceWith({
+			orders: [expect.objectContaining({ s: "0.075" })],
+			grouping: "positionTpsl",
+		});
+	});
+
+	it("releases the confirmation lock when a quantity gesture ends without moving", () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => getInput(container, "Configure amount").click());
+		const slider = testState.amountSliderProps;
+		if (!slider) throw new Error("Expected the configured amount slider");
+		act(() => slider.onPercentInteractionStart?.(slider.value));
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		act(() => slider.onPercentInteractionEnd?.());
+
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.301");
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+	});
+
+	it.each(["position size", "stale snapshot", "submitting"])(
+		"ignores pending percentage callbacks after %s disables editing",
+		(change) => {
+			renderModal();
+			act(() => getInput(container, "Configure amount").click());
+			act(() => setInputValue(getInput(container, "Configured TP/SL amount"), ".100"));
+			const slider = testState.amountSliderProps;
+			if (!slider) throw new Error("Expected the configured amount slider");
+			act(() => slider.onPercentInteractionStart?.(slider.value));
+			act(() => slider.onPercentChange(33));
+			if (change === "position size" && testState.position) testState.position = { ...testState.position, szi: "-0.3" };
+			if (change === "stale snapshot") testState.positionStale = true;
+			if (change === "submitting") testState.pendingMethods.add("order");
+			renderModal();
+			act(() => {
+				slider.onPercentChange(100);
+				slider.onPercentCommit(100, { reason: "drag", event: new Event("pointerup") });
+				slider.onPercentCancel(slider.value);
+			});
+
+			expect(testState.amountSliderProps?.disabled).toBe(true);
+			expect(getInput(container, "Configured TP/SL amount").value).toBe("0.099");
+			expect(getButton(container, change === "submitting" ? "Submitting..." : "Confirm").disabled).toBe(true);
+			expect(testState.placeOrder).not.toHaveBeenCalled();
+			expect(testState.cancelOrders).not.toHaveBeenCalled();
+		},
+	);
+
+	it("ignores a pending amount commit after a close request before the parent unmounts", () => {
+		const onOpenChange = renderModal();
+		act(() => getInput(container, "Configure amount").click());
+		const slider = testState.amountSliderProps;
+		if (!slider) throw new Error("Expected the configured amount slider");
+		act(() => slider.onPercentInteractionStart?.(slider.value));
+		act(() => getButton(container, "Cancel").click());
+		act(() => slider.onPercentCommit(25, { reason: "drag", event: new Event("pointerup") }));
+
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(getInput(container, "Configured TP/SL amount").value).toBe("0.301");
+		expect(testState.placeOrder).not.toHaveBeenCalled();
 	});
 
 	it.each(["0", "."])("blocks a stale trigger while the linked return draft is invalid: %s", (invalidValue) => {

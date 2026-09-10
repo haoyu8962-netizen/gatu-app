@@ -1,7 +1,7 @@
 import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataPendingState } from "@/components/ui/data-pending-state";
 import { InfoRow } from "@/components/ui/info-row";
@@ -22,6 +22,7 @@ import {
 	isOrderBatchResolutionError,
 	resolveOrderBatchResponse,
 } from "@/domain/trade/order-tracking";
+import { getPositionTpSlSizeForPercent, getPositionTpSlSizePercent } from "@/domain/trade/position-tpsl-size";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -75,6 +76,8 @@ import {
 } from "@/lib/trade/tpsl";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
+import { SizePercentInput } from "../components/size-percent-input";
+import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import type { TpSlPositionTarget } from "./position-dialog-types";
@@ -498,6 +501,9 @@ function PositionTpSlForm({
 	const expectedTpSlSnapshotRef = useRef<TpSlOrderInfo | undefined>(initialTpSlInfo);
 	const workflowSubmittingRef = useRef(false);
 	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
+	const amountInteractionSnapshotRef = useRef<{ identity: string; sizeInput: string } | null>(null);
+	const [isAmountInteracting, setIsAmountInteracting] = useState(false);
+	const amountErrorId = useId();
 
 	function getSubmitErrorMessage(error: PositionTpSlSubmitError): string {
 		if (error.kind === "order-submission") {
@@ -838,6 +844,35 @@ function PositionTpSlForm({
 	const slValid =
 		!slNeedsMark || (markReady && validatePositionSlPrice(markPx, position.liquidationPx, slValidationPrice, side));
 	const dataChanged = positionChanged || ordersChanged;
+	const amountInteractionIdentity = [
+		sessionIdentity.owner,
+		sessionIdentity.env,
+		positionRef.dex,
+		positionRef.coin,
+		positionRef.assetId,
+		positionRef.szDecimals,
+		positionRef.marginMode,
+		position.szi,
+		configureAmount,
+		open,
+	].join(":");
+	const amountEditingAvailable =
+		open &&
+		configureAmount &&
+		liveDataReady &&
+		!dataChanged &&
+		!configurationConflict &&
+		!requiresRefresh &&
+		!isSubmitting;
+	const amountEditingRef = useRef({
+		identity: amountInteractionIdentity,
+		available: amountEditingAvailable,
+		sizeInput,
+	});
+	useLayoutEffect(() => {
+		amountEditingRef.current = { identity: amountInteractionIdentity, available: amountEditingAvailable, sizeInput };
+	}, [amountInteractionIdentity, amountEditingAvailable, sizeInput]);
+	const amountPercent = getPositionTpSlSizePercent(sizeInput, size);
 	const canSubmit =
 		updatePlan.hasChanges &&
 		updatePlan.errors.length === 0 &&
@@ -854,6 +889,7 @@ function PositionTpSlForm({
 		!dataChanged &&
 		!requiresRefresh &&
 		liveDataReady &&
+		!isAmountInteracting &&
 		!isSubmitting;
 
 	let tpError: string | null = null;
@@ -894,6 +930,48 @@ function PositionTpSlForm({
 		updatePlan.errors.length > 0 && !sizeError && !tpLimitError && !slLimitError
 			? t`Enter a valid TP/SL order configuration.`
 			: null;
+
+	function canEditConfiguredAmount(): boolean {
+		if (!amountEditingRef.current.available || workflowSubmittingRef.current) return false;
+		try {
+			assertLiveExecutionContext();
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	function handleAmountPercentChange(percent: number) {
+		if (!canEditConfiguredAmount()) return;
+		const snapshot = amountInteractionSnapshotRef.current;
+		if (snapshot && snapshot.identity !== amountEditingRef.current.identity) return;
+		setSizeInput(getPositionTpSlSizeForPercent(size, percent, positionRef.szDecimals));
+		setSubmitError(null);
+	}
+
+	function handleAmountPercentStart() {
+		if (!canEditConfiguredAmount()) return;
+		const current = amountEditingRef.current;
+		amountInteractionSnapshotRef.current = { identity: current.identity, sizeInput: current.sizeInput };
+		setIsAmountInteracting(true);
+	}
+
+	function handleAmountPercentEnd() {
+		amountInteractionSnapshotRef.current = null;
+		setIsAmountInteracting(false);
+	}
+
+	function handleAmountPercentCommit(percent: number) {
+		handleAmountPercentChange(percent);
+		amountInteractionSnapshotRef.current = null;
+	}
+
+	function handleAmountPercentCancel() {
+		const snapshot = amountInteractionSnapshotRef.current;
+		amountInteractionSnapshotRef.current = null;
+		if (!snapshot || snapshot.identity !== amountEditingRef.current.identity || !canEditConfiguredAmount()) return;
+		setSizeInput(snapshot.sizeInput);
+	}
 
 	function formatLinkedReturn(value: string | null, fractionDigits: number): string {
 		const parsed = toBig(value)?.abs();
@@ -963,7 +1041,7 @@ function PositionTpSlForm({
 	}
 
 	async function handleSubmit() {
-		if (!canSubmit || workflowSubmittingRef.current) return;
+		if (!canSubmit || workflowSubmittingRef.current || amountInteractionSnapshotRef.current) return;
 		workflowSubmittingRef.current = true;
 		setIsWorkflowSubmitting(true);
 
@@ -1114,6 +1192,10 @@ function PositionTpSlForm({
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen && (isSubmitting || workflowSubmittingRef.current)) return;
+		if (!nextOpen) {
+			amountEditingRef.current.available = false;
+			amountInteractionSnapshotRef.current = null;
+		}
 		onOpenChange(nextOpen);
 	}
 
@@ -1288,7 +1370,37 @@ function PositionTpSlForm({
 								className="h-11 rounded-[10px] border-market-close-stroke-input bg-modal text-right font-semibold tabular-nums"
 								disabled={isSubmitting}
 							/>
-							{sizeError ? <p className="mt-1 text-xs text-error">{sizeError}</p> : null}
+							<div className="mt-2 grid min-w-0 grid-cols-[minmax(0,1fr)_64px] items-center gap-2">
+								<TradeSizeSlider
+									value={amountPercent}
+									onPercentChange={handleAmountPercentChange}
+									onPercentCommit={handleAmountPercentCommit}
+									onPercentCancel={handleAmountPercentCancel}
+									onPercentInteractionStart={handleAmountPercentStart}
+									onPercentInteractionEnd={handleAmountPercentEnd}
+									interactionIdentity={amountInteractionIdentity}
+									ariaLabel={t`Size (%)`}
+									ariaInvalid={!partialSizeValid}
+									ariaDescribedBy={sizeError ? amountErrorId : undefined}
+									disabled={!amountEditingAvailable}
+								/>
+								<SizePercentInput
+									value={amountPercent}
+									interactionIdentity={amountInteractionIdentity}
+									onPercentChange={handleAmountPercentChange}
+									ariaLabel={t`Size (%)`}
+									ariaInvalid={!partialSizeValid}
+									ariaDescribedBy={sizeError ? amountErrorId : undefined}
+									disabled={!amountEditingAvailable}
+									mobileSafe
+									frameClassName="h-8 w-16 shrink-0 px-2"
+								/>
+							</div>
+							{sizeError ? (
+								<p id={amountErrorId} className="mt-1 text-xs text-error">
+									{sizeError}
+								</p>
+							) : null}
 						</div>
 					) : null}
 

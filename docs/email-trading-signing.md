@@ -56,10 +56,32 @@ identities and stub or fixture-generated signatures.
    legal success and complete current funding snapshots, and preserve all
    existing deposit eligibility and routing requirements.
 
+## Authentication UI Recovery
+
+Use `usePrivy().ready` for authentication UI and `useWallets().ready` plus the
+exact active owner for signing. An authenticated identity menu remains
+accessible during wallet-directory initialization; an auth-ready logged-out
+session can start login without waiting for the wallet directory.
+
+After 30 seconds of unresolved authentication or an authenticated user's
+unresolved wallet-directory initialization, offer an explicit **Reload
+page** action; the authenticated menu uses a neutral wallet indicator until
+ready. Readiness or identity changes reset the timer. Wallet reconnection
+and secure disconnect remain disabled while the wallet directory is
+unresolved. This application affordance is not an official SDK retry or a
+reproduced Hyperliquid timeout. It uses normal Privy session restoration
+only after the user clicks; do not automatically reload, log out, remount
+the provider, mark readiness complete, sign, approve, or change funding
+decisions. Do not expose raw errors or a warning banner. The synchronized
+contract and Privy readiness and session references are in [trading
+onboarding](trading-onboarding.md).
+
 ## Validation Matrix
 
 - Fresh email user and returning email login; delayed embedded-wallet creation
-  and activation; refresh without repeat setup or signing.
+  and activation; refresh without repeat setup or signing. Verify independent
+  identity-menu access, explicit reload after 30 seconds, and timer reset on
+  readiness or identity changes.
 - Exact owner match, account/user/environment switch during signing, missing
   wallet, logout, provider unmount, and no fallback to a stored Agent.
 - L1 order/cancel/leverage selection; user-signed builder fee remains separate;

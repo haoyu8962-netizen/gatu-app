@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 
 interface Props {
+	interactionIdentity?: string;
 	ariaDescribedBy?: string;
 	ariaInvalid?: boolean;
 	ariaLabel: string;
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function SizePercentInput({
+	interactionIdentity,
 	ariaDescribedBy,
 	ariaInvalid,
 	ariaLabel,
@@ -32,7 +34,12 @@ export function SizePercentInput({
 	value,
 }: Props) {
 	const [percentDraft, setPercentDraft] = useState<string | null>(null);
-	const displayPercent = percentDraft ?? formatSliderPercent(value);
+	const [draftIdentity, setDraftIdentity] = useState(interactionIdentity);
+	if (draftIdentity !== interactionIdentity) {
+		setDraftIdentity(interactionIdentity);
+		setPercentDraft(null);
+	}
+	const displayPercent = (draftIdentity === interactionIdentity ? percentDraft : null) ?? formatSliderPercent(value);
 
 	function handlePercentChange(event: ChangeEvent<HTMLInputElement>) {
 		const nextValue = event.target.value;
@@ -55,13 +62,13 @@ export function SizePercentInput({
 				aria-describedby={ariaDescribedBy}
 				aria-invalid={ariaInvalid || undefined}
 				aria-label={ariaLabel}
-				inputMode="decimal"
+				inputMode="numeric"
 				inputSize={inputSize}
 				mobileSafe={mobileSafe}
 				value={displayPercent}
 				onBlur={handlePercentBlur}
 				onChange={handlePercentChange}
-				maxAllowedDecimals={1}
+				allowDecimals={false}
 				min={0}
 				max={100}
 				className={cn(

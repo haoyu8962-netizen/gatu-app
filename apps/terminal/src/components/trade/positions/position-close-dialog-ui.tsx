@@ -1,6 +1,6 @@
 import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { type ReactNode, useRef } from "react";
+import { type ChangeEvent, type ReactNode, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import {
 	formatPositionMarketClosePercent,
@@ -11,7 +11,6 @@ import { cn } from "@/lib/cn";
 import { toBig, toFixed } from "@/lib/trade/numbers";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 
-const SLIDER_MARKS = [0, 25, 50, 75, 100] as const;
 const QUICK_PERCENTAGES = [25, 50, 75, 100] as const;
 
 interface PositionCloseDialogShellProps {
@@ -157,14 +156,15 @@ export function createPositionCloseSizingViewModel(
 		effectivePercent,
 		requestedPercent,
 		sizeInput: intent.kind === "size" ? intent.value : toFixed(resolution.normalizedSize, szDecimals),
-		percentInput: intent.kind === "percent" ? intent.value : formatPercentInput(requestedPercent),
-		sliderValue: getSliderValue(requestedPercent),
+		percentInput: formatPercentInput(resolution.effectivePercent),
+		sliderValue: getSliderValue(resolution.effectivePercent),
 	};
 }
 
 interface PositionCloseSizingControlsProps {
 	testId: string;
 	sliderTestId: string;
+	interactionIdentity: string;
 	intent: PositionCloseSizingIntent;
 	resolution: PositionMarketCloseResolution;
 	viewModel: PositionCloseSizingViewModel;
@@ -176,12 +176,14 @@ interface PositionCloseSizingControlsProps {
 	visibleSizingError: string | null;
 	priceLabel: ReactNode;
 	onIntentChange: (intent: PositionCloseSizingIntent) => void;
+	onInteractionChange?: (interacting: boolean) => void;
 	children?: ReactNode;
 }
 
 export function PositionCloseSizingControls({
 	testId,
 	sliderTestId,
+	interactionIdentity,
 	intent,
 	resolution,
 	viewModel,
@@ -193,14 +195,18 @@ export function PositionCloseSizingControls({
 	visibleSizingError,
 	priceLabel,
 	onIntentChange,
+	onInteractionChange,
 	children,
 }: PositionCloseSizingControlsProps) {
 	const { t } = useLingui();
-	const requestedPercent = formatPositionMarketClosePercent(String(viewModel.sliderValue));
+	const requestedPercent = formatPositionMarketClosePercent(viewModel.requestedPercent);
 	const effectivePercent = viewModel.effectivePercent;
 	const requestedValue = toBig(requestedPercent);
 	const effectiveValue = toBig(effectivePercent);
-	const sliderStartIntentRef = useRef<PositionCloseSizingIntent | null>(null);
+	const sliderStartIntentRef = useRef<{ identity: string; intent: PositionCloseSizingIntent } | null>(null);
+	const [percentDraft, setPercentDraft] = useState<{ identity: string; value: string } | null>(null);
+	if (percentDraft && percentDraft.identity !== interactionIdentity) setPercentDraft(null);
+	const percentInput = percentDraft?.identity === interactionIdentity ? percentDraft.value : viewModel.percentInput;
 	const sliderAriaValueText =
 		requestedValue && effectiveValue && requestedValue.eq(effectiveValue)
 			? `${requestedPercent}%`
@@ -211,31 +217,48 @@ export function PositionCloseSizingControls({
 		onIntentChange({ kind: "size", value: toFixed(resolution.normalizedSize, szDecimals) });
 	}
 
+	function handlePercentChange(event: ChangeEvent<HTMLInputElement>) {
+		if (disabled) return;
+		const text = event.target.value;
+		if (!/^\d*$/.test(text)) return;
+		const value = text === "" ? "" : String(Math.min(100, Number(text)));
+		setPercentDraft({ identity: interactionIdentity, value });
+		onIntentChange(value === "100" ? { kind: "max" } : { kind: "percent", value });
+	}
+
 	function handlePercentBlur() {
-		if (intent.kind !== "percent" || resolution.errors.length > 0) return;
-		if (viewModel.sliderValue >= 100) {
-			onIntentChange({ kind: "max" });
-			return;
-		}
-		onIntentChange({ kind: "percent", value: formatPercentInput(intent.value) });
+		setPercentDraft(null);
 	}
 
 	function handleSliderChange(value: number) {
-		onIntentChange(value >= 100 ? { kind: "max" } : { kind: "percent", value: String(value) });
+		if (disabled) return;
+		const snapshot = sliderStartIntentRef.current;
+		if (snapshot && snapshot.identity !== interactionIdentity) return;
+		setPercentDraft(null);
+		onIntentChange(value === 100 ? { kind: "max" } : { kind: "percent", value: String(value) });
 	}
 
 	function handleSliderInteractionStart() {
-		sliderStartIntentRef.current = intent;
+		sliderStartIntentRef.current = { identity: interactionIdentity, intent };
+		setPercentDraft(null);
+		onInteractionChange?.(true);
+	}
+
+	function handleSliderInteractionEnd() {
+		sliderStartIntentRef.current = null;
+		onInteractionChange?.(false);
 	}
 
 	function handleSliderCancel() {
-		const startIntent = sliderStartIntentRef.current;
+		const snapshot = sliderStartIntentRef.current;
 		sliderStartIntentRef.current = null;
-		if (startIntent) onIntentChange(startIntent);
+		if (snapshot?.identity === interactionIdentity) onIntentChange(snapshot.intent);
 	}
 
 	function handleSliderCommit(value: number) {
+		const snapshot = sliderStartIntentRef.current;
 		sliderStartIntentRef.current = null;
+		if (snapshot && snapshot.identity !== interactionIdentity) return;
 		handleSliderChange(value);
 	}
 
@@ -268,10 +291,13 @@ export function PositionCloseSizingControls({
 					aria-label={t`Close percentage`}
 					aria-describedby={hasDescribedError ? errorId : undefined}
 					aria-invalid={intent.kind === "percent" && visibleSizingError !== null}
-					value={viewModel.percentInput}
-					onChange={(event) => onIntentChange({ kind: "percent", value: event.target.value })}
+					value={percentInput}
+					onChange={handlePercentChange}
 					onBlur={handlePercentBlur}
-					maxAllowedDecimals={1}
+					allowDecimals={false}
+					min={0}
+					max={100}
+					step={1}
 					suffix="%"
 					disabled={disabled}
 					inputSize="xl"
@@ -284,7 +310,8 @@ export function PositionCloseSizingControls({
 
 			<div className="grid grid-cols-4 gap-2">
 				{QUICK_PERCENTAGES.map((percent) => {
-					const selected = isSelectedPercentage(viewModel.requestedPercent, percent);
+					const selected =
+						percent === 100 ? intent.kind === "max" : isSelectedPercentage(viewModel.requestedPercent, percent);
 					return (
 						<Button
 							key={percent}
@@ -310,40 +337,21 @@ export function PositionCloseSizingControls({
 				})}
 			</div>
 
-			<div className="relative h-9 min-h-0 min-[1001px]:mt-0.5 min-[1001px]:h-8" data-testid={sliderTestId}>
+			<div className="min-h-0 min-[1001px]:mt-0.5" data-testid={sliderTestId}>
 				<TradeSizeSlider
 					value={viewModel.sliderValue}
+					interactionIdentity={interactionIdentity}
 					onPercentChange={handleSliderChange}
 					onPercentCancel={handleSliderCancel}
 					onPercentCommit={handleSliderCommit}
 					onPercentInteractionStart={handleSliderInteractionStart}
+					onPercentInteractionEnd={handleSliderInteractionEnd}
 					disabled={disabled}
-					thumbSize="lg"
-					thumbAlignment="center"
 					ariaLabel={t`Close percentage slider`}
 					ariaDescribedBy={hasDescribedError ? errorId : undefined}
 					ariaInvalid={visibleSizingError !== null}
 					ariaValueText={sliderAriaValueText}
-					className="relative z-10"
-					controlClassName="h-9 min-[1001px]:h-8"
-					trackClassName="h-1 !rounded-[2px] bg-market-close-stroke-card ring-0 !shadow-none"
-					indicatorClassName="min-w-0 !rounded-[2px] bg-market-close-control !shadow-none"
-					thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-trading-panel-slider before:-inset-[7px] min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
 				/>
-				<div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
-					{SLIDER_MARKS.map((mark) => (
-						<span
-							key={mark}
-							style={{ left: `${mark}%` }}
-							className={cn(
-								"absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full",
-								mark <= viewModel.sliderValue
-									? "border-2 border-market-close-control bg-market-close-control"
-									: "border-2 border-market-close-stroke-input bg-modal",
-							)}
-						/>
-					))}
-				</div>
 			</div>
 
 			{children}
@@ -361,8 +369,9 @@ function getSliderValue(value: string): number {
 
 function formatPercentInput(value: string): string {
 	const parsed = toBig(value);
-	if (!parsed) return "0.0";
-	return parsed.round(1, 0).toFixed(1);
+	if (!parsed || parsed.lte(0)) return "0";
+	if (parsed.gte(100)) return "100";
+	return parsed.round(0, 1).toFixed(0);
 }
 
 function isSelectedPercentage(value: string, percentage: number): boolean {
