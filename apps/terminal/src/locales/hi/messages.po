@@ -320,6 +320,7 @@ msgstr "एक्सेस अक्षम है"
 msgid "Access restricted"
 msgstr "पहुँच प्रतिबंधित"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2413,7 +2414,6 @@ msgid "Discard local key"
 msgstr "स्थानीय कुंजी हटाएँ"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
@@ -6050,6 +6050,11 @@ msgstr "रीफ़्रेश हो रहा है…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "अस्वीकृत"
+
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "पेज फिर से लोड करें"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"

@@ -320,6 +320,7 @@ msgstr "Access disabled"
 msgid "Access restricted"
 msgstr "Access restricted"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2413,7 +2414,6 @@ msgid "Discard local key"
 msgstr "Discard local key"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Disconnect"
@@ -6050,6 +6050,11 @@ msgstr "Refreshing…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "Rejected"
+
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "Reload page"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"

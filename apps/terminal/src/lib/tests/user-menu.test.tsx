@@ -12,6 +12,10 @@ const testState = vi.hoisted(() => ({
 	ensName: undefined as string | undefined,
 	hasWalletAccess: false,
 	isConnected: false,
+	isConnecting: false,
+	isDisconnecting: false,
+	isWalletReconnecting: false,
+	isReconnecting: false,
 	isMobile: false,
 	isMobileQrSurface: false,
 	login: vi.fn(),
@@ -22,6 +26,9 @@ const testState = vi.hoisted(() => ({
 	mobileSyncModalOpen: false,
 	mobileSyncModalUnmounts: 0,
 	ready: true,
+	reconnectWallet: vi.fn(),
+	disconnectWallet: vi.fn(),
+	userId: "user-a",
 	sessionMode: "disconnected" as "agent-only" | "disconnected" | "wallet",
 	walletModalOpen: false,
 	walletModalModuleGate: null as Promise<void> | null,
@@ -91,7 +98,7 @@ vi.mock("@gatu/ui", () => ({
 		triggerClassName,
 	}: {
 		className?: string;
-		groups?: Array<{ items: Array<{ label: string; onSelect?: () => void }> }>;
+		groups?: Array<{ items: Array<{ label: string; disabled?: boolean; onSelect?: () => void }> }>;
 		trigger?: ReactNode;
 		triggerAriaLabel?: string;
 		triggerClassName?: string;
@@ -102,7 +109,11 @@ vi.mock("@gatu/ui", () => ({
 			createElement("button", { "aria-label": triggerAriaLabel, className: triggerClassName, type: "button" }, trigger),
 			groups.flatMap((group) =>
 				group.items.map((item) =>
-					createElement("button", { key: item.label, onClick: item.onSelect, type: "button" }, item.label),
+					createElement(
+						"button",
+						{ key: item.label, disabled: item.disabled, onClick: item.onSelect, type: "button" },
+						item.label,
+					),
 				),
 			),
 		),
@@ -118,6 +129,7 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@phosphor-icons/react", () => ({
+	ArrowClockwiseIcon: () => null,
 	CheckIcon: () => null,
 	CopyIcon: () => null,
 	DeviceMobileIcon: () => null,
@@ -140,22 +152,28 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useDisconnectWallet: () => ({ disconnectWallet: vi.fn() }),
+	useDisconnectWallet: () => ({
+		disconnectWallet: testState.disconnectWallet,
+		isDisconnecting: testState.isDisconnecting,
+	}),
 	useReconnectWallet: () => ({
-		reconnectWallet: vi.fn(),
+		reconnectWallet: testState.reconnectWallet,
 		walletsReady: testState.walletsReady,
-		isReconnecting: false,
+		isReconnecting: testState.isReconnecting,
 	}),
 	useWalletSession: () => ({
-		ready: testState.ready,
+		ready: testState.ready && testState.walletsReady,
+		authenticationReady: testState.ready,
+		walletDirectoryReady: testState.walletsReady,
 		authenticated: testState.authenticated,
 		isConnected: testState.isConnected,
-		isConnecting: false,
+		isConnecting: testState.isConnecting,
+		isReconnecting: testState.isWalletReconnecting,
 		login: testState.login,
 		displayAddress: testState.displayAddress,
 		sessionMode: testState.sessionMode,
 		hasWalletAccess: testState.hasWalletAccess,
-		user: null,
+		user: testState.authenticated ? { id: testState.userId } : null,
 	}),
 }));
 
@@ -256,6 +274,11 @@ describe("UserMenu", () => {
 		testState.ensName = undefined;
 		testState.hasWalletAccess = false;
 		testState.isConnected = false;
+		testState.isConnecting = false;
+		testState.isDisconnecting = false;
+		testState.isReconnecting = false;
+		testState.isWalletReconnecting = false;
+		testState.userId = "user-a";
 		testState.isMobile = false;
 		testState.isMobileQrSurface = false;
 		testState.mobileSyncModalModuleGate = null;
@@ -290,6 +313,7 @@ describe("UserMenu", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		vi.useRealTimers();
 	});
 
 	it("loads the shared wallet modal on demand without waiting for unauthenticated wallet connectors", async () => {
@@ -492,24 +516,149 @@ describe("UserMenu", () => {
 		expect(action.querySelector("span.truncate")).not.toBeNull();
 	});
 
-	it("keeps reconnect controls shrinkable without collapsing disconnect", () => {
+	it("keeps the account menu accessible when its exact wallet needs reconnection", () => {
 		testState.authenticated = true;
-		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		act(() => root.render(createElement(UserMenu)));
+
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
+		expect(trigger?.textContent).toBe("Account");
+		expect(trigger?.disabled).toBe(false);
+		expect(trigger?.className).toContain("min-w-0");
+		expect(trigger?.className).toContain("max-w-full");
+		expect(trigger?.querySelector("span.bg-fg-muted")).not.toBeNull();
+		expect(container.textContent).not.toContain("Copy Address");
+		expect(container.textContent).not.toContain("Link mobile device");
+		act(() => findButtonByText(container, "Reconnect wallet").click());
+		expect(testState.reconnectWallet).toHaveBeenCalledOnce();
+		act(() => findButtonByText(container, "Disconnect").click());
+		expect(testState.disconnectWallet).toHaveBeenCalledOnce();
+	});
+
+	it("prevents duplicate disconnect while secure cleanup is running", () => {
+		testState.authenticated = true;
+		testState.isDisconnecting = true;
+		act(() => root.render(createElement(UserMenu)));
+		const disconnect = findButtonByText(container, "Disconnect");
+		expect(disconnect.disabled).toBe(true);
+		act(() => disconnect.click());
+		expect(testState.disconnectWallet).not.toHaveBeenCalled();
+	});
+
+	it("offers auth initialization recovery only after the delay and removes it when auth becomes ready", () => {
+		vi.useFakeTimers();
+		testState.ready = false;
+		testState.walletsReady = false;
+		act(() => root.render(createElement(UserMenu)));
+		expect(findButtonByText(container, "Connecting...").disabled).toBe(true);
+		act(() => vi.advanceTimersByTime(29_999));
+		expect(container.textContent).not.toContain("Reload page");
+		act(() => vi.advanceTimersByTime(1));
+		const reload = findButtonByText(container, "Reload page");
+		expect(reload.disabled).toBe(false);
+		expect(reload.className).toContain("min-w-0");
+		expect(reload.querySelector("span.truncate")).not.toBeNull();
+		expect(testState.login).not.toHaveBeenCalled();
+		expect(testState.disconnectWallet).not.toHaveBeenCalled();
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+
+		testState.ready = true;
+		act(() => root.render(createElement(UserMenu)));
+		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+		expect(container.textContent).not.toContain("Reload page");
+	});
+
+	it("shows authenticated identity during wallet initialization without permitting wallet actions", () => {
+		vi.useFakeTimers();
+		testState.authenticated = true;
+		testState.emailAddress = "owner@example.test";
+		testState.walletsReady = false;
+		act(() => root.render(createElement(UserMenu)));
+
+		const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]');
+		expect(trigger?.disabled).toBe(false);
+		expect(trigger?.textContent).toBe("owner@example.test");
+		expect(trigger?.querySelector("span.bg-fg-muted")).not.toBeNull();
+		expect(findButtonByText(container, "Reconnect wallet").disabled).toBe(true);
+		expect(findButtonByText(container, "Disconnect").disabled).toBe(true);
+		act(() => findButtonByText(container, "Reconnect wallet").click());
+		act(() => findButtonByText(container, "Disconnect").click());
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+		expect(testState.disconnectWallet).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain("Link mobile device");
+		expect(container.textContent).not.toContain("Copy Address");
+		act(() => vi.advanceTimersByTime(30_000));
+		expect(findButtonByText(container, "Reload page").disabled).toBe(false);
+		expect(testState.disconnectWallet).not.toHaveBeenCalled();
+
+		testState.walletsReady = true;
+		testState.hasWalletAccess = true;
 		testState.isConnected = true;
 		testState.sessionMode = "wallet";
-		act(() => {
-			root.render(createElement(UserMenu));
-		});
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		act(() => root.render(createElement(UserMenu)));
+		expect(container.querySelector('button[aria-label="Account and wallet"]')).toBe(trigger);
+		expect(container.textContent).not.toContain("Reload page");
+		expect(container.textContent).not.toContain("Reconnect wallet");
+		expect(container.textContent).toContain("Copy Address");
+		expect(container.textContent).toContain("Link mobile device");
+		expect(trigger?.querySelector("span.bg-success")).not.toBeNull();
+	});
 
-		const reconnect = findButtonByText(container, "Reconnect wallet");
-		const controls = reconnect.parentElement;
-		expect(controls?.className).toContain("min-w-0");
-		expect(controls?.className).toContain("max-w-full");
-		expect(controls?.className).toContain("gap-2");
-		expect(reconnect.className).toContain("min-w-0");
-		expect(reconnect.className).toContain("flex-1");
-		expect(reconnect.querySelector("span.truncate")).not.toBeNull();
-		expect(controls?.querySelector('button[aria-label="Disconnect"]')).not.toBeNull();
+	it("gives each authentication phase and user a fresh recovery delay", () => {
+		vi.useFakeTimers();
+		testState.ready = false;
+		testState.walletsReady = false;
+		act(() => root.render(createElement(UserMenu)));
+		act(() => vi.advanceTimersByTime(30_000));
+		expect(container.textContent).toContain("Reload page");
+
+		testState.ready = true;
+		testState.authenticated = true;
+		act(() => root.render(createElement(UserMenu)));
+		expect(container.textContent).not.toContain("Reload page");
+		act(() => vi.advanceTimersByTime(29_999));
+		testState.userId = "user-b";
+		act(() => root.render(createElement(UserMenu)));
+		act(() => vi.advanceTimersByTime(1));
+		expect(container.textContent).not.toContain("Reload page");
+		act(() => vi.advanceTimersByTime(29_999));
+		expect(container.textContent).toContain("Reload page");
+
+		testState.authenticated = false;
+		act(() => root.render(createElement(UserMenu)));
+		expect(container.textContent).not.toContain("Reload page");
+		expect(findButtonByText(container, "Connect Wallet").disabled).toBe(false);
+	});
+
+	it.each(["isConnecting", "isWalletReconnecting", "isReconnecting"] as const)(
+		"retains identity access and prevents duplicate reconnection during %s",
+		(field) => {
+			testState.authenticated = true;
+			testState[field] = true;
+			act(() => root.render(createElement(UserMenu)));
+			expect(container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]')?.disabled).toBe(
+				false,
+			);
+			expect(findButtonByText(container, "Reconnect wallet").disabled).toBe(true);
+			act(() => findButtonByText(container, "Reconnect wallet").click());
+			expect(testState.reconnectWallet).not.toHaveBeenCalled();
+		},
+	);
+
+	it("preserves agent-only account access without waiting for Privy initialization", () => {
+		vi.useFakeTimers();
+		testState.ready = false;
+		testState.walletsReady = false;
+		testState.isConnected = true;
+		testState.sessionMode = "agent-only";
+		testState.displayAddress = "0x1234567890abcdef1234567890abcdef12345678";
+		act(() => root.render(createElement(UserMenu)));
+		act(() => vi.advanceTimersByTime(60_000));
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Account and wallet"]')?.disabled).toBe(false);
+		expect(container.textContent).toContain("Copy Address");
+		expect(container.textContent).not.toContain("Reload page");
+		expect(container.textContent).not.toContain("Reconnect wallet");
+		expect(container.textContent).not.toContain("Link mobile device");
 	});
 });
 

@@ -320,6 +320,7 @@ msgstr "الوصول معطّل"
 msgid "Access restricted"
 msgstr "الوصول مقيّد"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2413,7 +2414,6 @@ msgid "Discard local key"
 msgstr "تجاهل المفتاح المحلي"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "قطع الاتصال"
@@ -6050,6 +6050,11 @@ msgstr "جارٍ التحديث…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "مرفوض"
+
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "إعادة تحميل الصفحة"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"

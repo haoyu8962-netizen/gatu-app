@@ -504,6 +504,13 @@ The [Vite cacheDir option](https://vite.dev/config/shared-options#cachedir)
 controls optimizer storage. Privy's screen loader can hide a failed dynamic
 import, so a blank login overlay also requires checking its module requests.
 
+The dedicated header-recovery fixture uses the separate sibling cache
+`node_modules/.vite-user-menu-recovery` and runs with
+`pnpm --dir apps/terminal test:browser:user-menu-recovery`. Its Vite configuration
+scans only `user-menu-recovery.html`; the shared browser optimizer excludes that
+entry, and the default Playwright suite excludes its dedicated test file so each
+fixture runs with its own wallet mocks and server configuration.
+
 ## 10. Trading Slider Sessions
 
 Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and

@@ -1,11 +1,20 @@
-import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
+import { Button, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon, DeviceMobileIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	ArrowClockwiseIcon,
+	CheckIcon,
+	CopyIcon,
+	DeviceMobileIcon,
+	SignOutIcon,
+	SpinnerGapIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useIsMobile, useIsMobileQrSurface } from "@/hooks/use-mobile";
+import { useWalletInitializationRecovery } from "@/hooks/wallet/use-wallet-initialization-recovery";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
@@ -34,11 +43,21 @@ interface Props {
 
 export function UserMenu({ variant = "default" }: Props) {
 	const { t } = useLingui();
-	const { ready, authenticated, isConnected, isConnecting, displayAddress, sessionMode, hasWalletAccess, user } =
-		useWalletSession();
-	const { disconnectWallet } = useDisconnectWallet();
-	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
-	const emailAddress = getPrivyEmailAddress(user);
+	const {
+		authenticationReady,
+		walletDirectoryReady,
+		authenticated,
+		isConnected,
+		isConnecting,
+		isReconnecting: isWalletReconnecting,
+		displayAddress,
+		sessionMode,
+		hasWalletAccess,
+		user,
+	} = useWalletSession();
+	const { disconnectWallet, isDisconnecting } = useDisconnectWallet();
+	const { reconnectWallet, isReconnecting } = useReconnectWallet();
+	const emailAddress = authenticationReady && authenticated ? getPrivyEmailAddress(user) : undefined;
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
 	const [hasOpenedMobileSync, setHasOpenedMobileSync] = useState(() => shouldKeepMobileSyncModalMounted);
@@ -55,8 +74,21 @@ export function UserMenu({ variant = "default" }: Props) {
 		setMounted(true);
 	}, []);
 
-	const walletSessionLoading =
-		sessionMode !== "agent-only" && (!ready || isConnecting || isReconnecting || (authenticated && !walletsReady));
+	const initializationScope =
+		sessionMode === "agent-only"
+			? null
+			: !authenticationReady
+				? "authentication"
+				: authenticated && !walletDirectoryReady
+					? `wallets:${user?.id ?? ""}`
+					: null;
+	const recoveryAvailable = useWalletInitializationRecovery(initializationScope);
+	const reconnectDisabled = !walletDirectoryReady || isConnecting || isWalletReconnecting || isReconnecting;
+	const disconnectDisabled = initializationScope !== null || isDisconnecting;
+
+	function handleReloadPage() {
+		window.location.reload();
+	}
 
 	function handleWalletModalErrorOpenChange(open: boolean) {
 		setWalletModalOpen(open);
@@ -84,7 +116,7 @@ export function UserMenu({ variant = "default" }: Props) {
 		setMobileSyncLoadAttempt((attempt) => attempt + 1);
 	}
 
-	if (!mounted || walletSessionLoading) {
+	if (!mounted || (!authenticationReady && sessionMode !== "agent-only")) {
 		return (
 			<Button
 				variant={isDesktopNav ? "filled" : "outline"}
@@ -98,11 +130,16 @@ export function UserMenu({ variant = "default" }: Props) {
 					isDesktopNav &&
 						"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
 				)}
-				disabled
+				disabled={!recoveryAvailable}
+				onClick={handleReloadPage}
 			>
-				<SpinnerGapIcon className="size-3.5 animate-spin" />
+				{recoveryAvailable ? (
+					<ArrowClockwiseIcon className="size-3.5" />
+				) : (
+					<SpinnerGapIcon className="size-3.5 animate-spin" />
+				)}
 				<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
-					<Trans>Connecting...</Trans>
+					{recoveryAvailable ? <Trans>Reload page</Trans> : <Trans>Connecting...</Trans>}
 				</span>
 			</Button>
 		);
@@ -156,48 +193,25 @@ export function UserMenu({ variant = "default" }: Props) {
 		);
 	}
 
-	if (authenticated && sessionMode !== "agent-only" && !hasWalletAccess) {
-		return (
-			<div className={cn("flex items-center", isDesktopNav ? "shrink-0 gap-1" : "min-w-0 max-w-full gap-2")}>
-				<Button
-					variant={isDesktopNav ? "filled" : "outline"}
-					intent="neutral"
-					size="sm"
-					onClick={() => void reconnectWallet()}
-					iconLeft={<WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						isDesktopNav ? "shrink-0" : "min-w-0 flex-1",
-						"px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-						isDesktopNav &&
-							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
-					)}
-				>
-					<span className={cn(!isDesktopNav && "min-w-0 truncate")}>
-						<Trans>Reconnect wallet</Trans>
-					</span>
-				</Button>
-				<ButtonIcon
-					variant="ghost"
-					intent="error"
-					size="sm"
-					onClick={() => void disconnectWallet()}
-					aria-label={t`Disconnect`}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						isDesktopNav && "size-[34px] min-h-[34px] rounded-[10px] text-market-close-danger",
-					)}
-				>
-					<SignOutIcon className="size-3.5" />
-				</ButtonIcon>
-			</div>
-		);
-	}
-
-	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : t`Account`);
 	const compactDisplayLabel = displayAddress ? shortenAddress(displayAddress) : displayLabel;
 
 	const actionItems = [
+		...(authenticated && sessionMode !== "agent-only" && !hasWalletAccess
+			? [
+					{
+						label: t`Reconnect wallet`,
+						icon: <WalletIcon className="size-3.5" />,
+						disabled: reconnectDisabled,
+						onSelect: () => {
+							if (!reconnectDisabled) void reconnectWallet();
+						},
+					},
+				]
+			: []),
+		...(recoveryAvailable
+			? [{ label: t`Reload page`, icon: <ArrowClockwiseIcon className="size-3.5" />, onSelect: handleReloadPage }]
+			: []),
 		...(displayAddress
 			? [
 					{
@@ -254,8 +268,9 @@ export function UserMenu({ variant = "default" }: Props) {
 					<>
 						<span
 							className={cn(
-								"size-1.5 shrink-0 rounded-full bg-success",
-								isDesktopNav && "size-[7px] bg-market-close-success",
+								"size-1.5 shrink-0 rounded-full",
+								isDesktopNav && "size-[7px]",
+								isConnected ? (isDesktopNav ? "bg-market-close-success" : "bg-success") : "bg-fg-muted",
 							)}
 							aria-hidden
 						/>
@@ -283,8 +298,9 @@ export function UserMenu({ variant = "default" }: Props) {
 								label: t`Disconnect`,
 								icon: <SignOutIcon className="size-3.5" />,
 								danger: true,
+								disabled: disconnectDisabled,
 								onSelect: () => {
-									void disconnectWallet();
+									if (!disconnectDisabled) void disconnectWallet();
 								},
 							},
 						],

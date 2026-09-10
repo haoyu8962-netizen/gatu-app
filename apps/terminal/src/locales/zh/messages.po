@@ -320,6 +320,7 @@ msgstr "访问已停用"
 msgid "Access restricted"
 msgstr "访问受限"
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2413,7 +2414,6 @@ msgid "Discard local key"
 msgstr "丢弃本地私钥"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "断开连接"
@@ -6050,6 +6050,11 @@ msgstr "刷新中…"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "已拒绝"
+
+#: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Reload page"
+msgstr "重新加载页面"
 
 #: src/components/pages/application-error-page.tsx
 msgid "Reload terminal"
