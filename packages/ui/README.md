@@ -172,6 +172,7 @@ import "@gatu/ui/globals.css";
 
 ## Conventions
 
+- **Keep imports free of required initialization.** JavaScript and TypeScript modules must not depend on import-time registration or global writes. `package.json` marks `**/*.css` as side-effectful so consumers retain styles; any future module requiring import-time execution, including a module that only imports styles, must be listed explicitly in `sideEffects`.
 - **One component per file.** No barrel subdirectories.
 - **Props interface named `Props`.** Never `type ComponentProps`.
 - **CVA for variants.** No ad-hoc className switches inside the component.

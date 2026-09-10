@@ -8,6 +8,7 @@ on:
       - "apps/terminal/tests/browser/**"
       - "apps/terminal/src/**"
       - "packages/ui/src/**"
+      - "packages/ui/package.json"
       - "pnpm-lock.yaml"
   workflow_dispatch:
 

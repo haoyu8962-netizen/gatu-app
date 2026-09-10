@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { create } from "zustand";
-import { createJSONStorage, persist, subscribeWithSelector } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
 import { type LimitTif, ORDER_TYPES, type OrderType, SCALE_SKEW_DEFAULT } from "@/config/trade";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
@@ -76,7 +76,7 @@ interface OrderEntryActions {
 interface OrderEntryFormStore extends FormState {
 	marketIdentity: string | null;
 	draftRevision: number;
-	limitPricePrefillConsumption: Record<string, true>;
+	limitPricePrefillIdentity: string | null;
 	actions: OrderEntryActions;
 }
 
@@ -139,141 +139,137 @@ const usePersistedOrderEntryStore = create<PersistedState>()(
 	}),
 );
 
-const useOrderEntryFormStore = create<OrderEntryFormStore>()(
-	subscribeWithSelector((rawSet) => {
-		type Patch = Partial<Omit<OrderEntryFormStore, "actions">>;
-		function set(patch: Patch | ((state: OrderEntryFormStore) => Patch)) {
-			rawSet((state) => {
-				const next = typeof patch === "function" ? patch(state) : patch;
-				if (!Object.entries(next).some(([key, value]) => !Object.is(state[key as keyof OrderEntryFormStore], value)))
-					return state;
-				return { ...next, draftRevision: state.draftRevision + 1 };
-			});
-		}
-		function setPreferences(patch: Partial<PersistedState>) {
-			const previous = usePersistedOrderEntryStore.getState();
-			if (!Object.entries(patch).some(([key, value]) => previous[key as keyof PersistedState] !== value)) return;
-			rawSet((state) => ({ draftRevision: state.draftRevision + 1 }));
-			usePersistedOrderEntryStore.setState(patch);
-		}
-		return {
-			...DEFAULT_FORM,
-			marketIdentity: null,
-			draftRevision: 0,
-			limitPricePrefillConsumption: {},
+const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
+	type Patch = Partial<Omit<OrderEntryFormStore, "actions">>;
+	function set(patch: Patch | ((state: OrderEntryFormStore) => Patch)) {
+		rawSet((state) => {
+			const next = typeof patch === "function" ? patch(state) : patch;
+			if (!Object.entries(next).some(([key, value]) => !Object.is(state[key as keyof OrderEntryFormStore], value)))
+				return state;
+			return { ...next, draftRevision: state.draftRevision + 1 };
+		});
+	}
+	function setPreferences(patch: Partial<PersistedState>) {
+		const previous = usePersistedOrderEntryStore.getState();
+		if (!Object.entries(patch).some(([key, value]) => previous[key as keyof PersistedState] !== value)) return;
+		rawSet((state) => ({ draftRevision: state.draftRevision + 1 }));
+		usePersistedOrderEntryStore.setState(patch);
+	}
+	return {
+		...DEFAULT_FORM,
+		marketIdentity: null,
+		draftRevision: 0,
+		limitPricePrefillIdentity: null,
 
-			actions: {
-				setSide: (side) => {
-					set({ tpReturnInvalid: false, slReturnInvalid: false });
-					setPreferences({ side });
-				},
-
-				setOrderType: (orderType) => {
-					const isTrigger = isTriggerOrderType(orderType);
-					const isScale = isScaleOrderType(orderType);
-					const orderTypeChanged = usePersistedOrderEntryStore.getState().orderType !== orderType;
-
-					set((state) => {
-						const needsTifReset = isScale && state.tif === "Ioc";
-						return {
-							// Only an explicit type change starts another prefill opportunity;
-							// surface visibility and remounts keep the current consumption.
-							limitPricePrefillConsumption: orderTypeChanged ? {} : state.limitPricePrefillConsumption,
-							tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
-							tpReturnInvalid: isTrigger ? false : state.tpReturnInvalid,
-							slReturnInvalid: isTrigger ? false : state.slReturnInvalid,
-							tif: needsTifReset ? "Gtc" : state.tif,
-						};
-					});
-					setPreferences({ orderType });
-				},
-
-				setSizeMode: (sizeMode) => setPreferences({ sizeMode }),
-
-				toggleSizeMode: () => {
-					const { sizeMode } = usePersistedOrderEntryStore.getState();
-					setPreferences({ sizeMode: sizeMode === "base" ? "quote" : "base" });
-				},
-
-				setSize: (size) => set({ size }),
-				setLimitPrice: (limitPrice) => set({ limitPrice }),
-				setLimitPriceFromPrefill: (identity, limitPrice) =>
-					set((state) => {
-						if (state.limitPricePrefillConsumption[identity]) return state;
-						return {
-							limitPrice: state.limitPrice === "" ? limitPrice : state.limitPrice,
-							limitPricePrefillConsumption: { ...state.limitPricePrefillConsumption, [identity]: true },
-						};
-					}),
-				setLimitPriceFromUser: (identity, limitPrice) =>
-					set((state) => ({
-						limitPrice,
-						limitPricePrefillConsumption: state.limitPricePrefillConsumption[identity]
-							? state.limitPricePrefillConsumption
-							: { ...state.limitPricePrefillConsumption, [identity]: true },
-					})),
-				setTriggerPrice: (triggerPrice) => set({ triggerPrice }),
-				setScaleStart: (scaleStart) => set({ scaleStart }),
-				setScaleEnd: (scaleEnd) => set({ scaleEnd }),
-				setScaleLevels: (scaleLevels) => set({ scaleLevels }),
-				setScaleSkew: (scaleSkew) => set({ scaleSkew }),
-				setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
-				setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
-				setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
-				setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
-				setReduceOnly: (reduceOnly) => set({ reduceOnly }),
-				setTpSlEnabled: (tpSlEnabled) =>
-					set((state) => ({
-						tpSlEnabled,
-						tpReturnInvalid: tpSlEnabled ? state.tpReturnInvalid : false,
-						slReturnInvalid: tpSlEnabled ? state.slReturnInvalid : false,
-					})),
-				setTpPrice: (tpPrice) => set({ tpPrice, tpReturnInvalid: false }),
-				setSlPrice: (slPrice) => set({ slPrice, slReturnInvalid: false }),
-				setTpReturnInvalid: (tpReturnInvalid) => set({ tpReturnInvalid }),
-				setSlReturnInvalid: (slReturnInvalid) => set({ slReturnInvalid }),
-				setTif: (tif) => set({ tif }),
-
-				resetForm: () => rawSet((state) => ({ ...DEFAULT_FORM, draftRevision: state.draftRevision + 1 })),
-				markDraftEdited: () => rawSet((state) => ({ draftRevision: state.draftRevision + 1 })),
-				resetFormForMarket: (marketIdentity) =>
-					set((state) =>
-						state.marketIdentity === marketIdentity
-							? state
-							: {
-									...DEFAULT_FORM,
-									marketIdentity,
-									limitPricePrefillConsumption: {},
-								},
-					),
-				resetFormIfCurrent: (token) => {
-					let reset = false;
-					rawSet((state) => {
-						if (state.marketIdentity !== token.marketIdentity || state.draftRevision !== token.draftRevision)
-							return state;
-						reset = true;
-						return { ...DEFAULT_FORM, draftRevision: state.draftRevision + 1 };
-					});
-					return reset;
-				},
-
-				resetPrices: () =>
-					set({
-						limitPrice: "",
-						triggerPrice: "",
-						scaleStart: "",
-						scaleEnd: "",
-						twapTriggerPrice: "",
-						twapStopPrice: "",
-						tpPrice: "",
-						slPrice: "",
-						tpReturnInvalid: false,
-						slReturnInvalid: false,
-					}),
+		actions: {
+			setSide: (side) => {
+				set({ tpReturnInvalid: false, slReturnInvalid: false });
+				setPreferences({ side });
 			},
-		};
-	}),
-);
+
+			setOrderType: (orderType) => {
+				const isTrigger = isTriggerOrderType(orderType);
+				const isScale = isScaleOrderType(orderType);
+				const orderTypeChanged = usePersistedOrderEntryStore.getState().orderType !== orderType;
+
+				set((state) => {
+					const needsTifReset = isScale && state.tif === "Ioc";
+					return {
+						// Only an explicit type change starts another prefill opportunity;
+						// surface visibility and remounts keep the current consumption.
+						limitPricePrefillIdentity: orderTypeChanged ? null : state.limitPricePrefillIdentity,
+						tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
+						tpReturnInvalid: isTrigger ? false : state.tpReturnInvalid,
+						slReturnInvalid: isTrigger ? false : state.slReturnInvalid,
+						tif: needsTifReset ? "Gtc" : state.tif,
+					};
+				});
+				setPreferences({ orderType });
+			},
+
+			setSizeMode: (sizeMode) => setPreferences({ sizeMode }),
+
+			toggleSizeMode: () => {
+				const { sizeMode } = usePersistedOrderEntryStore.getState();
+				setPreferences({ sizeMode: sizeMode === "base" ? "quote" : "base" });
+			},
+
+			setSize: (size) => set({ size }),
+			setLimitPrice: (limitPrice) => set({ limitPrice }),
+			setLimitPriceFromPrefill: (identity, limitPrice) =>
+				set((state) => {
+					if (state.limitPricePrefillIdentity === identity) return state;
+					return {
+						limitPrice: state.limitPrice === "" ? limitPrice : state.limitPrice,
+						limitPricePrefillIdentity: identity,
+					};
+				}),
+			setLimitPriceFromUser: (identity, limitPrice) =>
+				set({
+					limitPrice,
+					limitPricePrefillIdentity: identity,
+				}),
+			setTriggerPrice: (triggerPrice) => set({ triggerPrice }),
+			setScaleStart: (scaleStart) => set({ scaleStart }),
+			setScaleEnd: (scaleEnd) => set({ scaleEnd }),
+			setScaleLevels: (scaleLevels) => set({ scaleLevels }),
+			setScaleSkew: (scaleSkew) => set({ scaleSkew }),
+			setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
+			setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
+			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
+			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
+			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
+			setTpSlEnabled: (tpSlEnabled) =>
+				set((state) => ({
+					tpSlEnabled,
+					tpReturnInvalid: tpSlEnabled ? state.tpReturnInvalid : false,
+					slReturnInvalid: tpSlEnabled ? state.slReturnInvalid : false,
+				})),
+			setTpPrice: (tpPrice) => set({ tpPrice, tpReturnInvalid: false }),
+			setSlPrice: (slPrice) => set({ slPrice, slReturnInvalid: false }),
+			setTpReturnInvalid: (tpReturnInvalid) => set({ tpReturnInvalid }),
+			setSlReturnInvalid: (slReturnInvalid) => set({ slReturnInvalid }),
+			setTif: (tif) => set({ tif }),
+
+			resetForm: () => rawSet((state) => ({ ...DEFAULT_FORM, draftRevision: state.draftRevision + 1 })),
+			markDraftEdited: () => rawSet((state) => ({ draftRevision: state.draftRevision + 1 })),
+			resetFormForMarket: (marketIdentity) =>
+				set((state) =>
+					state.marketIdentity === marketIdentity
+						? state
+						: {
+								...DEFAULT_FORM,
+								marketIdentity,
+								limitPricePrefillIdentity: null,
+							},
+				),
+			resetFormIfCurrent: (token) => {
+				let reset = false;
+				rawSet((state) => {
+					if (state.marketIdentity !== token.marketIdentity || state.draftRevision !== token.draftRevision)
+						return state;
+					reset = true;
+					return { ...DEFAULT_FORM, draftRevision: state.draftRevision + 1 };
+				});
+				return reset;
+			},
+
+			resetPrices: () =>
+				set({
+					limitPrice: "",
+					triggerPrice: "",
+					scaleStart: "",
+					scaleEnd: "",
+					twapTriggerPrice: "",
+					twapStopPrice: "",
+					tpPrice: "",
+					slPrice: "",
+					tpReturnInvalid: false,
+					slReturnInvalid: false,
+				}),
+		},
+	};
+});
 
 export function getOrderEntryDraftResetToken(): OrderEntryDraftResetToken {
 	const { marketIdentity, draftRevision } = useOrderEntryFormStore.getState();
