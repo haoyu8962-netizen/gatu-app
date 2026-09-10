@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const TEST_BUILDER_CONFIG = { b: "0x0" as `0x${string}`, f: 0 };
 const ADDRESS_A = "0x1234567890abcdef1234567890abcdef12345678" as const;
+const ADDRESS_A_CASE_VARIANT = "0x1234567890ABCDEF1234567890ABCDEF12345678" as const;
 const ADDRESS_B = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd" as const;
 
 const sessionMocks = vi.hoisted(() => ({
@@ -515,5 +516,114 @@ describe("HyperliquidProvider userAddress prop", () => {
 
 		expect(lifecycle?.active).toBe(false);
 		expect(schedulerMocks.invalidateLifecycle).toHaveBeenCalledWith(lifecycle);
+	});
+
+	async function createSessionProbe() {
+		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		let currentLease: ReturnType<typeof useHyperliquid>["exchangeSession"] | undefined;
+		function Consumer() {
+			currentLease = useHyperliquid().exchangeSession;
+			return null;
+		}
+		const root = createRoot(document.createElement("div"));
+		return {
+			async render(userAddress: `0x${string}` | undefined, env: "Mainnet" | "Testnet" = "Testnet") {
+				await act(async () => {
+					root.render(
+						<HyperliquidProvider env={env} userAddress={userAddress} builderConfig={TEST_BUILDER_CONFIG}>
+							<Consumer />
+						</HyperliquidProvider>,
+					);
+				});
+				expect(currentLease).toBeDefined();
+				return currentLease;
+			},
+			async unmount() {
+				await act(async () => root.unmount());
+			},
+		};
+	}
+
+	it("issues one active exchange-session lease per committed signing identity", async () => {
+		const probe = await createSessionProbe();
+		let latestLease: Awaited<ReturnType<typeof probe.render>>;
+		try {
+			const originalA = await probe.render(ADDRESS_A);
+			expect(originalA?.active).toBe(true);
+			expect(await probe.render(ADDRESS_A_CASE_VARIANT)).toBe(originalA);
+			const leaseB = await probe.render(ADDRESS_B);
+			latestLease = await probe.render(ADDRESS_A);
+
+			expect(originalA).not.toBe(leaseB);
+			expect(latestLease).not.toBe(originalA);
+			expect(originalA?.active).toBe(false);
+			expect(leaseB?.active).toBe(false);
+			expect(latestLease?.active).toBe(true);
+			expect(latestLease?.clientKey).toBe(ADDRESS_A.toLowerCase());
+		} finally {
+			await probe.unmount();
+		}
+		expect(latestLease?.active).toBe(false);
+	});
+
+	it("does not revive a signing lease after a transient disconnect", async () => {
+		const probe = await createSessionProbe();
+		try {
+			const connectedLease = await probe.render(ADDRESS_A);
+			const disconnectedLease = await probe.render(undefined);
+			const restoredLease = await probe.render(ADDRESS_A_CASE_VARIANT);
+
+			expect(connectedLease).not.toBe(disconnectedLease);
+			expect(restoredLease).not.toBe(connectedLease);
+			expect(connectedLease?.active).toBe(false);
+			expect(disconnectedLease?.active).toBe(false);
+			expect(restoredLease?.active).toBe(true);
+			expect(sessionMocks.closeAndRemove).not.toHaveBeenCalled();
+		} finally {
+			await probe.unmount();
+		}
+	});
+
+	it("invalidates the session lease across a network round trip", async () => {
+		const probe = await createSessionProbe();
+		try {
+			const originalLease = await probe.render(ADDRESS_A, "Mainnet");
+			const testnetLease = await probe.render(ADDRESS_A, "Testnet");
+			const restoredLease = await probe.render(ADDRESS_A, "Mainnet");
+
+			expect(originalLease?.env).toBe("Mainnet");
+			expect(testnetLease?.env).toBe("Testnet");
+			expect(originalLease?.active).toBe(false);
+			expect(testnetLease?.active).toBe(false);
+			expect(restoredLease).not.toBe(originalLease);
+			expect(restoredLease?.active).toBe(true);
+		} finally {
+			await probe.unmount();
+		}
+	});
+
+	it("invalidates the lease when the same owner changes between wallet and agent-only signing", async () => {
+		const { clearActiveAgentOwner, setActiveAgentOwnerAndVerify } = await import(
+			"@gatu/hl-react/signing/agent-session"
+		);
+		clearActiveAgentOwner();
+		expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_A)).toBe(true);
+		const probe = await createSessionProbe();
+		try {
+			const walletLease = await probe.render(ADDRESS_A);
+			const agentLease = await probe.render(undefined);
+			const restoredLease = await probe.render(ADDRESS_A);
+
+			expect(walletLease?.sessionMode).toBe("wallet");
+			expect(agentLease?.sessionMode).toBe("agent-only");
+			expect(agentLease?.clientKey).toBe(walletLease?.clientKey);
+			expect(walletLease?.active).toBe(false);
+			expect(agentLease?.active).toBe(false);
+			expect(restoredLease).not.toBe(walletLease);
+			expect(restoredLease?.active).toBe(true);
+		} finally {
+			await probe.unmount();
+			clearActiveAgentOwner();
+		}
 	});
 });

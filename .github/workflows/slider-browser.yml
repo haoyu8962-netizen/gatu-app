@@ -8,6 +8,7 @@ on:
       - "apps/terminal/tests/browser/**"
       - "apps/terminal/src/**"
       - "packages/ui/src/**"
+      - "packages/ui/package.json"
       - "pnpm-lock.yaml"
   workflow_dispatch:
 
@@ -39,3 +40,10 @@ jobs:
 
       - name: Run mobile orderbook CLS regression
         run: pnpm --dir apps/terminal test:browser:orderbook-cls
+
+      - name: Run drawer and orderbook interaction regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          tests/browser/drawer-interactions.pw.ts
+          tests/browser/orderbook-hover.pw.ts
+          --config tests/browser/playwright.config.ts

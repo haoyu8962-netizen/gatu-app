@@ -53,6 +53,13 @@ describe("useSub hook surface", () => {
 			clientKey: "0x0000000000000000000000000000000000000000",
 			sessionMode: "wallet",
 			exchangeLifecycle: { id: Symbol("use-sub-test-provider"), active: true },
+			exchangeSession: {
+				id: Symbol("use-sub-test-session"),
+				env: "Testnet",
+				clientKey: "0x0000000000000000000000000000000000000000",
+				sessionMode: "wallet",
+				active: true,
+			},
 			enforceLegalActions: false,
 		};
 

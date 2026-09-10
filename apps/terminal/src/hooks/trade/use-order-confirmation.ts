@@ -11,7 +11,7 @@ export interface PendingOrderConfirmation<T> {
 
 export interface UseOrderConfirmationOptions<T> {
 	execute: (input: T) => Promise<void>;
-	canExecute: () => boolean;
+	canExecute: (input: T) => boolean;
 }
 
 export interface UseOrderConfirmationResult<T> {
@@ -41,6 +41,10 @@ export function useOrderConfirmation<T>({
 	const [isConfirming, setIsConfirming] = useState(false);
 
 	async function requestSubmit(input: T, draft: OrderConfirmationDraft) {
+		if (!canExecute(input)) {
+			rejectChangedOrder();
+			return;
+		}
 		if (getSkipOrderConfirmation()) {
 			await execute(input);
 			return;
@@ -51,10 +55,8 @@ export function useOrderConfirmation<T>({
 
 	async function confirm() {
 		if (!pending || isConfirming) return;
-		if (!canExecute()) {
-			setDontShowAgain(false);
-			setPending(null);
-			toast.error(t`Order conditions changed before it was confirmed. Review the order and submit it again.`);
+		if (!canExecute(pending.input)) {
+			rejectChangedOrder();
 			return;
 		}
 		if (dontShowAgain) setSkipOrderConfirmation(true);
@@ -72,6 +74,12 @@ export function useOrderConfirmation<T>({
 		if (isConfirming) return;
 		setDontShowAgain(false);
 		setPending(null);
+	}
+
+	function rejectChangedOrder() {
+		setDontShowAgain(false);
+		setPending(null);
+		toast.error(t`Order conditions changed before it was confirmed. Review the order and submit it again.`);
 	}
 
 	return { pending, isConfirming, dontShowAgain, setDontShowAgain, requestSubmit, confirm, cancel };

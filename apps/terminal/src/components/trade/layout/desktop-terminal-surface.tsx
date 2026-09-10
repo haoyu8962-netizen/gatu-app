@@ -13,9 +13,10 @@ const FooterBar = createLazyComponent(() => import("../footer/footer-bar"), "Foo
 
 interface Props {
 	marketReady: boolean;
+	orderEntryDraftReady?: boolean;
 }
 
-export function DesktopTerminalSurface({ marketReady }: Props) {
+export function DesktopTerminalSurface({ marketReady, orderEntryDraftReady = true }: Props) {
 	const isTestnet = useIsTestnet();
 	const mode = marketReady ? "default" : "market-loading";
 
@@ -31,7 +32,7 @@ export function DesktopTerminalSurface({ marketReady }: Props) {
 			<TestnetBanner />
 			<TopNav mode={mode} />
 			<GeoRestrictionBanner />
-			{marketReady ? <MainWorkspace /> : <TerminalLoadingWorkspace />}
+			{marketReady ? <MainWorkspace orderEntryDraftReady={orderEntryDraftReady} /> : <TerminalLoadingWorkspace />}
 			<Suspense fallback={null}>
 				<FooterBar mode={mode} />
 			</Suspense>

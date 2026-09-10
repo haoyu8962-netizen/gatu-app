@@ -1,5 +1,6 @@
 import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import type { ReactNode } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import {
 	HyperliquidContext,
 	type HyperliquidContextValue,
@@ -29,6 +30,23 @@ function createMockSubscriptionClient(): SubscriptionClient {
 }
 
 export function MockHyperliquidProvider({ children, value = {} }: MockHyperliquidProviderProps) {
+	const normalizedClientKey = (value.clientKey ?? "mock").toLowerCase();
+	const defaultExchangeSession = useMemo(
+		() => ({
+			id: Symbol("mock-hyperliquid-exchange-session"),
+			env: value.env ?? ("Testnet" as HyperliquidEnv),
+			clientKey: normalizedClientKey,
+			sessionMode: value.sessionMode ?? "wallet",
+			active: false,
+		}),
+		[normalizedClientKey, value.env, value.sessionMode],
+	);
+	useLayoutEffect(() => {
+		defaultExchangeSession.active = true;
+		return () => {
+			defaultExchangeSession.active = false;
+		};
+	}, [defaultExchangeSession]);
 	const mockValue: HyperliquidContextValue = {
 		info: createMockInfoClient(),
 		subscription: createMockSubscriptionClient(),
@@ -39,6 +57,7 @@ export function MockHyperliquidProvider({ children, value = {} }: MockHyperliqui
 		clientKey: "mock",
 		sessionMode: "wallet",
 		exchangeLifecycle: { id: Symbol("mock-hyperliquid-provider"), active: true },
+		exchangeSession: defaultExchangeSession,
 		enforceLegalActions: false,
 		...value,
 	};
@@ -54,6 +73,7 @@ export function MockHyperliquidProvider({ children, value = {} }: MockHyperliqui
 		agentName: mockValue.agentName,
 		builderConfig: mockValue.builderConfig,
 		exchangeLifecycle: mockValue.exchangeLifecycle,
+		exchangeSession: mockValue.exchangeSession,
 		enforceLegalActions: mockValue.enforceLegalActions,
 	};
 

@@ -92,6 +92,7 @@ import {
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
+	useLimitPrice,
 	useOrderEntryActions,
 	useOrderSide,
 	useOrderType,
@@ -179,7 +180,15 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const isApprovalLoading = isSignerReady ? requiresBuilderFee && isBuilderFeeLoading : isSignerLoading;
 	const scaleOrder = isScaleOrderType(orderType);
 	const side = useOrderSide();
-	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
+	const {
+		setOrderType,
+		setSide,
+		setTpSlEnabled,
+		setLimitPriceFromPrefill,
+		setLimitPriceFromUser,
+		markDraftEdited,
+		setTriggerPrice,
+	} = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
 	const tpSlReturnInvalid = useTpSlReturnInvalid();
 	const tpPrice = useTpPrice();
@@ -194,15 +203,23 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const twapRandomize = useTwapRandomize();
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
-	const [sizeInput, setSizeInput] = useState("");
+	const [sizeInput, setLocalSizeInput] = useState("");
+	function setSizeInput(value: string) {
+		if (value !== sizeInput) markDraftEdited();
+		setLocalSizeInput(value);
+	}
 	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
 		sizeInteractionRef.current = active;
 		setIsSizeInteracting(active);
 	}
-	const [limitPriceInput, setLimitPriceInput] = useState("");
-	const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);
+	const limitPriceInput = useLimitPrice();
+	const [reduceOnlyChecked, setLocalReduceOnly] = useState(false);
+	function setReduceOnlyChecked(value: boolean) {
+		if (value !== reduceOnlyChecked) markDraftEdited();
+		setLocalReduceOnly(value);
+	}
 	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -244,18 +261,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		marketType,
 		market?.assetId,
 	);
-	const limitPrefillKey = active && usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
-	const prefilledLimitKeyRef = useRef<string | null>(null);
+	const limitPrefillIdentity = `${market?.name ?? ""}|${orderType}`;
 	useEffect(() => {
-		if (limitPrefillKey === null) {
-			prefilledLimitKeyRef.current = null;
-			return;
-		}
-		if (prefilledLimitKeyRef.current === limitPrefillKey) return;
-		if (limitPriceInput !== "" || formattedMidForPrefill === undefined) return;
-		prefilledLimitKeyRef.current = limitPrefillKey;
-		setLimitPriceInput(formattedMidForPrefill);
-	}, [limitPrefillKey, limitPriceInput, formattedMidForPrefill]);
+		if (!active || !usesLimitPrice || formattedMidForPrefill === undefined) return;
+		setLimitPriceFromPrefill(limitPrefillIdentity, formattedMidForPrefill);
+	}, [active, usesLimitPrice, limitPrefillIdentity, formattedMidForPrefill, setLimitPriceFromPrefill]);
 
 	const {
 		accountAbstraction,
@@ -362,7 +372,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
 		[],
 	);
-	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit({
+	const {
+		captureDraftResetToken,
+		isDraftResetTokenCurrent,
+		handleSubmit: submitOrder,
+		isSubmitting,
+	} = useOrderSubmit({
 		executionGuard,
 		twapExecutionGuard,
 		onReset: resetSubmittedForm,
@@ -388,8 +403,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		if (price === null) return;
 
 		setOrderType("limit");
-		setLimitPriceInput(price);
-	}, [market?.name, selectedPrice, setOrderType]);
+		setLimitPriceFromUser(`${market?.name ?? ""}|limit`, price);
+	}, [market?.name, selectedPrice, setOrderType, setLimitPriceFromUser]);
 	const price = getOrderPrice(
 		orderType,
 		executionReferencePx,
@@ -521,6 +536,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	});
 
 	function handleSizeModeToggle() {
+		markDraftEdited();
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
 		onSizeModeChange(newMode);
@@ -610,15 +626,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	}
 
 	function resetSubmittedForm() {
-		setSizeInput("");
-		setLimitPriceInput("");
-		setReduceOnlyChecked(false);
-		setTpPrice("");
-		setSlPrice("");
-		setTriggerPrice("");
+		setLocalSizeInput("");
+		setLocalReduceOnly(false);
 	}
 
-	function canExecuteOrder() {
+	function canExecuteOrder(input?: OrderSubmitDraftInput) {
+		if (input && !isDraftResetTokenCurrent(input.draftResetToken)) return false;
 		if (sizeInteractionRef.current) return false;
 		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
@@ -632,6 +645,9 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	async function handleSubmit() {
 		if (isSubmitting || !canExecuteOrder()) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
+
+		const draftResetToken = captureDraftResetToken();
+		if (!draftResetToken) return;
 
 		const draft: OrderConfirmationDraft = {
 			assetId: market.assetId,
@@ -670,6 +686,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 		await confirmation.requestSubmit(
 			{
+				draftResetToken,
 				market: {
 					assetId: market.assetId,
 					kind: isSpotMarket ? "spot" : "perp",
@@ -897,8 +914,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 							inputMode="decimal"
 							placeholder="0.00"
 							value={limitPriceInput}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
-							onMidClick={setLimitPriceInput}
+							onChange={(e: ChangeEvent<HTMLInputElement>) =>
+								setLimitPriceFromUser(limitPrefillIdentity, e.target.value)
+							}
+							onMidClick={(value) => setLimitPriceFromUser(limitPrefillIdentity, value)}
 							midPrice={midReferencePrice}
 							szDecimals={market?.szDecimals}
 							marketType={marketType}

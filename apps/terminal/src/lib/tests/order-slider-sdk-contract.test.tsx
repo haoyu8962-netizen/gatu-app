@@ -13,11 +13,22 @@ import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	exchangeSession: {
+		id: Symbol("order-slider-sdk-session"),
+		env: "Mainnet" as const,
+		clientKey: "0x1111111111111111111111111111111111111111",
+		sessionMode: "wallet" as const,
+		active: true,
+	},
 	submitOrder: vi.fn(),
 	submitTwap: vi.fn(),
 	addOrder: vi.fn(() => "sdk-queue"),
 	updateOrder: vi.fn(),
-	resetForm: vi.fn(),
+	resetFormIfCurrent: vi.fn(() => true),
+}));
+
+vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ ...mocks.exchangeSession, exchangeSession: mocks.exchangeSession }),
 }));
 
 vi.mock("@/hooks/trade/use-tracked-order", () => ({
@@ -33,7 +44,8 @@ vi.mock("@/stores/use-order-queue-store", () => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useOrderEntryActions: () => ({ resetForm: mocks.resetForm }),
+	getOrderEntryDraftResetToken: () => ({ marketIdentity: "order-slider-sdk-market", draftRevision: 1 }),
+	useOrderEntryActions: () => ({ resetFormIfCurrent: mocks.resetFormIfCurrent }),
 }));
 
 const markets = [
@@ -45,7 +57,10 @@ const markets = [
 type MarketFixture = (typeof markets)[number];
 
 function orderInput(market: MarketFixture, overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInput {
+	const draftResetToken = hookValue?.captureDraftResetToken();
+	if (!draftResetToken) throw new Error("Expected a current draft reset token");
 	return {
+		draftResetToken,
 		market,
 		baseToken: market.name,
 		side: "buy",
@@ -115,7 +130,7 @@ describe("slider quantity through the installed Hyperliquid SDK", () => {
 			result: await sdk.client.twapOrder(params),
 		}));
 		mocks.updateOrder.mockClear();
-		mocks.resetForm.mockClear();
+		mocks.resetFormIfCurrent.mockClear();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);

@@ -246,7 +246,12 @@ export function TradePanel() {
 			assertEntryTwapExecutionAllowed(params, orderExecutionStateRef.current),
 		[],
 	);
-	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit({ executionGuard, twapExecutionGuard });
+	const {
+		captureDraftResetToken,
+		isDraftResetTokenCurrent,
+		handleSubmit: submitOrder,
+		isSubmitting,
+	} = useOrderSubmit({ executionGuard, twapExecutionGuard });
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
 	useEffect(() => {
@@ -294,7 +299,7 @@ export function TradePanel() {
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
-	const { setSide, setOrderType, setSizeMode, setSize, setLimitPrice } = useOrderEntryActions();
+	const { setSide, setOrderType, setSizeMode, setSize, setLimitPriceFromUser } = useOrderEntryActions();
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -321,8 +326,8 @@ export function TradePanel() {
 		if (price === null) return;
 
 		setOrderType("limit");
-		setLimitPrice(price);
-	}, [market?.name, selectedPrice, setOrderType, setLimitPrice]);
+		setLimitPriceFromUser(`${market?.name ?? ""}|limit`, price);
+	}, [market?.name, selectedPrice, setOrderType, setLimitPriceFromUser]);
 
 	useEffect(() => {
 		if (isSpotMarket && triggerOrder) {
@@ -452,7 +457,8 @@ export function TradePanel() {
 				}),
 	);
 
-	function canExecuteOrder() {
+	function canExecuteOrder(input?: OrderSubmitDraftInput) {
+		if (input && !isDraftResetTokenCurrent(input.draftResetToken)) return false;
 		if (sizeInteractionRef.current) return false;
 		if (tradeActionsBlocked) return false;
 		if (!isConnected || !address) return false;
@@ -547,6 +553,9 @@ export function TradePanel() {
 		if (isSubmitting || !canExecuteOrder()) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
+		const draftResetToken = captureDraftResetToken();
+		if (!draftResetToken) return;
+
 		const draft: OrderConfirmationDraft = {
 			assetId: market.assetId,
 			marketLabel: market.pairName ?? market.name,
@@ -584,6 +593,7 @@ export function TradePanel() {
 
 		await confirmation.requestSubmit(
 			{
+				draftResetToken,
 				market: {
 					assetId: market.assetId,
 					kind: market.kind === "spot" ? "spot" : "perp",

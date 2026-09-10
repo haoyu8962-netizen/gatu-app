@@ -19,6 +19,9 @@ const testState = vi.hoisted(() => ({
 	side: "buy" as "buy" | "sell",
 	sizeValue: 1,
 	actions: {
+		markDraftEdited: vi.fn(),
+		setLimitPriceFromPrefill: vi.fn(),
+		setLimitPriceFromUser: vi.fn(),
 		setOrderType: vi.fn(),
 		setSide: vi.fn(),
 		setSlPrice: vi.fn(),
@@ -143,7 +146,21 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-order-submit", () => ({
-	useOrderSubmit: () => ({ handleSubmit: vi.fn(), isSubmitting: false }),
+	useOrderSubmit: () => ({
+		captureDraftResetToken: () => ({
+			orderEntry: { marketIdentity: "Mainnet:BTC", draftRevision: 0 },
+			exchangeSession: {
+				id: Symbol("mobile-size-validation-session"),
+				env: "Mainnet",
+				clientKey: "0xabc",
+				sessionMode: "wallet",
+				active: true,
+			},
+		}),
+		isDraftResetTokenCurrent: () => true,
+		handleSubmit: vi.fn(),
+		isSubmitting: false,
+	}),
 }));
 
 vi.mock("@/hooks/trade/use-prospective-cross-margin-account", () => ({
@@ -216,6 +233,7 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
+	useLimitPrice: () => "",
 	useOrderEntryActions: () => testState.actions,
 	useOrderSide: () => testState.side,
 	useOrderType: () => testState.orderType,

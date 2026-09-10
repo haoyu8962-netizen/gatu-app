@@ -27,6 +27,9 @@ adapter if rendered. Existing deposit, withdrawal, bridge, staking, and vault fo
 have no quantity slider to migrate. Official repay, chase, and trailing-stop paths
 are comparison inventory only: this work does not add those trading businesses.
 
+Confirmation ownership, late order completion and shared limit-price prefill are
+specified in [`order-draft-lifecycle.md`](./order-draft-lifecycle.md).
+
 ## Visual and input contract
 
 - A 33px control contains an 8px track and an 18px thumb. Quantity controls have

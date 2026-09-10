@@ -4,6 +4,14 @@ import type { ExchangeProviderLifecycleLease } from "./internal/exchange/request
 import type { SessionMode } from "./signing/agent-session";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
 
+export interface HyperliquidExchangeSessionLease {
+	readonly id: symbol;
+	readonly env: HyperliquidEnv;
+	readonly clientKey: string;
+	readonly sessionMode: SessionMode;
+	active: boolean;
+}
+
 export interface HyperliquidTransportContextValue {
 	info: InfoClient;
 	subscription: SubscriptionClient;
@@ -17,6 +25,7 @@ export interface HyperliquidSessionContextValue {
 	agentName: string;
 	builderConfig: BuilderConfig;
 	exchangeLifecycle: ExchangeProviderLifecycleLease;
+	exchangeSession: HyperliquidExchangeSessionLease;
 	enforceLegalActions: boolean;
 }
 

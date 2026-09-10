@@ -125,6 +125,7 @@ export type {
 } from "./markets/types";
 export type {
 	HyperliquidContextValue,
+	HyperliquidExchangeSessionLease,
 	HyperliquidProviderProps,
 	HyperliquidSessionContextValue,
 	HyperliquidSessionProviderProps,
