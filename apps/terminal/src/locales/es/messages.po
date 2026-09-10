@@ -941,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "Precio medio de ejecución"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "Precio medio"
@@ -2431,6 +2432,10 @@ msgstr "Descartar"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "Pantalla"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "Distancia al precio medio"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -8293,8 +8298,9 @@ msgstr "Demasiadas aprobaciones móviles esperan recuperación en esta pestaña.
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8313,7 +8319,6 @@ msgstr "Patrimonio total"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "El patrimonio total no está disponible porque los saldos de préstamos y de trading podrían solaparse."
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "Nocional total"

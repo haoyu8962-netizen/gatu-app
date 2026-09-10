@@ -1,8 +1,9 @@
 import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/trade/orderbook";
 import { getOrderbookLadderStyle, getOrderbookPlaceholderKeys } from "@/lib/ui/orderbook-layout";
 import { useSizeMode } from "@/stores/use-order-entry-store";
+import { OrderbookHoverTooltip } from "./orderbook-hover-tooltip";
 import { OrderbookPlaceholderRow } from "./orderbook-placeholder-row";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
@@ -124,6 +126,16 @@ export function OrderbookPanel() {
 		active: tab === "book" && hasCurrentSnapshot && fullRowCount > 0,
 	});
 
+	const hoverRootRef = useRef<HTMLDivElement>(null);
+	const hover = useOrderbookHover({
+		identity: flashResetKey,
+		viewKey: `desktop:${tab}:${fullRowCount}:${rowHeightPx}`,
+		enabled: tab === "book" && hasCurrentSnapshot && fullRowCount > 0,
+		bids,
+		asks,
+		rootRef: hoverRootRef,
+	});
+
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 
 	const hasFailure = orderbookStatus === "error" || orderbookIsStale;
@@ -167,6 +179,8 @@ export function OrderbookPanel() {
 
 			<TabsContent
 				value="book"
+				ref={hoverRootRef}
+				{...hover.containerProps}
 				aria-busy={!hasCurrentSnapshot && !hasFailure}
 				className="flex-1 min-h-0 mt-0 pt-0 flex flex-col"
 			>
@@ -206,6 +220,7 @@ export function OrderbookPanel() {
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 					<div
 						data-slot="orderbook-asks"
+						data-orderbook-side-container="ask"
 						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
 						className="flex-1 min-h-0 overflow-hidden flex flex-col justify-end gap-[2px]"
 					>
@@ -217,6 +232,13 @@ export function OrderbookPanel() {
 								{asksReversed.map((level, index) => (
 									<OrderbookRow
 										key={`ask-${level.price}`}
+										rank={asks.length - index - 1}
+										hoverState={hover.getHoverState("ask", asks.length - index - 1)}
+										tooltipId={
+											hover.hoveredSide === "ask" && asks.length - index - 1 === hover.hoveredRank
+												? hover.tooltipId
+												: undefined
+										}
 										disabled={asks.length - index - 1 >= fullRowCount}
 										flashResetKey={flashResetKey}
 										pulse={getPulse("ask", level.price)}
@@ -250,6 +272,7 @@ export function OrderbookPanel() {
 
 					<div
 						data-slot="orderbook-bids"
+						data-orderbook-side-container="bid"
 						style={getOrderbookLadderStyle(rowHeightPx, fullRowCount > 0)}
 						className="flex-1 min-h-0 overflow-hidden flex flex-col gap-[2px]"
 					>
@@ -258,6 +281,9 @@ export function OrderbookPanel() {
 								{bids.map((level, rank) => (
 									<OrderbookRow
 										key={`bid-${level.price}`}
+										rank={rank}
+										hoverState={hover.getHoverState("bid", rank)}
+										tooltipId={hover.hoveredSide === "bid" && rank === hover.hoveredRank ? hover.tooltipId : undefined}
 										disabled={rank >= fullRowCount}
 										flashResetKey={flashResetKey}
 										pulse={getPulse("bid", level.price)}
@@ -280,6 +306,16 @@ export function OrderbookPanel() {
 						) : null}
 					</div>
 				</div>
+				{hover.activeLevel && (
+					<OrderbookHoverTooltip
+						hover={hover}
+						marketName={subscriptionParams.coin}
+						baseAsset={baseToken}
+						quoteAsset={quoteToken}
+						szDecimals={szDecimals}
+						priceDecimals={priceDecimals}
+					/>
+				)}
 			</TabsContent>
 
 			<TabsContent value="trades" keepMounted className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">

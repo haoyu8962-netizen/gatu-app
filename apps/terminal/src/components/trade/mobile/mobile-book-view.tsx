@@ -1,7 +1,7 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import {
@@ -9,6 +9,7 @@ import {
 	type OrderbookFeedSource,
 	useOrderbookFeed,
 } from "@/hooks/trade/use-orderbook-feed";
+import { useOrderbookHover } from "@/hooks/trade/use-orderbook-hover";
 import { useOrderbookLevelPulses } from "@/hooks/trade/use-orderbook-level-pulses";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
@@ -38,6 +39,7 @@ import type { OrderbookLevelPulseEvent } from "@/lib/ui/orderbook-level-pulses";
 import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+import { OrderbookHoverTooltip } from "../orderbook/orderbook-hover-tooltip";
 import { OrderbookLevelPulse } from "../orderbook/orderbook-level-pulse";
 import { OrderbookPlaceholderRow } from "../orderbook/orderbook-placeholder-row";
 import { OrderbookRow } from "../orderbook/orderbook-row";
@@ -409,6 +411,8 @@ export function MobileBookView({
 						showOrderbookInQuote={showOrderbookInQuote}
 						szDecimals={szDecimals}
 						spreadText={spreadText}
+						baseToken={baseToken}
+						quoteToken={quoteToken}
 					/>
 				)
 			) : (
@@ -519,10 +523,28 @@ export function CompactOrderbook({
 		active: isInteractive && fullRowCount > 0,
 	});
 
+	const rootRef = useRef<HTMLDivElement>(null);
+	const hover = useOrderbookHover({
+		identity: flashResetKey,
+		viewKey: `compact:${mode}:${fullRowCount}:${rowHeightPx}`,
+		enabled: isInteractive && fullRowCount > 0,
+		bids: visibleBids,
+		asks: visibleAsks,
+		rootRef,
+	});
+	const setPanelRef = useCallback(
+		(node: HTMLDivElement | null) => {
+			rootRef.current = node;
+			panelRef(node);
+		},
+		[panelRef],
+	);
+
 	return (
 		<div
-			ref={panelRef}
-			className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg"
+			ref={setPanelRef}
+			{...hover.containerProps}
+			className="orderbook-panel-container flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg [--orderbook-hover-gap:4px]"
 		>
 			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal orderbook-header-text uppercase">
 				<div className="min-w-0 truncate" title={`${t`Price`} (${priceToken})`}>
@@ -551,6 +573,7 @@ export function CompactOrderbook({
 			>
 				<div
 					data-slot="compact-orderbook-asks"
+					data-orderbook-side-container="ask"
 					className={cn("relative flex-1 min-h-0 overflow-hidden", !showAsks && "hidden")}
 				>
 					{hasAsks ? (
@@ -584,12 +607,13 @@ export function CompactOrderbook({
 												level={level}
 												marketName={marketName}
 												side="ask"
+												rank={rank}
+												hoverState={hover.getHoverState("ask", rank)}
+												tooltipId={hover.tooltipId}
 												maxTotal={askMaxTotal}
 												priceDecimals={priceDecimals}
 												showInQuote={showOrderbookInQuote}
 												szDecimals={szDecimals}
-												baseAsset={baseToken}
-												quoteAsset={quoteToken}
 												compact
 											/>
 										</CompactOrderbookRowPosition>
@@ -639,6 +663,7 @@ export function CompactOrderbook({
 
 				<div
 					data-slot="compact-orderbook-bids"
+					data-orderbook-side-container="bid"
 					className={cn("relative flex-1 min-h-0 overflow-hidden", !showBids && "hidden")}
 				>
 					{hasBids ? (
@@ -659,12 +684,13 @@ export function CompactOrderbook({
 										level={level}
 										marketName={marketName}
 										side="bid"
+										rank={rank}
+										hoverState={hover.getHoverState("bid", rank)}
+										tooltipId={hover.tooltipId}
 										maxTotal={bidMaxTotal}
 										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
-										baseAsset={baseToken}
-										quoteAsset={quoteToken}
 										compact
 									/>
 								</CompactOrderbookRowPosition>
@@ -691,6 +717,16 @@ export function CompactOrderbook({
 				{isTransitioning && hasSnapshot && <OrderbookBusyOverlay />}
 			</fieldset>
 			{isTransitioning && <OrderbookLoadingAnnouncement />}
+			{hover.activeLevel && (
+				<OrderbookHoverTooltip
+					hover={hover}
+					marketName={marketName}
+					baseAsset={baseToken}
+					quoteAsset={quoteToken}
+					szDecimals={szDecimals}
+					priceDecimals={priceDecimals}
+				/>
+			)}
 
 			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1">
 				<Dropdown
@@ -779,11 +815,15 @@ function OrderbookModeIcon({ bars }: { bars: Array<"ask" | "bid"> }) {
 }
 
 interface SplitOrderbookProps extends OrderbookLayoutProps {
+	baseToken: string;
+	quoteToken: string;
 	enabled: boolean;
 	spreadText: string;
 }
 
 function SplitOrderbook({
+	baseToken,
+	quoteToken,
 	asks,
 	bids,
 	pulseIdentity = "",
@@ -824,8 +864,25 @@ function SplitOrderbook({
 		active: isInteractive && (askFullRowCount > 0 || bidFullRowCount > 0),
 	});
 
+	const rootRef = useRef<HTMLDivElement>(null);
+	const hover = useOrderbookHover({
+		identity: pulseIdentity,
+		viewKey: `split:${askFullRowCount}:${bidFullRowCount}:${askRowHeightPx}:${bidRowHeightPx}`,
+		enabled: isInteractive && (askFullRowCount > 0 || bidFullRowCount > 0),
+		bids: visibleBids,
+		asks: visibleAsks,
+		rootRef,
+	});
+	const setPanelRef = useCallback(
+		(node: HTMLDivElement | null) => {
+			rootRef.current = node;
+			panelRef(node);
+		},
+		[panelRef],
+	);
+
 	return (
-		<div ref={panelRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+		<div ref={setPanelRef} {...hover.containerProps} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
 				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs orderbook-header-text">
 					<span>{t`Spread`}</span>
@@ -866,6 +923,7 @@ function SplitOrderbook({
 					ref={bidLadderRef}
 					style={getOrderbookLadderStyle(bidRowHeightPx, bidFullRowCount > 0)}
 					data-slot="split-orderbook-bids"
+					data-orderbook-side-container="bid"
 					className="min-h-0 overflow-hidden flex flex-col gap-[2px]"
 				>
 					{hasBids ? (
@@ -879,6 +937,9 @@ function SplitOrderbook({
 									level={level}
 									marketName={marketName}
 									side="bid"
+									rank={rank}
+									hoverState={hover.getHoverState("bid", rank)}
+									tooltipId={hover.tooltipId}
 									maxTotal={bidMaxTotal}
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
@@ -900,6 +961,7 @@ function SplitOrderbook({
 					ref={askLadderRef}
 					style={getOrderbookLadderStyle(askRowHeightPx, askFullRowCount > 0)}
 					data-slot="split-orderbook-asks"
+					data-orderbook-side-container="ask"
 					className="min-h-0 overflow-hidden flex flex-col gap-[2px]"
 				>
 					{hasAsks ? (
@@ -913,6 +975,9 @@ function SplitOrderbook({
 									level={level}
 									marketName={marketName}
 									side="ask"
+									rank={rank}
+									hoverState={hover.getHoverState("ask", rank)}
+									tooltipId={hover.tooltipId}
 									maxTotal={askMaxTotal}
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
@@ -932,6 +997,16 @@ function SplitOrderbook({
 				{isTransitioning && hasSnapshot && <OrderbookBusyOverlay />}
 			</fieldset>
 			{isTransitioning && <OrderbookLoadingAnnouncement />}
+			{hover.activeLevel && (
+				<OrderbookHoverTooltip
+					hover={hover}
+					marketName={marketName}
+					baseAsset={baseToken}
+					quoteAsset={quoteToken}
+					szDecimals={szDecimals}
+					priceDecimals={priceDecimals}
+				/>
+			)}
 		</div>
 	);
 }
@@ -1038,6 +1113,9 @@ function OrderbookSkeletonRow({ index, align, compact }: { index: number; align?
 }
 
 interface SplitOrderbookRowProps {
+	rank?: number;
+	hoverState?: "active" | "range";
+	tooltipId?: string;
 	disabled?: boolean;
 	pulse?: OrderbookLevelPulseEvent;
 	onPulseEnd?: (id: number) => void;
@@ -1051,6 +1129,9 @@ interface SplitOrderbookRowProps {
 }
 
 export function SplitOrderbookRow({
+	rank,
+	hoverState,
+	tooltipId,
 	disabled = false,
 	pulse,
 	onPulseEnd,
@@ -1094,9 +1175,14 @@ export function SplitOrderbookRow({
 			type="button"
 			disabled={disabled}
 			onClick={() => setSelectedPrice(marketName, level.price)}
-			title={priceText}
+			data-orderbook-side={side}
+			data-orderbook-rank={rank}
+			data-orderbook-price={level.price}
+			data-orderbook-hover={disabled ? undefined : hoverState}
+			data-orderbook-hover-edge="bottom"
+			aria-describedby={!disabled && hoverState === "active" ? tooltipId : undefined}
 			aria-label={`${sideLabel}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`}
-			className="orderbook-row group relative block h-[var(--orderbook-row-height,23px)] w-full shrink-0 cursor-pointer overflow-hidden text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default"
+			className="orderbook-row group relative block h-[var(--orderbook-row-height,23px)] w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default"
 		>
 			<span
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}

@@ -941,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "औसत निष्पादन मूल्य"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "औसत मूल्य"
@@ -2431,6 +2432,10 @@ msgstr "खारिज करें"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "डिस्प्ले"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "मध्य मूल्य से दूरी"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -8293,8 +8298,9 @@ msgstr "इस टैब में बहुत सारी मोबाइल 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8313,7 +8319,6 @@ msgstr "कुल इक्विटी"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "कुल इक्विटी उपलब्ध नहीं है क्योंकि उधार और ट्रेडिंग शेष में एक ही राशि शामिल हो सकती है।"
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "कुल नोशनल"

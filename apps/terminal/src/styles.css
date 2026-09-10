@@ -1117,6 +1117,50 @@
     background-color: var(--orderbook-hover);
   }
 
+  .orderbook-row[data-orderbook-hover]:not(:disabled) {
+    background-color: var(--orderbook-hover);
+  }
+
+  .orderbook-row[data-orderbook-hover]:not(:disabled)::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    height: var(--orderbook-hover-gap, 2px);
+    pointer-events: none;
+    background-color: var(--orderbook-hover);
+  }
+
+  .orderbook-row[data-orderbook-hover-edge="top"]::before {
+    bottom: calc(-1 * var(--orderbook-hover-gap, 2px));
+  }
+
+  .orderbook-row[data-orderbook-hover-edge="bottom"]::before {
+    top: calc(-1 * var(--orderbook-hover-gap, 2px));
+  }
+
+  .orderbook-row[data-orderbook-rank="0"]::before {
+    display: none;
+  }
+
+  .orderbook-row[data-orderbook-hover="active"]:not(:disabled)::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    height: 1px;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0.5;
+    background: repeating-linear-gradient(to right, var(--orderbook-text) 0 2px, transparent 2px 5px);
+  }
+
+  .orderbook-row[data-orderbook-hover-edge="top"]::after {
+    top: 0;
+  }
+
+  .orderbook-row[data-orderbook-hover-edge="bottom"]::after {
+    bottom: 0;
+  }
+
   .orderbook-level-pulse {
     position: absolute;
     inset: 0;

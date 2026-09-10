@@ -941,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "متوسط سعر التنفيذ"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "متوسط السعر"
@@ -2431,6 +2432,10 @@ msgstr "تجاهل"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "العرض"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "البُعد عن السعر الوسطي"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -8293,8 +8298,9 @@ msgstr "هناك عدد كبير جدًا من موافقات الهاتف با�
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8313,7 +8319,6 @@ msgstr "إجمالي القيمة"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "إجمالي حقوق الملكية غير متاح لأن أرصدة الإقراض والاقتراض والتداول قد تتداخل."
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "إجمالي القيمة الاسمية"

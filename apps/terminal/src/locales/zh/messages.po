@@ -941,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "平均成交价格"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "平均价格"
@@ -2431,6 +2432,10 @@ msgstr "关闭"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "显示"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "距中间价"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -8293,8 +8298,9 @@ msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8313,7 +8319,6 @@ msgstr "总权益"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "借贷余额与交易余额可能重叠，暂不显示总权益。"
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "总名义价值"

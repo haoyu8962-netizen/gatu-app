@@ -941,6 +941,7 @@ msgid "Average Fill Price"
 msgstr "Average Fill Price"
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/positions/twap-history-table.tsx
 msgid "Average Price"
 msgstr "Average Price"
@@ -2431,6 +2432,10 @@ msgstr "Dismiss"
 #: src/components/trade/header/desktop-utilities-menu.tsx
 msgid "Display"
 msgstr "Display"
+
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+msgid "Distance from mid"
+msgstr "Distance from mid"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Distance to mark"
@@ -8293,8 +8298,9 @@ msgstr "Too many mobile approvals are awaiting recovery in this tab. Resolve or 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
+#: src/components/trade/orderbook/orderbook-hover-tooltip.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -8313,7 +8319,6 @@ msgstr "Total Equity"
 msgid "Total equity is unavailable because lending and trading balances may overlap."
 msgstr "Total equity is unavailable because lending and trading balances may overlap."
 
-#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Total notional"
 msgstr "Total notional"

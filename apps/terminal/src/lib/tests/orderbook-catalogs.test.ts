@@ -2,12 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const translations = {
-	ar: { Ask: "بيع", Bid: "شراء", "No orders": "لا توجد أوامر" },
-	en: { Ask: "Ask", Bid: "Bid", "No orders": "No orders" },
-	es: { Ask: "Venta", Bid: "Compra", "No orders": "Sin órdenes" },
-	fr: { Ask: "Vente", Bid: "Achat", "No orders": "Aucun ordre" },
-	hi: { Ask: "बिक्री", Bid: "खरीद", "No orders": "कोई ऑर्डर नहीं" },
-	zh: { Ask: "卖盘", Bid: "买盘", "No orders": "暂无挂单" },
+	ar: { "Distance from mid": "البُعد عن السعر الوسطي", Ask: "بيع", Bid: "شراء", "No orders": "لا توجد أوامر" },
+	en: { "Distance from mid": "Distance from mid", Ask: "Ask", Bid: "Bid", "No orders": "No orders" },
+	es: { "Distance from mid": "Distancia al precio medio", Ask: "Venta", Bid: "Compra", "No orders": "Sin órdenes" },
+	fr: { "Distance from mid": "Écart au prix médian", Ask: "Vente", Bid: "Achat", "No orders": "Aucun ordre" },
+	hi: { "Distance from mid": "मध्य मूल्य से दूरी", Ask: "बिक्री", Bid: "खरीद", "No orders": "कोई ऑर्डर नहीं" },
+	zh: { "Distance from mid": "距中间价", Ask: "卖盘", Bid: "买盘", "No orders": "暂无挂单" },
 } as const;
 
 describe("orderbook catalogs", () => {

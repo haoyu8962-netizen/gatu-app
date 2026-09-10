@@ -1,7 +1,5 @@
-import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { memo } from "react";
-import { useLongPressTooltip } from "@/hooks/ui/use-long-press-tooltip";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
@@ -22,8 +20,9 @@ interface Props {
 	szDecimals: number;
 	compact?: boolean;
 	disabled?: boolean;
-	baseAsset?: string;
-	quoteAsset?: string;
+	rank?: number;
+	hoverState?: "active" | "range";
+	tooltipId?: string;
 	pulse?: OrderbookLevelPulseEvent;
 	onPulseEnd?: (id: number) => void;
 }
@@ -39,8 +38,9 @@ function OrderbookRowComponent({
 	szDecimals,
 	compact = false,
 	disabled = false,
-	baseAsset,
-	quoteAsset,
+	rank,
+	hoverState,
+	tooltipId,
 	pulse,
 	onPulseEnd,
 }: Props) {
@@ -58,26 +58,23 @@ function OrderbookRowComponent({
 	const priceText = formatNumber(level.price, priceDecimals);
 	const sizeText = formatNumber(sizeValue, { decimals: sizeDecimals, compact: true });
 	const totalText = formatNumber(totalValue, { decimals: totalDecimals, compact: true });
-	const cumulativeBaseText = formatNumber(level.total, { decimals: szDecimals, compact: true });
-	const cumulativeQuoteText = formatNumber(level.quoteTotal, {
-		decimals: getOrderbookQuoteDecimals(level.quoteTotal),
-		compact: true,
-	});
 	const sideText = isAsk ? t`Ask` : t`Bid`;
 	const ariaLabel = `${sideText}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`;
-	const longPressTooltip = useLongPressTooltip({ enabled: compact && !disabled });
 
-	const row = (
+	return (
 		<button
 			type="button"
 			disabled={disabled}
 			onClick={() => {
-				if (longPressTooltip.consumeLongPressClick()) return;
 				setSelectedPrice(marketName, level.price);
 			}}
-			title={compact ? undefined : priceText}
+			data-orderbook-side={side}
+			data-orderbook-rank={rank}
+			data-orderbook-price={level.price}
+			data-orderbook-hover={disabled ? undefined : hoverState}
+			data-orderbook-hover-edge={isAsk ? "top" : "bottom"}
+			aria-describedby={!disabled && hoverState === "active" ? tooltipId : undefined}
 			aria-label={ariaLabel}
-			{...longPressTooltip.handlers}
 			className={cn(
 				"orderbook-row group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
 				compact ? "h-[var(--orderbook-row-height,24px)]" : "h-[var(--orderbook-row-height,23px)]",
@@ -99,7 +96,7 @@ function OrderbookRowComponent({
 					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
 				)}
 			>
-				<span title={compact ? undefined : priceText} className="min-w-0 truncate text-left">
+				<span className="min-w-0 truncate text-left">
 					<span
 						data-slot="orderbook-price-text"
 						className={cn(
@@ -116,40 +113,9 @@ function OrderbookRowComponent({
 					resetKey={flashResetKey}
 					value={level.size}
 				/>
-				{!compact && (
-					<span className="min-w-0 truncate text-right orderbook-value-text" title={totalText}>
-						{totalText}
-					</span>
-				)}
+				{!compact && <span className="min-w-0 truncate text-right orderbook-value-text">{totalText}</span>}
 			</span>
 		</button>
-	);
-
-	if (!compact) return row;
-
-	return (
-		<Tooltip
-			open={longPressTooltip.open}
-			onOpenChange={longPressTooltip.onOpenChange}
-			closeOnClick={false}
-			delay={300}
-			side="left"
-			sideOffset={4}
-			content={
-				<span data-slot="orderbook-cumulative-tooltip" className="grid gap-1 tabular-nums">
-					<span>
-						{t`Total`}
-						{baseAsset ? ` (${baseAsset})` : ""}: {cumulativeBaseText}
-					</span>
-					<span>
-						{t`Total notional`}
-						{quoteAsset ? ` (${quoteAsset})` : ""}: {cumulativeQuoteText}
-					</span>
-				</span>
-			}
-		>
-			{row}
-		</Tooltip>
 	);
 }
 
@@ -165,8 +131,9 @@ function areEqual(prev: Props, next: Props): boolean {
 		prev.showInQuote === next.showInQuote &&
 		prev.szDecimals === next.szDecimals &&
 		prev.disabled === next.disabled &&
-		prev.baseAsset === next.baseAsset &&
-		prev.quoteAsset === next.quoteAsset &&
+		prev.rank === next.rank &&
+		prev.hoverState === next.hoverState &&
+		prev.tooltipId === next.tooltipId &&
 		prev.level.price === next.level.price &&
 		prev.level.size === next.level.size &&
 		prev.level.total === next.level.total &&
