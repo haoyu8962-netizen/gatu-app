@@ -504,6 +504,20 @@ The [Vite cacheDir option](https://vite.dev/config/shared-options#cachedir)
 controls optimizer storage. Privy's screen loader can hide a failed dynamic
 import, so a blank login overlay also requires checking its module requests.
 
+## 10. Trading Slider Sessions
+
+Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and
+leverage interaction contract. A pointer session separates local visual position,
+15ms trailing business previews, and the final synchronous commit. Every terminal
+path clears pending work on cancellation, invalidation, and unmount. Preserve exact
+business snapshots only in their original eligible identity. End callbacks run even
+when a thumb was pressed without moving, so submission locks cannot remain stuck.
+
+Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
+start through end; leverage gestures edit drafts and never invoke an API directly.
+Slippage persistence requires explicit confirmation. These controls never replace
+wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
+
 ## Required Review Checklist
 
 Before merging any change that touches the areas above:

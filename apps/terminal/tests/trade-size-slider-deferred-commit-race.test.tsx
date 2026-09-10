@@ -1,180 +1,114 @@
 /** @vitest-environment jsdom */
 
-import { act, type ComponentProps, type ReactNode, type Ref, useState } from "react";
+import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TradeSlider } from "@/components/trade/components/trade-slider";
 
-interface SliderEventDetails {
-	event: Event;
-	reason: string;
-}
-
-interface SliderDoubleProps {
-	children?: ReactNode;
-	onLostPointerCapture?: (event: { pointerId: number }) => void;
-	onPointerDownCapture?: (event: {
-		button: number;
-		clientX: number;
-		clientY: number;
-		isPrimary: boolean;
-		pointerId: number;
-		preventDefault: () => void;
-		stopPropagation: () => void;
-	}) => void;
-	onValueChange?: (value: number, details: SliderEventDetails) => void;
-	onValueCommitted?: (value: number, details: SliderEventDetails) => void;
-	ref?: Ref<HTMLDivElement>;
-	value?: number;
-}
-
-let sliderProps: SliderDoubleProps = {};
-
-vi.mock("@gatu/ui", () => ({
-	Slider: (props: SliderDoubleProps) => {
-		sliderProps = props;
-		return (
-			<div
-				ref={props.ref}
-				role="group"
-				onPointerDownCapture={props.onPointerDownCapture}
-				onLostPointerCapture={props.onLostPointerCapture}
-			>
-				<input type="range" value={props.value} readOnly />
-			</div>
-		);
-	},
-}));
-
-import { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
-
-type CommitHandler = ComponentProps<typeof TradeSizeSlider>["onPercentCommit"];
-
-function SliderFixture({ onCommit }: { onCommit: (value: number) => void }) {
+function Fixture({ onCommit }: { onCommit: (value: number) => void }) {
 	const [value, setValue] = useState(25);
-
-	function handleCommit(committedValue: number, _details: Parameters<CommitHandler>[1]) {
-		onCommit(committedValue);
-		setValue(committedValue);
-	}
-
 	return (
 		<>
-			<TradeSizeSlider
+			<TradeSlider
 				value={value}
-				onPercentChange={setValue}
-				onPercentCancel={setValue}
-				onPercentCommit={handleCommit}
-				ariaLabel="Size percentage"
+				min={0}
+				max={100}
+				ariaLabel="Size (%)"
+				onPreview={setValue}
+				onCancel={setValue}
+				onCommit={(nextValue) => {
+					onCommit(nextValue);
+					setValue(nextValue);
+				}}
 			/>
-			<output data-testid="parent-value">{value}</output>
+			<output>{value}</output>
 		</>
 	);
 }
 
-function createPointerEvent(type: string, pointerId: number): MouseEvent {
-	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1 });
+function pointer(type: string, clientX: number, pointerId = 1): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1, clientX });
 	Object.defineProperties(event, {
-		isPrimary: { value: true },
 		pointerId: { value: pointerId },
 		pointerType: { value: "mouse" },
+		isPrimary: { value: true },
 	});
 	return event;
 }
 
-function eventDetails(reason: string, event: Event): SliderEventDetails {
-	return { event, reason };
-}
-
-describe("TradeSizeSlider synchronous commit isolation", () => {
+describe("TradeSlider synchronous commit isolation", () => {
 	let container: HTMLDivElement;
 	let root: Root;
-	let frameCallbacks: Map<number, FrameRequestCallback>;
-	let nextFrameId: number;
+	let mounted: boolean;
+	let frames: Map<number, FrameRequestCallback>;
+	let frameId: number;
 
 	beforeEach(() => {
+		vi.useFakeTimers();
+		frames = new Map();
+		frameId = 0;
+		vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+			const id = ++frameId;
+			frames.set(id, callback);
+			return id;
+		});
+		vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
-		frameCallbacks = new Map();
-		nextFrameId = 1;
-		sliderProps = {};
-		vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-			const frameId = nextFrameId;
-			nextFrameId += 1;
-			frameCallbacks.set(frameId, callback);
-			return frameId;
-		});
-		vi.stubGlobal("cancelAnimationFrame", (frameId: number) => {
-			frameCallbacks.delete(frameId);
-		});
+		mounted = true;
 	});
 
 	afterEach(() => {
-		if (container.isConnected) {
-			act(() => root.unmount());
-			container.remove();
-		}
+		if (mounted) act(() => root.unmount());
+		container.remove();
+		vi.useRealTimers();
 		vi.unstubAllGlobals();
-		vi.restoreAllMocks();
 	});
 
-	function renderSlider(onCommit: (value: number) => void) {
-		act(() => root.render(<SliderFixture onCommit={onCommit} />));
-		const slider = container.querySelector<HTMLElement>('[role="group"]');
-		if (!slider) throw new Error("Missing slider root");
-		return slider;
-	}
-
-	function beginPointer(slider: HTMLElement, pointerId: number) {
-		act(() => slider.dispatchEvent(createPointerEvent("pointerdown", pointerId)));
-	}
-
-	function changePointer(value: number, pointerId: number) {
-		const pointerMove = createPointerEvent("pointermove", pointerId);
-		act(() => sliderProps.onValueChange?.(value, eventDetails("drag", pointerMove)));
-	}
-
-	function commitPointer(value: number, pointerId: number) {
-		const pointerUp = createPointerEvent("pointerup", pointerId);
-		act(() => sliderProps.onValueCommitted?.(value, eventDetails("drag", pointerUp)));
-	}
-
-	it("commits before a subsequent canceled interaction can invalidate the result", () => {
+	function render() {
 		const onCommit = vi.fn();
-		const slider = renderSlider(onCommit);
-		beginPointer(slider, 1);
-		changePointer(90, 1);
-		commitPointer(90, 1);
+		act(() => root.render(<Fixture onCommit={onCommit} />));
+		const control = container.querySelector<HTMLDivElement>("[data-trade-slider-control]");
+		const thumb = container.querySelector<HTMLDivElement>("[data-trade-slider-thumb]");
+		if (!control || !thumb) throw new Error("Expected slider controls");
+		Object.defineProperty(control, "getBoundingClientRect", {
+			configurable: true,
+			value: () => ({ left: 10, width: 100, height: 33, x: 10, y: 0, top: 0, right: 110, bottom: 33 }),
+		});
+		return { control, thumb, onCommit };
+	}
 
-		expect(onCommit).toHaveBeenCalledTimes(1);
-		expect(onCommit).toHaveBeenCalledWith(90);
-		expect(frameCallbacks).toHaveLength(0);
-
-		beginPointer(slider, 2);
-		changePointer(20, 2);
-		act(() => document.dispatchEvent(createPointerEvent("pointercancel", 2)));
-
-		expect(onCommit).toHaveBeenCalledTimes(1);
-		expect(container.querySelector<HTMLOutputElement>('[data-testid="parent-value"]')?.value).toBe("90");
+	it("does not let a subsequent canceled interaction erase a completed commit", () => {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 100)));
+		act(() => document.dispatchEvent(pointer("pointerup", 100)));
+		expect(slider.onCommit).toHaveBeenCalledExactlyOnceWith(90);
+		expect(container.querySelector("output")?.textContent).toBe("90");
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 100, 2)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 30, 2)));
+		act(() => vi.advanceTimersByTime(15));
+		expect(container.querySelector("output")?.textContent).toBe("20");
+		act(() => document.dispatchEvent(pointer("pointercancel", 30, 2)));
+		expect(container.querySelector("output")?.textContent).toBe("90");
+		act(() => vi.advanceTimersByTime(100));
+		expect(slider.onCommit).toHaveBeenCalledTimes(1);
+		expect(frames.size).toBe(0);
 	});
 
-	it("does not lose a completed commit when the slider unmounts immediately", () => {
-		const onCommit = vi.fn();
-		const slider = renderSlider(onCommit);
-		beginPointer(slider, 1);
-		changePointer(70, 1);
-
+	it("finishes the commit before an immediate unmount without leaving delayed work", () => {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 80)));
 		act(() => {
-			sliderProps.onValueCommitted?.(
-				70,
-				eventDetails("drag", createPointerEvent("pointerup", 1)),
-			);
+			document.dispatchEvent(pointer("pointerup", 80));
 			root.unmount();
 		});
-		container.remove();
-
-		expect(onCommit).toHaveBeenCalledTimes(1);
-		expect(onCommit).toHaveBeenCalledWith(70);
-		expect(frameCallbacks).toHaveLength(0);
+		mounted = false;
+		expect(slider.onCommit).toHaveBeenCalledExactlyOnceWith(70);
+		expect(frames.size).toBe(0);
+		act(() => vi.advanceTimersByTime(100));
+		expect(slider.onCommit).toHaveBeenCalledTimes(1);
 	});
 });

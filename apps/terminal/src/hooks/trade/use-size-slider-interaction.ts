@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 
 interface Params {
+	onInteractionChange?: (active: boolean) => void;
 	applyPercent: (percent: number) => void;
 	interactionIdentity: string;
 	setSizeInput: (value: string) => void;
@@ -12,12 +13,19 @@ interface SizeSnapshot {
 	sizeInput: string;
 }
 
-export function useSizeSliderInteraction({ applyPercent, interactionIdentity, setSizeInput, sizeInput }: Params) {
+export function useSizeSliderInteraction({
+	applyPercent,
+	interactionIdentity,
+	setSizeInput,
+	sizeInput,
+	onInteractionChange,
+}: Params) {
 	const snapshotRef = useRef<SizeSnapshot | null>(null);
 
 	const onPercentInteractionStart = useCallback(() => {
 		snapshotRef.current = { identity: interactionIdentity, sizeInput };
-	}, [interactionIdentity, sizeInput]);
+		onInteractionChange?.(true);
+	}, [interactionIdentity, sizeInput, onInteractionChange]);
 
 	const onPercentCancel = useCallback(() => {
 		const snapshot = snapshotRef.current;
@@ -35,5 +43,9 @@ export function useSizeSliderInteraction({ applyPercent, interactionIdentity, se
 		[applyPercent, interactionIdentity],
 	);
 
-	return { onPercentCancel, onPercentCommit, onPercentInteractionStart };
+	function onPercentInteractionEnd() {
+		snapshotRef.current = null;
+		onInteractionChange?.(false);
+	}
+	return { onPercentCancel, onPercentCommit, onPercentInteractionStart, onPercentInteractionEnd };
 }

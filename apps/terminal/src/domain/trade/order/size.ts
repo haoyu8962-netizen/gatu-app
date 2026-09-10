@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { QUOTE_SIZE_INPUT_MAX_DECIMALS } from "@/config/trade";
 import type { SpotBalanceData } from "@/domain/trade/balances";
-import { floorToDecimals, formatDecimalFloor, type Numeric, toBig } from "@/lib/trade/numbers";
+import { floorToDecimals, type Numeric, toBig } from "@/lib/trade/numbers";
 import type { Side, SizeMode } from "@/lib/trade/types";
 
 interface MaxSizeInput {
@@ -57,9 +57,11 @@ interface SizeModeToggleInput {
 	szDecimals: number;
 }
 
-function formatSizeValue(value: number, decimals: number): string {
-	if (!Number.isFinite(value) || value <= 0) return "0";
-	return formatDecimalFloor(value, decimals);
+function formatSizeValue(value: Numeric, decimals: number): string {
+	const size = toBig(value);
+	if (!size || size.lte(0)) return "0";
+	const fixed = size.toFixed(decimals, Big.roundDown);
+	return fixed.includes(".") ? fixed.replace(/\.?0+$/, "") : fixed;
 }
 
 export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
@@ -103,7 +105,7 @@ export function getSizeValueFromInput(input: SizeValueInput): number {
 
 	const px = toBig(input.price);
 	if (!px || px.lte(0)) return 0;
-	const converted = floorToDecimals(inputVal.div(px).toNumber(), input.szDecimals);
+	const converted = inputVal.div(px).round(input.szDecimals, Big.roundDown).toNumber();
 	return Number.isFinite(converted) ? converted : 0;
 }
 
@@ -115,10 +117,10 @@ export function getOrderValue(sizeValue: number, price: number): number {
 }
 
 export function getSizeValues(input: SizeValuesInput): SizeValueResult {
-	const sizeInputValue = toBig(input.sizeInput)?.toNumber() ?? 0;
+	const sizeInput = toBig(input.sizeInput) ?? Big(0);
+	const sizeInputValue = sizeInput.toNumber();
 	const convPx = toBig(input.conversionPx);
-	const sizeValue =
-		input.sizeMode === "quote" && convPx?.gt(0) ? Big(sizeInputValue).div(convPx).toNumber() : sizeInputValue;
+	const sizeValue = input.sizeMode === "quote" && convPx?.gt(0) ? sizeInput.div(convPx).toNumber() : sizeInputValue;
 	return { sizeInputValue, sizeValue };
 }
 
@@ -133,7 +135,7 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 				const quoteAmount = Big(input.maxSize).times(input.price).times(pct);
 				return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 			}
-			const tokenAmount = Big(input.maxSize).times(pct).toNumber();
+			const tokenAmount = Big(input.maxSize).times(pct);
 			return formatSizeValue(tokenAmount, input.szDecimals);
 		}
 
@@ -141,9 +143,9 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 			if (input.price <= 0) return "";
 			const tokenAmount = Big(input.spotBalance.baseAvailable).times(pct);
 			const quoteAmount = tokenAmount.times(input.price);
-			return quoteAmount.toFixed(2);
+			return quoteAmount.toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 		}
-		const tokenAmount = Big(input.spotBalance.baseAvailable).times(pct).toNumber();
+		const tokenAmount = Big(input.spotBalance.baseAvailable).times(pct);
 		return formatSizeValue(tokenAmount, input.szDecimals);
 	}
 
@@ -152,16 +154,16 @@ export function getSizeForPercent(input: SizeForPercentInput): string {
 
 	if (isQuoteMode) {
 		if (input.price <= 0) return "";
-		return size.times(input.price).toFixed(2);
+		return size.times(input.price).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 	}
-	return formatSizeValue(size.toNumber(), input.szDecimals);
+	return formatSizeValue(size, input.szDecimals);
 }
 
 export function getSizeValueForModeToggle(input: SizeModeToggleInput): string {
 	if (input.sizeValue <= 0 || input.price <= 0) return "";
 
 	if (input.sizeMode === "base") {
-		return Big(input.sizeValue).times(input.price).toFixed(2);
+		return Big(input.sizeValue).times(input.price).toFixed(QUOTE_SIZE_INPUT_MAX_DECIMALS, Big.roundDown);
 	}
 	return formatSizeValue(input.sizeValue, input.szDecimals);
 }
@@ -175,7 +177,7 @@ export function getSliderValue(sizeValue: number, maxSize: number): number {
 
 export function formatSliderPercent(value: number): string {
 	if (!Number.isFinite(value) || value <= 0) return "0";
-	return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+	return Math.min(100, value).toFixed(0);
 }
 
 export function getSizeInputMaxDecimals(sizeMode: SizeMode, szDecimals: number): number {

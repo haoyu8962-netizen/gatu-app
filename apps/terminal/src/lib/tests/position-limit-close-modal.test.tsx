@@ -358,7 +358,7 @@ describe("PositionLimitCloseModal", () => {
 				target: { value: "1.25" },
 			});
 		});
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50.0");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50");
 
 		const chip75 = [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
 			(button) => button.textContent === "75%",
@@ -387,6 +387,60 @@ describe("PositionLimitCloseModal", () => {
 		expect(testState.submit).toHaveBeenCalledWith({ price: "101", size: "2.5" });
 		expect(testState.toastSuccess).toHaveBeenCalledOnce();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it.each(["cancel", "commit", "no-move"])("locks submit throughout a slider gesture ending with %s", (ending) => {
+		render();
+		act(() => {
+			(testState.priceInputProps?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "101" },
+			});
+			(testState.numberInputs.get("Close size")?.onChange as (event: { target: { value: string } }) => void)({
+				target: { value: "1.0000" },
+			});
+		});
+		const submitBeforeStart = testState.actionButtonProps?.onClick as () => void;
+		act(() => {
+			(testState.sliderProps?.onPercentInteractionStart as () => void)();
+			submitBeforeStart();
+		});
+		expect(testState.submit).not.toHaveBeenCalled();
+		expect(testState.actionButtonProps?.disabled).toBe(true);
+		expect(testState.sliderProps?.disabled).toBe(false);
+
+		if (ending !== "no-move") {
+			act(() => (testState.sliderProps?.onPercentChange as (value: number) => void)(75));
+			act(() => {
+				const callback = ending === "cancel" ? "onPercentCancel" : "onPercentCommit";
+				(testState.sliderProps?.[callback] as (value: number) => void)(75);
+			});
+			if (ending === "cancel") {
+				expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.0000");
+			}
+			expect(testState.actionButtonProps?.disabled).toBe(true);
+		}
+
+		act(() => (testState.sliderProps?.onPercentInteractionEnd as () => void)());
+		expect(testState.actionButtonProps?.disabled).toBe(false);
+		expect(testState.submit).not.toHaveBeenCalled();
+	});
+
+	it("includes the live account and network in the slider identity and rejects the old drag", () => {
+		render();
+		const previousIdentity = testState.sliderProps?.interactionIdentity;
+		act(() => (testState.sliderProps?.onPercentInteractionStart as () => void)());
+		testState.clientKey = "0x2222222222222222222222222222222222222222";
+		testState.env = "Testnet";
+		render();
+		expect(testState.sliderProps?.interactionIdentity).not.toBe(previousIdentity);
+		expect(testState.sliderProps?.interactionIdentity).toContain(testState.clientKey);
+		expect(testState.sliderProps?.interactionIdentity).toContain("Testnet");
+		act(() => {
+			(testState.sliderProps?.onPercentCommit as (value: number) => void)(75);
+			(testState.sliderProps?.onPercentInteractionEnd as () => void)();
+		});
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5000");
+		expect(testState.resetError).not.toHaveBeenCalled();
 	});
 
 	it("normalizes the Mid shortcut to the exact protocol price before displaying or submitting", async () => {

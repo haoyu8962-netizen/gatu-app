@@ -93,6 +93,7 @@ interface ModalBodyProps extends BodyProps {
 }
 
 function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: ModalBodyProps) {
+	const { clientKey, env } = useHyperliquid();
 	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
@@ -110,6 +111,8 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const livePosition = userPositions.getPosition(position.coin, position.dex);
 	const { submit, phase, isPending, isReconciling, error, resetError } = usePositionLimitCloseSubmit(openingTarget);
 	const [sizingIntent, setSizingIntentState] = useState<PositionCloseSizingIntent>({ kind: "max" });
+	const [isSizingInteractionActive, setIsSizingInteractionActive] = useState(false);
+	const sizingInteractionActiveRef = useRef(false);
 	const [priceInput, setPriceInput] = useState("");
 	const [showPriceError, setShowPriceError] = useState(false);
 
@@ -155,6 +158,18 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					szDecimals: position.szDecimals,
 				});
 	const sizingViewModel = createPositionCloseSizingViewModel(sizingIntent, sizing, position.szDecimals);
+	const sizingInteractionIdentity = JSON.stringify([
+		openingTarget.owner,
+		openingTarget.env,
+		openingTarget.coin,
+		openingTarget.dex,
+		openingTarget.assetId,
+		openingTarget.szDecimals,
+		openingTarget.marginMode,
+		openingTarget.signedPositionSize,
+		clientKey.toLowerCase(),
+		env,
+	]);
 	const priceValue = toBig(priceInput);
 	const normalizedPrice = formatPriceForOrder(priceInput, {
 		assetId: position.assetId,
@@ -168,7 +183,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
 	const visibleError =
 		positionStatusMessage ?? error ?? (positionStatus === null ? (priceError ?? visibleSizingError) : null);
-	const canSubmit = canEdit && priceValid && sizing.errors.length === 0;
+	const canSubmit = canEdit && !isSizingInteractionActive && priceValid && sizing.errors.length === 0;
 	const errorId = `position-limit-close-error-${position.assetId}`;
 	const helperId = `position-limit-close-helper-${position.assetId}`;
 	const priceInputId = `position-limit-close-price-${position.assetId}`;
@@ -247,8 +262,13 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 		if (!nextOpen && canDismiss) onOpenChange(false);
 	}
 
+	function handleSizingInteractionChange(interacting: boolean) {
+		sizingInteractionActiveRef.current = interacting;
+		setIsSizingInteractionActive(interacting);
+	}
+
 	async function handleSubmit() {
-		if (!canSubmit) return;
+		if (!canSubmit || sizingInteractionActiveRef.current) return;
 		try {
 			const outcome = await submit({ price: priceInput, size: sizing.normalizedSize });
 			if (outcome.state === "reconciling") {
@@ -346,6 +366,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 				<PositionCloseSizingControls
 					testId="position-limit-close-sizing"
 					sliderTestId="position-limit-close-slider"
+					interactionIdentity={sizingInteractionIdentity}
 					intent={sizingIntent}
 					resolution={sizing}
 					viewModel={sizingViewModel}
@@ -357,6 +378,7 @@ function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: 
 					visibleSizingError={visibleSizingError}
 					priceLabel={t`Limit Price`}
 					onIntentChange={setSizingIntent}
+					onInteractionChange={handleSizingInteractionChange}
 				/>
 
 				{phase === "reconciling" && (

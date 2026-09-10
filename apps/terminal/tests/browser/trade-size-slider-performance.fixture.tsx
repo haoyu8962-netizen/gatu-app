@@ -1,10 +1,15 @@
+import { i18n } from "@lingui/core";
 import { useLayoutEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
-import "../../src/styles.css";
+import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-size-control";
+import { LeverageSlider } from "@/components/trade/tradebox/leverage-slider";
+import { createI18nRoot } from "@/lib/tests/harness/react";
+import { messages } from "@/locales/en/messages.po";
+import "./trade-slider.css";
 
 interface PerformanceAuditState {
 	callbackDurations: number[];
+	previewTimes: number[];
 	commitCallbacks: number;
 	commitLatencies: number[];
 	commitsByFrame: Record<number, number>;
@@ -21,6 +26,7 @@ interface PerformanceAuditState {
 
 const audit: PerformanceAuditState = {
 	callbackDurations: [],
+	previewTimes: [],
 	commitCallbacks: 0,
 	commitLatencies: [],
 	commitsByFrame: {},
@@ -50,6 +56,7 @@ function snapshot() {
 		callbackDurationMedianMs: percentile(audit.callbackDurations, 0.5),
 		callbackDurationP95Ms: percentile(audit.callbackDurations, 0.95),
 		commitCallbacks: audit.commitCallbacks,
+		previewIntervals: audit.previewTimes.slice(1).map((time, i) => time - audit.previewTimes[i]),
 		commitLatencyMedianMs: percentile(audit.commitLatencies, 0.5),
 		commitLatencyP95Ms: percentile(audit.commitLatencies, 0.95),
 		elapsedMs,
@@ -68,6 +75,7 @@ Object.assign(window, {
 	__gatuSliderPerf: {
 		reset() {
 			audit.callbackDurations = [];
+			audit.previewTimes = [];
 			audit.commitCallbacks = 0;
 			audit.commitLatencies = [];
 			audit.commitsByFrame = {};
@@ -105,6 +113,9 @@ requestAnimationFrame(frameLoop);
 function SliderPerformanceFixture() {
 	const [value, setValue] = useState(25);
 	const valueRef = useRef(value);
+	const [leverage, setLeverage] = useState(1);
+	const [size, setSize] = useState("0.24");
+	const gallery = new URLSearchParams(window.location.search).has("gallery");
 
 	useLayoutEffect(() => {
 		valueRef.current = value;
@@ -126,7 +137,10 @@ function SliderPerformanceFixture() {
 	}
 
 	function handlePreview(nextValue: number) {
-		if (audit.observing) audit.previewCallbacks += 1;
+		if (audit.observing) {
+			audit.previewCallbacks += 1;
+			audit.previewTimes.push(performance.now());
+		}
 		applyValue(nextValue);
 	}
 
@@ -136,24 +150,80 @@ function SliderPerformanceFixture() {
 	}
 
 	return (
-		<main className="min-h-screen bg-modal p-16 text-market-close-fg">
-			<section className="mx-auto w-[640px] rounded-[16px] bg-modal p-8">
+		<main className="min-h-screen bg-modal p-6 text-market-close-fg">
+			<section className="mx-auto w-full max-w-[640px] rounded-[16px] bg-modal p-4">
 				<TradeSizeSlider
 					value={value}
 					onPercentChange={handlePreview}
 					onPercentCancel={handlePreview}
 					onPercentCommit={handleCommit}
 					ariaLabel="Size percentage"
-					thumbSize="lg"
 				/>
 				<output data-slider-value className="mt-8 block text-sm tabular-nums">
 					{value}%
 				</output>
 			</section>
+			{gallery && (
+				<section data-gallery className="mx-auto mt-8 grid w-full max-w-[1000px] gap-8 min-[1001px]:grid-cols-3">
+					<div>
+						<h2>Leverage</h2>
+						<LeverageSlider
+							value={leverage}
+							max={10}
+							onChange={setLeverage}
+							onCommit={setLeverage}
+							onCancel={() => setLeverage(1)}
+						/>
+					</div>
+					<div>
+						<h2>Mobile buy</h2>
+						<MobileTradeSizeControl
+							canUsePercent
+							disabled={false}
+							interactionIdentity="fixture:buy"
+							maxAllowedDecimals={2}
+							onPercentChange={setValue}
+							onPercentCommit={setValue}
+							onPercentCancel={setValue}
+							onSizeChange={(e) => setSize(e.target.value)}
+							onSizeModeToggle={() => undefined}
+							percentAriaLabel="Buy size percent"
+							side="buy"
+							sizeAriaLabel="Buy size"
+							sizeInput={size}
+							sizeLabel="Size"
+							sizeModeLabel="HYPE"
+							sliderValue={value}
+						/>
+					</div>
+					<div>
+						<h2>Mobile sell</h2>
+						<MobileTradeSizeControl
+							canUsePercent
+							disabled={false}
+							interactionIdentity="fixture:sell"
+							maxAllowedDecimals={2}
+							onPercentChange={setValue}
+							onPercentCommit={setValue}
+							onPercentCancel={setValue}
+							onSizeChange={(e) => setSize(e.target.value)}
+							onSizeModeToggle={() => undefined}
+							percentAriaLabel="Sell size percent"
+							side="sell"
+							sizeAriaLabel="Sell size"
+							sizeInput={size}
+							sizeLabel="Size"
+							sizeModeLabel="HYPE"
+							sliderValue={value}
+						/>
+					</div>
+				</section>
+			)}
 		</main>
 	);
 }
 
 const root = document.querySelector("#root");
 if (!(root instanceof HTMLElement)) throw new Error("Fixture root is missing");
-createRoot(root).render(<SliderPerformanceFixture />);
+i18n.loadAndActivate({ locale: "en", messages });
+createI18nRoot(root).render(<SliderPerformanceFixture />);

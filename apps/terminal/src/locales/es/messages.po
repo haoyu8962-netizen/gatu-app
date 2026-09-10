@@ -1100,6 +1100,7 @@ msgstr "Vista previa de la cámara para el QR del monedero de escritorio"
 #: src/components/referrals/referral-action-modal.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/header/user-menu-modal-boundary.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -1630,6 +1631,7 @@ msgid "Configured TP/SL amount"
 msgstr "Cantidad de TP/SL configurada"
 
 #: src/components/referrals/referral-action-modal.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6874,6 +6876,11 @@ msgstr "Firmando..."
 msgid "Size"
 msgstr "Tamaño"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Size (%)"
+msgstr "Tamaño (%)"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Size cannot exceed the order's remaining size."
@@ -6920,7 +6927,6 @@ msgstr "Precio SL"
 msgid "Slippage"
 msgstr "Deslizamiento"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx

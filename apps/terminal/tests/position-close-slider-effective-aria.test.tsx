@@ -2,16 +2,17 @@
 
 import { createHash } from "node:crypto";
 import { i18n, type Messages } from "@lingui/core";
-import { type ReactNode, act, createElement, useState } from "react";
+import { act, createElement, type ReactNode, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	PositionCloseSizingControls,
 	createPositionCloseSizingViewModel,
+	PositionCloseSizingControls,
 } from "@/components/trade/positions/position-close-dialog-ui";
 import {
 	type PositionCloseSizingIntent,
 	resolvePositionMarketClosePercent,
+	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 
@@ -19,19 +20,15 @@ const sliderState = vi.hoisted(() => ({
 	props: null as null | {
 		onPercentCancel: (value: number) => void;
 		onPercentChange: (value: number) => void;
+		onPercentCommit: (value: number) => void;
 		onPercentInteractionStart?: (value: number) => void;
 	},
 }));
 
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-	Button: ({
-		children,
-		intent: _intent,
-		size: _size,
-		variant: _variant,
-		...props
-	}: Record<string, unknown>) => createElement("button", { ...props, type: "button" }, children as ReactNode),
+	Button: ({ children, intent: _intent, size: _size, variant: _variant, ...props }: Record<string, unknown>) =>
+		createElement("button", { ...props, type: "button" }, children as ReactNode),
 	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("div", props, children),
 	ModalFooter: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
@@ -44,6 +41,7 @@ vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: ({
 		inputSize: _inputSize,
 		maxAllowedDecimals: _maxAllowedDecimals,
+		allowDecimals: _allowDecimals,
 		mobileSafe: _mobileSafe,
 		suffix: _suffix,
 		suffixClassName: _suffixClassName,
@@ -80,14 +78,14 @@ const translatedEffectivePercentMessages: Array<{
 		locale: "ar",
 		messages: {
 			[getMessageId(EFFECTIVE_PERCENT_MESSAGE)]: [
-				"طُلب ",
+				"طلب ",
 				["requestedPercent"],
 				"٪؛ ",
 				["effectivePercent"],
 				"٪ بعد تطبيق دقة الحجم",
 			],
 		},
-		expected: "طُلب 50٪؛ 46.6٪ بعد تطبيق دقة الحجم",
+		expected: "طلب 50٪؛ 46.6٪ بعد تطبيق دقة الحجم",
 	},
 	{
 		locale: "fr",
@@ -121,11 +119,12 @@ describe("position close slider effective aria contract", () => {
 		container.remove();
 	});
 
-	it("A3 identifies the requested 50% and the effective 46.6% without contradicting aria-valuenow", () => {
+	it("A3 identifies the requested 50% and the effective 46.6% alongside the actual aria-valuenow", () => {
 		renderSizingControls(root);
 
 		const slider = container.querySelector('[role="slider"]');
-		expect(slider?.getAttribute("aria-valuenow")).toBe("50");
+		expect(Number(slider?.getAttribute("aria-valuenow"))).toBeCloseTo(46.6667, 3);
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("47");
 		expect(slider?.getAttribute("aria-valuetext")).toBe("50% requested; 46.6% after size precision");
 	});
 
@@ -138,6 +137,80 @@ describe("position close slider effective aria contract", () => {
 			expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(expected);
 		},
 	);
+
+	it("shows rounded effective percentages without promoting a partial request to max on blur", () => {
+		const onIntentChange = vi.fn();
+		renderSizingControls(root, {
+			intent: { kind: "size", value: "996" },
+			signedPositionSize: "1000",
+			onIntentChange,
+		});
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]');
+		expect(input?.value).toBe("100");
+		expect(input?.min).toBe("0");
+		expect(input?.max).toBe("100");
+		expect(input?.step).toBe("1");
+		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuenow")).toBe("99.6");
+		const maxButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Max");
+		expect(maxButton?.getAttribute("aria-pressed")).toBe("false");
+
+		act(() => input?.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		expect(onIntentChange).not.toHaveBeenCalled();
+	});
+
+	it("retains an integer percentage draft until blur and accepts explicit 100% as max", () => {
+		const onIntentChange = vi.fn();
+		renderSizingControls(root, { onIntentChange });
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]');
+		if (!input) throw new Error("Expected percentage input");
+		const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+		act(() => {
+			valueSetter?.call(input, "50");
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		expect(input.value).toBe("50");
+		expect(onIntentChange).toHaveBeenLastCalledWith({ kind: "percent", value: "50" });
+		act(() => input.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+		expect(input.value).toBe("47");
+
+		act(() => {
+			valueSetter?.call(input, "100");
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		expect(onIntentChange).toHaveBeenLastCalledWith({ kind: "max" });
+	});
+
+	it("commits a keyboard percentage without requiring a pointer-start event", () => {
+		const onIntentChange = vi.fn();
+		renderSizingControls(root, { onIntentChange });
+		act(() => sliderState.props?.onPercentCommit(51));
+		expect(onIntentChange).toHaveBeenCalledExactlyOnceWith({ kind: "percent", value: "51" });
+		act(() => sliderState.props?.onPercentCommit(100));
+		expect(onIntentChange).toHaveBeenLastCalledWith({ kind: "max" });
+	});
+
+	it.each(["cancel", "commit"])("does not restore or commit an old identity after %s", (action) => {
+		const onIntentChange = vi.fn();
+		renderSizingControls(root, {
+			intent: { kind: "size", value: "0.0100" },
+			interactionIdentity: "owner-a:mainnet:BTC:session-1",
+			onIntentChange,
+		});
+		act(() => sliderState.props?.onPercentInteractionStart?.(66.6));
+		act(() => sliderState.props?.onPercentChange(25));
+		onIntentChange.mockClear();
+		renderSizingControls(root, {
+			intent: { kind: "size", value: "0.0050" },
+			interactionIdentity: "owner-b:testnet:ETH:session-2",
+			onIntentChange,
+		});
+		act(() => {
+			if (action === "cancel") sliderState.props?.onPercentCancel(66.6);
+			else sliderState.props?.onPercentCommit(75);
+		});
+		expect(onIntentChange).not.toHaveBeenCalled();
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("0.0050");
+	});
 
 	it("restores an exact manual close-size intent after a canceled drag", () => {
 		function Harness() {
@@ -155,6 +228,7 @@ describe("position close slider effective aria contract", () => {
 				<PositionCloseSizingControls
 					testId="close-sizing"
 					sliderTestId="close-slider"
+					interactionIdentity="owner:network:position-session"
 					intent={intent}
 					resolution={resolution}
 					viewModel={viewModel}
@@ -183,13 +257,28 @@ describe("position close slider effective aria contract", () => {
 	});
 });
 
-function renderSizingControls(root: Root) {
-	const intent = { kind: "percent", value: "50" } as const;
-	const resolution = resolvePositionMarketClosePercent({
-		signedPositionSize: "0.015",
-		percent: intent.value,
-		szDecimals: 3,
-	});
+function renderSizingControls(
+	root: Root,
+	{
+		intent = { kind: "percent", value: "50" },
+		signedPositionSize = "0.015",
+		interactionIdentity = "owner:network:position-session",
+		onIntentChange = () => {},
+	}: {
+		intent?: PositionCloseSizingIntent;
+		signedPositionSize?: string;
+		interactionIdentity?: string;
+		onIntentChange?: (intent: PositionCloseSizingIntent) => void;
+	} = {},
+) {
+	const resolution =
+		intent.kind === "size"
+			? resolvePositionMarketCloseSize({ signedPositionSize, closeSize: intent.value, szDecimals: 3 })
+			: resolvePositionMarketClosePercent({
+					signedPositionSize,
+					percent: intent.kind === "max" ? "100" : intent.value,
+					szDecimals: 3,
+				});
 	const viewModel = createPositionCloseSizingViewModel(intent, resolution, 3);
 
 	act(() => {
@@ -197,6 +286,7 @@ function renderSizingControls(root: Root) {
 			<PositionCloseSizingControls
 				testId="close-sizing"
 				sliderTestId="close-slider"
+				interactionIdentity={interactionIdentity}
 				intent={intent}
 				resolution={resolution}
 				viewModel={viewModel}
@@ -206,7 +296,7 @@ function renderSizingControls(root: Root) {
 				hasDescribedError={false}
 				visibleSizingError={null}
 				priceLabel="$100,000"
-				onIntentChange={() => {}}
+				onIntentChange={onIntentChange}
 			/>,
 		);
 	});

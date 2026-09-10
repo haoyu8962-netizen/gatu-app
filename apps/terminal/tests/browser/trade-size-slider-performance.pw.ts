@@ -1,6 +1,7 @@
-import { expect, test, type CDPSession, type Page } from "@playwright/test";
+import { type CDPSession, expect, type Page, test } from "@playwright/test";
 
 interface SliderAuditSnapshot {
+	previewIntervals: number[];
 	commitCallbacks: number;
 	maxParentCommitsPerFrame: number;
 	multiCommitFrames: Array<[string, number]>;
@@ -21,6 +22,7 @@ interface SliderGeometry {
 type SliderAuditWindow = Window & {
 	__gatuSliderPerf: {
 		reset: () => void;
+		snapshot: () => SliderAuditSnapshot;
 		stop: () => SliderAuditSnapshot;
 	};
 	__gatuSliderPointerId?: number;
@@ -31,7 +33,7 @@ test.beforeEach(async ({ page }) => {
 	await page.locator('input[type="range"]').waitFor();
 });
 
-test("coalesces high-frequency previews without changing the released value", async ({ page }) => {
+test("debounces high-frequency previews without changing the released value", async ({ page }, testInfo) => {
 	const geometry = await getControlGeometry(page);
 	const session = await page.context().newCDPSession(page);
 	const startX = percentX(geometry, 25);
@@ -63,15 +65,18 @@ test("coalesces high-frequency previews without changing the released value", as
 
 	const result = await stopAudit(page);
 	const finalValue = await readValue(page);
+	await testInfo.attach("slider-performance", {
+		body: JSON.stringify(result, null, 2),
+		contentType: "application/json",
+	});
 
 	expect(result.rawPointerMoves).toBeGreaterThanOrEqual(60);
 	expect(result.rawPointerMoveRateHz).toBeGreaterThanOrEqual(40);
-	expect(result.previewCallbacks).toBeGreaterThan(0);
+	expect(result.previewCallbacks).toBeGreaterThanOrEqual(0);
 	expect(result.previewCallbacks).toBeLessThan(result.rawPointerMoves);
 	expect(result.previewCallbacks).toBeLessThanOrEqual(result.renderedFrames + 2);
-	// The discrete release commit may follow the final coalesced preview in one frame.
 	expect(result.maxParentCommitsPerFrame, JSON.stringify(result)).toBeLessThanOrEqual(2);
-	expect(result.multiCommitFrames.length).toBeLessThanOrEqual(1);
+	for (const interval of result.previewIntervals) expect(interval).toBeGreaterThanOrEqual(14);
 	for (const [, commitCount] of result.multiCommitFrames) expect(commitCount).toBe(2);
 	expect(result.parentCommits).toBeLessThanOrEqual(result.previewCallbacks + 1);
 	expect(result.commitCallbacks).toBe(1);
@@ -195,9 +200,7 @@ async function captureNextPointerId(page: Page): Promise<void> {
 }
 
 async function readPointerId(page: Page): Promise<number> {
-	const pointerId = await page.evaluate(
-		() => (window as unknown as SliderAuditWindow).__gatuSliderPointerId,
-	);
+	const pointerId = await page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPointerId);
 	if (pointerId === undefined) throw new Error("Slider pointer id was not captured");
 	return pointerId;
 }
@@ -210,7 +213,7 @@ async function dispatchPointerMoves(
 	await page.evaluate(
 		({ activePointerId, movePoints }) => {
 			for (const point of movePoints) {
-				document.dispatchEvent(
+				document.querySelector("[data-trade-slider-control]")?.dispatchEvent(
 					new PointerEvent("pointermove", {
 						bubbles: true,
 						buttons: 1,
@@ -247,7 +250,7 @@ async function dispatchPointerMovesByFrame(
 				return { x: startX + (endX - startX) * (index / totalMoves), y };
 			});
 			for (const point of points) {
-				document.dispatchEvent(
+				document.querySelector("[data-trade-slider-control]")?.dispatchEvent(
 					new PointerEvent("pointermove", {
 						bubbles: true,
 						buttons: 1,
@@ -279,3 +282,90 @@ async function dispatchPointer(
 		y,
 	});
 }
+
+for (const width of [390, 1000, 1001, 1333, 1920]) {
+	for (const theme of ["dark", "light"]) {
+		test(`retains readable slider geometry at ${width}px in ${theme}`, async ({ page }, testInfo) => {
+			await page.setViewportSize({ width, height: 950 });
+			await page.goto("/trade-size-slider-performance.html?gallery=1");
+			await page.evaluate((theme) => document.documentElement.classList.toggle("dark", theme === "dark"), theme);
+			await expect(page.locator("[data-gallery]")).toBeVisible();
+			const geometry = await page.locator("[data-trade-slider-control]").evaluateAll((controls) =>
+				controls.map((control) => {
+					const thumb = control.querySelector("[data-trade-slider-thumb]") as HTMLElement;
+					const input = thumb.querySelector("input")!;
+					const rect = control.getBoundingClientRect();
+					const thumbRect = thumb.getBoundingClientRect();
+					return {
+						height: rect.height,
+						track: control.firstElementChild!.getBoundingClientRect().height,
+						thumb: thumbRect.width,
+						inputOpacity: getComputedStyle(input).opacity,
+						contained: thumbRect.left >= rect.left - 1 && thumbRect.right <= rect.right + 1,
+						ticks: control.querySelectorAll("[data-percent]").length,
+					};
+				}),
+			);
+			expect(geometry).toHaveLength(4);
+			for (const item of geometry)
+				expect(item).toMatchObject({ height: 33, track: 8, thumb: 18, inputOpacity: "0", contained: true });
+			expect(geometry.map((item) => item.ticks)).toEqual([5, 0, 5, 5]);
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+			const leverage = page.getByRole("slider", { name: "Leverage", exact: true });
+			await leverage.press("End");
+			await expect(leverage).toHaveValue("10");
+			await leverage.press("Home");
+			await expect(leverage).toHaveValue("1");
+			await page.screenshot({ path: testInfo.outputPath(`sliders-${width}-${theme}.png`) });
+		});
+	}
+}
+
+test("paints a rapid burst without a business preview and flushes the last value on release", async ({ page }) => {
+	const geometry = await getControlGeometry(page);
+	const session = await page.context().newCDPSession(page);
+	const y = geometry.top + geometry.height / 2;
+	await resetAudit(page);
+	await captureNextPointerId(page);
+	await dispatchPointer(session, "mousePressed", percentX(geometry, 25), y, 1);
+	const pointerId = await readPointerId(page);
+	const result = await page.evaluate(
+		async ({ pointerId, x, y }) => {
+			const control = document.querySelector("[data-trade-slider-control]")!;
+			const audit = (window as unknown as SliderAuditWindow).__gatuSliderPerf;
+			for (let i = 0; i < 100; i++)
+				control.dispatchEvent(
+					new PointerEvent("pointermove", {
+						bubbles: true,
+						pointerId,
+						pointerType: "mouse",
+						isPrimary: true,
+						buttons: 1,
+						clientX: x,
+						clientY: y,
+					}),
+				);
+			const before = audit.snapshot();
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			const transform = (control.querySelector("[data-trade-slider-thumb]") as HTMLElement).style.transform;
+			control.dispatchEvent(
+				new PointerEvent("pointerup", {
+					bubbles: true,
+					pointerId,
+					pointerType: "mouse",
+					isPrimary: true,
+					buttons: 0,
+					clientX: x,
+					clientY: y,
+				}),
+			);
+			return { before, transform };
+		},
+		{ pointerId, x: percentX(geometry, 63), y },
+	);
+	expect(result.before.previewCallbacks).toBe(0);
+	expect(result.transform).toContain("translate3d(");
+	await dispatchPointer(session, "mouseReleased", percentX(geometry, 63), y, 0);
+	expect(await readValue(page)).toBe(63);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});

@@ -7,12 +7,11 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-	Slider,
 	Toggle,
 } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
-import { useReducer, useState } from "react";
+import { useId, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
@@ -55,44 +54,33 @@ export function GlobalSettingsModal() {
 	const confirmationIdentity = { owner: clientKey, env };
 	const confirmationPreference = readPositionMarketCloseConfirmationPreference(confirmationIdentity);
 
+	const slippageRangeId = useId();
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
-	const [localSlippageSlider, setLocalSlippageSlider] = useState<number | null>(null);
-	const slippageSliderValue = localSlippageSlider ?? slippagePercent;
-	const slippageInputValue = localSlippageInput ?? String(slippageSliderValue);
+	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
+	const parsedSlippage = Number(slippageInputValue);
+	const isSlippageValid =
+		Number.isFinite(parsedSlippage) &&
+		parsedSlippage >= MARKET_ORDER_SLIPPAGE_MIN_PERCENT &&
+		parsedSlippage <= MARKET_ORDER_SLIPPAGE_MAX_PERCENT;
+	const hasSlippageChange = localSlippageInput !== null && parsedSlippage !== slippagePercent;
 
 	function handleSlippageInputChange(event: ChangeEvent<HTMLInputElement>) {
-		const nextValue = event.target.value;
-		setLocalSlippageInput(nextValue);
-		if (nextValue.trim() === "") return;
-		const parsed = Number(nextValue);
-		if (!Number.isFinite(parsed) || parsed < MARKET_ORDER_SLIPPAGE_MIN_PERCENT) return;
-		const committed = setMarketOrderSlippagePercent(parsed);
-		if (committed !== parsed) setLocalSlippageInput(String(committed));
+		setLocalSlippageInput(event.target.value);
 	}
 
-	function handleSlippageInputBlur() {
-		if (localSlippageInput !== null && localSlippageInput.trim() !== "") {
-			const parsed = Number(localSlippageInput);
-			if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
-		}
+	function handleSlippageConfirm() {
+		if (!open || !isSlippageValid || !hasSlippageChange) return;
+		setMarketOrderSlippagePercent(parsedSlippage);
 		setLocalSlippageInput(null);
 	}
 
-	function handleSlippageSliderChange(value: number | readonly number[]) {
-		if (typeof value !== "number") return;
-		setLocalSlippageSlider(value);
-	}
-
-	function handleSlippageSliderCommit(value: number | readonly number[]) {
-		if (typeof value !== "number") return;
-		setLocalSlippageSlider(null);
-		if (value !== slippagePercent) setMarketOrderSlippagePercent(value);
+	function handleSlippageCancel() {
+		setLocalSlippageInput(null);
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (nextOpen) return;
 		setLocalSlippageInput(null);
-		setLocalSlippageSlider(null);
 		close();
 	}
 
@@ -128,34 +116,37 @@ export function GlobalSettingsModal() {
 									<NumberInput
 										value={slippageInputValue}
 										onChange={handleSlippageInputChange}
-										onBlur={handleSlippageInputBlur}
 										min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 										max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 										maxAllowedDecimals={2}
 										inputSize="sm"
 										mobileSafe
 										aria-label={t`Slippage tolerance`}
+										aria-describedby={slippageRangeId}
+										aria-invalid={!isSlippageValid || undefined}
 										className="w-16 text-right tabular-nums max-[1000px]:h-8"
 									/>
 									<span className="text-xs text-fg-muted">%</span>
 								</div>
 							</div>
-							<Slider
-								label={t`Slippage tolerance`}
-								labelHidden
-								getAriaValueText={(_formattedValue, value) => `${value}%`}
-								value={slippageSliderValue}
-								onValueChange={handleSlippageSliderChange}
-								onValueCommitted={handleSlippageSliderCommit}
-								onPointerCancel={() => setLocalSlippageSlider(null)}
-								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
-								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
-								step={0.1}
-								thumbSize="sm"
-							/>
-							<div className="flex items-center justify-between text-2xs tabular-nums text-fg-muted">
-								<span>{MARKET_ORDER_SLIPPAGE_MIN_PERCENT}%</span>
-								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
+							<div className="flex items-center justify-between gap-3">
+								<span id={slippageRangeId} className="text-2xs tabular-nums text-fg-muted">
+									{MARKET_ORDER_SLIPPAGE_MIN_PERCENT}% – {MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%
+								</span>
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										intent="neutral"
+										size="xs"
+										disabled={localSlippageInput === null}
+										onClick={handleSlippageCancel}
+									>
+										{t`Cancel`}
+									</Button>
+									<Button size="xs" disabled={!isSlippageValid || !hasSlippageChange} onClick={handleSlippageConfirm}>
+										{t`Confirm`}
+									</Button>
+								</div>
 							</div>
 						</div>
 						<SettingRow label={t`Order confirmation`} hint={t`Review side, size and price before each order is sent.`}>

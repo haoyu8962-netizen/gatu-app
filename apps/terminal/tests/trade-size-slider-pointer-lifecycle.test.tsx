@@ -1,505 +1,268 @@
 /** @vitest-environment jsdom */
 
-import { act, type ComponentProps, useState } from "react";
+import { DirectionProvider } from "@base-ui/react/direction-provider";
+import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
+import { TradeSlider } from "@/components/trade/components/trade-slider";
 
-type CommitHandler = ComponentProps<typeof TradeSizeSlider>["onPercentCommit"];
+type Props = ComponentProps<typeof TradeSlider>;
 
-interface FixtureProps {
-	initialValue?: number;
-	onPercentChange: (value: number) => void;
-	onPercentCancel: (value: number) => void;
-	onPercentCommit: CommitHandler;
-}
-
-function SliderFixture({ initialValue = 25, onPercentChange, onPercentCancel, onPercentCommit }: FixtureProps) {
-	const [value, setValue] = useState(initialValue);
-	const [disabled, setDisabled] = useState(false);
-	const [interactionIdentity, setInteractionIdentity] = useState("account-a:BTC");
-
-	function handlePercentChange(nextValue: number) {
-		if (disabled) return;
-		onPercentChange(nextValue);
-		setValue(nextValue);
-	}
-
-	function handlePercentCancel(startValue: number) {
-		onPercentCancel(startValue);
-		setValue(startValue);
-	}
-
-	function handlePercentCommit(
-		nextValue: number,
-		details: Parameters<CommitHandler>[1],
-	) {
-		onPercentCommit(nextValue, details);
-		setValue(nextValue);
-	}
-
-	return (
-		<>
-			<TradeSizeSlider
-				value={value}
-				interactionIdentity={interactionIdentity}
-				onPercentChange={handlePercentChange}
-				onPercentCancel={handlePercentCancel}
-				onPercentCommit={handlePercentCommit}
-				ariaLabel="Size percentage"
-				disabled={disabled}
-			/>
-			<button type="button" data-testid="toggle-disabled" onClick={() => setDisabled((current) => !current)}>
-				Toggle disabled
-			</button>
-			<button type="button" data-testid="external-value" onClick={() => setValue(50)}>
-				Set 50
-			</button>
-			<button type="button" data-testid="switch-identity" onClick={() => setInteractionIdentity("account-b:BTC")}>
-				Switch identity
-			</button>
-			<output data-testid="parent-value">{value}</output>
-		</>
-	);
-}
-
-interface PointerEventOptions {
-	buttons?: number;
-	clientX: number;
-	isPrimary?: boolean;
-	pointerId?: number;
-}
-
-function createPointerEvent(type: string, options: PointerEventOptions): MouseEvent {
-	const event = new MouseEvent(type, {
-		bubbles: true,
-		button: 0,
-		buttons: options.buttons ?? 0,
-		clientX: options.clientX,
-	});
+function pointer(type: string, clientX: number, pointerId = 1): MouseEvent {
+	const event = new MouseEvent(type, { bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1, clientX });
 	Object.defineProperties(event, {
-		isPrimary: { value: options.isPrimary ?? true },
-		pointerId: { value: options.pointerId ?? 1 },
+		pointerId: { value: pointerId },
 		pointerType: { value: "mouse" },
+		isPrimary: { value: true },
 	});
 	return event;
 }
 
-function createRect(left: number, width: number, height: number): DOMRect {
-	return {
-		bottom: height,
-		height,
-		left,
-		right: left + width,
-		top: 0,
-		width,
-		x: left,
-		y: 0,
-		toJSON: () => ({}),
-	} as DOMRect;
-}
-
-describe("TradeSizeSlider pointer lifecycle", () => {
+describe("TradeSlider lifecycle isolation", () => {
 	let container: HTMLDivElement;
 	let root: Root;
-	let pointerCaptureOwners: Map<number, HTMLElement>;
-	let pointerCaptureDescriptors: Record<string, PropertyDescriptor | undefined>;
-	let frameCallbacks: Map<number, FrameRequestCallback>;
-	let nextFrameId: number;
-	let rootMounted: boolean;
+	let mounted: boolean;
+	let props: Props;
+	let direction: "ltr" | "rtl";
+	let frames: Map<number, FrameRequestCallback>;
+	let frameId: number;
+	let captures: Set<number>;
+	let resizeCallbacks: ResizeObserverCallback[];
+	let observerDisconnect: () => void;
+	let notifications: string[];
 
 	beforeEach(() => {
+		vi.useFakeTimers();
+		frames = new Map();
+		frameId = 0;
+		captures = new Set();
+		resizeCallbacks = [];
+		observerDisconnect = vi.fn();
+		notifications = [];
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor(callback: ResizeObserverCallback) {
+					resizeCallbacks.push(callback);
+				}
+				observe() {}
+				unobserve() {}
+				disconnect() {
+					observerDisconnect();
+				}
+			},
+		);
+		vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+			const id = ++frameId;
+			frames.set(id, callback);
+			return id;
+		});
+		vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
-		rootMounted = true;
-		pointerCaptureOwners = new Map();
-		frameCallbacks = new Map();
-		nextFrameId = 1;
-		pointerCaptureDescriptors = Object.fromEntries(
-			["setPointerCapture", "hasPointerCapture", "releasePointerCapture"].map((name) => [
-				name,
-				Object.getOwnPropertyDescriptor(HTMLElement.prototype, name),
-			]),
-		);
-
-		Object.defineProperties(HTMLElement.prototype, {
-			setPointerCapture: {
-				configurable: true,
-				value(this: HTMLElement, pointerId: number) {
-					const previousOwner = pointerCaptureOwners.get(pointerId);
-					if (previousOwner && previousOwner !== this) {
-						pointerCaptureOwners.delete(pointerId);
-						previousOwner.dispatchEvent(
-							createPointerEvent("lostpointercapture", { clientX: 0, pointerId }),
-						);
-					}
-					pointerCaptureOwners.set(pointerId, this);
-				},
-			},
-			hasPointerCapture: {
-				configurable: true,
-				value(this: HTMLElement, pointerId: number) {
-					return pointerCaptureOwners.get(pointerId) === this;
-				},
-			},
-			releasePointerCapture: {
-				configurable: true,
-				value(this: HTMLElement, pointerId: number) {
-					if (pointerCaptureOwners.get(pointerId) !== this) return;
-					pointerCaptureOwners.delete(pointerId);
-					this.dispatchEvent(createPointerEvent("lostpointercapture", { clientX: 0, pointerId }));
-				},
-			},
-		});
-		vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-			const frameId = nextFrameId;
-			nextFrameId += 1;
-			frameCallbacks.set(frameId, callback);
-			return frameId;
-		});
-		vi.stubGlobal("cancelAnimationFrame", (frameId: number) => {
-			frameCallbacks.delete(frameId);
-		});
+		mounted = true;
+		direction = "ltr";
+		props = {
+			value: 25,
+			min: 0,
+			max: 100,
+			ariaLabel: "Size (%)",
+			interactionIdentity: "mainnet:owner-a:HYPE:buy:base",
+			onPreview: vi.fn(() => notifications.push("preview")),
+			onCommit: vi.fn(() => notifications.push("commit")),
+			onCancel: vi.fn(() => notifications.push("cancel")),
+			onInteractionEnd: vi.fn(() => notifications.push("end")),
+			onInteractionStart: vi.fn(),
+		};
 	});
 
 	afterEach(() => {
-		if (rootMounted) act(() => root.unmount());
+		if (mounted) act(() => root.unmount());
 		container.remove();
-		for (const [name, descriptor] of Object.entries(pointerCaptureDescriptors)) {
-			if (descriptor) Object.defineProperty(HTMLElement.prototype, name, descriptor);
-			else Reflect.deleteProperty(HTMLElement.prototype, name);
-		}
+		vi.useRealTimers();
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
 
-	function flushAnimationFrame() {
-		const callbacks = [...frameCallbacks.values()];
-		frameCallbacks.clear();
-		act(() => {
-			for (const callback of callbacks) callback(performance.now());
-		});
-	}
-
-	function renderSlider(initialValue = 25) {
-		const onPercentChange = vi.fn();
-		const onPercentCancel = vi.fn();
-		const onPercentCommit = vi.fn<CommitHandler>();
-		act(() => {
+	function render(overrides: Partial<Props> = {}, nextDirection = direction) {
+		props = { ...props, ...overrides };
+		direction = nextDirection;
+		act(() =>
 			root.render(
-				<SliderFixture
-					initialValue={initialValue}
-					onPercentChange={onPercentChange}
-					onPercentCancel={onPercentCancel}
-					onPercentCommit={onPercentCommit}
-				/>,
-			);
-		});
-
+				<DirectionProvider direction={direction}>
+					<TradeSlider {...props} />
+				</DirectionProvider>,
+			),
+		);
+		const control = container.querySelector<HTMLDivElement>("[data-trade-slider-control]");
+		const thumb = container.querySelector<HTMLDivElement>("[data-trade-slider-thumb]");
 		const input = container.querySelector<HTMLInputElement>('input[type="range"]');
-		const thumb = input?.parentElement;
-		const control = thumb?.parentElement;
-		const sliderRoot = container.querySelector<HTMLElement>('[role="group"]');
-		const parentValue = container.querySelector<HTMLOutputElement>('[data-testid="parent-value"]');
-		const externalValueButton = container.querySelector<HTMLButtonElement>('[data-testid="external-value"]');
-		const switchIdentityButton = container.querySelector<HTMLButtonElement>('[data-testid="switch-identity"]');
-		const toggleDisabledButton = container.querySelector<HTMLButtonElement>('[data-testid="toggle-disabled"]');
-		if (
-			!input ||
-			!thumb ||
-			!control ||
-			!sliderRoot ||
-			!parentValue ||
-			!externalValueButton ||
-			!switchIdentityButton ||
-			!toggleDisabledButton
-		) {
-			throw new Error("Trade size slider DOM is incomplete");
+		if (!control || !thumb || !input) throw new Error("Expected native slider controls");
+		Object.defineProperties(control, {
+			getBoundingClientRect: {
+				configurable: true,
+				value: () => ({ left: 10, width: 100, height: 33, top: 0, bottom: 33, right: 110, x: 10, y: 0 }),
+			},
+			setPointerCapture: { configurable: true, value: (id: number) => captures.add(id) },
+			hasPointerCapture: { configurable: true, value: (id: number) => captures.has(id) },
+			releasePointerCapture: {
+				configurable: true,
+				value: (id: number) => {
+					if (!captures.delete(id)) return;
+					control.dispatchEvent(pointer("lostpointercapture", 0, id));
+				},
+			},
+		});
+		return { control, thumb, input };
+	}
+
+	function advance(ms: number) {
+		act(() => vi.advanceTimersByTime(ms));
+	}
+
+	function drag(publish = false) {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 90)));
+		if (publish) {
+			advance(15);
+			expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
 		}
-
-		Object.defineProperty(control, "getBoundingClientRect", {
-			configurable: true,
-			value: () => createRect(10, 100, 20),
-		});
-		Object.defineProperty(thumb, "getBoundingClientRect", {
-			configurable: true,
-			value: () => createRect(2 + Number(input.value), 16, 16),
-		});
-
-		return {
-			control,
-			externalValueButton,
-			input,
-			onPercentCancel,
-			onPercentChange,
-			onPercentCommit,
-			parentValue,
-			sliderRoot,
-			switchIdentityButton,
-			thumb,
-			toggleDisabledButton,
-		};
+		return slider;
 	}
 
-	function startDrag(slider: ReturnType<typeof renderSlider>, targetValue = 80) {
-		act(() => slider.input.focus());
-		act(() => {
-			slider.thumb.dispatchEvent(
-				createPointerEvent("pointerdown", {
-					buttons: 1,
-					clientX: 10 + Number(slider.input.value),
-				}),
-			);
-		});
-		act(() => {
-			document.dispatchEvent(
-				createPointerEvent("pointermove", { buttons: 1, clientX: 10 + targetValue }),
-			);
-		});
-
-		expect(slider.parentValue.value).toBe("25");
-		expect(slider.input.value).toBe(String(targetValue));
-		expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(true);
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-		flushAnimationFrame();
-		expect(slider.onPercentChange).toHaveBeenLastCalledWith(targetValue);
-		expect(slider.parentValue.value).toBe(String(targetValue));
+	function expectEnded(control: HTMLElement, previews: number) {
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+		expect(control.hasAttribute("data-dragging")).toBe(false);
+		expect(captures.size).toBe(0);
+		expect(frames.size).toBe(0);
+		advance(100);
+		act(() => document.dispatchEvent(pointer("pointerup", 110)));
+		expect(props.onPreview).toHaveBeenCalledTimes(previews);
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(props.onCancel).toHaveBeenCalledTimes(1);
+		expect(props.onInteractionEnd).toHaveBeenCalledTimes(1);
+		expect(notifications.slice(-2)).toEqual(["cancel", "end"]);
 	}
 
-	it.each(["pointercancel", "lostpointercapture", "hidden document"])(
-		"rolls back an active preview without committing on %s",
-		(boundary) => {
-			const slider = renderSlider();
-			startDrag(slider);
-
-			if (boundary === "pointercancel") {
-				act(() =>
-					document.dispatchEvent(createPointerEvent("pointercancel", { clientX: 90, pointerId: 1 })),
-				);
-			} else if (boundary === "lostpointercapture") {
-				act(() =>
-					slider.control.dispatchEvent(
-						createPointerEvent("lostpointercapture", { clientX: 90, pointerId: 1 }),
-					),
-				);
-			} else {
-				vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+	it.each([
+		"pointercancel",
+		"lostpointercapture",
+		"window blur",
+		"input blur",
+		"hidden document",
+		"window resize",
+		"Escape",
+	])("cancels an unpublished preview on %s and leaves no asynchronous writes", (boundary) => {
+		const slider = drag();
+		act(() => {
+			if (boundary === "pointercancel") document.dispatchEvent(pointer("pointercancel", 90));
+			else if (boundary === "lostpointercapture") slider.control.dispatchEvent(pointer("lostpointercapture", 90));
+			else if (boundary === "window blur") window.dispatchEvent(new Event("blur"));
+			else if (boundary === "input blur") slider.input.blur();
+			else if (boundary === "window resize") window.dispatchEvent(new Event("resize"));
+			else if (boundary === "Escape")
+				slider.input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+			else {
 				vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
-				act(() => document.dispatchEvent(new Event("visibilitychange")));
+				document.dispatchEvent(new Event("visibilitychange"));
 			}
-
-			expect(slider.onPercentCommit).not.toHaveBeenCalled();
-			expect(slider.onPercentCancel).toHaveBeenCalledOnce();
-			expect(slider.onPercentCancel).toHaveBeenCalledWith(25);
-			expect(slider.onPercentChange).toHaveBeenLastCalledWith(80);
-			expect(slider.parentValue.value).toBe("25");
-			expect(slider.input.value).toBe("25");
-			expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(false);
-		},
-	);
-
-	it("commits a completed drag synchronously and exactly once", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-
-		act(() =>
-			document.dispatchEvent(
-				createPointerEvent("pointerup", { buttons: 0, clientX: 90, pointerId: 1 }),
-			),
-		);
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(80, expect.objectContaining({ reason: "drag" }));
-		expect(slider.parentValue.value).toBe("80");
-		expect(slider.input.value).toBe("80");
-		expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(false);
-	});
-
-	it("clears Base UI dragging state when disabled during an active drag", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-
-		act(() => slider.toggleDisabledButton.click());
-
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-		expect(slider.onPercentCancel).toHaveBeenCalledOnce();
-		expect(slider.onPercentCancel).toHaveBeenCalledWith(25);
-		expect(slider.onPercentChange).toHaveBeenLastCalledWith(80);
-		expect(slider.parentValue.value).toBe("25");
+		});
 		expect(slider.input.value).toBe("25");
-		expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(false);
-
-		act(() => slider.toggleDisabledButton.click());
-		startDrag(slider, 60);
-		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 70, pointerId: 1 })));
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(60, expect.objectContaining({ reason: "drag" }));
-		expect(slider.parentValue.value).toBe("60");
-		expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(false);
+		expectEnded(slider.control, 0);
 	});
 
-	it("cancels an active drag when the interaction identity changes", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-
-		act(() => slider.switchIdentityButton.click());
-
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-		expect(slider.onPercentCancel).toHaveBeenCalledWith(25);
-		expect(slider.parentValue.value).toBe("25");
-		expect(slider.sliderRoot.hasAttribute("data-dragging")).toBe(false);
+	it("restores the starting value and cancels exactly once after publishing a preview", () => {
+		const slider = drag(true);
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 100)));
+		act(() => document.dispatchEvent(pointer("pointercancel", 100)));
+		expect(slider.input.value).toBe("25");
+		expectEnded(slider.control, 1);
 	});
 
-	it("keeps focus and values unchanged when the thumb is pressed without moving", () => {
-		const slider = renderSlider();
-		act(() => slider.input.focus());
-		const originalInput = slider.input;
-
-		act(() => {
-			slider.thumb.dispatchEvent(createPointerEvent("pointerdown", { buttons: 1, clientX: 35 }));
-			document.dispatchEvent(createPointerEvent("pointerup", { clientX: 35 }));
-		});
-
-		expect(slider.onPercentChange).not.toHaveBeenCalled();
-		expect(slider.onPercentCancel).not.toHaveBeenCalled();
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-		expect(slider.parentValue.value).toBe("25");
-		expect(slider.input).toBe(originalInput);
-		expect(document.activeElement).toBe(originalInput);
+	it.each([
+		{ name: "disabled", overrides: { disabled: true } },
+		{ name: "identity", overrides: { interactionIdentity: "mainnet:owner-b:HYPE:buy:base", value: 40 } },
+		{ name: "minimum", overrides: { min: 10 } },
+		{ name: "maximum", overrides: { max: 50 } },
+	])("cancels when $name changes without writing a stale preview", ({ overrides }) => {
+		const slider = drag();
+		render(overrides);
+		expect(slider.input.value).toBe(String(overrides.value ?? 25));
+		expectEnded(slider.control, 0);
 	});
 
-	it("ignores Base UI's previous commit after an external value update and a stationary press", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-		act(() =>
-			document.dispatchEvent(createPointerEvent("pointerup", { clientX: 90, pointerId: 1 })),
-		);
-		act(() => slider.externalValueButton.click());
-		slider.onPercentChange.mockClear();
-		slider.onPercentCommit.mockClear();
-		act(() => slider.input.focus());
-		const originalInput = slider.input;
-
-		act(() => {
-			slider.thumb.dispatchEvent(createPointerEvent("pointerdown", { buttons: 1, clientX: 60 }));
-			document.dispatchEvent(createPointerEvent("pointerup", { clientX: 60 }));
-		});
-
-		expect(slider.onPercentChange).not.toHaveBeenCalled();
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-		expect(slider.parentValue.value).toBe("50");
-		expect(slider.input.value).toBe("50");
-		expect(slider.input).toBe(originalInput);
-		expect(document.activeElement).toBe(originalInput);
+	it("cancels on a direction change and paints the current logical value", () => {
+		const slider = drag();
+		render({}, "rtl");
+		expect(slider.input.value).toBe("25");
+		expect(slider.control.querySelector<HTMLElement>("div[style]")?.style.transformOrigin).toBe("right center");
+		expectEnded(slider.control, 0);
 	});
 
-	it("commits the local draft when movement returns to the controlled start value within one frame", () => {
-		const slider = renderSlider(30);
-		act(() => slider.input.focus());
-		act(() =>
-			slider.thumb.dispatchEvent(createPointerEvent("pointerdown", { buttons: 1, clientX: 40 })),
-		);
-		act(() =>
-			document.dispatchEvent(createPointerEvent("pointermove", { buttons: 1, clientX: 45 })),
-		);
-		expect(slider.input.value).toBe("35");
-		act(() =>
-			document.dispatchEvent(createPointerEvent("pointermove", { buttons: 1, clientX: 40 })),
-		);
-		expect(slider.input.value).toBe("30");
-
-		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 40 })));
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(30, expect.objectContaining({ reason: "drag" }));
-		expect(slider.onPercentChange).not.toHaveBeenCalled();
-		expect(slider.parentValue.value).toBe("30");
-		expect(frameCallbacks).toHaveLength(0);
-	});
-
-	it("rejects a second pointer without replacing or ending the primary session", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-
-		act(() => {
-			slider.thumb.dispatchEvent(
-				createPointerEvent("pointerdown", {
-					buttons: 1,
-					clientX: 30,
-					isPrimary: false,
-					pointerId: 2,
-				}),
-			);
-			document.dispatchEvent(
-				createPointerEvent("pointermove", {
-					buttons: 1,
-					clientX: 20,
-					isPrimary: false,
-					pointerId: 2,
-				}),
-			);
-			document.dispatchEvent(
-				createPointerEvent("pointerup", { clientX: 20, isPrimary: false, pointerId: 2 }),
-			);
-		});
-
-		expect(pointerCaptureOwners.has(2)).toBe(false);
-		expect(slider.input.value).toBe("80");
-		expect(slider.onPercentCommit).not.toHaveBeenCalled();
-
-		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 90, pointerId: 1 })));
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(80, expect.objectContaining({ reason: "drag" }));
-	});
-
-	it("does not let a later canceled interaction erase an already completed commit", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 90, pointerId: 1 })));
-
-		act(() =>
-			slider.thumb.dispatchEvent(
-				createPointerEvent("pointerdown", { buttons: 1, clientX: 90, pointerId: 2 }),
-			),
-		);
-		act(() =>
-			document.dispatchEvent(
-				createPointerEvent("pointermove", { buttons: 1, clientX: 30, pointerId: 2 }),
-			),
-		);
-		act(() =>
-			document.dispatchEvent(createPointerEvent("pointercancel", { clientX: 30, pointerId: 2 })),
-		);
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(80, expect.objectContaining({ reason: "drag" }));
-		expect(slider.parentValue.value).toBe("80");
-		expect(slider.input.value).toBe("80");
-	});
-
-	it("does not leave commit work behind when unmounted after release", () => {
-		const slider = renderSlider();
-		startDrag(slider);
-		act(() => document.dispatchEvent(createPointerEvent("pointerup", { clientX: 90, pointerId: 1 })));
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
+	it("cancels an active session on unmount and ignores the later physical release", () => {
+		const slider = drag(true);
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 100)));
 		act(() => root.unmount());
-		rootMounted = false;
-
-		expect(slider.onPercentCommit).toHaveBeenCalledTimes(1);
-		expect(slider.onPercentCommit).toHaveBeenCalledWith(80, expect.objectContaining({ reason: "drag" }));
-		expect(frameCallbacks).toHaveLength(0);
+		mounted = false;
+		expect(slider.control.isConnected).toBe(false);
+		expect(props.onInteractionEnd).toHaveBeenCalledTimes(1);
+		expect(notifications.slice(-2)).toEqual(["cancel", "end"]);
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+		expect(frames.size).toBe(0);
+		advance(100);
+		act(() => document.dispatchEvent(pointer("pointerup", 110)));
+		expect(props.onPreview).toHaveBeenCalledTimes(1);
+		expect(props.onCommit).not.toHaveBeenCalled();
 	});
 
-	it("keeps Base UI Control as the sole pointer-capture owner", () => {
-		const slider = renderSlider();
+	it("ignores unchanged observed width and cancels when the actual control width changes", () => {
+		const slider = drag();
+		const notify = resizeCallbacks[0];
+		if (!notify) throw new Error("Expected a control ResizeObserver");
+		act(() => notify([{ contentRect: { width: 100 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).not.toHaveBeenCalled();
+		act(() => notify([{ contentRect: { width: 80 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expectEnded(slider.control, 0);
+		expect(observerDisconnect).toHaveBeenCalledTimes(1);
+		act(() => notify([{ contentRect: { width: 60 } } as ResizeObserverEntry], {} as ResizeObserver));
+		expect(props.onCancel).toHaveBeenCalledTimes(1);
+	});
 
-		act(() =>
-			slider.thumb.dispatchEvent(createPointerEvent("pointerdown", { buttons: 1, clientX: 35 })),
-		);
+	it("uses the latest callback after a same-identity rerender", () => {
+		const slider = drag();
+		const previousPreview = props.onPreview;
+		const latestPreview = vi.fn();
+		render({ onPreview: latestPreview });
+		advance(15);
+		expect(previousPreview).not.toHaveBeenCalled();
+		expect(latestPreview).toHaveBeenCalledExactlyOnceWith(80);
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(props.onCommit).toHaveBeenCalledTimes(1);
+		expect(slider.control.hasAttribute("data-dragging")).toBe(false);
+	});
 
-		expect(pointerCaptureOwners.get(1)).toBe(slider.control);
+	it("can start a fresh interaction after a disabled session recovers", () => {
+		const slider = drag();
+		render({ disabled: true });
+		render({ disabled: false });
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35, 2)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 70, 2)));
+		act(() => document.dispatchEvent(pointer("pointerup", 70, 2)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(60, expect.objectContaining({ reason: "drag" }));
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+	});
+
+	it("maps an RTL pointer position to the logical value and keeps capture on the control", () => {
+		const slider = render({}, "rtl");
+		act(() => slider.control.dispatchEvent(pointer("pointerdown", 30)));
+		expect(captures.has(1)).toBe(true);
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+		act(() => document.dispatchEvent(pointer("pointerup", 30)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "track-press" }));
+		expect(captures.size).toBe(0);
 	});
 });

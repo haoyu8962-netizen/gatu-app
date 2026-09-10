@@ -1,0 +1,128 @@
+# Trading slider interactions
+
+## Scope and reference
+
+The trading quantity and leverage controls share `TradeSlider`, an application-only
+single-thumb control. It uses Pointer Events and a native range input for keyboard
+and assistive technology access. `TradeSizeSlider` and `LeverageSlider` are thin
+business adapters. The shared `@gatu/ui` Slider remains available for other products;
+no new dependency or alternate wallet/trading execution path is introduced.
+
+The reference is the [Hyperliquid trading terminal](https://app.hyperliquid.xyz/trade/HYPE),
+inspected through its authenticated UI and publicly served JavaScript in September
+2026. The inspected slider was custom React code, not evidence of Base UI usage.
+Observed behavior is a comparison baseline, not a public SDK contract.
+
+| Surface | Application behavior |
+| --- | --- |
+| Desktop and mobile order size, including ordinary advanced orders | Integer requested percentages, actual size and percentage derived from quantity precision |
+| Market and limit position close | Shared slider with existing `size`, `percent`, and explicit `max` intents, plus existing amount input and shortcuts |
+| Position TP/SL | Slider and percentage input only while configuring a fixed quantity |
+| Leverage and margin/leverage dialogs | Integer range from 1 to the market maximum; drag previews, release edits pending leverage, Confirm invokes the existing action |
+| Slippage | Numeric draft with explicit Confirm/Cancel; input and blur never persist; existing 0.1–5% bounds and two decimal places remain |
+| Portfolio history cursor | Separate indexed chart navigation; preserve index -1, Home/Escape clearing, and End selecting the latest sample |
+
+The legacy `LeverageControl` remains unused by runtime callers and uses the same
+adapter if rendered. Existing deposit, withdrawal, bridge, staking, and vault forms
+have no quantity slider to migrate. Official repay, chase, and trailing-stop paths
+are comparison inventory only: this work does not add those trading businesses.
+
+## Visual and input contract
+
+- A 33px control contains an 8px track and an 18px thumb. Quantity controls have
+  6px marks at 0/25/50/75/100; leverage has no percentage marks.
+- Reuse `trading-panel-*` tokens in both themes and on both order sides. The
+  44px native input target and thumb remain mounted while values change.
+- Hover and press feedback scale to 1.7 and 2.2 over 200ms. Reduced-motion disables
+  these scale transitions. Thumb geometry and input values do not depend on motion.
+- Pointer position is continuous. Business requests and percentage text are
+  integers. Actual quantity can yield a fractional underlying percentage, displayed
+  as a rounded integer; this presentation never changes an order's size or intent.
+- Horizontal geometry, keyboard arrows, fill origin, and marks follow direction.
+  Arrow keys move one unit, Page keys ten, Home/End select the range endpoints.
+- Retain requested keyboard/native-range intent while focused, independently of
+  actual rounded quantity. An assistive technology range event is an absolute value,
+  never an inferred delta. Blur restores the native value to the actual percentage.
+- Locale/theme changes preserve mounted controls and drafts. Text drafts belong to
+  their interaction identity; changing owner/market/order context clears old drafts.
+
+## Scheduling and cleanup
+
+Pointer movement schedules at most one RAF to paint transforms and marks. It resets
+one **15ms trailing timer** for the business preview. RAF never dispatches financial
+calculations, and the timer never waits for RAF. A continuous stream closer than
+15ms apart may produce no intermediate business previews. Release reads its own
+final coordinate, cancels pending work, and synchronously commits that value once.
+A stationary thumb press does not publish a value or commit.
+
+`onInteractionStart` records the exact business snapshot. `onInteractionEnd` runs
+once after commit/cancel, including stationary release. Trading forms use these
+boundaries to lock submission while a gesture is active, including the interval
+before the first preview. Keyboard and native-range input commit synchronously.
+
+Pointer cancellation, lost capture, window blur, hidden document, resizing,
+unmount, disable, invalid ranges, and changed identity/direction cancel pending
+RAF/timers/listeners. Other pointer IDs cannot replace the active gesture. Callers
+restore the exact starting string/intent only in the same eligible session; an
+unavailable or changed session cannot receive an old snapshot. No synthetic
+pointerup, forced React flush, or duplicate Base UI gesture engine is used.
+
+The official web implementation's missing touch-cancel cleanup and leverage
+minimum positioning were not copied. Its vibration path required a native Android
+Capacitor platform; Android browser emulation still reported platform `web` and no
+vibration calls. This web/PWA implementation adds neither haptics nor a setting for it.
+
+## Quantity and execution boundaries
+
+Quantity arithmetic stays in domain modules and uses Big.js. Multiply the precise
+maximum size by the requested percentage, then round down to `szDecimals`. Generated
+quote amounts and base-to-quote conversions round down to two decimal places. A
+100% selection must never round a generated amount above the available maximum.
+Follow the [SDK-facing tick and lot-size rules](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size).
+
+The official HYPE sample had maximum 0.69 at price 84.292: requesting 35% produced
+0.24 (display 35%); 63% produced 0.43 (display 62%); 1% produced zero; 100% produced
+0.69. These are precision examples, not current market data or pricing assumptions.
+
+TP/SL uses the frozen, reviewed position snapshot as denominator. Configured 100%
+is an explicit fixed size; whole-position protection still passes `null` and
+produces protocol size `"0"`. Configured 0% or a rounded zero is invalid and cannot
+remove protection or silently become whole-position protection. Preserve existing
+PnL/ROE precedence, freshness and scope checks, operation locks, REST/SDK boundary
+revalidation, cancel/replace ordering, and uncertain-result handling.
+
+Position close preserves requested intent separately from its actual percentage.
+A manually entered size whose actual percentage displays 100 must not become an
+explicit Max selection. No slider can submit, sign, approve, change account mode,
+or save leverage automatically. Those actions retain their existing confirmation
+and identity checks.
+
+## Implementation practices and verification
+
+Keep gesture geometry and pending work in refs; React owns business drafts and
+submission state. Layout effects synchronize DOM state and lifecycle boundaries,
+not chains of derived financial state. Native input mode remains uncontrolled for
+its lifetime with one DOM synchronization owner. See React's [input guidance](https://react.dev/reference/react-dom/components/input#optimizing-re-rendering-on-every-keystroke)
+and [Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events).
+
+Regression coverage includes:
+
+- Exact 14/15ms preview timing, independent painting, final-coordinate flush,
+  same-frame reversals, multiple pointers, stationary focus, and all cancellation
+  boundaries, including resize and unmount.
+- Low-precision keyboard accumulation and absolute native input after a keyboard
+  draft; invalid ranges, RTL, stable IDs, labels, error descriptions, and integer inputs.
+- Large decimal quantities, quote rounding, spot/perp sizing, fixed TP/SL 100% versus
+  dynamic full-position protection, zero rejection, identity changes, draft recovery,
+  and blocking confirmation during a gesture.
+- Slippage Confirm/Cancel/persistence and unchanged portfolio chart navigation.
+- Real Chromium pointer/touch interactions, 390/1000/1001/1333/1920px layouts in both
+  themes, exact geometry, no horizontal clipping, and the existing all-order-form
+  desktop layout suite.
+
+The browser fixture explicitly scans application CSS and uses the existing separate
+`node_modules/.vite-browser` cache. Its performance attachment records callback
+intervals, parent commits and timing. Bounds validate scheduling and final values;
+they do not establish device-wide latency, mainnet execution, or a measured speedup
+against the old implementation. Wallet/signature/real order actions are tested
+through existing controlled test doubles, without creating live orders.

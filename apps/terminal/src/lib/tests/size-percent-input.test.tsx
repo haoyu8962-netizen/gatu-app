@@ -21,9 +21,9 @@ const MOBILE_SIZE_CONTROL_SOURCE = readFileSync(
 );
 const DESKTOP_PERCENT_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<SizePercentInput[\s\S]*?\/>/)?.[0] ?? "";
 const DESKTOP_SLIDER_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<TradeSizeSlider[\s\S]*?\/>/)?.[0] ?? "";
-const DESKTOP_TICK_USAGE = TRADE_FORM_FIELDS_SOURCE.match(/<SliderTickMarks[\s\S]*?\/>/)?.[0] ?? "";
 
 interface RenderOverrides {
+	interactionIdentity?: string;
 	disabled?: boolean;
 	onPercentChange?: (percent: number) => void;
 	value?: number;
@@ -50,6 +50,7 @@ describe("SizePercentInput", () => {
 			root.render(
 				<SizePercentInput
 					ariaLabel="Size (%)"
+					interactionIdentity={overrides.interactionIdentity}
 					disabled={overrides.disabled ?? false}
 					onPercentChange={overrides.onPercentChange ?? vi.fn()}
 					value={overrides.value ?? 25}
@@ -66,7 +67,8 @@ describe("SizePercentInput", () => {
 		renderInput({ value: 80.7 });
 
 		const input = getPercentInput(container);
-		expect(input.value).toBe("80.7");
+		expect(input.value).toBe("81");
+		expect(input.inputMode).toBe("numeric");
 		expect(input.nextElementSibling?.textContent).toBe("%");
 	});
 
@@ -75,14 +77,26 @@ describe("SizePercentInput", () => {
 		renderInput({ onPercentChange, value: 37.5 });
 
 		const input = getPercentInput(container);
-		expect(input.value).toBe("37.5");
+		expect(input.value).toBe("38");
 
-		changeInput(input, "125.5");
+		changeInput(input, "125");
 		expect(onPercentChange).toHaveBeenLastCalledWith(100);
 		expect(input.value).toBe("100");
 
 		changeInput(input, "0");
 		expect(onPercentChange).toHaveBeenLastCalledWith(0);
+	});
+
+	it("rejects fractional, negative, and non-numeric percentage entries", () => {
+		const onPercentChange = vi.fn();
+		renderInput({ onPercentChange, value: 25 });
+		const input = getPercentInput(container);
+
+		for (const value of ["62.5", "0.1", "-1", "1e2"]) {
+			changeInput(input, value);
+			expect(onPercentChange).not.toHaveBeenCalled();
+			expect(input.value).toBe("25");
+		}
 	});
 
 	it("keeps the typed draft while focused so rounding cannot fight the keystrokes", () => {
@@ -106,9 +120,9 @@ describe("SizePercentInput", () => {
 		act(() => input.focus());
 		changeInput(input, "50");
 
-		rerender({ onPercentChange, value: 49.9 });
+		rerender({ onPercentChange, value: 49.2 });
 		act(() => input.blur());
-		expect(input.value).toBe("49.9");
+		expect(input.value).toBe("49");
 	});
 
 	it("ignores a blank entry instead of applying a zero percent", () => {
@@ -130,6 +144,17 @@ describe("SizePercentInput", () => {
 
 		rerender({ onPercentChange, value: 60 });
 		expect(input.value).toBe("60");
+	});
+
+	it("clears a draft on identity changes without remounting the input", () => {
+		renderInput({ interactionIdentity: "owner:BTC", value: 25 });
+		const input = getPercentInput(container);
+		changeInput(input, "80");
+		rerender({ interactionIdentity: "owner:HYPE", value: 10 });
+		expect(getPercentInput(container)).toBe(input);
+		expect(input.value).toBe("10");
+		rerender({ interactionIdentity: "owner:BTC", value: 25 });
+		expect(input.value).toBe("25");
 	});
 
 	it("disables the field when percent sizing is unavailable", () => {
@@ -161,9 +186,7 @@ describe("size percent input wiring", () => {
 		expect(DESKTOP_SLIDER_USAGE).toContain("value={sliderValue}");
 		expect(DESKTOP_SLIDER_USAGE).toContain("onPercentChange={handleSizePercentApply}");
 		expect(DESKTOP_SLIDER_USAGE).toContain("disabled={isFormDisabled || maxSize <= 0}");
-		expect(DESKTOP_TICK_USAGE).toContain("positions={SIZE_PERCENT_OPTIONS.map((pct)");
-		expect(DESKTOP_TICK_USAGE).toContain("active: sliderValue >= pct");
-		expect(TRADE_FORM_FIELDS_SOURCE.match(/SIZE_PERCENT_OPTIONS\.map/g) ?? []).toHaveLength(1);
+		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("SliderTickMarks");
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("Math.abs(sliderValue - pct)");
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("{pct}%");
 		expect(TRADE_FORM_FIELDS_SOURCE).not.toContain("accentTextClass");

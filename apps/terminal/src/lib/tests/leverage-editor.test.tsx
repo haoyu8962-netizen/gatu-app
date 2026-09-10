@@ -109,18 +109,12 @@ describe("LeverageEditor", () => {
 		expect(onChange).not.toHaveBeenCalled();
 	});
 
-	it("keeps the visual control inset aligned with the thumb radius", () => {
-		renderEditor(vi.fn(), vi.fn(), "sheet");
-
-		expect(sliderHarness.props?.controlClassName).toContain("mx-3");
-		expect(sliderHarness.props?.controlClassName).toContain("w-auto");
-		expect(sliderHarness.props?.trackClassName).not.toContain("mx-");
-
-		renderEditor(vi.fn(), vi.fn(), "modal");
-
-		expect(sliderHarness.props?.controlClassName).toContain("mx-2.5");
-		expect(sliderHarness.props?.controlClassName).toContain("h-8");
-		expect(sliderHarness.props?.trackClassName).not.toContain("mx-");
+	it.each(["sheet", "modal"] as const)("uses the shared geometry without extra stops in %s", (variant) => {
+		renderEditor(vi.fn(), vi.fn(), variant);
+		expect(sliderHarness.props?.controlClassName).toBeUndefined();
+		expect(sliderHarness.props?.trackClassName).toBeUndefined();
+		expect(sliderHarness.props?.thumbClassName).toBeUndefined();
+		expect(container.querySelector("[data-slider-ticks]")).toBeNull();
 	});
 
 	it("does not mount the high leverage warning for an uncommitted drag value", () => {

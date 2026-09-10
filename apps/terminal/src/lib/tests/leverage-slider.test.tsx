@@ -22,6 +22,7 @@ describe("LeverageSlider", () => {
 	let animationFrames: Array<FrameRequestCallback>;
 
 	beforeEach(() => {
+		vi.useFakeTimers();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -37,6 +38,7 @@ describe("LeverageSlider", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.restoreAllMocks();
+		vi.useRealTimers();
 	});
 
 	type RenderOptions = {
@@ -132,7 +134,10 @@ describe("LeverageSlider", () => {
 		expect(getBoundingClientRect).toHaveBeenCalledTimes(1);
 		expect(onChange).not.toHaveBeenCalled();
 
-		act(() => animationFrames.shift()?.(16));
+		act(() => {
+			animationFrames.shift()?.(16);
+			vi.advanceTimersByTime(15);
+		});
 
 		expect(onChange).toHaveBeenCalledTimes(1);
 		expect(onChange).toHaveBeenCalledWith(6);
@@ -174,6 +179,7 @@ describe("LeverageSlider", () => {
 			control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 43 }));
 			control.dispatchEvent(createPointerEvent("pointermove", { clientX: 98 }));
 			animationFrames.shift()?.(16);
+			vi.advanceTimersByTime(15);
 		});
 
 		expect(onChange).toHaveBeenCalledTimes(1);
@@ -203,6 +209,7 @@ describe("LeverageSlider", () => {
 				control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 43 }));
 				control.dispatchEvent(createPointerEvent("pointermove", { clientX: 98 }));
 				animationFrames.shift()?.(16);
+				vi.advanceTimersByTime(15);
 				control.dispatchEvent(createPointerEvent("pointermove", { clientX: 110 }));
 			});
 			expect(onChange).toHaveBeenCalledWith(9);
@@ -304,7 +311,7 @@ describe("LeverageSlider", () => {
 
 		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
 
-		expect(onChange).toHaveBeenCalledWith(6);
+		expect(onChange).not.toHaveBeenCalled();
 		expect(onCommit).toHaveBeenCalledWith(6);
 		expect(input.value).toBe("6");
 	});
@@ -319,36 +326,38 @@ describe("LeverageSlider", () => {
 			input.dispatchEvent(new Event("input", { bubbles: true }));
 		});
 
-		expect(onChange).toHaveBeenCalledWith(7);
+		expect(onChange).not.toHaveBeenCalled();
 		expect(onCommit).toHaveBeenCalledWith(7);
 	});
 
 	it("mirrors pointer geometry and fill origin in RTL", () => {
 		const onChange = vi.fn();
 		const onCommit = vi.fn();
-		const { control, indicator, input, thumb } = renderSlider({
+		const { control, indicator, input, thumb, rerender } = renderSlider({
 			direction: "rtl",
 			onChange,
 			onCommit,
 		});
 
-		expect(thumb.style.left).toBe("100%");
+		expect(input.value).toBe("1");
 		expect(indicator.style.transformOrigin).toBe("right center");
 
 		act(() => {
 			control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 110 }));
 			control.dispatchEvent(createPointerEvent("pointermove", { clientX: 10 }));
 			animationFrames.shift()?.(16);
+			vi.advanceTimersByTime(15);
 		});
 
 		expect(onChange).toHaveBeenCalledWith(10);
-		expect(thumb.style.transform).toContain("0px");
+		expect(thumb.style.transform).toContain("9px");
 		expect(indicator.style.transform).toBe("scaleX(1)");
 
 		act(() => control.dispatchEvent(createPointerEvent("pointerup", { clientX: 10 })));
+		rerender({ value: 10 });
 		act(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
 
-		expect(onChange).toHaveBeenLastCalledWith(9);
+		expect(onChange).toHaveBeenLastCalledWith(10);
 		expect(onCommit).toHaveBeenLastCalledWith(9);
 	});
 
@@ -371,6 +380,7 @@ describe("LeverageSlider", () => {
 			control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 88 }));
 			control.dispatchEvent(createPointerEvent("pointermove", { clientX: 110 }));
 			animationFrames.shift()?.(16);
+			vi.advanceTimersByTime(15);
 		});
 		expect(onChange).toHaveBeenLastCalledWith(10);
 
