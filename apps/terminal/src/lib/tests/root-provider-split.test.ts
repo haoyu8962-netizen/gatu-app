@@ -40,6 +40,7 @@ describe("root provider startup split", () => {
 	it("activates the wallet runtime inside <body> through the client runtime gate", () => {
 		expect(rootProviderSource).toContain("export function ClientRuntimeGate");
 		expect(rootProviderSource).toContain("useHydrated()");
+		expect(rootProviderSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
 		expect(rootProviderSource).toContain("isDocumentRoutePath(pathname)");
 		expect(rootProviderSource).toContain("<Suspense fallback={fallback}>");
 		expect(rootProviderSource).not.toContain("fallback={children}");
@@ -51,6 +52,7 @@ describe("root provider startup split", () => {
 	});
 
 	it("selects a route-matched startup frame before mounting route content", () => {
+		expect(rootRouteSource).toContain("useRouterState({ select: getPresentedRoutePathname })");
 		expect(rootRouteSource).toContain("const routeSurface = getAppRouteSurface(pathname)");
 		expect(rootRouteSource).toMatch(
 			/if \(routeSurface === "document"\)[\s\S]*?<ApplicationErrorBoundary>[\s\S]*?<Outlet \/>/,

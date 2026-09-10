@@ -19,6 +19,13 @@ export function useClientRuntimeReady() {
 	return use(ClientRuntimeContext);
 }
 
+export function getPresentedRoutePathname(state: {
+	matches: ReadonlyArray<{ pathname: string }>;
+	location: { pathname: string };
+}): string {
+	return state.matches.at(-1)?.pathname ?? state.location.pathname;
+}
+
 export function getAppRouteSurface(pathname: string): AppRouteSurface {
 	const normalizedPathname = normalizePathname(pathname);
 	if (DOCUMENT_ROUTE_PATHS.has(normalizedPathname)) return "document";

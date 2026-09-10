@@ -12,7 +12,7 @@ import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { createLazyComponent } from "@/lib/lazy";
 import { buildRootHead } from "@/lib/seo";
-import { getAppRouteSurface, useClientRuntimeReady } from "@/providers/client-runtime";
+import { getAppRouteSurface, getPresentedRoutePathname, useClientRuntimeReady } from "@/providers/client-runtime";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import { ClientRuntimeGate } from "@/providers/root";
 import "@/bones/registry";
@@ -55,7 +55,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
-	const pathname = useRouterState({ select: (state) => state.location.pathname });
+	const pathname = useRouterState({ select: getPresentedRoutePathname });
 	const routeSurface = getAppRouteSurface(pathname);
 
 	useEffect(() => {

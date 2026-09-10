@@ -83,9 +83,31 @@ Do not collapse these states into one boolean.
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
 
+### Provider Lifetime During Navigation
+
+- The root route and client runtime gate must classify their surface using
+  the last presented `router.state.matches` pathname, with `location` only
+  as the initial fallback when no matches exist. The requested `location`
+  changes before `Outlet` replaces the previous route; `resolvedLocation`
+  can remain old after the destination is presented. Neither is a safe
+  standalone signal for mounting or removing route providers.
+- Keep the current route's providers mounted throughout a pending or
+  cancelled navigation. Replace the document/app provider boundary when
+  the presented matches change, and preserve provider identity between
+  business routes. Initial document entries must remain independent of
+  the wallet runtime.
+- A departing market title synchronizer may clear only its own last
+  applied title. It must preserve a destination title already installed
+  by the router's head renderer.
+- Cover delayed navigation from business routes to every document route,
+  the reverse direction, cancellation and browser history with a real
+  router. Mocking only a pathname cannot verify provider/Outlet alignment.
+
 ### Important Files
 
 - `apps/terminal/src/config/privy.ts`
+- `apps/terminal/src/routes/__root.tsx`
+- `apps/terminal/src/providers/client-runtime.tsx`
 - `apps/terminal/src/providers/root.tsx`
 - `apps/terminal/src/components/trade/components/wallet-modal.tsx`
 - `apps/terminal/src/lib/wallet/privy-wagmi.ts`
@@ -106,6 +128,10 @@ Do not collapse these states into one boolean.
 
 ### Regression Coverage
 
+- `apps/terminal/src/lib/tests/root-route-transition.test.tsx`
+- `apps/terminal/src/lib/tests/root-provider-runtime.test.tsx`
+- `apps/terminal/src/lib/tests/root-provider-split.test.ts`
+- `apps/terminal/src/lib/tests/document-title.test.tsx`
 - `apps/terminal/src/lib/tests/privy-config.test.ts`
 - `apps/terminal/src/lib/tests/wallet-modal.test.tsx`
 - `apps/terminal/src/lib/tests/privy-wagmi.test.ts`

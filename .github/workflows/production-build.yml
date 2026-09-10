@@ -77,6 +77,17 @@ jobs:
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
 
+      - name: Test route provider lifecycles
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/app-route-surface.test.ts
+          src/lib/tests/document-title.test.tsx
+          src/lib/tests/root-provider-split.test.ts
+          src/lib/tests/root-provider-runtime.test.tsx
+          src/lib/tests/root-route-transition.test.tsx
+          src/lib/tests/application-error-boundary.test.tsx
+
       - name: Test order draft and exchange session lifecycles
         working-directory: apps/terminal
         run: >-

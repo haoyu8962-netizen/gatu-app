@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
 import { getMarketApiCoin, getSpotMarketApiCoin, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
@@ -11,6 +11,7 @@ export function TabTitleSync() {
 }
 
 export function useDocumentTitle() {
+	const lastWrittenTitleRef = useRef<string | null>(null);
 	const numberFormatRevision = useNumberFormatRevision();
 	const { data: market } = useSelectedMarketInfo();
 
@@ -37,12 +38,17 @@ export function useDocumentTitle() {
 		void numberFormatRevision;
 		if (!markPx || !pairName) return;
 		const price = formatPrice(markPx, { szDecimals, marketType: isSpot ? "spot" : "perp", style: "decimal" });
-		document.title = buildMarketDocumentTitle(price, pairName);
+		const title = buildMarketDocumentTitle(price, pairName);
+		document.title = title;
+		lastWrittenTitleRef.current = title;
 	}, [isSpot, markPx, numberFormatRevision, pairName, szDecimals]);
 
 	useEffect(() => {
 		return () => {
-			document.title = SEO_DEFAULTS.defaultTitle;
+			if (lastWrittenTitleRef.current !== null && document.title === lastWrittenTitleRef.current) {
+				document.title = SEO_DEFAULTS.defaultTitle;
+			}
+			lastWrittenTitleRef.current = null;
 		};
 	}, []);
 }
