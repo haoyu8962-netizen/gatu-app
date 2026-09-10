@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useLayoutEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,7 +13,9 @@ import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperl
 import { getTradeTerminalBootStatus } from "@/lib/hyperliquid/trade-terminal-boot";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
+import { useOrderEntryActions, useOrderEntryMarketIdentity } from "@/stores/use-order-entry-store";
 import { AccountActivityFeedOwner } from "./account-activity-feed-owner";
 import { DesktopTerminalSurface } from "./layout/desktop-terminal-surface";
 import { TerminalBootError } from "./layout/terminal-boot-error";
@@ -24,6 +26,8 @@ import { OrderToast } from "./tradebox/order-toast";
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
 export function TradeTerminalPage() {
+	const isTestnet = useIsTestnet();
+	const selectedMarketName = useSelectedMarket();
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const { routeMarketName, routeScope } = useExchangeScope();
@@ -57,15 +61,22 @@ export function TradeTerminalPage() {
 		return <TerminalBootError isPaused={bootStatus === "paused"} onRetry={() => void retryMarketCatalog()} />;
 	}
 
-	return <TradeTerminalContent marketReady={bootStatus === "ready"} />;
+	const marketIdentity = JSON.stringify([isTestnet, routeMarket?.name ?? routeMarketName ?? selectedMarketName]);
+	return <TradeTerminalContent marketReady={bootStatus === "ready"} marketIdentity={marketIdentity} />;
 }
 
 interface Props {
 	marketReady: boolean;
 }
 
-function TradeTerminalContent({ marketReady }: Props) {
+function TradeTerminalContent({ marketReady, marketIdentity }: Props & { marketIdentity: string }) {
 	const isMobile = useIsMobile();
+	const currentMarketIdentity = useOrderEntryMarketIdentity();
+	const { resetFormForMarket } = useOrderEntryActions();
+	const orderEntryDraftReady = marketReady && currentMarketIdentity === marketIdentity;
+	useLayoutEffect(() => {
+		if (marketReady) resetFormForMarket(marketIdentity);
+	}, [marketReady, marketIdentity, resetFormForMarket]);
 
 	return (
 		<>
@@ -74,13 +85,13 @@ function TradeTerminalContent({ marketReady }: Props) {
 			{isMobile ? (
 				marketReady ? (
 					<Suspense fallback={<MobileLoadingFallback />}>
-						<MobileTerminal />
+						<MobileTerminal orderEntryDraftReady={orderEntryDraftReady} />
 					</Suspense>
 				) : (
 					<MobileLoadingFallback />
 				)
 			) : (
-				<DesktopTerminalSurface marketReady={marketReady} />
+				<DesktopTerminalSurface marketReady={marketReady} orderEntryDraftReady={orderEntryDraftReady} />
 			)}
 			<MarketReadyOverlays marketReady={marketReady} />
 		</>

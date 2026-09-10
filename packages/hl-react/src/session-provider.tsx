@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
 	type ExchangeProviderLifecycleLease,
 	invalidateExchangeProviderLifecycle,
 	invalidateExchangeRequestIdentity,
 } from "./internal/exchange/request-scheduler";
-import { HyperliquidSessionContext } from "./provider-context";
+import { type HyperliquidExchangeSessionLease, HyperliquidSessionContext } from "./provider-context";
 import {
 	activateAgentRegistrationSession,
 	closeAgentRegistrationSessionAndRemove,
@@ -48,6 +48,27 @@ export function HyperliquidSessionProvider({
 		exchangeLifecycleRef.current = { id: Symbol("hyperliquid-provider"), active: true };
 	}
 	const exchangeLifecycle = exchangeLifecycleRef.current;
+	const normalizedClientKey = clientKey.toLowerCase();
+	const [exchangeSession, setExchangeSession] = useState<HyperliquidExchangeSessionLease>(() => ({
+		id: Symbol("hyperliquid-exchange-session"),
+		env,
+		clientKey: normalizedClientKey,
+		sessionMode,
+		active: false,
+	}));
+	if (
+		exchangeSession.env !== env ||
+		exchangeSession.clientKey !== normalizedClientKey ||
+		exchangeSession.sessionMode !== sessionMode
+	) {
+		setExchangeSession({
+			id: Symbol("hyperliquid-exchange-session"),
+			env,
+			clientKey: normalizedClientKey,
+			sessionMode,
+			active: false,
+		});
+	}
 	const previousExchangeIdentityRef = useRef<{
 		env: HyperliquidEnv;
 		clientKey: string;
@@ -66,6 +87,13 @@ export function HyperliquidSessionProvider({
 			});
 		};
 	}, [exchangeLifecycle]);
+
+	useLayoutEffect(() => {
+		exchangeSession.active = true;
+		return () => {
+			exchangeSession.active = false;
+		};
+	}, [exchangeSession]);
 
 	useLayoutEffect(() => {
 		const previous = previousExchangeIdentityRef.current;
@@ -129,6 +157,7 @@ export function HyperliquidSessionProvider({
 		agentName,
 		builderConfig,
 		exchangeLifecycle,
+		exchangeSession,
 		enforceLegalActions,
 	};
 

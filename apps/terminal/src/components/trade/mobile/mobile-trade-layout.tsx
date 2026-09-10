@@ -17,6 +17,7 @@ type TopView = "chart" | "book" | "trades";
 
 interface Props {
 	active?: boolean;
+	orderEntryDraftReady?: boolean;
 	showMarketBar?: boolean;
 	showOrderForm?: boolean;
 	disclosureStates: MobilePositionsDisclosureStates;
@@ -24,6 +25,7 @@ interface Props {
 
 export function MobileTradeLayout({
 	active = true,
+	orderEntryDraftReady = true,
 	showMarketBar = false,
 	showOrderForm = true,
 	disclosureStates,
@@ -34,6 +36,7 @@ export function MobileTradeLayout({
 
 	return showOrderForm ? (
 		<TradeOrderView
+			orderEntryDraftReady={orderEntryDraftReady}
 			active={active}
 			showMarketBar={showMarketBar}
 			marketKey={marketKey}
@@ -50,11 +53,13 @@ export function MobileTradeLayout({
 }
 
 function TradeOrderView({
+	orderEntryDraftReady,
 	active,
 	showMarketBar,
 	marketKey,
 	disclosureStates,
 }: {
+	orderEntryDraftReady: boolean;
 	active: boolean;
 	showMarketBar: boolean;
 	marketKey: string;
@@ -83,14 +88,22 @@ function TradeOrderView({
 					/>
 				}
 			>
-				<MobileTradeView
-					key={marketKey}
-					active={active}
-					embedded
-					sizeMode={sizeMode}
-					onSizeModeChange={setSizeMode}
-					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
-				/>
+				{orderEntryDraftReady ? (
+					<MobileTradeView
+						key={marketKey}
+						active={active}
+						embedded
+						sizeMode={sizeMode}
+						onSizeModeChange={setSizeMode}
+						className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
+					/>
+				) : (
+					<div
+						aria-hidden="true"
+						data-testid="mobile-order-entry-draft-loading"
+						className="flex-[1.53] min-w-0 bg-surface"
+					/>
+				)}
 			</MobileTradeOrderSplit>
 
 			{active && (

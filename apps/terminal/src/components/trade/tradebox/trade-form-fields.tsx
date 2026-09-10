@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId } from "react";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
@@ -176,7 +176,8 @@ export function TradeFormFields({
 		szDecimals,
 	} = orderEntryData;
 
-	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
+	const { setSize, setLimitPriceFromPrefill, setLimitPriceFromUser, setTriggerPrice, setReduceOnly, setTpSlEnabled } =
+		useOrderEntryActions();
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 
@@ -205,18 +206,11 @@ export function TradeFormFields({
 	const hasDisplayedSizeError = displaySizeError !== "";
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
-	const limitPrefillKey = usesLimitPrice ? `${market?.name ?? ""}|${orderType}` : null;
-	const prefilledLimitKeyRef = useRef<string | null>(null);
+	const limitPrefillIdentity = `${market?.name ?? ""}|${orderType}`;
 	useEffect(() => {
-		if (limitPrefillKey === null) {
-			prefilledLimitKeyRef.current = null;
-			return;
-		}
-		if (prefilledLimitKeyRef.current === limitPrefillKey) return;
-		if (limitPriceInput !== "" || formattedMid === undefined) return;
-		prefilledLimitKeyRef.current = limitPrefillKey;
-		setLimitPrice(formattedMid);
-	}, [limitPrefillKey, limitPriceInput, formattedMid, setLimitPrice]);
+		if (!usesLimitPrice || formattedMid === undefined) return;
+		setLimitPriceFromPrefill(limitPrefillIdentity, formattedMid);
+	}, [usesLimitPrice, limitPrefillIdentity, formattedMid, setLimitPriceFromPrefill]);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
@@ -346,14 +340,14 @@ export function TradeFormFields({
 								id={limitFieldId}
 								placeholder="0.00"
 								value={limitPriceInput}
-								onChange={(e) => setLimitPrice(e.target.value)}
+								onChange={(e) => setLimitPriceFromUser(limitPrefillIdentity, e.target.value)}
 								className="h-8 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 								disabled={isFormDisabled}
 							/>
 							<span className="ms-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-muted">{quoteToken}</span>
 							<button
 								type="button"
-								onClick={() => formattedMid && setLimitPrice(formattedMid)}
+								onClick={() => formattedMid && setLimitPriceFromUser(limitPrefillIdentity, formattedMid)}
 								disabled={isFormDisabled || !formattedMid}
 								aria-pressed={!!formattedMid && limitPriceInput === formattedMid}
 								className="ms-2 h-8 shrink-0 cursor-pointer whitespace-nowrap text-xs font-semibold text-trading-panel-success disabled:cursor-not-allowed"

@@ -1,9 +1,10 @@
-import type { ExchangeExecutionGuard } from "@gatu/hl-react";
+import type { ExchangeExecutionGuard, HyperliquidExchangeSessionLease } from "@gatu/hl-react";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { buildTwapOrderDetails } from "@/domain/trade/twap-details";
+import { useHyperliquid } from "@/lib/hyperliquid";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive, toBig } from "@/lib/trade/numbers";
@@ -13,7 +14,11 @@ import {
 	orderSubmissionFeedback,
 } from "@/lib/trade/order-submission-feedback";
 import type { Side } from "@/lib/trade/types";
-import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import {
+	getOrderEntryDraftResetToken,
+	type OrderEntryDraftResetToken,
+	useOrderEntryActions,
+} from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { useTrackedOrder } from "./use-tracked-order";
 import { useTrackedTwapOrder } from "./use-tracked-twap-order";
@@ -25,7 +30,13 @@ interface SubmitMarket {
 	szDecimals?: number;
 }
 
+export interface OrderSubmitDraftResetToken {
+	orderEntry: OrderEntryDraftResetToken;
+	exchangeSession: HyperliquidExchangeSessionLease;
+}
+
 export interface OrderSubmitInput {
+	draftResetToken: OrderSubmitDraftResetToken;
 	market: SubmitMarket;
 	baseToken: string;
 	side: Side;
@@ -66,6 +77,8 @@ export type OrderSubmitLivePrices = Pick<OrderSubmitInput, "price" | "executionR
 export type OrderSubmitDraftInput = Omit<OrderSubmitInput, keyof OrderSubmitLivePrices>;
 
 interface UseOrderSubmitResult {
+	captureDraftResetToken: () => OrderSubmitDraftResetToken | null;
+	isDraftResetTokenCurrent: (token: OrderSubmitDraftResetToken) => boolean;
 	handleSubmit: (input: OrderSubmitInput) => Promise<void>;
 	isSubmitting: boolean;
 }
@@ -75,7 +88,7 @@ interface UseOrderSubmitOptions {
 	twapExecutionGuard?: ExchangeExecutionGuard<"twapOrder">;
 	/**
 	 * Runs wherever the shared order-entry store is reset, so a surface that keeps part of its
-	 * form outside that store (the mobile panel holds size, limit price and reduce-only locally)
+	 * form outside that store (the mobile panel holds size and reduce-only locally)
 	 * clears exactly on the outcomes that clear the store.
 	 */
 	onReset?: () => void;
@@ -92,22 +105,47 @@ function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
 }
 
 export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSubmitResult {
+	const { exchangeSession, clientKey, sessionMode } = useHyperliquid();
 	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder({ executionGuard: options.executionGuard });
 	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder({
 		executionGuard: options.twapExecutionGuard,
 	});
 	const { addOrder, updateOrder } = useOrderQueueActions();
-	const { resetForm } = useOrderEntryActions();
+	const { resetFormIfCurrent } = useOrderEntryActions();
 
 	const isSubmitting = isSubmittingOrder || isSubmittingTwap;
 
-	function resetSubmittedForm() {
-		resetForm();
-		options.onReset?.();
+	function captureDraftResetToken(): OrderSubmitDraftResetToken | null {
+		if (clientKey === "disconnected" || sessionMode === "disconnected" || !exchangeSession.active) return null;
+		return { exchangeSession, orderEntry: getOrderEntryDraftResetToken() };
+	}
+
+	function isExchangeSessionCurrent(token: OrderSubmitDraftResetToken) {
+		return (
+			exchangeSession.active &&
+			token?.exchangeSession === exchangeSession &&
+			clientKey !== "disconnected" &&
+			sessionMode !== "disconnected"
+		);
+	}
+
+	function isDraftResetTokenCurrent(token: OrderSubmitDraftResetToken) {
+		if (!isExchangeSessionCurrent(token)) return false;
+		const current = getOrderEntryDraftResetToken();
+		return (
+			current.marketIdentity === token.orderEntry.marketIdentity &&
+			current.draftRevision === token.orderEntry.draftRevision
+		);
+	}
+
+	function resetSubmittedForm(token: OrderSubmitDraftResetToken) {
+		if (isExchangeSessionCurrent(token) && resetFormIfCurrent(token.orderEntry)) options.onReset?.();
 	}
 
 	async function handleSubmit(input: OrderSubmitInput) {
+		if (!isDraftResetTokenCurrent(input.draftResetToken)) return;
 		const {
+			draftResetToken,
 			market,
 			baseToken,
 			side,
@@ -202,7 +240,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 				if (submission.state === "reconciling") {
-					resetSubmittedForm();
+					resetSubmittedForm(draftResetToken);
 					return;
 				}
 				throwIfResponseError(submission.result.response?.data?.status);
@@ -249,7 +287,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 				if (submission.state === "reconciling") {
-					resetSubmittedForm();
+					resetSubmittedForm(draftResetToken);
 					return;
 				}
 
@@ -263,7 +301,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 				}
 			}
 
-			resetSubmittedForm();
+			resetSubmittedForm(draftResetToken);
 		} catch (error) {
 			if (isOrderBatchResolutionError(error)) {
 				const { resolution } = error;
@@ -274,7 +312,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 						totalCount: resolution.totalCount,
 						error: resolution.errors.join("; ") || undefined,
 					});
-					resetSubmittedForm();
+					resetSubmittedForm(draftResetToken);
 					return;
 				}
 				updateOrder(orderId, {
@@ -290,5 +328,5 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 		}
 	}
 
-	return { handleSubmit, isSubmitting };
+	return { captureDraftResetToken, isDraftResetTokenCurrent, handleSubmit, isSubmitting };
 }

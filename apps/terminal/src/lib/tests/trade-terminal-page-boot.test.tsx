@@ -5,6 +5,7 @@ import { act, useEffect, useState } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketCatalogState } from "@/lib/hyperliquid/markets/market-catalog-state";
+import { useOrderEntryActions, useOrderSize } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
 interface TestMarket {
@@ -38,6 +39,7 @@ const testState = vi.hoisted(() => ({
 
 const BTC_MARKET: TestMarket = { name: "BTC", pairName: "BTC-USDC", kind: "perp" };
 const CXMT_MARKET: TestMarket = { name: "xyz:CXMT", pairName: "CXMT-USDC", kind: "perp" };
+let draftActions: ReturnType<typeof useOrderEntryActions>;
 
 vi.mock("@tanstack/react-router", () => ({
 	useLocation: () => ({ pathname: testState.pathname }),
@@ -87,6 +89,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 }));
 
 vi.mock("@/stores/use-market-store", () => ({
+	useSelectedMarket: () => testState.selectedMarket?.name ?? "BTC",
 	useMarketActions: () => ({ setSelectedMarket: testState.setSelectedMarket }),
 }));
 
@@ -160,7 +163,10 @@ vi.mock("@/components/trade/header/top-nav", () => {
 });
 
 vi.mock("@/components/trade/layout/main-workspace", () => ({
-	MainWorkspace: () => <main data-testid="main-workspace" />,
+	MainWorkspace: () => {
+		draftActions = useOrderEntryActions();
+		return <main data-testid="main-workspace" data-size={useOrderSize()} />;
+	},
 }));
 
 vi.mock("@/components/trade/geo/geo-restriction-banner", () => ({
@@ -289,6 +295,21 @@ describe("trade terminal page boot", () => {
 		};
 		expect(options).toMatchObject({ to: "/trade/BTC", replace: true, resetScroll: false });
 		expect(options.search({ retained: true })).toEqual({ retained: true, scope: "all" });
+	});
+
+	it("resets a draft on route-driven market changes without replacing the workspace", () => {
+		testState.catalogState = catalogState();
+		testState.markets = [BTC_MARKET, CXMT_MARKET];
+		renderPage();
+		const workspace = container.querySelector('[data-testid="main-workspace"]');
+		act(() => draftActions.setSize("2"));
+		expect(workspace?.getAttribute("data-size")).toBe("2");
+		testState.routeMarketName = CXMT_MARKET.name;
+		testState.pathname = "/trade/xyz:CXMT";
+		testState.selectedMarket = CXMT_MARKET;
+		renderPage();
+		expect(container.querySelector('[data-testid="main-workspace"]')).toBe(workspace);
+		expect(workspace?.getAttribute("data-size")).toBe("");
 	});
 
 	it("does not subscribe or synchronize a default BTC while xyz:CXMT is unresolved", () => {

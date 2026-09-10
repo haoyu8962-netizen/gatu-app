@@ -8,11 +8,22 @@ import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedb
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	exchangeSession: {
+		id: Symbol("twap-details-session"),
+		env: "Mainnet" as const,
+		clientKey: "0x1111111111111111111111111111111111111111",
+		sessionMode: "wallet" as const,
+		active: true,
+	},
 	submitOrder: vi.fn(),
 	submitTwap: vi.fn(),
 	addOrder: vi.fn(() => "queue-1"),
 	updateOrder: vi.fn(),
-	resetForm: vi.fn(),
+	resetFormIfCurrent: vi.fn(() => true),
+}));
+
+vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ ...mocks.exchangeSession, exchangeSession: mocks.exchangeSession }),
 }));
 
 vi.mock("@/hooks/trade/use-tracked-order", () => ({
@@ -28,7 +39,8 @@ vi.mock("@/stores/use-order-queue-store", () => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useOrderEntryActions: () => ({ resetForm: mocks.resetForm }),
+	getOrderEntryDraftResetToken: () => ({ marketIdentity: "twap-details-market", draftRevision: 1 }),
+	useOrderEntryActions: () => ({ resetFormIfCurrent: mocks.resetFormIfCurrent }),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -41,7 +53,10 @@ function Probe() {
 }
 
 function twapInput(overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInput {
+	const draftResetToken = hookValue?.captureDraftResetToken();
+	if (!draftResetToken) throw new Error("Expected a current draft reset token");
 	return {
+		draftResetToken,
 		market: { assetId: 0, kind: "perp", name: "BTC", szDecimals: 5 },
 		baseToken: "BTC",
 		side: "buy",
@@ -90,7 +105,7 @@ describe("useOrderSubmit TWAP details", () => {
 		mocks.addOrder.mockReset();
 		mocks.addOrder.mockReturnValue("queue-1");
 		mocks.updateOrder.mockReset();
-		mocks.resetForm.mockReset();
+		mocks.resetFormIfCurrent.mockReset().mockReturnValue(true);
 		mocks.submitTwap.mockResolvedValue(CONFIRMED);
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -178,7 +193,7 @@ describe("useOrderSubmit TWAP details", () => {
 			status: "failed",
 			error: { kind: "order-submission", code: "order-conditions-changed" },
 		});
-		expect(mocks.resetForm).not.toHaveBeenCalled();
+		expect(mocks.resetFormIfCurrent).not.toHaveBeenCalled();
 	});
 
 	it("stores a tracked-TWAP client failure as a locale-independent descriptor", async () => {

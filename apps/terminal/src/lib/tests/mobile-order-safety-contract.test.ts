@@ -38,18 +38,32 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).not.toContain("isSpotMarket && (isTriggerOrder || twapOrder)");
 	});
 
-	it("clears reduce-only together with the other locally held inputs after a submitted order", () => {
+	it("clears local inputs only when the submitted session and shared draft still match", () => {
 		expect(mobileTradeView).toMatch(
-			/function resetSubmittedForm\(\) \{\s*setSizeInput\(""\);\s*setLimitPriceInput\(""\);\s*setReduceOnlyChecked\(false\);\s*setTpPrice\(""\);\s*setSlPrice\(""\);\s*setTriggerPrice\(""\);\s*\}/,
+			/function resetSubmittedForm\(\) \{\s*setLocalSizeInput\(""\);\s*setLocalReduceOnly\(false\);\s*\}/,
 		);
 		expect(mobileTradeView).toMatch(/useOrderSubmit\(\{[\s\S]*?onReset: resetSubmittedForm,/);
-		expect(orderSubmit).toMatch(/function resetSubmittedForm\(\) \{\s*resetForm\(\);\s*options\.onReset\?\.\(\);\s*\}/);
-		expect(orderSubmit.match(/\bresetForm\(\);/g)).toHaveLength(1);
-		expect(orderSubmit.match(/\bresetSubmittedForm\(\);/g)).toHaveLength(4);
+		expect(orderSubmit).toMatch(
+			/function resetSubmittedForm\(token: OrderSubmitDraftResetToken\) \{\s*if \(isExchangeSessionCurrent\(token\) && resetFormIfCurrent\(token\.orderEntry\)\) options\.onReset\?\.\(\);\s*\}/,
+		);
+		expect(orderSubmit).not.toMatch(/\bresetForm\(\)/);
+		expect(orderSubmit.match(/\bresetSubmittedForm\(draftResetToken\);/g)).toHaveLength(4);
+		expect(mobileTradeView).toMatch(
+			/function setSizeInput\(value: string\) \{\s*if \(value !== sizeInput\) markDraftEdited\(\);\s*setLocalSizeInput\(value\);/,
+		);
+		expect(mobileTradeView).toMatch(
+			/function setReduceOnlyChecked\(value: boolean\) \{\s*if \(value !== reduceOnlyChecked\) markDraftEdited\(\);\s*setLocalReduceOnly\(value\);/,
+		);
 	});
 
-	it("resets the whole shared order-entry form on mobile, matching desktop parity", () => {
-		expect(orderEntryStore).toContain("resetForm: () => set({ ...DEFAULT_FORM })");
+	it("resets the whole shared form atomically only for its matching market and revision", () => {
+		const conditionalReset = orderEntryStore.match(/resetFormIfCurrent: \(token\) => \{[\s\S]*?\n\s*resetPrices:/)?.[0];
+		expect(conditionalReset).toBeDefined();
+		expect(conditionalReset).toMatch(
+			/if \(state\.marketIdentity !== token\.marketIdentity \|\| state\.draftRevision !== token\.draftRevision\)\s*return state;/,
+		);
+		expect(conditionalReset).toContain("return { ...DEFAULT_FORM, draftRevision: state.draftRevision + 1 };");
+		expect(conditionalReset).toContain("return reset;");
 
 		const defaultForm = orderEntryStore.match(/const DEFAULT_FORM: FormState = \{[\s\S]*?\n\};/)?.[0] ?? "";
 		for (const field of ['tif: "Gtc"', "tpSlEnabled: false", "twapMinutes: 30", "scaleLevels: 4"]) {

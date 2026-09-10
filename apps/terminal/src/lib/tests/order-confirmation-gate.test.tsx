@@ -75,7 +75,7 @@ const DRAFT: OrderConfirmationDraft = {
 
 let hookValue: ReturnType<typeof useOrderConfirmation<string>> | null = null;
 let execute: (input: string) => Promise<void>;
-let canExecute: () => boolean;
+let canExecute: (input: string) => boolean;
 
 function Probe() {
 	hookValue = useOrderConfirmation<string>({ execute, canExecute });
@@ -122,6 +122,26 @@ describe("order confirmation gate", () => {
 
 		expect(executed).toEqual([]);
 		expect(currentHook().pending).toEqual({ input: "order-1", draft: DRAFT });
+	});
+
+	it("checks the original input before opening and accepting confirmation", async () => {
+		const check = vi.fn(() => true);
+		canExecute = check;
+		act(() => root.render(<Probe />));
+		await act(async () => currentHook().requestSubmit("owner-a-draft", DRAFT));
+		expect(check).toHaveBeenLastCalledWith("owner-a-draft");
+		check.mockReturnValue(false);
+		await act(async () => currentHook().confirm());
+		expect(check).toHaveBeenLastCalledWith("owner-a-draft");
+		expect(executed).toEqual([]);
+	});
+
+	it("does not bypass changed draft validation when confirmation is skipped", async () => {
+		mocks.skipOrderConfirmation = true;
+		canExecute = () => false;
+		act(() => root.render(<Probe />));
+		await act(async () => currentHook().requestSubmit("obsolete-draft", DRAFT));
+		expect(executed).toEqual([]);
 	});
 
 	it("submits exactly once when the confirmation is accepted", async () => {

@@ -116,9 +116,16 @@ const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(
 		return (
 			<BaseDrawer.Portal keepMounted={keepMounted}>
 				{overlay && <DrawerOverlay className={overlayClassName} />}
-				<BaseDrawer.Popup ref={ref} className={cn(drawerContentVariants({ side, size }), className)} {...props}>
-					{children}
-				</BaseDrawer.Popup>
+				<BaseDrawer.Viewport data-slot="drawer-viewport">
+					<BaseDrawer.Popup
+						ref={ref}
+						data-slot="drawer-popup"
+						className={cn(drawerContentVariants({ side, size }), className)}
+						{...props}
+					>
+						{children}
+					</BaseDrawer.Popup>
+				</BaseDrawer.Viewport>
 			</BaseDrawer.Portal>
 		);
 	},

@@ -43,7 +43,11 @@ function DesktopWorkspaceSkeleton() {
 	return <DesktopGridLoadingSurface panelClassName="desktop-grid-panel bg-surface" />;
 }
 
-export function MainWorkspace() {
+interface Props {
+	orderEntryDraftReady?: boolean;
+}
+
+export function MainWorkspace({ orderEntryDraftReady = true }: Props) {
 	useRenderCommitTrack("main-workspace");
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const { gridProps, accountContentRef } = useDesktopGridLayout(width, mounted);
@@ -102,7 +106,11 @@ export function MainWorkspace() {
 
 					<div key="tradingInterface" className="desktop-grid-panel overflow-hidden bg-surface">
 						<Suspense fallback={panelFallback}>
-							<TradePanel key={marketKey} />
+							{orderEntryDraftReady ? (
+								<TradePanel key={marketKey} />
+							) : (
+								<div aria-hidden="true" data-testid="order-entry-draft-loading" className="h-full bg-surface" />
+							)}
 						</Suspense>
 					</div>
 

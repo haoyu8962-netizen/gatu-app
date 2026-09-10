@@ -89,13 +89,22 @@ vi.mock("@/components/trade/mobile/mobile-positions-view", () => ({
 
 import { MobileTradeLayout } from "@/components/trade/mobile/mobile-trade-layout";
 
-function MobileTradeLayoutHarness({ active, showOrderForm }: { active: boolean; showOrderForm: boolean }) {
+function MobileTradeLayoutHarness({
+	active,
+	showOrderForm,
+	orderEntryDraftReady = true,
+}: {
+	active: boolean;
+	showOrderForm: boolean;
+	orderEntryDraftReady?: boolean;
+}) {
 	const disclosureStates = useMobilePositionsDisclosureStates("Mainnet:0x1234");
 	return (
 		<MobileTradeLayout
 			active={active}
 			showMarketBar
 			showOrderForm={showOrderForm}
+			orderEntryDraftReady={orderEntryDraftReady}
 			disclosureStates={disclosureStates}
 		/>
 	);
@@ -121,11 +130,29 @@ describe("MobileTradeLayout market identity", () => {
 		document.documentElement.removeAttribute("dir");
 	});
 
-	function render(active = true, showOrderForm = true) {
+	function render(active = true, showOrderForm = true, orderEntryDraftReady = true) {
 		act(() => {
-			root.render(<MobileTradeLayoutHarness active={active} showOrderForm={showOrderForm} />);
+			root.render(
+				<MobileTradeLayoutHarness
+					active={active}
+					showOrderForm={showOrderForm}
+					orderEntryDraftReady={orderEntryDraftReady}
+				/>,
+			);
 		});
 	}
+
+	it("gates only the form while the next market draft is reset", () => {
+		render(true, true, false);
+		const book = container.querySelector("[data-mobile-book]");
+		const account = container.querySelector("[data-mobile-positions]");
+		expect(container.querySelector('[aria-label="Mobile order size"]')).toBeNull();
+		expect(container.querySelector('[data-testid="mobile-order-entry-draft-loading"]')).not.toBeNull();
+		render();
+		expect(container.querySelector('[aria-label="Mobile order size"]')).not.toBeNull();
+		expect(container.querySelector("[data-mobile-book]")).toBe(book);
+		expect(container.querySelector("[data-mobile-positions]")).toBe(account);
+	});
 
 	it.each([true, false])("provides spot balances to the mobile account tabs when showOrderForm=%s", (showOrderForm) => {
 		render(true, showOrderForm);

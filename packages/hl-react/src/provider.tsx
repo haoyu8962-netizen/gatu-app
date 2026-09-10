@@ -12,6 +12,7 @@ import { HyperliquidTransportProvider } from "./transport-provider";
 
 export type {
 	HyperliquidContextValue,
+	HyperliquidExchangeSessionLease,
 	HyperliquidSessionContextValue,
 	HyperliquidTransportContextValue,
 } from "./provider-context";
@@ -91,6 +92,7 @@ function combineHyperliquidContexts(
 		clientKey: sessionContext.clientKey,
 		sessionMode: sessionContext.sessionMode,
 		exchangeLifecycle: sessionContext.exchangeLifecycle,
+		exchangeSession: sessionContext.exchangeSession,
 		enforceLegalActions: sessionContext.enforceLegalActions,
 	};
 }

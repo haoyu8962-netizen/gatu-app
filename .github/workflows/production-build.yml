@@ -60,6 +60,43 @@ jobs:
           src/lib/tests/seo.test.ts
           src/lib/tests/hyperliquid-resource-hints.test.ts
 
+      - name: Test terminal interaction and mounting contracts
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/user-menu.test.tsx
+          src/lib/tests/top-nav.test.tsx
+          src/lib/tests/wallet-modal.test.tsx
+          src/lib/tests/mobile-agent-sync-modal.test.tsx
+          src/lib/tests/modal-surface-contract.test.ts
+          src/lib/tests/trades.test.ts
+          src/lib/tests/orderbook-panel-safety.test.tsx
+          src/lib/tests/mobile-bottom-nav.test.tsx
+          src/lib/tests/mobile-terminal-market-bar-lifecycle.test.tsx
+          src/lib/tests/mobile-terminal-disclosure-state.test.tsx
+          src/lib/tests/mobile-trade-layout-market-reset.test.tsx
+          src/lib/tests/market-overview.test.tsx
+
+      - name: Test order draft and exchange session lifecycles
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/account-activity-feed-owner.test.tsx
+          src/lib/tests/fast-asset-ctxs-subscription.test.tsx
+          src/lib/tests/limit-price-prefill-contract.test.ts
+          src/lib/tests/mobile-order-safety-contract.test.ts
+          src/lib/tests/order-confirmation-gate.test.tsx
+          src/lib/tests/order-entry-store.test.tsx
+          src/lib/tests/order-slider-sdk-contract.test.tsx
+          src/lib/tests/order-submission-wiring.test.ts
+          src/lib/tests/order-submit-surface-reset.test.tsx
+          src/lib/tests/order-submit-surface-lifecycle-integration.test.tsx
+          src/lib/tests/order-submit-twap-details.test.tsx
+          src/lib/tests/provider-address.test.tsx
+          src/lib/tests/trade-terminal-page-boot.test.tsx
+          src/lib/tests/use-sub.test.tsx
+          tests/mobile-trade-size-validation-a11y.test.tsx
+
       - name: Test TradingView integration
         working-directory: apps/terminal
         run: >-

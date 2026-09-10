@@ -86,6 +86,13 @@ describe("AccountActivityFeedOwner", () => {
 			clientKey,
 			sessionMode: clientKey === "disconnected" ? "disconnected" : "wallet",
 			exchangeLifecycle: { id: Symbol("account-activity-feed-owner-test"), active: true },
+			exchangeSession: {
+				id: Symbol("account-activity-feed-owner-session"),
+				env,
+				clientKey: clientKey.toLowerCase(),
+				sessionMode: clientKey === "disconnected" ? "disconnected" : "wallet",
+				active: true,
+			},
 			enforceLegalActions: false,
 		};
 

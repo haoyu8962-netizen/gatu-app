@@ -5,7 +5,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEYS } from "@/config/app";
 import {
+	getOrderEntryDraftResetToken,
 	useOrderEntryActions as useActions,
+	useLimitPrice,
 	useOrderType,
 	useReduceOnly,
 	useScaleSkew,
@@ -77,6 +79,48 @@ describe("order entry store persistence", () => {
 
 		expect(setItemSpy).not.toHaveBeenCalled();
 		expect(localStorage.getItem(STORAGE_KEYS.ORDER_ENTRY)).toBeNull();
+	});
+
+	it("rejects stale reset tokens after edits and an A-B-A market cycle", () => {
+		act(() => actions.resetFormForMarket("mainnet:BTC"));
+		const original = getOrderEntryDraftResetToken();
+		if (!original) throw new Error("Missing draft token");
+		act(() => actions.setSize("2"));
+		expect(actions.resetFormIfCurrent(original)).toBe(false);
+		const edited = getOrderEntryDraftResetToken();
+		if (!edited) throw new Error("Missing edited token");
+		act(() => {
+			actions.resetFormForMarket("mainnet:ETH");
+			actions.resetFormForMarket("mainnet:BTC");
+		});
+		expect(actions.resetFormIfCurrent(edited)).toBe(false);
+		const current = getOrderEntryDraftResetToken();
+		if (!current) throw new Error("Missing current token");
+		expect(actions.resetFormIfCurrent(current)).toBe(true);
+		expect(actions.resetFormIfCurrent(current)).toBe(false);
+	});
+
+	it("keeps a manually cleared limit price empty after remount and successful reset", () => {
+		let limitPrice = "";
+		function PriceProbe() {
+			limitPrice = useLimitPrice();
+			return null;
+		}
+		act(() => {
+			actions.resetFormForMarket("mainnet:BTC");
+			root.render(createElement(PriceProbe));
+			actions.setLimitPriceFromPrefill("BTC|limit", "100");
+		});
+		expect(limitPrice).toBe("100");
+		act(() => actions.setLimitPriceFromUser("BTC|limit", ""));
+		act(() => root.render(null));
+		act(() => root.render(createElement(PriceProbe)));
+		act(() => {
+			actions.setLimitPriceFromPrefill("BTC|limit", "101");
+			actions.resetForm();
+			actions.setLimitPriceFromPrefill("BTC|limit", "102");
+		});
+		expect(limitPrice).toBe("");
 	});
 
 	it("continues to persist only side, order type, and size mode", () => {

@@ -71,7 +71,7 @@ describe("order submission wiring", () => {
 		const mobileTradeView = readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8");
 
 		expect(tradePanel).toContain("const reduceOnlyChecked = useReduceOnly();");
-		expect(mobileTradeView).toContain("const [reduceOnlyChecked, setReduceOnlyChecked] = useState(false);");
+		expect(mobileTradeView).toMatch(/const \[reduceOnlyChecked, \w+\] = useState\(false\);/);
 
 		for (const source of [tradePanel, mobileTradeView]) {
 			expect(source).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
@@ -81,20 +81,26 @@ describe("order submission wiring", () => {
 		}
 	});
 
-	it("routes both order-entry surfaces through the shared confirmation gate", () => {
+	it("binds both confirmation surfaces to the captured session and draft revision", () => {
 		for (const path of ORDER_ENTRY_SURFACES) {
 			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
 			expect(source).toContain("useOrderConfirmation(");
 			expect(source).toContain("<OrderConfirmationModal");
 			expect(source).toContain("confirmation.requestSubmit(");
 			expect(source).toContain("canExecute: canExecuteOrder })");
-			expect(source).toContain("function canExecuteOrder()");
+			expect(source).toContain("function canExecuteOrder(input?: OrderSubmitDraftInput)");
+			expect(source).toContain("if (input && !isDraftResetTokenCurrent(input.draftResetToken)) return false;");
 			expect(source).toMatch(/if \(isSubmitting \|\| !canExecuteOrder\(\)\) return;/);
+			expect(source).toMatch(/const draftResetToken = captureDraftResetToken\(\);\s*if \(!draftResetToken\) return;/);
+			expect(source).toMatch(/await confirmation\.requestSubmit\(\s*\{\s*draftResetToken,/);
 		}
 
 		const confirmationHook = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-confirmation.ts"), "utf8");
-		expect(confirmationHook).toContain("getSkipOrderConfirmation()");
-		expect(confirmationHook).toMatch(/if \(!canExecute\(\)\) \{[\s\S]*?setPending\(null\);/);
+		expect(confirmationHook).toMatch(
+			/if \(!canExecute\(input\)\) \{\s*rejectChangedOrder\(\);\s*return;\s*\}\s*if \(getSkipOrderConfirmation\(\)\)/,
+		);
+		expect(confirmationHook).toMatch(/if \(!canExecute\(pending\.input\)\) \{\s*rejectChangedOrder\(\);\s*return;/);
+		expect(confirmationHook).toMatch(/function rejectChangedOrder\(\) \{[\s\S]*?setPending\(null\);/);
 		expect(confirmationHook).toMatch(
 			/if \(dontShowAgain\) setSkipOrderConfirmation\(true\);\s*setIsConfirming\(true\);/,
 		);
@@ -106,6 +112,21 @@ describe("order submission wiring", () => {
 			.sort();
 
 		expect(skipMatches).toEqual(["hooks/trade/use-order-confirmation.ts", "stores/use-global-settings-store.ts"]);
+	});
+
+	it("checks the active session and exact draft before creating a submission", () => {
+		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
+		expect(orderSubmit).toContain("draftResetToken: OrderSubmitDraftResetToken;");
+		expect(orderSubmit).toMatch(
+			/async function handleSubmit\(input: OrderSubmitInput\) \{\s*if \(!isDraftResetTokenCurrent\(input\.draftResetToken\)\) return;/,
+		);
+		expect(orderSubmit).toMatch(
+			/exchangeSession\.active &&\s*token\?\.exchangeSession === exchangeSession &&\s*clientKey !== "disconnected" &&\s*sessionMode !== "disconnected"/,
+		);
+		expect(orderSubmit).toContain("if (!isExchangeSessionCurrent(token)) return false;");
+		expect(orderSubmit).toMatch(
+			/current\.marketIdentity === token\.orderEntry\.marketIdentity &&\s*current\.draftRevision === token\.orderEntry\.draftRevision/,
+		);
 	});
 
 	it("keeps price-bearing fields out of the confirmation snapshot on both surfaces", () => {

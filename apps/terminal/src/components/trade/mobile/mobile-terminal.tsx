@@ -14,9 +14,10 @@ import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
+	orderEntryDraftReady?: boolean;
 }
 
-export function MobileTerminal({ className }: Props) {
+export function MobileTerminal({ className, orderEntryDraftReady = true }: Props) {
 	const { activeTab, setActiveTab } = useMobileTerminalTab();
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
@@ -45,6 +46,7 @@ export function MobileTerminal({ className }: Props) {
 							)}
 						>
 							<MobileTradeLayout
+								orderEntryDraftReady={orderEntryDraftReady}
 								active={activeTab === "markets"}
 								showMarketBar={activeTab === "markets"}
 								showOrderForm={false}
@@ -59,6 +61,7 @@ export function MobileTerminal({ className }: Props) {
 							)}
 						>
 							<MobileTradeLayout
+								orderEntryDraftReady={orderEntryDraftReady}
 								active={activeTab === "trade"}
 								showMarketBar={activeTab === "trade"}
 								disclosureStates={disclosureStates}

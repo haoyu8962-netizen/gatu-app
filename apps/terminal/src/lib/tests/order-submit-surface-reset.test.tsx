@@ -4,17 +4,30 @@ import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EntryExecutionError } from "@/domain/trade/order/entry-execution-guard";
+import { OrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { orderSubmissionFeedbackCause } from "@/lib/trade/order-submission-feedback";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	exchangeSession: {
+		id: Symbol("order-submit-session"),
+		env: "Mainnet" as const,
+		clientKey: "0x1111111111111111111111111111111111111111",
+		sessionMode: "wallet" as const,
+		active: true,
+	},
+	draftRevision: 7,
 	submitOrder: vi.fn(),
 	submitTwap: vi.fn(),
 	addOrder: vi.fn(() => "queue-1"),
 	updateOrder: vi.fn(),
-	resetForm: vi.fn(),
+	resetFormIfCurrent: vi.fn(() => true),
 	onReset: vi.fn(),
+}));
+
+vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ ...mocks.exchangeSession, exchangeSession: mocks.exchangeSession }),
 }));
 
 vi.mock("@/hooks/trade/use-tracked-order", () => ({
@@ -30,7 +43,8 @@ vi.mock("@/stores/use-order-queue-store", () => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useOrderEntryActions: () => ({ resetForm: mocks.resetForm }),
+	getOrderEntryDraftResetToken: () => ({ marketIdentity: "Mainnet:perp:BTC", draftRevision: mocks.draftRevision }),
+	useOrderEntryActions: () => ({ resetFormIfCurrent: mocks.resetFormIfCurrent }),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -43,7 +57,10 @@ function Probe() {
 }
 
 function marketInput(overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInput {
+	const draftResetToken = hookValue?.captureDraftResetToken();
+	if (!draftResetToken) throw new Error("Expected a current draft reset token");
 	return {
+		draftResetToken,
 		market: { assetId: 0, kind: "perp", name: "BTC", szDecimals: 5 },
 		baseToken: "BTC",
 		side: "buy",
@@ -95,17 +112,24 @@ const CONFIRMED_ORDER = {
 	result: { status: "ok", response: { type: "order", data: { statuses: [{ resting: { oid: 1 } }] } } },
 } as const;
 
+function replaceSession(clientKey: string) {
+	mocks.exchangeSession.active = false;
+	mocks.exchangeSession = { ...mocks.exchangeSession, id: Symbol("order-submit-session"), clientKey, active: true };
+}
+
 describe("useOrderSubmit surface reset", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.draftRevision = 7;
+		replaceSession("0x1111111111111111111111111111111111111111");
 		mocks.submitOrder.mockReset();
 		mocks.submitTwap.mockReset();
 		mocks.addOrder.mockReset();
 		mocks.addOrder.mockReturnValue("queue-1");
 		mocks.updateOrder.mockReset();
-		mocks.resetForm.mockReset();
+		mocks.resetFormIfCurrent.mockReset().mockReturnValue(true);
 		mocks.onReset.mockReset();
 		mocks.submitOrder.mockResolvedValue(CONFIRMED_ORDER);
 		container = document.createElement("div");
@@ -130,7 +154,10 @@ describe("useOrderSubmit surface reset", () => {
 	it("clears the surface-local inputs exactly when the shared form is reset", async () => {
 		await submit(marketInput());
 
-		expect(mocks.resetForm).toHaveBeenCalledOnce();
+		expect(mocks.resetFormIfCurrent).toHaveBeenCalledExactlyOnceWith({
+			marketIdentity: "Mainnet:perp:BTC",
+			draftRevision: 7,
+		});
 		expect(mocks.onReset).toHaveBeenCalledOnce();
 	});
 
@@ -138,8 +165,109 @@ describe("useOrderSubmit surface reset", () => {
 		mocks.submitOrder.mockResolvedValue({ state: "blocked", reason: "pending" });
 		await submit(marketInput());
 
-		expect(mocks.resetForm).not.toHaveBeenCalled();
+		expect(mocks.resetFormIfCurrent).not.toHaveBeenCalled();
 		expect(mocks.onReset).not.toHaveBeenCalled();
+	});
+
+	it("rejects a confirmation after the shared draft changes", async () => {
+		const input = marketInput();
+		mocks.draftRevision += 1;
+
+		await submit(input);
+
+		expect(mocks.addOrder).not.toHaveBeenCalled();
+		expect(mocks.submitOrder).not.toHaveBeenCalled();
+		expect(mocks.submitTwap).not.toHaveBeenCalled();
+		expect(mocks.resetFormIfCurrent).not.toHaveBeenCalled();
+		expect(mocks.onReset).not.toHaveBeenCalled();
+	});
+
+	it("rejects a confirmation captured before an account A-B-A cycle", async () => {
+		const input = marketInput();
+		replaceSession("0x2222222222222222222222222222222222222222");
+		act(() => root.render(createElement(Probe)));
+		replaceSession("0x1111111111111111111111111111111111111111");
+		act(() => root.render(createElement(Probe)));
+
+		await submit(input);
+
+		expect(mocks.addOrder).not.toHaveBeenCalled();
+		expect(mocks.submitOrder).not.toHaveBeenCalled();
+		expect(mocks.submitTwap).not.toHaveBeenCalled();
+		expect(mocks.resetFormIfCurrent).not.toHaveBeenCalled();
+		expect(mocks.onReset).not.toHaveBeenCalled();
+	});
+
+	it.each(["confirmed", "reconciling", "partial", "TWAP reconciling"] as const)(
+		"preserves local inputs when a late %s result cannot reset the shared draft",
+		async (outcome) => {
+			let resolveSubmission: ((value: unknown) => void) | undefined;
+			let rejectSubmission: ((reason: unknown) => void) | undefined;
+			const deferred = new Promise((resolve, reject) => {
+				resolveSubmission = resolve;
+				rejectSubmission = reject;
+			});
+			const twapOrder = outcome === "TWAP reconciling";
+			(twapOrder ? mocks.submitTwap : mocks.submitOrder).mockReturnValue(deferred);
+			const input = outcome === "partial" ? scaleInput() : marketInput({ twapOrder, twapMinutesNum: 30 });
+			let submissionPromise: Promise<void> | undefined;
+			act(() => {
+				submissionPromise = hookValue?.handleSubmit(input);
+			});
+			mocks.draftRevision += 1;
+			mocks.resetFormIfCurrent.mockReturnValue(false);
+
+			await act(async () => {
+				if (outcome === "partial") {
+					rejectSubmission?.(
+						new OrderBatchResolutionError({
+							status: "partial",
+							totalCount: 2,
+							acceptedCount: 1,
+							rejectedCount: 1,
+							errors: ["Order 2 was rejected"],
+						}),
+					);
+				} else {
+					resolveSubmission?.(
+						outcome === "confirmed" ? CONFIRMED_ORDER : { state: "reconciling", submissionId: "pending-1" },
+					);
+				}
+				await submissionPromise;
+			});
+
+			expect(mocks.resetFormIfCurrent).toHaveBeenCalledExactlyOnceWith(input.draftResetToken.orderEntry);
+			expect(mocks.onReset).not.toHaveBeenCalled();
+			if (outcome === "partial") {
+				expect(mocks.updateOrder).toHaveBeenCalledWith(
+					"queue-1",
+					expect.objectContaining({ status: "partial", acceptedCount: 1, error: "Order 2 was rejected" }),
+				);
+			}
+		},
+	);
+
+	it("keeps the current account draft when the previous account submission finishes", async () => {
+		let resolveSubmission: ((value: typeof CONFIRMED_ORDER) => void) | undefined;
+		mocks.submitOrder.mockReturnValue(
+			new Promise<typeof CONFIRMED_ORDER>((resolve) => {
+				resolveSubmission = resolve;
+			}),
+		);
+		let submissionPromise: Promise<void> | undefined;
+		act(() => {
+			submissionPromise = hookValue?.handleSubmit(marketInput());
+		});
+		replaceSession("0x2222222222222222222222222222222222222222");
+		act(() => root.render(createElement(Probe)));
+		await act(async () => {
+			resolveSubmission?.(CONFIRMED_ORDER);
+			await submissionPromise;
+		});
+
+		expect(mocks.resetFormIfCurrent).not.toHaveBeenCalled();
+		expect(mocks.onReset).not.toHaveBeenCalled();
+		expect(mocks.updateOrder).toHaveBeenCalledWith("queue-1", expect.objectContaining({ status: "success" }));
 	});
 
 	it("stores a tracked-order client failure as a locale-independent descriptor", async () => {
