@@ -160,6 +160,93 @@ test("keeps focus and component identity when the thumb is pressed without movin
 	expect(await readValue(page)).toBe(25);
 });
 
+for (const requested of [63, 66]) {
+	test(`holds a ${requested}% track press through quantity rounding and releases to the actual percent`, async ({
+		page,
+	}) => {
+		await page.goto("/trade-size-slider-performance.html?precision=1");
+		const input = page.getByRole("slider", { name: "Size percentage", exact: true });
+		const quantity = page.locator("[data-slider-size]");
+		await expect(quantity).toHaveText("0.001");
+		const geometry = await getControlGeometry(page);
+		const x = percentX(geometry, requested);
+		const y = geometry.top + geometry.height / 2;
+
+		await resetAudit(page);
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await expect
+			.poll(() =>
+				page.evaluate(() => (window as unknown as SliderAuditWindow).__gatuSliderPerf.snapshot().previewCallbacks),
+			)
+			.toBe(1);
+		await expect(quantity).toHaveAttribute("data-slider-interacting", "true");
+		await expect(quantity).toHaveText("0.001");
+		await expect(input).toHaveValue(String(requested));
+		expect(await readThumbPercent(page)).toBeCloseTo(requested, 0);
+
+		await page.mouse.up();
+		await expect(quantity).toHaveAttribute("data-slider-interacting", "false");
+		await expect(quantity).toHaveText("0.001");
+		await expect(input).toHaveValue("33");
+		expect(await readValue(page)).toBeCloseTo(100 / 3, 5);
+		expect(await readThumbPercent(page)).toBeCloseTo(100 / 3, 1);
+		expect((await stopAudit(page)).commitCallbacks).toBe(1);
+	});
+}
+
+test("commits a quick 20% track click to zero without restoring the previous quantity", async ({ page }) => {
+	await page.goto("/trade-size-slider-performance.html?precision=1");
+	const input = page.getByRole("slider", { name: "Size percentage", exact: true });
+	const quantity = page.locator("[data-slider-size]");
+	await expect(quantity).toHaveText("0.001");
+	const geometry = await getControlGeometry(page);
+	await resetAudit(page);
+	await page.mouse.click(percentX(geometry, 20), geometry.top + geometry.height / 2);
+	await expect(quantity).toHaveAttribute("data-slider-interacting", "false");
+	await expect(quantity).toHaveText("0");
+	await expect(input).toHaveValue("0");
+	await page.waitForTimeout(50);
+	await expect(quantity).toHaveText("0");
+	expect(await readValue(page)).toBe(0);
+	expect(await readThumbPercent(page)).toBeCloseTo((9 / geometry.width) * 100, 1);
+	expect((await stopAudit(page)).commitCallbacks).toBe(1);
+});
+
+test("restores the exact quantity when a held track press is canceled", async ({ page }) => {
+	await page.goto("/trade-size-slider-performance.html?precision=1");
+	const input = page.getByRole("slider", { name: "Size percentage", exact: true });
+	const quantity = page.locator("[data-slider-size]");
+	await expect(quantity).toHaveText("0.001");
+	const geometry = await getControlGeometry(page);
+	const x = percentX(geometry, 90);
+	const y = geometry.top + geometry.height / 2;
+
+	await resetAudit(page);
+	await page.mouse.move(x, y);
+	await page.mouse.down();
+	await expect(quantity).toHaveText("0.002");
+	await expect(input).toHaveValue("90");
+	expect(await readThumbPercent(page)).toBeCloseTo(90, 0);
+	await page.keyboard.press("Escape");
+	await expect(quantity).toHaveAttribute("data-slider-interacting", "false");
+	await expect(quantity).toHaveText("0.001");
+	await expect(input).toHaveValue("33");
+	expect(await readThumbPercent(page)).toBeCloseTo(100 / 3, 1);
+	await page.mouse.up();
+	expect((await stopAudit(page)).commitCallbacks).toBe(0);
+});
+
+async function readThumbPercent(page: Page): Promise<number> {
+	return page.locator("[data-trade-slider-control]").evaluate((control) => {
+		const thumb = control.querySelector("[data-trade-slider-thumb]");
+		if (!(thumb instanceof HTMLElement)) throw new Error("Slider thumb is missing");
+		const controlRect = control.getBoundingClientRect();
+		const thumbRect = thumb.getBoundingClientRect();
+		return ((thumbRect.left + thumbRect.width / 2 - controlRect.left) / controlRect.width) * 100;
+	});
+}
+
 async function getControlGeometry(page: Page): Promise<SliderGeometry> {
 	return page.locator('input[type="range"]').evaluate((input) => {
 		const control = input.parentElement?.parentElement;

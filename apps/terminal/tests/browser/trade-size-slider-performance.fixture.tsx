@@ -3,6 +3,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
 import { MobileTradeSizeControl } from "@/components/trade/mobile/mobile-trade-size-control";
 import { LeverageSlider } from "@/components/trade/tradebox/leverage-slider";
+import { getSizeForPercent, getSliderValue } from "@/domain/trade/order/size";
+import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages } from "@/locales/en/messages.po";
 import "./trade-slider.css";
@@ -111,11 +113,14 @@ function frameLoop() {
 requestAnimationFrame(frameLoop);
 
 function SliderPerformanceFixture() {
+	const precision = new URLSearchParams(window.location.search).has("precision");
 	const [value, setValue] = useState(25);
 	const valueRef = useRef(value);
 	const [leverage, setLeverage] = useState(1);
-	const [size, setSize] = useState("0.24");
+	const [size, setSize] = useState(precision ? "0.001" : "0.24");
+	const [interacting, setInteracting] = useState(false);
 	const gallery = new URLSearchParams(window.location.search).has("gallery");
+	const sliderValue = precision ? getSliderValue(Number(size), 0.003) : value;
 
 	useLayoutEffect(() => {
 		valueRef.current = value;
@@ -133,8 +138,29 @@ function SliderPerformanceFixture() {
 		const changed = nextValue !== valueRef.current;
 		if (changed && audit.observing) audit.pendingCommitStarts.push(startedAt);
 		setValue(nextValue);
+		if (precision)
+			setSize(
+				getSizeForPercent({
+					pct: nextValue,
+					isSpotMarket: false,
+					side: "buy",
+					sizeMode: "base",
+					price: 1380,
+					maxSize: 0.003,
+					spotBalance: { baseAvailable: 0, quoteAvailable: 0, baseName: "SKHX", quoteName: "USDC" },
+					szDecimals: 3,
+				}),
+			);
 		if (audit.observing) audit.callbackDurations.push(performance.now() - startedAt);
 	}
+
+	const interaction = useSizeSliderInteraction({
+		applyPercent: applyValue,
+		interactionIdentity: "fixture:precision",
+		setSizeInput: setSize,
+		sizeInput: size,
+		onInteractionChange: setInteracting,
+	});
 
 	function handlePreview(nextValue: number) {
 		if (audit.observing) {
@@ -146,22 +172,30 @@ function SliderPerformanceFixture() {
 
 	function handleCommit(nextValue: number) {
 		if (audit.observing) audit.commitCallbacks += 1;
-		applyValue(nextValue);
+		if (precision) interaction.onPercentCommit(nextValue);
+		else applyValue(nextValue);
 	}
 
 	return (
 		<main className="min-h-screen bg-modal p-6 text-market-close-fg">
 			<section className="mx-auto w-full max-w-[640px] rounded-[16px] bg-modal p-4">
 				<TradeSizeSlider
-					value={value}
+					value={sliderValue}
 					onPercentChange={handlePreview}
-					onPercentCancel={handlePreview}
+					onPercentCancel={precision ? interaction.onPercentCancel : handlePreview}
 					onPercentCommit={handleCommit}
+					onPercentInteractionStart={precision ? interaction.onPercentInteractionStart : undefined}
+					onPercentInteractionEnd={precision ? interaction.onPercentInteractionEnd : undefined}
 					ariaLabel="Size percentage"
 				/>
 				<output data-slider-value className="mt-8 block text-sm tabular-nums">
-					{value}%
+					{sliderValue}%
 				</output>
+				{precision && (
+					<output data-slider-size data-slider-interacting={interacting} className="block text-sm tabular-nums">
+						{size}
+					</output>
+				)}
 			</section>
 			{gallery && (
 				<section data-gallery className="mx-auto mt-8 grid w-full max-w-[1000px] gap-8 min-[1001px]:grid-cols-3">

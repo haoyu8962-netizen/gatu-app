@@ -148,14 +148,69 @@ describe("TradeSlider pointer previews and commits", () => {
 		expect(notifications).toEqual(["commit", "end"]);
 	});
 
+	it.each([
+		{ source: "unchanged parent value", value: 50 },
+		{ source: "quantity-rounded parent value", value: 17 },
+	])("keeps a held track press at its requested position after $source rerenders", ({ value }) => {
+		const slider = render({ value: 50 });
+		act(() => slider.control.dispatchEvent(pointer("pointerdown", 30)));
+		paintFrame();
+		advance(15);
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(20);
+
+		render({ value });
+		expect(slider.thumb.style.transform).toContain("20px");
+		expect(slider.input.value).toBe("20");
+		expect(props.onCancel).not.toHaveBeenCalled();
+
+		act(() => slider.control.dispatchEvent(pointer("pointerup", 30)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(20, expect.objectContaining({ reason: "track-press" }));
+		render({ value: 17 });
+		expect(slider.input.value).toBe("17");
+		expect(slider.control.querySelector<HTMLElement>("div[style]")?.style.transform).toBe("scaleX(0.17)");
+		expect(notifications).toEqual(["preview", "commit", "end"]);
+	});
+
+	it("restores the starting value when a held track press is canceled after quantity rounding", () => {
+		const slider = render({ value: 50 });
+		act(() => slider.control.dispatchEvent(pointer("pointerdown", 30)));
+		paintFrame();
+		advance(15);
+		render({ value: 17 });
+		expect(slider.thumb.style.transform).toContain("20px");
+
+		act(() => document.dispatchEvent(pointer("pointercancel", 30)));
+		expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(50);
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(slider.input.value).toBe("50");
+		expect(slider.control.querySelector<HTMLElement>("div[style]")?.style.transform).toBe("scaleX(0.5)");
+		expect(notifications).toEqual(["preview", "cancel", "end"]);
+		advance(100);
+		expect(props.onPreview).toHaveBeenCalledTimes(1);
+	});
+
 	it("commits the release coordinate even when no move event delivered it", () => {
-		const slider = render();
+		const onCommit = vi.fn((value: number) => root.render(<TradeSlider {...props} value={value} />));
+		const slider = render({ onCommit });
 		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
 		act(() => slider.control.dispatchEvent(pointer("pointermove", 70)));
 		act(() => document.dispatchEvent(pointer("pointerup", 105)));
 		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(95, expect.objectContaining({ reason: "drag" }));
 		expect(props.onPreview).not.toHaveBeenCalled();
 		expect(slider.input.value).toBe("95");
+	});
+
+	it("reconciles a rounded commit even when the parent keeps the same value", () => {
+		const slider = render({ value: 100 / 3 });
+		act(() => slider.control.dispatchEvent(pointer("pointerdown", 73)));
+		paintFrame();
+		advance(15);
+		expect(slider.input.value).toBe("63");
+		act(() => slider.control.dispatchEvent(pointer("pointerup", 73)));
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(63, expect.objectContaining({ reason: "track-press" }));
+		expect(slider.input.value).toBe("33");
+		expect(slider.control.querySelector<HTMLElement>("div[style]")?.style.transform).toContain("scaleX(0.333333");
+		expect(props.onCancel).not.toHaveBeenCalled();
 	});
 
 	it("commits the last value after a same-frame reversal back to the starting value", () => {
@@ -235,7 +290,8 @@ describe("TradeSlider pointer previews and commits", () => {
 		{ clientX: -20, expected: 1 },
 		{ clientX: 150, expected: 10 },
 	])("clamps a leverage-range interaction to $expected", ({ clientX, expected }) => {
-		const slider = render({ value: 5, min: 1, max: 10 });
+		const onCommit = vi.fn((value: number) => root.render(<TradeSlider {...props} value={value} />));
+		const slider = render({ value: 5, min: 1, max: 10, onCommit });
 		act(() => slider.control.dispatchEvent(pointer("pointerdown", clientX)));
 		act(() => document.dispatchEvent(pointer("pointerup", clientX)));
 		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(
@@ -252,5 +308,17 @@ describe("TradeSlider pointer previews and commits", () => {
 		expect(slider.input.value).toBe("75");
 		expect(props.onPreview).not.toHaveBeenCalled();
 		expect(props.onCommit).not.toHaveBeenCalled();
+	});
+
+	it("accepts the current percentage after a stationary thumb release", () => {
+		const slider = render();
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		render({ value: 30 });
+		expect(slider.input.value).toBe("25");
+		act(() => slider.control.dispatchEvent(pointer("pointerup", 35)));
+		expect(slider.input.value).toBe("30");
+		expect(props.onPreview).not.toHaveBeenCalled();
+		expect(props.onCommit).not.toHaveBeenCalled();
+		expect(props.onCancel).not.toHaveBeenCalled();
 	});
 });

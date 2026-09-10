@@ -7,6 +7,7 @@ import {
 	useId,
 	useLayoutEffect,
 	useRef,
+	useState,
 } from "react";
 import { cn } from "@/lib/cn";
 
@@ -80,6 +81,7 @@ export function TradeSlider(props: Props) {
 	const cleanupRef = useRef<(() => void) | null>(null);
 	const disposeRef = useRef<(() => void) | null>(null);
 	const keyboardIntentRef = useRef<number | null>(null);
+	const [, setCommitRevision] = useState(0);
 	const latestRef = useRef({ ...props, direction });
 	const initialProgress = useRef(progressFor(value, min, max));
 	const initialRtl = useRef(direction === "rtl");
@@ -172,11 +174,13 @@ export function TradeSlider(props: Props) {
 		if (controlRef.current?.hasPointerCapture?.(pointerId)) controlRef.current.releasePointerCapture(pointerId);
 		const current = latestRef.current;
 		if (commit && valid && event) {
-			const committed = session.didChange ? session.draftValue : session.startValue;
+			const committed = session.didChange ? session.draftValue : current.value;
 			updateNativeValue(committed);
 			paint(progressFor(committed, current.min, current.max), current.direction === "rtl");
-			if (session.didChange)
+			if (session.didChange) {
 				current.onCommit(session.draftValue, { reason: session.didMove ? "drag" : "track-press", event });
+				setCommitRevision((revision) => revision + 1);
+			}
 		} else {
 			const restored = valid ? session.startValue : current.value;
 			updateNativeValue(restored);
@@ -312,9 +316,9 @@ export function TradeSlider(props: Props) {
 			unavailable
 		)
 			keyboardIntentRef.current = null;
-		updateNativeValue(keyboardIntentRef.current ?? value);
 		const active = dragRef.current;
-		if (!active || (timerRef.current === null && value !== active.draftValue)) {
+		updateNativeValue(active?.draftValue ?? keyboardIntentRef.current ?? value);
+		if (!active) {
 			paint(progressFor(value, min, max), direction === "rtl");
 		}
 	});

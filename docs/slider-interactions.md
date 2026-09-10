@@ -55,6 +55,15 @@ calculations, and the timer never waits for RAF. A continuous stream closer than
 final coordinate, cancels pending work, and synchronously commits that value once.
 A stationary thumb press does not publish a value or commit.
 
+While a pointer session is active, its draft owns both the thumb and the native
+range value. Parent renders, including unchanged or quantity-rounded previews,
+must not overwrite that position. Release accepts the actual business percentage;
+only a cancellation restores the exact starting snapshot.
+Changed commits trigger one local reconciliation render after the business callback,
+even if lot rounding leaves the parent's value unchanged. Settling must not depend
+on a later quote update. Stationary release uses the current actual percentage
+without changing quantity or issuing a commit.
+
 `onInteractionStart` records the exact business snapshot. `onInteractionEnd` runs
 once after commit/cancel, including stationary release. Trading forms use these
 boundaries to lock submission while a gesture is active, including the interval
@@ -91,6 +100,15 @@ The official HYPE sample had maximum 0.69 at price 84.292: requesting 35% produc
 0.24 (display 35%); 63% produced 0.43 (display 62%); 1% produced zero; 100% produced
 0.69. These are precision examples, not current market data or pricing assumptions.
 
+Small maximum quantities make this rounding visible as large steps. With maximum
+`0.003` and `szDecimals = 3`, requests from 63% through 66% still produce `0.001`
+and an actual percentage of 33.33%; 67% produces `0.002`, and 20% produces zero.
+Returning to 33% after release in this case is a successful rounded selection,
+not a canceled gesture or an SDK rollback. Do not round quantity up or retain a
+misleading requested percentage after release to hide the lot-size constraint.
+A subsequent official HYPE check with maximum approximately `0.70` confirmed that
+a 2% track press produced `0.01`, displayed 1%, and settled the thumb at 1.43%.
+
 TP/SL uses the frozen, reviewed position snapshot as denominator. Configured 100%
 is an explicit fixed size; whole-position protection still passes `null` and
 produces protocol size `"0"`. Configured 0% or a rounded zero is invalid and cannot
@@ -117,6 +135,8 @@ Regression coverage includes:
 - Exact 14/15ms preview timing, independent painting, final-coordinate flush,
   same-frame reversals, multiple pointers, stationary focus, and all cancellation
   boundaries, including resize and unmount.
+- Held track presses across old-value and quantity-rounded parent renders, plus
+  small-lot release and cancellation behavior in a real browser.
 - Low-precision keyboard accumulation and absolute native input after a keyboard
   draft; invalid ranges, RTL, stable IDs, labels, error descriptions, and integer inputs.
 - Large decimal quantities, quote rounding, spot/perp sizing, fixed TP/SL 100% versus
