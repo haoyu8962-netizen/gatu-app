@@ -134,6 +134,13 @@ describe("useOrderbookHover", () => {
 	function advance(milliseconds: number) {
 		act(() => vi.advanceTimersByTime(milliseconds));
 	}
+	function releaseTouch(target: HTMLElement) {
+		pointer(target, "pointerup", { pointerType: "touch" });
+		pointer(target, "pointerout", { pointerType: "touch" });
+		act(() => target.focus());
+		click(target);
+		advance(0);
+	}
 
 	it("tracks the current rank through live insertion without changing price keys", () => {
 		render();
@@ -316,6 +323,73 @@ describe("useOrderbookHover", () => {
 		expect(onPriceSelected).toHaveBeenCalledOnce();
 	});
 
+	it("does not interpret a tap's compatibility focus as keyboard selection", () => {
+		render();
+		const target = row("bid", 1);
+		pointer(target, "pointerdown", { pointerType: "touch" });
+		advance(70);
+		releaseTouch(target);
+		expect(document.activeElement).toBe(target);
+		expect(controller.activeLevel).toBeNull();
+		expect(onPriceSelected).toHaveBeenCalledExactlyOnceWith("99");
+		expect(vi.getTimerCount()).toBe(0);
+		act(() => row("bid", 0).focus());
+		act(() => target.focus());
+		expect(controller.activeLevel?.price).toBe("99");
+	});
+
+	it("retains the original dismissal timer through touch release and repeated focused holds", () => {
+		render();
+		const target = row("bid", 1);
+		for (let press = 0; press < 2; press += 1) {
+			pointer(target, "pointerdown", { pointerType: "touch" });
+			advance(450);
+			expect(controller.activeLevel?.price).toBe("99");
+			advance(300);
+			releaseTouch(target);
+			expect(document.activeElement).toBe(target);
+			expect(controller.activeLevel?.price).toBe("99");
+			advance(2199);
+			expect(controller.activeLevel?.price).toBe("99");
+			advance(1);
+			expect(controller.activeLevel).toBeNull();
+			expect(vi.getTimerCount()).toBe(0);
+		}
+		expect(onPriceSelected).not.toHaveBeenCalled();
+	});
+
+	it.each(["pointer", "keyboard"] as const)("cancels the touch timer when %s selection takes over", (source) => {
+		render();
+		const target = row("bid", 1);
+		pointer(target, "pointerdown", { pointerType: "touch" });
+		advance(450);
+		releaseTouch(target);
+		if (source === "pointer") pointer(row("ask", 1));
+		else act(() => row("ask", 1).focus());
+		advance(0);
+		expect(controller.activeLevel?.price).toBe("102");
+		expect(vi.getTimerCount()).toBe(0);
+		advance(2500);
+		expect(controller.activeLevel?.price).toBe("102");
+	});
+
+	it.each(["identity", "viewKey", "enabled"] as const)(
+		"does not resurrect a dismissed hold through compatibility focus after %s changes",
+		(field) => {
+			render();
+			const target = row("bid", 1);
+			pointer(target, "pointerdown", { pointerType: "touch" });
+			advance(450);
+			render(field === "enabled" ? { enabled: false } : { [field]: "changed" });
+			if (field === "enabled") render();
+			expect(row("bid", 1)).toBe(target);
+			releaseTouch(target);
+			expect(controller.activeLevel).toBeNull();
+			expect(onPriceSelected).not.toHaveBeenCalled();
+			expect(vi.getTimerCount()).toBe(0);
+		},
+	);
+
 	it("follows the touched price when live ranks change before and after the long press", () => {
 		render();
 		const target = row("bid", 1);
@@ -402,13 +476,14 @@ describe("useOrderbookHover", () => {
 		expect(controller.activeLevel?.price).toBe("99");
 	});
 
-	it.each(["move", "release", "cancel", "scope"] as const)("cancels pending long press on %s", (reason) => {
+	it.each(["move", "release", "leave", "cancel", "scope"] as const)("cancels pending long press on %s", (reason) => {
 		render();
 		const target = row("bid", 1);
 		pointer(target, "pointerdown", { pointerType: "touch" });
 		advance(300);
 		if (reason === "move") pointer(target, "pointermove", { pointerType: "touch", clientX: 19 });
 		if (reason === "release") pointer(target, "pointerup", { pointerType: "touch" });
+		if (reason === "leave") pointer(target, "pointerout", { pointerType: "touch" });
 		if (reason === "cancel") pointer(target, "pointercancel", { pointerType: "touch" });
 		if (reason === "scope") render({ identity: "different-market" });
 		advance(150);

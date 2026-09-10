@@ -124,7 +124,6 @@ export function useOrderbookHover({ identity, viewKey, enabled, bids, asks, root
 		if (previous.identity === identity && previous.viewKey === viewKey && previous.enabled === enabled) return;
 		previousScope.current = { identity, viewKey, enabled };
 		clearTimers();
-		pointerFocusTarget.current = null;
 	}, [identity, viewKey, enabled, clearTimers]);
 
 	function readRow(target: EventTarget | null): Row | null {
@@ -149,6 +148,7 @@ export function useOrderbookHover({ identity, viewKey, enabled, bids, asks, root
 				: "rank" in selected && "rank" in next && selected.rank === next.rank)
 		)
 			return;
+		if (next.source !== "touch") clearTimers();
 		setSession((previous) => {
 			const old = previous.selection;
 			if (
@@ -230,7 +230,6 @@ export function useOrderbookHover({ identity, viewKey, enabled, bids, asks, root
 	}
 
 	function onPointerUp(event: PointerEvent<HTMLDivElement>) {
-		pointerFocusTarget.current = null;
 		if (touch.current?.id !== event.pointerId) return;
 		if (pressTimer.current !== null) window.clearTimeout(pressTimer.current);
 		pressTimer.current = null;
@@ -244,10 +243,11 @@ export function useOrderbookHover({ identity, viewKey, enabled, bids, asks, root
 	}
 
 	function onPointerLeave(event: PointerEvent<HTMLDivElement>) {
-		if (event.pointerType === "touch" || selection?.source === "pointer") close();
+		if (event.pointerType === "touch" ? touch.current !== null : selection?.source === "pointer") close();
 	}
 
 	function onClickCapture(event: MouseEvent<HTMLDivElement>) {
+		pointerFocusTarget.current = null;
 		if (!suppressClickFor.current) return;
 		const target = event.target instanceof Element ? event.target.closest(ROW_SELECTOR) : null;
 		const suppressed = suppressClickFor.current;

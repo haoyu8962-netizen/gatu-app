@@ -42,9 +42,17 @@ row references the tooltip with `aria-describedby`; live updates are not an
 `aria-live` announcement.
 
 Touch uses the existing 450 ms long press, 8 px movement tolerance and 2.5 second
-automatic dismissal. Moving cancels the gesture without preventing scrolling.
+automatic dismissal, counted from long-press activation. Releasing the finger
+preserves that deadline: the resulting touch `pointerleave` does not dismiss a
+completed press. Moving, scrolling or cancellation still dismisses the gesture
+without preventing scrolling. Mouse hover or keyboard focus taking over cancels
+the touch deadline so it cannot close the new selection.
+
 A completed long press suppresses its resulting click; a later ordinary tap
-still fills the clicked limit price. The price must remain valid when the timer
+still fills the clicked limit price without opening a tooltip. Pointer-generated
+focus remains suppressed through `pointerup` and scope invalidation until the
+compatibility click, cancellation or a keyboard event; it must not be mistaken
+for keyboard selection. The price must remain valid when the long-press timer
 fires. Market, network, grouping, actual feed, view and measured-row geometry
 changes invalidate the session. Hidden pages, blur, disabled data and removed
 targets close it. Recovery cannot resurrect an old selection.
@@ -77,12 +85,15 @@ behavior follow this project's contracts.
 
 - `orderbook-hover.test.ts`: exact arithmetic, invalid data and price precision.
 - `use-orderbook-hover.test.tsx`: stationary hover, keyboard/touch identity,
-  interruption, recovery and timer cleanup.
+  interruption, recovery, compatibility focus and timer cleanup/ownership.
 - `orderbook-row-tooltip.test.tsx`: real popup content, live reference fallback,
   localization, accessibility association and long-press click suppression.
 - Mobile mode/subscription tests: compact and split integration, current-feed
   guards and unchanged subscriptions.
 - `tests/browser/orderbook-hover.pw.ts`: real positioning, cumulative ranges,
-  live snapshots, gap/spread behavior, touch, themes and viewport bounds.
+  live snapshots, gap/spread behavior, themes and viewport bounds. Native touch
+  sequences cover short taps, first and repeated focused long presses through
+  release and expiry, click suppression, keyboard recovery and touch scrolling
+  in both compact and split layouts.
 - Existing layout, CLS, pulse, size-color and price-selection regressions remain
   required for changes to these layers.

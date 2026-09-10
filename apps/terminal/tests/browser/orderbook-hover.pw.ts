@@ -218,34 +218,90 @@ test("native document and internal ancestor scrolling dismiss pointer hover", as
 	}
 });
 
-test.describe("compact touch cumulative hover", () => {
-	test.use({ hasTouch: true });
-	test("long press inspects without filling, movement cancels, and a tap still selects", async ({ page }) => {
-		await openFixture(page, fixtures[1]);
-		const target = row(page, "bid", 2);
-		const box = await target.boundingBox();
-		if (!box) throw new Error("Missing touch row");
-		const x = box.x + box.width / 2;
-		const y = box.y + box.height / 2;
-		const cdp = await page.context().newCDPSession(page);
-		try {
-			await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+for (const fixture of fixtures.filter((fixture) => fixture.view !== "desktop")) {
+	test.describe(`${fixture.view} touch cumulative hover`, () => {
+		test.use({ hasTouch: true });
+
+		test("ordinary taps fill prices without opening a cumulative tooltip", async ({ page }) => {
+			await openFixture(page, fixture);
+			for (const rank of [2, 2, 1]) {
+				const target = row(page, "bid", rank);
+				await target.tap();
+				await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBe(String(99 - rank));
+				await expect(page.locator(tooltipSelector)).toHaveCount(0);
+				await expect(page.locator("[data-orderbook-hover]")).toHaveCount(0);
+				await expect(target).not.toHaveAttribute("aria-describedby");
+			}
+			await row(page, "bid", 1).press("Tab");
+			const keyboardTarget = row(page, "bid", 2);
+			await expect(keyboardTarget).toBeFocused();
 			await expectSummary(page, ["3.0000%", "97.667", "6.00", "586"]);
-			await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-			await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBeNull();
-			await page.evaluate(() => window.setOrderbookHoverUnavailable("stale"));
-			await page.evaluate(() => window.publishOrderbookHoverSnapshot({ sizes: ["1", "2", "3"] }));
+			await keyboardTarget.press("Escape");
+			await expect(keyboardTarget).toBeFocused();
 			await expect(page.locator(tooltipSelector)).toHaveCount(0);
-			await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
-			await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - 30 }] });
-			await page.waitForTimeout(500);
-			await expect(page.locator(tooltipSelector)).toHaveCount(0);
-			await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-			await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBeNull();
-			await row(page, "bid", 2).tap();
+			await keyboardTarget.press("Enter");
 			await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBe("97");
-		} finally {
-			await cdp.detach();
-		}
+		});
+
+		test("first and repeated long presses survive release and automatically dismiss", async ({ page }) => {
+			await openFixture(page, fixture);
+			const target = row(page, "bid", 2);
+			const box = await target.boundingBox();
+			if (!box) throw new Error("Missing touch row");
+			const x = box.x + box.width / 2;
+			const y = box.y + box.height / 2;
+			const cdp = await page.context().newCDPSession(page);
+			try {
+				for (const repeated of [false, true]) {
+					if (repeated) await expect(target).toBeFocused();
+					await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+					await expectSummary(page, ["3.0000%", "97.667", "6.00", "586"]);
+					await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+					await expect(page.locator(tooltipSelector)).toBeVisible();
+					await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBeNull();
+					await page.waitForTimeout(1000);
+					await expect(page.locator(tooltipSelector)).toBeVisible();
+					await expect(page.locator(tooltipSelector)).toHaveCount(0, { timeout: 2500 });
+					await expect(page.locator("[data-orderbook-hover]")).toHaveCount(0);
+					await expect(target).not.toHaveAttribute("aria-describedby");
+				}
+				await target.tap();
+				await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBe("97");
+				await expect(page.locator(tooltipSelector)).toHaveCount(0);
+			} finally {
+				await cdp.detach();
+			}
+		});
+
+		test("touch movement cancels inspection while allowing native scrolling", async ({ page }) => {
+			await openFixture(page, fixture);
+			await page.evaluate(() => {
+				const spacer = document.createElement("div");
+				spacer.style.height = "1200px";
+				document.body.append(spacer);
+			});
+			const box = await row(page, "bid", 2).boundingBox();
+			if (!box) throw new Error("Missing touch row");
+			const x = box.x + box.width / 2;
+			const y = box.y + box.height / 2;
+			const cdp = await page.context().newCDPSession(page);
+			try {
+				await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+				for (const offset of [20, 40, 60]) {
+					await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - offset }] });
+				}
+				await page.waitForTimeout(500);
+				await expect(page.locator(tooltipSelector)).toHaveCount(0);
+				await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+				await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+				await expect(page.locator(tooltipSelector)).toHaveCount(0);
+				await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBeNull();
+				await row(page, "bid", 2).tap();
+				await expect.poll(() => page.evaluate(() => window.getOrderbookLayoutSelectedPrice())).toBe("97");
+				await expect(page.locator(tooltipSelector)).toHaveCount(0);
+			} finally {
+				await cdp.detach();
+			}
+		});
 	});
-});
+}
