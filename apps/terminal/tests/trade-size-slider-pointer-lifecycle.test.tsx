@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { act, type ComponentProps } from "react";
+import { act, type ComponentProps, StrictMode, useLayoutEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradeSlider } from "@/components/trade/components/trade-slider";
@@ -85,16 +85,15 @@ describe("TradeSlider lifecycle isolation", () => {
 		vi.restoreAllMocks();
 	});
 
-	function render(overrides: Partial<Props> = {}, nextDirection = direction) {
+	function render(overrides: Partial<Props> = {}, nextDirection = direction, strict = false) {
 		props = { ...props, ...overrides };
 		direction = nextDirection;
-		act(() =>
-			root.render(
-				<DirectionProvider direction={direction}>
-					<TradeSlider {...props} />
-				</DirectionProvider>,
-			),
+		const slider = (
+			<DirectionProvider direction={direction}>
+				<TradeSlider {...props} />
+			</DirectionProvider>
 		);
+		act(() => root.render(strict ? <StrictMode>{slider}</StrictMode> : slider));
 		const control = container.querySelector<HTMLDivElement>("[data-trade-slider-control]");
 		const thumb = container.querySelector<HTMLDivElement>("[data-trade-slider-thumb]");
 		const input = container.querySelector<HTMLInputElement>('input[type="range"]');
@@ -216,6 +215,40 @@ describe("TradeSlider lifecycle isolation", () => {
 		act(() => document.dispatchEvent(pointer("pointerup", 110)));
 		expect(props.onPreview).toHaveBeenCalledTimes(1);
 		expect(props.onCommit).not.toHaveBeenCalled();
+	});
+
+	it("clears pending work before the replacement form's layout effects run", () => {
+		drag();
+		const onReplacementLayout = vi.fn(() => {
+			vi.advanceTimersByTime(15);
+			for (const callback of frames.values()) callback(16);
+			expect(props.onPreview).not.toHaveBeenCalled();
+			expect(props.onCancel).toHaveBeenCalledExactlyOnceWith(25);
+			expect(props.onInteractionEnd).toHaveBeenCalledTimes(1);
+			expect(frames.size).toBe(0);
+			expect(captures.size).toBe(0);
+		});
+		function Replacement() {
+			useLayoutEffect(onReplacementLayout, []);
+			return <output>New market form</output>;
+		}
+		act(() => root.render(<Replacement />));
+		expect(onReplacementLayout).toHaveBeenCalledOnce();
+	});
+
+	it("keeps one active gesture after StrictMode replays the initial effects", () => {
+		const slider = render({}, "ltr", true);
+		act(() => slider.thumb.dispatchEvent(pointer("pointerdown", 35)));
+		act(() => slider.control.dispatchEvent(pointer("pointermove", 90)));
+		advance(15);
+		act(() => document.dispatchEvent(pointer("pointerup", 90)));
+		expect(props.onPreview).toHaveBeenCalledExactlyOnceWith(80);
+		expect(props.onCommit).toHaveBeenCalledExactlyOnceWith(80, expect.objectContaining({ reason: "drag" }));
+		expect(props.onInteractionStart).toHaveBeenCalledExactlyOnceWith(25);
+		expect(props.onInteractionEnd).toHaveBeenCalledOnce();
+		expect(props.onCancel).not.toHaveBeenCalled();
+		expect(frames.size).toBe(0);
+		expect(captures.size).toBe(0);
 	});
 
 	it("ignores unchanged observed width and cancels when the actual control width changes", () => {

@@ -10,6 +10,7 @@ import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-mo
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
 import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -629,6 +630,69 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.placeOrder).toHaveBeenCalledExactlyOnceWith({
 			orders: [expect.objectContaining({ s: expectedSize, r: true })],
 			grouping: "positionTpsl",
+		});
+	});
+
+	it.each([
+		{ percent: null, executionMode: "market", expectedSize: "0", expectedPrice: "30250" },
+		{ percent: "63", executionMode: "market", expectedSize: "0.189", expectedPrice: "30250" },
+		{ percent: "100", executionMode: "market", expectedSize: "0.301", expectedPrice: "30250" },
+		{ percent: null, executionMode: "limit", expectedSize: "0", expectedPrice: "27600" },
+		{ percent: "63", executionMode: "limit", expectedSize: "0.189", expectedPrice: "27600" },
+		{ percent: "100", executionMode: "limit", expectedSize: "0.301", expectedPrice: "27600" },
+	])("serializes configured $percent% $executionMode protection through the real SDK", async (sample) => {
+		const exchange = createExchangeHarness(false);
+		testState.placeOrder.mockImplementation((params) => exchange.client.order(params));
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		if (sample.percent !== null) {
+			act(() => getInput(container, "Configure amount").click());
+			act(() => setInputValue(getInput(container, "Size (%)"), sample.percent ?? ""));
+		}
+		if (sample.executionMode === "limit") {
+			act(() => getInput(container, "Limit execution").click());
+			act(() => setInputValue(getInput(container, "Take profit limit price"), "27600"));
+		}
+		expect(exchange.signTypedData).not.toHaveBeenCalled();
+		expect(exchange.request).not.toHaveBeenCalled();
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(exchange.request).toHaveBeenCalledOnce();
+		expect(exchange.getAction()).toEqual({
+			type: "order",
+			grouping: "positionTpsl",
+			orders: [
+				{
+					a: positionRef.assetId,
+					b: true,
+					p: sample.expectedPrice,
+					s: sample.expectedSize,
+					r: true,
+					t: { trigger: { isMarket: sample.executionMode === "market", triggerPx: "27500", tpsl: "tp" } },
+				},
+			],
+		});
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+	});
+
+	it("serializes a fixed-size replacement as cancel then order through the real SDK", async () => {
+		const exchange = createExchangeHarness(false);
+		testState.orders = [openOrder({ triggerPx: "27500", limitPx: "30250" })];
+		testState.placeOrder.mockImplementation((params) => exchange.client.order(params));
+		testState.cancelOrders.mockImplementation((params) => exchange.client.cancel(params));
+		renderModal();
+		act(() => getInput(container, "Configure amount").click());
+		act(() => setInputValue(getInput(container, "Size (%)"), "63"));
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(exchange.request).toHaveBeenCalledTimes(2);
+		expect(exchange.getAction(0)).toEqual({ type: "cancel", cancels: [{ a: positionRef.assetId, o: 7 }] });
+		expect(exchange.getAction(1)).toMatchObject({
+			type: "order",
+			grouping: "positionTpsl",
+			orders: [{ a: positionRef.assetId, b: true, s: "0.189", r: true }],
 		});
 	});
 

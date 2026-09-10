@@ -4,6 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 
 const USER = "0x1111111111111111111111111111111111111111";
 
@@ -203,6 +204,58 @@ describe("useAssetLeverage", () => {
 		if (!mocks.executionGuard) throw new Error("Expected updateLeverage execution guard");
 		return mocks.executionGuard;
 	}
+
+	it.each([corePerp(), builderPerp()])(
+		"sends confirmed $name leverage through the installed SDK exactly once",
+		async (market) => {
+			const sdk = createExchangeHarness();
+			const mode = market.kind === "builderPerp" ? "isolated" : "cross";
+			mocks.market = market;
+			setActiveAsset(market.name, mode);
+			mocks.executeLeverage.mockImplementation((params: UpdateLeverageParams) => sdk.client.updateLeverage(params));
+			renderHook();
+
+			act(() => currentHook().setPendingLeverage(7));
+			expect(sdk.signTypedData).not.toHaveBeenCalled();
+			expect(sdk.request).not.toHaveBeenCalled();
+			await act(async () => currentHook().confirmLeverage());
+
+			expect(sdk.signTypedData).toHaveBeenCalledOnce();
+			expect(sdk.request).toHaveBeenCalledOnce();
+			expect(sdk.getAction()).toEqual({
+				type: "updateLeverage",
+				asset: market.assetId,
+				isCross: mode === "cross",
+				leverage: 7,
+			});
+		},
+	);
+
+	it("blocks an account change before the real leverage SDK boundary", async () => {
+		const sdk = createExchangeHarness();
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		mocks.executeLeverage.mockImplementation((params: UpdateLeverageParams) => sdk.client.updateLeverage(params));
+		renderHook();
+		act(() => currentHook().setPendingLeverage(7));
+		mocks.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		let updatePromise!: Promise<void>;
+		act(() => {
+			updatePromise = currentHook().confirmLeverage();
+		});
+		await queueStarted.promise;
+		mocks.accountAddress = "0x2222222222222222222222222222222222222222";
+		renderHook();
+		releaseQueue.resolve();
+		await act(async () => {
+			await expect(updatePromise).rejects.toThrow();
+		});
+		expect(sdk.signTypedData).not.toHaveBeenCalled();
+		expect(sdk.request).not.toHaveBeenCalled();
+	});
 
 	it("allows leverage updates for a forced-isolated HIP-3 market and queries the exact dex", async () => {
 		mocks.market = builderPerp();

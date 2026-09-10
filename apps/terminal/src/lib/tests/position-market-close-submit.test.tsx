@@ -17,6 +17,7 @@ import {
 } from "@/stores/use-global-modal-store";
 import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions } from "@/stores/use-pending-twap-store";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 import { createI18nRoot } from "./harness/react";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
@@ -388,6 +389,42 @@ describe("usePositionMarketCloseSubmit", () => {
 			"Close order submitted",
 			expect.objectContaining({ description: "2.500 CXMT" }),
 		);
+	});
+
+	it.each([
+		{ kind: "percent" as const, value: "63", expectedSize: "1.575" },
+		{ kind: "max" as const, value: "100", expectedSize: "2.5" },
+	])("sends $kind close sizing through the real SDK without changing market semantics", async (sample) => {
+		const exchange = createExchangeHarness(false);
+		mocks.executeOrder.mockImplementation((params) => exchange.client.order(params));
+		const sessionId = openSession();
+		act(() =>
+			getPositionMarketCloseActions().setSizingIntent(
+				sessionId,
+				sample.kind === "max" ? { kind: "max" } : { kind: "percent", value: sample.value },
+			),
+		);
+		expect(exchange.signTypedData).not.toHaveBeenCalled();
+		await act(async () => {
+			await currentHook().submit({ sessionId });
+		});
+
+		expect(exchange.request).toHaveBeenCalledOnce();
+		expect(exchange.getAction()).toMatchObject({
+			type: "order",
+			grouping: "na",
+			orders: [
+				{
+					a: ASSET_ID,
+					b: false,
+					p: "99.5",
+					s: sample.expectedSize,
+					r: true,
+					t: { limit: { tif: "FrontendMarket" } },
+					c: expect.stringMatching(/^0x[0-9a-f]{32}$/),
+				},
+			],
+		});
 	});
 
 	it("does not rerender its status consumer for idle sizing intent updates", () => {

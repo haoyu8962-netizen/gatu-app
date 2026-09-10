@@ -319,7 +319,7 @@ export function TradeSlider(props: Props) {
 		}
 	});
 
-	useEffect(() => () => disposeRef.current?.(), []);
+	useBrowserLayoutEffect(() => () => disposeRef.current?.(), []);
 
 	return (
 		<div

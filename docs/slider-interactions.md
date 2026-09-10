@@ -67,6 +67,13 @@ restore the exact starting string/intent only in the same eligible session; an
 unavailable or changed session cannot receive an old snapshot. No synthetic
 pointerup, forced React flush, or duplicate Base UI gesture engine is used.
 
+Unmount clears pending work during layout cleanup, before a replacement form can
+run its layout effects. A disposed quantity hook cannot restore or commit into the
+shared order-entry store. This covers keyed market replacements as well as identity
+changes on a mounted form; an old BTC gesture must not undo a new market's form
+reset. Interaction end still releases the gesture lock. StrictMode effect replay
+must leave the next gesture usable without duplicate callbacks.
+
 The official web implementation's missing touch-cancel cleanup and leverage
 minimum positioning were not copied. Its vibration path required a native Android
 Capacitor platform; Android browser emulation still reported platform `web` and no
@@ -126,3 +133,34 @@ intervals, parent commits and timing. Bounds validate scheduling and final value
 they do not establish device-wide latency, mainnet execution, or a measured speedup
 against the old implementation. Wallet/signature/real order actions are tested
 through existing controlled test doubles, without creating live orders.
+
+## SDK request verification
+
+The SDK contract tests use the installed `@nktkas/hyperliquid` 0.33.3 package,
+including the repository's existing TWAP duration patch. They execute real
+`ExchangeClient` validation and serialization with a test signing wallet and a
+capturing transport. Neither signatures nor order requests reach a live account.
+Compare fields with the [exchange API](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
+and the [SDK documentation](https://nktkas.gitbook.io/hyperliquid).
+
+- `order-slider-sdk-contract.test.tsx` checks all eight perpetual order types and
+  the four supported spot types, both sides, base/quote inputs, core/spot/HIP-3 asset
+  IDs, lot and price precision, reduce-only/TIF, attached TP/SL, and TWAP details.
+- `use-asset-leverage.test.tsx` passes confirmed leverage through the real SDK and
+  rejects owner changes before signing. Editing a draft makes no SDK request.
+- `position-slider-sdk-contract.test.ts` and the position submit/modal tests cover
+  rounded percentage sizes, Max, fixed versus whole-position TP/SL, trigger/limit
+  fields, and cancel-before-replace ordering.
+
+Slippage is a percentage in settings, basis points inside order calculations, and
+a protective limit price in the SDK request. Both order construction and the final
+execution guard must stay inside the exact Big.js limit: round buy prices down and
+sell prices up to a valid tick. For reference price 1378.9 and 0.1% slippage, a buy
+limit of 1380.3 exceeds 1380.2789 and must be rejected; the valid inward tick is
+1380.2. Limit and trigger orders retain their separate pricing semantics.
+
+`FrontendMarket` is accepted by the pinned SDK and is the terminal's existing
+market-order TIF; the public exchange table only lists `Alo`, `Ioc`, and `Gtc`.
+Offline acceptance verifies compatibility with the installed SDK, not a live
+exchange acknowledgement or fill. Public InfoClient reads can be checked live
+without signing; they do not validate exchange mutation outcomes.

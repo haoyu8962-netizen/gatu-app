@@ -512,11 +512,17 @@ leverage interaction contract. A pointer session separates local visual position
 path clears pending work on cancellation, invalidation, and unmount. Preserve exact
 business snapshots only in their original eligible identity. End callbacks run even
 when a thumb was pressed without moving, so submission locks cannot remain stuck.
+Dispose pointer work in layout cleanup before replacement forms run. Unmounted
+quantity hooks must not restore or commit into the shared order-entry store; a
+keyed market change must preserve the new form's reset and subsequent edits.
 
 Quantity/close/TP-SL gestures must lock confirmation synchronously from pointer
 start through end; leverage gestures edit drafts and never invoke an API directly.
 Slippage persistence requires explicit confirmation. These controls never replace
 wallet, legal, funding, freshness, market identity, or SDK-boundary validation.
+Market orders round protective prices inward to valid ticks, and the final
+execution guard compares against the exact Big.js slippage bound. Rounding the
+guard's bound outward would silently permit a price beyond the user's tolerance.
 
 ## Required Review Checklist
 

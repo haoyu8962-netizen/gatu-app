@@ -9,6 +9,7 @@ import {
 import { getSizeForPercent, getSizeValueFromInput } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
+import { createExchangeHarness } from "./harness/hyperliquid-exchange";
 
 const spotMarket = {
 	kind: "spot",
@@ -50,7 +51,7 @@ function executionState(slippageBps: number): EntryOrderExecutionState {
 }
 
 describe("spot market buy Max", () => {
-	it("sizes against the signed slippage cap without exceeding the quote balance", () => {
+	it("sizes against the signed slippage cap without exceeding the quote balance", async () => {
 		const slippageBps = Big(DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT).times(100).toNumber();
 		const derived = deriveOrderEntry({
 			isConnected: true,
@@ -119,6 +120,10 @@ describe("spot market buy Max", () => {
 		});
 		expect(Big(plan.orders[0].p).times(plan.orders[0].s).toString()).toBe("99.9375");
 		expect(() => assertEntryOrderExecutionAllowed(plan, executionState(slippageBps), 1_001)).not.toThrow();
+		const sdk = createExchangeHarness();
+		await sdk.client.order({ orders: plan.orders, grouping: plan.grouping });
+		expect(sdk.request).toHaveBeenCalledOnce();
+		expect(sdk.getAction()).toEqual({ type: "order", orders: plan.orders, grouping: "na" });
 		expect(() =>
 			assertEntryOrderExecutionAllowed(
 				{ ...plan, orders: [{ ...plan.orders[0], s: "10" }] },
