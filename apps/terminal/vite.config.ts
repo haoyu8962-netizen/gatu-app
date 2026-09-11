@@ -229,6 +229,20 @@ const config = defineConfig({
         '/join/**': {
           headers: referralJoinHeaders,
         },
+        '/mobile-agent-sync-ticket': {
+          headers: {
+            ...securityHeaders,
+            'cache-control': 'no-store',
+            'referrer-policy': 'no-referrer',
+          },
+        },
+        '/mobile-agent-sync-ticket/**': {
+          headers: {
+            ...securityHeaders,
+            'cache-control': 'no-store',
+            'referrer-policy': 'no-referrer',
+          },
+        },
         '/mobile-agent-sync': {
           headers: {
             ...securityHeaders,

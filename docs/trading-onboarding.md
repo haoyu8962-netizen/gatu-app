@@ -473,3 +473,12 @@ handling. The embedded owner must be revalidated before and after asynchronous
 signing and before submission. Ordinary L1 writes and explicitly requested
 builder-fee approval use the same owner wallet; builder approval remains tied
 to the first action needing the configured builder, never login or registration.
+
+
+## Mobile Agent QR ticket v2
+
+Optional Link Desktop uses a server-issued, origin-scoped ticket before QR encryption. The phone captures the existing registration epoch before consume and accepts only HTTP 204 before persistence, owner activation and verification; cancellation keeps the existing epoch-aware rollback. A rejected/expired ticket clears only the current QR draft. Network failures retain the bounded draft and stable same-tab consumer for retry. Server restart invalidates old tickets for every consumer; old client-selected registration is rejected.
+
+Issuance, consumption, verification, refresh and QR recovery never sign or approve a builder fee. Explicit Mobile Agent approval still requires the exact master on desktop; the importing phone does not connect the master or enter a pairing code. Ordinary email trading continues to use the exact active Privy embedded owner without generating an Agent. QR recovery is limited to an existing approved-unrevealed desktop record; after rendering or losing that record a replacement needs an explicit new flow.
+
+Pairing stays disabled until the [production release gates](mobile-sync-production-readiness.md) and [physical-device evidence](mobile-phone-access-device-validation.md) pass. Envelope v2 and draft v1 remain unchanged; a complete copied QR remains a bearer credential.

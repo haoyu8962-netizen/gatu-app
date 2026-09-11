@@ -64,7 +64,7 @@ const testState = vi.hoisted(() => ({
 	isMobile: false,
 	localAgent: null as Record<string, unknown> | null,
 	qrToCanvas: vi.fn(),
-	registerMobileSyncTicket: vi.fn(),
+	issueMobileSyncTicket: vi.fn(),
 	registrationLeaseCurrent: true,
 	spotRefetch: vi.fn(),
 	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
@@ -244,7 +244,7 @@ vi.mock("@/lib/mobile-sync/sync-core", () => ({
 }));
 
 vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
-	registerMobileSyncTicket: testState.registerMobileSyncTicket,
+	issueMobileSyncTicket: testState.issueMobileSyncTicket,
 }));
 
 vi.mock("qrcode", () => ({
@@ -345,7 +345,7 @@ describe("MobileAgentSyncModal", () => {
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
 			encodedKey: "encoded-key",
 			expiresAtMs: SYNC_EXPIRES_AT_MS,
-			syncId: "sync-id",
+			syncId: "A".repeat(22),
 			url: PHONE_LINK,
 		});
 		testState.extraAgents = [approvedRemoteAgent()];
@@ -357,9 +357,10 @@ describe("MobileAgentSyncModal", () => {
 		}));
 		testState.localAgent = null;
 		testState.qrToCanvas.mockReset();
-		testState.registerMobileSyncTicket.mockReset();
-		testState.registerMobileSyncTicket.mockImplementation(async () => ({
+		testState.issueMobileSyncTicket.mockReset();
+		testState.issueMobileSyncTicket.mockImplementation(async () => ({
 			status: "accepted",
+			syncId: "A".repeat(22),
 			expiresAtMonotonicMs: performance.now() + 60_000,
 			expiresAtWallClockMs: Date.now() + 60_000,
 		}));
@@ -540,6 +541,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(testState.extraAgentsRefetch.mock.calls.length).toBeGreaterThanOrEqual(2);
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledWith({
+			syncId: "A".repeat(22),
 			agentName: AGENT_NAME,
 			agentPrivateKey: AGENT_PRIVATE_KEY,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
@@ -557,8 +559,11 @@ describe("MobileAgentSyncModal", () => {
 				width: 320,
 			}),
 		);
-		expect(testState.registerMobileSyncTicket).toHaveBeenCalledWith("sync-id", expect.any(AbortSignal));
-		expect(testState.registerMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(testState.issueMobileSyncTicket).toHaveBeenCalledWith(expect.any(AbortSignal));
+		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.createMobileAgentSyncUrl.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(testState.issueMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
 			testState.qrToCanvas.mock.invocationCallOrder[0] ?? 0,
 		);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
@@ -570,14 +575,14 @@ describe("MobileAgentSyncModal", () => {
 	});
 
 	it("never renders an unregistered one-time QR", async () => {
-		testState.registerMobileSyncTicket.mockResolvedValue({ status: "unavailable" });
+		testState.issueMobileSyncTicket.mockResolvedValue({ status: "unavailable" });
 		await renderModal();
 		await reviewAndApprove();
 
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
 
-		expect(testState.registerMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
 		expect(testState.qrToCanvas).not.toHaveBeenCalled();
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
 		expect(container.textContent).toContain("one-time QR service is unavailable");
@@ -649,12 +654,17 @@ describe("MobileAgentSyncModal", () => {
 
 	it("deducts registration and rendering delays from the ticket's 60-second lifetime", async () => {
 		let finishRegistration:
-			| ((result: { status: "accepted"; expiresAtMonotonicMs: number; expiresAtWallClockMs: number }) => void)
+			| ((result: {
+					status: "accepted";
+					syncId: string;
+					expiresAtMonotonicMs: number;
+					expiresAtWallClockMs: number;
+			  }) => void)
 			| undefined;
 		let finishQrRender: (() => void) | undefined;
 		let ticketExpiresAtMonotonicMs = 0;
 		let ticketExpiresAtWallClockMs = 0;
-		testState.registerMobileSyncTicket.mockImplementationOnce(() => {
+		testState.issueMobileSyncTicket.mockImplementationOnce(() => {
 			ticketExpiresAtMonotonicMs = performance.now() + 60_000;
 			ticketExpiresAtWallClockMs = Date.now() + 60_000;
 			return new Promise((resolve) => {
@@ -672,13 +682,14 @@ describe("MobileAgentSyncModal", () => {
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
 
-		expect(testState.registerMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 
 		await advanceTime(5_000);
 		act(() =>
 			finishRegistration?.({
 				status: "accepted",
+				syncId: "A".repeat(22),
 				expiresAtMonotonicMs: ticketExpiresAtMonotonicMs,
 				expiresAtWallClockMs: ticketExpiresAtWallClockMs,
 			}),
@@ -702,9 +713,45 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
 	});
 
+	it("does not encrypt a QR when the page becomes hidden while issuance is pending", async () => {
+		let complete:
+			| ((result: {
+					status: "accepted";
+					syncId: string;
+					expiresAtMonotonicMs: number;
+					expiresAtWallClockMs: number;
+			  }) => void)
+			| undefined;
+		testState.issueMobileSyncTicket.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		await renderModal();
+		await reviewAndApprove();
+		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
+		await advanceTime(4_000);
+		expect(testState.issueMobileSyncTicket).toHaveBeenCalledTimes(1);
+		Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+		act(() => document.dispatchEvent(new Event("visibilitychange")));
+		act(() =>
+			complete?.({
+				status: "accepted",
+				syncId: "A".repeat(22),
+				expiresAtMonotonicMs: performance.now() + 60_000,
+				expiresAtWallClockMs: Date.now() + 60_000,
+			}),
+		);
+		await flushAsyncWork();
+		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
+		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+	});
+
 	it("closes at the wall-clock ticket deadline when the monotonic clock lags", async () => {
-		testState.registerMobileSyncTicket.mockImplementationOnce(async () => ({
+		testState.issueMobileSyncTicket.mockImplementationOnce(async () => ({
 			status: "accepted",
+			syncId: "A".repeat(22),
 			expiresAtMonotonicMs: performance.now() + 60_000,
 			expiresAtWallClockMs: Date.now() + 20_000,
 		}));

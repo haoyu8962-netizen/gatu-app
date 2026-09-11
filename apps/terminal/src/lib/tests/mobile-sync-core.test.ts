@@ -36,6 +36,7 @@ function expectMobileSyncError(error: unknown, code: string) {
 
 async function createSyncFixture() {
 	const sync = await createMobileAgentSyncUrl({
+		syncId: "A".repeat(22),
 		appOrigin: APP_ORIGIN,
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,
@@ -111,6 +112,7 @@ describe("mobile sync core", () => {
 		const approvedAgentName = createMobileAgentName(approvedAgentValidUntilMs);
 
 		const sync = await createMobileAgentSyncUrl({
+			syncId: "A".repeat(22),
 			appOrigin: APP_ORIGIN,
 			env: "Mainnet",
 			userAddress: USER_ADDRESS,
@@ -361,4 +363,27 @@ describe("mobile sync core", () => {
 			).toThrow(MobileSyncError);
 		}
 	});
+});
+
+it("binds the required server ticket ID into authenticated encryption", async () => {
+	const sync = await createSyncFixture();
+	expect(sync.syncId).toBe("A".repeat(22));
+	await expect(
+		decryptMobileAgentSyncEnvelope({ ...sync.envelope, syncId: `${"B".repeat(21)}A` }, sync.keyBytes, {
+			currentOrigin: APP_ORIGIN,
+			expectedEnv: "Mainnet",
+			nowMs: NOW_MS,
+		}),
+	).rejects.toMatchObject({ code: "decrypt_failed" });
+	for (const syncId of ["", "B".repeat(22)])
+		await expect(
+			createMobileAgentSyncUrl({
+				syncId,
+				appOrigin: APP_ORIGIN,
+				env: "Mainnet",
+				userAddress: USER_ADDRESS,
+				agentPrivateKey: AGENT_PRIVATE_KEY,
+				nowMs: NOW_MS,
+			}),
+		).rejects.toMatchObject({ code: "invalid_envelope" });
 });

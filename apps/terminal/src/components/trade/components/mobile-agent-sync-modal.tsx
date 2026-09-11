@@ -46,7 +46,7 @@ import {
 	hasDesktopApprovalRecovery,
 	updateDesktopApprovalRecovery,
 } from "@/lib/mobile-sync/desktop-approval-recovery";
-import { registerMobileSyncTicket } from "@/lib/mobile-sync/one-time-ticket-client";
+import { issueMobileSyncTicket } from "@/lib/mobile-sync/one-time-ticket-client";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
 import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
 
@@ -119,6 +119,7 @@ const LOCALIZED_MESSAGE_CODES = [
 	"qr-render-failed",
 	"qr-reveal-unavailable",
 	"qr-service-unavailable",
+	"qr-upgrade-required",
 	"qr-ticket-rejected",
 	"recovery-capacity",
 	"review-before-approve",
@@ -910,8 +911,37 @@ function MobileAgentSyncSession({
 				return;
 			}
 
+			const ticketResult = await issueMobileSyncTicket(operation.signal);
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
+			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
+				setSyncState({ status: "concealed", approval });
+				return;
+			}
+			if (ticketResult.status !== "accepted") {
+				setSyncState({
+					status: "concealed",
+					approval,
+					message:
+						ticketResult.status === "rejected"
+							? localizedMessage("qr-ticket-rejected")
+							: ticketResult.status === "incompatible"
+								? localizedMessage("qr-upgrade-required")
+								: localizedMessage("qr-service-unavailable"),
+				});
+				return;
+			}
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
+			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
+				setSyncState({ status: "concealed", approval });
+				return;
+			}
+			if (ticketResult.expiresAtWallClockMs <= Date.now() || ticketResult.expiresAtMonotonicMs <= performance.now()) {
+				setSyncState({ status: "concealed", approval, message: localizedMessage("qr-ticket-rejected") });
+				return;
+			}
 			const syncCreatedAtMs = Date.now();
 			const syncUrl = await createMobileAgentSyncUrl({
+				syncId: ticketResult.syncId,
 				appOrigin: window.location.origin,
 				env,
 				userAddress: walletAddress,
@@ -920,23 +950,6 @@ function MobileAgentSyncSession({
 				agentValidUntilMs: approval.agentValidUntilMs,
 				nowMs: syncCreatedAtMs,
 			});
-			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
-			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
-				setSyncState({ status: "concealed", approval });
-				return;
-			}
-			const ticketResult = await registerMobileSyncTicket(syncUrl.syncId, operation.signal);
-			if (ticketResult.status !== "accepted") {
-				setSyncState({
-					status: "concealed",
-					approval,
-					message:
-						ticketResult.status === "rejected"
-							? localizedMessage("qr-ticket-rejected")
-							: localizedMessage("qr-service-unavailable"),
-				});
-				return;
-			}
 			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
 				setSyncState({ status: "concealed", approval });
@@ -1293,6 +1306,8 @@ function MobileAgentSyncMessageText({ message }: { message: MobileAgentSyncMessa
 			return t`Could not render QR. Create a new key.`;
 		case "qr-reveal-unavailable":
 			return t`Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it.`;
+		case "qr-upgrade-required":
+			return t`Refresh both devices to update phone access, then create a new QR.`;
 		case "qr-service-unavailable":
 			return t`The one-time QR service is unavailable. Check your connection and retry.`;
 		case "qr-ticket-rejected":

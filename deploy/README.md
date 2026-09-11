@@ -12,7 +12,7 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
 > 服务端负责首屏 SSR、`getGeo`(IPdata 查询)、脱敏客户端错误接收，以及移动配对 QR 的
-> 60 秒一次性消费登记。移动配对登记只保存随机 `syncId`、随机设备 ID 和过期时间，
+> 60 秒首次消费票据。移动配对 store 只保存 origin、服务端随机 `syncId`、随机消费者 ID 和过期时间，
 > 不接收或保存 Agent 私钥、QR 密钥、钱包地址。
 
 `app.gatu.ai` 和 `testnet.gatu.ai` 共用同一 Caddy 站点、Node upstream 和 immutable release。
@@ -41,8 +41,8 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai + testnet.gatu.ai
   host/environment 不一致时必须 fail closed，不得继续 Agent 注册或资金操作。
 
 移动配对的一次性消费依赖当前拓扑中的**单个常驻 Node 进程**完成原子判定。进程重启会让
-尚未消费的 QR 安全失效，用户需要重新生成；不会降级为允许导入。若未来扩成多进程、多实例
-或多区域，必须先把该登记迁移到所有实例共享、支持原子 compare-and-set 且带 TTL 的存储，
+所有旧 QR 票据安全失效，用户需要重新生成；不会降级为允许导入。若未来扩成多进程、多实例
+或多区域，必须先把该票据协调迁移到所有实例共享、支持原子 compare-and-set 且带 TTL 的存储，
 并在迁移验证完成前保持移动配对两个 gate 关闭，不能使用各实例独立内存。
 
 `/mobile-agent-sync-ticket` 会先验证同源、体积和完整 schema，再按 Caddy 覆盖写入的客户端
@@ -308,10 +308,27 @@ sudo systemctl status gatu --no-pager
 - `VITE_MOBILE_PAIRING_CREATE_ENABLED=true`:允许桌面创建、批准并揭示 QR，但仅在 import gate 也开启时生效。
 - `VITE_MOBILE_PAIRING_IMPORT_ENABLED=true`:允许手机扫码并导入。
 
-建议先开启 import gate，再开启 create gate，并在测试环境跑完桌面批准、手机导入和撤销回归后
-按环境放量。create-only 会保持关闭，避免同名 Agent 替换现有手机后却无法导入。关闭任一开关都
-需要重新构建和部署；它不是无需部署即可切换的远端 kill switch。无论开关状态如何，撤销已有
-Mobile Agent 和已有 Agent 的远端对账都保持可用。
+生产 validator 允许缺失、空值、`false`、`true`，拒绝大小写/引号歧义及 CREATE=true、IMPORT 未开的发布配置。
+两 origin 共用编译开关，不能按主网/测试网分别启用。先在独立 HTTPS 暂存实例验证；首次生产发布必须双关。
+仅 import 不恢复旧进程票据，也不作为跨版本兼容桥梁。修改开关必须重新构建；撤销已有 Mobile Agent 和远端对账保持可用。
+
+### 移动配对 v2 发布保护
+
+当前 canonical Caddyfile **独立封锁票据路径**及大小写、编码、重复/尾斜杠变体，返回 503、no-store、no-referrer 和 Retry-After: 60。
+这用于首次升级保护；先按下文安装并验证 canonical Caddy，再运行 deploy。`.env.runtime` 的 `HOST` 必须精确为 `127.0.0.1`，禁止公开 Node 端口。
+
+`deploy.sh` 在切换前用 `mobile-sync-release.mjs attest-env` 启动最终 `.output/server/index.mjs`，测试两个 origin、严格状态码、旧客户端模块、并发和真实停止/重启。
+探针仅使用合成票据，不签名、不下单、不输出票据 ID。实际编译 gate 必须与已验证 `.env.local` 的发布意图一致。任一 gate 开启还会运行真机验证器，并要求全部 11 行证据匹配当前完整 commit。
+
+验收产生独立 `.gatu-mobile-sync.json`：commit/release、API v2、旧登记禁用、编译 gate、单进程模式、产物 SHA-256 与文件清单。
+发布后检查 Node 和双 origin；manifest 与实际文件、身份不符即失败。原 `.gatu-release-capabilities` 继续精确为 17 字节 `referral-join-v1\n`，不可追加。
+
+`/opt/gatu/shared/mobile-sync-safe-release` 固定已验收的双关 v2 release，清理任务保留该目录。两条自动失败路径和下面的人工回滚入口优先选择该基线。
+没有安全基线时，仅在独立 edge 封锁仍可验证的条件下允许旧 release 回滚；两者皆无则拒绝切换。不要为旧产物手写 manifest，不要绕过脚本直接切换 symlink。
+
+关闭基线通过 Node/双 origin 验收并固定后，才可通过单独受审查的 canonical Caddy 变更移除封锁；部署与 Caddy 安装内容必须一致。
+移除时应用仍双关，确认旧 register=400、issue/consume=503。全部真机、Linux 与 HTTPS 暂存验证完成后，才可部署双开版本。
+具体阶段、操作证据和回滚要求见 [生产准入](../docs/mobile-sync-production-readiness.md)。
 
 其余两个高风险能力也使用彼此独立、默认关闭的构建期开关:
 
@@ -377,11 +394,17 @@ journalctl -u gatu -n 100 --no-pager
 sudo systemctl restart gatu
 sudo systemctl stop gatu
 
-# 回滚到已有 release（不会重新构建）
-sudo -u gatu ls -1 /opt/gatu/releases
-sudo -u gatu ln -sfn /opt/gatu/releases/<release-dir> /opt/gatu/current.tmp
-sudo -u gatu mv -Tf /opt/gatu/current.tmp /opt/gatu/current
-sudo systemctl restart gatu
+# 人工回滚：以 gatu 用户执行；选择已固定的双关 v2 基线
+cd /opt/gatu/repo
+exec 9>/opt/gatu/shared/deploy.lock
+flock -n 9 || exit 1
+source deploy/deploy.sh
+verify_caddy_config
+rollback_to_release "$(readlink -f /opt/gatu/shared/mobile-sync-safe-release)"
+health_check 3000 "$rollback_expected_commit" "$rollback_expected_release"
+edge_health_check https://app.gatu.ai "$rollback_expected_commit" "$rollback_expected_release"
+edge_health_check https://testnet.gatu.ai "$rollback_expected_commit" "$rollback_expected_release" true
+verify_mobile_sync_health "$previous_release" 3000
 ```
 
 > 更新时构建期间旧进程继续服务,旧 release 目录不会被覆盖。新 release 会携带上一版 hashed assets,
@@ -391,12 +414,12 @@ sudo systemctl restart gatu
 > 并验证首个可达层中唯一的当前代 `trade-terminal-page-*.js`。它不会扫描 release 目录中为旧标签页保留的历史 hash;
 > fresh build 的 bundle budget 门禁负责禁止产物内出现多份同名页面 chunk。任何检查过程中读取的 hashed asset
 > 返回 HTML/500/非 JavaScript,或图越界、首个可达层解析出多代交易 chunk,
-> 都会失败并尝试回滚到上一个 release。它还会在 Node 直连、`GATU_MAINNET_PUBLIC_BASE_URL`
+> 都会失败并尝试按配对协议下限回滚。它还会在 Node 直连、`GATU_MAINNET_PUBLIC_BASE_URL`
 > 和 `GATU_TESTNET_PUBLIC_BASE_URL`
 > 指向的 Caddy 最终入口核对 TradingView 入口、`sameorigin.html`、入口引用的初始 JS/CSS bundles、
 > MIME、唯一的重验证 Cache-Control，以及缺失 bundle 必须返回非 HTML 的 404。最后读取
 > `/build-meta.json`,确认线上 commit 与 release 就是刚发布的版本；自动回滚后也会精确
-> 核对上一个 release，不会把仍在响应的失败新版本误报为回滚成功。所有健康检查 HTTP
+> 核对所选安全 release，不会把仍在响应的失败新版本误报为回滚成功。所有健康检查 HTTP
 > 请求都有连接和总时限，网络异常不会让部署无限挂起。
 > 对畸形 Referral URI 的检查分两层：Node 直连必须由应用 guard 返回带安全响应头的 404；
 > 公网 Caddy 入口固定使用 HTTP/1.1，并必须在进入路由前返回 400。HTTP/2 协议中止、DNS/TLS
@@ -514,8 +537,8 @@ release identity/capability、上一版 hashed assets、TradingView manifest、s
 - [ ] 若开启 Sponsored，ZeroDev Arbitrum One 已关闭 Sponsor All，Contract Policy 只允许 `0x3289e443a95B28Bcedacc4B33C689b0C9b84ffAB` / `batchSponsorDepositForBurn` (`0x300fb2a3`)，并已设定经过容量评估的 Request、单笔/累计 Gas 与 Gas Price 限额、监控和预警
 - [ ] 建议对每条已开启的 CCTP 路径完成受控 production-candidate 小额主网 E2E；这是真实资金上线验收，不是部署验证器的隐式禁用条件
 - [ ] `node deploy/validate-production-env.mjs /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime apps/terminal` 通过
-- [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
-- [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 登记已迁移到共享原子 TTL 存储
+- [ ] 关闭 v2 基线、独立入口封锁和 manifest 已验证；启用前完成同 commit 的 11 行真机证据及 Linux/HTTPS 准入
+- [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 票据已迁移到共享原子 TTL 存储
 - [ ] PM 激活和 LI.FI 新 bridge 两个独立 rollout 已决策；未批准的 gate 保持为空
 - [ ] 若关闭 LI.FI 新 bridge，已停止启用版本的流量、盘点在途 route，并验证同标签页刷新恢复和双端新入口隐藏
 - [ ] `.env.runtime`:`IPDATA_API_KEY` 已填(并已**轮换**掉聊天里泄漏过的旧 key)

@@ -24,6 +24,7 @@ REFERRAL_CACHE_POLICY="no-store"
 REFERRAL_REFERRER_POLICY="no-referrer"
 REFERRAL_ROUTE_MARKER='<meta name="gatu-route" content="referral-join"'
 REFERRAL_RELEASE_CAPABILITY="referral-join-v1"
+MOBILE_SYNC_BASELINE="${SHARED}/mobile-sync-safe-release"
 NOINDEX_POLICY="noindex, nofollow"
 MAINNET_API_ORIGIN="https://api.hyperliquid.xyz"
 TESTNET_API_ORIGIN="https://api.hyperliquid-testnet.xyz"
@@ -260,6 +261,8 @@ publish_release() {
 		exit 1
 	}
 	verify_chart_build_output "apps/terminal/public" "apps/terminal/.output/public" || exit 1
+	node "${REPO}/deploy/mobile-sync-release.mjs" attest-env apps/terminal/.output "${SHARED}/.env.local" "$release_commit" "$release_name" >&2 || exit 1
+	prepare_mobile_sync_rollback "$previous_release" || exit 1
 	mkdir -p "$RELEASES"
 	rm -rf "$release_tmp"
 	mkdir -p "$release_tmp"
@@ -272,6 +275,10 @@ publish_release() {
 	printf '%s\n' "$release_commit" > "${release_tmp}/.gatu-release-commit"
 	printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
 	printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > "${release_tmp}/.gatu-release-capabilities"
+	node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" >&2 || exit 1
+	if grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile"; then
+		node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" closed >&2 || exit 1
+	fi
 	mv "$release_tmp" "$release_dir"
 
 	ln -sfn "$release_dir" "$current_tmp"
@@ -389,11 +396,69 @@ load_release_identity() {
 	rollback_expected_commit="$(git rev-parse --verify "${legacy_short_commit}^{commit}" 2>/dev/null || true)"
 }
 
+verify_mobile_sync_edge_block() {
+	local origin
+	grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile" || return 1
+	for origin in https://app.gatu.ai https://testnet.gatu.ai; do
+		node "${REPO}/deploy/mobile-sync-release.mjs" block "$origin" >&2 || return 1
+	done
+}
+
+prepare_mobile_sync_rollback() {
+	local previous="$1" baseline
+	baseline="$(readlink -f "$MOBILE_SYNC_BASELINE" 2>/dev/null || true)"
+	if [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" closed >&2; then
+		return 0
+	fi
+	if [ -n "$previous" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$previous" closed >&2; then
+		ln -sfn "$previous" "${MOBILE_SYNC_BASELINE}.tmp"
+		mv -Tf "${MOBILE_SYNC_BASELINE}.tmp" "$MOBILE_SYNC_BASELINE"
+		return 0
+	fi
+	verify_mobile_sync_edge_block || {
+		echo "ERROR: no verified closed v2 baseline or independently blocked ticket edge; refusing release switch." >&2
+		return 1
+	}
+}
+
+verify_mobile_sync_health() {
+	local release_dir="$1" port="$2" origin mode=""
+	node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "http://127.0.0.1:${port}" "https://app.gatu.ai" node || return 1
+	if verify_mobile_sync_edge_block; then mode="blocked"; fi
+	for origin in https://app.gatu.ai https://testnet.gatu.ai; do
+		node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "$origin" "$origin" "$mode" || return 1
+	done
+}
+
+verify_mobile_sync_rollback_health() {
+	local release_dir="$1" port="$2"
+	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_dir" closed >&2; then
+		verify_mobile_sync_health "$release_dir" "$port"
+	else
+		verify_mobile_sync_edge_block
+	fi
+}
+
+pin_mobile_sync_baseline() {
+	local candidate="$1"
+	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$candidate" closed >&2; then
+		ln -sfn "$candidate" "${MOBILE_SYNC_BASELINE}.tmp"
+		mv -Tf "${MOBILE_SYNC_BASELINE}.tmp" "$MOBILE_SYNC_BASELINE"
+	fi
+}
+
 rollback_to_release() {
 	local previous="$1"
-	if [ -z "$previous" ] || [ ! -d "$previous" ]; then
-		return 1
+	local baseline
+	baseline="$(readlink -f "$MOBILE_SYNC_BASELINE" 2>/dev/null || true)"
+	if [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" closed >&2; then
+		previous="$baseline"
+	elif ! node "${REPO}/deploy/mobile-sync-release.mjs" verify "$previous" closed >&2; then
+		verify_mobile_sync_edge_block || return 1
 	fi
+	if [ -z "$previous" ] || [ ! -d "$previous" ]; then return 1; fi
+	load_release_identity "$previous" || return 1
+	previous_release="$previous"
 	echo "==> Roll back current release to ${previous}"
 	ln -sfn "$previous" "${CURRENT}.tmp"
 	mv -Tf "${CURRENT}.tmp" "$CURRENT"
@@ -872,15 +937,15 @@ edge_health_check() {
 }
 
 cleanup_old_releases() {
-	local current_target releases_to_remove
+	local current_target baseline_target release
 	current_target="$(readlink -f "$CURRENT" 2>/dev/null || true)"
-	mapfile -t releases_to_remove < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +"$((KEEP_RELEASES + 1))")
-	for release in "${releases_to_remove[@]}"; do
-		if [ "$(readlink -f "$release")" = "$current_target" ]; then
+	baseline_target="$(readlink -f "$MOBILE_SYNC_BASELINE" 2>/dev/null || true)"
+	while IFS= read -r release; do
+		if [ "$(readlink -f "$release")" = "$current_target" ] || [ "$(readlink -f "$release")" = "$baseline_target" ]; then
 			continue
 		fi
 		rm -rf "$release"
-	done
+	done < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +"$((KEEP_RELEASES + 1))")
 }
 
 if [ "${BASH_SOURCE[0]}" != "$0" ]; then
@@ -913,6 +978,8 @@ release_name="$(date -u +%Y%m%d%H%M%S)-${build_commit_short}"
 build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 NODE_ENV=production GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
 
+set -a; . "$SHARED/.env.runtime"; set +a
+
 echo "==> [6/8] Publish immutable release"
 previous_release="$(readlink -f "$CURRENT" 2>/dev/null || true)"
 rollback_expected_commit=""
@@ -925,7 +992,9 @@ echo "Published ${new_release}"
 echo "==> [7/8] Restart service"
 if ! sudo systemctl restart gatu; then
 	echo "RESTART FAILED — attempting rollback." >&2
-	rollback_to_release "$previous_release" || true
+	if rollback_to_release "$previous_release"; then
+		verify_mobile_sync_rollback_health "$previous_release" "${PORT:-3000}" || true
+	fi
 	exit 1
 fi
 
@@ -943,19 +1012,21 @@ fi
 if health_check "$PORT" "$build_commit" "$release_name" &&
 	edge_health_check "$GATU_MAINNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" &&
 	edge_health_check "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" true &&
-	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name"; then
+	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$build_commit" "$release_name" &&
+	verify_mobile_sync_health "$new_release" "$PORT"; then
+	pin_mobile_sync_baseline "$new_release"
 	cleanup_old_releases
 	echo "OK — gatu serving release $(basename "$new_release") on 127.0.0.1:${PORT}, ${GATU_MAINNET_PUBLIC_BASE_URL}, and ${GATU_TESTNET_PUBLIC_BASE_URL} (commit $(git rev-parse --short HEAD))"
 	exit 0
 fi
 
 echo "HEALTH CHECK FAILED — attempting rollback." >&2
-if [ -n "$rollback_expected_release" ] &&
-	rollback_to_release "$previous_release" &&
+if rollback_to_release "$previous_release" &&
 	health_check "$PORT" "$rollback_expected_commit" "$rollback_expected_release" false "$rollback_require_referral_join" &&
 	edge_health_check "$GATU_MAINNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release" false "$rollback_require_referral_join" &&
 	edge_health_check "$GATU_TESTNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release" true "$rollback_require_referral_join" &&
-	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release"; then
+	verify_release_parity "$GATU_MAINNET_PUBLIC_BASE_URL" "$GATU_TESTNET_PUBLIC_BASE_URL" "$rollback_expected_commit" "$rollback_expected_release" &&
+	verify_mobile_sync_rollback_health "$previous_release" "$PORT"; then
 	echo "ROLLBACK OK — restored $(basename "$previous_release"). Inspect: journalctl -u gatu -n 100" >&2
 	exit 1
 fi

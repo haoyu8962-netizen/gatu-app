@@ -6,6 +6,8 @@ import {
 import { type Address, getAddress, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { isMobileSyncTicketId } from "./one-time-ticket-policy";
+
 export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
 export const MOBILE_SYNC_KEY_FRAGMENT_KEY = "k";
 export const MOBILE_SYNC_ROUTE_PATH = "/mobile-agent-sync";
@@ -98,6 +100,7 @@ export interface ImportedMobileAgent {
 }
 
 export interface CreateMobileAgentSyncUrlInput {
+	syncId: string;
 	appOrigin: string;
 	env: HyperliquidEnvName;
 	userAddress: string;
@@ -163,6 +166,7 @@ type JsonRecord = Record<string, unknown>;
 export async function createMobileAgentSyncUrl(
 	input: CreateMobileAgentSyncUrlInput,
 ): Promise<CreateMobileAgentSyncUrlResult> {
+	if (!isMobileSyncTicketId(input.syncId)) throw new MobileSyncError("invalid_envelope");
 	const nowMs = input.nowMs ?? Date.now();
 	const expiresAtMs = nowMs + MOBILE_SYNC_PAYLOAD_TTL_MS;
 	const appOrigin = normalizeOrigin(input.appOrigin);
@@ -175,7 +179,7 @@ export async function createMobileAgentSyncUrl(
 	const crypto = getCrypto();
 
 	const keyBytes = createSyncKeyBytes(crypto);
-	const envelopeWithoutCiphertext = createEnvelopeWithoutCiphertext(nowMs, expiresAtMs, crypto);
+	const envelopeWithoutCiphertext = createEnvelopeWithoutCiphertext(input.syncId, nowMs, expiresAtMs, crypto);
 	const plaintext: MobileAgentSyncPlaintext = {
 		v: MOBILE_SYNC_VERSION,
 		issuerOrigin: appOrigin,
@@ -483,19 +487,18 @@ function buildMobileSyncUrl(
 }
 
 function createEnvelopeWithoutCiphertext(
+	syncId: string,
 	createdAtMs: number,
 	expiresAtMs: number,
 	crypto: Crypto,
 ): Omit<MobileSyncEnvelope, "ciphertext"> {
-	const syncIdBytes = new Uint8Array(SYNC_ID_BYTES);
 	const ivBytes = new Uint8Array(AES_GCM_IV_BYTES);
-	crypto.getRandomValues(syncIdBytes);
 	crypto.getRandomValues(ivBytes);
 
 	return {
 		v: MOBILE_SYNC_VERSION,
 		type: MOBILE_SYNC_ENVELOPE_TYPE,
-		syncId: bytesToBase64Url(syncIdBytes),
+		syncId,
 		createdAtMs,
 		expiresAtMs,
 		cipher: {

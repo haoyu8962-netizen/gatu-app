@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -256,7 +256,7 @@ verify_systemd_unit
 	}
 }
 
-function runFailedRestartRollback() {
+function runFailedRestartRollback({ edgeBlocked = true } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "gatu-release-rollback-"));
 	const previousRelease = join(root, "previous");
 	const failedRelease = join(root, "failed");
@@ -271,6 +271,9 @@ function runFailedRestartRollback() {
 	const shell = String.raw`
 source "$DEPLOY_SCRIPT_PATH"
 CURRENT="$TEST_CURRENT"
+REPO="$TEST_REPO"
+MOBILE_SYNC_BASELINE="$TEST_BASELINE"
+verify_mobile_sync_edge_block() { [ "$TEST_EDGE_BLOCKED" = "true" ]; }
 mv() {
 	if [ "${"$"}1" = "-Tf" ]; then
 		local source="${"$"}2" target="${"$"}3"
@@ -302,6 +305,9 @@ rollback_to_release "$PREVIOUS_RELEASE"
 				PREVIOUS_RELEASE: previousRelease,
 				RESTART_LOG: restartLog,
 				TEST_CURRENT: current,
+				TEST_REPO: resolve(dirname(DEPLOY_SCRIPT), ".."),
+				TEST_BASELINE: join(root, "absent-baseline"),
+				TEST_EDGE_BLOCKED: String(edgeBlocked),
 			},
 			input: shell,
 		});
@@ -423,16 +429,12 @@ test("systemd preflight verifies the loaded immutable service contract", () => {
 	]);
 });
 
-test(
-	"Linux systemd parser accepts the canonical release launcher",
-	{ skip: process.platform !== "linux" },
-	() => {
-		const result = spawnSync("/usr/bin/systemd-analyze", ["--man=no", "verify", SERVICE_UNIT], {
-			encoding: "utf8",
-		});
-		assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-	},
-);
+test("Linux systemd parser accepts the canonical release launcher", { skip: process.platform !== "linux" }, () => {
+	const result = spawnSync("/usr/bin/systemd-analyze", ["--man=no", "verify", SERVICE_UNIT], {
+		encoding: "utf8",
+	});
+	assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+});
 
 test("systemd preflight fails closed for stale or overridden loaded units", async (context) => {
 	await context.test("daemon reload required", () => {
@@ -497,7 +499,7 @@ test("markerless legacy releases remain a narrowly scoped rollback path", () => 
 	assert.equal(output, "server\n");
 });
 
-test("failed deployment rollback restarts with the previous immutable release guard", () => {
+test("legacy rollback behind a verified edge block restarts with the previous immutable release guard", () => {
 	const { currentTarget, restarts, result } = runFailedRestartRollback();
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(currentTarget.endsWith("/previous"), true);
@@ -526,3 +528,10 @@ test(
 		}
 	},
 );
+
+test("rollback refuses an unverified legacy release without independent edge protection", () => {
+	const { result, currentTarget, restarts } = runFailedRestartRollback({ edgeBlocked: false });
+	assert.equal(result.status, 1);
+	assert.ok(currentTarget.endsWith("/failed"));
+	assert.deepEqual(restarts, ["failed-guard"]);
+});

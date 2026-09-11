@@ -9,6 +9,8 @@ on:
       - "designs/og-cards/**"
       - "packages/**"
       - "tests/**"
+      - "scripts/validate-mobile-phone-access-device-validation*"
+      - "docs/mobile-phone-access-device-validation.md"
       - "scripts/check-client-bundle-budget.mjs"
       - "scripts/check-client-bundle-budget.test.mjs"
       - "scripts/check-client-chunk-cycles.mjs"
@@ -21,7 +23,15 @@ on:
 
 jobs:
   terminal:
-    name: Build terminal
+    strategy:
+      fail-fast: false
+      matrix:
+        pairing:
+          - { create: "false", import: "false" }
+          - { create: "false", import: "true" }
+          - { create: "true", import: "false" }
+          - { create: "true", import: "true" }
+    name: Build terminal (${{ matrix.pairing.create }}/${{ matrix.pairing.import }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -50,8 +60,19 @@ jobs:
           deploy/deploy-health-check.test.mjs
           deploy/validate-caddy-forwarded-headers.test.mjs
           deploy/validate-production-env.test.mjs
+          deploy/mobile-sync-release.test.mjs
+          scripts/validate-mobile-phone-access-device-validation.test.js
           deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
+
+      - name: Verify Caddy ticket block and forwarded IP handling over HTTP
+        run: |
+          set -euo pipefail
+          container_id=$(docker create caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648)
+          trap 'docker rm "$container_id" >/dev/null' EXIT
+          docker cp "$container_id:/usr/bin/caddy" "$RUNNER_TEMP/caddy"
+          chmod +x "$RUNNER_TEMP/caddy"
+          CADDY_BINARY="$RUNNER_TEMP/caddy" node --test deploy/mobile-sync-caddy.test.mjs
 
       - name: Test Hyperliquid API resource hints
         working-directory: apps/terminal
@@ -76,6 +97,15 @@ jobs:
           src/lib/tests/mobile-terminal-disclosure-state.test.tsx
           src/lib/tests/mobile-trade-layout-market-reset.test.tsx
           src/lib/tests/market-overview.test.tsx
+
+      - name: Test mobile ticket protocol and import lifecycle
+        working-directory: apps/terminal
+        run: >-
+          pnpm exec vitest run --maxWorkers=1
+          src/lib/tests/mobile-sync-*.test.ts
+          src/lib/tests/mobile-agent-sync-route.test.tsx
+          src/lib/tests/mobile-agent-qr-scanner.test.tsx
+          src/lib/tests/mobile-pairing-feature-gate.test.ts
 
       - name: Test route provider lifecycles
         working-directory: apps/terminal
@@ -162,6 +192,20 @@ jobs:
           GATU_BUILD_SHA: ${{ github.event.pull_request.head.sha }}
           GATU_RELEASE_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
           NODE_ENV: production
+          NITRO_PRESET: node-server
+          VITE_MOBILE_PAIRING_CREATE_ENABLED: ${{ matrix.pairing.create }}
+          VITE_MOBILE_PAIRING_IMPORT_ENABLED: ${{ matrix.pairing.import }}
+
+      - name: Verify actual mobile ticket HTTP protocol and process restart
+        run: node deploy/mobile-sync-release.mjs attest apps/terminal/.output "${{ matrix.pairing.create }}" "${{ matrix.pairing.import }}"
+
+      - name: Record verified mobile artifact identity
+        run: |
+          node --input-type=module - <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const { commit, release, mobileSync, verification, verifiedAt, sha256 } = JSON.parse(readFileSync('apps/terminal/.output/.gatu-mobile-sync.json', 'utf8'));
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, '```json\n' + JSON.stringify({ commit, release, mobileSync, verification, verifiedAt, sha256 }, null, 2) + '\n```\n');
+          NODE
 
       - name: Measure client-root startup closure
         run: pnpm --filter @gatu/terminal perf:startup

@@ -62,6 +62,7 @@ async function flushAsyncWork() {
 
 async function createSyncFixture() {
 	return createMobileAgentSyncUrl({
+		syncId: "A".repeat(22),
 		appOrigin: window.location.origin,
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,

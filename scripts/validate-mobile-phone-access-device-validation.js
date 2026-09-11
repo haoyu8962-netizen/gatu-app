@@ -12,54 +12,65 @@ const VALID_STATUSES = new Set(["Not run", "Pass", "Fail"]);
 const EXPECTED_MATRIX_ROWS = {
 	"RD-1": {
 		deviceAndBrowser: "iOS Safari via native Camera app",
-		requiredResult: "Phone-access QR opens the route and shows `Phone link loaded`.",
+		requiredResult: "Phone-access QR opens the clean route and waits for explicit Import.",
 	},
 	"RD-2": {
 		deviceAndBrowser: "iOS Safari",
-		requiredResult: "Pairing code can be typed and pasted before wallet connection.",
+		requiredResult:
+			"Reload retains the bounded draft and consumer; rejected tickets clear the draft without activating access.",
 	},
 	"RD-3": {
-		deviceAndBrowser: "iOS Safari plus target wallet",
-		requiredResult: "Wallet handoff returns to the route without losing loaded link or code.",
+		deviceAndBrowser: "Installed iOS PWA",
+		requiredResult:
+			"PWA and browser contexts remain isolated; cancel and background recovery never import or sign automatically.",
 	},
 	"RD-4": {
 		deviceAndBrowser: "iOS Chrome",
-		requiredResult: "Full phone-access flow works from scan/open through successful import.",
+		requiredResult:
+			"Desktop-approved Agent imports without phone owner login or pairing code; owner and remote approval match.",
 	},
 	"RD-5": {
 		deviceAndBrowser: "Android Chrome",
-		requiredResult: "Full phone-access flow works from scan/open through successful import.",
+		requiredResult:
+			"Desktop-approved Agent imports without phone owner login or pairing code; owner and remote approval match.",
 	},
 	"RD-6": {
 		deviceAndBrowser: "iOS wallet in-app browser, if supported",
-		requiredResult: "Full phone-access flow works or unsupported behavior is documented.",
+		requiredResult: "Explicit import works or unsupported behavior is documented with a working external-browser path.",
 	},
 	"RD-7": {
-		deviceAndBrowser: "Physical phone camera in WalletConnect scanner",
-		requiredResult: "A real `wc:` desktop QR scans, pairs, and connects.",
+		deviceAndBrowser: "Physical phone camera in Link Desktop scanner",
+		requiredResult:
+			"Real Agent QR scans within the viewport; cancel, denied or pending camera permission and background cleanup release all tracks.",
 	},
 	"RD-8": {
-		deviceAndBrowser: "Physical phone WalletConnect scanner",
-		requiredResult: "Phone-access and unsupported QRs show clear wrong-QR feedback.",
+		deviceAndBrowser: "Physical phone Link Desktop scanner",
+		requiredResult: "WalletConnect, expired, foreign-origin and unsupported QRs fail closed with actionable feedback.",
 	},
 	"TW-1": {
 		deviceAndBrowser: "Coinbase Wallet",
-		requiredResult: "Wallet handoff returns to the route without clearing the loaded phone link or typed code.",
+		requiredResult:
+			"Privy reconnect activates the exact owner; desktop Mobile approval matches; ordinary mobile trading keeps its signing contract.",
 	},
 	"TW-2": {
 		deviceAndBrowser: "MetaMask",
-		requiredResult: "Wallet handoff returns to the route without clearing the loaded phone link or typed code.",
+		requiredResult:
+			"Privy reconnect activates the exact owner; desktop Mobile approval matches; ordinary mobile trading keeps its signing contract.",
 	},
 	"TW-3": {
 		deviceAndBrowser: "WalletConnect-compatible wallet used by the product team",
 		requiredResult:
-			"Same-phone WalletConnect deep-link handoff remains available and returns without clearing the loaded phone link or typed code.",
+			"Privy same-phone WalletConnect handoff returns to the exact owner; no parallel application wallet scanner is required.",
 	},
 };
 const REQUIRED_EVIDENCE_FIELDS = [
 	"Tester",
 	"Date and time",
 	"Git commit",
+	"Release ID",
+	"Ticket API version",
+	"Mobile create gate",
+	"Mobile import gate",
 	"App origin",
 	"Environment",
 	"Device model",
@@ -153,6 +164,11 @@ function parseFieldTable(section) {
 }
 
 function validateEvidenceField(id, field, value, problems) {
+	if (field === "Git commit" && getArgValue("--commit", "") && value !== getArgValue("--commit", ""))
+		problems.push(`${id} evidence commit does not match the release commit.`);
+	if (field === "Ticket API version" && value !== "2") problems.push(`${id} evidence must verify ticket API v2.`);
+	if (["Mobile create gate", "Mobile import gate"].includes(field) && value !== "true")
+		problems.push(`${id} evidence must use enabled mobile pairing gates.`);
 	if (isPlaceholderValue(value)) {
 		problems.push(`${id} evidence "${field}" still has placeholder value "${value}".`);
 		return;
@@ -223,7 +239,9 @@ function isPlaceholderValue(value) {
 
 function validateEvidenceReference(id, label, value, problems) {
 	if (value.trim().length < 20) {
-		problems.push(`${id} ${label} must include a concrete screenshot, recording, artifact, or detailed note reference.`);
+		problems.push(
+			`${id} ${label} must include a concrete screenshot, recording, artifact, or detailed note reference.`,
+		);
 	}
 	if (!/\b(screenshot|recording|video|artifact|attachment|notes?|https?:\/\/)\b/i.test(value)) {
 		problems.push(`${id} ${label} must mention a screenshot, recording, artifact, link, or notes.`);
@@ -254,6 +272,10 @@ function renderEvidenceTemplate(id) {
 | Tester | <tester name> |
 | Date and time | <YYYY-MM-DDTHH:mm:ssZ> |
 | Git commit | <7-40 character commit hash> |
+| Release ID | <verified build release ID> |
+| Ticket API version | 2 |
+| Mobile create gate | true |
+| Mobile import gate | true |
 | App origin | <https://preview.example> |
 | Environment | Testnet |
 | Device model | <device model> |
@@ -284,9 +306,7 @@ function getEvidenceSectionInsertion(content) {
 		const rest = content.slice(sectionStart + EVIDENCE_SECTIONS_HEADING.length);
 		const nextHeadingIndex = rest.search(/\n## /);
 		const insertIndex =
-			nextHeadingIndex === -1
-				? content.length
-				: sectionStart + EVIDENCE_SECTIONS_HEADING.length + nextHeadingIndex;
+			nextHeadingIndex === -1 ? content.length : sectionStart + EVIDENCE_SECTIONS_HEADING.length + nextHeadingIndex;
 		return { insertIndex, needsHeading: false };
 	}
 
@@ -314,9 +334,7 @@ function initMissingEvidenceSections() {
 
 	const { insertIndex, needsHeading } = getEvidenceSectionInsertion(content);
 	const templates = missingIds.map(renderEvidenceTemplate).join("\n");
-	const insertedBlock = needsHeading
-		? `\n\n${EVIDENCE_SECTIONS_HEADING}\n\n${templates}\n`
-		: `\n${templates}\n`;
+	const insertedBlock = needsHeading ? `\n\n${EVIDENCE_SECTIONS_HEADING}\n\n${templates}\n` : `\n${templates}\n`;
 	const nextContent = `${content.slice(0, insertIndex).trimEnd()}${insertedBlock}${content.slice(insertIndex)}`;
 	writeFileSync(filePath, nextContent);
 	console.log(`Inserted ${missingIds.length} evidence sections into ${filePath}: ${missingIds.join(", ")}.`);

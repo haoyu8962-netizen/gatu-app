@@ -16,48 +16,55 @@ const VALIDATION_IDS = [...RD_IDS, ...TW_IDS];
 const EXPECTED_MATRIX_ROWS = {
 	"RD-1": {
 		deviceAndBrowser: "iOS Safari via native Camera app",
-		requiredResult: "Phone-access QR opens the route and shows `Phone link loaded`.",
+		requiredResult: "Phone-access QR opens the clean route and waits for explicit Import.",
 	},
 	"RD-2": {
 		deviceAndBrowser: "iOS Safari",
-		requiredResult: "Pairing code can be typed and pasted before wallet connection.",
+		requiredResult:
+			"Reload retains the bounded draft and consumer; rejected tickets clear the draft without activating access.",
 	},
 	"RD-3": {
-		deviceAndBrowser: "iOS Safari plus target wallet",
-		requiredResult: "Wallet handoff returns to the route without losing loaded link or code.",
+		deviceAndBrowser: "Installed iOS PWA",
+		requiredResult:
+			"PWA and browser contexts remain isolated; cancel and background recovery never import or sign automatically.",
 	},
 	"RD-4": {
 		deviceAndBrowser: "iOS Chrome",
-		requiredResult: "Full phone-access flow works from scan/open through successful import.",
+		requiredResult:
+			"Desktop-approved Agent imports without phone owner login or pairing code; owner and remote approval match.",
 	},
 	"RD-5": {
 		deviceAndBrowser: "Android Chrome",
-		requiredResult: "Full phone-access flow works from scan/open through successful import.",
+		requiredResult:
+			"Desktop-approved Agent imports without phone owner login or pairing code; owner and remote approval match.",
 	},
 	"RD-6": {
 		deviceAndBrowser: "iOS wallet in-app browser, if supported",
-		requiredResult: "Full phone-access flow works or unsupported behavior is documented.",
+		requiredResult: "Explicit import works or unsupported behavior is documented with a working external-browser path.",
 	},
 	"RD-7": {
-		deviceAndBrowser: "Physical phone camera in WalletConnect scanner",
-		requiredResult: "A real `wc:` desktop QR scans, pairs, and connects.",
+		deviceAndBrowser: "Physical phone camera in Link Desktop scanner",
+		requiredResult:
+			"Real Agent QR scans within the viewport; cancel, denied or pending camera permission and background cleanup release all tracks.",
 	},
 	"RD-8": {
-		deviceAndBrowser: "Physical phone WalletConnect scanner",
-		requiredResult: "Phone-access and unsupported QRs show clear wrong-QR feedback.",
+		deviceAndBrowser: "Physical phone Link Desktop scanner",
+		requiredResult: "WalletConnect, expired, foreign-origin and unsupported QRs fail closed with actionable feedback.",
 	},
 	"TW-1": {
 		deviceAndBrowser: "Coinbase Wallet",
-		requiredResult: "Wallet handoff returns to the route without clearing the loaded phone link or typed code.",
+		requiredResult:
+			"Privy reconnect activates the exact owner; desktop Mobile approval matches; ordinary mobile trading keeps its signing contract.",
 	},
 	"TW-2": {
 		deviceAndBrowser: "MetaMask",
-		requiredResult: "Wallet handoff returns to the route without clearing the loaded phone link or typed code.",
+		requiredResult:
+			"Privy reconnect activates the exact owner; desktop Mobile approval matches; ordinary mobile trading keeps its signing contract.",
 	},
 	"TW-3": {
 		deviceAndBrowser: "WalletConnect-compatible wallet used by the product team",
 		requiredResult:
-			"Same-phone WalletConnect deep-link handoff remains available and returns without clearing the loaded phone link or typed code.",
+			"Privy same-phone WalletConnect handoff returns to the exact owner; no parallel application wallet scanner is required.",
 	},
 };
 const EXPECTED_REFERENCES = {
@@ -100,27 +107,28 @@ function runScript(extraArgs = []) {
 
 function createRows(ids, status) {
 	return ids
-		.map(
-			(id) => {
-				const row = EXPECTED_MATRIX_ROWS[id];
-				const evidence = status === "Pass" ? `${id} screenshot artifact and notes` : "";
-				return `| ${id} | ${row.deviceAndBrowser} | ${row.requiredResult} | ${status} | ${evidence} |`;
-			},
-		)
+		.map((id) => {
+			const row = EXPECTED_MATRIX_ROWS[id];
+			const evidence = status === "Pass" ? `${id} screenshot artifact and notes` : "";
+			return `| ${id} | ${row.deviceAndBrowser} | ${row.requiredResult} | ${status} | ${evidence} |`;
+		})
 		.join("\n");
 }
 
 function createEvidenceSections() {
-	return VALIDATION_IDS.map(
-		(id) => {
-			const walletConnector = EXPECTED_WALLET_CONNECTORS[id] ?? "Test Wallet";
-			return `### ${id} Evidence
+	return VALIDATION_IDS.map((id) => {
+		const walletConnector = EXPECTED_WALLET_CONNECTORS[id] ?? "Test Wallet";
+		return `### ${id} Evidence
 
 | Field | Value |
 | --- | --- |
 | Tester | Test Engineer |
 | Date and time | 2026-05-25T12:00:00Z |
 | Git commit | abc1234 |
+| Release ID | preview-v2 |
+| Ticket API version | 2 |
+| Mobile create gate | true |
+| Mobile import gate | true |
 | App origin | https://preview.example |
 | Environment | Testnet |
 | Device model | Test Device |
@@ -138,8 +146,7 @@ Notes:
 - Temporary draft cleanup or persistence: ${id} draft behavior matched the pass criteria.
 - Screenshot or recording reference: ${id} screenshot artifact captured.
 `;
-		},
-	).join("\n");
+	}).join("\n");
 }
 
 function createValidationDoc({ status = "Pass", includeEvidence = true } = {}) {
@@ -249,14 +256,14 @@ test("fails when required matrix row wording drifts", () => {
 	const content = createValidationDoc()
 		.replace("| RD-1 | iOS Safari via native Camera app |", "| RD-1 | Desktop Chrome |")
 		.replace(
-			"| Desktop Chrome | Phone-access QR opens the route and shows `Phone link loaded`. |",
+			"| Desktop Chrome | Phone-access QR opens the clean route and waits for explicit Import. |",
 			"| Desktop Chrome | Opens a generic page. |",
 		);
 	const filePath = writeFixture(content);
 	const result = runValidator(filePath);
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /RD-1 device\/browser cell must be "iOS Safari via native Camera app"/);
-	assert.match(result.stderr, /RD-1 required-result cell must be "Phone-access QR opens the route/);
+	assert.match(result.stderr, /RD-1 required-result cell must be "Phone-access QR opens the clean route/);
 });
 
 test("fails when matrix rows or evidence sections are duplicated", () => {
@@ -356,7 +363,9 @@ test("fails when commit, date, or app origin evidence has the wrong shape", () =
 });
 
 test("fails when the required matrix section is missing", () => {
-	const filePath = writeFixture("# Mobile Phone Access Device Validation\n\n| RD-1 | Not matrix | Not matrix | Pass | link |\n");
+	const filePath = writeFixture(
+		"# Mobile Phone Access Device Validation\n\n| RD-1 | Not matrix | Not matrix | Pass | link |\n",
+	);
 	const result = runValidator(filePath, ["--allow-incomplete"]);
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Required Device Matrix section is missing/);
@@ -415,4 +424,15 @@ test("initializes missing evidence sections without duplicating them", () => {
 	assert.match(rerun.stdout, /No missing evidence sections/);
 	content = readFileSync(filePath, "utf8");
 	assert.equal((content.match(/^### RD-1 Evidence$/gm) ?? []).length, 1);
+});
+
+test("release gating rejects stale commit and disabled-gate evidence", () => {
+	const stale = runValidator(writeFixture(createValidationDoc()), ["--commit", "f".repeat(40)]);
+	assert.equal(stale.status, 1);
+	assert.match(stale.stdout + stale.stderr, /commit does not match/);
+	const disabled = runValidator(
+		writeFixture(createValidationDoc().replace("| Mobile import gate | true |", "| Mobile import gate | false |")),
+	);
+	assert.equal(disabled.status, 1);
+	assert.match(disabled.stdout + disabled.stderr, /enabled mobile pairing gates/);
 });
