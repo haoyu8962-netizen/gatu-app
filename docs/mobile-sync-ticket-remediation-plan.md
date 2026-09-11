@@ -2,6 +2,8 @@
 
 状态：待实施。本文只记录方案、调研依据和验收任务，不表示修复已经完成。
 
+生产准入补充见[生产发布核查](mobile-sync-production-readiness.md)：已对照部署脚本、CI、锁定依赖及官方终端实践；安全回滚基线、票据探针和更新后的真机证据是启用前置条件。
+
 调研日期：2026-09-10；复审日期：2026-09-11。最初审计基于 `0c27aa14`，原计划基于 `e922a82c`。本次复审检查计划提交 `5844e4b8` 及其业务代码，逐项核验 Grok 4.6 对抗审查意见，并补充真实 HTTP 重启复现。实施前重新检查相关文件和并发工作区改动。
 
 ## 1. 修复目标与边界
@@ -47,7 +49,7 @@ G1–G4 对应外部模型意见，C1/C2 为本地独立交叉检查。所有裁
 | --- | --- | --- |
 | [Hyperliquid：手机扫码连接](https://hyperliquid.gitbook.io/hyperliquid-docs/onboarding/connect-mobile-via-qr-code) | 桌面连接钱包并签名，手机通过 Link Desktop Wallet 扫码 | 保留桌面 owner 授权和手机导入分工；文档没有说明其内部票据存储或重启策略 |
 | [Hyperliquid：API wallets / nonces](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets) | master 批准 Agent；nonce 按 signer 追踪；注销后的 Agent 地址不宜复用 | 票据 ID 与交易 nonce 分开；重新展示二维码不能自动重批 Agent；新授权使用新 Agent key |
-| [Hyperliquid：Approve an API wallet](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#approve-an-api-wallet) | approveAgent 带网络、Agent 地址、名称、nonce 和签名；名称支持 valid_until 到期时间 | 继续核对远端 Agent 地址、名称和期限；不能用票据 204 代替链上授权 |
+| [Hyperliquid：Approve an API wallet](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#approve-an-api-wallet) 与锁定 SDK | approveAgent 的网络、Agent 地址、名称、nonce 和签名在公开索引与 SDK 中一致；本地 SDK 处理 valid_until 后缀，本次页面抓取未重新确认该细节 | 保留远端地址/名称/期限核验；到期期限须由测试网实际验证，不能用票据 204 代替远端授权 |
 | [官方 Python SDK：approve_agent](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/hyperliquid/exchange.py) 与 [sign_agent](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/hyperliquid/utils/signing.py) | approve_agent 调用 owner 的 sign_agent，后者使用 user-signed EIP-712 | 保留现有 SDK 的签名方案，不手写或复用 L1 交易签名作为批准签名 |
 | [Hyperliquid：签名调试](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/signing) | 建议使用 SDK，并对照官方 Python 实现检查签名差异 | 调试签名使用一次性测试材料；真实密钥、签名、fragment 不进入日志或报告 |
 | [TanStack Start：Server Routes](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes) | HTTP 路由由 server.handlers 处理，可独立配置服务端 middleware | 强制校验放在 handler/store 边界，不能依赖页面 beforeLoad 或隐藏按钮 |
@@ -70,6 +72,8 @@ API 分类：批准/撤销属于 **Exchange**；授权状态复核属于 **Info*
 | 点击 Link Desktop Wallet | 出现 Scan QR Code 和从桌面生成二维码的提示 | 手机扫描入口与官方 onboarding 文档一致 |
 
 这是 Chromium 的移动模拟，不是 iOS Safari 或 Android 真机验收。未完成摄像头授权、真实扫码、owner 批准、导入或官方服务重启测试，不能据此推断官方终端采用某种加密协议、单次消费算法或数据库。临时视口已恢复，调试标签页已关闭。
+
+2026-09-11 在独立访客上下文再次验证了 viewport 与移动 UA/触控的差异，并完成合成摄像头拒绝检查；详细观察及限制见[生产发布核查第 2 节](mobile-sync-production-readiness.md#2-官方终端的实际调试记录)。官方页面的错误表现不是本项目削弱扫描失败反馈的依据。
 
 ## 3. 本轮选定方案
 
@@ -152,13 +156,14 @@ T1–T3 同次部署并重启单 Node 实例，丢弃旧内存票据，禁止导
 
 | 任务 | 修改范围 | 交付与验收 |
 | --- | --- | --- |
+| T0：发布保护与安全回滚基线 | `deploy.sh`、生产 env validator、必要的 canonical Caddy 保护、独立配对 release manifest、build metadata、CI 与部署测试 | 两个失败分支和人工回滚均检查安全协议下限；首次切换有独立入口保护；固定关闭基线不被清理；保留现有精确 referral capability 格式 |
 | T1：补复现回归并替换服务端登记 | `one-time-ticket-server.ts`、`one-time-ticket-policy.ts`、route、对应 server 测试 | 固化重启→重登记复现；实现 issue、origin scope、原子 consume、gate；旧登记永不成功 |
 | T2：客户端签发与 envelope 接线 | `one-time-ticket-client.ts`、`sync-core.ts`、`mobile-agent-sync-modal.tsx`、对应 client/core/modal 测试 | 必须先获得服务端 ID 再生成 QR；consume 仅接受 204，issue 严格解析；身份切换、隐藏、超时不会展示旧结果；展示不新增签名 |
 | T3：手机导入与兼容失败处理 | `mobile-agent-sync.tsx`、必要的 draft 清理逻辑、相关测试与翻译 | 使用 v2 consume；保留 envelope v2/draft v1；保留 consume 前 capture epoch 及完整回滚；拒绝旧票据并给出准确恢复路径，既有 Agent 会话保持可用 |
-| T4：真实 HTTP 与浏览器回归 | 票据 HTTP 集成测试、现有浏览器 fixture/Playwright 配置中必要的新增用例 | 并发、重试、重启后重登记完整链；四种 gate 的构建产物；异常 2xx 不激活；真实旧 bundle 的迁移体验 |
-| T5：发布、说明和旧 PRD 对齐 | `deploy/README.md`、必要的部署 gate 验证、`docs/mobile-phone-access-scanner-prd.md`、`docs/trading-onboarding.md`、`docs/email-trading-signing.md`、真机验证文档 | 文档区分票据有效期与 Agent 授权期限；标明旧 PRD 配对码/手机 owner 登录内容已过时；记录关闭、切换和回滚流程 |
+| T4：真实 HTTP 与浏览器回归 | 票据 HTTP 集成测试、现有浏览器 fixture/Playwright 配置中必要的新增用例、CI 和发布探针 | 并发、重试、重启后重登记完整链；四种 gate 的编译行为及关闭/开启生产产物；Node 与双 HTTPS origin；异常 2xx 不激活；真实旧 bundle/PWA 迁移体验 |
+| T5：发布、说明和旧 PRD 对齐 | `deploy/README.md`、旧 PRD、trading-onboarding/email-trading-signing 文档、真机清单与 `validate-mobile-phone-access-device-validation.js` 及其测试/模板 | 更新已经过时的配对码/手机 owner/WalletConnect scanner 用例；保持必需真机证据约束；按生产发布核查执行并记录结果，不能以 allow-incomplete 通过代替验收 |
 
-T1 先完成；T2、T3 依赖 T1 的契约；T4、T5 在客户端接线后验收。T1–T3 应作为同一次兼容性切换发布，不部署半套协议。任务按以上顺序实现，不意味着自动创建新的 Codex 任务。
+代码依赖为 T1 → T2/T3 → T4；T0 的发布工具可提前准备，但必须结合新产物完成验证。关闭基线部署先满足 T0 及 T4 中相应的自动化/产物验收；用户功能开启前须完成全部 T4/T5，包括真机证据。T1–T3 应作为同一次兼容性切换发布，不部署半套协议。任务划分不意味着自动创建新的 Codex 任务。
 
 ## 5. 验收矩阵
 
@@ -169,6 +174,7 @@ T1 先完成；T2、T3 依赖 T1 的契约；T4、T5 在客户端接线后验收
 | 并发/重试 | A/B 同时消费只有一方成功；原进程与记录仍有效时胜者重试为 204，另一方为 409；过首次 60 秒但已消费的记录仍可幂等重试，到签发后 660 秒均为 410；客户端其它期限仍需通过 |
 | 响应语义 | consume 的 200 HTML、200 JSON、202、重定向、503 和网络中断均不写入/激活 Agent，仅 204 通过；issue 非 200、字段缺失/多余、非规范 ID、无效时间均不生成 QR |
 | 服务端开关 | 默认关闭和仅 CREATE 的构建均不 issue/consume；仅 IMPORT 可 consume、不可 issue；双开可按契约工作；运行时改 VITE 变量不能改变构建结果；关闭不妨碍既有 Agent 查看/主动撤销 |
+| 发布与回滚 | restart/health 失败均不得暴露旧 register；验证固定关闭基线和入口保护；双 origin 与 Node 的 release/协议/gate 一致；不能给现有精确 referral capability 文件直接追加内容 |
 | 服务故障 | RNG 失败/碰撞、store 满、无可信 IP、超限均失败关闭；重试不延长原期限 |
 | Origin/输入 | mainnet/testnet 跨 origin 拒绝；缺失、跨源或不一致的浏览器来源元数据、额外字段、旧版本、非规范 ID、超大流拒绝；Origin 不作为身份证明，非浏览器客户端可以伪造该请求头 |
 | 时钟与可见性 | RTT 较长、QR 渲染跨过期限、系统时钟前后跳、隐藏/恢复页面均不能展示超期结果；monotonic 倒计时不重置 |
@@ -184,7 +190,7 @@ T1 先完成；T2、T3 依赖 T1 的契约；T4、T5 在客户端接线后验收
 
 原规划阶段的 ticket server、ticket client、sync core、feature gate 四个 Vitest 文件共 32 项通过。本次复审另外运行 mobile-agent-sync route/modal 两个文件，55 项通过，并完成第 1 节的真实 handler HTTP 子进程重启复现及实际 client 的响应注入检查。现有测试通过只确认当前基线；复现结果仍显示缺陷存在，不能记作修复通过。
 
-尚未完成新契约的生产构建、Nitro/Caddy HTTP 集成和真机验收；它们属于实施任务。提交前已检查本文 13 个本地 Markdown 链接与下列 11 个测试文件路径，均存在。
+尚未完成新契约的生产构建、Nitro/Caddy HTTP 集成和真机验收；它们属于实施任务。生产核查另运行部署测试：96 通过、2 项 Linux 专属检查在 macOS 跳过、0 失败；旧真机验证器因 11 行 Not run 返回失败。完整结果和命令见[生产发布核查第 6 节](mobile-sync-production-readiness.md#6-本次实际完成与尚未完成)。本地文档链接与测试路径在提交前检查。
 
 实施验证命令按实际改动补齐：
 
@@ -211,11 +217,13 @@ pnpm build
 
 ## 6. 发布与回滚
 
-1. 在暂存环境完成单 Node 生产构建及真实 HTTP 重启测试；配对两个 gate 保持默认关闭，测试构建显式开启。
-2. 对齐关闭配对 gate 的构建与运行实例，确认关闭不触发额外签名；已有交易会话保持原有可用性。
-3. 一次部署新 handler 与 client，重启实例并确认旧内存票据清空，保留 envelope/draft 格式；验证两 origin 均为同一修复后的 release。发布提示要求旧页面双端完整刷新后重新配对，不能承诺旧 JS 自动显示升级提示。
-4. 按已完成的浏览器/真机证据开启既有 gate；记录发行版本与验证结果，不能把“计划中的测试”标为已通过。
-5. 回滚使用仍包含旧登记拒绝逻辑的安全构建，并关闭配对 gate。仅关闭旧构建的 UI 开关不能修复仍可调用的旧 register API；不得回滚为公开暴露旧登记入口的版本。
+执行[生产发布核查第 4–5 节](mobile-sync-production-readiness.md#5-推荐发布顺序)的阶段顺序：独立暂存验收 → 首次票据入口保护 → 发布完整但关闭的 v2 基线 → 验证安全回滚后解除入口保护 → 发布完整开启版本 → 探针与观察。每次部署都使旧 Map 票据失效，用户需重新配对；不承诺配对无中断。
+
+现有 deploy.sh 自动回滚到 previous_release，尚未检查票据协议下限；仅在本文写“不回滚旧版”不足以执行，必须完成 T0。首次失败若恢复旧应用，独立入口封锁必须继续存在；解除封锁后只能回到已验证的安全版本。保持原有版本校验、referral guard、图表健康检查、旧 hashed assets 保留和原子 release 切换。
+
+主网和测试网共用同一 Node release 与两个全局构建开关，不能只对其中一个 origin 放量。测试网先验收使用独立暂存部署；生产双 origin 同时按实际构建配置开启。需要按网络分阶段时另行设计网络级 gate，不能用临时环境变量假装已实现。
+
+发布提示要求旧页面双端完整刷新后重新配对；保留既有 Agent 会话，不自动重签、不强制刷新正在签名的页面。关闭配对需要重建或已验证的入口封锁，不能只改 runtime VITE 环境变量。记录最终主机产物的发行身份及探针结果，不把同 SHA 的 CI 构建视为主机产物已经验证。
 
 当前计划继续限定单常驻 Node。横向扩容、serverless 或多区域启用配对之前，必须另行交付所有实例共享的原子 TTL store 和全局失效策略；粘性会话不足以证明跨实例一次性。此条件同样适用于仓库现有的可选 Vercel 发布配置。
 
@@ -231,4 +239,4 @@ pnpm build
 
 ## 8. 完成判定
 
-T1–T5 的代码、协议迁移、根因回归、真实 HTTP 重启、浏览器验证与发布说明齐备，才可称“票据重放缺口已修复”。完整 QR 泄露后的安全性继续按第 7 节单独评估。当前文档的提交只表示规划完成。
+T0–T5 的代码、协议迁移、根因回归、真实 HTTP 重启、浏览器/真机验证、安全回滚及发布证据齐备，才可称“票据重放缺口已修复且通过生产准入”。完整 QR 泄露后的安全性继续按第 7 节单独评估。当前文档提交只表示规划完成，不能视为已可启用生产。
