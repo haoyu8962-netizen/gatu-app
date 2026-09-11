@@ -635,7 +635,7 @@ export function CompactOrderbook({
 					<div
 						data-slot="compact-orderbook-mid"
 						data-direction={midDirection}
-						className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
+						className="shrink-0 flex h-[24px] items-center justify-start px-2 gap-1.5"
 					>
 						<span className="sr-only">{t`Mid`}: </span>
 						<span
