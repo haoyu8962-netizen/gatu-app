@@ -167,31 +167,44 @@ describe("TradeFormFields order-entry data ownership", () => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 	});
 
-	it("hot-switches TIF chip labels while preserving selection, input and focus", () => {
+	it("hot-switches the TIF selector label while preserving selection, input and focus", async () => {
 		act(() => root.render(<ParentHarness />));
 		act(() => {
 			actions.setOrderType("limit");
 			actions.setLimitPrice("101.25");
 		});
-		const chip = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent === "Post Only",
+		const trigger = container.querySelector<HTMLButtonElement>('button[role="combobox"][aria-label^="TIF:"]');
+		if (!trigger) throw new Error("Expected TIF selector");
+		await act(async () => {
+			trigger.click();
+			await Promise.resolve();
+		});
+		const postOnlyOption = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find(
+			(option) => option.textContent === "Post Only",
 		);
-		if (!chip) throw new Error("Expected Post Only chip");
-		act(() => chip.click());
-		chip.focus();
-		expect(chip.getAttribute("aria-pressed")).toBe("true");
+		if (!postOnlyOption) throw new Error("Expected Post Only option");
+		await act(async () => {
+			postOnlyOption.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+			await Promise.resolve();
+			postOnlyOption.click();
+			await Promise.resolve();
+		});
+		act(() => trigger.focus());
+		expect(trigger.textContent).toBe("Post Only");
+		expect(trigger.getAttribute("aria-expanded")).toBe("false");
 		const priceInput = container.querySelector<HTMLInputElement>('input[value="101.25"]');
 		expect(priceInput).not.toBeNull();
 		const postOnlyId = createHash("sha256").update("Post Only\x1f").digest("base64").slice(0, 6);
 		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [postOnlyId]: "只挂单" } }));
-		expect(chip.textContent).toBe("只挂单");
-		expect(chip.getAttribute("aria-pressed")).toBe("true");
-		expect(document.activeElement).toBe(chip);
+		expect(trigger.textContent).toBe("只挂单");
+		expect(trigger.getAttribute("aria-label")).toBe("TIF: 只挂单");
+		expect(document.activeElement).toBe(trigger);
+		expect(container.querySelector('button[role="combobox"][aria-label="TIF: 只挂单"]')).toBe(trigger);
 		expect(container.querySelector('input[value="101.25"]')).toBe(priceInput);
 		act(() => i18n.loadAndActivate({ locale: "en", messages: {} }));
-		expect(chip.textContent).toBe("Post Only");
-		expect(chip.getAttribute("aria-pressed")).toBe("true");
-		expect(document.activeElement).toBe(chip);
+		expect(trigger.textContent).toBe("Post Only");
+		expect(trigger.getAttribute("aria-label")).toBe("TIF: Post Only");
+		expect(document.activeElement).toBe(trigger);
 		expect(priceInput?.value).toBe("101.25");
 	});
 

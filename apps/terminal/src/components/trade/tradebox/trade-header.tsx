@@ -124,16 +124,16 @@ export function TradeHeader({
 			<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-3"}>
 				<div
 					className={cn(
-						"grid min-w-0 overflow-hidden bg-surface",
-						isLeveraged
-							? "grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)]"
-							: "grid-cols-1",
+						"grid min-w-0 gap-1 bg-surface",
+						isLeveraged ? "grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_2.75rem]" : "grid-cols-1",
 					)}
 				>
 					<Dropdown
 						trigger={
 							<span className="inline-flex min-w-0 items-center justify-center gap-1">
-								<span className="truncate">{orderTypeLabel}</span>
+								<span className="truncate" title={orderTypeLabel}>
+									{orderTypeLabel}
+								</span>
 								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 							</span>
 						}

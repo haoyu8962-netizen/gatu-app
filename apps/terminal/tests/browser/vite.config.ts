@@ -12,7 +12,7 @@ const tradePanelBrowserMock = fileURLToPath(new URL("./trade-panel-all-orders.br
 export default defineConfig({
 	root,
 	cacheDir: fileURLToPath(new URL("../../node_modules/.vite-browser", import.meta.url)),
-	optimizeDeps: { entries: ["**/*.html", "!user-menu-recovery.html"] },
+	optimizeDeps: { entries: ["**/*.html", "!user-menu-recovery.html", "!mobile-trade-all-orders.html"] },
 	define: { "process.env.DRAGGABLE_DEBUG": "false" },
 	plugins: [
 		lingui(),

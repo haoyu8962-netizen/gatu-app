@@ -99,7 +99,7 @@ export function TradeFormTwap({
 	const quoteUnitClass = compact || desktop ? "trade-card-label-full" : undefined;
 
 	const optionProps = {
-		className: cn("min-w-0 max-w-full items-center gap-1.5", mobileSafe ? "min-h-11" : "min-h-5"),
+		className: cn("min-w-0 max-w-full items-center gap-1.5", mobileSafe ? "min-h-8" : "min-h-5"),
 		controlClassName:
 			"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control",
 		indicatorClassName: "text-trading-panel-on-control",
@@ -120,7 +120,7 @@ export function TradeFormTwap({
 	}
 
 	return (
-		<div data-slot="trade-twap-fields" className={cn("flex min-w-0 flex-col", compact ? "gap-1.5" : "gap-2")}>
+		<div data-slot="trade-twap-fields" className={cn("flex min-w-0 flex-col", mobileSafe ? "gap-3" : "gap-2")}>
 			<div className="flex flex-col gap-1.5">
 				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${DAYS_MAX}d)`}</span>
 				<div className="flex gap-2">
@@ -157,7 +157,10 @@ export function TradeFormTwap({
 					</div>
 				</div>
 			</div>
-			<div data-slot="trade-twap-options" className="flex min-w-0 flex-wrap items-center gap-x-4">
+			<div
+				data-slot="trade-twap-options"
+				className={cn("flex min-w-0 flex-wrap items-center gap-x-4", mobileSafe && "gap-y-3")}
+			>
 				<Checkbox
 					{...optionProps}
 					disabled={disabled}

@@ -14,11 +14,15 @@ interface Props {
 
 export function ScaleField({ compact, desktop, range, disabled, label, action, children }: Props) {
 	if (!compact && !desktop) return <>{children}</>;
-	if (desktop && range) {
+	if (range) {
 		return (
 			<div className="flex min-w-0 flex-col gap-0.5">
-				<span className="text-2xs text-trading-panel-subtle">{label}</span>
-				<div className={cn(tradingInputFrameClass, "h-9 px-2.5", disabled && "opacity-50")}>{children}</div>
+				<span className="min-w-0 truncate text-2xs text-trading-panel-subtle" title={label}>
+					{label}
+				</span>
+				<div className={cn(tradingInputFrameClass, desktop ? "h-9 px-2.5" : "h-8 px-2", disabled && "opacity-50")}>
+					{children}
+				</div>
 				<span className="text-3xs tabular-nums text-trading-panel-subtle">{range}</span>
 			</div>
 		);

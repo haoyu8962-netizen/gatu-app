@@ -677,6 +677,7 @@ export function TradePanel() {
 					side={side}
 					feeQuote={feeQuote}
 					szDecimals={market?.szDecimals}
+					marketKind={market?.kind}
 				/>
 			);
 		}

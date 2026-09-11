@@ -88,4 +88,24 @@ describe("TwapOrderSummary trigger and stop rows", () => {
 		expect(labels).toContain("Min Price");
 		expect(labels).not.toContain("Max Price");
 	});
+
+	it("preserves spot precision for low-priced TWAP trigger and stop values", () => {
+		act(() =>
+			root.render(
+				<TwapOrderSummary
+					{...baseProps}
+					compact
+					marketKind="spot"
+					twapTriggerPriceNum={0.123}
+					twapStopPriceNum={0.456}
+				/>,
+			),
+		);
+
+		const labels = [...container.querySelectorAll("span.truncate")];
+		const triggerRow = labels.find((label) => label.textContent === "Trigger Price")?.parentElement;
+		const stopRow = labels.find((label) => label.textContent === "Max Price")?.parentElement;
+		expect(triggerRow?.lastElementChild?.textContent).toBe("$0.123");
+		expect(stopRow?.lastElementChild?.textContent).toBe("$0.456");
+	});
 });

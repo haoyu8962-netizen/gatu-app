@@ -46,7 +46,9 @@ export function ScaleOrderSummary({
 						scaleStart !== null && scaleStart > 0 ? "" : "font-normal text-trading-panel-muted",
 					)}
 				>
-					{scaleStart !== null && scaleStart > 0 ? formatPrice(scaleStart, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
+					{scaleStart !== null && scaleStart > 0
+						? formatPrice(scaleStart, { szDecimals, marketType: marketKind === "spot" ? "spot" : "perp" })
+						: FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			<SummaryRow compact={compact} label={t`End Price`}>
@@ -56,7 +58,9 @@ export function ScaleOrderSummary({
 						scaleEnd !== null && scaleEnd > 0 ? "" : "font-normal text-trading-panel-muted",
 					)}
 				>
-					{scaleEnd !== null && scaleEnd > 0 ? formatPrice(scaleEnd, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
+					{scaleEnd !== null && scaleEnd > 0
+						? formatPrice(scaleEnd, { szDecimals, marketType: marketKind === "spot" ? "spot" : "perp" })
+						: FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{!compact && (

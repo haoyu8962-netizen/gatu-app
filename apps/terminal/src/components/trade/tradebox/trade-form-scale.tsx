@@ -63,7 +63,7 @@ export function TradeFormScale({
 	const hoistedMid = inline ? formattedMid : undefined;
 
 	return (
-		<>
+		<div data-slot="trade-scale-fields" className="flex min-w-0 flex-col gap-2">
 			<ScaleField
 				compact={compact}
 				desktop={desktop}
@@ -110,13 +110,13 @@ export function TradeFormScale({
 					mobileSafe={mobileSafe}
 				/>
 			</ScaleField>
-			<div className={desktop ? "grid min-w-0 grid-cols-2 gap-2" : "contents"}>
+			<div className={inline ? "grid min-w-0 grid-cols-2 gap-2" : "contents"}>
 				<ScaleField
 					compact={compact}
 					desktop={desktop}
 					disabled={disabled}
 					label={levelsLabel}
-					range={desktop ? `${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}` : undefined}
+					range={inline ? `${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}` : undefined}
 				>
 					<NumberInput
 						label={inline ? undefined : levelsLabel}
@@ -138,7 +138,7 @@ export function TradeFormScale({
 					desktop={desktop}
 					disabled={disabled}
 					label={skewLabel}
-					range={desktop ? `${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}` : undefined}
+					range={inline ? `${SCALE_SKEW_MIN}–${SCALE_SKEW_MAX}` : undefined}
 				>
 					<NumberInput
 						label={inline ? undefined : skewLabel}
@@ -157,6 +157,6 @@ export function TradeFormScale({
 					/>
 				</ScaleField>
 			</div>
-		</>
+		</div>
 	);
 }

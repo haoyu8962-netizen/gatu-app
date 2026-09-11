@@ -2575,7 +2575,6 @@ msgstr "फ़ोन लिंक करने से पहले इस डे
 msgid "Enabling"
 msgstr "सक्षम किया जा रहा है"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -2759,7 +2758,6 @@ msgstr "अनुमानित समय"
 msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
 msgstr "एथेरियम स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए एक प्रोग्राम योग्य ब्लॉकचेन है।"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
@@ -3185,7 +3183,6 @@ msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबम�
 msgid "Forwarding deposit"
 msgstr "जमा फ़ॉरवर्ड किया जा रहा है"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "आवृत्ति"
@@ -4289,7 +4286,6 @@ msgstr "अधिकतम गिरावट"
 msgid "Max drawdown is unavailable until cash-flow-adjusted history can be verified."
 msgstr "नकदी प्रवाह के प्रभाव से समायोजित इतिहास की पुष्टि होने तक अधिकतम गिरावट उपलब्ध नहीं है।"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -4341,7 +4337,6 @@ msgstr "न्यूनतम ऑर्डर ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "न्यूनतम ऑर्डर $10"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -4891,7 +4886,6 @@ msgstr "रिपोर्ट नहीं किया गया"
 msgid "Number format"
 msgstr "नंबर फ़ॉर्मेट"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -5566,7 +5560,6 @@ msgstr "यह पुष्टि खुली रहने के दौरा�
 msgid "Positive PNL"
 msgstr "धनात्मक PNL"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Post Only"
@@ -6444,7 +6437,6 @@ msgstr "चल रहा है"
 msgid "Running Time ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
 msgstr "चलने की अवधि ({TWAP_MINUTES_MIN}m - {DAYS_MAX}d)"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Runtime"
@@ -6911,7 +6903,6 @@ msgstr "साइज़ ऑर्डर के शेष साइज़ से 
 msgid "Size precision must be a non-negative integer"
 msgstr "साइज़ परिशुद्धता एक गैर-ऋणात्मक पूर्णांक होनी चाहिए"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7146,7 +7137,6 @@ msgstr "प्रारंभ और समाप्ति अलग होन�
 msgid "Start camera"
 msgstr "कैमरा शुरू करें"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -7250,6 +7240,10 @@ msgstr "स्टॉप लॉस लिमिट मूल्य"
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Stop loss return"
 msgstr "स्टॉप लॉस रिटर्न"
+
+#: src/components/trade/tradebox/tp-sl-section.tsx
+msgid "Stop loss return unit"
+msgstr "स्टॉप लॉस रिटर्न की इकाई"
 
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -7484,6 +7478,10 @@ msgstr "Take Profit Market"
 #: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Take profit return"
 msgstr "टेक प्रॉफिट रिटर्न"
+
+#: src/components/trade/tradebox/tp-sl-section.tsx
+msgid "Take profit return unit"
+msgstr "लाभ लेने के रिटर्न की इकाई"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
@@ -8223,7 +8221,6 @@ msgstr "इससे कोई भी वर्तमान मोबाइल �
 msgid "This window stays locked until the request reaches a verifiable result."
 msgstr "अनुरोध का सत्यापन योग्य परिणाम मिलने तक यह विंडो लॉक रहेगी।"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -8285,7 +8282,6 @@ msgid "Toggle display units"
 msgstr "प्रदर्शन इकाइयाँ बदलें"
 
 #: src/components/trade/tradebox/price-input-with-percent.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Toggle profit and loss unit"
 msgstr "लाभ और हानि इकाई बदलें"
 
@@ -8624,7 +8620,6 @@ msgstr "ट्रिगर ऑर्डर को आपकी मौजूद�
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx

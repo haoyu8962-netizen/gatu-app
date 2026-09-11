@@ -5,6 +5,7 @@ import type { OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { getTwapRuntimeMinutes } from "@/domain/trade/twap-details";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatPrice } from "@/lib/format";
+import type { MarketKind } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isPositive } from "@/lib/trade/numbers";
 import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
@@ -20,6 +21,7 @@ interface Props {
 	side: Side;
 	feeQuote: OrderFeeQuote;
 	szDecimals: number | undefined;
+	marketKind?: MarketKind;
 }
 
 export function TwapOrderSummary({
@@ -30,6 +32,7 @@ export function TwapOrderSummary({
 	feeQuote,
 	szDecimals,
 	compact,
+	marketKind,
 }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
@@ -50,12 +53,16 @@ export function TwapOrderSummary({
 			</SummaryRow>
 			{isPositive(twapTriggerPriceNum) && (
 				<SummaryRow compact={compact} label={t`Trigger Price`}>
-					<span className="whitespace-nowrap">{formatPrice(twapTriggerPriceNum, { szDecimals })}</span>
+					<span className="whitespace-nowrap">
+						{formatPrice(twapTriggerPriceNum, { szDecimals, marketType: marketKind === "spot" ? "spot" : "perp" })}
+					</span>
 				</SummaryRow>
 			)}
 			{isPositive(twapStopPriceNum) && (
 				<SummaryRow compact={compact} label={stopPriceLabel}>
-					<span className="whitespace-nowrap">{formatPrice(twapStopPriceNum, { szDecimals })}</span>
+					<span className="whitespace-nowrap">
+						{formatPrice(twapStopPriceNum, { szDecimals, marketType: marketKind === "spot" ? "spot" : "perp" })}
+					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow compact={compact} label={t`Fees`}>

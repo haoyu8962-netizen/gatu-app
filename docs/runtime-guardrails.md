@@ -551,6 +551,24 @@ scans only `user-menu-recovery.html`; the shared browser optimizer excludes that
 entry, and the default Playwright suite excludes its dedicated test file so each
 fixture runs with its own wallet mocks and server configuration.
 
+The real mobile order-entry fixture uses `node_modules/.vite-mobile-trade-all-orders`
+and scans only `mobile-trade-all-orders.html`. Run it with
+`pnpm --dir apps/terminal exec playwright test --config tests/browser/mobile-trade-all-orders.playwright.config.ts`.
+The shared optimizer and default browser suite exclude this fixture's entry and
+test file. Its cache must remain a sibling of the application and other fixture caches.
+
+Shared desktop/mobile order summaries are emitted as separate implicit chunks
+after the client runtime entry. The trade route imports them statically inside its
+existing dynamic page boundary, and TanStack Start retains one client entry.
+Rollup shares their transitive dependencies through the existing chunk graph.
+Test this actual runtime-to-route topology when checking the chunk plugin.
+Do not group application summaries with recursive `manualChunks`
+assignments: they can absorb application state and vendor dependencies. See
+[Rollup's manual-chunk dependency behavior](https://rollupjs.org/configuration-options/#output-manualchunks).
+Validate the complete static chunk graph and startup-closure budgets after changing
+these boundaries; a small named chunk alone does not prove safe startup behavior.
+Do not introduce a lazy/Suspense boundary solely to shrink a measured form's bundle.
+
 ## 10. Trading Slider Sessions
 
 Follow [slider-interactions.md](slider-interactions.md) for the shared quantity and

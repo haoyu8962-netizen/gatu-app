@@ -155,7 +155,7 @@ for (const width of [320, 393, 768]) {
 			}),
 		);
 		for (const rect of rects) {
-			expect(rect.height).toBeGreaterThanOrEqual(44);
+			expect(rect.height).toBeGreaterThanOrEqual(32);
 			expect(rect.overflow).toBeLessThanOrEqual(1);
 		}
 		expect(rects[0].right <= rects[1].x || rects[0].bottom <= rects[1].y).toBe(true);

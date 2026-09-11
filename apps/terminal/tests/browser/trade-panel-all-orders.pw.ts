@@ -166,6 +166,8 @@ for (const viewport of [
 				const toggle = page.getByRole("checkbox", { name: label.tpSl, exact: true });
 				await toggle.check();
 				await expect(page.getByRole("textbox", { name: label.tpReturn, exact: true })).toBeVisible();
+				await page.getByRole("textbox", { name: locale === "en" ? "Take Profit" : "止盈", exact: true }).fill("110");
+				await page.getByRole("textbox", { name: locale === "en" ? "Stop Loss" : "止损", exact: true }).fill("95");
 				await expectPanelFits(page);
 				expect(await geometry(page)).toEqual(initial);
 				await toggle.uncheck();

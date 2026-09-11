@@ -23,7 +23,9 @@ const testState = vi.hoisted(() => ({
 		setLimitPriceFromPrefill: vi.fn(),
 		setLimitPriceFromUser: vi.fn(),
 		setOrderType: vi.fn(),
+		setReduceOnly: vi.fn(),
 		setSide: vi.fn(),
+		setSize: vi.fn(),
 		setSlPrice: vi.fn(),
 		setTpPrice: vi.fn(),
 		setTpSlEnabled: vi.fn(),
@@ -40,7 +42,7 @@ vi.mock("@gatu/ui", async (importOriginal) => ({
 		size: _size,
 		variant: _variant,
 		...props
-	}: Record<string, unknown>) => createElement("button", props, children as ReactNode),
+	}: Record<string, unknown>) => createElement("button", { type: "button", ...props }, children as ReactNode),
 	Tooltip: ({ children }: { children: ReactNode }) => children,
 }));
 
@@ -236,7 +238,9 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useLimitPrice: () => "",
 	useOrderEntryActions: () => testState.actions,
 	useOrderSide: () => testState.side,
+	useOrderSize: () => String(testState.sizeValue),
 	useOrderType: () => testState.orderType,
+	useReduceOnly: () => false,
 	useScaleEnd: () => "",
 	useScaleLevels: () => null,
 	useScaleSkew: () => "",
@@ -247,6 +251,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
 	useTriggerPrice: () => "",
+	useTwapAdvancedEnabled: () => false,
 	useTwapMinutes: () => null,
 	useTwapRandomize: () => false,
 	useTwapStopPrice: () => "",

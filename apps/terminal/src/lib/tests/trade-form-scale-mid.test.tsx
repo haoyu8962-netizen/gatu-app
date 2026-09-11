@@ -77,7 +77,7 @@ describe("TradeFormScale Mid controls", () => {
 		expect(inputs).toHaveLength(4);
 		for (const input of inputs) {
 			expect(input.classList.contains("h-7")).toBe(true);
-			expect(input.closest(".h-8")?.classList.contains("px-2.5")).toBe(true);
+			expect(input.closest(".h-8")).not.toBeNull();
 			expect(input.classList.contains("max-[1000px]:text-base")).toBe(true);
 			expect(input.classList.contains("max-[1000px]:leading-5")).toBe(true);
 			expect(input.disabled).toBe(false);

@@ -1,0 +1,133 @@
+import { i18n } from "@lingui/core";
+import { MobileTradeOrderSplit } from "@/components/trade/mobile/mobile-trade-order-split";
+import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
+import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
+import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { createI18nRoot } from "@/lib/tests/harness/react";
+import { toNumberOrZero } from "@/lib/trade/numbers";
+import { messages } from "@/locales/en/messages.po";
+import { messages as chineseMessages } from "@/locales/zh/messages.po";
+import { useSetTheme, useTheme } from "@/stores/use-global-settings-store";
+import {
+	useLimitPrice,
+	useOrderEntryActions,
+	useOrderSide,
+	useOrderSize,
+	useOrderType,
+	useSizeMode,
+} from "@/stores/use-order-entry-store";
+import { setFixtureState, useFixtureState, useSelectedMarketInfo } from "./mobile-trade-all-orders.browser";
+import "./mobile-orderbook-cls.css";
+
+function DesktopFields() {
+	const { data: market } = useSelectedMarketInfo();
+	const side = useOrderSide();
+	const sizeMode = useSizeMode();
+	const sizeInput = useOrderSize();
+	const limitPrice = useLimitPrice();
+	const actions = useOrderEntryActions();
+	const data = useOrderEntryData({
+		market,
+		side,
+		markPx: 100,
+		sizeMode,
+		sizeInput,
+		limitPx: toNumberOrZero(limitPrice),
+		marketOrderSizing: null,
+	});
+	return (
+		<div data-fixture-desktop className="trade-panel-container w-[300px] p-3">
+			<TradeFormFields
+				orderEntryData={data}
+				price={toNumberOrZero(limitPrice)}
+				positionSize={0}
+				swapTargetToken={null}
+				onSizeModeToggle={() => {
+					const converted = data.convertSizeForModeToggle();
+					actions.toggleSizeMode();
+					if (converted) actions.setSize(converted);
+				}}
+				onSizePercentApply={(percent) => actions.setSize(data.getSizeForPercent(percent))}
+				onSwapClick={() => {}}
+			/>
+		</div>
+	);
+}
+
+function Fixture() {
+	const { data: market } = useSelectedMarketInfo();
+	const theme = useTheme();
+	const setTheme = useSetTheme();
+	const sizeMode = useSizeMode();
+	const mobile = useIsMobile();
+	const state = useFixtureState();
+	const actions = useOrderEntryActions();
+	const orderType = useOrderType();
+	return (
+		<div className="flex h-svh flex-col bg-surface">
+			<nav className="flex min-h-[50px] shrink-0 flex-wrap gap-2 text-xs">
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "en", messages })}>
+					English
+				</button>
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "zh", messages: chineseMessages })}>
+					中文
+				</button>
+				<button type="button" onClick={() => setFixtureState({ connected: !state.connected })}>
+					Connection
+				</button>
+				<button type="button" onClick={() => setFixtureState({ funded: !state.funded })}>
+					Funding
+				</button>
+				<button
+					type="button"
+					onClick={() => setFixtureState({ status: state.status === "success" ? "stale" : "success" })}
+				>
+					Freshness
+				</button>
+				<button type="button" onClick={() => actions.resetForm()}>
+					Reset
+				</button>
+				<button
+					type="button"
+					aria-pressed={theme === "dark"}
+					onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+				>
+					Theme
+				</button>
+			</nav>
+			<main data-fixture-page className="min-h-0 flex-1 overflow-y-auto">
+				<div className="h-[62px]">{market.pairName}</div>
+				{mobile ? (
+					<MobileTradeOrderSplit
+						orderbook={
+							<div data-fixture-book className="absolute inset-0 border-l border-stroke">
+								Order book
+							</div>
+						}
+					>
+						<div
+							data-fixture-form
+							data-order-type={orderType}
+							className="flex min-h-0 min-w-0 flex-[1.53] flex-col self-stretch"
+						>
+							<MobileTradeView embedded sizeMode={sizeMode} onSizeModeChange={actions.setSizeMode} />
+						</div>
+					</MobileTradeOrderSplit>
+				) : (
+					<DesktopFields />
+				)}
+				<section data-fixture-positions className="h-[200px]">
+					Positions
+				</section>
+			</main>
+			<footer className="h-[57px] shrink-0">
+				Navigation<output aria-label="Captured orders">{JSON.stringify(state.submissions)}</output>
+			</footer>
+		</div>
+	);
+}
+const root = document.getElementById("root");
+if (!root) throw new Error("Missing fixture root");
+i18n.loadAndActivate({ locale: "en", messages });
+createI18nRoot(root).render(<Fixture />);
