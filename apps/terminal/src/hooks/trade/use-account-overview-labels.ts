@@ -10,7 +10,6 @@ interface AccountOverviewLabels {
 	accountMarginRatio: string;
 	accountMode: string;
 	accountValue: string;
-	availableFundsInSpot: string;
 	crossAccountLeverage: string;
 	crossMaintenanceMargin: string;
 	loading: string;
@@ -39,7 +38,6 @@ export function useAccountOverviewLabels({
 		accountMarginRatio: t`Account Margin Ratio`,
 		accountMode: accountModeLabel,
 		accountValue: usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`,
-		availableFundsInSpot: t`Available funds are in Spot`,
 		crossAccountLeverage: t`Cross Account Leverage`,
 		crossMaintenanceMargin: t`Cross Maintenance Margin`,
 		loading: t`Loading...`,

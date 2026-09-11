@@ -325,6 +325,8 @@ msgstr "الوصول مقيّد"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "الحساب"
@@ -920,8 +922,8 @@ msgid "Available for delegation"
 msgstr "متاح للتفويض"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Available funds are in Spot"
-msgstr "الأموال المتاحة في Spot"
+#~ msgid "Available funds are in Spot"
+#~ msgstr "الأموال المتاحة في Spot"
 
 #: src/components/staking/staking-view.tsx
 msgid "Available in Spot"
@@ -1231,8 +1233,8 @@ msgid "Checking regional availability. Funds actions are temporarily unavailable
 msgstr "جارٍ التحقق من التوفر في منطقتك. عمليات إدارة الأموال غير متاحة مؤقتًا."
 
 #: src/components/trade/tradebox/trade-panel.tsx
-msgid "Checking regional availability. Trading is temporarily unavailable."
-msgstr "جارٍ التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
+#~ msgid "Checking regional availability. Trading is temporarily unavailable."
+#~ msgstr "جارٍ التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
@@ -2270,7 +2272,6 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "تم إرسال معاملة الإيداع لكنها لم تُؤكَّد على Arbitrum. قد يكون رقم nonce في محفظتك غير متزامن مع الشبكة. امسح النشاط المعلّق أو أعد ضبط بيانات nonce في المحفظة، ثم أعد المحاولة."
 
 #: src/hooks/trade/use-deposit-availability.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Deposit unavailable"
 msgstr "الإيداع غير متاح"
 
@@ -2938,9 +2939,6 @@ msgstr "فشل تحميل الأرصدة"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "فشل في تحميل الأرصدة."
 
@@ -4001,13 +3999,8 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
-#: src/lib/trade/use-button-content.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
 
@@ -5398,6 +5391,7 @@ msgid "Phone-access storage is unavailable. Close this tab and clear this site's
 msgstr "تخزين وصول الهاتف غير متاح. أغلق علامة التبويب هذه وامسح بيانات هذا الموقع قبل المسح مرة أخرى."
 
 #. placeholder {0}: input.sideLabel
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Place {0} Order"
 msgstr "وضع أمر {0}"
@@ -8825,7 +8819,6 @@ msgstr "تعذر التحقق من التوفر الإقليمي. لم يُرس�
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "تعذّر التحقق من التوفر في منطقتك. لم يتم إرسال عملية إدارة الأموال هذه."
 
-#: src/components/trade/tradebox/trade-panel.tsx
 #: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "تعذر التحقق من التوفر الإقليمي. التداول غير متاح مؤقتًا."
@@ -8886,7 +8879,6 @@ msgstr "تعذر التحقق من أهلية السحب. لم يتم إرسال
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "غير متاح"

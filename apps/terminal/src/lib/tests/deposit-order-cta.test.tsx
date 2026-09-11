@@ -12,7 +12,6 @@ import { createI18nRoot } from "./harness/react";
 
 const DEPOSIT_UNAVAILABLE = "Deposit unavailable";
 const UNAVAILABLE_REASON = "Deposits from external wallets are not enabled on Mainnet.";
-const TRADING_UNAVAILABLE_REASON = "Checking regional availability. Trading is temporarily unavailable.";
 
 function getMessageId(message: string): string {
 	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
@@ -135,6 +134,38 @@ describe("Deposit order CTA", () => {
 		},
 	);
 
+	it("keeps explicit signer setup reachable before the funding snapshot resolves", () => {
+		const input = createDesktopInput({
+			isSignerReady: false,
+			isBalanceLoading: true,
+			validation: { canSubmit: false, errors: [], validationErrors: [], needsApproval: true, valid: false },
+		});
+		const content = renderDesktop(input);
+		expect(content).toMatchObject({ text: "Enable Trading", disabled: false });
+		content.action();
+		expect(input.onRegister).toHaveBeenCalledOnce();
+		expect(input.onSubmit).not.toHaveBeenCalled();
+		expect(input.onDeposit).not.toHaveBeenCalled();
+	});
+
+	it.each(["loading", "error", "blocked"])("keeps the desktop action label quiet during %s and recovery", (state) => {
+		const input = createDesktopInput({
+			availableBalance: 100,
+			validation: { canSubmit: true, errors: [], validationErrors: [], needsApproval: false, valid: true },
+		});
+		const pending = renderDesktop({
+			...input,
+			isBalanceLoading: state === "loading",
+			hasBalanceError: state === "error",
+			tradingBlocked: state === "blocked",
+		});
+		expect(pending).toMatchObject({ text: "Place Buy Order", disabled: true });
+		expect(pending.disabledReason).toBeUndefined();
+		expect(input.onSubmit).not.toHaveBeenCalled();
+		const ready = renderDesktop(input);
+		expect(ready).toMatchObject({ text: "Place Buy Order", disabled: false });
+	});
+
 	it("keeps the desktop CTA inert and exposes the unavailable reason", () => {
 		const input = createDesktopInput();
 		const content = renderDesktop(input);
@@ -142,7 +173,7 @@ describe("Deposit order CTA", () => {
 		expect(content).toMatchObject({
 			disabled: true,
 			disabledReason: UNAVAILABLE_REASON,
-			text: DEPOSIT_UNAVAILABLE,
+			text: "Deposit",
 		});
 		content.action();
 		expect(input.onDeposit).not.toHaveBeenCalled();
@@ -195,7 +226,7 @@ describe("Deposit order CTA", () => {
 	it("keeps Connect Wallet actionable while unresolved geo blocks later desktop actions", () => {
 		const connectInput = createDesktopInput({
 			isConnected: false,
-			tradingUnavailableReason: TRADING_UNAVAILABLE_REASON,
+			tradingBlocked: true,
 		});
 		const connectContent = renderDesktop(connectInput);
 		expect(connectContent).toMatchObject({ disabled: false, text: "Connect Wallet" });
@@ -204,15 +235,15 @@ describe("Deposit order CTA", () => {
 		const orderContent = renderDesktop(
 			createDesktopInput({
 				availableBalance: 10,
-				tradingUnavailableReason: TRADING_UNAVAILABLE_REASON,
+				tradingBlocked: true,
 				validation: { canSubmit: true, errors: [], validationErrors: [], needsApproval: false, valid: true },
 			}),
 		);
 		expect(orderContent).toMatchObject({
 			disabled: true,
-			disabledReason: TRADING_UNAVAILABLE_REASON,
 			text: "Place Buy Order",
 		});
+		expect(orderContent.disabledReason).toBeUndefined();
 	});
 
 	it("keeps Connect Wallet actionable while unresolved geo blocks later mobile actions", () => {

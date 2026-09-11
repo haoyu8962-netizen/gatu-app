@@ -350,27 +350,6 @@ describe("account overview derivation", () => {
 		expect(shared.accountEquityValue).toBe("33");
 	});
 
-	it("exposes a Spot funds notice only from a complete, current Spot snapshot", () => {
-		const balances = createBalances({
-			spotAvailableAfterMaintenance: [[0, "12"]],
-			spotBalances: [
-				{ coin: "USDC", entryNtl: "0", hold: "5", token: 0, total: "25" },
-			] as AccountBalances["spotBalances"],
-			withdrawable: "0",
-		});
-		const overview = deriveAccountOverview(createInput({ defaultBalances: balances, selectedBalances: balances }));
-
-		expect(overview.spotFundsAvailable).toBe("12");
-		expect(overview.showSpotFundsNotice).toBe(true);
-
-		const staleSpot = createBalances({ ...balances, isSpotStateStale: true, spotStateStatus: "stale" });
-		const staleOverview = deriveAccountOverview(
-			createInput({ defaultBalances: staleSpot, selectedBalances: staleSpot }),
-		);
-		expect(staleOverview.spotFundsAvailable).toBeNull();
-		expect(staleOverview.showSpotFundsNotice).toBe(false);
-	});
-
 	it("keeps disconnected and unsupported account modes unavailable", () => {
 		const disconnected = deriveAccountOverview(createInput({ isConnected: false }));
 		expect(disconnected.status).toBe("unavailable");

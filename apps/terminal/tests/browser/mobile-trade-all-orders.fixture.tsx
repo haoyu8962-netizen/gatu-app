@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { MobileTradeOrderSplit } from "@/components/trade/mobile/mobile-trade-order-split";
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
+import { TradePanel } from "@/components/trade/tradebox/trade-panel";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -55,6 +56,8 @@ function DesktopFields() {
 	);
 }
 
+const quietAudit = new URLSearchParams(window.location.search).has("quiet-audit");
+
 function Fixture() {
 	const { data: market } = useSelectedMarketInfo();
 	const theme = useTheme();
@@ -66,7 +69,13 @@ function Fixture() {
 	const orderType = useOrderType();
 	return (
 		<div className="flex h-svh flex-col bg-surface">
-			<nav className="flex min-h-[50px] shrink-0 flex-wrap gap-2 text-xs">
+			<nav
+				className={
+					quietAudit
+						? "flex h-[50px] shrink-0 gap-2 overflow-x-auto whitespace-nowrap text-xs"
+						: "flex min-h-[50px] shrink-0 flex-wrap gap-2 text-xs"
+				}
+			>
 				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "en", messages })}>
 					English
 				</button>
@@ -85,6 +94,24 @@ function Fixture() {
 				>
 					Freshness
 				</button>
+				{quietAudit && (
+					<>
+						{(["success", "loading", "stale", "error"] as const).map((status) => (
+							<button type="button" key={status} onClick={() => setFixtureState({ status, accountStatus: "success" })}>
+								Market {status}
+							</button>
+						))}
+
+						{(["success", "loading", "stale", "error"] as const).map((accountStatus) => (
+							<button type="button" key={accountStatus} onClick={() => setFixtureState({ accountStatus })}>
+								Account {accountStatus}
+							</button>
+						))}
+						<button type="button" onClick={() => setFixtureState({ positionPending: !state.positionPending })}>
+							Positions pending
+						</button>
+					</>
+				)}
 				<button type="button" onClick={() => actions.resetForm()}>
 					Reset
 				</button>
@@ -114,6 +141,10 @@ function Fixture() {
 							<MobileTradeView embedded sizeMode={sizeMode} onSizeModeChange={actions.setSizeMode} />
 						</div>
 					</MobileTradeOrderSplit>
+				) : quietAudit ? (
+					<div data-fixture-form className="h-[750px] w-[320px]">
+						<TradePanel />
+					</div>
 				) : (
 					<DesktopFields />
 				)}

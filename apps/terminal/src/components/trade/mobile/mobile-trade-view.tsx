@@ -52,7 +52,6 @@ import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-or
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
-import { useLingeringValidation } from "@/hooks/ui/use-lingering-validation";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -78,6 +77,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getOrderValidationPresentation } from "@/lib/trade/order-validation-presentation";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -135,8 +135,6 @@ import { MobileTradeScrollArea } from "./mobile-trade-scroll-area";
 import { MobileTradeSizeControl } from "./mobile-trade-size-control";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
-
-const ERROR_LINGER_MS = 1500;
 
 interface Props {
 	active?: boolean;
@@ -511,15 +509,21 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				}),
 	);
 
-	const validationErrorText =
-		validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval
-			? validation.errors.join(" \u2022 ")
-			: "";
-	const validationSnapshot = useLingeringValidation(
-		validationErrorText,
-		hasOrderSizeValidationError(validation.validationErrors),
-		ERROR_LINGER_MS,
-	);
+	const visibleValidationErrors = getOrderValidationPresentation(validation.validationErrors, {
+		accountReady:
+			isConnected &&
+			!isWalletLoading &&
+			availableBalance > 0 &&
+			!validation.needsApproval &&
+			!isAvailabilityBlocked &&
+			!tradeActionsBlocked,
+		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
+		positionReady: positionSnapshotReady,
+	});
+	const validationSnapshot = {
+		text: visibleValidationErrors.map((error) => error.message).join(" \u2022 "),
+		hasSizeError: hasOrderSizeValidationError(visibleValidationErrors),
+	};
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;

@@ -325,6 +325,8 @@ msgstr "Acceso restringido"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Cuenta"
@@ -920,8 +922,8 @@ msgid "Available for delegation"
 msgstr "Disponible para delegación"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Available funds are in Spot"
-msgstr "Fondos disponibles en Spot"
+#~ msgid "Available funds are in Spot"
+#~ msgstr "Fondos disponibles en Spot"
 
 #: src/components/staking/staking-view.tsx
 msgid "Available in Spot"
@@ -1231,8 +1233,8 @@ msgid "Checking regional availability. Funds actions are temporarily unavailable
 msgstr "Comprobando la disponibilidad en tu región. Las operaciones con fondos no están disponibles temporalmente."
 
 #: src/components/trade/tradebox/trade-panel.tsx
-msgid "Checking regional availability. Trading is temporarily unavailable."
-msgstr "Comprobando la disponibilidad regional. El trading no está disponible temporalmente."
+#~ msgid "Checking regional availability. Trading is temporarily unavailable."
+#~ msgstr "Comprobando la disponibilidad regional. El trading no está disponible temporalmente."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
@@ -2270,7 +2272,6 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "La transacción de depósito se envió, pero no se confirmó en Arbitrum. Es posible que el nonce de tu billetera no esté sincronizado con la red. Borra la actividad pendiente o restablece los datos de nonce en tu billetera y vuelve a intentarlo."
 
 #: src/hooks/trade/use-deposit-availability.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Deposit unavailable"
 msgstr "Depósito no disponible"
 
@@ -2938,9 +2939,6 @@ msgstr "No se pudieron cargar los saldos"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "Error al cargar saldos."
 
@@ -4001,13 +3999,8 @@ msgstr "Cargando billetera..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
-#: src/lib/trade/use-button-content.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "Cargando..."
 
@@ -5398,6 +5391,7 @@ msgid "Phone-access storage is unavailable. Close this tab and clear this site's
 msgstr "El almacenamiento del acceso del teléfono no está disponible. Cierra esta pestaña y borra los datos de este sitio antes de escanear de nuevo."
 
 #. placeholder {0}: input.sideLabel
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Place {0} Order"
 msgstr "Colocar orden {0}"
@@ -8825,7 +8819,6 @@ msgstr "No se pudo verificar la disponibilidad regional. Este depósito no se en
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "No se ha podido verificar la disponibilidad en tu región. Esta operación con fondos no se envió."
 
-#: src/components/trade/tradebox/trade-panel.tsx
 #: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "No se pudo verificar la disponibilidad regional. El trading no está disponible temporalmente."
@@ -8886,7 +8879,6 @@ msgstr "No se pudo verificar la elegibilidad para el retiro. La solicitud no se 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "No disponible"

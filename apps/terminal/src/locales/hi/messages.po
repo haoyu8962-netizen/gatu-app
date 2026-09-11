@@ -325,6 +325,8 @@ msgstr "पहुँच प्रतिबंधित"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "खाता"
@@ -920,8 +922,8 @@ msgid "Available for delegation"
 msgstr "डेलीगेशन के लिए उपलब्ध"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Available funds are in Spot"
-msgstr "उपलब्ध धन Spot में है"
+#~ msgid "Available funds are in Spot"
+#~ msgstr "उपलब्ध धन Spot में है"
 
 #: src/components/staking/staking-view.tsx
 msgid "Available in Spot"
@@ -1231,8 +1233,8 @@ msgid "Checking regional availability. Funds actions are temporarily unavailable
 msgstr "आपके क्षेत्र में उपलब्धता की जाँच की जा रही है। धन संबंधी कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/tradebox/trade-panel.tsx
-msgid "Checking regional availability. Trading is temporarily unavailable."
-msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
+#~ msgid "Checking regional availability. Trading is temporarily unavailable."
+#~ msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
@@ -2270,7 +2272,6 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "जमा लेनदेन सबमिट हो गया, लेकिन Arbitrum पर पुष्टि नहीं हुई। आपके वॉलेट का nonce नेटवर्क से सिंक नहीं हो सकता है। वॉलेट में लंबित गतिविधि साफ करें या nonce डेटा रीसेट करें, फिर दोबारा प्रयास करें।"
 
 #: src/hooks/trade/use-deposit-availability.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Deposit unavailable"
 msgstr "जमा उपलब्ध नहीं है"
 
@@ -2938,9 +2939,6 @@ msgstr "बैलेंस लोड करने में विफल"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "शेष लोड करने में विफल।"
 
@@ -4001,13 +3999,8 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
-#: src/lib/trade/use-button-content.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
@@ -5398,6 +5391,7 @@ msgid "Phone-access storage is unavailable. Close this tab and clear this site's
 msgstr "फ़ोन एक्सेस स्टोरेज अनुपलब्ध है। दोबारा स्कैन करने से पहले यह टैब बंद करें और इस साइट का डेटा साफ़ करें।"
 
 #. placeholder {0}: input.sideLabel
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Place {0} Order"
 msgstr "{0} ऑर्डर लगाएँ"
@@ -8825,7 +8819,6 @@ msgstr "क्षेत्रीय उपलब्धता सत्याप�
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "आपके क्षेत्र में उपलब्धता सत्यापित नहीं की जा सकी। यह धन संबंधी कार्रवाई सबमिट नहीं की गई।"
 
-#: src/components/trade/tradebox/trade-panel.tsx
 #: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "क्षेत्रीय उपलब्धता सत्यापित नहीं की जा सकी। ट्रेडिंग अस्थायी रूप से उपलब्ध नहीं है।"
@@ -8886,7 +8879,6 @@ msgstr "निकासी पात्रता सत्यापित नह
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "अनुपलब्ध"

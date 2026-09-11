@@ -1,10 +1,7 @@
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import {
 	accountOverviewNeedsTokenUsdPrices,
 	getPerpRiskSummaryUsdValue,
 	getSpotAccountValueUsdValue,
-	getSpotAvailableValue,
-	getSpotBalance,
 	getTokenAmountUsdValue,
 	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
@@ -47,9 +44,7 @@ interface AccountOverviewBase {
 	marginRatioReady: boolean;
 	requiresUsdPrices: boolean;
 	riskSummary: PerpRiskSummaryValue | null;
-	showSpotFundsNotice: boolean;
 	snapshotReady: boolean;
-	spotFundsAvailable: string | null;
 	summaryReady: boolean;
 	unrealizedPnlTone: ReturnType<typeof getToolbarSignedValueTone>;
 	usesSharedQuoteBalance: boolean;
@@ -184,25 +179,6 @@ export function deriveAccountOverview({
 		snapshotReady && riskSummary ? getToolbarSignedValueTone(riskSummary.unrealizedPnl) : "neutral";
 	const summaryReady = snapshotReady && accountEquityValue !== null && riskSummary !== null;
 	const valuationUnavailable = snapshotReady && !summaryReady;
-	const spotSnapshotReady =
-		snapshotReady &&
-		!usesSharedQuoteBalance &&
-		summaryBalances.spotStateStatus === "success" &&
-		!summaryBalances.isSpotStateStale &&
-		summaryBalances.hasSpotStateSnapshot;
-	const spotFundsAvailable = spotSnapshotReady
-		? getSpotAvailableValue(
-				getSpotBalance(summaryBalances.spotBalances, DEFAULT_QUOTE_TOKEN),
-				summaryBalances.spotAvailableAfterMaintenance,
-			)
-		: null;
-	const perpWithdrawable = toBig(summaryBalances.withdrawable);
-	const showSpotFundsNotice =
-		spotFundsAvailable !== null &&
-		!usesSharedQuoteBalance &&
-		selectedBalances.dex === "" &&
-		perpWithdrawable?.lte(0) === true &&
-		toBig(spotFundsAvailable)?.gt(0) === true;
 	const fundsActionsReady =
 		accountModeReady &&
 		!defaultBalances.hasError &&
@@ -231,9 +207,7 @@ export function deriveAccountOverview({
 		marginRatioReady,
 		requiresUsdPrices,
 		riskSummary,
-		showSpotFundsNotice,
 		snapshotReady,
-		spotFundsAvailable,
 		status,
 		summaryReady,
 		unrealizedPnlTone,

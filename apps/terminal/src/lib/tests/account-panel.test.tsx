@@ -338,26 +338,23 @@ describe("desktop account panel", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
 	});
 
-	it("renders current Spot funds on desktop and gates the transfer entry with shared availability", () => {
+	it("omits the Spot funds warning and keeps the ordinary transfer entry guarded", () => {
 		renderPanel();
-
-		const notice = container.querySelector('[data-slot="account-spot-funds-notice"]');
-		expect(notice?.textContent).toContain("Available funds are in Spot: $122.75");
-		const transfer = notice?.querySelector<HTMLButtonElement>("button");
-		expect(transfer?.textContent).toBe("Perps / Spot");
-		expect(transfer?.getAttribute("aria-label")).toBeNull();
-		expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
-
+		expect(container.querySelector('[data-slot="account-spot-funds-notice"]')).toBeNull();
+		expect(container.textContent).not.toContain("Available funds are in Spot");
+		expect(
+			Array.from(container.querySelectorAll("button")).filter((button) => button.textContent === "Perps / Spot"),
+		).toHaveLength(1);
+		const transfer = findButton(container, "Perps / Spot");
+		expect(getDescriptionText(transfer)).toContain("Transfer between Perps and Spot");
+		act(() => transfer.click());
+		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
+		modalActions.openTransfer.mockClear();
 		testState.geoStatus = "restricted";
 		renderPanel();
-		const blockedTransfer = container.querySelector<HTMLButtonElement>(
-			'[data-slot="account-spot-funds-notice"] button',
-		);
-		expect(blockedTransfer?.getAttribute("aria-disabled")).toBe("true");
-		expect(blockedTransfer ? getDescriptionText(blockedTransfer) : "").toContain(
-			"Funds actions are not available in your region.",
-		);
-		act(() => blockedTransfer?.click());
+		expect(
+			Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+		).toBe(false);
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 
@@ -465,7 +462,7 @@ describe("desktop account panel", () => {
 	});
 
 	it.each(["restricted", "unresolved"] as const)(
-		"removes account action entries and gates the Spot notice transfer when geo is %s",
+		"removes account action entries without a duplicate Spot notice when geo is %s",
 		(geoStatus) => {
 			testState.geoStatus = geoStatus;
 			renderPanel();
@@ -474,9 +471,8 @@ describe("desktop account panel", () => {
 				container.querySelectorAll<HTMLButtonElement>("button"),
 				(button) => button.textContent,
 			);
-			expect(labels.filter((label) => label === "Perps / Spot")).toHaveLength(1);
+			expect(labels.filter((label) => label === "Perps / Spot")).toHaveLength(0);
 			expect(labels).not.toContain("Withdraw");
-			expect(findButton(container, "Perps / Spot").getAttribute("aria-disabled")).toBe("true");
 			expect(container.textContent).toContain("Funds actions are unavailable in this region.");
 			expect(modalActions.openTransfer).not.toHaveBeenCalled();
 			expect(modalActions.openDeposit).not.toHaveBeenCalledWith("withdraw");

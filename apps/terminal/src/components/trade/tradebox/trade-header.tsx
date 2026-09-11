@@ -90,12 +90,12 @@ export function TradeHeader({
 				: accountMode === "disabled"
 					? t`Separate`
 					: isAccountModeLoading
-						? t`Loading...`
+						? t`Account`
 						: accountMode === "default"
 							? t`Select mode`
 							: accountMode === "dexAbstraction"
 								? t`Legacy DEX`
-								: t`Unavailable`;
+								: t`Account`;
 	const compactAccountModeLabel =
 		accountMode === "dexAbstraction"
 			? t`Legacy`

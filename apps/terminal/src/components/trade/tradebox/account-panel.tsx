@@ -46,9 +46,7 @@ export function AccountPanel() {
 		maintenanceMarginRatio,
 		marginRatioReady,
 		riskSummary,
-		showSpotFundsNotice,
 		snapshotReady: balanceSnapshotReady,
-		spotFundsAvailable,
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
@@ -85,7 +83,6 @@ export function AccountPanel() {
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
-	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	function renderMetricValue(value: ReactNode) {
 		return (
@@ -222,12 +219,12 @@ export function AccountPanel() {
 							</output>
 						) : null}
 						{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
-						{showsTransferEntry ? (
+						{showsSecondaryFundsActions ? (
 							<span id={transferDescriptionId} className="sr-only">
 								{overviewLabels.transferBetweenPerpsAndSpot}
 							</span>
 						) : null}
-						{showsTransferEntry && internalTransferDisabledReason ? (
+						{showsSecondaryFundsActions && internalTransferDisabledReason ? (
 							<span id={transferUnavailableId} className="sr-only">
 								{internalTransferDisabledReason}
 							</span>
@@ -261,35 +258,6 @@ export function AccountPanel() {
 								))}
 							</InfoRowGroup>
 						</section>
-
-						{showSpotFundsNotice ? (
-							<div
-								data-slot="account-spot-funds-notice"
-								className="mt-3 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2 text-xs text-warning"
-							>
-								<div className="tabular-nums">
-									{overviewLabels.availableFundsInSpot}:{" "}
-									{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
-								</div>
-								{hasWalletAccess ? (
-									<Button
-										variant="link"
-										intent="brand"
-										size="xs"
-										className="mt-1 h-auto p-0"
-										disabled={!fundsActionAvailability.internalTransfer.available}
-										focusableWhenDisabled
-										aria-describedby={transferDescriptionIds}
-										title={internalTransferDisabledReason ?? undefined}
-										onClick={
-											fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
-										}
-									>
-										{overviewLabels.perpsSpot}
-									</Button>
-								) : null}
-							</div>
-						) : null}
 					</div>
 					<div data-grid-content-part className="shrink-0 mt-auto flow-root px-2 pb-3">
 						{depositGeoBlocked ? (

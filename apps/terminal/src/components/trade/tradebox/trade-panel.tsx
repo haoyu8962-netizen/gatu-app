@@ -8,6 +8,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
 import { getBuilderPerpSwapTargetToken } from "@/domain/trade/collateral-acquisition";
+import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	assertEntryOrderExecutionAllowed,
@@ -36,7 +37,6 @@ import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
-import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -59,6 +59,7 @@ import {
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getOrderValidationPresentation } from "@/lib/trade/order-validation-presentation";
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -112,8 +113,6 @@ import { TwapOrderSummary } from "./twap-order-summary";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
-const ERROR_LINGER_MS = 1500;
-
 export function TradePanel() {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
@@ -131,11 +130,6 @@ export function TradePanel() {
 	const geoRestriction = useGeoRestriction();
 	const tradeActionsBlocked = geoRestriction.actionsBlocked;
 	const tradeRestricted = geoRestriction.tradeRestricted;
-	const tradingUnavailableReason = !geoRestriction.isResolved
-		? geoRestriction.isError
-			? t`Unable to verify regional availability. Trading is temporarily unavailable.`
-			: t`Checking regional availability. Trading is temporarily unavailable.`
-		: null;
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
@@ -171,6 +165,7 @@ export function TradePanel() {
 		availableBalance,
 		isAvailabilityBlocked,
 		isAvailabilityLoading,
+		isAvailabilityStale,
 		hasAvailabilityError,
 		maxSize,
 		sizeValue,
@@ -637,9 +632,18 @@ export function TradePanel() {
 		);
 	}
 
-	const validationErrorText =
-		validation.errors.length > 0 && isConnected && availableBalance > 0 ? validation.errors.join(" \u2022 ") : "";
-	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
+	const visibleValidationErrors = getOrderValidationPresentation(validation.validationErrors, {
+		accountReady:
+			isConnected &&
+			!isWalletLoading &&
+			availableBalance > 0 &&
+			!validation.needsApproval &&
+			!isAvailabilityBlocked &&
+			!tradeActionsBlocked,
+		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
+		positionReady: positionSnapshotReady,
+	});
+	const displayValidationError = visibleValidationErrors.map((error) => error.message).join(" \u2022 ");
 
 	const buttonContent = useButtonContent({
 		isConnected,
@@ -647,12 +651,12 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: depositAvailability.available,
-		depositUnavailableReason: depositAvailability.unavailableReason,
-		tradingUnavailableReason,
-		validation,
+		depositUnavailableReason: getFundsAvailabilityNotice(depositAvailability),
+		tradingBlocked: tradeActionsBlocked,
+		validation: { ...validation, canSubmit: validation.canSubmit && !isAvailabilityBlocked },
 		isSignerReady,
 		isApprovalLoading,
 		registerStatus,

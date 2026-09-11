@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
+import { getOrderValidationPresentation } from "@/lib/trade/order-validation-presentation";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -526,5 +527,93 @@ describe("attached TP/SL precision validation", () => {
 
 		expect(result.errors.map((error) => error.code)).toContain("TPSL_002");
 		expect(result.canSubmit).toBe(false);
+	});
+});
+
+describe("quiet order validation presentation", () => {
+	it.each(["idle", "loading", "stale", "error"] as const)(
+		"keeps %s data blocked without passive or mark-dependent errors",
+		(markPriceStatus) => {
+			const context = perpContext({
+				orderType: "market",
+				usesLimitPrice: false,
+				requiresLiveMarkPrice: true,
+				markPriceStatus,
+				sizeValue: 0,
+				orderValue: 0,
+				isWalletLoading: true,
+			});
+			const result = validatePerpOrder(context);
+			expect(result.canSubmit).toBe(false);
+			expect(result.errors.some((error) => error.code === "MKT_004")).toBe(true);
+			expect(
+				getOrderValidationPresentation(result.errors, { accountReady: true, marketReady: false, positionReady: true }),
+			).toEqual([]);
+			const recovered = validatePerpOrder({ ...context, markPriceStatus: "success", isWalletLoading: false });
+			expect(
+				getOrderValidationPresentation(recovered.errors, {
+					accountReady: true,
+					marketReady: true,
+					positionReady: true,
+				}).map((error) => error.id),
+			).toContain("enter-size");
+		},
+	);
+
+	it("separates unknown positions from confirmed empty and funded positions", () => {
+		const context = perpContext({
+			orderType: "stopMarket",
+			usesLimitPrice: false,
+			usesTriggerPrice: true,
+			triggerPriceNum: 110,
+			stopOrder: true,
+			reduceOnly: true,
+			positionSize: null,
+		});
+		const pending = validatePerpOrder(context);
+		expect(pending.canSubmit).toBe(false);
+		expect(
+			getOrderValidationPresentation(pending.errors, { accountReady: true, marketReady: true, positionReady: false }),
+		).toEqual([]);
+		const empty = validatePerpOrder({ ...context, positionSize: 0 });
+		expect(
+			getOrderValidationPresentation(empty.errors, { accountReady: true, marketReady: true, positionReady: true }).map(
+				(error) => error.id,
+			),
+		).toContain("trigger-position-exists");
+		expect(validatePerpOrder({ ...context, positionSize: -10 }).canSubmit).toBe(true);
+	});
+
+	it("keeps independent TWAP input errors but suppresses stale mark comparisons", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				twapOrder: true,
+				twapMinutesNum: 1,
+				twapStopPriceNum: 90,
+				markPriceStatus: "stale",
+				requiresLiveMarkPrice: true,
+			}),
+		);
+		const ids = getOrderValidationPresentation(result.errors, {
+			accountReady: true,
+			marketReady: false,
+			positionReady: true,
+		}).map((error) => error.id);
+		expect(ids).toContain("twap-minutes-range");
+		expect(ids).not.toContain("twap-stop-direction");
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("does not infer insufficient Spot balance from unavailable account data", () => {
+		const result = validateSpotOrder(spotContext({ quoteAvailable: 0 }));
+		expect(result.canSubmit).toBe(false);
+		expect(
+			getOrderValidationPresentation(result.errors, { accountReady: false, marketReady: true, positionReady: true }),
+		).toEqual([]);
+		expect(
+			getOrderValidationPresentation(result.errors, { accountReady: true, marketReady: true, positionReady: true }).map(
+				(error) => error.id,
+			),
+		).toContain("spot-insufficient-quote");
 	});
 });

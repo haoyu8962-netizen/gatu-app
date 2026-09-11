@@ -16,6 +16,8 @@ let state = {
 	connected: true,
 	funded: true,
 	status: "success" as MarkPriceStatus,
+	accountStatus: undefined as MarkPriceStatus | undefined,
+	positionPending: false,
 	submissions: [] as OrderSubmitDraftInput[],
 };
 export function setFixtureState(next: Partial<typeof state>) {
@@ -97,7 +99,7 @@ export function useSelectedMarketInfo(): { data: UnifiedMarketInfo } {
 }
 export function useMarketsInfo() {
 	const market = useSelectedMarketInfo();
-	return { getMarketByName: () => market.data };
+	return { getMarketByName: () => market.data, spotMarkets: [], isLoading: false, error: null };
 }
 export function useOrderbookMidPrice() {
 	return { midPx: "100" };
@@ -109,7 +111,7 @@ export function useDefaultDexBalances() {
 		isLoading: false,
 		spotBalances: [],
 		spotAvailableAfterMaintenance: [],
-		spotStateStatus: current.status,
+		spotStateStatus: current.accountStatus ?? current.status,
 		spotStateReceivedAt: Date.now(),
 	};
 }
@@ -140,7 +142,7 @@ export function useAssetLeverage() {
 		isOnlyIsolated: false,
 		allowsCrossMargin: true,
 		allowsIsolatedMarginRemoval: true,
-		subscriptionStatus: current.status,
+		subscriptionStatus: current.accountStatus ?? current.status,
 		subscriptionReceivedAt: Date.now(),
 	};
 }
@@ -167,7 +169,8 @@ export function useTradingGuard() {
 	};
 }
 export function useUserPositions() {
-	return { getPosition: () => null, hasError: false, isLoading: false, isStale: false };
+	const current = useFixtureState();
+	return { getPosition: () => null, hasError: false, isLoading: current.positionPending, isStale: false };
 }
 export function useInfo() {
 	return { data: undefined };

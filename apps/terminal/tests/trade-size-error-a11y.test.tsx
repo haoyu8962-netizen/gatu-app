@@ -32,6 +32,7 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 			assetId: 0,
 			kind: "perp",
 			markPx: "100",
+			markPriceStatus: "success",
 			midPx: "100",
 			name: "BTC",
 			pairName: "BTC/USDC",
@@ -43,10 +44,6 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 vi.mock("@/hooks/trade/use-orderbook-mid-price", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/hooks/trade/use-orderbook-mid-price")>()),
 	useOrderbookMidPrice: () => ({ midPx: null }),
-}));
-
-vi.mock("@/hooks/ui/use-lingering-text", () => ({
-	useLingeringText: (value: string) => value,
 }));
 
 vi.mock("@/lib/number-format-reactivity", () => ({
@@ -138,10 +135,7 @@ async function renderDesktop(root: Root) {
 						},
 						displayAvailableBalance: 100,
 						displayAvailableBalanceToken: "USDC",
-						hasAvailabilityError: false,
 						isAvailabilityBlocked: false,
-						isAvailabilityLoading: false,
-						isAvailabilityStale: false,
 						isSpotMarket: false,
 						leverage: 10,
 						leverageInteractionIdentity: "BTC:perp:50",

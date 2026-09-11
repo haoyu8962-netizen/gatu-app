@@ -325,6 +325,8 @@ msgstr "Access restricted"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Account"
@@ -920,8 +922,8 @@ msgid "Available for delegation"
 msgstr "Available for delegation"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Available funds are in Spot"
-msgstr "Available funds are in Spot"
+#~ msgid "Available funds are in Spot"
+#~ msgstr "Available funds are in Spot"
 
 #: src/components/staking/staking-view.tsx
 msgid "Available in Spot"
@@ -1231,8 +1233,8 @@ msgid "Checking regional availability. Funds actions are temporarily unavailable
 msgstr "Checking regional availability. Funds actions are temporarily unavailable."
 
 #: src/components/trade/tradebox/trade-panel.tsx
-msgid "Checking regional availability. Trading is temporarily unavailable."
-msgstr "Checking regional availability. Trading is temporarily unavailable."
+#~ msgid "Checking regional availability. Trading is temporarily unavailable."
+#~ msgstr "Checking regional availability. Trading is temporarily unavailable."
 
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
@@ -2270,7 +2272,6 @@ msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your w
 msgstr "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 
 #: src/hooks/trade/use-deposit-availability.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Deposit unavailable"
 msgstr "Deposit unavailable"
 
@@ -2938,9 +2939,6 @@ msgstr "Failed to load balances"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "Failed to load balances."
 
@@ -4001,13 +3999,8 @@ msgstr "Loading wallet..."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
-#: src/lib/trade/use-button-content.ts
-#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -5398,6 +5391,7 @@ msgid "Phone-access storage is unavailable. Close this tab and clear this site's
 msgstr "Phone-access storage is unavailable. Close this tab and clear this site's data before scanning again."
 
 #. placeholder {0}: input.sideLabel
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Place {0} Order"
 msgstr "Place {0} Order"
@@ -8825,7 +8819,6 @@ msgstr "Unable to verify regional availability. This deposit was not submitted."
 msgid "Unable to verify regional availability. This funds action was not submitted."
 msgstr "Unable to verify regional availability. This funds action was not submitted."
 
-#: src/components/trade/tradebox/trade-panel.tsx
 #: src/lib/errors/format.ts
 msgid "Unable to verify regional availability. Trading is temporarily unavailable."
 msgstr "Unable to verify regional availability. Trading is temporarily unavailable."
@@ -8886,7 +8879,6 @@ msgstr "Unable to verify withdrawal eligibility. Request was not submitted."
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "Unavailable"

@@ -434,6 +434,8 @@ describe("mobile account view", () => {
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
 		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Perps / Spot", "Withdraw"]);
+		expect(container.querySelector('[data-slot="account-spot-funds-notice"]')).toBeNull();
+		expect(container.textContent).not.toContain("Available funds are in Spot");
 		expect(buttons[0]?.getAttribute("aria-label")).toBe(buttons[0]?.textContent);
 		expect(buttons[1]?.getAttribute("aria-label")).toBeNull();
 		expect(buttons[2]?.getAttribute("aria-label")).toBe(buttons[2]?.textContent);
@@ -544,11 +546,7 @@ describe("mobile account view", () => {
 			const transferButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
 				(button) => button.textContent === "Perps / Spot",
 			);
-			expect(transferButtons).toHaveLength(1);
-			for (const button of transferButtons) {
-				expect(button.getAttribute("aria-disabled")).toBe("true");
-				act(() => button.click());
-			}
+			expect(transferButtons).toHaveLength(0);
 			const withdraw = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 				(button) => button.textContent === "Withdraw",
 			);

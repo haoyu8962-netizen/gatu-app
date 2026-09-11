@@ -42,9 +42,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		maintenanceMarginRatio,
 		marginRatioReady,
 		riskSummary,
-		showSpotFundsNotice,
 		snapshotReady: accountSummaryReady,
-		spotFundsAvailable,
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
@@ -77,7 +75,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
-	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	if (!isConnected) {
 		const showsEmailDeposit = depositAvailability.path === "sponsored";
@@ -131,12 +128,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	return (
 		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
 			<div className="flex min-h-full flex-col gap-3 p-3">
-				{showsTransferEntry ? (
+				{showsSecondaryFundsActions ? (
 					<span id={transferDescriptionId} className="sr-only">
 						{overviewLabels.transferBetweenPerpsAndSpot}
 					</span>
 				) : null}
-				{showsTransferEntry && internalTransferDisabledReason ? (
+				{showsSecondaryFundsActions && internalTransferDisabledReason ? (
 					<span id={transferUnavailableId} className="sr-only">
 						{internalTransferDisabledReason}
 					</span>
@@ -224,35 +221,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} />
 					</div>
 				</section>
-
-				{showSpotFundsNotice ? (
-					<div
-						data-slot="account-spot-funds-notice"
-						className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning"
-					>
-						<div className="tabular-nums">
-							{overviewLabels.availableFundsInSpot}:{" "}
-							{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
-						</div>
-						{hasWalletAccess ? (
-							<Button
-								variant="link"
-								intent="brand"
-								size="xs"
-								className="mt-1 h-auto p-0"
-								disabled={!fundsActionAvailability.internalTransfer.available}
-								focusableWhenDisabled
-								aria-describedby={transferDescriptionIds}
-								title={internalTransferDisabledReason ?? undefined}
-								onClick={
-									fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
-								}
-							>
-								{overviewLabels.perpsSpot}
-							</Button>
-						) : null}
-					</div>
-				) : null}
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
 					{depositGeoBlocked && depositNotice ? (

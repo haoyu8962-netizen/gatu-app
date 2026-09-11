@@ -1,16 +1,14 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useEffect, useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import type { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
-import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
@@ -49,10 +47,7 @@ import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
 type TradeFormOrderEntryData = Pick<
 	ReturnType<typeof useOrderEntryData>,
 	| "isSpotMarket"
-	| "isAvailabilityLoading"
 	| "isAvailabilityBlocked"
-	| "isAvailabilityStale"
-	| "hasAvailabilityError"
 	| "baseToken"
 	| "quoteToken"
 	| "capabilities"
@@ -80,7 +75,6 @@ interface Props {
 }
 
 const inputFrameClass = cn(tradingInputFrameClass, "h-9 px-2.5");
-const ERROR_LINGER_MS = 1500;
 
 const inputFrameErrorClass =
 	"border-trading-panel-error focus-within:border-trading-panel-error focus-within:ring-trading-panel-error/10";
@@ -118,10 +112,7 @@ export function TradeFormFields({
 
 	const {
 		isSpotMarket,
-		isAvailabilityLoading,
 		isAvailabilityBlocked,
-		isAvailabilityStale,
-		hasAvailabilityError,
 		baseToken,
 		quoteToken,
 		capabilities,
@@ -159,11 +150,11 @@ export function TradeFormFields({
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 
 	function getSizeErrorText(): string {
-		if (!sizeHasError) return "";
+		if (!sizeHasError || isFormDisabled || market?.markPriceStatus !== "success") return "";
 		if (sizeValue > maxSize && maxSize > 0) return t`Exceeds max size`;
 		return t`Min order $${ORDER_MIN_NOTIONAL_USD}`;
 	}
-	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
+	const displaySizeError = getSizeErrorText();
 	const hasDisplayedSizeError = displaySizeError !== "";
 	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
@@ -187,10 +178,12 @@ export function TradeFormFields({
 	});
 
 	function formatAvailableBalance(): string {
-		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
+		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : displayAvailableBalance, {
+			decimals,
+			symbol: displayAvailableBalanceToken ?? undefined,
+		});
 	}
 
 	return (
@@ -212,22 +205,6 @@ export function TradeFormFields({
 								>
 									{formatAvailableBalance()}
 								</button>
-							) : null}
-							{isAvailabilityStale ? (
-								<Tooltip content={t`Loading...`} side="top">
-									<SpinnerGapIcon
-										className="ms-1 size-3 shrink-0 animate-spin text-warning"
-										aria-label={t`Loading...`}
-									/>
-								</Tooltip>
-							) : null}
-							{hasAvailabilityError ? (
-								<Tooltip content={t`Failed to load balances.`} side="top">
-									<WarningCircleIcon
-										className="ms-1 size-3 shrink-0 text-error"
-										aria-label={t`Failed to load balances.`}
-									/>
-								</Tooltip>
 							) : null}
 						</span>
 						{isConnected && !isAvailabilityBlocked && swapTargetToken ? (

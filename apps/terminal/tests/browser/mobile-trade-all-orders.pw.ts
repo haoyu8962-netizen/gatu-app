@@ -479,3 +479,92 @@ test("disables real inputs on missing funding, disconnection and stale data with
 	}
 	await expect(page.getByRole("status", { name: "Captured orders", exact: true })).toHaveText("[]");
 });
+
+for (const desktop of [false, true]) {
+	test(`keeps ${desktop ? "desktop" : "mobile"} order forms quiet while market data recovers`, async ({ page }) => {
+		await page.setViewportSize(desktop ? { width: 1440, height: 1000 } : { width: 375, height: 666 });
+		await openFixture(page, "?quiet-audit");
+		const form = page.locator("[data-fixture-form]");
+		const passive =
+			/Mark price is unavailable|No mark price|No market|Market not ready|Loading wallet|Signer not ready|Checking regional|Failed to load balances/;
+		await form.evaluate((element, pattern) => {
+			const failures: string[] = [];
+			const expression = new RegExp(pattern);
+			const observer = new MutationObserver(() => {
+				if (expression.test(element.textContent ?? "")) failures.push(element.textContent ?? "");
+			});
+			observer.observe(element, { subtree: true, characterData: true, childList: true });
+			Object.assign(window, { quietAudit: { failures, observer } });
+		}, passive.source);
+		for (const order of orders) {
+			if (!desktop) await selectOrder(page, order);
+			else if (order === "Market" || order === "Limit")
+				await form.getByRole("button", { name: order, exact: true }).click();
+			else {
+				await form.getByRole("button", { name: "Advanced order types", exact: true }).click();
+				await page.getByRole("menuitem", { name: order, exact: true }).click();
+			}
+			const size = page.getByRole("textbox", { name: "Size", exact: true });
+			await size.fill("1");
+			await size.blur();
+			for (const status of ["loading", "stale", "error"]) {
+				await page.getByRole("button", { name: `Market ${status}`, exact: true }).click();
+				await expect(form).not.toContainText(passive);
+				await expect(size).toHaveValue("1");
+				if (
+					["Market", "Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit", "TWAP"].includes(order)
+				) {
+					const submit = form.getByRole("button", { name: desktop ? "Place Long Order" : "Long", exact: true });
+					await expect(submit).toBeDisabled();
+				}
+				await page.getByRole("button", { name: "Market success", exact: true }).click();
+				await expect(form).not.toContainText(passive);
+				await expect(size).toHaveValue("1");
+			}
+		}
+		if (desktop) {
+			await form.getByRole("button", { name: "Advanced order types", exact: true }).click();
+			await page.getByRole("menuitem", { name: "Stop Market", exact: true }).click();
+		} else await selectOrder(page, "Stop Market");
+		const reduceOnly = form.getByRole("checkbox", { name: "Reduce Only", exact: true });
+		await reduceOnly.check();
+		await expect(form).toContainText("Open a position before placing a trigger order");
+		await page.getByRole("button", { name: "Positions pending", exact: true }).click();
+		await expect(form).not.toContainText("Open a position before placing a trigger order", { timeout: 500 });
+		await expect(form.getByRole("button", { name: desktop ? "Place Long Order" : "Long", exact: true })).toBeDisabled();
+		await page.getByRole("button", { name: "Positions pending", exact: true }).click();
+		await expect(form).toContainText("Open a position before placing a trigger order");
+		await reduceOnly.uncheck();
+		if (desktop) await form.getByRole("button", { name: "Market", exact: true }).click();
+		else await selectOrder(page, "Market");
+		const size = form.getByRole("textbox", { name: "Size", exact: true });
+		await size.fill("");
+		await size.blur();
+		await expect(form).toContainText("Enter size");
+		await page.getByRole("button", { name: "Market stale", exact: true }).click();
+		await expect(form).not.toContainText("Enter size", { timeout: 500 });
+		await page.getByRole("button", { name: "Market success", exact: true }).click();
+		await expect(form).toContainText("Enter size");
+		await size.fill("1");
+		await size.blur();
+		await expect(form).not.toContainText("Enter size", { timeout: 500 });
+		for (const status of ["loading", "stale", "error"]) {
+			await page.getByRole("button", { name: `Account ${status}`, exact: true }).click();
+			await expect(form.getByRole("textbox", { name: "Size", exact: true })).toBeDisabled();
+			await expect(form).not.toContainText(passive);
+			await expect(
+				form.getByRole("button", { name: desktop ? "Place Long Order" : "Long", exact: true }),
+			).toBeDisabled();
+			await page.getByRole("button", { name: "Account success", exact: true }).click();
+		}
+		const violations = await page.evaluate(() => {
+			const audit = (window as unknown as { quietAudit: { failures: string[]; observer: MutationObserver } })
+				.quietAudit;
+			audit.observer.disconnect();
+			return audit.failures;
+		});
+		expect(violations).toEqual([]);
+		await expect(page.getByRole("status", { name: "Captured orders", exact: true })).toHaveText("[]");
+		await page.screenshot({ path: test.info().outputPath(`quiet-${desktop ? "desktop" : "mobile"}.png`) });
+	});
+}
