@@ -37,3 +37,15 @@ node --test deploy/deploy-bootstrap.test.mjs deploy/deploy-health-check.test.mjs
 [Caddy path_regexp 官方说明](https://caddyserver.com/docs/caddyfile/matchers#path_regexp) 明确匹配 URI 解码后的路径；本修复同时用固定版本的真实代理确认语义。[Nitro Node runtime 文档](https://nitro.build/deploy/runtimes/node) 列出 HOST/NITRO_HOST 和 PORT/NITRO_PORT，项目实际产物的别名优先级与启动链已纳入检查。
 
 生产仍需在受控环境安装并比对 canonical Caddy/systemd、先发布并固定双关基线、通过目标 Linux 与双 HTTPS origin 检查。启用配对前需要相同候选的全部真实手机/钱包验收，并按 [部署说明](../deploy/README.md#移动配对-v2-发布保护) 提升同一产物。测试阶段不下单、不转账、不更换 owner、不跳过法律/地区/签名门禁。
+
+## 发布重试修复补充
+
+后续对抗测试发现两处恢复阻断：记录 chmod 0440 后目录移动失败，重试无法覆盖记录；发布后回滚，再提升同一候选被既有目录检查拒绝。修复将记录持久化改为先写完整临时文件并 `sync()`，再用同文件系统的 `link()` 创建最终名称；仅相同授权可幂等复用，冲突、残缺或 symlink 记录不覆盖。依据 [Node 文件系统 API](https://nodejs.org/docs/latest-v22.x/api/fs.html#fspromiseslinkexistingpath-newpath)，实际测试验证并发情况下的无覆盖行为。
+
+复用 release 仍要求当前候选授权和审计记录完全一致，并验证已发布产物的 commit、release、gate、摘要、身份标记和实际文件。复用不重写产物、guard 或现有 carried assets。发布入口及切换前都执行校验，原服务重启、健康检查与安全基线回滚链保持不变。
+
+新增验证：32 个并发相同记录写入、重复调用不改 inode/字节、冲突身份/配置/证据拒绝、残缺及 symlink 记录拒绝；复用时缺少记录、身份不符、产物篡改及 symlink release 拒绝。真实 Nitro shell 集成依次注入记录写前、写后、release rename、current 切换失败，验证故障解除后无需删除记录即可完成；回滚后再次提升保持服务器文件和记录 inode/字节不变，篡改既有服务器文件则在切换前拒绝。
+
+应用路由、交易签名、钱包、金融计算及 UI 未修改。目标 Linux/systemd 和真实设备准入限制继续适用。
+
+本轮使用双关实际产物运行上文完整部署测试命令（`MOBILE_SYNC_OUTPUT=apps/terminal/.output`）：158 项，155 通过，3 项 Linux 专用检查跳过。双开实际产物的候选测试 7/7 通过；两项记录/复用专项测试另验证严格 umask 下仍为 0440，以及 32 个冲突授权并发仅允许同一胜出授权。Biome（沿用仓库规则的临时配置）、Node 语法、`bash -n`、`git diff --check` 通过，设备模板仍为 11 项 Not run。未推送或部署。

@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, lstat, mkdir, mkdtemp, readdir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import {
+	cp,
+	link,
+	lstat,
+	mkdir,
+	mkdtemp,
+	open,
+	readdir,
+	readFile,
+	realpath,
+	rename,
+	rm,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -193,6 +206,55 @@ export async function authorizePromotion(candidate, root, repo, shared, commit) 
 	return { ...record, evidenceSha256 };
 }
 
+async function verifyPublicationRecord(root, authorization) {
+	const path = resolve(root, `${authorization.release}.json`);
+	await regularPath(path, root);
+	assert.ok((await lstat(path)).isFile(), "publication record must be a regular file");
+	assert.deepEqual(
+		JSON.parse(await readFile(path, "utf8")),
+		authorization,
+		"publication record differs from current authorization",
+	);
+}
+
+export async function recordPublication(root, authorization) {
+	assert.match(authorization.release, /^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$/);
+	await mkdir(root, { recursive: true, mode: 0o750 });
+	assert.equal(await realpath(root), resolve(root), "publication root must not contain symlinks");
+	const temporary = await mkdtemp(resolve(root, ".recording-"));
+	try {
+		const path = resolve(temporary, "record.json");
+		const handle = await open(path, "wx", 0o440);
+		try {
+			await handle.writeFile(`${JSON.stringify(authorization)}\n`);
+			await handle.chmod(0o440);
+			await handle.sync();
+		} finally {
+			await handle.close();
+		}
+		try {
+			await link(path, resolve(root, `${authorization.release}.json`));
+		} catch (error) {
+			if (error.code !== "EEXIST") throw error;
+		}
+		await verifyPublicationRecord(root, authorization);
+	} finally {
+		await rm(temporary, { recursive: true, force: true });
+	}
+}
+
+export async function verifyPublishedRelease(directory, root, publications, authorization) {
+	await regularPath(directory, root);
+	assert.equal(directory.split("/").at(-1), authorization.release, "published directory identity mismatch");
+	await verifyPublicationRecord(publications, authorization);
+	const manifest = await verifyRelease(directory);
+	assert.equal(manifest.commit, authorization.commit, "published commit mismatch");
+	assert.equal(manifest.release, authorization.release, "published release mismatch");
+	assert.equal(manifest.sha256, authorization.sha256, "published artifact differs from candidate");
+	assert.deepEqual(manifest.mobileSync, authorization.mobileSync, "published gates differ from candidate");
+	return manifest;
+}
+
 export async function pruneCandidates(root, publications, current, baseline, keep = "5") {
 	assert.match(String(keep), /^[1-9][0-9]*$/);
 	const protectedIds = new Set(
@@ -228,12 +290,14 @@ export async function pruneCandidates(root, publications, current, baseline, kee
 async function main() {
 	const [operation, ...args] = process.argv.slice(2);
 	if (operation === "prepare") process.stdout.write(`${await prepareCandidate(...args)}\n`);
+	else if (operation === "record") await recordPublication(args[0], JSON.parse(args[1]));
+	else if (operation === "reuse") await verifyPublishedRelease(args[0], args[1], args[2], JSON.parse(args[3]));
 	else if (operation === "prune") await pruneCandidates(...args);
 	else if (operation === "verify") await verifyCandidate(...args);
 	else if (operation === "authorize") process.stdout.write(`${JSON.stringify(await authorizePromotion(...args))}\n`);
 	else
 		throw new Error(
-			"Usage: mobile-sync-candidate.mjs prepare <output> <root> <repo> <shared> | verify/authorize <candidate> <root> <repo> <shared> <commit>",
+			"Usage: mobile-sync-candidate.mjs prepare <output> <root> <repo> <shared> | verify/authorize <candidate> <root> <repo> <shared> <commit> | record <publications> <authorization-json> | reuse <release> <releases> <publications> <authorization-json>",
 		);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)

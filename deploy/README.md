@@ -343,6 +343,10 @@ bash /opt/gatu/repo/deploy/deploy.sh main promote <candidate-id>
 
 `promote` 不安装依赖、不构建、不覆盖 guard；重新核对 main SHA、配置、候选字节、全部真实证据及 HTTP 协议后，复制同一产物，仅按原规则保留旧的顶层哈希 assets。证据摘要和候选身份记录在 shared/mobile-sync-publications/<id>.json，供发布/失败尝试审计；该记录本身不是上线成功证明。任意代码、配置、guard 或已声明文件改变都要新候选和新验收。若 Caddy 仍封锁票据，开启 gate 的候选不能发布。
 
+发布中断或健康检查失败并回滚后，可再次运行同一条 `deploy.sh main promote <candidate-id>`。每次仍重新检查 main、配置、外部证据、候选和实际 HTTP 协议。审计记录先在同一文件系统写完并同步文件，再通过不覆盖已有文件的硬链接创建最终只读记录；已有记录必须与当前授权的全部字段一致，重试不会改写记录。
+
+已存在的 release 必须同时通过记录、commit、release ID、gate、产物 SHA-256、实际文件树和原身份标记校验后才能复用。复用保留其文件及已携带的旧 assets，不重新构建或覆盖 guard；切换后继续执行原有服务重启、健康检查和安全基线回滚流程。证据、配置或产物不一致时继续拒绝，不应删除记录或覆盖 release 来强行恢复。此恢复保证针对进程/操作失败；断电后的底层文件系统恢复仍须验证现场状态。
+
 候选清理与 release 清理分开：仅回收超过保留数量、有匹配发布记录的旧候选；保留 current、安全基线和未发布的验收候选。待验收候选需运维明确废弃后在部署锁下清理。SHA-256 只证明一致性，不证明物理设备测试真实发生。
 
 具体阶段、操作证据和回滚要求见 [生产准入](../docs/mobile-sync-production-readiness.md)。

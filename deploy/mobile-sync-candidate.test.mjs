@@ -1,7 +1,19 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, readlink, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import {
+	cp,
+	lstat,
+	mkdir,
+	mkdtemp,
+	readdir,
+	readFile,
+	readlink,
+	realpath,
+	rm,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
@@ -11,8 +23,10 @@ import {
 	evidenceIdentity,
 	prepareCandidate,
 	pruneCandidates,
+	recordPublication,
 	verifyCandidate,
 	verifyEvidence,
+	verifyPublishedRelease,
 } from "./mobile-sync-candidate.mjs";
 import { attest, verifyRelease } from "./mobile-sync-release.mjs";
 
@@ -209,10 +223,19 @@ RELEASES="$FIXTURE_WORK/releases"
 CURRENT="$FIXTURE_WORK/current"
 prepare_mobile_sync_rollback() { return 0; }
 pnpm() { echo 'unexpected rebuild' >&2; return 99; }
-mv() { if [ "$1" = "-Tf" ]; then command rm -f "$3"; command mv "$2" "$3"; else command mv "$@"; fi; }
+node() {
+ if [ "${"$"}{FAULT:-}" = "record-before" ] && [ "${"$"}{2:-}" = "record" ]; then echo "injected $FAULT" >&2; return 71; fi
+ command node "$@" || return $?
+ if [ "${"$"}{FAULT:-}" = "record-after" ] && [ "${"$"}{2:-}" = "record" ]; then echo "injected $FAULT" >&2; return 71; fi
+}
+mv() {
+ if [ "${"$"}{FAULT:-}" = "release-rename" ] && [ "$2" = "$RELEASES/$FIXTURE_RELEASE" ]; then echo "injected $FAULT" >&2; return 71; fi
+ if [ "${"$"}{FAULT:-}" = "current-switch" ] && [ "$1" = "-Tf" ]; then echo "injected $FAULT" >&2; return 71; fi
+ if [ "$1" = "-Tf" ]; then command rm -f "$3"; command mv "$2" "$3"; else command mv "$@"; fi
+}
 publish_release "$FIXTURE_WORK/previous" "$FIXTURE_RELEASE" "$FIXTURE_COMMIT"
 `;
-			const run = () =>
+			const run = (fault = "") =>
 				spawnSync("bash", ["-s"], {
 					input: shell,
 					encoding: "utf8",
@@ -225,6 +248,7 @@ publish_release "$FIXTURE_WORK/previous" "$FIXTURE_RELEASE" "$FIXTURE_COMMIT"
 						FIXTURE_WORK: f.work,
 						FIXTURE_RELEASE: f.record.release,
 						FIXTURE_COMMIT: f.record.commit,
+						FAULT: fault,
 					},
 				});
 			await writeFile(f.proof, evidence(f.record, { status: "Not run" }));
@@ -233,11 +257,35 @@ publish_release "$FIXTURE_WORK/previous" "$FIXTURE_RELEASE" "$FIXTURE_COMMIT"
 				assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
 			}
 			await writeFile(f.proof, evidence(f.record));
+			for (const fault of ["record-before", "record-after", "release-rename", "current-switch"]) {
+				const failed = run(fault);
+				assert.notEqual(failed.status, 0, fault);
+				assert.ok(failed.stderr.includes(`injected ${fault}`), failed.stderr);
+				assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
+			}
+			const receipt = resolve(f.shared, "mobile-sync-publications", `${f.record.release}.json`);
+			const recordedBytes = await readFile(receipt);
+			const recordedStat = await lstat(receipt);
 			const result = run();
 			assert.equal(result.status, 0, result.stderr);
 			const published = await readlink(resolve(f.work, "current"));
 			assert.equal((await verifyRelease(published)).sha256, f.record.sha256);
 			assert.equal((await verifyRelease(resolve(f.candidate, "artifact"))).sha256, f.record.sha256);
+			const serverStat = await lstat(resolve(published, "server/index.mjs"));
+			await rm(resolve(f.work, "current"));
+			await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
+			const retried = run();
+			assert.equal(retried.status, 0, retried.stderr);
+			assert.equal(await readlink(resolve(f.work, "current")), published);
+			assert.equal((await lstat(resolve(published, "server/index.mjs"))).ino, serverStat.ino);
+			assert.equal((await lstat(receipt)).ino, recordedStat.ino);
+			assert.deepEqual(await readFile(receipt), recordedBytes);
+			await rm(resolve(f.work, "current"));
+			await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
+			await writeFile(resolve(published, "server/index.mjs"), "tampered");
+			const rejected = run();
+			assert.notEqual(rejected.status, 0);
+			assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
 			assert.equal(f.git("rev-parse", "HEAD"), f.head);
 		}, true),
 );
@@ -270,4 +318,78 @@ test("candidate verification rejects extra client assets before the publication-
 		await mkdir(resolve(f.candidate, "artifact/public/assets"), { recursive: true });
 		await writeFile(resolve(f.candidate, "artifact/public/assets/undeclared.js"), "unexpected");
 		await assert.rejects(verifyCandidate(f.candidate, f.root, f.repo, f.shared, f.record.commit), /unexpected file/);
+	}));
+
+test("publication records are atomic, immutable and idempotent under concurrent retries", async () =>
+	fixture(async (f) => {
+		const root = resolve(f.shared, "mobile-sync-publications");
+		const authorization = { ...f.record, evidenceSha256: "a".repeat(64) };
+		const previousMask = process.umask(0o077);
+		try {
+			await Promise.all(Array.from({ length: 32 }, () => recordPublication(root, authorization)));
+		} finally {
+			process.umask(previousMask);
+		}
+		const path = resolve(root, `${authorization.release}.json`);
+		const before = await lstat(path),
+			bytes = await readFile(path);
+		assert.equal(before.mode & 0o777, 0o440);
+		await recordPublication(root, authorization);
+		assert.equal((await lstat(path)).ino, before.ino);
+		assert.deepEqual(await readFile(path), bytes);
+		for (const change of [
+			{ commit: "b".repeat(40) },
+			{ sha256: "b".repeat(64) },
+			{ configurationSha256: "b".repeat(64) },
+			{ evidenceSha256: "b".repeat(64) },
+			{ mobileSync: { ...authorization.mobileSync, createAndReveal: false } },
+		]) {
+			await assert.rejects(recordPublication(root, { ...authorization, ...change }), /differs/);
+			assert.deepEqual(await readFile(path), bytes);
+		}
+		assert.deepEqual(await readdir(root), [`${authorization.release}.json`]);
+		await rm(path);
+		await writeFile(path, "partial");
+		await assert.rejects(recordPublication(root, authorization));
+		assert.equal(await readFile(path, "utf8"), "partial");
+		await rm(path);
+		await symlink(resolve(f.repo, "deploy/Caddyfile"), path);
+		await assert.rejects(recordPublication(root, authorization), /symlink/);
+		await rm(path);
+		const competing = { ...authorization, evidenceSha256: "c".repeat(64) };
+		const results = await Promise.allSettled(
+			Array.from({ length: 32 }, (_, i) => recordPublication(root, i % 2 ? competing : authorization)),
+		);
+		const winner = JSON.parse(await readFile(path, "utf8"));
+		assert.ok([authorization.evidenceSha256, competing.evidenceSha256].includes(winner.evidenceSha256));
+		assert.equal(results.filter((result) => result.status === "fulfilled").length, 16);
+		assert.equal(results.filter((result) => result.status === "rejected").length, 16);
+		assert.deepEqual(await readdir(root), [`${authorization.release}.json`]);
+	}));
+
+test("release reuse requires matching receipt, artifact and identity without changing carried assets", async () =>
+	fixture(async (f) => {
+		const root = resolve(f.work, "releases"),
+			receipts = resolve(f.shared, "mobile-sync-publications");
+		const release = resolve(root, f.record.release),
+			authorization = { ...f.record, evidenceSha256: "a".repeat(64) };
+		await cp(resolve(f.candidate, "artifact"), release, { recursive: true });
+		await assert.rejects(verifyPublishedRelease(release, root, receipts, authorization));
+		await recordPublication(receipts, authorization);
+		await mkdir(resolve(release, "public/assets"), { recursive: true });
+		await writeFile(resolve(release, "public/assets/old.js"), "carried");
+		await verifyPublishedRelease(release, root, receipts, authorization);
+		assert.equal(await readFile(resolve(release, "public/assets/old.js"), "utf8"), "carried");
+		await assert.rejects(
+			verifyPublishedRelease(release, root, receipts, { ...authorization, evidenceSha256: "b".repeat(64) }),
+			/differs/,
+		);
+		await writeFile(resolve(release, ".gatu-release-id"), "wrong");
+		await assert.rejects(verifyPublishedRelease(release, root, receipts, authorization));
+		await writeFile(resolve(release, ".gatu-release-id"), `${f.record.release}\n`);
+		await writeFile(resolve(release, "server/index.mjs"), "tampered");
+		await assert.rejects(verifyPublishedRelease(release, root, receipts, authorization), /hash/);
+		await rm(release, { recursive: true });
+		await symlink(resolve(f.candidate, "artifact"), release);
+		await assert.rejects(verifyPublishedRelease(release, root, receipts, authorization), /symlink/);
 	}));

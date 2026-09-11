@@ -258,27 +258,30 @@ publish_release() {
 	node "${REPO}/deploy/mobile-sync-release.mjs" check "${candidate}/artifact" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.createAndReveal' "$authorization")" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.importFromQr' "$authorization")" "$release_commit" "$release_name" >&2 || exit 1
 	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
 	prepare_mobile_sync_rollback "$previous_release" || exit 1
-	mkdir -p "$RELEASES"
-	rm -rf "$release_tmp"
-	mkdir -p "$release_tmp"
-	cp -a "${candidate}/artifact/." "$release_tmp"/ || exit 1
-	if [ -n "$previous_release" ] && [ -d "${previous_release}/public/assets" ] && [ -d "${release_tmp}/public/assets" ]; then
-		echo "Carry forward previous hashed assets from ${previous_release}" >&2
-		find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp --update=none {} "${release_tmp}/public/assets/" \;
+	if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
+		node "${REPO}/deploy/mobile-sync-candidate.mjs" reuse "$release_dir" "$RELEASES" "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
+	else
+		mkdir -p "$RELEASES"
+		rm -rf "$release_tmp"
+		mkdir -p "$release_tmp"
+		cp -a "${candidate}/artifact/." "$release_tmp"/ || exit 1
+		if [ -n "$previous_release" ] && [ -d "${previous_release}/public/assets" ] && [ -d "${release_tmp}/public/assets" ]; then
+			echo "Carry forward previous hashed assets from ${previous_release}" >&2
+			find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp --update=none {} "${release_tmp}/public/assets/" \;
+		fi
+		printf '%s\n' "$release_commit" > "${release_tmp}/.gatu-release-commit"
+		printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
+		printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > "${release_tmp}/.gatu-release-capabilities"
+		node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" >&2 || exit 1
+		if grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile"; then
+			node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" closed >&2 || exit 1
+		fi
+		[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
+		node "${REPO}/deploy/mobile-sync-candidate.mjs" record "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
+		mv "$release_tmp" "$release_dir"
 	fi
-	printf '%s\n' "$release_commit" > "${release_tmp}/.gatu-release-commit"
-	printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
-	printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > "${release_tmp}/.gatu-release-capabilities"
-	node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" >&2 || exit 1
-	if grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile"; then
-		node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" closed >&2 || exit 1
-	fi
-	[ ! -e "$release_dir" ] || { echo "ERROR: release already exists" >&2; exit 1; }
 	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
-	mkdir -p "${SHARED}/mobile-sync-publications"
-	printf '%s\n' "$authorization" > "${SHARED}/mobile-sync-publications/${release_name}.json"
-	chmod 0440 "${SHARED}/mobile-sync-publications/${release_name}.json"
-	mv "$release_tmp" "$release_dir"
+	node "${REPO}/deploy/mobile-sync-candidate.mjs" reuse "$release_dir" "$RELEASES" "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
 
 	ln -sfn "$release_dir" "$current_tmp"
 	mv -Tf "$current_tmp" "$CURRENT"
