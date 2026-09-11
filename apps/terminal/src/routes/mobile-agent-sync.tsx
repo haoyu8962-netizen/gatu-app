@@ -46,7 +46,12 @@ import {
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
 
-type InitialHashCapture = { status: "loaded"; sync: ParsedMobileSync } | { status: "error"; message: string } | null;
+type MobileSyncImportMessage = string | { ticketResult: Exclude<MobileSyncTicketResult, "accepted"> };
+
+type InitialHashCapture =
+	| { status: "loaded"; sync: ParsedMobileSync }
+	| { status: "error"; message: MobileSyncImportMessage }
+	| null;
 
 // Direct-load fragments are captured and removed by the zero-dependency client
 // bootstrap before React/providers hydrate. This route consumes that value once.
@@ -85,7 +90,7 @@ type EnvelopeSource = "url" | "stored";
 type LoadState =
 	| { state: "empty" }
 	| { state: "loaded"; sync: ParsedMobileSync; source: EnvelopeSource }
-	| { state: "error"; message: string };
+	| { state: "error"; message: MobileSyncImportMessage };
 
 class MobileAgentRemoteVerificationError extends Error {
 	constructor(readonly hadNetworkError: boolean) {
@@ -108,7 +113,7 @@ class MobileAgentOneTimeTicketError extends Error {
 function MobileAgentSyncRoute() {
 	const { env, info } = useHyperliquid();
 	const [loadState, setLoadState] = useState<LoadState>(createInitialLoadState);
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<MobileSyncImportMessage | null>(null);
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
 	const errorAlertRef = useRef<HTMLDivElement | null>(null);
 	const importAbortRef = useRef<AbortController | null>(null);
@@ -127,7 +132,7 @@ function MobileAgentSyncRoute() {
 		setStatus({ state: "idle" });
 	}, []);
 
-	const clearInvalidSync = useCallback((message: string) => {
+	const clearInvalidSync = useCallback((message: MobileSyncImportMessage) => {
 		importAbortRef.current?.abort();
 		const draftCleared = clearMobileSyncDraft();
 		setLoadState((previous) => {
@@ -329,7 +334,10 @@ function MobileAgentSyncRoute() {
 				if (cleanupIncomplete) error = new MobileAgentStorageError(true);
 			}
 			if (abortController.signal.aborted) return;
-			if (isMobileSyncError(error)) {
+			if (
+				isMobileSyncError(error) ||
+				(caughtError instanceof MobileAgentOneTimeTicketError && caughtError.result === "rejected")
+			) {
 				loadedSync.keyBytes.fill(0);
 				const draftCleared = clearMobileSyncDraft();
 				setLoadState({
@@ -534,7 +542,10 @@ function RequirementRow({ label, value }: { label: string; value: string }) {
 	);
 }
 
-const ErrorCallout = forwardRef<HTMLDivElement, { message: string }>(function ErrorCallout({ message }, ref) {
+const ErrorCallout = forwardRef<HTMLDivElement, { message: MobileSyncImportMessage }>(function ErrorCallout(
+	{ message },
+	ref,
+) {
 	return (
 		<div
 			ref={ref}
@@ -543,10 +554,18 @@ const ErrorCallout = forwardRef<HTMLDivElement, { message: string }>(function Er
 			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
-			<p>{message}</p>
+			<p>{typeof message === "string" ? message : <MobileSyncTicketErrorText result={message.ticketResult} />}</p>
 		</div>
 	);
 });
+
+function MobileSyncTicketErrorText({ result }: { result: Exclude<MobileSyncTicketResult, "accepted"> }) {
+	if (result === "incompatible")
+		return <Trans>Refresh both devices to update phone access, then create a new QR.</Trans>;
+	if (result === "rejected")
+		return <Trans>This one-time QR was already used or is no longer active. Scan a new QR.</Trans>;
+	return <Trans>The one-time QR could not be verified. Check your connection and retry.</Trans>;
+}
 
 function SuccessPanel({
 	userAddress,
@@ -774,12 +793,8 @@ function createInitialLoadState(): LoadState {
 	return { state: "empty" };
 }
 
-function getMobileSyncImportErrorMessage(error: unknown): string {
-	if (error instanceof MobileAgentOneTimeTicketError) {
-		return error.result === "rejected"
-			? t`This one-time QR was already used or is no longer active. Scan a new QR.`
-			: t`The one-time QR could not be verified. Check your connection and retry.`;
-	}
+function getMobileSyncImportErrorMessage(error: unknown): MobileSyncImportMessage {
+	if (error instanceof MobileAgentOneTimeTicketError) return { ticketResult: error.result };
 	if (error instanceof MobileAgentRemoteVerificationError) {
 		return error.hadNetworkError
 			? t`Hyperliquid approval could not be checked. Check your connection and retry.`

@@ -10,6 +10,22 @@
 app.gatu.ai, testnet.gatu.ai {
 	encode zstd gzip
 
+	@mobile_sync_block path_regexp (?i)^[/\\]*mobile-agent-sync-ticket([/\\].*)?$
+	@ambiguous_path path_regexp \x5c
+	route {
+		header @mobile_sync_block {
+			>Cache-Control "no-store"
+			>Referrer-Policy "no-referrer"
+			>Retry-After "60"
+		}
+		respond @mobile_sync_block 503
+		header @ambiguous_path {
+			>Cache-Control "no-store"
+			>Referrer-Policy "no-referrer"
+		}
+		respond @ambiguous_path 400
+	}
+
 	# Referral landing paths may contain user-controlled codes. Never cache them,
 	# leak them through Referer, or let search engines index them.
 	@referral_join path /join /join/*

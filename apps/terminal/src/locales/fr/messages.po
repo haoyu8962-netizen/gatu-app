@@ -6012,6 +6012,11 @@ msgstr "Les parrains gagnent actuellement 10 % des frais générés par les trad
 msgid "Refresh"
 msgstr "Actualiser"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Refresh both devices to update phone access, then create a new QR."
+msgstr "Actualisez la page sur les deux appareils pour mettre à jour l’accès mobile, puis créez un nouveau code QR."
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Refresh failed. Previously loaded funding payments remain visible."
 msgstr "Échec de l’actualisation. Les paiements de financement chargés précédemment restent visibles."

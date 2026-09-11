@@ -6,7 +6,7 @@ import { lazy, Suspense } from "react";
 import "@/lib/i18n";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
-import { ClientRuntimeProvider, isDocumentRoutePath } from "@/providers/client-runtime";
+import { ClientRuntimeProvider, getPresentedRoutePathname, isDocumentRoutePath } from "@/providers/client-runtime";
 
 const isServer = typeof document === "undefined";
 // Start fetching the client-only wallet runtime as soon as the root module evaluates. The document
@@ -58,7 +58,7 @@ export function RootProvider({ children, queryClient }: { children: React.ReactN
 
 export function ClientRuntimeGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
 	const hydrated = useHydrated();
-	const pathname = useRouterState({ select: (state) => state.location.pathname });
+	const pathname = useRouterState({ select: getPresentedRoutePathname });
 	const queryClient = useQueryClient();
 
 	if (isDocumentRoutePath(pathname)) {

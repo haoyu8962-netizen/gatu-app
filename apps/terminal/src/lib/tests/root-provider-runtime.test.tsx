@@ -14,8 +14,11 @@ const runtime = vi.hoisted(() => ({
 
 vi.mock("@tanstack/react-router", () => ({
 	useHydrated: () => runtime.hydrated,
-	useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) =>
-		select({ location: { pathname: runtime.pathname } }),
+	useRouterState: ({
+		select,
+	}: {
+		select: (state: { location: { pathname: string }; matches: { pathname: string }[] }) => string;
+	}) => select({ location: { pathname: runtime.pathname }, matches: [{ pathname: runtime.pathname }] }),
 }));
 
 vi.mock("@/lib/i18n", () => ({}));

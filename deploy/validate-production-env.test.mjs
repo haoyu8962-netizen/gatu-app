@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, test } from "node:test";
-import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const SCRIPT_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "validate-production-env.mjs");
 const temporaryDirectories = [];
@@ -24,7 +24,9 @@ function createEnvironmentFiles({
 	mainnetOrigin = "https://app.gatu.ai",
 	testnetOrigin = "https://testnet.gatu.ai",
 	ipdataApiKey = "ipdata-api-key",
+	host = "127.0.0.1",
 	extraBuild = "",
+	extraRuntime = "",
 } = {}) {
 	const directory = mkdtempSync(resolve(tmpdir(), "gatu-production-env-"));
 	temporaryDirectories.push(directory);
@@ -37,9 +39,7 @@ function createEnvironmentFiles({
 			"VITE_PRIVY_APP_ID=privy-app-id",
 			`VITE_HYPERLIQUID_TESTNET=${testnetBuild}`,
 			`VITE_HYPERLIQUID_AGENT_NAME=${agentName}`,
-			...(mainnetExternal === null
-				? []
-				: [`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=${mainnetExternal}`]),
+			...(mainnetExternal === null ? [] : [`VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=${mainnetExternal}`]),
 			`VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=${testnetExternal}`,
 			`VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED=${mainnetSponsored}`,
 			`VITE_CCTP_SPONSORED_DEPOSIT_TESTNET_ENABLED=${testnetSponsored}`,
@@ -50,6 +50,8 @@ function createEnvironmentFiles({
 		runtimeEnvironmentPath,
 		[
 			...(ipdataApiKey === null ? [] : [`IPDATA_API_KEY=${ipdataApiKey}`]),
+			`HOST=${host}`,
+			extraRuntime,
 			`GATU_MAINNET_PUBLIC_BASE_URL=${mainnetOrigin}`,
 			`GATU_TESTNET_PUBLIC_BASE_URL=${testnetOrigin}`,
 			`GATU_CCTP_MAINNET_RELEASE_MODE=${releaseMode}`,
@@ -184,3 +186,42 @@ test("rejects a higher-priority Vite production environment file", () => {
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /\.env\.production\.local must be removed/);
 });
+
+test("mobile pairing flags are explicit and reject ambiguous release intent", () => {
+	for (const value of ["TRUE", "1", '"true"', "yes"])
+		assert.equal(validate({ extraBuild: `VITE_MOBILE_PAIRING_IMPORT_ENABLED=${value}` }).status, 1);
+	assert.equal(validate({ extraBuild: "VITE_MOBILE_PAIRING_CREATE_ENABLED=true" }).status, 1);
+	for (const extraBuild of [
+		"",
+		"VITE_MOBILE_PAIRING_CREATE_ENABLED=false",
+		"VITE_MOBILE_PAIRING_IMPORT_ENABLED=true",
+		"VITE_MOBILE_PAIRING_CREATE_ENABLED=true\nVITE_MOBILE_PAIRING_IMPORT_ENABLED=true",
+	]) {
+		const result = validate({ extraBuild });
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(result.stdout, /mobile-create=(true|false) mobile-import=(true|false)/);
+	}
+});
+
+test("rejects runtime listeners that can bypass the canonical loopback proxy", () => {
+	for (const host of ["0.0.0.0", "::", "localhost", ""]) {
+		const result = validate({ host });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /HOST=127\.0\.0\.1/);
+	}
+});
+
+for (const line of [
+	"NITRO_HOST=0.0.0.0",
+	"NITRO_HOST=::",
+	"PORT=0",
+	"PORT=3001",
+	"NITRO_PORT=3001",
+	"NITRO_PORT=03000",
+	"PORT=NaN",
+]) {
+	test(`rejects listener override ${line}`, () => assert.notEqual(validate({ extraRuntime: line }).status, 0));
+}
+for (const line of ["NITRO_HOST=", "NITRO_HOST=127.0.0.1", "PORT=3000\nNITRO_PORT=3000", "NITRO_PORT="]) {
+	test(`accepts safe listener ${line}`, () => assert.equal(validate({ extraRuntime: line }).status, 0));
+}

@@ -31,6 +31,7 @@ function createMemoryStorage(): Storage {
 
 async function createSyncFixture() {
 	return createMobileAgentSyncUrl({
+		syncId: "A".repeat(22),
 		appOrigin: APP_ORIGIN,
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,

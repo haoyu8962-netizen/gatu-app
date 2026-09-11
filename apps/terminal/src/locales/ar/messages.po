@@ -6012,6 +6012,11 @@ msgstr "يكسب المُحيلون حاليًا 10% من رسوم المُحا�
 msgid "Refresh"
 msgstr "تحديث"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Refresh both devices to update phone access, then create a new QR."
+msgstr "حدّث الصفحة على كلا الجهازين لتحديث وصول الهاتف، ثم أنشئ رمز QR جديدًا."
+
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Refresh failed. Previously loaded funding payments remain visible."
 msgstr "فشل التحديث. تظل مدفوعات التمويل المحمّلة سابقًا ظاهرة."

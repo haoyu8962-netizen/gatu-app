@@ -1,18 +1,23 @@
-import { MOBILE_SYNC_TICKET_TTL_MS } from "./one-time-ticket-policy";
+import { MOBILE_PAIRING_FEATURES, type MobilePairingFeatureFlags } from "@/config/mobile-pairing";
+import {
+	isMobileSyncTicketId,
+	MOBILE_SYNC_TICKET_API_VERSION,
+	MOBILE_SYNC_TICKET_TTL_MS,
+	type MobileSyncTicketRequest,
+} from "./one-time-ticket-policy";
 import { MOBILE_SYNC_CLOCK_SKEW_MS, MOBILE_SYNC_PAYLOAD_TTL_MS } from "./sync-core";
 
 const MOBILE_SYNC_TICKET_TOMBSTONE_TTL_MS = MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS;
 const MOBILE_SYNC_TICKET_MAX_BYTES = 256;
 const MOBILE_SYNC_TICKET_MAX_ENTRIES = 20_000;
 const MOBILE_SYNC_TICKET_RATE_WINDOW_MS = 60_000;
-const MOBILE_SYNC_REGISTER_RATE_LIMIT = 20;
+const MOBILE_SYNC_ISSUE_RATE_LIMIT = 20;
 const MOBILE_SYNC_CONSUME_RATE_LIMIT = 60;
 const MOBILE_SYNC_RATE_BUCKET_LIMIT = 4_096;
-const SYNC_ID_RE = /^[A-Za-z0-9_-]{22}$/;
 const CONSUMER_ID_RE = /^[0-9a-f]{32}$/;
 
 type TicketStoreResult = "accepted" | "rejected" | "missing" | "full";
-type TicketRegistrationStoreResult = { status: "accepted"; expiresAtMs: number } | { status: "rejected" | "full" };
+type TicketIssueStoreResult = { status: "accepted"; syncId: string; expiresAtMs: number } | { status: "full" };
 
 interface MobileSyncTicket {
 	consumerId: string | null;
@@ -21,11 +26,11 @@ interface MobileSyncTicket {
 }
 
 export interface MobileSyncTicketStore {
-	register(syncId: string, nowMs: number): TicketRegistrationStoreResult;
-	consume(syncId: string, consumerId: string, nowMs: number): TicketStoreResult;
+	issue(origin: string, nowMs: number): TicketIssueStoreResult;
+	consume(origin: string, syncId: string, consumerId: string, nowMs: number): TicketStoreResult;
 }
 
-type MobileSyncTicketOperation = "register" | "consume";
+type MobileSyncTicketOperation = "issue" | "consume";
 
 interface MobileSyncTicketRateLimiter {
 	consume(
@@ -40,11 +45,12 @@ interface HandleMobileSyncTicketOptions {
 	store?: MobileSyncTicketStore;
 	rateLimiter?: MobileSyncTicketRateLimiter;
 	sourceKey?: string | null;
+	features?: MobilePairingFeatureFlags;
 }
 
 const serverTicketStore = createMobileSyncTicketStore();
 const serverRateLimiter = createMobileSyncTicketRateLimiter(
-	MOBILE_SYNC_REGISTER_RATE_LIMIT,
+	MOBILE_SYNC_ISSUE_RATE_LIMIT,
 	MOBILE_SYNC_CONSUME_RATE_LIMIT,
 	MOBILE_SYNC_TICKET_RATE_WINDOW_MS,
 );
@@ -69,6 +75,10 @@ export async function handleMobileSyncTicket(
 
 	const parsedRequest = parseTicketRequest(body);
 	if (!parsedRequest) return responseWithStatus(400);
+	const features = options.features ?? MOBILE_PAIRING_FEATURES;
+	if (!(parsedRequest.operation === "issue" ? features.createAndReveal : features.importFromQr)) {
+		return responseWithStatus(503, { "retry-after": "60" });
+	}
 	const sourceKey = normalizeSourceKey(options.sourceKey);
 	if (!sourceKey) return responseWithStatus(503, { "retry-after": "60" });
 
@@ -79,15 +89,17 @@ export async function handleMobileSyncTicket(
 	}
 
 	const store = options.store ?? serverTicketStore;
-	if (parsedRequest.operation === "register") {
-		return ticketRegistrationResultResponse(store.register(parsedRequest.syncId, nowMs), nowMs);
+	const origin = new URL(request.url).origin;
+	if (parsedRequest.operation === "issue") {
+		return ticketIssueResultResponse(store.issue(origin, nowMs), nowMs);
 	}
-	return ticketResultResponse(store.consume(parsedRequest.syncId, parsedRequest.consumerId, nowMs));
+	return ticketResultResponse(store.consume(origin, parsedRequest.syncId, parsedRequest.consumerId, nowMs));
 }
 
 export function createMobileSyncTicketStore(
 	maxEntries = MOBILE_SYNC_TICKET_MAX_ENTRIES,
 	ttlMs = MOBILE_SYNC_TICKET_TTL_MS,
+	generateId: () => string = createTicketId,
 ): MobileSyncTicketStore {
 	const tickets = new Map<string, MobileSyncTicket>();
 
@@ -98,26 +110,32 @@ export function createMobileSyncTicketStore(
 	}
 
 	return {
-		register(syncId, nowMs) {
+		issue(origin, nowMs) {
 			removeExpiredTombstones(nowMs);
-			const existing = tickets.get(syncId);
-			if (existing) {
-				return existing.consumerId === null && existing.consumeExpiresAtMs > nowMs
-					? { status: "accepted", expiresAtMs: existing.consumeExpiresAtMs }
-					: { status: "rejected" };
-			}
 			if (tickets.size >= maxEntries) return { status: "full" };
-			const expiresAtMs = nowMs + ttlMs;
-			tickets.set(syncId, {
-				consumerId: null,
-				consumeExpiresAtMs: expiresAtMs,
-				tombstoneExpiresAtMs: nowMs + MOBILE_SYNC_TICKET_TOMBSTONE_TTL_MS,
-			});
-			return { status: "accepted", expiresAtMs };
+			for (let attempt = 0; attempt < 8; attempt += 1) {
+				let syncId: string;
+				try {
+					syncId = generateId();
+				} catch {
+					return { status: "full" };
+				}
+				if (!isMobileSyncTicketId(syncId)) return { status: "full" };
+				const key = `${origin}:${syncId}`;
+				if (tickets.has(key)) continue;
+				const expiresAtMs = nowMs + ttlMs;
+				tickets.set(key, {
+					consumerId: null,
+					consumeExpiresAtMs: expiresAtMs,
+					tombstoneExpiresAtMs: nowMs + MOBILE_SYNC_TICKET_TOMBSTONE_TTL_MS,
+				});
+				return { status: "accepted", syncId, expiresAtMs };
+			}
+			return { status: "full" };
 		},
-		consume(syncId, consumerId, nowMs) {
+		consume(origin, syncId, consumerId, nowMs) {
 			removeExpiredTombstones(nowMs);
-			const ticket = tickets.get(syncId);
+			const ticket = tickets.get(`${origin}:${syncId}`);
 			if (!ticket) return "missing";
 			if (ticket.consumerId === null) {
 				if (ticket.consumeExpiresAtMs <= nowMs) return "missing";
@@ -130,7 +148,7 @@ export function createMobileSyncTicketStore(
 }
 
 export function createMobileSyncTicketRateLimiter(
-	registerLimit: number,
+	issueLimit: number,
 	consumeLimit: number,
 	windowMs: number,
 ): MobileSyncTicketRateLimiter {
@@ -152,7 +170,7 @@ export function createMobileSyncTicketRateLimiter(
 				bucket = { windowStartedAtMs: nowMs, requestsInWindow: 0 };
 				buckets.set(bucketKey, bucket);
 			}
-			const limit = operation === "register" ? registerLimit : consumeLimit;
+			const limit = operation === "issue" ? issueLimit : consumeLimit;
 			if (bucket.requestsInWindow >= limit) {
 				return {
 					allowed: false,
@@ -165,26 +183,28 @@ export function createMobileSyncTicketRateLimiter(
 	};
 }
 
-function parseTicketRequest(
-	value: Record<string, unknown>,
-): { operation: "register"; syncId: string } | { operation: "consume"; syncId: string; consumerId: string } | null {
-	if (
-		value.operation === "register" &&
-		typeof value.syncId === "string" &&
-		SYNC_ID_RE.test(value.syncId) &&
-		hasExactKeys(value, ["operation", "syncId"])
-	) {
-		return { operation: "register", syncId: value.syncId };
+function createTicketId(): string {
+	const bytes = new Uint8Array(16);
+	globalThis.crypto.getRandomValues(bytes);
+	return btoa(String.fromCharCode(...bytes))
+		.replaceAll("+", "-")
+		.replaceAll("/", "_")
+		.replaceAll("=", "");
+}
+
+function parseTicketRequest(value: Record<string, unknown>): MobileSyncTicketRequest | null {
+	if (value.version !== MOBILE_SYNC_TICKET_API_VERSION) return null;
+	if (value.operation === "issue" && hasExactKeys(value, ["operation", "version"])) {
+		return { version: 2, operation: "issue" };
 	}
 	if (
 		value.operation === "consume" &&
-		typeof value.syncId === "string" &&
-		SYNC_ID_RE.test(value.syncId) &&
+		isMobileSyncTicketId(value.syncId) &&
 		typeof value.consumerId === "string" &&
 		CONSUMER_ID_RE.test(value.consumerId) &&
-		hasExactKeys(value, ["consumerId", "operation", "syncId"])
+		hasExactKeys(value, ["consumerId", "operation", "syncId", "version"])
 	) {
-		return { operation: "consume", syncId: value.syncId, consumerId: value.consumerId };
+		return { version: 2, operation: "consume", syncId: value.syncId, consumerId: value.consumerId };
 	}
 	return null;
 }
@@ -257,18 +277,19 @@ function ticketResultResponse(result: TicketStoreResult): Response {
 	return responseWithStatus(503, { "retry-after": "60" });
 }
 
-function ticketRegistrationResultResponse(result: TicketRegistrationStoreResult, serverNowMs: number): Response {
+function ticketIssueResultResponse(result: TicketIssueStoreResult, serverNowMs: number): Response {
 	if (result.status === "accepted") {
 		return responseWithJson({
+			version: MOBILE_SYNC_TICKET_API_VERSION,
+			syncId: result.syncId,
 			expiresAtMs: result.expiresAtMs,
 			serverNowMs,
 		});
 	}
-	if (result.status === "rejected") return responseWithStatus(409);
 	return responseWithStatus(503, { "retry-after": "60" });
 }
 
-function responseWithJson(body: Record<string, number>): Response {
+function responseWithJson(body: Record<string, number | string>): Response {
 	return new Response(JSON.stringify(body), {
 		status: 200,
 		headers: {

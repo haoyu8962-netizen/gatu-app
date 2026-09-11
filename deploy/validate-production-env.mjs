@@ -3,6 +3,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { validateListener } from "./runtime-listener.mjs";
+
 const EXPECTED_MAINNET_ORIGIN = "https://app.gatu.ai";
 const EXPECTED_TESTNET_ORIGIN = "https://testnet.gatu.ai";
 const MAINNET_RELEASE_PROFILES = new Map([
@@ -73,12 +75,7 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 			`${filePath} may omit ${LEGACY_MAINNET_EXTERNAL_GATE} or keep the legacy acknowledgement at the exact literal true; Mainnet external deposits cannot be disabled by build configuration.`,
 		);
 	}
-	requireExactValue(
-		values,
-		filePath,
-		"VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED",
-		releaseProfile.sponsored,
-	);
+	requireExactValue(values, filePath, "VITE_CCTP_SPONSORED_DEPOSIT_MAINNET_ENABLED", releaseProfile.sponsored);
 
 	for (const name of OPTIONAL_BOOLEAN_BUILD_FLAGS) {
 		const value = requireValue(values, filePath, name);
@@ -87,10 +84,20 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 		}
 	}
 
+	for (const name of ["VITE_MOBILE_PAIRING_CREATE_ENABLED", "VITE_MOBILE_PAIRING_IMPORT_ENABLED"]) {
+		if (![undefined, "", "false", "true"].includes(values.get(name)))
+			fail(`${filePath} requires ${name} to be absent, empty, false or true without quotes.`);
+	}
+	if (
+		values.get("VITE_MOBILE_PAIRING_CREATE_ENABLED") === "true" &&
+		values.get("VITE_MOBILE_PAIRING_IMPORT_ENABLED") !== "true"
+	)
+		fail("Mobile pairing CREATE requires IMPORT=true.");
 	return releaseProfile;
 }
 
 function validateRuntimeEnvironment(values, filePath) {
+	validateListener(Object.fromEntries(values));
 	requireExactValue(values, filePath, "GATU_MAINNET_PUBLIC_BASE_URL", EXPECTED_MAINNET_ORIGIN);
 	requireExactValue(values, filePath, "GATU_TESTNET_PUBLIC_BASE_URL", EXPECTED_TESTNET_ORIGIN);
 
@@ -147,6 +154,8 @@ function main() {
 			`mainnet-sponsored=${mainnetProfile.sponsored === "true" ? "enabled" : "disabled"}`,
 			`testnet-external=${testnetExternal === "true" ? "enabled" : "disabled"}`,
 			`testnet-sponsored=${testnetSponsored === "true" ? "enabled" : "disabled"}`,
+			`mobile-create=${buildEnvironment.get("VITE_MOBILE_PAIRING_CREATE_ENABLED") === "true"}`,
+			`mobile-import=${buildEnvironment.get("VITE_MOBILE_PAIRING_IMPORT_ENABLED") === "true"}`,
 		].join(" ") + "\n",
 	);
 }

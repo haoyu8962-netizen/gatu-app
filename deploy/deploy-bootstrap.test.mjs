@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -27,6 +27,8 @@ function createHarness() {
 
 function runBootstrap({
 	branch = "main",
+	deployMode = "",
+	candidateId = "",
 	flockExitCode = 0,
 	gitDiffExitCode = 0,
 	gitUntrackedFiles = "",
@@ -38,6 +40,8 @@ function runBootstrap({
 	const harness = createHarness();
 	const shell = String.raw`
 set -- "$TEST_BRANCH"
+if [ -n "$TEST_DEPLOY_MODE" ]; then set -- "$@" "$TEST_DEPLOY_MODE"; fi
+if [ -n "$TEST_CANDIDATE_ID" ]; then set -- "$@" "$TEST_CANDIDATE_ID"; fi
 source "$DEPLOY_SCRIPT_PATH"
 REPO="$TEST_REPOSITORY"
 SHARED="$TEST_SHARED"
@@ -93,6 +97,8 @@ printf 'verified\n%s\n' "$PWD" > "$RESULT_FILE"
 				KEEP_RELEASES: "7",
 				RESULT_FILE: harness.resultFile,
 				TEST_BRANCH: branch,
+				TEST_DEPLOY_MODE: deployMode,
+				TEST_CANDIDATE_ID: candidateId,
 				TEST_REPOSITORY: harness.repository,
 				TEST_SHARED: harness.shared,
 			},
@@ -136,13 +142,17 @@ function runReleaseLauncher({
 	guard = true,
 	guardSymlink = false,
 	identified = true,
+	runtime = {},
+	listen = false,
 } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "gatu-release-launcher-"));
 	const resultFile = join(root, "result");
 	mkdirSync(join(root, "server"), { recursive: true });
 	writeFileSync(
 		join(root, "server/index.mjs"),
-		'import { appendFileSync } from "node:fs"; appendFileSync(process.env.RESULT_FILE, "server\\n");\n',
+		listen
+			? 'import {createServer} from "node:net"; import {appendFileSync} from "node:fs"; const server = createServer(); server.listen(Number(process.env.NITRO_PORT ?? process.env.PORT), process.env.NITRO_HOST || process.env.HOST, () => { const {address, port} = server.address(); appendFileSync(process.env.RESULT_FILE, `${address}:${port}\\n`); server.close(); });'
+			: 'import { appendFileSync } from "node:fs"; appendFileSync(process.env.RESULT_FILE, "server\\n");\n',
 	);
 	if (identified) {
 		writeFileSync(join(root, ".gatu-release-commit"), `${TARGET_SHA}\n`);
@@ -170,13 +180,21 @@ function runReleaseLauncher({
 
 	try {
 		const portableLauncher = extractReleaseLauncher()
-			.replaceAll("$$(", "$(")
+			.replaceAll("$$", "$")
 			.replaceAll("/usr/bin/node", process.execPath)
 			.replaceAll("/usr/bin/cat", "/bin/cat");
 		const result = spawnSync("/bin/sh", ["-ec", portableLauncher], {
 			cwd: root,
 			encoding: "utf8",
-			env: { ...process.env, RESULT_FILE: resultFile },
+			env: {
+				...process.env,
+				HOST: "127.0.0.1",
+				PORT: "3000",
+				NITRO_HOST: "",
+				NITRO_PORT: "",
+				...runtime,
+				RESULT_FILE: resultFile,
+			},
 		});
 		return {
 			output: (() => {
@@ -256,7 +274,7 @@ verify_systemd_unit
 	}
 }
 
-function runFailedRestartRollback() {
+function runFailedRestartRollback({ edgeBlocked = true } = {}) {
 	const root = mkdtempSync(join(tmpdir(), "gatu-release-rollback-"));
 	const previousRelease = join(root, "previous");
 	const failedRelease = join(root, "failed");
@@ -271,6 +289,9 @@ function runFailedRestartRollback() {
 	const shell = String.raw`
 source "$DEPLOY_SCRIPT_PATH"
 CURRENT="$TEST_CURRENT"
+REPO="$TEST_REPO"
+MOBILE_SYNC_BASELINE="$TEST_BASELINE"
+verify_mobile_sync_edge_block() { [ "$TEST_EDGE_BLOCKED" = "true" ]; }
 mv() {
 	if [ "${"$"}1" = "-Tf" ]; then
 		local source="${"$"}2" target="${"$"}3"
@@ -302,6 +323,9 @@ rollback_to_release "$PREVIOUS_RELEASE"
 				PREVIOUS_RELEASE: previousRelease,
 				RESTART_LOG: restartLog,
 				TEST_CURRENT: current,
+				TEST_REPO: resolve(dirname(DEPLOY_SCRIPT), ".."),
+				TEST_BASELINE: join(root, "absent-baseline"),
+				TEST_EDGE_BLOCKED: String(edgeBlocked),
 			},
 			input: shell,
 		});
@@ -382,7 +406,7 @@ test("production deployment fixes NODE_ENV before building", () => {
 
 test("canonical publication writes the guard identity and exact capability before switching current", () => {
 	const source = readFileSync(DEPLOY_SCRIPT, "utf8");
-	const guardCopy = source.indexOf('cp deploy/referral-uri-guard.cjs "${release_tmp}/referral-uri-guard.cjs"');
+	const guardCopy = source.indexOf('cp -a "${candidate}/artifact/." "$release_tmp"/');
 	const commitMarker = source.indexOf('> "${release_tmp}/.gatu-release-commit"');
 	const releaseMarker = source.indexOf('> "${release_tmp}/.gatu-release-id"');
 	const capabilityMarker = source.indexOf('> "${release_tmp}/.gatu-release-capabilities"');
@@ -423,16 +447,12 @@ test("systemd preflight verifies the loaded immutable service contract", () => {
 	]);
 });
 
-test(
-	"Linux systemd parser accepts the canonical release launcher",
-	{ skip: process.platform !== "linux" },
-	() => {
-		const result = spawnSync("/usr/bin/systemd-analyze", ["--man=no", "verify", SERVICE_UNIT], {
-			encoding: "utf8",
-		});
-		assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-	},
-);
+test("Linux systemd parser accepts the canonical release launcher", { skip: process.platform !== "linux" }, () => {
+	const result = spawnSync("/usr/bin/systemd-analyze", ["--man=no", "verify", SERVICE_UNIT], {
+		encoding: "utf8",
+	});
+	assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+});
 
 test("systemd preflight fails closed for stale or overridden loaded units", async (context) => {
 	await context.test("daemon reload required", () => {
@@ -497,7 +517,7 @@ test("markerless legacy releases remain a narrowly scoped rollback path", () => 
 	assert.equal(output, "server\n");
 });
 
-test("failed deployment rollback restarts with the previous immutable release guard", () => {
+test("legacy rollback behind a verified edge block restarts with the previous immutable release guard", () => {
 	const { currentTarget, restarts, result } = runFailedRestartRollback();
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(currentTarget.endsWith("/previous"), true);
@@ -526,3 +546,64 @@ test(
 		}
 	},
 );
+
+test("rollback refuses an unverified legacy release without independent edge protection", () => {
+	const { result, currentTarget, restarts } = runFailedRestartRollback({ edgeBlocked: false });
+	assert.equal(result.status, 1);
+	assert.ok(currentTarget.endsWith("/failed"));
+	assert.deepEqual(restarts, ["failed-guard"]);
+});
+
+for (const runtime of [
+	{ HOST: "0.0.0.0" },
+	{ NITRO_HOST: "0.0.0.0" },
+	{ NITRO_HOST: "::" },
+	{ PORT: "3001" },
+	{ NITRO_PORT: "0" },
+	{ NITRO_PORT: "03000" },
+]) {
+	test(`launcher rejects unsafe listener ${JSON.stringify(runtime)} before executing even legacy code`, () => {
+		for (const identified of [true, false]) {
+			const { result, output } = runReleaseLauncher({
+				runtime,
+				identified,
+				...(identified ? {} : { capability: null, guard: false }),
+			});
+			assert.notEqual(result.status, 0);
+			assert.match(result.stderr, /runtime listener/);
+			assert.equal(output, "");
+		}
+	});
+}
+
+test(
+	"Linux canonical launcher binds the real Node socket only to the Caddy upstream",
+	{ skip: process.platform !== "linux" },
+	() => {
+		for (const runtime of [
+			{ NITRO_HOST: "", PORT: "", NITRO_PORT: "" },
+			{ NITRO_HOST: "127.0.0.1", PORT: "3000", NITRO_PORT: "3000" },
+		]) {
+			const { result, output } = runReleaseLauncher({ runtime, listen: true });
+			assert.equal(result.status, 0, result.stderr);
+			assert.equal(output, "guard\n127.0.0.1:3000\n");
+		}
+	},
+);
+
+test("bootstrap accepts prepare/promote and rejects unsafe candidate arguments before synchronization", () => {
+	for (const options of [{ deployMode: "prepare" }, { deployMode: "promote", candidateId: "20260911-main" }]) {
+		const { result } = runBootstrap(options);
+		assert.equal(result.status, 0, result.stderr);
+	}
+	for (const options of [
+		{ deployMode: "promote" },
+		{ deployMode: "promote", candidateId: "../outside" },
+		{ deployMode: "prepare", candidateId: "unexpected" },
+		{ deployMode: "skip-checks" },
+	]) {
+		const { result, gitCalls } = runBootstrap(options);
+		assert.equal(result.status, 64);
+		assert.equal(gitCalls, "");
+	}
+});
