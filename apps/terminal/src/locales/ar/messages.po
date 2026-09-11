@@ -4314,6 +4314,7 @@ msgstr "الحد الأقصى القابل للسحب: {0}"
 msgid "Meme"
 msgstr "Meme"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -7044,7 +7045,6 @@ msgstr "من الحساب الفوري إلى التخزين"
 msgid "Spot to staking available"
 msgstr "النقل من الحساب الفوري إلى التخزين متاح"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

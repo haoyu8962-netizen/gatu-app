@@ -385,7 +385,6 @@ export function MobileBookView({
 						mid={mid}
 						midDirection={midDirection}
 						marketName={name}
-						spreadText={spreadText}
 						selectedOptionLabel={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
 						priceGroupingOptions={priceGroupingOptions}
 						setSelectedOptionKey={setSelectedOptionKey}
@@ -445,7 +444,6 @@ interface CompactOrderbookProps extends OrderbookLayoutProps {
 	flashResetKey: string;
 	mid: string | undefined;
 	midDirection: "up" | "down" | "flat";
-	spreadText: string;
 	selectedOptionLabel: string;
 	priceGroupingOptions: L2BookPriceGroupOption[];
 	setSelectedOptionKey: (key: string) => void;
@@ -471,7 +469,6 @@ export function CompactOrderbook({
 	szDecimals,
 	mid,
 	midDirection,
-	spreadText,
 	selectedOptionLabel,
 	priceGroupingOptions,
 	setSelectedOptionKey,
@@ -638,9 +635,9 @@ export function CompactOrderbook({
 					<div
 						data-slot="compact-orderbook-mid"
 						data-direction={midDirection}
-						title={`${t`Spread`}: ${spreadText}`}
 						className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
 					>
+						<span className="sr-only">{t`Mid`}: </span>
 						<span
 							data-slot="compact-orderbook-mid-price"
 							className={cn(
@@ -651,12 +648,6 @@ export function CompactOrderbook({
 							)}
 						>
 							{mid ? `$${formatNumber(mid, priceDecimals)}` : FALLBACK_VALUE_PLACEHOLDER}
-						</span>
-						<span
-							data-slot="compact-orderbook-spread"
-							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums orderbook-header-text"
-						>
-							{spreadText}
 						</span>
 					</div>
 				)}

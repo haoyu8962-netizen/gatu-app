@@ -4314,6 +4314,7 @@ msgstr "अधिकतम निकासी योग्य राशि: {0}"
 msgid "Meme"
 msgstr "Meme"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -7044,7 +7045,6 @@ msgstr "स्पॉट से स्टेकिंग"
 msgid "Spot to staking available"
 msgstr "स्पॉट से स्टेकिंग के लिए उपलब्ध"
 
-#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

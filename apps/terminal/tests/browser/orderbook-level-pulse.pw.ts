@@ -372,7 +372,7 @@ for (const view of ["desktop", "compact", "split"] as const) {
 			await page.screenshot({ path: screenshotPath, animations: "allow" });
 			await testInfo.attach("focused-price-pulse-peak", { path: screenshotPath, contentType: "image/png" });
 			if (view === "compact") {
-				const contrast = await page.locator('[data-slot="compact-orderbook-spread"]').evaluate((element) => {
+				const contrast = await page.locator('[data-slot="compact-orderbook-mid-price"]').evaluate((element) => {
 					const foreground = getComputedStyle(element).color;
 					const parent = element.parentElement;
 					if (!parent) throw new Error("Missing compact midpoint");
@@ -407,7 +407,7 @@ for (const view of ["desktop", "compact", "split"] as const) {
 					return { foreground, background, ratio: (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05) };
 				});
 				expect(contrast.ratio, JSON.stringify(contrast)).toBeGreaterThanOrEqual(4.5);
-				await testInfo.attach("compact-spread-contrast", {
+				await testInfo.attach("compact-mid-price-contrast", {
 					body: JSON.stringify(contrast),
 					contentType: "application/json",
 				});

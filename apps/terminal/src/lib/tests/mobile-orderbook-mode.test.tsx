@@ -80,7 +80,6 @@ function CompactOrderbookHarness({
 			szDecimals={2}
 			mid="100"
 			midDirection="up"
-			spreadText="2.0 (2.000%)"
 			selectedOptionLabel="0.1"
 			priceGroupingOptions={[]}
 			setSelectedOptionKey={() => undefined}
@@ -399,7 +398,7 @@ describe("compact mobile orderbook modes", () => {
 		expect(getLadder("asks").querySelectorAll("button:disabled")).toHaveLength(0);
 	});
 
-	it("shows a dollar-prefixed directional mid price and a visible compact spread", () => {
+	it("shows only an accessibly named dollar-prefixed directional mid price", () => {
 		const mid = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-mid"]');
 		const midValue = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-mid-price"]');
 		const spread = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-spread"]');
@@ -408,8 +407,9 @@ describe("compact mobile orderbook modes", () => {
 		expect(midValue?.textContent).toBe("$100.0");
 		expect(midValue?.className).toContain("text-trading-panel-success");
 		expect(mid?.querySelector("svg")).toBeNull();
-		expect(spread?.textContent).toBe("2.0 (2.000%)");
-		expect(spread?.className).not.toContain("sr-only");
+		expect(spread).toBeNull();
+		expect(mid?.querySelector(".sr-only")?.textContent).toBe("Mid: ");
+		expect(mid?.hasAttribute("title")).toBe(false);
 		expect(container.textContent).toContain("Price (USDC)");
 		expect(container.textContent).toContain("Size (HYPE)");
 		expect(container.firstElementChild?.className).toContain("orderbook-panel-container");
