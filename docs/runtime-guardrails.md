@@ -508,6 +508,15 @@ dependency graphs and must not write to the same Vite optimizer cache. A
 different HTML root or port does not isolate the cache: Vite resolves its
 default beneath the nearest package directory.
 
+Wallet initialization also depends on the browser allowing Privy's external
+iframe. For local wallet validation, use a standalone browser with
+`pnpm dev:browser --port 3006`, or open the existing server there. A local
+embedded preview can block that iframe independently of Vite. Classify
+`ERR_BLOCKED_BY_CLIENT` separately from optimizer HTTP 504 responses; do not
+change signing readiness, proxy the wallet iframe, or patch the browser's
+security policy to hide the failure. See
+[wallet initialization troubleshooting](wallet-initialization-debugging.md).
+
 ### Rules
 
 - Keep the application cache at its default `node_modules/.vite` and give

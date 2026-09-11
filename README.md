@@ -64,11 +64,18 @@ pnpm install
 pnpm dev                    # runs apps/terminal at http://localhost:3000
 ```
 
+For wallet testing, use `pnpm dev:browser --port 3006` instead of `pnpm dev`.
+It opens the system browser. If the server is already running, open its existing
+URL in Chrome or Safari without starting another server. Embedded previews may
+block Privy's external wallet iframe even when email login succeeds; see
+[wallet initialization troubleshooting](docs/wallet-initialization-debugging.md).
+
 ### Root scripts
 
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Dev server for `apps/terminal` (HMR across workspace) |
+| `pnpm dev:browser --port 3006` | Start on the requested port and open the system browser; fail if that port is occupied |
 | `pnpm build` | Lingui catalog compile + Vite production build |
 | `pnpm serve` | Preview the built app |
 | `pnpm test` | Vitest across the workspace |

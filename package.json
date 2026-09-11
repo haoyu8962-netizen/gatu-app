@@ -8,6 +8,7 @@
 	},
 	"scripts": {
 		"dev": "pnpm --filter @gatu/terminal dev",
+		"dev:browser": "pnpm --filter @gatu/terminal dev:browser",
 		"build": "pnpm --filter @gatu/terminal build",
 		"serve": "pnpm --filter @gatu/terminal serve",
 		"test": "pnpm og:check && pnpm --filter @gatu/terminal test && pnpm --filter @gatu/website test && node --test tests/brand-cross-app.test.mjs",
