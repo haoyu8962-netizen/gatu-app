@@ -46,10 +46,6 @@ const HOURS_MAX = Math.floor(TWAP_MINUTES_MAX / 60);
 const DAYS_MAX = Math.floor(TWAP_MINUTES_MAX / MINUTES_PER_DAY);
 const MINUTES_PER_INPUT_MAX = 59;
 
-function displayValue(n: number): string {
-	return n > 0 ? String(n) : "";
-}
-
 function clamp(n: number, min: number, max: number): number {
 	if (Number.isNaN(n)) return min;
 	return Math.min(Math.max(n, min), max);
@@ -131,7 +127,7 @@ export function TradeFormTwap({
 						<NumberInput
 							aria-label={hoursLabel}
 							placeholder="0"
-							value={displayValue(hours)}
+							value={String(hours)}
 							onChange={(e) => handleHoursChange(e.target.value)}
 							allowDecimals={false}
 							min={0}
@@ -145,8 +141,8 @@ export function TradeFormTwap({
 						<span className={durationTextClass}>{compact || desktop ? t`Mins` : minutesLabel}</span>
 						<NumberInput
 							aria-label={minutesLabel}
-							placeholder="30"
-							value={displayValue(minutes)}
+							placeholder="0"
+							value={String(minutes)}
 							onChange={(e) => handleMinutesChange(e.target.value)}
 							allowDecimals={false}
 							min={0}

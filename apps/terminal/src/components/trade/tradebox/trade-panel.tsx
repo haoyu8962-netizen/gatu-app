@@ -23,6 +23,7 @@ import { getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
+import { isOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
 import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
@@ -643,7 +644,10 @@ export function TradePanel() {
 		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
 		positionReady: positionSnapshotReady,
 	});
-	const displayValidationError = visibleValidationErrors.map((error) => error.message).join(" \u2022 ");
+	const displayValidationError = visibleValidationErrors
+		.filter((error) => !isOrderSizeValidationError(error))
+		.map((error) => error.message)
+		.join(" \u2022 ");
 
 	const buttonContent = useButtonContent({
 		isConnected,
@@ -845,6 +849,7 @@ export function TradePanel() {
 			>
 				<TradeFormFields
 					orderEntryData={orderEntryData}
+					visibleValidationErrors={visibleValidationErrors}
 					price={price}
 					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}

@@ -192,6 +192,7 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 			>
 				<TradeFormFields
 					orderEntryData={orderEntryData}
+					visibleValidationErrors={[]}
 					price={100.05}
 					positionSize={hasPosition ? 0.25 : 0}
 					swapTargetToken={null}

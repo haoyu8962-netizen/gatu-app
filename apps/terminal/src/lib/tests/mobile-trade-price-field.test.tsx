@@ -64,5 +64,59 @@ describe("MobileTradePriceField", () => {
 		});
 
 		expect(container.querySelector('input[aria-label="Trigger Price (USDC)"]')).not.toBeNull();
+		expect(container.querySelector("button")).toBeNull();
 	});
+
+	it.each([undefined, "0", "-1", "invalid"])(
+		"keeps the Mid action and input geometry stable while the reference is %s, then restores the action",
+		(unavailablePrice) => {
+			const onMidClick = vi.fn();
+			function render(midPrice: string | undefined) {
+				act(() =>
+					root.render(
+						<MobileTradePriceField
+							label="Price"
+							marketType="perp"
+							midPrice={midPrice}
+							onChange={vi.fn()}
+							onMidClick={onMidClick}
+							szDecimals={2}
+							value="105.25"
+						/>,
+					),
+				);
+			}
+			render("101.25");
+			const button = container.querySelector<HTMLButtonElement>("button");
+			const input = container.querySelector<HTMLInputElement>("input");
+			if (!button || !input) throw new Error("Expected price input and Mid action");
+			const buttonClasses = button.className;
+			const inputClasses = input.className;
+			const frame = button.parentElement;
+			const frameClasses = frame?.className;
+			expect(button.disabled).toBe(false);
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 101.2500");
+
+			render(unavailablePrice);
+			expect(container.querySelector("button")).toBe(button);
+			expect(container.querySelector("input")).toBe(input);
+			expect(button.className).toBe(buttonClasses);
+			expect(input.className).toBe(inputClasses);
+			expect(button.parentElement).toBe(frame);
+			expect(frame?.className).toBe(frameClasses);
+			expect(input.value).toBe("105.25");
+			expect(button.disabled).toBe(true);
+			expect(button.textContent).toBe("Mid");
+			expect(button.getAttribute("aria-label")).toBe("Use mid price");
+			act(() => button.click());
+			expect(onMidClick).not.toHaveBeenCalled();
+
+			render("102.5");
+			expect(container.querySelector("button")).toBe(button);
+			expect(button.disabled).toBe(false);
+			expect(button.getAttribute("aria-label")).toBe("Use mid price 102.5000");
+			act(() => button.click());
+			expect(onMidClick).toHaveBeenCalledExactlyOnceWith("102.5000");
+		},
+	);
 });

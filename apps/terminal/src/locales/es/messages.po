@@ -2764,7 +2764,6 @@ msgstr "Ethereum es una cadena de bloques programable para contratos inteligente
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "Cada {TWAP_SUBORDER_INTERVAL_SECONDS} segundos"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "Excede tamaño máximo"
@@ -4322,7 +4321,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "Orden mínima ${ORDER_MIN_NOTIONAL_USD}"
@@ -9081,6 +9079,8 @@ msgid "Use max available balance"
 msgstr "Usar el saldo máximo disponible"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "Usar precio medio"

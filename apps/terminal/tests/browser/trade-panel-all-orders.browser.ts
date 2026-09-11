@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { useSelectedMarketInfo as useOrderbookMarket } from "./mobile-orderbook-cls.browser";
 
-export { getMidReferencePrice } from "../../src/hooks/trade/use-orderbook-mid-price";
 
 export {
 	getExplorerTxUrl,

@@ -60,7 +60,6 @@ export function TradeFormScale({
 	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType, assetId);
 	const inline = compact || desktop;
 	const inputClass = inline ? cn(compactInputClass, desktop && "h-8") : defaultInputClass;
-	const hoistedMid = inline ? formattedMid : undefined;
 
 	return (
 		<div data-slot="trade-scale-fields" className="flex min-w-0 flex-col gap-2">
@@ -69,7 +68,7 @@ export function TradeFormScale({
 				desktop={desktop}
 				disabled={disabled}
 				label={startPriceLabel}
-				action={hoistedMid ? <ScaleMidButton disabled={disabled} value={hoistedMid} onSelect={setScaleStart} /> : null}
+				action={inline ? <ScaleMidButton disabled={disabled} value={formattedMid} onSelect={setScaleStart} /> : null}
 			>
 				<PriceInput
 					label={inline ? undefined : startPriceLabel}
@@ -92,7 +91,7 @@ export function TradeFormScale({
 				desktop={desktop}
 				disabled={disabled}
 				label={endPriceLabel}
-				action={hoistedMid ? <ScaleMidButton disabled={disabled} value={hoistedMid} onSelect={setScaleEnd} /> : null}
+				action={inline ? <ScaleMidButton disabled={disabled} value={formattedMid} onSelect={setScaleEnd} /> : null}
 			>
 				<PriceInput
 					label={inline ? undefined : endPriceLabel}

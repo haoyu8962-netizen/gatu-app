@@ -19,7 +19,7 @@ This document tracks our research and design for a more robust, configurable err
 | **TP/SL** | TP must be above entry, SL must be below entry | `use-order-validation.ts`, `tpsl.ts` |
 | **Trigger Orders** | Stop trigger must be above mark | `use-order-validation.ts` |
 | **Scale Orders** | Enter price range, Scale levels must be 2-100 | `use-order-validation.ts` |
-| **TWAP** | TWAP minutes must be 1-10080 | `use-order-validation.ts` |
+| **TWAP** | TWAP minutes must be 5-10080 | `use-order-validation.ts` |
 | **Deposits** | Minimum deposit is 5 USDC | `use-deposit.ts` |
 | **Withdrawals** | Minimum withdrawal is $100 | `deposit-modal.tsx` |
 | **Transactions** | Transaction rejected, Insufficient gas | `transfer/errors.ts` |

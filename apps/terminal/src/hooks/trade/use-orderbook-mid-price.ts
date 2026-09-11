@@ -1,6 +1,6 @@
 import type { SubscriptionStatus } from "@/lib/hyperliquid";
 import { useSubscription } from "@/lib/hyperliquid";
-import { type Numeric, toBig } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 
 interface BboPrices {
 	bestAsk: string | undefined;
@@ -33,10 +33,6 @@ export function getBboPrices(bbo: BboSides | undefined): BboPrices {
 	const midPx = bid && ask ? bid.plus(ask).div(2).toString() : undefined;
 
 	return { bestAsk, bestBid, midPx };
-}
-
-export function getMidReferencePrice(midPx: string | undefined, markPx: Numeric): Numeric {
-	return midPx ?? markPx;
 }
 
 export function useOrderbookMidPrice(coin: string | undefined): OrderbookMidPriceResult {

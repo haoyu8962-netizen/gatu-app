@@ -19,7 +19,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
-import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import { getOrderEntryReferencePrice, isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	assertEntryOrderExecutionAllowed,
 	assertEntryTwapExecutionAllowed,
@@ -49,7 +49,6 @@ import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-est
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
-import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -250,10 +249,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
 	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder || twapOrder;
-	const { midPx } = useOrderbookMidPrice(
-		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
-	);
-	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const midReferencePrice = getOrderEntryReferencePrice(market);
 	const formattedMidForPrefill = getFormattedMidPrice(
 		midReferencePrice,
 		market?.szDecimals,

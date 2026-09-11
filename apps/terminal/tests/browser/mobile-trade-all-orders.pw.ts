@@ -481,6 +481,62 @@ test("disables real inputs on missing funding, disconnection and stale data with
 });
 
 for (const desktop of [false, true]) {
+	test(`preserves ${desktop ? "desktop" : "mobile"} prefill intent across recovery and shows zero TWAP minutes`, async ({ page }) => {
+		await page.setViewportSize(desktop ? { width: 1440, height: 1000 } : { width: 393, height: 852 });
+		await openFixture(page, "?quiet-audit");
+		const form = page.locator("[data-fixture-form]");
+		async function chooseOrder(order: string) {
+			if (!desktop) return selectOrder(page, order);
+			if (order === "Market" || order === "Limit") return form.getByRole("button", { name: order, exact: true }).click();
+			await form.getByRole("button", { name: "Advanced order types", exact: true }).click();
+			await page.getByRole("menuitem", { name: order, exact: true }).click();
+		}
+		await chooseOrder("Market");
+		await page.getByRole("button", { name: "Market stale", exact: true }).click();
+		await page.getByRole("button", { name: "Reset", exact: true }).click();
+		await chooseOrder("Limit");
+		const price = form.getByRole("textbox", { name: /^Price(?: \(USDC\))?$/ });
+		const mid = form.getByRole("button", { name: desktop ? "Mid" : /^Use mid price/ });
+		await expect(price).toHaveValue("");
+		await expect(mid).toBeDisabled();
+		const waitingPriceBounds = await price.boundingBox();
+		await page.getByRole("button", { name: "Market success", exact: true }).click();
+		await expect(price).toHaveValue("100");
+		expect((await price.boundingBox())?.width).toBeCloseTo(waitingPriceBounds?.width ?? 0, 1);
+		await price.fill("99");
+		await page.getByRole("button", { name: "Market stale", exact: true }).click();
+		await page.getByRole("button", { name: "Market success", exact: true }).click();
+		await expect(price).toHaveValue("99");
+		await price.fill("");
+		await page.getByRole("button", { name: "Market stale", exact: true }).click();
+		await page.getByRole("button", { name: "Market success", exact: true }).click();
+		await expect(price).toHaveValue("");
+		await mid.click();
+		await expect(price).toHaveValue("100");
+		await chooseOrder("TWAP");
+		await form.getByRole("textbox", { name: "Hour(s)", exact: true }).fill("1");
+		await form.getByRole("textbox", { name: "Minute(s)", exact: true }).fill("0");
+		await expect(form.getByRole("textbox", { name: "Minute(s)", exact: true })).toHaveValue("0");
+		await expect(form).toContainText("1h");
+		await expect(page.getByRole("status", { name: "Captured orders", exact: true })).toHaveText("[]");
+		await page.screenshot({ path: test.info().outputPath(`fields-${desktop ? "desktop" : "mobile"}.png`) });
+		await chooseOrder("Scale");
+		const start = form.getByRole("textbox", { name: "Start Price", exact: true });
+		await start.fill("90");
+		const startBounds = await start.boundingBox();
+		await page.getByRole("button", { name: "Market stale", exact: true }).click();
+		for (const button of await form.getByRole("button", { name: /^Use mid price/ }).all()) {
+			await expect(button).toBeDisabled();
+		}
+		await expect(form.getByRole("button", { name: /^Use mid price/ })).toHaveCount(2);
+		await expect(start).toHaveValue("90");
+		expect((await start.boundingBox())?.width).toBeCloseTo(startBounds?.width ?? 0, 1);
+		await page.getByRole("button", { name: "Market success", exact: true }).click();
+		await expect(start).toHaveValue("90");
+		await form.getByRole("button", { name: /^Use mid price/ }).first().click();
+		await expect(start).toHaveValue("100");
+	});
+
 	test(`keeps ${desktop ? "desktop" : "mobile"} order forms quiet while market data recovers`, async ({ page }) => {
 		await page.setViewportSize(desktop ? { width: 1440, height: 1000 } : { width: 375, height: 666 });
 		await openFixture(page, "?quiet-audit");
@@ -541,6 +597,7 @@ for (const desktop of [false, true]) {
 		await size.fill("");
 		await size.blur();
 		await expect(form).toContainText("Enter size");
+		await expect(form.getByText("Enter size", { exact: true })).toHaveCount(1);
 		await page.getByRole("button", { name: "Market stale", exact: true }).click();
 		await expect(form).not.toContainText("Enter size", { timeout: 500 });
 		await page.getByRole("button", { name: "Market success", exact: true }).click();

@@ -39,11 +39,6 @@ vi.mock("@/lib/hyperliquid", async (importOriginal) => ({
 	}),
 }));
 
-vi.mock("@/hooks/trade/use-orderbook-mid-price", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/hooks/trade/use-orderbook-mid-price")>()),
-	useOrderbookMidPrice: () => ({ midPx: null }),
-}));
-
 vi.mock("@/lib/number-format-reactivity", () => ({
 	useNumberFormatRevision: () => 0,
 }));
@@ -136,6 +131,7 @@ describe("TradeFormFields order-entry data ownership", () => {
 				<output aria-label="Parent margin required">{marginRequired}</output>
 				<TradeFormFields
 					orderEntryData={orderEntryData}
+					visibleValidationErrors={[]}
 					price={100}
 					positionSize={0}
 					swapTargetToken={null}

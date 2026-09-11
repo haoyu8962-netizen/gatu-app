@@ -6,7 +6,6 @@ import { getOrderEntryDraftResetToken } from "@/stores/use-order-entry-store";
 
 export { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
 export { getMarketCapabilities } from "../../../../packages/hl-react/src/capabilities";
-export { getMidReferencePrice } from "../../src/hooks/trade/use-orderbook-mid-price";
 
 const owner = "0x0000000000000000000000000000000000000001";
 const listeners = new Set<() => void>();

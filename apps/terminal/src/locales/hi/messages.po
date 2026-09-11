@@ -2764,7 +2764,6 @@ msgstr "एथेरियम स्मार्ट कॉन्ट्रैक�
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "हर {TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड में"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "अधिकतम साइज से अधिक"
@@ -4322,7 +4321,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "Mid"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "न्यूनतम ऑर्डर ${ORDER_MIN_NOTIONAL_USD}"
@@ -9081,6 +9079,8 @@ msgid "Use max available balance"
 msgstr "अधिकतम उपलब्ध शेष राशि का उपयोग करें"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "मध्य मूल्य का उपयोग करें"

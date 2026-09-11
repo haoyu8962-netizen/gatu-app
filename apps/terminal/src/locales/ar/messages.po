@@ -2764,7 +2764,6 @@ msgstr "إيثريوم سلسلة كتل قابلة للبرمجة للعقود 
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "كل {TWAP_SUBORDER_INTERVAL_SECONDS} ثانية"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "يتجاوز الحد الأقصى"
@@ -4322,7 +4321,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "المتوسط"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "أدنى أمر ${ORDER_MIN_NOTIONAL_USD}"
@@ -9081,6 +9079,8 @@ msgid "Use max available balance"
 msgstr "استخدام الحد الأقصى للرصيد المتاح"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "استخدام السعر الأوسط"

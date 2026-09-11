@@ -150,6 +150,23 @@ export function isLiveMarkPriceReady(
 	return age >= 0 && age <= LIVE_MARK_MAX_STALE_MS;
 }
 
+export function getOrderEntryReferencePrice(
+	market:
+		| {
+				midPx?: string | null;
+				markPx?: string;
+				markPriceStatus?: MarkPriceStatus;
+				midPriceReceivedAt?: number;
+				markPriceReceivedAt?: number;
+		  }
+		| undefined,
+	now = Date.now(),
+): string | undefined {
+	const price = market?.midPx ?? market?.markPx;
+	const receivedAt = market?.midPx == null ? market?.markPriceReceivedAt : market?.midPriceReceivedAt;
+	return isLiveMarkPriceReady(market?.markPriceStatus ?? "idle", price, receivedAt, now) ? price : undefined;
+}
+
 export function isLiveExecutionPriceReceiptFresh(receivedAt: number | undefined, now = performance.now()): boolean {
 	if (receivedAt === undefined || !Number.isFinite(receivedAt) || !Number.isFinite(now)) return false;
 	const age = now - receivedAt;

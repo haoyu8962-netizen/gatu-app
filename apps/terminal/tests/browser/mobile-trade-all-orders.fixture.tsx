@@ -41,6 +41,7 @@ function DesktopFields() {
 		<div data-fixture-desktop className="trade-panel-container w-[300px] p-3">
 			<TradeFormFields
 				orderEntryData={data}
+				visibleValidationErrors={[]}
 				price={toNumberOrZero(limitPrice)}
 				positionSize={0}
 				swapTargetToken={null}

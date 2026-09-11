@@ -3,7 +3,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getBboPrices, getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { getBboPrices, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 
 const mocks = vi.hoisted(() => ({
 	calls: [] as Array<[string, unknown, unknown]>,
@@ -142,10 +142,5 @@ describe("useOrderbookMidPrice", () => {
 
 		expect(mocks.calls).toEqual([["bbo", { coin: "" }, { enabled: false, throttleMs: 50 }]]);
 		expect(hookValue?.midPx).toBeUndefined();
-	});
-
-	it("uses a real BBO mid for Mid controls and falls back to mark only while BBO is unavailable", () => {
-		expect(getMidReferencePrice("101.25", "99.75")).toBe("101.25");
-		expect(getMidReferencePrice(undefined, "99.75")).toBe("99.75");
 	});
 });

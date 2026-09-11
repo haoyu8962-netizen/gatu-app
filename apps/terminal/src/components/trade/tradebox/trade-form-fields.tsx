@@ -4,17 +4,18 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { useEffect, useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
-import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
+import { getOrderEntryReferencePrice } from "@/domain/trade/market-price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
+import { isOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import type { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
-import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import type { ValidationError } from "@/lib/errors/types";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { formatDecimalFloor, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { formatDecimalFloor, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
@@ -58,7 +59,6 @@ type TradeFormOrderEntryData = Pick<
 	| "leverageInteractionIdentity"
 	| "maxSize"
 	| "sizeValue"
-	| "orderValue"
 	| "sizeModeLabel"
 	| "szDecimals"
 >;
@@ -66,6 +66,7 @@ type TradeFormOrderEntryData = Pick<
 interface Props {
 	onSizeInteractionChange?: (active: boolean) => void;
 	orderEntryData: TradeFormOrderEntryData;
+	visibleValidationErrors: readonly ValidationError[];
 	price: number;
 	positionSize: number;
 	swapTargetToken: string | null;
@@ -81,6 +82,7 @@ const inputFrameErrorClass =
 
 export function TradeFormFields({
 	orderEntryData,
+	visibleValidationErrors,
 	price,
 	positionSize,
 	swapTargetToken,
@@ -123,7 +125,6 @@ export function TradeFormFields({
 		leverageInteractionIdentity,
 		maxSize,
 		sizeValue,
-		orderValue,
 		sizeModeLabel,
 		szDecimals,
 	} = orderEntryData;
@@ -139,24 +140,21 @@ export function TradeFormFields({
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const marketType = isSpotMarket ? "spot" : "perp";
-	const { midPx } = useOrderbookMidPrice(usesLimitPrice || usesTriggerPrice || scaleOrder ? market?.name : undefined);
 
-	const triggerPriceNum = toNumber(triggerPriceInput);
-	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
-	const triggerHasError = usesTriggerPrice && !isPositive(triggerPriceNum) && sizeValue > 0;
-	const limitHasError = usesLimitPrice && !price && sizeValue > 0;
+	const triggerHasError = sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price");
+	const limitHasError =
+		sizeValue > 0 &&
+		visibleValidationErrors.some((error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price");
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 
-	function getSizeErrorText(): string {
-		if (!sizeHasError || isFormDisabled || market?.markPriceStatus !== "success") return "";
-		if (sizeValue > maxSize && maxSize > 0) return t`Exceeds max size`;
-		return t`Min order $${ORDER_MIN_NOTIONAL_USD}`;
-	}
-	const displaySizeError = getSizeErrorText();
+	const displaySizeError = visibleValidationErrors
+		.filter(isOrderSizeValidationError)
+		.map((error) => error.message)
+		.join(" \u2022 ");
 	const hasDisplayedSizeError = displaySizeError !== "";
-	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const midReferencePrice = getOrderEntryReferencePrice(market);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
 	const limitPrefillIdentity = `${market?.name ?? ""}|${orderType}`;
 	useEffect(() => {
@@ -244,6 +242,7 @@ export function TradeFormFields({
 						<NumberInput
 							id={triggerFieldId}
 							aria-label={`${t`Trigger Price`} (${quoteToken})`}
+							aria-invalid={triggerHasError || undefined}
 							placeholder="0.00"
 							value={triggerPriceInput}
 							onChange={(e) => setTriggerPrice(e.target.value)}
@@ -264,6 +263,7 @@ export function TradeFormFields({
 							</label>
 							<NumberInput
 								id={limitFieldId}
+								aria-invalid={limitHasError || undefined}
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e) => setLimitPriceFromUser(limitPrefillIdentity, e.target.value)}
@@ -285,7 +285,13 @@ export function TradeFormFields({
 				)}
 
 				<div className="flex flex-col gap-2">
-					<div className={cn(inputFrameClass, sizeHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
+					<div
+						className={cn(
+							inputFrameClass,
+							hasDisplayedSizeError && inputFrameErrorClass,
+							isFormDisabled && "opacity-50",
+						)}
+					>
 						<label
 							htmlFor={sizeFieldId}
 							className="me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"

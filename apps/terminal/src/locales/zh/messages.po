@@ -2764,7 +2764,6 @@ msgstr "Ethereum 是一个用于智能合约和去中心化应用的可编程区
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "每 {TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "超过最大数量"
@@ -4322,7 +4321,6 @@ msgstr "Meme"
 msgid "Mid"
 msgstr "中间价"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "最小委托 ${ORDER_MIN_NOTIONAL_USD}"
@@ -9081,6 +9079,8 @@ msgid "Use max available balance"
 msgstr "使用全部可用余额"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/scale-mid-button.tsx
 #: src/components/trade/tradebox/scale-mid-button.tsx
 msgid "Use mid price"
 msgstr "使用中间价"
