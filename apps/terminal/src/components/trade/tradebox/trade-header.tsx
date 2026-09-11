@@ -113,30 +113,27 @@ export function TradeHeader({
 	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
 	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
-		"relative flex h-9 min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
-		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
+		"relative flex h-[35px] min-w-0 items-center gap-3 whitespace-nowrap rounded-none bg-surface px-0 text-xs font-semibold text-trading-panel-fg",
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
 
 	if (layout === "mobile") {
 		return (
-			<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-3"}>
+			<div className="min-w-0 space-y-0.5">
 				<div
 					className={cn(
-						"grid min-w-0 gap-1 bg-surface",
-						isLeveraged
-							? "grid-cols-[minmax(2.75rem,1fr)_minmax(2.75rem,max-content)_minmax(2.75rem,max-content)]"
-							: "grid-cols-1",
+						"grid min-w-0 bg-surface",
+						isLeveraged ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" : "grid-cols-1",
 					)}
 				>
 					<Dropdown
 						trigger={
-							<span className="inline-flex min-w-0 items-center justify-center gap-1">
+							<span className="inline-flex min-w-0 items-center justify-center gap-3">
 								<span className="truncate" title={orderTypeLabel}>
 									{orderTypeLabel}
 								</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</span>
 						}
 						items={mobileOrderTypeItems}
@@ -154,33 +151,26 @@ export function TradeHeader({
 							<button
 								type="button"
 								onClick={handleMarginModeClick}
-								className={cn(mobileControlClass, "max-w-18 justify-center")}
+								className={cn(mobileControlClass, "justify-start")}
 								aria-haspopup="dialog"
 							>
 								<span className="truncate">{marginLabel}</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</button>
 							<button
 								type="button"
 								onClick={handleLeverageClick}
-								className={cn(mobileControlClass, "justify-end")}
+								className={cn(mobileControlClass, "justify-start pr-4")}
 								aria-haspopup="dialog"
 							>
 								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</button>
 						</>
 					)}
 				</div>
 
-				<SideToggle
-					side={side}
-					onSideChange={onSideChange}
-					labels={sideLabels}
-					compact={compact}
-					tradingPanel
-					mobileTouchTargets
-				/>
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel mobile />
 			</div>
 		);
 	}

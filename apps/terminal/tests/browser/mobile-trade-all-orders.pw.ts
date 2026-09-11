@@ -75,22 +75,53 @@ async function expectHeaderHitTargets(page: Page) {
 			return {
 				height: rect.height,
 				width: rect.width,
-				hits: [rect.left + 2, rect.right - 2].flatMap((x) =>
-					[centerY - 21, centerY, centerY + 21].map((y) => document.elementFromPoint(x, y)?.closest("button") === node),
-				),
+				hits: [
+					[rect.left + rect.width / 2, rect.top + 1],
+					[rect.left + rect.width / 2, rect.bottom - 1],
+					[rect.left + 2, centerY],
+					[rect.right - 2, centerY],
+				].map(([x, y]) => document.elementFromPoint(x, y)?.closest("button") === node),
 			};
 		});
-		expect(geometry.width).toBeGreaterThanOrEqual(44);
-		expect(geometry.height).toBe((await control.getAttribute("role")) === "tab" ? 32 : 36);
-		expect(geometry.hits).toEqual([true, true, true, true, true, true]);
+		expect(geometry.width).toBeGreaterThanOrEqual(24);
+		expect(geometry.height).toBe((await control.getAttribute("role")) === "tab" ? 31 : 35);
+		expect(geometry.hits).toEqual([true, true, true, true]);
 	}
+	const headerGeometry = await orderType.evaluate((node) => {
+		const header = node.parentElement?.parentElement?.parentElement;
+		const grid = node.parentElement?.parentElement;
+		const sideList = header?.querySelector('[role="tablist"]');
+		const available = header?.nextElementSibling;
+		if (!header || !grid || !sideList || !available) throw new Error("Missing header regions");
+		const first = node.getBoundingClientRect();
+		const side = sideList.getBoundingClientRect();
+		const balance = available.getBoundingClientRect();
+		return {
+			columnDifference: Math.abs(first.width - grid.children[1].getBoundingClientRect().width),
+			sideGap: side.top - first.bottom,
+			sideHeight: side.height,
+			balanceGap: balance.top - side.bottom,
+			balanceHeight: balance.height,
+			totalHeight: balance.bottom - first.top,
+		};
+	});
+	expect(headerGeometry.columnDifference).toBeLessThan(1);
+	expect(headerGeometry).toMatchObject({
+		sideGap: 2,
+		sideHeight: 33,
+		balanceGap: 8,
+		balanceHeight: 15,
+		totalHeight: 93,
+	});
 	const available = page.getByRole("button", { name: /^(Available|可用)/ });
 	expect(
 		await available.evaluate((node) => {
 			const rect = node.getBoundingClientRect();
-			return (
-				document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2 - 21)?.closest("button") ===
-				node
+			return [-11, 11].every(
+				(offset) =>
+					document
+						.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2 + offset)
+						?.closest("button") === node,
 			);
 		}),
 	).toBe(true);
@@ -98,7 +129,7 @@ async function expectHeaderHitTargets(page: Page) {
 		await orderType.evaluate((node) => {
 			const rect = node.getBoundingClientRect();
 			const arrow = node.querySelector("svg")?.getBoundingClientRect();
-			return !!arrow && arrow.width >= 12 && arrow.left >= rect.left && arrow.right <= rect.right;
+			return !!arrow && arrow.width >= 9 && arrow.left >= rect.left && arrow.right <= rect.right;
 		}),
 	).toBe(true);
 }
@@ -153,7 +184,7 @@ for (const viewport of [
 		}
 	});
 
-	test(`activates mobile side controls beyond their visible bounds at ${viewport.width}px`, async ({ page }) => {
+	test(`keeps compact header controls independent at ${viewport.width}px`, async ({ page }) => {
 		await page.setViewportSize(viewport);
 		await openFixture(page);
 		await selectOrder(page, "TWAP");
@@ -168,10 +199,18 @@ for (const viewport of [
 				const tab = tabs.nth(index);
 				const rect = await tab.boundingBox();
 				if (!rect) throw new Error("Missing side control");
-				await page.touchscreen.tap(rect.x + rect.width / 2, rect.y + rect.height / 2 + (index ? -21 : 21));
+				await page.touchscreen.tap(rect.x + rect.width / 2, index ? rect.y + 1 : rect.y + rect.height - 1);
 				await expect(tab).toHaveAttribute("aria-selected", "true");
 				await expect(size).toHaveValue("1");
 			}
+			const available = page.getByRole("button", { name: /^Available/ });
+			const bounds = await available.boundingBox();
+			if (!bounds) throw new Error("Missing available balance");
+			await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2 - 11);
+			await expect(size).not.toHaveValue("1");
+			await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+			await size.fill("1");
+			await size.blur();
 			await expectMobileGeometry(page);
 			await page.screenshot({
 				animations: "disabled",

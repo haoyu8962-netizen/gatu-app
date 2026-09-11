@@ -66,8 +66,6 @@ describe("TradeHeader mobile margin actions", () => {
 		expect(controlGrid?.querySelectorAll("button")).toHaveLength(3);
 		expect(container.querySelector('button[aria-label="Account mode"]')).toBeNull();
 		expect(container.querySelector(".trade-card-label-compact")).toBeNull();
-		expect(getButton(container, "Cross").className).toContain("after:h-11");
-		expect(getButton(container, "10x").className).toContain("after:h-11");
 
 		act(() => getButton(container, "Cross").click());
 		expect(onMarginModeClick).toHaveBeenCalledOnce();
