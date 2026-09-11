@@ -172,8 +172,27 @@ for (const viewport of [
 			}
 
 			await selectOrder(page, "twap", locale);
+			await page
+				.getByRole("checkbox", { name: locale === "en" ? "Advanced Settings" : "高级设置", exact: true })
+				.check();
 			await page.getByRole("textbox", { name: label.trigger, exact: true }).fill("110");
 			await page.getByRole("textbox", { name: label.stop, exact: true }).fill("120");
+			const advanced = page.getByRole("checkbox", {
+				name: locale === "en" ? "Advanced Settings" : "高级设置",
+				exact: true,
+			});
+			const summary = page.locator("[data-fixture-summary]");
+			await advanced.uncheck();
+			await expect(page.getByRole("textbox", { name: label.trigger, exact: true })).toHaveCount(0);
+			await expect(summary).not.toContainText(locale === "en" ? "Trigger Price" : "触发价");
+			await expect(summary).not.toContainText(locale === "en" ? "Max Price" : "最高价");
+			await advanced.check();
+			await expect(page.getByRole("textbox", { name: label.trigger, exact: true })).toHaveValue("110");
+			await expect(page.getByRole("textbox", { name: label.stop, exact: true })).toHaveValue("120");
+			await expect(
+				page.getByRole("checkbox", { name: locale === "en" ? "Reduce Only" : "只减仓", exact: true }),
+			).toHaveCount(1);
+
 			await expectPanelFits(page);
 			expect(await geometry(page)).toEqual(initial);
 
@@ -258,6 +277,7 @@ test("hot-switches every mounted TWAP label and hint without replacing inputs or
 	await page.setViewportSize({ width: 1001, height: 900 });
 	await page.goto("/trade-panel-all-orders.html");
 	await selectOrder(page, "twap");
+	await page.getByRole("checkbox", { name: "Advanced Settings", exact: true }).check();
 	const hours = page.getByRole("textbox", { name: "Hour(s)", exact: true });
 	const minutes = page.getByRole("textbox", { name: "Minute(s)", exact: true });
 	const trigger = page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true });

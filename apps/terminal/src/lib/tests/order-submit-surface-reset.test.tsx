@@ -81,6 +81,7 @@ function marketInput(overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInpu
 		scaleSkewInput: "",
 		twapMinutesNum: null,
 		twapRandomize: false,
+		twapAdvancedEnabled: false,
 		twapTriggerPx: null,
 		twapStopPx: null,
 		tpSlEnabled: false,

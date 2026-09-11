@@ -57,6 +57,7 @@ export interface OrderSubmitInput {
 	scaleSkewInput: string;
 	twapMinutesNum: number | null;
 	twapRandomize: boolean;
+	twapAdvancedEnabled: boolean;
 	twapTriggerPx: string | null;
 	twapStopPx: string | null;
 	tpSlEnabled: boolean;
@@ -166,6 +167,7 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 			scaleSkewInput,
 			twapMinutesNum,
 			twapRandomize,
+			twapAdvancedEnabled,
 			twapTriggerPx,
 			twapStopPx,
 			tpSlEnabled,
@@ -211,8 +213,8 @@ export function useOrderSubmit(options: UseOrderSubmitOptions = {}): UseOrderSub
 					return;
 				}
 				const details = buildTwapOrderDetails({
-					triggerPx: toBig(twapTriggerPx)?.gt(0) ? twapTriggerPx : null,
-					stopPx: toBig(twapStopPx)?.gt(0) ? twapStopPx : null,
+					triggerPx: twapAdvancedEnabled && toBig(twapTriggerPx)?.gt(0) ? twapTriggerPx : null,
+					stopPx: twapAdvancedEnabled && toBig(twapStopPx)?.gt(0) ? twapStopPx : null,
 					markPx,
 				});
 				const submission = await submitTwap(

@@ -23,6 +23,7 @@ interface FormState {
 	scaleSkew: string;
 	twapMinutes: number;
 	twapRandomize: boolean;
+	twapAdvancedEnabled: boolean;
 	twapTriggerPrice: string;
 	twapStopPrice: string;
 	reduceOnly: boolean;
@@ -56,6 +57,7 @@ interface OrderEntryActions {
 	setScaleSkew: (skew: string) => void;
 	setTwapMinutes: (minutes: number) => void;
 	setTwapRandomize: (randomize: boolean) => void;
+	setTwapAdvancedEnabled: (enabled: boolean) => void;
 	setTwapTriggerPrice: (price: string) => void;
 	setTwapStopPrice: (price: string) => void;
 	setReduceOnly: (reduceOnly: boolean) => void;
@@ -96,6 +98,7 @@ const DEFAULT_FORM: FormState = {
 	scaleSkew: String(SCALE_SKEW_DEFAULT),
 	twapMinutes: 30,
 	twapRandomize: true,
+	twapAdvancedEnabled: false,
 	twapTriggerPrice: "",
 	twapStopPrice: "",
 	reduceOnly: false,
@@ -216,6 +219,7 @@ const useOrderEntryFormStore = create<OrderEntryFormStore>()((rawSet) => {
 			setScaleSkew: (scaleSkew) => set({ scaleSkew }),
 			setTwapMinutes: (twapMinutes) => set({ twapMinutes }),
 			setTwapRandomize: (twapRandomize) => set({ twapRandomize }),
+			setTwapAdvancedEnabled: (twapAdvancedEnabled) => set({ twapAdvancedEnabled }),
 			setTwapTriggerPrice: (twapTriggerPrice) => set({ twapTriggerPrice }),
 			setTwapStopPrice: (twapStopPrice) => set({ twapStopPrice }),
 			setReduceOnly: (reduceOnly) => set({ reduceOnly }),
@@ -321,6 +325,9 @@ export function useTwapMinutes() {
 }
 export function useTwapRandomize() {
 	return useOrderEntryFormStore((s) => s.twapRandomize);
+}
+export function useTwapAdvancedEnabled() {
+	return useOrderEntryFormStore((s) => s.twapAdvancedEnabled);
 }
 export function useTwapTriggerPrice() {
 	return useOrderEntryFormStore((s) => s.twapTriggerPrice);

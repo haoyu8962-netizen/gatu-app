@@ -50,6 +50,7 @@ for (const viewport of [
 			await expect(size).toHaveValue("0.25");
 			expect(await input?.evaluate((node) => node.isConnected)).toBe(true);
 			if (mode === "twap") {
+				await page.getByRole("checkbox", { name: "Advanced Settings", exact: true }).check();
 				await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("110");
 				await page.getByRole("textbox", { name: "Max Price (USDC)", exact: true }).fill("120");
 				await expect(page.getByText("Activates when mark ≥ 110", { exact: true })).toBeVisible();
@@ -87,6 +88,7 @@ test("preserves wrapped TWAP hint height when the mark reaches the trigger", asy
 	await page.setViewportSize({ width: 320, height: 568 });
 	await page.goto("/mobile-trade-height.html");
 	await page.getByRole("button", { name: "twap", exact: true }).click();
+	await page.getByRole("checkbox", { name: "Advanced Settings", exact: true }).check();
 	await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("110000000000000");
 	const hint = page.locator('[data-slot="mobile-order-entry-scroll"] p');
 	await expect(hint).toContainText("Activates when mark");
@@ -109,3 +111,58 @@ test("preserves wrapped TWAP hint height when the mark reaches the trigger", asy
 	await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("");
 	await expect(hint).toHaveCount(0);
 });
+
+for (const width of [320, 393, 768]) {
+	test(`keeps TWAP advanced options reachable and independent at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 852 });
+		await page.goto("/mobile-trade-height.html");
+		await page.getByRole("button", { name: "twap", exact: true }).click();
+		const advanced = page.getByRole("checkbox", { name: "Advanced Settings", exact: true });
+		const trigger = page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true });
+		await expect(advanced).not.toBeChecked();
+		await expect(trigger).toHaveCount(0);
+		await page.getByRole("checkbox", { name: "Reduce Only", exact: true }).check();
+		await expect(page.getByRole("checkbox", { name: "Randomize timing", exact: true })).toBeChecked();
+		await advanced.check();
+		await trigger.fill("110");
+		await page.getByRole("textbox", { name: "Max Price (USDC)", exact: true }).fill("120");
+		const input = await trigger.elementHandle();
+		const expanded = await geometry(page);
+		await advanced.uncheck();
+		await expect(trigger).toHaveCount(0);
+		await advanced.press("Tab");
+		await expect(page.getByRole("textbox", { name: "Last field", exact: true })).toBeFocused();
+		expect((await geometry(page)).height).toBeLessThanOrEqual(expanded.height);
+		await page.getByRole("button", { name: "中文", exact: true }).click();
+		await page.getByRole("checkbox", { name: "高级设置", exact: true }).check();
+		await expect(page.getByRole("textbox", { name: "触发价 (USDC)", exact: true })).toHaveValue("110");
+		expect(await input?.evaluate((node) => node.isConnected)).toBe(true);
+		await expect(page.getByRole("checkbox", { name: "只减仓", exact: true })).toBeChecked();
+		await page.getByRole("button", { name: "Side", exact: true }).click();
+		await expect(page.getByRole("textbox", { name: "最低价 (USDC)", exact: true })).toHaveValue("120");
+		const labels = page.locator('[data-slot="trade-twap-options"] label');
+		const rects = await labels.evaluateAll((nodes) =>
+			nodes.map((node) => {
+				const rect = node.getBoundingClientRect();
+				return {
+					x: rect.x,
+					y: rect.y,
+					right: rect.right,
+					bottom: rect.bottom,
+					height: rect.height,
+					overflow: node.scrollWidth - node.clientWidth,
+				};
+			}),
+		);
+		for (const rect of rects) {
+			expect(rect.height).toBeGreaterThanOrEqual(44);
+			expect(rect.overflow).toBeLessThanOrEqual(1);
+		}
+		expect(rects[0].right <= rects[1].x || rects[0].bottom <= rects[1].y).toBe(true);
+		expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+		const current = await geometry(page);
+		expect(current.fieldsOverflow).toBeLessThanOrEqual(1);
+		expect(Math.abs(current.bookBottom - current.formBottom)).toBeLessThanOrEqual(1);
+		expect(Math.abs(current.accountTop - current.formBottom)).toBeLessThanOrEqual(1);
+	});
+}

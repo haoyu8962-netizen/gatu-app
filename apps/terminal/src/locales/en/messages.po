@@ -524,6 +524,10 @@ msgstr "Advanced"
 msgid "Advanced order types"
 msgstr "Advanced order types"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Advanced Settings"
+msgstr "Advanced Settings"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "After removal"
 msgstr "After removal"
@@ -5900,6 +5904,7 @@ msgstr "Recovery could not be saved in this browser. Record the Arbitrum transac
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts

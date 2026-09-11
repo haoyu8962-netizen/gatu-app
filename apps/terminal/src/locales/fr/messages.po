@@ -524,6 +524,10 @@ msgstr "Avancé"
 msgid "Advanced order types"
 msgstr "Types d'ordres avancés"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Advanced Settings"
+msgstr "Paramètres avancés"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "After removal"
 msgstr "Après la suppression"
@@ -5900,6 +5904,7 @@ msgstr "La récupération n’a pas pu être enregistrée dans ce navigateur. No
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts

@@ -524,6 +524,10 @@ msgstr "متقدم"
 msgid "Advanced order types"
 msgstr "أنواع الأوامر المتقدمة"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Advanced Settings"
+msgstr "الإعدادات المتقدمة"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "After removal"
 msgstr "بعد الإزالة"
@@ -5900,6 +5904,7 @@ msgstr "تعذر حفظ بيانات الاسترداد في هذا المتصف
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts

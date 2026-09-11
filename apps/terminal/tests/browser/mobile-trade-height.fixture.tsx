@@ -5,18 +5,22 @@ import { MobileTradeScrollArea } from "@/components/trade/mobile/mobile-trade-sc
 import { TradeFormTwap } from "@/components/trade/tradebox/trade-form-twap";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages } from "@/locales/en/messages.po";
-import { useTwapTriggerPrice } from "@/stores/use-order-entry-store";
+import { messages as chineseMessages } from "@/locales/zh/messages.po";
+import { useOrderEntryActions, useOrderSide, useReduceOnly, useTwapTriggerPrice } from "@/stores/use-order-entry-store";
 import "./mobile-orderbook-cls.css";
 
 function Fixture() {
 	const [mark, setMark] = useState(100);
 	const triggerPrice = useTwapTriggerPrice();
+	const actions = useOrderEntryActions();
+	const side = useOrderSide();
+	const reduceOnly = useReduceOnly();
 	const [mode, setMode] = useState("market");
 	const [feedback, setFeedback] = useState(false);
 	const [requests, setRequests] = useState(0);
 	return (
 		<div className="flex h-svh flex-col">
-			<nav className="flex h-[57px] shrink-0 gap-2">
+			<nav className="flex min-h-[57px] shrink-0 flex-wrap gap-x-2">
 				{["market", "limit", "twap", "tall"].map((value) => (
 					<button key={value} type="button" onClick={() => setMode(value)}>
 						{value}
@@ -35,6 +39,15 @@ function Fixture() {
 				</button>
 				<button type="button" onClick={() => setFeedback((value) => !value)}>
 					Feedback
+				</button>
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "en", messages })}>
+					English
+				</button>
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "zh", messages: chineseMessages })}>
+					中文
+				</button>
+				<button type="button" onClick={() => actions.setSide(side === "buy" ? "sell" : "buy")}>
+					Side
 				</button>
 			</nav>
 			<main data-fixture-page className="min-h-0 flex-1 overflow-y-auto">
@@ -61,7 +74,8 @@ function Fixture() {
 							{mode === "twap" ? (
 								<TradeFormTwap
 									disabled={false}
-									side="buy"
+									side={side}
+									reduceOnly={{ checked: reduceOnly, onCheckedChange: actions.setReduceOnly }}
 									quoteToken="USDC"
 									markPx={mark}
 									assetId={0}

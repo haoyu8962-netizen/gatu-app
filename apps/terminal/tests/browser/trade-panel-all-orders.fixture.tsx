@@ -11,6 +11,7 @@ import { TradeHeader } from "@/components/trade/tradebox/trade-header";
 import { TradePanelBody } from "@/components/trade/tradebox/trade-panel-body";
 import { TwapOrderSummary } from "@/components/trade/tradebox/twap-order-summary";
 import { buildOrderFeeQuote } from "@/domain/trade/order-fee-quote";
+import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { messages as englishMessages } from "@/locales/en/messages.po";
@@ -25,6 +26,7 @@ import {
 	useScaleSkew,
 	useScaleStart,
 	useSizeMode,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapStopPrice,
 	useTwapTriggerPrice,
@@ -54,8 +56,13 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 	const scaleLevels = useScaleLevels();
 	const scaleSkew = useScaleSkew();
 	const twapMinutes = useTwapMinutes();
+	const twapAdvancedEnabled = useTwapAdvancedEnabled();
 	const twapTriggerPrice = useTwapTriggerPrice();
 	const twapStopPrice = useTwapStopPrice();
+	const { triggerPx, stopPx } = resolveTwapPriceInputs(twapAdvancedEnabled, twapTriggerPrice, twapStopPrice, {
+		assetId: 0,
+		szDecimals: 2,
+	});
 	const [requests, setRequests] = useState(0);
 	const orderEntryData = {
 		availableBalance: 1_000,
@@ -109,8 +116,8 @@ function FixtureTradePanel({ feedback, hasPosition }: { feedback: boolean; hasPo
 				<TwapOrderSummary
 					compact
 					twapMinutesNum={twapMinutes}
-					twapTriggerPriceNum={toNumberOrZero(twapTriggerPrice)}
-					twapStopPriceNum={toNumberOrZero(twapStopPrice)}
+					twapTriggerPriceNum={toNumberOrZero(triggerPx)}
+					twapStopPriceNum={toNumberOrZero(stopPx)}
 					side={side}
 					feeQuote={feeQuote}
 					szDecimals={2}

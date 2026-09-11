@@ -315,18 +315,6 @@ export function TradeFormFields({
 					</div>
 				)}
 
-				{twapOrder && (
-					<TradeFormTwap
-						desktop
-						disabled={isFormDisabled}
-						side={side}
-						quoteToken={quoteToken}
-						markPx={markPx}
-						assetId={market?.assetId}
-						szDecimals={szDecimals}
-					/>
-				)}
-
 				{usesLimitPrice && (
 					<div className="flex min-w-0 flex-col gap-2">
 						<div className={cn(inputFrameClass, limitHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
@@ -440,9 +428,23 @@ export function TradeFormFields({
 						/>
 					</div>
 				</div>
+				{twapOrder && (
+					<TradeFormTwap
+						reduceOnly={
+							capabilities.hasReduceOnly ? { checked: reduceOnly, onCheckedChange: setReduceOnly } : undefined
+						}
+						desktop
+						disabled={isFormDisabled}
+						side={side}
+						quoteToken={quoteToken}
+						markPx={markPx}
+						assetId={market?.assetId}
+						szDecimals={szDecimals}
+					/>
+				)}
 			</div>
 
-			{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
+			{((!twapOrder && capabilities.hasReduceOnly) || (capabilities.hasTpSl && canUseTpSl)) && (
 				<div className="space-y-2 py-0.5">
 					<TradeOptionCheckboxes
 						className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"

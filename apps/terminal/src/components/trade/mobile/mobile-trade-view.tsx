@@ -37,7 +37,7 @@ import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
-import { formatTwapPriceInput } from "@/domain/trade/twap-details";
+import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -106,6 +106,7 @@ import {
 	useTpSlEnabled,
 	useTpSlReturnInvalid,
 	useTriggerPrice,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapRandomize,
 	useTwapStopPrice,
@@ -201,6 +202,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const scaleSkewInput = useScaleSkew();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
+	const twapAdvancedEnabled = useTwapAdvancedEnabled();
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const [sizeInput, setLocalSizeInput] = useState("");
@@ -243,8 +245,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const markPriceStatus = market?.markPriceStatus ?? "loading";
 	const marketType = market?.kind === "spot" ? "spot" : "perp";
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
-	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
-	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const { triggerPx: twapTriggerPx, stopPx: twapStopPx } = resolveTwapPriceInputs(
+		twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
+		twapPriceFormat,
+	);
 	const twapTriggerPriceNum = toNumber(twapTriggerPx);
 	const twapStopPriceNum = toNumber(twapStopPx);
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
@@ -709,6 +715,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				scaleSkewInput,
 				twapMinutesNum,
 				twapRandomize,
+				twapAdvancedEnabled,
 				twapTriggerPx,
 				twapStopPx,
 				tpSlEnabled,
@@ -875,19 +882,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					/>
 				)}
 
-				{twapOrder && (
-					<TradeFormTwap
-						disabled={isFormDisabled}
-						side={side}
-						quoteToken={priceUnitLabel}
-						markPx={markPx}
-						assetId={market?.assetId}
-						szDecimals={szDecimals}
-						compact
-						mobileSafe
-					/>
-				)}
-
 				{scaleOrder && (
 					<TradeFormScale
 						midPrice={midReferencePrice}
@@ -944,7 +938,28 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					sliderValue={sliderValue}
 				/>
 
-				{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice || scaleOrder) && (
+				{twapOrder && (
+					<TradeFormTwap
+						reduceOnly={
+							capabilities.hasReduceOnly
+								? { checked: reduceOnlyChecked, onCheckedChange: setReduceOnlyChecked }
+								: undefined
+						}
+						disabled={isFormDisabled}
+						side={side}
+						quoteToken={priceUnitLabel}
+						markPx={markPx}
+						assetId={market?.assetId}
+						szDecimals={szDecimals}
+						compact
+						mobileSafe
+					/>
+				)}
+
+				{((!twapOrder && capabilities.hasReduceOnly) ||
+					(capabilities.hasTpSl && canUseTpSl) ||
+					usesLimitPrice ||
+					scaleOrder) && (
 					<TradeOptionCheckboxes
 						className={cn(
 							"flex flex-wrap items-center gap-y-1",

@@ -77,6 +77,7 @@ function twapInput(overrides: Partial<OrderSubmitInput> = {}): OrderSubmitInput 
 		scaleSkewInput: "",
 		twapMinutesNum: 30,
 		twapRandomize: true,
+		twapAdvancedEnabled: true,
 		twapTriggerPx: null,
 		twapStopPx: null,
 		tpSlEnabled: false,
@@ -125,6 +126,12 @@ describe("useOrderSubmit TWAP details", () => {
 			await hookValue?.handleSubmit(input);
 		});
 	}
+
+	it("omits hidden advanced prices even if a caller passes stale configured values", async () => {
+		await submit(twapInput({ twapAdvancedEnabled: false, twapTriggerPx: "100", twapStopPx: "110" }));
+		expect(mocks.submitTwap).toHaveBeenCalledTimes(1);
+		expect(mocks.submitTwap.mock.calls[0]?.[0]).toEqual({ twap: { a: 0, b: true, s: "1", r: false, m: 30, t: true } });
+	});
 
 	it("submits a plain TWAP without any details key", async () => {
 		await submit(twapInput());

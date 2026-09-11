@@ -81,6 +81,7 @@ function orderInput(market: MarketFixture, overrides: Partial<OrderSubmitInput> 
 		scaleSkewInput: "1",
 		twapMinutesNum: 30,
 		twapRandomize: true,
+		twapAdvancedEnabled: false,
 		twapTriggerPx: null,
 		twapStopPx: null,
 		tpSlEnabled: false,
@@ -290,6 +291,7 @@ describe("slider quantity through the installed Hyperliquid SDK", () => {
 					orderType: "twap",
 					twapOrder: true,
 					twapMinutesNum: minutes,
+					twapAdvancedEnabled: true,
 					twapTriggerPx: "1400",
 					twapStopPx: "1500",
 					reduceOnly: true,
@@ -302,6 +304,25 @@ describe("slider quantity through the installed Hyperliquid SDK", () => {
 			});
 		},
 	);
+
+	it("omits disabled advanced TWAP conditions from the SDK action while preserving execution flags", async () => {
+		await submit(
+			orderInput(markets[1], {
+				orderType: "twap",
+				twapOrder: true,
+				twapMinutesNum: 30,
+				twapAdvancedEnabled: false,
+				twapTriggerPx: "1400",
+				twapStopPx: "1500",
+				reduceOnly: true,
+				twapRandomize: false,
+			}),
+		);
+		expect(sdk.getAction()).toEqual({
+			type: "twapOrder",
+			twap: { a: 120_031, b: true, s: "1.234", r: true, m: 30, t: false },
+		});
+	});
 
 	it.each([4, 10081, 5.5])("blocks invalid TWAP duration %s before SDK signing", async (minutes) => {
 		await submit(orderInput(markets[1], { orderType: "twap", twapOrder: true, twapMinutesNum: minutes }));

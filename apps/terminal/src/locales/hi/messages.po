@@ -524,6 +524,10 @@ msgstr "उन्नत"
 msgid "Advanced order types"
 msgstr "उन्नत ऑर्डर प्रकार"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Advanced Settings"
+msgstr "उन्नत सेटिंग्स"
+
 #: src/components/api-wallet/api-wallet-action-modal.tsx
 msgid "After removal"
 msgstr "हटाने के बाद"
@@ -5900,6 +5904,7 @@ msgstr "इस ब्राउज़र में रिकवरी सहे�
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts

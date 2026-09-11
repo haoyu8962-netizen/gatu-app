@@ -10,6 +10,7 @@ import type { Side } from "@/lib/trade/types";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import {
 	useOrderEntryActions,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapRandomize,
 	useTwapStopPrice,
@@ -26,6 +27,7 @@ interface Props {
 	compact?: boolean;
 	desktop?: boolean;
 	mobileSafe?: boolean;
+	reduceOnly?: { checked: boolean; onCheckedChange: (checked: boolean) => void };
 }
 
 const labelClass = "text-2xs leading-none text-trading-panel-subtle";
@@ -63,15 +65,19 @@ export function TradeFormTwap({
 	compact,
 	desktop,
 	mobileSafe,
+	reduceOnly,
 }: Props) {
 	const { t } = useLingui();
 	const triggerFieldId = useId();
 	const stopFieldId = useId();
+	const advancedFieldsId = useId();
+	const advancedEnabled = useTwapAdvancedEnabled();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
 	const twapTriggerPrice = useTwapTriggerPrice();
 	const twapStopPrice = useTwapStopPrice();
-	const { setTwapMinutes, setTwapRandomize, setTwapTriggerPrice, setTwapStopPrice } = useOrderEntryActions();
+	const { setTwapMinutes, setTwapRandomize, setTwapTriggerPrice, setTwapStopPrice, setTwapAdvancedEnabled } =
+		useOrderEntryActions();
 
 	const hours = Math.floor(twapMinutesNum / 60);
 	const minutes = twapMinutesNum - hours * 60;
@@ -92,6 +98,14 @@ export function TradeFormTwap({
 	const fieldInputClass = cn(inputClass, compact && compactInputClass, desktop && "h-8");
 	const quoteUnitClass = compact || desktop ? "trade-card-label-full" : undefined;
 
+	const optionProps = {
+		className: cn("min-w-0 max-w-full items-center gap-1.5", mobileSafe ? "min-h-11" : "min-h-5"),
+		controlClassName:
+			"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control",
+		indicatorClassName: "text-trading-panel-on-control",
+		labelClassName: "text-xs text-trading-panel-muted [overflow-wrap:anywhere]",
+	};
+
 	function handleHoursChange(value: string) {
 		const h = clamp(Math.floor(Number(value) || 0), 0, HOURS_MAX);
 		const cappedMinutes = h >= HOURS_MAX ? 0 : minutes;
@@ -106,7 +120,7 @@ export function TradeFormTwap({
 	}
 
 	return (
-		<>
+		<div data-slot="trade-twap-fields" className={cn("flex min-w-0 flex-col", compact ? "gap-1.5" : "gap-2")}>
 			<div className="flex flex-col gap-1.5">
 				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${DAYS_MAX}d)`}</span>
 				<div className="flex gap-2">
@@ -143,70 +157,95 @@ export function TradeFormTwap({
 					</div>
 				</div>
 			</div>
-			<div className={cn("flex items-center", compact ? "text-2xs" : "text-xs")}>
+			<div data-slot="trade-twap-options" className="flex min-w-0 flex-wrap items-center gap-x-4">
 				<Checkbox
+					{...optionProps}
+					disabled={disabled}
 					checked={twapRandomize}
 					onCheckedChange={(checked) => setTwapRandomize(checked === true)}
-					disabled={disabled}
 					label={t`Randomize timing`}
 				/>
+				{reduceOnly && (
+					<Checkbox
+						{...optionProps}
+						disabled={disabled}
+						checked={reduceOnly.checked}
+						onCheckedChange={(checked) => reduceOnly.onCheckedChange(checked === true)}
+						label={t`Reduce Only`}
+					/>
+				)}
 			</div>
-			<div className="flex flex-col gap-1.5">
+			<Checkbox
+				{...optionProps}
+				checked={advancedEnabled}
+				onCheckedChange={(checked) => setTwapAdvancedEnabled(checked === true)}
+				label={t`Advanced Settings`}
+				aria-controls={advancedFieldsId}
+				aria-expanded={advancedEnabled}
+			/>
+			<div
+				id={advancedFieldsId}
+				data-slot="trade-twap-advanced"
+				hidden={!advancedEnabled}
+				className={cn("min-w-0 flex-col", compact ? "gap-1.5" : "gap-2", advancedEnabled ? "flex" : "hidden")}
+			>
+				<div className="flex flex-col gap-1.5">
+					<div className={cn(priceFieldClass, disabled && "opacity-50")}>
+						<label htmlFor={triggerFieldId} className={priceTextClass}>
+							{t`Trigger Price`}
+							<span className={quoteUnitClass}> ({quoteToken})</span>
+						</label>
+						<NumberInput
+							id={triggerFieldId}
+							aria-label={`${t`Trigger Price`} (${quoteToken})`}
+							placeholder="0.00"
+							value={twapTriggerPrice}
+							onChange={(e) => setTwapTriggerPrice(e.target.value)}
+							className={fieldInputClass}
+							disabled={disabled || !advancedEnabled}
+							mobileSafe={mobileSafe}
+						/>
+					</div>
+					{(triggerHint || (mobileSafe && triggerPx !== null)) && (
+						<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "grid")}>
+							{mobileSafe ? (
+								<>
+									<span
+										aria-hidden={triggerDirection !== "above"}
+										className={cn("col-start-1 row-start-1", triggerDirection !== "above" && "invisible")}
+									>
+										{aboveTriggerHint}
+									</span>
+									<span
+										aria-hidden={triggerDirection !== "below"}
+										className={cn("col-start-1 row-start-1", triggerDirection !== "below" && "invisible")}
+									>
+										{belowTriggerHint}
+									</span>
+								</>
+							) : (
+								triggerHint
+							)}
+						</p>
+					)}
+				</div>
 				<div className={cn(priceFieldClass, disabled && "opacity-50")}>
-					<label htmlFor={triggerFieldId} className={priceTextClass}>
-						{t`Trigger Price`}
+					<label htmlFor={stopFieldId} className={priceTextClass}>
+						{stopPriceLabel}
 						<span className={quoteUnitClass}> ({quoteToken})</span>
 					</label>
 					<NumberInput
-						id={triggerFieldId}
-						aria-label={`${t`Trigger Price`} (${quoteToken})`}
+						id={stopFieldId}
+						aria-label={`${stopPriceLabel} (${quoteToken})`}
 						placeholder="0.00"
-						value={twapTriggerPrice}
-						onChange={(e) => setTwapTriggerPrice(e.target.value)}
+						value={twapStopPrice}
+						onChange={(e) => setTwapStopPrice(e.target.value)}
 						className={fieldInputClass}
-						disabled={disabled}
+						disabled={disabled || !advancedEnabled}
 						mobileSafe={mobileSafe}
 					/>
 				</div>
-				{(triggerHint || (mobileSafe && triggerPx !== null)) && (
-					<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "grid")}>
-						{mobileSafe ? (
-							<>
-								<span
-									aria-hidden={triggerDirection !== "above"}
-									className={cn("col-start-1 row-start-1", triggerDirection !== "above" && "invisible")}
-								>
-									{aboveTriggerHint}
-								</span>
-								<span
-									aria-hidden={triggerDirection !== "below"}
-									className={cn("col-start-1 row-start-1", triggerDirection !== "below" && "invisible")}
-								>
-									{belowTriggerHint}
-								</span>
-							</>
-						) : (
-							triggerHint
-						)}
-					</p>
-				)}
 			</div>
-			<div className={cn(priceFieldClass, disabled && "opacity-50")}>
-				<label htmlFor={stopFieldId} className={priceTextClass}>
-					{stopPriceLabel}
-					<span className={quoteUnitClass}> ({quoteToken})</span>
-				</label>
-				<NumberInput
-					id={stopFieldId}
-					aria-label={`${stopPriceLabel} (${quoteToken})`}
-					placeholder="0.00"
-					value={twapStopPrice}
-					onChange={(e) => setTwapStopPrice(e.target.value)}
-					className={fieldInputClass}
-					disabled={disabled}
-					mobileSafe={mobileSafe}
-				/>
-			</div>
-		</>
+		</div>
 	);
 }

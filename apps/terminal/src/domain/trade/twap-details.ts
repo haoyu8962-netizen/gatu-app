@@ -32,6 +32,18 @@ export function formatTwapPriceInput(input: string, { assetId, szDecimals }: Twa
 	return formatPriceForOrder(raw, assetId === undefined ? undefined : { assetId, szDecimals });
 }
 
+export function resolveTwapPriceInputs(
+	advancedEnabled: boolean,
+	triggerInput: string,
+	stopInput: string,
+	format: TwapPriceFormat,
+) {
+	return {
+		triggerPx: advancedEnabled ? formatTwapPriceInput(triggerInput, format) : null,
+		stopPx: advancedEnabled ? formatTwapPriceInput(stopInput, format) : null,
+	};
+}
+
 export function getTwapRuntimeMinutes(minutes: number | null): number {
 	return Math.max(0, Math.round(minutes ?? 0));
 }

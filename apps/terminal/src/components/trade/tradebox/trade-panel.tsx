@@ -23,7 +23,7 @@ import { getOrderPrice } from "@/domain/trade/order/price";
 import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
-import { formatTwapPriceInput } from "@/domain/trade/twap-details";
+import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -88,6 +88,7 @@ import {
 	useTpSlEnabled,
 	useTpSlReturnInvalid,
 	useTriggerPrice,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapRandomize,
 	useTwapStopPrice,
@@ -273,6 +274,7 @@ export function TradePanel() {
 	const scaleSkewInput = useScaleSkew();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
+	const twapAdvancedEnabled = useTwapAdvancedEnabled();
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
 	const tpSlEnabled = useTpSlEnabled();
@@ -290,8 +292,12 @@ export function TradePanel() {
 	const isTradingAuthorized = requiresBuilderFee ? isReady : isSignerReady;
 	const { authorize, status: registerStatus } = useTradingAuthorization({ requiresBuilderFee });
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
-	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
-	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const { triggerPx: twapTriggerPx, stopPx: twapStopPx } = resolveTwapPriceInputs(
+		twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
+		twapPriceFormat,
+	);
 	const twapTriggerPriceNum = toNumber(twapTriggerPx);
 	const twapStopPriceNum = toNumber(twapStopPx);
 	const requiresLiveMarkPrice = orderType === "market" || triggerOrder || twapOrder;
@@ -616,6 +622,7 @@ export function TradePanel() {
 				scaleSkewInput,
 				twapMinutesNum,
 				twapRandomize,
+				twapAdvancedEnabled,
 				twapTriggerPx,
 				twapStopPx,
 				tpSlEnabled,

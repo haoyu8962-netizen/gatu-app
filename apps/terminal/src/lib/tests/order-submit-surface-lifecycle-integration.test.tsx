@@ -90,6 +90,7 @@ function marketInput(draftResetToken: OrderSubmitDraftResetToken): OrderSubmitIn
 		scaleSkewInput: "",
 		twapMinutesNum: null,
 		twapRandomize: false,
+		twapAdvancedEnabled: false,
 		twapTriggerPx: null,
 		twapStopPx: null,
 		tpSlEnabled: false,
