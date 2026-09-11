@@ -162,11 +162,11 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
-	it("keeps the split viewport-based and independent of form content", () => {
+	it("provides a viewport-based minimum without capping taller forms", () => {
 		render();
 
 		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain(
-			"h-[clamp(370px,60svh,480px)]",
+			"min-h-[clamp(370px,60svh,480px)]",
 		);
 	});
 

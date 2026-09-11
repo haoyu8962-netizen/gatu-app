@@ -1,21 +1,28 @@
+import { i18n } from "@lingui/core";
 import { useState } from "react";
-import { createRoot } from "react-dom/client";
 import { MobileTradeOrderSplit } from "@/components/trade/mobile/mobile-trade-order-split";
 import { MobileTradeScrollArea } from "@/components/trade/mobile/mobile-trade-scroll-area";
+import { TradeFormTwap } from "@/components/trade/tradebox/trade-form-twap";
+import { createI18nRoot } from "@/lib/tests/harness/react";
+import { messages } from "@/locales/en/messages.po";
 import "./mobile-orderbook-cls.css";
 
 function Fixture() {
+	const [mark, setMark] = useState(100);
 	const [mode, setMode] = useState("market");
 	const [feedback, setFeedback] = useState(false);
 	const [requests, setRequests] = useState(0);
 	return (
 		<div className="flex h-svh flex-col">
 			<nav className="flex h-[57px] shrink-0 gap-2">
-				{["market", "limit", "tall"].map((value) => (
+				{["market", "limit", "twap", "tall"].map((value) => (
 					<button key={value} type="button" onClick={() => setMode(value)}>
 						{value}
 					</button>
 				))}
+				<button type="button" onClick={() => setMark((value) => (value === 100 ? 110 : value === 110 ? 120 : 100))}>
+					Quote
+				</button>
 				<button type="button" onClick={() => setFeedback((value) => !value)}>
 					Feedback
 				</button>
@@ -29,10 +36,7 @@ function Fixture() {
 						</div>
 					}
 				>
-					<div
-						data-fixture-form
-						className="flex min-h-0 min-w-0 flex-[1.53] flex-col self-stretch overflow-y-auto overscroll-y-contain"
-					>
+					<div data-fixture-form className="flex min-h-0 min-w-0 flex-[1.53] flex-col self-stretch">
 						<MobileTradeScrollArea embedded>
 							<label>
 								Size
@@ -44,7 +48,20 @@ function Fixture() {
 									<input aria-label="Price" defaultValue="100" />
 								</label>
 							) : null}
-							<div style={{ minHeight: mode === "tall" ? 900 : mode === "limit" ? 320 : 280 }}>Order fields</div>
+							{mode === "twap" ? (
+								<TradeFormTwap
+									disabled={false}
+									side="buy"
+									quoteToken="USDC"
+									markPx={mark}
+									assetId={0}
+									szDecimals={2}
+									compact
+									mobileSafe
+								/>
+							) : (
+								<div style={{ minHeight: mode === "tall" ? 900 : mode === "limit" ? 320 : 280 }}>Order fields</div>
+							)}
 							<label>
 								Last field
 								<input aria-label="Last field" />
@@ -70,4 +87,5 @@ function Fixture() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing fixture root");
-createRoot(root).render(<Fixture />);
+i18n.loadAndActivate({ locale: "en", messages });
+createI18nRoot(root).render(<Fixture />);

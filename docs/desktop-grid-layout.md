@@ -39,11 +39,13 @@ At 1545×900, reference Market and Limit modes retain the same 670px trading pan
 
 ## Mobile order-entry height
 
-The embedded mobile form and compact order book share an order-type-independent split height: `clamp(370px, 60svh, 480px)`. The 370px floor preserves room for the compact book, while the viewport-relative height and 480px ceiling leave room for account navigation on ordinary phones. Stable viewport units avoid resizing this split merely because browser chrome changes. Market details and account disclosures retain their own explicit expansion behavior.
+The embedded mobile form and compact order book share a viewport-based minimum height: `clamp(370px, 60svh, 480px)`. This is a floor, not a fixed height or content ceiling. The form's natural content determines any additional height; the book stretches alongside it and account panels follow below. Keep the book out of intrinsic height calculation so its measured row count cannot feed back into split sizing.
 
-The embedded form scrolls its fields and summary internally, with the existing action area at the bottom. Keep a minimum usable field viewport and allow local body scrolling for unusually tall action feedback; no field or requested-action message may become unreachable. The surrounding page can still scroll to account data. Switching order types must preserve the split, order-book and account boundaries, viewport scroll position, form state and subscription identity. Do not derive split height from the current order form or hide duplicate forms to measure them.
+Use the surrounding mobile page as the single vertical scroll owner. The embedded form, including its order toolbar, complete fields, summary and action feedback, must not have an independent vertical scroll viewport. Short viewports and open keyboards may require page scrolling to reach the action; no content may be clipped. The standalone form retains its existing scroll behavior.
 
-At 390×844 the reference terminal's Market-to-Limit split grows from 370px to 390px and reduces its account area. GATU instead keeps the mobile split stable to honor the requested height boundary. Verify 320px, 390px and tablet widths, shorter viewports, tall advanced forms, keyboard reachability, action feedback, and a stable compact-book footer during repeated switches.
+Order-type switches, expanded controls, locale changes and requested-action feedback may change natural height. Preserve mounted input state and subscriptions. Do not create hidden measurement copies, order-type height tables, quote-driven height state or ResizeObserver feedback loops. Retain all TWAP conditions, summaries, fees and touch targets; keep ordinary field spacing compact before allocating more height.
+
+Verify 320px, 393px and tablet widths, all eight real order types, advanced TWAP values, TP/SL, long action feedback and keyboard reachability. Assert no embedded vertical overflow, aligned book/form bottom edges, account panels below the split, and shrinking back after tall content is removed. Repeated market-value updates must not progressively grow the layout. Desktop grid height ownership remains unchanged.
 
 ## Complete order-type coverage
 

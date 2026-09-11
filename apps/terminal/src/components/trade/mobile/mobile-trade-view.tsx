@@ -780,13 +780,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<div
-			className={cn(
-				"flex min-h-0 flex-col self-stretch",
-				embedded ? "overflow-y-auto overscroll-y-contain" : "h-full bg-background",
-				className,
-			)}
-		>
+		<div className={cn("flex min-h-0 flex-col self-stretch", !embedded && "h-full bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={handleMarginDialogOpenChange}

@@ -167,7 +167,9 @@ export function TradeFormTwap({
 						mobileSafe={mobileSafe}
 					/>
 				</div>
-				{triggerHint && <p className="text-2xs text-trading-panel-muted">{triggerHint}</p>}
+				{(triggerHint || (mobileSafe && triggerPx !== null)) && (
+					<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "min-h-[1lh]")}>{triggerHint}</p>
+				)}
 			</div>
 			<div className={cn(priceFieldClass, disabled && "opacity-50")}>
 				<label htmlFor={stopFieldId} className={priceTextClass}>
