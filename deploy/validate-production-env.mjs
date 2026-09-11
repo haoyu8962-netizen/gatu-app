@@ -3,6 +3,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { validateListener } from "./runtime-listener.mjs";
+
 const EXPECTED_MAINNET_ORIGIN = "https://app.gatu.ai";
 const EXPECTED_TESTNET_ORIGIN = "https://testnet.gatu.ai";
 const MAINNET_RELEASE_PROFILES = new Map([
@@ -95,7 +97,7 @@ function validateBuildEnvironment(values, filePath, releaseMode) {
 }
 
 function validateRuntimeEnvironment(values, filePath) {
-	requireExactValue(values, filePath, "HOST", "127.0.0.1");
+	validateListener(Object.fromEntries(values));
 	requireExactValue(values, filePath, "GATU_MAINNET_PUBLIC_BASE_URL", EXPECTED_MAINNET_ORIGIN);
 	requireExactValue(values, filePath, "GATU_TESTNET_PUBLIC_BASE_URL", EXPECTED_TESTNET_ORIGIN);
 

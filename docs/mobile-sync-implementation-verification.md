@@ -2,7 +2,9 @@
 
 2026-09-11。本次完成修复代码和发布工具；**尚未通过生产启用准入**。本地使用 macOS arm64、Node 24.15.0、锁定 pnpm 10.21.0；CI 保持 Ubuntu / Node 22.15.0。验证产物来自当前工作树，不是可直接提升到生产的发行包。
 
-后续复审更正：`cef99af3` 仍存在 Caddy 反斜杠路径绕过、仓库内真机证据的 commit 循环和 NITRO_HOST 校验缺口。下列通过记录只覆盖当时的测试集合，不能证明入口封锁或发布准入完整；重新复现、影响边界和待实施任务见[发布防护修复计划](mobile-sync-release-hardening-plan.md)。
+后续复审更正：`cef99af3` 仍存在 Caddy 反斜杠路径绕过、仓库内真机证据的 commit 循环和 NITRO_HOST 校验缺口。下列通过记录只覆盖当时的测试集合，不能证明入口封锁或发布准入完整；重新复现、影响边界和任务拆解见[发布防护修复计划](mobile-sync-release-hardening-plan.md)。
+
+当前发布防护修复与新增验证见[后续实施记录](mobile-sync-release-hardening-verification.md)。
 
 ## 已交付
 

@@ -167,7 +167,12 @@ function validateEvidenceField(id, field, value, problems) {
 	if (field === "Git commit" && getArgValue("--commit", "") && value !== getArgValue("--commit", ""))
 		problems.push(`${id} evidence commit does not match the release commit.`);
 	if (field === "Ticket API version" && value !== "2") problems.push(`${id} evidence must verify ticket API v2.`);
-	if (["Mobile create gate", "Mobile import gate"].includes(field) && value !== "true")
+	if (field === "Release ID" && getArgValue("--release", "") && value !== getArgValue("--release", ""))
+		problems.push(`${id} evidence release does not match the candidate.`);
+	if (
+		["Mobile create gate", "Mobile import gate"].includes(field) &&
+		value !== getArgValue(field === "Mobile create gate" ? "--create" : "--import", "true")
+	)
 		problems.push(`${id} evidence must use enabled mobile pairing gates.`);
 	if (isPlaceholderValue(value)) {
 		problems.push(`${id} evidence "${field}" still has placeholder value "${value}".`);

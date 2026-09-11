@@ -1,17 +1,20 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { once } from "node:events";
-import { copyFile, lstat, readFile, readdir, writeFile } from "node:fs/promises";
-import { createServer } from "node:net";
+import { copyFile, lstat, readdir, readFile, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
+import { createServer } from "node:net";
 import { relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 import {
-	registerMobileSyncTicket as legacyRegister,
 	consumeMobileSyncTicket as legacyConsume,
+	registerMobileSyncTicket as legacyRegister,
 } from "./fixtures/mobile-sync-legacy-client.mjs";
+
+import { validateListener } from "./runtime-listener.mjs";
 
 const MANIFEST = ".gatu-mobile-sync.json";
 const TICKET_PATH = "/mobile-agent-sync-ticket";
@@ -24,6 +27,10 @@ const ORIGINS = ["https://app.gatu.ai", "https://testnet.gatu.ai"];
 export const BLOCKED_PATHS = [
 	TICKET_PATH,
 	`${TICKET_PATH}/`,
+	`${TICKET_PATH}\\`,
+	`${TICKET_PATH}%5c`,
+	`${TICKET_PATH}%5C`,
+	`${TICKET_PATH}%2f`,
 	`/${TICKET_PATH}`,
 	"/%6dobile-agent-sync-ticket",
 	"/MOBILE-AGENT-SYNC-TICKET",
@@ -55,32 +62,36 @@ function headers(origin, forwarded) {
 	};
 }
 
-function transport(url, options, forwarded) {
-	if (!forwarded)
-		return fetch(url, { ...options, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+function transport(url, options) {
 	return new Promise((resolveResponse, reject) => {
-		const pending = httpRequest(url, { method: options.method, headers: options.headers }, (incoming) => {
-			const chunks = [];
-			let bytes = 0;
-			incoming.on("data", (chunk) => {
-				bytes += chunk.length;
-				if (bytes > 65_536) pending.destroy(new Error("probe response too large"));
-				else chunks.push(chunk);
-			});
-			incoming.on("error", reject);
-			incoming.on("end", () => {
-				const responseHeaders = new Headers();
-				for (const [key, value] of Object.entries(incoming.headers)) {
-					if (value !== undefined) responseHeaders.set(key, Array.isArray(value) ? value.join(", ") : value);
-				}
-				resolveResponse(
-					new Response(incoming.statusCode === 204 ? null : Buffer.concat(chunks), {
-						status: incoming.statusCode,
-						headers: responseHeaders,
-					}),
-				);
-			});
-		});
+		const target = new URL(url);
+		const rawPath = url.slice(url.indexOf("/", url.indexOf("://") + 3));
+		const send = target.protocol === "https:" ? httpsRequest : httpRequest;
+		const pending = send(
+			{ hostname: target.hostname, port: target.port, path: rawPath, method: options.method, headers: options.headers },
+			(incoming) => {
+				const chunks = [];
+				let bytes = 0;
+				incoming.on("data", (chunk) => {
+					bytes += chunk.length;
+					if (bytes > 65_536) pending.destroy(new Error("probe response too large"));
+					else chunks.push(chunk);
+				});
+				incoming.on("error", reject);
+				incoming.on("end", () => {
+					const responseHeaders = new Headers();
+					for (const [key, value] of Object.entries(incoming.headers)) {
+						if (value !== undefined) responseHeaders.set(key, Array.isArray(value) ? value.join(", ") : value);
+					}
+					resolveResponse(
+						new Response(incoming.statusCode === 204 ? null : Buffer.concat(chunks), {
+							status: incoming.statusCode,
+							headers: responseHeaders,
+						}),
+					);
+				});
+			},
+		);
 		pending.setTimeout(10_000, () => pending.destroy(new Error("probe request timed out")));
 		pending.on("error", reject);
 		pending.end(options.body);
@@ -179,7 +190,7 @@ async function digest(directory, files) {
 	return hash.digest("hex");
 }
 
-export async function verifyRelease(directory, { closed = false, identity = true } = {}) {
+export async function verifyRelease(directory, { closed = false, identity = true, carriedAssets = true } = {}) {
 	directory = resolve(directory);
 	const manifestStat = await lstat(resolve(directory, MANIFEST));
 	assert.ok(manifestStat.isFile() && !manifestStat.isSymbolicLink());
@@ -193,7 +204,7 @@ export async function verifyRelease(directory, { closed = false, identity = true
 	const actualFiles = await artifactFiles(directory);
 	for (const file of actualFiles) {
 		assert.ok(
-			manifest.files.includes(file) || /^public\/assets\/[^/]+$/.test(file),
+			manifest.files.includes(file) || (carriedAssets && /^public\/assets\/[^/]+$/.test(file)),
 			"unexpected file outside carried immutable assets",
 		);
 	}
@@ -231,6 +242,9 @@ async function unusedPort() {
 }
 
 async function start(directory, port, runtimeFlags = "false") {
+	validateListener(process.env, { requireHost: false });
+	const listener = { HOST: "127.0.0.1", NITRO_HOST: "127.0.0.1", PORT: String(port), NITRO_PORT: String(port) };
+	validateListener(listener, { port });
 	const guard = resolve(directory, "referral-uri-guard.cjs");
 	const hasGuard = await lstat(guard).then(
 		() => true,
@@ -243,10 +257,7 @@ async function start(directory, port, runtimeFlags = "false") {
 			cwd: directory,
 			env: {
 				...process.env,
-				HOST: "127.0.0.1",
-				PORT: String(port),
-				NITRO_HOST: "127.0.0.1",
-				NITRO_PORT: String(port),
+				...listener,
 				NODE_ENV: "production",
 				VITE_MOBILE_PAIRING_CREATE_ENABLED: runtimeFlags,
 				VITE_MOBILE_PAIRING_IMPORT_ENABLED: runtimeFlags,
@@ -283,7 +294,7 @@ async function start(directory, port, runtimeFlags = "false") {
 	}
 }
 
-export async function attest(directory, expectedCreate, expectedImport, commit, release) {
+export async function attest(directory, expectedCreate, expectedImport, commit, release, persist = true) {
 	directory = resolve(directory);
 	assert.ok(["true", "false"].includes(expectedCreate) && ["true", "false"].includes(expectedImport));
 	const files = await artifactFiles(directory);
@@ -356,13 +367,14 @@ export async function attest(directory, expectedCreate, expectedImport, commit, 
 		sha256,
 		files,
 	};
-	await writeFile(resolve(directory, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o644 });
+	if (persist) await writeFile(resolve(directory, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o644 });
 	return manifest;
 }
 
 async function main() {
 	const [operation, directory, ...args] = process.argv.slice(2);
 	if (operation === "attest") await attest(directory, ...args);
+	else if (operation === "check") await attest(directory, args[0], args[1], args[2], args[3], false);
 	else if (operation === "attest-env") {
 		const values = new Map(
 			(await readFile(args[0], "utf8"))
@@ -373,15 +385,7 @@ async function main() {
 		);
 		const create = values.get("VITE_MOBILE_PAIRING_CREATE_ENABLED") === "true";
 		const imported = values.get("VITE_MOBILE_PAIRING_IMPORT_ENABLED") === "true";
-		if (create || imported) {
-			const validation = spawn(
-				process.execPath,
-				[resolve("scripts/validate-mobile-phone-access-device-validation.js"), "--commit", args[1]],
-				{ stdio: "inherit" },
-			);
-			const [status] = await once(validation, "exit");
-			assert.equal(status, 0, "physical-device evidence must pass before enabling pairing");
-		}
+
 		await copyFile(resolve("deploy/referral-uri-guard.cjs"), resolve(directory, "referral-uri-guard.cjs"));
 		await attest(directory, String(create), String(imported), args[1], args[2]);
 	} else if (operation === "verify") await verifyRelease(directory, { closed: args[0] === "closed" });
@@ -392,7 +396,7 @@ async function main() {
 		await probe(base, origin, manifest, { forwarded: mode === "node", blocked: mode === "blocked" });
 	} else
 		throw new Error(
-			"Usage: mobile-sync-release.mjs attest <output> <create> <import> [commit release] | verify <release> [closed] | block <origin> | probe <release> <base> <origin> [node|blocked]",
+			"Usage: mobile-sync-release.mjs attest/check <output> <create> <import> [commit release] | verify <release> [closed] | block <origin> | probe <release> <base> <origin> [node|blocked]",
 		);
 	process.stdout.write(`Mobile sync ${operation}: verified\n`);
 }

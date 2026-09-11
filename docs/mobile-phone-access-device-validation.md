@@ -8,7 +8,7 @@ All 11 required physical rows remain **Not run**. Automation and simulated camer
 
 ## Required Evidence
 
-Use the per-row templates below. Record tester, time, exact commit, release ID, HTTPS origin, network, compiled gates, ticket version, device/OS/browser/wallet versions, acceptance references and a reproducible result. `node scripts/validate-mobile-phone-access-device-validation.js --commit <release-commit>` requires all rows to pass for that commit. `--allow-incomplete` checks structure only.
+Copy the per-row templates below to the controlled external file `/opt/gatu/shared/mobile-sync-evidence/<release-id>.md`; keep this repository template as Not run. Use `deploy.sh main prepare` first, exercise that exact candidate on isolated HTTPS, and then use `deploy.sh main promote <release-id>` without rebuilding. Record tester, time, exact commit, release ID, HTTPS origin, network, compiled gates, ticket version, device/OS/browser/wallet versions, acceptance references and a reproducible result. `node scripts/validate-mobile-phone-access-device-validation.js --file <external-file> --commit <full-40-character-SHA> --release <release-id>` checks row evidence; production additionally validates the candidate identity table and artifact/configuration digests. Record all row flags exactly as compiled in the candidate. `--allow-incomplete` checks structure only.
 
 Never record QR screenshots, URL fragments, keys, complete signatures or credential-bearing HAR files. Evidence may be redacted UI images or detailed non-sensitive notes. Consumer IDs are tab storage identifiers, not physical-device identities; opener-created tabs can inherit sessionStorage.
 
@@ -20,6 +20,21 @@ Never record QR screenshots, URL fragments, keys, complete signatures or credent
 4. The phone parses and scrubs the fragment, verifies the owner/Agent/network, and waits for explicit Import. It does not need a pairing code or master-wallet login. Test sessionStorage default and explicit Stay Connected persistence separately.
 5. Prepare Coinbase Wallet, MetaMask and a WalletConnect-compatible wallet through the Privy directory. Ordinary email trading uses the exact embedded owner and must not generate a Mobile/ordinary Agent as a side effect.
 6. Record only non-sensitive approval outcomes and version information. After a QR is rendered the desktop recovery key is cleared; replacement may require a new explicit approval. Never assume retries always reuse an in-memory key.
+
+## Candidate Identity
+
+Copy this table into the external evidence file exactly once. Fill values from `mobile-sync-candidates/<release-id>/candidate.json`; copy the full SHA and matching release ID into every row. Install reviewed evidence as a regular read-only file (`0440`), outside Git and outside the candidate artifact; no symlinks. A digest proves consistency, not that physical testing occurred. Reviewers remain responsible for the actual test record.
+
+| Field | Value |
+| --- | --- |
+| Schema | 1 |
+| Git commit | <full 40-character candidate SHA> |
+| Release ID | <candidate release ID> |
+| Artifact SHA256 | <candidate sha256> |
+| Configuration SHA256 | <candidate configurationSha256> |
+| Ticket API version | 2 |
+| Mobile create gate | <candidate createAndReveal> |
+| Mobile import gate | <candidate importFromQr> |
 
 ## Required Device Matrix
 
@@ -63,11 +78,11 @@ Preserve every required ID, matrix description and evidence field. Pass requires
 
 ### TC-1: Native Camera Opens Agent QR
 
-Scan a desktop-approved QR. Confirm the correct network/owner and clean address bar, explicit Import, and no automatic wallet activation or signature. Cancel and verify draft removal. Repeat direct load, SPA navigation and expired QR.
+On desktop verify the owner against the active signing wallet, approval and Hyperliquid owner Info. Scan its approved QR on the phone: confirm network, clean address bar and explicit Import, with no automatic activation or signature. The phone does not display the owner before Import; after explicit Import, verify that the resulting account and remotely approved Agent match the desktop owner. Cancel and verify draft removal. Repeat direct load, SPA navigation and expired QR.
 
 ### TC-2: Draft, Retry and Lost Response
 
-Within ticket lifetime reload the same tab and retry after simulated network loss. A successful first consumption followed by storage failure may retry with the same consumer while the original server record exists. A different independent context receives 409 and clears only its current draft. After a real server restart both consumers receive 410; old registration remains 400. With unavailable storage fail closed. A network failure retains the bounded draft; expired/rejected state does not. Do not copy actual QR credentials into test artifacts.
+The phone tester performs reload and explicit retries; a separate operator controls the isolated staging proxy/network fault and server restart. Within ticket lifetime reload the same tab and retry after simulated network loss. A successful first consumption followed by storage failure may retry with the same consumer while the original server record exists. A different independent context receives 409 and clears only its current draft. After a real server restart both consumers receive 410; old registration remains 400. With unavailable storage fail closed. A network failure retains the bounded draft; expired/rejected state does not. Do not copy actual QR credentials into test artifacts.
 
 ### TC-3: Identity, PWA and Wallet Lifecycle
 

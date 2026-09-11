@@ -150,7 +150,7 @@ sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 #   .env.local   → VITE_PRIVY_APP_ID；保留 VITE_HYPERLIQUID_AGENT_NAME=gatu；
 #                  主网 External CCTP 固定开启；Sponsored、测试网和移动配对
 #                  仅在启用时把对应 gate 设为精确的 "true"
-#   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
+#   .env.runtime → IPDATA_API_KEY（HOST=127.0.0.1；PORT 缺省或 3000）
 #                  GATU_MAINNET_PUBLIC_BASE_URL / GATU_TESTNET_PUBLIC_BASE_URL 保持为
 #                  对应的两个 exact public origin；修改域名时同步修改 deploy/Caddyfile
 sudo -u gatu nano /opt/gatu/shared/.env.local
@@ -314,11 +314,11 @@ sudo systemctl status gatu --no-pager
 
 ### 移动配对 v2 发布保护
 
-当前 canonical Caddyfile **独立封锁票据路径**及大小写、编码、重复/尾斜杠变体，返回 503、no-store、no-referrer 和 Retry-After: 60。
-这用于首次升级保护；先按下文安装并验证 canonical Caddy，再运行 deploy。`.env.runtime` 的 `HOST` 必须精确为 `127.0.0.1`，禁止公开 Node 端口。
+当前 canonical Caddyfile **独立封锁票据路径**及大小写、编码、重复/尾斜杠、字面反斜杠和 `%5c` 变体，返回 503、no-store、no-referrer 和 Retry-After: 60。
+这用于首次升级保护；先按下文安装并验证 canonical Caddy，再运行 deploy。`.env.runtime` 的 `HOST` 必须精确为 `127.0.0.1`，`NITRO_HOST` 非空时也只能为 `127.0.0.1`；`PORT`/`NITRO_PORT` 缺省、空或精确 `3000`。systemd 启动器在每次启动（含旧版回滚）重新检查并将空端口归一为 3000，禁止公开 Node 端口。
 
 `deploy.sh` 在切换前用 `mobile-sync-release.mjs attest-env` 启动最终 `.output/server/index.mjs`，测试两个 origin、严格状态码、旧客户端模块、并发和真实停止/重启。
-探针仅使用合成票据，不签名、不下单、不输出票据 ID。实际编译 gate 必须与已验证 `.env.local` 的发布意图一致。任一 gate 开启还会运行真机验证器，并要求全部 11 行证据匹配当前完整 commit。
+探针仅使用合成票据，不签名、不下单、不输出票据 ID。实际编译 gate 必须与已验证 `.env.local` 的发布意图一致。该命令只准备候选，不代表允许发布。任一 gate 开启必须通过下述外部证据与同产物发布流程。
 
 验收产生独立 `.gatu-mobile-sync.json`：commit/release、API v2、旧登记禁用、编译 gate、单进程模式、产物 SHA-256 与文件清单。
 发布后检查 Node 和双 origin；manifest 与实际文件、身份不符即失败。原 `.gatu-release-capabilities` 继续精确为 17 字节 `referral-join-v1\n`，不可追加。
@@ -327,7 +327,24 @@ sudo systemctl status gatu --no-pager
 没有安全基线时，仅在独立 edge 封锁仍可验证的条件下允许旧 release 回滚；两者皆无则拒绝切换。不要为旧产物手写 manifest，不要绕过脚本直接切换 symlink。
 
 关闭基线通过 Node/双 origin 验收并固定后，才可通过单独受审查的 canonical Caddy 变更移除封锁；部署与 Caddy 安装内容必须一致。
-移除时应用仍双关，确认旧 register=400、issue/consume=503。全部真机、Linux 与 HTTPS 暂存验证完成后，才可部署双开版本。
+移除临时 `@mobile_sync_block` 时必须保留 `@ambiguous_path` 及其 400 响应，保持 route 内顺序；移除时应用仍双关，确认旧 register=400、issue/consume=503。全部真机、Linux 与 HTTPS 暂存验证完成后，才可部署双开版本。
+候选构建与发布分开执行（均同步并锁定 `origin/main`，沿用干净工作树、单机 flock、服务与 Caddy 完整校验）：
+
+```bash
+bash /opt/gatu/repo/deploy/deploy.sh main prepare
+bash /opt/gatu/repo/deploy/deploy.sh main promote <candidate-id>
+```
+
+`prepare` 构建一次并完成实际 HTTP/重启验收，保存到 `/opt/gatu/shared/mobile-sync-candidates/<id>/artifact`，旁置 `candidate.json`；不切换 current、不重启生产。双关版本仍可用默认 `deploy.sh main` 一次完成。任一 gate 开启时默认命令拒绝发布，必须使用两阶段流程。
+
+将同一 artifact 复制到隔离 HTTPS 暂存主机，核对清单摘要，运行其 `server/index.mjs` 和产物内 referral guard；不要重新编译或改写 gate、guard、元信息。桌面和手机使用同一 HTTPS origin、Privy 允许的暂存域名及隔离 Testnet owner。在非 canonical 域名用现有网络选择器选择 Testnet，核对两端 Info/Exchange 实际网络；不要改 `VITE_HYPERLIQUID_TESTNET`，不要跳过法律、身份或地区限制。
+
+审核真实 11 行记录后，将[证据模板](../docs/mobile-phone-access-device-validation.md)复制并填入外部 `/opt/gatu/shared/mobile-sync-evidence/<id>.md`，通过受控部署权限安装为普通只读文件（如 `root:gatu`、0440，目录 0750）。完整 SHA、release、产物摘要、配置摘要、API 与编译 gate 必须来自 candidate.json，每行身份一致。证据不提交 Git、不放入 artifact；禁止 symlink 和目录外路径。
+
+`promote` 不安装依赖、不构建、不覆盖 guard；重新核对 main SHA、配置、候选字节、全部真实证据及 HTTP 协议后，复制同一产物，仅按原规则保留旧的顶层哈希 assets。证据摘要和候选身份记录在 shared/mobile-sync-publications/<id>.json，供发布/失败尝试审计；该记录本身不是上线成功证明。任意代码、配置、guard 或已声明文件改变都要新候选和新验收。若 Caddy 仍封锁票据，开启 gate 的候选不能发布。
+
+候选清理与 release 清理分开：仅回收超过保留数量、有匹配发布记录的旧候选；保留 current、安全基线和未发布的验收候选。待验收候选需运维明确废弃后在部署锁下清理。SHA-256 只证明一致性，不证明物理设备测试真实发生。
+
 具体阶段、操作证据和回滚要求见 [生产准入](../docs/mobile-sync-production-readiness.md)。
 
 其余两个高风险能力也使用彼此独立、默认关闭的构建期开关:

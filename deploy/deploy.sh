@@ -14,6 +14,9 @@ RELEASES=/opt/gatu/releases
 CURRENT=/opt/gatu/current
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 BRANCH="${1:-main}"
+DEPLOY_MODE="${2:-deploy}"
+CANDIDATE_ID="${3:-}"
+CANDIDATES="${SHARED}/mobile-sync-candidates"
 SOCIAL_IMAGE_PATH="/og-terminal-1200x630.png"
 CHART_LIBRARY_PATH="/charting_library"
 CHART_THEME_PATHS="/tradingview-theme-dark.css /tradingview-theme-light.css"
@@ -35,8 +38,8 @@ DEPLOY_LOCK_PATH="${SHARED}/deploy.lock"
 sync_and_reexec_deploy() {
 	local target_sha current_sha lock_target expected_lock_target untracked_files
 
-	if [ "$#" -gt 1 ]; then
-		echo "ERROR: usage: deploy.sh [main]" >&2
+	if [ "$#" -gt 3 ] || [[ ! "$DEPLOY_MODE" =~ ^(deploy|prepare|promote)$ ]] || { [ "$DEPLOY_MODE" = "promote" ] && [[ ! "$CANDIDATE_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$ ]]; } || { [ "$DEPLOY_MODE" != "promote" ] && [ -n "$CANDIDATE_ID" ]; }; then
+		echo "ERROR: usage: deploy.sh [main [deploy|prepare|promote <candidate-id>]]" >&2
 		exit 64
 	fi
 	if [ "$BRANCH" != "main" ]; then
@@ -240,6 +243,7 @@ verify_referral_uri_guard() {
 }
 
 publish_release() {
+	set -e
 	local previous_release="$1"
 	local release_name="$2"
 	local release_commit="$3"
@@ -248,26 +252,16 @@ publish_release() {
 	release_dir="${RELEASES}/${release_name}"
 	current_tmp="${CURRENT}.tmp"
 
-	test -f apps/terminal/.output/server/index.mjs || {
-		echo "ERROR: missing Nitro server output: apps/terminal/.output/server/index.mjs" >&2
-		exit 1
-	}
-	compgen -G "apps/terminal/.output/public/assets/*.js" >/dev/null || {
-		echo "ERROR: build output has no client JavaScript assets." >&2
-		exit 1
-	}
-	test -f "apps/terminal/.output/public${SOCIAL_IMAGE_PATH}" || {
-		echo "ERROR: build output is missing social image: ${SOCIAL_IMAGE_PATH}" >&2
-		exit 1
-	}
-	verify_chart_build_output "apps/terminal/public" "apps/terminal/.output/public" || exit 1
-	node "${REPO}/deploy/mobile-sync-release.mjs" attest-env apps/terminal/.output "${SHARED}/.env.local" "$release_commit" "$release_name" >&2 || exit 1
+	local candidate="${CANDIDATES}/${release_name}"
+	local authorization
+	authorization="$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" || exit 1
+	node "${REPO}/deploy/mobile-sync-release.mjs" check "${candidate}/artifact" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.createAndReveal' "$authorization")" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.importFromQr' "$authorization")" "$release_commit" "$release_name" >&2 || exit 1
+	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
 	prepare_mobile_sync_rollback "$previous_release" || exit 1
 	mkdir -p "$RELEASES"
 	rm -rf "$release_tmp"
 	mkdir -p "$release_tmp"
-	cp -a apps/terminal/.output/. "$release_tmp"/
-	cp deploy/referral-uri-guard.cjs "${release_tmp}/referral-uri-guard.cjs"
+	cp -a "${candidate}/artifact/." "$release_tmp"/ || exit 1
 	if [ -n "$previous_release" ] && [ -d "${previous_release}/public/assets" ] && [ -d "${release_tmp}/public/assets" ]; then
 		echo "Carry forward previous hashed assets from ${previous_release}" >&2
 		find "${previous_release}/public/assets" -maxdepth 1 -type f -exec cp --update=none {} "${release_tmp}/public/assets/" \;
@@ -279,6 +273,11 @@ publish_release() {
 	if grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile"; then
 		node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" closed >&2 || exit 1
 	fi
+	[ ! -e "$release_dir" ] || { echo "ERROR: release already exists" >&2; exit 1; }
+	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
+	mkdir -p "${SHARED}/mobile-sync-publications"
+	printf '%s\n' "$authorization" > "${SHARED}/mobile-sync-publications/${release_name}.json"
+	chmod 0440 "${SHARED}/mobile-sync-publications/${release_name}.json"
 	mv "$release_tmp" "$release_dir"
 
 	ln -sfn "$release_dir" "$current_tmp"
@@ -966,18 +965,37 @@ test -f "$SHARED/.env.local" || { echo "ERROR: missing $SHARED/.env.local"; exit
 test -f "$SHARED/.env.runtime" || { echo "ERROR: missing $SHARED/.env.runtime"; exit 1; }
 clear_inherited_vite_environment
 node deploy/validate-production-env.mjs "$SHARED/.env.local" "$SHARED/.env.runtime" apps/terminal
-cp "$SHARED/.env.local" apps/terminal/.env.local
-
-echo "==> [4/8] Install deps (frozen lockfile)"
-pnpm install --frozen-lockfile
-
-echo "==> [5/8] Build Nitro node-server output (8GB heap)"
+configuration_before="$(node --input-type=module -e 'import {configurationDigest} from "./deploy/mobile-sync-candidate.mjs"; console.log(await configurationDigest(process.argv[1], process.argv[2]))' "$REPO" "$SHARED")"
 build_commit="$(git rev-parse HEAD)"
-build_commit_short="$(git rev-parse --short HEAD)"
-release_name="$(date -u +%Y%m%d%H%M%S)-${build_commit_short}"
-build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-NODE_ENV=production GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
-
+if [ "$DEPLOY_MODE" = "promote" ]; then
+	release_name="$CANDIDATE_ID"
+	node deploy/mobile-sync-candidate.mjs verify "${CANDIDATES}/${release_name}" "$CANDIDATES" "$REPO" "$SHARED" "$build_commit"
+else
+	cp "$SHARED/.env.local" apps/terminal/.env.local
+	if [ "$DEPLOY_MODE" = "deploy" ] && grep -Eq '^[[:space:]]*VITE_MOBILE_PAIRING_(CREATE|IMPORT)_ENABLED[[:space:]]*=[[:space:]]*true[[:space:]]*$' "$SHARED/.env.local"; then
+		echo "ERROR: enabled pairing requires prepare, external device evidence, then promote of the same candidate." >&2
+		exit 1
+	fi
+	echo "==> [4/8] Install deps (frozen lockfile)"
+	pnpm install --frozen-lockfile
+	echo "==> [5/8] Build immutable candidate"
+	release_name="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+	build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	NODE_ENV=production GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
+	test -f "apps/terminal/.output/public${SOCIAL_IMAGE_PATH}"
+	compgen -G "apps/terminal/.output/public/assets/*.js" >/dev/null
+	verify_chart_build_output apps/terminal/public apps/terminal/.output/public
+	node deploy/mobile-sync-release.mjs attest-env apps/terminal/.output "$SHARED/.env.local" "$build_commit" "$release_name"
+	printf '%s\n' "$build_commit" > apps/terminal/.output/.gatu-release-commit
+	printf '%s\n' "$release_name" > apps/terminal/.output/.gatu-release-id
+	printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > apps/terminal/.output/.gatu-release-capabilities
+	[ "$(node --input-type=module -e 'import {configurationDigest} from "./deploy/mobile-sync-candidate.mjs"; console.log(await configurationDigest(process.argv[1], process.argv[2]))' "$REPO" "$SHARED")" = "$configuration_before" ] || { echo "ERROR: configuration changed during build" >&2; exit 1; }
+	node deploy/mobile-sync-candidate.mjs prepare apps/terminal/.output "$CANDIDATES" "$REPO" "$SHARED"
+	if [ "$DEPLOY_MODE" = "prepare" ]; then
+		echo "Candidate ready: ${release_name}. Current release and service were not changed."
+		exit 0
+	fi
+fi
 set -a; . "$SHARED/.env.runtime"; set +a
 
 echo "==> [6/8] Publish immutable release"
@@ -1016,6 +1034,7 @@ if health_check "$PORT" "$build_commit" "$release_name" &&
 	verify_mobile_sync_health "$new_release" "$PORT"; then
 	pin_mobile_sync_baseline "$new_release"
 	cleanup_old_releases
+	node deploy/mobile-sync-candidate.mjs prune "$CANDIDATES" "${SHARED}/mobile-sync-publications" "$CURRENT" "$MOBILE_SYNC_BASELINE" "$KEEP_RELEASES"
 	echo "OK — gatu serving release $(basename "$new_release") on 127.0.0.1:${PORT}, ${GATU_MAINNET_PUBLIC_BASE_URL}, and ${GATU_TESTNET_PUBLIC_BASE_URL} (commit $(git rev-parse --short HEAD))"
 	exit 0
 fi

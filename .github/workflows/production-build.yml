@@ -61,6 +61,7 @@ jobs:
           deploy/validate-caddy-forwarded-headers.test.mjs
           deploy/validate-production-env.test.mjs
           deploy/mobile-sync-release.test.mjs
+          deploy/mobile-sync-candidate.test.mjs
           scripts/validate-mobile-phone-access-device-validation.test.js
           deploy/resolve-client-asset.test.mjs
           scripts/check-client-bundle-budget.test.mjs
@@ -198,6 +199,10 @@ jobs:
 
       - name: Verify actual mobile ticket HTTP protocol and process restart
         run: node deploy/mobile-sync-release.mjs attest apps/terminal/.output "${{ matrix.pairing.create }}" "${{ matrix.pairing.import }}"
+
+      - name: Verify actual Nitro proxy aliases and same-artifact promotion
+        run: |
+          CADDY_BINARY="$RUNNER_TEMP/caddy" MOBILE_SYNC_OUTPUT=apps/terminal/.output node --test deploy/mobile-sync-caddy.test.mjs deploy/mobile-sync-candidate.test.mjs
 
       - name: Record verified mobile artifact identity
         run: |
