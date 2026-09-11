@@ -514,6 +514,20 @@ default beneath the nearest package directory.
   `tests/browser/vite.config.ts` an explicit `node_modules/.vite-browser`
   cache under the terminal package. The paths must be distinct and neither
   may contain the other.
+- Development responses use `Cache-Control: no-cache`, including optimized
+  dependency modules. Browsers may retain response bodies and use ETags, but
+  must revalidate them instead of reusing Vite's year-long immutable responses
+  after the dependency graph changes. This is a dev-server setting only;
+  production `/assets/**` responses remain immutable.
+- Keep `server.strictPort` enabled. Do not start multiple application dev
+  servers in the same checkout, even on different ports: they still share the
+  optimizer cache. Use a separate checkout for another application instance.
+- Ordinary startup uses `pnpm dev --port 3006`. Do not force re-optimization
+  on every startup or delete the optimizer cache while a server is running.
+  When migrating an existing browser from immutable caching, temporarily
+  disable the HTTP cache in DevTools, reload and let all lazy modules finish
+  loading, then restore normal caching and verify an ordinary reload. A hard
+  reload alone may leave asynchronously imported modules using old responses.
 - Do not work around an `Outdated Optimize Dep` response by changing wallet
   login methods, remounting authentication providers, patching SDK internals,
   or adding a second wallet chooser.

@@ -165,7 +165,10 @@ const config = defineConfig({
     'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
   },
   server: {
-    strictPort: false,
+    strictPort: true,
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
   },
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query', 'wagmi'],
