@@ -7,21 +7,27 @@ import {
 } from "@/domain/trade/market-price";
 
 describe("live market price", () => {
-	it("selects a tradable headline midpoint without substituting mark price", () => {
-		expect(
-			selectMarketHeadlinePrice({
-				bboMidPx: "72.1375",
-				allMidsPrice: "72.13",
-				assetCtxMidPx: "72.12",
-			}),
-		).toEqual({ source: "bbo", value: "72.1375" });
-		expect(
-			selectMarketHeadlinePrice({
-				bboMidPx: undefined,
-				allMidsPrice: undefined,
-				assetCtxMidPx: null,
-			}),
-		).toEqual({ source: null, value: undefined });
+	it("selects the context mid and falls back to its mark only for a missing mid", () => {
+		expect(selectMarketHeadlinePrice({ assetCtxMidPx: "72.12", assetCtxMarkPx: "72.5" })).toEqual({
+			source: "assetCtxMid",
+			value: "72.12",
+		});
+		for (const mid of [null, undefined]) {
+			expect(selectMarketHeadlinePrice({ assetCtxMidPx: mid, assetCtxMarkPx: "72.5" })).toEqual({
+				source: "assetCtxMark",
+				value: "72.5",
+			});
+		}
+		for (const mid of ["0", "-1", "NaN"]) {
+			expect(selectMarketHeadlinePrice({ assetCtxMidPx: mid, assetCtxMarkPx: "72.5" })).toEqual({
+				source: null,
+				value: undefined,
+			});
+		}
+		expect(selectMarketHeadlinePrice({ assetCtxMidPx: null, assetCtxMarkPx: null })).toEqual({
+			source: null,
+			value: undefined,
+		});
 	});
 
 	it("uses the exact fast-market key and preserves an explicit null mid", () => {

@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 		name: "@999",
 		pairName: "TOKEN-USDH",
 		markPx: "1.25",
+		midPx: undefined as string | undefined,
 		prevDayPx: "1.0",
 		dayNtlVlm: "12345.67",
 		circulatingSupply: "1000",
@@ -153,6 +154,7 @@ describe("MobileMarketBar", () => {
 			name: "@999",
 			pairName: "TOKEN-USDH",
 			markPx: "1.25",
+			midPx: undefined as string | undefined,
 			prevDayPx: "1.0",
 			dayNtlVlm: "12345.67",
 			circulatingSupply: "1000",
@@ -379,7 +381,7 @@ describe("MobileMarketBar", () => {
 			prevDayPx: "99.0",
 			szDecimals: 5,
 		});
-		mocks.midPx = "100.5";
+		mocks.selectedMarket.midPx = "100.5";
 		mocks.midSnapshot = { revision: 0 };
 
 		renderBar("markets");
@@ -393,7 +395,7 @@ describe("MobileMarketBar", () => {
 		expect(price?.classList.contains("use-color-change")).toBe(false);
 		expect(price?.dataset.direction).toBeUndefined();
 
-		mocks.midPx = "101.0";
+		mocks.selectedMarket.midPx = "101.0";
 		mocks.midSnapshot = { revision: 1 };
 		renderBar("trade");
 		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');
@@ -412,7 +414,7 @@ describe("MobileMarketBar", () => {
 			prevDayPx: "70",
 			szDecimals: 2,
 		});
-		mocks.midPx = "72.1375";
+		mocks.selectedMarket.midPx = "72.1375";
 		mocks.midSnapshot = { revision: 0 };
 
 		renderBar();
@@ -420,7 +422,7 @@ describe("MobileMarketBar", () => {
 		expect(price?.title).toBe("72.138");
 		expect(price?.textContent).toBe("72.138");
 
-		mocks.midPx = "72.138";
+		mocks.selectedMarket.midPx = "72.138";
 		mocks.midSnapshot = { revision: 1 };
 		renderBar();
 		price = container.querySelector<HTMLElement>('[data-boneyard="market-price"] span');

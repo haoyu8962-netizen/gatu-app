@@ -630,51 +630,31 @@ describe("MarketOverview", () => {
 		expect(container.textContent).not.toContain("Mark75");
 	});
 
-	it("keeps the spot headline at native precision and flashes only real same-source price changes", () => {
+	it("keeps the server spot headline at native precision and flashes only real changes", () => {
 		mocks.selectedMarket = createSpotMarket({ name: "@107", pairName: "HYPE-USDC", szDecimals: 2 });
-		mocks.midPx = "72.1375";
-		mocks.midSnapshot = { revision: 0 };
+		mocks.spotCtxStatus = "active";
+		mocks.spotCtxEvent = {
+			coin: "@107",
+			ctx: { markPx: "71", midPx: "72.1375", prevDayPx: "70", dayNtlVlm: "1000", circulatingSupply: "1000" },
+		};
 		renderOverview();
-
 		let price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
 		expect(price?.textContent).toBe("72.138");
-		expect(price?.dataset.priceSource).toBe("bbo");
-		expect(price?.dataset.direction).toBeUndefined();
-		expect(price?.classList.contains("use-color-change")).toBe(false);
-
-		mocks.midPx = "72.138";
-		mocks.midSnapshot = { revision: 1 };
+		expect(price?.dataset.priceSource).toBe("assetCtxMid");
+		mocks.spotCtxEvent = { ...mocks.spotCtxEvent, ctx: { ...mocks.spotCtxEvent.ctx, midPx: "72.138" } };
 		renderOverview();
 		price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
-		expect(price?.textContent).toBe("72.138");
 		expect(price?.dataset.direction).toBe("up");
-		expect(price?.classList.contains("use-color-change")).toBe(true);
-
-		mocks.midPx = "72.137";
-		mocks.midSnapshot = { revision: 2 };
+		mocks.spotCtxEvent = { ...mocks.spotCtxEvent, ctx: { ...mocks.spotCtxEvent.ctx, midPx: "72.137" } };
 		renderOverview();
 		price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
-		expect(price?.textContent).toBe("72.137");
 		expect(price?.dataset.direction).toBe("down");
-	});
-
-	it("establishes a no-flash baseline when the spot headline changes source", () => {
-		mocks.selectedMarket = createSpotMarket({ name: "@107", pairName: "HYPE-USDC", szDecimals: 2 });
-		mocks.midPx = "72.1375";
-		mocks.midSnapshot = { revision: 0 };
+		mocks.spotCtxEvent = { ...mocks.spotCtxEvent, ctx: { ...mocks.spotCtxEvent.ctx, midPx: null } };
 		renderOverview();
-
-		mocks.midPx = undefined;
-		mocks.midSnapshot = undefined;
-		mocks.allMidsStatus = "active";
-		mocks.allMidsEvent = { mids: { "@107": "72.2" } };
-		renderOverview();
-
-		const price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
-		expect(price?.textContent).toBe("72.200");
-		expect(price?.dataset.priceSource).toBe("allMids");
+		price = container.querySelector<HTMLElement>('[data-slot="market-overview-price-value"]');
+		expect(price?.textContent).toBe("71.000");
+		expect(price?.dataset.priceSource).toBe("assetCtxMark");
 		expect(price?.dataset.direction).toBeUndefined();
-		expect(price?.classList.contains("use-color-change")).toBe(false);
 	});
 
 	it("keeps unavailable funding distinct from a real zero rate", () => {
@@ -747,8 +727,8 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 
-		expect(container.textContent).toContain("Price1.3");
-		expect(container.textContent).toContain("24h Change+0.3000 / +30.00%");
+		expect(container.textContent).toContain("Price1.2");
+		expect(container.textContent).toContain("24h Change+0.2000 / +20.00%");
 		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
@@ -796,7 +776,7 @@ describe("MarketOverview", () => {
 		expect(getStat("price").textContent).not.toContain("9");
 	});
 
-	it("fails closed when a fresh spot context has a mark but no midpoint", () => {
+	it("falls back to the fresh spot context mark when its midpoint is null", () => {
 		mocks.selectedMarket = createSpotMarket();
 		mocks.spotCtxStatus = "active";
 		mocks.spotCtxEvent = {
@@ -811,7 +791,7 @@ describe("MarketOverview", () => {
 		};
 		renderOverview();
 
-		expect(getStat("price").textContent).toBe("Price-");
+		expect(getStat("price").textContent).toBe("Price9.0000");
 		expect(getStat("marketCap").textContent).toContain("9,000 USDH");
 	});
 

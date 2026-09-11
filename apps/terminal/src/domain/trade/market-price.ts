@@ -45,7 +45,7 @@ export interface LiveMarketPriceSnapshot {
 
 type MarketValue = string | number | null | undefined;
 
-export type MarketHeadlinePriceSource = "bbo" | "allMids" | "assetCtxMid" | null;
+export type MarketHeadlinePriceSource = "assetCtxMid" | "assetCtxMark" | null;
 
 export interface MarketHeadlinePriceSample {
 	source: MarketHeadlinePriceSource;
@@ -58,17 +58,15 @@ function getPositivePrice(value: unknown): string | undefined {
 }
 
 export function selectMarketHeadlinePrice({
-	bboMidPx,
-	allMidsPrice,
 	assetCtxMidPx,
+	assetCtxMarkPx,
 }: {
-	bboMidPx: MarketValue;
-	allMidsPrice: MarketValue;
 	assetCtxMidPx: MarketValue;
+	assetCtxMarkPx: MarketValue;
 }): MarketHeadlinePriceSample {
-	if (isPositivePrice(bboMidPx)) return { source: "bbo", value: bboMidPx };
-	if (isPositivePrice(allMidsPrice)) return { source: "allMids", value: allMidsPrice };
 	if (isPositivePrice(assetCtxMidPx)) return { source: "assetCtxMid", value: assetCtxMidPx };
+	if (assetCtxMidPx == null && isPositivePrice(assetCtxMarkPx))
+		return { source: "assetCtxMark", value: assetCtxMarkPx };
 	return { source: null, value: undefined };
 }
 

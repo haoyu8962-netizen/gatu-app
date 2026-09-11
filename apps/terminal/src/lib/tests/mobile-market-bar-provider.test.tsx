@@ -5,7 +5,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	MobileMarketBarProvider,
-	selectMobileMarketPrice,
 	useMobileMarketBarSnapshot,
 } from "@/components/trade/mobile/mobile-market-bar-provider";
 
@@ -18,10 +17,12 @@ const mocks = vi.hoisted(() => ({
 	allMidsMaxStaleMs: undefined as number | undefined,
 	allMidsStale: false,
 	allMidsStatus: "active" as "active" | "idle" | "subscribing" | "error",
-	bboMidPx: "100.5" as string | undefined,
+	bboMidPx: "100.25" as string | undefined,
 	bboSnapshot: { revision: 0 } as object | undefined,
 	bboSubscriptions: 0,
 	bboUnsubscriptions: 0,
+	ctxSubscriptions: 0,
+	ctxUnsubscriptions: 0,
 	env: "Mainnet",
 	reconnectListener: undefined as (() => void) | undefined,
 	market: {
@@ -39,6 +40,7 @@ const mocks = vi.hoisted(() => ({
 		markPriceStatus: "success",
 		markPriceReceivedAt: 999_900,
 	},
+	perpReceipt: undefined as { key: string; event: { coin: string; ctx: Record<string, unknown> } } | undefined,
 	perpCtxCoin: "BTC",
 	perpCtxIsStale: false,
 	perpCtxReceivedAt: 999_900 as number | undefined,
@@ -95,6 +97,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({ env: mocks.env, isTestnet: mocks.env === "Testnet" }),
 	useSelectedMarketInfo: () => ({ data: mocks.market }),
 	useSubscription: (method: string, _params: unknown, options: { enabled?: boolean; maxStaleMs?: number } = {}) => {
+		useEffect(() => {
+			if (!options.enabled || !["activeAssetCtx", "activeSpotAssetCtx"].includes(method)) return;
+			mocks.ctxSubscriptions += 1;
+			return () => {
+				mocks.ctxUnsubscriptions += 1;
+			};
+		}, [method, options.enabled]);
 		if (options.enabled === false) {
 			return { data: undefined, isStale: false, lastMessageAt: undefined, status: "idle" };
 		}
@@ -108,8 +117,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 			};
 		}
 		if (method === "activeAssetCtx") {
+			const key = JSON.stringify([mocks.perpCtxCoin, mocks.perpCtx]);
+			if (mocks.perpReceipt?.key !== key)
+				mocks.perpReceipt = { key, event: { coin: mocks.perpCtxCoin, ctx: { ...mocks.perpCtx } } };
 			return {
-				data: { coin: mocks.perpCtxCoin, ctx: mocks.perpCtx },
+				data: mocks.perpReceipt.event,
 				isStale: mocks.perpCtxIsStale,
 				lastMessageAt: mocks.perpCtxReceivedAt,
 				status: mocks.perpCtxStatus,
@@ -169,10 +181,11 @@ describe("MobileMarketBarProvider", () => {
 		mocks.allMidsMaxStaleMs = undefined;
 		mocks.allMidsStale = false;
 		mocks.allMidsStatus = "active";
-		mocks.bboMidPx = "100.5";
-		mocks.bboSnapshot = { revision: 0 };
+		mocks.perpCtx.midPx = "100.25";
 		mocks.bboSubscriptions = 0;
 		mocks.bboUnsubscriptions = 0;
+		mocks.ctxSubscriptions = 0;
+		mocks.ctxUnsubscriptions = 0;
 		mocks.env = "Mainnet";
 		mocks.reconnectListener = undefined;
 		mocks.perpCtxCoin = "BTC";
@@ -231,41 +244,40 @@ describe("MobileMarketBarProvider", () => {
 		return container.querySelector<HTMLOutputElement>("output");
 	}
 
-	it("keeps one BBO subscription and one price snapshot across tab handoff", () => {
+	it("keeps the context price across tab handoff without BBO or allMids subscriptions", () => {
 		let price = render("markets");
-		expect(price?.textContent).toBe("100.5");
-		expect(price?.dataset.source).toBe("bbo");
+		expect(price?.textContent).toBe("100.25");
+		expect(price?.dataset.source).toBe("assetCtxMid");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
 		expect(mocks.bboUnsubscriptions).toBe(0);
-		expect(mocks.allMidsMaxStaleMs).toBe(10_000);
+		expect(mocks.allMidsMaxStaleMs).toBeUndefined();
 
 		price = render("trade");
-		expect(price?.textContent).toBe("100.5");
+		expect(price?.textContent).toBe("100.25");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
 		expect(mocks.bboUnsubscriptions).toBe(0);
 	});
 
 	it("releases market streams on Account and establishes a fresh no-flash baseline on return", () => {
 		let price = render("markets");
-		expect(price?.textContent).toBe("100.5");
-		expect(mocks.bboSubscriptions).toBe(1);
+		expect(price?.textContent).toBe("100.25");
+		expect(mocks.bboSubscriptions).toBe(0);
 		expect(mocks.bboUnsubscriptions).toBe(0);
 
 		price = render("account");
 		expect(price).toBeNull();
-		expect(mocks.bboSubscriptions).toBe(1);
-		expect(mocks.bboUnsubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
+		expect(mocks.bboUnsubscriptions).toBe(0);
 		expect(mocks.reconnectListener).toBeUndefined();
 
-		mocks.bboMidPx = "101.0";
-		mocks.bboSnapshot = { revision: 1 };
+		mocks.perpCtx.midPx = "101.0";
 		price = render("trade");
 		expect(price?.textContent).toBe("101.0");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(2);
-		expect(mocks.bboUnsubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
+		expect(mocks.bboUnsubscriptions).toBe(0);
 		expect(mocks.reconnectListener).toBeTypeOf("function");
 	});
 
@@ -277,11 +289,12 @@ describe("MobileMarketBarProvider", () => {
 				</StrictMode>,
 			),
 		);
-		expect(mocks.bboSubscriptions).toBeGreaterThan(0);
-		expect(mocks.bboUnsubscriptions).toBe(mocks.bboSubscriptions - 1);
+		expect(mocks.bboSubscriptions).toBe(0);
+		expect(mocks.ctxSubscriptions).toBeGreaterThan(0);
+		expect(mocks.ctxUnsubscriptions).toBe(mocks.ctxSubscriptions - 1);
 
 		act(() => root.unmount());
-		expect(mocks.bboUnsubscriptions).toBe(mocks.bboSubscriptions);
+		expect(mocks.ctxUnsubscriptions).toBe(mocks.ctxSubscriptions);
 		root = createRoot(container);
 	});
 
@@ -289,43 +302,39 @@ describe("MobileMarketBarProvider", () => {
 		let price = render("markets");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.bboMidPx = "101.0";
-		mocks.bboSnapshot = { revision: 1 };
+		mocks.perpCtx.midPx = "101.0";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("up");
 
-		mocks.bboMidPx = undefined;
-		mocks.allMidsPrice = "101.5";
+		mocks.perpCtx.midPx = null;
+		mocks.perpCtx.markPx = "101.5";
 		price = render("markets");
-		expect(price?.dataset.source).toBe("allMids");
+		expect(price?.dataset.source).toBe("assetCtxMark");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.allMidsPrice = "101.25";
+		mocks.perpCtx.markPx = "101.25";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("down");
 
-		mocks.bboMidPx = "2000";
-		mocks.bboSnapshot = { revision: 2 };
+		mocks.perpCtx.midPx = "2000";
 		mocks.market.name = "ETH";
+		mocks.perpCtxCoin = "ETH";
 		price = render("markets");
 		expect(price?.textContent).toBe("2000");
 		expect(price?.dataset.direction).toBe("none");
 
 		mocks.env = "Testnet";
-		mocks.bboMidPx = "2001";
-		mocks.bboSnapshot = { revision: 3 };
+		mocks.perpCtx.midPx = "2001";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("none");
 	});
 
 	it("does not animate when only the decimal representation changes", () => {
-		mocks.bboMidPx = "101.0";
-		mocks.bboSnapshot = { revision: 0 };
+		mocks.perpCtx.midPx = "101.0";
 		let price = render("markets");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.bboMidPx = "101.00";
-		mocks.bboSnapshot = { revision: 1 };
+		mocks.perpCtx.midPx = "101.00";
 		price = render("markets");
 		expect(price?.textContent).toBe("101.00");
 		expect(price?.dataset.direction).toBe("none");
@@ -335,8 +344,7 @@ describe("MobileMarketBarProvider", () => {
 		let price = render("markets");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.bboMidPx = "101.0";
-		mocks.bboSnapshot = { revision: 1 };
+		mocks.perpCtx.midPx = "101.0";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("up");
 
@@ -345,13 +353,11 @@ describe("MobileMarketBarProvider", () => {
 		expect(price?.textContent).toBe("101.0");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.bboMidPx = "101.5";
-		mocks.bboSnapshot = { revision: 2 };
+		mocks.perpCtx.midPx = "101.5";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("none");
 
-		mocks.bboMidPx = "102.0";
-		mocks.bboSnapshot = { revision: 3 };
+		mocks.perpCtx.midPx = "102.0";
 		price = render("markets");
 		expect(price?.dataset.direction).toBe("up");
 	});
@@ -427,7 +433,7 @@ describe("MobileMarketBarProvider", () => {
 		expect(price?.dataset.direction).toBe("up");
 	});
 
-	it("fails closed instead of presenting mark price as an unlabeled mid", () => {
+	it("uses the same current context mark when the midpoint is null", () => {
 		mocks.bboMidPx = undefined;
 		mocks.allMidsPrice = undefined;
 		mocks.perpCtx.midPx = null;
@@ -435,12 +441,12 @@ describe("MobileMarketBarProvider", () => {
 		mocks.market.markPx = "177.06";
 
 		const price = render("markets");
-		expect(price?.textContent).toBe("—");
-		expect(price?.dataset.source).toBe("none");
+		expect(price?.textContent).toBe("177.06");
+		expect(price?.dataset.source).toBe("assetCtxMark");
 		expect(price?.dataset.direction).toBe("none");
 	});
 
-	it("uses a fresh spot context mid and never substitutes its different mark price", () => {
+	it("uses the spot context midpoint with an explicit mark fallback", () => {
 		mocks.bboMidPx = undefined;
 		mocks.allMidsPrice = undefined;
 		Object.assign(mocks.market, {
@@ -460,8 +466,8 @@ describe("MobileMarketBarProvider", () => {
 
 		mocks.spotCtx.midPx = null;
 		price = render("markets");
-		expect(price?.textContent).toBe("—");
-		expect(price?.dataset.source).toBe("none");
+		expect(price?.textContent).toBe("0.14");
+		expect(price?.dataset.source).toBe("assetCtxMark");
 		expect(price?.dataset.direction).toBe("none");
 	});
 
@@ -485,39 +491,5 @@ describe("MobileMarketBarProvider", () => {
 		expect(price?.dataset.mark).toBe("0.14");
 		expect(price?.dataset.volume).toBe("none");
 		expect(price?.dataset.direction).toBe("none");
-	});
-});
-
-describe("selectMobileMarketPrice", () => {
-	it("keeps BBO, allMids, and asset context mid as distinct ordered sources", () => {
-		expect(selectMobileMarketPrice({ bboMidPx: "10.5", allMidsPrice: "10.4", assetCtxMidPx: "10.3" })).toEqual({
-			source: "bbo",
-			value: "10.5",
-		});
-		expect(selectMobileMarketPrice({ bboMidPx: undefined, allMidsPrice: "10.4", assetCtxMidPx: "10.3" })).toEqual({
-			source: "allMids",
-			value: "10.4",
-		});
-		expect(
-			selectMobileMarketPrice({ bboMidPx: undefined, allMidsPrice: undefined, assetCtxMidPx: "0.209265" }),
-		).toEqual({ source: "assetCtxMid", value: "0.209265" });
-	});
-
-	it("returns no price when only a semantically different mark value exists", () => {
-		expect(selectMobileMarketPrice({ bboMidPx: undefined, allMidsPrice: undefined, assetCtxMidPx: null })).toEqual({
-			source: null,
-			value: undefined,
-		});
-	});
-
-	it("skips malformed or non-positive prices and fails closed when no valid mid remains", () => {
-		expect(selectMobileMarketPrice({ bboMidPx: "0", allMidsPrice: "10.4", assetCtxMidPx: "10.3" })).toEqual({
-			source: "allMids",
-			value: "10.4",
-		});
-		expect(selectMobileMarketPrice({ bboMidPx: "-1", allMidsPrice: "NaN", assetCtxMidPx: 0 })).toEqual({
-			source: null,
-			value: undefined,
-		});
 	});
 });

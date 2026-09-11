@@ -20,6 +20,7 @@ let hoverMarket = {
 	midPx: "100" as string | undefined,
 	markPriceStatus: "success",
 	markPriceReceivedAt: Date.now(),
+	midPriceReceivedAt: Date.now(),
 };
 
 export function setBrowserOrderbookReference(price: string | undefined, ready = true) {
@@ -29,6 +30,7 @@ export function setBrowserOrderbookReference(price: string | undefined, ready = 
 		midPx: price,
 		markPriceStatus: ready ? "success" : "stale",
 		markPriceReceivedAt: Date.now(),
+		midPriceReceivedAt: Date.now(),
 	};
 	for (const listener of marketListeners) listener();
 }

@@ -27,7 +27,14 @@ vi.mock("@/lib/hyperliquid", () => ({
 			},
 			() => reference.revision,
 		);
-		return { getMarketByName: () => ({ ...reference, kind: "perp", markPriceReceivedAt: Date.now() }) };
+		return {
+			getMarketByName: () => ({
+				...reference,
+				kind: "perp",
+				markPriceReceivedAt: Date.now(),
+				midPriceReceivedAt: Date.now(),
+			}),
+		};
 	},
 }));
 
@@ -158,7 +165,8 @@ describe("compact orderbook cumulative tooltip", () => {
 		expect(content()).toContain("Average Price");
 		reference.midPx = null;
 		notifyReference();
-		expect(content()).toContain("0.2137%");
+		expect(content()).toContain("Distance from mid—");
+		expect(content()).not.toContain("0.2137%");
 		reference.markPriceStatus = "stale";
 		notifyReference();
 		expect(content()).toContain("Distance from mid—");
