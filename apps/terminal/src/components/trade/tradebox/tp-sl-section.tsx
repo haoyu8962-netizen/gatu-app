@@ -408,6 +408,16 @@ function FramedTpSlRow({
 	const unitToggleDisabled = disabled || returnInput?.unitToggleDisabled;
 	const returnError = returnInput?.error;
 	const displayError = error ?? returnError;
+	const estimatedPnl =
+		!displayError && pnl !== null ? (
+			<span
+				data-slot="trade-tpsl-pnl"
+				className={cn("min-w-0 max-w-full text-2xs font-semibold tabular-nums [overflow-wrap:anywhere]", pnlToneClass)}
+				title={t`Estimated PnL after trigger`}
+			>
+				<span className="sr-only">{t`Estimated PnL after trigger`}: </span>≈ {formatPnlValue(pnl)}
+			</span>
+		) : null;
 
 	return (
 		<div className="min-w-0 space-y-1">
@@ -421,9 +431,12 @@ function FramedTpSlRow({
 					{pricePlaceholder}
 				</label>
 				{returnInput && (
-					<label htmlFor={returnInputId} className="min-w-0 text-2xs leading-tight text-trading-panel-subtle">
-						{returnInput.placeholder}
-					</label>
+					<div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-1">
+						<label htmlFor={returnInputId} className="min-w-0 text-2xs leading-tight text-trading-panel-subtle">
+							{returnInput.placeholder}
+						</label>
+						{estimatedPnl}
+					</div>
 				)}
 				<div
 					data-slot="trade-tpsl-input-frame"
@@ -500,12 +513,7 @@ function FramedTpSlRow({
 					{displayError}
 				</p>
 			)}
-			{!displayError && pnl !== null && (
-				<p className="text-2xs tabular-nums text-trading-panel-muted">
-					{t`Estimated PnL after trigger`}{" "}
-					<span className={cn("font-semibold", pnlToneClass)}>{formatPnlValue(pnl)}</span>
-				</p>
-			)}
+			{!returnInput && estimatedPnl}
 		</div>
 	);
 }

@@ -67,6 +67,7 @@ interface Props {
 	onSizeInteractionChange?: (active: boolean) => void;
 	orderEntryData: TradeFormOrderEntryData;
 	visibleValidationErrors: readonly ValidationError[];
+	showTpSlValidation?: boolean;
 	price: number;
 	positionSize: number;
 	swapTargetToken: string | null;
@@ -83,6 +84,7 @@ const inputFrameErrorClass =
 export function TradeFormFields({
 	orderEntryData,
 	visibleValidationErrors,
+	showTpSlValidation = true,
 	price,
 	positionSize,
 	swapTargetToken,
@@ -418,6 +420,7 @@ export function TradeFormFields({
 
 					{capabilities.hasTpSl && canUseTpSl && tpSlEnabled && (
 						<TradeFormTpSl
+							showValidation={showTpSlValidation}
 							assetId={market?.assetId ?? null}
 							marketId={market?.name ?? null}
 							referencePrice={price}

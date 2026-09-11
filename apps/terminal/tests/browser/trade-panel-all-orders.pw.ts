@@ -258,10 +258,13 @@ test("keeps order tabs pinned and real fields reachable after reducing the grid 
 	const initial = await geometry(page);
 	const header = page.locator('[data-slot="trade-panel-header"]');
 	const headerBounds = await header.boundingBox();
-	const fields = page.locator('[data-slot="trade-panel-fields"]');
-	await fields.evaluate((element) => {
+	const body = page.locator('[data-slot="trade-panel-body"]');
+	await body.evaluate((element) => {
 		element.scrollTop = element.scrollHeight;
 	});
+	expect(
+		await page.locator('[data-slot="trade-panel-fields"]').evaluate((element) => getComputedStyle(element).overflowY),
+	).not.toMatch(/auto|scroll/);
 	await expect(page.getByRole("textbox", { name: "Stop loss return", exact: true })).toBeInViewport();
 	await page.getByRole("textbox", { name: "Stop loss return", exact: true }).focus();
 	await expect(page.getByRole("textbox", { name: "Stop loss return", exact: true })).toBeFocused();

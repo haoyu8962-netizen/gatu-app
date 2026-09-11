@@ -2747,6 +2747,7 @@ msgid "Estimated PnL"
 msgstr "预估盈亏"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "触发后预计盈亏"
 

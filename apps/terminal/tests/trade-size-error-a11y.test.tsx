@@ -13,6 +13,8 @@ const desktopState = vi.hoisted(() => ({
 	orderType: "market",
 	orderValue: 200,
 	price: 100,
+	limitPriceInput: "",
+	triggerPriceInput: "",
 	sizeInput: "2",
 	sizeValue: 2,
 }));
@@ -57,7 +59,7 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useLimitPrice: () => "",
+	useLimitPrice: () => desktopState.limitPriceInput,
 	useOrderEntryActions: () => orderActions,
 	useOrderSide: () => "buy",
 	useOrderSize: () => desktopState.sizeInput,
@@ -66,7 +68,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useSizeMode: () => "base",
 	useTif: () => "Gtc",
 	useTpSlEnabled: () => false,
-	useTriggerPrice: () => "",
+	useTriggerPrice: () => desktopState.triggerPriceInput,
 }));
 
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
@@ -85,6 +87,8 @@ describe("order-size error accessibility wiring", () => {
 		desktopState.orderType = "market";
 		desktopState.orderValue = 200;
 		desktopState.price = 100;
+		desktopState.limitPriceInput = "";
+		desktopState.triggerPriceInput = "";
 		desktopState.sizeInput = "2";
 		desktopState.sizeValue = 2;
 		i18n.loadAndActivate({ locale: "en", messages: {} });
@@ -154,6 +158,8 @@ describe("order-size error accessibility wiring", () => {
 		desktopState.orderType = "stopLimit";
 		desktopState.maxSize = 3;
 		desktopState.price = 0;
+		desktopState.limitPriceInput = "0";
+		desktopState.triggerPriceInput = "0";
 		await renderDesktop(root);
 		const triggerInput = container.querySelector<HTMLInputElement>('input[aria-label="Trigger Price (USDC)"]');
 		if (!triggerInput) throw new Error("Expected trigger price input");
@@ -188,6 +194,15 @@ async function renderDesktop(root: Root) {
 		accountReady: desktopState.accountReady,
 		marketReady: desktopState.marketReady,
 		positionReady: true,
+		draft: {
+			size: desktopState.sizeInput,
+			limitPrice: desktopState.limitPriceInput,
+			triggerPrice: desktopState.triggerPriceInput,
+			tpPrice: "",
+			slPrice: "",
+			scaleStartPrice: "",
+			scaleEndPrice: "",
+		},
 	});
 	await act(async () => {
 		root.render(

@@ -25,6 +25,7 @@ import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { isOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
+import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
 import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
@@ -60,7 +61,7 @@ import {
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
-import { getOrderValidationPresentation } from "@/lib/trade/order-validation-presentation";
+import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -633,7 +634,7 @@ export function TradePanel() {
 		);
 	}
 
-	const visibleValidationErrors = getOrderValidationPresentation(validation.validationErrors, {
+	const validationPresentationState = {
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
@@ -643,9 +644,30 @@ export function TradePanel() {
 			!tradeActionsBlocked,
 		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
 		positionReady: positionSnapshotReady,
+		draft: {
+			size: sizeInput,
+			limitPrice: limitPriceInput,
+			triggerPrice: triggerPriceInput,
+			tpPrice: tpPriceInput,
+			slPrice: slPriceInput,
+			scaleStartPrice: scaleStartPriceInput,
+			scaleEndPrice: scaleEndPriceInput,
+		},
+	};
+	const visibleValidationErrors = getOrderValidationPresentation(
+		validation.validationErrors,
+		validationPresentationState,
+	);
+	const inlineTpSlPriceErrors = getTpSlPriceErrors({
+		assetId: market?.assetId ?? null,
+		szDecimals: orderEntryData.szDecimals,
+		referencePrice: price,
+		tpPrice: tpPriceInput,
+		slPrice: slPriceInput,
+		side,
 	});
 	const displayValidationError = visibleValidationErrors
-		.filter((error) => !isOrderSizeValidationError(error))
+		.filter((error) => !isOrderSizeValidationError(error) && !isInlineTpSlValidationError(error, inlineTpSlPriceErrors))
 		.map((error) => error.message)
 		.join(" \u2022 ");
 
@@ -850,6 +872,7 @@ export function TradePanel() {
 				<TradeFormFields
 					orderEntryData={orderEntryData}
 					visibleValidationErrors={visibleValidationErrors}
+					showTpSlValidation={validationPresentationState.accountReady && validationPresentationState.marketReady}
 					price={price}
 					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}

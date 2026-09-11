@@ -2747,6 +2747,7 @@ msgid "Estimated PnL"
 msgstr "الأرباح والخسائر المقدرة"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "الأرباح والخسائر المتوقعة بعد التفعيل"
 

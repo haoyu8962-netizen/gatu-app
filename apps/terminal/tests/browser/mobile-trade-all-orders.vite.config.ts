@@ -9,6 +9,7 @@ export default mergeConfig(
 		cacheDir: fileURLToPath(new URL("../../node_modules/.vite-mobile-trade-all-orders", import.meta.url)),
 		optimizeDeps: { entries: ["mobile-trade-all-orders.html"] },
 		resolve: {
+			dedupe: ["react", "react-dom"],
 			alias: [
 				{ find: /^wagmi$/u, replacement: mock },
 				{ find: /^@\/lib\/hyperliquid$/u, replacement: mock },

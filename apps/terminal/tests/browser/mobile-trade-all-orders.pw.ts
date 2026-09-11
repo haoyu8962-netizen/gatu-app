@@ -323,6 +323,9 @@ for (const viewport of [
 		await expect(page.getByRole("textbox", { name: "止盈", exact: true })).toHaveValue("110");
 		await expectMobileGeometry(page);
 		await page.screenshot({ animations: "disabled", path: test.info().outputPath(`tp-sl-${viewport.width}.png`) });
+		if (viewport.width === 375) {
+			await page.screenshot({ path: test.info().outputPath("mobile-limit-tpsl.png"), animations: "disabled" });
+		}
 		await page.getByRole("button", { name: "Theme", exact: true }).click();
 		await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 		await expectMobileGeometry(page);
@@ -344,6 +347,9 @@ for (const viewport of [
 		const summary = page.locator('[data-slot="mobile-order-summary"]');
 		await expect(summary).toContainText("Trigger Price");
 		await expectMobileGeometry(page);
+		if (viewport.width === 375) {
+			await page.screenshot({ path: test.info().outputPath("mobile-twap-advanced.png"), animations: "disabled" });
+		}
 		await advanced.uncheck();
 		await expect(page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true })).toHaveCount(0);
 		await expect(summary).not.toContainText("Trigger Price");
@@ -461,6 +467,28 @@ test("keeps USDH return inputs usable at 320px in a builder market", async ({ pa
 	});
 	await expectMobileGeometry(page);
 	await page.screenshot({ animations: "disabled", path: test.info().outputPath("tp-sl-usdh-320.png") });
+	await tpPrice.fill("100000000000");
+	const pnl = page.locator('[data-slot="trade-tpsl-pnl"]').first();
+	await expect(pnl).toContainText("USDH");
+	await expect(pnl).toContainText("99,999,999,900");
+	expect(
+		await pnl.evaluate((node) => {
+			const bounds = node.getBoundingClientRect();
+			const parent = node.parentElement?.getBoundingClientRect();
+			const form = node.closest("[data-fixture-form]")?.getBoundingClientRect();
+			return (
+				!!parent &&
+				!!form &&
+				node.scrollWidth <= node.clientWidth + 1 &&
+				bounds.left >= parent.left - 1 &&
+				bounds.right <= parent.right + 1 &&
+				bounds.left >= form.left - 1 &&
+				bounds.right <= form.right + 1
+			);
+		}),
+	).toBe(true);
+	await expectMobileGeometry(page);
+	await page.screenshot({ animations: "disabled", path: test.info().outputPath("tp-sl-usdh-large-320.png") });
 });
 
 test("disables real inputs on missing funding, disconnection and stale data without losing drafts", async ({
@@ -481,13 +509,16 @@ test("disables real inputs on missing funding, disconnection and stale data with
 });
 
 for (const desktop of [false, true]) {
-	test(`preserves ${desktop ? "desktop" : "mobile"} prefill intent across recovery and shows zero TWAP minutes`, async ({ page }) => {
+	test(`preserves ${desktop ? "desktop" : "mobile"} prefill intent across recovery and shows zero TWAP minutes`, async ({
+		page,
+	}) => {
 		await page.setViewportSize(desktop ? { width: 1440, height: 1000 } : { width: 393, height: 852 });
 		await openFixture(page, "?quiet-audit");
 		const form = page.locator("[data-fixture-form]");
 		async function chooseOrder(order: string) {
 			if (!desktop) return selectOrder(page, order);
-			if (order === "Market" || order === "Limit") return form.getByRole("button", { name: order, exact: true }).click();
+			if (order === "Market" || order === "Limit")
+				return form.getByRole("button", { name: order, exact: true }).click();
 			await form.getByRole("button", { name: "Advanced order types", exact: true }).click();
 			await page.getByRole("menuitem", { name: order, exact: true }).click();
 		}
@@ -533,7 +564,10 @@ for (const desktop of [false, true]) {
 		expect((await start.boundingBox())?.width).toBeCloseTo(startBounds?.width ?? 0, 1);
 		await page.getByRole("button", { name: "Market success", exact: true }).click();
 		await expect(start).toHaveValue("90");
-		await form.getByRole("button", { name: /^Use mid price/ }).first().click();
+		await form
+			.getByRole("button", { name: /^Use mid price/ })
+			.first()
+			.click();
 		await expect(start).toHaveValue("100");
 	});
 
@@ -596,15 +630,22 @@ for (const desktop of [false, true]) {
 		const size = form.getByRole("textbox", { name: "Size", exact: true });
 		await size.fill("");
 		await size.blur();
-		await expect(form).toContainText("Enter size");
-		await expect(form.getByText("Enter size", { exact: true })).toHaveCount(1);
+		await expect(form).not.toContainText("Enter size");
+		await expect(size).not.toHaveAttribute("aria-invalid", "true");
+		await expect(form.getByRole("button", { name: desktop ? "Place Long Order" : "Long", exact: true })).toBeDisabled();
+		await size.fill("0.001");
+		await size.blur();
+		await expect(form.getByText("Min order $10", { exact: true })).toHaveCount(1);
+		await expect(size).toHaveAttribute("aria-invalid", "true");
 		await page.getByRole("button", { name: "Market stale", exact: true }).click();
-		await expect(form).not.toContainText("Enter size", { timeout: 500 });
+		await expect(form).not.toContainText("Min order $10", { timeout: 500 });
+		await expect(size).not.toHaveAttribute("aria-invalid", "true");
 		await page.getByRole("button", { name: "Market success", exact: true }).click();
-		await expect(form).toContainText("Enter size");
+		await expect(form.getByText("Min order $10", { exact: true })).toHaveCount(1);
+		await expect(size).toHaveAttribute("aria-invalid", "true");
 		await size.fill("1");
 		await size.blur();
-		await expect(form).not.toContainText("Enter size", { timeout: 500 });
+		await expect(form).not.toContainText("Min order $10", { timeout: 500 });
 		for (const status of ["loading", "stale", "error"]) {
 			await page.getByRole("button", { name: `Account ${status}`, exact: true }).click();
 			await expect(form.getByRole("textbox", { name: "Size", exact: true })).toBeDisabled();

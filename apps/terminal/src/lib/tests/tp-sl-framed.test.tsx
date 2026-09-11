@@ -69,7 +69,11 @@ describe("TpSlSection framed order-panel card", () => {
 		expect(container.querySelector('input[aria-label="Stop loss return"]')).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Set to 25%"]')).toBeNull();
 		expect(container.textContent).not.toContain("Risk/Reward");
-		expect(container.textContent).toContain("Estimated PnL after trigger");
+		const estimates = container.querySelectorAll('[data-slot="trade-tpsl-pnl"]');
+		expect(estimates).toHaveLength(2);
+		expect(estimates[0].textContent).toBe("Estimated PnL after trigger: ≈ +$10.00");
+		expect(estimates[1].textContent).toBe("Estimated PnL after trigger: ≈ -$5.00");
+		expect(estimates[0].getAttribute("title")).toBe("Estimated PnL after trigger");
 	});
 
 	it("keeps permanent field labels and equal compact frames on desktop and mobile", () => {

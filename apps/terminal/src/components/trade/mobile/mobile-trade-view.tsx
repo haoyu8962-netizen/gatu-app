@@ -36,6 +36,7 @@ import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
+import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
 import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
@@ -76,7 +77,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
-import { getOrderValidationPresentation } from "@/lib/trade/order-validation-presentation";
+import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -505,7 +506,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				}),
 	);
 
-	const visibleValidationErrors = getOrderValidationPresentation(validation.validationErrors, {
+	const validationPresentationState = {
 		accountReady:
 			isConnected &&
 			!isWalletLoading &&
@@ -515,9 +516,33 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			!tradeActionsBlocked,
 		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
 		positionReady: positionSnapshotReady,
+		draft: {
+			size: sizeInput,
+			limitPrice: limitPriceInput,
+			triggerPrice,
+			tpPrice,
+			slPrice,
+			scaleStartPrice: scaleStartPriceInput,
+			scaleEndPrice: scaleEndPriceInput,
+		},
+	};
+	const visibleValidationErrors = getOrderValidationPresentation(
+		validation.validationErrors,
+		validationPresentationState,
+	);
+	const inlineTpSlPriceErrors = getTpSlPriceErrors({
+		assetId: market?.assetId ?? null,
+		szDecimals,
+		referencePrice: price,
+		tpPrice,
+		slPrice,
+		side,
 	});
 	const validationSnapshot = {
-		text: visibleValidationErrors.map((error) => error.message).join(" \u2022 "),
+		text: visibleValidationErrors
+			.filter((error) => !isInlineTpSlValidationError(error, inlineTpSlPriceErrors))
+			.map((error) => error.message)
+			.join(" \u2022 "),
 		hasSizeError: hasOrderSizeValidationError(visibleValidationErrors),
 	};
 
@@ -976,6 +1001,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 				{tpSlEnabled && canUseTpSl && (
 					<TradeFormTpSl
+						showValidation={validationPresentationState.accountReady && validationPresentationState.marketReady}
 						assetId={market?.assetId ?? null}
 						marketId={market?.name ?? null}
 						referencePrice={price}

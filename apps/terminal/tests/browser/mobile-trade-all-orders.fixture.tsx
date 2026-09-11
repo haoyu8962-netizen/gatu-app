@@ -2,7 +2,6 @@ import { i18n } from "@lingui/core";
 import { MobileTradeOrderSplit } from "@/components/trade/mobile/mobile-trade-order-split";
 import { MobileTradeView } from "@/components/trade/mobile/mobile-trade-view";
 import { TradeFormFields } from "@/components/trade/tradebox/trade-form-fields";
-import { TradePanel } from "@/components/trade/tradebox/trade-panel";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createI18nRoot } from "@/lib/tests/harness/react";
@@ -18,6 +17,7 @@ import {
 	useOrderType,
 	useSizeMode,
 } from "@/stores/use-order-entry-store";
+import { DesktopOrderEntryGrid } from "./desktop-order-entry-grid.fixture";
 import { setFixtureState, useFixtureState, useSelectedMarketInfo } from "./mobile-trade-all-orders.browser";
 import "./mobile-orderbook-cls.css";
 
@@ -125,7 +125,7 @@ function Fixture() {
 				</button>
 			</nav>
 			<main data-fixture-page className="min-h-0 flex-1 overflow-y-auto">
-				<div className="h-[62px]">{market.pairName}</div>
+				{mobile || !quietAudit ? <div className="h-[62px]">{market.pairName}</div> : null}
 				{mobile ? (
 					<MobileTradeOrderSplit
 						orderbook={
@@ -143,9 +143,7 @@ function Fixture() {
 						</div>
 					</MobileTradeOrderSplit>
 				) : quietAudit ? (
-					<div data-fixture-form className="h-[750px] w-[320px]">
-						<TradePanel />
-					</div>
+					<DesktopOrderEntryGrid />
 				) : (
 					<DesktopFields />
 				)}

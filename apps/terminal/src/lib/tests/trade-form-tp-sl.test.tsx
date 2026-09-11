@@ -101,6 +101,48 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(findInput(container, "Take Profit").value).toBe("84.00");
 	});
 
+	it("keeps an invalid return draft blocked while its passive recovery presentation is quiet", () => {
+		resetPrices({ referencePrice: 80 });
+		act(() => orderActions.setSide("buy"));
+		const tpReturn = findInput(container, "Take profit return");
+		changeInput(tpReturn, "0.01");
+		expect(tpReturnInvalidState).toBe(true);
+		expect(container.textContent).toContain("Invalid amount");
+
+		renderForm({ referencePrice: 80, showValidation: false });
+		expect(tpReturnInvalidState).toBe(true);
+		expect(tpReturn.value).toBe("0.01");
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("false");
+		expect(container.textContent).not.toContain("Invalid amount");
+
+		renderForm({ referencePrice: 80, showValidation: true });
+		expect(tpReturnInvalidState).toBe(true);
+		expect(tpReturn.getAttribute("aria-invalid")).toBe("true");
+		expect(container.textContent).toContain("Invalid amount");
+		act(() => orderActions.setSide("sell"));
+		expect(tpReturnInvalidState).toBe(false);
+		expect(container.textContent).not.toContain("Invalid amount");
+	});
+
+	it("restores local direction feedback after recovery without replacing the price draft", () => {
+		resetPrices({ referencePrice: 80 });
+		act(() => orderActions.setSide("buy"));
+		const tpPrice = findInput(container, "Take Profit");
+		changeInput(tpPrice, "70");
+		expect(container.textContent).toContain("TP must be above entry");
+
+		renderForm({ referencePrice: 80, showValidation: false });
+		expect(tpPrice.value).toBe("70");
+		expect(tpPrice.getAttribute("aria-invalid")).toBe("false");
+		expect(container.textContent).not.toContain("TP must be above entry");
+
+		renderForm({ referencePrice: 80, showValidation: true });
+		expect(findInput(container, "Take Profit")).toBe(tpPrice);
+		expect(tpPrice.value).toBe("70");
+		expect(tpPrice.getAttribute("aria-invalid")).toBe("true");
+		expect(container.textContent).toContain("TP must be above entry");
+	});
+
 	it("preserves and marks a return that rounds to the entry reference as invalid", () => {
 		resetPrices({ referencePrice: 80 });
 		const tpReturn = findInput(container, "Take profit return");
@@ -333,6 +375,6 @@ describe("TradeFormTpSl linked return inputs", () => {
 		expect(tpReturn.disabled).toBe(false);
 		expect(toggle?.disabled).toBe(true);
 		changeInput(findInput(container, "Take Profit"), "105");
-		expect(container.textContent).not.toContain("Estimated PnL after trigger");
+		expect(container.querySelector('[data-slot="trade-tpsl-pnl"]')).toBeNull();
 	});
 });

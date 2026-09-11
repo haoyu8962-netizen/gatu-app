@@ -2747,6 +2747,7 @@ msgid "Estimated PnL"
 msgstr "PnL estimé"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Estimated PnL after trigger"
 msgstr "PnL estimé après déclenchement"
 
