@@ -52,7 +52,7 @@ for (const viewport of [
 			if (mode === "twap") {
 				await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("110");
 				await page.getByRole("textbox", { name: "Max Price (USDC)", exact: true }).fill("120");
-				await expect(page.getByText("Activates when mark ≥ 110")).toBeVisible();
+				await expect(page.getByText("Activates when mark ≥ 110", { exact: true })).toBeVisible();
 				expect((await geometry(page)).fieldsOverflow).toBeLessThanOrEqual(1);
 				const twapHeight = (await geometry(page)).height;
 				for (let tick = 0; tick < 3; tick++) {
@@ -82,3 +82,30 @@ for (const viewport of [
 		expect(errors).toEqual([]);
 	});
 }
+
+test("preserves wrapped TWAP hint height when the mark reaches the trigger", async ({ page }) => {
+	await page.setViewportSize({ width: 320, height: 568 });
+	await page.goto("/mobile-trade-height.html");
+	await page.getByRole("button", { name: "twap", exact: true }).click();
+	await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("110000000000000");
+	const hint = page.locator('[data-slot="mobile-order-entry-scroll"] p');
+	await expect(hint).toContainText("Activates when mark");
+	const before = await hint.evaluate((node) => ({
+		height: node.getBoundingClientRect().height,
+		line: parseFloat(getComputedStyle(node).lineHeight),
+	}));
+	expect(before.height).toBeGreaterThan(before.line);
+	await page.getByRole("button", { name: "Quote", exact: true }).click();
+	expect(await hint.evaluate((node) => node.getBoundingClientRect().height)).toBe(before.height);
+	await expect(hint.locator("span:visible")).toHaveCount(0);
+	await page.getByRole("button", { name: "Quote", exact: true }).click();
+	expect(await hint.evaluate((node) => node.getBoundingClientRect().height)).toBe(before.height);
+	await expect(hint.locator("span:visible")).toHaveText("Activates when mark ≤ 110000000000000");
+	await expect(hint.locator('span[aria-hidden="false"]')).toHaveCount(1);
+	await page.getByRole("button", { name: "Quote", exact: true }).click();
+	expect(await hint.evaluate((node) => node.getBoundingClientRect().height)).toBe(before.height);
+	await expect(hint.locator("span:visible")).toHaveCount(0);
+	await expect(hint.locator('span[aria-hidden="false"]')).toHaveCount(0);
+	await page.getByRole("textbox", { name: "Trigger Price (USDC)", exact: true }).fill("");
+	await expect(hint).toHaveCount(0);
+});

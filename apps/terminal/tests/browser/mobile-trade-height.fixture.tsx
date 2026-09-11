@@ -5,10 +5,12 @@ import { MobileTradeScrollArea } from "@/components/trade/mobile/mobile-trade-sc
 import { TradeFormTwap } from "@/components/trade/tradebox/trade-form-twap";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages } from "@/locales/en/messages.po";
+import { useTwapTriggerPrice } from "@/stores/use-order-entry-store";
 import "./mobile-orderbook-cls.css";
 
 function Fixture() {
 	const [mark, setMark] = useState(100);
+	const triggerPrice = useTwapTriggerPrice();
 	const [mode, setMode] = useState("market");
 	const [feedback, setFeedback] = useState(false);
 	const [requests, setRequests] = useState(0);
@@ -20,7 +22,15 @@ function Fixture() {
 						{value}
 					</button>
 				))}
-				<button type="button" onClick={() => setMark((value) => (value === 100 ? 110 : value === 110 ? 120 : 100))}>
+				<button
+					type="button"
+					onClick={() =>
+						setMark((value) => {
+							const trigger = Number(triggerPrice);
+							return value === trigger ? trigger + 1 : value === trigger + 1 ? 0 : trigger;
+						})
+					}
+				>
 					Quote
 				</button>
 				<button type="button" onClick={() => setFeedback((value) => !value)}>

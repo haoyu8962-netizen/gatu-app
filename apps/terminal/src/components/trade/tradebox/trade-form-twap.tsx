@@ -79,9 +79,10 @@ export function TradeFormTwap({
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
 	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
 	const triggerPrice = triggerPx ?? "";
-	let triggerHint = "";
-	if (triggerDirection === "above") triggerHint = t`Activates when mark ≥ ${triggerPrice}`;
-	if (triggerDirection === "below") triggerHint = t`Activates when mark ≤ ${triggerPrice}`;
+	const aboveTriggerHint = t`Activates when mark ≥ ${triggerPrice}`;
+	const belowTriggerHint = t`Activates when mark ≤ ${triggerPrice}`;
+	const triggerHint =
+		triggerDirection === "above" ? aboveTriggerHint : triggerDirection === "below" ? belowTriggerHint : "";
 	const hoursLabel = t`Hour(s)`;
 	const minutesLabel = t`Minute(s)`;
 	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass, desktop && "h-9 px-2.5");
@@ -168,7 +169,26 @@ export function TradeFormTwap({
 					/>
 				</div>
 				{(triggerHint || (mobileSafe && triggerPx !== null)) && (
-					<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "min-h-[1lh]")}>{triggerHint}</p>
+					<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "grid")}>
+						{mobileSafe ? (
+							<>
+								<span
+									aria-hidden={triggerDirection !== "above"}
+									className={cn("col-start-1 row-start-1", triggerDirection !== "above" && "invisible")}
+								>
+									{aboveTriggerHint}
+								</span>
+								<span
+									aria-hidden={triggerDirection !== "below"}
+									className={cn("col-start-1 row-start-1", triggerDirection !== "below" && "invisible")}
+								>
+									{belowTriggerHint}
+								</span>
+							</>
+						) : (
+							triggerHint
+						)}
+					</p>
 				)}
 			</div>
 			<div className={cn(priceFieldClass, disabled && "opacity-50")}>
