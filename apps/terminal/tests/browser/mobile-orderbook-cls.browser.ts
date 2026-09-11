@@ -14,6 +14,11 @@ const selectedMarket = {
 	data: {
 		kind: "perp",
 		markPx: "100.05",
+		midPx: "100.05",
+		markPriceStatus: "success",
+		get midPriceReceivedAt() {
+			return Date.now();
+		},
 		name: "CLS_HYPE",
 		pairName: "CLS_HYPE-USDC",
 		szDecimals: 2,

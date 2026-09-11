@@ -4,6 +4,7 @@ import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	type OrderbookFeedSnapshot,
 	type OrderbookFeedSource,
@@ -236,7 +237,7 @@ export function MobileBookView({
 		midPx: liveBboMid,
 		isStale: isBboStale,
 		status: bboStatus,
-	} = useOrderbookMidPrice(isBookViewActive ? name : undefined);
+	} = useOrderbookMidPrice(isBookViewActive && !compact ? name : undefined);
 	const bboMid = bboStatus === "active" && !isBboStale ? liveBboMid : undefined;
 
 	useEffect(() => {
@@ -275,15 +276,25 @@ export function MobileBookView({
 		() => getRawSpreadInfo(book?.levels, { bboMid, eventSpread: book?.spread }),
 		[bboMid, book?.levels, book?.spread],
 	);
-	const mid = spreadInfo?.mid ?? bboMid;
+	const serverMid = selectedMarket?.midPx ?? undefined;
+	const mid =
+		isBookViewActive &&
+		isLiveMarkPriceReady(selectedMarket?.markPriceStatus ?? "idle", serverMid, selectedMarket?.midPriceReceivedAt)
+			? serverMid
+			: undefined;
+	const midIdentity = `${env}:${name}`;
 
 	const [midDirection, setMidDirection] = useState<"up" | "down" | "flat">("flat");
 	const lastMidRef = useRef<{ key: string | null; value: string | undefined }>({ key: null, value: undefined });
 
 	useEffect(() => {
 		const midValue = toBig(mid);
-		if (!midValue) return;
-		const key = bookCacheKey;
+		if (!midValue) {
+			lastMidRef.current = { key: null, value: undefined };
+			setMidDirection("flat");
+			return;
+		}
+		const key = midIdentity;
 		const last = lastMidRef.current;
 		if (last.key !== key) {
 			setMidDirection("flat");
@@ -299,7 +310,7 @@ export function MobileBookView({
 			else setMidDirection("flat");
 		}
 		lastMidRef.current = { key, value: mid };
-	}, [bookCacheKey, mid]);
+	}, [midIdentity, mid]);
 
 	const spreadText = spreadInfo
 		? `${formatNumber(spreadInfo.spread, displayPriceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`

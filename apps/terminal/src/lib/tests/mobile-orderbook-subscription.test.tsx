@@ -52,6 +52,9 @@ const mocks = vi.hoisted(() => ({
 	market: {
 		kind: "perp",
 		markPx: "100",
+		midPx: "100.25" as string | null | undefined,
+		markPriceStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
+		midPriceReceivedAt: Date.now() as number | undefined,
 		name: "MOBILE_A",
 		pairName: "MOBILE_A-USDC",
 		szDecimals: 2,
@@ -164,6 +167,9 @@ describe("mobile orderbook subscription lifecycle", () => {
 		mocks.market = {
 			kind: "perp",
 			markPx: "100",
+			midPx: "100.25" as string | null | undefined,
+			markPriceStatus: "success" as "idle" | "loading" | "success" | "stale" | "error",
+			midPriceReceivedAt: Date.now() as number | undefined,
 			name: marketName,
 			pairName: `${marketName}-USDC`,
 			szDecimals: 2,
@@ -517,10 +523,58 @@ describe("mobile orderbook subscription lifecycle", () => {
 		});
 	});
 
+	it("uses server mid independently of BBO and book prices without a compact BBO subscription", () => {
+		render();
+		const price = () => container.querySelector('[data-slot="compact-orderbook-mid-price"]')?.textContent;
+		expect(price()).toBe("$100.25");
+		expect(mocks.midPriceCoins.every((coin) => coin === undefined)).toBe(true);
+		mocks.market.midPx = "105";
+		render();
+		expect(price()).toBe("$105.00");
+		mocks.market.midPx = null;
+		render();
+		expect(price()).toBe("-");
+		mocks.market.midPx = "98";
+		render();
+		expect(price()).toBe("$98.00");
+		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')?.getAttribute("data-direction")).toBe("flat");
+	});
+
+	it.each(["idle", "loading", "stale", "error"] as const)(
+		"hides server mid during %s and restores it on recovery",
+		(status) => {
+			mocks.market.markPriceStatus = status;
+			render();
+			expect(container.querySelector('[data-slot="compact-orderbook-mid-price"]')?.textContent).toBe("-");
+			mocks.market.markPriceStatus = "success";
+			render();
+			expect(container.querySelector('[data-slot="compact-orderbook-mid-price"]')?.textContent).toBe("$100.25");
+		},
+	);
+
+	it.each([undefined, Date.now() - 60_000])("hides a server mid without a current receipt: %s", (receivedAt) => {
+		mocks.market.midPriceReceivedAt = receivedAt;
+		render();
+		expect(container.querySelector('[data-slot="compact-orderbook-mid-price"]')?.textContent).toBe("-");
+	});
+
+	it("establishes a new direction baseline when the selected market changes", () => {
+		render();
+		mocks.market = { ...mocks.market, name: "NEXT", midPx: "200", kind: "spot" };
+		render();
+		expect(container.querySelector('[data-slot="compact-orderbook-mid-price"]')?.textContent).toBe("$200.00");
+		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')?.getAttribute("data-direction")).toBe("flat");
+	});
+
+	it("keeps BBO available for the ordinary split spread", () => {
+		render({ compact: false });
+		expect(mocks.midPriceCoins.at(-1)).toBe(mocks.market.name);
+	});
+
 	it("keeps an inactive book warm for ten seconds and then releases the subscription", () => {
 		render({ active: true });
 		expect(latestL2SubscriptionCall().options.enabled).toBe(true);
-		expect(mocks.midPriceCoins.at(-1)).toBe(mocks.market.name);
+		expect(mocks.midPriceCoins.at(-1)).toBeUndefined();
 
 		vi.useFakeTimers();
 		render({ active: false });
