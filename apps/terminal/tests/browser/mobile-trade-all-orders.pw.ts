@@ -219,6 +219,81 @@ for (const viewport of [
 		}
 	});
 
+	test(`aligns TWAP options and isolates every touch target at ${viewport.width}px`, async ({ page }) => {
+		await page.setViewportSize(viewport);
+		await openFixture(page);
+		await selectOrder(page, "TWAP");
+		const group = page.locator('[data-slot="trade-twap-options"]');
+		const checks = group.getByRole("checkbox");
+		await expect(checks).toHaveCount(3);
+		for (const locale of ["English", "中文"]) {
+			await page.getByRole("button", { name: locale, exact: true }).click();
+			if (locale === "中文") await page.getByRole("button", { name: "Theme", exact: true }).click();
+			await group.scrollIntoViewIfNeeded();
+			const metrics = await group.evaluate((node) => {
+				const labels = [...node.querySelectorAll("label")];
+				return {
+					height: node.getBoundingClientRect().height,
+					rows: labels.map((label) => {
+						const box = label.querySelector('[role="checkbox"]');
+						if (!box) throw new Error("Missing checkbox");
+						const row = label.getBoundingClientRect();
+						const rect = box.getBoundingClientRect();
+						return {
+							x: rect.x,
+							y: row.y,
+							height: row.height,
+							boxWidth: rect.width,
+							boxHeight: rect.height,
+							gap: getComputedStyle(label).columnGap,
+							hits: [rect.x + rect.width / 2, row.x + row.width / 2].flatMap((x) =>
+								[row.top + 1, row.bottom - 1].map((y) => document.elementFromPoint(x, y)?.closest("label") === label),
+							),
+						};
+					}),
+				};
+			});
+			expect(metrics.height).toBe(72);
+			for (const [index, row] of metrics.rows.entries()) {
+				expect(row).toMatchObject({
+					x: metrics.rows[0].x,
+					y: metrics.rows[0].y + 24 * index,
+					height: 24,
+					boxWidth: 16,
+					boxHeight: 16,
+					gap: "8px",
+					hits: [true, true, true, true],
+				});
+			}
+			for (let index = 0; index < 3; index++) {
+				const before = await checks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-checked")));
+				const checkbox = checks.nth(index);
+				for (const edge of ["top", "bottom"]) {
+					await checkbox.scrollIntoViewIfNeeded();
+					const rect = await checkbox.boundingBox();
+					if (!rect) throw new Error("Missing checkbox bounds");
+					await page.touchscreen.tap(rect.x + rect.width / 2, edge === "top" ? rect.y - 3 : rect.y + rect.height + 3);
+					const expected = before.map((value, other) =>
+						other === index && edge === "top" ? String(value !== "true") : value,
+					);
+					await expect
+						.poll(() => checks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-checked"))))
+						.toEqual(expected);
+				}
+			}
+			await expectMobileGeometry(page);
+			await page.screenshot({
+				animations: "disabled",
+				path: test.info().outputPath(`twap-options-${viewport.width}-${locale}.png`),
+			});
+		}
+		await page.getByRole("button", { name: "Funding", exact: true }).click();
+		await expect(checks.nth(0)).toBeDisabled();
+		await expect(checks.nth(1)).toBeDisabled();
+		await expect(checks.nth(2)).toBeEnabled();
+		await expect(page.getByRole("status", { name: "Captured orders", exact: true })).toHaveText("[]");
+	});
+
 	test(`keeps every TP/SL field labelled and independently selectable at ${viewport.width}px`, async ({ page }) => {
 		await page.setViewportSize(viewport);
 		await openFixture(page);

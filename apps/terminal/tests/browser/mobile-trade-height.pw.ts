@@ -155,10 +155,14 @@ for (const width of [320, 393, 768]) {
 			}),
 		);
 		for (const rect of rects) {
-			expect(rect.height).toBeGreaterThanOrEqual(32);
+			expect(rect.height).toBeGreaterThanOrEqual(24);
 			expect(rect.overflow).toBeLessThanOrEqual(1);
 		}
-		expect(rects[0].right <= rects[1].x || rects[0].bottom <= rects[1].y).toBe(true);
+		expect(rects).toHaveLength(3);
+		for (let index = 1; index < rects.length; index++) {
+			expect(rects[index].x).toBe(rects[0].x);
+			expect(rects[index].y).toBeGreaterThanOrEqual(rects[index - 1].bottom);
+		}
 		expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 		const current = await geometry(page);
 		expect(current.fieldsOverflow).toBeLessThanOrEqual(1);
