@@ -63,9 +63,6 @@ describe("TradeHeader mobile margin actions", () => {
 		const onMarginLeverageClick = vi.fn();
 		renderHeader({ onMarginModeClick, onLeverageClick, onMarginLeverageClick });
 		const controlGrid = container.querySelector(".grid");
-		expect(controlGrid?.className).toContain(
-			"grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)]",
-		);
 		expect(controlGrid?.querySelectorAll("button")).toHaveLength(3);
 		expect(container.querySelector('button[aria-label="Account mode"]')).toBeNull();
 		expect(container.querySelector(".trade-card-label-compact")).toBeNull();

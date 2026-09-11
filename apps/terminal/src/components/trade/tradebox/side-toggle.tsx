@@ -15,9 +15,10 @@ interface Props {
 	labels: SideLabels;
 	compact?: boolean;
 	tradingPanel?: boolean;
+	mobileTouchTargets?: boolean;
 }
 
-export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }: Props) {
+export function SideToggle({ side, onSideChange, labels, compact, tradingPanel, mobileTouchTargets }: Props) {
 	const indicatorClassName = cn(
 		"shadow-none",
 		tradingPanel
@@ -29,7 +30,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 				: "border-stroke-error-strong bg-error-soft",
 	);
 
-	return (
+	const control = (
 		<SegmentedControls
 			value={side}
 			onValueChange={(v: string) => onSideChange(v as Side)}
@@ -37,6 +38,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 			className={cn(
 				compact ? "mb-0" : "mb-2",
 				tradingPanel && "rounded-[10px] border-trading-panel-stroke-card bg-surface",
+				mobileTouchTargets && "overflow-visible",
 			)}
 			indicatorClassName={indicatorClassName}
 		>
@@ -66,4 +68,6 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 			</SegmentedControlItem>
 		</SegmentedControls>
 	);
+
+	return mobileTouchTargets ? <div className="py-[5px]">{control}</div> : control;
 }

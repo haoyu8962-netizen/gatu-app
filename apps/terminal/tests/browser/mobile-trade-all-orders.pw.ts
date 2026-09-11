@@ -63,6 +63,46 @@ async function expectMobileGeometry(page: Page) {
 		.toEqual([]);
 }
 
+async function expectHeaderHitTargets(page: Page) {
+	const controls = page.locator('[data-fixture-form] [aria-haspopup="dialog"], [data-fixture-form] [role="tab"]');
+	const orderType = page.getByRole("button", { name: /^(Order type|订单类型)$/ });
+	const headerControls = [orderType, ...(await controls.all())];
+	expect(headerControls).toHaveLength(5);
+	for (const control of headerControls) {
+		const geometry = await control.evaluate((node) => {
+			const rect = node.getBoundingClientRect();
+			const centerY = rect.top + rect.height / 2;
+			return {
+				height: rect.height,
+				width: rect.width,
+				hits: [rect.left + 2, rect.right - 2].flatMap((x) =>
+					[centerY - 21, centerY, centerY + 21].map((y) => document.elementFromPoint(x, y)?.closest("button") === node),
+				),
+			};
+		});
+		expect(geometry.width).toBeGreaterThanOrEqual(44);
+		expect(geometry.height).toBe((await control.getAttribute("role")) === "tab" ? 32 : 36);
+		expect(geometry.hits).toEqual([true, true, true, true, true, true]);
+	}
+	const available = page.getByRole("button", { name: /^(Available|可用)/ });
+	expect(
+		await available.evaluate((node) => {
+			const rect = node.getBoundingClientRect();
+			return (
+				document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2 - 21)?.closest("button") ===
+				node
+			);
+		}),
+	).toBe(true);
+	expect(
+		await orderType.evaluate((node) => {
+			const rect = node.getBoundingClientRect();
+			const arrow = node.querySelector("svg")?.getBoundingClientRect();
+			return !!arrow && arrow.width >= 12 && arrow.left >= rect.left && arrow.right <= rect.right;
+		}),
+	).toBe(true);
+}
+
 async function expectInputHitTarget(page: Page, name: string) {
 	const input = page.getByRole("textbox", { name, exact: true });
 	await input.scrollIntoViewIfNeeded();
@@ -100,6 +140,7 @@ for (const viewport of [
 			await selectOrder(page, order);
 			await expect(page.getByRole("textbox", { name: "Size", exact: true })).toBeVisible();
 			await expectMobileGeometry(page);
+			await expectHeaderHitTargets(page);
 			await expect(page.getByRole("button", { name: "Cross", exact: true })).toBeVisible();
 			await expect(page.getByRole("button", { name: "10x", exact: true })).toBeVisible();
 		}
@@ -108,6 +149,34 @@ for (const viewport of [
 			await page.getByRole("button", { name: "订单类型", exact: true }).click();
 			await page.getByRole("menuitem", { name: order, exact: true }).click();
 			await expectMobileGeometry(page);
+			await expectHeaderHitTargets(page);
+		}
+	});
+
+	test(`activates mobile side controls beyond their visible bounds at ${viewport.width}px`, async ({ page }) => {
+		await page.setViewportSize(viewport);
+		await openFixture(page);
+		await selectOrder(page, "TWAP");
+		const size = page.getByRole("textbox", { name: "Size", exact: true });
+		await size.fill("1");
+		await size.blur();
+		const tabs = page.locator('[data-fixture-form] [role="tab"]');
+		for (const dark of [false, true]) {
+			if (dark) await page.getByRole("button", { name: "Theme", exact: true }).click();
+			await expectHeaderHitTargets(page);
+			for (const index of [1, 0]) {
+				const tab = tabs.nth(index);
+				const rect = await tab.boundingBox();
+				if (!rect) throw new Error("Missing side control");
+				await page.touchscreen.tap(rect.x + rect.width / 2, rect.y + rect.height / 2 + (index ? -21 : 21));
+				await expect(tab).toHaveAttribute("aria-selected", "true");
+				await expect(size).toHaveValue("1");
+			}
+			await expectMobileGeometry(page);
+			await page.screenshot({
+				animations: "disabled",
+				path: test.info().outputPath(`header-${viewport.width}-${dark ? "dark" : "light"}.png`),
+			});
 		}
 	});
 

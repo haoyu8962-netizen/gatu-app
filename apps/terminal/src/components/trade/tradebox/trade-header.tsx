@@ -113,7 +113,7 @@ export function TradeHeader({
 	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
 	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
-		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
+		"relative flex h-9 min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
 		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
@@ -125,7 +125,9 @@ export function TradeHeader({
 				<div
 					className={cn(
 						"grid min-w-0 gap-1 bg-surface",
-						isLeveraged ? "grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_2.75rem]" : "grid-cols-1",
+						isLeveraged
+							? "grid-cols-[minmax(2.75rem,1fr)_minmax(2.75rem,max-content)_minmax(2.75rem,max-content)]"
+							: "grid-cols-1",
 					)}
 				>
 					<Dropdown
@@ -152,7 +154,7 @@ export function TradeHeader({
 							<button
 								type="button"
 								onClick={handleMarginModeClick}
-								className={cn(mobileControlClass, "justify-center")}
+								className={cn(mobileControlClass, "max-w-18 justify-center")}
 								aria-haspopup="dialog"
 							>
 								<span className="truncate">{marginLabel}</span>
@@ -171,7 +173,14 @@ export function TradeHeader({
 					)}
 				</div>
 
-				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
+				<SideToggle
+					side={side}
+					onSideChange={onSideChange}
+					labels={sideLabels}
+					compact={compact}
+					tradingPanel
+					mobileTouchTargets
+				/>
 			</div>
 		);
 	}
