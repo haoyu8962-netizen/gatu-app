@@ -59,7 +59,9 @@ const testState = {
 	depositUnavailableReason: null as string | null,
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
+	hasExistingBridgeExecution: false,
 	hasWalletAccess: true,
+	hideFundsDisabledReasons: false,
 	isConnected: true,
 	isDataStale: false,
 	isLoading: false,
@@ -156,8 +158,25 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 	},
 }));
 
+vi.mock("@/hooks/trade/use-funds-action-availability", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/hooks/trade/use-funds-action-availability")>();
+	return {
+		...original,
+		useFundsActionAvailability: (input: Parameters<typeof original.useFundsActionAvailability>[0]) => {
+			const availability = original.useFundsActionAvailability(input);
+			return testState.hideFundsDisabledReasons
+				? {
+						...availability,
+						withdrawal: { ...availability.withdrawal, unavailableReason: null },
+						internalTransfer: { ...availability.internalTransfer, unavailableReason: null },
+					}
+				: availability;
+		},
+	};
+});
+
 vi.mock("@/lib/lifi/bridge-execution-state", () => ({
-	useHasExistingBridgeExecution: () => false,
+	useHasExistingBridgeExecution: () => testState.hasExistingBridgeExecution,
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -203,7 +222,9 @@ describe("desktop account panel", () => {
 		testState.depositUnavailableReason = null;
 		testState.geoStatus = "allowed";
 		testState.hasError = false;
+		testState.hasExistingBridgeExecution = false;
 		testState.hasWalletAccess = true;
+		testState.hideFundsDisabledReasons = false;
 		testState.isConnected = true;
 		testState.isDataStale = false;
 		testState.isLoading = false;
@@ -336,6 +357,134 @@ describe("desktop account panel", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
 		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+	});
+
+	it("places one funding action group before the overview and keeps the Account heading accessible only", () => {
+		renderPanel();
+		const groups = container.querySelectorAll('[data-slot="account-panel-actions"]');
+		expect(groups).toHaveLength(1);
+		const actions = groups[0];
+		const overview = container.querySelector("section[aria-labelledby]");
+		expect(overview).not.toBeNull();
+		expect(actions.compareDocumentPosition(overview as Element) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(container.querySelector("h2")?.textContent).toBe("Account");
+		expect(container.querySelector("h2")?.classList.contains("sr-only")).toBe(true);
+
+		const deposit = findButton(container, "Deposit");
+		const withdraw = findButton(container, "Withdraw");
+		const transfer = findButton(container, "Perps / Spot");
+		const primaryRow = deposit.closest(".grid");
+		expect(primaryRow).not.toBeNull();
+		expect(primaryRow?.classList.contains("grid-cols-2")).toBe(true);
+		expect(primaryRow?.classList.contains("gap-2")).toBe(true);
+		expect(Array.from(primaryRow?.querySelectorAll("button") ?? [], (button) => button.textContent)).toEqual([
+			"Deposit",
+			"Withdraw",
+		]);
+		expect(primaryRow?.contains(transfer)).toBe(false);
+		expect(withdraw.compareDocumentPosition(transfer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(transfer.classList.contains("w-full")).toBe(true);
+		for (const button of [deposit, withdraw, transfer]) expect(actions.contains(button)).toBe(true);
+	});
+
+	it("does not duplicate or leave bottom funding controls when connection and account states change", () => {
+		for (const state of [
+			{ connected: true, mode: "disabled", status: "success" },
+			{ connected: true, mode: "unifiedAccount", status: "success" },
+			{ connected: true, mode: "portfolioMargin", status: "success" },
+			{ connected: false, mode: "disabled", status: "success" },
+			{ connected: true, mode: "disabled", status: "loading" },
+			{ connected: true, mode: "disabled", status: "stale" },
+			{ connected: true, mode: "disabled", status: "success" },
+		]) {
+			testState.isConnected = state.connected;
+			testState.hasWalletAccess = state.connected;
+			testState.accountAbstraction = state.mode;
+			testState.perpStateStatus = state.status;
+			testState.isLoading = state.status === "loading";
+			testState.isDataStale = state.status === "stale";
+			renderPanel();
+			const overview = container.querySelector("section[aria-labelledby]");
+			expect(overview).not.toBeNull();
+			for (const label of ["Deposit", "Withdraw"]) {
+				const matches = Array.from(container.querySelectorAll("button")).filter(
+					(button) => button.textContent === label,
+				);
+				expect(matches).toHaveLength(1);
+				expect(matches[0].compareDocumentPosition(overview as Element) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+			}
+			expect(container.querySelectorAll('[data-slot="account-panel-actions"]')).toHaveLength(state.connected ? 1 : 0);
+			expect(
+				Array.from(container.querySelectorAll("button")).filter((button) => button.textContent === "Perps / Spot"),
+			).toHaveLength(state.connected ? 1 : 0);
+		}
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+	});
+
+	it.each(["unifiedAccount", "portfolioMargin"])(
+		"keeps the relocated transfer inactive in %s and restores its route in separate mode",
+		(accountAbstraction) => {
+			testState.accountAbstraction = accountAbstraction;
+			renderPanel();
+			const transfer = findButton(container, "Perps / Spot");
+			expectActionDisabled(transfer);
+			expect(transfer.closest('[data-slot="account-panel-actions"]')).not.toBeNull();
+			act(() => transfer.click());
+			expect(modalActions.openTransfer).not.toHaveBeenCalled();
+			act(() => findButton(container, "Deposit").click());
+			act(() => findButton(container, "Withdraw").click());
+			expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
+			expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+			testState.accountAbstraction = "disabled";
+			renderPanel();
+			act(() => findButton(container, "Perps / Spot").click());
+			expect(modalActions.openTransfer).toHaveBeenCalledExactlyOnceWith("toPerp");
+		},
+	);
+
+	it("disables unavailable transfers and withdrawals independently of their explanation text", () => {
+		testState.hasError = true;
+		testState.perpStateStatus = "error";
+		testState.hideFundsDisabledReasons = true;
+		renderPanel();
+		for (const label of ["Perps / Spot", "Withdraw"]) {
+			const button = findButton(container, label);
+			expectActionDisabled(button);
+			expect(button.tabIndex).toBe(0);
+			act(() => button.click());
+		}
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		testState.hasError = false;
+		testState.perpStateStatus = "success";
+		renderPanel();
+		act(() => findButton(container, "Perps / Spot").click());
+		act(() => findButton(container, "Withdraw").click());
+		expect(modalActions.openTransfer).toHaveBeenCalledExactlyOnceWith("toPerp");
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("withdraw");
+	});
+
+	it("preserves bridge recovery routing and removes it when wallet access or regional permission is absent", () => {
+		testState.hasExistingBridgeExecution = true;
+		renderPanel();
+		const bridge = findButton(container, "Bridge");
+		expect(bridge.closest('[data-slot="account-panel-actions"]')).not.toBeNull();
+		act(() => bridge.click());
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("bridge");
+		for (const state of [
+			{ wallet: false, geo: "allowed" as const },
+			{ wallet: true, geo: "restricted" as const },
+			{ wallet: true, geo: "unresolved" as const },
+		]) {
+			testState.hasWalletAccess = state.wallet;
+			testState.geoStatus = state.geo;
+			renderPanel();
+			expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Bridge")).toBe(
+				false,
+			);
+		}
+		expect(modalActions.openDeposit).toHaveBeenCalledTimes(1);
 	});
 
 	it("omits the Spot funds warning and keeps the ordinary transfer entry guarded", () => {

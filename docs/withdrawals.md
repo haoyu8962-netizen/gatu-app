@@ -11,6 +11,38 @@ fail closed. If the fresh route differs from the route the user reviewed, the
 request is aborted and must be reviewed again; the terminal never changes
 routes or falls back after an error without renewed user intent.
 
+The shared desktop/mobile form keeps passive route discovery quiet: preserve
+the form and draft, disable submission, and expose loading through `aria-busy`
+rather than a warning banner or a Processing action label. A failed passive
+lookup may retain a neutral Retry entry. Failures encountered during an actual
+submission preflight and route changes still require visible feedback; do not
+infer whether the user submitted from the query status alone. Follow
+[mobile data presentation](mobile-data-presentation.md).
+
+## Account funding entries and amount units
+
+Desktop account actions open the existing shared surfaces; opening Deposit,
+Perps / Spot, or Withdraw must not sign or submit a transaction. Moving these
+controls does not change the protocol or account identity.
+
+| Entry | Execution | Amount and source |
+| --- | --- | --- |
+| Deposit | EIP-3009 authorization and Circle CCTP contracts; see [CCTP deposits](cctp-deposits.md) | Convert native USDC with `parseUnits(amount, 6)` only for the on-chain amount; require the exact owner wallet |
+| Perps / Spot | User-signed `usdClassTransfer({ amount, toPerp })` | Decimal USDC string; `true` means Spot to Perps, `false` means Perps to Spot |
+| Withdraw | Route-selected user-signed `withdraw3` or `sendToEvmWithData` | Decimal USDC string; destination is the verified owner for the external-wallet flow, or the validated explicit recipient in the email flow |
+
+Separate-account withdrawals use `clearinghouseState.withdrawable`; shared
+unified/portfolio-margin withdrawals use available Spot USDC (`total - hold`).
+Shared modes disable Perps / Spot transfers. User-signed funds actions continue
+to revalidate identity, legal status, account mode, region and current balances
+at the execution boundary and never use an Agent key as the owner signer.
+
+The UI's two-decimal `USDC_TRANSFER_DECIMALS` limit is a product policy, not an
+SDK precision constraint. Max must floor the original decimal string with
+Big.js helpers before assigning the form value; never round through a
+JavaScript number first. Presentation formatting must not feed back into the
+submitted amount.
+
 ## CCTP route
 
 The CCTP route uses the user-signed Hyperliquid SDK method `sendToEvmWithData` with this protocol contract:

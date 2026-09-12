@@ -1246,8 +1246,8 @@ msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Hyperliquid के मौजूदा जमा रूट की जाँच की जा रही है..."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Checking the current Hyperliquid withdrawal route..."
-msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
+#~ msgid "Checking the current Hyperliquid withdrawal route..."
+#~ msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -6196,6 +6196,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -8773,7 +8774,6 @@ msgstr "Arbitrum USDC बैलेंस लोड नहीं किया ज
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
 msgstr "वर्तमान खाता मोड लोड नहीं हो सका। अपना वॉलेट दोबारा कनेक्ट करें और फिर कोशिश करें।"
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "वर्तमान CCTP निकासी शुल्क लोड नहीं हो सका।"
@@ -8845,8 +8845,8 @@ msgid "Unable to verify the current Circle fee. Deposits are temporarily unavail
 msgstr "वर्तमान Circle शुल्क सत्यापित नहीं किया जा सका। जमा अस्थायी रूप से उपलब्ध नहीं हैं।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Unable to verify the current HyperCore USDC destination."
-msgstr "मौजूदा HyperCore USDC गंतव्य सत्यापित नहीं किया जा सका।"
+#~ msgid "Unable to verify the current HyperCore USDC destination."
+#~ msgstr "मौजूदा HyperCore USDC गंतव्य सत्यापित नहीं किया जा सका।"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
@@ -8867,8 +8867,8 @@ msgid "Unable to verify the current Hyperliquid withdrawal route."
 msgstr "Hyperliquid के मौजूदा निकासी रूट को सत्यापित नहीं किया जा सका।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Unable to verify withdrawal eligibility."
-msgstr "निकासी पात्रता सत्यापित नहीं की जा सकी।"
+#~ msgid "Unable to verify withdrawal eligibility."
+#~ msgstr "निकासी पात्रता सत्यापित नहीं की जा सकी।"
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."

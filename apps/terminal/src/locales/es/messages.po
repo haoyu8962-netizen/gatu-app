@@ -1246,8 +1246,8 @@ msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Comprobando la ruta de depósito actual de Hyperliquid..."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Checking the current Hyperliquid withdrawal route..."
-msgstr "Comprobando la ruta de retiro actual de Hyperliquid..."
+#~ msgid "Checking the current Hyperliquid withdrawal route..."
+#~ msgstr "Comprobando la ruta de retiro actual de Hyperliquid..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -6196,6 +6196,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
 #: src/components/vaults/vaults-list.tsx
@@ -8773,7 +8774,6 @@ msgstr "No se pudo cargar el saldo de USDC en Arbitrum"
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
 msgstr "No se pudo cargar el modo de cuenta actual. Vuelve a conectar tu billetera e inténtalo de nuevo."
 
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "No se pudo cargar la tarifa actual de retiro mediante CCTP."
@@ -8845,8 +8845,8 @@ msgid "Unable to verify the current Circle fee. Deposits are temporarily unavail
 msgstr "No se puede verificar la comisión actual de Circle. Los depósitos no están disponibles temporalmente."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Unable to verify the current HyperCore USDC destination."
-msgstr "No se pudo verificar el destino actual de USDC en HyperCore."
+#~ msgid "Unable to verify the current HyperCore USDC destination."
+#~ msgstr "No se pudo verificar el destino actual de USDC en HyperCore."
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
@@ -8867,8 +8867,8 @@ msgid "Unable to verify the current Hyperliquid withdrawal route."
 msgstr "No se puede verificar la ruta de retiro actual de Hyperliquid."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Unable to verify withdrawal eligibility."
-msgstr "No se pudo verificar si el retiro está permitido."
+#~ msgid "Unable to verify withdrawal eligibility."
+#~ msgstr "No se pudo verificar si el retiro está permitido."
 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify withdrawal eligibility. Request was not submitted."

@@ -35,11 +35,16 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 					aria-describedby={depositDisabledReason ? depositDescriptionId : undefined}
 					onClick={depositEnabled ? onDeposit : undefined}
 					title={depositDisabledReason ?? undefined}
-					className="min-w-0 rounded-8 font-semibold shadow-none"
+					className="min-h-8 min-w-0 rounded-8 font-semibold shadow-none"
 				>
 					{t`Deposit`}
 				</Button>
-				<Button variant="outline" intent="neutral" disabled className="min-w-0 rounded-8 font-semibold shadow-none">
+				<Button
+					variant="outline"
+					intent="neutral"
+					disabled
+					className="min-h-8 min-w-0 rounded-8 font-semibold shadow-none"
+				>
 					{t`Withdraw`}
 				</Button>
 			</div>

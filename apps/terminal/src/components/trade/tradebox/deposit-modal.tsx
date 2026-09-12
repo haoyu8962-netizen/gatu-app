@@ -60,6 +60,7 @@ import { calculateCctpDepositFee, getAmountIndependentCctpMaxFeeRaw } from "@/li
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
 	FundsActionFeedbackCause,
+	type FundsActionFeedbackCode,
 	formatFundsActionFeedback,
 	fundsActionFeedbackCause,
 } from "@/lib/trade/funds-action-feedback";
@@ -161,10 +162,15 @@ export function DepositModal() {
 					? t`Circle fees changed. Review the updated fee, then submit again.`
 					: null;
 	const [withdrawalRoutingPreflightFailed, setWithdrawalRoutingPreflightFailed] = useState(false);
+	const [withdrawalPreflightFeedback, setWithdrawalPreflightFeedback] = useState<{
+		contextIdentity: string;
+		code: FundsActionFeedbackCode;
+	} | null>(null);
 	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
 	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const depositPreflightIdRef = useRef(0);
 	const withdrawalPreflightRef = useRef<WithdrawalPreflightAttempt | null>(null);
+	const withdrawalRetryEpochRef = useRef(0);
 	const withdrawalExecutionReviewRef = useRef<WithdrawalExecutionReview | null>(null);
 	const withdrawalRequestReviewsRef = useRef(new WeakMap<object, WithdrawalExecutionReview>());
 	const observedWithdrawalRouteRef = useRef<WithdrawalRoute | null>(null);
@@ -320,7 +326,6 @@ export function DepositModal() {
 		hasWalletAccess,
 		internalTransfersEnabled: !isQuoteBalanceSharedWithPerps(accountAbstraction),
 	});
-	const withdrawable = withdrawalBalanceReady ? String(accountSummary.withdrawable) : "0";
 	const exactWithdrawable = withdrawalBalanceReady
 		? accountSummary.usesSpotStateForPerps
 			? getSpotTransferableValue(getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN))
@@ -470,6 +475,7 @@ export function DepositModal() {
 		preExecutionGuard: (params, signal) => assertFreshWithdrawalExecution("arbitrum-legacy", params.amount, signal),
 	});
 	useLayoutEffect(() => {
+		withdrawalRetryEpochRef.current += 1;
 		fundsModalContextIdentityRef.current = fundsModalContextIdentity;
 		depositPreflightIdRef.current += 1;
 		withdrawalPreflightRef.current?.controller.abort();
@@ -477,8 +483,10 @@ export function DepositModal() {
 		withdrawalExecutionReviewRef.current = null;
 		setIsDepositPreflighting(false);
 		setIsWithdrawalPreflighting(false);
+		setWithdrawalPreflightFeedback(null);
 		return () => {
 			if (fundsModalContextIdentityRef.current !== fundsModalContextIdentity) return;
+			withdrawalRetryEpochRef.current += 1;
 			fundsModalContextIdentityRef.current = null;
 			depositPreflightIdRef.current += 1;
 			withdrawalPreflightRef.current?.controller.abort();
@@ -494,11 +502,11 @@ export function DepositModal() {
 	const withdrawalActivationFee = withdrawalRoute === "arbitrum-cctp" ? (preTransferCheckQuery.data?.fee ?? "0") : "0";
 	const withdrawalMaxAmount =
 		withdrawalRoute === "arbitrum-legacy" || preTransferCheckQuery.isSuccess
-			? getMaximumWithdrawal(withdrawable, withdrawalActivationFee)
+			? getMaximumWithdrawal(exactWithdrawable, withdrawalActivationFee)
 			: "0";
 	const withdrawValidation = validateWithdrawal({
 		amount: withdrawAmount,
-		available: withdrawable,
+		available: exactWithdrawable,
 		route: withdrawalRoute,
 		routeFee: withdrawalRouteFee,
 		activationFee: withdrawalActivationFee,
@@ -521,29 +529,22 @@ export function DepositModal() {
 		(withdrawalRoute === "arbitrum-cctp" &&
 			(spotMetaQuery.isFetching || preTransferCheckQuery.isFetching || cctpFeeQuery.isFetching));
 	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
-	let withdrawalPrerequisiteError: string | null = null;
+	const withdrawalPreflightErrorCode =
+		withdrawalPreflightFeedback?.contextIdentity === fundsModalContextIdentity
+			? withdrawalPreflightFeedback.code
+			: null;
+	let withdrawalPrerequisiteError = withdrawalPreflightErrorCode
+		? formatFundsActionFeedback(withdrawalPreflightErrorCode, (descriptor) => t(descriptor))
+		: null;
 	if (!fundsActionAvailability.withdrawal.available) {
-		withdrawalPrerequisiteError = getFundsAvailabilityNotice(fundsActionAvailability.withdrawal);
-	} else if (
-		withdrawalRoutingStatus === "ready" &&
-		withdrawalRoute === "arbitrum-cctp" &&
-		(spotMetaQuery.isError || cctpSpotMetaInvalid)
-	) {
-		withdrawalPrerequisiteError = t`Unable to verify the current HyperCore USDC destination.`;
+		withdrawalPrerequisiteError =
+			getFundsAvailabilityNotice(fundsActionAvailability.withdrawal) ?? withdrawalPrerequisiteError;
 	} else if (
 		withdrawalRoutingStatus === "ready" &&
 		withdrawalRoute === "arbitrum-cctp" &&
 		preTransferCheckQuery.data?.isSanctioned
 	) {
 		withdrawalPrerequisiteError = t`Withdrawals are unavailable for this address.`;
-	} else if (
-		withdrawalRoutingStatus === "ready" &&
-		withdrawalRoute === "arbitrum-cctp" &&
-		preTransferCheckQuery.isError
-	) {
-		withdrawalPrerequisiteError = t`Unable to verify withdrawal eligibility.`;
-	} else if (withdrawalRoutingStatus === "ready" && withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError) {
-		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
 	}
 	const withdrawalPrerequisitesReady =
 		fundsActionAvailability.withdrawal.available &&
@@ -559,7 +560,11 @@ export function DepositModal() {
 		withdrawalRoutingStatus === "ready" &&
 		withdrawalRoute === "arbitrum-cctp" &&
 		!preTransferCheckQuery.data?.isSanctioned &&
-		(spotMetaQuery.isError || cctpSpotMetaInvalid || preTransferCheckQuery.isError || cctpFeeQuery.isError);
+		(spotMetaQuery.isError ||
+			cctpSpotMetaInvalid ||
+			preTransferCheckQuery.isError ||
+			cctpFeeQuery.isError ||
+			withdrawalPreflightErrorCode !== null);
 	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
@@ -772,6 +777,7 @@ export function DepositModal() {
 	}
 
 	function invalidateWithdrawalPreflight(): void {
+		withdrawalRetryEpochRef.current += 1;
 		withdrawalPreflightRef.current?.controller.abort();
 		withdrawalPreflightRef.current = null;
 		withdrawalExecutionReviewRef.current = null;
@@ -805,6 +811,7 @@ export function DepositModal() {
 		setDepositRoutingPreflightErrorCode(null);
 		setDepositCctpPreflightErrorCode(null);
 		setWithdrawalRoutingPreflightFailed(false);
+		setWithdrawalPreflightFeedback(null);
 		setIsDepositPreflighting(false);
 		setIsWithdrawalPreflighting(false);
 		observedWithdrawalRouteRef.current = null;
@@ -897,11 +904,19 @@ export function DepositModal() {
 		if (!canSubmitWithdraw || !walletAddress || withdrawalRouteFee === null) return;
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
 		if (!isAddress(destination)) return;
+		withdrawalRetryEpochRef.current += 1;
 
 		const attempt = beginWithdrawalPreflight();
 		if (!attempt) return;
 		const reviewedAmount = withdrawAmount;
+		setWithdrawalPreflightFeedback(null);
 		setIsWithdrawalPreflighting(true);
+		let mutationStarted = false;
+		let preflightFailureCode: FundsActionFeedbackCode = "withdrawal-eligibility-unavailable";
+		const reportPreflightFailure = (code: FundsActionFeedbackCode) => {
+			assertWithdrawalPreflightCurrent(attempt);
+			setWithdrawalPreflightFeedback({ contextIdentity: attempt.contextIdentity, code });
+		};
 		try {
 			const expectedWithdrawalRoute = routedWithdrawalRoute;
 			if (!expectedWithdrawalRoute) return;
@@ -914,21 +929,38 @@ export function DepositModal() {
 
 				const spotMetaResult = await spotMetaQuery.refetch();
 				assertWithdrawalPreflightCurrent(attempt);
-				if (!spotMetaResult.data || spotMetaResult.isError) return;
+				if (!spotMetaResult.data || spotMetaResult.isError) {
+					reportPreflightFailure("withdrawal-eligibility-unavailable");
+					return;
+				}
 				let freshUsdcSystemAddress: Address;
 				try {
 					freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
 				} catch {
+					reportPreflightFailure("withdrawal-eligibility-unavailable");
 					return;
 				}
-				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress.toLowerCase()) return;
+				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress.toLowerCase()) {
+					reportPreflightFailure("withdrawal-conditions-changed");
+					return;
+				}
 
 				const preTransferResult = await preTransferCheckQuery.refetch();
 				assertWithdrawalPreflightCurrent(attempt);
-				if (!preTransferResult.data || preTransferResult.isError) return;
+				if (!preTransferResult.data || preTransferResult.isError) {
+					reportPreflightFailure("withdrawal-eligibility-unavailable");
+					return;
+				}
 				try {
 					assertPreTransferCheckMatchesReview(reviewedPreTransferCheck.fee, preTransferResult.data);
-				} catch {
+				} catch (error) {
+					reportPreflightFailure(
+						error instanceof PreTransferCheckExecutionError && error.reason === "sanctioned"
+							? "withdrawal-sanctioned"
+							: error instanceof PreTransferCheckExecutionError && error.reason === "changed"
+								? "withdrawal-activation-fee-changed"
+								: "withdrawal-eligibility-unavailable",
+					);
 					return;
 				}
 				cctpPreTransferReview = {
@@ -938,23 +970,34 @@ export function DepositModal() {
 			}
 
 			let freshRouteFee = getWithdrawalRouteFee(expectedWithdrawalRoute, cctpFee);
+			preflightFailureCode = "withdrawal-fee-unavailable";
 			if (expectedWithdrawalRoute === "arbitrum-cctp") {
 				const cctpFeeResult = await cctpFeeQuery.refetch();
 				assertWithdrawalPreflightCurrent(attempt);
-				if (!cctpFeeResult.data || cctpFeeResult.isError) return;
+				if (!cctpFeeResult.data || cctpFeeResult.isError) {
+					reportPreflightFailure("withdrawal-fee-unavailable");
+					return;
+				}
 				freshRouteFee = cctpFeeResult.data;
 			}
-			if (freshRouteFee === null) return;
+			if (freshRouteFee === null) {
+				reportPreflightFailure("withdrawal-fee-unavailable");
+				return;
+			}
 
 			const freshValidation = validateWithdrawal({
 				amount: reviewedAmount,
-				available: withdrawable,
+				available: exactWithdrawable,
 				route: expectedWithdrawalRoute,
 				routeFee: freshRouteFee,
 				activationFee: cctpPreTransferReview?.fee ?? "0",
 			});
-			if (!freshValidation.valid) return;
+			if (!freshValidation.valid) {
+				reportPreflightFailure("withdrawal-conditions-changed");
+				return;
+			}
 
+			preflightFailureCode = "withdrawal-route-unavailable";
 			const executionStatus = await executeWithFreshWithdrawalRoute(
 				expectedWithdrawalRoute,
 				fetchFreshUsdcRouting,
@@ -976,6 +1019,7 @@ export function DepositModal() {
 					};
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
 						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
+						mutationStarted = true;
 						await cctpWithdrawal.mutateAsync(
 							buildCctpWithdrawalParameters({
 								amount: reviewedAmount,
@@ -985,6 +1029,7 @@ export function DepositModal() {
 						);
 						return;
 					}
+					mutationStarted = true;
 					await legacyWithdrawal.mutateAsync({ destination, amount: reviewedAmount });
 				},
 				attempt.controller.signal,
@@ -998,8 +1043,15 @@ export function DepositModal() {
 			} else {
 				setWithdrawalRoutingPreflightFailed(false);
 			}
-		} catch {
-			// Query and mutation state render the actionable error without duplicating the request.
+		} catch (error) {
+			if (
+				!mutationStarted &&
+				!attempt.controller.signal.aborted &&
+				withdrawalPreflightRef.current === attempt &&
+				fundsModalContextIdentityRef.current === attempt.contextIdentity
+			) {
+				reportPreflightFailure(error instanceof FundsActionFeedbackCause ? error.code : preflightFailureCode);
+			}
 		} finally {
 			if (withdrawalPreflightRef.current === attempt) {
 				withdrawalPreflightRef.current = null;
@@ -1012,27 +1064,57 @@ export function DepositModal() {
 	async function handleWithdrawalPrerequisiteRetry() {
 		const contextIdentity = fundsModalContextIdentityRef.current;
 		if (contextIdentity !== fundsModalContextIdentity) return;
-		const routingResult = await usdcRoutingQuery.refetch();
-		if (fundsModalContextIdentityRef.current !== contextIdentity) return;
-		const freshWithdrawalRoute = getWithdrawalRoute(routingResult.data);
-		if (routingResult.isError || !freshWithdrawalRoute) {
-			setWithdrawalRoutingPreflightFailed(true);
-			return;
-		}
-		setWithdrawalRoutingPreflightFailed(false);
-		if (freshWithdrawalRoute === "arbitrum-cctp") {
-			const spotMetaResult = await spotMetaQuery.refetch();
-			if (fundsModalContextIdentityRef.current !== contextIdentity) return;
-			if (spotMetaResult.isError || !spotMetaResult.data) return;
-			let freshUsdcSystemAddress: Address;
-			try {
-				freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
-			} catch {
+		const retryEpoch = ++withdrawalRetryEpochRef.current;
+		const isCurrentRetry = () =>
+			withdrawalRetryEpochRef.current === retryEpoch && fundsModalContextIdentityRef.current === contextIdentity;
+		setWithdrawalPreflightFeedback(null);
+		let failureCode: FundsActionFeedbackCode = "withdrawal-route-unavailable";
+		try {
+			const routingResult = await usdcRoutingQuery.refetch();
+			if (!isCurrentRetry()) return;
+			const freshWithdrawalRoute = getWithdrawalRoute(routingResult.data);
+			if (routingResult.isError || !freshWithdrawalRoute) {
+				setWithdrawalRoutingPreflightFailed(true);
 				return;
 			}
-			if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress?.toLowerCase()) return;
-			await Promise.all([preTransferCheckQuery.refetch(), cctpFeeQuery.refetch()]);
-			if (fundsModalContextIdentityRef.current !== contextIdentity) return;
+			setWithdrawalRoutingPreflightFailed(false);
+			if (freshWithdrawalRoute === "arbitrum-cctp") {
+				failureCode = "withdrawal-eligibility-unavailable";
+				const spotMetaResult = await spotMetaQuery.refetch();
+				if (!isCurrentRetry()) return;
+				if (spotMetaResult.isError || !spotMetaResult.data) {
+					setWithdrawalPreflightFeedback({ contextIdentity, code: "withdrawal-eligibility-unavailable" });
+					return;
+				}
+				let freshUsdcSystemAddress: Address;
+				try {
+					freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
+				} catch {
+					setWithdrawalPreflightFeedback({ contextIdentity, code: "withdrawal-eligibility-unavailable" });
+					return;
+				}
+				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress?.toLowerCase()) {
+					setWithdrawalPreflightFeedback({ contextIdentity, code: "withdrawal-conditions-changed" });
+					return;
+				}
+				const [preTransferResult, feeResult] = await Promise.all([
+					preTransferCheckQuery.refetch(),
+					cctpFeeQuery.refetch(),
+				]);
+				if (!isCurrentRetry()) return;
+				if (preTransferResult.isError || !preTransferResult.data) {
+					setWithdrawalPreflightFeedback({ contextIdentity, code: "withdrawal-eligibility-unavailable" });
+				} else if (feeResult.isError || !feeResult.data) {
+					setWithdrawalPreflightFeedback({ contextIdentity, code: "withdrawal-fee-unavailable" });
+				}
+			}
+		} catch {
+			if (!isCurrentRetry()) return;
+			if (failureCode === "withdrawal-route-unavailable") {
+				setWithdrawalRoutingPreflightFailed(true);
+			} else {
+				setWithdrawalPreflightFeedback({ contextIdentity, code: failureCode });
+			}
 		}
 	}
 
@@ -1479,10 +1561,11 @@ export function DepositModal() {
 								onDestinationChange={setWithdrawDestination}
 								destinationRequired={requiresWithdrawDestination}
 								destinationError={withdrawDestinationError}
-								available={withdrawable}
+								available={exactWithdrawable}
 								maxAmount={withdrawalMaxAmount}
 								route={withdrawalRoute}
 								routingStatus={withdrawalRoutingStatus}
+								routingPreflightFailed={withdrawalRoutingPreflightFailed}
 								routeChanged={withdrawalRouteChanged}
 								routeFee={withdrawalRouteFee}
 								activationFee={withdrawalActivationFee}

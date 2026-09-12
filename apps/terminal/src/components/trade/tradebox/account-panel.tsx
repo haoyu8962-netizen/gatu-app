@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
@@ -180,9 +180,7 @@ export function AccountPanel() {
 
 	return (
 		<div className="flex h-full min-h-[459px] min-w-0 flex-col bg-surface">
-			<div data-grid-content-part className="shrink-0 border-y border-trading-panel-stroke-card px-2 py-2">
-				<h2 className="text-2sm font-bold text-trading-panel-fg">{t`Account`}</h2>
-			</div>
+			<h2 className="sr-only">{t`Account`}</h2>
 
 			{!isConnected ? (
 				<DisconnectedAccountOverview
@@ -192,7 +190,92 @@ export function AccountPanel() {
 				/>
 			) : (
 				<div className="flex flex-1 flex-col">
-					<div data-grid-content-part className="shrink-0 flow-root px-2 pt-2">
+					<div data-grid-content-part className="shrink-0 px-2 pt-3 pb-3">
+						{depositGeoBlocked ? (
+							<p className="text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</p>
+						) : !showsFundsActions ? (
+							<p className="text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
+						) : (
+							<div data-slot="account-panel-actions" className="space-y-2">
+								{depositAvailability.unavailableReason ? (
+									<output className="block text-center text-xs text-fg-muted">
+										{depositAvailability.unavailableReason}
+									</output>
+								) : null}
+								<div className="grid grid-cols-2 gap-2">
+									<Tooltip content={depositAvailability.unavailableReason} side="top">
+										<span className="inline-flex min-w-0 w-full">
+											<Button
+												variant="filled"
+												intent="neutral"
+												disabled={!depositAvailability.available}
+												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+												aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+												title={depositAvailability.unavailableReason ?? undefined}
+												className="min-h-8 w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
+											>
+												{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+											</Button>
+										</span>
+									</Tooltip>
+									<Tooltip content={withdrawDisabledReason} side="top">
+										<span className="inline-flex min-w-0 w-full">
+											<Button
+												variant="outline"
+												intent="neutral"
+												disabled={!fundsActionAvailability.withdrawal.available}
+												focusableWhenDisabled
+												onClick={
+													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+												}
+												aria-label={t`Withdraw`}
+												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+												className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+											>
+												{t`Withdraw`}
+											</Button>
+										</span>
+									</Tooltip>
+								</div>
+								<Tooltip content={internalTransferDisabledReason} side="top">
+									<span className="inline-flex min-w-0 w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											onClick={
+												fundsActionAvailability.internalTransfer.available
+													? () => openTransferModal("toPerp")
+													: undefined
+											}
+											aria-describedby={transferDescriptionIds}
+											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+											disabled={!fundsActionAvailability.internalTransfer.available}
+											focusableWhenDisabled
+											className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
+										>
+											{overviewLabels.perpsSpot}
+										</Button>
+									</span>
+								</Tooltip>
+								{hasWalletAccess && showBridgeEntry ? (
+									<Button
+										variant="outline"
+										intent="neutral"
+										onClick={() => openDepositModal("bridge")}
+										aria-label={t`Bridge`}
+										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+										className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
+									>
+										{t`Bridge`}
+									</Button>
+								) : null}
+							</div>
+						)}
+					</div>
+					<div
+						data-grid-content-part
+						className="shrink-0 flow-root border-t border-trading-panel-stroke-row px-2 pt-3 pb-3"
+					>
 						{metricsHaveError ? (
 							<div
 								role="alert"
@@ -258,90 +341,6 @@ export function AccountPanel() {
 								))}
 							</InfoRowGroup>
 						</section>
-					</div>
-					<div data-grid-content-part className="shrink-0 mt-auto flow-root px-2 pb-3">
-						{depositGeoBlocked ? (
-							<p className="mt-4 text-center text-xs text-fg-muted">{depositAvailability.unavailableReason}</p>
-						) : !showsFundsActions ? (
-							<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
-						) : (
-							<div data-slot="account-panel-actions" className="mt-auto space-y-2 pt-4">
-								{depositAvailability.unavailableReason ? (
-									<output className="block text-center text-xs text-fg-muted">
-										{depositAvailability.unavailableReason}
-									</output>
-								) : null}
-								<Tooltip content={depositAvailability.unavailableReason} side="top">
-									<span className="inline-flex w-full">
-										<Button
-											variant="filled"
-											intent="neutral"
-											disabled={!depositAvailability.available}
-											onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-											aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
-											title={depositAvailability.unavailableReason ?? undefined}
-											iconLeft={<DownloadSimpleIcon className="size-4" />}
-											className="w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
-										>
-											{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
-										</Button>
-									</span>
-								</Tooltip>
-								<div className="account-panel-secondary-actions grid grid-cols-2 gap-2">
-									<Tooltip content={internalTransferDisabledReason} side="top">
-										<span className="inline-flex min-w-0 w-full">
-											<Button
-												variant="outline"
-												intent="neutral"
-												onClick={
-													fundsActionAvailability.internalTransfer.available
-														? () => openTransferModal("toPerp")
-														: undefined
-												}
-												aria-describedby={transferDescriptionIds}
-												iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-												disabled={!!internalTransferDisabledReason}
-												focusableWhenDisabled
-												className="w-full min-w-0 rounded-8 border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
-											>
-												{overviewLabels.perpsSpot}
-											</Button>
-										</span>
-									</Tooltip>
-									<Tooltip content={withdrawDisabledReason} side="top">
-										<span className="inline-flex min-w-0 w-full">
-											<Button
-												variant="outline"
-												intent="neutral"
-												disabled={!!withdrawDisabledReason}
-												focusableWhenDisabled
-												onClick={
-													fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-												}
-												aria-label={t`Withdraw`}
-												aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-												iconLeft={<UploadSimpleIcon className="size-4" />}
-												className="w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
-											>
-												{t`Withdraw`}
-											</Button>
-										</span>
-									</Tooltip>
-								</div>
-								{hasWalletAccess && showBridgeEntry ? (
-									<Button
-										variant="outline"
-										intent="neutral"
-										onClick={() => openDepositModal("bridge")}
-										aria-label={t`Bridge`}
-										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-										className="w-full min-w-0 rounded-8 border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
-									>
-										{t`Bridge`}
-									</Button>
-								) : null}
-							</div>
-						)}
 					</div>
 				</div>
 			)}

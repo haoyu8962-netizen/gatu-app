@@ -64,6 +64,7 @@ const testState = vi.hoisted(() => ({
 	} | null,
 	cctpDepositFeeCalls: [] as Array<{ amountRaw: bigint | undefined; enabled: boolean; isTestnet: boolean }>,
 	cctpWithdrawalFee: "1",
+	cctpWithdrawalFeeError: false,
 	cctpWithdrawalFeeRefetch: vi.fn(),
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
@@ -109,6 +110,7 @@ const testState = vi.hoisted(() => ({
 		userHasSentTx: true,
 	},
 	routingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
+	routingError: false,
 	routingRefetch: vi.fn(),
 	sponsoredReadinessFailure: null as
 		| "build-gate-disabled"
@@ -123,10 +125,14 @@ const testState = vi.hoisted(() => ({
 		universe: [],
 	},
 	spotMetaRefetch: vi.fn(),
+	spotMetaError: false,
+	preTransferError: false,
+	spotBalances: [] as Array<{ coin: string; total: string; hold: string; token: number; entryNtl: string }>,
 	useDepositOptions: null as Record<string, unknown> | null,
 	walletIntentOverride: undefined as "ambiguous" | "embedded" | "external" | "unavailable" | undefined,
 	walletAddress: "0x1111111111111111111111111111111111111111",
 	withdrawable: "10",
+	withdrawDraft: "2",
 	withdrawSubmit: null as null | (() => Promise<void> | void),
 }));
 
@@ -141,18 +147,23 @@ vi.mock("@gatu/ui", () => ({
 		createElement("h2", { className }, children),
 }));
 
-vi.mock("@/domain/trade/balances", () => ({
-	getSpotBalance: () => null,
-	getSpotTransferableValue: () => "0",
-	isQuoteBalanceSharedWithPerps: () => false,
-	getAccountBalanceSummary: () => ({
-		hasSpotFundsWhenPerpWithdrawableZero: true,
-		isAvailable: true,
-		usesSpotStateForPerps: false,
-		spotUsdcAvailable: 0,
-		withdrawable: testState.withdrawable,
-	}),
-}));
+vi.mock("@/domain/trade/balances", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/domain/trade/balances")>();
+	return {
+		getSpotBalance: actual.getSpotBalance,
+		getSpotTransferableValue: actual.getSpotTransferableValue,
+		isQuoteBalanceSharedWithPerps: actual.isQuoteBalanceSharedWithPerps,
+		getAccountBalanceSummary: () => ({
+			hasSpotFundsWhenPerpWithdrawableZero: true,
+			isAvailable: true,
+			usesSpotStateForPerps: actual.isQuoteBalanceSharedWithPerps(
+				testState.accountAbstraction as Parameters<typeof actual.isQuoteBalanceSharedWithPerps>[0],
+			),
+			spotUsdcAvailable: 0,
+			withdrawable: Number(testState.withdrawable),
+		}),
+	};
+});
 
 vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
 	AccountAbstractionExecutionError: class AccountAbstractionExecutionError extends Error {
@@ -171,7 +182,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 		marginSummary: null,
 		perpSummary: null,
 		spotAvailableAfterMaintenance: null,
-		spotBalances: [],
+		spotBalances: testState.spotBalances,
 		withdrawable: testState.withdrawable,
 		spotStateStatus: "success",
 		perpStateStatus: "success",
@@ -185,9 +196,9 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 vi.mock("@/hooks/trade/use-cctp-withdrawal-fee", () => ({
 	useCctpWithdrawalFee: () => ({
 		data: testState.cctpWithdrawalFee,
-		isError: false,
+		isError: testState.cctpWithdrawalFeeError,
 		isFetching: false,
-		isSuccess: true,
+		isSuccess: !testState.cctpWithdrawalFeeError,
 		refetch: testState.cctpWithdrawalFeeRefetch,
 	}),
 }));
@@ -269,7 +280,7 @@ vi.mock("@/hooks/trade/use-usdc-routing", async (importOriginal) => {
 		useFreshUsdcRouting: () => testState.fetchFreshRouting,
 		useUsdcRouting: () => ({
 			data: testState.routingResponse,
-			isError: false,
+			isError: testState.routingError,
 			isFetching: false,
 			refetch: testState.routingRefetch,
 		}),
@@ -361,18 +372,18 @@ vi.mock("@/lib/hyperliquid", () => ({
 		if (method === "spotMeta") {
 			return {
 				data: testState.spotMeta,
-				isError: false,
+				isError: testState.spotMetaError,
 				isFetching: false,
-				isSuccess: options?.enabled !== false,
+				isSuccess: options?.enabled !== false && !testState.spotMetaError,
 				refetch: testState.spotMetaRefetch,
 			};
 		}
 		if (method === "preTransferCheck") {
 			return {
 				data: testState.preTransferReview,
-				isError: false,
+				isError: testState.preTransferError,
 				isFetching: false,
-				isSuccess: options?.enabled !== false,
+				isSuccess: options?.enabled !== false && !testState.preTransferError,
 				refetch: testState.preTransferRefetch,
 			};
 		}
@@ -515,11 +526,14 @@ vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
 vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 	WithdrawForm: ({
 		activationFee,
+		amount,
+		available,
 		maxAmount,
 		onAmountChange,
 		onRetryPrerequisites,
 		onSubmit,
 		routingStatus,
+		routingPreflightFailed,
 		showSpotFundsNotice,
 		prerequisiteError,
 		canSubmit,
@@ -527,11 +541,14 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 		prerequisiteError: string | null;
 		canSubmit: boolean;
 		activationFee: string;
+		amount: string;
+		available: string;
 		maxAmount: string;
 		onAmountChange: (amount: string) => void;
 		onRetryPrerequisites: () => void;
 		onSubmit: () => void;
 		routingStatus: string;
+		routingPreflightFailed?: boolean;
 		showSpotFundsNotice: boolean;
 	}) => {
 		testState.withdrawSubmit = onSubmit;
@@ -539,12 +556,15 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 			"div",
 			{
 				"data-activation-fee": activationFee,
+				"data-amount": amount,
+				"data-available": available,
 				"data-max-amount": maxAmount,
 				"data-show-spot-funds-notice": showSpotFundsNotice,
 				"data-testid": "withdraw-routing-status",
 				"data-status": routingStatus,
+				"data-preflight-failed": routingPreflightFailed,
 			},
-			createElement("button", { onClick: () => onAmountChange("2"), type: "button" }, "Set amount"),
+			createElement("button", { onClick: () => onAmountChange(testState.withdrawDraft), type: "button" }, "Set amount"),
 			createElement("p", { "data-testid": "withdrawal-prerequisite" }, prerequisiteError),
 			createElement("button", { disabled: !canSubmit, onClick: onSubmit, type: "button" }, "Submit withdrawal"),
 			createElement("button", { onClick: onRetryPrerequisites, type: "button" }, "Retry withdrawal route"),
@@ -601,6 +621,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.cctpDepositFeeCalculation = { maxFeeRaw: 200_000n, netAmountRaw: 4_800_000n };
 		testState.cctpDepositFeeCalls.length = 0;
 		testState.cctpWithdrawalFee = "1";
+		testState.cctpWithdrawalFeeError = false;
 		testState.cctpWithdrawalFeeRefetch.mockReset();
 		testState.cctpWithdrawalFeeRefetch.mockResolvedValue({ data: "1", isError: false });
 		testState.sponsoredReadinessFailure = null;
@@ -627,6 +648,10 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 			isError: false,
 		}));
 		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.routingError = false;
+		testState.spotMetaError = false;
+		testState.preTransferError = false;
+		testState.spotBalances = [];
 		testState.routingRefetch.mockReset();
 		testState.routingRefetch.mockResolvedValue({
 			data: { depositRoute: "bridge", withdrawalRoute: "cctp" },
@@ -641,6 +666,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.walletIntentOverride = undefined;
 		testState.walletAddress = "0x1111111111111111111111111111111111111111";
 		testState.withdrawable = "10";
+		testState.withdrawDraft = "2";
 		testState.withdrawSubmit = null;
 		testState.spotMetaRefetch.mockImplementation(async () => ({ data: testState.spotMeta, isError: false }));
 		testState.fetchFreshRouting.mockImplementation(async () => {
@@ -756,6 +782,50 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledOnce();
 		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
 	});
+
+	it.each(["disabled", "unifiedAccount", "portfolioMargin"] as const)(
+		"preserves the exact %s withdrawal balance through Max, validation and SDK submission",
+		async (mode) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState.accountAbstraction = mode;
+			testState.withdrawable = "1000000000000000.999999";
+			testState.spotBalances = [
+				{
+					coin: "USDC",
+					token: 0,
+					total: "1000000000000001.123455",
+					hold: "0.123456",
+					entryNtl: "0",
+				},
+			];
+			testState.preTransferReview.fee = "0.25";
+			testState.preTransferFresh.fee = "0.25";
+			await rerender();
+
+			const form = () => container.querySelector('[data-testid="withdraw-routing-status"]');
+			expect(form()?.getAttribute("data-available")).toBe("1000000000000000.999999");
+			expect(form()?.getAttribute("data-max-amount")).toBe("1000000000000000.749999");
+			testState.withdrawDraft = "1000000000000000.75";
+			act(() => getButton("Set amount").click());
+			expect(getButton("Submit withdrawal").disabled).toBe(true);
+			act(() => getButton("Submit withdrawal").click());
+			expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+
+			testState.withdrawDraft = "1000000000000000.74";
+			act(() => getButton("Set amount").click());
+			expect(form()?.getAttribute("data-amount")).toBe("1000000000000000.74");
+			expect(getButton("Submit withdrawal").disabled).toBe(false);
+			await act(async () => getButton("Submit withdrawal").click());
+			expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({
+					amount: "1000000000000000.74",
+					sourceDex: mode === "disabled" ? "" : "spot",
+				}),
+			);
+			expect(testState.exchangeErrors.get("sendToEvmWithData")).toBeUndefined();
+		},
+	);
 
 	it("does not enqueue a withdrawal after its modal lifecycle is invalidated", async () => {
 		testState.modalOpen = true;
@@ -1578,11 +1648,155 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-status")).toBe(
 			"error",
 		);
+		expect(
+			container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-preflight-failed"),
+		).toBe("true");
 
 		await act(async () => getButton("Retry withdrawal route").click());
 		expect(container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-status")).toBe(
 			"ready",
 		);
+		expect(
+			container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-preflight-failed"),
+		).toBe("false");
+	});
+
+	it.each(["spotMetaError", "preTransferError", "cctpWithdrawalFeeError"] as const)(
+		"keeps passive %s quiet while retaining the SDK gate",
+		async (field) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			testState[field] = true;
+			await rerender();
+			act(() => getButton("Set amount").click());
+			expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+			expect(getButton("Submit withdrawal").disabled).toBe(true);
+			await act(async () => getButton("Submit withdrawal").click());
+			expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+			testState[field] = false;
+			await rerender();
+			expect(getButton("Submit withdrawal").disabled).toBe(false);
+		},
+	);
+
+	it("does not classify a passive routing error as a failed withdrawal attempt", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.routingError = true;
+		await rerender();
+		expect(
+			container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-preflight-failed"),
+		).toBe("false");
+		expect(getButton("Submit withdrawal").disabled).toBe(true);
+	});
+
+	it.each([
+		["spotMetaRefetch", WITHDRAWAL_MESSAGES.preTransferUnavailable],
+		["preTransferRefetch", WITHDRAWAL_MESSAGES.preTransferUnavailable],
+		["cctpWithdrawalFeeRefetch", WITHDRAWAL_MESSAGES.feeUnavailable],
+	] as const)("retains a requested %s failure and clears it after a successful retry", async (field, expected) => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState[field].mockResolvedValueOnce({ data: undefined, isError: true });
+		await rerender();
+		act(() => getButton("Set amount").click());
+		await act(async () => getButton("Submit withdrawal").click());
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(expected);
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		expect(testState.exchangeMutations.get("withdraw3")).not.toHaveBeenCalled();
+		await act(async () => getButton("Retry withdrawal route").click());
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+	});
+
+	it("retains a thrown preflight failure through passive balance recovery and retranslates it", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.spotMetaRefetch.mockRejectedValueOnce(new Error("private transport detail"));
+		await rerender();
+		act(() => getButton("Set amount").click());
+		await act(async () => getButton("Submit withdrawal").click());
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES.preTransferUnavailable,
+		);
+		expect(container.textContent).not.toContain("private transport detail");
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		testState.balanceStale = true;
+		await rerender();
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES.preTransferUnavailable,
+		);
+		await act(async () => i18n.loadAndActivate({ locale: "ar", messages: arabicMessages }));
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES_AR.preTransferUnavailable,
+		);
+		const originalWallet = testState.walletAddress;
+		testState.walletAddress = "0x2222222222222222222222222222222222222222";
+		await rerender();
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+		testState.walletAddress = originalWallet;
+		await rerender();
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+	});
+
+	it.each(["rejected", "error result"] as const)(
+		"ignores an old Retry %s after closing and reopening the same withdrawal context",
+		async (failure) => {
+			testState.modalOpen = true;
+			testState.activeTab = "withdraw";
+			let finish!: () => void;
+			testState.spotMetaRefetch.mockReturnValueOnce(
+				new Promise((resolve, reject) => {
+					finish = () =>
+						failure === "rejected"
+							? reject(new Error("old retry failed"))
+							: resolve({ data: undefined, isError: true });
+				}),
+			);
+			await rerender();
+			await act(async () => getButton("Retry withdrawal route").click());
+			expect(testState.spotMetaRefetch).toHaveBeenCalledOnce();
+			testState.modalOpen = false;
+			await rerender();
+			testState.modalOpen = true;
+			await rerender();
+			await act(async () => finish());
+			expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+			expect(
+				container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-preflight-failed"),
+			).toBe("false");
+			expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+			expect(testState.exchangeMutations.get("withdraw3")).not.toHaveBeenCalled();
+		},
+	);
+
+	it("keeps the latest Retry result when an older request fails afterward", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		let rejectFirst!: (error: Error) => void;
+		testState.spotMetaRefetch.mockReturnValueOnce(
+			new Promise((_resolve, reject) => {
+				rejectFirst = reject;
+			}),
+		);
+		await rerender();
+		await act(async () => getButton("Retry withdrawal route").click());
+		await act(async () => getButton("Retry withdrawal route").click());
+		expect(testState.spotMetaRefetch).toHaveBeenCalledTimes(2);
+		await act(async () => rejectFirst(new Error("old retry failed")));
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe("");
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
+	});
+
+	it("retains an explicit Retry query rejection instead of rejecting its event handler", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.spotMetaRefetch.mockRejectedValueOnce(new Error("transport unavailable"));
+		await rerender();
+		await act(async () => getButton("Retry withdrawal route").click());
+		expect(container.querySelector('[data-testid="withdrawal-prerequisite"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES.preTransferUnavailable,
+		);
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).not.toHaveBeenCalled();
 	});
 
 	it("renders a localized definitive source failure as failed without parsing its wording", async () => {

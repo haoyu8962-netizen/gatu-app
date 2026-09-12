@@ -28,6 +28,7 @@ interface Props {
 	maxAmount: string;
 	route: WithdrawalRoute;
 	routingStatus: UsdcRoutingQueryStatus;
+	routingPreflightFailed?: boolean;
 	routeChanged: boolean;
 	routeFee: string | null;
 	activationFee: string;
@@ -55,6 +56,7 @@ export function WithdrawForm({
 	maxAmount,
 	route,
 	routingStatus,
+	routingPreflightFailed = false,
 	routeChanged,
 	routeFee,
 	activationFee,
@@ -76,23 +78,22 @@ export function WithdrawForm({
 	const amountInputId = useId();
 	const amountErrorId = useId();
 	const destinationErrorId = useId();
-	const maxAmountNum = toNumberOrZero(maxAmount);
+	const maximumAmount = floorToString(maxAmount, USDC_TRANSFER_DECIMALS);
 	const netReceived = getWithdrawalNetReceived(amount, routeFee);
+	const showsReviewedRoute = routingStatus === "ready" || routingPreflightFailed || routeChanged;
 	const routeOptions = [
 		{
 			value: route,
-			label: route === "arbitrum-cctp" ? translate`Arbitrum (CCTP)` : translate`Arbitrum (Legacy)`,
+			label: !showsReviewedRoute
+				? "--"
+				: route === "arbitrum-cctp"
+					? translate`Arbitrum (CCTP)`
+					: translate`Arbitrum (Legacy)`,
 		},
 	];
+	const canRetryRouting = routingStatus === "error" || routingStatus === "unknown";
 	const routingNotice = (() => {
-		if (routingStatus === "loading") {
-			return (
-				<div className="rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-xs leading-[17px] text-market-close-muted">
-					<Trans>Checking the current Hyperliquid withdrawal route...</Trans>
-				</div>
-			);
-		}
-		if (routingStatus === "error" || routingStatus === "unknown") {
+		if (routingPreflightFailed) {
 			return (
 				<div
 					role="alert"
@@ -128,7 +129,10 @@ export function WithdrawForm({
 	})();
 
 	return (
-		<div className="flex flex-1 flex-col gap-3.5 font-market-close">
+		<div
+			className="flex flex-1 flex-col gap-3.5 font-market-close"
+			aria-busy={routingStatus === "loading" || prerequisitesPending || isPending}
+		>
 			<div className="flex flex-col items-center gap-2 text-center">
 				<div className="grid size-10 place-items-center rounded-full bg-market-close-control" aria-hidden="true">
 					<img src={USDC_ICON_URL} alt="" className="size-8 rounded-full" />
@@ -158,6 +162,18 @@ export function WithdrawForm({
 			</div>
 
 			{routingNotice}
+			{!routingPreflightFailed && !prerequisiteError && (canRetryRouting || canRetryPrerequisites) ? (
+				<Button
+					variant="link"
+					intent="neutral"
+					size="xxs"
+					className="h-auto self-start p-0 text-market-close-fg active:not-data-disabled:scale-100"
+					onClick={onRetryPrerequisites}
+					disabled={isPending || prerequisitesPending}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			) : null}
 
 			<div>
 				<div
@@ -181,10 +197,10 @@ export function WithdrawForm({
 							mobileSafe
 							maxLabel={
 								<span className="font-semibold tabular-nums">
-									<Trans>Max</Trans>: {formatNumber(maxAmountNum, 2)}
+									<Trans>Max</Trans>: {formatNumber(maximumAmount, USDC_TRANSFER_DECIMALS)}
 								</span>
 							}
-							onMaxClick={() => onAmountChange(floorToString(maxAmountNum, USDC_TRANSFER_DECIMALS))}
+							onMaxClick={() => onAmountChange(maximumAmount)}
 							className="h-11 rounded-none border-0 bg-transparent px-2 pr-[7.75rem] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums shadow-none focus-visible:border-transparent focus-visible:ring-0 min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"
 						/>
 					</div>
@@ -285,10 +301,10 @@ export function WithdrawForm({
 					className="p-0"
 					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
 					label={<Trans>Withdrawal fee</Trans>}
-					value={routeFee === null ? "--" : `$${formatNumber(toNumberOrZero(routeFee), 2)}`}
+					value={!showsReviewedRoute || routeFee === null ? "--" : `$${formatNumber(toNumberOrZero(routeFee), 2)}`}
 					valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 				/>
-				{showActivationFee ? (
+				{showsReviewedRoute && showActivationFee ? (
 					<InfoRow
 						className="p-0"
 						labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
@@ -301,7 +317,9 @@ export function WithdrawForm({
 					className="p-0"
 					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
 					label={<Trans>Net received</Trans>}
-					value={netReceived === null ? "--" : `$${formatNumber(toNumberOrZero(netReceived), 2)}`}
+					value={
+						!showsReviewedRoute || netReceived === null ? "--" : `$${formatNumber(toNumberOrZero(netReceived), 2)}`
+					}
 					valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 				/>
 				<InfoRow
@@ -320,7 +338,7 @@ export function WithdrawForm({
 				disabled={!canSubmit || isPending || prerequisitesPending}
 				className="mt-auto min-h-11 w-full !rounded-[10px] !bg-market-close-control text-[13px] font-bold !text-market-close-on-control !shadow-none active:not-data-disabled:!scale-100 data-disabled:!bg-market-close-stroke-control data-disabled:!text-market-close-on-control"
 			>
-				{isPending || prerequisitesPending ? (
+				{isPending ? (
 					<>
 						<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />
 						<Trans>Processing...</Trans>
