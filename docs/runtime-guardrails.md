@@ -566,6 +566,14 @@ and scans only `mobile-trade-all-orders.html`. Run it with
 The shared optimizer and default browser suite exclude this fixture's entry and
 test file. Its cache must remain a sibling of the application and other fixture caches.
 
+The desktop/mobile account funding fixture uses `node_modules/.vite-account-actions`
+and scans only `account-actions.html`. Run it with
+`pnpm --dir apps/terminal exec playwright test --config tests/browser/account-actions.playwright.config.ts`.
+The shared optimizer and default browser suite exclude this fixture's entry and
+test file. Validate dedicated fixtures from a cold fixture cache as well as a warm
+cache: incomplete mock exports can break dependency scanning even when a warm
+development run appears to pass. Never clear the application cache for this check.
+
 Shared desktop/mobile order summaries are emitted as separate implicit chunks
 after the client runtime entry. The trade route imports them statically inside its
 existing dynamic page boundary, and TanStack Start retains one client entry.

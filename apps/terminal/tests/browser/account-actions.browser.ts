@@ -37,6 +37,14 @@ export function useWalletSession() {
 	};
 }
 
+export function useReconnectWallet() {
+	return {
+		reconnectWallet: async () => recordAction("reconnect"),
+		walletsReady: true,
+		isReconnecting: false,
+	};
+}
+
 export function useAccountOverview() {
 	const state = useAccountActionsFixture();
 	return {
