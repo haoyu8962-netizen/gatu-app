@@ -1,6 +1,10 @@
 # Desktop grid layout
 
-The desktop workspace uses one React Grid Layout instance with stable panel keys. The layout starts at 1001px, uses 14 columns through 1420px, and uses 16 columns above 1420px. Grid rows are 30px with 3px gutters and outer padding.
+The desktop workspace uses one React Grid Layout instance with stable panel keys. The layout starts at 1001px, uses 14 columns through 1420px, and uses 16 columns above 1420px. Grid rows are 30px with 3px gutters and outer padding; keep `margin` and React Grid Layout `containerPadding` aligned, because the latter is geometry rather than CSS padding.
+
+Default spans live in `apps/terminal/src/config/desktop-grid-layout.ts`: the 16-column layout uses a `10 / 3 / 3` upper row (chart, market data, trading panel) and a `13 / 3` lower row (account table, account information); the 14-column layout uses `8 / 3 / 3` and `11 / 3`, so all three upper panels stay visible together at every desktop width. Changing default geometry incompatibly requires bumping `DESKTOP_GRID_STORAGE_KEY`.
+
+The grid underlay is the `bg-grid-container` token (`#F1F3F6` behind white panels in the light theme, `#1B2429` behind `#0F1A1F` panels in the dark theme). React Grid Layout itself stays transparent so the underlay shows through every gutter; do not replace that separation with panel borders.
 
 ## Shared boundaries
 

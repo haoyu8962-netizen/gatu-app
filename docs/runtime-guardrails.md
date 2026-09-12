@@ -73,12 +73,15 @@ Do not collapse these states into one boolean.
   Reown/AppKit chooser or reimplement the catalog in application components.
 - `PRIVY_WALLET_LIST` is the single source for recommended-wallet ordering.
   Keep named wallets ahead of detected/fallback entries and use
-  `wallet_connect` for Privy's long-tail catalog.
+  `wallet_connect` for Privy's long-tail catalog; do not substitute
+  `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
 - Login methods remain `wallet` and `email`; Passkey login is intentionally
   disabled. Embedded Ethereum wallets are created only for users without a
   wallet, and Privy's embedded wallet UI remains hidden.
-- Dark/light Privy configuration changes appearance only. Preserve
-  `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
+- Dark/light Privy configuration changes appearance and accent color only.
+  Wallet ordering and authentication behavior stay identical across themes,
+  and the authentication provider is never remounted merely to change theme.
+  Preserve `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
   `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
   Ethereum-only wallet selection, and customize radius through Privy's
   supported public CSS variables rather than generated DOM classes.
@@ -358,6 +361,15 @@ mobile regressions.
   `pointer-events: none` to the loaded TradingView iframe.
 - CSP changes must keep the main document strict while allowing the
   charting-library same-origin iframe mode.
+- TradingView theme CSS runs inside the iframe, so application CSS variables
+  do not inherit into it. Define its semantic background variables inside
+  `apps/terminal/public/tradingview-theme-{dark,light}.css`: the canvas uses
+  the terminal dark background `#0F1A1F`; raised or interactive layers use
+  `#1D1E26` (the shared `bg-surface` dark value) and are never flattened into
+  the canvas color.
+- Keep the single theme-aware TradingView stylesheet used by runtime theme
+  switching; changing CSS URLs on theme changes would require rebuilding the
+  iframe.
 
 ### Important Files
 

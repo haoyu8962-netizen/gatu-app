@@ -27,7 +27,7 @@
 | 账户共享模型 | [账户 ADR](adr/0001-account-overview-cross-shell-model.md)；账户概要与 Portfolio 的就绪条件不同 |
 | 市场身份、路由与展示价格 | [单交易路由迁移](architecture/trade-single-route-migration.md)、[价格来源审查](price-source-audit.md)、[资产资料来源](spot-asset-information.md) |
 | 下单状态与桌面/移动表单 | [草稿生命周期](order-draft-lifecycle.md)、[双端一致性](order-entry-surface-parity.md)、[表单布局](order-entry-layout-audit.md)、[TWAP 回归](twap-regression-tests.md) |
-| 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md) |
+| 订单簿数据、交互与动画 | [分组隔离修复依据](terminal-review-remediation.md)、[传输 ADR](adr/0003-orderbook-transport-isolation.md)、[累计悬浮](orderbook-hover.md)、[行几何](orderbook-layout.md)、[新增档位及数量反馈](orderbook-new-level-animation.md)、[最近成交面板](recent-trades.md) |
 | 响应式布局与控件 | [桌面网格](desktop-grid-layout.md)、[交易滑杆](slider-interactions.md)、[工具栏](trading-toolbar-redesign.md) |
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
