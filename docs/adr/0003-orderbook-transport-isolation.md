@@ -84,6 +84,16 @@ snapshots establish a quiet animation baseline. Geometry and feedback remain in
 [order-book layout](../orderbook-layout.md) and
 [new-level animation](../orderbook-new-level-animation.md).
 
+The downstream snapshot cache therefore keys on `network + coin + grouping +
+actual feed source`, so a cached fast frame can never serve an incremental or
+full-depth view. Its expiry compares a `performance.now()` receipt time against
+a ten-second budget over at most twelve keys: the user's wall clock is never
+compared with exchange timestamps, and a live frame at or newer than the cached
+one supersedes it. Because the pinned SDK's `l2Book` callback filters only by
+coin, same-coin fast and full frames must also be matched against the requested
+feed source before they reach subscription state — a grouping-correct transport
+does not make an unrequested depth mode current data.
+
 ## Evidence and verification limits
 
 - [Pool implementation](../../packages/hl-react/src/subscriptions/l2-book-transport-pool.ts)
