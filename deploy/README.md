@@ -489,6 +489,13 @@ sudo /usr/bin/systemctl reload caddy
 然后重新运行 `deploy.sh`。脚本故意不自动覆盖/reload Caddy：仓库归 `gatu` 可写，为它授予
 root install/reload 会让被入侵的应用用户获得修改公网代理的能力，也无法与应用 release 做可靠的原子回滚。
 
+如果同时看到 `WARN ... Unnecessary header_up X-Forwarded-For` 和
+`ERROR: installed Caddyfile does not match ...`，真正的阻断是已安装文件与仓库文件的逐字节比较失败，
+不是这个警告。保留仓库中覆盖客户端 IP 的配置，不要为了消除警告而删除它或跳过校验。
+该检查位于第 2 步，尚未进入构建与 release 切换。上面的 validate、install、reload 必须依次成功，
+然后执行 `sudo -u gatu /bin/bash /opt/gatu/repo/deploy/deploy.sh main` 重试；出现新的错误时按新的检查处理，
+不能把安装配置完成当作应用部署完成。
+
 如果服务器之前的 `gatu.service` 仍使用 `/opt/gatu/repo/apps/terminal/.output`,再更新 systemd 单元:
 
 ```bash

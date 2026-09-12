@@ -37,6 +37,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
 
 ### Fixed
 
+- Reduced repeated order-queue render code so deployment builds retain more
+  room under the existing trading-page bundle budget, preserving status badges,
+  warning priority and individual order feedback. See
+  [performance acceptance criteria](docs/terminal-performance-baseline.md#order-queue-rendering-and-deployment-headroom).
 - Loading, stale and recovering data retain quiet placeholders. Empty-account
   conclusions require complete, current snapshots, while action availability
   remains independently guarded. See [mobile data presentation](docs/mobile-data-presentation.md).
