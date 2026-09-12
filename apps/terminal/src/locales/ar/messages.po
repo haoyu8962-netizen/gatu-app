@@ -2960,7 +2960,6 @@ msgstr "تعذر تحميل فئات الأسواق."
 msgid "Failed to load open orders."
 msgstr "فشل في تحميل الأوامر المفتوحة."
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "فشل في تحميل دفتر الأوامر."

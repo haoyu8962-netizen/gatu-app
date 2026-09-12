@@ -92,6 +92,35 @@ for (const fixture of fixtures) {
 	});
 }
 
+test("desktop refresh and recovery keep pending ladders quiet and stable", async ({ page }) => {
+	await page.goto("/orderbook-layout.html");
+	await page.waitForFunction(() => typeof window.setOrderbookLayoutFixture === "function");
+	await page.evaluate(() =>
+		window.setOrderbookLayoutFixture({ view: "desktop", height: 677, width: 280, pending: true }),
+	);
+	const spread = page.locator('[data-slot="orderbook-spread"]');
+	const asks = page.locator('[data-slot="orderbook-asks"]');
+	const bids = page.locator('[data-slot="orderbook-bids"]');
+	await expect(page.locator('[aria-busy="true"]')).toHaveCount(1);
+	await expect(page.locator("output.sr-only")).toHaveCSS("clip-path", "inset(50%)");
+	await expect(asks.locator('[data-slot="orderbook-placeholder-row"]')).not.toHaveCount(0);
+	const bounds = await spread.boundingBox();
+	for (const state of ["pending", "stale", "error"] as const) {
+		await page.evaluate((value) => window.setOrderbookHoverUnavailable(value), state);
+		await expect(asks).toHaveText("");
+		await expect(bids).toHaveText("");
+		await expect(page.locator("[data-orderbook-side-container] button")).toHaveCount(0);
+		expect(await page.locator(".orderbook-panel-container").innerText()).not.toMatch(
+			/Failed to load order book|No orders/,
+		);
+		expect(await spread.boundingBox()).toEqual(bounds);
+		await page.evaluate(() => window.publishOrderbookHoverSnapshot());
+		await expect(asks.locator("button:enabled").first()).toBeVisible();
+		await expect(bids.locator("button:enabled").first()).toBeVisible();
+		expect(await spread.boundingBox()).toEqual(bounds);
+	}
+});
+
 test("compact pending and sparse books preserve the midpoint and footer", async ({ page }) => {
 	await page.goto("/orderbook-layout.html");
 	await page.waitForFunction(() => typeof window.setOrderbookLayoutFixture === "function");

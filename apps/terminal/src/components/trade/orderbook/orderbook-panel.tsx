@@ -184,6 +184,11 @@ export function OrderbookPanel() {
 				aria-busy={!hasCurrentSnapshot && !hasFailure}
 				className="flex-1 min-h-0 mt-0 pt-0 flex flex-col"
 			>
+				{!hasCurrentSnapshot && !hasFailure && (
+					<output aria-live="polite" className="sr-only">
+						{t`Waiting for order book...`}
+					</output>
+				)}
 				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs orderbook-header-text border-b border-stroke-weak shrink-0">
 					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
 						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
@@ -256,9 +261,7 @@ export function OrderbookPanel() {
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
 						) : (
-							<div className="flex items-center justify-center px-2 py-6 text-xs text-fg">
-								{hasFailure ? t`Failed to load order book.` : t`Waiting for order book...`}
-							</div>
+							getOrderbookPlaceholderKeys(visibleRows).map((key) => <OrderbookPlaceholderRow key={key} />)
 						)}
 					</div>
 
@@ -303,7 +306,9 @@ export function OrderbookPanel() {
 							</>
 						) : hasCurrentSnapshot ? (
 							<OrderbookSideEmpty />
-						) : null}
+						) : (
+							getOrderbookPlaceholderKeys(visibleRows).map((key) => <OrderbookPlaceholderRow key={key} />)
+						)}
 					</div>
 				</div>
 				{hover.activeLevel && (

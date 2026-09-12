@@ -2960,7 +2960,6 @@ msgstr "加载市场分类失败。"
 msgid "Failed to load open orders."
 msgstr "加载未成交订单失败。"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "加载订单簿失败。"

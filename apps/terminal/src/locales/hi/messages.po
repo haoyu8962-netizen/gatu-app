@@ -2960,7 +2960,6 @@ msgstr "बाज़ार श्रेणियां लोड नहीं �
 msgid "Failed to load open orders."
 msgstr "खुले ऑर्डर लोड करने में विफल।"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "ऑर्डर बुक लोड करने में विफल।"

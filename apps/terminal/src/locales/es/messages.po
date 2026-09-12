@@ -2960,7 +2960,6 @@ msgstr "No se pudieron cargar las categorías de mercado."
 msgid "Failed to load open orders."
 msgstr "Error al cargar órdenes abiertas."
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "Error al cargar libro de órdenes."
