@@ -548,7 +548,7 @@ describe("desktop account panel", () => {
 		testState.hasError = true;
 		testState.perpStateStatus = "error";
 		renderPanel();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Failed to load balances.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 		expect(getMetricRowText(container, "Account Value")).toContain("—");
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 
@@ -556,7 +556,7 @@ describe("desktop account panel", () => {
 		testState.isDataStale = true;
 		testState.perpStateStatus = "stale";
 		renderPanel();
-		expect(container.textContent).toContain("Balance data is stale. Actions are temporarily unavailable.");
+		expect(container.querySelector("output:not(.sr-only)")).toBeNull();
 		expect(getMetricRowText(container, "Account Value")).toContain("—");
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 	});
@@ -571,7 +571,7 @@ describe("desktop account panel", () => {
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 	});
 
-	it("explains shared-account valuation failures and never falls back to entry notional", () => {
+	it("keeps shared-account valuation failures quiet and never falls back to entry notional", () => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.builderCollateral = "HYPE";
 		testState.spotBalances = [
@@ -581,13 +581,13 @@ describe("desktop account panel", () => {
 		testState.prices = {};
 		renderPanel();
 
-		expect(container.textContent).toContain("Balance data is unavailable. Try again after the connection recovers.");
+		expect(container.querySelector("output:not(.sr-only)")).toBeNull();
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("—");
 		expect(container.textContent).not.toContain("$253.50");
 
 		testState.priceStatus = "error";
 		renderPanel();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Failed to load balances.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it("keeps disabled funds actions focusable and exposes their reason to assistive technology", () => {

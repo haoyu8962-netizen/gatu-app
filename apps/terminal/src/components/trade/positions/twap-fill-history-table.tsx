@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { TwapHistoryLoadMore, TwapRealtimeWarning } from "@/components/trade/twap-history-feedback";
+import { TwapHistoryLoadMore, TwapRealtimeRetry } from "@/components/trade/twap-history-feedback";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -10,6 +10,7 @@ import { useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass } from "./positions-panel-table-styles";
 
@@ -19,8 +20,7 @@ const twapFillGridClass =
 export function TwapFillHistoryTable() {
 	useNumberFormatRevision();
 	const { t } = useLingui();
-	const { error, fills, hasMore, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
-		useTwapSliceFills();
+	const { fills, hasMore, isConnected, isRealtimeDegraded, loadMore, retryRealtime, status } = useTwapSliceFills();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 
@@ -34,17 +34,8 @@ export function TwapFillHistoryTable() {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view TWAP fill history.`}</Placeholder>;
-		if (status === "loading" || status === "idle") {
-			return <Placeholder>{t`Loading TWAP fill history...`}</Placeholder>;
-		}
-		if (status === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load TWAP fill history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
-				</Placeholder>
-			);
-		}
+		if (status === "loading" || status === "idle") return <PassiveDataPlaceholder busy />;
+		if (status !== "ready" || (fills.length === 0 && isRealtimeDegraded)) return <PassiveDataPlaceholder />;
 		if (fills.length === 0) return <Placeholder>{t`No TWAP fills found.`}</Placeholder>;
 		return null;
 	}
@@ -53,7 +44,7 @@ export function TwapFillHistoryTable() {
 
 	return (
 		<div className={positionsPanelTableShellClass}>
-			{isRealtimeDegraded ? <TwapRealtimeWarning error={realtimeError} onRetry={retryRealtime} /> : null}
+			{isRealtimeDegraded ? <TwapRealtimeRetry onRetry={retryRealtime} /> : null}
 			{placeholder ?? (
 				<ScrollArea className="min-h-0 flex-1 w-full">
 					<table aria-label={t`TWAP fill history`} className="block min-w-[1230px] border-collapse">

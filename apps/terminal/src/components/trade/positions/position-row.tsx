@@ -1,6 +1,6 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ShareIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ShareIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -125,7 +125,7 @@ export function PositionRow({
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
 	const entryPriceDisplay = formatPrice(p.entryPx, { szDecimals, style: "decimal" });
-	const markPriceDisplay = formatPrice(markPxRaw, { szDecimals, style: "decimal" });
+	const markPriceDisplay = formatPrice(hasFreshMark ? markPxRaw : undefined, { szDecimals, style: "decimal" });
 	const pnlDisplay = formatUSD(p.unrealizedPnl, {
 		compact: false,
 		currencyDisplay: "narrowSymbol",
@@ -145,19 +145,6 @@ export function PositionRow({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
-	const markStatusIndicator =
-		markPriceStatus === "loading" || markPriceStatus === "idle" ? (
-			<Tooltip content={t`Loading...`} side="top">
-				<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-			</Tooltip>
-		) : markPriceStatus === "stale" || markPriceStatus === "error" ? (
-			<Tooltip content={t`Mark price is unavailable. Wait for market data and try again.`} side="top">
-				<WarningCircleIcon
-					className="size-3 shrink-0 text-warning"
-					aria-label={t`Mark price is unavailable. Wait for market data and try again.`}
-				/>
-			</Tooltip>
-		) : null;
 	function renderTpSlContent() {
 		if (hasTpSl) {
 			return (
@@ -340,7 +327,6 @@ export function PositionRow({
 					title={markPriceDisplay}
 				>
 					{markPriceDisplay}
-					{markStatusIndicator}
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>

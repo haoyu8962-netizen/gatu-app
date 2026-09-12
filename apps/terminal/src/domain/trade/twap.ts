@@ -47,6 +47,7 @@ export function getTwapViewState(input: TwapViewStateInput): TwapViewState {
 	if (!input.isConnected) return "disconnected";
 	if (!input.hasData) return input.status === "error" ? "error" : "loading";
 	if (input.status === "error" || input.isStale) return "stale";
+	if (input.status !== "active") return "loading";
 	return "ready";
 }
 

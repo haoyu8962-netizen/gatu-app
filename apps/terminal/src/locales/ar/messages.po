@@ -1007,15 +1007,14 @@ msgid "Balance changed before submission. Review the updated balance and try aga
 msgstr "تغيّر الرصيد قبل الإرسال. راجع الرصيد المحدّث وحاول مرة أخرى."
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Balance data is stale."
-msgstr "بيانات الرصيد قديمة."
+#~ msgid "Balance data is stale."
+#~ msgstr "بيانات الرصيد قديمة."
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Balance data is stale. Actions are temporarily unavailable."
-msgstr "بيانات الرصيد قديمة. الإجراءات غير متاحة مؤقتًا."
+#~ msgid "Balance data is stale. Actions are temporarily unavailable."
+#~ msgstr "بيانات الرصيد قديمة. الإجراءات غير متاحة مؤقتًا."
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/hooks/trade/use-funds-action-availability.ts
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Balance data is unavailable. Try again after the connection recovers."
@@ -2941,57 +2940,56 @@ msgstr "فشل تحميل الأرصدة"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Failed to load balances."
-msgstr "فشل في تحميل الأرصدة."
+#~ msgid "Failed to load balances."
+#~ msgstr "فشل في تحميل الأرصدة."
 
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Failed to load deposits and withdrawals."
 msgstr "تعذر تحميل الإيداعات والسحوبات."
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Failed to load funding payments."
-msgstr "فشل تحميل مدفوعات التمويل."
+#~ msgid "Failed to load funding payments."
+#~ msgstr "فشل تحميل مدفوعات التمويل."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Failed to load market categories."
 msgstr "تعذر تحميل فئات الأسواق."
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Failed to load open orders."
-msgstr "فشل في تحميل الأوامر المفتوحة."
+#~ msgid "Failed to load open orders."
+#~ msgstr "فشل في تحميل الأوامر المفتوحة."
 
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "فشل في تحميل دفتر الأوامر."
 
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "Failed to load order history."
-msgstr "فشل تحميل سجل الأوامر."
+#~ msgid "Failed to load order history."
+#~ msgstr "فشل تحميل سجل الأوامر."
 
-#: src/components/trade/positions/positions-tab.tsx
 #: src/lib/trade/position-submit-feedback.ts
 msgid "Failed to load positions."
 msgstr "فشل تحميل المراكز."
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "Failed to load trade history."
-msgstr "فشل في تحميل سجل التداول."
+#~ msgid "Failed to load trade history."
+#~ msgstr "فشل في تحميل سجل التداول."
 
 #: src/components/trade/orderbook/trades-panel.tsx
 msgid "Failed to load trades."
 msgstr "فشل في تحميل الصفقات."
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
-msgid "Failed to load TWAP fill history."
-msgstr "تعذر تحميل سجل تنفيذات TWAP."
+#~ msgid "Failed to load TWAP fill history."
+#~ msgstr "تعذر تحميل سجل تنفيذات TWAP."
 
 #: src/components/trade/positions/twap-history-table.tsx
-msgid "Failed to load TWAP history."
-msgstr "تعذر تحميل سجل TWAP."
+#~ msgid "Failed to load TWAP history."
+#~ msgstr "تعذر تحميل سجل TWAP."
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Failed to load TWAP orders."
-msgstr "تعذر تحميل أوامر TWAP."
+#~ msgid "Failed to load TWAP orders."
+#~ msgstr "تعذر تحميل أوامر TWAP."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -3211,8 +3209,8 @@ msgid "FUNDING"
 msgstr "FUNDING"
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Funding data could not be validated. Refresh and try again."
-msgstr "تعذّر التحقق من صحة بيانات التمويل. حدّث الصفحة وحاول مرة أخرى."
+#~ msgid "Funding data could not be validated. Refresh and try again."
+#~ msgstr "تعذّر التحقق من صحة بيانات التمويل. حدّث الصفحة وحاول مرة أخرى."
 
 #: src/components/funding-history/funding-history-page.tsx
 #: src/components/funding-history/funding-history-page.tsx
@@ -3250,8 +3248,8 @@ msgid "Funding shown"
 msgstr "التمويل المعروض"
 
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Funding updates paused."
-msgstr "تحديثات التمويل متوقفة مؤقتًا."
+#~ msgid "Funding updates paused."
+#~ msgstr "تحديثات التمويل متوقفة مؤقتًا."
 
 #: src/components/staking/staking-action-modal.tsx
 msgid "Funds action progress"
@@ -3392,8 +3390,8 @@ msgstr "السجل"
 
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "History data could not be validated. Refresh and try again."
-msgstr "تعذر التحقق من صحة بيانات السجل. حدّث الصفحة وحاول مرة أخرى."
+#~ msgid "History data could not be validated. Refresh and try again."
+#~ msgstr "تعذر التحقق من صحة بيانات السجل. حدّث الصفحة وحاول مرة أخرى."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for 4 seconds to reveal phone access QR"
@@ -3875,12 +3873,12 @@ msgid "Loading balances across all chains..."
 msgstr "جارٍ تحميل الأرصدة عبر جميع الشبكات..."
 
 #: src/components/trade/positions/balances-tab.tsx
-msgid "Loading balances..."
-msgstr "جارٍ تحميل الأرصدة..."
+#~ msgid "Loading balances..."
+#~ msgstr "جارٍ تحميل الأرصدة..."
 
 #: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Loading deposits and withdrawals..."
-msgstr "جارٍ تحميل الإيداعات والسحوبات..."
+#~ msgid "Loading deposits and withdrawals..."
+#~ msgstr "جارٍ تحميل الإيداعات والسحوبات..."
 
 #: src/components/funding-history/funding-history-page.tsx
 msgid "Loading funding payments"
@@ -3901,24 +3899,24 @@ msgid "Loading markets..."
 msgstr "جارٍ تحميل الأسواق..."
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Loading open orders..."
-msgstr "جارٍ تحميل الأوامر المفتوحة..."
+#~ msgid "Loading open orders..."
+#~ msgstr "جارٍ تحميل الأوامر المفتوحة..."
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Loading order history"
 msgstr "جارٍ تحميل سجل الأوامر"
 
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "Loading order history..."
-msgstr "جارٍ تحميل سجل الأوامر..."
+#~ msgid "Loading order history..."
+#~ msgstr "جارٍ تحميل سجل الأوامر..."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #~ msgid "Loading position..."
 #~ msgstr "جارٍ تحميل المركز..."
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Loading positions..."
-msgstr "جاري تحميل المراكز..."
+#~ msgid "Loading positions..."
+#~ msgstr "جاري تحميل المراكز..."
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Loading QR code"
@@ -3955,20 +3953,20 @@ msgid "Loading trade history"
 msgstr "جارٍ تحميل سجل الصفقات"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "Loading trade history..."
-msgstr "جارٍ تحميل سجل التداول..."
+#~ msgid "Loading trade history..."
+#~ msgstr "جارٍ تحميل سجل التداول..."
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
-msgid "Loading TWAP fill history..."
-msgstr "جارٍ تحميل سجل تنفيذات TWAP..."
+#~ msgid "Loading TWAP fill history..."
+#~ msgstr "جارٍ تحميل سجل تنفيذات TWAP..."
 
 #: src/components/trade/positions/twap-history-table.tsx
-msgid "Loading TWAP history..."
-msgstr "جارٍ تحميل سجل TWAP..."
+#~ msgid "Loading TWAP history..."
+#~ msgstr "جارٍ تحميل سجل TWAP..."
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Loading TWAP orders..."
-msgstr "جارٍ تحميل أوامر TWAP..."
+#~ msgid "Loading TWAP orders..."
+#~ msgstr "جارٍ تحميل أوامر TWAP..."
 
 #: src/components/vaults/vaults-page.tsx
 msgid "Loading Vault details"
@@ -3987,8 +3985,6 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/components/deposit-modal-loading-fallback.tsx
 #: src/components/trade/components/global-modals.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
@@ -4129,8 +4125,6 @@ msgstr "يُشتق سعر العلامة من أسعار الأوراكل ويُ
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-row.tsx
-#: src/components/trade/positions/position-row.tsx
 #: src/lib/errors/definitions/market.ts
 msgid "Mark price is unavailable. Wait for market data and try again."
 msgstr "سعر العلامة غير متاح. انتظر بيانات السوق وحاول مرة أخرى."
@@ -5112,8 +5106,8 @@ msgid "Order history pagination"
 msgstr "ترقيم صفحات سجل الأوامر"
 
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "Order history updates paused."
-msgstr "تحديثات سجل الأوامر متوقفة مؤقتًا."
+#~ msgid "Order history updates paused."
+#~ msgstr "تحديثات سجل الأوامر متوقفة مؤقتًا."
 
 #: src/components/historical-orders/historical-orders-page.tsx
 msgid "Order history will load automatically when the connection returns."
@@ -5822,8 +5816,8 @@ msgid "Ready for verification"
 msgstr "جاهز للتحقق"
 
 #: src/components/trade/twap-history-feedback.tsx
-msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
-msgstr "تحديثات TWAP في الوقت الفعلي غير متاحة. يتم عرض أحدث البيانات المحمّلة."
+#~ msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
+#~ msgstr "تحديثات TWAP في الوقت الفعلي غير متاحة. يتم عرض أحدث البيانات المحمّلة."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
@@ -8426,8 +8420,8 @@ msgid "Trade history pagination"
 msgstr "ترقيم صفحات سجل الصفقات"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "Trade history updates paused."
-msgstr "تحديثات سجل الصفقات متوقفة مؤقتًا."
+#~ msgid "Trade history updates paused."
+#~ msgstr "تحديثات سجل الصفقات متوقفة مؤقتًا."
 
 #: src/components/trade-history/trade-history-page.tsx
 msgid "Trade history will load automatically when the connection returns."
@@ -8692,8 +8686,8 @@ msgid "TWAP cancellation was submitted, but its status could not be confirmed. C
 msgstr "تم إرسال طلب إلغاء TWAP، ولكن تعذر تأكيد حالته. تحقق من قائمة أوامر TWAP النشطة قبل إعادة المحاولة."
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "TWAP data may be stale while the connection recovers."
-msgstr "قد تكون بيانات TWAP قديمة أثناء استعادة الاتصال."
+#~ msgid "TWAP data may be stale while the connection recovers."
+#~ msgstr "قد تكون بيانات TWAP قديمة أثناء استعادة الاتصال."
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -9554,16 +9548,14 @@ msgstr "أنت غير متصل"
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "You are offline."
-msgstr "أنت غير متصل."
+#~ msgid "You are offline."
+#~ msgstr "أنت غير متصل."
 
 #: src/components/funding-history/funding-history-page.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "You are offline. Funding payments will load when the connection returns."
 msgstr "أنت غير متصل. ستُحمّل مدفوعات التمويل عند عودة الاتصال."
 
 #: src/components/historical-orders/historical-orders-page.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 msgid "You are offline. Order history will load when the connection returns."
 msgstr "أنت غير متصل. سيُحمّل سجل الأوامر عند عودة الاتصال."
 
@@ -9580,7 +9572,6 @@ msgid "You are offline. Previously loaded trade history remains visible."
 msgstr "أنت غير متصل. يظل سجل الصفقات المحمّل سابقًا ظاهرًا."
 
 #: src/components/trade-history/trade-history-page.tsx
-#: src/components/trade/positions/history-tab.tsx
 msgid "You are offline. Trade history will load when the connection returns."
 msgstr "أنت غير متصل. سيُحمّل سجل الصفقات عند عودة الاتصال."
 

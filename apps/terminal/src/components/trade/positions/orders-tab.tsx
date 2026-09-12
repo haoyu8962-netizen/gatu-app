@@ -87,6 +87,7 @@ import {
 import { CancelAllOrdersModal } from "./cancel-all-orders-modal";
 import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { OrderInlineEdit } from "./order-inline-edit";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -236,7 +237,6 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const {
 		data: openOrdersEvent,
 		status,
-		error,
 		isStale,
 	} = useSubscription(
 		"openOrders",
@@ -247,6 +247,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const markets = useMarkets();
 	const { getMarketInfo } = useMarketsInfo();
 	const openOrders = openOrdersEvent?.orders ?? [];
+	const hasCurrentOrders = status === "active" && !isStale && openOrdersEvent !== undefined;
 	const selectionSessionKey = getTradingSessionKey(clientKey, address, env);
 	const [selectedOrders, setSelectedOrders] = useState<SelectedOrdersState>(() => ({
 		ids: new Set(),
@@ -1030,23 +1031,16 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 
 	const hasActiveModification = sessionModifications.some((action) => action.phase !== "unconfirmed");
 	const isModifyLocked = modifyPhase !== "idle" || hasActiveModification;
-	const disableCancelSelected = pendingScopes.has("selected") || selectedCount === 0 || isModifyLocked;
-	const disableCancelAll = pendingScopes.size > 0 || openOrders.length === 0 || isModifyLocked;
+	const disableCancelSelected =
+		!hasCurrentOrders || pendingScopes.has("selected") || selectedCount === 0 || isModifyLocked;
+	const disableCancelAll = !hasCurrentOrders || pendingScopes.size > 0 || openOrders.length === 0 || isModifyLocked;
 	const actionError = visibleCancelValidationError ?? visibleModifyValidationError;
 	const modifyActionErrorId =
 		visibleModifyValidationError && actionError === visibleModifyValidationError ? modifyErrorId : undefined;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view open orders.`}</Placeholder>;
-		if (status === "subscribing" || status === "idle") return <Placeholder>{t`Loading open orders...`}</Placeholder>;
-		if (status === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load open orders.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
-				</Placeholder>
-			);
-		}
+		if (!hasCurrentOrders) return <PassiveDataPlaceholder busy={status !== "error" && !isStale} />;
 		return null;
 	}
 
@@ -1059,7 +1053,7 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 					data-testid="orders-toolbar-actions"
 					className="flex min-w-0 shrink-0 items-center gap-2 font-market-close"
 				>
-					{isConnected ? (
+					{isConnected && hasCurrentOrders ? (
 						<span className="shrink-0 text-xs text-market-close-muted tabular-nums">
 							<Plural value={openOrders.length} one="# order" other="# orders" />
 						</span>

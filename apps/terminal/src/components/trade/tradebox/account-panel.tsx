@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { Skeleton, SkeletonValue } from "@/components/ui/skeleton";
@@ -50,7 +50,6 @@ export function AccountPanel() {
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
-		valuationUnavailable,
 	} = useAccountOverview();
 	const overviewLabels = useAccountOverviewLabels({ accountMode, usesSharedQuoteBalance });
 	const fundsActionAvailability = useFundsActionAvailability({
@@ -61,8 +60,6 @@ export function AccountPanel() {
 		internalTransfersEnabled: !usesSharedQuoteBalance,
 	});
 	const metricLoading = accountOverviewStatus === "loading";
-	const metricsHaveError = accountOverviewStatus === "error";
-	const metricsAreStale = accountOverviewStatus === "stale";
 	const marginRatioLabel = marginRatioReady
 		? formatPercent(maintenanceMarginRatio, { maximumFractionDigits: 2, signDisplay: "never" })
 		: "—";
@@ -278,31 +275,6 @@ export function AccountPanel() {
 						data-grid-content-part
 						className="shrink-0 flow-root border-t border-trading-panel-stroke-row px-2 pt-3 pb-3"
 					>
-						{metricsHaveError ? (
-							<div
-								role="alert"
-								className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-error-weak bg-error-soft px-2.5 py-2 text-xs text-error"
-							>
-								<WarningCircleIcon className="size-4 shrink-0" />
-								<span>{t`Failed to load balances.`}</span>
-							</div>
-						) : null}
-						{metricsAreStale && !metricsHaveError ? (
-							<output className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-2.5 py-2 text-xs text-warning">
-								<WarningCircleIcon className="size-4 shrink-0" />
-								<span>
-									{fundsActionsReady
-										? t`Balance data is stale.`
-										: t`Balance data is stale. Actions are temporarily unavailable.`}
-								</span>
-							</output>
-						) : null}
-						{valuationUnavailable && !metricsHaveError && !metricsAreStale ? (
-							<output className="mb-2 flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft px-2.5 py-2 text-xs text-warning">
-								<WarningCircleIcon className="size-4 shrink-0" />
-								<span>{t`Balance data is unavailable. Try again after the connection recovers.`}</span>
-							</output>
-						) : null}
 						{metricLoading ? <output className="sr-only">{overviewLabels.loading}</output> : null}
 						{showsSecondaryFundsActions ? (
 							<span id={transferDescriptionId} className="sr-only">

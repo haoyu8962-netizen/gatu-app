@@ -47,7 +47,7 @@
 - 明确解析出的 `default`、`dexAbstraction` 使用 `account-mode-unsupported`，保留“移动资金前请选择支持的账户模式”的限制说明。`default` 不能当成 Standard / `disabled`，也不能当成尚未收到数据。
 - 缺少模式、未识别值以及 HTTP / WebSocket 模式冲突使用 `account-mode-unresolved`，保持静默并禁用动作。当前归一化的 `unknown` 也包括来源冲突，不能把它全部当成已确认的不支持模式。
 - 两类禁用原因不改变 `available`、资金分类或提交前账户模式与身份复核。恢复和切换模式不得卸载已打开的弹窗或丢失输入草稿。
-- 桌面持仓的读取错误优先于加载占位；移动持仓继续安静展示。订阅已 active 但首份快照未到达的保护必须保留，错误和未知快照不得显示确认空持仓。
+- 桌面与移动持仓均安静展示读取状态。读取错误/过期优先于加载占位，且不标记为正在加载；订阅已 active 但首份快照未到达的保护必须保留，错误、过期和未知快照不得显示确认空持仓。
 
 依据：2026-09-09 核对 [Hyperliquid 账户模式文档](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)，Standard / Manual、统一账户与组合保证金为当前模式，DEX abstraction 已停用；[官方 Python SDK 示例](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/examples/user_abstraction.py) 将 `default` 明确作为 Agent 设置模式前的状态。项目锁定的 [SDK 0.33.3 userAbstraction](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/userAbstraction.ts) 返回类型包含 `default`；该方法只校验请求并直接返回传输结果，因此终端仍须防御未识别响应。以上区分仅修正展示与原因分类，不新增模式支持。
 
@@ -65,6 +65,7 @@
 
 ## 受约束的入口
 
+- 桌面最近成交、账户概要、余额、持仓、当前委托、TWAP 与交易/委托/资金费用历史使用相同的静默数据恢复规则。最近成交与当前委托只显示当前有效快照；历史列表可保留已加载记录，但失效空快照不得得出“没有记录”的结论。TWAP 历史保留中性的主动重试和分页控件，不再插入被动警告条。充值提现历史保留主动重试和已确认显示上限说明。详见 [加载体验审查](terminal-loading-audit.md)。
 - 移动端账户概览、余额、持仓、当前委托、TWAP 当前/历史/成交列表。
 - 成交历史、委托历史、资金费用、充值提现记录。
 - 下单面板的可用余额、主操作按钮与地区检查状态。

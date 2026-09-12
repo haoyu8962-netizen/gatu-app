@@ -215,7 +215,7 @@ describe("PositionRow market close entry", () => {
 		const limitButton = container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]');
 		expect(marketButton?.disabled).toBe(false);
 		expect(limitButton?.disabled).toBe(false);
-		expect(container.querySelector('[aria-label="Loading..."]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="Loading..."]')).toBeNull();
 		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
 
 		act(() => {
@@ -241,7 +241,7 @@ describe("PositionRow market close entry", () => {
 		});
 	});
 
-	it("labels a cached stale mark without disabling risk-reducing actions", () => {
+	it("hides a cached stale mark without disabling risk-reducing actions", () => {
 		act(() => {
 			root.render(
 				createElement(
@@ -274,7 +274,8 @@ describe("PositionRow market close entry", () => {
 			);
 		});
 
-		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label^="Mark price is unavailable"]')).toBeNull();
+		expect(container.querySelectorAll("tbody tr > td")[4]?.textContent).toBe("-");
 		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Market Close"]')?.disabled).toBe(false);
 		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Limit Close"]')?.disabled).toBe(false);
 	});

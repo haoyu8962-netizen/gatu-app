@@ -158,6 +158,35 @@ describe("empty balance Deposit entries", () => {
 		});
 	}
 
+	it.each([{ isLoading: true }, { hasError: true }, { isDataStale: true }, { accountDataReady: false }])(
+		"keeps an incomplete desktop snapshot quiet without a deposit suggestion: %o",
+		(state) => {
+			Object.assign(testState, state);
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<BalancesTab />
+					</I18nProvider>,
+				),
+			);
+			expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+			expect(container.textContent).not.toMatch(
+				/Loading balances|Failed to load balances|No balances found|Deposit funds/,
+			);
+			expect(testState.openDeposit).not.toHaveBeenCalled();
+			Object.assign(testState, { isLoading: false, hasError: false, isDataStale: false, accountDataReady: true });
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<BalancesTab />
+					</I18nProvider>,
+				),
+			);
+			expect(container.querySelector('[data-slot="passive-data-placeholder"]')).toBeNull();
+			expect(container.textContent).toContain("Deposit");
+		},
+	);
+
 	it.each([
 		{ isLoading: true },
 		{ hasError: true },

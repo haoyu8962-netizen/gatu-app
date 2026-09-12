@@ -15,11 +15,11 @@ import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelTableBodyClass,
@@ -73,7 +73,6 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 	const { address } = useWalletSession();
 	const markets = useMarkets();
 	const totalFunding = getToolbarFundingTotal(updates);
-	const malformedHistory = isMalformedHistoryPageError(error);
 
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
 	const headerClass = totalFunding === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(totalFunding);
@@ -105,24 +104,9 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view funding payments.`}</Placeholder>;
-		if (status === "offline") {
-			return <Placeholder>{t`You are offline. Funding payments will load when the connection returns.`}</Placeholder>;
-		}
 		if (status === "loading" || status === "idle") return <FundingLoadingPlaceholder />;
-		if (status === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load funding payments.`}</span>
-					{malformedHistory ? (
-						<span className="mt-1 text-xs text-fg-muted">
-							{t`Funding data could not be validated. Refresh and try again.`}
-						</span>
-					) : (
-						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
-					)}
-				</Placeholder>
-			);
-		}
+		if (status !== "ready" || (updates.length === 0 && (error || isOffline || isStale)))
+			return <PassiveDataPlaceholder />;
 		if (updates.length === 0) return <Placeholder>{t`No funding payments found.`}</Placeholder>;
 		return null;
 	}
@@ -137,11 +121,6 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 						<span className="whitespace-nowrap text-xs text-market-close-muted">
 							{t`Funding shown`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
 						</span>
-					) : null}
-					{isConnected && status === "ready" && (error || isOffline || isStale) ? (
-						<output aria-live="polite" className="whitespace-nowrap text-xs text-market-close-danger">
-							{isOffline ? t`You are offline.` : t`Funding updates paused.`}
-						</output>
 					) : null}
 				</div>
 			</DesktopTabToolbarPortal>

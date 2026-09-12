@@ -15,11 +15,11 @@ import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelTableBodyClass,
@@ -45,7 +45,6 @@ export function HistoryTab() {
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
-	const malformedHistory = isMalformedHistoryPageError(error);
 	const visibleFills = fills.slice(0, RECENT_ACCOUNT_HISTORY_ROWS);
 
 	function getDirectionLabel(direction: string) {
@@ -83,24 +82,9 @@ export function HistoryTab() {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
-		if (status === "offline") {
-			return <Placeholder>{t`You are offline. Trade history will load when the connection returns.`}</Placeholder>;
-		}
-		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
-		if (status === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load trade history.`}</span>
-					{malformedHistory ? (
-						<span className="mt-1 text-xs text-fg-muted">
-							{t`History data could not be validated. Refresh and try again.`}
-						</span>
-					) : (
-						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
-					)}
-				</Placeholder>
-			);
-		}
+		if (status === "loading" || status === "idle") return <PassiveDataPlaceholder busy />;
+		if (status !== "ready" || (fills.length === 0 && (error || isOffline || isStale)))
+			return <PassiveDataPlaceholder />;
 		if (fills.length === 0) return <Placeholder>{t`No fills found.`}</Placeholder>;
 		return null;
 	}
@@ -109,14 +93,6 @@ export function HistoryTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			{status === "ready" && (error || isOffline || isStale) ? (
-				<output
-					aria-live="polite"
-					className="flex h-8 shrink-0 items-center border-b border-market-close-stroke-card px-5 text-xs text-market-close-danger"
-				>
-					{isOffline ? t`You are offline.` : t`Trade history updates paused.`}
-				</output>
-			) : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">

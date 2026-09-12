@@ -16,6 +16,7 @@ import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass, positionsPanelTabRootClass } from "./positions-panel-table-styles";
 import { TwapFillHistoryTable } from "./twap-fill-history-table";
@@ -33,7 +34,6 @@ export function TwapTab() {
 	const {
 		data: twapStatesEvent,
 		status,
-		error,
 		isStale,
 	} = useSubscription(
 		"twapStates",
@@ -54,15 +54,7 @@ export function TwapTab() {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view TWAP orders.`}</Placeholder>;
-		if (viewState === "loading") return <Placeholder>{t`Loading TWAP orders...`}</Placeholder>;
-		if (viewState === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load TWAP orders.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
-				</Placeholder>
-			);
-		}
+		if (viewState !== "ready") return <PassiveDataPlaceholder busy={viewState === "loading"} />;
 		if (activeOrders.length === 0) {
 			return (
 				<div className="flex h-full w-full flex-col items-center justify-center gap-2.5 px-2 py-14">
@@ -114,11 +106,6 @@ export function TwapTab() {
 							>
 								{feedback.message}
 							</div>
-						) : null}
-						{viewState === "stale" ? (
-							<output className="block px-5 py-1 text-xs text-warning">
-								{t`TWAP data may be stale while the connection recovers.`}
-							</output>
 						) : null}
 						<div className={positionsPanelTableShellClass}>
 							{placeholder ?? (

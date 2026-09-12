@@ -24,6 +24,7 @@ import {
 	balancesTableHeaderClass,
 } from "./balances-table-styles";
 import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -233,8 +234,8 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			}
 			return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
 		}
-		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
-		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
+		if (hasError || isDataStale) return <PassiveDataPlaceholder />;
+		if (isLoading || !accountDataReady || accountAbstraction === "unknown") return <PassiveDataPlaceholder busy />;
 		if (!accountModeReady) {
 			return <Placeholder variant="error">{t`Select a supported account mode to view balances.`}</Placeholder>;
 		}
@@ -285,11 +286,6 @@ export function BalancesTab({ toolbarTarget }: Props) {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<div className="flex h-full min-h-0 flex-col">
-						{isDataStale ? (
-							<output className="shrink-0 border-b border-stroke-warning-weak bg-warning-soft px-3 py-2 text-xs text-warning">
-								{t`Balance data is stale. Actions are temporarily unavailable.`}
-							</output>
-						) : null}
 						<ScrollArea className="min-h-0 flex-1">
 							<Table className="table-fixed min-w-[52rem] w-full">
 								<TableHeader className={balancesTableHeaderClass}>
