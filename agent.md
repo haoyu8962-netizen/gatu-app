@@ -1,10 +1,10 @@
-# HypeTerminal — AI Agent Guide
+# gatu — AI Agent Guide
 
 This is the implementation map for this checkout. Read [AGENTS.md](AGENTS.md) first for durable product and safety contracts, and use the [documentation index](docs/README.md) to find design decisions, working records and delivery documentation. Update the relevant documentation alongside behavior changes.
 
 ## Repository boundaries
 
-HypeTerminal is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
+gatu is a pnpm monorepo for a Hyperliquid trading terminal, its public website and shared packages. Paths below are relative to the repository root; the terminal's `@/` alias resolves to `apps/terminal/src/`.
 
 | Location | Responsibility |
 |---|---|
