@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => mocks,
 	useTwapMinutes: () => 30,
+	useTwapAdvancedEnabled: () => true,
 	useTwapRandomize: () => true,
 	useTwapTriggerPrice: () => mocks.twapTriggerPrice,
 	useTwapStopPrice: () => mocks.twapStopPrice,
@@ -158,13 +159,13 @@ describe("TradeFormTwap trigger and stop prices", () => {
 			expect(input.classList.contains("max-[1000px]:leading-5")).toBe(layout.compact);
 			expect(input.disabled).toBe(false);
 		}
-		expect(inputs.map((input) => input.value)).toEqual(["", "30", "105.5", "110"]);
+		expect(inputs.map((input) => input.value)).toEqual(["0", "30", "105.5", "110"]);
 		act(() => changeInput(getInputByLabel(container, "Trigger Price"), "106.5"));
 		expect(mocks.setTwapTriggerPrice).toHaveBeenCalledWith("106.5");
 		act(() => changeInput(getInputByLabel(container, "Max Price"), "111"));
 		expect(mocks.setTwapStopPrice).toHaveBeenCalledWith("111");
 		act(() => root.render(<TradeFormTwap {...defaultProps} {...layout} mobileSafe={layout.compact} disabled />));
 		for (const input of inputs) expect(input.disabled).toBe(true);
-		expect(inputs.map((input) => input.value)).toEqual(["", "30", "105.5", "110"]);
+		expect(inputs.map((input) => input.value)).toEqual(["0", "30", "105.5", "110"]);
 	});
 });

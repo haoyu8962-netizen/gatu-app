@@ -25,6 +25,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useScaleSkew: () => "1",
 	useScaleStart: () => "",
 	useTwapMinutes: () => 30,
+	useTwapAdvancedEnabled: () => true,
 	useTwapRandomize: () => true,
 	useTwapStopPrice: () => "",
 	useTwapTriggerPrice: () => "",

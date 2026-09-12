@@ -97,3 +97,5 @@ behavior follow this project's contracts.
   in both compact and split layouts.
 - Existing layout, CLS, pulse, size-color and price-selection regressions remain
   required for changes to these layers.
+
+“距中间价”只使用同市场且接收时间有效的服务端 `midPx`。缺少中间价时显示占位，不将标记价替代中间价；平均价和累计量继续由盘口精确累计数据计算。

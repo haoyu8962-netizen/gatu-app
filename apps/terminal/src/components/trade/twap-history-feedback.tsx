@@ -1,29 +1,17 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { WarningCircleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 
-interface RealtimeWarningProps {
+interface RealtimeRetryProps {
 	className?: string;
-	error: unknown;
 	onRetry: () => void;
 }
 
-export function TwapRealtimeWarning({ className, error, onRetry }: RealtimeWarningProps) {
+export function TwapRealtimeRetry({ className, onRetry }: RealtimeRetryProps) {
 	const { t } = useLingui();
-	const errorMessage = error instanceof Error ? error.message : undefined;
 
 	return (
-		<output
-			aria-live="polite"
-			title={errorMessage}
-			className={cn(
-				"flex shrink-0 items-center gap-2 border-b border-warning/20 bg-warning/5 px-3 py-1.5 text-xs text-warning",
-				className,
-			)}
-		>
-			<WarningCircleIcon className="size-3.5 shrink-0" weight="fill" aria-hidden="true" />
-			<span className="min-w-0 flex-1">{t`Real-time TWAP updates are unavailable. Showing the latest loaded data.`}</span>
+		<div className={cn("flex shrink-0 justify-end px-3 py-1.5", className)}>
 			<Button
 				variant="outline"
 				intent="neutral"
@@ -33,7 +21,7 @@ export function TwapRealtimeWarning({ className, error, onRetry }: RealtimeWarni
 			>
 				{t`Retry`}
 			</Button>
-		</output>
+		</div>
 	);
 }
 

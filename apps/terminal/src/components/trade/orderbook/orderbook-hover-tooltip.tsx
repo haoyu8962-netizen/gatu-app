@@ -25,8 +25,8 @@ export function OrderbookHoverTooltip({ hover, marketName, baseAsset, quoteAsset
 	const { getMarketByName } = useMarketsInfo();
 	const market = getMarketByName(marketName);
 	const referencePrice =
-		market && isLiveMarkPriceReady(market.markPriceStatus, market.markPx, market.markPriceReceivedAt)
-			? (market.midPx ?? market.markPx)
+		market && isLiveMarkPriceReady(market.markPriceStatus, market.midPx ?? undefined, market.midPriceReceivedAt)
+			? (market.midPx ?? undefined)
 			: undefined;
 	const summary = hover.activeLevel ? getOrderbookHoverSummary(hover.activeLevel, referencePrice) : undefined;
 	const averageDecimals = getOrderbookHoverPriceDecimals(

@@ -149,4 +149,34 @@ describe("OrderSummary information rows", () => {
 		expect(container.textContent).not.toContain("Hyperliquid fee");
 		expect(container.textContent).not.toContain("GATU fee");
 	});
+
+	it("preserves low-priced spot scale boundaries without showing a margin requirement", () => {
+		act(() =>
+			root.render(
+				<ScaleOrderSummary
+					compact
+					marketKind="spot"
+					scaleStart={0.123}
+					scaleEnd={0.456}
+					scaleLevels={4}
+					scaleSkew={1}
+					orderValue={400}
+					marginRequired={0}
+					feeQuote={buildOrderFeeQuote({
+						orderValue: 400,
+						protocolRate: 0.00009,
+						builderFeeTenthsBps: 10,
+						marketKind: "spot",
+						side: "buy",
+						execution: "order",
+					})}
+					szDecimals={5}
+				/>,
+			),
+		);
+
+		expect(getRowValue(container, "Start Price")).toBe("$0.123");
+		expect(getRowValue(container, "End Price")).toBe("$0.456");
+		expect(getRowLabels(container)).not.toContain("Margin Req.");
+	});
 });

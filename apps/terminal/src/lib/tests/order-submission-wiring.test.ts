@@ -44,7 +44,7 @@ describe("order submission wiring", () => {
 		);
 	});
 
-	it("tick-rounds TWAP prices once and requires a live mark to value every TWAP", () => {
+	it("resolves optional TWAP prices through the shared policy and requires a live mark on both surfaces", () => {
 		const orderSubmit = readFileSync(resolve(SOURCE_ROOT, "hooks/trade/use-order-submit.ts"), "utf8");
 
 		expect(orderSubmit).toContain("const details = buildTwapOrderDetails({");
@@ -55,10 +55,10 @@ describe("order submission wiring", () => {
 		for (const path of ORDER_ENTRY_SURFACES) {
 			const source = readFileSync(resolve(SOURCE_ROOT, path), "utf8");
 
-			expect(source).toContain("const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);");
-			expect(source).toContain("const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);");
-			expect(source).toContain("const twapTriggerPriceNum = toNumber(twapTriggerPx);");
-			expect(source).toContain("const twapStopPriceNum = toNumber(twapStopPx);");
+			expect(source).toMatch(
+				/resolveTwapPriceInputs\(\s*twapAdvancedEnabled,\s*twapTriggerPriceInput,\s*twapStopPriceInput,\s*twapPriceFormat,?\s*\)/,
+			);
+			expect(source).not.toContain("formatTwapPriceInput(");
 			expect(source).not.toContain("spotBuyTwapOrder");
 			expect(source).toMatch(
 				/const requiresLiveMarkPrice = orderType === "market" \|\| (?:is)?[Tt]riggerOrder \|\| twapOrder;/,
@@ -70,10 +70,8 @@ describe("order submission wiring", () => {
 		const tradePanel = readFileSync(resolve(SOURCE_ROOT, "components/trade/tradebox/trade-panel.tsx"), "utf8");
 		const mobileTradeView = readFileSync(resolve(SOURCE_ROOT, "components/trade/mobile/mobile-trade-view.tsx"), "utf8");
 
-		expect(tradePanel).toContain("const reduceOnlyChecked = useReduceOnly();");
-		expect(mobileTradeView).toMatch(/const \[reduceOnlyChecked, \w+\] = useState\(false\);/);
-
 		for (const source of [tradePanel, mobileTradeView]) {
+			expect(source).toContain("const reduceOnlyChecked = useReduceOnly();");
 			expect(source).toContain("const reduceOnly = capabilities.hasReduceOnly && reduceOnlyChecked;");
 			expect(source).toMatch(/perpInput\(baseInput, \{[\s\S]*?\breduceOnly,[\s\S]*?\}\)/);
 			expect(source).toMatch(/await confirmation\.requestSubmit\(\s*\{[\s\S]*?\breduceOnly,[\s\S]*?\},\s*draft,\s*\);/);

@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => mocks,
 	useTwapMinutes: () => 30,
+	useTwapAdvancedEnabled: () => true,
 	useTwapRandomize: () => true,
 	useTwapTriggerPrice: () => "105",
 	useTwapStopPrice: () => "110",

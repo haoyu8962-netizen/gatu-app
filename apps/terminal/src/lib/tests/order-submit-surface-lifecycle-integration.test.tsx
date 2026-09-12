@@ -5,7 +5,13 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { type OrderSubmitDraftResetToken, type OrderSubmitInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
-import { useLimitPrice, useOrderEntryActions, useOrderSize, useReduceOnly } from "@/stores/use-order-entry-store";
+import {
+	useLimitPrice,
+	useOrderEntryActions,
+	useOrderSize,
+	useReduceOnly,
+	useSizeMode,
+} from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
@@ -50,6 +56,7 @@ let orderEntryActions: ReturnType<typeof useOrderEntryActions> | null = null;
 let renderedLimitPrice = "";
 let renderedReduceOnly = false;
 let renderedSize = "";
+let renderedSizeMode = "base";
 const LIMIT_PREFILL_IDENTITY = "BTC|limit";
 
 function Probe({ active = true, limitPricePrefill }: { active?: boolean; limitPricePrefill?: string }) {
@@ -60,6 +67,7 @@ function Probe({ active = true, limitPricePrefill }: { active?: boolean; limitPr
 	renderedLimitPrice = limitPrice;
 	renderedReduceOnly = useReduceOnly();
 	renderedSize = useOrderSize();
+	renderedSizeMode = useSizeMode();
 	useEffect(() => {
 		if (!active || limitPricePrefill === undefined) return;
 		actions.setLimitPriceFromPrefill(LIMIT_PREFILL_IDENTITY, limitPricePrefill);
@@ -90,6 +98,7 @@ function marketInput(draftResetToken: OrderSubmitDraftResetToken): OrderSubmitIn
 		scaleSkewInput: "",
 		twapMinutesNum: null,
 		twapRandomize: false,
+		twapAdvancedEnabled: false,
 		twapTriggerPx: null,
 		twapStopPx: null,
 		tpSlEnabled: false,
@@ -127,6 +136,7 @@ describe("useOrderSubmit surface lifecycle with the real draft store", () => {
 			orderEntryActions?.resetFormForMarket("mainnet:perp:BTC");
 			orderEntryActions?.resetForm();
 			orderEntryActions?.setOrderType("limit");
+			orderEntryActions?.setSizeMode("base");
 			orderEntryActions?.setSize("1");
 			orderEntryActions?.setLimitPriceFromUser(LIMIT_PREFILL_IDENTITY, "99");
 		});
@@ -190,6 +200,39 @@ describe("useOrderSubmit surface lifecycle with the real draft store", () => {
 		await remountAndComplete({ afterRemount: () => orderEntryActions?.setSize("2") });
 
 		expect(renderedSize).toBe("2");
+	});
+
+	it("preserves a converted quantity and unit entered on a replacement surface after a late receipt", async () => {
+		await remountAndComplete({
+			afterRemount: () => {
+				orderEntryActions?.setSize("100");
+				orderEntryActions?.setSizeMode("quote");
+			},
+		});
+
+		expect(renderedSize).toBe("100");
+		expect(renderedSizeMode).toBe("quote");
+	});
+
+	it("invalidates a frozen confirmation when only the quantity unit changes", () => {
+		const token = hookValue?.captureDraftResetToken();
+		if (!token) throw new Error("Missing original token");
+		act(() => orderEntryActions?.setSizeMode("quote"));
+		expect(hookValue?.isDraftResetTokenCurrent(token)).toBe(false);
+	});
+
+	it("clears quantity and reduce-only for the next market while retaining the chosen quantity unit", () => {
+		act(() => {
+			orderEntryActions?.setReduceOnly(true);
+			orderEntryActions?.setSizeMode("quote");
+		});
+		const token = hookValue?.captureDraftResetToken();
+		if (!token) throw new Error("Missing original token");
+		act(() => orderEntryActions?.resetFormForMarket("mainnet:perp:ETH"));
+		expect(renderedSize).toBe("");
+		expect(renderedReduceOnly).toBe(false);
+		expect(renderedSizeMode).toBe("quote");
+		expect(hookValue?.isDraftResetTokenCurrent(token)).toBe(false);
 	});
 
 	it.each(["success", "partial", "reconciling", "twap-reconciling"])(

@@ -24,6 +24,7 @@ import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPos
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { PassiveDataPlaceholder } from "./passive-data-placeholder";
 import { Placeholder } from "./placeholder";
 import { PositionCloseAllController } from "./position-close-all-modal";
 import type {
@@ -205,14 +206,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view positions.`}</Placeholder>;
-		if (positionsError) {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load positions.`}</span>
-				</Placeholder>
-			);
-		}
-		if (positionsLoading) return <Placeholder>{t`Loading positions...`}</Placeholder>;
+		if (positionsError || positionsStale) return <PassiveDataPlaceholder />;
+		if (positionsLoading) return <PassiveDataPlaceholder busy />;
 		if (positions.length === 0) return <Placeholder>{t`No active positions.`}</Placeholder>;
 		return null;
 	}

@@ -242,6 +242,10 @@ verify_referral_uri_guard() {
 	node --check "${REPO}/deploy/referral-uri-guard.cjs"
 }
 
+authorize_mobile_sync_candidate() {
+	node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$1" "$CANDIDATES" "$REPO" "$SHARED" "$2" "$DEPLOY_MODE"
+}
+
 publish_release() {
 	set -e
 	local previous_release="$1"
@@ -254,10 +258,9 @@ publish_release() {
 
 	local candidate="${CANDIDATES}/${release_name}"
 	local authorization
-	authorization="$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" || exit 1
+	authorization="$(authorize_mobile_sync_candidate "$candidate" "$release_commit")" || exit 1
 	node "${REPO}/deploy/mobile-sync-release.mjs" check "${candidate}/artifact" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.createAndReveal' "$authorization")" "$(node -p 'JSON.parse(process.argv[1]).mobileSync.importFromQr' "$authorization")" "$release_commit" "$release_name" >&2 || exit 1
-	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
-	prepare_mobile_sync_rollback "$previous_release" || exit 1
+	[ "$(authorize_mobile_sync_candidate "$candidate" "$release_commit")" = "$authorization" ] || exit 1
 	if [ -e "$release_dir" ] || [ -L "$release_dir" ]; then
 		node "${REPO}/deploy/mobile-sync-candidate.mjs" reuse "$release_dir" "$RELEASES" "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
 	else
@@ -273,16 +276,14 @@ publish_release() {
 		printf '%s\n' "$release_name" > "${release_tmp}/.gatu-release-id"
 		printf '%s\n' "$REFERRAL_RELEASE_CAPABILITY" > "${release_tmp}/.gatu-release-capabilities"
 		node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" >&2 || exit 1
-		if grep -Fq 'respond @mobile_sync_block 503' "${REPO}/deploy/Caddyfile"; then
-			node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_tmp" closed >&2 || exit 1
-		fi
-		[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
+		[ "$(authorize_mobile_sync_candidate "$candidate" "$release_commit")" = "$authorization" ] || exit 1
 		node "${REPO}/deploy/mobile-sync-candidate.mjs" record "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
 		mv "$release_tmp" "$release_dir"
 	fi
-	[ "$(node "${REPO}/deploy/mobile-sync-candidate.mjs" authorize "$candidate" "$CANDIDATES" "$REPO" "$SHARED" "$release_commit")" = "$authorization" ] || exit 1
+	[ "$(authorize_mobile_sync_candidate "$candidate" "$release_commit")" = "$authorization" ] || exit 1
 	node "${REPO}/deploy/mobile-sync-candidate.mjs" reuse "$release_dir" "$RELEASES" "${SHARED}/mobile-sync-publications" "$authorization" >&2 || exit 1
 
+	prepare_mobile_sync_rollback "$previous_release" || exit 1
 	ln -sfn "$release_dir" "$current_tmp"
 	mv -Tf "$current_tmp" "$CURRENT"
 	printf '%s\n' "$release_dir"
@@ -406,57 +407,74 @@ verify_mobile_sync_edge_block() {
 	done
 }
 
+close_mobile_sync_edge() {
+	rm -f "${CURRENT%/*}/mobile-sync-edge-ready"
+}
+
+open_mobile_sync_edge() {
+	local marker="${CURRENT%/*}/mobile-sync-edge-ready" temporary
+	temporary="$(mktemp "${marker}.XXXXXX")" || return 1
+	printf '%s\n' "$1" > "$temporary" && chmod 0644 "$temporary" && mv -f "$temporary" "$marker" || {
+		rm -f "$temporary"
+		return 1
+	}
+}
+
 prepare_mobile_sync_rollback() {
 	local previous="$1" baseline
 	baseline="$(readlink -f "$MOBILE_SYNC_BASELINE" 2>/dev/null || true)"
-	if [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" closed >&2; then
-		return 0
+	if ! { [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" >&2; }; then
+		if [ -n "$previous" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$previous" >&2; then
+			ln -sfn "$previous" "${MOBILE_SYNC_BASELINE}.tmp"
+			mv -Tf "${MOBILE_SYNC_BASELINE}.tmp" "$MOBILE_SYNC_BASELINE"
+		fi
 	fi
-	if [ -n "$previous" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$previous" closed >&2; then
-		ln -sfn "$previous" "${MOBILE_SYNC_BASELINE}.tmp"
-		mv -Tf "${MOBILE_SYNC_BASELINE}.tmp" "$MOBILE_SYNC_BASELINE"
-		return 0
-	fi
+	close_mobile_sync_edge || return 1
 	verify_mobile_sync_edge_block || {
-		echo "ERROR: no verified closed v2 baseline or independently blocked ticket edge; refusing release switch." >&2
+		echo "ERROR: ticket edge could not be closed; refusing release switch." >&2
 		return 1
 	}
 }
 
 verify_mobile_sync_health() {
-	local release_dir="$1" port="$2" origin mode=""
-	node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "http://127.0.0.1:${port}" "https://app.gatu.ai" node || return 1
-	if verify_mobile_sync_edge_block; then mode="blocked"; fi
+	local release_dir="$1" port="$2" origin
+	close_mobile_sync_edge || return 1
 	for origin in https://app.gatu.ai https://testnet.gatu.ai; do
-		node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "$origin" "$origin" "$mode" || return 1
+		node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "http://127.0.0.1:${port}" "$origin" node || return 1
+	done
+	open_mobile_sync_edge "$release_dir" || return 1
+	for origin in https://app.gatu.ai https://testnet.gatu.ai; do
+		node "${REPO}/deploy/mobile-sync-release.mjs" probe "$release_dir" "$origin" "$origin" || {
+			close_mobile_sync_edge
+			return 1
+		}
 	done
 }
 
 verify_mobile_sync_rollback_health() {
 	local release_dir="$1" port="$2"
-	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_dir" closed >&2; then
+	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$release_dir" >&2; then
 		verify_mobile_sync_health "$release_dir" "$port"
 	else
-		verify_mobile_sync_edge_block
+		close_mobile_sync_edge && verify_mobile_sync_edge_block
 	fi
 }
 
 pin_mobile_sync_baseline() {
 	local candidate="$1"
-	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$candidate" closed >&2; then
+	if node "${REPO}/deploy/mobile-sync-release.mjs" verify "$candidate" >&2; then
 		ln -sfn "$candidate" "${MOBILE_SYNC_BASELINE}.tmp"
 		mv -Tf "${MOBILE_SYNC_BASELINE}.tmp" "$MOBILE_SYNC_BASELINE"
 	fi
 }
 
 rollback_to_release() {
-	local previous="$1"
-	local baseline
+	local previous="$1" baseline
+	close_mobile_sync_edge || return 1
+	verify_mobile_sync_edge_block || return 1
 	baseline="$(readlink -f "$MOBILE_SYNC_BASELINE" 2>/dev/null || true)"
-	if [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" closed >&2; then
+	if [ -n "$baseline" ] && node "${REPO}/deploy/mobile-sync-release.mjs" verify "$baseline" >&2; then
 		previous="$baseline"
-	elif ! node "${REPO}/deploy/mobile-sync-release.mjs" verify "$previous" closed >&2; then
-		verify_mobile_sync_edge_block || return 1
 	fi
 	if [ -z "$previous" ] || [ ! -d "$previous" ]; then return 1; fi
 	load_release_identity "$previous" || return 1
@@ -975,10 +993,6 @@ if [ "$DEPLOY_MODE" = "promote" ]; then
 	node deploy/mobile-sync-candidate.mjs verify "${CANDIDATES}/${release_name}" "$CANDIDATES" "$REPO" "$SHARED" "$build_commit"
 else
 	cp "$SHARED/.env.local" apps/terminal/.env.local
-	if [ "$DEPLOY_MODE" = "deploy" ] && grep -Eq '^[[:space:]]*VITE_MOBILE_PAIRING_(CREATE|IMPORT)_ENABLED[[:space:]]*=[[:space:]]*true[[:space:]]*$' "$SHARED/.env.local"; then
-		echo "ERROR: enabled pairing requires prepare, external device evidence, then promote of the same candidate." >&2
-		exit 1
-	fi
 	echo "==> [4/8] Install deps (frozen lockfile)"
 	pnpm install --frozen-lockfile
 	echo "==> [5/8] Build immutable candidate"

@@ -9,16 +9,19 @@ import { TradeRow } from "./trade-row";
 
 interface Props {
 	compact?: boolean;
-	quietErrors?: boolean;
 	showInQuote: boolean;
 }
 
-export function TradesPanel({ compact = false, quietErrors = false, showInQuote }: Props) {
+export function TradesPanel({ compact = false, showInQuote }: Props) {
 	const { t } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);
-	const { data: trades, status } = useSubscription("trades", params, {
+	const {
+		data: trades,
+		status,
+		isStale,
+	} = useSubscription("trades", params, {
 		enabled: !!selectedMarket && !!subscriptionCoin,
 	});
 	const isTestnet = useIsTestnet();
@@ -31,15 +34,20 @@ export function TradesPanel({ compact = false, quietErrors = false, showInQuote 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
 	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
 	const priceDecimals = getTradePriceDecimals(selectedMarket?.markPx, szDecimals, marketType);
-	const processed = useMemo(() => processTrades(trades ?? []), [trades]);
+	const hasCurrentSnapshot =
+		!!subscriptionCoin &&
+		status === "active" &&
+		!isStale &&
+		trades !== undefined &&
+		trades.every((trade) => trade.coin === subscriptionCoin);
+	const processed = useMemo(() => processTrades(hasCurrentSnapshot ? trades : []), [hasCurrentSnapshot, trades]);
 	const initialTradeIds = useRef<Set<string> | null>(null);
 	if (initialTradeIds.current === null && processed.length > 0) {
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
 	}
 	const displayAsset = showInQuote ? quoteToken : baseToken;
-	const showError = status === "error" && !quietErrors;
-	const showRows = status !== "error" && processed.length > 0;
-	const showEmpty = status === "active" && trades !== undefined && processed.length === 0;
+	const showRows = hasCurrentSnapshot && processed.length > 0;
+	const showEmpty = hasCurrentSnapshot && processed.length === 0;
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
@@ -59,11 +67,6 @@ export function TradesPanel({ compact = false, quietErrors = false, showInQuote 
 				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
 			</div>
 
-			{showError ? (
-				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
-					{t`Failed to load trades.`}
-				</div>
-			) : null}
 			{showRows ? (
 				<div className="flex-1 min-h-0 overflow-y-auto">
 					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>
@@ -87,7 +90,7 @@ export function TradesPanel({ compact = false, quietErrors = false, showInQuote 
 					{t`No recent trades.`}
 				</div>
 			) : null}
-			{!showError && !showRows && !showEmpty ? (
+			{!showRows && !showEmpty ? (
 				<div data-slot="trades-pending" className="flex-1 min-h-0" aria-hidden="true" />
 			) : null}
 		</div>

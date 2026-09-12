@@ -128,8 +128,44 @@ describe("OrderbookPanel safety", () => {
 		renderPanel();
 
 		expect(container.querySelector('button[aria-label*="limit price"]')).toBeNull();
-		expect(container.textContent).toContain("Failed to load order book.");
+		expect(container.textContent).not.toContain("Failed to load order book.");
+		expect(container.textContent).not.toContain("No orders");
+		expect(container.querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(8);
+		expect(container.querySelector("[aria-busy]")?.getAttribute("aria-busy")).toBe("false");
+
+		mocks.status = "active";
+		mocks.isStale = false;
+		renderPanel();
+
+		expect(container.querySelectorAll('button[aria-label*="limit price"]')).toHaveLength(2);
+		expect(container.querySelector('[data-slot="orderbook-asks"]')?.textContent).toContain("100.05");
 	});
+
+	it.each(["idle", "subscribing", "active"] as const)(
+		"keeps %s without a first snapshot quiet until current prices arrive",
+		(status) => {
+			mocks.status = status;
+			renderPanel();
+
+			expect(container.querySelector("[aria-busy]")?.getAttribute("aria-busy")).toBe("true");
+			expect(container.querySelector("output.sr-only")?.textContent).toContain("Waiting for order book...");
+			expect(container.textContent).not.toContain("No orders");
+			expect(container.querySelector('button[aria-label*="limit price"]')).toBeNull();
+			for (const side of ["asks", "bids"]) {
+				const ladder = container.querySelector(`[data-slot="orderbook-${side}"]`);
+				expect(ladder?.textContent).toBe("");
+				expect(ladder?.querySelectorAll('[data-slot="orderbook-placeholder-row"]')).toHaveLength(4);
+			}
+
+			mocks.status = "active";
+			mocks.book = snapshot("HYPE", [{ n: 1, px: "99.95", sz: "1" }], [{ n: 1, px: "100.05", sz: "1" }]);
+			renderPanel();
+
+			expect(container.querySelector("[aria-busy]")?.getAttribute("aria-busy")).toBe("false");
+			expect(container.querySelector("output")).toBeNull();
+			expect(container.querySelectorAll('button[aria-label*="limit price"]')).toHaveLength(2);
+		},
+	);
 
 	it("does not render a snapshot from a different market", () => {
 		mocks.book = snapshot("ETH", [{ n: 1, px: "1920.5", sz: "1" }], [{ n: 1, px: "1921.0", sz: "1" }]);
@@ -139,7 +175,8 @@ describe("OrderbookPanel safety", () => {
 
 		expect(container.textContent).not.toContain("1,920.5");
 		expect(container.querySelector('button[aria-label*="limit price"]')).toBeNull();
-		expect(container.textContent).toContain("Waiting for order book...");
+		expect(container.querySelector("output.sr-only")?.textContent).toContain("Waiting for order book...");
+		expect(container.querySelector('[data-slot="orderbook-asks"]')?.textContent).toBe("");
 	});
 
 	it("distinguishes an active empty side and normalizes depth independently", () => {

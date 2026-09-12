@@ -21,6 +21,9 @@ async function settleLayout(page: Page) {
 }
 
 async function expectFooterAtBottom(page: Page) {
+	await page.locator('[data-slot="trade-panel-body"]').evaluate((element) => {
+		element.scrollTop = element.scrollHeight;
+	});
 	await expect
 		.poll(async () =>
 			page.locator('[data-panel="tradingInterface"]').evaluate((panel) => {
@@ -42,11 +45,15 @@ async function expectFooterAtBottom(page: Page) {
 }
 
 async function expectFieldsReachable(page: Page) {
-	const fields = page.locator('[data-slot="trade-panel-fields"]');
 	const outerScroll = await page.evaluate(() => scrollY);
-	await fields.evaluate((element) => {
-		element.scrollTop = element.scrollHeight;
+	await page.locator('[data-slot="trade-panel-body"]').evaluate((element) => {
+		const lastField = element.querySelector('input[aria-label="Last field"]');
+		if (!lastField) throw new Error("Missing last field");
+		element.scrollTop += lastField.getBoundingClientRect().top - element.getBoundingClientRect().top;
 	});
+	expect(
+		await page.locator('[data-slot="trade-panel-fields"]').evaluate((element) => getComputedStyle(element).overflowY),
+	).not.toMatch(/auto|scroll/);
 	await expect(page.getByRole("textbox", { name: "Last field", exact: true })).toBeInViewport();
 	await page.getByRole("textbox", { name: "Last field", exact: true }).focus();
 	await expect(page.getByRole("textbox", { name: "Last field", exact: true })).toBeFocused();

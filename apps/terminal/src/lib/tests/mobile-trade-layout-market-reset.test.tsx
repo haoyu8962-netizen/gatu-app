@@ -4,6 +4,7 @@ import { act, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useMobilePositionsDisclosureStates } from "@/components/trade/mobile/use-mobile-disclosure-set";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { createI18nRoot } from "./harness/react";
 
 const marketState = vi.hoisted(() => ({
@@ -113,11 +114,19 @@ function MobileTradeLayoutHarness({
 describe("MobileTradeLayout market identity", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	let draftActions: ReturnType<typeof useOrderEntryActions>;
+
+	function DraftActionsProbe() {
+		draftActions = useOrderEntryActions();
+		return null;
+	}
 
 	beforeEach(() => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
+		act(() => root.render(<DraftActionsProbe />));
+		act(() => draftActions.setSizeMode("quote"));
 		marketState.routeMarketName = "xyz:GOOGL";
 		marketState.selectedMarketName = "xyz:GOOGL";
 		marketState.mountCount = 0;
@@ -162,11 +171,11 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
-	it("keeps the split viewport-based and independent of form content", () => {
+	it("provides a viewport-based minimum without capping taller forms", () => {
 		render();
 
 		expect(container.querySelector('[data-slot="mobile-trade-order-split"]')?.className).toContain(
-			"h-[clamp(370px,60svh,480px)]",
+			"min-h-[clamp(370px,60svh,480px)]",
 		);
 	});
 
@@ -176,6 +185,29 @@ describe("MobileTradeLayout market identity", () => {
 
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Toggle mobile size mode"]')?.click());
 
+		expect(container.querySelector("[data-mobile-book]")?.getAttribute("data-show-in-quote")).toBe("false");
+	});
+
+	it.each(["base", "quote"] as const)("retains the shared %s quantity unit across a surface remount", (mode) => {
+		act(() => draftActions.setSizeMode(mode));
+		render();
+		const selector = 'button[aria-label="Toggle mobile size mode"]';
+		expect(container.querySelector<HTMLButtonElement>(selector)?.dataset.sizeMode).toBe(mode);
+		expect(container.querySelector("[data-mobile-book]")?.getAttribute("data-show-in-quote")).toBe(
+			String(mode === "quote"),
+		);
+
+		act(() => root.render(null));
+		render();
+		expect(container.querySelector<HTMLButtonElement>(selector)?.dataset.sizeMode).toBe(mode);
+	});
+
+	it("reflects a quantity-unit preference changed on another surface", () => {
+		render();
+		act(() => draftActions.setSizeMode("base"));
+		expect(
+			container.querySelector<HTMLButtonElement>('button[aria-label="Toggle mobile size mode"]')?.dataset.sizeMode,
+		).toBe("base");
 		expect(container.querySelector("[data-mobile-book]")?.getAttribute("data-show-in-quote")).toBe("false");
 	});
 

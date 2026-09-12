@@ -14,6 +14,7 @@ import {
 	useTif,
 	useTpSlEnabled,
 	useTpSlReturnInvalid,
+	useTwapAdvancedEnabled,
 	useTwapStopPrice,
 	useTwapTriggerPrice,
 } from "@/stores/use-order-entry-store";
@@ -66,6 +67,7 @@ describe("order entry store persistence", () => {
 			actions.setScaleSkew("2");
 			actions.setTwapMinutes(60);
 			actions.setTwapRandomize(false);
+			actions.setTwapAdvancedEnabled(true);
 			actions.setTwapTriggerPrice("101");
 			actions.setTwapStopPrice("103");
 			actions.setReduceOnly(true);
@@ -168,6 +170,40 @@ describe("order entry store persistence", () => {
 		act(() => actions.resetForm());
 		expect(snapshot).toEqual({ twapTriggerPrice: "", twapStopPrice: "" });
 		expect(setItemSpy).not.toHaveBeenCalled();
+	});
+
+	it("retains disabled TWAP drafts across tabs and resets their activation with the market or form", () => {
+		let snapshot: { enabled: boolean; trigger: string; stop: string } | undefined;
+		function Probe() {
+			snapshot = { enabled: useTwapAdvancedEnabled(), trigger: useTwapTriggerPrice(), stop: useTwapStopPrice() };
+			return null;
+		}
+		act(() => root.render(createElement(Probe)));
+		expect(snapshot).toEqual({ enabled: false, trigger: "", stop: "" });
+		act(() => {
+			actions.setOrderType("twap");
+			actions.setTwapAdvancedEnabled(true);
+			actions.setTwapTriggerPrice("105");
+			actions.setTwapStopPrice("110");
+		});
+		const token = getOrderEntryDraftResetToken();
+		act(() => actions.setTwapAdvancedEnabled(false));
+		expect(actions.resetFormIfCurrent(token)).toBe(false);
+		act(() => {
+			actions.setOrderType("limit");
+			actions.setOrderType("twap");
+		});
+		expect(snapshot).toEqual({ enabled: false, trigger: "105", stop: "110" });
+		act(() => actions.setTwapAdvancedEnabled(true));
+		expect(snapshot).toEqual({ enabled: true, trigger: "105", stop: "110" });
+		act(() => actions.resetFormForMarket("mainnet:twap:ETH"));
+		expect(snapshot).toEqual({ enabled: false, trigger: "", stop: "" });
+		act(() => {
+			actions.setTwapAdvancedEnabled(true);
+			actions.setTwapStopPrice("110");
+		});
+		act(() => actions.resetFormIfCurrent(getOrderEntryDraftResetToken()));
+		expect(snapshot).toEqual({ enabled: false, trigger: "", stop: "" });
 	});
 
 	it("clears linked TP/SL amount errors when their price or form state resets", () => {

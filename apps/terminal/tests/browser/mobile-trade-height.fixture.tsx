@@ -1,23 +1,53 @@
+import { i18n } from "@lingui/core";
 import { useState } from "react";
-import { createRoot } from "react-dom/client";
 import { MobileTradeOrderSplit } from "@/components/trade/mobile/mobile-trade-order-split";
 import { MobileTradeScrollArea } from "@/components/trade/mobile/mobile-trade-scroll-area";
+import { TradeFormTwap } from "@/components/trade/tradebox/trade-form-twap";
+import { createI18nRoot } from "@/lib/tests/harness/react";
+import { messages } from "@/locales/en/messages.po";
+import { messages as chineseMessages } from "@/locales/zh/messages.po";
+import { useOrderEntryActions, useOrderSide, useReduceOnly, useTwapTriggerPrice } from "@/stores/use-order-entry-store";
 import "./mobile-orderbook-cls.css";
 
 function Fixture() {
+	const [mark, setMark] = useState(100);
+	const triggerPrice = useTwapTriggerPrice();
+	const actions = useOrderEntryActions();
+	const side = useOrderSide();
+	const reduceOnly = useReduceOnly();
 	const [mode, setMode] = useState("market");
 	const [feedback, setFeedback] = useState(false);
 	const [requests, setRequests] = useState(0);
 	return (
 		<div className="flex h-svh flex-col">
-			<nav className="flex h-[57px] shrink-0 gap-2">
-				{["market", "limit", "tall"].map((value) => (
+			<nav className="flex min-h-[57px] shrink-0 flex-wrap gap-x-2">
+				{["market", "limit", "twap", "tall"].map((value) => (
 					<button key={value} type="button" onClick={() => setMode(value)}>
 						{value}
 					</button>
 				))}
+				<button
+					type="button"
+					onClick={() =>
+						setMark((value) => {
+							const trigger = Number(triggerPrice);
+							return value === trigger ? trigger + 1 : value === trigger + 1 ? 0 : trigger;
+						})
+					}
+				>
+					Quote
+				</button>
 				<button type="button" onClick={() => setFeedback((value) => !value)}>
 					Feedback
+				</button>
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "en", messages })}>
+					English
+				</button>
+				<button type="button" onClick={() => i18n.loadAndActivate({ locale: "zh", messages: chineseMessages })}>
+					中文
+				</button>
+				<button type="button" onClick={() => actions.setSide(side === "buy" ? "sell" : "buy")}>
+					Side
 				</button>
 			</nav>
 			<main data-fixture-page className="min-h-0 flex-1 overflow-y-auto">
@@ -29,10 +59,7 @@ function Fixture() {
 						</div>
 					}
 				>
-					<div
-						data-fixture-form
-						className="flex min-h-0 min-w-0 flex-[1.53] flex-col self-stretch overflow-y-auto overscroll-y-contain"
-					>
+					<div data-fixture-form className="flex min-h-0 min-w-0 flex-[1.53] flex-col self-stretch">
 						<MobileTradeScrollArea embedded>
 							<label>
 								Size
@@ -44,7 +71,21 @@ function Fixture() {
 									<input aria-label="Price" defaultValue="100" />
 								</label>
 							) : null}
-							<div style={{ minHeight: mode === "tall" ? 900 : mode === "limit" ? 320 : 280 }}>Order fields</div>
+							{mode === "twap" ? (
+								<TradeFormTwap
+									disabled={false}
+									side={side}
+									reduceOnly={{ checked: reduceOnly, onCheckedChange: actions.setReduceOnly }}
+									quoteToken="USDC"
+									markPx={mark}
+									assetId={0}
+									szDecimals={2}
+									compact
+									mobileSafe
+								/>
+							) : (
+								<div style={{ minHeight: mode === "tall" ? 900 : mode === "limit" ? 320 : 280 }}>Order fields</div>
+							)}
 							<label>
 								Last field
 								<input aria-label="Last field" />
@@ -70,4 +111,5 @@ function Fixture() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing fixture root");
-createRoot(root).render(<Fixture />);
+i18n.loadAndActivate({ locale: "en", messages });
+createI18nRoot(root).render(<Fixture />);

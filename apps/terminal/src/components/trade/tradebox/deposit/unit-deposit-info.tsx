@@ -11,20 +11,13 @@ interface Props {
 
 export function UnitDepositInfo({ cctpFee, cctpFeeLoading = false, cctpFeeError = false }: Props) {
 	useNumberFormatRevision();
-	const fee = cctpFee ? (
-		formatUSD(cctpFee, { compact: false })
-	) : cctpFeeLoading ? (
-		<Trans>Checking...</Trans>
-	) : cctpFeeError ? (
-		<Trans>Unavailable</Trans>
-	) : (
-		<Trans>Calculated after funding</Trans>
-	);
+	const fee = !cctpFeeLoading && !cctpFeeError && cctpFee ? formatUSD(cctpFee, { compact: false }) : "--";
 
 	return (
 		<dl
 			className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 text-xs"
 			data-presentation="funding"
+			aria-busy={cctpFeeLoading}
 		>
 			<div className="flex items-center justify-between gap-3">
 				<dt className="text-market-close-muted">

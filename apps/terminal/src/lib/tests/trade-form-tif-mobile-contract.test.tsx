@@ -23,11 +23,12 @@ describe("TradeFormTif mobile contract", () => {
 		container.remove();
 	});
 
-	it("keeps an accessible TIF name when the narrow-screen visual label is hidden", () => {
+	it("keeps both the visible TIF label and the accessible selection name on narrow screens", () => {
 		act(() => root.render(<TradeFormTif orderType="limit" disabled={false} tradingPanel />));
 
 		expect(container.querySelector('[aria-label="TIF: GTC"]')).not.toBeNull();
 		const visibleLabel = [...container.querySelectorAll("span")].find((element) => element.textContent === "TIF");
-		expect(visibleLabel?.className).toContain("max-[339px]:hidden");
+		expect(visibleLabel).toBeDefined();
+		expect(visibleLabel?.className).not.toContain("hidden");
 	});
 });

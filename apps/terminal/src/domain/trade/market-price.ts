@@ -45,7 +45,7 @@ export interface LiveMarketPriceSnapshot {
 
 type MarketValue = string | number | null | undefined;
 
-export type MarketHeadlinePriceSource = "bbo" | "allMids" | "assetCtxMid" | null;
+export type MarketHeadlinePriceSource = "assetCtxMid" | "assetCtxMark" | null;
 
 export interface MarketHeadlinePriceSample {
 	source: MarketHeadlinePriceSource;
@@ -58,17 +58,15 @@ function getPositivePrice(value: unknown): string | undefined {
 }
 
 export function selectMarketHeadlinePrice({
-	bboMidPx,
-	allMidsPrice,
 	assetCtxMidPx,
+	assetCtxMarkPx,
 }: {
-	bboMidPx: MarketValue;
-	allMidsPrice: MarketValue;
 	assetCtxMidPx: MarketValue;
+	assetCtxMarkPx: MarketValue;
 }): MarketHeadlinePriceSample {
-	if (isPositivePrice(bboMidPx)) return { source: "bbo", value: bboMidPx };
-	if (isPositivePrice(allMidsPrice)) return { source: "allMids", value: allMidsPrice };
 	if (isPositivePrice(assetCtxMidPx)) return { source: "assetCtxMid", value: assetCtxMidPx };
+	if (assetCtxMidPx == null && isPositivePrice(assetCtxMarkPx))
+		return { source: "assetCtxMark", value: assetCtxMarkPx };
 	return { source: null, value: undefined };
 }
 
@@ -150,6 +148,23 @@ export function isLiveMarkPriceReady(
 	if (status !== "success" || !getPositivePrice(markPx) || receivedAt === undefined) return false;
 	const age = now - receivedAt;
 	return age >= 0 && age <= LIVE_MARK_MAX_STALE_MS;
+}
+
+export function getOrderEntryReferencePrice(
+	market:
+		| {
+				midPx?: string | null;
+				markPx?: string;
+				markPriceStatus?: MarkPriceStatus;
+				midPriceReceivedAt?: number;
+				markPriceReceivedAt?: number;
+		  }
+		| undefined,
+	now = Date.now(),
+): string | undefined {
+	const price = market?.midPx ?? market?.markPx;
+	const receivedAt = market?.midPx == null ? market?.markPriceReceivedAt : market?.midPriceReceivedAt;
+	return isLiveMarkPriceReady(market?.markPriceStatus ?? "idle", price, receivedAt, now) ? price : undefined;
 }
 
 export function isLiveExecutionPriceReceiptFresh(receivedAt: number | undefined, now = performance.now()): boolean {

@@ -42,7 +42,7 @@ const zhTranslations: Record<string, string> = {
 	Size: "数量",
 	Total: "合计",
 	"Portfolio Value": "投资组合价值",
-	"Cross Maintenance Margin": "全仓维持保证金",
+	"Perps Maintenance Margin": "合约维持保证金",
 	Withdraw: "提款",
 	Language: "语言",
 	"Language and number format": "语言和数字格式",
@@ -87,6 +87,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		data: { kind: "perp", markPx: "70", name: "HYPE", pairName: "HYPE-USDC", szDecimals: 2 },
 	}),
 	useSubscription: () => ({ data: undefined, error: null, status: "idle" }),
+	useInfo: () => ({ data: undefined, dataUpdatedAt: 0, isSuccess: false, isFetchedAfterMount: false }),
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
@@ -533,7 +534,7 @@ describe("language hot switching", () => {
 		expect(container.textContent).toContain("数量");
 		expect(container.textContent).toContain("合计");
 		expect(container.textContent).toContain("投资组合价值");
-		expect(container.textContent).toContain("全仓维持保证金");
+		expect(container.textContent).toContain("合约维持保证金");
 		expect(container.querySelector('[aria-label="订单簿"]')).not.toBeNull();
 		expect(container.querySelector('[aria-label="提款"]')).not.toBeNull();
 		const localizedMobileNav = container.querySelector<HTMLElement>('[aria-label="主导航"]');
@@ -556,6 +557,12 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="close-short-side"]')?.textContent).toBe("平空");
 		expect(orderLabels?.querySelector('[data-label="close-long-side"]')?.textContent).toBe("平多");
 		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
+
+		act(() => activateLocale("en"));
+		expect(container.querySelector('[data-testid="order-labels"]')).toBe(orderLabels);
+		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("Stop Market");
+		expect(container.querySelector('[aria-label="Reduce Only"]')).toBe(originalCheckbox);
+		expect(originalCheckbox?.getAttribute("aria-checked")).toBe("true");
 	});
 
 	it("hides the desktop bridge entry while creation is gated and restores it for an existing execution", () => {

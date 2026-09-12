@@ -44,10 +44,10 @@ describe("UnitDepositInfo", () => {
 	});
 
 	it.each([
-		{ expected: "Checking...", props: { cctpFeeLoading: true } },
-		{ expected: "Unavailable", props: { cctpFeeError: true } },
-		{ expected: "Calculated after funding", props: {} },
-	])("renders $expected when an exact funding fee is not available", async ({ expected, props }) => {
+		{ props: { cctpFeeLoading: true, cctpFee: "0.2" } },
+		{ props: { cctpFeeError: true, cctpFee: "0.2" } },
+		{ props: {} },
+	])("keeps missing or outdated fees quiet", async ({ props }) => {
 		await act(async () => {
 			root.render(
 				<I18nProvider i18n={i18n}>
@@ -56,6 +56,8 @@ describe("UnitDepositInfo", () => {
 			);
 		});
 
-		expect(container.textContent).toContain(expected);
+		expect(container.textContent).toContain("--");
+		expect(container.textContent).not.toMatch(/Checking|Unavailable|Calculated after funding|\$0.20/);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 });

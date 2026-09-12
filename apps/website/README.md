@@ -14,7 +14,7 @@ pnpm --filter @gatu/website preview
 
 ## Deploying to Vercel (apex domain)
 
-The terminal already deploys from this repo's root `vercel.json` to `app.gatu.ai`. The website is a **separate Vercel project** that points at this directory.
+The website's Vercel configuration points at this directory. The terminal has a separate [Node/systemd/Caddy deployment workflow](../../deploy/README.md); do not infer its deployment target from the website configuration. Domain assignments below describe the intended website setup, not a live DNS verification.
 
 ### One-time setup
 
@@ -31,16 +31,15 @@ The terminal already deploys from this repo's root `vercel.json` to `app.gatu.ai
 
 At your registrar:
 
-- `gatu.ai` (apex) → Vercel's apex IPs (`A` record `76.76.21.21`) or ALIAS to `cname.vercel-dns.com` if your DNS supports it.
-- `www.gatu.ai` → CNAME `cname.vercel-dns.com`.
-- `app.gatu.ai` already points at the terminal project — leave it alone.
+- For `gatu.ai` and `www.gatu.ai`, use the exact record types and targets shown by the website project's Domains configuration. This repository does not establish the current DNS targets.
+- Configure only the website domains here; terminal domain and proxy configuration belong to the [terminal deployment workflow](../../deploy/README.md).
 
 ### Why two projects, not one?
 
-The terminal is a TanStack Start app that needs Nitro/Vercel functions. The website is fully static. Splitting them keeps the marketing build fast (~500ms), the app deploy isolated, and lets each domain have its own caching rules.
+The terminal is a TanStack Start application with Nitro server endpoints. The website is fully static. Separate delivery keeps their build, runtime and caching requirements independent.
 
 ## Design notes
 
 - **Theme:** uses the same token system as `@gatu/ui` (a trimmed subset is inlined into `src/styles/global.css` so the website has zero workspace dependencies).
-- **Type:** Inter Variable everywhere. Numbers use `tabular-nums` via the `.tabular` utility.
+- **Type:** Inter Variable for sans-serif text and Instrument Serif for display text, defined in `src/styles/global.css`. Numbers use `tabular-nums` via the `.tabular` utility.
 - **Inspiration:** [midday.ai](https://midday.ai) — single-column layout, restrained motion, every section is a short headline + one-line subtitle + one visual.

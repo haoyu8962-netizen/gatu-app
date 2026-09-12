@@ -1,5 +1,7 @@
 # Hyperliquid Provider Architecture
 
+> Historical design proposal; the API examples below are not the current provider contract. The application now separates public transport, authenticated session and exchange policy. Read the [terminal reference](../apps/terminal/README.md), [runtime guardrails](runtime-guardrails.md) and [signer ADR](adr/0002-exact-owner-trading-signers.md); verify exported APIs in `packages/hl-react/src/`. This notice was added during the 2026-09-12 documentation review; the original proposal remains below.
+
 ## Overview
 
 A minimal, KISS-oriented provider that serves as a thin client factory. The provider's sole responsibility is to create and expose Hyperliquid clients based on the current wallet state.

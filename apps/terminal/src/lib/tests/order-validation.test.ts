@@ -1,6 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
+import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
+import {
+	enterSizeValidator,
+	exceedsMaxSizeValidator,
+	minOrderNotionalValidator,
+} from "@/lib/errors/definitions/order-input";
+import {
+	scaleLevelMinNotionalValidator,
+	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+} from "@/lib/errors/definitions/scale";
+import {
+	insufficientBaseBalanceValidator,
+	insufficientQuoteBalanceValidator,
+} from "@/lib/errors/definitions/spot-balance";
+import { spotEnterSizeValidator, spotMinOrderNotionalValidator } from "@/lib/errors/definitions/spot-input";
+import {
+	enterTpSlPriceValidator,
+	slPriceValidator,
+	tpPriceValidator,
+	tpSlReturnValidator,
+} from "@/lib/errors/definitions/tpsl";
+import {
+	stopTriggerAboveMarkValidator,
+	stopTriggerBelowMarkValidator,
+	tpTriggerAboveMarkValidator,
+	tpTriggerBelowMarkValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionExistsValidator,
+	triggerPositionSizeValidator,
+} from "@/lib/errors/definitions/trigger";
+import {
+	twapMinNotionalValidator,
+	twapStopDirectionValidator,
+	twapTriggerDiffersFromMarkValidator,
+} from "@/lib/errors/definitions/twap";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
+import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -526,5 +563,346 @@ describe("attached TP/SL precision validation", () => {
 
 		expect(result.errors.map((error) => error.code)).toContain("TPSL_002");
 		expect(result.canSubmit).toBe(false);
+	});
+});
+
+describe("quiet order validation presentation", () => {
+	const enteredDraft = {
+		size: "0",
+		limitPrice: "100",
+		triggerPrice: "110",
+		tpPrice: "",
+		slPrice: "",
+		scaleStartPrice: "95",
+		scaleEndPrice: "105",
+	};
+	it.each([
+		enterSizeValidator,
+		minOrderNotionalValidator,
+		exceedsMaxSizeValidator,
+		spotEnterSizeValidator,
+		spotMinOrderNotionalValidator,
+		insufficientQuoteBalanceValidator,
+		insufficientBaseBalanceValidator,
+		scaleLevelMinNotionalValidator,
+		scaleSizeAllocationValidator,
+		scaleSkewAllocationValidator,
+		triggerPositionSizeValidator,
+		twapMinNotionalValidator,
+		enterTpSlPriceValidator,
+		tpPriceValidator,
+		slPriceValidator,
+		tpSlReturnValidator,
+		stopTriggerAboveMarkValidator,
+		stopTriggerBelowMarkValidator,
+		tpTriggerAboveMarkValidator,
+		tpTriggerBelowMarkValidator,
+		twapTriggerDiffersFromMarkValidator,
+		twapStopDirectionValidator,
+	])("keeps $id feedback quiet until the market recovers without changing the raw error", (validator) => {
+		const error = { ...validator.error, message: validator.id };
+		const errors = [error];
+		const state = {
+			accountReady: true,
+			marketReady: false,
+			positionReady: true,
+			draft: { ...enteredDraft, tpPrice: "120" },
+		};
+		expect(getOrderValidationPresentation(errors, state)).toEqual([]);
+		expect(getOrderValidationPresentation(errors, { ...state, marketReady: true })).toEqual([error]);
+		expect(errors).toEqual([error]);
+	});
+
+	it.each([triggerPositionExistsValidator, triggerPositionDirectionValidator, triggerPositionSizeValidator])(
+		"keeps $id feedback quiet until positions arrive",
+		(validator) => {
+			const error = { ...validator.error, message: validator.id };
+			const state = { accountReady: true, marketReady: true, positionReady: false, draft: enteredDraft };
+			expect(getOrderValidationPresentation([error], state)).toEqual([]);
+			expect(getOrderValidationPresentation([error], { ...state, positionReady: true })).toEqual([error]);
+		},
+	);
+
+	it.each(["idle", "loading", "stale", "error"] as const)(
+		"keeps %s data blocked without passive or mark-dependent errors",
+		(markPriceStatus) => {
+			const context = perpContext({
+				orderType: "market",
+				usesLimitPrice: false,
+				requiresLiveMarkPrice: true,
+				markPriceStatus,
+				sizeValue: 0,
+				orderValue: 0,
+				isWalletLoading: true,
+			});
+			const result = validatePerpOrder(context);
+			expect(result.canSubmit).toBe(false);
+			expect(result.errors.some((error) => error.code === "MKT_004")).toBe(true);
+			expect(
+				getOrderValidationPresentation(result.errors, {
+					accountReady: true,
+					marketReady: false,
+					positionReady: true,
+					draft: enteredDraft,
+				}),
+			).toEqual([]);
+			const recovered = validatePerpOrder({ ...context, markPriceStatus: "success", isWalletLoading: false });
+			expect(
+				getOrderValidationPresentation(recovered.errors, {
+					accountReady: true,
+					marketReady: true,
+					positionReady: true,
+					draft: enteredDraft,
+				}).map((error) => error.id),
+			).toContain("enter-size");
+		},
+	);
+
+	it("separates unknown positions from confirmed empty and funded positions", () => {
+		const context = perpContext({
+			orderType: "stopMarket",
+			usesLimitPrice: false,
+			usesTriggerPrice: true,
+			triggerPriceNum: 110,
+			stopOrder: true,
+			reduceOnly: true,
+			positionSize: null,
+		});
+		const pending = validatePerpOrder(context);
+		expect(pending.canSubmit).toBe(false);
+		expect(
+			getOrderValidationPresentation(pending.errors, {
+				accountReady: true,
+				marketReady: true,
+				positionReady: false,
+				draft: enteredDraft,
+			}),
+		).toEqual([]);
+		const empty = validatePerpOrder({ ...context, positionSize: 0 });
+		expect(
+			getOrderValidationPresentation(empty.errors, {
+				accountReady: true,
+				marketReady: true,
+				positionReady: true,
+				draft: enteredDraft,
+			}).map((error) => error.id),
+		).toContain("trigger-position-exists");
+		expect(validatePerpOrder({ ...context, positionSize: -10 }).canSubmit).toBe(true);
+	});
+
+	it("keeps independent TWAP input errors but suppresses stale mark comparisons", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				twapOrder: true,
+				twapMinutesNum: 1,
+				twapStopPriceNum: 90,
+				markPriceStatus: "stale",
+				requiresLiveMarkPrice: true,
+			}),
+		);
+		const ids = getOrderValidationPresentation(result.errors, {
+			accountReady: true,
+			marketReady: false,
+			positionReady: true,
+			draft: enteredDraft,
+		}).map((error) => error.id);
+		expect(ids).toContain("twap-minutes-range");
+		expect(ids).not.toContain("twap-stop-direction");
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("does not infer insufficient Spot balance from unavailable account data", () => {
+		const result = validateSpotOrder(spotContext({ quoteAvailable: 0 }));
+		expect(result.canSubmit).toBe(false);
+		expect(
+			getOrderValidationPresentation(result.errors, {
+				accountReady: false,
+				marketReady: true,
+				positionReady: true,
+				draft: enteredDraft,
+			}),
+		).toEqual([]);
+		expect(
+			getOrderValidationPresentation(result.errors, {
+				accountReady: true,
+				marketReady: true,
+				positionReady: true,
+				draft: enteredDraft,
+			}).map((error) => error.id),
+		).toContain("spot-insufficient-quote");
+	});
+});
+
+describe("order draft feedback timing and ownership", () => {
+	const emptyDraft = {
+		size: "",
+		limitPrice: "",
+		triggerPrice: "",
+		tpPrice: "",
+		slPrice: "",
+		scaleStartPrice: "",
+		scaleEndPrice: "",
+	};
+	const ready = { accountReady: true, marketReady: true, positionReady: true, draft: emptyDraft };
+
+	it("keeps empty required fields quiet without changing submission validity", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				sizeValue: 0,
+				orderValue: 0,
+				price: 0,
+				usesTriggerPrice: true,
+				tpSlEnabled: true,
+				canUseTpSl: true,
+			}),
+		);
+		expect(result.errors.map((error) => error.id)).toEqual(
+			expect.arrayContaining(["enter-size", "enter-limit-price", "enter-trigger-price", "enter-tpsl-price"]),
+		);
+		const originalErrors = [...result.errors];
+		expect(getOrderValidationPresentation(result.errors, ready)).toEqual([]);
+		expect(result.errors).toEqual(originalErrors);
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("shows nonempty zero and intermediate invalid inputs, then becomes quiet when cleared", () => {
+		const result = validatePerpOrder(
+			perpContext({
+				sizeValue: 0,
+				orderValue: 0,
+				price: 0,
+				usesTriggerPrice: true,
+				tpSlEnabled: true,
+				canUseTpSl: true,
+			}),
+		);
+		for (const value of ["0", "."]) {
+			const draft = { ...emptyDraft, size: value, limitPrice: value, triggerPrice: value, tpPrice: value };
+			expect(getOrderValidationPresentation(result.errors, { ...ready, draft }).map((error) => error.id)).toEqual(
+				expect.arrayContaining(["enter-size", "enter-limit-price", "enter-trigger-price", "enter-tpsl-price"]),
+			);
+		}
+		expect(getOrderValidationPresentation(result.errors, ready)).toEqual([]);
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("keeps a newly expanded TP/SL section quiet while retaining its required-price guard", () => {
+		const result = validatePerpOrder(perpContext({ tpSlEnabled: true, canUseTpSl: true }));
+		const draft = { ...emptyDraft, size: "1", limitPrice: "100" };
+		expect(result.canSubmit).toBe(false);
+		expect(result.errors.map((error) => error.id)).toContain("enter-tpsl-price");
+		expect(getOrderValidationPresentation(result.errors, { ...ready, draft })).toEqual([]);
+		expect(validatePerpOrder(perpContext({ tpSlEnabled: true, canUseTpSl: true, tpPriceNum: 110 })).canSubmit).toBe(
+			true,
+		);
+	});
+
+	it("applies the same empty and entered-zero behavior to Spot limit orders", () => {
+		const result = validateSpotOrder(spotContext({ usesLimitPrice: true, price: 0, sizeValue: 0, orderValue: 0 }));
+		expect(getOrderValidationPresentation(result.errors, ready)).toEqual([]);
+		expect(result.canSubmit).toBe(false);
+		const draft = { ...emptyDraft, size: "0", limitPrice: "0" };
+		expect(getOrderValidationPresentation(result.errors, { ...ready, draft }).map((error) => error.id)).toEqual([
+			"spot-enter-limit-price",
+			"spot-enter-size",
+		]);
+	});
+
+	it.each(["", "95"])("waits for an unfinished Scale range with valid entered start %s", (start) => {
+		const result = validatePerpOrder(
+			perpContext({
+				scaleOrder: true,
+				scaleStartPriceNum: start ? Number(start) : null,
+				scaleEndPriceNum: null,
+				scaleLevelsNum: 5,
+				scaleSkewNum: 1,
+			}),
+		);
+		const draft = { ...emptyDraft, size: "1", scaleStartPrice: start };
+		expect(getOrderValidationPresentation(result.errors, { ...ready, draft }).map((error) => error.id)).not.toContain(
+			"enter-price-range",
+		);
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it.each(["0", ".", "-1"])("preserves invalid Scale value %s even while the other bound is blank", (value) => {
+		const result = validatePerpOrder(
+			perpContext({
+				scaleOrder: true,
+				scaleStartPriceNum: 0,
+				scaleEndPriceNum: null,
+				scaleLevelsNum: 5,
+				scaleSkewNum: 1,
+			}),
+		);
+		for (const draft of [
+			{ ...emptyDraft, size: "1", scaleStartPrice: value },
+			{ ...emptyDraft, size: "1", scaleEndPrice: value },
+		]) {
+			expect(getOrderValidationPresentation(result.errors, { ...ready, draft }).map((error) => error.id)).toContain(
+				"enter-price-range",
+			);
+		}
+	});
+
+	it("does not hide typed notional, maximum-size, or Spot balance errors", () => {
+		const results = [
+			validatePerpOrder(perpContext({ sizeValue: 0.01, orderValue: 1 })),
+			validatePerpOrder(perpContext({ sizeValue: 101, orderValue: 10100 })),
+			validateSpotOrder(spotContext({ quoteAvailable: 1 })),
+		];
+		for (const [index, result] of results.entries()) {
+			const draft = { ...emptyDraft, size: ["0.01", "101", "10"][index], limitPrice: "100" };
+			expect(getOrderValidationPresentation(result.errors, { ...ready, draft })).toHaveLength(1);
+			expect(result.canSubmit).toBe(false);
+		}
+	});
+
+	it.each(["buy", "sell"] as const)("assigns %s TP/SL direction errors to their inline fields", (side) => {
+		const tpPrice = side === "buy" ? "90" : "110";
+		const slPrice = side === "buy" ? "110" : "90";
+		const result = validatePerpOrder(
+			perpContext({
+				side,
+				tpSlEnabled: true,
+				canUseTpSl: true,
+				tpPriceNum: Number(tpPrice),
+				slPriceNum: Number(slPrice),
+			}),
+		);
+		const priceErrors = getTpSlPriceErrors({ assetId: 0, szDecimals: 2, referencePrice: 100, tpPrice, slPrice, side });
+		expect(priceErrors).toEqual({ tp: true, sl: true });
+		expect(result.errors.map((error) => error.id)).toEqual(["tp-price-invalid", "sl-price-invalid"]);
+		expect(result.errors.filter((error) => !isInlineTpSlValidationError(error, priceErrors))).toEqual([]);
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("keeps a rounded-to-zero TP price error in the footer when its inline direction error is unavailable", () => {
+		const result = validatePerpOrder(perpContext({ tpSlEnabled: true, canUseTpSl: true, tpPriceNum: 0.0000001 }));
+		const priceErrors = getTpSlPriceErrors({
+			assetId: 0,
+			szDecimals: 2,
+			referencePrice: 100,
+			tpPrice: "0.0000001",
+			slPrice: "",
+			side: "buy",
+		});
+		expect(priceErrors).toEqual({ tp: false, sl: false });
+		expect(
+			result.errors.filter((error) => !isInlineTpSlValidationError(error, priceErrors)).map((error) => error.id),
+		).toContain("tp-price-invalid");
+		expect(result.canSubmit).toBe(false);
+	});
+
+	it("uses the inline error when the price rounds to the entry reference", () => {
+		const priceErrors = getTpSlPriceErrors({
+			assetId: 0,
+			szDecimals: 2,
+			referencePrice: 100,
+			tpPrice: "100.0001",
+			slPrice: "100.0001",
+			side: "buy",
+		});
+		expect(priceErrors).toEqual({ tp: true, sl: true });
 	});
 });

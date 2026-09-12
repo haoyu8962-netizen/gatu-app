@@ -57,6 +57,28 @@ function createClientChunkGraphPlugin(): Plugin {
   }
 }
 
+export function createOrderSummaryChunksPlugin(): Plugin {
+  return {
+    name: 'gatu-order-summary-chunks',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    buildStart(options) {
+      const entries = typeof options.input === 'string'
+        ? [options.input]
+        : Array.isArray(options.input) ? options.input : Object.values(options.input)
+      for (const name of ['twap-order-summary', 'scale-order-summary']) {
+        this.emitFile({
+          type: 'chunk',
+          id: fileURLToPath(new URL(`./src/components/trade/tradebox/${name}.tsx`, import.meta.url)),
+          name,
+          preserveSignature: 'strict',
+          implicitlyLoadedAfterOneOf: entries,
+        })
+      }
+    },
+  }
+}
+
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
@@ -165,7 +187,10 @@ const config = defineConfig({
     'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
   },
   server: {
-    strictPort: false,
+    strictPort: true,
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
   },
   resolve: {
     dedupe: ['react', 'react-dom', '@tanstack/react-query', 'wagmi'],
@@ -194,6 +219,7 @@ const config = defineConfig({
   plugins: [
     createReferralJoinDevRequestGuard(),
     createClientChunkGraphPlugin(),
+    createOrderSummaryChunksPlugin(),
     nitro({
       compressPublicAssets: true,
       publicAssets: [

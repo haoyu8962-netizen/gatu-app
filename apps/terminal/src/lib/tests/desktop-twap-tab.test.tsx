@@ -196,6 +196,25 @@ describe("desktop TWAP toolbar", () => {
 		});
 	}
 
+	it.each([
+		{ status: "active", isStale: false, data: undefined },
+		{ status: "subscribing", isStale: false, data: { states: [] } },
+		{ status: "error", isStale: false, data: { states: [] } },
+		{ status: "active", isStale: true, data: { states: [] } },
+	])("never shows empty TWAP guidance before a current snapshot: %o", (snapshot) => {
+		vi.mocked(useSubscription).mockReturnValueOnce(snapshot as ReturnType<typeof useSubscription>);
+		render();
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toMatch(
+			/Loading TWAP|Failed to load TWAP|No active TWAP|Create TWAP|may be stale/,
+		);
+		expect(container.querySelector('button[aria-label="Terminate TWAP order"]')).toBeNull();
+		expect(testState.cancelTwap).not.toHaveBeenCalled();
+		testState.hasActiveOrder = false;
+		render();
+		expect(container.textContent).toContain("No active TWAP orders.");
+	});
+
 	it("renders the seven design columns from SDK state and Big.js-derived metrics", () => {
 		render();
 
@@ -325,7 +344,8 @@ describe("desktop TWAP toolbar", () => {
 		act(() => historyTab?.click());
 
 		expect(container.textContent).toContain("15.33 GOOGL");
-		expect(container.querySelector("output")?.textContent).toContain("Real-time TWAP updates are unavailable.");
+		expect(container.querySelector("output")).toBeNull();
+		expect(container.textContent).not.toContain("Real-time TWAP updates are unavailable.");
 		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(button) => button.textContent === "Retry",
 		);

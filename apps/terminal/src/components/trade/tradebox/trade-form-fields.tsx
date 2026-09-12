@@ -1,23 +1,21 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useEffect, useId } from "react";
-import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { NumberInput } from "@/components/ui/number-input";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { ORDER_MIN_NOTIONAL_USD, type OrderType } from "@/config/trade";
+import { getOrderEntryReferencePrice } from "@/domain/trade/market-price";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
+import { isOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import type { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
-import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
-import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import type { ValidationError } from "@/lib/errors/types";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
-import { formatDecimalFloor, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { formatDecimalFloor, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
@@ -25,7 +23,6 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
-import { getAvailableTifOptions, getTifOptionLabel } from "@/lib/trade/tif";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -37,13 +34,13 @@ import {
 	useOrderType,
 	useReduceOnly,
 	useSizeMode,
-	useTif,
 	useTpSlEnabled,
 	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import { SizePercentInput } from "../components/size-percent-input";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradeFormScale } from "./trade-form-scale";
+import { TradeFormTif } from "./trade-form-tif";
 import { TradeFormTpSl } from "./trade-form-tp-sl";
 import { TradeFormTwap } from "./trade-form-twap";
 import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
@@ -51,10 +48,7 @@ import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
 type TradeFormOrderEntryData = Pick<
 	ReturnType<typeof useOrderEntryData>,
 	| "isSpotMarket"
-	| "isAvailabilityLoading"
 	| "isAvailabilityBlocked"
-	| "isAvailabilityStale"
-	| "hasAvailabilityError"
 	| "baseToken"
 	| "quoteToken"
 	| "capabilities"
@@ -65,7 +59,6 @@ type TradeFormOrderEntryData = Pick<
 	| "leverageInteractionIdentity"
 	| "maxSize"
 	| "sizeValue"
-	| "orderValue"
 	| "sizeModeLabel"
 	| "szDecimals"
 >;
@@ -73,6 +66,8 @@ type TradeFormOrderEntryData = Pick<
 interface Props {
 	onSizeInteractionChange?: (active: boolean) => void;
 	orderEntryData: TradeFormOrderEntryData;
+	visibleValidationErrors: readonly ValidationError[];
+	showTpSlValidation?: boolean;
 	price: number;
 	positionSize: number;
 	swapTargetToken: string | null;
@@ -82,50 +77,14 @@ interface Props {
 }
 
 const inputFrameClass = cn(tradingInputFrameClass, "h-9 px-2.5");
-const ERROR_LINGER_MS = 1500;
 
 const inputFrameErrorClass =
 	"border-trading-panel-error focus-within:border-trading-panel-error focus-within:ring-trading-panel-error/10";
 
-function chipClass(active: boolean): string {
-	return cn(
-		"cursor-pointer whitespace-nowrap rounded-[7px] border px-2.5 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-		active
-			? "border-trading-panel-control bg-surface text-trading-panel-fg"
-			: "border-trading-panel-stroke-card text-trading-panel-muted hover:text-trading-panel-fg",
-	);
-}
-
-function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled: boolean }) {
-	const { t } = useLingui();
-	const postOnlyLabel = t`Post Only`;
-	const tif = useTif();
-	const { setTif } = useOrderEntryActions();
-	const options = getAvailableTifOptions(orderType);
-
-	return (
-		<div className="flex min-w-0 flex-wrap items-center gap-1.5">
-			<DefinitionTooltip topic="tif" only={options}>
-				<span className="cursor-default whitespace-nowrap text-3xs text-trading-panel-subtle">{t`TIF`}</span>
-			</DefinitionTooltip>
-			{options.map((option) => (
-				<button
-					key={option}
-					type="button"
-					onClick={() => setTif(option)}
-					disabled={disabled}
-					aria-pressed={tif === option}
-					className={chipClass(tif === option)}
-				>
-					{getTifOptionLabel(option, postOnlyLabel)}
-				</button>
-			))}
-		</div>
-	);
-}
-
 export function TradeFormFields({
 	orderEntryData,
+	visibleValidationErrors,
+	showTpSlValidation = true,
 	price,
 	positionSize,
 	swapTargetToken,
@@ -157,10 +116,7 @@ export function TradeFormFields({
 
 	const {
 		isSpotMarket,
-		isAvailabilityLoading,
 		isAvailabilityBlocked,
-		isAvailabilityStale,
-		hasAvailabilityError,
 		baseToken,
 		quoteToken,
 		capabilities,
@@ -171,7 +127,6 @@ export function TradeFormFields({
 		leverageInteractionIdentity,
 		maxSize,
 		sizeValue,
-		orderValue,
 		sizeModeLabel,
 		szDecimals,
 	} = orderEntryData;
@@ -187,24 +142,21 @@ export function TradeFormFields({
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const marketType = isSpotMarket ? "spot" : "perp";
-	const { midPx } = useOrderbookMidPrice(usesLimitPrice || usesTriggerPrice || scaleOrder ? market?.name : undefined);
 
-	const triggerPriceNum = toNumber(triggerPriceInput);
-	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
-	const triggerHasError = usesTriggerPrice && !isPositive(triggerPriceNum) && sizeValue > 0;
-	const limitHasError = usesLimitPrice && !price && sizeValue > 0;
+	const triggerHasError = sizeValue > 0 && visibleValidationErrors.some((error) => error.id === "enter-trigger-price");
+	const limitHasError =
+		sizeValue > 0 &&
+		visibleValidationErrors.some((error) => error.id === "enter-limit-price" || error.id === "spot-enter-limit-price");
 
 	const sliderValue = getSliderValue(sizeValue, maxSize);
 	const sliderInteractionIdentity = `${leverageInteractionIdentity}:${side}:${orderType}:${reduceOnly}:${sizeMode}:${szDecimals}`;
 
-	function getSizeErrorText(): string {
-		if (!sizeHasError) return "";
-		if (sizeValue > maxSize && maxSize > 0) return t`Exceeds max size`;
-		return t`Min order $${ORDER_MIN_NOTIONAL_USD}`;
-	}
-	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
+	const displaySizeError = visibleValidationErrors
+		.filter(isOrderSizeValidationError)
+		.map((error) => error.message)
+		.join(" \u2022 ");
 	const hasDisplayedSizeError = displaySizeError !== "";
-	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const midReferencePrice = getOrderEntryReferencePrice(market);
 	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType, market?.assetId);
 	const limitPrefillIdentity = `${market?.name ?? ""}|${orderType}`;
 	useEffect(() => {
@@ -226,10 +178,12 @@ export function TradeFormFields({
 	});
 
 	function formatAvailableBalance(): string {
-		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
+		return formatToken(!isConnected || isAvailabilityBlocked ? "0" : displayAvailableBalance, {
+			decimals,
+			symbol: displayAvailableBalanceToken ?? undefined,
+		});
 	}
 
 	return (
@@ -251,22 +205,6 @@ export function TradeFormFields({
 								>
 									{formatAvailableBalance()}
 								</button>
-							) : null}
-							{isAvailabilityStale ? (
-								<Tooltip content={t`Loading...`} side="top">
-									<SpinnerGapIcon
-										className="ms-1 size-3 shrink-0 animate-spin text-warning"
-										aria-label={t`Loading...`}
-									/>
-								</Tooltip>
-							) : null}
-							{hasAvailabilityError ? (
-								<Tooltip content={t`Failed to load balances.`} side="top">
-									<WarningCircleIcon
-										className="ms-1 size-3 shrink-0 text-error"
-										aria-label={t`Failed to load balances.`}
-									/>
-								</Tooltip>
 							) : null}
 						</span>
 						{isConnected && !isAvailabilityBlocked && swapTargetToken ? (
@@ -306,6 +244,7 @@ export function TradeFormFields({
 						<NumberInput
 							id={triggerFieldId}
 							aria-label={`${t`Trigger Price`} (${quoteToken})`}
+							aria-invalid={triggerHasError || undefined}
 							placeholder="0.00"
 							value={triggerPriceInput}
 							onChange={(e) => setTriggerPrice(e.target.value)}
@@ -313,18 +252,6 @@ export function TradeFormFields({
 							disabled={isFormDisabled}
 						/>
 					</div>
-				)}
-
-				{twapOrder && (
-					<TradeFormTwap
-						desktop
-						disabled={isFormDisabled}
-						side={side}
-						quoteToken={quoteToken}
-						markPx={markPx}
-						assetId={market?.assetId}
-						szDecimals={szDecimals}
-					/>
 				)}
 
 				{usesLimitPrice && (
@@ -338,6 +265,7 @@ export function TradeFormFields({
 							</label>
 							<NumberInput
 								id={limitFieldId}
+								aria-invalid={limitHasError || undefined}
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e) => setLimitPriceFromUser(limitPrefillIdentity, e.target.value)}
@@ -355,26 +283,17 @@ export function TradeFormFields({
 								{t`Mid`}
 							</button>
 						</div>
-						{orderType === "limit" && <TradeTifChips orderType={orderType} disabled={isFormDisabled} />}
 					</div>
 				)}
 
-				{scaleOrder && (
-					<>
-						<TradeFormScale
-							desktop
-							midPrice={midReferencePrice}
-							szDecimals={szDecimals}
-							marketType={marketType}
-							assetId={market?.assetId}
-							disabled={isFormDisabled}
-						/>
-						<TradeTifChips orderType={orderType} disabled={isFormDisabled} />
-					</>
-				)}
-
 				<div className="flex flex-col gap-2">
-					<div className={cn(inputFrameClass, sizeHasError && inputFrameErrorClass, isFormDisabled && "opacity-50")}>
+					<div
+						className={cn(
+							inputFrameClass,
+							hasDisplayedSizeError && inputFrameErrorClass,
+							isFormDisabled && "opacity-50",
+						)}
+					>
 						<label
 							htmlFor={sizeFieldId}
 							className="me-2 shrink-0 cursor-text whitespace-nowrap text-xs text-trading-panel-subtle"
@@ -440,9 +359,37 @@ export function TradeFormFields({
 						/>
 					</div>
 				</div>
+				{scaleOrder && (
+					<TradeFormScale
+						desktop
+						midPrice={midReferencePrice}
+						szDecimals={szDecimals}
+						marketType={marketType}
+						assetId={market?.assetId}
+						disabled={isFormDisabled}
+					/>
+				)}
+
+				{twapOrder && (
+					<TradeFormTwap
+						reduceOnly={
+							capabilities.hasReduceOnly ? { checked: reduceOnly, onCheckedChange: setReduceOnly } : undefined
+						}
+						desktop
+						disabled={isFormDisabled}
+						side={side}
+						quoteToken={quoteToken}
+						markPx={markPx}
+						assetId={market?.assetId}
+						szDecimals={szDecimals}
+					/>
+				)}
 			</div>
 
-			{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
+			{((!twapOrder && capabilities.hasReduceOnly) ||
+				(capabilities.hasTpSl && canUseTpSl) ||
+				orderType === "limit" ||
+				scaleOrder) && (
 				<div className="space-y-2 py-0.5">
 					<TradeOptionCheckboxes
 						className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
@@ -465,10 +412,15 @@ export function TradeFormFields({
 									}
 								: undefined
 						}
-					/>
+					>
+						{(orderType === "limit" || scaleOrder) && (
+							<TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel />
+						)}
+					</TradeOptionCheckboxes>
 
 					{capabilities.hasTpSl && canUseTpSl && tpSlEnabled && (
 						<TradeFormTpSl
+							showValidation={showTpSlValidation}
 							assetId={market?.assetId ?? null}
 							marketId={market?.name ?? null}
 							referencePrice={price}

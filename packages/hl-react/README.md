@@ -1,6 +1,6 @@
 # @gatu/hl-react
 
-React bindings for the Hyperliquid API. Wraps [`@nktkas/hyperliquid`](https://github.com/nktkas/hyperliquid) with hooks for info queries, WebSocket subscriptions, signed exchange mutations, and **agent-wallet lifecycle**.
+React bindings for the Hyperliquid API. Wraps [`@nktkas/hyperliquid`](https://github.com/nktkas/hyperliquid) with hooks for info queries, WebSocket subscriptions, signed exchange mutations, and owner/Agent signer lifecycles.
 
 Source-shipped workspace package — `"main": "./src/index.ts"`, no build step. Consumers import TypeScript directly.
 
@@ -11,7 +11,7 @@ Everything about talking to Hyperliquid from React:
 - **Transports** — `HttpTransport` (REST) and `WebSocketTransport` (streaming), cached per environment.
 - **Clients** — `InfoClient`, `SubscriptionClient`, `ExchangeClient`, assembled per-wallet.
 - **Hooks** — `useInfo` (REST), `useSubscription` (WS), `useExchange` (signed mutation), plus higher-level conveniences.
-- **Agent wallets** — the Hyperliquid pattern where the user approves a scoped signer once and subsequent trades sign without wallet popups.
+- **Signing** — a host-provided exact owner signer or a verified Agent/API wallet; the terminal uses its Privy embedded owner for ordinary email trading and Agents for external-wallet/Agent-only trading.
 - **Reliability** — reconnect/backoff, batch updates, payload-size guards, ring-buffer accumulation for high-frequency streams.
 
 Anything above this layer (e.g. market metadata caches, order validation, UI state) lives in the consuming app.
@@ -21,7 +21,10 @@ Anything above this layer (e.g. market metadata caches, order validation, UI sta
 ```
 packages/hl-react/src/
 ├── index.ts                       public exports (also: /store, /markets/types, /registries/*, /internal/*)
-├── provider.tsx                   HyperliquidProvider + context
+├── provider.tsx                   HyperliquidProvider composes transport/session providers
+├── provider-context.ts            transport, session and combined contexts
+├── session-provider.tsx           owner/session identity and exchange lifecycle
+├── transport-provider.tsx         environment-scoped clients and subscription store
 ├── store.ts                       Zustand store — subscriptions, WS status, reconnect/cooldown timers
 ├── clients.ts                     Cached client factories (per env, per wallet)
 ├── wallet.ts                      wagmi WalletClient → Hyperliquid AbstractWallet adapter
@@ -36,8 +39,11 @@ packages/hl-react/src/
 │   ├── useTransport.ts            raw transport access
 │   ├── useTradingGuard.ts         pre-submit validation
 │   └── useApiStatus.ts
-├── signing/                       agent-wallet lifecycle
-│   ├── agent-storage.ts           localStorage-backed agent key, Zod-validated, StorageEvent-synced
+├── signing/                       owner signer and agent-wallet lifecycle
+│   ├── agent-storage.ts           owner/env-scoped sessionStorage or localStorage, Zod-validated
+│   ├── owner-signer-provider.tsx  host owner strategy and current-session assertions
+│   ├── owner-signer-client.ts     session-bound guarded owner clients
+│   ├── use-trading-status.ts      signer readiness separate from real Agent approval
 │   ├── use-agent-wallet.ts        cached PrivateKeyAccount signer
 │   ├── use-agent-registration.ts  multi-step registration mutation
 │   └── use-agent-status.ts        queries registration requirements
@@ -61,15 +67,28 @@ packages/hl-react/src/
 
 ## Setup
 
+Minimal disconnected data example, inside the host's `WagmiProvider` and
+`QueryClientProvider`:
+
 ```tsx
 import { HyperliquidProvider } from "@gatu/hl-react";
 
-<HyperliquidProvider env="mainnet" builderConfig={builderConfig} agentName="hypeterminal">
-  {/* your app */}
+<HyperliquidProvider
+  env="Mainnet"
+  userAddress={undefined}
+  allowAgentOnlySession={false}
+  builderConfig={undefined}
+>
+  <MarketData />
 </HyperliquidProvider>
 ```
 
-Wrap inside `WagmiProvider` and `QueryClientProvider` — the hooks depend on both.
+This is not the terminal's trading setup. The [application host](../../apps/terminal/src/providers/client-root.tsx)
+supplies resolved session identity, exchange policy, legal enforcement, builder
+configuration and explicit Agent approval. Its [owner signer bridge](../../apps/terminal/src/providers/hyperliquid-owner-signer-bridge.tsx)
+supplies the exact Privy embedded owner strategy. Preserve this composition and
+the [SSR/client runtime boundary](../../apps/terminal/README.md#provider-and-data-flow)
+when integrating signed actions.
 
 ## Hook taxonomy
 
@@ -83,9 +102,10 @@ Endpoint coverage is intentionally generic rather than one-hook-per-endpoint:
 | `SubscriptionClient` | `useSubscription(method, params, options)` | `useSubscription("allDexsAssetCtxs", undefined)` |
 | `ExchangeClient` | `useExchange(method, options)` | `useExchange("sendToEvmWithData")` |
 
-As of `@nktkas/hyperliquid` `0.32.2`, newer SDK methods such as prediction-market info (`outcomeMeta`, `perpCategories`), builder/HIP-3 info (`perpDexs`, `perpDexStatus`, `userDexAbstraction`, `perpDexLimits`), richer subscriptions (`allDexsAssetCtxs`, `allDexsClearinghouseState`), and exchange actions (`sendToEvmWithData`, `setDisplayName`, `convertToMultiSigUser`, `userSetAbstraction`, `userPortfolioMargin`) are available through the same generic hooks.
-
-HIP-4 status: Hyperliquid's HIP-4 outcome-market API is present in the locked `0.32.2` SDK as `useInfo("outcomeMeta", undefined)`. Upstream `main` also contains additional outcome-market methods, but this package documents and tests against the pinned workspace SDK version. The peer dependency accepts newer 0.x SDK minors for install compatibility; those newer minors are untested until the workspace SDK pin is bumped.
+The workspace and this package's peer dependency pin `@nktkas/hyperliquid` to
+`0.33.3`; see [package.json](package.json). Generic hook method names and request
+types come from that installed SDK. An upstream branch or another SDK version
+does not establish endpoint support or validation for this checkout.
 
 ### `useInfo` — REST one-shot queries
 
@@ -117,7 +137,7 @@ Backing store tracks `status` (`idle | subscribing | active | error`) per key, r
 
 ### `useExchange` — signed mutations
 
-Wraps `ExchangeClient` methods (`order`, `cancel`, `modify`, `approveAgent`, `approveBuilderFee`, `withdraw3`, `sendToEvmWithData`, …). Returns a TanStack Query mutation. Signing comes from either the agent wallet (default, fast-path L1 trading actions) or the connected user wallet (EIP-712/user-signed actions) — `registries/exchange.ts` decides.
+Wraps `ExchangeClient` methods (`order`, `cancel`, `modify`, `approveAgent`, `approveBuilderFee`, `withdraw3`, `sendToEvmWithData`, …). Returns a TanStack Query mutation. `registries/exchange.ts` selects the trading or user client; [useClients.ts](src/hooks/useClients.ts) resolves the actual signer. A host-provided owner strategy supplies both clients for ordinary email trading. Without that strategy, trading actions require a verified Agent and user-signed methods require a connected wallet matching the selected owner, case-insensitively. When owner mode is selected, a missing wallet or invalid owner fails closed without falling back to an Agent or another wallet.
 
 When `HyperliquidProvider` enables `enforceLegalActions`, every method checks
 the exact master owner through the short-lived `legalCheck` cache immediately
@@ -149,11 +169,12 @@ withdraw3
 
 | Hook | Role |
 |---|---|
+| `useTradingStatus` | Reports owner/Agent signer mode and readiness separately from builder-fee readiness; ordinary email readiness is not evidence of Agent approval. |
 | `useAgentStatus` | Independently reports Agent approval, builder-fee approval, the registered Agent address, a definitive missing reason, and typed status-check failures that preserve their cause. |
 | `useAgentRegistration` | Generates an Agent key, persists it as unverified approval-pending before signing, and requires a host `HyperliquidAgentApprovalProvider` to request `approveAgent`; there is no generic signing fallback. The host atomically records the exact signed transport boundary before the exchange request starts, then the hook verifies the freshly approved address. States: `idle -> approving_agent -> verifying -> idle/error`; failures expose the phase and automatic mutation retry is disabled. Lost responses, timeouts, and verification failures remain durably bound to the exact owner, environment, epoch, and stored key across remounts. Cross-tab coordination contains only the public key and timestamps; the private key remains in the selected Agent storage scope. Another tab can resume only the exact same candidate and otherwise fails closed. A pre-submission failure removes the candidate without classifying error text; a submitted candidate is never replaced merely because a later status check misses it. Retries reconcile the latest cross-tab record and may move the same key and markers between storage scopes. The optional application-review marker is forwarded only to the host approval path. It does not approve the builder fee. |
 | `useAgentWallet` | Returns `{ data, signer, address, isReady }` — the cached `PrivateKeyAccount` used for trading signatures. |
 | `useBuilderFeeApproval` | Requests and verifies `approveBuilderFee` independently from Agent registration. |
-| `useTradingAuthorization` | Composes Agent registration and builder-fee approval for an action that requires both. |
+| `useTradingAuthorization` | Confirms the selected trading signer, registers an Agent only when required, and separately approves a builder fee only when the requested action requires it. Owner-mode authorization does not generate an Agent. |
 | `useLegalStatus` / `useTermsAcceptance` | Reads the strictly validated `legalCheck` contract and signs/submits `acceptTerms2` with the matching owner wallet. These frontend endpoints are not part of Hyperliquid's currently documented public API and remain version-locked. |
 
 Agent keys use `hyperliquid_agent_{env}_{userAddress}` with Zod validation.
@@ -163,9 +184,11 @@ defaults to `false`. A session record takes precedence over a persistent record
 for the same owner and environment. `StorageEvent` listeners synchronize
 persistent records across tabs; session records intentionally remain tab-local.
 
-See `docs/trading-onboarding.md` for the required first-time flow and the
-separation between legal acceptance, Agent setup, funding classification,
-deposit guidance, and builder-fee approval.
+See [trading onboarding](../../docs/trading-onboarding.md) and
+[email trading signing](../../docs/email-trading-signing.md) for the required
+first-time flow and the separation between legal acceptance, signer setup,
+funding classification, deposit guidance and builder-fee approval. Login,
+refresh and status checks never sign.
 
 ### `useClients`, `useTransport`, `useTradingGuard`, `useApiStatus`
 
@@ -185,6 +208,11 @@ trading:{address}:{testnet}      → ExchangeClient(agent signer)
 
 `createExchangeClient(wallet, isTestnet)` produces a fresh client for user-wallet signing (approvals, withdrawals) without polluting the cache.
 
+[owner-signer-client.ts](src/signing/owner-signer-client.ts) separately caches
+owner clients by live signer-strategy object and environment in a `WeakMap`.
+These clients revalidate the exact owner before/after signing and at transport
+submission; they do not use the address-keyed Agent client cache.
+
 ## WebSocket reliability
 
 Lives in `src/internal/websocket/`:
@@ -200,13 +228,13 @@ The Zustand store (`store.ts`) drives the lifecycle: `acquireSubscription` bumps
 ## Peer dependencies
 
 ```json
-"@nktkas/hyperliquid":   ">=0.32.2 <1",
-"@tanstack/react-query": "^5",
-"react":                 "^19",
-"viem":                  "^2",
-"wagmi":                 "^3",
-"zod":                   "^4",
-"zustand":               "^5"
+"@nktkas/hyperliquid":   "0.33.3",
+"@tanstack/react-query": ">=5.90.16 <6",
+"react":                 ">=19.0.0 <20",
+"viem":                  ">=2.42.1 <3",
+"wagmi":                 ">=3.1.0 <4",
+"zod":                   ">=4.3.4 <5",
+"zustand":               ">=5.0.9 <6"
 ```
 
 No runtime dependencies — everything is peer, so the consuming app controls versions.

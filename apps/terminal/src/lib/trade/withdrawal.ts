@@ -1,4 +1,5 @@
-import { t } from "@lingui/core/macro";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import Big from "big.js";
 import type { Address } from "viem";
 import {
@@ -91,28 +92,26 @@ export function getWithdrawalSourceDex(usesSpotStateForPerps: boolean): Withdraw
 	return usesSpotStateForPerps ? "spot" : "";
 }
 
-export function validateWithdrawal({
-	amount,
-	available,
-	route,
-	routeFee,
-	activationFee,
-}: WithdrawalValidationInput): WithdrawalValidation {
+export function validateWithdrawal(
+	{ amount, available, route, routeFee, activationFee }: WithdrawalValidationInput,
+	translate: (message: MessageDescriptor) => string,
+): WithdrawalValidation {
 	if (!amount || amount === "0") return { valid: false, error: null };
 	const withdrawalAmount = toUnsignedBig(amount);
-	if (!withdrawalAmount || withdrawalAmount.lte(0)) return { valid: false, error: t`Invalid amount` };
+	if (!withdrawalAmount || withdrawalAmount.lte(0)) return { valid: false, error: translate(msg`Invalid amount`) };
 
 	const minimum = getMinimumWithdrawal(route, routeFee);
 	if (minimum === null) return { valid: false, error: null };
 	if (withdrawalAmount.lt(minimum)) {
-		return { valid: false, error: t`Minimum withdrawal is $${minimum}` };
+		return { valid: false, error: translate(msg`Minimum withdrawal is $${minimum}`) };
 	}
 
 	const availableAmount = toUnsignedBig(available);
 	const activation = toUnsignedBig(activationFee);
-	if (!availableAmount || !activation) return { valid: false, error: t`Unable to verify available balance` };
+	if (!availableAmount || !activation)
+		return { valid: false, error: translate(msg`Unable to verify available balance`) };
 	if (withdrawalAmount.plus(activation).gt(availableAmount)) {
-		return { valid: false, error: t`Insufficient balance` };
+		return { valid: false, error: translate(msg`Insufficient balance`) };
 	}
 
 	return { valid: true, error: null };

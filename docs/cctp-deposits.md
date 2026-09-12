@@ -125,6 +125,17 @@ rate limits have capacity, or that the complete UserOperation-to-HyperCore path
 works. Those properties still require dashboard review, monitoring, and a
 funded end-to-end release check.
 
+The mainnet email form explains the two steps before exposing the QR: send USDC
+to the exact wallet, then return and explicitly deposit into the trading account.
+The testnet automatic path does not display these mainnet instructions. Asset and
+network are fixed route details, not selectable dropdowns.
+
+Passive balance, fee, wallet-readiness and route failures render numeric placeholders
+or the address skeleton, with neutral retry controls where recovery is available.
+Unknown balances never enable Max or submission. Read-only data retries may show
+request feedback if they fail, never sign, and discard results from an older modal
+context. Submitted-action failures and confirmed restrictions remain visible.
+
 Sending USDC to the displayed embedded-wallet address does not by itself
 authorize a mainnet CCTP deposit. After funds arrive, the modal reviews the
 complete available native-USDC balance and current Circle fee. The user must

@@ -7,6 +7,7 @@ import {
 	toSelectableAccountAbstraction,
 } from "@/hooks/trade/use-account-abstraction-control";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
+import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { cn } from "@/lib/cn";
 
 export interface AccountModeFormProps {
@@ -90,6 +91,7 @@ export function AccountModeForm({
 	onSubmissionLockChange,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
+	const modes = useAccountModeLabels();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
 		toSelectableAccountAbstraction(currentMode),
 	);
@@ -106,44 +108,25 @@ export function AccountModeForm({
 	const accountModeOptions: AccountModeOption[] = [
 		{
 			id: "unifiedAccount",
-			label: t`Unified account`,
+			label: modes.unified.name,
 			badge: t`Recommended`,
 			description: t`Recommended account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset.`,
 		},
 		{
 			id: "portfolioMargin",
-			label: t`Portfolio margin`,
+			label: modes.portfolio.name,
 			description: t`For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset.`,
 		},
 		{
 			id: "disabled",
-			label: t`Separate`,
+			label: modes.manual.name,
 			description: t`Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX.`,
 		},
 	];
 	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
-	const requiresExplicitSelection =
-		currentMode === "default" || currentMode === "dexAbstraction" || currentMode === "unknown";
-	const portfolioGuidance = (
-		<>
-			<p className="text-2xs leading-relaxed text-trading-panel-muted">
-				<Trans>
-					Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts
-					holding less than $1,000.
-				</Trans>
-			</p>
-			{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" ? (
-				<p className="text-xs text-trading-panel-error">
-					<Trans>
-						New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not
-						affected and can switch away.
-					</Trans>
-				</p>
-			) : null}
-		</>
-	);
+	const requiresExplicitSelection = currentMode === "default" || currentMode === "dexAbstraction";
 	const submitErrorMessage = submitError
 		? submitError.cause instanceof Error && submitError.cause.message
 			? submitError.cause.message
@@ -176,7 +159,7 @@ export function AccountModeForm({
 
 	return (
 		<>
-			<ModalContent className={cn("space-y-3 overflow-y-auto", mobileLayout && "px-4 pt-3 pb-3")}>
+			<ModalContent aria-busy={isBusy} className={cn("space-y-3 overflow-y-auto", mobileLayout && "px-4 pt-3 pb-3")}>
 				<div className="space-y-2">
 					{accountModeOptions.map((option) => {
 						const isSelected = selectedMode === option.id;
@@ -234,11 +217,6 @@ export function AccountModeForm({
 					})}
 				</div>
 
-				{isModeUnavailable ? (
-					<p className="text-xs text-error">
-						<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
-					</p>
-				) : null}
 				{requiresExplicitSelection ? (
 					<p className="text-xs text-warning">
 						<Trans>Select a supported account mode before using balances or moving funds.</Trans>
@@ -258,24 +236,26 @@ export function AccountModeForm({
 					iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 					className="min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:opacity-90"
 				>
-					{!canChange ? (
-						<Trans>Connect</Trans>
-					) : isLoading ? (
-						<Trans>Loading...</Trans>
-					) : isUpdating ? (
-						<Trans>Switching...</Trans>
-					) : (
-						<Trans>Confirm</Trans>
-					)}
+					{!canChange ? <Trans>Connect</Trans> : isUpdating ? <Trans>Switching...</Trans> : <Trans>Confirm</Trans>}
 				</Button>
 			</ModalFooter>
-			<div
-				className={cn(
-					"space-y-2 rounded-[10px] border border-trading-panel-error/30 bg-trading-panel-error-soft p-2.5 text-center",
-					mobileLayout ? "mx-4 mb-4" : "mx-5 mb-5",
-				)}
-			>
-				{portfolioGuidance}
+			<div className={cn("space-y-2 text-xs text-trading-panel-muted", mobileLayout ? "mx-4 mb-4" : "mx-5 mb-5")}>
+				{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" ? (
+					<p>
+						<Trans>
+							This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another
+							mode.
+						</Trans>
+					</p>
+				) : null}
+				<a
+					href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-margin"
+					target="_blank"
+					rel="noreferrer"
+					className="inline-block underline underline-offset-4"
+				>
+					<Trans>Portfolio margin eligibility and limits</Trans>
+				</a>
 			</div>
 		</>
 	);

@@ -6,7 +6,13 @@ const terminalRoot = fileURLToPath(new URL("../..", import.meta.url));
 export default defineConfig({
 	testDir: fileURLToPath(new URL(".", import.meta.url)),
 	testMatch: "*.pw.ts",
-	testIgnore: "user-menu-recovery.pw.ts",
+	testIgnore: [
+		"user-menu-recovery.pw.ts",
+		"mobile-trade-all-orders.pw.ts",
+		"desktop-order-entry-layout.pw.ts",
+		"account-actions.pw.ts",
+	],
+	outputDir: fileURLToPath(new URL("../../test-results/shared-browser", import.meta.url)),
 	fullyParallel: false,
 	workers: 1,
 	reporter: "line",

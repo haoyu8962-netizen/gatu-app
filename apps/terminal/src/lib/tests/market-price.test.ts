@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	getOrderEntryReferencePrice,
 	isLiveMarkPriceReady,
 	resolveActiveMarketPrice,
 	resolveFastMarketPrice,
@@ -7,21 +8,47 @@ import {
 } from "@/domain/trade/market-price";
 
 describe("live market price", () => {
-	it("selects a tradable headline midpoint without substituting mark price", () => {
+	it("offers fresh context mids and only a fresh mark fallback to order-entry controls", () => {
+		const market = { midPx: "101.234", markPx: "99", markPriceStatus: "success" as const, midPriceReceivedAt: 1_000 };
+		expect(getOrderEntryReferencePrice(market, 2_000)).toBe("101.234");
+		for (const status of ["loading", "stale", "error", "idle"] as const) {
+			expect(getOrderEntryReferencePrice({ ...market, markPriceStatus: status }, 2_000)).toBeUndefined();
+		}
+		for (const midPx of [null, undefined, "0", "-1", "NaN"]) {
+			expect(getOrderEntryReferencePrice({ ...market, midPx }, 2_000)).toBeUndefined();
+		}
+		for (const midPriceReceivedAt of [undefined, 2_001, -10_000, Number.NaN]) {
+			expect(getOrderEntryReferencePrice({ ...market, midPriceReceivedAt }, 2_000)).toBeUndefined();
+		}
+		expect(getOrderEntryReferencePrice(undefined, 2_000)).toBeUndefined();
+		for (const midPx of [null, undefined]) {
+			expect(getOrderEntryReferencePrice({ ...market, midPx, markPriceReceivedAt: 1_000 }, 2_000)).toBe("99");
+		}
 		expect(
-			selectMarketHeadlinePrice({
-				bboMidPx: "72.1375",
-				allMidsPrice: "72.13",
-				assetCtxMidPx: "72.12",
-			}),
-		).toEqual({ source: "bbo", value: "72.1375" });
-		expect(
-			selectMarketHeadlinePrice({
-				bboMidPx: undefined,
-				allMidsPrice: undefined,
-				assetCtxMidPx: null,
-			}),
-		).toEqual({ source: null, value: undefined });
+			getOrderEntryReferencePrice({ ...market, midPriceReceivedAt: -10_000, markPriceReceivedAt: 1_000 }, 2_000),
+		).toBeUndefined();
+	});
+	it("selects the context mid and falls back to its mark only for a missing mid", () => {
+		expect(selectMarketHeadlinePrice({ assetCtxMidPx: "72.12", assetCtxMarkPx: "72.5" })).toEqual({
+			source: "assetCtxMid",
+			value: "72.12",
+		});
+		for (const mid of [null, undefined]) {
+			expect(selectMarketHeadlinePrice({ assetCtxMidPx: mid, assetCtxMarkPx: "72.5" })).toEqual({
+				source: "assetCtxMark",
+				value: "72.5",
+			});
+		}
+		for (const mid of ["0", "-1", "NaN"]) {
+			expect(selectMarketHeadlinePrice({ assetCtxMidPx: mid, assetCtxMarkPx: "72.5" })).toEqual({
+				source: null,
+				value: undefined,
+			});
+		}
+		expect(selectMarketHeadlinePrice({ assetCtxMidPx: null, assetCtxMarkPx: null })).toEqual({
+			source: null,
+			value: undefined,
+		});
 	});
 
 	it("uses the exact fast-market key and preserves an explicit null mid", () => {

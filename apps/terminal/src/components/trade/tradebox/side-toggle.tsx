@@ -15,9 +15,10 @@ interface Props {
 	labels: SideLabels;
 	compact?: boolean;
 	tradingPanel?: boolean;
+	mobile?: boolean;
 }
 
-export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }: Props) {
+export function SideToggle({ side, onSideChange, labels, compact, tradingPanel, mobile }: Props) {
 	const indicatorClassName = cn(
 		"shadow-none",
 		tradingPanel
@@ -37,6 +38,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 			className={cn(
 				compact ? "mb-0" : "mb-2",
 				tradingPanel && "rounded-[10px] border-trading-panel-stroke-card bg-surface",
+				mobile && "mb-0",
 			)}
 			indicatorClassName={indicatorClassName}
 		>
@@ -48,6 +50,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 					tradingPanel &&
 						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-success",
 					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
+					mobile && "h-[31px] py-0 text-xs after:content-none",
 				)}
 			>
 				{labels.buy}
@@ -60,6 +63,7 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 					tradingPanel &&
 						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-error",
 					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
+					mobile && "h-[31px] py-0 text-xs after:content-none",
 				)}
 			>
 				{labels.sell}

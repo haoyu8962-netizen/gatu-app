@@ -71,9 +71,8 @@ export function floor(value: Numeric, decimals: number): number | null {
 }
 
 export function floorToString(value: Numeric, decimals: number): string {
-	const floored = floor(value, decimals);
-	if (floored === null) return "0";
-	return new Big(floored).toFixed(decimals);
+	const big = toBig(value);
+	return big === null ? "0" : big.round(decimals, Big.roundDown).toFixed(decimals);
 }
 
 export function floorToDecimals(value: number, maxDecimals: number): number {

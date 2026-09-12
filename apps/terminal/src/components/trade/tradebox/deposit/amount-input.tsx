@@ -11,7 +11,6 @@ interface Props {
 	maxAmount: string;
 	balance: string;
 	balanceStatus: "idle" | "loading" | "success" | "error";
-	balanceError: Error | null;
 	validation: { valid: boolean; error: string | null };
 	amountError?: string | null;
 	isPending: boolean;
@@ -24,7 +23,6 @@ export function AmountInput({
 	maxAmount,
 	balance,
 	balanceStatus,
-	balanceError,
 	validation,
 	amountError = null,
 	isPending,
@@ -33,28 +31,22 @@ export function AmountInput({
 	const { t } = useLingui();
 	const helperId = useId();
 	const isBalanceLoading = balanceStatus === "loading";
-	const hasBalanceError = balanceStatus === "error";
-	const isSubmitDisabled = !validation.valid || isPending || isBalanceLoading || hasBalanceError;
-	const helperText = hasBalanceError ? balanceError?.message || t`Unable to load Arbitrum USDC balance` : amountError;
+	const isBalanceReady = balanceStatus === "success";
+	const isSubmitDisabled = !validation.valid || isPending || !isBalanceReady;
+	const helperText = balanceStatus === "success" ? amountError : null;
 	const hasHelper = Boolean(helperText);
-	const hasAmountError = Boolean(amountError);
+	const hasAmountError = Boolean(helperText);
 
 	return (
-		<div className="flex flex-col gap-2 font-market-close">
+		<div className="flex flex-col gap-2 font-market-close" aria-busy={isBalanceLoading || isPending}>
 			<div>
 				<NumberInput
 					label={t`Deposit amount`}
 					labelValue={
-						isBalanceLoading ? (
-							<Trans>Loading...</Trans>
-						) : (
-							<>
-								<Trans>Available</Trans>:{" "}
-								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-									{balance} USDC
-								</span>
-							</>
-						)
+						<>
+							<Trans>Available</Trans>:{" "}
+							<span className="tabular-nums">{balanceStatus === "success" ? balance : "--"} USDC</span>
+						</>
 					}
 					onLabelValueClick={() => onAmountChange(maxAmount)}
 					maxLabel={<Trans>Max</Trans>}
@@ -64,7 +56,7 @@ export function AmountInput({
 					onChange={(e) => onAmountChange(e.target.value)}
 					aria-describedby={hasAmountError ? helperId : undefined}
 					aria-invalid={hasAmountError ? true : undefined}
-					disabled={isPending || isBalanceLoading || hasBalanceError}
+					disabled={isPending || !isBalanceReady}
 					maxAllowedDecimals={6}
 					mobileSafe
 					className={cn(

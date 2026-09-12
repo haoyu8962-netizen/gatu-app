@@ -4,7 +4,7 @@ Updated: 2026-09-11. Protocol: ticket API v2, envelope v2, draft v1.
 
 ## Release Rule
 
-All 11 required physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. This blocks enabling pairing; a verified closed v2 safety baseline may ship under the [production release procedure](mobile-sync-production-readiness.md).
+All 11 physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. These rows are mandatory for the optional `prepare` / `promote` workflow when pairing is enabled. Ordinary `deploy.sh main` uses automated release verification without requiring this file; it does not claim device acceptance. See the [production release procedure](mobile-sync-production-readiness.md).
 
 ## Required Evidence
 
@@ -59,7 +59,7 @@ Copy this table into the external evidence file exactly once. Fill values from `
 
 ## Matrix Update Rules
 
-Preserve every required ID, matrix description and evidence field. Pass requires real-device observations, complete notes and exact acceptance references. Unsupported RD-6 may pass only with demonstrated fail-closed behavior and a verified external-browser route. Replace stale evidence after code changes. Run the validator without `--allow-incomplete` before enabling either gate; failed or missing rows block that release.
+Preserve every required ID, matrix description and evidence field. Pass requires real-device observations, complete notes and exact acceptance references. Unsupported RD-6 may pass only with demonstrated fail-closed behavior and a verified external-browser route. Replace stale evidence after code changes. Before promoting a candidate with either gate enabled through the optional strict `prepare` / `promote` workflow, run the validator without `--allow-incomplete`; failed or missing rows block that promotion. Ordinary deployment follows the automated checks described in the Release Rule above.
 
 ## Acceptance Coverage Map
 

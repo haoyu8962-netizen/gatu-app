@@ -4,6 +4,7 @@ import { ArrowsClockwiseIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	type OrderbookFeedSnapshot,
 	type OrderbookFeedSource,
@@ -236,7 +237,7 @@ export function MobileBookView({
 		midPx: liveBboMid,
 		isStale: isBboStale,
 		status: bboStatus,
-	} = useOrderbookMidPrice(isBookViewActive ? name : undefined);
+	} = useOrderbookMidPrice(isBookViewActive && !compact ? name : undefined);
 	const bboMid = bboStatus === "active" && !isBboStale ? liveBboMid : undefined;
 
 	useEffect(() => {
@@ -275,15 +276,25 @@ export function MobileBookView({
 		() => getRawSpreadInfo(book?.levels, { bboMid, eventSpread: book?.spread }),
 		[bboMid, book?.levels, book?.spread],
 	);
-	const mid = spreadInfo?.mid ?? bboMid;
+	const serverMid = selectedMarket?.midPx ?? undefined;
+	const mid =
+		isBookViewActive &&
+		isLiveMarkPriceReady(selectedMarket?.markPriceStatus ?? "idle", serverMid, selectedMarket?.midPriceReceivedAt)
+			? serverMid
+			: undefined;
+	const midIdentity = `${env}:${name}`;
 
 	const [midDirection, setMidDirection] = useState<"up" | "down" | "flat">("flat");
 	const lastMidRef = useRef<{ key: string | null; value: string | undefined }>({ key: null, value: undefined });
 
 	useEffect(() => {
 		const midValue = toBig(mid);
-		if (!midValue) return;
-		const key = bookCacheKey;
+		if (!midValue) {
+			lastMidRef.current = { key: null, value: undefined };
+			setMidDirection("flat");
+			return;
+		}
+		const key = midIdentity;
 		const last = lastMidRef.current;
 		if (last.key !== key) {
 			setMidDirection("flat");
@@ -299,7 +310,7 @@ export function MobileBookView({
 			else setMidDirection("flat");
 		}
 		lastMidRef.current = { key, value: mid };
-	}, [bookCacheKey, mid]);
+	}, [midIdentity, mid]);
 
 	const spreadText = spreadInfo
 		? `${formatNumber(spreadInfo.spread, displayPriceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`
@@ -385,7 +396,6 @@ export function MobileBookView({
 						mid={mid}
 						midDirection={midDirection}
 						marketName={name}
-						spreadText={spreadText}
 						selectedOptionLabel={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
 						priceGroupingOptions={priceGroupingOptions}
 						setSelectedOptionKey={setSelectedOptionKey}
@@ -417,7 +427,7 @@ export function MobileBookView({
 				)
 			) : (
 				<div className="flex-1 min-h-0 flex flex-col">
-					{active && <TradesPanel key={name} compact={compact} quietErrors showInQuote={showOrderbookInQuote} />}
+					{active && <TradesPanel key={name} compact={compact} showInQuote={showOrderbookInQuote} />}
 				</div>
 			)}
 
@@ -445,7 +455,6 @@ interface CompactOrderbookProps extends OrderbookLayoutProps {
 	flashResetKey: string;
 	mid: string | undefined;
 	midDirection: "up" | "down" | "flat";
-	spreadText: string;
 	selectedOptionLabel: string;
 	priceGroupingOptions: L2BookPriceGroupOption[];
 	setSelectedOptionKey: (key: string) => void;
@@ -471,7 +480,6 @@ export function CompactOrderbook({
 	szDecimals,
 	mid,
 	midDirection,
-	spreadText,
 	selectedOptionLabel,
 	priceGroupingOptions,
 	setSelectedOptionKey,
@@ -638,9 +646,9 @@ export function CompactOrderbook({
 					<div
 						data-slot="compact-orderbook-mid"
 						data-direction={midDirection}
-						title={`${t`Spread`}: ${spreadText}`}
-						className="shrink-0 flex h-[24px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
+						className="shrink-0 flex h-[24px] items-center justify-start px-2 gap-1.5"
 					>
+						<span className="sr-only">{t`Mid`}: </span>
 						<span
 							data-slot="compact-orderbook-mid-price"
 							className={cn(
@@ -651,12 +659,6 @@ export function CompactOrderbook({
 							)}
 						>
 							{mid ? `$${formatNumber(mid, priceDecimals)}` : FALLBACK_VALUE_PLACEHOLDER}
-						</span>
-						<span
-							data-slot="compact-orderbook-spread"
-							className="ml-auto min-w-0 truncate text-right text-3xs tabular-nums orderbook-header-text"
-						>
-							{spreadText}
 						</span>
 					</div>
 				)}

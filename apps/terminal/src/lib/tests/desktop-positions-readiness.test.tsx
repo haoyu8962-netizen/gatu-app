@@ -9,6 +9,7 @@ import { createI18nRoot } from "./harness/react";
 const state = vi.hoisted(() => ({
 	connected: true,
 	status: "active",
+	isStale: false,
 	data: undefined as { clearinghouseStates: [] } | undefined,
 }));
 
@@ -18,8 +19,7 @@ vi.mock("../../../../../packages/hl-react/src/provider", () => ({
 	}),
 }));
 vi.mock("../../../../../packages/hl-react/src/hooks/useSubscription", () => ({
-	useSubscription: (method: string) =>
-		method === "allDexsClearinghouseState" ? { ...state, isStale: false } : { data: undefined },
+	useSubscription: (method: string) => (method === "allDexsClearinghouseState" ? { ...state } : { data: undefined }),
 }));
 vi.mock("@/lib/hyperliquid", async () => {
 	const { useUserPositions } = await import("../../../../../packages/hl-react/src/account/use-user-positions");
@@ -55,7 +55,7 @@ describe("desktop positions snapshot presentation", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 	beforeEach(() => {
-		Object.assign(state, { connected: true, status: "active", data: undefined });
+		Object.assign(state, { connected: true, status: "active", isStale: false, data: undefined });
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -67,18 +67,19 @@ describe("desktop positions snapshot presentation", () => {
 		act(() => root.unmount());
 		container.remove();
 	});
-	it("shows a subscription failure without an initial snapshot, then recovers through loading to a confirmed empty snapshot", () => {
+	it("keeps a subscription failure quiet and recovers through loading to a confirmed empty snapshot", () => {
 		render();
-		expect(container.textContent).toContain("Loading positions...");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"][aria-busy="true"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("No active positions.");
 		state.status = "error";
 		render();
-		expect(container.textContent).toContain("Failed to load positions.");
+		expect(container.textContent).not.toContain("Failed to load positions.");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"][aria-busy="false"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("Loading positions...");
 		expect(container.textContent).not.toContain("No active positions.");
 		state.status = "active";
 		render();
-		expect(container.textContent).toContain("Loading positions...");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"][aria-busy="true"]')).not.toBeNull();
 		state.data = { clearinghouseStates: [] };
 		render();
 		expect(container.textContent).toContain("No active positions.");
@@ -90,5 +91,15 @@ describe("desktop positions snapshot presentation", () => {
 		render();
 		expect(container.textContent).toContain("Connect your wallet to view positions.");
 		expect(container.textContent).not.toContain("Failed to load positions.");
+	});
+	it("does not turn a stale empty snapshot into a confirmed empty account", () => {
+		state.data = { clearinghouseStates: [] };
+		state.isStale = true;
+		render();
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("No active positions.");
+		state.isStale = false;
+		render();
+		expect(container.textContent).toContain("No active positions.");
 	});
 });

@@ -17,10 +17,9 @@ import { useSwitchChain, useWalletClient } from "wagmi";
 import { getFormattedMidPrice } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
-import { isLiveMarkPriceReady } from "@/domain/trade/market-price";
+import { getOrderEntryReferencePrice, isLiveMarkPriceReady } from "@/domain/trade/market-price";
 import {
 	assertEntryOrderExecutionAllowed,
 	assertEntryTwapExecutionAllowed,
@@ -37,7 +36,8 @@ import type { OrderConfirmationDraft } from "@/domain/trade/order-confirmation";
 import { buildOrderFeeQuote, resolveEstimatedProtocolRate } from "@/domain/trade/order-fee-quote";
 import { hasOrderSizeValidationError } from "@/domain/trade/order-size-validation";
 import { resolveScaleSkewNumber } from "@/domain/trade/orders";
-import { formatTwapPriceInput } from "@/domain/trade/twap-details";
+import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
+import { resolveTwapPriceInputs } from "@/domain/trade/twap-details";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -50,14 +50,12 @@ import { useMarketSlippageEstimate } from "@/hooks/trade/use-market-slippage-est
 import { useOrderConfirmation } from "@/hooks/trade/use-order-confirmation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { type OrderSubmitDraftInput, useOrderSubmit } from "@/hooks/trade/use-order-submit";
-import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useProspectiveCrossMarginAccount } from "@/hooks/trade/use-prospective-cross-margin-account";
 import { useSizeSliderInteraction } from "@/hooks/trade/use-size-slider-interaction";
-import { useLingeringValidation } from "@/hooks/ui/use-lingering-validation";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDuration, formatNumber, formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
+import { formatPrice, formatSlippageBps, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useSelectedMarketInfo,
@@ -79,8 +77,8 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
 import { getTpSlCollateralSymbol } from "@/lib/trade/tpsl";
-import { getTwapStopPriceLabel } from "@/lib/trade/twap-labels";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
@@ -95,7 +93,9 @@ import {
 	useLimitPrice,
 	useOrderEntryActions,
 	useOrderSide,
+	useOrderSize,
 	useOrderType,
+	useReduceOnly,
 	useScaleEnd,
 	useScaleLevels,
 	useScaleSkew,
@@ -106,6 +106,7 @@ import {
 	useTpSlEnabled,
 	useTpSlReturnInvalid,
 	useTriggerPrice,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapRandomize,
 	useTwapStopPrice,
@@ -120,20 +121,20 @@ import { TokenSelector } from "../chart/token-selector";
 import { OrderFeeSummaryValue } from "../components/order-fee-summary-value";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { OrderConfirmationModal } from "../tradebox/order-confirmation-modal";
+import { ScaleOrderSummary } from "../tradebox/scale-order-summary";
 import { TradeFormScale } from "../tradebox/trade-form-scale";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
 import { TradeFormTwap } from "../tradebox/trade-form-twap";
 import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
+import { TwapOrderSummary } from "../tradebox/twap-order-summary";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileTradePriceField } from "./mobile-trade-price-field";
 import { MobileTradeScrollArea } from "./mobile-trade-scroll-area";
 import { MobileTradeSizeControl } from "./mobile-trade-size-control";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
-
-const ERROR_LINGER_MS = 1500;
 
 interface Props {
 	active?: boolean;
@@ -186,7 +187,8 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setTpSlEnabled,
 		setLimitPriceFromPrefill,
 		setLimitPriceFromUser,
-		markDraftEdited,
+		setSize: setSizeInput,
+		setReduceOnly: setReduceOnlyChecked,
 		setTriggerPrice,
 	} = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
@@ -201,13 +203,10 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const scaleSkewInput = useScaleSkew();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
+	const twapAdvancedEnabled = useTwapAdvancedEnabled();
 	const twapTriggerPriceInput = useTwapTriggerPrice();
 	const twapStopPriceInput = useTwapStopPrice();
-	const [sizeInput, setLocalSizeInput] = useState("");
-	function setSizeInput(value: string) {
-		if (value !== sizeInput) markDraftEdited();
-		setLocalSizeInput(value);
-	}
+	const sizeInput = useOrderSize();
 	const [isSizeInteracting, setIsSizeInteracting] = useState(false);
 	const sizeInteractionRef = useRef(false);
 	function handleSizeInteractionChange(active: boolean) {
@@ -215,11 +214,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setIsSizeInteracting(active);
 	}
 	const limitPriceInput = useLimitPrice();
-	const [reduceOnlyChecked, setLocalReduceOnly] = useState(false);
-	function setReduceOnlyChecked(value: boolean) {
-		if (value !== reduceOnlyChecked) markDraftEdited();
-		setLocalReduceOnly(value);
-	}
+	const reduceOnlyChecked = useReduceOnly();
 	const [approvalError, setApprovalError] = useState<{ cause: unknown } | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -243,18 +238,19 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const markPriceStatus = market?.markPriceStatus ?? "loading";
 	const marketType = market?.kind === "spot" ? "spot" : "perp";
 	const twapPriceFormat = { assetId: market?.assetId, szDecimals: market?.szDecimals ?? 0 };
-	const twapTriggerPx = formatTwapPriceInput(twapTriggerPriceInput, twapPriceFormat);
-	const twapStopPx = formatTwapPriceInput(twapStopPriceInput, twapPriceFormat);
+	const { triggerPx: twapTriggerPx, stopPx: twapStopPx } = resolveTwapPriceInputs(
+		twapAdvancedEnabled,
+		twapTriggerPriceInput,
+		twapStopPriceInput,
+		twapPriceFormat,
+	);
 	const twapTriggerPriceNum = toNumber(twapTriggerPx);
 	const twapStopPriceNum = toNumber(twapStopPx);
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 	const scaleSkewNum = resolveScaleSkewNumber(scaleSkewInput);
 	const requiresLiveMarkPrice = orderType === "market" || isTriggerOrder || twapOrder;
-	const { midPx } = useOrderbookMidPrice(
-		active && (usesLimitPrice || usesTriggerPrice || scaleOrder) ? market?.name : undefined,
-	);
-	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const midReferencePrice = getOrderEntryReferencePrice(market);
 	const formattedMidForPrefill = getFormattedMidPrice(
 		midReferencePrice,
 		market?.szDecimals,
@@ -380,7 +376,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	} = useOrderSubmit({
 		executionGuard,
 		twapExecutionGuard,
-		onReset: resetSubmittedForm,
 	});
 	const accountModeControl = useAccountAbstractionControl(accountAbstraction);
 
@@ -511,15 +506,45 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				}),
 	);
 
-	const validationErrorText =
-		validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval
-			? validation.errors.join(" \u2022 ")
-			: "";
-	const validationSnapshot = useLingeringValidation(
-		validationErrorText,
-		hasOrderSizeValidationError(validation.validationErrors),
-		ERROR_LINGER_MS,
+	const validationPresentationState = {
+		accountReady:
+			isConnected &&
+			!isWalletLoading &&
+			availableBalance > 0 &&
+			!validation.needsApproval &&
+			!isAvailabilityBlocked &&
+			!tradeActionsBlocked,
+		marketReady: !!market && typeof market.assetId === "number" && markPriceStatus === "success",
+		positionReady: positionSnapshotReady,
+		draft: {
+			size: sizeInput,
+			limitPrice: limitPriceInput,
+			triggerPrice,
+			tpPrice,
+			slPrice,
+			scaleStartPrice: scaleStartPriceInput,
+			scaleEndPrice: scaleEndPriceInput,
+		},
+	};
+	const visibleValidationErrors = getOrderValidationPresentation(
+		validation.validationErrors,
+		validationPresentationState,
 	);
+	const inlineTpSlPriceErrors = getTpSlPriceErrors({
+		assetId: market?.assetId ?? null,
+		szDecimals,
+		referencePrice: price,
+		tpPrice,
+		slPrice,
+		side,
+	});
+	const validationSnapshot = {
+		text: visibleValidationErrors
+			.filter((error) => !isInlineTpSlValidationError(error, inlineTpSlPriceErrors))
+			.map((error) => error.message)
+			.join(" \u2022 "),
+		hasSizeError: hasOrderSizeValidationError(visibleValidationErrors),
+	};
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
@@ -536,7 +561,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	});
 
 	function handleSizeModeToggle() {
-		markDraftEdited();
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
 		onSizeModeChange(newMode);
@@ -625,11 +649,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		}
 	}
 
-	function resetSubmittedForm() {
-		setLocalSizeInput("");
-		setLocalReduceOnly(false);
-	}
-
 	function canExecuteOrder(input?: OrderSubmitDraftInput) {
 		if (input && !isDraftResetTokenCurrent(input.draftResetToken)) return false;
 		if (sizeInteractionRef.current) return false;
@@ -709,6 +728,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				scaleSkewInput,
 				twapMinutesNum,
 				twapRandomize,
+				twapAdvancedEnabled,
 				twapTriggerPx,
 				twapStopPx,
 				tpSlEnabled,
@@ -780,13 +800,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 	const marginDialogError = marginDialogView === "leverage" ? leverageUpdateError : switchModeError;
 
 	return (
-		<div
-			className={cn(
-				"flex min-h-0 flex-col self-stretch",
-				embedded ? "overflow-y-auto overscroll-y-contain" : "h-full bg-background",
-				className,
-			)}
-		>
+		<div className={cn("flex min-h-0 flex-col self-stretch", !embedded && "h-full bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={handleMarginDialogOpenChange}
@@ -850,12 +864,12 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					type="button"
 					onClick={() => applySizeFromPercent(100)}
 					disabled={isFormDisabled || maxSize <= 0}
-					className="relative flex min-h-7 w-full min-w-0 items-center justify-between gap-2 text-2xs text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] disabled:cursor-default"
+					className="relative flex min-h-[15px] w-full min-w-0 items-center justify-between gap-2 text-xs leading-[15px] text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-6 after:w-full after:-translate-y-1/2 after:content-[''] disabled:cursor-default"
 				>
 					<span className="shrink-0 whitespace-nowrap">{t`Available`}</span>
 					<span
 						className={cn(
-							"inline-flex min-w-0 items-center justify-end gap-1 truncate whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-right font-semibold tabular-nums text-trading-panel-fg",
+							"inline-flex min-w-0 items-center justify-end gap-1 truncate whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-right font-semibold leading-[14px] tabular-nums text-trading-panel-fg",
 							(isFormDisabled || maxSize <= 0) && "border-transparent",
 						)}
 					>
@@ -872,37 +886,11 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						placeholder="0.00"
 						value={triggerPrice}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
-						onMidClick={setTriggerPrice}
 						midPrice={midReferencePrice}
 						szDecimals={market?.szDecimals}
 						marketType={marketType}
 						assetId={market?.assetId}
 						disabled={isFormDisabled}
-					/>
-				)}
-
-				{twapOrder && (
-					<TradeFormTwap
-						disabled={isFormDisabled}
-						side={side}
-						quoteToken={priceUnitLabel}
-						markPx={markPx}
-						assetId={market?.assetId}
-						szDecimals={szDecimals}
-						compact
-						mobileSafe
-					/>
-				)}
-
-				{scaleOrder && (
-					<TradeFormScale
-						midPrice={midReferencePrice}
-						szDecimals={szDecimals}
-						marketType={marketType}
-						assetId={market?.assetId}
-						disabled={isFormDisabled}
-						compact
-						mobileSafe
 					/>
 				)}
 
@@ -950,7 +938,40 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					sliderValue={sliderValue}
 				/>
 
-				{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice || scaleOrder) && (
+				{scaleOrder && (
+					<TradeFormScale
+						midPrice={midReferencePrice}
+						szDecimals={szDecimals}
+						marketType={marketType}
+						assetId={market?.assetId}
+						disabled={isFormDisabled}
+						compact
+						mobileSafe
+					/>
+				)}
+
+				{twapOrder && (
+					<TradeFormTwap
+						reduceOnly={
+							capabilities.hasReduceOnly
+								? { checked: reduceOnlyChecked, onCheckedChange: setReduceOnlyChecked }
+								: undefined
+						}
+						disabled={isFormDisabled}
+						side={side}
+						quoteToken={priceUnitLabel}
+						markPx={markPx}
+						assetId={market?.assetId}
+						szDecimals={szDecimals}
+						compact
+						mobileSafe
+					/>
+				)}
+
+				{((!twapOrder && capabilities.hasReduceOnly) ||
+					(capabilities.hasTpSl && canUseTpSl) ||
+					usesLimitPrice ||
+					scaleOrder) && (
 					<TradeOptionCheckboxes
 						className={cn(
 							"flex flex-wrap items-center gap-y-1",
@@ -980,6 +1001,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 
 				{tpSlEnabled && canUseTpSl && (
 					<TradeFormTpSl
+						showValidation={validationPresentationState.accountReady && validationPresentationState.marketReady}
 						assetId={market?.assetId ?? null}
 						marketId={market?.name ?? null}
 						referencePrice={price}
@@ -992,102 +1014,92 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 					/>
 				)}
 
-				<div className={cn("border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}>
-					{twapOrder && (
+				<div
+					data-slot="mobile-order-summary"
+					className={cn("mt-auto border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}
+				>
+					{twapOrder ? (
+						<TwapOrderSummary
+							compact
+							twapMinutesNum={twapMinutesNum}
+							twapTriggerPriceNum={twapTriggerPriceNum}
+							twapStopPriceNum={twapStopPriceNum}
+							side={side}
+							feeQuote={feeQuote}
+							szDecimals={market?.szDecimals}
+							marketKind={market?.kind}
+						/>
+					) : scaleOrder ? (
+						<ScaleOrderSummary
+							compact
+							scaleStart={scaleStartPriceNum}
+							scaleEnd={scaleEndPriceNum}
+							scaleLevels={scaleLevelsNum}
+							scaleSkew={scaleSkewNum}
+							orderValue={orderValue}
+							marginRequired={marginRequired}
+							feeQuote={feeQuote}
+							szDecimals={market?.szDecimals}
+							marketKind={market?.kind}
+						/>
+					) : (
 						<>
-							<SummaryRow
-								label={t`Frequency`}
-								value={t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
-								valueClass="max-w-[60%] whitespace-normal leading-tight text-trading-panel-fg"
-								compact={embedded}
-							/>
-							<SummaryRow
-								label={t`Runtime`}
-								value={twapMinutesNum > 0 ? formatDuration(twapMinutesNum) : FALLBACK_VALUE_PLACEHOLDER}
-								compact={embedded}
-							/>
-							{isPositive(twapTriggerPriceNum) && (
+							{capabilities.isLeveraged && (
 								<SummaryRow
-									label={t`Trigger Price`}
-									value={formatSummaryPrice(twapTriggerPriceNum, market?.szDecimals, marketType)}
+									label={t`Liq. Price`}
+									value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
+									valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
 									compact={embedded}
 								/>
 							)}
-							{isPositive(twapStopPriceNum) && (
+							<SummaryRow
+								label={t`Order Value`}
+								value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
+								compact={embedded}
+							/>
+							{capabilities.isLeveraged && (
 								<SummaryRow
-									label={getTwapStopPriceLabel(side, { buy: t`Max Price`, sell: t`Min Price` })}
-									value={formatSummaryPrice(twapStopPriceNum, market?.szDecimals, marketType)}
+									label={t`Margin Req.`}
+									value={
+										marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER
+									}
 									compact={embedded}
 								/>
 							)}
-						</>
-					)}
-					{scaleOrder && (
-						<>
-							<SummaryRow
-								label={t`Start Price`}
-								value={formatSummaryPrice(scaleStartPriceNum, market?.szDecimals, marketType)}
-								compact={embedded}
-							/>
-							<SummaryRow
-								label={t`End Price`}
-								value={formatSummaryPrice(scaleEndPriceNum, market?.szDecimals, marketType)}
-								compact={embedded}
-							/>
-							<SummaryRow label={t`Number of Orders`} value={formatSummaryCount(scaleLevelsNum)} compact={embedded} />
-							<SummaryRow label={t`Size Skew`} value={formatSummaryCount(scaleSkewNum)} compact={embedded} />
-						</>
-					)}
-					{capabilities.isLeveraged && (orderType === "market" || orderType === "limit") && (
-						<SummaryRow
-							label={t`Liq. Price`}
-							value={formatSummaryPrice(liqPrice, market?.szDecimals, marketType)}
-							valueClass={getLiquidationPriceClassName(liqPrice, liqWarning)}
-							compact={embedded}
-						/>
-					)}
-					<SummaryRow
-						label={t`Order Value`}
-						value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
-						compact={embedded}
-					/>
-					{capabilities.isLeveraged && (
-						<SummaryRow
-							label={t`Margin Req.`}
-							value={marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
-							compact={embedded}
-						/>
-					)}
-					{orderType === "market" && (
-						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}>
-							<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
-							<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
-								<span title={t`Est. Slippage`} className="text-trading-panel-muted">
-									<span className="sr-only">{t`Est. Slippage`}: </span>
-									{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
-								</span>
-								<span aria-hidden="true" className="text-trading-panel-subtle">
-									/
-								</span>
-								<button
-									type="button"
-									onClick={openSettingsDialog}
-									aria-label={t`Slippage`}
-									className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							{orderType === "market" && (
+								<div
+									className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-1.5")}
 								>
-									<span className="text-trading-panel-muted">{t`Max`}</span>
-									<span className="text-trading-panel-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
-								</button>
-							</span>
-						</div>
+									<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
+									<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums">
+										<span title={t`Est. Slippage`} className="text-trading-panel-muted">
+											<span className="sr-only">{t`Est. Slippage`}: </span>
+											{estimatedSlippageText ?? FALLBACK_VALUE_PLACEHOLDER}
+										</span>
+										<span aria-hidden="true" className="text-trading-panel-subtle">
+											/
+										</span>
+										<button
+											type="button"
+											onClick={openSettingsDialog}
+											aria-label={t`Slippage`}
+											className="relative inline-flex cursor-pointer items-center gap-1 rounded-8 transition-opacity after:absolute after:left-1/2 after:top-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+										>
+											<span className="text-trading-panel-muted">{t`Max`}</span>
+											<span className="text-trading-panel-error">{slippagePercent}%</span>
+											<PencilIcon className="size-2.5 text-trading-panel-subtle" />
+										</button>
+									</span>
+								</div>
+							)}
+							<SummaryRow
+								label={t`Est. Fee`}
+								value={<OrderFeeSummaryValue quote={feeQuote} />}
+								valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
+								compact={embedded}
+							/>
+						</>
 					)}
-					<SummaryRow
-						label={t`Est. Fee`}
-						value={<OrderFeeSummaryValue quote={feeQuote} />}
-						valueClass="min-w-0 flex-1 shrink whitespace-normal text-trading-panel-muted"
-						compact={embedded}
-					/>
 				</div>
 			</MobileTradeScrollArea>
 
@@ -1172,7 +1184,7 @@ function SummaryRow({
 	compact?: boolean;
 }) {
 	return (
-		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
+		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-0.5" : "gap-2 py-1.5")}>
 			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
 			<span
 				className={cn(
@@ -1194,10 +1206,6 @@ function getLiquidationPriceClassName(liqPrice: number | null, liqWarning: boole
 
 function formatSummaryPrice(value: number | null, szDecimals: number | undefined, marketType: "perp" | "spot"): string {
 	return isPositive(value) ? formatPrice(value, { szDecimals, marketType }) : FALLBACK_VALUE_PLACEHOLDER;
-}
-
-function formatSummaryCount(value: number | null): string {
-	return isPositive(value) ? formatNumber(String(value)) : FALLBACK_VALUE_PLACEHOLDER;
 }
 
 interface MobileButtonContentInput {

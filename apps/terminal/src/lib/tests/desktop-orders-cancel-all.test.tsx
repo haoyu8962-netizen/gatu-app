@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
 	resetModifyError: vi.fn(),
 	setSide: vi.fn(),
 	subscriptionIsStale: false,
+	hasSnapshot: true,
 	subscriptionStatus: "active" as "active" | "error" | "idle" | "subscribing",
 	toastError: vi.fn(),
 	toastInfo: vi.fn(),
@@ -170,7 +171,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
 	useSubscription: () => ({
-		data: { orders: mocks.orders },
+		data: mocks.hasSnapshot ? { orders: mocks.orders } : undefined,
 		error: null,
 		isStale: mocks.subscriptionIsStale,
 		status: mocks.subscriptionStatus,
@@ -260,6 +261,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.orders = [order];
 		mocks.quoteSymbol = "USDC";
 		mocks.subscriptionIsStale = false;
+		mocks.hasSnapshot = true;
 		mocks.subscriptionStatus = "active";
 		mocks.cancelOrders.mockReset();
 		mocks.getOrderSideLabel.mockClear();
@@ -280,6 +282,31 @@ describe("desktop cancel all orders confirmation", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it.each([
+		{ subscriptionStatus: "active" as const, hasSnapshot: false, subscriptionIsStale: false },
+		{ subscriptionStatus: "subscribing" as const, hasSnapshot: true, subscriptionIsStale: false },
+		{ subscriptionStatus: "error" as const, hasSnapshot: true, subscriptionIsStale: false },
+		{ subscriptionStatus: "active" as const, hasSnapshot: true, subscriptionIsStale: true },
+	])("keeps unavailable orders quiet without empty conclusions or cancellation: %o", (state) => {
+		Object.assign(mocks, state);
+		act(() => root.render(<OrdersTab />));
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toMatch(/Loading open orders|Failed to load open orders|No open orders/);
+		const cancelAll = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Cancel all",
+		);
+		if (state.hasSnapshot) expect(cancelAll).toBeDefined();
+		else expect(cancelAll).toBeUndefined();
+		expect(cancelAll?.disabled ?? true).toBe(true);
+		act(() => cancelAll?.click());
+		expect(mocks.cancelOrders).not.toHaveBeenCalled();
+		Object.assign(mocks, { subscriptionStatus: "active", hasSnapshot: true, subscriptionIsStale: false });
+		mocks.orders = [];
+		act(() => root.render(<OrdersTab />));
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).toBeNull();
+		expect(container.textContent).toContain("No open orders.");
 	});
 
 	it("renders the twelve production order fields and derives remaining metrics from sz", () => {
@@ -936,7 +963,8 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Open orders are refreshing. Wait for live data and try again.");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Open orders are refreshing. Wait for live data and try again.");
 	});
 
 	it("fails selected-order cancellation closed while the open-orders snapshot is stale", () => {
@@ -947,7 +975,8 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
 
 		expect(mocks.cancelOrders).not.toHaveBeenCalled();
-		expect(container.textContent).toContain("Open orders are refreshing. Wait for live data and try again.");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Open orders are refreshing. Wait for live data and try again.");
 	});
 
 	it("fails row cancellation closed when the snapshot owner does not match the trading client", () => {

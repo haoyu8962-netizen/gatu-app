@@ -36,6 +36,10 @@ describe("TWAP domain state", () => {
 		expect(getTwapViewState({ isConnected: true, status: "error", hasData: true, isStale: false })).toBe("stale");
 		expect(getTwapViewState({ isConnected: true, status: "active", hasData: true, isStale: true })).toBe("stale");
 		expect(getTwapViewState({ isConnected: true, status: "active", hasData: true, isStale: false })).toBe("ready");
+		expect(getTwapViewState({ isConnected: true, status: "subscribing", hasData: true, isStale: false })).toBe(
+			"loading",
+		);
+		expect(getTwapViewState({ isConnected: true, status: "idle", hasData: true, isStale: false })).toBe("loading");
 	});
 
 	it("matches a TWAP using every exchange field while comparing size numerically", () => {

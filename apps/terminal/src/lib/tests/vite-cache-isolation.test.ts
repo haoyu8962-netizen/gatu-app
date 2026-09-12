@@ -7,6 +7,12 @@ import { describe, expect, it } from "vitest";
 const terminalRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const terminalConfigFile = fileURLToPath(new URL("../../../vite.config.ts", import.meta.url));
 const browserConfigFile = fileURLToPath(new URL("../../../tests/browser/vite.config.ts", import.meta.url));
+const orderEntryConfigFile = fileURLToPath(
+	new URL("../../../tests/browser/mobile-trade-all-orders.vite.config.ts", import.meta.url),
+);
+const accountConfigFile = fileURLToPath(
+	new URL("../../../tests/browser/account-actions.vite.config.ts", import.meta.url),
+);
 
 function containsDirectory(parent: string, child: string) {
 	const directory = relative(parent, child);
@@ -14,19 +20,30 @@ function containsDirectory(parent: string, child: string) {
 }
 
 describe("Vite dependency cache isolation", () => {
-	it("keeps the browser fixture cache separate from the terminal development cache", async () => {
+	it("isolates the shared, order-entry and account fixture caches from each other and the application", async () => {
 		const terminalConfigSource = readFileSync(terminalConfigFile, "utf8");
 		expect(
 			terminalConfigSource,
 			"Resolve explicit terminal root or cacheDir settings in this test when the application changes its defaults",
 		).not.toMatch(/\b(?:root|cacheDir)\s*:/u);
 
-		const [terminalConfig, browserConfig] = await Promise.all([
+		const [terminalConfig, browserConfig, orderEntryConfig, accountConfig] = await Promise.all([
 			resolveConfig({ configFile: false, envFile: false, root: terminalRoot, logLevel: "silent" }, "serve"),
 			resolveConfig({ configFile: browserConfigFile, envFile: false, logLevel: "silent" }, "serve"),
+			resolveConfig({ configFile: orderEntryConfigFile, envFile: false, logLevel: "silent" }, "serve"),
+			resolveConfig({ configFile: accountConfigFile, envFile: false, logLevel: "silent" }, "serve"),
 		]);
 
-		expect(containsDirectory(terminalConfig.cacheDir, browserConfig.cacheDir)).toBe(false);
-		expect(containsDirectory(browserConfig.cacheDir, terminalConfig.cacheDir)).toBe(false);
+		const caches = [terminalConfig, browserConfig, orderEntryConfig, accountConfig].map((config) => config.cacheDir);
+		for (const [index, parent] of caches.entries()) {
+			for (const [otherIndex, child] of caches.entries()) {
+				if (index !== otherIndex) expect(containsDirectory(parent, child)).toBe(false);
+			}
+		}
+		expect(browserConfig.optimizeDeps.entries).toEqual(
+			expect.arrayContaining(["!mobile-trade-all-orders.html", "!account-actions.html"]),
+		);
+		expect(orderEntryConfig.optimizeDeps.entries).toEqual(["mobile-trade-all-orders.html"]);
+		expect(accountConfig.optimizeDeps.entries).toEqual(["account-actions.html"]);
 	});
 });

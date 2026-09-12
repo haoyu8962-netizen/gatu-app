@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
 			  }>
 			| undefined,
 		error: null as Error | null,
+		isStale: false,
 		status: "subscribing" as "active" | "error" | "idle" | "subscribing",
 	},
 }));
@@ -68,6 +69,7 @@ describe("TradesPanel", () => {
 		mocks.subscriptionMethods.length = 0;
 		mocks.result.data = undefined;
 		mocks.result.error = null;
+		mocks.result.isStale = false;
 		mocks.result.status = "subscribing";
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
@@ -194,15 +196,15 @@ describe("TradesPanel", () => {
 		).toBe("80.63");
 	});
 
-	it("shows a localized desktop error without exposing transport details", () => {
+	it("keeps desktop subscription errors quiet without exposing transport details", () => {
 		mocks.result.error = new Error("Subscription unavailable");
 		mocks.result.status = "error";
 
 		renderPanel();
 
 		expect(container.textContent).not.toContain("Subscription unavailable");
-		expect(container.textContent).toContain("Failed to load trades.");
-		expect(container.querySelector('[data-slot="trades-pending"]')).toBeNull();
+		expect(container.textContent).not.toContain("Failed to load trades.");
+		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
 	});
 
 	it("keeps mobile errors quiet until a fresh snapshot recovers", () => {
@@ -218,11 +220,49 @@ describe("TradesPanel", () => {
 		expect(container.textContent).toContain("No recent trades.");
 	});
 
-	function renderPanel(quietErrors = false) {
+	it.each([
+		{ status: "subscribing" as const, isStale: false, coin: "HYPE" },
+		{ status: "active" as const, isStale: true, coin: "HYPE" },
+		{ status: "active" as const, isStale: false, coin: "ETH" },
+	])("keeps invalid live snapshots quiet and recovers: %o", ({ status, isStale, coin }) => {
+		mocks.result.status = status;
+		mocks.result.isStale = isStale;
+		mocks.result.data = [
+			{
+				coin,
+				hash: "0xabc",
+				px: "64.50",
+				side: "B",
+				sz: "1.25",
+				tid: 42,
+				time: Date.now(),
+				users: ["0xbuyer", "0xseller"],
+			},
+		];
+		renderPanel();
+		expect(container.querySelector("a.recent-trade-row")).toBeNull();
+		expect(container.textContent).not.toContain("No recent trades.");
+		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
+		mocks.result.status = "active";
+		mocks.result.isStale = false;
+		mocks.result.data[0].coin = "HYPE";
+		renderPanel();
+		expect(container.querySelector("a.recent-trade-row")).not.toBeNull();
+	});
+
+	it("does not call a stale empty snapshot an empty market", () => {
+		mocks.result.status = "active";
+		mocks.result.isStale = true;
+		mocks.result.data = [];
+		renderPanel();
+		expect(container.textContent).not.toContain("No recent trades.");
+	});
+
+	function renderPanel(compact = false) {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<TradesPanel quietErrors={quietErrors} showInQuote={mocks.sizeMode === "quote"} />
+					<TradesPanel compact={compact} showInQuote={mocks.sizeMode === "quote"} />
 				</I18nProvider>,
 			),
 		);

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
+import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
@@ -56,6 +57,7 @@ export function TradeHeader({
 	layout = "desktop",
 }: Props) {
 	const { t } = useLingui();
+	const modes = useAccountModeLabels();
 	const { getAdvancedOrderLabel, getAdvancedOrderTypeLabel } = useOrderDisplayLabels();
 	const tabsOrderType = getTabsOrderType(orderType);
 	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
@@ -84,18 +86,18 @@ export function TradeHeader({
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
 	const accountModeLabel =
 		accountMode === "portfolioMargin"
-			? t`Portfolio`
+			? modes.portfolio.short
 			: accountMode === "unifiedAccount"
-				? t`Unified`
+				? modes.unified.short
 				: accountMode === "disabled"
-					? t`Separate`
+					? modes.manual.short
 					: isAccountModeLoading
-						? t`Loading...`
+						? t`Account`
 						: accountMode === "default"
 							? t`Select mode`
 							: accountMode === "dexAbstraction"
 								? t`Legacy DEX`
-								: t`Unavailable`;
+								: t`Account`;
 	const compactAccountModeLabel =
 		accountMode === "dexAbstraction"
 			? t`Legacy`
@@ -113,28 +115,27 @@ export function TradeHeader({
 	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
 	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
-		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
-		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
+		"relative flex h-[35px] min-w-0 items-center gap-3 whitespace-nowrap rounded-none bg-surface px-0 text-xs font-semibold text-trading-panel-fg",
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
 
 	if (layout === "mobile") {
 		return (
-			<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-3"}>
+			<div className="min-w-0 space-y-0.5">
 				<div
 					className={cn(
-						"grid min-w-0 overflow-hidden bg-surface",
-						isLeveraged
-							? "grid-cols-[minmax(max-content,1.2fr)_minmax(max-content,1fr)_minmax(2.75rem,0.8fr)]"
-							: "grid-cols-1",
+						"grid min-w-0 bg-surface",
+						isLeveraged ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" : "grid-cols-1",
 					)}
 				>
 					<Dropdown
 						trigger={
-							<span className="inline-flex min-w-0 items-center justify-center gap-1">
-								<span className="truncate">{orderTypeLabel}</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+							<span className="inline-flex min-w-0 items-center justify-center gap-3">
+								<span className="truncate" title={orderTypeLabel}>
+									{orderTypeLabel}
+								</span>
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</span>
 						}
 						items={mobileOrderTypeItems}
@@ -152,26 +153,26 @@ export function TradeHeader({
 							<button
 								type="button"
 								onClick={handleMarginModeClick}
-								className={cn(mobileControlClass, "justify-center")}
+								className={cn(mobileControlClass, "justify-start")}
 								aria-haspopup="dialog"
 							>
 								<span className="truncate">{marginLabel}</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</button>
 							<button
 								type="button"
 								onClick={handleLeverageClick}
-								className={cn(mobileControlClass, "justify-end")}
+								className={cn(mobileControlClass, "justify-start pr-4")}
 								aria-haspopup="dialog"
 							>
 								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
-								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+								<CaretDownIcon viewBox="32 72 192 128" className="h-1.5 w-[9px] shrink-0 text-trading-panel-subtle" />
 							</button>
 						</>
 					)}
 				</div>
 
-				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel mobile />
 			</div>
 		);
 	}

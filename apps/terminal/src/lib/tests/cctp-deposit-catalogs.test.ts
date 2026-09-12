@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const cctpMessages = [
 	"~2 minutes",
-	"Calculated after funding",
+	"Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.",
 	"Gas-sponsored CCTP deposits are not enabled for this network.",
 	"Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}.",
 	"Legacy Bridge2 deposits are no longer accepted. Automatic deposits are paused.",
@@ -11,8 +11,8 @@ const cctpMessages = [
 	"Legacy Bridge2 deposits are no longer accepted. This deposit was not submitted.",
 	"Unable to verify the CCTP authorization.",
 	"Processing time",
-	"The fee will be confirmed using Circle's latest quote before submission.",
-	"Unable to verify the current Circle fee. Deposits are temporarily unavailable.",
+	"Circle fees changed. Review the updated fee, then submit again.",
+	"Unable to verify the current Circle CCTP fee and Fast Transfer capacity.",
 	"Up to {cctpFee} USDC in fees will be deducted from your deposit.",
 	"USDC on HyperCore",
 ] as const;

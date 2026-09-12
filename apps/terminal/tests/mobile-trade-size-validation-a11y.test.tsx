@@ -10,20 +10,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	availableBalance: 100,
 	baseAvailable: 100,
+	availabilityStatus: "success" as "success" | "loading" | "stale" | "error",
 	kind: "perp" as "perp" | "spot",
+	limitPrice: "",
 	markPx: "100",
+	markPriceStatus: "success" as "success" | "loading" | "stale" | "error",
 	maxSize: 10,
 	orderType: "market",
 	orderValue: 100,
 	quoteAvailable: 100,
+	reduceOnly: false,
 	side: "buy" as "buy" | "sell",
 	sizeValue: 1,
+	requestSubmit: vi.fn(),
+	submitOrder: vi.fn(),
 	actions: {
 		markDraftEdited: vi.fn(),
 		setLimitPriceFromPrefill: vi.fn(),
 		setLimitPriceFromUser: vi.fn(),
 		setOrderType: vi.fn(),
+		setReduceOnly: vi.fn(),
 		setSide: vi.fn(),
+		setSize: vi.fn(),
 		setSlPrice: vi.fn(),
 		setTpPrice: vi.fn(),
 		setTpSlEnabled: vi.fn(),
@@ -40,7 +48,7 @@ vi.mock("@gatu/ui", async (importOriginal) => ({
 		size: _size,
 		variant: _variant,
 		...props
-	}: Record<string, unknown>) => createElement("button", props, children as ReactNode),
+	}: Record<string, unknown>) => createElement("button", { type: "button", ...props }, children as ReactNode),
 	Tooltip: ({ children }: { children: ReactNode }) => children,
 }));
 
@@ -61,7 +69,6 @@ vi.mock("@/components/trade/tradebox/trade-option-checkboxes", () => ({
 	TradeOptionCheckboxes: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/components/trade/mobile/mobile-bottom-nav", () => ({ MobileBottomNavSpacer: () => null }));
-vi.mock("@/components/trade/mobile/mobile-trade-price-field", () => ({ MobileTradePriceField: () => null }));
 
 vi.mock("@/hooks/trade/use-account-abstraction-control", () => ({
 	useAccountAbstractionControl: () => ({
@@ -91,7 +98,7 @@ vi.mock("@/hooks/trade/use-order-confirmation", () => ({
 		dontShowAgain: false,
 		isConfirming: false,
 		pending: null,
-		requestSubmit: vi.fn(),
+		requestSubmit: testState.requestSubmit,
 		setDontShowAgain: vi.fn(),
 	}),
 }));
@@ -103,7 +110,7 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		applyMarginAndLeverage: vi.fn(),
 		availabilityMaxAgeMs: 10_000,
 		availabilityReceivedAt: Date.now(),
-		availabilityStatus: "ready",
+		availabilityStatus: testState.availabilityStatus,
 		availableBalance: testState.availableBalance,
 		availableBalanceToken: testState.side === "sell" && testState.kind === "spot" ? "BTC" : "USDC",
 		baseToken: "BTC",
@@ -118,10 +125,11 @@ vi.mock("@/hooks/trade/use-order-entry-data", () => ({
 		currentLeverage: 10,
 		executionAvailability: {},
 		getSizeForPercent: () => "1",
-		hasAvailabilityError: false,
+		hasAvailabilityError: testState.availabilityStatus === "error",
 		hasPosition: false,
-		isAvailabilityBlocked: false,
-		isAvailabilityLoading: false,
+		isAvailabilityBlocked: testState.availabilityStatus !== "success",
+		isAvailabilityLoading: testState.availabilityStatus === "loading",
+		isAvailabilityStale: testState.availabilityStatus === "stale",
 		isSpotMarket: testState.kind === "spot",
 		isSwitchingMode: false,
 		leverage: 10,
@@ -158,18 +166,13 @@ vi.mock("@/hooks/trade/use-order-submit", () => ({
 			},
 		}),
 		isDraftResetTokenCurrent: () => true,
-		handleSubmit: vi.fn(),
+		handleSubmit: testState.submitOrder,
 		isSubmitting: false,
 	}),
 }));
 
 vi.mock("@/hooks/trade/use-prospective-cross-margin-account", () => ({
 	useProspectiveCrossMarginAccount: () => ({ account: null, existingPosition: null }),
-}));
-
-vi.mock("@/hooks/trade/use-orderbook-mid-price", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/hooks/trade/use-orderbook-mid-price")>()),
-	useOrderbookMidPrice: () => ({ midPx: undefined }),
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
@@ -194,10 +197,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useSelectedMarketInfo: () => ({
 		data: {
-			assetId: 0,
+			assetId: testState.kind === "spot" ? 10_000 : 0,
 			kind: testState.kind,
 			markPriceReceivedAt: Date.now(),
-			markPriceStatus: "success",
+			markPriceStatus: testState.markPriceStatus,
 			markPx: testState.markPx,
 			midPriceReceivedAt: Date.now(),
 			midPx: testState.markPx,
@@ -233,10 +236,12 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => ({
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
-	useLimitPrice: () => "",
+	useLimitPrice: () => testState.limitPrice,
 	useOrderEntryActions: () => testState.actions,
 	useOrderSide: () => testState.side,
+	useOrderSize: () => String(testState.sizeValue),
 	useOrderType: () => testState.orderType,
+	useReduceOnly: () => testState.reduceOnly,
 	useScaleEnd: () => "",
 	useScaleLevels: () => null,
 	useScaleSkew: () => "",
@@ -247,6 +252,7 @@ vi.mock("@/stores/use-order-entry-store", () => ({
 	useTpSlEnabled: () => false,
 	useTpSlReturnInvalid: () => false,
 	useTriggerPrice: () => "",
+	useTwapAdvancedEnabled: () => false,
 	useTwapMinutes: () => null,
 	useTwapRandomize: () => false,
 	useTwapStopPrice: () => "",
@@ -319,35 +325,136 @@ describe("MobileTradeView order-size validation accessibility", () => {
 		expectSizeErrorLinked(container);
 	});
 
-	it("keeps the lingering error and ARIA state atomic, then clears both", async () => {
-		activateLocale("en");
+	it.each(LOCALES)("clears corrected size errors and ARIA together immediately in %s", async (locale) => {
+		activateLocale(locale);
 		setPerpMaximumScenario();
 		await renderView(root);
 		expectSizeErrorLinked(container);
 
 		setValidPerpScenario();
 		await renderView(root);
-		expectSizeErrorLinked(container);
-
-		await act(async () => vi.advanceTimersByTime(1_500));
-
 		expect(getValidationError(container)).toBeNull();
 		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+		expect(getOrderButton(container).disabled).toBe(false);
 	});
 
-	it("does not mark size controls invalid for a price-only error", async () => {
-		activateLocale("ar");
-		setPerpMaximumScenario();
-		await renderView(root);
-		expectSizeErrorLinked(container);
-
-		setPriceErrorScenario();
+	it.each(LOCALES)("keeps an empty limit quiet but prevents submission in %s", async (locale) => {
+		activateLocale(locale);
+		testState.orderType = "limit";
 		await renderView(root);
 
-		const error = getValidationError(container);
-		expect(error?.textContent).toBe("ar: price required");
+		expect(getPriceInput(container).value).toBe("");
+		expect(getValidationError(container)).toBeNull();
 		for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+		await expectSubmissionBlocked(container);
 	});
+
+	it("opens confirmation for a valid spot limit without an unsupported shared reduce-only flag", async () => {
+		activateLocale("en");
+		testState.kind = "spot";
+		testState.orderType = "limit";
+		testState.limitPrice = "100";
+		testState.reduceOnly = true;
+		await renderView(root);
+
+		expect(getPriceInput(container).value).toBe("100");
+		expect(getValidationError(container)).toBeNull();
+		expect(getOrderButton(container).disabled).toBe(false);
+		await act(async () => getOrderButton(container).click());
+		expect(testState.requestSubmit).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ orderType: "limit", limitPriceInput: "100", reduceOnly: false }),
+			expect.objectContaining({ marketKind: "spot", limitPrice: 100, reduceOnly: false }),
+		);
+		expect(testState.submitOrder).not.toHaveBeenCalled();
+	});
+
+	for (const invalidPrice of ["0", "."]) {
+		it.each(LOCALES)(
+			`shows the nonempty invalid limit ${invalidPrice} without invalidating size in %s`,
+			async (locale) => {
+				activateLocale(locale);
+				setPerpMaximumScenario();
+				await renderView(root);
+				expectSizeErrorLinked(container);
+				const errorId = getValidationError(container)?.id;
+
+				setValidPerpScenario();
+				testState.orderType = "limit";
+				testState.limitPrice = invalidPrice;
+				await renderView(root);
+
+				expect(getPriceInput(container).value).toBe(invalidPrice);
+				expect(getValidationError(container)?.id).toBe(errorId);
+				expect(getValidationError(container)?.textContent).toBe(
+					locale === "en" ? "Enter limit price" : `${locale}: price required`,
+				);
+				for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+				await expectSubmissionBlocked(container);
+			},
+		);
+	}
+
+	for (const source of ["account", "market"] as const) {
+		it.each(["loading", "stale", "error"] as const)(
+			`blocks an otherwise valid draft while ${source} data is %s without passive error text`,
+			async (status) => {
+				activateLocale("en");
+				if (source === "account") testState.availabilityStatus = status;
+				else testState.markPriceStatus = status;
+				await renderView(root);
+
+				expect(getSizeControls(container)[0].value).toBe("1");
+				expect(getValidationError(container)).toBeNull();
+				for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+				await expectSubmissionBlocked(container);
+
+				testState.availabilityStatus = "success";
+				testState.markPriceStatus = "success";
+				await renderView(root);
+				expect(getSizeControls(container)[0].value).toBe("1");
+				expect(getValidationError(container)).toBeNull();
+				expect(getOrderButton(container).disabled).toBe(false);
+			},
+		);
+	}
+
+	it.each([
+		["account", "stale"],
+		["account", "error"],
+		["market", "stale"],
+		["market", "error"],
+	] as const)(
+		"keeps %s %s recovery quiet, preserves the draft and restores current validation",
+		async (source, status) => {
+			activateLocale("en");
+			setPerpMaximumScenario();
+			await renderView(root);
+			expectSizeErrorLinked(container);
+			const errorId = getValidationError(container)?.id;
+
+			if (source === "account") testState.availabilityStatus = status;
+			else testState.markPriceStatus = status;
+			await renderView(root);
+			expect(getSizeControls(container)[0].value).toBe("2");
+			expect(getValidationError(container)).toBeNull();
+			for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+			await expectSubmissionBlocked(container);
+
+			testState.availabilityStatus = "success";
+			testState.markPriceStatus = "success";
+			await renderView(root);
+			expect(getSizeControls(container)[0].value).toBe("2");
+			expectSizeErrorLinked(container);
+			expect(getValidationError(container)?.id).toBe(errorId);
+			await expectSubmissionBlocked(container);
+
+			setValidPerpScenario();
+			await renderView(root);
+			expect(getValidationError(container)).toBeNull();
+			for (const control of getSizeControls(container)) expectDescriptionCleared(control);
+			expect(getOrderButton(container).disabled).toBe(false);
+		},
+	);
 });
 
 function activateLocale(locale: Locale) {
@@ -378,7 +485,29 @@ function expectSizeErrorLinked(container: HTMLElement) {
 }
 
 function getValidationError(container: HTMLElement): HTMLParagraphElement | null {
-	return container.querySelector<HTMLParagraphElement>("p[id]");
+	return container.querySelector<HTMLParagraphElement>('p[id][role="alert"]');
+}
+
+function getPriceInput(container: HTMLElement): HTMLInputElement {
+	const input = container.querySelector<HTMLInputElement>('input[aria-label="Price (USDC)"]');
+	if (!input) throw new Error("Expected the limit price input");
+	return input;
+}
+
+function getOrderButton(container: HTMLElement): HTMLButtonElement {
+	const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button.w-full")).find(
+		(candidate) => candidate.textContent?.trim() === "Buy",
+	);
+	if (!button) throw new Error("Expected the order submit button");
+	return button;
+}
+
+async function expectSubmissionBlocked(container: HTMLElement) {
+	const button = getOrderButton(container);
+	expect(button.disabled).toBe(true);
+	await act(async () => button.click());
+	expect(testState.requestSubmit).not.toHaveBeenCalled();
+	expect(testState.submitOrder).not.toHaveBeenCalled();
 }
 
 function getSizeControls(container: HTMLElement): HTMLInputElement[] {
@@ -397,12 +526,16 @@ function expectDescriptionCleared(control: HTMLInputElement) {
 function setValidPerpScenario() {
 	testState.availableBalance = 100;
 	testState.baseAvailable = 100;
+	testState.availabilityStatus = "success";
 	testState.kind = "perp";
+	testState.limitPrice = "";
 	testState.markPx = "100";
+	testState.markPriceStatus = "success";
 	testState.maxSize = 10;
 	testState.orderType = "market";
 	testState.orderValue = 100;
 	testState.quoteAvailable = 100;
+	testState.reduceOnly = false;
 	testState.side = "buy";
 	testState.sizeValue = 1;
 }
@@ -436,10 +569,4 @@ function setSpotSellBalanceScenario() {
 	testState.orderValue = 200;
 	testState.side = "sell";
 	testState.sizeValue = 2;
-}
-
-function setPriceErrorScenario() {
-	setValidPerpScenario();
-	testState.markPx = "0";
-	testState.orderType = "limit";
 }

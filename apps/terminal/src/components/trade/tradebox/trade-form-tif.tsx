@@ -27,7 +27,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 				<span
 					className={cn(
 						"cursor-default font-medium tracking-wide uppercase select-none",
-						tradingPanel ? "text-2xs text-trading-panel-muted max-[339px]:hidden" : "text-3xs text-fg-muted/60",
+						tradingPanel ? "text-2xs text-trading-panel-muted" : "text-3xs text-fg-muted/60",
 					)}
 				>
 					{t`TIF`}
@@ -42,7 +42,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 				triggerClassName={cn(
 					"gap-1 border-transparent bg-transparent px-1.5",
 					tradingPanel
-						? "gap-0.5 px-0.5 text-2xs text-trading-panel-fg hover:bg-trading-panel-hover"
+						? "gap-0.5 px-0.5 text-2xs max-[1000px]:min-h-8 text-trading-panel-fg hover:bg-trading-panel-hover"
 						: "hover:bg-fill-hover/40",
 				)}
 				options={availableTifOptions.map((opt) => ({

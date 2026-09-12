@@ -55,7 +55,6 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/tradebox/account-panel.tsx",
 	"components/trade/tradebox/deposit-modal.tsx",
 	"components/trade/tradebox/deposit/amount-input.tsx",
-	"components/trade/tradebox/deposit/asset-select.tsx",
 	"components/trade/tradebox/deposit/deposit-form.tsx",
 	"components/trade/tradebox/deposit/funding-address-card.tsx",
 	"components/trade/tradebox/deposit/withdraw-form.tsx",

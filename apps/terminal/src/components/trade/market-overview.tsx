@@ -17,7 +17,6 @@ import {
 	selectMarketHeadlinePrice,
 } from "@/domain/trade/market-price";
 import { useMarketPriceFlash } from "@/hooks/trade/use-market-price-flash";
-import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import {
@@ -172,7 +171,6 @@ export function MarketOverview() {
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { getMarketByName } = useMarketsInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
-	const { midPx, snapshot: bboSnapshot } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
 	const { copiedValue: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
@@ -183,23 +181,21 @@ export function MarketOverview() {
 		status: perpCtxStatus,
 		isStale: perpCtxIsStale,
 		lastMessageAt: perpCtxReceivedAt,
-	} = useSubscription("activeAssetCtx", { coin: perpCoin }, { enabled: !!perpCoin && !isSpot });
+	} = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: !!perpCoin && !isSpot, maxStaleMs: LIVE_MARK_MAX_STALE_MS },
+	);
 	const {
 		data: spotCtxEvent,
 		status: spotCtxStatus,
 		isStale: spotCtxIsStale,
 		lastMessageAt: spotCtxReceivedAt,
-	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: !!spotCoin && isSpot });
-	const {
-		data: allMidsEvent,
-		isStale: allMidsIsStale,
-		lastMessageAt: allMidsReceivedAt,
-		status: allMidsStatus,
-	} = useSubscription("allMids", undefined, {
-		enabled: !!perpCoin && isSpot,
-		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
-	});
-
+	} = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: !!spotCoin && isSpot, maxStaleMs: LIVE_MARK_MAX_STALE_MS },
+	);
 	const perpPrice = resolveActiveMarketPrice({
 		coin: perpCoin,
 		enabled: !!perpCoin && !isSpot,
@@ -225,14 +221,6 @@ export function MarketOverview() {
 	const spotCtx = hasFreshSpotCtx ? spotCtxEvent?.ctx : undefined;
 	const perpCtx = hasFreshPerpCtx ? perpCtxEvent?.ctx : undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
-	const allMidsCandidate = perpCoin ? allMidsEvent?.mids?.[perpCoin] : undefined;
-	const allMidsPrice = isLiveMarkPriceReady(
-		allMidsStatus === "active" && !allMidsIsStale ? "success" : allMidsStatus === "error" ? "error" : "loading",
-		allMidsCandidate,
-		allMidsReceivedAt,
-	)
-		? allMidsCandidate
-		: undefined;
 	const hasFreshSelectedMark = isLiveMarkPriceReady(
 		selectedMarketInfo?.markPriceStatus ?? "loading",
 		selectedMarketInfo?.markPx,
@@ -253,21 +241,16 @@ export function MarketOverview() {
 			: { receipt: undefined, source: null, value: undefined };
 	const selectedLiveMark = selectedMarkSample.value;
 	const spotPriceSample = selectMarketHeadlinePrice({
-		bboMidPx: midPx,
-		allMidsPrice,
+		assetCtxMarkPx: liveCtx?.markPx,
 		assetCtxMidPx: liveCtx?.midPx,
 	});
 	const perpMarkPx = perpCtx?.markPx ?? selectedLiveMark;
 	const displayPrice = isSpot ? spotPriceSample.value : perpMarkPx;
 	const priceSource = isSpot ? spotPriceSample.source : perpCtx ? "activeAssetCtxMark" : selectedMarkSample.source;
 	const priceReceipt = isSpot
-		? spotPriceSample.source === "bbo"
-			? bboSnapshot
-			: spotPriceSample.source === "allMids"
-				? allMidsEvent
-				: spotPriceSample.source === "assetCtxMid"
-					? spotCtxEvent
-					: undefined
+		? spotCtx
+			? spotCtxEvent
+			: undefined
 		: perpCtx
 			? perpCtxEvent
 			: selectedMarkSample.receipt;
@@ -292,7 +275,7 @@ export function MarketOverview() {
 	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
-	const spotPrice = isSpot ? (liveCtx?.markPx ?? selectedLiveMark ?? midPx) : undefined;
+	const spotPrice = isSpot ? (liveCtx?.markPx ?? selectedLiveMark) : undefined;
 	const spotCirculatingSupply = isSpot ? spotCtx?.circulatingSupply : null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 	const marketType = isSpot ? "spot" : "perp";

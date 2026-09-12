@@ -11,11 +11,9 @@ import {
 	type MarketPriceFlash,
 	useMarketPriceFlash,
 } from "@/hooks/trade/use-market-price-flash";
-import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import {
 	getMarketApiCoin,
 	getSpotMarketApiCoin,
-	type SubParams,
 	type UnifiedMarketInfo,
 	useHyperliquid,
 	useSelectedMarketInfo,
@@ -25,7 +23,6 @@ import {
 export type MobileMarketPriceSource = MarketHeadlinePriceSource;
 export type MobileMarketPriceDirection = MarketPriceDirection;
 export type MobileMarketPriceFlash = MarketPriceFlash;
-export { selectMarketHeadlinePrice as selectMobileMarketPrice } from "@/domain/trade/market-price";
 
 interface MobileMarketBarSnapshot {
 	market: UnifiedMarketInfo | undefined;
@@ -47,7 +44,6 @@ interface Props {
 	enabled: boolean;
 }
 
-type AllMidsParams = SubParams<"allMids">;
 type MarketValue = string | number | null | undefined;
 
 const MobileMarketBarContext = createContext<MobileMarketBarSnapshot | null>(null);
@@ -58,38 +54,27 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 	const isSpot = market?.kind === "spot";
 	const perpCoin = getMarketApiCoin(market);
 	const spotCoin = getSpotMarketApiCoin(market);
-	const midsCoin = getMarketApiCoin(market);
-	const { midPx, snapshot: bboSnapshot } = useOrderbookMidPrice(enabled ? market?.name : undefined);
-	const {
-		data: allMidsEvent,
-		isStale: allMidsIsStale,
-		lastMessageAt: allMidsReceivedAt,
-		status: allMidsStatus,
-	} = useSubscription("allMids", getAllMidsParams(market), {
-		enabled: enabled && !!midsCoin,
-		maxStaleMs: LIVE_MARK_MAX_STALE_MS,
-	});
 	const {
 		data: perpCtxEvent,
 		isStale: perpCtxIsStale,
 		lastMessageAt: perpCtxReceivedAt,
 		status: perpCtxStatus,
-	} = useSubscription("activeAssetCtx", { coin: perpCoin }, { enabled: enabled && !!perpCoin && !isSpot });
+	} = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: enabled && !!perpCoin && !isSpot, maxStaleMs: LIVE_MARK_MAX_STALE_MS },
+	);
 	const {
 		data: spotCtxEvent,
 		isStale: spotCtxIsStale,
 		lastMessageAt: spotCtxReceivedAt,
 		status: spotCtxStatus,
-	} = useSubscription("activeSpotAssetCtx", { coin: spotCoin }, { enabled: enabled && !!spotCoin && isSpot });
+	} = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: enabled && !!spotCoin && isSpot, maxStaleMs: LIVE_MARK_MAX_STALE_MS },
+	);
 
-	const allMidsCandidate = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
-	const allMidsPrice = isLiveMarkPriceReady(
-		allMidsStatus === "active" && !allMidsIsStale ? "success" : allMidsStatus === "error" ? "error" : "loading",
-		allMidsCandidate,
-		allMidsReceivedAt,
-	)
-		? allMidsCandidate
-		: undefined;
 	const perpPrice = resolveActiveMarketPrice({
 		coin: perpCoin,
 		enabled: enabled && !!perpCoin && !isSpot,
@@ -116,20 +101,10 @@ export function MobileMarketBarProvider({ children, enabled }: Props) {
 			: undefined;
 	const liveCtx = isSpot ? spotCtx : perpCtx;
 	const priceSample = selectMarketHeadlinePrice({
-		bboMidPx: midPx,
-		allMidsPrice,
+		assetCtxMarkPx: liveCtx?.markPx,
 		assetCtxMidPx: liveCtx?.midPx,
 	});
-	const priceReceipt =
-		priceSample.source === "bbo"
-			? bboSnapshot
-			: priceSample.source === "allMids"
-				? allMidsEvent
-				: priceSample.source === "assetCtxMid"
-					? isSpot
-						? spotCtxEvent
-						: perpCtxEvent
-					: undefined;
+	const priceReceipt = liveCtx ? (isSpot ? spotCtxEvent : perpCtxEvent) : undefined;
 	const marketDex = market?.kind === "builderPerp" ? market.dex : isSpot ? "spot" : "perp";
 	const priceFlash = useMarketPriceFlash({
 		enabled,
@@ -169,9 +144,4 @@ export function useMobileMarketBarSnapshot(): MobileMarketBarSnapshot {
 	const snapshot = useContext(MobileMarketBarContext);
 	if (!snapshot) throw new Error("MobileMarketBar must be rendered inside MobileMarketBarProvider");
 	return snapshot;
-}
-
-function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
-	if (market?.kind !== "builderPerp") return undefined;
-	return { dex: market.dex };
 }

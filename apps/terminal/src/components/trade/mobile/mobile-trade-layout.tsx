@@ -2,8 +2,8 @@ import { useLingui } from "@lingui/react/macro";
 import { type KeyboardEvent, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import type { SizeMode } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
+import { useOrderEntryActions, useSizeMode } from "@/stores/use-order-entry-store";
 import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
@@ -65,7 +65,8 @@ function TradeOrderView({
 	marketKey: string;
 	disclosureStates: MobilePositionsDisclosureStates;
 }) {
-	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
+	const sizeMode = useSizeMode();
+	const { setSizeMode } = useOrderEntryActions();
 
 	return (
 		<div

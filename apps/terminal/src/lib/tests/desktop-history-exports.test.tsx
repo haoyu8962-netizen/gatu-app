@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
 	fundingError: undefined as unknown,
 	fundingOffline: false,
 	fundingStale: false,
+	historyStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
+	historyStale: false,
 	fundingStatus: "ready" as "error" | "idle" | "loading" | "offline" | "ready",
 }));
 
@@ -64,7 +66,8 @@ vi.mock("@/hooks/trade/use-user-fills", () => ({
 		error: null,
 		fills: mocks.fills,
 		isConnected: true,
-		status: "ready",
+		isStale: mocks.historyStale,
+		status: mocks.historyStatus,
 	}),
 }));
 
@@ -187,6 +190,8 @@ describe("desktop history exports", () => {
 		mocks.fundingOffline = false;
 		mocks.fundingStale = false;
 		mocks.fundingStatus = "ready";
+		mocks.historyStatus = "ready";
+		mocks.historyStale = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -309,6 +314,52 @@ describe("desktop history exports", () => {
 		);
 	});
 
+	it.each(["idle", "loading", "error", "offline"] as const)(
+		"keeps %s histories quiet until confirmed empty",
+		(status) => {
+			mocks.fills = [];
+			mocks.fundings = [];
+			mocks.historyStatus = status;
+			mocks.fundingStatus = status;
+			act(() =>
+				root.render(
+					<>
+						<HistoryTab />
+						<FundingTab />
+					</>,
+				),
+			);
+			expect(container.textContent).not.toMatch(
+				/Loading trade history|Failed to load|No fills found|No funding payments found|You are offline/,
+			);
+			mocks.historyStatus = "ready";
+			mocks.fundingStatus = "ready";
+			mocks.historyStale = true;
+			mocks.fundingStale = true;
+			act(() =>
+				root.render(
+					<>
+						<HistoryTab />
+						<FundingTab />
+					</>,
+				),
+			);
+			expect(container.textContent).not.toMatch(/No fills found|No funding payments found|updates paused/);
+			mocks.historyStale = false;
+			mocks.fundingStale = false;
+			act(() =>
+				root.render(
+					<>
+						<HistoryTab />
+						<FundingTab />
+					</>,
+				),
+			);
+			expect(container.textContent).toContain("No fills found.");
+			expect(container.textContent).toContain("No funding payments found.");
+		},
+	);
+
 	it("keeps full funding export available when the recent display window is empty", () => {
 		mocks.fundings = [];
 		act(() => root.render(<FundingTab />));
@@ -327,28 +378,29 @@ describe("desktop history exports", () => {
 		act(() => root.render(<FundingTab />));
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
-		expect(container.textContent).toContain("Funding updates paused.");
+		expect(container.textContent).not.toContain("Funding updates paused.");
 	});
 
-	it("warns when retained funding rows are waiting for a fresh reconnect snapshot", () => {
+	it("keeps retained funding rows quiet while waiting for a fresh reconnect snapshot", () => {
 		mocks.fundingStale = true;
 		act(() => root.render(<FundingTab />));
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
-		expect(container.textContent).toContain("Funding updates paused.");
+		expect(container.textContent).not.toContain("Funding updates paused.");
 	});
 
-	it("shows offline explicitly and preserves already loaded funding rows", () => {
+	it("keeps offline recovery quiet and preserves already loaded funding rows", () => {
 		mocks.fundingOffline = true;
 		act(() => root.render(<FundingTab />));
 
 		expect(container.querySelectorAll("tbody tr")).toHaveLength(1);
-		expect(container.textContent).toContain("You are offline.");
+		expect(container.textContent).not.toContain("You are offline.");
 
 		mocks.fundings = [];
 		mocks.fundingStatus = "offline";
 		act(() => root.render(<FundingTab />));
-		expect(container.textContent).toContain("Funding payments will load when the connection returns.");
+		expect(container.querySelector('[data-slot="passive-data-placeholder"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("No funding payments found.");
 		expect(container.querySelector('[data-testid="funding-loading-skeleton"]')).toBeNull();
 	});
 

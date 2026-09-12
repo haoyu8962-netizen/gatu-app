@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import { formatPriceForOrder } from "@/domain/trade/orders";
+import { getTpSlPriceErrors, normalizeTpSlPrice } from "@/domain/trade/tpsl-price-validation";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import {
@@ -33,6 +33,7 @@ interface Props {
 	quoteSymbol: string | null;
 	leverage?: number;
 	mobileTouchSafe?: boolean;
+	showValidation?: boolean;
 }
 
 type ReturnUnit = "roe" | "collateral";
@@ -87,6 +88,7 @@ function TradeFormTpSlFields({
 	quoteSymbol,
 	leverage,
 	mobileTouchSafe,
+	showValidation = true,
 	side,
 	returnContextKey,
 }: Props & { side: "buy" | "sell"; returnContextKey: string }) {
@@ -106,13 +108,17 @@ function TradeFormTpSlFields({
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals);
 	const normalizedReferencePrice = normalizePrice(referencePrice);
+	const priceErrors = getTpSlPriceErrors({
+		assetId,
+		szDecimals,
+		referencePrice,
+		tpPrice: tpPriceInput,
+		slPrice: slPriceInput,
+		side,
+	});
 
 	function normalizePrice(value: string | number | null): string | null {
-		if (assetId === null) return null;
-		const parsed = toBig(value);
-		if (!parsed?.gt(0)) return null;
-		const normalized = formatPriceForOrder(parsed, { assetId, szDecimals });
-		return toBig(normalized)?.gt(0) ? normalized : null;
+		return normalizeTpSlPrice(value, { assetId, szDecimals });
 	}
 
 	function getUnit(kind: TpSlKind): ReturnUnit {
@@ -329,16 +335,12 @@ function TradeFormTpSlFields({
 	}
 
 	function getTpError(): string | null {
-		const normalizedTpPrice = normalizePrice(tpPriceInput);
-		if (normalizedTpPrice === null || normalizedReferencePrice === null) return null;
-		if (validateTpPrice(normalizedReferencePrice, normalizedTpPrice, side)) return null;
+		if (!showValidation || !priceErrors.tp) return null;
 		return side === "buy" ? t`TP must be above entry` : t`TP must be below entry`;
 	}
 
 	function getSlError(): string | null {
-		const normalizedSlPrice = normalizePrice(slPriceInput);
-		if (normalizedSlPrice === null || normalizedReferencePrice === null) return null;
-		if (validateSlPrice(normalizedReferencePrice, normalizedSlPrice, side)) return null;
+		if (!showValidation || !priceErrors.sl) return null;
 		return side === "buy" ? t`SL must be below entry` : t`SL must be above entry`;
 	}
 
@@ -367,7 +369,10 @@ function TradeFormTpSlFields({
 					ariaLabel: t`Take profit return`,
 					placeholder: t`Profit`,
 					value: getReturnValue("tp"),
-					error: tpReturnInvalid && tpReturnErrorVisible && tpDraftValue !== null ? t`Invalid amount` : null,
+					error:
+						showValidation && tpReturnInvalid && tpReturnErrorVisible && tpDraftValue !== null
+							? t`Invalid amount`
+							: null,
 					unitLabel: getUnitLabel("tp"),
 					onUnitToggle: () => handleUnitToggle("tp"),
 					unitToggleDisabled: quoteSymbol === null && getUnit("tp") === "roe",
@@ -379,7 +384,10 @@ function TradeFormTpSlFields({
 					ariaLabel: t`Stop loss return`,
 					placeholder: t`Loss`,
 					value: getReturnValue("sl"),
-					error: slReturnInvalid && slReturnErrorVisible && slDraftValue !== null ? t`Invalid amount` : null,
+					error:
+						showValidation && slReturnInvalid && slReturnErrorVisible && slDraftValue !== null
+							? t`Invalid amount`
+							: null,
 					unitLabel: getUnitLabel("sl"),
 					onUnitToggle: () => handleUnitToggle("sl"),
 					unitToggleDisabled: quoteSymbol === null && getUnit("sl") === "roe",

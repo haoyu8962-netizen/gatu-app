@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildTwapOrderDetails, formatTwapPriceInput, getTwapTriggerDirection } from "@/domain/trade/twap-details";
+import {
+	buildTwapOrderDetails,
+	formatTwapPriceInput,
+	getTwapTriggerDirection,
+	resolveTwapPriceInputs,
+} from "@/domain/trade/twap-details";
 
 describe("buildTwapOrderDetails", () => {
 	it("omits details entirely when neither trigger nor stop price is set", () => {
@@ -99,5 +104,27 @@ describe("getTwapTriggerDirection", () => {
 		expect(getTwapTriggerDirection("abc", "100")).toBeNull();
 		expect(getTwapTriggerDirection("101", 0)).toBeNull();
 		expect(getTwapTriggerDirection("101", null)).toBeNull();
+	});
+});
+
+describe("resolveTwapPriceInputs", () => {
+	it("excludes both configured and invalid draft prices while advanced settings are off", () => {
+		const format = { assetId: 0, szDecimals: 5 };
+		for (const [trigger, stop] of [
+			["105", "110"],
+			["100", "0"],
+			["abc", "-5"],
+		]) {
+			expect(resolveTwapPriceInputs(false, trigger, stop, format)).toEqual({ triggerPx: null, stopPx: null });
+		}
+	});
+	it("applies existing precision and empty-field rules when enabled", () => {
+		const format = { assetId: 0, szDecimals: 5 };
+		expect(resolveTwapPriceInputs(true, "117312.6", "118000.1", format)).toEqual({
+			triggerPx: "117313",
+			stopPx: "118000",
+		});
+		expect(resolveTwapPriceInputs(true, "", "118000.1", format)).toEqual({ triggerPx: null, stopPx: "118000" });
+		expect(resolveTwapPriceInputs(true, "0", "", format)).toEqual({ triggerPx: "0", stopPx: null });
 	});
 });

@@ -38,22 +38,18 @@ describe("mobile order safety contract", () => {
 		expect(mobileTradeView).not.toContain("isSpotMarket && (isTriggerOrder || twapOrder)");
 	});
 
-	it("clears local inputs only when the submitted session and shared draft still match", () => {
-		expect(mobileTradeView).toMatch(
-			/function resetSubmittedForm\(\) \{\s*setLocalSizeInput\(""\);\s*setLocalReduceOnly\(false\);\s*\}/,
-		);
-		expect(mobileTradeView).toMatch(/useOrderSubmit\(\{[\s\S]*?onReset: resetSubmittedForm,/);
+	it("uses the shared draft and session-guarded reset without a separate mobile reset callback", () => {
+		expect(mobileTradeView).toContain("const sizeInput = useOrderSize();");
+		expect(mobileTradeView).toContain("const reduceOnlyChecked = useReduceOnly();");
+		expect(mobileTradeView).toMatch(/setSize: setSizeInput,\s*setReduceOnly: setReduceOnlyChecked,/);
+		const submitOptions = mobileTradeView.match(/useOrderSubmit\(\{[\s\S]*?\}\)/)?.[0];
+		expect(submitOptions).toBeDefined();
+		expect(submitOptions).not.toContain("onReset");
 		expect(orderSubmit).toMatch(
 			/function resetSubmittedForm\(token: OrderSubmitDraftResetToken\) \{\s*if \(isExchangeSessionCurrent\(token\) && resetFormIfCurrent\(token\.orderEntry\)\) options\.onReset\?\.\(\);\s*\}/,
 		);
 		expect(orderSubmit).not.toMatch(/\bresetForm\(\)/);
 		expect(orderSubmit.match(/\bresetSubmittedForm\(draftResetToken\);/g)).toHaveLength(4);
-		expect(mobileTradeView).toMatch(
-			/function setSizeInput\(value: string\) \{\s*if \(value !== sizeInput\) markDraftEdited\(\);\s*setLocalSizeInput\(value\);/,
-		);
-		expect(mobileTradeView).toMatch(
-			/function setReduceOnlyChecked\(value: boolean\) \{\s*if \(value !== reduceOnlyChecked\) markDraftEdited\(\);\s*setLocalReduceOnly\(value\);/,
-		);
 	});
 
 	it("resets the whole shared form atomically only for its matching market and revision", () => {

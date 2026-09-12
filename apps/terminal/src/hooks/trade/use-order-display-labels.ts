@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import type { AdvancedOrderType, OrderType } from "@/config/trade";
+import { type AdvancedOrderType, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
@@ -76,20 +76,7 @@ export function useOrderDisplayLabels() {
 	}
 
 	function getAdvancedOrderTypeLabel(orderType: AdvancedOrderType): string {
-		switch (orderType) {
-			case "stopMarket":
-				return t`Stop Market`;
-			case "stopLimit":
-				return t`Stop Limit`;
-			case "takeProfitMarket":
-				return t`Take Profit Market`;
-			case "takeProfitLimit":
-				return t`Take Profit Limit`;
-			case "twap":
-				return t`TWAP`;
-			case "scale":
-				return t`Scale`;
-		}
+		return t(ORDER_TYPE_MESSAGES[orderType]);
 	}
 
 	function getAdvancedOrderLabel(orderType: OrderType, fallback: string): string {

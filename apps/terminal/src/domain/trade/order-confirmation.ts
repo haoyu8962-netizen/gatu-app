@@ -1,7 +1,7 @@
 import { i18n, type MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import type { LimitTif, OrderType } from "@/config/trade";
+import { type LimitTif, ORDER_TYPE_MESSAGES, type OrderType } from "@/config/trade";
 import { formatOrderFeeRatePercent, type OrderFeeQuote } from "@/domain/trade/order-fee-quote";
 import { formatDuration, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -98,30 +98,9 @@ export function getOrderConfirmationSideLabel(
 }
 
 function getOrderTypeValue(draft: OrderConfirmationDraft, translate: (message: MessageDescriptor) => string): string {
-	const label = getOrderTypeLabel(draft.orderType, translate);
+	const label = translate(ORDER_TYPE_MESSAGES[draft.orderType]);
 	if (draft.orderType !== "limit") return label;
 	return `${label} · ${getTifOptionLabel(draft.tif, translate(msg`Post Only`))}`;
-}
-
-function getOrderTypeLabel(orderType: OrderType, translate: (message: MessageDescriptor) => string): string {
-	switch (orderType) {
-		case "market":
-			return translate(msg({ message: "Market", context: "Order type" }));
-		case "limit":
-			return translate(msg({ message: "Limit", context: "Order type" }));
-		case "stopMarket":
-			return translate(msg`Stop Market`);
-		case "stopLimit":
-			return translate(msg`Stop Limit`);
-		case "takeProfitMarket":
-			return translate(msg`Take Profit Market`);
-		case "takeProfitLimit":
-			return translate(msg`Take Profit Limit`);
-		case "twap":
-			return translate(msg`TWAP`);
-		case "scale":
-			return translate(msg`Scale`);
-	}
 }
 
 function getMarketExecutionLabel(): string {

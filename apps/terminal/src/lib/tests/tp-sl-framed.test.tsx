@@ -63,66 +63,59 @@ describe("TpSlSection framed order-panel card", () => {
 			);
 		});
 
-		expect(container.querySelector('input[placeholder="TP Price"]')).not.toBeNull();
-		expect(container.querySelector('input[placeholder="SL Price"]')).not.toBeNull();
-		expect(container.querySelector('input[placeholder="Profit"]')).not.toBeNull();
-		expect(container.querySelector('input[placeholder="Loss"]')).not.toBeNull();
+		expect(container.querySelector('input[aria-label="Take Profit"]')).not.toBeNull();
+		expect(container.querySelector('input[aria-label="Stop Loss"]')).not.toBeNull();
+		expect(container.querySelector('input[aria-label="Take profit return"]')).not.toBeNull();
+		expect(container.querySelector('input[aria-label="Stop loss return"]')).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Set to 25%"]')).toBeNull();
 		expect(container.textContent).not.toContain("Risk/Reward");
-		expect(container.textContent).toContain("Estimated PnL after trigger");
+		const estimates = container.querySelectorAll('[data-slot="trade-tpsl-pnl"]');
+		expect(estimates).toHaveLength(2);
+		expect(estimates[0].textContent).toBe("Estimated PnL after trigger: ≈ +$10.00");
+		expect(estimates[1].textContent).toBe("Estimated PnL after trigger: ≈ -$5.00");
+		expect(estimates[0].getAttribute("title")).toBe("Estimated PnL after trigger");
 	});
 
-	it("uses a two-column framed layout without outer card background", () => {
-		act(() => {
-			root.render(
-				createElement(TpSlSection, {
-					framed: true,
-					linkedReturnInputs: linkedReturnInputs(),
-					mobileTouchSafe: true,
-					onSlPriceChange: vi.fn(),
-					onTpPriceChange: vi.fn(),
-					referencePrice: 100,
-					side: "buy",
-					size: 1,
-					slPrice: "",
-					szDecimals: 2,
-					tpPrice: "",
-				}),
-			);
-		});
-
-		const section = container.firstElementChild as HTMLElement | null;
-		expect(section?.className).not.toContain("bg-trading-panel-card");
-		expect(section?.className).not.toContain("border-trading-panel-stroke-card");
-
-		const tpPriceInput = container.querySelector<HTMLInputElement>('input[placeholder="TP Price"]');
-		const tpReturnInput = container.querySelector<HTMLInputElement>('input[placeholder="Profit"]');
-		const tpPriceFrame = tpPriceInput?.parentElement;
-		const tpReturnFrame = tpReturnInput?.parentElement;
-		const row = tpPriceFrame?.parentElement;
-
-		expect(row?.className).toContain("grid-cols-2");
-		expect(row?.className).toContain("gap-2.5");
-		expect(tpPriceFrame?.className).toContain("w-full");
-		expect(tpPriceFrame?.className).toContain("box-border");
-		expect(tpPriceFrame?.className).toContain("h-8.25");
-		expect(tpPriceFrame?.className).toContain("gap-1.5");
-		expect(tpPriceFrame?.className).toContain("rounded-16");
-		expect(tpPriceFrame?.className).toContain("bg-transparent");
-		expect(tpPriceFrame?.className).toContain("py-1.25");
-		expect(tpPriceFrame?.className).toContain("pr-3");
-		expect(tpPriceFrame?.className).toContain("pl-2.5");
-		expect(tpPriceFrame?.className).not.toContain("min-w-[");
-		expect(tpReturnFrame?.className).toContain("w-full");
-		expect(tpReturnFrame?.className).toContain("box-border");
-		expect(tpReturnFrame?.className).not.toContain("min-w-[");
-		expect(tpPriceInput?.className).toContain("flex-auto");
-		expect(tpPriceInput?.className).toContain("min-w-0");
-		expect(tpPriceInput?.className).toContain("text-xs");
-		expect(tpReturnInput?.className).toContain("flex-auto");
-		expect(tpReturnInput?.className).toContain("min-w-0");
-		expect(tpReturnInput?.className).toContain("text-xs");
-		expect(tpReturnFrame?.querySelector("button")?.className).toContain("flex-none");
+	it("keeps permanent field labels and equal compact frames on desktop and mobile", () => {
+		for (const mobileTouchSafe of [false, true]) {
+			act(() => {
+				root.render(
+					createElement(TpSlSection, {
+						framed: true,
+						linkedReturnInputs: linkedReturnInputs(),
+						mobileTouchSafe,
+						onSlPriceChange: vi.fn(),
+						onTpPriceChange: vi.fn(),
+						referencePrice: 100,
+						side: "buy",
+						size: 1,
+						slPrice: "95",
+						tpPrice: "110",
+					}),
+				);
+			});
+			const labels = [
+				["Take Profit", "TP Price"],
+				["Stop Loss", "SL Price"],
+				["Take profit return", "Profit"],
+				["Stop loss return", "Loss"],
+			];
+			for (const [ariaLabel, label] of labels) {
+				const input = container.querySelector<HTMLInputElement>(`input[aria-label="${ariaLabel}"]`);
+				expect(input).not.toBeNull();
+				expect(container.querySelector(`label[for="${input?.id}"]`)?.textContent).toBe(label);
+				expect(input?.parentElement?.className).toContain("h-8.25");
+				expect(input?.parentElement?.className).not.toContain("h-11");
+				expect(input?.className).not.toContain("h-11");
+				if (mobileTouchSafe) expect(input?.className).toContain("max-[1000px]:text-base");
+			}
+			const unitTriggers = container.querySelectorAll<HTMLButtonElement>('[role="combobox"]');
+			expect(unitTriggers).toHaveLength(2);
+			for (const trigger of unitTriggers) {
+				expect(trigger.getAttribute("aria-haspopup")).toBe("listbox");
+				expect(trigger.className).not.toMatch(/before:|after:|h-11/);
+			}
+		}
 	});
 
 	it("shows direction errors instead of the estimated PnL line", () => {
@@ -174,7 +167,7 @@ describe("TpSlSection framed order-panel card", () => {
 		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid amount");
 	});
 
-	it("toggles the return unit from the paired input", () => {
+	it("opens a real unit menu and changes units only after selecting another option", async () => {
 		const onUnitToggle = vi.fn();
 		act(() => {
 			root.render(
@@ -186,18 +179,30 @@ describe("TpSlSection framed order-panel card", () => {
 					referencePrice: 100,
 					side: "buy",
 					size: 1,
-					slPrice: "",
-					szDecimals: 2,
-					tpPrice: "",
+					slPrice: "95",
+					tpPrice: "110",
 				}),
 			);
 		});
-
-		const unitButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
-			(button) => button.textContent === "%",
-		);
-		expect(unitButtons.length).toBe(2);
-		act(() => unitButtons[0]?.click());
-		expect(onUnitToggle).toHaveBeenCalledTimes(1);
+		const trigger = container.querySelector<HTMLButtonElement>('[aria-label="Take profit return unit"]');
+		expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+		await act(async () => {
+			trigger?.click();
+			await Promise.resolve();
+		});
+		expect(onUnitToggle).not.toHaveBeenCalled();
+		expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+		const options = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'));
+		expect(options.map((option) => option.textContent)).toEqual(["%", "$"]);
+		const dollars = options.find((option) => option.textContent === "$");
+		await act(async () => {
+			dollars?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+			await Promise.resolve();
+			dollars?.click();
+			await Promise.resolve();
+		});
+		expect(onUnitToggle).toHaveBeenCalledOnce();
+		expect(container.querySelector<HTMLInputElement>('[aria-label="Take Profit"]')?.value).toBe("110");
+		expect(container.querySelector<HTMLInputElement>('[aria-label="Stop Loss"]')?.value).toBe("95");
 	});
 });

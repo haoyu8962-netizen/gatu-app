@@ -1,6 +1,6 @@
-import { Badge, Button, Tooltip } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WalletIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -42,9 +42,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		maintenanceMarginRatio,
 		marginRatioReady,
 		riskSummary,
-		showSpotFundsNotice,
 		snapshotReady: accountSummaryReady,
-		spotFundsAvailable,
 		status: accountOverviewStatus,
 		unrealizedPnlTone,
 		usesSharedQuoteBalance,
@@ -77,7 +75,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		depositAvailability.reason === "geo-restricted" || depositAvailability.reason === "geo-unresolved";
 	const showsFundsActions = hasWalletAccess || depositAvailability.path === "sponsored";
 	const showsSecondaryFundsActions = !depositGeoBlocked && showsFundsActions;
-	const showsTransferEntry = (showSpotFundsNotice && hasWalletAccess) || showsSecondaryFundsActions;
 
 	if (!isConnected) {
 		const showsEmailDeposit = depositAvailability.path === "sponsored";
@@ -131,12 +128,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	return (
 		<div className={cn("h-full min-h-0 overflow-y-auto overscroll-y-contain bg-grid-container", className)}>
 			<div className="flex min-h-full flex-col gap-3 p-3">
-				{showsTransferEntry ? (
+				{showsSecondaryFundsActions ? (
 					<span id={transferDescriptionId} className="sr-only">
 						{overviewLabels.transferBetweenPerpsAndSpot}
 					</span>
 				) : null}
-				{showsTransferEntry && internalTransferDisabledReason ? (
+				{showsSecondaryFundsActions && !usesSharedQuoteBalance && internalTransferDisabledReason ? (
 					<span id={transferUnavailableId} className="sr-only">
 						{internalTransferDisabledReason}
 					</span>
@@ -148,18 +145,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				) : null}
 
 				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId} aria-busy={metricLoading}>
-					<div className="mb-4 flex items-start justify-between gap-3">
-						<div className="min-w-0">
-							<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
-								{overviewLabels.accountMode} · {overviewLabels.overview}
-							</h2>
-							<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
-						</div>
-						<div className="shrink-0">
-							<Badge tone="neutral" size="sm">
-								{overviewLabels.accountMode}
-							</Badge>
-						</div>
+					<div className="mb-4 min-w-0">
+						<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
+							{overviewLabels.summary}
+						</h2>
+						<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
 					</div>
 
 					<div className="space-y-2 pb-4">
@@ -214,45 +204,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							}
 						/>
 						<MetricRow
-							label={overviewLabels.crossMaintenanceMargin}
+							label={overviewLabels.maintenanceMargin}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
 									: formatUSD("0", { compact: false })
 							}
 						/>
-						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} />
+						<MetricRow label={overviewLabels.accountLeverage} value={crossLeverageLabel} />
 					</div>
 				</section>
-
-				{showSpotFundsNotice ? (
-					<div
-						data-slot="account-spot-funds-notice"
-						className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning"
-					>
-						<div className="tabular-nums">
-							{overviewLabels.availableFundsInSpot}:{" "}
-							{spotFundsAvailable === null ? "—" : formatUSD(spotFundsAvailable, { compact: false })}
-						</div>
-						{hasWalletAccess ? (
-							<Button
-								variant="link"
-								intent="brand"
-								size="xs"
-								className="mt-1 h-auto p-0"
-								disabled={!fundsActionAvailability.internalTransfer.available}
-								focusableWhenDisabled
-								aria-describedby={transferDescriptionIds}
-								title={internalTransferDisabledReason ?? undefined}
-								onClick={
-									fundsActionAvailability.internalTransfer.available ? () => openTransferModal("toPerp") : undefined
-								}
-							>
-								{overviewLabels.perpsSpot}
-							</Button>
-						) : null}
-					</div>
-				) : null}
 
 				<div data-slot="mobile-account-actions" className="mt-auto pt-3">
 					{depositGeoBlocked && depositNotice ? (
@@ -261,20 +222,40 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					{!depositGeoBlocked && showsFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
-							<Button
-								variant="filled"
-								intent="brand"
-								size="md"
-								disabled={!depositAvailability.available}
-								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-								aria-label={t`Deposit`}
-								title={depositNotice ?? undefined}
-								iconLeft={<DownloadSimpleIcon className="size-4" />}
-								className="min-h-11 w-full"
-							>
-								{t`Deposit`}
-							</Button>
 							<div className="grid grid-cols-2 gap-2">
+								<Button
+									variant="filled"
+									intent="brand"
+									size="md"
+									disabled={!depositAvailability.available}
+									onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+									aria-label={t`Deposit`}
+									title={depositNotice ?? undefined}
+									className="min-h-11 w-full"
+								>
+									{t`Deposit`}
+								</Button>
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="md"
+											disabled={!fundsActionAvailability.withdrawal.available}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
+											aria-label={t`Withdraw`}
+											className="min-h-11 w-full"
+										>
+											{t`Withdraw`}
+										</Button>
+									</span>
+								</Tooltip>
+							</div>
+							{!usesSharedQuoteBalance ? (
 								<Tooltip content={internalTransferDisabledReason} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -296,27 +277,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 										</Button>
 									</span>
 								</Tooltip>
-								<Tooltip content={withdrawDisabledReason} side="top">
-									<span className="inline-flex w-full">
-										<Button
-											variant="outline"
-											intent="neutral"
-											size="md"
-											disabled={!fundsActionAvailability.withdrawal.available}
-											focusableWhenDisabled
-											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-											onClick={
-												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-											}
-											aria-label={t`Withdraw`}
-											iconLeft={<UploadSimpleIcon className="size-4" />}
-											className="min-h-11 w-full"
-										>
-											{t`Withdraw`}
-										</Button>
-									</span>
-								</Tooltip>
-							</div>
+							) : null}
+
 							{hasWalletAccess && showBridgeEntry ? (
 								<Button
 									variant="outline"

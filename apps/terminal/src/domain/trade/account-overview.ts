@@ -1,10 +1,8 @@
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { AllBorrowLendReserveStatesResponse } from "@nktkas/hyperliquid";
 import {
 	accountOverviewNeedsTokenUsdPrices,
 	getPerpRiskSummaryUsdValue,
 	getSpotAccountValueUsdValue,
-	getSpotAvailableValue,
-	getSpotBalance,
 	getTokenAmountUsdValue,
 	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
@@ -24,6 +22,7 @@ import {
 	isSupportedAccountAbstraction,
 } from "@/hooks/trade/use-account-balances";
 import { toBig } from "@/lib/trade/numbers";
+import { getAccountLeverageCollateralValue } from "./account-leverage";
 
 export type AccountOverviewStatus = "loading" | "error" | "stale" | "unavailable" | "ready";
 export type AccountOverviewMode = "unified" | "portfolioMargin" | "separate" | "unavailable";
@@ -47,9 +46,7 @@ interface AccountOverviewBase {
 	marginRatioReady: boolean;
 	requiresUsdPrices: boolean;
 	riskSummary: PerpRiskSummaryValue | null;
-	showSpotFundsNotice: boolean;
 	snapshotReady: boolean;
-	spotFundsAvailable: string | null;
 	summaryReady: boolean;
 	unrealizedPnlTone: ReturnType<typeof getToolbarSignedValueTone>;
 	usesSharedQuoteBalance: boolean;
@@ -66,6 +63,7 @@ export interface DeriveAccountOverviewInput {
 	selectedBalances: AccountBalances;
 	tokenUsdPrices: TokenUsdPrices;
 	tokenUsdPriceStatus: AssetAvailabilityStatus;
+	leverageReserves?: AllBorrowLendReserveStatesResponse;
 }
 
 function getAccountOverviewMode(accountAbstraction: AccountAbstraction): AccountOverviewMode {
@@ -82,6 +80,7 @@ export function deriveAccountOverview({
 	selectedBalances,
 	tokenUsdPrices,
 	tokenUsdPriceStatus,
+	leverageReserves,
 }: DeriveAccountOverviewInput): AccountOverview {
 	const accountAbstraction = selectedBalances.accountAbstraction;
 	const accountMode = getAccountOverviewMode(accountAbstraction);
@@ -148,7 +147,13 @@ export function deriveAccountOverview({
 		: null;
 	const crossAccountEquityValue = snapshotReady
 		? usesSharedQuoteBalance
-			? accountEquityValue
+			? getAccountLeverageCollateralValue({
+					collaterals,
+					spotBalances: summaryBalances.spotBalances,
+					tokenUsdPrices,
+					portfolioMargin: accountAbstraction === "portfolioMargin",
+					reserves: leverageReserves,
+				})
 			: getTokenAmountUsdValue(summaryBalances.perpSummary?.accountValue, selectedCollateralToken, tokenUsdPrices)
 		: null;
 	const riskSummary = snapshotReady ? getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices) : null;
@@ -184,25 +189,6 @@ export function deriveAccountOverview({
 		snapshotReady && riskSummary ? getToolbarSignedValueTone(riskSummary.unrealizedPnl) : "neutral";
 	const summaryReady = snapshotReady && accountEquityValue !== null && riskSummary !== null;
 	const valuationUnavailable = snapshotReady && !summaryReady;
-	const spotSnapshotReady =
-		snapshotReady &&
-		!usesSharedQuoteBalance &&
-		summaryBalances.spotStateStatus === "success" &&
-		!summaryBalances.isSpotStateStale &&
-		summaryBalances.hasSpotStateSnapshot;
-	const spotFundsAvailable = spotSnapshotReady
-		? getSpotAvailableValue(
-				getSpotBalance(summaryBalances.spotBalances, DEFAULT_QUOTE_TOKEN),
-				summaryBalances.spotAvailableAfterMaintenance,
-			)
-		: null;
-	const perpWithdrawable = toBig(summaryBalances.withdrawable);
-	const showSpotFundsNotice =
-		spotFundsAvailable !== null &&
-		!usesSharedQuoteBalance &&
-		selectedBalances.dex === "" &&
-		perpWithdrawable?.lte(0) === true &&
-		toBig(spotFundsAvailable)?.gt(0) === true;
 	const fundsActionsReady =
 		accountModeReady &&
 		!defaultBalances.hasError &&
@@ -231,9 +217,7 @@ export function deriveAccountOverview({
 		marginRatioReady,
 		requiresUsdPrices,
 		riskSummary,
-		showSpotFundsNotice,
 		snapshotReady,
-		spotFundsAvailable,
 		status,
 		summaryReady,
 		unrealizedPnlTone,

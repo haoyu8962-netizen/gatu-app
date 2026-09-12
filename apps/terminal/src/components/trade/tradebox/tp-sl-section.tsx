@@ -1,5 +1,6 @@
+import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useId } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -179,7 +180,7 @@ export function TpSlSection({
 
 	if (framed) {
 		return (
-			<div className="min-w-0 space-y-2">
+			<div className="min-w-0 space-y-1.5">
 				<FramedTpSlRow
 					priceAriaLabel={t`Take Profit`}
 					pricePlaceholder={t`TP Price`}
@@ -187,6 +188,8 @@ export function TpSlSection({
 					onPriceChange={onTpPriceChange}
 					onPriceBlur={onTpPriceBlur}
 					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "tp")}
+					returnUnitLabel={t`Take profit return unit`}
+					collateralUnitLabel={normalizedQuoteSymbol === DEFAULT_QUOTE_TOKEN ? "$" : normalizedQuoteSymbol}
 					error={tpError}
 					pnl={tpPnl}
 					pnlToneClass="text-trading-panel-success"
@@ -201,6 +204,8 @@ export function TpSlSection({
 					onPriceChange={onSlPriceChange}
 					onPriceBlur={onSlPriceBlur}
 					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "sl")}
+					returnUnitLabel={t`Stop loss return unit`}
+					collateralUnitLabel={normalizedQuoteSymbol === DEFAULT_QUOTE_TOKEN ? "$" : normalizedQuoteSymbol}
 					error={slError}
 					pnl={slPnl}
 					pnlToneClass="text-trading-panel-error"
@@ -345,9 +350,9 @@ export function TpSlSection({
 }
 
 const framedFrameClass =
-	"flex h-8.25 w-full min-w-0 box-border items-center gap-1.5 rounded-16 border border-trading-panel-stroke-input bg-transparent py-1.25 pr-3 pl-2.5 text-xs [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
+	"flex h-8.25 w-full min-w-0 box-border items-center gap-1 rounded-[10px] border border-trading-panel-stroke-input bg-transparent px-1.5 text-xs [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
 const framedInputClass =
-	"h-auto w-auto min-w-0 flex-auto bg-transparent p-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
+	"h-7 w-auto min-w-0 flex-auto bg-transparent p-0 text-right text-xs font-semibold tabular-nums text-trading-panel-fg";
 
 function resolveLinkedReturnInput(
 	linkedReturnInputs: Props["linkedReturnInputs"],
@@ -369,6 +374,8 @@ interface FramedTpSlRowProps {
 	onPriceChange: (value: string) => void;
 	onPriceBlur?: () => void;
 	returnInput?: LinkedReturnInput;
+	returnUnitLabel: string;
+	collateralUnitLabel: string | null;
 	error?: string | null;
 	pnl: string | number | null;
 	pnlToneClass: string;
@@ -384,6 +391,8 @@ function FramedTpSlRow({
 	onPriceChange,
 	onPriceBlur,
 	returnInput,
+	returnUnitLabel,
+	collateralUnitLabel,
 	error,
 	pnl,
 	pnlToneClass,
@@ -393,19 +402,46 @@ function FramedTpSlRow({
 }: FramedTpSlRowProps) {
 	const { t } = useLingui();
 	const inputId = useId();
+	const returnInputId = useId();
 	const errorId = `${inputId}-error`;
 	const returnDisabled = disabled || returnInput?.disabled;
 	const unitToggleDisabled = disabled || returnInput?.unitToggleDisabled;
 	const returnError = returnInput?.error;
 	const displayError = error ?? returnError;
+	const estimatedPnl =
+		!displayError && pnl !== null ? (
+			<span
+				data-slot="trade-tpsl-pnl"
+				className={cn("min-w-0 max-w-full text-2xs font-semibold tabular-nums [overflow-wrap:anywhere]", pnlToneClass)}
+				title={t`Estimated PnL after trigger`}
+			>
+				<span className="sr-only">{t`Estimated PnL after trigger`}: </span>≈ {formatPnlValue(pnl)}
+			</span>
+		) : null;
 
 	return (
-		<div className="min-w-0 space-y-1.5">
-			<div className={cn("grid w-full min-w-0 gap-2.5", returnInput ? "grid-cols-2" : "grid-cols-1")}>
+		<div className="min-w-0 space-y-1">
+			<div
+				className={cn(
+					"grid w-full min-w-0 gap-x-1.5 gap-y-1",
+					returnInput ? "grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]" : "grid-cols-1",
+				)}
+			>
+				<label htmlFor={inputId} className="min-w-0 text-2xs leading-tight text-trading-panel-subtle">
+					{pricePlaceholder}
+				</label>
+				{returnInput && (
+					<div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-1">
+						<label htmlFor={returnInputId} className="min-w-0 text-2xs leading-tight text-trading-panel-subtle">
+							{returnInput.placeholder}
+						</label>
+						{estimatedPnl}
+					</div>
+				)}
 				<div
+					data-slot="trade-tpsl-input-frame"
 					className={cn(
 						framedFrameClass,
-						mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 						!disabled &&
 							"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-focus focus-within:bg-transparent",
 						!!error &&
@@ -418,20 +454,20 @@ function FramedTpSlRow({
 						aria-label={priceAriaLabel}
 						aria-describedby={error ? errorId : undefined}
 						aria-invalid={Boolean(error)}
-						placeholder={pricePlaceholder}
+						placeholder="0.00"
 						mobileSafe={mobileSafe}
 						value={priceValue}
 						onChange={(e) => onPriceChange(e.target.value)}
 						onBlur={onPriceBlur}
-						className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
+						className={framedInputClass}
 						disabled={disabled}
 					/>
 				</div>
 				{returnInput && (
 					<div
+						data-slot="trade-tpsl-input-frame"
 						className={cn(
 							framedFrameClass,
-							mobileSafe && "max-[1000px]:h-11 max-[1000px]:py-0",
 							!returnDisabled &&
 								"hover:not-data-disabled:border-trading-panel-stroke-control hover:not-data-disabled:bg-transparent focus-within:border-trading-panel-focus focus-within:bg-transparent",
 							!!returnError &&
@@ -440,33 +476,34 @@ function FramedTpSlRow({
 						)}
 					>
 						<NumberInput
+							id={returnInputId}
 							aria-label={returnInput.ariaLabel}
 							aria-describedby={returnError ? errorId : undefined}
 							aria-invalid={Boolean(returnError)}
-							placeholder={returnInput.placeholder}
+							placeholder="0.00"
 							mobileSafe={mobileSafe}
 							value={returnInput.value}
 							onChange={(e) => returnInput.onChange(e.target.value)}
 							onBlur={returnInput.onBlur}
-							className={cn(framedInputClass, mobileSafe && "max-[1000px]:h-11")}
+							className={cn(framedInputClass, "min-w-8")}
 							disabled={returnDisabled}
 						/>
 						{returnInput.onUnitToggle && (
-							<button
-								type="button"
-								onClick={returnInput.onUnitToggle}
+							<Select
+								size="xxs"
+								value={returnInput.unitLabel === "%" ? "roe" : "collateral"}
+								onValueChange={(value) => {
+									if (value && (value === "roe") !== (returnInput.unitLabel === "%")) returnInput.onUnitToggle?.();
+								}}
 								disabled={unitToggleDisabled}
-								aria-label={t`Toggle profit and loss unit`}
-								aria-pressed={returnInput.unitLabel === "%"}
-								className={cn(
-									"relative inline-flex flex-none cursor-pointer items-center justify-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed",
-									mobileSafe &&
-										"max-[1000px]:min-h-11 max-[1000px]:text-base max-[1000px]:before:absolute max-[1000px]:before:-inset-x-2.5 max-[1000px]:before:-inset-y-3 max-[1000px]:before:content-['']",
-								)}
-							>
-								{returnInput.unitLabel}
-								<CaretDownIcon className="size-2.5 text-trading-panel-subtle" />
-							</button>
+								triggerAriaLabel={returnUnitLabel}
+								className="h-full min-w-0 max-w-[calc(100%_-_2.25rem)] shrink-0"
+								triggerClassName="h-full w-full min-w-0 gap-0.5 rounded-none border-0 bg-transparent px-0 py-0 font-semibold text-trading-panel-fg hover:bg-trading-panel-hover focus-visible:outline-offset-0"
+								options={[
+									{ value: "roe", label: "%" },
+									...(collateralUnitLabel ? [{ value: "collateral", label: collateralUnitLabel }] : []),
+								]}
+							/>
 						)}
 					</div>
 				)}
@@ -476,12 +513,7 @@ function FramedTpSlRow({
 					{displayError}
 				</p>
 			)}
-			{!displayError && pnl !== null && (
-				<p className="text-2xs tabular-nums text-trading-panel-muted">
-					{t`Estimated PnL after trigger`}{" "}
-					<span className={cn("font-semibold", pnlToneClass)}>{formatPnlValue(pnl)}</span>
-				</p>
-			)}
+			{!returnInput && estimatedPnl}
 		</div>
 	);
 }

@@ -10,6 +10,7 @@ import type { Side } from "@/lib/trade/types";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 import {
 	useOrderEntryActions,
+	useTwapAdvancedEnabled,
 	useTwapMinutes,
 	useTwapRandomize,
 	useTwapStopPrice,
@@ -26,6 +27,7 @@ interface Props {
 	compact?: boolean;
 	desktop?: boolean;
 	mobileSafe?: boolean;
+	reduceOnly?: { checked: boolean; onCheckedChange: (checked: boolean) => void };
 }
 
 const labelClass = "text-2xs leading-none text-trading-panel-subtle";
@@ -44,10 +46,6 @@ const HOURS_MAX = Math.floor(TWAP_MINUTES_MAX / 60);
 const DAYS_MAX = Math.floor(TWAP_MINUTES_MAX / MINUTES_PER_DAY);
 const MINUTES_PER_INPUT_MAX = 59;
 
-function displayValue(n: number): string {
-	return n > 0 ? String(n) : "";
-}
-
 function clamp(n: number, min: number, max: number): number {
 	if (Number.isNaN(n)) return min;
 	return Math.min(Math.max(n, min), max);
@@ -63,15 +61,19 @@ export function TradeFormTwap({
 	compact,
 	desktop,
 	mobileSafe,
+	reduceOnly,
 }: Props) {
 	const { t } = useLingui();
 	const triggerFieldId = useId();
 	const stopFieldId = useId();
+	const advancedFieldsId = useId();
+	const advancedEnabled = useTwapAdvancedEnabled();
 	const twapMinutesNum = useTwapMinutes();
 	const twapRandomize = useTwapRandomize();
 	const twapTriggerPrice = useTwapTriggerPrice();
 	const twapStopPrice = useTwapStopPrice();
-	const { setTwapMinutes, setTwapRandomize, setTwapTriggerPrice, setTwapStopPrice } = useOrderEntryActions();
+	const { setTwapMinutes, setTwapRandomize, setTwapTriggerPrice, setTwapStopPrice, setTwapAdvancedEnabled } =
+		useOrderEntryActions();
 
 	const hours = Math.floor(twapMinutesNum / 60);
 	const minutes = twapMinutesNum - hours * 60;
@@ -79,9 +81,10 @@ export function TradeFormTwap({
 	const triggerPx = formatTwapPriceInput(twapTriggerPrice, { assetId, szDecimals });
 	const triggerDirection = getTwapTriggerDirection(triggerPx, markPx);
 	const triggerPrice = triggerPx ?? "";
-	let triggerHint = "";
-	if (triggerDirection === "above") triggerHint = t`Activates when mark ≥ ${triggerPrice}`;
-	if (triggerDirection === "below") triggerHint = t`Activates when mark ≤ ${triggerPrice}`;
+	const aboveTriggerHint = t`Activates when mark ≥ ${triggerPrice}`;
+	const belowTriggerHint = t`Activates when mark ≤ ${triggerPrice}`;
+	const triggerHint =
+		triggerDirection === "above" ? aboveTriggerHint : triggerDirection === "below" ? belowTriggerHint : "";
 	const hoursLabel = t`Hour(s)`;
 	const minutesLabel = t`Minute(s)`;
 	const durationFrameClass = cn(twapFrameClass, compact && compactFrameClass, desktop && "h-9 px-2.5");
@@ -90,6 +93,16 @@ export function TradeFormTwap({
 	const priceTextClass = cn(priceLabelClass, (compact || desktop) && compactPriceLabelClass);
 	const fieldInputClass = cn(inputClass, compact && compactInputClass, desktop && "h-8");
 	const quoteUnitClass = compact || desktop ? "trade-card-label-full" : undefined;
+
+	const optionProps = {
+		className: cn("min-w-0 max-w-full items-center gap-1.5", mobileSafe ? "min-h-6 w-full gap-2" : "min-h-5"),
+		controlClassName: cn(
+			"size-[17px] rounded-[5px] border-trading-panel-stroke-control data-checked:border-trading-panel-control data-checked:bg-trading-panel-control",
+			mobileSafe && "size-4 rounded-4 after:size-6",
+		),
+		indicatorClassName: "text-trading-panel-on-control",
+		labelClassName: "text-xs text-trading-panel-muted [overflow-wrap:anywhere]",
+	};
 
 	function handleHoursChange(value: string) {
 		const h = clamp(Math.floor(Number(value) || 0), 0, HOURS_MAX);
@@ -105,7 +118,7 @@ export function TradeFormTwap({
 	}
 
 	return (
-		<>
+		<div data-slot="trade-twap-fields" className="flex min-w-0 flex-col gap-2">
 			<div className="flex flex-col gap-1.5">
 				<span className={labelClass}>{t`Running Time (${TWAP_MINUTES_MIN}m - ${DAYS_MAX}d)`}</span>
 				<div className="flex gap-2">
@@ -114,7 +127,7 @@ export function TradeFormTwap({
 						<NumberInput
 							aria-label={hoursLabel}
 							placeholder="0"
-							value={displayValue(hours)}
+							value={String(hours)}
 							onChange={(e) => handleHoursChange(e.target.value)}
 							allowDecimals={false}
 							min={0}
@@ -128,8 +141,8 @@ export function TradeFormTwap({
 						<span className={durationTextClass}>{compact || desktop ? t`Mins` : minutesLabel}</span>
 						<NumberInput
 							aria-label={minutesLabel}
-							placeholder="30"
-							value={displayValue(minutes)}
+							placeholder="0"
+							value={String(minutes)}
 							onChange={(e) => handleMinutesChange(e.target.value)}
 							allowDecimals={false}
 							min={0}
@@ -142,49 +155,97 @@ export function TradeFormTwap({
 					</div>
 				</div>
 			</div>
-			<div className={cn("flex items-center", compact ? "text-2xs" : "text-xs")}>
+			<div data-slot="trade-twap-options" className={mobileSafe ? "flex min-w-0 flex-col" : "contents"}>
+				<div className={mobileSafe ? "contents" : "flex min-w-0 flex-wrap items-center gap-x-4"}>
+					<Checkbox
+						{...optionProps}
+						disabled={disabled}
+						checked={twapRandomize}
+						onCheckedChange={(checked) => setTwapRandomize(checked === true)}
+						label={t`Randomize timing`}
+					/>
+					{reduceOnly && (
+						<Checkbox
+							{...optionProps}
+							disabled={disabled}
+							checked={reduceOnly.checked}
+							onCheckedChange={(checked) => reduceOnly.onCheckedChange(checked === true)}
+							label={t`Reduce Only`}
+						/>
+					)}
+				</div>
 				<Checkbox
-					checked={twapRandomize}
-					onCheckedChange={(checked) => setTwapRandomize(checked === true)}
-					disabled={disabled}
-					label={t`Randomize timing`}
+					{...optionProps}
+					checked={advancedEnabled}
+					onCheckedChange={(checked) => setTwapAdvancedEnabled(checked === true)}
+					label={t`Advanced Settings`}
+					aria-controls={advancedFieldsId}
+					aria-expanded={advancedEnabled}
 				/>
 			</div>
-			<div className="flex flex-col gap-1.5">
+			<div
+				id={advancedFieldsId}
+				data-slot="trade-twap-advanced"
+				hidden={!advancedEnabled}
+				className={cn("min-w-0 flex-col", compact ? "gap-1.5" : "gap-2", advancedEnabled ? "flex" : "hidden")}
+			>
+				<div className="flex flex-col gap-1.5">
+					<div className={cn(priceFieldClass, disabled && "opacity-50")}>
+						<label htmlFor={triggerFieldId} className={priceTextClass}>
+							{t`Trigger Price`}
+							<span className={quoteUnitClass}> ({quoteToken})</span>
+						</label>
+						<NumberInput
+							id={triggerFieldId}
+							aria-label={`${t`Trigger Price`} (${quoteToken})`}
+							placeholder="0.00"
+							value={twapTriggerPrice}
+							onChange={(e) => setTwapTriggerPrice(e.target.value)}
+							className={fieldInputClass}
+							disabled={disabled || !advancedEnabled}
+							mobileSafe={mobileSafe}
+						/>
+					</div>
+					{(triggerHint || (mobileSafe && triggerPx !== null)) && (
+						<p className={cn("text-2xs text-trading-panel-muted", mobileSafe && "grid")}>
+							{mobileSafe ? (
+								<>
+									<span
+										aria-hidden={triggerDirection !== "above"}
+										className={cn("col-start-1 row-start-1", triggerDirection !== "above" && "invisible")}
+									>
+										{aboveTriggerHint}
+									</span>
+									<span
+										aria-hidden={triggerDirection !== "below"}
+										className={cn("col-start-1 row-start-1", triggerDirection !== "below" && "invisible")}
+									>
+										{belowTriggerHint}
+									</span>
+								</>
+							) : (
+								triggerHint
+							)}
+						</p>
+					)}
+				</div>
 				<div className={cn(priceFieldClass, disabled && "opacity-50")}>
-					<label htmlFor={triggerFieldId} className={priceTextClass}>
-						{t`Trigger Price`}
+					<label htmlFor={stopFieldId} className={priceTextClass}>
+						{stopPriceLabel}
 						<span className={quoteUnitClass}> ({quoteToken})</span>
 					</label>
 					<NumberInput
-						id={triggerFieldId}
-						aria-label={`${t`Trigger Price`} (${quoteToken})`}
+						id={stopFieldId}
+						aria-label={`${stopPriceLabel} (${quoteToken})`}
 						placeholder="0.00"
-						value={twapTriggerPrice}
-						onChange={(e) => setTwapTriggerPrice(e.target.value)}
+						value={twapStopPrice}
+						onChange={(e) => setTwapStopPrice(e.target.value)}
 						className={fieldInputClass}
-						disabled={disabled}
+						disabled={disabled || !advancedEnabled}
 						mobileSafe={mobileSafe}
 					/>
 				</div>
-				{triggerHint && <p className="text-2xs text-trading-panel-muted">{triggerHint}</p>}
 			</div>
-			<div className={cn(priceFieldClass, disabled && "opacity-50")}>
-				<label htmlFor={stopFieldId} className={priceTextClass}>
-					{stopPriceLabel}
-					<span className={quoteUnitClass}> ({quoteToken})</span>
-				</label>
-				<NumberInput
-					id={stopFieldId}
-					aria-label={`${stopPriceLabel} (${quoteToken})`}
-					placeholder="0.00"
-					value={twapStopPrice}
-					onChange={(e) => setTwapStopPrice(e.target.value)}
-					className={fieldInputClass}
-					disabled={disabled}
-					mobileSafe={mobileSafe}
-				/>
-			</div>
-		</>
+		</div>
 	);
 }

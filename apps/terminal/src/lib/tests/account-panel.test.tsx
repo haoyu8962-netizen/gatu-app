@@ -59,7 +59,9 @@ const testState = {
 	depositUnavailableReason: null as string | null,
 	geoStatus: "allowed" as "allowed" | "restricted" | "unresolved",
 	hasError: false,
+	hasExistingBridgeExecution: false,
 	hasWalletAccess: true,
+	hideFundsDisabledReasons: false,
 	isConnected: true,
 	isDataStale: false,
 	isLoading: false,
@@ -108,6 +110,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useInfo: () => ({ dataUpdatedAt: 0, isSuccess: false }),
 	useMarkets: () => ({
 		builderPerp: [
 			{
@@ -156,8 +159,25 @@ vi.mock("@/hooks/trade/use-deposit-availability", () => ({
 	},
 }));
 
+vi.mock("@/hooks/trade/use-funds-action-availability", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/hooks/trade/use-funds-action-availability")>();
+	return {
+		...original,
+		useFundsActionAvailability: (input: Parameters<typeof original.useFundsActionAvailability>[0]) => {
+			const availability = original.useFundsActionAvailability(input);
+			return testState.hideFundsDisabledReasons
+				? {
+						...availability,
+						withdrawal: { ...availability.withdrawal, unavailableReason: null },
+						internalTransfer: { ...availability.internalTransfer, unavailableReason: null },
+					}
+				: availability;
+		},
+	};
+});
+
 vi.mock("@/lib/lifi/bridge-execution-state", () => ({
-	useHasExistingBridgeExecution: () => false,
+	useHasExistingBridgeExecution: () => testState.hasExistingBridgeExecution,
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -203,7 +223,9 @@ describe("desktop account panel", () => {
 		testState.depositUnavailableReason = null;
 		testState.geoStatus = "allowed";
 		testState.hasError = false;
+		testState.hasExistingBridgeExecution = false;
 		testState.hasWalletAccess = true;
+		testState.hideFundsDisabledReasons = false;
 		testState.isConnected = true;
 		testState.isDataStale = false;
 		testState.isLoading = false;
@@ -338,26 +360,150 @@ describe("desktop account panel", () => {
 		expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
 	});
 
-	it("renders current Spot funds on desktop and gates the transfer entry with shared availability", () => {
+	it("places one funding action group before the overview and keeps the Account heading accessible only", () => {
 		renderPanel();
+		const groups = container.querySelectorAll('[data-slot="account-panel-actions"]');
+		expect(groups).toHaveLength(1);
+		const actions = groups[0];
+		const overview = container.querySelector("section[aria-labelledby]");
+		expect(overview).not.toBeNull();
+		expect(actions.compareDocumentPosition(overview as Element) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(container.querySelector("h2")?.textContent).toBe("Account");
+		expect(container.querySelector("h2")?.classList.contains("sr-only")).toBe(true);
 
-		const notice = container.querySelector('[data-slot="account-spot-funds-notice"]');
-		expect(notice?.textContent).toContain("Available funds are in Spot: $122.75");
-		const transfer = notice?.querySelector<HTMLButtonElement>("button");
-		expect(transfer?.textContent).toBe("Perps / Spot");
-		expect(transfer?.getAttribute("aria-label")).toBeNull();
-		expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
+		const deposit = findButton(container, "Deposit");
+		const withdraw = findButton(container, "Withdraw");
+		const transfer = findButton(container, "Perps / Spot");
+		const primaryRow = deposit.closest(".grid");
+		expect(primaryRow).not.toBeNull();
+		expect(primaryRow?.classList.contains("grid-cols-2")).toBe(true);
+		expect(primaryRow?.classList.contains("gap-2")).toBe(true);
+		expect(Array.from(primaryRow?.querySelectorAll("button") ?? [], (button) => button.textContent)).toEqual([
+			"Deposit",
+			"Withdraw",
+		]);
+		expect(primaryRow?.contains(transfer)).toBe(false);
+		expect(withdraw.compareDocumentPosition(transfer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(transfer.classList.contains("w-full")).toBe(true);
+		for (const button of [deposit, withdraw, transfer]) expect(actions.contains(button)).toBe(true);
+	});
 
+	it("does not duplicate or leave bottom funding controls when connection and account states change", () => {
+		for (const state of [
+			{ connected: true, mode: "disabled", status: "success" },
+			{ connected: true, mode: "unifiedAccount", status: "success" },
+			{ connected: true, mode: "portfolioMargin", status: "success" },
+			{ connected: false, mode: "disabled", status: "success" },
+			{ connected: true, mode: "disabled", status: "loading" },
+			{ connected: true, mode: "disabled", status: "stale" },
+			{ connected: true, mode: "disabled", status: "success" },
+		]) {
+			testState.isConnected = state.connected;
+			testState.hasWalletAccess = state.connected;
+			testState.accountAbstraction = state.mode;
+			testState.perpStateStatus = state.status;
+			testState.isLoading = state.status === "loading";
+			testState.isDataStale = state.status === "stale";
+			renderPanel();
+			const overview = container.querySelector("section[aria-labelledby]");
+			expect(overview).not.toBeNull();
+			for (const label of ["Deposit", "Withdraw"]) {
+				const matches = Array.from(container.querySelectorAll("button")).filter(
+					(button) => button.textContent === label,
+				);
+				expect(matches).toHaveLength(1);
+				expect(matches[0].compareDocumentPosition(overview as Element) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+			}
+			expect(container.querySelectorAll('[data-slot="account-panel-actions"]')).toHaveLength(state.connected ? 1 : 0);
+			expect(
+				Array.from(container.querySelectorAll("button")).filter((button) => button.textContent === "Perps / Spot"),
+			).toHaveLength(state.connected && state.mode === "disabled" ? 1 : 0);
+		}
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+	});
+
+	it.each(["unifiedAccount", "portfolioMargin"])(
+		"hides internal transfer in %s and restores its route in separate mode",
+		(accountAbstraction) => {
+			testState.accountAbstraction = accountAbstraction;
+			renderPanel();
+			expect(
+				Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+			).toBe(false);
+			expect(modalActions.openTransfer).not.toHaveBeenCalled();
+			act(() => findButton(container, "Deposit").click());
+			act(() => findButton(container, "Withdraw").click());
+			expect(modalActions.openDeposit).toHaveBeenNthCalledWith(1, "deposit");
+			expect(modalActions.openDeposit).toHaveBeenNthCalledWith(2, "withdraw");
+			testState.accountAbstraction = "disabled";
+			renderPanel();
+			act(() => findButton(container, "Perps / Spot").click());
+			expect(modalActions.openTransfer).toHaveBeenCalledExactlyOnceWith("toPerp");
+		},
+	);
+
+	it("disables unavailable transfers and withdrawals independently of their explanation text", () => {
+		testState.hasError = true;
+		testState.perpStateStatus = "error";
+		testState.hideFundsDisabledReasons = true;
+		renderPanel();
+		for (const label of ["Perps / Spot", "Withdraw"]) {
+			const button = findButton(container, label);
+			expectActionDisabled(button);
+			expect(button.tabIndex).toBe(0);
+			act(() => button.click());
+		}
+		expect(modalActions.openTransfer).not.toHaveBeenCalled();
+		expect(modalActions.openDeposit).not.toHaveBeenCalled();
+		testState.hasError = false;
+		testState.perpStateStatus = "success";
+		renderPanel();
+		act(() => findButton(container, "Perps / Spot").click());
+		act(() => findButton(container, "Withdraw").click());
+		expect(modalActions.openTransfer).toHaveBeenCalledExactlyOnceWith("toPerp");
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("withdraw");
+	});
+
+	it("preserves bridge recovery routing and removes it when wallet access or regional permission is absent", () => {
+		testState.hasExistingBridgeExecution = true;
+		renderPanel();
+		const bridge = findButton(container, "Bridge");
+		expect(bridge.closest('[data-slot="account-panel-actions"]')).not.toBeNull();
+		act(() => bridge.click());
+		expect(modalActions.openDeposit).toHaveBeenCalledExactlyOnceWith("bridge");
+		for (const state of [
+			{ wallet: false, geo: "allowed" as const },
+			{ wallet: true, geo: "restricted" as const },
+			{ wallet: true, geo: "unresolved" as const },
+		]) {
+			testState.hasWalletAccess = state.wallet;
+			testState.geoStatus = state.geo;
+			renderPanel();
+			expect(Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Bridge")).toBe(
+				false,
+			);
+		}
+		expect(modalActions.openDeposit).toHaveBeenCalledTimes(1);
+	});
+
+	it("omits the Spot funds warning and keeps the ordinary transfer entry guarded", () => {
+		renderPanel();
+		expect(container.querySelector('[data-slot="account-spot-funds-notice"]')).toBeNull();
+		expect(container.textContent).not.toContain("Available funds are in Spot");
+		expect(
+			Array.from(container.querySelectorAll("button")).filter((button) => button.textContent === "Perps / Spot"),
+		).toHaveLength(1);
+		const transfer = findButton(container, "Perps / Spot");
+		expect(getDescriptionText(transfer)).toContain("Transfer between Perps and Spot");
+		act(() => transfer.click());
+		expect(modalActions.openTransfer).toHaveBeenCalledWith("toPerp");
+		modalActions.openTransfer.mockClear();
 		testState.geoStatus = "restricted";
 		renderPanel();
-		const blockedTransfer = container.querySelector<HTMLButtonElement>(
-			'[data-slot="account-spot-funds-notice"] button',
-		);
-		expect(blockedTransfer?.getAttribute("aria-disabled")).toBe("true");
-		expect(blockedTransfer ? getDescriptionText(blockedTransfer) : "").toContain(
-			"Funds actions are not available in your region.",
-		);
-		act(() => blockedTransfer?.click());
+		expect(
+			Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+		).toBe(false);
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 
@@ -367,30 +513,24 @@ describe("desktop account panel", () => {
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
 		expect(getMetricRowText(container, "Unrealized PNL")).toContain("+$56.00");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$230.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$230.50");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("65.21%");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("29.49x");
 
-		const transfer = findButton(container, "Perps / Spot");
-		expect(transfer.getAttribute("aria-disabled")).toBe("true");
-		expect(transfer.disabled).toBe(false);
-		const describedBy = transfer.getAttribute("aria-describedby");
-		expect(describedBy).not.toBeNull();
-		expect(transfer.getAttribute("aria-label")).toBeNull();
-		expect(getDescriptionText(transfer)).toContain("Transfer between Perps and Spot");
-		expect(getDescriptionText(transfer)).toContain("shared-balance account modes");
-		act(() => transfer.click());
+		expect(
+			Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+		).toBe(false);
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 
 	it("uses the SDK portfolio margin ratio and stays neutral when that optional field is absent", () => {
 		testState.accountAbstraction = "portfolioMargin";
 		renderPanel();
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("42.00%");
+		expect(getMetricRowText(container, "Portfolio Margin Ratio")).toContain("42.00%");
 
 		testState.portfolioMarginRatio = null;
 		renderPanel();
-		const ratioRow = getMetricRowText(container, "Account Margin Ratio");
+		const ratioRow = getMetricRowText(container, "Portfolio Margin Ratio");
 		expect(ratioRow).toContain("—");
 		expect(container.querySelector('[role="progressbar"]')?.hasAttribute("aria-valuenow")).toBe(false);
 		expect(container.querySelector('[role="progressbar"] .text-trading-panel-muted')).not.toBeNull();
@@ -408,7 +548,7 @@ describe("desktop account panel", () => {
 		testState.hasError = true;
 		testState.perpStateStatus = "error";
 		renderPanel();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Failed to load balances.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 		expect(getMetricRowText(container, "Account Value")).toContain("—");
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 
@@ -416,7 +556,7 @@ describe("desktop account panel", () => {
 		testState.isDataStale = true;
 		testState.perpStateStatus = "stale";
 		renderPanel();
-		expect(container.textContent).toContain("Balance data is stale. Actions are temporarily unavailable.");
+		expect(container.querySelector("output:not(.sr-only)")).toBeNull();
 		expect(getMetricRowText(container, "Account Value")).toContain("—");
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 	});
@@ -431,7 +571,7 @@ describe("desktop account panel", () => {
 		expect(findButton(container, "Withdraw").getAttribute("aria-disabled")).toBe("true");
 	});
 
-	it("explains shared-account valuation failures and never falls back to entry notional", () => {
+	it("keeps shared-account valuation failures quiet and never falls back to entry notional", () => {
 		testState.accountAbstraction = "unifiedAccount";
 		testState.builderCollateral = "HYPE";
 		testState.spotBalances = [
@@ -441,13 +581,13 @@ describe("desktop account panel", () => {
 		testState.prices = {};
 		renderPanel();
 
-		expect(container.textContent).toContain("Balance data is unavailable. Try again after the connection recovers.");
+		expect(container.querySelector("output:not(.sr-only)")).toBeNull();
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("—");
 		expect(container.textContent).not.toContain("$253.50");
 
 		testState.priceStatus = "error";
 		renderPanel();
-		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Failed to load balances.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
 	it("keeps disabled funds actions focusable and exposes their reason to assistive technology", () => {
@@ -465,7 +605,7 @@ describe("desktop account panel", () => {
 	});
 
 	it.each(["restricted", "unresolved"] as const)(
-		"removes account action entries and gates the Spot notice transfer when geo is %s",
+		"removes account action entries without a duplicate Spot notice when geo is %s",
 		(geoStatus) => {
 			testState.geoStatus = geoStatus;
 			renderPanel();
@@ -474,9 +614,8 @@ describe("desktop account panel", () => {
 				container.querySelectorAll<HTMLButtonElement>("button"),
 				(button) => button.textContent,
 			);
-			expect(labels.filter((label) => label === "Perps / Spot")).toHaveLength(1);
+			expect(labels.filter((label) => label === "Perps / Spot")).toHaveLength(0);
 			expect(labels).not.toContain("Withdraw");
-			expect(findButton(container, "Perps / Spot").getAttribute("aria-disabled")).toBe("true");
 			expect(container.textContent).toContain("Funds actions are unavailable in this region.");
 			expect(modalActions.openTransfer).not.toHaveBeenCalled();
 			expect(modalActions.openDeposit).not.toHaveBeenCalledWith("withdraw");

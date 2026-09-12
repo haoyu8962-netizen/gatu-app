@@ -508,12 +508,35 @@ dependency graphs and must not write to the same Vite optimizer cache. A
 different HTML root or port does not isolate the cache: Vite resolves its
 default beneath the nearest package directory.
 
+Wallet initialization also depends on the browser allowing Privy's external
+iframe. For local wallet validation, use a standalone browser with
+`pnpm dev:browser --port 3006`, or open the existing server there. A local
+embedded preview can block that iframe independently of Vite. Classify
+`ERR_BLOCKED_BY_CLIENT` separately from optimizer HTTP 504 responses; do not
+change signing readiness, proxy the wallet iframe, or patch the browser's
+security policy to hide the failure. See
+[wallet initialization troubleshooting](wallet-initialization-debugging.md).
+
 ### Rules
 
 - Keep the application cache at its default `node_modules/.vite` and give
   `tests/browser/vite.config.ts` an explicit `node_modules/.vite-browser`
   cache under the terminal package. The paths must be distinct and neither
   may contain the other.
+- Development responses use `Cache-Control: no-cache`, including optimized
+  dependency modules. Browsers may retain response bodies and use ETags, but
+  must revalidate them instead of reusing Vite's year-long immutable responses
+  after the dependency graph changes. This is a dev-server setting only;
+  production `/assets/**` responses remain immutable.
+- Keep `server.strictPort` enabled. Do not start multiple application dev
+  servers in the same checkout, even on different ports: they still share the
+  optimizer cache. Use a separate checkout for another application instance.
+- Ordinary startup uses `pnpm dev --port 3006`. Do not force re-optimization
+  on every startup or delete the optimizer cache while a server is running.
+  When migrating an existing browser from immutable caching, temporarily
+  disable the HTTP cache in DevTools, reload and let all lazy modules finish
+  loading, then restore normal caching and verify an ordinary reload. A hard
+  reload alone may leave asynchronously imported modules using old responses.
 - Do not work around an `Outdated Optimize Dep` response by changing wallet
   login methods, remounting authentication providers, patching SDK internals,
   or adding a second wallet chooser.
@@ -536,6 +559,32 @@ The dedicated header-recovery fixture uses the separate sibling cache
 scans only `user-menu-recovery.html`; the shared browser optimizer excludes that
 entry, and the default Playwright suite excludes its dedicated test file so each
 fixture runs with its own wallet mocks and server configuration.
+
+The real mobile order-entry fixture uses `node_modules/.vite-mobile-trade-all-orders`
+and scans only `mobile-trade-all-orders.html`. Run it with
+`pnpm --dir apps/terminal exec playwright test --config tests/browser/mobile-trade-all-orders.playwright.config.ts`.
+The shared optimizer and default browser suite exclude this fixture's entry and
+test file. Its cache must remain a sibling of the application and other fixture caches.
+
+The desktop/mobile account funding fixture uses `node_modules/.vite-account-actions`
+and scans only `account-actions.html`. Run it with
+`pnpm --dir apps/terminal exec playwright test --config tests/browser/account-actions.playwright.config.ts`.
+The shared optimizer and default browser suite exclude this fixture's entry and
+test file. Validate dedicated fixtures from a cold fixture cache as well as a warm
+cache: incomplete mock exports can break dependency scanning even when a warm
+development run appears to pass. Never clear the application cache for this check.
+
+Shared desktop/mobile order summaries are emitted as separate implicit chunks
+after the client runtime entry. The trade route imports them statically inside its
+existing dynamic page boundary, and TanStack Start retains one client entry.
+Rollup shares their transitive dependencies through the existing chunk graph.
+Test this actual runtime-to-route topology when checking the chunk plugin.
+Do not group application summaries with recursive `manualChunks`
+assignments: they can absorb application state and vendor dependencies. See
+[Rollup's manual-chunk dependency behavior](https://rollupjs.org/configuration-options/#output-manualchunks).
+Validate the complete static chunk graph and startup-closure budgets after changing
+these boundaries; a small named chunk alone does not prove safe startup behavior.
+Do not introduce a lazy/Suspense boundary solely to shrink a measured form's bundle.
 
 ## 10. Trading Slider Sessions
 

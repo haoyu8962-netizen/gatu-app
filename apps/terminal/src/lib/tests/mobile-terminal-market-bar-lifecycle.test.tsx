@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	activeTab: "markets" as "markets" | "trade" | "account",
-	bboMidPx: "100.5" as string | undefined,
+	bboMidPx: "100.25" as string | undefined,
 	bboSnapshot: { revision: 0 } as object | undefined,
 	bboSubscriptions: 0,
 	bboUnsubscriptions: 0,
@@ -67,7 +67,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 			return { data: { mids: { BTC: "100.25" } }, isStale: false, status: "active" };
 		}
 		if (method === "activeAssetCtx") {
-			return { data: { ctx: mocks.perpCtx }, isStale: false, status: "active" };
+			return {
+				data: { coin: mocks.market.name, ctx: mocks.perpCtx },
+				lastMessageAt: Date.now(),
+				isStale: false,
+				status: "active",
+			};
 		}
 		return { data: undefined, isStale: false, status: "idle" };
 	},
@@ -126,7 +131,7 @@ describe("MobileTerminal market bar lifecycle", () => {
 
 	beforeEach(() => {
 		mocks.activeTab = "markets";
-		mocks.bboMidPx = "100.5";
+		mocks.bboMidPx = "100.25";
 		mocks.bboSnapshot = { revision: 0 };
 		mocks.bboSubscriptions = 0;
 		mocks.bboUnsubscriptions = 0;
@@ -149,28 +154,28 @@ describe("MobileTerminal market bar lifecycle", () => {
 	it("keeps one controller across Markets and Trade, but releases it on Account", () => {
 		let price = render("markets");
 		expect(price?.dataset.pane).toBe("markets");
-		expect(price?.textContent).toBe("100.5");
+		expect(price?.textContent).toBe("100.25");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
 		expect(mocks.bboUnsubscriptions).toBe(0);
 
 		price = render("trade");
 		expect(price?.dataset.pane).toBe("trade");
-		expect(price?.textContent).toBe("100.5");
+		expect(price?.textContent).toBe("100.25");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
 		expect(mocks.bboUnsubscriptions).toBe(0);
 
 		expect(render("account")).toBeNull();
-		expect(mocks.bboSubscriptions).toBe(1);
-		expect(mocks.bboUnsubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
+		expect(mocks.bboUnsubscriptions).toBe(0);
 
-		mocks.bboMidPx = "101.0";
+		mocks.perpCtx.midPx = "101.0";
 		mocks.bboSnapshot = { revision: 1 };
 		price = render("trade");
 		expect(price?.textContent).toBe("101.0");
 		expect(price?.dataset.direction).toBe("none");
-		expect(mocks.bboSubscriptions).toBe(2);
-		expect(mocks.bboUnsubscriptions).toBe(1);
+		expect(mocks.bboSubscriptions).toBe(0);
+		expect(mocks.bboUnsubscriptions).toBe(0);
 	});
 });

@@ -1,4 +1,4 @@
-import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle, Select } from "@gatu/ui";
+import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
@@ -8,49 +8,8 @@ import {
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import type { Chain } from "viem";
-import { NETWORKS, type NetworkId } from "@/config/networks";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
-
-interface NetworkSelectProps {
-	label: React.ReactNode;
-	value: NetworkId;
-	onChange: (value: NetworkId) => void;
-	disabled?: boolean;
-	displayName?: string;
-	presentation?: "default" | "funding";
-}
-
-export function NetworkSelect({
-	label,
-	value,
-	onChange,
-	disabled,
-	displayName,
-	presentation = "default",
-}: NetworkSelectProps) {
-	const fundingPresentation = presentation === "funding";
-
-	return (
-		<Select
-			label={fundingPresentation ? undefined : (label as string)}
-			triggerAriaLabel={fundingPresentation ? (label as string) : undefined}
-			value={value}
-			onValueChange={(v) => {
-				if (v) onChange(v as NetworkId);
-			}}
-			disabled={disabled}
-			size={fundingPresentation ? "lg" : undefined}
-			className={fundingPresentation ? "min-w-0" : undefined}
-			triggerClassName={
-				fundingPresentation
-					? "min-h-10 rounded-[10px] border-market-close-stroke-input bg-modal !px-3 !py-2 text-market-close-fg data-disabled:!cursor-default data-disabled:!border-market-close-stroke-input data-disabled:!text-market-close-fg [&_svg]:size-3"
-					: undefined
-			}
-			options={NETWORKS.map((n) => ({ value: n.id, label: displayName && n.id === value ? displayName : n.name }))}
-		/>
-	);
-}
 
 interface StatusScreenProps {
 	open: boolean;

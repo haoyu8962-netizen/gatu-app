@@ -121,6 +121,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useInfo: () => ({ dataUpdatedAt: 0, isSuccess: false }),
 	useMarkets: () => ({
 		builderPerp: [{ dex: "xyz", quoteToken: { index: 0, name: "USDC" } }],
 		getToken: () => ({ index: 0 }),
@@ -239,9 +240,9 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$230.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$230.50");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("65.21%");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("29.49x");
 	});
 
 	it.each([null, "unknown", "default", "dexAbstraction"])(
@@ -291,7 +292,7 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("42.00%");
+		expect(getMetricRowText(container, "Portfolio Margin Ratio")).toContain("42.00%");
 	});
 
 	it("uses formatted zero placeholders before complete snapshots arrive", () => {
@@ -305,10 +306,10 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$0.00");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("0.00%");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("0.00%");
 		expect(getMetricRowText(container, "Unrealized PNL")).toContain("$0.00");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$0.00");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$0.00");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("0.00x");
 		expect(container.querySelector("section")?.textContent).not.toContain("—");
 	});
 
@@ -340,10 +341,33 @@ describe("mobile account view", () => {
 				render();
 
 				expect(getMetricRowText(container, accountValueLabel)).toContain("$0.00");
-				expect(getMetricRowText(container, "Account Margin Ratio")).toContain("0.00%");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled"
+							? "Account Margin Ratio"
+							: accountAbstraction === "unifiedAccount"
+								? "Unified Account Ratio"
+								: "Portfolio Margin Ratio",
+					),
+				).toContain("0.00%");
 				expect(getMetricRowText(container, "Unrealized PNL")).toContain("$0.00");
-				expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$0.00");
-				expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled" ? "Cross Maintenance Margin" : "Perps Maintenance Margin",
+					),
+				).toContain("$0.00");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled"
+							? "Cross Account Leverage"
+							: accountAbstraction === "unifiedAccount"
+								? "Unified Account Leverage"
+								: "Portfolio Account Leverage",
+					),
+				).toContain("0.00x");
 				expect(container.querySelector("section")?.getAttribute("aria-busy")).toBe(String(status === "loading"));
 				expect(container.querySelector('[role="alert"], output, [aria-label="Balance data is stale."]')).toBeNull();
 				expect(container.textContent).not.toContain("Balance data is stale");
@@ -356,10 +380,10 @@ describe("mobile account view", () => {
 				const buttons = Array.from(actions.querySelectorAll("button"));
 				const transfer = buttons.find((button) => button.textContent === "Perps / Spot");
 				const withdraw = buttons.find((button) => button.textContent === "Withdraw");
-				expect(transfer?.getAttribute("aria-disabled")).toBe("true");
-				expect(transfer?.getAttribute("aria-label")).toBeNull();
-				expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
-				expect(transfer ? getDescriptionText(transfer) : "").not.toContain("Balance data is unavailable");
+				if (accountAbstraction === "disabled") {
+					expect(transfer?.getAttribute("aria-disabled")).toBe("true");
+					expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
+				} else expect(transfer).toBeUndefined();
 				expect(withdraw?.getAttribute("aria-disabled")).toBe("true");
 				act(() => {
 					transfer?.click();
@@ -433,10 +457,12 @@ describe("mobile account view", () => {
 		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
-		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Perps / Spot", "Withdraw"]);
+		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Withdraw", "Perps / Spot"]);
+		expect(container.querySelector('[data-slot="account-spot-funds-notice"]')).toBeNull();
+		expect(container.textContent).not.toContain("Available funds are in Spot");
 		expect(buttons[0]?.getAttribute("aria-label")).toBe(buttons[0]?.textContent);
-		expect(buttons[1]?.getAttribute("aria-label")).toBeNull();
-		expect(buttons[2]?.getAttribute("aria-label")).toBe(buttons[2]?.textContent);
+		expect(buttons[2]?.getAttribute("aria-label")).toBeNull();
+		expect(buttons[1]?.getAttribute("aria-label")).toBe(buttons[1]?.textContent);
 
 		act(() => buttons[0]?.click());
 		act(() => buttons[1]?.click());
@@ -544,11 +570,7 @@ describe("mobile account view", () => {
 			const transferButtons = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(
 				(button) => button.textContent === "Perps / Spot",
 			);
-			expect(transferButtons).toHaveLength(1);
-			for (const button of transferButtons) {
-				expect(button.getAttribute("aria-disabled")).toBe("true");
-				act(() => button.click());
-			}
+			expect(transferButtons).toHaveLength(0);
 			const withdraw = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 				(button) => button.textContent === "Withdraw",
 			);
