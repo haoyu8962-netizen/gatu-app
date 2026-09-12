@@ -534,6 +534,10 @@ msgstr "الإعدادات المتقدمة"
 msgid "After removal"
 msgstr "بعد الإزالة"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+msgstr "بعد وصول الأموال، عد إلى هنا واختر إيداع لنقلها إلى حساب التداول الخاص بك."
+
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -844,8 +848,7 @@ msgstr "بيع"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 msgid "Asset"
 msgstr "الأصل"
 
@@ -1091,10 +1094,6 @@ msgstr "شراء طويل"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "افتراضياً، ينطبق TP/SL على المركز بأكمله ويرسل أمراً بسعر السوق عندما يصل سعر العلامة إلى سعر التفعيل. حدد مبلغاً للاحتفاظ بحجم ثابت، أو اختر التنفيذ بسعر محدد ليتم الإرسال بسعرك المحدد."
 
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Calculated after funding"
-msgstr "يُحتسب بعد وصول الأموال"
-
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "فشل الوصول إلى الكاميرا. اسمح بالوصول إلى الكاميرا وحاول مرة أخرى، أو امسح رمز QR بكاميرا نظامك."
@@ -1179,14 +1178,10 @@ msgid "Cannot switch to Isolated mode with an open position. Close your position
 msgstr "لا يمكن التبديل إلى وضع الهامش المعزول مع وجود مركز مفتوح. أغلق مركزك أولاً."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
 msgstr "تنتظر إيداعات CCTP إجراء تحقق شامل ممول على هذه الشبكة."
-
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "CCTP forwarding to Arbitrum usually completes in {0}."
-msgstr "عادةً ما يكتمل تحويل CCTP إلى Arbitrum خلال {0}."
 
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
@@ -1240,7 +1235,6 @@ msgstr "جارٍ التحقق من التوفر في منطقتك. عمليات 
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
 msgstr "جارٍ التحقق من التوفر الإقليمي. إجراءات الخزائن غير متاحة مؤقتًا."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "جارٍ التحقق من مسار الإيداع الحالي في Hyperliquid..."
@@ -1250,7 +1244,6 @@ msgstr "جارٍ التحقق من مسار الإيداع الحالي في Hyp
 #~ msgstr "جارٍ التحقق من مسار السحب الحالي في Hyperliquid..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "جارٍ التحقق..."
 
@@ -2042,7 +2035,6 @@ msgid "Create Vault"
 msgstr "إنشاء خزنة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 
@@ -2173,6 +2165,10 @@ msgstr "يفوّض رصيد HYPE المتاح للتخزين إلى جهة ال�
 #: src/components/staking/staking-view.tsx
 msgid "Delegation"
 msgstr "التفويض"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Depends on network confirmation"
+msgstr "بحسب تأكيد الشبكة"
 
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
@@ -3209,10 +3205,6 @@ msgstr "التمويل"
 msgid "FUNDING"
 msgstr "FUNDING"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Funding chain"
-msgstr "شبكة الإيداع"
-
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
 msgstr "تعذّر التحقق من صحة بيانات التمويل. حدّث الصفحة وحاول مرة أخرى."
@@ -3277,6 +3269,10 @@ msgstr "عمليات إدارة الأموال غير متاحة لهذا الح
 msgid "Funds are in Spot account"
 msgstr "الأموال في حساب Spot"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+msgstr "تصل الأموال بعد تأكيد السحب على Arbitrum. تحقق من الحساب المستلم للتأكد من وصولها."
+
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
 msgstr "تعذّرت قراءة سجل عملية الأموال"
@@ -3297,10 +3293,6 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "الغاز ({0})"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas sponsorship is unavailable for this Arbitrum network."
-msgstr "رعاية رسوم الغاز غير متاحة لشبكة Arbitrum هذه."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -3998,7 +3990,6 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4345,6 +4336,7 @@ msgid "Min price must be below trigger price"
 msgstr "يجب أن يكون السعر الأدنى أقل من سعر التفعيل"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Minimum"
 msgstr "الحد الأدنى"
 
@@ -4486,7 +4478,7 @@ msgstr "الصافي المستلم"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -6194,6 +6186,8 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6690,10 +6684,6 @@ msgstr "إرسال"
 msgid "Send failed"
 msgstr "فشل الإرسال"
 
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Send funds from Hyperliquid to an Arbitrum address."
-msgstr "أرسل الأموال من Hyperliquid إلى عنوان Arbitrum."
-
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "إرسال الرموز"
@@ -6701,6 +6691,10 @@ msgstr "إرسال الرموز"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "أرسل الرموز إلى حساب آخر على Hyperliquid L1."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Send USDC to your wallet address below."
+msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
@@ -7676,10 +7670,6 @@ msgstr "لم تُرجع المنصة الحالة النهائية لأمر TWAP
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr "فشل طلب extraAgents. تواصل محافظ API الحالية العمل، لكن تظل الإدارة معطلة حتى يمكن التحقق من بيانات جديدة."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "The fee will be confirmed using Circle's latest quote before submission."
-msgstr "سيتم تأكيد الرسوم باستخدام أحدث عرض أسعار من Circle قبل الإرسال."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
@@ -8762,8 +8752,6 @@ msgstr "النوع"
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق قبل إعادة المحاولة."
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8777,10 +8765,6 @@ msgstr "تعذر تحميل وضع الحساب الحالي. أعد توصيل 
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to prepare the gas-sponsored wallet for this network."
-msgstr "تعذر إعداد محفظة الرسوم المموّلة لهذه الشبكة."
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8840,10 +8824,6 @@ msgstr "تعذّر التحقق من وضع الحساب الحالي. لم يت
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "تعذر التحقق من رسوم Circle CCTP الحالية وسعة Fast Transfer."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
-msgstr "تعذر التحقق من رسوم Circle الحالية. عمليات الإيداع غير متاحة مؤقتًا."
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Unable to verify the current HyperCore USDC destination."
 #~ msgstr "تعذر التحقق من وجهة USDC الحالية على HyperCore."
@@ -8855,11 +8835,6 @@ msgstr "تعذّر التحقق من مسار الإيداع الحالي في H
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
 msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. لم يُرسل الإيداع."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
-msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. تم إيقاف الإيداعات مؤقتًا."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
@@ -8877,7 +8852,6 @@ msgstr "تعذر التحقق من أهلية السحب. لم يتم إرسال
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "غير متاح"
@@ -9065,10 +9039,6 @@ msgstr "USDC على HyperCore"
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
 msgstr "حجم تداول USDC"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "USDC will be sent to this Arbitrum address."
-msgstr "سيتم إرسال USDC إلى عنوان Arbitrum هذا."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -9445,11 +9415,6 @@ msgstr "مكافأة الترحيب"
 msgid "Whole position"
 msgstr "المركز بالكامل"
 
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "will arrive in {0}"
-msgstr "ستصل خلال {0}"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9485,8 +9450,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "السحب إلى Arbitrum"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdraw USDC"
-msgstr "سحب USDC"
+msgid "Withdraw USDC to Arbitrum"
+msgstr "سحب USDC إلى Arbitrum"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
@@ -9529,10 +9494,6 @@ msgstr "يظل السحب مقفلًا حتى وقت إلغاء القفل ال�
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal remains unavailable until the owner balance is verified."
 msgstr "يظل السحب غير متاح حتى التحقق من رصيد المالك."
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdrawal route"
-msgstr "مسار السحب"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -9676,7 +9637,6 @@ msgstr "مركزك المفتوح الحالي في هذا السوق"
 msgid "Your delegated stake"
 msgstr "حصتك المفوّضة"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "محفظة البريد الإلكتروني غير متاحة. سجّل الخروج ثم سجّل الدخول مجددًا باستخدام البريد الإلكتروني نفسه وأعد المحاولة."

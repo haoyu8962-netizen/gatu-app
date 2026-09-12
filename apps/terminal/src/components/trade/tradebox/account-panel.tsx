@@ -210,11 +210,11 @@ export function AccountPanel() {
 												intent="neutral"
 												disabled={!depositAvailability.available}
 												onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-												aria-label={depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+												aria-label={t`Deposit`}
 												title={depositAvailability.unavailableReason ?? undefined}
 												className="min-h-8 w-full min-w-0 rounded-8 bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
 											>
-												{depositAvailability.available ? t`Deposit` : depositAvailability.unavailableLabel}
+												{t`Deposit`}
 											</Button>
 										</span>
 									</Tooltip>
@@ -237,26 +237,28 @@ export function AccountPanel() {
 										</span>
 									</Tooltip>
 								</div>
-								<Tooltip content={internalTransferDisabledReason} side="top">
-									<span className="inline-flex min-w-0 w-full">
-										<Button
-											variant="outline"
-											intent="neutral"
-											onClick={
-												fundsActionAvailability.internalTransfer.available
-													? () => openTransferModal("toPerp")
-													: undefined
-											}
-											aria-describedby={transferDescriptionIds}
-											iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-											disabled={!fundsActionAvailability.internalTransfer.available}
-											focusableWhenDisabled
-											className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
-										>
-											{overviewLabels.perpsSpot}
-										</Button>
-									</span>
-								</Tooltip>
+								{!usesSharedQuoteBalance ? (
+									<Tooltip content={internalTransferDisabledReason} side="top">
+										<span className="inline-flex min-w-0 w-full">
+											<Button
+												variant="outline"
+												intent="neutral"
+												onClick={
+													fundsActionAvailability.internalTransfer.available
+														? () => openTransferModal("toPerp")
+														: undefined
+												}
+												aria-describedby={transferDescriptionIds}
+												iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+												disabled={!fundsActionAvailability.internalTransfer.available}
+												focusableWhenDisabled
+												className="min-h-8 w-full min-w-0 rounded-8 border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
+											>
+												{overviewLabels.perpsSpot}
+											</Button>
+										</span>
+									</Tooltip>
+								) : null}
 								{hasWalletAccess && showBridgeEntry ? (
 									<Button
 										variant="outline"
@@ -307,7 +309,7 @@ export function AccountPanel() {
 								{overviewLabels.transferBetweenPerpsAndSpot}
 							</span>
 						) : null}
-						{showsSecondaryFundsActions && internalTransferDisabledReason ? (
+						{showsSecondaryFundsActions && !usesSharedQuoteBalance && internalTransferDisabledReason ? (
 							<span id={transferUnavailableId} className="sr-only">
 								{internalTransferDisabledReason}
 							</span>

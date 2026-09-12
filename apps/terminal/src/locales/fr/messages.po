@@ -534,6 +534,10 @@ msgstr "Paramètres avancés"
 msgid "After removal"
 msgstr "Après la suppression"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+msgstr "Une fois les fonds reçus, revenez ici et sélectionnez Déposer pour les transférer vers votre compte de trading."
+
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -844,8 +848,7 @@ msgstr "Vente"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 msgid "Asset"
 msgstr "Actif"
 
@@ -1091,10 +1094,6 @@ msgstr "Acheter long"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "Par défaut, le TP/SL s'applique à toute la position et envoie un ordre au marché lorsque le prix mark atteint le déclencheur. Configurez un montant pour conserver une taille fixe, ou sélectionnez l'exécution limite pour soumettre à votre prix limite."
 
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Calculated after funding"
-msgstr "Calculé après réception des fonds"
-
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "L'accès à la caméra a échoué. Autorisez l'accès à la caméra et réessayez, ou scannez le QR avec la caméra de votre système."
@@ -1179,14 +1178,10 @@ msgid "Cannot switch to Isolated mode with an open position. Close your position
 msgstr "Impossible de passer en mode Isolé avec une position ouverte. Fermez d'abord votre position."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
 msgstr "Les dépôts CCTP sont en attente d’une vérification de bout en bout avec des fonds sur ce réseau."
-
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "CCTP forwarding to Arbitrum usually completes in {0}."
-msgstr "Le transfert CCTP vers Arbitrum se termine généralement sous {0}."
 
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
@@ -1240,7 +1235,6 @@ msgstr "Vérification de la disponibilité dans votre région. Les opérations s
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
 msgstr "Vérification de la disponibilité régionale. Les actions sur les coffres sont temporairement indisponibles."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Vérification de la route de dépôt actuelle d’Hyperliquid…"
@@ -1250,7 +1244,6 @@ msgstr "Vérification de la route de dépôt actuelle d’Hyperliquid…"
 #~ msgstr "Vérification de la route de retrait actuelle d’Hyperliquid…"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "Vérification..."
 
@@ -2042,7 +2035,6 @@ msgid "Create Vault"
 msgstr "Créer un coffre"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "Création de votre portefeuille. Veuillez patienter..."
 
@@ -2173,6 +2165,10 @@ msgstr "Délègue le HYPE disponible en staking au validateur sélectionné."
 #: src/components/staking/staking-view.tsx
 msgid "Delegation"
 msgstr "Délégation"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Depends on network confirmation"
+msgstr "Selon la confirmation du réseau"
 
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
@@ -3209,10 +3205,6 @@ msgstr "Financement"
 msgid "FUNDING"
 msgstr "FUNDING"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Funding chain"
-msgstr "Chaîne de dépôt"
-
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
 msgstr "Les données de financement n’ont pas pu être validées. Actualisez et réessayez."
@@ -3277,6 +3269,10 @@ msgstr "Les opérations sur les fonds ne sont pas disponibles pour ce compte."
 msgid "Funds are in Spot account"
 msgstr "Les fonds sont sur le compte Spot"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+msgstr "Les fonds arrivent après la confirmation du retrait sur Arbitrum. Vérifiez leur réception sur le compte destinataire."
+
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
 msgstr "L’enregistrement de l’opération sur les fonds est illisible"
@@ -3297,10 +3293,6 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "Gas ({0})"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas sponsorship is unavailable for this Arbitrum network."
-msgstr "La prise en charge des frais de gas est indisponible pour ce réseau Arbitrum."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -3998,7 +3990,6 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4345,6 +4336,7 @@ msgid "Min price must be below trigger price"
 msgstr "Le prix minimal doit être inférieur au prix de déclenchement"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -4486,7 +4478,7 @@ msgstr "Net reçu"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -6194,6 +6186,8 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6690,10 +6684,6 @@ msgstr "Envoyer"
 msgid "Send failed"
 msgstr "Échec de l'envoi"
 
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Send funds from Hyperliquid to an Arbitrum address."
-msgstr "Envoyez des fonds de Hyperliquid vers une adresse Arbitrum."
-
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "Envoyer des tokens"
@@ -6701,6 +6691,10 @@ msgstr "Envoyer des tokens"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "Envoyez des tokens vers un autre compte sur le L1 Hyperliquid."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Send USDC to your wallet address below."
+msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
@@ -7676,10 +7670,6 @@ msgstr "La plateforme n’a pas renvoyé le statut final du TWAP. Vérifiez les 
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr "La demande extraAgents a échoué. Les portefeuilles API existants continuent de fonctionner, mais leur gestion reste désactivée jusqu’à la vérification de données actualisées."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "The fee will be confirmed using Circle's latest quote before submission."
-msgstr "Les frais seront confirmés à partir du dernier devis de Circle avant l’envoi."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
@@ -8762,8 +8752,6 @@ msgstr "Type"
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "Impossible d'identifier ce marché TWAP. Actualisez les données du marché avant de réessayer."
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8777,10 +8765,6 @@ msgstr "Impossible de charger le mode de compte actuel. Reconnectez votre portef
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "Impossible de charger les frais actuels de retrait CCTP."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to prepare the gas-sponsored wallet for this network."
-msgstr "Impossible de préparer pour ce réseau le portefeuille dont les frais de gas sont pris en charge."
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8840,10 +8824,6 @@ msgstr "Impossible de vérifier le mode de compte actuel. La requête n’a pas 
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "Impossible de vérifier les frais Circle CCTP actuels et la capacité de Fast Transfer."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
-msgstr "Impossible de vérifier les frais Circle actuels. Les dépôts sont temporairement indisponibles."
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Unable to verify the current HyperCore USDC destination."
 #~ msgstr "Impossible de vérifier la destination USDC actuelle sur HyperCore."
@@ -8855,11 +8835,6 @@ msgstr "Impossible de vérifier la route de dépôt actuelle d’Hyperliquid. Le
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
 msgstr "Impossible de vérifier la route de dépôt actuelle d’Hyperliquid. Le dépôt n’a pas été soumis."
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
-msgstr "Impossible de vérifier la route de dépôt actuelle d’Hyperliquid. Les dépôts sont suspendus."
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
@@ -8877,7 +8852,6 @@ msgstr "Impossible de vérifier l’admissibilité au retrait. La demande n’a 
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "Indisponible"
@@ -9065,10 +9039,6 @@ msgstr "USDC sur HyperCore"
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
 msgstr "Volume en USDC"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "USDC will be sent to this Arbitrum address."
-msgstr "L'USDC sera envoyé à cette adresse Arbitrum."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -9445,11 +9415,6 @@ msgstr "Bonus de bienvenue"
 msgid "Whole position"
 msgstr "Position entière"
 
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "will arrive in {0}"
-msgstr "arrivera dans {0}"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9485,8 +9450,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "Retirer vers Arbitrum"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdraw USDC"
-msgstr "Retirer des USDC"
+msgid "Withdraw USDC to Arbitrum"
+msgstr "Retirer des USDC vers Arbitrum"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
@@ -9529,10 +9494,6 @@ msgstr "Le retrait reste verrouillé jusqu’à l’heure de déverrouillage ind
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal remains unavailable until the owner balance is verified."
 msgstr "Le retrait reste indisponible jusqu’à la vérification du solde du propriétaire."
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdrawal route"
-msgstr "Mode de retrait"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -9676,7 +9637,6 @@ msgstr "Votre position actuellement ouverte sur ce marché"
 msgid "Your delegated stake"
 msgstr "Votre stake délégué"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."

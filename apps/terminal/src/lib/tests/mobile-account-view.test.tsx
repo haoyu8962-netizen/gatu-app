@@ -356,10 +356,10 @@ describe("mobile account view", () => {
 				const buttons = Array.from(actions.querySelectorAll("button"));
 				const transfer = buttons.find((button) => button.textContent === "Perps / Spot");
 				const withdraw = buttons.find((button) => button.textContent === "Withdraw");
-				expect(transfer?.getAttribute("aria-disabled")).toBe("true");
-				expect(transfer?.getAttribute("aria-label")).toBeNull();
-				expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
-				expect(transfer ? getDescriptionText(transfer) : "").not.toContain("Balance data is unavailable");
+				if (accountAbstraction === "disabled") {
+					expect(transfer?.getAttribute("aria-disabled")).toBe("true");
+					expect(transfer ? getDescriptionText(transfer) : "").toContain("Transfer between Perps and Spot");
+				} else expect(transfer).toBeUndefined();
 				expect(withdraw?.getAttribute("aria-disabled")).toBe("true");
 				act(() => {
 					transfer?.click();
@@ -433,12 +433,12 @@ describe("mobile account view", () => {
 		const actions = container.querySelector('[data-slot="mobile-account-actions"]');
 		if (!actions) throw new Error("Missing mobile account actions");
 		const buttons = Array.from(actions.querySelectorAll("button"));
-		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Perps / Spot", "Withdraw"]);
+		expect(buttons.map((button) => button.textContent)).toEqual(["Deposit", "Withdraw", "Perps / Spot"]);
 		expect(container.querySelector('[data-slot="account-spot-funds-notice"]')).toBeNull();
 		expect(container.textContent).not.toContain("Available funds are in Spot");
 		expect(buttons[0]?.getAttribute("aria-label")).toBe(buttons[0]?.textContent);
-		expect(buttons[1]?.getAttribute("aria-label")).toBeNull();
-		expect(buttons[2]?.getAttribute("aria-label")).toBe(buttons[2]?.textContent);
+		expect(buttons[2]?.getAttribute("aria-label")).toBeNull();
+		expect(buttons[1]?.getAttribute("aria-label")).toBe(buttons[1]?.textContent);
 
 		act(() => buttons[0]?.click());
 		act(() => buttons[1]?.click());

@@ -33,7 +33,8 @@ controls does not change the protocol or account identity.
 
 Separate-account withdrawals use `clearinghouseState.withdrawable`; shared
 unified/portfolio-margin withdrawals use available Spot USDC (`total - hold`).
-Shared modes disable Perps / Spot transfers. User-signed funds actions continue
+Shared modes hide Perps / Spot entries while the execution guard continues to
+reject internal transfers. User-signed funds actions continue
 to revalidate identity, legal status, account mode, region and current balances
 at the execution boundary and never use an Agent key as the owner signer.
 
@@ -42,6 +43,16 @@ SDK precision constraint. Max must floor the original decimal string with
 Big.js helpers before assigning the form value; never round through a
 JavaScript number first. Presentation formatting must not feed back into the
 submitted amount.
+
+The shared form displays one visible heading and static Asset / Network details;
+fixed protocol values are not disabled dropdowns. Minimum amount is visible
+before entry. The destination label remains visible with the value: external
+wallets show the exact owner address read-only, while email sessions retain the
+explicit editable recipient. Fees come from the selected route, not from the
+reference application's Across bridge. Estimated arrival is confirmation-dependent;
+neither the form nor the success screen promises a fixed five-minute arrival.
+Passive prerequisite failures keep values quiet, preserve drafts and disable submission.
+A data retry never signs; an earlier retry cannot overwrite a newly opened context.
 
 ## CCTP route
 

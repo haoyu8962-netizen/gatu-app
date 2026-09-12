@@ -69,6 +69,7 @@ const testState = vi.hoisted(() => ({
 	depositAvailable: true,
 	depositUnavailableReason: null as string | null,
 	deposit: vi.fn(),
+	refreshDepositBalance: vi.fn<() => Promise<bigint | undefined>>(),
 	depositError: null as Error | null,
 	depositExecutionRoute: null as "bridge" | "cctp" | null,
 	depositHash: undefined as `0x${string}` | undefined,
@@ -398,6 +399,7 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 			balance: "0",
 			balanceError: null,
 			balanceStatus: "idle",
+			refreshBalance: testState.refreshDepositBalance,
 			deposit: testState.deposit,
 			error: testState.depositError,
 			executionAmount: null,
@@ -461,6 +463,10 @@ vi.mock("@/components/trade/components/pending-action-modal", () => ({
 vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 	DepositForm: ({
 		onRetryRouting,
+		onRetryData,
+		preflightError,
+		isPending,
+		balanceStatus,
 		onSubmit,
 		requiresExplicitFundingDeposit,
 		routingPreflightError,
@@ -473,6 +479,10 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 		cctpFee?: string | null;
 		fundingAddress?: string;
 		onRetryRouting: () => void;
+		onRetryData: () => void;
+		preflightError: string | null;
+		isPending: boolean;
+		balanceStatus: string;
 		onSubmit: () => void;
 		requiresExplicitFundingDeposit?: boolean;
 		routingPreflightError?: string | null;
@@ -484,11 +494,15 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 			"div",
 			{
 				"data-cctp-fee": cctpFee,
+				"data-is-pending": isPending,
+				"data-balance-status": balanceStatus,
 				"data-funding-address": fundingAddress,
 				"data-readiness-status": sponsoredCctpReadiness.status,
 				"data-testid": "deposit-routing-status",
 				"data-status": routingStatus,
 			},
+			createElement("p", { "data-testid": "deposit-data-error" }, preflightError),
+			createElement("button", { onClick: onRetryData, type: "button" }, "Retry deposit data"),
 			routingPreflightError
 				? createElement("p", { "data-testid": "deposit-routing-preflight-error", role: "alert" }, routingPreflightError)
 				: null,
@@ -607,6 +621,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		testState.modalOpen = false;
 		testState.modalOnOpenChange = null;
 		testState.deposit.mockReset();
+		testState.refreshDepositBalance.mockReset().mockResolvedValue(10_000_000n);
 		testState.depositAvailable = true;
 		testState.depositUnavailableReason = null;
 		testState.depositError = null;
@@ -1429,6 +1444,61 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(testState.fetchFreshRouting).not.toHaveBeenCalled();
 	});
 
+	it("retries deposit data without signing and clears feedback only after success", async () => {
+		testState.modalOpen = true;
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.refreshDepositBalance.mockRejectedValueOnce(new Error("private balance transport detail"));
+		await rerender();
+		await act(async () => getButton("Retry deposit data").click());
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe(
+			WITHDRAWAL_MESSAGES.balanceUnavailable,
+		);
+		expect(container.textContent).not.toContain("private balance transport detail");
+		await act(async () => getButton("Retry deposit data").click());
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe("");
+		expect(testState.refreshDepositBalance).toHaveBeenCalledTimes(2);
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("discards an old deposit-data retry after closing and reopening", async () => {
+		testState.modalOpen = true;
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		let fail!: (error: Error) => void;
+		testState.refreshDepositBalance.mockReturnValueOnce(
+			new Promise((_, reject) => {
+				fail = reject;
+			}),
+		);
+		await rerender();
+		await act(async () => getButton("Retry deposit data").click());
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-is-pending")).toBe(
+			"false",
+		);
+		expect(container.querySelector('[data-testid="deposit-routing-status"]')?.getAttribute("data-balance-status")).toBe(
+			"loading",
+		);
+		testState.modalOpen = false;
+		await rerender();
+		testState.modalOpen = true;
+		await rerender();
+		await act(async () => fail(new Error("old retry")));
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toBe("");
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("keeps a confirmed capacity failure visible after a data retry", async () => {
+		testState.modalOpen = true;
+		testState.emailAddress = "owner@example.com";
+		testState.routingResponse = { depositRoute: "cctp", withdrawalRoute: "cctp" };
+		testState.refreshDepositBalance.mockResolvedValue(150_000_000n);
+		await rerender();
+		await act(async () => getButton("Retry deposit data").click());
+		expect(container.querySelector('[data-testid="deposit-data-error"]')?.textContent).toContain(
+			"Circle Fast Transfer capacity",
+		);
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
 	it("surfaces a final deposit-route request failure instead of leaving a ready button silently active", async () => {
 		testState.modalOpen = true;
 		testState.activeTab = "deposit";
@@ -1532,7 +1602,7 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 		const withdrawTitle = container.querySelector("h2");
 		expect(withdrawTitle?.textContent).toBe("Withdraw");
-		expect(withdrawTitle?.className).not.toContain("sr-only");
+		expect(withdrawTitle?.className).toContain("sr-only");
 	});
 
 	it("queries the shared Circle fee cache for the embedded wallet's current sponsored deposit amount", async () => {

@@ -416,21 +416,20 @@ describe("desktop account panel", () => {
 			expect(container.querySelectorAll('[data-slot="account-panel-actions"]')).toHaveLength(state.connected ? 1 : 0);
 			expect(
 				Array.from(container.querySelectorAll("button")).filter((button) => button.textContent === "Perps / Spot"),
-			).toHaveLength(state.connected ? 1 : 0);
+			).toHaveLength(state.connected && state.mode === "disabled" ? 1 : 0);
 		}
 		expect(modalActions.openDeposit).not.toHaveBeenCalled();
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 
 	it.each(["unifiedAccount", "portfolioMargin"])(
-		"keeps the relocated transfer inactive in %s and restores its route in separate mode",
+		"hides internal transfer in %s and restores its route in separate mode",
 		(accountAbstraction) => {
 			testState.accountAbstraction = accountAbstraction;
 			renderPanel();
-			const transfer = findButton(container, "Perps / Spot");
-			expectActionDisabled(transfer);
-			expect(transfer.closest('[data-slot="account-panel-actions"]')).not.toBeNull();
-			act(() => transfer.click());
+			expect(
+				Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+			).toBe(false);
 			expect(modalActions.openTransfer).not.toHaveBeenCalled();
 			act(() => findButton(container, "Deposit").click());
 			act(() => findButton(container, "Withdraw").click());
@@ -517,15 +516,9 @@ describe("desktop account panel", () => {
 		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
 		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
 
-		const transfer = findButton(container, "Perps / Spot");
-		expect(transfer.getAttribute("aria-disabled")).toBe("true");
-		expect(transfer.disabled).toBe(false);
-		const describedBy = transfer.getAttribute("aria-describedby");
-		expect(describedBy).not.toBeNull();
-		expect(transfer.getAttribute("aria-label")).toBeNull();
-		expect(getDescriptionText(transfer)).toContain("Transfer between Perps and Spot");
-		expect(getDescriptionText(transfer)).toContain("shared-balance account modes");
-		act(() => transfer.click());
+		expect(
+			Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
+		).toBe(false);
 		expect(modalActions.openTransfer).not.toHaveBeenCalled();
 	});
 

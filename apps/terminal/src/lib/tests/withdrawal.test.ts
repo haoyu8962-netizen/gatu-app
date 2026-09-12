@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { i18n } from "@lingui/core";
+import { describe, expect, it } from "vitest";
 import { ARBITRUM_CCTP_DOMAIN, CCTP_NETWORKS } from "@/config/cctp";
 import { getCctpWithdrawalFeeRequest } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import {
@@ -12,10 +13,7 @@ import {
 	validateWithdrawal,
 } from "@/lib/trade/withdrawal";
 
-vi.mock("@lingui/core/macro", () => ({
-	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
-		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
-}));
+i18n.loadAndActivate({ locale: "en", messages: {} });
 
 const DESTINATION = "0x1111111111111111111111111111111111111111" as const;
 
@@ -75,44 +73,56 @@ describe("withdrawal amounts", () => {
 	it("matches the official CCTP UI minimum of twice the forwarding fee", () => {
 		expect(getMinimumWithdrawal("arbitrum-cctp", "0.2")).toBe("0.4");
 		expect(
-			validateWithdrawal({
-				amount: "0.399999",
-				available: "10",
-				route: "arbitrum-cctp",
-				routeFee: "0.2",
-				activationFee: "0",
-			}),
+			validateWithdrawal(
+				{
+					amount: "0.399999",
+					available: "10",
+					route: "arbitrum-cctp",
+					routeFee: "0.2",
+					activationFee: "0",
+				},
+				(descriptor) => i18n._(descriptor),
+			),
 		).toEqual({ valid: false, error: "Minimum withdrawal is $0.4" });
 		expect(
-			validateWithdrawal({
-				amount: "0.4",
-				available: "10",
-				route: "arbitrum-cctp",
-				routeFee: "0.2",
-				activationFee: "0",
-			}),
+			validateWithdrawal(
+				{
+					amount: "0.4",
+					available: "10",
+					route: "arbitrum-cctp",
+					routeFee: "0.2",
+					activationFee: "0",
+				},
+				(descriptor) => i18n._(descriptor),
+			),
 		).toEqual({ valid: true, error: null });
 	});
 
 	it("accounts for the separate one-time HyperCore activation fee", () => {
 		expect(getMaximumWithdrawal("5.5", "1")).toBe("4.5");
 		expect(
-			validateWithdrawal({
-				amount: "5",
-				available: "5.5",
-				route: "arbitrum-cctp",
-				routeFee: "0.2",
-				activationFee: "1",
-			}),
+			validateWithdrawal(
+				{
+					amount: "5",
+					available: "5.5",
+					route: "arbitrum-cctp",
+					routeFee: "0.2",
+					activationFee: "1",
+				},
+				(descriptor) => i18n._(descriptor),
+			),
 		).toEqual({ valid: false, error: "Insufficient balance" });
 		expect(
-			validateWithdrawal({
-				amount: "4.5",
-				available: "5.5",
-				route: "arbitrum-cctp",
-				routeFee: "0.2",
-				activationFee: "1",
-			}),
+			validateWithdrawal(
+				{
+					amount: "4.5",
+					available: "5.5",
+					route: "arbitrum-cctp",
+					routeFee: "0.2",
+					activationFee: "1",
+				},
+				(descriptor) => i18n._(descriptor),
+			),
 		).toEqual({ valid: true, error: null });
 	});
 
@@ -123,13 +133,16 @@ describe("withdrawal amounts", () => {
 
 	it("fails closed while the dynamic fee is unavailable", () => {
 		expect(
-			validateWithdrawal({
-				amount: "10",
-				available: "20",
-				route: "arbitrum-cctp",
-				routeFee: null,
-				activationFee: "0",
-			}),
+			validateWithdrawal(
+				{
+					amount: "10",
+					available: "20",
+					route: "arbitrum-cctp",
+					routeFee: null,
+					activationFee: "0",
+				},
+				(descriptor) => i18n._(descriptor),
+			),
 		).toEqual({ valid: false, error: null });
 	});
 });

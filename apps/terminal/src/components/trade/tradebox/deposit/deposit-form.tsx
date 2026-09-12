@@ -1,14 +1,13 @@
 import { Button } from "@gatu/ui";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 import type { SponsoredCctpReadiness } from "@/lib/hyperliquid/use-deposit";
 import { AmountInput } from "./amount-input";
-import { AssetSelect } from "./asset-select";
 import { FundingAddressCard } from "./funding-address-card";
-import { NetworkSelect } from "./shared-ui";
+import { FundsRouteDetails } from "./funds-route-details";
 import { UnitDepositInfo } from "./unit-deposit-info";
 
 interface Props {
@@ -18,9 +17,10 @@ interface Props {
 	maxAmount: string;
 	maxDepositRaw: bigint | undefined;
 	balanceStatus: "idle" | "loading" | "success" | "error";
-	balanceError: Error | null;
 	validation: { valid: boolean; error: string | null };
 	amountError?: string | null;
+	preflightError?: string | null;
+	onRetryData: () => void;
 	isPending: boolean;
 	onSubmit: () => void;
 	routingStatus: UsdcRoutingQueryStatus;
@@ -51,9 +51,10 @@ export function DepositForm({
 	maxAmount,
 	maxDepositRaw,
 	balanceStatus,
-	balanceError,
 	validation,
 	amountError = null,
+	preflightError = null,
+	onRetryData,
 	isPending,
 	onSubmit,
 	routingStatus,
@@ -76,7 +77,6 @@ export function DepositForm({
 	onRetryFundingAddress,
 	onDone,
 }: Props) {
-	const { t } = useLingui();
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
 	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
@@ -90,12 +90,16 @@ export function DepositForm({
 		!explicitFundingDepositReady ||
 		!validation.valid ||
 		isPending ||
-		balanceStatus === "loading" ||
-		balanceStatus === "error" ||
+		fundingAddressPending ||
+		!!fundingAddressError ||
+		!!depositUnavailableReason ||
+		!!routingPreflightError ||
+		balanceStatus !== "success" ||
 		cctpFeeLoading ||
+		cctpFeeError ||
 		pendingCctpRecovery;
 	const routingNotice = (() => {
-		if (!routingPreflightError && (routingStatus === "loading" || (cctpRoutingReady && !fundingAddress))) {
+		if (!routingPreflightError && !bridgeRoutingReady) {
 			return null;
 		}
 		return (
@@ -106,10 +110,8 @@ export function DepositForm({
 				<p>
 					{routingPreflightError ? (
 						routingPreflightError
-					) : bridgeRoutingReady ? (
-						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
 					) : (
-						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
+						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
 					)}
 				</p>
 				{routingPreflightError && bridgeRoutingReady ? (
@@ -117,7 +119,7 @@ export function DepositForm({
 						<Trans>Legacy Bridge2 deposits are no longer accepted. Deposits are paused.</Trans>
 					</p>
 				) : null}
-				{routingPreflightError || !bridgeRoutingReady ? (
+				{routingPreflightError ? (
 					<Button
 						variant="link"
 						intent="neutral"
@@ -131,49 +133,43 @@ export function DepositForm({
 			</div>
 		);
 	})();
+	const actionNotice = preflightError ?? depositUnavailableReason;
 	const formValidationNotice =
-		!routingNotice && validation.error && validation.error !== amountError ? (
+		!routingNotice && actionNotice ? (
 			<div
 				role="alert"
-				className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
+				className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-xs text-market-close-danger"
 			>
-				{validation.error}
+				{actionNotice}
 			</div>
+		) : null;
+	const retryDataAction =
+		(balanceStatus === "error" || cctpFeeError || preflightError) && !depositUnavailableReason ? (
+			<Button
+				variant="link"
+				intent="neutral"
+				size="xxs"
+				className="h-auto self-start p-0"
+				onClick={onRetryData}
+				disabled={isPending || balanceStatus === "loading" || cctpFeeLoading}
+			>
+				<Trans>Retry</Trans>
+			</Button>
 		) : null;
 	const embeddedDepositStatus = (() => {
 		if (!sponsoredCctpEnabled) {
-			return {
-				tone: "error" as const,
-				text: <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>,
-			};
+			return <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>;
 		}
-		if (balanceStatus === "loading") {
-			return null;
-		}
-		if (balanceStatus === "error") {
-			return {
-				tone: "error" as const,
-				text: balanceError?.message || t`Unable to load Arbitrum USDC balance`,
-			};
-		}
+		if (balanceStatus !== "success") return null;
 		if (maxDepositRaw === undefined || maxDepositRaw === 0n) {
 			return null;
 		}
 		if (maxDepositRaw < MIN_DEPOSIT_USDC) {
-			return {
-				tone: "error" as const,
-				text: (
-					<Trans>
-						Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
-					</Trans>
-				),
-			};
-		}
-		if (validation.error) {
-			return {
-				tone: "error" as const,
-				text: validation.error,
-			};
+			return (
+				<Trans>
+					Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
+				</Trans>
+			);
 		}
 		return null;
 	})();
@@ -187,20 +183,7 @@ export function DepositForm({
 					<Trans>Minimum</Trans> {minimumDeposit}
 				</span>
 			</div>
-			<div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-				<AssetSelect presentation="funding" />
-				<span className="text-[13px] text-market-close-stroke-control" aria-hidden="true">
-					·
-				</span>
-				<NetworkSelect
-					label={usesFundingAddressFlow ? t`Funding chain` : t`Network`}
-					value="arbitrum"
-					onChange={() => {}}
-					disabled
-					displayName={networkName}
-					presentation="funding"
-				/>
-			</div>
+			<FundsRouteDetails network={networkName} />
 		</div>
 	);
 
@@ -213,6 +196,7 @@ export function DepositForm({
 					size="xxs"
 					className="h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
 					onClick={onRetryRouting}
+					disabled={isPending}
 				>
 					<Trans>Retry</Trans>
 				</Button>
@@ -247,10 +231,8 @@ export function DepositForm({
 					return <Trans>Gas-sponsored CCTP deposits are not enabled for this network.</Trans>;
 				case "wrong-chain":
 					return <Trans>The gas-sponsored wallet is configured for a different Arbitrum network.</Trans>;
-				case "paymaster-unavailable":
-					return <Trans>Gas sponsorship is unavailable for this Arbitrum network.</Trans>;
 				default:
-					return <Trans>Unable to prepare the gas-sponsored wallet for this network.</Trans>;
+					return null;
 			}
 		})();
 		const fundingAddressReady =
@@ -267,7 +249,7 @@ export function DepositForm({
 				return { message: routingPreflightError, action: retryRoutingAction, state: "unavailable" } as const;
 			}
 			if (routingStatus === "loading") {
-				return { message: <Trans>Checking the current Hyperliquid deposit route...</Trans>, state: "loading" } as const;
+				return { state: "loading" } as const;
 			}
 			if (cctpRoutingReady && !sponsoredCctpEnabled) {
 				return {
@@ -283,19 +265,17 @@ export function DepositForm({
 			}
 			if (!cctpRoutingReady) {
 				return {
-					message: <Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>,
 					action: retryRoutingAction,
-					state: "unavailable",
+					state: "pending",
 				} as const;
 			}
 			if (fundingAddressPending) {
-				return { message: <Trans>Creating your wallet. Please wait...</Trans>, state: "loading" } as const;
+				return { state: "loading" } as const;
 			}
 			if (fundingAddressError) {
 				return {
-					message: fundingAddressError,
 					action: retryFundingAddressAction,
-					state: "unavailable",
+					state: "pending",
 				} as const;
 			}
 			if (sponsoredCctpReadiness.status === "idle" || sponsoredCctpReadiness.status === "loading") {
@@ -303,18 +283,15 @@ export function DepositForm({
 			}
 			if (sponsoredCctpReadiness.status === "error") {
 				return {
-					message: sponsoredReadinessError,
+					...(sponsoredCctpReadiness.failure === "build-gate-disabled" ||
+					sponsoredCctpReadiness.failure === "wrong-chain"
+						? { message: sponsoredReadinessError, state: "unavailable" as const }
+						: { state: "pending" as const }),
 					action: retrySponsoredReadinessAction,
-					state: "unavailable",
 				} as const;
 			}
 			if (fundingAddressReady && fundingAddress) return { address: fundingAddress, state: "ready" } as const;
-			return {
-				message: (
-					<Trans>Your email wallet is unavailable. Sign out and log in again with the same email, then retry.</Trans>
-				),
-				state: "unavailable",
-			} as const;
+			return { state: "pending", action: retryFundingAddressAction } as const;
 		})();
 		const showFundingDestinationDetails =
 			!depositUnavailableReason &&
@@ -339,9 +316,16 @@ export function DepositForm({
 
 		return (
 			<div
-				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg min-[1001px]:min-h-[37.5rem]"
+				className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
 				data-deposit-layout="funding-address"
 				data-deposit-readiness={sponsoredCctpReadiness.status}
+				aria-busy={
+					routingStatus === "loading" ||
+					fundingAddressState.state === "loading" ||
+					balanceStatus === "loading" ||
+					cctpFeeLoading ||
+					isPending
+				}
 			>
 				<div className="pt-0.5 text-center">
 					<h3 className="text-[15px] leading-5 font-bold">
@@ -349,6 +333,21 @@ export function DepositForm({
 					</h3>
 				</div>
 
+				{requiresExplicitFundingDeposit && fundingAddressState.state !== "unavailable" ? (
+					<ol
+						className="list-decimal space-y-1 pl-4 text-xs leading-5 text-market-close-muted"
+						data-slot="funding-steps"
+					>
+						<li>
+							<Trans>Send USDC to your wallet address below.</Trans>
+						</li>
+						<li>
+							<Trans>
+								After the funds arrive, return here and select Deposit to move them into your trading account.
+							</Trans>
+						</li>
+					</ol>
+				) : null}
 				{transferSelectors}
 
 				<FundingAddressCard {...fundingAddressState} />
@@ -357,16 +356,10 @@ export function DepositForm({
 					<div className="contents" data-deposit-slot="funding-details">
 						{fundingAddressReady && embeddedDepositStatus ? (
 							<div
-								role={embeddedDepositStatus.tone === "error" ? "alert" : "status"}
-								className={
-									embeddedDepositStatus.tone === "error"
-										? "rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
-										: embeddedDepositStatus.tone === "success"
-											? "rounded-[10px] border border-stroke-success-weak bg-success-soft px-3 py-2.5 text-center text-xs leading-relaxed text-success"
-											: "rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
-								}
+								role="alert"
+								className="rounded-8 border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 							>
-								{embeddedDepositStatus.text}
+								{embeddedDepositStatus}
 							</div>
 						) : null}
 
@@ -418,6 +411,12 @@ export function DepositForm({
 					</div>
 				) : null}
 
+				{preflightError ? (
+					<div role="alert" className="text-xs text-market-close-danger">
+						{preflightError}
+					</div>
+				) : null}
+				{retryDataAction}
 				{showExplicitFundingDepositAction ? (
 					<Button
 						variant="filled"
@@ -427,7 +426,8 @@ export function DepositForm({
 						aria-busy={isPending}
 						className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90 data-disabled:bg-market-close-stroke-control data-disabled:text-market-close-on-control"
 					>
-						<Trans>Deposit</Trans> <span className="tabular-nums">{balance} USDC</span>
+						<Trans>Deposit</Trans>{" "}
+						<span className="tabular-nums">{balanceStatus === "success" ? balance : "--"} USDC</span>
 					</Button>
 				) : null}
 
@@ -444,7 +444,10 @@ export function DepositForm({
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
+		<div
+			className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg"
+			aria-busy={routingStatus === "loading" || balanceStatus === "loading" || cctpFeeLoading || isPending}
+		>
 			<div className="flex flex-col items-center gap-2 text-center">
 				<img src={USDC_ICON_URL} alt="" aria-hidden="true" className="size-10 rounded-full" />
 				<div className="space-y-0.5">
@@ -453,12 +456,10 @@ export function DepositForm({
 					</h3>
 					<p className="min-h-[18px] text-[11px] leading-[18px] text-market-close-subtle">
 						{cctpRoutingReady ? (
-							cctpFeeError ? (
-								<Trans>Unable to verify the current Circle fee. Deposits are temporarily unavailable.</Trans>
-							) : cctpFee ? (
+							!cctpFeeError && !cctpFeeLoading && cctpFee ? (
 								<Trans>Up to {cctpFee} USDC in fees will be deducted from your deposit.</Trans>
 							) : (
-								<Trans>The fee will be confirmed using Circle's latest quote before submission.</Trans>
+								<span aria-hidden="true">--</span>
 							)
 						) : null}
 					</p>
@@ -469,6 +470,12 @@ export function DepositForm({
 
 			{routingNotice}
 			{formValidationNotice}
+			{retryDataAction}
+			{!routingNotice && (routingStatus === "error" || routingStatus === "unknown") ? (
+				<Button variant="link" intent="neutral" size="xxs" onClick={onRetryRouting} disabled={isPending}>
+					<Trans>Retry</Trans>
+				</Button>
+			) : null}
 			{pendingCctpRecovery ? (
 				<div className="rounded-[10px] border border-stroke-weak bg-fill-weak px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
@@ -481,7 +488,6 @@ export function DepositForm({
 				balance={balance}
 				maxAmount={maxAmount}
 				balanceStatus={balanceStatus}
-				balanceError={balanceError}
 				validation={validation}
 				amountError={amountError}
 				isPending={isPending}

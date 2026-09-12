@@ -12,7 +12,6 @@ import {
 	isCctpSponsoredDepositEnabled,
 } from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
-import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import {
 	getAccountBalanceSummary,
@@ -91,8 +90,6 @@ import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
 
 const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
 
-const ARBITRUM_NETWORK = NETWORKS[0];
-
 interface WithdrawalAttempt {
 	activationFee: string;
 	amount: string;
@@ -151,22 +148,25 @@ export function DepositModal() {
 			)
 		: null;
 	const [depositCctpPreflightErrorCode, setDepositCctpPreflightErrorCode] = useState<
-		"capacity-unavailable" | "fee-changed" | "verification-unavailable" | null
+		"capacity-unavailable" | "fee-changed" | "verification-unavailable" | "balance-unavailable" | null
 	>(null);
 	const depositCctpPreflightError =
-		depositCctpPreflightErrorCode === "verification-unavailable"
-			? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
-			: depositCctpPreflightErrorCode === "capacity-unavailable"
-				? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
-				: depositCctpPreflightErrorCode === "fee-changed"
-					? t`Circle fees changed. Review the updated fee, then submit again.`
-					: null;
+		depositCctpPreflightErrorCode === "balance-unavailable"
+			? formatFundsActionFeedback("balance-unavailable", (descriptor) => t(descriptor))
+			: depositCctpPreflightErrorCode === "verification-unavailable"
+				? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+				: depositCctpPreflightErrorCode === "capacity-unavailable"
+					? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+					: depositCctpPreflightErrorCode === "fee-changed"
+						? t`Circle fees changed. Review the updated fee, then submit again.`
+						: null;
 	const [withdrawalRoutingPreflightFailed, setWithdrawalRoutingPreflightFailed] = useState(false);
 	const [withdrawalPreflightFeedback, setWithdrawalPreflightFeedback] = useState<{
 		contextIdentity: string;
 		code: FundsActionFeedbackCode;
 	} | null>(null);
 	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
+	const [isDepositDataRetrying, setIsDepositDataRetrying] = useState(false);
 	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const depositPreflightIdRef = useRef(0);
 	const withdrawalPreflightRef = useRef<WithdrawalPreflightAttempt | null>(null);
@@ -234,7 +234,7 @@ export function DepositModal() {
 		maxAmount: maxDepositAmount,
 		maxDepositRaw,
 		balanceStatus: depositBalanceStatus,
-		balanceError: depositBalanceError,
+		refreshBalance: refreshDepositBalance,
 		status: depositStatus,
 		error: depositError,
 		hash: depositHash,
@@ -482,6 +482,7 @@ export function DepositModal() {
 		withdrawalPreflightRef.current = null;
 		withdrawalExecutionReviewRef.current = null;
 		setIsDepositPreflighting(false);
+		setIsDepositDataRetrying(false);
 		setIsWithdrawalPreflighting(false);
 		setWithdrawalPreflightFeedback(null);
 		return () => {
@@ -504,13 +505,16 @@ export function DepositModal() {
 		withdrawalRoute === "arbitrum-legacy" || preTransferCheckQuery.isSuccess
 			? getMaximumWithdrawal(exactWithdrawable, withdrawalActivationFee)
 			: "0";
-	const withdrawValidation = validateWithdrawal({
-		amount: withdrawAmount,
-		available: exactWithdrawable,
-		route: withdrawalRoute,
-		routeFee: withdrawalRouteFee,
-		activationFee: withdrawalActivationFee,
-	});
+	const withdrawValidation = validateWithdrawal(
+		{
+			amount: withdrawAmount,
+			available: exactWithdrawable,
+			route: withdrawalRoute,
+			routeFee: withdrawalRouteFee,
+			activationFee: withdrawalActivationFee,
+		},
+		(descriptor) => t(descriptor),
+	);
 	const isDepositPending = isDepositPreflighting || depositStatus === "pending" || depositStatus === "confirming";
 	const displayedDepositAmount = depositExecutionAmount ?? depositAmount;
 	const walletDepositProviderUnavailable =
@@ -813,6 +817,7 @@ export function DepositModal() {
 		setWithdrawalRoutingPreflightFailed(false);
 		setWithdrawalPreflightFeedback(null);
 		setIsDepositPreflighting(false);
+		setIsDepositDataRetrying(false);
 		setIsWithdrawalPreflighting(false);
 		observedWithdrawalRouteRef.current = null;
 		close();
@@ -837,6 +842,7 @@ export function DepositModal() {
 			!depositValidation.valid ||
 			!canUseDeposit ||
 			isDepositPending ||
+			isDepositDataRetrying ||
 			!depositRouteReady
 		) {
 			return;
@@ -985,13 +991,16 @@ export function DepositModal() {
 				return;
 			}
 
-			const freshValidation = validateWithdrawal({
-				amount: reviewedAmount,
-				available: exactWithdrawable,
-				route: expectedWithdrawalRoute,
-				routeFee: freshRouteFee,
-				activationFee: cctpPreTransferReview?.fee ?? "0",
-			});
+			const freshValidation = validateWithdrawal(
+				{
+					amount: reviewedAmount,
+					available: exactWithdrawable,
+					route: expectedWithdrawalRoute,
+					routeFee: freshRouteFee,
+					activationFee: cctpPreTransferReview?.fee ?? "0",
+				},
+				(descriptor) => t(descriptor),
+			);
 			if (!freshValidation.valid) {
 				reportPreflightFailure("withdrawal-conditions-changed");
 				return;
@@ -1118,12 +1127,51 @@ export function DepositModal() {
 		}
 	}
 
+	async function handleDepositDataRetry() {
+		const contextIdentity = fundsModalContextIdentityRef.current;
+		if (contextIdentity !== fundsModalContextIdentity || isDepositPending || isDepositDataRetrying) return;
+		const retryId = ++depositPreflightIdRef.current;
+		const isCurrent = () =>
+			fundsModalContextIdentityRef.current === contextIdentity && depositPreflightIdRef.current === retryId;
+		setIsDepositDataRetrying(true);
+		let failureCode: "balance-unavailable" | "verification-unavailable" = "balance-unavailable";
+		try {
+			const balance = await refreshDepositBalance();
+			if (!isCurrent()) return;
+			if (balance === undefined) {
+				setDepositCctpPreflightErrorCode("balance-unavailable");
+				return;
+			}
+			failureCode = "verification-unavailable";
+			const fee = await displayedCctpDepositFeeQuery.refetch();
+			if (!isCurrent()) return;
+			if (fee.isError || !fee.data) {
+				setDepositCctpPreflightErrorCode("verification-unavailable");
+				return;
+			}
+			const amountRaw = isEmbeddedDeposit ? balance : reviewedDepositAmountRaw;
+			setDepositCctpPreflightErrorCode(
+				amountRaw !== undefined && fee.data.fastAllowanceRaw < amountRaw ? "capacity-unavailable" : null,
+			);
+		} catch {
+			if (isCurrent()) setDepositCctpPreflightErrorCode(failureCode);
+		} finally {
+			if (isCurrent()) setIsDepositDataRetrying(false);
+		}
+	}
+
 	async function handleDepositRoutingRetry() {
 		const contextIdentity = fundsModalContextIdentityRef.current;
-		if (contextIdentity !== fundsModalContextIdentity) return;
-		const result = await usdcRoutingQuery.refetch();
-		if (fundsModalContextIdentityRef.current !== contextIdentity) return;
-		setDepositRoutingPreflightErrorCode(result.isError || !result.data ? "unavailable" : null);
+		if (contextIdentity !== fundsModalContextIdentity || isDepositPending || isDepositDataRetrying) return;
+		const retryId = ++depositPreflightIdRef.current;
+		const isCurrent = () =>
+			fundsModalContextIdentityRef.current === contextIdentity && depositPreflightIdRef.current === retryId;
+		try {
+			const result = await usdcRoutingQuery.refetch();
+			if (isCurrent()) setDepositRoutingPreflightErrorCode(result.isError || !result.data ? "unavailable" : null);
+		} catch {
+			if (isCurrent()) setDepositRoutingPreflightErrorCode("unavailable");
+		}
 	}
 
 	function handleWithdrawalErrorRetry() {
@@ -1368,7 +1416,6 @@ export function DepositModal() {
 
 	if (isWithdrawSuccess && withdrawalAttempt) {
 		const withdrawNetReceived = getWithdrawalNetReceived(withdrawalAttempt.amount, withdrawalAttempt.routeFee);
-		const isCctpWithdrawal = withdrawalAttempt.route === "arbitrum-cctp";
 
 		return (
 			<StatusScreen
@@ -1382,27 +1429,23 @@ export function DepositModal() {
 						<div>
 							<Trans>Net received</Trans>:{" "}
 							<span className="tabular-nums font-medium text-success">
-								${formatNumber(Number(withdrawNetReceived ?? 0), 2)}
+								${formatNumber(withdrawNetReceived ?? "0", 2)}
 							</span>
 						</div>
 						<div className="text-fg-muted">
 							<Trans>Withdrawal fee</Trans>:{" "}
-							<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.routeFee), 2)}</span>
+							<span className="tabular-nums">${formatNumber(withdrawalAttempt.routeFee, 2)}</span>
 						</div>
 						{isPositiveDecimal(withdrawalAttempt.activationFee) ? (
 							<div className="text-fg-muted">
 								<Trans>One-time account activation fee</Trans>:{" "}
-								<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.activationFee), 2)}</span>
+								<span className="tabular-nums">${formatNumber(withdrawalAttempt.activationFee, 2)}</span>
 							</div>
 						) : null}
 						<div className="text-fg-muted">
-							{isCctpWithdrawal ? (
-								<Trans>
-									CCTP forwarding to Arbitrum usually completes in {ARBITRUM_NETWORK.estimatedWithdrawTime}.
-								</Trans>
-							) : (
-								<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
-							)}
+							<Trans>
+								Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt.
+							</Trans>
 						</div>
 					</div>
 				}
@@ -1472,15 +1515,7 @@ export function DepositModal() {
 						: undefined
 				}
 			>
-				<ModalTitle
-					className={
-						usesFundsRedesign
-							? visibleTab === "deposit"
-								? "sr-only"
-								: "text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6"
-							: undefined
-					}
-				>
+				<ModalTitle className={usesFundsRedesign ? "sr-only" : undefined}>
 					{visibleTab === "deposit" ? (
 						<Trans>Deposit</Trans>
 					) : visibleTab === "withdraw" ? (
@@ -1505,9 +1540,10 @@ export function DepositModal() {
 								balance={depositBalance}
 								maxAmount={maxDepositAmount}
 								maxDepositRaw={maxDepositRaw}
-								balanceStatus={depositBalanceStatus}
-								balanceError={depositBalanceError}
+								balanceStatus={isDepositDataRetrying ? "loading" : depositBalanceStatus}
 								validation={depositValidation}
+								preflightError={depositCctpPreflightError}
+								onRetryData={handleDepositDataRetry}
 								amountError={cctpDepositAmountLimitError ?? baseDepositValidation.error}
 								isPending={isDepositPending}
 								onSubmit={handleDepositSubmit}
@@ -1518,10 +1554,20 @@ export function DepositModal() {
 								networkName={depositNetworkName}
 								sponsoredCctpEnabled={sponsoredCctpEnabled}
 								sponsoredCctpReadiness={sponsoredCctpReadiness}
-								depositUnavailableReason={getFundsAvailabilityNotice(depositAvailability)}
+								depositUnavailableReason={
+									getFundsAvailabilityNotice(depositAvailability) ??
+									(depositRouteReady &&
+									selectedDepositRoute === "cctp" &&
+									!isEmbeddedDeposit &&
+									!cctpExternalDepositEnabled
+										? t`CCTP deposits are awaiting funded end-to-end verification for this network.`
+										: null)
+								}
 								requiresExplicitFundingDeposit={isEmbeddedDeposit && !isTestnet}
 								cctpFee={cctpDepositFee}
-								cctpFeeLoading={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading}
+								cctpFeeLoading={
+									isDepositDataRetrying || (selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isLoading)
+								}
 								cctpFeeError={selectedDepositRoute === "cctp" && displayedCctpDepositFeeQuery.isError}
 								pendingCctpRecovery={
 									!depositHash &&
@@ -1557,7 +1603,7 @@ export function DepositModal() {
 							<WithdrawForm
 								amount={withdrawAmount}
 								onAmountChange={setWithdrawAmount}
-								destination={withdrawDestination}
+								destination={requiresWithdrawDestination ? withdrawDestination : (walletAddress ?? "")}
 								onDestinationChange={setWithdrawDestination}
 								destinationRequired={requiresWithdrawDestination}
 								destinationError={withdrawDestinationError}
@@ -1574,7 +1620,11 @@ export function DepositModal() {
 								prerequisiteError={withdrawalPrerequisiteError}
 								canRetryPrerequisites={canRetryWithdrawalPrerequisites}
 								onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
-								validation={withdrawValidation}
+								validation={{
+									...withdrawValidation,
+									error:
+										withdrawalPrerequisitesReady && !withdrawalPrerequisitesPending ? withdrawValidation.error : null,
+								}}
 								canSubmit={canSubmitWithdraw}
 								isPending={isWithdrawPending}
 								onSubmit={handleWithdrawSubmit}

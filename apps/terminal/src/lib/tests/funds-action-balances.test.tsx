@@ -320,6 +320,24 @@ describe("funds action balance wiring", () => {
 		expect(getAmountInput(container).value).toBe("4964.51");
 	});
 
+	it.each(["toSpot", "toPerp"] as const)(
+		"keeps Max, validation and SDK amounts exact for %s",
+		async (initialDirection) => {
+			testState.balances.withdrawable = "1000000000000000.999999";
+			testState.balances.spotBalances[0].total = "1000000000000001.000001";
+			testState.balances.spotBalances[0].hold = "0.000002";
+			testState.runGuardsOnMutation = true;
+			act(() => root.render(createElement(TransferModal, { initialDirection, onOpenChange: vi.fn(), open: true })));
+			clickAvailableBalance(container);
+			expect(getAmountInput(container).value).toBe("1000000000000000.99");
+			await act(async () => getButton(container, "Transfer").click());
+			expect(testState.exchangeMutations.usdClassTransfer).toHaveBeenCalledExactlyOnceWith({
+				amount: "1000000000000000.99",
+				toPerp: initialDirection === "toPerp",
+			});
+		},
+	);
+
 	it("uses clearinghouseState.withdrawable for sends from the Perps account", () => {
 		act(() => root.render(createElement(SendModal, { initialAccountType: "perp", onOpenChange: vi.fn(), open: true })));
 

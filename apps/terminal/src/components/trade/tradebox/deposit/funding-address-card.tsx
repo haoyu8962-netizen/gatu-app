@@ -9,11 +9,10 @@ interface ReadyProps {
 	state: "ready";
 }
 
-interface LoadingProps {
+interface PendingProps {
 	address?: never;
 	action?: ReactNode;
-	message?: ReactNode;
-	state: "loading";
+	state: "loading" | "pending";
 }
 
 interface UnavailableProps {
@@ -23,7 +22,7 @@ interface UnavailableProps {
 	state: "unavailable";
 }
 
-type Props = LoadingProps | ReadyProps | UnavailableProps;
+type Props = PendingProps | ReadyProps | UnavailableProps;
 
 export function FundingAddressCard(props: Props) {
 	const { t } = useLingui();
@@ -57,22 +56,28 @@ export function FundingAddressCard(props: Props) {
 	}, [address]);
 
 	if (props.state !== "ready") {
-		const isLoading = props.state === "loading";
+		const isUnavailable = props.state === "unavailable";
 
 		return (
-			<div className="flex flex-col items-center gap-4" data-address-state={props.state}>
-				<div
-					className="flex size-[140px] flex-col items-center justify-center gap-2 rounded-[12px] border border-market-close-stroke-card bg-market-close-card px-4 text-center"
-					role={isLoading ? (props.message ? "status" : undefined) : "alert"}
-				>
-					{isLoading ? (
+			<div
+				className="flex flex-col items-center gap-4"
+				data-address-state={props.state}
+				aria-busy={props.state === "loading"}
+			>
+				<div className="flex size-[140px] flex-col items-center justify-center gap-2 rounded-[12px] border border-market-close-stroke-card bg-market-close-card px-4 text-center">
+					{!isUnavailable ? (
 						<QrCodeIcon className="size-8 text-market-close-muted" aria-hidden="true" />
 					) : (
 						<WarningCircleIcon className="size-8 text-market-close-danger" aria-hidden="true" />
 					)}
-					{props.message ? <p className="text-[11px] leading-4 text-market-close-muted">{props.message}</p> : null}
-					{props.action}
+					{!isUnavailable ? props.action : null}
 				</div>
+				{isUnavailable ? (
+					<div role="alert" className="w-full space-y-1 text-center text-xs leading-5 text-market-close-danger">
+						<p>{props.message}</p>
+						{props.action}
+					</div>
+				) : null}
 
 				<div className="w-full space-y-1.5">
 					<p className="text-[11px] leading-4 text-market-close-subtle">
@@ -82,7 +87,7 @@ export function FundingAddressCard(props: Props) {
 						className="flex min-h-[50px] items-center justify-center rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2"
 						aria-hidden="true"
 					>
-						{isLoading ? (
+						{!isUnavailable ? (
 							<div
 								className="h-2 w-3/4 rounded-full bg-market-close-stroke-input/50"
 								data-address-placeholder="skeleton"
@@ -113,7 +118,7 @@ export function FundingAddressCard(props: Props) {
 				</p>
 				<div className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2">
 					<span
-						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg min-[1001px]:break-normal min-[1001px]:whitespace-nowrap"
+						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg"
 						title={props.address}
 					>
 						{props.address}

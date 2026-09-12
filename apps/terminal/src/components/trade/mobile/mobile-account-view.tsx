@@ -1,6 +1,6 @@
 import { Badge, Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon, WalletIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
@@ -133,7 +133,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						{overviewLabels.transferBetweenPerpsAndSpot}
 					</span>
 				) : null}
-				{showsSecondaryFundsActions && internalTransferDisabledReason ? (
+				{showsSecondaryFundsActions && !usesSharedQuoteBalance && internalTransferDisabledReason ? (
 					<span id={transferUnavailableId} className="sr-only">
 						{internalTransferDisabledReason}
 					</span>
@@ -229,20 +229,40 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					{!depositGeoBlocked && showsFundsActions ? (
 						<div className="space-y-2">
 							{depositNotice ? <output className="text-center text-xs text-fg-muted">{depositNotice}</output> : null}
-							<Button
-								variant="filled"
-								intent="brand"
-								size="md"
-								disabled={!depositAvailability.available}
-								onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
-								aria-label={t`Deposit`}
-								title={depositNotice ?? undefined}
-								iconLeft={<DownloadSimpleIcon className="size-4" />}
-								className="min-h-11 w-full"
-							>
-								{t`Deposit`}
-							</Button>
 							<div className="grid grid-cols-2 gap-2">
+								<Button
+									variant="filled"
+									intent="brand"
+									size="md"
+									disabled={!depositAvailability.available}
+									onClick={depositAvailability.available ? () => openDepositModal("deposit") : undefined}
+									aria-label={t`Deposit`}
+									title={depositNotice ?? undefined}
+									className="min-h-11 w-full"
+								>
+									{t`Deposit`}
+								</Button>
+								<Tooltip content={withdrawDisabledReason} side="top">
+									<span className="inline-flex w-full">
+										<Button
+											variant="outline"
+											intent="neutral"
+											size="md"
+											disabled={!fundsActionAvailability.withdrawal.available}
+											focusableWhenDisabled
+											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
+											onClick={
+												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
+											}
+											aria-label={t`Withdraw`}
+											className="min-h-11 w-full"
+										>
+											{t`Withdraw`}
+										</Button>
+									</span>
+								</Tooltip>
+							</div>
+							{!usesSharedQuoteBalance ? (
 								<Tooltip content={internalTransferDisabledReason} side="top">
 									<span className="inline-flex w-full">
 										<Button
@@ -264,27 +284,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 										</Button>
 									</span>
 								</Tooltip>
-								<Tooltip content={withdrawDisabledReason} side="top">
-									<span className="inline-flex w-full">
-										<Button
-											variant="outline"
-											intent="neutral"
-											size="md"
-											disabled={!fundsActionAvailability.withdrawal.available}
-											focusableWhenDisabled
-											aria-describedby={withdrawDisabledReason ? withdrawUnavailableId : undefined}
-											onClick={
-												fundsActionAvailability.withdrawal.available ? () => openDepositModal("withdraw") : undefined
-											}
-											aria-label={t`Withdraw`}
-											iconLeft={<UploadSimpleIcon className="size-4" />}
-											className="min-h-11 w-full"
-										>
-											{t`Withdraw`}
-										</Button>
-									</span>
-								</Tooltip>
-							</div>
+							) : null}
+
 							{hasWalletAccess && showBridgeEntry ? (
 								<Button
 									variant="outline"

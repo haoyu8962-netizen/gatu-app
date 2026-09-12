@@ -534,6 +534,10 @@ msgstr "उन्नत सेटिंग्स"
 msgid "After removal"
 msgstr "हटाने के बाद"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+msgstr "राशि आने के बाद यहाँ वापस आकर जमा करें चुनें, ताकि राशि आपके ट्रेडिंग खाते में पहुँच जाए।"
+
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -844,8 +848,7 @@ msgstr "बिक्री"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 msgid "Asset"
 msgstr "संपत्ति"
 
@@ -1091,10 +1094,6 @@ msgstr "लॉन्ग खरीदें"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "डिफ़ॉल्ट रूप से, TP/SL पूरी पोज़िशन पर लागू होता है और मार्क मूल्य ट्रिगर तक पहुँचने पर मार्केट ऑर्डर सबमिट करता है। निश्चित आकार रखने के लिए राशि कॉन्फ़िगर करें, या अपनी लिमिट प्राइस पर सबमिट करने के लिए लिमिट निष्पादन चुनें।"
 
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Calculated after funding"
-msgstr "फ़ंड आने के बाद गणना होगी"
-
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "कैमरा एक्सेस विफल रहा। कैमरा एक्सेस की अनुमति देकर फिर से प्रयास करें, या अपने सिस्टम कैमरे से QR स्कैन करें।"
@@ -1179,14 +1178,10 @@ msgid "Cannot switch to Isolated mode with an open position. Close your position
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
 msgstr "इस नेटवर्क पर CCTP जमा का वास्तविक धनराशि के साथ शुरू से अंत तक सत्यापन बाकी है।"
-
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "CCTP forwarding to Arbitrum usually completes in {0}."
-msgstr "CCTP द्वारा Arbitrum पर फ़ॉरवर्डिंग आमतौर पर {0} में पूरी हो जाती है।"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
@@ -1240,7 +1235,6 @@ msgstr "आपके क्षेत्र में उपलब्धता �
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
 msgstr "क्षेत्रीय उपलब्धता जाँची जा रही है। वॉल्ट कार्रवाइयाँ अस्थायी रूप से उपलब्ध नहीं हैं।"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "Hyperliquid के मौजूदा जमा रूट की जाँच की जा रही है..."
@@ -1250,7 +1244,6 @@ msgstr "Hyperliquid के मौजूदा जमा रूट की जा�
 #~ msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "जांच हो रही है..."
 
@@ -2042,7 +2035,6 @@ msgid "Create Vault"
 msgstr "वॉल्ट बनाएँ"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "आपका वॉलेट बनाया जा रहा है। कृपया प्रतीक्षा करें..."
 
@@ -2173,6 +2165,10 @@ msgstr "उपलब्ध स्टेकिंग HYPE को चुने ह
 #: src/components/staking/staking-view.tsx
 msgid "Delegation"
 msgstr "डेलीगेशन"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Depends on network confirmation"
+msgstr "नेटवर्क की पुष्टि पर निर्भर"
 
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
@@ -3209,10 +3205,6 @@ msgstr "फंडिंग"
 msgid "FUNDING"
 msgstr "फंडिंग"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Funding chain"
-msgstr "जमा चेन"
-
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
 msgstr "फंडिंग डेटा सत्यापित नहीं किया जा सका। रीफ़्रेश करके फिर प्रयास करें।"
@@ -3277,6 +3269,10 @@ msgstr "इस खाते के लिए धन संबंधी कार
 msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+msgstr "Arbitrum पर निकासी की पुष्टि होने के बाद राशि पहुँचेगी। प्राप्ति की जाँच गंतव्य खाते में करें।"
+
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
 msgstr "फंड ऑपरेशन का रिकॉर्ड पढ़ा नहीं जा सकता"
@@ -3297,10 +3293,6 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "गैस ({0})"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas sponsorship is unavailable for this Arbitrum network."
-msgstr "इस Arbitrum नेटवर्क के लिए गैस स्पॉन्सरशिप उपलब्ध नहीं है।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -3998,7 +3990,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4345,6 +4336,7 @@ msgid "Min price must be below trigger price"
 msgstr "न्यूनतम मूल्य ट्रिगर मूल्य से कम होना चाहिए"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Minimum"
 msgstr "न्यूनतम"
 
@@ -4486,7 +4478,7 @@ msgstr "शुद्ध प्राप्त"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -6194,6 +6186,8 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6690,10 +6684,6 @@ msgstr "भेजें"
 msgid "Send failed"
 msgstr "भेजना विफल रहा"
 
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Send funds from Hyperliquid to an Arbitrum address."
-msgstr "Hyperliquid से Arbitrum पते पर धनराशि भेजें।"
-
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "टोकन भेजें"
@@ -6701,6 +6691,10 @@ msgstr "टोकन भेजें"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "Hyperliquid L1 पर किसी अन्य खाते में टोकन भेजें।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Send USDC to your wallet address below."
+msgstr "नीचे दिए गए अपने वॉलेट पते पर USDC भेजें।"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
@@ -7676,10 +7670,6 @@ msgstr "एक्सचेंज ने TWAP की अंतिम स्थि
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr "extraAgents अनुरोध विफल रहा। मौजूदा API वॉलेट काम करते रहेंगे, लेकिन नया डेटा सत्यापित होने तक प्रबंधन अक्षम रहेगा।"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "The fee will be confirmed using Circle's latest quote before submission."
-msgstr "सबमिट करने से पहले Circle के नवीनतम कोट के आधार पर शुल्क की पुष्टि की जाएगी।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
@@ -8762,8 +8752,6 @@ msgstr "प्रकार"
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "इस TWAP बाज़ार की पहचान नहीं हो सकी। पुनः प्रयास करने से पहले बाज़ार डेटा रीफ़्रेश करें।"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8777,10 +8765,6 @@ msgstr "वर्तमान खाता मोड लोड नहीं ह�
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "वर्तमान CCTP निकासी शुल्क लोड नहीं हो सका।"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to prepare the gas-sponsored wallet for this network."
-msgstr "इस नेटवर्क के लिए गैस-स्पॉन्सर्ड वॉलेट तैयार नहीं किया जा सका।"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8840,10 +8824,6 @@ msgstr "मौजूदा खाता मोड सत्यापित न�
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "मौजूदा Circle CCTP शुल्क और Fast Transfer क्षमता सत्यापित नहीं की जा सकी।"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
-msgstr "वर्तमान Circle शुल्क सत्यापित नहीं किया जा सका। जमा अस्थायी रूप से उपलब्ध नहीं हैं।"
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Unable to verify the current HyperCore USDC destination."
 #~ msgstr "मौजूदा HyperCore USDC गंतव्य सत्यापित नहीं किया जा सका।"
@@ -8855,11 +8835,6 @@ msgstr "Hyperliquid के मौजूदा जमा रूट को सत�
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
 msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा सबमिट नहीं किया गया।"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
-msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा रोक दिए गए हैं।"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
@@ -8877,7 +8852,6 @@ msgstr "निकासी पात्रता सत्यापित नह
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "अनुपलब्ध"
@@ -9065,10 +9039,6 @@ msgstr "HyperCore पर USDC"
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
 msgstr "USDC वॉल्यूम"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "USDC will be sent to this Arbitrum address."
-msgstr "USDC इस Arbitrum पते पर भेजा जाएगा।"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -9445,11 +9415,6 @@ msgstr "स्वागत बोनस"
 msgid "Whole position"
 msgstr "पूरी पोज़िशन"
 
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "will arrive in {0}"
-msgstr "{0} में पहुँचेगा"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9485,8 +9450,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "Arbitrum पर निकासी"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdraw USDC"
-msgstr "USDC निकालें"
+msgid "Withdraw USDC to Arbitrum"
+msgstr "Arbitrum पर USDC निकालें"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
@@ -9529,10 +9494,6 @@ msgstr "सर्वर द्वारा बताए गए अनलॉक �
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal remains unavailable until the owner balance is verified."
 msgstr "मालिक का बैलेंस सत्यापित होने तक निकासी उपलब्ध नहीं रहेगी।"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdrawal route"
-msgstr "निकासी मार्ग"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -9676,7 +9637,6 @@ msgstr "इस मार्केट पर आपकी वर्तमान �
 msgid "Your delegated stake"
 msgstr "आपका डेलीगेट किया गया स्टेक"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"

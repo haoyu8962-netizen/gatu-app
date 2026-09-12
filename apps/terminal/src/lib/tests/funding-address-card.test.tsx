@@ -55,8 +55,8 @@ describe("FundingAddressCard", () => {
 		const addressText = Array.from(container.querySelectorAll("span")).find(
 			(element) => element.textContent === address,
 		);
-		expect(addressText?.className).toContain("min-[1001px]:whitespace-nowrap");
-		expect(addressText?.className).toContain("min-[1001px]:break-normal");
+		expect(addressText?.className).toContain("break-all");
+		expect(addressText?.className).not.toContain("whitespace-nowrap");
 		expect(addressText?.className).not.toContain("truncate");
 		const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy deposit address"]');
 		expect(copyButton?.className).toContain("size-8");
@@ -64,23 +64,34 @@ describe("FundingAddressCard", () => {
 		expect(copyButton?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
 	});
 
-	it.each(["loading", "unavailable"] as const)("does not expose an address while the card is %s", async (state) => {
-		await act(async () => {
-			root.render(
-				<I18nProvider i18n={i18n}>
-					<FundingAddressCard message="Address unavailable" state={state} />
-				</I18nProvider>,
-			);
-		});
+	it.each(["loading", "pending", "unavailable"] as const)(
+		"does not expose an address while the card is %s",
+		async (state) => {
+			await act(async () => {
+				root.render(
+					<I18nProvider i18n={i18n}>
+						{state === "unavailable" ? (
+							<FundingAddressCard message="Confirmed restriction" state={state} />
+						) : (
+							<FundingAddressCard state={state} />
+						)}
+					</I18nProvider>,
+				);
+			});
 
-		expect(mocks.toCanvas).not.toHaveBeenCalled();
-		expect(container.querySelector("canvas")).toBeNull();
-		expect(container.querySelector("button")).toBeNull();
-		const stateContainer = container.querySelector(`[data-address-state="${state}"]`);
-		expect(stateContainer).not.toBeNull();
-		const statusRole = state === "loading" ? "status" : "alert";
-		expect(stateContainer?.querySelector(`[role="${statusRole}"]`)?.className).toContain("size-[140px]");
-	});
+			expect(mocks.toCanvas).not.toHaveBeenCalled();
+			expect(container.querySelector("canvas")).toBeNull();
+			expect(container.querySelector("button")).toBeNull();
+			const stateContainer = container.querySelector(`[data-address-state="${state}"]`);
+			expect(stateContainer).not.toBeNull();
+			if (state === "unavailable") {
+				expect(stateContainer?.querySelector('[role="alert"]')?.textContent).toContain("Confirmed restriction");
+			} else {
+				expect(stateContainer?.querySelector('[role="alert"], [role="status"]')).toBeNull();
+				expect(stateContainer?.textContent).toBe("Deposit address");
+			}
+		},
+	);
 
 	it("renders a silent loading skeleton when no readiness message is provided", async () => {
 		await act(async () => {

@@ -6,6 +6,7 @@ const mock = fileURLToPath(new URL("./account-actions.browser.ts", import.meta.u
 export default mergeConfig(
 	{ ...shared, resolve: undefined, optimizeDeps: undefined },
 	{
+		publicDir: fileURLToPath(new URL("../../public", import.meta.url)),
 		cacheDir: fileURLToPath(new URL("../../node_modules/.vite-account-actions", import.meta.url)),
 		optimizeDeps: { entries: ["account-actions.html"] },
 		resolve: {

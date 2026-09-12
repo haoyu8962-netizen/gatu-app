@@ -6,13 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
-import {
-	getAccountBalanceSummary,
-	getSpotBalance,
-	getSpotTransferable,
-	getSpotTransferableValue,
-	isQuoteBalanceSharedWithPerps,
-} from "@/domain/trade/balances";
+import { getSpotBalance, getSpotTransferableValue, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { getFundsAvailabilityNotice } from "@/domain/trade/data-presentation";
 import { assertFreshFundsAmount, FundsExecutionError } from "@/domain/trade/funds-execution-guard";
 import {
@@ -85,10 +79,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 
 	const { address, hasWalletAccess, sessionMode: walletSessionMode, walletAddress } = useWalletSession();
 	const {
-		marginSummary,
-		perpSummary,
 		spotBalances,
-		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
 		spotStateStatus,
@@ -201,22 +192,8 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	});
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-	});
 	const internalTransfersDisabled = !fundsActionAvailability.internalTransfer.available;
 	const internalTransfersDisabledReason = getFundsAvailabilityNotice(fundsActionAvailability.internalTransfer);
-	const availableBalanceValue =
-		accountModeReady && accountDataReady
-			? direction === "toSpot"
-				? accountSummary.withdrawable
-				: getSpotTransferable(spotUsdcBal)
-			: 0;
 	const availableBalanceExact =
 		accountModeReady && accountDataReady
 			? direction === "toSpot"
@@ -231,7 +208,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 
 	const isValidAmount =
 		fundsActionAvailability.internalTransfer.available &&
-		isAmountWithinBalance(amount, availableBalanceValue) &&
+		isAmountWithinBalance(amount, availableBalanceExact) &&
 		hasWalletAccess &&
 		!!walletAddress;
 
@@ -282,7 +259,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 
 	function handleMaxClick() {
 		if (internalTransfersDisabled || !accountDataReady || isPending) return;
-		setAmount(floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS));
+		setAmount(floorToString(availableBalanceExact, USDC_TRANSFER_DECIMALS));
 	}
 
 	return (
@@ -347,7 +324,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 									<>
 										{t`Available`}:{" "}
 										<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
-											{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
+											{floorToString(availableBalanceExact, USDC_TRANSFER_DECIMALS)} USDC
 										</span>
 									</>
 								}
@@ -360,7 +337,7 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 								className={cn(
 									"w-full tabular-nums max-[1000px]:h-11",
 									accountDataReady &&
-										exceedsBalance(amount, availableBalanceValue) &&
+										exceedsBalance(amount, availableBalanceExact) &&
 										"border-stroke-error-strong focus:border-stroke-error-strong",
 								)}
 							/>

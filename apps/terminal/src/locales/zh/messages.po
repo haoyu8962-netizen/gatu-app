@@ -534,6 +534,10 @@ msgstr "高级设置"
 msgid "After removal"
 msgstr "移除后"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "After the funds arrive, return here and select Deposit to move them into your trading account."
+msgstr "资金到账后，返回此处点击“存款”，将资金存入交易账户。"
+
 #: src/components/vaults/vaults-list.tsx
 #: src/components/vaults/vaults-list.tsx
 msgid "Age"
@@ -844,8 +848,7 @@ msgstr "卖盘"
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
-#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 msgid "Asset"
 msgstr "资产"
 
@@ -1091,10 +1094,6 @@ msgstr "买入做多"
 msgid "By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price."
 msgstr "默认情况下，止盈止损应用于全部仓位，并在标记价格达到触发价时提交市价单。可设置固定数量，或选择限价执行并按指定限价提交。"
 
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
-msgid "Calculated after funding"
-msgstr "资金到账后计算"
-
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
 msgstr "无法访问相机。请允许相机权限后重试，或使用系统相机扫描二维码。"
@@ -1179,14 +1178,10 @@ msgid "Cannot switch to Isolated mode with an open position. Close your position
 msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
 msgstr "此网络的 CCTP 充值仍待完成有真实资金的端到端验证。"
-
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "CCTP forwarding to Arbitrum usually completes in {0}."
-msgstr "CCTP 转发到 Arbitrum 通常会在 {0} 内完成。"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
@@ -1240,7 +1235,6 @@ msgstr "正在检查地区可用性，资金操作暂时不可用。"
 msgid "Checking regional availability. Vault actions are temporarily unavailable."
 msgstr "正在核验地区可用性，Vault 操作暂不可用。"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
 msgstr "正在检查 Hyperliquid 当前的充值路由..."
@@ -1250,7 +1244,6 @@ msgstr "正在检查 Hyperliquid 当前的充值路由..."
 #~ msgstr "正在检查 Hyperliquid 当前的提现路由..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "检查中..."
 
@@ -2042,7 +2035,6 @@ msgid "Create Vault"
 msgstr "创建金库"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "正在创建你的钱包，请稍候..."
 
@@ -2173,6 +2165,10 @@ msgstr "将质押账户中的可用 HYPE 委托给所选验证者。"
 #: src/components/staking/staking-view.tsx
 msgid "Delegation"
 msgstr "委托"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Depends on network confirmation"
+msgstr "取决于网络确认"
 
 #: src/config/account-ledger.ts
 msgid "Deploy Gas Auction"
@@ -3209,10 +3205,6 @@ msgstr "资金费"
 msgid "FUNDING"
 msgstr "资金费率"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Funding chain"
-msgstr "充值链"
-
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding data could not be validated. Refresh and try again."
 msgstr "无法验证资金费数据。请刷新后重试。"
@@ -3277,6 +3269,10 @@ msgstr "此账户不支持资金操作。"
 msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Funds arrive after the withdrawal is confirmed on Arbitrum. Check the destination account for receipt."
+msgstr "提款在 Arbitrum 上确认后到账，请在目标账户查看收款。"
+
 #: src/components/funds-action/funds-action-recovery-host.tsx
 msgid "Funds operation record cannot be read"
 msgstr "无法读取资金操作记录"
@@ -3297,10 +3293,6 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "Gas（{0}）"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Gas sponsorship is unavailable for this Arbitrum network."
-msgstr "此 Arbitrum 网络的 Gas 赞助不可用。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -3998,7 +3990,6 @@ msgstr "加载钱包中..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4345,6 +4336,7 @@ msgid "Min price must be below trigger price"
 msgstr "最低价须低于触发价"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Minimum"
 msgstr "最小"
 
@@ -4486,7 +4478,7 @@ msgstr "实际到账"
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funds-route-details.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
@@ -6194,6 +6186,8 @@ msgstr "继续跟踪"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6690,10 +6684,6 @@ msgstr "发送"
 msgid "Send failed"
 msgstr "发送失败"
 
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Send funds from Hyperliquid to an Arbitrum address."
-msgstr "将资金从 Hyperliquid 发送至 Arbitrum 地址。"
-
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "发送代币"
@@ -6701,6 +6691,10 @@ msgstr "发送代币"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "向 Hyperliquid L1 上的另一账户发送代币。"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Send USDC to your wallet address below."
+msgstr "将 USDC 转入下方的钱包地址。"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
@@ -7676,10 +7670,6 @@ msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委
 #: src/components/api-wallet/api-wallet-list.tsx
 msgid "The extraAgents request failed. Existing API wallets continue to operate, but management stays disabled until fresh data can be verified."
 msgstr "extraAgents 请求失败。现有 API 钱包仍可正常使用，但在验证到最新数据前，管理功能将保持禁用。"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "The fee will be confirmed using Circle's latest quote before submission."
-msgstr "手续费将在提交前根据 Circle 的最新报价确认。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "The gas-sponsored wallet is configured for a different Arbitrum network."
@@ -8762,8 +8752,6 @@ msgstr "类型"
 msgid "Unable to identify this TWAP market. Refresh market data before retrying."
 msgstr "无法识别该 TWAP 市场。请刷新市场数据后重试。"
 
-#: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8777,10 +8765,6 @@ msgstr "无法加载当前账户模式。请重新连接钱包后重试。"
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "无法加载当前的 CCTP 提款手续费。"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to prepare the gas-sponsored wallet for this network."
-msgstr "无法为此网络准备 Gas 赞助钱包。"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
@@ -8840,10 +8824,6 @@ msgstr "无法验证当前账户模式。请求未提交。"
 msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
 msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Circle fee. Deposits are temporarily unavailable."
-msgstr "无法验证当前的 Circle 手续费，存款暂时不可用。"
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Unable to verify the current HyperCore USDC destination."
 #~ msgstr "无法验证当前 HyperCore USDC 目标地址。"
@@ -8855,11 +8835,6 @@ msgstr "无法验证 Hyperliquid 当前的充值路由。自动充值已暂停�
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
 msgstr "无法验证 Hyperliquid 当前的充值路由。充值未提交。"
-
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
-msgstr "无法验证 Hyperliquid 当前的充值路由。充值已暂停。"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/lib/trade/funds-action-feedback.ts
@@ -8877,7 +8852,6 @@ msgstr "无法验证提现资格。请求未提交。"
 #: src/components/api-wallet/api-wallet-list.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Unavailable"
 msgstr "不可用"
@@ -9065,10 +9039,6 @@ msgstr "HyperCore 上的 USDC"
 #: src/components/referrals/referred-traders.tsx
 msgid "USDC volume"
 msgstr "USDC 成交量"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "USDC will be sent to this Arbitrum address."
-msgstr "USDC 将发送到此 Arbitrum 地址。"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-row.tsx
@@ -9445,11 +9415,6 @@ msgstr "欢迎奖励"
 msgid "Whole position"
 msgstr "全部仓位"
 
-#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "will arrive in {0}"
-msgstr "将在{0}后到账"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/portfolio/portfolio-page.tsx
@@ -9485,8 +9450,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "提现至 Arbitrum"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdraw USDC"
-msgstr "提现 USDC"
+msgid "Withdraw USDC to Arbitrum"
+msgstr "提取 USDC 至 Arbitrum"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
@@ -9529,10 +9494,6 @@ msgstr "提款仍处于锁定状态，需等待服务器返回的解锁时间。
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Withdrawal remains unavailable until the owner balance is verified."
 msgstr "在所有者余额完成核验前，提款不可用。"
-
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Withdrawal route"
-msgstr "提款方式"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal status unknown"
@@ -9676,7 +9637,6 @@ msgstr "您在此市场的当前持仓"
 msgid "Your delegated stake"
 msgstr "您的已委托质押"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"

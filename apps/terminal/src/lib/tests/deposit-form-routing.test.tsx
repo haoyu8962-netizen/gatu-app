@@ -8,10 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DepositForm } from "@/components/trade/tradebox/deposit/deposit-form";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 
-vi.mock("@/components/trade/tradebox/deposit/asset-select", () => ({
-	AssetSelect: () => createElement("div", { "data-testid": "asset-select" }),
-}));
-
 vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
 	FundingAddressCard: ({
 		action,
@@ -35,10 +31,6 @@ vi.mock("@/components/trade/tradebox/deposit/funding-address-card", () => ({
 			message,
 			action,
 		),
-}));
-
-vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
-	NetworkSelect: () => createElement("div", { "data-testid": "network-select" }),
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/unit-deposit-info", () => ({
@@ -74,7 +66,7 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		maxAmount: "9",
 		maxDepositRaw: 9_000_000n,
 		balanceStatus: "success" as const,
-		balanceError: null,
+		onRetryData: vi.fn(),
 		validation: { valid: false, error: null },
 		isPending: false,
 		onSubmit: vi.fn(),
@@ -287,11 +279,11 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.textContent).toContain("The fee will be confirmed using Circle's latest quote before submission.");
+		expect(container.textContent).toContain("--");
 		expect(container.textContent).not.toContain("—");
 	});
 
-	it("shows that external deposits are unavailable when the Circle fee cannot be verified", async () => {
+	it("keeps a failed fee quote quiet and exposes a read-only retry", async () => {
 		const props = {
 			...createProps("ready", "cctp"),
 			cctpFeeError: true,
@@ -302,9 +294,11 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.textContent).toContain(
-			"Unable to verify the current Circle fee. Deposits are temporarily unavailable.",
-		);
+		expect(container.textContent).toContain("--");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+		expect(props.onRetryData).toHaveBeenCalledOnce();
+		expect(props.onSubmit).not.toHaveBeenCalled();
 		expect(container.textContent).not.toContain("before submission");
 	});
 
@@ -371,8 +365,30 @@ describe("DepositForm routing gate", () => {
 			button.textContent?.includes("Deposit 9 USDC"),
 		);
 		expect(submitButton?.disabled).toBe(false);
+		expect(container.querySelectorAll('[data-slot="funding-steps"] li')).toHaveLength(2);
+		expect(container.textContent).toContain("After the funds arrive, return here and select Deposit");
+		expect(container.querySelectorAll('[role="combobox"]')).toHaveLength(0);
 		act(() => submitButton?.click());
 		expect(props.onSubmit).toHaveBeenCalledOnce();
+	});
+
+	it("retains requested-action feedback even while balances recover or a small balance is confirmed", async () => {
+		const props = {
+			...createProps("ready", "cctp"),
+			requiresExplicitFundingDeposit: true,
+			maxDepositRaw: 1_000_000n,
+			preflightError: "Unable to verify the current Circle fee.",
+			balance: "1",
+		};
+		for (const balanceStatus of ["loading", "error", "success"] as const) {
+			await act(async () =>
+				root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, { ...props, balanceStatus }))),
+			);
+			expect(
+				[...container.querySelectorAll('[role="alert"]')].filter((alert) => alert.textContent === props.preflightError),
+			).toHaveLength(1);
+		}
+		expect(props.onSubmit).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -387,11 +403,15 @@ describe("DepositForm routing gate", () => {
 		{
 			name: "the balance failed to load",
 			overrides: {
-				balanceError: new Error("balance unavailable"),
 				balanceStatus: "error" as const,
 				validation: { valid: true, error: null },
 			},
 		},
+		{
+			name: "the balance has not initialized",
+			overrides: { balanceStatus: "idle" as const, validation: { valid: true, error: null } },
+		},
+		{ name: "the Circle fee failed", overrides: { cctpFeeError: true, validation: { valid: true, error: null } } },
 		{
 			name: "the Circle fee is loading",
 			overrides: { cctpFeeLoading: true, validation: { valid: true, error: null } },
@@ -416,13 +436,13 @@ describe("DepositForm routing gate", () => {
 		});
 
 		const submitButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Deposit 9 USDC"),
+			button.textContent?.includes(`Deposit ${props.balanceStatus === "success" ? "9" : "--"} USDC`),
 		);
 		expect(submitButton).toBeDefined();
 		expect(submitButton?.disabled).toBe(true);
 		expect(submitButton?.getAttribute("aria-busy")).toBe(String(props.isPending));
 		if (props.balanceStatus === "error") {
-			expect(container.querySelector('[role="alert"]')?.textContent).toContain("balance unavailable");
+			expect(container.querySelector('[role="alert"]')).toBeNull();
 		}
 		act(() => submitButton?.click());
 		expect(props.onSubmit).not.toHaveBeenCalled();
@@ -430,8 +450,8 @@ describe("DepositForm routing gate", () => {
 
 	it.each([
 		{ expectedState: "loading", status: "loading" as const, route: null },
-		{ expectedState: "unavailable", status: "error" as const, route: null },
-		{ expectedState: "unavailable", status: "unknown" as const, route: null },
+		{ expectedState: "pending", status: "error" as const, route: null },
+		{ expectedState: "pending", status: "unknown" as const, route: null },
 		{ expectedState: "unavailable", status: "ready" as const, route: "bridge" as const },
 	])("never exposes the funding address for $status/$route", async ({ expectedState, route, status }) => {
 		const props = createProps(status, route);
@@ -467,7 +487,7 @@ describe("DepositForm routing gate", () => {
 		expect(container.querySelector('[data-deposit-notice="funding-network"]')).not.toBeNull();
 	});
 
-	it("shows a recoverable wallet-creation error instead of waiting on readiness forever", async () => {
+	it("keeps a passive wallet-creation failure quiet with a retry", async () => {
 		const onRetryFundingAddress = vi.fn();
 		const props = {
 			...createProps("ready", "cctp"),
@@ -485,8 +505,8 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
-		expect(container.textContent).toContain("Embedded wallet creation failed.");
+		expect(container.querySelector('[data-address-state="pending"]')).not.toBeNull();
+		expect(container.textContent).not.toContain("Embedded wallet creation failed.");
 		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
 		act(() => retryButton?.click());
 		expect(onRetryFundingAddress).toHaveBeenCalledOnce();
@@ -540,7 +560,7 @@ describe("DepositForm routing gate", () => {
 
 		const loadingShell = container.querySelector<HTMLElement>('[data-deposit-layout="funding-address"]');
 		expect(loadingShell?.getAttribute("data-deposit-readiness")).toBe("loading");
-		expect(loadingShell?.className).toContain("min-[1001px]:min-h-[37.5rem]");
+		expect(loadingShell?.className).not.toContain("min-[1001px]:min-h-[37.5rem]");
 		expect(loadingShell?.className).not.toContain(" min-h-[37.5rem]");
 		expect(container.querySelector('[data-address-state="loading"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
@@ -727,10 +747,12 @@ describe("DepositForm routing gate", () => {
 			root.render(createElement(I18nProvider, { i18n }, createElement(DepositForm, props)));
 		});
 
-		expect(container.querySelector('[data-address-state="unavailable"]')).not.toBeNull();
+		const confirmed = failure === "build-gate-disabled" || failure === "wrong-chain";
+		expect(container.querySelector(`[data-address-state="${confirmed ? "unavailable" : "pending"}"]`)).not.toBeNull();
 		expect(container.querySelector('[data-testid="funding-address"]')?.hasAttribute("data-address")).toBe(false);
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).toBeNull();
-		expect(container.textContent).toContain(message);
+		if (confirmed) expect(container.textContent).toContain(message);
+		else expect(container.textContent).not.toContain(message);
 		expect(
 			[...container.querySelectorAll("button")].some((button) => button.textContent?.includes("Deposit 9 USDC")),
 		).toBe(false);

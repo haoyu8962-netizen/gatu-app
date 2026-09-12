@@ -106,21 +106,17 @@ describe("WithdrawForm UI", () => {
 
 		const form = container.firstElementChild as HTMLElement;
 		expect(form.className).toContain("font-market-close");
-		expect(form.querySelector("h3")?.textContent).toBe("Withdraw USDC");
-		const assetIcon = form.querySelector<HTMLImageElement>('img[src="/coins/USDC.svg"]');
-		expect(assetIcon).not.toBeNull();
-		expect(assetIcon?.alt).toBe("");
-		expect(assetIcon?.parentElement?.className).toContain("size-10");
-
-		const comboboxes = Array.from(form.querySelectorAll<HTMLButtonElement>('[role="combobox"]'));
-		expect(comboboxes).toHaveLength(2);
-		expect(comboboxes.every((combobox) => combobox.disabled)).toBe(true);
+		expect(form.querySelector("h3")?.textContent).toBe("Withdraw USDC to Arbitrum");
+		expect(form.querySelectorAll('[role="combobox"]')).toHaveLength(0);
+		expect(form.querySelector('[data-slot="funds-route-details"]')?.textContent).toContain("Arbitrum (CCTP)");
+		expect(form.textContent).toContain("Minimum");
+		expect(form.textContent).toContain("Depends on network confirmation");
 
 		const amountInput = form.querySelector<HTMLInputElement>('input[placeholder="0.00"]');
 		expect(amountInput?.value).toBe("2.5");
 		expect(amountInput?.getAttribute("aria-invalid")).toBeNull();
 		const destinationInput = form.querySelector<HTMLInputElement>('input[aria-label="Destination address"]');
-		expect(destinationInput?.dir).toBe("auto");
+		expect(destinationInput?.dir).toBe("ltr");
 		expect(destinationInput?.getAttribute("autocapitalize")).toBe("none");
 
 		const maxButton = Array.from(form.querySelectorAll<HTMLButtonElement>("button")).find((button) =>
@@ -208,5 +204,20 @@ describe("WithdrawForm UI", () => {
 		expect(getButton("Processing").disabled).toBe(true);
 		act(() => getButton("Processing").click());
 		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("preserves the exact protocol minimum instead of rounding it down", async () => {
+		await renderForm({ routeFee: "0.200001" });
+		expect(container.textContent).toContain("Minimum 0.400002 USDC");
+	});
+
+	it("shows the exact external owner destination read-only with a persistent label", async () => {
+		const destination = "0x1111111111111111111111111111111111111111";
+		await renderForm({ destination, destinationRequired: false });
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Destination address"]');
+		expect(input?.value).toBe(destination);
+		expect(input?.readOnly).toBe(true);
+		expect(input?.dir).toBe("ltr");
+		expect(container.querySelector(`label[for="${input?.id}"]`)?.textContent).toBe("Destination address");
 	});
 });

@@ -1,14 +1,18 @@
 import { i18n } from "@lingui/core";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import { useDesktopGridLayout } from "@/components/trade/layout/use-desktop-grid-layout";
+import { MobileAccountView } from "@/components/trade/mobile/mobile-account-view";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages } from "@/locales/en/messages.po";
 import { messages as chineseMessages } from "@/locales/zh/messages.po";
 import { useSetTheme } from "@/stores/use-global-settings-store";
 import { setAccountActionsFixture, useAccountActionsFixture } from "./account-actions.browser";
+import { FundsFormsFixture } from "./funds-forms.fixture";
 import "./mobile-orderbook-cls.css";
 import "react-grid-layout/css/styles.css";
+
+const surface = new URLSearchParams(location.search).get("surface");
 
 function Fixture() {
 	const state = useAccountActionsFixture();
@@ -74,39 +78,45 @@ function Fixture() {
 				</button>
 				<output aria-label="Opened funds actions">{JSON.stringify(state.actions)}</output>
 			</nav>
-			<div ref={containerRef} className="desktop-terminal-grid bg-grid-container" data-fixture-grid>
-				{mounted && (
-					<Responsive {...gridProps}>
-						<div key="favoriteCoins" data-panel="favoriteCoins" className="desktop-grid-panel bg-surface">
-							Favorites
-						</div>
-						<div key="coinInfo" data-panel="coinInfo" className="desktop-grid-panel bg-surface">
-							Market
-						</div>
-						<div key="chart" data-panel="chart" className="desktop-grid-panel bg-surface">
-							Chart
-						</div>
-						<div key="marketData" data-panel="marketData" className="desktop-grid-panel bg-surface">
-							Order book
-						</div>
-						<div key="tradingInterface" data-panel="tradingInterface" className="desktop-grid-panel bg-surface">
-							Order entry
-						</div>
-						<div key="accountTable" data-panel="accountTable" className="desktop-grid-panel bg-surface">
-							Account table
-						</div>
-						<div
-							key="accountInfo"
-							data-panel="accountInfo"
-							className="desktop-grid-panel account-panel-container overflow-hidden bg-surface"
-						>
-							<div ref={accountContentRef} className="h-full">
-								<AccountPanel />
+			{surface === "funds" ? (
+				<FundsFormsFixture />
+			) : surface === "mobile" ? (
+				<MobileAccountView />
+			) : (
+				<div ref={containerRef} className="desktop-terminal-grid bg-grid-container" data-fixture-grid>
+					{mounted && (
+						<Responsive {...gridProps}>
+							<div key="favoriteCoins" data-panel="favoriteCoins" className="desktop-grid-panel bg-surface">
+								Favorites
 							</div>
-						</div>
-					</Responsive>
-				)}
-			</div>
+							<div key="coinInfo" data-panel="coinInfo" className="desktop-grid-panel bg-surface">
+								Market
+							</div>
+							<div key="chart" data-panel="chart" className="desktop-grid-panel bg-surface">
+								Chart
+							</div>
+							<div key="marketData" data-panel="marketData" className="desktop-grid-panel bg-surface">
+								Order book
+							</div>
+							<div key="tradingInterface" data-panel="tradingInterface" className="desktop-grid-panel bg-surface">
+								Order entry
+							</div>
+							<div key="accountTable" data-panel="accountTable" className="desktop-grid-panel bg-surface">
+								Account table
+							</div>
+							<div
+								key="accountInfo"
+								data-panel="accountInfo"
+								className="desktop-grid-panel account-panel-container overflow-hidden bg-surface"
+							>
+								<div ref={accountContentRef} className="h-full">
+									<AccountPanel />
+								</div>
+							</div>
+						</Responsive>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
