@@ -9,11 +9,10 @@ import { TradeRow } from "./trade-row";
 
 interface Props {
 	compact?: boolean;
-	quietErrors?: boolean;
 	showInQuote: boolean;
 }
 
-export function TradesPanel({ compact = false, quietErrors = true, showInQuote }: Props) {
+export function TradesPanel({ compact = false, showInQuote }: Props) {
 	const { t } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
@@ -47,7 +46,6 @@ export function TradesPanel({ compact = false, quietErrors = true, showInQuote }
 		initialTradeIds.current = new Set(processed.map((trade) => trade.id));
 	}
 	const displayAsset = showInQuote ? quoteToken : baseToken;
-	const showError = status === "error" && !quietErrors;
 	const showRows = hasCurrentSnapshot && processed.length > 0;
 	const showEmpty = hasCurrentSnapshot && processed.length === 0;
 
@@ -69,11 +67,6 @@ export function TradesPanel({ compact = false, quietErrors = true, showInQuote }
 				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
 			</div>
 
-			{showError ? (
-				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
-					{t`Failed to load trades.`}
-				</div>
-			) : null}
 			{showRows ? (
 				<div className="flex-1 min-h-0 overflow-y-auto">
 					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>
@@ -97,7 +90,7 @@ export function TradesPanel({ compact = false, quietErrors = true, showInQuote }
 					{t`No recent trades.`}
 				</div>
 			) : null}
-			{!showError && !showRows && !showEmpty ? (
+			{!showRows && !showEmpty ? (
 				<div data-slot="trades-pending" className="flex-1 min-h-0" aria-hidden="true" />
 			) : null}
 		</div>

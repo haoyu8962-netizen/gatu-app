@@ -258,11 +258,11 @@ describe("TradesPanel", () => {
 		expect(container.textContent).not.toContain("No recent trades.");
 	});
 
-	function renderPanel(quietErrors = true) {
+	function renderPanel(compact = false) {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
-					<TradesPanel quietErrors={quietErrors} showInQuote={mocks.sizeMode === "quote"} />
+					<TradesPanel compact={compact} showInQuote={mocks.sizeMode === "quote"} />
 				</I18nProvider>,
 			),
 		);

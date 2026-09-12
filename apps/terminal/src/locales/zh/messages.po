@@ -2976,8 +2976,8 @@ msgstr "加载仓位失败。"
 #~ msgstr "加载交易历史失败。"
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Failed to load trades."
-msgstr "加载成交记录失败。"
+#~ msgid "Failed to load trades."
+#~ msgstr "加载成交记录失败。"
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #~ msgid "Failed to load TWAP fill history."
@@ -3747,7 +3747,7 @@ msgstr "限价"
 
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -4163,7 +4163,7 @@ msgstr "市场"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6484,8 +6484,7 @@ msgstr "保存图片"
 msgid "Saving..."
 msgstr "正在保存..."
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "分段订单"
@@ -7195,8 +7194,7 @@ msgstr "股票"
 msgid "Stop"
 msgstr "止损"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "止损限价"
@@ -7233,8 +7231,7 @@ msgstr "止损收益"
 msgid "Stop loss return unit"
 msgstr "止损收益单位"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "止损市价"
@@ -7438,8 +7435,7 @@ msgstr "止盈 / 止损"
 msgid "Take profit limit"
 msgstr "止盈限价"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "止盈限价"
@@ -7456,8 +7452,7 @@ msgstr "止盈限价必须低于或等于触发价。"
 msgid "Take profit limit price"
 msgstr "止盈限价价格"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "止盈市价"
@@ -8662,8 +8657,7 @@ msgid "TVL"
 msgstr "TVL"
 
 #: src/config/trade.ts
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"

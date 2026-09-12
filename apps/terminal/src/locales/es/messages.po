@@ -2976,8 +2976,8 @@ msgstr "Error al cargar posiciones."
 #~ msgstr "Error al cargar historial de operaciones."
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Failed to load trades."
-msgstr "Error al cargar operaciones."
+#~ msgid "Failed to load trades."
+#~ msgstr "Error al cargar operaciones."
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #~ msgid "Failed to load TWAP fill history."
@@ -3747,7 +3747,7 @@ msgstr "Límite"
 
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -4163,7 +4163,7 @@ msgstr "Mercado"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6484,8 +6484,7 @@ msgstr "Guardar imagen"
 msgid "Saving..."
 msgstr "Guardando..."
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "Escala"
@@ -7195,8 +7194,7 @@ msgstr "Acciones"
 msgid "Stop"
 msgstr "Stop"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "Stop límite"
@@ -7233,8 +7231,7 @@ msgstr "Retorno del stop loss"
 msgid "Stop loss return unit"
 msgstr "Unidad del rendimiento de stop loss"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "Stop a mercado"
@@ -7438,8 +7435,7 @@ msgstr "Tomar ganancia / Stop Loss"
 msgid "Take profit limit"
 msgstr "Take Profit límite"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "Take Profit límite"
@@ -7456,8 +7452,7 @@ msgstr "El límite del Take Profit debe ser igual o inferior a su precio de acti
 msgid "Take profit limit price"
 msgstr "Precio límite del Take Profit"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "Take Profit a mercado"
@@ -8662,8 +8657,7 @@ msgid "TVL"
 msgstr "TVL"
 
 #: src/config/trade.ts
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"

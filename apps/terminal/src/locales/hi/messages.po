@@ -2976,8 +2976,8 @@ msgstr "पोजीशन लोड करने में विफल।"
 #~ msgstr "ट्रेड इतिहास लोड करने में विफल।"
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Failed to load trades."
-msgstr "ट्रेड लोड करने में विफल।"
+#~ msgid "Failed to load trades."
+#~ msgstr "ट्रेड लोड करने में विफल।"
 
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #~ msgid "Failed to load TWAP fill history."
@@ -3747,7 +3747,7 @@ msgstr "लिमिट"
 
 #: src/components/trade/positions/position-inline-actions.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -4163,7 +4163,7 @@ msgstr "बाज़ार"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/positions/position-inline-actions.tsx
-#: src/domain/trade/order-confirmation.ts
+#: src/config/trade.ts
 #: src/domain/trade/order-confirmation.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6484,8 +6484,7 @@ msgstr "छवि सहेजें"
 msgid "Saving..."
 msgstr "सहेजा जा रहा है..."
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "Scale"
@@ -7195,8 +7194,7 @@ msgstr "स्टॉक्स"
 msgid "Stop"
 msgstr "स्टॉप"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
@@ -7233,8 +7231,7 @@ msgstr "स्टॉप लॉस रिटर्न"
 msgid "Stop loss return unit"
 msgstr "स्टॉप लॉस रिटर्न की इकाई"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "Stop Market"
@@ -7438,8 +7435,7 @@ msgstr "प्रॉफिट लें / स्टॉप लॉस"
 msgid "Take profit limit"
 msgstr "टेक प्रॉफिट लिमिट"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "Take Profit Limit"
@@ -7456,8 +7452,7 @@ msgstr "टेक प्रॉफिट लिमिट अपने ट्र�
 msgid "Take profit limit price"
 msgstr "टेक प्रॉफिट लिमिट मूल्य"
 
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
@@ -8662,8 +8657,7 @@ msgid "TVL"
 msgstr "TVL"
 
 #: src/config/trade.ts
-#: src/domain/trade/order-confirmation.ts
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"

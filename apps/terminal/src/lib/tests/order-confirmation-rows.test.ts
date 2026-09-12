@@ -58,6 +58,21 @@ function byKey(rows: OrderConfirmationRow[], key: string): OrderConfirmationRow 
 }
 
 describe("buildOrderConfirmationRows", () => {
+	it.each([
+		["market", "Market"],
+		["limit", "Limit · GTC"],
+		["stopMarket", "Stop Market"],
+		["stopLimit", "Stop Limit"],
+		["takeProfitMarket", "Take Profit Market"],
+		["takeProfitLimit", "Take Profit Limit"],
+		["twap", "TWAP"],
+		["scale", "Scale"],
+	] as const)("uses the supplied translator for the %s order type", (orderType, label) => {
+		const rows = buildOrderConfirmationRows(draft({ orderType }), (message) => `translated:${message.message}`);
+
+		expect(byKey(rows, "orderType")?.value).toBe(`translated:${label}`);
+	});
+
 	it("describes a perp market order with slippage and the leveraged cost block", () => {
 		const rows = buildOrderConfirmationRows(BASE_DRAFT);
 

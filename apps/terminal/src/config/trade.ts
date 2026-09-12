@@ -1,3 +1,4 @@
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { OrderParameters, TwapOrderParameters } from "@nktkas/hyperliquid";
 
@@ -88,6 +89,17 @@ export const ORDER_TYPES = [
 ] as const;
 
 export type OrderType = (typeof ORDER_TYPES)[number];
+export const ORDER_TYPE_MESSAGES = {
+	market: msg({ message: "Market", context: "Order type" }),
+	limit: msg({ message: "Limit", context: "Order type" }),
+	stopMarket: msg`Stop Market`,
+	stopLimit: msg`Stop Limit`,
+	takeProfitMarket: msg`Take Profit Market`,
+	takeProfitLimit: msg`Take Profit Limit`,
+	twap: msg`TWAP`,
+	scale: msg`Scale`,
+} satisfies Record<OrderType, MessageDescriptor>;
+
 export type AdvancedOrderType = Exclude<OrderType, "market" | "limit">;
 export type AdvancedOrderGroup = "trigger" | "execution";
 export type ExchangeOrder = OrderParameters["orders"][number];

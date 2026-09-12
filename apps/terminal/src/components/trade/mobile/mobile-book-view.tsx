@@ -427,7 +427,7 @@ export function MobileBookView({
 				)
 			) : (
 				<div className="flex-1 min-h-0 flex flex-col">
-					{active && <TradesPanel key={name} compact={compact} quietErrors showInQuote={showOrderbookInQuote} />}
+					{active && <TradesPanel key={name} compact={compact} showInQuote={showOrderbookInQuote} />}
 				</div>
 			)}
 
