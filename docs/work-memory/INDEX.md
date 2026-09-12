@@ -13,6 +13,7 @@
 当前规范：[docs/terminal-review-remediation.md](../../docs/terminal-review-remediation.md)
 
 - [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) — 2026-09-12；已验证，范围见正文。服务器交易页面 gzip 超限 11 字节；统一订单队列计数与徽标渲染，保留预算和状态优先级，本地完整构建通过，交易页面距上限 227 字节，线上待验证。
+- [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) — 2026-09-12；已整理，验证见正文。同色卡片 43 次引用涉及 28 文件；扩展 hover 与弱填充后覆盖 106 文件，区分只读精简候选、交互状态、共享覆盖和未启用分支；未修改 UI、未逐页视觉验收。
 - [PR #22 合并前校验：清理成交旧提示与重复订单标签](sessions/2026-09-12-pr22-merge-validation.md) — 2026-09-12；已整理，验证见正文。核对构建中断与包预算失败，删除未使用的成交错误分支、共用订单类型消息描述并修复过期语言测试夹具；保留快照与交互检查。
 - [PR #22：复审、夹具隔离及版本化验证](sessions/2026-09-12-pr22-review.md) — 2026-09-12；已整理，验证见正文。旧版本 CI 全绿不能继承到新提交；最新基线有三项构建失败，待独立排查。
 
@@ -20,6 +21,7 @@
 
 当前规范：[docs/order-entry-layout-audit.md](../../docs/order-entry-layout-audit.md) · [docs/order-entry-surface-parity.md](../../docs/order-entry-surface-parity.md) · [docs/desktop-grid-layout.md](../../docs/desktop-grid-layout.md)
 
+- [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) — 2026-09-12；已整理，验证见正文。同色卡片 43 次引用涉及 28 文件；扩展 hover 与弱填充后覆盖 106 文件，区分只读精简候选、交互状态、共享覆盖和未启用分支；未修改 UI、未逐页视觉验收。
 - [下单布局：自然高度、TWAP 与双端表单](sessions/2026-09-12-order-entry-layout.md) — 2026-09-12；已整理，验证见正文。保留双端草稿与字段语义，移动表单自然增长；桌面遵守独立网格约束。
 - [PR #22 合并前校验：清理成交旧提示与重复订单标签](sessions/2026-09-12-pr22-merge-validation.md) — 2026-09-12；已整理，验证见正文。核对构建中断与包预算失败，删除未使用的成交错误分支、共用订单类型消息描述并修复过期语言测试夹具；保留快照与交互检查。
 
@@ -42,6 +44,7 @@
 当前规范：[docs/account-overview.md](../../docs/account-overview.md) · [docs/withdrawals.md](../../docs/withdrawals.md) · [docs/cctp-deposits.md](../../docs/cctp-deposits.md)
 
 - [账户与资金：模式语义、共享概览与精确转账](sessions/2026-09-12-account-funding.md) — 2026-09-12；已整理，验证见正文。模式标签依赖已解析服务器状态；桌面与移动共享账户语义，金额及签名身份严格校验。
+- [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) — 2026-09-12；已整理，验证见正文。同色卡片 43 次引用涉及 28 文件；扩展 hover 与弱填充后覆盖 106 文件，区分只读精简候选、交互状态、共享覆盖和未启用分支；未修改 UI、未逐页视觉验收。
 
 ### 移动配对与发布校验
 
@@ -65,6 +68,7 @@
 | 2026-09-12 | [部署第 2 步：已安装 Caddy 配置与仓库不一致](sessions/2026-09-12-caddy-config-mismatch.md) | 未取得任务标识，见正文 | `42349cb1` | 已整理，验证见正文 |
 | 2026-09-12 | [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) | 未取得任务标识，见正文 | `23966794` | 已验证，范围见正文 |
 | 2026-09-12 | [行情恢复：字段来源、静默占位与操作守卫](sessions/2026-09-12-market-recovery.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `422ea8a6` | 已整理，验证见正文 |
+| 2026-09-12 | [中性卡片底色与相邻弱填充全量源码审查](sessions/2026-09-12-neutral-surface-audit.md) | 未取得任务标识，见正文 | `43ce177c384377c3f1f84a92623d4892b0859624` | 已整理，验证见正文 |
 | 2026-09-12 | [下单布局：自然高度、TWAP 与双端表单](sessions/2026-09-12-order-entry-layout.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `422ea8a6` | 已整理，验证见正文 |
 | 2026-09-12 | [移动配对：常规发布自动门控与可选真机晋级](sessions/2026-09-12-pairing-release.md) | 解释 gatu 服务配置不匹配（`01a09457-b938-7862-8278-681459added6`） | `422ea8a6` | 已整理，验证见正文 |
 | 2026-09-12 | [PR #22 合并前校验：清理成交旧提示与重复订单标签](sessions/2026-09-12-pr22-merge-validation.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `e2affd06` | 已整理，验证见正文 |

@@ -43,7 +43,7 @@
 | 早期 Provider / 签名 | [Provider 方案](hyperliquid-provider-architecture.md)、[签名方案](signing-architecture-proposal.md) | Runtime guardrails、签名 ADR |
 | 配对票据修复演进 | [票据修复方案](mobile-sync-ticket-remediation-plan.md)、[旧生产核查原文](mobile-sync-production-readiness-2026-09-11.md)、[实施记录](mobile-sync-implementation-verification.md)、[发布防护方案](mobile-sync-release-hardening-plan.md)、[防护验证](mobile-sync-release-hardening-verification.md) | 当前配对发布流程；旧的常规发布限制已替代 |
 | 产品页面交付 | [API Wallet](api-wallet-redesign-notes.md)、[Leaderboard / Vaults / Staking](leaderboard-vaults-staking-redesign-notes.md) | 对应代码与各记录内的验证范围 |
-| 终端专项审查 | [字段审查](order-entry-field-review.md)、[订单簿参考观察](orderbook-ui-reference-audit.md)、[回归修复](terminal-test-regression-repair.md) | 对应当前主题契约 |
+| 终端专项审查 | [字段审查](order-entry-field-review.md)、[订单簿参考观察](orderbook-ui-reference-audit.md)、[回归修复](terminal-test-regression-repair.md)、[中性底色全量清单](neutral-surface-audit.md) | 对应当前主题契约；底色清单为源码审查，视觉精简尚未实施 |
 | API 与交易调查 | [集成审计](hyperliquid-integration-audit.md)、[订单验证排查](order-validation-analysis.md) | SDK 核对工作流、当前订单提交路径 |
 | 启动与性能建议 | [首次加载观察](architecture/hyperliquid-first-load-investigation.md)、[Web3 包优化](web3-bundle-optimization.md)、[并发渲染](concurrent-rendering.md)、[TanStack 优化](tanstack-start-optimization.md) | Runtime guardrails、性能基线；旧字节数字不能作当前预算 |
 | WebSocket 与内存研究 | [优化分析](websocket-optimization.md)、[加固路线图](websocket-hardening-roadmap.md)、[待收集输入](websocket-info-needed.md)、[内存与泄漏](memory-management.md)、[错误管理方案](error-handling-architecture.md) | 当前 hl-react 实现、传输 ADR、测试；路线图勾选不代表生产验收 |
