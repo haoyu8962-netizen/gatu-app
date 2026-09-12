@@ -6914,7 +6914,6 @@ msgid "SL must be below entry"
 msgstr "يجب أن يكون SL أدنى من سعر الدخول"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "سعر SL"
 
@@ -7201,7 +7200,6 @@ msgstr "Stop Limit"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Stop Loss"
 msgstr "وقف الخسارة"
@@ -7419,7 +7417,6 @@ msgstr "جاري التبديل..."
 msgid "System finalization · hash unavailable"
 msgstr "إتمام النظام · التجزئة غير متاحة"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8348,7 +8345,6 @@ msgstr "يجب أن يكون TP أعلى من سعر الدخول"
 msgid "TP must be below entry"
 msgstr "يجب أن يكون TP أدنى من سعر الدخول"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "سعر TP"

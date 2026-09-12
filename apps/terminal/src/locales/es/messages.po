@@ -6914,7 +6914,6 @@ msgid "SL must be below entry"
 msgstr "El SL debe estar por debajo de la entrada"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "Precio SL"
 
@@ -7201,7 +7200,6 @@ msgstr "Stop límite"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Stop Loss"
 msgstr "Stop Loss"
@@ -7419,7 +7417,6 @@ msgstr "Cambiando..."
 msgid "System finalization · hash unavailable"
 msgstr "Finalización del sistema · hash no disponible"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8348,7 +8345,6 @@ msgstr "El TP debe estar por encima de la entrada"
 msgid "TP must be below entry"
 msgstr "El TP debe estar por debajo de la entrada"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "Precio TP"

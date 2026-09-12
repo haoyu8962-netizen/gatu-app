@@ -95,7 +95,6 @@ import {
 	positionsPanelTableBodyClass,
 	positionsPanelTableCellClass,
 	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -1265,7 +1264,7 @@ function OrdersTableHeader({ allSelected, someSelected, disabled, onToggleAll }:
 	];
 
 	return (
-		<TableHeader className={cn(positionsPanelTableHeaderClass, "block bg-modal [&_tr]:border-t-0")}>
+		<TableHeader className="block bg-modal [&_tr]:border-stroke-weak [&_tr]:border-t-0">
 			<TableRow
 				className={cn(
 					positionsPanelTableHeaderRowClass,

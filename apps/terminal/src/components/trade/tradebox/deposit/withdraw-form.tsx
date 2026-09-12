@@ -279,7 +279,7 @@ export function WithdrawForm({
 				</div>
 			) : null}
 
-			<div className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 text-xs">
+			<div className="space-y-2 py-3 text-xs">
 				<InfoRow
 					className="p-0"
 					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"

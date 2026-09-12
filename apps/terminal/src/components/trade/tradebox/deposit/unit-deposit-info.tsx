@@ -14,11 +14,7 @@ export function UnitDepositInfo({ cctpFee, cctpFeeLoading = false, cctpFeeError 
 	const fee = !cctpFeeLoading && !cctpFeeError && cctpFee ? formatUSD(cctpFee, { compact: false }) : "--";
 
 	return (
-		<dl
-			className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 text-xs"
-			data-presentation="funding"
-			aria-busy={cctpFeeLoading}
-		>
+		<dl className="space-y-2 py-3 text-xs" data-presentation="funding" aria-busy={cctpFeeLoading}>
 			<div className="flex items-center justify-between gap-3">
 				<dt className="text-market-close-muted">
 					<Trans>You receive</Trans>

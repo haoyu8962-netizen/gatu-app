@@ -6914,7 +6914,6 @@ msgid "SL must be below entry"
 msgstr "止损价须低于开仓价"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "止损价"
 
@@ -7201,7 +7200,6 @@ msgstr "止损限价"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
 msgid "Stop Loss"
 msgstr "止损"
@@ -7419,7 +7417,6 @@ msgstr "切换中..."
 msgid "System finalization · hash unavailable"
 msgstr "系统结算 · 无可用交易哈希"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/domain/trade/order-confirmation.ts
@@ -8348,7 +8345,6 @@ msgstr "止盈价须高于开仓价"
 msgid "TP must be below entry"
 msgstr "止盈价须低于开仓价"
 
-#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "止盈价"

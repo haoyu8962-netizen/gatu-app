@@ -414,7 +414,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			</ModalHeader>
 
 			<ModalContent className="space-y-4 max-[1000px]:px-4 max-[1000px]:pt-4 max-[1000px]:pb-0">
-				<div className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-3 space-y-1 text-xs">
+				<div className="space-y-2 py-3 text-xs">
 					<InfoRow
 						className="p-0"
 						label={t`Current Margin`}

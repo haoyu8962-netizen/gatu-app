@@ -386,10 +386,7 @@ export function MarketAssetInfo({ market }: Props) {
 					) : null}
 
 					{metadataRows.length > 0 ? (
-						<dl
-							data-testid="market-asset-info-card"
-							className="flex flex-col gap-2 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-3"
-						>
+						<dl data-testid="market-asset-info-card" className="flex flex-col gap-2 py-3">
 							{metadataRows.map((row) => (
 								<div key={row.id} className="flex items-start justify-between gap-4 text-xs">
 									<dt className="shrink-0 whitespace-nowrap text-trading-panel-muted">{row.label}</dt>

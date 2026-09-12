@@ -394,7 +394,7 @@ export function TokenSelectorContent({
 
 			<div
 				className={cn(
-					"flex shrink-0 items-center justify-between border-t border-trading-panel-stroke-card bg-trading-panel-card px-4 py-2.5 text-xs text-trading-panel-muted",
+					"flex shrink-0 items-center justify-between border-t border-trading-panel-stroke-card px-4 py-2.5 text-xs text-trading-panel-muted",
 					mobile && onClose && "pb-[calc(0.625rem+env(safe-area-inset-bottom))]",
 				)}
 			>

@@ -38,7 +38,6 @@ interface Props {
 	tpError?: string | null;
 	slError?: string | null;
 	disabled?: boolean;
-	compact?: boolean;
 	framed?: boolean;
 	quickPercentMode?: "price" | "roe";
 	leverage?: number;
@@ -81,7 +80,6 @@ export function TpSlSection({
 	tpError,
 	slError,
 	disabled,
-	compact,
 	framed,
 	quickPercentMode = "price",
 	leverage,
@@ -213,45 +211,6 @@ export function TpSlSection({
 					disabled={disabled}
 					mobileSafe={mobileTouchSafe}
 				/>
-			</div>
-		);
-	}
-
-	if (compact) {
-		return (
-			<div className="min-w-0 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card p-2.5">
-				<div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2">
-					<div className="min-w-0">
-						<NumberInput
-							label={t`Take Profit`}
-							placeholder={t`TP Price`}
-							mobileSafe
-							value={tpPrice}
-							onChange={(e) => onTpPriceChange(e.target.value)}
-							className={cn(
-								"w-full box-border border-trading-panel-stroke-input bg-surface text-xs tabular-nums text-trading-panel-fg",
-								!!tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
-							disabled={disabled}
-						/>
-						{tpError && <div className="mt-1 text-xs text-error">{tpError}</div>}
-					</div>
-					<div className="min-w-0">
-						<NumberInput
-							label={t`Stop Loss`}
-							placeholder={t`SL Price`}
-							mobileSafe
-							value={slPrice}
-							onChange={(e) => onSlPriceChange(e.target.value)}
-							className={cn(
-								"w-full box-border border-trading-panel-stroke-input bg-surface text-xs tabular-nums text-trading-panel-fg",
-								!!slError && "border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
-							disabled={disabled}
-						/>
-						{slError && <div className="mt-1 text-xs text-error">{slError}</div>}
-					</div>
-				</div>
 			</div>
 		);
 	}

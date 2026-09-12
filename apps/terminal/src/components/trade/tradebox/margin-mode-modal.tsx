@@ -514,7 +514,7 @@ function MarginModeForm({
 				)}
 
 				{mobileLayout && mobileView === "leverage" && !showLeverageControls ? (
-					<p className="rounded-12 border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-4 text-xs leading-relaxed text-trading-panel-muted">
+					<p className="py-4 text-xs leading-relaxed text-trading-panel-muted">
 						<Trans>Leverage is fixed at {currentLeverage}× for this market.</Trans>
 					</p>
 				) : null}
