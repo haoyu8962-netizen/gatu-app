@@ -47,3 +47,13 @@ jobs:
           tests/browser/drawer-interactions.pw.ts
           tests/browser/orderbook-hover.pw.ts
           --config tests/browser/playwright.config.ts
+
+      - name: Run desktop and mobile order-entry regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          --config tests/browser/mobile-trade-all-orders.playwright.config.ts
+
+      - name: Run desktop and mobile account funding regressions
+        run: >-
+          pnpm --dir apps/terminal exec playwright test
+          --config tests/browser/account-actions.playwright.config.ts
