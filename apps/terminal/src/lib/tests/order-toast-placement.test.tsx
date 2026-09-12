@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OrderToast } from "@/components/trade/tradebox/order-toast";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { orderSubmissionFeedback } from "@/lib/trade/order-submission-feedback";
-import { useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
+import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { createI18nRoot } from "./harness/react";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
@@ -28,9 +28,12 @@ const arabicMessages: Messages = {
 	[getMessageId(COORDINATION_MESSAGE)]: COORDINATION_MESSAGE_AR,
 };
 
+let queueActions: ReturnType<typeof useOrderQueueActions>;
+
 function OrderToastHarness() {
 	const orders = useOrderQueue();
-	const { addOrder, removeOrder } = useOrderQueueActions();
+	queueActions = useOrderQueueActions();
+	const { addOrder, removeOrder } = queueActions;
 
 	return createElement(
 		Fragment,
@@ -165,6 +168,59 @@ describe("OrderToast placement", () => {
 
 		const list = queue?.querySelector<HTMLDivElement>("div.overflow-y-auto");
 		expect(list?.className).toContain("max-h-[min(18rem,40dvh)]");
+	});
+
+	it("counts mixed statuses and preserves badge order, colors and locale reactivity", () => {
+		const statuses: OrderQueueItem["status"][] = [
+			"failed",
+			"success",
+			"canceled",
+			"partial",
+			"unconfirmed",
+			"confirming",
+			"pending",
+			"pending",
+		];
+		act(() => {
+			for (const status of statuses) {
+				queueActions.addOrder({ market: "HYPE", side: "buy", size: "1", orderType: "limit", status });
+			}
+		});
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		const badges = Array.from(queue?.firstElementChild?.lastElementChild?.querySelectorAll("span") ?? []);
+		expect(badges.map((badge) => badge.textContent)).toEqual([
+			"2 pending",
+			"1 confirming",
+			"1 unconfirmed",
+			"1 partial",
+			"1 Canceled",
+			"1 failed",
+		]);
+		expect(badges[0].classList.contains("text-fg-muted")).toBe(true);
+		for (const badge of badges.slice(1, 5)) expect(badge.classList.contains("text-warning")).toBe(true);
+		expect(badges[5].classList.contains("text-error")).toBe(true);
+		expect(queue?.classList.contains("ring-stroke-strong/30")).toBe(true);
+		act(() => i18n.loadAndActivate({ locale: "ar", messages: { [getMessageId("pending")]: "قيد الانتظار" } }));
+		expect(badges[0].isConnected).toBe(true);
+		expect(badges[0].textContent).toBe("2 قيد الانتظار");
+	});
+
+	it.each<{ statuses: OrderQueueItem["status"][]; ring: string }>([
+		{ statuses: ["success"], ring: "success" },
+		{ statuses: ["success", "failed"], ring: "error" },
+		{ statuses: ["success", "failed", "confirming"], ring: "warning" },
+		{ statuses: ["success", "failed", "unconfirmed"], ring: "warning" },
+		{ statuses: ["success", "failed", "partial"], ring: "warning" },
+		{ statuses: ["success", "failed", "canceled"], ring: "warning" },
+	])("preserves the $ring ring for $statuses", ({ statuses, ring }) => {
+		act(() => {
+			for (const status of statuses) {
+				queueActions.addOrder({ market: "HYPE", side: "buy", size: "1", orderType: "limit", status });
+			}
+		});
+		const queue = document.body.querySelector<HTMLElement>('section[aria-label="Order Queue"]');
+		const ringColors = Array.from(queue?.classList ?? []).filter((name) => name.startsWith("ring-stroke-"));
+		expect(ringColors).toEqual([`ring-stroke-${ring}-strong/30`]);
 	});
 
 	it("mounts one queue outside the market-keyed desktop and mobile order forms", () => {

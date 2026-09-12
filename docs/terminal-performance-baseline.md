@@ -100,6 +100,35 @@ The 2026-09-09 diagnostic with Node 22.15.0 first compared the existing catalogs
 
 The subsequent complete `pnpm build`, with the fixed build identity and Node 22.15.0 used by this baseline, passed all budget and circular-import checks after the audit fixes. Client gzip total was 3,106,750 bytes: 47,957 below the existing 3,154,707-byte baseline and 57,957 below its 10,000-byte allowance. This is 59,174 bytes below the pre-fix 3,165,924-byte build. Trade static startup was 1,551,380 bytes; incremental mobile startup was 110,612 bytes; incremental desktop startup was 197,591 bytes. The complete build verified 378 client chunks. No baseline, allowance, startup threshold, or validation script was changed.
 
+## Order queue rendering and deployment headroom
+
+The September 12 deployment reported a `trade-terminal-page` chunk of 123,218
+gzip bytes against the unchanged 123,207-byte ceiling. The preceding PR passed
+its build matrix, so that result alone does not establish deployment headroom.
+
+The bounded correction counts order queue statuses in one pass and shares the
+header badge rendering. All six badges retain their count, order, translated
+label and color. The outer ring keeps its priority: pending, then any warning
+(confirming, unconfirmed, partial or canceled), then failed, then success.
+Individual order items, removal timers, reconciliation and subscriptions retain
+their existing ownership and behavior. This changes no system boundary.
+
+Increasing the allowance or moving code into a different chunk solely to pass
+the named budget would not establish a real reduction. A trial sharing margin
+form JSX actually increased compressed size and was discarded; source line
+count is not a substitute for measuring the complete production output.
+
+Acceptance requires complete before/after production builds with fixed metadata
+and both pairing flags enabled, budget-validator tests, typecheck, queue status
+and dismissal tests, and translation reactivity tests. Exact outcomes belong in
+the [deployment budget follow-up](work-memory/sessions/2026-09-12-deploy-bundle-margin.md);
+local builds do not prove server deployment.
+
+The fixed-input comparison reduced the trading page from 123,153 to 122,980
+gzip bytes, leaving 227 bytes under the existing limit. The complete build passed
+all budgets and checked 388 chunks for static cycles; the work record includes
+both startup profiles and the verification scope.
+
 ## Functional acceptance gates
 
 Every terminal optimization must preserve all of the following:

@@ -22,6 +22,14 @@ const ORDER_TOAST_WIDTH =
 	"left-[max(1rem,var(--sal))] right-[max(1rem,var(--sar))] w-auto min-[1001px]:left-auto min-[1001px]:right-6 min-[1001px]:w-80";
 const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-[min(18rem,40dvh)]";
 
+const ORDER_QUEUE_BADGE_STATUSES = ["pending", "confirming", "unconfirmed", "partial", "canceled", "failed"] as const;
+
+function countOrderStatuses(orders: OrderQueueItem[]) {
+	const counts = { pending: 0, confirming: 0, unconfirmed: 0, partial: 0, success: 0, canceled: 0, failed: 0 };
+	for (const order of orders) counts[order.status] += 1;
+	return counts;
+}
+
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
 	useEffect(() => {
 		if (order.status !== "success" || !order.completedAt) return;
@@ -192,13 +200,26 @@ export function OrderToast() {
 	const { removeOrder } = useOrderQueueActions();
 	if (orders.length === 0 || typeof document === "undefined") return null;
 
-	const pendingCount = orders.filter((o) => o.status === "pending").length;
-	const confirmingCount = orders.filter((o) => o.status === "confirming").length;
-	const unconfirmedCount = orders.filter((o) => o.status === "unconfirmed").length;
-	const partialCount = orders.filter((o) => o.status === "partial").length;
-	const successCount = orders.filter((o) => o.status === "success").length;
-	const canceledCount = orders.filter((o) => o.status === "canceled").length;
-	const failedCount = orders.filter((o) => o.status === "failed").length;
+	const counts = countOrderStatuses(orders);
+	const labels = {
+		pending: t`pending`,
+		confirming: t`confirming`,
+		unconfirmed: t`unconfirmed`,
+		partial: t`partial`,
+		canceled: t`Canceled`,
+		failed: t`failed`,
+	};
+	const warningCount = counts.confirming + counts.unconfirmed + counts.partial + counts.canceled;
+	const ringClass =
+		counts.pending > 0
+			? "ring-1 ring-stroke-strong/30"
+			: warningCount > 0
+				? "ring-1 ring-stroke-warning-strong/30"
+				: counts.failed > 0
+					? "ring-1 ring-stroke-error-strong/30"
+					: counts.success > 0
+						? "ring-1 ring-stroke-success-strong/30"
+						: undefined;
 
 	return createPortal(
 		<section
@@ -212,35 +233,7 @@ export function OrderToast() {
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
 				"font-sans",
 
-				pendingCount > 0 && "ring-1 ring-stroke-strong/30",
-				confirmingCount > 0 && pendingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
-				unconfirmedCount > 0 && pendingCount === 0 && confirmingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
-				partialCount > 0 &&
-					pendingCount === 0 &&
-					confirmingCount === 0 &&
-					unconfirmedCount === 0 &&
-					"ring-1 ring-stroke-warning-strong/30",
-				canceledCount > 0 &&
-					pendingCount === 0 &&
-					confirmingCount === 0 &&
-					unconfirmedCount === 0 &&
-					partialCount === 0 &&
-					"ring-1 ring-stroke-warning-strong/30",
-				failedCount > 0 &&
-					pendingCount === 0 &&
-					confirmingCount === 0 &&
-					unconfirmedCount === 0 &&
-					partialCount === 0 &&
-					canceledCount === 0 &&
-					"ring-1 ring-stroke-error-strong/30",
-				successCount > 0 &&
-					pendingCount === 0 &&
-					confirmingCount === 0 &&
-					unconfirmedCount === 0 &&
-					partialCount === 0 &&
-					canceledCount === 0 &&
-					failedCount === 0 &&
-					"ring-1 ring-stroke-success-strong/30",
+				ringClass,
 			)}
 		>
 			<div className="px-3 py-2 border-b border-stroke-weak/40 bg-surface flex items-center justify-between">
@@ -249,35 +242,22 @@ export function OrderToast() {
 					<span className="text-xs font-semibold uppercase tracking-wider text-fg">{t`Order Queue`}</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					{pendingCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded border border-stroke-weak bg-fill-weak text-xs font-medium text-fg-muted">
-							{pendingCount} {t`pending`}
-						</span>
-					)}
-					{confirmingCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
-							{confirmingCount} {t`confirming`}
-						</span>
-					)}
-					{unconfirmedCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
-							{unconfirmedCount} {t`unconfirmed`}
-						</span>
-					)}
-					{partialCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
-							{partialCount} {t`partial`}
-						</span>
-					)}
-					{canceledCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
-							{canceledCount} {t`Canceled`}
-						</span>
-					)}
-					{failedCount > 0 && (
-						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-error-soft text-error border border-stroke-error-strong/30">
-							{failedCount} {t`failed`}
-						</span>
+					{ORDER_QUEUE_BADGE_STATUSES.map((status) =>
+						counts[status] > 0 ? (
+							<span
+								key={status}
+								className={cn(
+									"px-1.5 py-0.5 rounded border text-xs font-medium",
+									status === "pending"
+										? "border-stroke-weak bg-fill-weak text-fg-muted"
+										: status === "failed"
+											? "bg-error-soft text-error border-stroke-error-strong/30"
+											: "bg-warning-soft text-warning border-stroke-warning-strong/30",
+								)}
+							>
+								{counts[status]} {labels[status]}
+							</span>
+						) : null,
 					)}
 				</div>
 			</div>
