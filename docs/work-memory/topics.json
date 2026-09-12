@@ -1,0 +1,41 @@
+[
+	{
+		"id": "pr-review",
+		"title": "PR 复审与回归验证",
+		"documents": ["docs/terminal-review-remediation.md"]
+	},
+	{
+		"id": "order-entry",
+		"title": "移动端与桌面下单布局",
+		"documents": [
+			"docs/order-entry-layout-audit.md",
+			"docs/order-entry-surface-parity.md",
+			"docs/desktop-grid-layout.md"
+		]
+	},
+	{
+		"id": "market-recovery",
+		"title": "行情字段与被动恢复展示",
+		"documents": ["docs/mobile-data-presentation.md", "docs/price-source-audit.md", "docs/terminal-loading-audit.md"]
+	},
+	{
+		"id": "vite-cache",
+		"title": "Vite 依赖缓存与浏览器夹具",
+		"documents": ["docs/runtime-guardrails.md"]
+	},
+	{
+		"id": "account-funding",
+		"title": "账户模式与资金操作",
+		"documents": ["docs/account-overview.md", "docs/withdrawals.md", "docs/cctp-deposits.md"]
+	},
+	{
+		"id": "pairing-release",
+		"title": "移动配对与发布校验",
+		"documents": ["docs/mobile-sync-production-readiness.md", "deploy/README.md"]
+	},
+	{
+		"id": "work-memory",
+		"title": "工作记录与索引维护",
+		"documents": ["docs/work-memory/README.md"]
+	}
+]

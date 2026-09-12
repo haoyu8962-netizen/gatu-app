@@ -17,6 +17,7 @@ scripts/measure/**/out/
 *.tgz
 
 # Logs and one-off scratch output
+.worklog/
 *.log
 logs/
 tmp/
