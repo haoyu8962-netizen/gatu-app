@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-21
+- Presentation amendment: 2026-09-12, reconciled with the current account components and quiet data-recovery contract. The shared-model decision remains accepted.
 
 ## Context
 
@@ -28,15 +29,15 @@ Hyperliquid's official documentation also makes the account-mode and data bounda
 
 The hook must not subscribe to the selected DEX. `useAccountOverview` adds the selected-Dex source because the trading account panels need it. Portfolio consumes only the default snapshot, so changing the selected market cannot add a Portfolio subscription or change Portfolio equity.
 
-`deriveAccountOverview` remains the shared pure business model for desktop, mobile, and other trading-shell consumers. Account mode, equity, risk, leverage, funding readiness, stale/error state, and the Spot-funds notice are derived there rather than in render components.
+`deriveAccountOverview` remains the shared pure business model for desktop, mobile, and other trading-shell consumers. Account mode, equity, risk, leverage, funding readiness and stale/error state are derived there rather than in render components.
 
 ### Fail closed
 
-Unresolved account mode, missing required snapshots, stale streams, request errors, and missing non-USDC collateral prices are unavailable states in the shared model. Desktop and Portfolio consumers render placeholders or an explicit status and must not substitute `$0.00`.
+Unresolved account mode, missing required snapshots, stale streams, request errors, and missing non-USDC collateral prices are unavailable states in the shared model. They must not become a confirmed zero balance or enable an action. Connected desktop account metrics use skeletons while loading and dash placeholders when unavailable, without passive transport warnings. Portfolio retains its independent current-source readiness and history fallback.
 
 The mobile account overview uses formatted zero placeholders for unavailable metrics without loading, stale, or error banners or warning icons. These placeholders exist only in the mobile rendering layer: they never enter the shared model, classify an account as empty, or enable funds actions. Loading is exposed through `aria-busy`. Disabled funds controls retain action descriptions and confirmed restriction explanations without transient read-status messages. The broader mobile and shared-dialog presentation rules are defined in [Mobile data presentation](../mobile-data-presentation.md).
 
-Outside those mobile placeholders, a numeric zero is displayed only when it comes from a complete current snapshot. Readiness is consumer-specific:
+The disconnected desktop overview also intentionally renders static zero placeholders, with funding controls disabled except for the independently eligible sponsored email-deposit path. These zeroes do not assert that any account snapshot is empty. Outside these explicit presentation cases, reported zero balances require complete current snapshots. Readiness is consumer-specific:
 
 - Trading account overview readiness may depend on the selected DEX and the account abstraction mode.
 - Portfolio current-equity readiness additionally requires its all-Dex, Vault, Earn, and reserve-price sources; history remains a separate fallback when those current sources are unavailable.
@@ -86,6 +87,8 @@ Rejected in the shared business model because an unconnected, loading, stale, or
 
 ## References
 
+- [Current account overview contract](../account-overview.md), [quiet data presentation](../mobile-data-presentation.md), and [desktop layout](../desktop-grid-layout.md)
+- [Desktop account renderer](../../apps/terminal/src/components/trade/tradebox/account-panel.tsx) and [disconnected overview](../../apps/terminal/src/components/trade/tradebox/disconnected-account-overview.tsx)
 - [Hyperliquid Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
 - [Hyperliquid account abstraction modes](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes)
 - [Hyperliquid Portfolio Margin](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/portfolio-margin)

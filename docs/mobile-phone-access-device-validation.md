@@ -59,7 +59,7 @@ Copy this table into the external evidence file exactly once. Fill values from `
 
 ## Matrix Update Rules
 
-Preserve every required ID, matrix description and evidence field. Pass requires real-device observations, complete notes and exact acceptance references. Unsupported RD-6 may pass only with demonstrated fail-closed behavior and a verified external-browser route. Replace stale evidence after code changes. Run the validator without `--allow-incomplete` before enabling either gate; failed or missing rows block that release.
+Preserve every required ID, matrix description and evidence field. Pass requires real-device observations, complete notes and exact acceptance references. Unsupported RD-6 may pass only with demonstrated fail-closed behavior and a verified external-browser route. Replace stale evidence after code changes. Before promoting a candidate with either gate enabled through the optional strict `prepare` / `promote` workflow, run the validator without `--allow-incomplete`; failed or missing rows block that promotion. Ordinary deployment follows the automated checks described in the Release Rule above.
 
 ## Acceptance Coverage Map
 

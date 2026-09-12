@@ -10,6 +10,13 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Do not change behavior outside the requested surface while making visual-alignment changes.
 - Follow `docs/i18n-presentation.md`: rendered translations must subscribe to locale changes, and presentation helpers must receive their translation dependencies explicitly. Language switches must preserve mounted panels, input values and protocol values.
 
+## Documentation contract
+
+- Treat documentation as a first-class deliverable. Follow `docs/documentation-system.md` and use `docs/README.md` as the navigation entry point.
+- Before changing a system boundary, document its goal, constraints, design, alternatives and verification criteria. Keep current reference docs and user-facing `CHANGELOG.md` aligned with the implementation in the same change; record significant tradeoffs in `docs/adr/`.
+- Preserve work memory in two logical layers: source records and a curated retrieval index. Use the project's work-memory entry point for ongoing tasks; `notes/index.md` catalogs retained legacy reviews and documentation audit records. Append corrections and link superseding decisions instead of rewriting history. Never reconstruct missing conversations or claim unperformed checks.
+- Distinguish implemented behavior, historical proposals, required verification and actual verification results. A code review, automated test or documentation update is not evidence of a release or real-device acceptance. Keep secrets and personal account data out of records.
+
 ## Wallet signing contract
 
 - Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
