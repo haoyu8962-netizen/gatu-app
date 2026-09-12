@@ -139,6 +139,7 @@ jobs:
           src/lib/tests/trade-terminal-page-boot.test.tsx
           src/lib/tests/twap-details.test.ts
           src/lib/tests/use-sub.test.tsx
+          src/lib/tests/vite-cache-isolation.test.ts
           tests/mobile-trade-size-validation-a11y.test.tsx
           tests/trade-size-error-a11y.test.tsx
 

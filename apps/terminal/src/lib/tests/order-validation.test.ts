@@ -1,5 +1,40 @@
 import { describe, expect, it, vi } from "vitest";
 import { getTpSlPriceErrors } from "@/domain/trade/tpsl-price-validation";
+import {
+	enterSizeValidator,
+	exceedsMaxSizeValidator,
+	minOrderNotionalValidator,
+} from "@/lib/errors/definitions/order-input";
+import {
+	scaleLevelMinNotionalValidator,
+	scaleSizeAllocationValidator,
+	scaleSkewAllocationValidator,
+} from "@/lib/errors/definitions/scale";
+import {
+	insufficientBaseBalanceValidator,
+	insufficientQuoteBalanceValidator,
+} from "@/lib/errors/definitions/spot-balance";
+import { spotEnterSizeValidator, spotMinOrderNotionalValidator } from "@/lib/errors/definitions/spot-input";
+import {
+	enterTpSlPriceValidator,
+	slPriceValidator,
+	tpPriceValidator,
+	tpSlReturnValidator,
+} from "@/lib/errors/definitions/tpsl";
+import {
+	stopTriggerAboveMarkValidator,
+	stopTriggerBelowMarkValidator,
+	tpTriggerAboveMarkValidator,
+	tpTriggerBelowMarkValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionExistsValidator,
+	triggerPositionSizeValidator,
+} from "@/lib/errors/definitions/trigger";
+import {
+	twapMinNotionalValidator,
+	twapStopDirectionValidator,
+	twapTriggerDiffersFromMarkValidator,
+} from "@/lib/errors/definitions/twap";
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
 import { getOrderValidationPresentation, isInlineTpSlValidationError } from "@/lib/trade/order-validation-presentation";
@@ -541,6 +576,53 @@ describe("quiet order validation presentation", () => {
 		scaleStartPrice: "95",
 		scaleEndPrice: "105",
 	};
+	it.each([
+		enterSizeValidator,
+		minOrderNotionalValidator,
+		exceedsMaxSizeValidator,
+		spotEnterSizeValidator,
+		spotMinOrderNotionalValidator,
+		insufficientQuoteBalanceValidator,
+		insufficientBaseBalanceValidator,
+		scaleLevelMinNotionalValidator,
+		scaleSizeAllocationValidator,
+		scaleSkewAllocationValidator,
+		triggerPositionSizeValidator,
+		twapMinNotionalValidator,
+		enterTpSlPriceValidator,
+		tpPriceValidator,
+		slPriceValidator,
+		tpSlReturnValidator,
+		stopTriggerAboveMarkValidator,
+		stopTriggerBelowMarkValidator,
+		tpTriggerAboveMarkValidator,
+		tpTriggerBelowMarkValidator,
+		twapTriggerDiffersFromMarkValidator,
+		twapStopDirectionValidator,
+	])("keeps $id feedback quiet until the market recovers without changing the raw error", (validator) => {
+		const error = { ...validator.error, message: validator.id };
+		const errors = [error];
+		const state = {
+			accountReady: true,
+			marketReady: false,
+			positionReady: true,
+			draft: { ...enteredDraft, tpPrice: "120" },
+		};
+		expect(getOrderValidationPresentation(errors, state)).toEqual([]);
+		expect(getOrderValidationPresentation(errors, { ...state, marketReady: true })).toEqual([error]);
+		expect(errors).toEqual([error]);
+	});
+
+	it.each([triggerPositionExistsValidator, triggerPositionDirectionValidator, triggerPositionSizeValidator])(
+		"keeps $id feedback quiet until positions arrive",
+		(validator) => {
+			const error = { ...validator.error, message: validator.id };
+			const state = { accountReady: true, marketReady: true, positionReady: false, draft: enteredDraft };
+			expect(getOrderValidationPresentation([error], state)).toEqual([]);
+			expect(getOrderValidationPresentation([error], { ...state, positionReady: true })).toEqual([error]);
+		},
+	);
+
 	it.each(["idle", "loading", "stale", "error"] as const)(
 		"keeps %s data blocked without passive or mark-dependent errors",
 		(markPriceStatus) => {
