@@ -47,9 +47,9 @@ function call(port, host, path, extraHeaders = {}, body = { operation: "register
 	});
 }
 
-for (const mode of ["legacy", "unsealed", ...(process.env.MOBILE_SYNC_OUTPUT ? ["nitro"] : [])])
+for (const mode of ["legacy", ...(process.env.MOBILE_SYNC_OUTPUT ? ["nitro"] : [])])
 	test(
-		`canonical Caddy blocks ticket aliases ahead of ${mode} and overwrites forged client IPs`,
+		`canonical Caddy opens verified ${mode} traffic and reseals before rollback`,
 		{ skip: !process.env.CADDY_BINARY },
 		async () => {
 			const directory = await mkdtemp(resolve(tmpdir(), "gatu-caddy-ticket-"));
@@ -131,14 +131,7 @@ for (const mode of ["legacy", "unsealed", ...(process.env.MOBILE_SYNC_OUTPUT ? [
 					}
 					assert.ok(ready, "Nitro readiness");
 				}
-				let configPath = resolve("deploy/Caddyfile");
-				if (mode === "unsealed") {
-					configPath = resolve(directory, "Caddyfile");
-					await writeFile(
-						configPath,
-						(await readFile("deploy/Caddyfile", "utf8")).replace("respond @mobile_sync_block 503", ""),
-					);
-				}
+				const configPath = resolve("deploy/Caddyfile");
 				const adapted = spawnSync(
 					process.env.CADDY_BINARY,
 					["adapt", "--config", configPath, "--adapter", "caddyfile"],
@@ -156,6 +149,7 @@ for (const mode of ["legacy", "unsealed", ...(process.env.MOBILE_SYNC_OUTPUT ? [
 				}
 				function rewrite(value) {
 					if (!value || typeof value !== "object") return;
+					if (value.file?.try_files?.includes("mobile-sync-edge-ready")) value.file.root = directory;
 					if (value.handler === "reverse_proxy") value.upstreams = [{ dial: `127.0.0.1:${upstreamPort}` }];
 					for (const nested of Object.values(value)) rewrite(nested);
 				}
@@ -177,18 +171,61 @@ for (const mode of ["legacy", "unsealed", ...(process.env.MOBILE_SYNC_OUTPUT ? [
 				forwarded.length = 0;
 				for (const host of ["app.gatu.ai", "testnet.gatu.ai"]) {
 					for (const path of [...BLOCKED_PATHS, "/mobile-agent-sync-ticket%2f", "/mobile-agent-sync-ticket?test=1"]) {
-						if (mode === "unsealed" && !/\\|%5c/i.test(path)) continue;
 						const response = await call(port, host, path);
-						assert.equal(response.statusCode, mode === "unsealed" ? 400 : 503, path);
+						assert.equal(response.statusCode, 503, path);
 						assert.equal(response.headers["cache-control"], "no-store");
 						assert.equal(response.headers["referrer-policy"], "no-referrer");
-						if (mode !== "unsealed") assert.equal(response.headers["retry-after"], "60");
+						assert.equal(response.headers["retry-after"], "60");
 					}
 				}
 				assert.equal(forwarded.length, 0, "blocked requests reached legacy upstream");
 				assert.equal((await call(port, "app.gatu.ai", "/trade%5c")).statusCode, 400);
-				if (mode === "unsealed")
-					assert.equal((await call(port, "app.gatu.ai", "/mobile-agent-sync-ticket")).statusCode, 200);
+				const marker = resolve(directory, "mobile-sync-edge-ready");
+				await writeFile(marker, "verified fixture release\n");
+				for (const host of ["app.gatu.ai", "testnet.gatu.ai"]) {
+					for (const path of BLOCKED_PATHS.filter((path) => /\\|%5c/i.test(path))) {
+						const rejected = await call(port, host, path);
+						assert.equal(rejected.statusCode, 400, path);
+						assert.equal(rejected.headers["cache-control"], "no-store");
+					}
+					assert.equal((await call(port, host, "/mobile-agent-sync-ticket")).statusCode, mode === "nitro" ? 400 : 200);
+					if (mode === "nitro") {
+						const issued = await call(port, host, "/mobile-agent-sync-ticket", {}, { version: 2, operation: "issue" });
+						const manifest = JSON.parse(
+							await readFile(resolve(process.env.MOBILE_SYNC_OUTPUT, ".gatu-mobile-sync.json"), "utf8"),
+						);
+						assert.equal(issued.statusCode, manifest.mobileSync.createAndReveal ? 200 : 503);
+						if (issued.statusCode === 200) {
+							const syncId = JSON.parse(issued.body).syncId;
+							for (const [consumerId, expected] of [
+								["11".repeat(16), 204],
+								["11".repeat(16), 204],
+								["22".repeat(16), 409],
+							]) {
+								assert.equal(
+									(
+										await call(
+											port,
+											host,
+											"/mobile-agent-sync-ticket",
+											{},
+											{ version: 2, operation: "consume", syncId, consumerId },
+										)
+									).statusCode,
+									expected,
+								);
+							}
+						}
+					}
+				}
+				await rm(marker);
+				for (const host of ["app.gatu.ai", "testnet.gatu.ai"])
+					for (const path of BLOCKED_PATHS)
+						assert.equal(
+							(await call(port, host, path)).statusCode,
+							503,
+							"rollback gate must close without a Caddy reload",
+						);
 				const response = await call(port, "app.gatu.ai", "/trade", {
 					"x-forwarded-for": "198.51.100.77",
 					"x-real-ip": "198.51.100.88",

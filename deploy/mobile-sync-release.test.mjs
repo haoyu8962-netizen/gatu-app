@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
@@ -122,51 +122,120 @@ cleanup_old_releases
 	}
 });
 
-test("rollback selects and verifies the pinned closed baseline instead of the previous release", async () =>
-	fixture(async (directory, manifest, save) => {
-		const { spawnSync } = await import("node:child_process");
-		const { basename } = await import("node:path");
-		const { readlink, realpath } = await import("node:fs/promises");
-		manifest.release = basename(directory);
-		await save();
-		await writeFile(resolve(directory, ".gatu-release-id"), `${manifest.release}\n`);
-		const work = await mkdtemp(resolve(tmpdir(), "gatu-safe-rollback-"));
-		try {
-			await mkdir(resolve(work, "previous"));
-			await mkdir(resolve(work, "failed"));
-			await symlink(resolve(work, "failed"), resolve(work, "current"));
-			await symlink(directory, resolve(work, "baseline"));
-			const result = spawnSync("bash", ["-s"], {
-				encoding: "utf8",
-				env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work },
-				input: `source "$TEST_REPO/deploy/deploy.sh"
+for (const enabled of [false, true])
+	test(`rollback selects the verified v2 baseline with pairing=${enabled}`, async () =>
+		fixture(async (directory, manifest, save) => {
+			const { spawnSync } = await import("node:child_process");
+			const { basename } = await import("node:path");
+			const { readlink, realpath } = await import("node:fs/promises");
+			manifest.mobileSync.createAndReveal = enabled;
+			manifest.mobileSync.importFromQr = enabled;
+			manifest.release = basename(directory);
+			await save();
+			await writeFile(resolve(directory, ".gatu-release-id"), `${manifest.release}\n`);
+			const work = await mkdtemp(resolve(tmpdir(), "gatu-safe-rollback-"));
+			try {
+				await mkdir(resolve(work, "previous"));
+				await mkdir(resolve(work, "failed"));
+				await symlink(resolve(work, "failed"), resolve(work, "current"));
+				await symlink(directory, resolve(work, "baseline"));
+				const result = spawnSync("bash", ["-s"], {
+					encoding: "utf8",
+					env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work },
+					input: `source "$TEST_REPO/deploy/deploy.sh"
 REPO="$TEST_REPO"
 CURRENT="$TEST_WORK/current"
 MOBILE_SYNC_BASELINE="$TEST_WORK/baseline"
-verify_mobile_sync_edge_block() { return 1; }
+verify_mobile_sync_edge_block() { [ ! -e "$TEST_WORK/mobile-sync-edge-ready" ]; }
 sudo() { [ "$*" = "systemctl restart gatu" ]; }
 mv() {
  if [ "$1" = "-Tf" ]; then command rm -f "$3"; command mv "$2" "$3"; else command mv "$@"; fi
 }
 rollback_to_release "$TEST_WORK/previous"
 `,
-			});
-			assert.equal(result.status, 0, result.stderr);
-			assert.equal(await readlink(resolve(work, "current")), await realpath(directory));
-			await writeFile(resolve(directory, "server/index.mjs"), "tampered");
-			const failed = spawnSync("bash", ["-s"], {
-				encoding: "utf8",
-				env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work },
-				input: `source "$TEST_REPO/deploy/deploy.sh"
+				});
+				assert.equal(result.status, 0, result.stderr);
+				assert.equal(await readlink(resolve(work, "current")), await realpath(directory));
+				await writeFile(resolve(directory, "server/index.mjs"), "tampered");
+				const failed = spawnSync("bash", ["-s"], {
+					encoding: "utf8",
+					env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work },
+					input: `source "$TEST_REPO/deploy/deploy.sh"
 REPO="$TEST_REPO"
+CURRENT="$TEST_WORK/current"
 MOBILE_SYNC_BASELINE="$TEST_WORK/baseline"
 verify_mobile_sync_edge_block() { return 1; }
 prepare_mobile_sync_rollback "$TEST_WORK/previous"
 `,
+				});
+				assert.equal(failed.status, 1);
+				assert.match(failed.stderr, /refusing release switch/);
+			} finally {
+				await rm(work, { recursive: true, force: true });
+			}
+		}));
+
+for (const failure of ["none", "node-mainnet", "node-testnet", "edge-mainnet", "edge-testnet"]) {
+	test(`ticket readiness opens only after both Node probes and closes on ${failure}`, async () => {
+		const { spawnSync } = await import("node:child_process");
+		const { readFile, stat } = await import("node:fs/promises");
+		const work = await mkdtemp(resolve(tmpdir(), "gatu-edge-readiness-"));
+		try {
+			await writeFile(resolve(work, "mobile-sync-edge-ready"), "old release");
+			const result = spawnSync("bash", ["-s"], {
+				encoding: "utf8",
+				env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work, TEST_FAILURE: failure },
+				input: `source "$TEST_REPO/deploy/deploy.sh"
+REPO="$TEST_REPO"
+CURRENT="$TEST_WORK/current"
+node() {
+ local phase="edge" network="mainnet"
+ if [ "${"$"}{6:-}" = "node" ]; then phase="node"; fi
+ if [ "$5" = "https://testnet.gatu.ai" ]; then network="testnet"; fi
+ if [ "$phase" = "node" ]; then [ ! -e "$TEST_WORK/mobile-sync-edge-ready" ] || return 90
+ else [ -f "$TEST_WORK/mobile-sync-edge-ready" ] || return 91; fi
+ printf '%s\\n' "$phase-$network" >> "$TEST_WORK/probes"
+ [ "$TEST_FAILURE" != "$phase-$network" ]
+}
+verify_mobile_sync_health "$TEST_WORK/verified-v2" 3000
+`,
 			});
-			assert.equal(failed.status, 1);
-			assert.match(failed.stderr, /refusing release switch/);
+			assert.equal(result.status, failure === "none" ? 0 : 1, result.stderr);
+			const probes = (await readFile(resolve(work, "probes"), "utf8")).trim().split("\n");
+			const expected = ["node-mainnet", "node-testnet", "edge-mainnet", "edge-testnet"];
+			assert.deepEqual(probes, failure === "none" ? expected : expected.slice(0, expected.indexOf(failure) + 1));
+			if (failure === "none") {
+				assert.equal(await readFile(resolve(work, "mobile-sync-edge-ready"), "utf8"), `${work}/verified-v2\n`);
+				assert.equal((await stat(resolve(work, "mobile-sync-edge-ready"))).mode & 0o777, 0o644);
+			} else await assert.rejects(stat(resolve(work, "mobile-sync-edge-ready")), { code: "ENOENT" });
 		} finally {
 			await rm(work, { recursive: true, force: true });
 		}
-	}));
+	});
+}
+
+test("first enabled deployment closes the edge without requiring a disabled baseline", async () => {
+	const { spawnSync } = await import("node:child_process");
+	const { stat } = await import("node:fs/promises");
+	const work = await mkdtemp(resolve(tmpdir(), "gatu-first-pairing-deploy-"));
+	try {
+		await mkdir(resolve(work, "legacy"));
+		await writeFile(resolve(work, "mobile-sync-edge-ready"), "old readiness");
+		const result = spawnSync("bash", ["-s"], {
+			encoding: "utf8",
+			env: { ...process.env, TEST_REPO: process.cwd(), TEST_WORK: work },
+			input: `source "$TEST_REPO/deploy/deploy.sh"
+REPO="$TEST_REPO"
+CURRENT="$TEST_WORK/current"
+MOBILE_SYNC_BASELINE="$TEST_WORK/baseline"
+verify_mobile_sync_edge_block() { [ ! -e "$TEST_WORK/mobile-sync-edge-ready" ]; }
+prepare_mobile_sync_rollback "$TEST_WORK/legacy"
+`,
+		});
+		assert.equal(result.status, 0, result.stderr);
+		await assert.rejects(stat(resolve(work, "mobile-sync-edge-ready")), { code: "ENOENT" });
+		await assert.rejects(stat(resolve(work, "baseline")), { code: "ENOENT" });
+	} finally {
+		await rm(work, { recursive: true, force: true });
+	}
+});

@@ -187,23 +187,17 @@ export async function verifyEvidence(file, root, record) {
 	return sha(bytes);
 }
 
-export async function authorizePromotion(candidate, root, repo, shared, commit) {
+export async function authorizePromotion(candidate, root, repo, shared, commit, mode = "promote") {
+	assert.ok(["deploy", "promote"].includes(mode), "invalid publication mode");
 	const { record, manifest } = await verifyCandidate(candidate, root, repo, shared, commit);
-	const blocked = (await readFile(resolve(repo, "deploy/Caddyfile"), "utf8")).includes(
-		"respond @mobile_sync_block 503",
-	);
-	assert.ok(
-		!blocked || !enabled(manifest),
-		"canonical Caddy still seals ticket routes; publish a closed baseline first",
-	);
 	let evidenceSha256 = null;
-	if (enabled(manifest))
+	if (enabled(manifest) && mode === "promote")
 		evidenceSha256 = await verifyEvidence(
 			resolve(shared, "mobile-sync-evidence", `${record.release}.md`),
 			resolve(shared, "mobile-sync-evidence"),
 			record,
 		);
-	return { ...record, evidenceSha256 };
+	return { ...record, publicationMode: mode, evidenceSha256 };
 }
 
 async function verifyPublicationRecord(root, authorization) {
@@ -297,7 +291,7 @@ async function main() {
 	else if (operation === "authorize") process.stdout.write(`${JSON.stringify(await authorizePromotion(...args))}\n`);
 	else
 		throw new Error(
-			"Usage: mobile-sync-candidate.mjs prepare <output> <root> <repo> <shared> | verify/authorize <candidate> <root> <repo> <shared> <commit> | record <publications> <authorization-json> | reuse <release> <releases> <publications> <authorization-json>",
+			"Usage: mobile-sync-candidate.mjs prepare <output> <root> <repo> <shared> | verify/authorize <candidate> <root> <repo> <shared> <commit> [deploy|promote] | record <publications> <authorization-json> | reuse <release> <releases> <publications> <authorization-json>",
 		);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)

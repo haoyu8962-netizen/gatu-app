@@ -4,7 +4,7 @@ Updated: 2026-09-11. Protocol: ticket API v2, envelope v2, draft v1.
 
 ## Release Rule
 
-All 11 required physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. This blocks enabling pairing; a verified closed v2 safety baseline may ship under the [production release procedure](mobile-sync-production-readiness.md).
+All 11 physical rows remain **Not run**. Automation and simulated cameras cannot mark them Pass. These rows are mandatory for the optional `prepare` / `promote` workflow when pairing is enabled. Ordinary `deploy.sh main` uses automated release verification without requiring this file; it does not claim device acceptance. See the [production release procedure](mobile-sync-production-readiness.md).
 
 ## Required Evidence
 

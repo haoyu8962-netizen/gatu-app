@@ -163,6 +163,28 @@ async function fixture(run, actual = false) {
 	}
 }
 
+test("ordinary deployment authorizes enabled candidates without device evidence while enforcing identity", async () =>
+	fixture(async (f) => {
+		await rm(f.proof, { force: true });
+		const approval = await authorizePromotion(f.candidate, f.root, f.repo, f.shared, f.record.commit, "deploy");
+		assert.equal(approval.evidenceSha256, null);
+		assert.equal(approval.publicationMode, "deploy");
+		assert.equal(approval.mobileSync.createAndReveal, true);
+		await assert.rejects(
+			authorizePromotion(f.candidate, f.root, f.repo, f.shared, "0".repeat(40), "deploy"),
+			/synchronized main/,
+		);
+		await assert.rejects(
+			authorizePromotion(f.candidate, f.root, f.repo, f.shared, f.record.commit, "unknown"),
+			/publication mode/,
+		);
+		await writeFile(resolve(f.shared, ".env.runtime"), "changed");
+		await assert.rejects(
+			authorizePromotion(f.candidate, f.root, f.repo, f.shared, f.record.commit, "deploy"),
+			/configuration changed/,
+		);
+	}));
+
 test("external complete evidence authorizes identical candidate bytes without changing real Git HEAD", async () =>
 	fixture(async (f) => {
 		await assert.rejects(authorizePromotion(f.candidate, f.root, f.repo, f.shared, f.record.commit));
@@ -207,20 +229,22 @@ test("promotion fails closed on wrong commit, changed config, malformed or incom
 		assert.throws(() => evidenceIdentity(`${valid}\n## Candidate Identity\n`, f.record), /exactly one/);
 	}));
 
-test(
-	"actual shell publication promotes the attested Nitro candidate without rebuilding or changing bytes",
-	{ skip: !process.env.MOBILE_SYNC_OUTPUT },
-	async () =>
-		fixture(async (f) => {
-			await writeFile(f.proof, evidence(f.record));
-			await mkdir(resolve(f.work, "previous"));
-			await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
-			const shell = `source "$SOURCE_REPO/deploy/deploy.sh"
+for (const mode of ["deploy", "promote"])
+	test(
+		`actual shell ${mode} publishes the attested Nitro candidate without rebuilding or changing bytes`,
+		{ skip: !process.env.MOBILE_SYNC_OUTPUT },
+		async () =>
+			fixture(async (f) => {
+				await writeFile(f.proof, evidence(f.record));
+				await mkdir(resolve(f.work, "previous"));
+				await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
+				const shell = `source "$SOURCE_REPO/deploy/deploy.sh"
 REPO="$FIXTURE_REPO"
 SHARED="$FIXTURE_SHARED"
 CANDIDATES="$SHARED/mobile-sync-candidates"
 RELEASES="$FIXTURE_WORK/releases"
 CURRENT="$FIXTURE_WORK/current"
+DEPLOY_MODE="${mode}"
 prepare_mobile_sync_rollback() { return 0; }
 pnpm() { echo 'unexpected rebuild' >&2; return 99; }
 node() {
@@ -235,60 +259,61 @@ mv() {
 }
 publish_release "$FIXTURE_WORK/previous" "$FIXTURE_RELEASE" "$FIXTURE_COMMIT"
 `;
-			const run = (fault = "") =>
-				spawnSync("bash", ["-s"], {
-					input: shell,
-					encoding: "utf8",
-					timeout: 60_000,
-					env: {
-						...process.env,
-						SOURCE_REPO: process.cwd(),
-						FIXTURE_REPO: f.repo,
-						FIXTURE_SHARED: f.shared,
-						FIXTURE_WORK: f.work,
-						FIXTURE_RELEASE: f.record.release,
-						FIXTURE_COMMIT: f.record.commit,
-						FAULT: fault,
-					},
-				});
-			await writeFile(f.proof, evidence(f.record, { status: "Not run" }));
-			if (f.record.mobileSync.importFromQr) {
-				assert.notEqual(run().status, 0);
+				const run = (fault = "") =>
+					spawnSync("bash", ["-s"], {
+						input: shell,
+						encoding: "utf8",
+						timeout: 60_000,
+						env: {
+							...process.env,
+							SOURCE_REPO: process.cwd(),
+							FIXTURE_REPO: f.repo,
+							FIXTURE_SHARED: f.shared,
+							FIXTURE_WORK: f.work,
+							FIXTURE_RELEASE: f.record.release,
+							FIXTURE_COMMIT: f.record.commit,
+							FAULT: fault,
+						},
+					});
+				await writeFile(f.proof, evidence(f.record, { status: "Not run" }));
+				if (mode === "promote" && f.record.mobileSync.importFromQr) {
+					assert.notEqual(run().status, 0);
+					assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
+				}
+				if (mode === "promote") await writeFile(f.proof, evidence(f.record));
+				else await rm(f.proof);
+				for (const fault of ["record-before", "record-after", "release-rename", "current-switch"]) {
+					const failed = run(fault);
+					assert.notEqual(failed.status, 0, fault);
+					assert.ok(failed.stderr.includes(`injected ${fault}`), failed.stderr);
+					assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
+				}
+				const receipt = resolve(f.shared, "mobile-sync-publications", `${f.record.release}.json`);
+				const recordedBytes = await readFile(receipt);
+				const recordedStat = await lstat(receipt);
+				const result = run();
+				assert.equal(result.status, 0, result.stderr);
+				const published = await readlink(resolve(f.work, "current"));
+				assert.equal((await verifyRelease(published)).sha256, f.record.sha256);
+				assert.equal((await verifyRelease(resolve(f.candidate, "artifact"))).sha256, f.record.sha256);
+				const serverStat = await lstat(resolve(published, "server/index.mjs"));
+				await rm(resolve(f.work, "current"));
+				await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
+				const retried = run();
+				assert.equal(retried.status, 0, retried.stderr);
+				assert.equal(await readlink(resolve(f.work, "current")), published);
+				assert.equal((await lstat(resolve(published, "server/index.mjs"))).ino, serverStat.ino);
+				assert.equal((await lstat(receipt)).ino, recordedStat.ino);
+				assert.deepEqual(await readFile(receipt), recordedBytes);
+				await rm(resolve(f.work, "current"));
+				await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
+				await writeFile(resolve(published, "server/index.mjs"), "tampered");
+				const rejected = run();
+				assert.notEqual(rejected.status, 0);
 				assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
-			}
-			await writeFile(f.proof, evidence(f.record));
-			for (const fault of ["record-before", "record-after", "release-rename", "current-switch"]) {
-				const failed = run(fault);
-				assert.notEqual(failed.status, 0, fault);
-				assert.ok(failed.stderr.includes(`injected ${fault}`), failed.stderr);
-				assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
-			}
-			const receipt = resolve(f.shared, "mobile-sync-publications", `${f.record.release}.json`);
-			const recordedBytes = await readFile(receipt);
-			const recordedStat = await lstat(receipt);
-			const result = run();
-			assert.equal(result.status, 0, result.stderr);
-			const published = await readlink(resolve(f.work, "current"));
-			assert.equal((await verifyRelease(published)).sha256, f.record.sha256);
-			assert.equal((await verifyRelease(resolve(f.candidate, "artifact"))).sha256, f.record.sha256);
-			const serverStat = await lstat(resolve(published, "server/index.mjs"));
-			await rm(resolve(f.work, "current"));
-			await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
-			const retried = run();
-			assert.equal(retried.status, 0, retried.stderr);
-			assert.equal(await readlink(resolve(f.work, "current")), published);
-			assert.equal((await lstat(resolve(published, "server/index.mjs"))).ino, serverStat.ino);
-			assert.equal((await lstat(receipt)).ino, recordedStat.ino);
-			assert.deepEqual(await readFile(receipt), recordedBytes);
-			await rm(resolve(f.work, "current"));
-			await symlink(resolve(f.work, "previous"), resolve(f.work, "current"));
-			await writeFile(resolve(published, "server/index.mjs"), "tampered");
-			const rejected = run();
-			assert.notEqual(rejected.status, 0);
-			assert.equal(await readlink(resolve(f.work, "current")), resolve(f.work, "previous"));
-			assert.equal(f.git("rev-parse", "HEAD"), f.head);
-		}, true),
-);
+				assert.equal(f.git("rev-parse", "HEAD"), f.head);
+			}, true),
+	);
 
 test("candidate pruning preserves pending validation, current and baseline outside release pruning", async () => {
 	const work = await realpath(await mkdtemp(resolve(tmpdir(), "gatu-candidate-prune-")));

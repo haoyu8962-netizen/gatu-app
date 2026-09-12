@@ -10,7 +10,15 @@
 app.gatu.ai, testnet.gatu.ai {
 	encode zstd gzip
 
-	@mobile_sync_block path_regexp (?i)^[/\\]*mobile-agent-sync-ticket([/\\].*)?$
+	# The deploy script opens this gate only after the running v2 process passes
+	# its Node probes, and closes it before every release switch or rollback.
+	@mobile_sync_block {
+		path_regexp (?i)^[/\\]*mobile-agent-sync-ticket([/\\].*)?$
+		not file {
+			root /opt/gatu
+			try_files mobile-sync-edge-ready
+		}
+	}
 	@ambiguous_path path_regexp \x5c
 	route {
 		header @mobile_sync_block {

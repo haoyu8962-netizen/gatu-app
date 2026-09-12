@@ -1,5 +1,7 @@
 # 移动配对发布防护实施记录
 
+本文保留 2026-09-11 的历史实施与验收结果。2026-09-12 起，常规发布已允许直接开启配对，并使用自动 readiness 入口保护；旧的关闭基线和强制真机准入要求不再适用于常规发布。当前规则见 [生产发布流程](mobile-sync-production-readiness.md)，严格 prepare/promote 仍要求真实设备证明。
+
 2026-09-11。对应 [R0–R5 修复计划](mobile-sync-release-hardening-plan.md)。代码与自动化流程已实施；未推送或部署，尚不满足真机/目标主机生产启用准入。
 
 | 任务 | 实施与交叉验证 |
@@ -36,7 +38,7 @@ node --test deploy/deploy-bootstrap.test.mjs deploy/deploy-health-check.test.mjs
 
 [Caddy path_regexp 官方说明](https://caddyserver.com/docs/caddyfile/matchers#path_regexp) 明确匹配 URI 解码后的路径；本修复同时用固定版本的真实代理确认语义。[Nitro Node runtime 文档](https://nitro.build/deploy/runtimes/node) 列出 HOST/NITRO_HOST 和 PORT/NITRO_PORT，项目实际产物的别名优先级与启动链已纳入检查。
 
-生产仍需在受控环境安装并比对 canonical Caddy/systemd、先发布并固定双关基线、通过目标 Linux 与双 HTTPS origin 检查。启用配对前需要相同候选的全部真实手机/钱包验收，并按 [部署说明](../deploy/README.md#移动配对-v2-发布保护) 提升同一产物。测试阶段不下单、不转账、不更换 owner、不跳过法律/地区/签名门禁。
+生产仍需在受控环境安装并比对 canonical Caddy/systemd、先发布并固定双关基线、通过目标 Linux 与双 HTTPS origin 检查。启用配对前需要相同候选的全部真实手机/钱包验收，并按 [部署说明](../deploy/README.md#移动配对-v2-发布与自动入口保护) 提升同一产物。测试阶段不下单、不转账、不更换 owner、不跳过法律/地区/签名门禁。
 
 ## 发布重试修复补充
 
