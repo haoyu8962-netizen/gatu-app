@@ -41,6 +41,8 @@ The account-action browser suite mounts the real AccountPanel in the real deskto
 
 At 1545×900, reference Market and Limit modes retain the same 670px trading panel and chart/account boundaries while reallocating space between the scrollable fields and bottom summary. Preserve this height-ownership boundary alongside GATU's grid resizing controls. Browser regressions must compare every panel rectangle and the outer scroll extent, preserve saved user geometry and field values, and verify that the last field, CTA and fees remain reachable.
 
+Account mode names, overview titles, ratio labels and leverage collateral follow [the shared account overview contract](account-overview.md). Locale and mode changes must update the existing desktop and mobile panels, including accessible progress labels, without remounting funds dialogs.
+
 ## Mobile order-entry height
 
 The embedded mobile form and compact order book share a viewport-based minimum height: `clamp(370px, 60svh, 480px)`. This is a floor, not a fixed height or content ceiling. The form's natural content determines any additional height; the book stretches alongside it and account panels follow below. Keep the book out of intrinsic height calculation so its measured row count cannot feed back into split sizing.

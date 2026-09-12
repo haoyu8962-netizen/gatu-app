@@ -98,24 +98,6 @@ export function AccountPanel() {
 
 	const summaryRows: SummaryRow[] = [
 		{
-			key: "portfolio-value",
-			label: overviewLabels.accountValue,
-			value: renderMetricValue(
-				balanceSnapshotReady && accountEquityValue !== null ? formatUSD(accountEquityValue, { compact: false }) : "—",
-			),
-		},
-		{
-			key: "unrealized-pnl",
-			label: overviewLabels.unrealizedPnl,
-			value: renderMetricValue(
-				balanceSnapshotReady && riskSummary
-					? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
-					: "—",
-			),
-			valueClassName:
-				unrealizedPnlTone === "positive" ? "text-success" : unrealizedPnlTone === "negative" ? "text-error" : undefined,
-		},
-		{
 			key: "margin-ratio",
 			label: overviewLabels.accountMarginRatio,
 			value: renderMetricValue(
@@ -161,8 +143,26 @@ export function AccountPanel() {
 			),
 		},
 		{
+			key: "portfolio-value",
+			label: overviewLabels.accountValue,
+			value: renderMetricValue(
+				balanceSnapshotReady && accountEquityValue !== null ? formatUSD(accountEquityValue, { compact: false }) : "—",
+			),
+		},
+		{
+			key: "unrealized-pnl",
+			label: overviewLabels.unrealizedPnl,
+			value: renderMetricValue(
+				balanceSnapshotReady && riskSummary
+					? formatUSD(riskSummary.unrealizedPnl, { compact: false, signDisplay: "exceptZero" })
+					: "—",
+			),
+			valueClassName:
+				unrealizedPnlTone === "positive" ? "text-success" : unrealizedPnlTone === "negative" ? "text-error" : undefined,
+		},
+		{
 			key: "cross-maintenance-margin",
-			label: overviewLabels.crossMaintenanceMargin,
+			label: overviewLabels.maintenanceMargin,
 			value: renderMetricValue(
 				balanceSnapshotReady && riskSummary
 					? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
@@ -171,7 +171,7 @@ export function AccountPanel() {
 		},
 		{
 			key: "cross-account-leverage",
-			label: overviewLabels.crossAccountLeverage,
+			label: overviewLabels.accountLeverage,
 			value: renderMetricValue(crossLeverageLabel),
 		},
 	];
@@ -323,10 +323,10 @@ export function AccountPanel() {
 						<section aria-labelledby={overviewTitleId}>
 							<h3
 								id={overviewTitleId}
-								className="mb-1 truncate text-2sm font-bold text-trading-panel-fg"
+								className="mb-1 text-2sm font-bold text-trading-panel-fg"
 								title={overviewLabels.accountMode}
 							>
-								{overviewLabels.accountMode} · {overviewLabels.overview}
+								{overviewLabels.summary}
 							</h3>
 							<InfoRowGroup className="divide-y-0 tracking-normal">
 								{summaryRows.map((row) => (
@@ -334,7 +334,8 @@ export function AccountPanel() {
 										key={row.key}
 										label={row.label}
 										value={row.value}
-										labelClassName="min-w-0 truncate text-trading-panel-muted"
+										className="gap-2"
+										labelClassName="min-w-0 text-trading-panel-muted"
 										valueClassName={cn(
 											"shrink-0 whitespace-nowrap font-semibold text-trading-panel-fg tabular-nums",
 											row.valueClassName,

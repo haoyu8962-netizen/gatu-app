@@ -328,6 +328,8 @@ msgstr "पहुँच प्रतिबंधित"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "खाता"
 
@@ -379,6 +381,10 @@ msgstr "खाते का स्टेकिंग डेटा उपलब�
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
 msgstr "खाते की स्टेकिंग स्थिति"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Account Summary"
+msgstr "खाते का सारांश"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -3444,10 +3450,6 @@ msgstr "Hyperliquid अभी इस खाते को रेफ़रल क�
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid सक्रिय TWAP ऑर्डर को पॉज़ करने का समर्थन नहीं करता।"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
-msgstr "Hyperliquid पोर्टफोलियो मार्जिन को प्री-अल्फा के रूप में चिह्नित करता है और $1,000 से कम राशि वाले नए खातों या उप-खातों से परीक्षण करने की सलाह देता है।"
-
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid जमाकर्ताओं का केवल एक उपसमूह लौटा सकता है।"
@@ -3989,7 +3991,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4059,6 +4060,15 @@ msgstr "मेकर"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
 msgstr "TP/SL प्रबंधित करें"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual"
+msgstr "मैन्युअल"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual Account Summary"
+msgstr "मैन्युअल खाते का सारांश"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -4500,10 +4510,6 @@ msgstr "इस रिकॉर्ड का समाधान होने त�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
 msgstr "नई मोबाइल पेयरिंग अस्थायी रूप से अनुपलब्ध है"
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
-msgstr "नई पोर्टफोलियो मार्जिन सक्रियता अस्थायी रूप से अनुपलब्ध है। मौजूदा पोर्टफोलियो मार्जिन खाते प्रभावित नहीं होते और मोड बदल सकते हैं।"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
@@ -5218,11 +5224,6 @@ msgstr "अन्य"
 msgid "Other Ledger Update"
 msgstr "अन्य लेजर अपडेट"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Overview"
-msgstr "अवलोकन"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -5354,6 +5355,10 @@ msgstr "Perps खाता"
 msgid "Perps Account Equity"
 msgstr "परपेचुअल खाते की इक्विटी"
 
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Perps Maintenance Margin"
+msgstr "परपेचुअल रखरखाव मार्जिन"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
 msgstr "परपेचुअल PNL"
@@ -5444,9 +5449,13 @@ msgstr "लोकप्रिय"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio"
 msgstr "पोर्टफोलियो"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Portfolio Account Leverage"
+msgstr "पोर्टफोलियो खाते का लीवरेज"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio account scope"
@@ -5460,13 +5469,21 @@ msgstr "पोर्टफोलियो इतिहास"
 msgid "Portfolio history chart"
 msgstr "पोर्टफोलियो इतिहास चार्ट"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Portfolio margin eligibility and limits"
+msgstr "पोर्टफोलियो मार्जिन की पात्रता और सीमाएँ"
+
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Portfolio Margin"
-msgstr "पोर्टफोलियो मार्जिन"
+msgid "Portfolio Margin Ratio"
+msgstr "पोर्टफोलियो मार्जिन अनुपात"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Portfolio Margin Summary"
+msgstr "पोर्टफोलियो मार्जिन का सारांश"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
@@ -6613,7 +6630,6 @@ msgid "Select market"
 msgstr "मार्केट चुनें"
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "मोड चुनें"
 
@@ -6699,15 +6715,6 @@ msgstr "नीचे दिए गए अपने वॉलेट पते प
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "भेजा जा रहा है..."
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-msgid "Separate"
-msgstr "अलग"
-
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Separate Accounts"
-msgstr "अलग खाते"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8177,6 +8184,10 @@ msgstr "यह स्टेकिंग खाता ट्रेडिंग �
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "यह सख्त आइसोलेटेड मार्केट खुली पोज़िशन से मार्जिन निकालने की अनुमति नहीं देता।"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
+msgstr "इस टर्मिनल पर नया पोर्टफोलियो मार्जिन सक्रिय करना अभी उपलब्ध नहीं है। मौजूदा खाते दूसरे मोड में बदल सकते हैं।"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "यह ट्रेडिंग कुंजी वर्तमान में स्वीकृत Mobile Agent नहीं है। नया डेस्कटॉप QR बनाएँ।"
@@ -8758,10 +8769,6 @@ msgstr "इस TWAP बाज़ार की पहचान नहीं ह�
 msgid "Unable to load Arbitrum USDC balance"
 msgstr "Arbitrum USDC बैलेंस लोड नहीं किया जा सका"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Unable to load the current account mode. Reconnect your wallet and try again."
-msgstr "वर्तमान खाता मोड लोड नहीं हो सका। अपना वॉलेट दोबारा कनेक्ट करें और फिर कोशिश करें।"
-
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "वर्तमान CCTP निकासी शुल्क लोड नहीं हो सका।"
@@ -8902,17 +8909,25 @@ msgstr "अंतर्निहित परिसंपत्ति"
 msgid "Understand the approval boundary"
 msgstr "स्वीकृति की सीमा समझें"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified"
 msgstr "एकीकृत"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified account"
 msgstr "एकीकृत खाता"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Unified Account"
-msgstr "एकीकृत खाता"
+msgid "Unified Account Leverage"
+msgstr "एकीकृत खाते का लीवरेज"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Unified Account Ratio"
+msgstr "एकीकृत खाते का अनुपात"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Unified Account Summary"
+msgstr "एकीकृत खाते का सारांश"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts

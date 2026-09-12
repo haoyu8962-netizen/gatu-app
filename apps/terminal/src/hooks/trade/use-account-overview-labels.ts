@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import type { AccountOverviewMode } from "@/domain/trade/account-overview";
+import { useAccountModeLabels } from "./use-account-mode-labels";
 
 interface AccountOverviewLabelsInput {
 	accountMode: AccountOverviewMode;
@@ -10,10 +11,10 @@ interface AccountOverviewLabels {
 	accountMarginRatio: string;
 	accountMode: string;
 	accountValue: string;
-	crossAccountLeverage: string;
-	crossMaintenanceMargin: string;
+	accountLeverage: string;
+	maintenanceMargin: string;
 	loading: string;
-	overview: string;
+	summary: string;
 	perpsSpot: string;
 	summaryDescription: string;
 	transferBetweenPerpsAndSpot: string;
@@ -25,23 +26,34 @@ export function useAccountOverviewLabels({
 	usesSharedQuoteBalance,
 }: AccountOverviewLabelsInput): AccountOverviewLabels {
 	const { t } = useLingui();
-	const accountModeLabel =
+	const modes = useAccountModeLabels();
+	const labels =
 		accountMode === "unified"
-			? t`Unified Account`
+			? modes.unified
 			: accountMode === "portfolioMargin"
-				? t`Portfolio Margin`
+				? modes.portfolio
 				: accountMode === "separate"
-					? t`Separate Accounts`
-					: t`Select mode`;
+					? modes.manual
+					: modes.unavailable;
 
 	return {
-		accountMarginRatio: t`Account Margin Ratio`,
-		accountMode: accountModeLabel,
+		accountMarginRatio:
+			accountMode === "unified"
+				? t`Unified Account Ratio`
+				: accountMode === "portfolioMargin"
+					? t`Portfolio Margin Ratio`
+					: t`Account Margin Ratio`,
+		accountMode: labels.name,
 		accountValue: usesSharedQuoteBalance ? t`Portfolio Value` : t`Account Value`,
-		crossAccountLeverage: t`Cross Account Leverage`,
-		crossMaintenanceMargin: t`Cross Maintenance Margin`,
+		accountLeverage:
+			accountMode === "unified"
+				? t`Unified Account Leverage`
+				: accountMode === "portfolioMargin"
+					? t`Portfolio Account Leverage`
+					: t`Cross Account Leverage`,
+		maintenanceMargin: usesSharedQuoteBalance ? t`Perps Maintenance Margin` : t`Cross Maintenance Margin`,
 		loading: t`Loading...`,
-		overview: t`Overview`,
+		summary: labels.summary,
 		perpsSpot: t`Perps / Spot`,
 		summaryDescription: t`Margin and account risk at a glance`,
 		transferBetweenPerpsAndSpot: t`Transfer between Perps and Spot`,

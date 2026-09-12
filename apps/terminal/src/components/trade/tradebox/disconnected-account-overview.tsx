@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useId } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
+import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
 import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 
@@ -14,6 +15,7 @@ interface Props {
 export function DisconnectedAccountOverview({ depositEnabled, depositDisabledReason, onDeposit }: Props) {
 	useNumberFormatRevision();
 	const { t } = useLingui();
+	const modes = useAccountModeLabels();
 	const titleId = useId();
 	const depositDescriptionId = `${titleId}-deposit`;
 	const rows = [
@@ -55,7 +57,7 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 			) : null}
 			<section aria-labelledby={titleId} className="mt-3 border-t border-trading-panel-stroke-row pt-3">
 				<h3 id={titleId} className="mb-1 text-2sm font-bold text-trading-panel-fg">
-					{t`Overview`}
+					{modes.unavailable.summary}
 				</h3>
 				<InfoRowGroup className="divide-y-0 tracking-normal">
 					{rows.map((row) => (
@@ -63,7 +65,8 @@ export function DisconnectedAccountOverview({ depositEnabled, depositDisabledRea
 							key={row.key}
 							label={row.label}
 							value={row.value}
-							labelClassName="min-w-0 truncate text-trading-panel-muted"
+							className="gap-2"
+							labelClassName="min-w-0 text-trading-panel-muted"
 							valueClassName="shrink-0 whitespace-nowrap font-semibold text-trading-panel-fg tabular-nums"
 						/>
 					))}

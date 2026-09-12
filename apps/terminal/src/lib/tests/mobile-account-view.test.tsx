@@ -121,6 +121,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useInfo: () => ({ dataUpdatedAt: 0, isSuccess: false }),
 	useMarkets: () => ({
 		builderPerp: [{ dex: "xyz", quoteToken: { index: 0, name: "USDC" } }],
 		getToken: () => ({ index: 0 }),
@@ -239,9 +240,9 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$230.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$230.50");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("65.21%");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("29.49x");
 	});
 
 	it.each([null, "unknown", "default", "dexAbstraction"])(
@@ -291,7 +292,7 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("42.00%");
+		expect(getMetricRowText(container, "Portfolio Margin Ratio")).toContain("42.00%");
 	});
 
 	it("uses formatted zero placeholders before complete snapshots arrive", () => {
@@ -305,10 +306,10 @@ describe("mobile account view", () => {
 		});
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$0.00");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("0.00%");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("0.00%");
 		expect(getMetricRowText(container, "Unrealized PNL")).toContain("$0.00");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$0.00");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$0.00");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("0.00x");
 		expect(container.querySelector("section")?.textContent).not.toContain("—");
 	});
 
@@ -340,10 +341,33 @@ describe("mobile account view", () => {
 				render();
 
 				expect(getMetricRowText(container, accountValueLabel)).toContain("$0.00");
-				expect(getMetricRowText(container, "Account Margin Ratio")).toContain("0.00%");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled"
+							? "Account Margin Ratio"
+							: accountAbstraction === "unifiedAccount"
+								? "Unified Account Ratio"
+								: "Portfolio Margin Ratio",
+					),
+				).toContain("0.00%");
 				expect(getMetricRowText(container, "Unrealized PNL")).toContain("$0.00");
-				expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$0.00");
-				expect(getMetricRowText(container, "Cross Account Leverage")).toContain("0.00x");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled" ? "Cross Maintenance Margin" : "Perps Maintenance Margin",
+					),
+				).toContain("$0.00");
+				expect(
+					getMetricRowText(
+						container,
+						accountAbstraction === "disabled"
+							? "Cross Account Leverage"
+							: accountAbstraction === "unifiedAccount"
+								? "Unified Account Leverage"
+								: "Portfolio Account Leverage",
+					),
+				).toContain("0.00x");
 				expect(container.querySelector("section")?.getAttribute("aria-busy")).toBe(String(status === "loading"));
 				expect(container.querySelector('[role="alert"], output, [aria-label="Balance data is stale."]')).toBeNull();
 				expect(container.textContent).not.toContain("Balance data is stale");

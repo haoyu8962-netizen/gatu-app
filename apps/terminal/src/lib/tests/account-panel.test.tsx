@@ -110,6 +110,7 @@ vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useInfo: () => ({ dataUpdatedAt: 0, isSuccess: false }),
 	useMarkets: () => ({
 		builderPerp: [
 			{
@@ -512,9 +513,9 @@ describe("desktop account panel", () => {
 
 		expect(getMetricRowText(container, "Portfolio Value")).toContain("$353.50");
 		expect(getMetricRowText(container, "Unrealized PNL")).toContain("+$56.00");
-		expect(getMetricRowText(container, "Cross Maintenance Margin")).toContain("$230.50");
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("65.21%");
-		expect(getMetricRowText(container, "Cross Account Leverage")).toContain("29.49x");
+		expect(getMetricRowText(container, "Perps Maintenance Margin")).toContain("$230.50");
+		expect(getMetricRowText(container, "Unified Account Ratio")).toContain("65.21%");
+		expect(getMetricRowText(container, "Unified Account Leverage")).toContain("29.49x");
 
 		expect(
 			Array.from(container.querySelectorAll("button")).some((button) => button.textContent === "Perps / Spot"),
@@ -525,11 +526,11 @@ describe("desktop account panel", () => {
 	it("uses the SDK portfolio margin ratio and stays neutral when that optional field is absent", () => {
 		testState.accountAbstraction = "portfolioMargin";
 		renderPanel();
-		expect(getMetricRowText(container, "Account Margin Ratio")).toContain("42.00%");
+		expect(getMetricRowText(container, "Portfolio Margin Ratio")).toContain("42.00%");
 
 		testState.portfolioMarginRatio = null;
 		renderPanel();
-		const ratioRow = getMetricRowText(container, "Account Margin Ratio");
+		const ratioRow = getMetricRowText(container, "Portfolio Margin Ratio");
 		expect(ratioRow).toContain("—");
 		expect(container.querySelector('[role="progressbar"]')?.hasAttribute("aria-valuenow")).toBe(false);
 		expect(container.querySelector('[role="progressbar"] .text-trading-panel-muted')).not.toBeNull();

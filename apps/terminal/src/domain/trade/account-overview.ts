@@ -1,3 +1,4 @@
+import type { AllBorrowLendReserveStatesResponse } from "@nktkas/hyperliquid";
 import {
 	accountOverviewNeedsTokenUsdPrices,
 	getPerpRiskSummaryUsdValue,
@@ -21,6 +22,7 @@ import {
 	isSupportedAccountAbstraction,
 } from "@/hooks/trade/use-account-balances";
 import { toBig } from "@/lib/trade/numbers";
+import { getAccountLeverageCollateralValue } from "./account-leverage";
 
 export type AccountOverviewStatus = "loading" | "error" | "stale" | "unavailable" | "ready";
 export type AccountOverviewMode = "unified" | "portfolioMargin" | "separate" | "unavailable";
@@ -61,6 +63,7 @@ export interface DeriveAccountOverviewInput {
 	selectedBalances: AccountBalances;
 	tokenUsdPrices: TokenUsdPrices;
 	tokenUsdPriceStatus: AssetAvailabilityStatus;
+	leverageReserves?: AllBorrowLendReserveStatesResponse;
 }
 
 function getAccountOverviewMode(accountAbstraction: AccountAbstraction): AccountOverviewMode {
@@ -77,6 +80,7 @@ export function deriveAccountOverview({
 	selectedBalances,
 	tokenUsdPrices,
 	tokenUsdPriceStatus,
+	leverageReserves,
 }: DeriveAccountOverviewInput): AccountOverview {
 	const accountAbstraction = selectedBalances.accountAbstraction;
 	const accountMode = getAccountOverviewMode(accountAbstraction);
@@ -143,7 +147,13 @@ export function deriveAccountOverview({
 		: null;
 	const crossAccountEquityValue = snapshotReady
 		? usesSharedQuoteBalance
-			? accountEquityValue
+			? getAccountLeverageCollateralValue({
+					collaterals,
+					spotBalances: summaryBalances.spotBalances,
+					tokenUsdPrices,
+					portfolioMargin: accountAbstraction === "portfolioMargin",
+					reserves: leverageReserves,
+				})
 			: getTokenAmountUsdValue(summaryBalances.perpSummary?.accountValue, selectedCollateralToken, tokenUsdPrices)
 		: null;
 	const riskSummary = snapshotReady ? getPerpRiskSummaryUsdValue(perpRiskStates, tokenUsdPrices) : null;

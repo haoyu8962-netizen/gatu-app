@@ -328,6 +328,8 @@ msgstr "الوصول مقيّد"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "الحساب"
 
@@ -379,6 +381,10 @@ msgstr "بيانات تخزين الحساب غير متاحة"
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
 msgstr "حالة تخزين الحساب"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Account Summary"
+msgstr "ملخص الحساب"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -3444,10 +3450,6 @@ msgstr "لا يُظهر Hyperliquid حاليًا أن هذا الحساب مؤه
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "لا يدعم Hyperliquid إيقاف أوامر TWAP النشطة مؤقتًا."
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
-msgstr "يصنف Hyperliquid هامش المحفظة كمرحلة ما قبل ألفا ويوصي بالتجربة عبر حسابات جديدة أو حسابات فرعية تحتوي على أقل من 1,000 دولار."
-
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "قد يعيد Hyperliquid مجموعة فرعية فقط من المودِعين."
@@ -3989,7 +3991,6 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4059,6 +4060,15 @@ msgstr "ميكر"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
 msgstr "إدارة TP/SL"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual"
+msgstr "يدوي"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual Account Summary"
+msgstr "ملخص الحساب اليدوي"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -4500,10 +4510,6 @@ msgstr "إجراءات الأموال الجديدة مقفلة حتى تسوي�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
 msgstr "إقران هاتف جديد غير متاح مؤقتًا"
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
-msgstr "تفعيل هامش المحفظة الجديد غير متاح مؤقتًا. الحسابات الحالية غير متأثرة ويمكنها التبديل إلى وضع آخر."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
@@ -5218,11 +5224,6 @@ msgstr "أخرى"
 msgid "Other Ledger Update"
 msgstr "تحديث آخر في دفتر الحسابات"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Overview"
-msgstr "نظرة عامة"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -5354,6 +5355,10 @@ msgstr "حساب Perps"
 msgid "Perps Account Equity"
 msgstr "قيمة حساب العقود الدائمة"
 
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Perps Maintenance Margin"
+msgstr "هامش صيانة العقود الدائمة"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
 msgstr "أرباح وخسائر العقود الدائمة"
@@ -5444,9 +5449,13 @@ msgstr "شائع"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio"
 msgstr "المحفظة"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Portfolio Account Leverage"
+msgstr "رافعة حساب المحفظة"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio account scope"
@@ -5460,13 +5469,21 @@ msgstr "سجل المحفظة الاستثمارية"
 msgid "Portfolio history chart"
 msgstr "مخطط سجل المحفظة الاستثمارية"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio margin"
 msgstr "هامش المحفظة"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Portfolio margin eligibility and limits"
+msgstr "أهلية هامش المحفظة وحدوده"
+
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Portfolio Margin"
-msgstr "هامش المحفظة"
+msgid "Portfolio Margin Ratio"
+msgstr "نسبة هامش المحفظة"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Portfolio Margin Summary"
+msgstr "ملخص هامش المحفظة"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
@@ -6613,7 +6630,6 @@ msgid "Select market"
 msgstr "اختر السوق"
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "اختيار الوضع"
 
@@ -6699,15 +6715,6 @@ msgstr "أرسل USDC إلى عنوان محفظتك أدناه."
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "جارٍ الإرسال..."
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-msgid "Separate"
-msgstr "منفصل"
-
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Separate Accounts"
-msgstr "حسابات منفصلة"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8177,6 +8184,10 @@ msgstr "يتحكم حساب التخزين هذا في حساب التداول <
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "لا يسمح هذا السوق المعزول الصارم بسحب الهامش من مركز مفتوح."
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
+msgstr "لم تفعّل هذه المنصة فتح حسابات جديدة بهامش المحفظة. يمكن للحسابات الحالية التبديل إلى وضع آخر."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "مفتاح التداول هذا ليس Mobile Agent المعتمد حاليًا. أنشئ رمز QR جديدًا على سطح المكتب."
@@ -8758,10 +8769,6 @@ msgstr "تعذر تحديد سوق TWAP هذا. حدّث بيانات السوق
 msgid "Unable to load Arbitrum USDC balance"
 msgstr "تعذّر تحميل رصيد USDC على Arbitrum"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Unable to load the current account mode. Reconnect your wallet and try again."
-msgstr "تعذر تحميل وضع الحساب الحالي. أعد توصيل محفظتك وحاول مرة أخرى."
-
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
@@ -8902,17 +8909,25 @@ msgstr "الأصل الأساسي"
 msgid "Understand the approval boundary"
 msgstr "فهم حدود الموافقة"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified"
 msgstr "موحد"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified account"
 msgstr "الحساب الموحد"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Unified Account"
-msgstr "حساب موحّد"
+msgid "Unified Account Leverage"
+msgstr "رافعة الحساب الموحد"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Unified Account Ratio"
+msgstr "نسبة الحساب الموحد"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Unified Account Summary"
+msgstr "ملخص الحساب الموحد"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts

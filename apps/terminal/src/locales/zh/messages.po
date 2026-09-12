@@ -328,6 +328,8 @@ msgstr "访问受限"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "账户"
 
@@ -379,6 +381,10 @@ msgstr "账户质押数据不可用"
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
 msgstr "账户质押状态"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Account Summary"
+msgstr "账户概要"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -3444,10 +3450,6 @@ msgstr "Hyperliquid 当前未将此账户标记为符合创建推荐码的条件
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid 不支持暂停正在执行的 TWAP 委托。"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
-msgstr "Hyperliquid 将投资组合保证金标记为 pre-alpha 阶段，建议使用持有资金低于 $1,000 的新账户或子账户进行测试。"
-
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid 可能只返回部分存款人数据。"
@@ -3989,7 +3991,6 @@ msgstr "加载钱包中..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4059,6 +4060,15 @@ msgstr "挂单方"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
 msgstr "管理 TP/SL"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual"
+msgstr "手动"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual Account Summary"
+msgstr "手动账户概要"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -4500,10 +4510,6 @@ msgstr "在此记录得到处理前，新的资金操作已锁定。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
 msgstr "暂时无法进行新的移动设备配对"
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
-msgstr "暂时无法新开通投资组合保证金。已开通的投资组合保证金账户不受影响，并可随时切换至其他模式。"
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
@@ -5218,11 +5224,6 @@ msgstr "其他"
 msgid "Other Ledger Update"
 msgstr "其他流水更新"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Overview"
-msgstr "概览"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -5354,6 +5355,10 @@ msgstr "合约账户"
 msgid "Perps Account Equity"
 msgstr "合约账户权益"
 
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Perps Maintenance Margin"
+msgstr "合约维持保证金"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
 msgstr "合约盈亏"
@@ -5444,9 +5449,13 @@ msgstr "热门"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio"
 msgstr "投资组合"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Portfolio Account Leverage"
+msgstr "投资组合账户杠杆"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio account scope"
@@ -5460,13 +5469,21 @@ msgstr "投资组合历史"
 msgid "Portfolio history chart"
 msgstr "投资组合历史图表"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio margin"
 msgstr "投资组合保证金"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Portfolio margin eligibility and limits"
+msgstr "投资组合保证金的准入条件与限额"
+
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Portfolio Margin"
-msgstr "组合保证金"
+msgid "Portfolio Margin Ratio"
+msgstr "投资组合保证金率"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Portfolio Margin Summary"
+msgstr "投资组合保证金概要"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
@@ -6613,7 +6630,6 @@ msgid "Select market"
 msgstr "选择市场"
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "选择模式"
 
@@ -6699,15 +6715,6 @@ msgstr "将 USDC 转入下方的钱包地址。"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "发送中..."
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-msgid "Separate"
-msgstr "分离"
-
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Separate Accounts"
-msgstr "分账户"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8177,6 +8184,10 @@ msgstr "此质押账户控制交易账户 <0>{0}</0>。"
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
+msgstr "本终端暂未开放投资组合保证金的新开通。已开通账户可以切换至其他模式。"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "此交易密钥不是当前获批的移动交易密钥。请创建新的桌面二维码。"
@@ -8758,10 +8769,6 @@ msgstr "无法识别该 TWAP 市场。请刷新市场数据后重试。"
 msgid "Unable to load Arbitrum USDC balance"
 msgstr "无法加载 Arbitrum USDC 余额"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Unable to load the current account mode. Reconnect your wallet and try again."
-msgstr "无法加载当前账户模式。请重新连接钱包后重试。"
-
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "无法加载当前的 CCTP 提款手续费。"
@@ -8902,17 +8909,25 @@ msgstr "标的资产"
 msgid "Understand the approval boundary"
 msgstr "了解授权边界"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified"
 msgstr "统一"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified account"
 msgstr "统一账户"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Unified Account"
-msgstr "统一账户"
+msgid "Unified Account Leverage"
+msgstr "统一账户杠杆"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Unified Account Ratio"
+msgstr "统一账户比率"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Unified Account Summary"
+msgstr "统一账户概要"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts

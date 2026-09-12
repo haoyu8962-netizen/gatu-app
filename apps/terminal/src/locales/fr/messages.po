@@ -328,6 +328,8 @@ msgstr "Accès restreint"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Account"
 msgstr "Compte"
 
@@ -379,6 +381,10 @@ msgstr "Données de staking du compte indisponibles"
 #: src/components/staking/staking-view.tsx
 msgid "Account staking status"
 msgstr "État du staking du compte"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Account Summary"
+msgstr "Résumé du compte"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -3444,10 +3450,6 @@ msgstr "Hyperliquid n’indique pas actuellement que ce compte est éligible à 
 msgid "Hyperliquid does not support pausing active TWAP orders."
 msgstr "Hyperliquid ne permet pas de mettre en pause les ordres TWAP actifs."
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
-msgstr "Hyperliquid classe la marge de portefeuille en pré-alpha et recommande de la tester avec de nouveaux comptes ou sous-comptes détenant moins de 1 000 $."
-
 #: src/components/vaults/vault-detail-view.tsx
 msgid "Hyperliquid may return only a subset of depositors."
 msgstr "Hyperliquid peut ne renvoyer qu’un sous-ensemble des déposants."
@@ -3989,7 +3991,6 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-account-overview-labels.ts
 msgid "Loading..."
@@ -4059,6 +4060,15 @@ msgstr "Maker"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
 msgstr "Gérer le TP/SL"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual"
+msgstr "Manuel"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Manual Account Summary"
+msgstr "Résumé du compte manuel"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -4500,10 +4510,6 @@ msgstr "Les nouvelles actions sur les fonds sont verrouillées jusqu’à la ré
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
 msgstr "La nouvelle association mobile est temporairement indisponible"
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
-msgstr "L'activation d'une nouvelle marge de portefeuille est temporairement indisponible. Les comptes existants ne sont pas affectés et peuvent changer de mode."
 
 #: src/components/referrals/referred-traders.tsx
 msgid "Next"
@@ -5218,11 +5224,6 @@ msgstr "Autre"
 msgid "Other Ledger Update"
 msgstr "Autre mise à jour du registre"
 
-#: src/components/trade/tradebox/disconnected-account-overview.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Overview"
-msgstr "Aperçu"
-
 #: src/components/funds-action/funds-action-recovery-host.tsx
 #: src/components/staking/staking-action-modal.tsx
 #: src/components/vaults/vault-action-modal.tsx
@@ -5354,6 +5355,10 @@ msgstr "Compte Perp"
 msgid "Perps Account Equity"
 msgstr "Fonds propres du compte de perpétuels"
 
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Perps Maintenance Margin"
+msgstr "Marge de maintenance des perpétuels"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
 msgstr "PnL des perpétuels"
@@ -5444,9 +5449,13 @@ msgstr "Populaire"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio"
 msgstr "Portefeuille"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Portfolio Account Leverage"
+msgstr "Levier du compte de portefeuille"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio account scope"
@@ -5460,13 +5469,21 @@ msgstr "Historique du portefeuille"
 msgid "Portfolio history chart"
 msgstr "Graphique de l’historique du portefeuille"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Portfolio margin"
 msgstr "Marge de portefeuille"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Portfolio margin eligibility and limits"
+msgstr "Conditions et limites de la marge de portefeuille"
+
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Portfolio Margin"
-msgstr "Marge de portefeuille"
+msgid "Portfolio Margin Ratio"
+msgstr "Ratio de marge de portefeuille"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Portfolio Margin Summary"
+msgstr "Résumé de la marge de portefeuille"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Portfolio performance"
@@ -6613,7 +6630,6 @@ msgid "Select market"
 msgstr "Sélectionner un marché"
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/hooks/trade/use-account-overview-labels.ts
 msgid "Select mode"
 msgstr "Sélectionner le mode"
 
@@ -6699,15 +6715,6 @@ msgstr "Envoyez des USDC à l’adresse de votre portefeuille ci-dessous."
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "Envoi en cours..."
-
-#: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/trade-header.tsx
-msgid "Separate"
-msgstr "Séparé"
-
-#: src/hooks/trade/use-account-overview-labels.ts
-msgid "Separate Accounts"
-msgstr "Comptes séparés"
 
 #. placeholder {0}: formatTimestamp(owner.lockedUntil, i18n.locale)
 #: src/components/vaults/vault-detail-view.tsx
@@ -8177,6 +8184,10 @@ msgstr "Ce compte de staking contrôle le compte de trading <0>{0}</0>."
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "Ce marché à isolation stricte ne permet pas de retirer de la marge d'une position ouverte."
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "This terminal has not enabled new portfolio margin activation. Existing accounts can switch to another mode."
+msgstr "Ce terminal ne permet pas encore de nouvelles activations de la marge de portefeuille. Les comptes existants peuvent passer à un autre mode."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
 msgstr "Cette clé de trading n'est pas le Mobile Agent actuellement approuvé. Créez un nouveau QR de bureau."
@@ -8758,10 +8769,6 @@ msgstr "Impossible d'identifier ce marché TWAP. Actualisez les données du marc
 msgid "Unable to load Arbitrum USDC balance"
 msgstr "Impossible de charger le solde USDC sur Arbitrum"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Unable to load the current account mode. Reconnect your wallet and try again."
-msgstr "Impossible de charger le mode de compte actuel. Reconnectez votre portefeuille et réessayez."
-
 #: src/lib/trade/funds-action-feedback.ts
 msgid "Unable to load the current CCTP withdrawal fee."
 msgstr "Impossible de charger les frais actuels de retrait CCTP."
@@ -8902,17 +8909,25 @@ msgstr "Actif sous-jacent"
 msgid "Understand the approval boundary"
 msgstr "Comprendre la portée de l’autorisation"
 
-#: src/components/trade/tradebox/trade-header.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified"
 msgstr "Unifié"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/hooks/trade/use-account-mode-labels.ts
 msgid "Unified account"
 msgstr "Compte unifié"
 
 #: src/hooks/trade/use-account-overview-labels.ts
-msgid "Unified Account"
-msgstr "Compte unifié"
+msgid "Unified Account Leverage"
+msgstr "Levier du compte unifié"
+
+#: src/hooks/trade/use-account-overview-labels.ts
+msgid "Unified Account Ratio"
+msgstr "Ratio du compte unifié"
+
+#: src/hooks/trade/use-account-mode-labels.ts
+msgid "Unified Account Summary"
+msgstr "Résumé du compte unifié"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts

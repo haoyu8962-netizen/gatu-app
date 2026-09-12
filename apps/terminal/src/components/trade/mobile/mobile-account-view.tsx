@@ -1,4 +1,4 @@
-import { Badge, Button, Tooltip } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useId, useState } from "react";
@@ -145,18 +145,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				) : null}
 
 				<section className="rounded-12 bg-surface p-4" aria-labelledby={overviewTitleId} aria-busy={metricLoading}>
-					<div className="mb-4 flex items-start justify-between gap-3">
-						<div className="min-w-0">
-							<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
-								{overviewLabels.accountMode} · {overviewLabels.overview}
-							</h2>
-							<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
-						</div>
-						<div className="shrink-0">
-							<Badge tone="neutral" size="sm">
-								{overviewLabels.accountMode}
-							</Badge>
-						</div>
+					<div className="mb-4 min-w-0">
+						<h2 id={overviewTitleId} className="text-base font-semibold text-fg">
+							{overviewLabels.summary}
+						</h2>
+						<p className="mt-1 text-xs text-fg-muted">{overviewLabels.summaryDescription}</p>
 					</div>
 
 					<div className="space-y-2 pb-4">
@@ -211,14 +204,14 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							}
 						/>
 						<MetricRow
-							label={overviewLabels.crossMaintenanceMargin}
+							label={overviewLabels.maintenanceMargin}
 							value={
 								accountSummaryReady && riskSummary
 									? formatUSD(riskSummary.crossMaintenanceMarginUsed, { compact: false })
 									: formatUSD("0", { compact: false })
 							}
 						/>
-						<MetricRow label={overviewLabels.crossAccountLeverage} value={crossLeverageLabel} />
+						<MetricRow label={overviewLabels.accountLeverage} value={crossLeverageLabel} />
 					</div>
 				</section>
 

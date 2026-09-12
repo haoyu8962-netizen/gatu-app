@@ -39,6 +39,8 @@
 
 ## 账户模式与资金限制
 
+账户标题和模式选项遵循 [账户概要规范](account-overview.md)，桌面与移动复用同一套标签。未知模式使用中性“账户概要”；被动加载期间，账户类型表单保持“确认”名称并禁用提交，不展示连接故障结论。实际用户提交失败仍保留反馈。
+
 资金能力必须区分 `supported`、`unresolved` 与 `unsupported`，不能仅凭 `accountModeReady` 布尔决定限制文案。
 
 - `disabled`、`unifiedAccount`、`portfolioMargin` 属于当前终端支持的模式；可操作性仍由钱包、地区、余额新鲜度和具体动作规则共同决定。

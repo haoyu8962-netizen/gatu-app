@@ -54,6 +54,48 @@ function createInput(overrides: Partial<DeriveAccountOverviewInput> = {}): Deriv
 }
 
 describe("account overview derivation", () => {
+	it("keeps portfolio value separate from mode-specific leverage collateral", () => {
+		const balances = createBalances({
+			accountAbstraction: "unifiedAccount",
+			spotBalances: [
+				{ token: 0, coin: "USDC", total: "100", hold: "0", entryNtl: "0" },
+				{ token: 150, coin: "HYPE", total: "10", hold: "0", entryNtl: "0" },
+			],
+		});
+		balances.allDexClearinghouseStates = [
+			[
+				"",
+				{
+					marginSummary: balances.marginSummary,
+					crossMarginSummary: balances.perpSummary,
+					crossMaintenanceMarginUsed: "5",
+					assetPositions: [],
+					time: 0,
+					withdrawable: "0",
+				},
+			],
+		] as AccountBalances["allDexClearinghouseStates"];
+		const input = createInput({
+			defaultBalances: balances,
+			selectedBalances: balances,
+			tokenUsdPrices: { HYPE: "100" },
+		});
+		const unified = deriveAccountOverview(input);
+		expect(unified.accountEquityValue).toBe("1100");
+		expect(unified.crossAccountEquityValue).toBe("100");
+		expect(unified.crossLeverage).toBe("2");
+		balances.accountAbstraction = "portfolioMargin";
+		expect(deriveAccountOverview(input).crossLeverage).toBeNull();
+		const portfolio = deriveAccountOverview({
+			...input,
+			leverageReserves: [[150, { ltv: "0.65", oraclePx: "80" }]] as NonNullable<
+				DeriveAccountOverviewInput["leverageReserves"]
+			>,
+		});
+		expect(portfolio.accountEquityValue).toBe("1100");
+		expect(portfolio.crossAccountEquityValue).toBe("620");
+		expect(portfolio.crossLeverage).toBe("0.32258064516129032258");
+	});
 	it("returns ready decimal-string metrics for a complete separate-account snapshot", () => {
 		const overview = deriveAccountOverview(createInput());
 

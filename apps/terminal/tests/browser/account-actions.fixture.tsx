@@ -2,6 +2,7 @@ import { i18n } from "@lingui/core";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import { useDesktopGridLayout } from "@/components/trade/layout/use-desktop-grid-layout";
 import { MobileAccountView } from "@/components/trade/mobile/mobile-account-view";
+import { AccountModeForm } from "@/components/trade/tradebox/account-mode-modal";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { createI18nRoot } from "@/lib/tests/harness/react";
 import { messages } from "@/locales/en/messages.po";
@@ -70,6 +71,15 @@ function Fixture() {
 				<button type="button" onClick={() => setAccountActionsFixture({ mode: "unifiedAccount" })}>
 					Unified
 				</button>
+				<button type="button" onClick={() => setAccountActionsFixture({ mode: "disabled" })}>
+					Manual mode
+				</button>
+				<button type="button" onClick={() => setAccountActionsFixture({ mode: "portfolioMargin" })}>
+					Portfolio mode
+				</button>
+				<button type="button" onClick={() => setAccountActionsFixture({ mode: null })}>
+					Unresolved mode
+				</button>
 				<button type="button" onClick={() => setAccountActionsFixture({ ready: !state.ready })}>
 					Snapshot
 				</button>
@@ -78,7 +88,18 @@ function Fixture() {
 				</button>
 				<output aria-label="Opened funds actions">{JSON.stringify(state.actions)}</output>
 			</nav>
-			{surface === "funds" ? (
+			{surface === "mode" ? (
+				<div className="mx-auto max-w-sm bg-modal py-4">
+					<AccountModeForm
+						key={state.mode ?? "unresolved"}
+						currentMode={state.mode}
+						canChange
+						mobileLayout={window.matchMedia("(max-width: 1000px)").matches}
+						onApply={async (mode) => setAccountActionsFixture({ mode })}
+						onClose={() => {}}
+					/>
+				</div>
+			) : surface === "funds" ? (
 				<FundsFormsFixture />
 			) : surface === "mobile" ? (
 				<MobileAccountView />

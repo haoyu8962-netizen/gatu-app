@@ -219,3 +219,66 @@ for (const width of [375, 393, 1363]) {
 		});
 	}
 }
+
+for (const width of [375, 393, 1001, 1363]) {
+	test(`keeps mode summaries and funding controls consistent at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });
+		await page.goto(`/account-actions.html${width <= 1000 ? "?surface=mobile" : ""}`);
+		const heading = page.locator(width <= 1000 ? "section h2" : '[data-panel="accountInfo"] section h3');
+		for (const mode of [
+			{ button: "Unified", en: "Unified Account Summary", zh: "统一账户概要", ratio: "统一账户比率", transfer: false },
+			{
+				button: "Portfolio mode",
+				en: "Portfolio Margin Summary",
+				zh: "投资组合保证金概要",
+				ratio: "投资组合保证金率",
+				transfer: false,
+			},
+			{
+				button: "Manual mode",
+				en: "Manual Account Summary",
+				zh: "手动账户概要",
+				ratio: "账户保证金率",
+				transfer: true,
+			},
+			{ button: "Unresolved mode", en: "Account Summary", zh: "账户概要", ratio: "账户保证金率", transfer: true },
+		]) {
+			await page.getByRole("button", { name: mode.button, exact: true }).click();
+			await expect(heading).toHaveText(mode.en);
+			await page.getByRole("button", { name: "中文", exact: true }).click();
+			await expect(heading).toHaveText(mode.zh);
+			await expect(page.getByRole("progressbar", { name: mode.ratio })).toHaveCount(1);
+			await expect(page.getByRole("button", { name: "合约 / 现货", exact: true })).toHaveCount(mode.transfer ? 1 : 0);
+			expect(await heading.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+			if (width > 1000) {
+				expect(
+					await page
+						.locator('[data-panel="accountInfo"] [data-slot="info-row-label"]')
+						.evaluateAll((labels) => labels.every((e) => e.scrollWidth <= e.clientWidth + 1)),
+				).toBe(true);
+			}
+			await page.getByRole("button", { name: "English", exact: true }).click();
+			await expect(heading).toHaveText(mode.en);
+		}
+		await expect(page.getByRole("status", { name: "Opened funds actions" })).toHaveText("[]");
+	});
+
+	test(`preserves mode selection and quiet unavailable state at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: width === 375 ? 666 : 852 });
+		await page.goto("/account-actions.html?surface=mode");
+		const unified = page.getByRole("button", { name: "Unified account", exact: false });
+		await unified.click();
+		await expect(unified).toHaveAttribute("aria-pressed", "true");
+		await page.getByRole("button", { name: "中文", exact: true }).click();
+		await expect(page.getByRole("button", { name: "统一账户", exact: false })).toHaveAttribute("aria-pressed", "true");
+		await expect(page.getByRole("button", { name: "手动", exact: false })).toBeVisible();
+		await expect(page.getByRole("button", { name: "投资组合保证金", exact: false })).toBeDisabled();
+		await expect(page.getByRole("link", { name: "投资组合保证金的准入条件与限额" })).toBeVisible();
+		await page.getByRole("button", { name: "Unresolved mode", exact: true }).click();
+		await expect(page.getByRole("button", { name: "确认", exact: true })).toBeDisabled();
+		await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
+		await expect(page.getByText("pre-alpha", { exact: false })).toHaveCount(0);
+		await expect(page.getByText("无法加载当前账户模式", { exact: false })).toHaveCount(0);
+		expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+	});
+}

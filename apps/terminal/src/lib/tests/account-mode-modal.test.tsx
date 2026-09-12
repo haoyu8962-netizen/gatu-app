@@ -13,7 +13,7 @@ const zhTranslations: Record<string, string> = {
 	"Unified account": "统一账户",
 	Recommended: "推荐",
 	"Portfolio margin": "投资组合保证金",
-	Separate: "分离",
+	Manual: "手动",
 	Current: "当前",
 	Unavailable: "不可用",
 	Confirm: "确认",
@@ -65,7 +65,7 @@ describe("AccountModeModal", () => {
 		expect(options).toHaveLength(3);
 		expect(options.every((option) => option.disabled)).toBe(true);
 		expect(options.some((option) => option.getAttribute("aria-pressed") === "true")).toBe(false);
-		expect(document.body.textContent).toContain(
+		expect(document.body.textContent).not.toContain(
 			"Unable to load the current account mode. Reconnect your wallet and try again.",
 		);
 		const applyButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
@@ -231,7 +231,7 @@ describe("AccountModeModal", () => {
 		);
 		expect(portfolioOption?.disabled).toBe(true);
 		expect(portfolioOption?.textContent).toContain("Unavailable");
-		expect(document.body.textContent).toContain("New portfolio margin activation is temporarily unavailable.");
+		expect(document.body.textContent).toContain("This terminal has not enabled new portfolio margin activation.");
 	});
 
 	it("lets an existing portfolio margin account select another mode when activation is gated", () => {
@@ -278,7 +278,7 @@ describe("AccountModeModal", () => {
 		render(false);
 		render(true);
 		const separateOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
-			(button) => button.textContent?.includes("Separate"),
+			(button) => button.textContent?.includes("Manual"),
 		);
 		expect(separateOption?.getAttribute("aria-pressed")).toBe("true");
 	});
@@ -301,7 +301,7 @@ describe("AccountModeModal", () => {
 		);
 
 		const separateOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
-			(button) => button.textContent?.includes("Separate"),
+			(button) => button.textContent?.includes("Manual"),
 		);
 		expect(separateOption?.className).toContain("rounded-12");
 		expect(separateOption?.className).toContain("border-trading-panel-control");
@@ -319,7 +319,7 @@ describe("AccountModeModal", () => {
 		expect(confirmButton?.disabled).toBe(false);
 		expect(confirmButton?.className).toContain("bg-trading-panel-control");
 		expect(confirmButton?.parentElement?.nextElementSibling?.textContent).toContain(
-			"Hyperliquid labels portfolio margin as pre-alpha",
+			"Portfolio margin eligibility and limits",
 		);
 	});
 });

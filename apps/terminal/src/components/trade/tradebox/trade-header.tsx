@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
 import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
+import { useAccountModeLabels } from "@/hooks/trade/use-account-mode-labels";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
@@ -56,6 +57,7 @@ export function TradeHeader({
 	layout = "desktop",
 }: Props) {
 	const { t } = useLingui();
+	const modes = useAccountModeLabels();
 	const { getAdvancedOrderLabel, getAdvancedOrderTypeLabel } = useOrderDisplayLabels();
 	const tabsOrderType = getTabsOrderType(orderType);
 	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
@@ -84,11 +86,11 @@ export function TradeHeader({
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
 	const accountModeLabel =
 		accountMode === "portfolioMargin"
-			? t`Portfolio`
+			? modes.portfolio.short
 			: accountMode === "unifiedAccount"
-				? t`Unified`
+				? modes.unified.short
 				: accountMode === "disabled"
-					? t`Separate`
+					? modes.manual.short
 					: isAccountModeLoading
 						? t`Account`
 						: accountMode === "default"

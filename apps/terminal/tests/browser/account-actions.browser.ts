@@ -3,7 +3,7 @@ import { create } from "zustand";
 interface FixtureState {
 	connected: boolean;
 	ownerWallet: boolean;
-	mode: "disabled" | "unifiedAccount" | "portfolioMargin";
+	mode: "disabled" | "unifiedAccount" | "portfolioMargin" | null;
 	ready: boolean;
 	sponsored: boolean;
 	geo: "allowed" | "restricted" | "unresolved";
@@ -43,7 +43,13 @@ export function useAccountOverview() {
 		accountAbstraction: state.mode,
 		accountEquityValue: "1403.71",
 		accountMode:
-			state.mode === "disabled" ? "separate" : state.mode === "unifiedAccount" ? "unified" : "portfolioMargin",
+			state.mode === "disabled"
+				? "separate"
+				: state.mode === "unifiedAccount"
+					? "unified"
+					: state.mode === "portfolioMargin"
+						? "portfolioMargin"
+						: "unavailable",
 		accountRisk: { progressPercent: "25.05", tone: "safe" },
 		crossLeverage: 5.01,
 		fundsActionsReady: state.ready,
@@ -53,7 +59,7 @@ export function useAccountOverview() {
 		snapshotReady: state.ready,
 		status: "success",
 		unrealizedPnlTone: "negative",
-		usesSharedQuoteBalance: state.mode !== "disabled",
+		usesSharedQuoteBalance: state.mode === "unifiedAccount" || state.mode === "portfolioMargin",
 		valuationUnavailable: false,
 	};
 }
