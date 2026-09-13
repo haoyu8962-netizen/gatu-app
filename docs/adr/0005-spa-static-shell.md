@@ -36,6 +36,7 @@ Nitro 目前承担的服务端职责：
 9. 运行时彻底不做服务端渲染：`src/start.ts` 注册 `staticPagesRequestMiddleware`（`src/lib/static-pages/`），生产环境下 Node 进程在路由器之前用预渲染产物回答导航：文档路由返回各自的 `index.html`，其余应用路径返回 `_shell.html`，`HEAD` 只回头部；文件形态的路径不返回 HTML（404），`/_serverFn/*` 返回 404。服务端路径不再落到页面渲染：`GET /api/geo`、`GET /api/leaderboard` 交给处理器，只接受 `POST` 的 `/api/referral-geo`、`/api/client-error-report`、`/client-error-report`、`/mobile-agent-sync-ticket*` 在 `GET`/`HEAD` 下由中间件返回 405（`allow: POST`），未知的 `/api/*` 返回 404；`POST` 等非导航方法一律交给服务端处理器。Nitro route rules 的安全头照常附加。产物目录按 `GATU_PUBLIC_DIR` → `./public` → `./.output/public` 查找；找不到壳时导航 503（fail closed），只有 `GATU_RUNTIME_SSR=true` 才回退 SSR。dev 服务器与构建期预渲染（`TSS_PRERENDERING`）绕过该中间件，因此文档路由保留 `ssr: true` 供预渲染使用，`/` 与 `/join/*` 改为 `ssr: false`。
 10. 部署契约随之调整：`/join/*` 返回的壳由中间件盖上 `<meta name="gatu-route" content="referral-join">` 标记，`deploy.sh` 的 referral 深链检查不变；第 8 步新增 `verify_geo_provider`，用生产 IPdata 密钥对 `/api/geo` 做真实探针（`X-Forwarded-For: 8.8.8.8` → 200 且 `country === "US"`），失败即回滚。
 11. 目标宿主是 CloudFront + S3 + Lambda，不再需要 EC2 与 Caddy（[部署材料](../../deploy/cloudfront/README.md)）。同一份客户端构建上传到私有 S3；viewer-request 函数承担静态壳中间件的分类逻辑（文档路由 → `index.html`，应用路径 → `_shell.html`，文件路径与服务端路径放行，`/_serverFn/*` 404），viewer-response 函数把 referral 标记暴露为 `x-gatu-route` 响应头；响应头策略由 `security-headers.ts` 生成；`src/edge/lambda-handler.ts` 把同一组 `/api/*` 处理器适配到 Lambda 函数 URL（`x-gatu-forwarded-host` 还原公网 origin，`CloudFront-Viewer-Address` 提供客户端 IP，OAC 保证只有 CloudFront 能调用），`build:lambda` 产出约 220 KB 的单文件。配对票据在无共享存储的宿主上返回 503，启用前需 DynamoDB 条件写。EC2 路径在切换稳定前保留为回滚手段。
+12. Lambda 源坚持用 OAC（函数 URL `AuthType=AWS_IAM`）而不是"公开 URL + 共享密钥头"：未签名的直接调用在 Lambda 入口就被拒绝，不产生调用计费与并发占用，也没有需要轮换的密钥。代价有两条，都由本仓库承担：函数资源策略必须同时授予 CloudFront 服务主体 `lambda:InvokeFunctionUrl` 与 `lambda:InvokeFunction`（AWS 文档要求；只加前者时 CloudFront 得到 403 `AccessDeniedException`）；CloudFront 签名不读请求体，浏览器发出的 `POST` 必须自带 `x-amz-content-sha256`，否则 Lambda 回"signature does not match"。因此同源 JSON `POST` 统一经 `src/lib/api/payload-hash.ts` 的 `createJsonPostHeaders(body)` 发出（同步 SHA-256，`keepalive` 错误上报在卸载时也能立即发出），`deploy.mjs verify` 用同样的头做一次真实 `POST /api/referral-geo`。共享密钥方案曾被实现到一半后放弃：它需要把函数 URL 改成公开、在分发配置与 Lambda 环境两处保存密钥。
 
 ## 备选方案与取舍
 
@@ -101,4 +102,14 @@ Nitro 目前承担的服务端职责：
 | 应用内浏览器（经 Nitro） | `/trade/BTC`、`/docs`、`/join/abc123` | 终端渲染 7 个面板且只请求 `/api/geo`；文档页直接是预渲染内容且不加载 Privy；无效推荐码由客户端判定并显示 404 页 |
 | 服务端路径错误方法（第四检查点，重建后复验） | `curl` Nitro 生产模式 | `GET`/`HEAD` 访问 POST-only 路径返回 405 JSON 且 `allow: POST`；未知 `/api/*` 返回 404；`GET /api/geo`、`GET /api/leaderboard` 与各 `POST` 端点不受影响；`health_check` 仍通过 |
 
-已知的验证局限：应用内浏览器面板处于隐藏状态（`document.visibilityState === "hidden"`），订阅按契约暂停缓冲，订单簿在两种托管方式下都停留在等待态，这是验证环境伪影而不是 SPA 模式差异；同一浏览器对 Nitro 与静态版本都无法注册 Service Worker，也属环境限制；占位密钥只能证明 IP 解析与提供方调用链路，真实判定由发布流程的 `verify_geo_provider` 用生产密钥确认；未做真实 CDN 部署、Privy 登录、签名、下单、移动布局、非英文语言壳与 Lighthouse/INP 采样。
+第七检查点（同日，CloudFront 首次发布，基于 `463a334a` 的客户端构建与后续代码改动）：
+
+| 检查 | 命令 | 结果 |
+| --- | --- | --- |
+| CloudFront → Lambda 授权 | `curl` 经 `d2i25dhfjwco8b.cloudfront.net` | 只有 `lambda:InvokeFunctionUrl` 时 `GET /api/geo` 403 `AccessDeniedException`；补 `lambda:InvokeFunction` 后 200；带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 200，不带则 403 signature mismatch |
+| 单元与脚本测试 | vitest payload-hash、client-error-report、mobile-sync-one-time-ticket-client、lambda-handler、referral-action-geo、geo-api；`pnpm test:cloudfront`；typecheck | 6 文件 54 用例、node 20 用例通过；typecheck 通过 |
+| 发布 | `build:lambda` → `deploy.mjs lambda`、`pnpm build` → `sync` → `invalidate` ×2 | Lambda 220,618 B 更新成功；客户端 gzip 总量 3,058,779 B；桶内 1,585 个对象；两条失效 `Completed` |
+| 公网验证 | `deploy.mjs verify` 对两条 `*.cloudfront.net` 域 | mainnet 8/8、testnet 9/9 全部 ok，含真实 geo 判定与签名 POST 决策 |
+| 应用内浏览器 | `/trade/HYPE`、`/docs`、`/join/abc123` | 终端 7 面板、`/api/geo` 200、无 `_serverFn`、无控制台错误；文档页预渲染且无 Privy；无效推荐码由客户端显示 404 |
+
+已知的验证局限：正式域名尚未切换（ACM 证书待用户在 Cloudflare 加验证 CNAME 后签发，分发仍用默认证书），EC2 仍在服务 `app.gatu.ai`；应用内浏览器面板处于隐藏状态（`document.visibilityState === "hidden"`），订阅按契约暂停缓冲，订单簿在两种托管方式下都停留在等待态，这是验证环境伪影而不是 SPA 模式差异；同一浏览器对 Nitro 与静态版本都无法注册 Service Worker，也属环境限制；占位密钥只能证明 IP 解析与提供方调用链路，真实判定由发布流程的 `verify_geo_provider` 用生产密钥确认；未做真实 CDN 部署、Privy 登录、签名、下单、移动布局、非英文语言壳与 Lighthouse/INP 采样。

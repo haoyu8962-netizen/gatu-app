@@ -1,4 +1,5 @@
 import { REFERRAL_GEO_API_PATH } from "@/config/api-paths";
+import { createJsonPostHeaders } from "@/lib/api/payload-hash";
 import { type ReferralActionGeoDecision, referralActionGeoDecisionSchema } from "@/lib/geo/geo-contracts";
 
 export { deriveReferralActionGeoDecision, type ReferralActionGeoDecision } from "@/lib/geo/geo-contracts";
@@ -15,10 +16,11 @@ export interface GetReferralActionGeoInput {
  * provider is reported inside the decision instead.
  */
 export async function getReferralActionGeo({ data }: GetReferralActionGeoInput): Promise<ReferralActionGeoDecision> {
+	const body = JSON.stringify({ override: data.override });
 	const response = await fetch(REFERRAL_GEO_API_PATH, {
 		method: "POST",
-		headers: { accept: "application/json", "content-type": "application/json" },
-		body: JSON.stringify({ override: data.override }),
+		headers: createJsonPostHeaders(body, { accept: "application/json" }),
+		body,
 		cache: "no-store",
 		credentials: "omit",
 		mode: "same-origin",

@@ -13,6 +13,8 @@ export const HTML_CACHE_CONTROL = "no-cache";
 export const NO_STORE = "no-store";
 export const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 export const REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+/** CloudFront signs Lambda origin requests without their body; POST callers send the body hash themselves. */
+export const PAYLOAD_HASH_HEADER = "x-amz-content-sha256";
 const NO_STORE_FILES = new Set(["build-meta.json", "sw.js"]);
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
@@ -162,6 +164,25 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		const verdict = JSON.parse(text);
 		expect(typeof verdict.country === "string" && verdict.country.length === 2, "verdict has no country");
 		return `country ${verdict.country}`;
+	});
+	await check("signed lambda post with a payload hash", async () => {
+		const body = JSON.stringify({ override: null });
+		const response = await fetchImpl(`${base}/api/referral-geo`, {
+			method: "POST",
+			headers: {
+				accept: "application/json",
+				"content-type": "application/json",
+				origin: base,
+				"sec-fetch-site": "same-origin",
+				[PAYLOAD_HASH_HEADER]: sha256(Buffer.from(body, "utf8")),
+			},
+			body,
+		});
+		const text = await response.text();
+		expect(response.status === 200, `status ${response.status}: ${text.slice(0, 120)}`);
+		const decision = JSON.parse(text);
+		expect(typeof decision.status === "string", "decision has no status");
+		return `status ${decision.status}`;
 	});
 	await check("referral deep link headers", async () => {
 		const response = await fetchImpl(`${base}/join/__gatu_healthcheck__`, { headers: { accept: "text/html" } });

@@ -96,6 +96,10 @@ test("verification passes when the edge serves the build with the expected heade
 			"/docs": { body: "<html>docs</html>", headers: { "content-security-policy": "x" } },
 			"/build-meta.json": { body: JSON.stringify({ commit: "abc", release: "r1" }) },
 			"/api/geo": { body: JSON.stringify({ country: "GB", proxy: false, tradeRestricted: false }) },
+			"/api/referral-geo": (init) => ({
+				status: init?.method === "POST" && /^[0-9a-f]{64}$/.test(init.headers?.["x-amz-content-sha256"] ?? "") ? 200 : 403,
+				body: JSON.stringify({ checkedAt: 1, country: "GB", status: "allowed", ttlMs: 60_000 }),
+			}),
 			"/join/__gatu_healthcheck__": {
 				body: "<html>shell</html>",
 				headers: { "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex, nofollow", "x-gatu-route": "referral-join" },
@@ -108,7 +112,8 @@ test("verification passes when the edge serves the build with the expected heade
 		results.filter((result) => !result.ok),
 		[],
 	);
-	assert.equal(results.length, 7);
+	assert.equal(results.length, 8);
+	assert.equal(results.find((result) => result.name.startsWith("signed lambda post"))?.detail, "status allowed");
 });
 
 test("verification reports a stale shell, a wrong preconnect and a failed geo verdict", async () => {
@@ -132,6 +137,7 @@ test("verification reports a stale shell, a wrong preconnect and a failed geo ve
 		"shell for a trade navigation",
 		"build metadata parity",
 		"geo endpoint answers with a real verdict",
+		"signed lambda post with a payload hash",
 		"referral deep link headers",
 		"missing files stay 404",
 		"chart package revalidates",

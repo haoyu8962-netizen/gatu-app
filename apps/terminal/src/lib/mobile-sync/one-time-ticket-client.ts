@@ -1,3 +1,4 @@
+import { createJsonPostHeaders } from "@/lib/api/payload-hash";
 import {
 	isMobileSyncTicketId,
 	MOBILE_SYNC_TICKET_API_VERSION,
@@ -86,10 +87,11 @@ async function requestMobileSyncTicket(
 }
 
 function sendMobileSyncTicketRequest(body: MobileSyncTicketRequest, signal?: AbortSignal): Promise<Response> {
+	const json = JSON.stringify(body);
 	return fetch(MOBILE_SYNC_TICKET_ENDPOINT, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify(body),
+		headers: createJsonPostHeaders(json),
+		body: json,
 		cache: "no-store",
 		credentials: "same-origin",
 		redirect: "error",

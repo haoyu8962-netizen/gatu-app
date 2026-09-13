@@ -92,6 +92,22 @@
 
 途中修正两处 CloudFront 限制：源请求策略白名单最多 10 个头（原 13 个，减到 9 个）；响应头策略的 CSP 最多 1,783 字符而应用 CSP 为 1,946 字符，改由 viewer-response 函数下发 CSP（模板 + `render-functions.mjs` 渲染，`test-function` 验证输出 CSP 长度 1,946、计算占用 7），响应头策略不再含 CSP，所有静态行为都挂该函数。
 
+## 第七检查点：打通 CloudFront → Lambda 并完成首次发布（同日，基于 `463a334a`）
+
+现象：两条分发 `Deployed` 后，经 CloudFront 访问 `GET /api/geo` 得到 403 `AccessDeniedException`（"Forbidden. For troubleshooting Function URL authorization issues"），带体的 `POST /api/referral-geo` 得到 403 "The request signature we calculated does not match"。直接调用函数 URL 与 `/_serverFn/*` 404 都正常，说明问题在 OAC 签名到 Lambda 授权这一段。
+
+根因与修复（依据 AWS 文档 "Restricting access to an AWS Lambda function URL origin" 的 CLI 示例）：函数资源策略需要给 `cloudfront.amazonaws.com` **两条**授权——`lambda:InvokeFunctionUrl` 与 `lambda:InvokeFunction`，手册与第六检查点只加了前者；补上 `cloudfront-mainnet-invoke`/`cloudfront-testnet-invoke` 两条（同样限定到各自分发 ARN）后 GET 立即 200。签名不匹配则是文档明示的限制：CloudFront 对 Lambda 源的 OAC 签名不读请求体，viewer 必须自带 `x-amz-content-sha256`；带该头（值为请求体 SHA-256）的同源 `POST /api/referral-geo` 经 CloudFront 返回 200 决策，不带则仍 403。
+
+曾尝试的替代方案（放弃）：把函数 URL 改成公开并用分发自定义头 `X-Origin-Verify` + Lambda 常量时间比较来验证来源。实现到一半后放弃，因为它让未签名调用也计费并占用并发，且要在分发配置与 Lambda 环境两处保存密钥；ADR 决策 12 记录了取舍。
+
+代码：新增 `src/lib/api/payload-hash.ts`（同步纯 TS SHA-256 + `createJsonPostHeaders(body, extra)`；同步是为了 `keepalive` 错误上报在页面卸载时仍能立即发出），`get-referral-action-geo.ts`、`error-reporting/client.ts`、`mobile-sync/one-time-ticket-client.ts` 的 POST 都经它发出；`deploy.mjs verify` 新增"signed lambda post with a payload hash"检查（同源头 + 体哈希的真实 `POST /api/referral-geo`）。测试：`payload-hash.test.ts`（NIST 向量、块边界与 UTF-8 与 `node:crypto` 对拍、referral 请求头）、`client-error-report.test.ts` 断言上报头、`deploy.test.mjs` 通过/失败两条路径各加该项；vitest 6 文件 54 用例、`pnpm test:cloudfront` 20 用例、typecheck 通过。
+
+发布：`build:lambda`（220,618 B）→ `deploy.mjs lambda --execute`（`update-function-code --publish`，代码 45,610 B zip，`LastUpdateStatus=Successful`）；客户端 `GATU_RELEASE_ID=cloudfront-2026-09-13 pnpm build`（预渲染 7 页，客户端 gzip 总量 3,058,779 B，比基线少 95,928 B；`x-amz-content-sha256` 出现在 1 个客户端资源文件中）→ `deploy.mjs sync --bucket gatu-terminal-2026 --execute`（桶内 1,585 个对象；`_shell.html` 12,677 B `no-cache`，`docs/index.html` 27,189 B，`build-meta.json` `no-store`，`404.html` 588 B；没有根 `index.html`，导航由 viewer-request 函数改写）→ 两条 `invalidate /*`（`I7W2G478KQ7XFSCGP18P1TK1ML`、`IOFBP2ZV49DCIQYN71WQ3CF4K`，均 `Completed`）。
+
+验证结果：`deploy.mjs verify --origin https://d2i25dhfjwco8b.cloudfront.net --network mainnet` 8 项全部 ok（壳逐字节一致且带 CSP 与 `api.hyperliquid.xyz` preconnect、文档页一致、`build-meta` `463a334a / cloudfront-2026-09-13`、`/api/geo` 真实判定 `country US`、签名 POST `status blocked`、`/join` 头与 `x-gatu-route`、缺失文件 404、图表包重新验证）；testnet 域 9 项全部 ok（多出 `noindex`，preconnect 指向 `api.hyperliquid-testnet.xyz`）。应用内浏览器（1024 宽）打开 `https://d2i25dhfjwco8b.cloudfront.net/trade/HYPE`：标题变为实时价格，7 个网格面板，唯一服务端请求 `/api/geo` 返回 200，无 `_serverFn` 请求，无控制台错误；`/docs` 直接是预渲染 HTML（`h1` "gatu Documentation"，未加载 Privy）；`/join/abc123` 得到壳并由客户端判定为无效推荐码显示 404 页，`gatu-route=referral-join` meta 由客户端写入。
+
+限制：两条分发仍用默认 `*.cloudfront.net` 证书；ACM 证书 `PENDING_VALIDATION`，等用户把两条验证 CNAME 加到 Cloudflare 后再给分发挂别名与证书，然后由用户切换 DNS；`verify` 与浏览器都从执行机的公网 IP 发起（IPdata 判定为 US），未做真实地区覆盖；未做 Privy 登录、签名、下单与移动布局；EC2 仍在服务 `app.gatu.ai`，尚未退役。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

@@ -29,12 +29,13 @@
 | 文件 | 作用 |
 | --- | --- |
 | `apps/terminal/src/edge/lambda-handler.ts` | Lambda 函数 URL 适配器：把事件转成 `Request`，用 `x-gatu-forwarded-host` 还原公网 origin（同源校验依赖它），从 `CloudFront-Viewer-Address` 取客户端 IP，路由到 `/api/geo`、`/api/referral-geo`、`/api/client-error-report`（含旧路径别名）、`/api/leaderboard`；配对票据返回 503（无共享存储时不可用）；其余 404 |
+| `apps/terminal/src/lib/api/payload-hash.ts` | 浏览器端 POST 辅助：CloudFront 对 Lambda 源的 OAC 签名不读请求体，viewer 必须自带 `x-amz-content-sha256`（AWS 文档要求），否则 Lambda 以签名不匹配拒绝。`createJsonPostHeaders(body)` 同步计算 SHA-256 并附上 `content-type`，`/api/referral-geo`、`/api/client-error-report`（含 `keepalive` 上报）与配对票据请求都经它发出；GET/HEAD 不需要 |
 | `pnpm --filter @gatu/terminal build:lambda` | 用 Vite SSR 构建把处理器打成单文件 `apps/terminal/dist-lambda/index.mjs`（约 220 KB，不含 `public/`，无浏览器全局访问），与客户端共用构建身份 |
 | `functions/terminal-request.js` | viewer-request：文档路由改写到 `index.html`，其余应用路径改写到 `_shell.html`，服务端路径与文件路径原样放行，`/_serverFn/*` 直接 404，写入 `x-gatu-forwarded-host`，`/join*` 标记 `x-gatu-route` |
 | `functions/terminal-response.js` | viewer-response（由 `render-functions.mjs` 从 `terminal-response.template.js` 渲染，勿手改）：设置 `Content-Security-Policy`（图表包路径用同源 iframe 版本，其余用终端版本）并把 `x-gatu-route: referral-join` 暴露为响应头。CloudFront 响应头策略最多接受 1,783 字符的 CSP，而应用策略是 1,946 字符，所以 CSP 由函数下发；`pnpm test:cloudfront` 会在渲染结果与 `security-headers.ts` 不一致时失败 |
 | `response-headers-policies.mjs` | 从 `security-headers.ts` 生成四个策略（不含 CSP）：base、trade（带该网络的 Hyperliquid API `preconnect`）、join（`no-store`/`no-referrer`/`noindex`）、chart（`X-Frame-Options: SAMEORIGIN` + 重新验证）；testnet 版本全部附加 `noindex` |
 | `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/*`、`/client-error-report`、`/mobile-agent-sync-ticket*` 走 Lambda 且不缓存，`/join*` 不缓存，所有静态行为挂 viewer-response 函数（CSP），导航行为再挂 viewer-request 函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`。不传 `--alias`/`--certificate-arn` 时使用默认 `*.cloudfront.net` 证书，供证书签发前先行验证；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（白名单 9 个头，CloudFront 上限 10，转发 viewer 地址但不转发 Host） |
-| `deploy.mjs` | `sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`）、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、`/join` 头与标记、缺失文件 404、图表包重新验证、testnet `noindex`） |
+| `deploy.mjs` | `sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`）、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、带 `x-amz-content-sha256` 的同源 `POST /api/referral-geo` 返回决策、`/join` 头与标记、缺失文件 404、图表包重新验证、testnet `noindex`） |
 
 `pnpm test:cloudfront` 运行以上生成器、函数与部署脚本的 node 测试。
 
@@ -50,7 +51,16 @@
    ```
    把 CNAME 记录加到 Cloudflare（DNS-only），等待 `ISSUED`。
 3. **S3 桶**（私有，禁用公共访问，开启版本控制便于回滚）：`aws s3api create-bucket --bucket gatu-terminal-2026 --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1`。桶策略给 CloudFront OAC 授予 `s3:GetObject` 与 `s3:ListBucket`（有 ListBucket 时缺失对象返回 404 而不是 403，Lambda 的 403 语义得以保留）。
-4. **Lambda**：Node.js 22 运行时，处理程序 `index.handler`，环境变量 `IPDATA_API_KEY`、`GATU_PUBLIC_ORIGIN=https://app.gatu.ai`、`GATU_TRUST_VIEWER_ADDRESS=true`，内存 256 MB，超时 10 s；创建函数 URL，`AuthType=AWS_IAM`，并建 Lambda 类型的 OAC 供 CloudFront 签名调用。首次上传：`pnpm --filter @gatu/terminal build:lambda && node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute`。主网与测试网共用同一函数时，把 `GATU_PUBLIC_ORIGIN` 留空并依赖 `x-gatu-forwarded-host`。
+4. **Lambda**：Node.js 22 运行时，处理程序 `index.handler`，环境变量 `IPDATA_API_KEY`、`GATU_PUBLIC_ORIGIN=https://app.gatu.ai`、`GATU_TRUST_VIEWER_ADDRESS=true`，内存 256 MB，超时 10 s；创建函数 URL，`AuthType=AWS_IAM`，并建 Lambda 类型的 OAC 供 CloudFront 签名调用。分发建好后给每条分发加**两条**资源策略（AWS 文档如此要求，只加第一条时 CloudFront 得到 403 `AccessDeniedException`）：
+   ```bash
+   aws lambda add-permission --function-name gatu-terminal-api --statement-id cloudfront-mainnet \
+     --action lambda:InvokeFunctionUrl --principal cloudfront.amazonaws.com \
+     --source-arn arn:aws:cloudfront::<account>:distribution/<mainnet-id>
+   aws lambda add-permission --function-name gatu-terminal-api --statement-id cloudfront-mainnet-invoke \
+     --action lambda:InvokeFunction --principal cloudfront.amazonaws.com \
+     --source-arn arn:aws:cloudfront::<account>:distribution/<mainnet-id>
+   ```
+   首次上传：`pnpm --filter @gatu/terminal build:lambda && node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute`。主网与测试网共用同一函数时，把 `GATU_PUBLIC_ORIGIN` 留空并依赖 `x-gatu-forwarded-host`。
 5. **CloudFront 函数**：
    ```bash
    aws cloudfront create-function --name gatu-terminal-request --function-config Comment="gatu shell rewrite",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-request.js

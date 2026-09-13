@@ -104,6 +104,7 @@ Routes live in [src/routes/](src/routes). URL parameters below use `:name`; file
 | `POST /mobile-agent-sync-ticket` | Server-side mobile Agent ticket handling |
 | `GET /api/geo` | Visitor jurisdiction verdict for trading and funds gates; portable handler in [lib/geo/geo-api.ts](src/lib/geo/geo-api.ts) |
 | `POST /api/referral-geo` | Fresh same-origin geo decision before referral and staking actions |
+| Browser `POST` helper | Every same-origin JSON `POST` goes through `createJsonPostHeaders()` in [lib/api/payload-hash.ts](src/lib/api/payload-hash.ts): the CloudFront target signs Lambda origin requests without their body, so the viewer sends `x-amz-content-sha256` itself |
 | `GET /api/leaderboard` | Leaderboard API handler |
 | `POST /api/client-error-report` | Client failure report handler; `POST /client-error-report` remains a temporary alias for bundles loaded before the move |
 | `GET /build-meta.json` | Running build identity; the build also writes the same JSON into `.output/public` |

@@ -1,3 +1,4 @@
+import { createJsonPostHeaders } from "@/lib/api/payload-hash";
 import {
 	CLIENT_ERROR_REPORT_ENDPOINT,
 	CLIENT_ERROR_REPORT_MAX_BYTES,
@@ -82,7 +83,7 @@ export function reportClientError(error: unknown, options: ReportClientErrorOpti
 
 	void fetch(CLIENT_ERROR_REPORT_ENDPOINT, {
 		method: "POST",
-		headers: { "content-type": "application/json" },
+		headers: createJsonPostHeaders(body),
 		body,
 		cache: "no-store",
 		credentials: "omit",

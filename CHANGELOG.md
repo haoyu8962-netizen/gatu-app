@@ -35,7 +35,11 @@ changes, not evidence that a build has been deployed or accepted on real devices
 - The same API handlers can run on an AWS Lambda function URL behind CloudFront
   (`pnpm --filter @gatu/terminal build:lambda`), and `deploy/cloudfront/` holds the
   CloudFront Functions, header policies, distribution generator and static deployment
-  script for the S3 + Lambda target that retires the EC2 server. Not deployed yet.
+  script for the S3 + Lambda target that retires the EC2 server. Browser `POST`
+  requests to the same-origin API now carry `x-amz-content-sha256`, which CloudFront's
+  signed Lambda origin requires. The first CloudFront release is live on the
+  `*.cloudfront.net` domains only; `app.gatu.ai` still points at the EC2 server until
+  the certificate is issued and DNS is switched.
 
 ### Changed
 
