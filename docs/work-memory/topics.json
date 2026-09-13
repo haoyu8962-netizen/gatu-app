@@ -37,5 +37,10 @@
 		"id": "work-memory",
 		"title": "工作记录与索引维护",
 		"documents": ["docs/work-memory/README.md"]
+	},
+	{
+		"id": "docs-governance",
+		"title": "Agent 规则与文档治理",
+		"documents": ["AGENTS.md", "docs/documentation-system.md", "docs/README.md"]
 	}
 ]
