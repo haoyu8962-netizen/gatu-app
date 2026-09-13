@@ -1,79 +1,105 @@
-# CloudFront 接入：静态壳 + API 源站
+# CloudFront 全静态部署：S3 壳 + Lambda API
 
-本目录是把交易终端放到 AWS CloudFront 之后的操作材料。当前已实现的运行形态（[ADR 0005](../../docs/adr/0005-spa-static-shell.md)）是 Node 进程直接返回预渲染产物并只执行 `/api/*` 与配对处理器，因此 CloudFront 的第一步不搬 S3：**CloudFront 作为 TLS 终结与静态资源边缘缓存，源站仍是现有 EC2 上的 Caddy → Node**。这一步只改 DNS、证书、分发和 Caddy 的可信代理链，不改应用代码，也不改 `deploy.sh` 的发布流程。把 `public/` 迁到 S3 是可选的第二步，见文末。
+目标拓扑不再有 EC2 与 Caddy：客户端构建放在私有 S3，CloudFront 负责 TLS、缓存、安全头与导航回写，同源 `/api/*` 处理器跑在一个 Lambda 函数 URL 上。应用代码不变，运行形态与 [ADR 0005](../../docs/adr/0005-spa-static-shell.md) 的"静态壳 + API"完全一致，只是宿主从 Node 换成 CloudFront + Lambda。
 
-本文件不执行任何 AWS 变更；每条命令都需要由持有授权的人在确认后运行。
+本目录的脚本只生成配置、打印命令和做验证；没有 `--execute` 时不会碰 AWS。资源创建由持有授权的人在确认后执行。
 
-## 2026-09-13 只读核查结果
+## 官方终端的托管实践（2026-09-13 只读调试 `app.hyperliquid.xyz/trade/HYPE`）
+
+| 观察 | 证据 | 对 gatu 的取舍 |
+| --- | --- | --- |
+| S3 源 + CloudFront，SPA 回写靠"自定义错误响应"：任何不存在的键（`/trade/HYPE`、`/portfolio`、`/no/such/page`、甚至缺失的 `/assets/*.js` 与 `/sw.js`）都返回 `index.html` 200，响应头 `X-Cache: Error from cloudfront` | `curl -D` 各路径，ETag 与 `/index.html` 相同 | 不照搬。gatu 用 viewer-request 函数把导航改写到 `_shell.html`/文档 `index.html`，文件形态的路径保持 404，避免缺失资源变成 HTML |
+| HTML 与资源都没有 `Cache-Control`，靠 ETag/Last-Modified 与 CloudFront 默认 TTL；错误映射的 HTML 在边缘缓存超过一天（`Age: 92651`） | 响应头 | 不照搬。gatu 在上传时写对象级 `Cache-Control`：`/assets/*` immutable、壳与文档页 `no-cache`、`build-meta.json`/`sw.js` `no-store`、图表包 `must-revalidate`；发布后全量失效 |
+| 没有任何安全头（无 CSP/HSTS/XFO） | 响应头 | 不照搬。gatu 用响应头策略把 `src/config/security-headers.ts` 原样搬到边缘 |
+| API 域 `api-ui.hyperliquid.xyz`：nginx 在 CloudFront 后面，`X-Cache: Miss`，CORS `*`，无缓存 | `POST /info` 响应头 | gatu 的浏览器仍直连公共 `api.hyperliquid.xyz`（同样在 CloudFront 后面，CORS `*`），不经过自家 API |
+| 前端不做地区判定，bundle 里没有 geo/ip 查询；限制由其 API 在服务端执行 | bundle 字符串检索 | gatu 的地区门控是产品契约，保留 `/api/geo`（IPdata，含代理判定）跑在 Lambda 上 |
+
+## 只读核查（2026-09-13）
 
 | 项目 | 结果 |
 | --- | --- |
 | AWS CLI | 本机 `aws-cli/2.36.2`，默认区域 `ap-northeast-1` |
-| 凭证 | `~/.aws/credentials` 默认 profile 是 **root 账号密钥**。CloudFront/ACM/EC2 变更前应先建 IAM 用户或角色并切换 profile，root 密钥只用于创建该 IAM 身份 |
-| 现有分发 | `EP2DIBP3T7M3G`：营销站，S3 源 `gatu-dist-2026`，别名 `gatu.ai`/`www.gatu.ai`，viewer-request 函数 `gatu-rewrite-index`（目录索引改写） |
-| ACM（us-east-1） | 只有 `gatu.ai` + `www.gatu.ai` 的证书；`app.gatu.ai`/`testnet.gatu.ai` 需要新申请 |
-| DNS | 没有 Route53 托管区，DNS 在 Cloudflare（DNS-only）；证书验证与切换都通过 Cloudflare 记录完成 |
-| 源站 | EC2 `18.182.219.124`（Tokyo）运行 Caddy + Node；Caddy 目前把 `X-Forwarded-For` 覆盖为 TCP 对端地址 |
+| 凭证 | 默认 profile 是 **root 账号密钥**。创建资源前先用 root 建一个受限 IAM 用户或角色（CloudFront、ACM us-east-1、S3 指定桶、Lambda 指定函数、IAM PassRole 给 Lambda 执行角色），本机切换到该 profile |
+| 现有分发 | `EP2DIBP3T7M3G`：营销站，S3 源 `gatu-dist-2026`，函数 `gatu-rewrite-index` |
+| ACM（us-east-1） | 只有 `gatu.ai`/`www.gatu.ai`；`app.gatu.ai`、`testnet.gatu.ai` 需新申请，DNS 验证记录加在 Cloudflare |
+| DNS | 无 Route53，切换与回滚靠 Cloudflare 的 DNS-only 记录 |
 
-## 目标拓扑
+## 组件
 
-```
-浏览器 → CloudFront（app.gatu.ai / testnet.gatu.ai，ACM 证书，HTTP/2+3）
-          ├─ /assets/*、/charting_library/*、主题 CSS、图标：边缘缓存（CachingOptimized）
-          └─ 其余（壳、文档页、/api/*、配对票据、/join/*）：不缓存，转发全部 viewer 头
-             → 源站 origin.gatu.ai（EC2 Caddy，HTTPS，自定义头 X-Origin-Verify）
-                → Node：静态壳/文档页 + /api/* + 配对处理器
-```
+| 文件 | 作用 |
+| --- | --- |
+| `apps/terminal/src/edge/lambda-handler.ts` | Lambda 函数 URL 适配器：把事件转成 `Request`，用 `x-gatu-forwarded-host` 还原公网 origin（同源校验依赖它），从 `CloudFront-Viewer-Address` 取客户端 IP，路由到 `/api/geo`、`/api/referral-geo`、`/api/client-error-report`（含旧路径别名）、`/api/leaderboard`；配对票据返回 503（无共享存储时不可用）；其余 404 |
+| `pnpm --filter @gatu/terminal build:lambda` | 用 Vite SSR 构建把处理器打成单文件 `apps/terminal/dist-lambda/index.mjs`（约 220 KB，不含 `public/`，无浏览器全局访问），与客户端共用构建身份 |
+| `functions/terminal-request.js` | viewer-request：文档路由改写到 `index.html`，其余应用路径改写到 `_shell.html`，服务端路径与文件路径原样放行，`/_serverFn/*` 直接 404，写入 `x-gatu-forwarded-host`，`/join*` 标记 `x-gatu-route` |
+| `functions/terminal-response.js` | viewer-response：把 `x-gatu-route: referral-join` 暴露为响应头，替代 Node 运行时注入的 meta 标记 |
+| `response-headers-policies.mjs` | 从 `security-headers.ts` 生成四个策略：base、trade（带该网络的 Hyperliquid API `preconnect`）、join（`no-store`/`no-referrer`/`noindex`）、chart（同源 iframe CSP + 重新验证）；testnet 版本全部附加 `noindex` |
+| `distribution-config.mjs` | 生成 DistributionConfig：S3 源（OAC）+ Lambda 源（OAC），`/api/*`、`/client-error-report`、`/mobile-agent-sync-ticket*` 走 Lambda 且不缓存，`/join*` 不缓存并挂两个函数，图表/资源路径 CachingOptimized，交易路径挂 trade 策略，404 映射到 `/404.html`；`--api-origin-request-policy-config` 输出 Lambda 源请求策略（转发除 Host 外的头与 viewer 地址） |
+| `deploy.mjs` | `sync`（按缓存策略分组 `aws s3 sync`，资源先、HTML 与 `build-meta.json` 后，从不 `--delete`）、`invalidate`（`/*`）、`lambda`（zip + `update-function-code` + 等待）、`verify`（经公网检查壳与文档页与本地构建逐字节一致、CSP 与网络专属 preconnect、`build-meta.json` 一致、`/api/geo` 真实判定、`/join` 头与标记、缺失文件 404、图表包重新验证、testnet `noindex`） |
 
-关键约束：
-
-- **Host 必须转发**。Caddy 依赖 Host 选择网络（`@mainnet_trade`/`@testnet_trade` 的 `preconnect`、`@testnet` 的 `noindex`）。默认行为使用托管源请求策略 `AllViewerAndCloudFrontHeaders-2022-06`，缓存行为使用 `AllViewer`，两者都转发 Host。
-- **客户端 IP 的可信链**。`/api/geo` 的判定与配对票据的限流依赖 Caddy 写入的 `X-Forwarded-For`。CloudFront 后面 TCP 对端是边缘节点，必须改为在 `X-Origin-Verify` 匹配时取 `CloudFront-Viewer-Address`（去掉端口）。片段见 [Caddyfile.cloudfront.snippet](Caddyfile.cloudfront.snippet)。
-- **不改缓存语义**。源站已对壳返回 `no-cache`、对 `/join/*`、`build-meta.json`、票据返回 `no-store`、对 `/assets/*` 返回 `immutable`，CloudFront 的 CachingDisabled/CachingOptimized 策略与之一致。
-- **发布流程不变**。`deploy.sh` 的公网检查经 CloudFront 到达源站；`verify_geo_provider` 直接探针本机 Node。切换后需按下方清单复验 `edge_health_check` 涉及的畸形 `/join/%` 请求在 CloudFront 上的表现。
+`pnpm test:cloudfront` 运行以上生成器、函数与部署脚本的 node 测试。
 
 ## 执行步骤
 
-1. **IAM 身份**（一次性）：用 root 建一个仅授予 `cloudfront:*`、`acm:*`（us-east-1）、`ec2:DescribeManagedPrefixLists`、`ec2:AuthorizeSecurityGroupIngress`/`Revoke…` 的用户或角色，本机 `aws configure --profile gatu-edge`，后续命令加 `--profile gatu-edge`。
-2. **证书**（us-east-1）：
+1. **IAM 身份**：用 root 创建受限用户或角色，`aws configure --profile gatu-edge`，以下命令均加 `--profile gatu-edge`。
+2. **证书（us-east-1）**：
    ```bash
    aws acm request-certificate --region us-east-1 --validation-method DNS \
      --domain-name app.gatu.ai --subject-alternative-names testnet.gatu.ai
    aws acm describe-certificate --region us-east-1 --certificate-arn <arn> \
      --query 'Certificate.DomainValidationOptions[].ResourceRecord'
    ```
-   把返回的 CNAME 记录加到 Cloudflare（DNS-only），等待状态 `ISSUED`。
-3. **源站主机名**：Cloudflare 添加 `origin.gatu.ai` A 记录指向 EC2（DNS-only）。按 [Caddyfile.cloudfront.snippet](Caddyfile.cloudfront.snippet) 修改 `/etc/caddy/Caddyfile`：站点块加入 `origin.gatu.ai`，加入 `X-Origin-Verify` 匹配的可信代理链；在服务器执行 `caddy validate` 与 `node deploy/validate-caddy-forwarded-headers.mjs`，通过后 reload。此时公网流量仍直连 EC2，行为不变。
-4. **生成并创建分发**：
+   把 CNAME 记录加到 Cloudflare（DNS-only），等待 `ISSUED`。
+3. **S3 桶**（私有，禁用公共访问，开启版本控制便于回滚）：`aws s3api create-bucket --bucket gatu-terminal-2026 --region ap-northeast-1 --create-bucket-configuration LocationConstraint=ap-northeast-1`。桶策略给 CloudFront OAC 授予 `s3:GetObject` 与 `s3:ListBucket`（有 ListBucket 时缺失对象返回 404 而不是 403，Lambda 的 403 语义得以保留）。
+4. **Lambda**：Node.js 22 运行时，处理程序 `index.handler`，环境变量 `IPDATA_API_KEY`、`GATU_PUBLIC_ORIGIN=https://app.gatu.ai`、`GATU_TRUST_VIEWER_ADDRESS=true`，内存 256 MB，超时 10 s；创建函数 URL，`AuthType=AWS_IAM`，并建 Lambda 类型的 OAC 供 CloudFront 签名调用。首次上传：`pnpm --filter @gatu/terminal build:lambda && node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute`。主网与测试网共用同一函数时，把 `GATU_PUBLIC_ORIGIN` 留空并依赖 `x-gatu-forwarded-host`。
+5. **CloudFront 函数**：
    ```bash
-   export GATU_ORIGIN_VERIFY_SECRET="$(openssl rand -hex 32)"   # 同一值写入 /etc/caddy/env
-   node deploy/cloudfront/distribution-config.mjs \
-     --alias app.gatu.ai --alias testnet.gatu.ai \
-     --origin origin.gatu.ai --certificate-arn <arn> > /tmp/gatu-cf.json
-   aws cloudfront create-distribution --distribution-config file:///tmp/gatu-cf.json
+   aws cloudfront create-function --name gatu-terminal-request --function-config Comment="gatu shell rewrite",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-request.js
+   aws cloudfront create-function --name gatu-terminal-response --function-config Comment="gatu route marker",Runtime=cloudfront-js-2.0 --function-code fileb://deploy/cloudfront/functions/terminal-response.js
+   aws cloudfront publish-function --name <name> --if-match <etag>
    ```
-   `node --test deploy/cloudfront/distribution-config.test.mjs` 钉住配置形状；托管策略 ID 可用 `aws cloudfront list-cache-policies --type managed` 与 `list-origin-request-policies --type managed` 复核。
-5. **切换前验证**（分发状态 `Deployed` 后，DNS 未改）：
+6. **策略**：
    ```bash
-   CF_IP="$(dig +short <dxxxx.cloudfront.net> | head -1)"
-   curl -sI --resolve app.gatu.ai:443:$CF_IP https://app.gatu.ai/trade/BTC        # 200, CSP, Link preconnect 主网
-   curl -sI --resolve testnet.gatu.ai:443:$CF_IP https://testnet.gatu.ai/trade/BTC  # Link preconnect 测试网, X-Robots-Tag
-   curl -s  --resolve app.gatu.ai:443:$CF_IP https://app.gatu.ai/api/geo             # 真实 verdict（来自本机公网 IP）
-   curl -sI --resolve app.gatu.ai:443:$CF_IP https://app.gatu.ai/assets/<hash>.js   # x-cache: Hit 第二次
-   curl -sI --resolve app.gatu.ai:443:$CF_IP https://app.gatu.ai/join/abc          # no-store, no-referrer, noindex
-   curl -s --path-as-is -o /dev/null -w '%{http_code}\n' --resolve app.gatu.ai:443:$CF_IP 'https://app.gatu.ai/join/%'
+   node --experimental-strip-types deploy/cloudfront/response-headers-policies.mjs --network mainnet > /tmp/rhp-mainnet.json
+   # 对数组中的每个策略：aws cloudfront create-response-headers-policy --response-headers-policy-config file://<单个策略 JSON>
+   node deploy/cloudfront/distribution-config.mjs --api-origin-request-policy-config > /tmp/orp.json
+   aws cloudfront create-origin-request-policy --origin-request-policy-config file:///tmp/orp.json
    ```
-   最后一条决定是否需要调整 `deploy.sh` 的 `verify_edge_rejects_malformed_referral_deep_link`：CloudFront 可能先于 Caddy 以自己的 400 拒绝畸形 URI。
-6. **切换 DNS**：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到分发域名（DNS-only）。回滚只需把记录改回 EC2 的 A 记录。
-7. **收紧源站**（可选）：安全组 443 只放行 CloudFront 托管前缀列表 `com.amazonaws.global.cloudfront.origin-facing`，80 保留给 ACME HTTP-01；Caddy 对缺少 `X-Origin-Verify` 的请求返回 403。
+7. **分发**（主网、测试网各一个，共用 S3 桶与 Lambda）：
+   ```bash
+   node deploy/cloudfront/distribution-config.mjs --network mainnet --alias app.gatu.ai \
+     --certificate-arn <arn> --bucket-domain gatu-terminal-2026.s3.ap-northeast-1.amazonaws.com \
+     --s3-oac <id> --lambda-url-domain <xxx>.lambda-url.ap-northeast-1.on.aws --lambda-oac <id> \
+     --api-origin-request-policy <id> --policy-base <id> --policy-trade <id> --policy-join <id> --policy-chart <id> \
+     --function-request <arn> --function-response <arn> > /tmp/cf-mainnet.json
+   aws cloudfront create-distribution --distribution-config file:///tmp/cf-mainnet.json
+   ```
+8. **首次发布**：
+   ```bash
+   pnpm build
+   node deploy/cloudfront/deploy.mjs sync --bucket gatu-terminal-2026 --execute
+   node deploy/cloudfront/deploy.mjs invalidate --distribution <id> --execute
+   ```
+9. **切换前验证**（分发 `Deployed` 后，DNS 未改）：用 `curl --resolve app.gatu.ai:443:<分发 IP>` 逐项检查，或临时把本机 hosts 指向分发后运行 `node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet`。特别确认畸形 `/join/%` 的响应状态，以及 `/api/geo` 在真实公网 IP 下返回 200。
+10. **切换 DNS**：Cloudflare 把 `app.gatu.ai`、`testnet.gatu.ai` 改为 CNAME 到各自分发（DNS-only）。回滚只需改回 EC2 的 A 记录，EC2 在确认稳定前保留。
+11. **退役 EC2**：连续观察一个发布周期后停掉 `gatu.service` 与 Caddy，`deploy/deploy.sh` 及其 Caddy/systemd 文件转为历史资料。
 
-## 发布后清单
+## 日常发布
 
-- `deploy.sh` 全流程通过（含新的 `verify_geo_provider`）。
-- `/api/geo` 在浏览器里返回真实判定，不再是 `missing_ip`/`provider_error`（说明可信代理链正确）。
-- 配对票据限流仍按真实客户端 IP 计数（`mobile-sync-release.mjs probe` 经公网）。
-- 更新 [部署手册](../README.md) 的拓扑图与 `deploy/env.runtime.example`（新增 `CADDY_ORIGIN_VERIFY` 说明）。
+```bash
+pnpm build && pnpm --filter @gatu/terminal build:lambda
+node deploy/cloudfront/deploy.mjs lambda --function-name gatu-terminal-api --execute
+node deploy/cloudfront/deploy.mjs sync --bucket gatu-terminal-2026 --execute
+node deploy/cloudfront/deploy.mjs invalidate --distribution <mainnet-id> --execute
+node deploy/cloudfront/deploy.mjs invalidate --distribution <testnet-id> --execute
+node deploy/cloudfront/deploy.mjs verify --origin https://app.gatu.ai --network mainnet
+node deploy/cloudfront/deploy.mjs verify --origin https://testnet.gatu.ai --network testnet
+```
 
-## 第二步（可选）：public/ 迁到 S3
+顺序说明：Lambda 先于静态文件更新，因为新壳可能依赖新的 API 行为；`sync` 从不删除旧对象，正在打开旧壳的浏览器仍能取到旧资源；`invalidate` 用 `/*` 是为了让 `no-cache` 的壳与文档页立即刷新，资源本身是内容哈希不受影响。
 
-把 `.output/public` 同步到 S3、CloudFront 默认行为改为 S3 源、`/api/*` 与票据路径改为 EC2 源。需要额外做：`gatu-rewrite-index` 风格的函数把文档路由改写到 `index.html`、404 回写 `_shell.html`、把 `src/config/security-headers.ts` 生成为响应头策略、`/join/*` 的 `no-store` 行为，以及为 referral 深链标记改用 Lambda@Edge 或调整 `deploy.sh` 的标记检查。收益是 HTML 也不依赖 EC2；在第一步稳定运行前不建议进行。
+## 与 EC2 部署的差异
+
+- 移动配对票据依赖单进程内存做原子消费，无服务器版本返回 503；启用该功能前需要 DynamoDB 条件写实现，`build-meta.json` 的 `mobileSync.store` 届时改为对应值。
+- `verify_geo_provider` 的等价检查是 `deploy.mjs verify` 的 geo 项：它从执行机的公网 IP 发起，要求 200 与两位国家码。
+- referral 深链的标记从 HTML meta 变为 `x-gatu-route` 响应头；客户端路由仍在水合后写入 meta。
+- 错误上报进入 Lambda 的 CloudWatch 日志；`/api/leaderboard` 的缓存是每个执行实例内存级的。

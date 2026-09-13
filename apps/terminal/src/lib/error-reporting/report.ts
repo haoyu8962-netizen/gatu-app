@@ -1,4 +1,4 @@
-import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@gatu/hl-react";
+import { LEGAL_STATUS_ERROR_REASONS, type LegalStatusErrorReason } from "@gatu/hl-react/legal";
 import { L2_BOOK_STREAM_ERROR_CODES, type L2BookStreamErrorCode } from "@gatu/hl-react/subscriptions/l2";
 import { CLIENT_ERROR_REPORT_API_PATH } from "@/config/api-paths";
 

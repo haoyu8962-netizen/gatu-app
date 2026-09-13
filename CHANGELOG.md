@@ -32,6 +32,10 @@ changes, not evidence that a build has been deployed or accepted on real devices
   server paths with 405/404 instead of a page, and keeps
   `POST /client-error-report` as a temporary alias. Deployment health checks now also probe `/api/geo`
   with the production IPdata key. See [ADR 0005](docs/adr/0005-spa-static-shell.md).
+- The same API handlers can run on an AWS Lambda function URL behind CloudFront
+  (`pnpm --filter @gatu/terminal build:lambda`), and `deploy/cloudfront/` holds the
+  CloudFront Functions, header policies, distribution generator and static deployment
+  script for the S3 + Lambda target that retires the EC2 server. Not deployed yet.
 
 ### Changed
 

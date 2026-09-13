@@ -19,6 +19,7 @@
 		"memory:index": "node scripts/work-memory.mjs --write",
 		"memory:check": "node scripts/work-memory.mjs --check",
 		"memory:test": "node --test scripts/work-memory.test.mjs",
+		"test:cloudfront": "node --experimental-strip-types --test deploy/cloudfront/*.test.mjs deploy/cloudfront/functions/*.test.mjs",
 		"validate:mobile-device": "node scripts/validate-mobile-phone-access-device-validation.js",
 		"test:mobile-device-validator": "node --test scripts/validate-mobile-phone-access-device-validation.test.js",
 		"template:mobile-device": "node scripts/validate-mobile-phone-access-device-validation.js --print-template",

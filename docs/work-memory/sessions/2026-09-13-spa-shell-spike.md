@@ -78,9 +78,18 @@
 
 同一轮用户确定 CDN 平台为 AWS CloudFront，并要求核对本机 AWS CLI。只读核查（未创建任何资源）：`aws-cli/2.36.2`，默认区域 `ap-northeast-1`，默认 profile 是 root 账号密钥；现有分发 `EP2DIBP3T7M3G` 为营销站（S3 源、`gatu-rewrite-index` 函数）；us-east-1 证书只覆盖 `gatu.ai`/`www.gatu.ai`；无 Route53 托管区（DNS 在 Cloudflare）；EC2 `18.182.219.124` 运行 Caddy + Node。据此新增 `deploy/cloudfront/`：分发配置生成器 `distribution-config.mjs`（默认行为 CachingDisabled + AllViewerAndCloudFrontHeaders 转发 Host 与 viewer 地址，`/assets/*` 等 7 类路径 CachingOptimized，源站 HTTPS + `X-Origin-Verify` 自定义头；4 项 node 测试）、Caddy 可信代理链片段（`X-Origin-Verify` 匹配时用 `CloudFront-Viewer-Address` 写 `X-Forwarded-For`）、操作手册（先建 IAM 身份、申请 `app.gatu.ai`+`testnet.gatu.ai` 证书、`origin.gatu.ai` 源站名、切换前用 `--resolve` 验证、Cloudflare CNAME 切换与回滚）。资源创建需持有授权的人确认后执行；root 密钥不应直接用于变更。
 
+## 第五检查点：CloudFront + S3 + Lambda 全静态目标（同日，基于 `33d810c5`）
+
+用户改变目标：用 CloudFront 就不再保留 Caddy/EC2（多一台服务器成本），并要求先调试官方终端 `/trade/HYPE` 的托管实践。官方站只读调试结论（`curl -D`、bundle 检索）：S3 源 + CloudFront，SPA 回写靠自定义错误响应把所有不存在的键（含缺失资源与 `/sw.js`）映射成 `index.html` 200（`X-Cache: Error from cloudfront`，错误响应在边缘缓存超过一天）；HTML 与资源均无 `Cache-Control`；没有任何安全头；API 域 `api-ui.hyperliquid.xyz` 是 CloudFront 后的 nginx，CORS `*`；前端不做地区判定。gatu 取其托管形态，不取其错误回写、无缓存策略与无安全头。
+
+实现（不创建任何 AWS 资源）：`src/edge/lambda-handler.ts` Lambda 函数 URL 适配器（还原公网 origin、取 viewer 地址为客户端 IP、路由四个 `/api/*` 处理器与旧路径别名、票据 503、其余 404；5 用例）与 `vite.lambda.config.ts`（`build:lambda`，SSR 单文件约 220 KB，`publicDir: false`，本地以假事件冒烟：geo 无密钥 503 `missing_config`、未知 404、错误上报 202）；`report.ts` 改从 `@gatu/hl-react/legal` 深路径导入并在 hl-react `exports` 增加 `./legal`，避免把整个 hl-react 打进 Lambda；`deploy/cloudfront/functions/`（viewer-request 改写与 `x-gatu-forwarded-host`/`x-gatu-route`，viewer-response 暴露标记头；测试用 `node:vm` 执行并核对文档路由与应用常量一致）；`response-headers-policies.mjs`（用 `--experimental-strip-types` 直接读取 `security-headers.ts`，生成 base/trade/join/chart 四策略，testnet 全部 `noindex`）；`distribution-config.mjs` 改为 S3（OAC）+ Lambda（OAC）双源、路径行为、函数关联与 404 映射，并输出 Lambda 源请求策略（转发除 Host 外的头与 viewer 地址）；`deploy.mjs`（`sync` 按缓存策略分组且资源先 HTML 后、从不删除；`invalidate /*`；`lambda` zip + 更新；`verify` 经公网核对壳/文档页字节、CSP 与网络 preconnect、`build-meta.json`、`/api/geo` 真实判定、`/join` 头与 `x-gatu-route`、缺失文件 404、图表包重新验证、testnet `noindex`）；`public/404.html`；根 `test:cloudfront` 脚本；删除 Caddy 片段。手册重写为 S3 + Lambda 步骤（IAM → 证书 → 桶 → Lambda 与 OAC → 函数 → 策略 → 分发 → 首次发布 → `--resolve` 验证 → Cloudflare 切换 → 退役 EC2）。
+
+验证：typecheck 通过；`pnpm test:cloudfront`（函数 4、策略 3、分发 5、部署脚本 5）与 vitest lambda-handler 5、client-error-report 15 用例通过；Lambda 产物无 `window` 引用。限制：所有 AWS 步骤仍为计划，未创建资源；`--resolve` 切换前验证与畸形 `/join/%` 在 CloudFront 上的表现需在真实分发上确认；本机 Node 24 与 CI Node 22 都支持 `--experimental-strip-types`，但 CI 未接入 `test:cloudfront`。
+
 ## 后续与替代关系
 
-- 把 `public/` 搬到对象存储 + CDN 时，需要把 `/api/*` 与 `/mobile-agent-sync-ticket` 路由到挂载处理器的宿主，并在 CDN 层重建安全头与 `preconnect`；边缘运行时适配（注入 `development`、`ipdataApiKey()`、`resolveClientIp`，例如 `CF-Connecting-IP`）及其密钥管理另立任务；本仓库暂不加入 `wrangler` 等新依赖，避免与并行的 Across 工作冲突 lockfile。
+- 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。
+- 配对票据在无服务器宿主上需要 DynamoDB 条件写实现后才能启用；`/api/leaderboard` 可考虑 CloudFront 缓存以减少 Lambda 调用。
 - 旧路径 `POST /client-error-report` 别名保留一个发布周期后删除。
 - 壳 head 目前带 `/trade` 的标题与 `canonical`，需要中性化或在 CDN 层禁止缓存壳。
 - 配对票据在多实例前迁到共享 CAS+TTL 存储，按部署手册既有要求执行。

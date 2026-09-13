@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Generates the CloudFront DistributionConfig for the trading terminal. The distribution fronts
-// the existing Caddy + Node origin: navigations, /api/* and the pairing ticket pass through
-// uncached with every viewer header (including Host and CloudFront-Viewer-Address), while the
-// content-hashed client assets and the TradingView package are cached at the edge. Nothing here
-// talks to AWS; pipe the JSON into `aws cloudfront create-distribution --distribution-config`.
+// Generates the CloudFront DistributionConfig for a fully static trading terminal: the client
+// build lives in a private S3 bucket (origin access control), the same-origin API handlers run on
+// a Lambda function URL (origin access control), and two CloudFront Functions rewrite navigations
+// to the prerendered shell and expose the referral route marker. Nothing here talks to AWS; pipe
+// the JSON into `aws cloudfront create-distribution --distribution-config file://...`.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,20 +12,24 @@ export const MANAGED_POLICIES = Object.freeze({
 	cacheOptimized: "658327ea-f89d-4fab-a63d-7e88639e58f6",
 	cacheDisabled: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
 	originAllViewer: "216adef6-5c7f-47e4-b989-5492eafa07d3",
-	originAllViewerAndCloudFrontHeaders: "33f36d7e-f396-46d9-90e0-52428a34d9dc",
 });
 
-export const ORIGIN_VERIFY_HEADER = "X-Origin-Verify";
-export const ORIGIN_ID = "gatu-caddy-origin";
-export const CACHED_PATH_PATTERNS = Object.freeze([
+export const S3_ORIGIN_ID = "gatu-terminal-static";
+export const API_ORIGIN_ID = "gatu-terminal-api";
+export const API_ORIGIN_REQUEST_POLICY_NAME = "gatu-terminal-api";
+export const NOT_FOUND_PAGE = "/404.html";
+
+export const API_PATH_PATTERNS = Object.freeze(["/api/*", "/client-error-report", "/mobile-agent-sync-ticket*"]);
+export const JOIN_PATH_PATTERN = "/join*";
+export const CHART_PATH_PATTERNS = Object.freeze(["/charting_library/*", "/tradingview-theme-*.css"]);
+export const ASSET_PATH_PATTERNS = Object.freeze([
 	"/assets/*",
-	"/charting_library/*",
-	"/tradingview-theme-*.css",
 	"/coins/*",
 	"/icon*.png",
 	"/apple-touch-icon.png",
 	"/favicon.*",
 ]);
+export const TRADE_PATH_PATTERNS = Object.freeze(["/trade*", "/perp*", "/spot*", "/builders-perp*"]);
 
 const ALL_METHODS = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"];
 const READ_METHODS = ["GET", "HEAD"];
@@ -34,49 +38,163 @@ function list(items) {
 	return { Quantity: items.length, Items: [...items] };
 }
 
-function cacheBehavior({ pathPattern, cachePolicyId, originRequestPolicyId, methods }) {
+function functionAssociations(arns) {
+	const items = [];
+	if (arns?.request) items.push({ EventType: "viewer-request", FunctionARN: arns.request });
+	if (arns?.response) items.push({ EventType: "viewer-response", FunctionARN: arns.response });
+	return list(items);
+}
+
+function cacheBehavior({
+	pathPattern,
+	targetOriginId,
+	cachePolicyId,
+	originRequestPolicyId,
+	responseHeadersPolicyId,
+	methods,
+	functions,
+}) {
 	const behavior = {
-		TargetOriginId: ORIGIN_ID,
+		TargetOriginId: targetOriginId,
 		ViewerProtocolPolicy: "redirect-to-https",
 		AllowedMethods: { ...list(methods), CachedMethods: list(READ_METHODS) },
 		Compress: true,
 		CachePolicyId: cachePolicyId,
-		OriginRequestPolicyId: originRequestPolicyId,
 		SmoothStreaming: false,
 		FieldLevelEncryptionId: "",
 		LambdaFunctionAssociations: list([]),
-		FunctionAssociations: list([]),
+		FunctionAssociations: functionAssociations(functions),
 	};
+	if (originRequestPolicyId) behavior.OriginRequestPolicyId = originRequestPolicyId;
+	if (responseHeadersPolicyId) behavior.ResponseHeadersPolicyId = responseHeadersPolicyId;
 	return pathPattern ? { PathPattern: pathPattern, ...behavior } : behavior;
 }
 
+const HOSTNAME = /^[a-z0-9.-]+$/;
+const ARN_PREFIX = /^arn:aws:/;
+
 export function validateOptions(options) {
-	const { aliases, originDomain, certificateArn, originVerifySecret } = options;
-	if (!Array.isArray(aliases) || aliases.length === 0 || aliases.some((alias) => !/^[a-z0-9.-]+$/.test(alias))) {
+	const {
+		network,
+		aliases,
+		certificateArn,
+		bucketDomain,
+		s3OriginAccessControlId,
+		lambdaUrlDomain,
+		lambdaOriginAccessControlId,
+		apiOriginRequestPolicyId,
+		responseHeadersPolicyIds,
+		functionArns,
+	} = options;
+	if (network !== "mainnet" && network !== "testnet") throw new Error("network must be mainnet or testnet");
+	if (!Array.isArray(aliases) || aliases.length === 0 || aliases.some((alias) => !HOSTNAME.test(alias))) {
 		throw new Error("aliases must list at least one lowercase hostname");
-	}
-	if (typeof originDomain !== "string" || !/^[a-z0-9.-]+$/.test(originDomain) || aliases.includes(originDomain)) {
-		throw new Error("originDomain must be a hostname that is not one of the aliases");
 	}
 	if (typeof certificateArn !== "string" || !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[0-9a-f-]+$/.test(certificateArn)) {
 		throw new Error("certificateArn must be an ACM certificate in us-east-1");
 	}
-	if (typeof originVerifySecret !== "string" || originVerifySecret.length < 32 || /\s/.test(originVerifySecret)) {
-		throw new Error("originVerifySecret must be at least 32 characters without whitespace");
+	if (typeof bucketDomain !== "string" || !/\.s3[.-][a-z0-9-]+\.amazonaws\.com$/.test(bucketDomain)) {
+		throw new Error("bucketDomain must be the bucket's regional S3 domain");
 	}
+	if (typeof lambdaUrlDomain !== "string" || !/\.lambda-url\.[a-z0-9-]+\.on\.aws$/.test(lambdaUrlDomain)) {
+		throw new Error("lambdaUrlDomain must be a Lambda function URL host");
+	}
+	for (const [name, value] of Object.entries({ s3OriginAccessControlId, lambdaOriginAccessControlId, apiOriginRequestPolicyId })) {
+		if (typeof value !== "string" || value.trim() === "") throw new Error(`${name} is required`);
+	}
+	for (const key of ["base", "trade", "join", "chart"]) {
+		if (typeof responseHeadersPolicyIds?.[key] !== "string" || responseHeadersPolicyIds[key].trim() === "") {
+			throw new Error(`responseHeadersPolicyIds.${key} is required`);
+		}
+	}
+	for (const key of ["request", "response"]) {
+		if (typeof functionArns?.[key] !== "string" || !ARN_PREFIX.test(functionArns[key])) {
+			throw new Error(`functionArns.${key} must be a CloudFront Function ARN`);
+		}
+	}
+}
+
+export function createApiOriginRequestPolicyConfig() {
+	return {
+		Name: API_ORIGIN_REQUEST_POLICY_NAME,
+		Comment: "Same-origin API on a Lambda function URL: every viewer header except Host, plus the viewer address",
+		HeadersConfig: {
+			HeaderBehavior: "whitelist",
+			Headers: list([
+				"Accept",
+				"Accept-Language",
+				"Content-Type",
+				"Origin",
+				"Referer",
+				"Sec-Fetch-Dest",
+				"Sec-Fetch-Mode",
+				"Sec-Fetch-Site",
+				"User-Agent",
+				"X-Gatu-Forwarded-Host",
+				"CloudFront-Viewer-Address",
+				"CloudFront-Viewer-Country",
+				"CloudFront-Viewer-Country-Region",
+			]),
+		},
+		CookiesConfig: { CookieBehavior: "none" },
+		QueryStringsConfig: { QueryStringBehavior: "all" },
+	};
 }
 
 export function createDistributionConfig(options) {
 	validateOptions(options);
 	const {
+		network,
 		aliases,
-		originDomain,
 		certificateArn,
-		originVerifySecret,
-		callerReference = `gatu-terminal-${randomUUID()}`,
-		comment = "gatu trading terminal: static shell and API origin",
+		bucketDomain,
+		s3OriginAccessControlId,
+		lambdaUrlDomain,
+		lambdaOriginAccessControlId,
+		apiOriginRequestPolicyId,
+		responseHeadersPolicyIds,
+		functionArns,
+		callerReference = `gatu-terminal-${network}-${randomUUID()}`,
+		comment = `gatu trading terminal (${network}): static shell on S3, API on Lambda`,
 		policies = MANAGED_POLICIES,
 	} = options;
+
+	const s3Behavior = (pathPattern, responseHeadersPolicyId, extra = {}) =>
+		cacheBehavior({
+			pathPattern,
+			targetOriginId: S3_ORIGIN_ID,
+			cachePolicyId: policies.cacheOptimized,
+			responseHeadersPolicyId,
+			methods: READ_METHODS,
+			...extra,
+		});
+	const apiBehavior = (pathPattern) =>
+		cacheBehavior({
+			pathPattern,
+			targetOriginId: API_ORIGIN_ID,
+			cachePolicyId: policies.cacheDisabled,
+			originRequestPolicyId: apiOriginRequestPolicyId,
+			responseHeadersPolicyId: responseHeadersPolicyIds.base,
+			methods: ALL_METHODS,
+			functions: { request: functionArns.request },
+		});
+
+	const behaviors = [
+		...API_PATH_PATTERNS.map(apiBehavior),
+		cacheBehavior({
+			pathPattern: JOIN_PATH_PATTERN,
+			targetOriginId: S3_ORIGIN_ID,
+			cachePolicyId: policies.cacheDisabled,
+			responseHeadersPolicyId: responseHeadersPolicyIds.join,
+			methods: READ_METHODS,
+			functions: functionArns,
+		}),
+		...CHART_PATH_PATTERNS.map((pattern) => s3Behavior(pattern, responseHeadersPolicyIds.chart)),
+		...ASSET_PATH_PATTERNS.map((pattern) => s3Behavior(pattern, responseHeadersPolicyIds.base)),
+		...TRADE_PATH_PATTERNS.map((pattern) =>
+			s3Behavior(pattern, responseHeadersPolicyIds.trade, { functions: { request: functionArns.request } }),
+		),
+	];
 
 	return {
 		CallerReference: callerReference,
@@ -84,10 +202,21 @@ export function createDistributionConfig(options) {
 		DefaultRootObject: "",
 		Origins: list([
 			{
-				Id: ORIGIN_ID,
-				DomainName: originDomain,
+				Id: S3_ORIGIN_ID,
+				DomainName: bucketDomain,
 				OriginPath: "",
-				CustomHeaders: list([{ HeaderName: ORIGIN_VERIFY_HEADER, HeaderValue: originVerifySecret }]),
+				CustomHeaders: list([]),
+				S3OriginConfig: { OriginAccessIdentity: "" },
+				OriginAccessControlId: s3OriginAccessControlId,
+				ConnectionAttempts: 3,
+				ConnectionTimeout: 10,
+				OriginShield: { Enabled: false },
+			},
+			{
+				Id: API_ORIGIN_ID,
+				DomainName: lambdaUrlDomain,
+				OriginPath: "",
+				CustomHeaders: list([]),
 				CustomOriginConfig: {
 					HTTPPort: 80,
 					HTTPSPort: 443,
@@ -96,6 +225,7 @@ export function createDistributionConfig(options) {
 					OriginReadTimeout: 30,
 					OriginKeepaliveTimeout: 5,
 				},
+				OriginAccessControlId: lambdaOriginAccessControlId,
 				ConnectionAttempts: 3,
 				ConnectionTimeout: 10,
 				OriginShield: { Enabled: false },
@@ -103,21 +233,16 @@ export function createDistributionConfig(options) {
 		]),
 		OriginGroups: list([]),
 		DefaultCacheBehavior: cacheBehavior({
-			cachePolicyId: policies.cacheDisabled,
-			originRequestPolicyId: policies.originAllViewerAndCloudFrontHeaders,
-			methods: ALL_METHODS,
+			targetOriginId: S3_ORIGIN_ID,
+			cachePolicyId: policies.cacheOptimized,
+			responseHeadersPolicyId: responseHeadersPolicyIds.base,
+			methods: READ_METHODS,
+			functions: { request: functionArns.request },
 		}),
-		CacheBehaviors: list(
-			CACHED_PATH_PATTERNS.map((pathPattern) =>
-				cacheBehavior({
-					pathPattern,
-					cachePolicyId: policies.cacheOptimized,
-					originRequestPolicyId: policies.originAllViewer,
-					methods: READ_METHODS,
-				}),
-			),
-		),
-		CustomErrorResponses: list([]),
+		CacheBehaviors: list(behaviors),
+		CustomErrorResponses: list([
+			{ ErrorCode: 404, ResponsePagePath: NOT_FOUND_PAGE, ResponseCode: "404", ErrorCachingMinTTL: 60 },
+		]),
 		Comment: comment,
 		Logging: { Enabled: false, IncludeCookies: false, Bucket: "", Prefix: "" },
 		PriceClass: "PriceClass_All",
@@ -138,25 +263,65 @@ export function createDistributionConfig(options) {
 }
 
 function readArgs(argv) {
-	const options = { aliases: [] };
+	const options = { aliases: [], responseHeadersPolicyIds: {}, functionArns: {} };
 	for (let index = 0; index < argv.length; index += 1) {
 		const argument = argv[index];
 		const [flag, inline] = argument.split("=", 2);
 		const value = inline ?? argv[++index];
-		if (flag === "--alias") options.aliases.push(value);
-		else if (flag === "--origin") options.originDomain = value;
-		else if (flag === "--certificate-arn") options.certificateArn = value;
-		else if (flag === "--origin-verify-secret") options.originVerifySecret = value;
-		else if (flag === "--comment") options.comment = value;
-		else throw new Error(`Unknown argument ${argument}`);
+		switch (flag) {
+			case "--network":
+				options.network = value;
+				break;
+			case "--alias":
+				options.aliases.push(value);
+				break;
+			case "--certificate-arn":
+				options.certificateArn = value;
+				break;
+			case "--bucket-domain":
+				options.bucketDomain = value;
+				break;
+			case "--s3-oac":
+				options.s3OriginAccessControlId = value;
+				break;
+			case "--lambda-url-domain":
+				options.lambdaUrlDomain = value;
+				break;
+			case "--lambda-oac":
+				options.lambdaOriginAccessControlId = value;
+				break;
+			case "--api-origin-request-policy":
+				options.apiOriginRequestPolicyId = value;
+				break;
+			case "--policy-base":
+			case "--policy-trade":
+			case "--policy-join":
+			case "--policy-chart":
+				options.responseHeadersPolicyIds[flag.slice("--policy-".length)] = value;
+				break;
+			case "--function-request":
+				options.functionArns.request = value;
+				break;
+			case "--function-response":
+				options.functionArns.response = value;
+				break;
+			case "--comment":
+				options.comment = value;
+				break;
+			default:
+				throw new Error(`Unknown argument ${argument}`);
+		}
 	}
 	return options;
 }
 
 function main() {
-	const options = readArgs(process.argv.slice(2));
-	options.originVerifySecret ??= process.env.GATU_ORIGIN_VERIFY_SECRET;
-	process.stdout.write(`${JSON.stringify(createDistributionConfig(options), null, 2)}\n`);
+	const argv = process.argv.slice(2);
+	if (argv[0] === "--api-origin-request-policy-config") {
+		process.stdout.write(`${JSON.stringify(createApiOriginRequestPolicyConfig(), null, 2)}\n`);
+		return;
+	}
+	process.stdout.write(`${JSON.stringify(createDistributionConfig(readArgs(argv)), null, 2)}\n`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

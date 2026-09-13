@@ -118,6 +118,12 @@ export function createOrderSummaryChunksPlugin(): Plugin {
 const buildSha = resolveBuildSha()
 const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
 const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
+export const buildIdentity = Object.freeze({
+  version: terminalPackage.version,
+  commit: buildSha,
+  release: releaseId,
+  builtAt: buildTime,
+})
 
 // The same build identity that the `/build-meta.json` server route reports, written as a static
 // file so a CDN deployment without the Nitro server still exposes it. Flags come from the same
