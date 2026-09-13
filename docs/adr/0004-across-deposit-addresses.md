@@ -1,39 +1,38 @@
 # ADR 0004：邮箱充值采用独立的 Across 持久地址路径
 
-状态：拟议；仅设计交付，尚未实现或发布。日期：2026-09-13。
+状态：拟议，尚未实现或发布。建立/修订日期：2026-09-13。原方案见提交 `0662cae1`；本版根据[复核记录](../work-memory/sessions/2026-09-13-across-plan-review-followup.md)收缩首期范围。
 
-## 上下文与目标
+## 目标与决策
 
-当前邮箱充值依次需要转入 embedded owner、用户显式确认、Smart Wallet/Paymaster 提交及 CCTP 恢复；外部钱包直接 CCTP 已存在。用户要求规划 Across 持久地址接入，目标是减少邮箱用户的二次存款操作，同时保留原资金路径的可恢复性。
+减少邮箱用户向 EOA 转入后再次显式存款的操作，保留精确 owner、旧余额及在途资金恢复。首期仅主网邮箱原生 USDC，以经验证的 USDC-SPOT 为目标；固定 SPOT 可能仍需显式模式选择/划转，不承诺转入后立即可交易。
 
-## 拟采用的决策
+采用现有同源 REST、Privy 服务端身份校验、SQLite 两张地址表及按需 Across 查询。持久化原 DID/owner/目的/退款/recipe 与地址；转账列表和详情由服务端按归属代理、缓存和限流，不做完整镜像。Across 处理归集/交付及支持的退款，GATU 的查询不参与执行。
 
-- 首期仅 mainnet 邮箱用户和经验证的 USDC 路线；通过 GATU 同源服务端调用 Across 地址 REST API，不新增钱包 Provider 或完整跨链 SDK。
-- 地址绑定到 Privy 服务端验证过的准确 embedded owner，目的与退款参数由服务器决定。Across capability 与 CCTP route guard 分开。
-- 单主机部署使用 shared 目录中的 SQLite 事务仓储及独立对账 worker。永久地址的持续服务责任与新入口发布开关分离；多机部署前更换共享数据库。
-- 保留外部 CCTP、旧邮箱余额显式存款和全部在途恢复。首期目标采用已文档化的 USDC-SPOT，交易可用性按账户模式单独验证，不自动内部划转。
+首期保留 `better-sqlite3` 选型，按现有 Node 22.15+ 和锁定 Nitro 验证 Linux native 打包、持久目录及备份。没有独立 worker、租约、巡检或新服务 unit；新增多实例前重新设计共享预算与数据库拓扑。
 
-接口、状态、文件落点、发布和验收由 [接入设计](../across-deposit-addresses.md) 维护，不在 ADR 复制。
+退款恢复以用户明确触发 Privy 官方导出、导入外部钱包并自备退款链 Gas 为首期路径；必须验证精确钱包、导出权限及用户可操作性。GATU 不读取私钥；删除/解绑后的恢复不保证，不能自动把旧地址转给同邮箱新 DID。
 
-## 备选方案与代价
+充值接收资格与交易模式资格分开。新账户 missing/已知 default 是独立验收场景，不能直接套交易模式 guard 阻断所有首充；未知/错误与真实 missing 区分。legal 出口语义仍需核对，未确认前不忽略限制字段。激活费及误存行为按 GATU 实际接入验证，不能套用 HL 自家前端的费率、最低额或退款承诺。
 
-| 方案 | 权衡 |
+## 备选方案与取舍
+
+| 方案 | 判断 |
 | --- | --- |
-| 只优化现有 sponsored CCTP | 增量代码少，可改善首开；保留两步用户流程、Gas 代付及授权恢复负担 |
-| 全部钱包改用 Across / 同时引入 Swap SDK | 增加覆盖，但扩大 signer、额度、报价和失败恢复面；首期收益集中在邮箱路径，暂不采用 |
-| 浏览器直连 Across | 无后端身份和持久映射保障，并暴露集成凭证；不采用 |
-| 只依赖相同参数重取地址，不持久存储 | 组件简单，但配置变更、旧地址多次转入、跨设备及退款恢复难以完整追溯；不采用 |
-| 新增 PostgreSQL | 多主机和扩展能力更强；当前单机没有现成数据库，先采用 SQLite 并明确拓扑限制 |
-| 复制官方 LI.FI + Bridge2 | 增加兑换能力，同时重引入旧桥；本次不是币种扩展，不采用 |
+| 只优化 sponsored CCTP | 代码增量小，但保留二次确认与 Smart Wallet/Paymaster 依赖；继续作为已启用部署的旧余额路径 |
+| 全部钱包采用 Across / 新增 Swap SDK | 扩大签名、路由与恢复面，超出首期邮箱地址目标 |
+| 浏览器直连持 Key 的 API | 无法保护集成凭证及服务端归属边界，不采用 |
+| 无数据库，只重取相同地址 | 无法完整保存历史 recipe 与原用户绑定，首期仍保留两张地址表 |
+| 转账镜像 + 独立 worker | 可支持主动异常通知、离线历史与独立档案，但增加完整性/身份/运维负担；首期按需查询，明确依赖供应商可用性与保留期，需要上述产品能力时另行加入 |
+| PostgreSQL | 更适合多主机，当前单机先使用 SQLite |
+| `node:sqlite` | 可减少第三方 native 打包，但当前最低 Node 22.15 缺少较新 backup/timeout 接口；需要另改运行时和备份实现，本轮保留 better-sqlite3 并验证原生依赖产物 |
+| 应用内多链退款转出/代付 | 体验更顺，但增加新的资金执行面；首期提供经过验收的 Privy 导出自助恢复，按需再扩展 |
 
-## 后果与边界
+## 后果与发布条件
 
-收益是更少的邮箱充值操作，以及独立于 Smart Wallet 代付状态的地址入口。代价是增加服务端 Privy 验证、持久化、供应商配额、隐私披露、退款支持与永久地址维护责任。关闭发布开关无法撤销用户已保存的地址；必须先取得供应商退出约定并保留对账。生产权限和各账户模式的真实资金验证是发布前置条件。
+收益是减少邮箱充值操作和代付依赖；成本是服务端身份验证、持久绑定、原生数据库打包、供应商配额、导出教程与持续支持责任。首期没有全量离线追踪或完整历史镜像，不能宣称每一笔异常都会被主动发现。
 
-本决策不改变 [exact-owner ADR](0002-exact-owner-trading-signers.md)，不允许登录/刷新自动签名，不删除 [当前 CCTP](../cctp-deposits.md) 的执行保护。现有规范在实现同步更新前继续有效。
+发布开关关闭仅停止新入口。已保存地址可能继续收款，Key 撤销/服务终止必须有供应商明确约定。保留历史查询与导出，回滚版本必须兼容这项恢复能力和数据库；不能把移除 worker 理解为可以删除地址记录或终止支持。
 
-## 证据与验证状态
+[接入设计](../across-deposit-addresses.md)维护接口、P0 证据问题、首次激活/模式/退款场景、配额和发布验证。外部 CCTP 始终保留，embedded CCTP 依实际 sponsored gate 展示；默认关闭不证明真实部署关闭。准确 owner 及[签名 ADR](0002-exact-owner-trading-signers.md)不变，登录/刷新/到账不自动签名、审批或划转。
 
-- 外部依据：[Across 地址指南](https://docs.across.to/introduction/persistent-deposit-addresses)、[创建 schema](https://docs.across.to/api-reference/deposit-addresses/post)、[Privy 后端验证](https://docs.privy.io/authentication/user-authentication/access-tokens)。
-- 当前代码基线 `9750ccff`：`apps/terminal/src/domain/trade/deposit-availability.ts`、`apps/terminal/src/lib/hyperliquid/use-deposit.ts`、`deploy/gatu.service`。
-- 计划验证：服务端归属隔离、地址幂等、连续对账、迁移恢复、模式资金落点和真实资金灰度，详见设计。当前仅文档检查，结果见 [任务记录](../work-memory/sessions/2026-09-13-across-deposit-address-plan.md)。
+本次仅文档复核；Mock 开发可开展，生产地址曝光仍须契约和授权资金验收，不能以代码检查替代。
