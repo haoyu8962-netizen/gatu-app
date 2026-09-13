@@ -70,22 +70,34 @@ test("static behaviors read from the private bucket with the matching header pol
 	);
 	for (const pattern of CHART_PATH_PATTERNS) {
 		assert.equal(behavior(config, pattern).ResponseHeadersPolicyId, "rhp-chart", pattern);
-		assert.equal(behavior(config, pattern).FunctionAssociations.Quantity, 0, pattern);
+		assert.deepEqual(
+			behavior(config, pattern).FunctionAssociations.Items.map((item) => item.EventType),
+			["viewer-response"],
+			pattern,
+		);
 	}
 	for (const pattern of ASSET_PATH_PATTERNS) {
 		assert.equal(behavior(config, pattern).CachePolicyId, MANAGED_POLICIES.cacheOptimized, pattern);
 		assert.equal(behavior(config, pattern).ResponseHeadersPolicyId, "rhp-base", pattern);
+		assert.deepEqual(
+			behavior(config, pattern).FunctionAssociations.Items.map((item) => item.EventType),
+			["viewer-response"],
+			pattern,
+		);
 	}
 	for (const pattern of TRADE_PATH_PATTERNS) {
 		assert.equal(behavior(config, pattern).ResponseHeadersPolicyId, "rhp-trade", pattern);
 		assert.deepEqual(
 			behavior(config, pattern).FunctionAssociations.Items.map((item) => item.EventType),
-			["viewer-request"],
+			["viewer-request", "viewer-response"],
 		);
 	}
 	assert.equal(config.DefaultCacheBehavior.TargetOriginId, S3_ORIGIN_ID);
 	assert.equal(config.DefaultCacheBehavior.ResponseHeadersPolicyId, "rhp-base");
-	assert.equal(config.DefaultCacheBehavior.FunctionAssociations.Items[0].EventType, "viewer-request");
+	assert.deepEqual(
+		config.DefaultCacheBehavior.FunctionAssociations.Items.map((item) => item.EventType),
+		["viewer-request", "viewer-response"],
+	);
 	assert.deepEqual(config.CustomErrorResponses.Items, [
 		{ ErrorCode: 404, ResponsePagePath: NOT_FOUND_PAGE, ResponseCode: "404", ErrorCachingMinTTL: 60 },
 	]);
@@ -108,8 +120,18 @@ test("the api origin request policy forwards everything the handlers need except
 		assert.ok(headers.includes(required), required);
 	}
 	assert.ok(!headers.includes("Host"));
+	assert.ok(headers.length <= 10, "CloudFront allows at most ten whitelisted headers");
 	assert.equal(policy.QueryStringsConfig.QueryStringBehavior, "all");
 	assert.equal(policy.CookiesConfig.CookieBehavior, "none");
+});
+
+test("a distribution can start on the default certificate and adopt aliases with the ACM certificate later", () => {
+	const config = createDistributionConfig({ ...OPTIONS, aliases: [], certificateArn: undefined });
+	assert.equal(config.Aliases.Quantity, 0);
+	assert.equal(config.ViewerCertificate.CloudFrontDefaultCertificate, true);
+	assert.equal(config.ViewerCertificate.ACMCertificateArn, undefined);
+	assert.throws(() => validateOptions({ ...OPTIONS, aliases: [] }), /together/);
+	assert.throws(() => validateOptions({ ...OPTIONS, certificateArn: undefined }), /together/);
 });
 
 test("invalid inputs are rejected before anything reaches AWS", () => {

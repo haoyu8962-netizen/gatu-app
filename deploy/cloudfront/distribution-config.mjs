@@ -73,6 +73,34 @@ function cacheBehavior({
 const HOSTNAME = /^[a-z0-9.-]+$/;
 const ARN_PREFIX = /^arn:aws:/;
 
+function validateViewerCertificate(aliases, certificateArn) {
+	if (!Array.isArray(aliases) || aliases.some((alias) => !HOSTNAME.test(alias))) {
+		throw new Error("aliases must be lowercase hostnames");
+	}
+	// Before the DNS cut-over the distribution runs on its *.cloudfront.net name with the default
+	// certificate; aliases and the ACM certificate are added together once the certificate is issued.
+	if (aliases.length === 0 && certificateArn === undefined) return;
+	if (aliases.length === 0 || certificateArn === undefined) {
+		throw new Error("aliases and certificateArn must be provided together");
+	}
+	if (typeof certificateArn !== "string" || !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[0-9a-f-]+$/.test(certificateArn)) {
+		throw new Error("certificateArn must be an ACM certificate in us-east-1");
+	}
+}
+
+export function viewerCertificate(certificateArn) {
+	if (certificateArn === undefined) {
+		return { CloudFrontDefaultCertificate: true, MinimumProtocolVersion: "TLSv1", CertificateSource: "cloudfront" };
+	}
+	return {
+		ACMCertificateArn: certificateArn,
+		SSLSupportMethod: "sni-only",
+		MinimumProtocolVersion: "TLSv1.2_2021",
+		Certificate: certificateArn,
+		CertificateSource: "acm",
+	};
+}
+
 export function validateOptions(options) {
 	const {
 		network,
@@ -87,12 +115,7 @@ export function validateOptions(options) {
 		functionArns,
 	} = options;
 	if (network !== "mainnet" && network !== "testnet") throw new Error("network must be mainnet or testnet");
-	if (!Array.isArray(aliases) || aliases.length === 0 || aliases.some((alias) => !HOSTNAME.test(alias))) {
-		throw new Error("aliases must list at least one lowercase hostname");
-	}
-	if (typeof certificateArn !== "string" || !/^arn:aws:acm:us-east-1:\d{12}:certificate\/[0-9a-f-]+$/.test(certificateArn)) {
-		throw new Error("certificateArn must be an ACM certificate in us-east-1");
-	}
+	validateViewerCertificate(aliases, certificateArn);
 	if (typeof bucketDomain !== "string" || !/\.s3[.-][a-z0-9-]+\.amazonaws\.com$/.test(bucketDomain)) {
 		throw new Error("bucketDomain must be the bucket's regional S3 domain");
 	}
@@ -120,20 +143,17 @@ export function createApiOriginRequestPolicyConfig() {
 		Comment: "Same-origin API on a Lambda function URL: every viewer header except Host, plus the viewer address",
 		HeadersConfig: {
 			HeaderBehavior: "whitelist",
+			// CloudFront allows at most ten whitelisted headers per origin request policy.
 			Headers: list([
 				"Accept",
-				"Accept-Language",
 				"Content-Type",
 				"Origin",
 				"Referer",
-				"Sec-Fetch-Dest",
-				"Sec-Fetch-Mode",
 				"Sec-Fetch-Site",
 				"User-Agent",
 				"X-Gatu-Forwarded-Host",
 				"CloudFront-Viewer-Address",
 				"CloudFront-Viewer-Country",
-				"CloudFront-Viewer-Country-Region",
 			]),
 		},
 		CookiesConfig: { CookieBehavior: "none" },
@@ -159,6 +179,8 @@ export function createDistributionConfig(options) {
 		policies = MANAGED_POLICIES,
 	} = options;
 
+	// Every static behavior runs the viewer-response function so the Content-Security-Policy
+	// (too long for a response headers policy) reaches HTML, scripts and the chart package alike.
 	const s3Behavior = (pathPattern, responseHeadersPolicyId, extra = {}) =>
 		cacheBehavior({
 			pathPattern,
@@ -166,6 +188,7 @@ export function createDistributionConfig(options) {
 			cachePolicyId: policies.cacheOptimized,
 			responseHeadersPolicyId,
 			methods: READ_METHODS,
+			functions: { response: functionArns.response },
 			...extra,
 		});
 	const apiBehavior = (pathPattern) =>
@@ -191,9 +214,7 @@ export function createDistributionConfig(options) {
 		}),
 		...CHART_PATH_PATTERNS.map((pattern) => s3Behavior(pattern, responseHeadersPolicyIds.chart)),
 		...ASSET_PATH_PATTERNS.map((pattern) => s3Behavior(pattern, responseHeadersPolicyIds.base)),
-		...TRADE_PATH_PATTERNS.map((pattern) =>
-			s3Behavior(pattern, responseHeadersPolicyIds.trade, { functions: { request: functionArns.request } }),
-		),
+		...TRADE_PATH_PATTERNS.map((pattern) => s3Behavior(pattern, responseHeadersPolicyIds.trade, { functions: functionArns })),
 	];
 
 	return {
@@ -237,7 +258,7 @@ export function createDistributionConfig(options) {
 			cachePolicyId: policies.cacheOptimized,
 			responseHeadersPolicyId: responseHeadersPolicyIds.base,
 			methods: READ_METHODS,
-			functions: { request: functionArns.request },
+			functions: functionArns,
 		}),
 		CacheBehaviors: list(behaviors),
 		CustomErrorResponses: list([
@@ -247,13 +268,7 @@ export function createDistributionConfig(options) {
 		Logging: { Enabled: false, IncludeCookies: false, Bucket: "", Prefix: "" },
 		PriceClass: "PriceClass_All",
 		Enabled: true,
-		ViewerCertificate: {
-			ACMCertificateArn: certificateArn,
-			SSLSupportMethod: "sni-only",
-			MinimumProtocolVersion: "TLSv1.2_2021",
-			Certificate: certificateArn,
-			CertificateSource: "acm",
-		},
+		ViewerCertificate: viewerCertificate(certificateArn),
 		Restrictions: { GeoRestriction: { RestrictionType: "none", Quantity: 0, Items: [] } },
 		WebACLId: "",
 		HttpVersion: "http2and3",

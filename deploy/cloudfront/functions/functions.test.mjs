@@ -5,6 +5,11 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { DOCUMENT_ROUTE_PATHS } from "../../../apps/terminal/src/config/document-routes.ts";
+import {
+	chartingLibraryContentSecurityPolicy,
+	contentSecurityPolicy,
+} from "../../../apps/terminal/src/config/security-headers.ts";
+import { FUNCTION_CODE_LIMIT_BYTES, renderCurrentResponseFunction } from "../render-functions.mjs";
 
 const directory = dirname(fileURLToPath(import.meta.url));
 
@@ -20,8 +25,14 @@ function viewerRequest(uri, headers = { host: { value: "app.gatu.ai" } }) {
 const { handler: onRequest, DOCUMENT_ROUTES } = loadFunction("terminal-request.js", ", DOCUMENT_ROUTES: DOCUMENT_ROUTES");
 const { handler: onResponse } = loadFunction("terminal-response.js");
 
-test("the function embeds the same document routes as the application", () => {
+test("the request function embeds the same document routes as the application", () => {
 	assert.deepEqual([...DOCUMENT_ROUTES].sort(), [...DOCUMENT_ROUTE_PATHS].sort());
+});
+
+test("the rendered response function matches the template and the application headers", () => {
+	const committed = readFileSync(join(directory, "terminal-response.js"), "utf8");
+	assert.equal(committed, renderCurrentResponseFunction(), "run: node --experimental-strip-types deploy/cloudfront/render-functions.mjs");
+	assert.ok(Buffer.byteLength(committed, "utf8") <= FUNCTION_CODE_LIMIT_BYTES);
 });
 
 test("application navigations rewrite to the shell and document routes to their index files", () => {
@@ -54,6 +65,21 @@ test("server paths and file-like paths pass through untouched", () => {
 	const gone = onRequest(viewerRequest("/_serverFn/abc"));
 	assert.equal(gone.statusCode, 404);
 	assert.equal(gone.headers["cache-control"].value, "no-store");
+});
+
+test("the response function sets the terminal or chart content security policy", () => {
+	const shell = onResponse({ request: onRequest(viewerRequest("/trade/BTC")), response: { statusCode: 200, headers: {} } });
+	assert.equal(shell.headers["content-security-policy"].value, contentSecurityPolicy);
+	const chart = onResponse({
+		request: onRequest(viewerRequest("/charting_library/charting_library.js")),
+		response: { statusCode: 200, headers: {} },
+	});
+	assert.equal(chart.headers["content-security-policy"].value, chartingLibraryContentSecurityPolicy);
+	const theme = onResponse({
+		request: onRequest(viewerRequest("/tradingview-theme-dark.css")),
+		response: { statusCode: 200, headers: {} },
+	});
+	assert.equal(theme.headers["content-security-policy"].value, chartingLibraryContentSecurityPolicy);
 });
 
 test("join paths carry the referral marker through to the response headers", () => {

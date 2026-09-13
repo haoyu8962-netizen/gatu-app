@@ -1,8 +1,19 @@
 // CloudFront Function (viewer-response, JavaScript runtime 2.0) for the gatu trading terminal.
 //
-// The static shell cannot carry a per-path route marker in its body, so the viewer-request
-// function tags join paths on the request and this function surfaces the tag as a response
-// header. Deployment health checks read `x-gatu-route: referral-join` instead of the meta tag.
+// GENERATED FILE: rendered from terminal-response.template.js by render-functions.mjs; do not
+// edit by hand. The application's Content-Security-Policy is longer than the 1,783 characters a
+// CloudFront response headers policy accepts, so this function sets it from the same source
+// (`apps/terminal/src/config/security-headers.ts`): the TradingView package gets the frame policy,
+// everything else the terminal policy. The static shell cannot carry a per-path route marker in its
+// body either, so the viewer-request function tags join paths on the request and this function
+// surfaces the tag as a response header for the deployment health check.
+var TERMINAL_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' blob: 'unsafe-inline' https://challenges.cloudflare.com; connect-src 'self' https://api.hyperliquid.xyz https://api.hyperliquid-testnet.xyz https://app.hyperliquid.xyz https://stats-data.hyperliquid.xyz https://rpc.hyperliquid.xyz https://rpc.hyperliquid-testnet.xyz wss://api.hyperliquid.xyz wss://api.hyperliquid-testnet.xyz https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com https://relay.walletconnect.com https://relay.walletconnect.org https://api.web3modal.com https://api.web3modal.org https://pulse.walletconnect.org https://rpc.zerodev.app https://iris-api.circle.com https://iris-api-sandbox.circle.com https://li.quest https://api.tenderly.co https://gas.api.infura.io https://ethereum-rpc.publicnode.com https://arb1.arbitrum.io https://sepolia-rollup.arbitrum.io https://eth.merkle.io https://polygon-rpc.com https://mainnet.optimism.io https://mainnet.base.org https://56.rpc.thirdweb.com https://api.avax.network https://250.rpc.thirdweb.com https://rpc.gnosischain.com https://mainnet.era.zksync.io https://rpc.scroll.io https://rpc.linea.build https://mainnet.mode.network https://rpc.blast.io https://rpc.mantle.xyz https://forno.celo.org https://moonbeam.public.blastapi.io https://mainnet.aurora.dev https://zkevm-rpc.com; worker-src 'self' blob:; child-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com; frame-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://secure.walletconnect.com; manifest-src 'self'";
+var CHART_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' blob: 'unsafe-inline' https://challenges.cloudflare.com; connect-src 'self' https://api.hyperliquid.xyz https://api.hyperliquid-testnet.xyz https://app.hyperliquid.xyz https://stats-data.hyperliquid.xyz https://rpc.hyperliquid.xyz https://rpc.hyperliquid-testnet.xyz wss://api.hyperliquid.xyz wss://api.hyperliquid-testnet.xyz https://auth.privy.io wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://*.rpc.privy.systems https://explorer-api.walletconnect.com https://relay.walletconnect.com https://relay.walletconnect.org https://api.web3modal.com https://api.web3modal.org https://pulse.walletconnect.org https://rpc.zerodev.app https://iris-api.circle.com https://iris-api-sandbox.circle.com https://li.quest https://api.tenderly.co https://gas.api.infura.io https://ethereum-rpc.publicnode.com https://arb1.arbitrum.io https://sepolia-rollup.arbitrum.io https://eth.merkle.io https://polygon-rpc.com https://mainnet.optimism.io https://mainnet.base.org https://56.rpc.thirdweb.com https://api.avax.network https://250.rpc.thirdweb.com https://rpc.gnosischain.com https://mainnet.era.zksync.io https://rpc.scroll.io https://rpc.linea.build https://mainnet.mode.network https://rpc.blast.io https://rpc.mantle.xyz https://forno.celo.org https://moonbeam.public.blastapi.io https://mainnet.aurora.dev https://zkevm-rpc.com; worker-src 'self' blob:; child-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com; frame-src 'self' blob: https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://secure.walletconnect.com; manifest-src 'self'";
+
+function isChartAsset(uri) {
+	return uri.indexOf('/charting_library/') === 0 || uri.indexOf('/tradingview-theme-') === 0;
+}
+
 function handler(event) {
 	var request = event.request;
 	var response = event.response;
@@ -10,5 +21,6 @@ function handler(event) {
 	if (route && route.value) {
 		response.headers['x-gatu-route'] = { value: route.value };
 	}
+	response.headers['content-security-policy'] = { value: isChartAsset(request.uri) ? CHART_CSP : TERMINAL_CSP };
 	return response;
 }

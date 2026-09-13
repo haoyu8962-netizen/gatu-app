@@ -19,7 +19,8 @@ function customHeader(policy, name) {
 
 test("standard security headers map to the typed policy fields and the rest stay custom", () => {
 	const policy = toResponseHeadersPolicyConfig("test", securityHeaders, "comment");
-	assert.equal(policy.SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy, securityHeaders["content-security-policy"]);
+	assert.equal(policy.SecurityHeadersConfig.ContentSecurityPolicy, undefined, "CSP is set by the viewer-response function");
+	assert.equal(customHeader(policy, "content-security-policy"), undefined);
 	assert.equal(policy.SecurityHeadersConfig.FrameOptions.FrameOption, "DENY");
 	assert.equal(policy.SecurityHeadersConfig.ReferrerPolicy.ReferrerPolicy, "strict-origin-when-cross-origin");
 	assert.equal(policy.SecurityHeadersConfig.ContentTypeOptions.Override, true);
@@ -37,7 +38,8 @@ test("mainnet policies carry the mainnet preconnect, join and chart specifics", 
 	assert.equal(join.SecurityHeadersConfig.ReferrerPolicy.ReferrerPolicy, "no-referrer");
 	assert.equal(customHeader(join, "x-robots-tag"), NOINDEX);
 	assert.equal(chart.SecurityHeadersConfig.FrameOptions.FrameOption, "SAMEORIGIN");
-	assert.equal(chart.SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy, chartingLibrarySecurityHeaders["content-security-policy"]);
+	assert.equal(chart.SecurityHeadersConfig.ContentSecurityPolicy, undefined);
+	assert.equal(chartingLibrarySecurityHeaders["x-frame-options"], "SAMEORIGIN");
 	assert.equal(customHeader(chart, "cache-control"), CHART_CACHE_CONTROL);
 });
 

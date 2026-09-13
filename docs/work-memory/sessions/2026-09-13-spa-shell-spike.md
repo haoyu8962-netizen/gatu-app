@@ -86,6 +86,12 @@
 
 验证：typecheck 通过；`pnpm test:cloudfront`（函数 4、策略 3、分发 5、部署脚本 5）与 vitest lambda-handler 5、client-error-report 15 用例通过；Lambda 产物无 `window` 引用。限制：所有 AWS 步骤仍为计划，未创建资源；`--resolve` 切换前验证与畸形 `/join/%` 在 CloudFront 上的表现需在真实分发上确认；本机 Node 24 与 CI Node 22 都支持 `--experimental-strip-types`，但 CI 未接入 `test:cloudfront`。
 
+## 第六检查点：按手册创建 AWS 资源（同日，基于 `d4e94618`）
+
+用户确认"先建受限 IAM 用户，然后按手册执行"。用 root 创建：IAM 策略 `gatu-edge-deploy`（CloudFront 全量、ACM 限 us-east-1、S3 限 `gatu-terminal-2026`、Lambda 限 `gatu-terminal-api*`、`iam:PassRole` 限 `gatu-terminal-api-role`、Lambda 日志只读）、用户 `gatu-edge`、Lambda 执行角色 `gatu-terminal-api-role`（`AWSLambdaBasicExecutionRole`）；访问密钥由脚本直接写入本机 `~/.aws/credentials` 的 `gatu-edge` profile，未在对话中出现。此后全部用 `gatu-edge` 执行：ACM 证书 `app.gatu.ai` + `testnet.gatu.ai`（us-east-1，`PENDING_VALIDATION`，两条验证 CNAME 已交给用户加到 Cloudflare）；S3 桶 `gatu-terminal-2026`（私有、版本控制、SSE-S3、BucketOwnerEnforced）；Lambda `gatu-terminal-api`（nodejs22.x、arm64、256 MB、10 s，环境变量含本机 `.env.local` 的 IPdata 密钥，函数 URL `AWS_IAM`，直接调用冒烟返回 404 JSON）；CloudFront Functions `gatu-terminal-request`/`gatu-terminal-response`（LIVE）；OAC `E3Q2M6YP3F2SUV`（S3）、`E36DJ1HFODURZB`（Lambda）；源请求策略 `b4401266-2fa0-4c6f-9e55-f232a32b94de`；八个响应头策略；分发 `ET9CNVE6L1GWN`（mainnet，`d2i25dhfjwco8b.cloudfront.net`）与 `E3Q2SAX402CR9F`（testnet，`dg9o2gpw3mt8q.cloudfront.net`），先用默认证书，桶策略与 Lambda URL 权限已限定到这两条分发的 ARN。
+
+途中修正两处 CloudFront 限制：源请求策略白名单最多 10 个头（原 13 个，减到 9 个）；响应头策略的 CSP 最多 1,783 字符而应用 CSP 为 1,946 字符，改由 viewer-response 函数下发 CSP（模板 + `render-functions.mjs` 渲染，`test-function` 验证输出 CSP 长度 1,946、计算占用 7），响应头策略不再含 CSP，所有静态行为都挂该函数。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

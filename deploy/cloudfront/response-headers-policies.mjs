@@ -36,6 +36,9 @@ function preconnectLink(network) {
 /**
  * Maps a flat header map onto CloudFront's policy shape: the standard security headers use the
  * typed SecurityHeadersConfig, everything else becomes a custom header that overrides the origin.
+ * The Content-Security-Policy is deliberately left out: the application's policy exceeds the
+ * 1,783 characters a response headers policy accepts, so the viewer-response CloudFront Function
+ * (`render-functions.mjs`) sets it from the same source instead.
  */
 export function toResponseHeadersPolicyConfig(name, headers, comment) {
 	const security = {
@@ -50,8 +53,9 @@ export function toResponseHeadersPolicyConfig(name, headers, comment) {
 	for (const [rawName, value] of Object.entries(headers)) {
 		const header = rawName.toLowerCase();
 		if (header === "content-security-policy") {
-			security.ContentSecurityPolicy = { Override: true, ContentSecurityPolicy: value };
-		} else if (header === "x-frame-options" && FRAME_OPTIONS.has(value.toUpperCase())) {
+			continue;
+		}
+		if (header === "x-frame-options" && FRAME_OPTIONS.has(value.toUpperCase())) {
 			security.FrameOptions = { Override: true, FrameOption: value.toUpperCase() };
 		} else if (header === "x-content-type-options" && value.toLowerCase() === "nosniff") {
 			security.ContentTypeOptions = { Override: true };
