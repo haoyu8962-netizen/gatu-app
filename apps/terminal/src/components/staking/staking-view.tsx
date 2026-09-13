@@ -193,7 +193,7 @@ export function StakingView(props: StakingViewProps) {
 							}
 						/>
 					</div>
-					<div className="mt-3 divide-y divide-stroke-weak rounded-8 border border-stroke-weak bg-fill-weaker px-3">
+					<div className="mt-3 divide-y divide-stroke-weak">
 						<BalanceRow
 							label={<Trans>Available in Spot</Trans>}
 							value={account ? `${formatStakingAmount(account.spotHypeAvailable)} HYPE` : "—"}
@@ -834,7 +834,7 @@ function ValidatorStatusBadge({ status }: { status: StakingValidatorStatus }) {
 
 function MetricCard({ label, value, description }: { label: ReactNode; value: string; description: ReactNode }) {
 	return (
-		<div className="rounded-8 border border-stroke-weak bg-fill-weaker p-3">
+		<div className="py-3">
 			<p className="text-2xs text-fg-muted">{label}</p>
 			<p className="mt-1 text-base font-bold text-fg tabular-nums">
 				<bdi dir="ltr">{value}</bdi>
