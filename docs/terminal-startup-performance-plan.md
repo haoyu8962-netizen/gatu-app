@@ -94,6 +94,26 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 - 壳 head：`lib/seo.ts` 为所有路由输出 `canonical`，壳里因此固定指向 `/trade`；改为只有文档路由输出 `canonical`，应用壳不带。
 - 文档：`agent.md` 第 44 行与 `apps/terminal/README.md` 第 50、52、117 行的 SSR 表述改为"预渲染壳"；`deploy/README.md` 开头改为指向 CloudFront 手册并把 EC2/Caddy 部分标为过渡期；`docs/README.md` 部署入口指向 CloudFront 手册；新增 ADR 0006 记录壳预加载、边缘缓存策略、图表 immutable 与地区预取的取舍；按规则重新基线 `terminal-performance-baseline.md`。
 
+### P9 · 图表入口提前 — 计划，待确认
+
+问题：`charting_library.js` 由 `lib/chart/load-tradingview.ts` 在图表面板挂载后才以 `<script>` 注入，同机冷缓存 1.76 s 到达；随后 widget 在同源 iframe（`charting_library/sameorigin.html`）里再请求 72 个文件，其中 `bundles/library.<hash>.js` 原始 2.8 MB，iframe 阶段约 0.7 s。官方站在 HTML 头部同步 `<script>` 加载入口（0.54 s 到达），代价是阻塞解析，FCP 1.15 s。目标是让入口与 iframe 的大文件随首波并发下载、widget 创建时全部命中缓存，同时不阻塞解析、不提前创建 widget（[Runtime guardrails §4](runtime-guardrails.md#4-tradingview-lifecycle)）、移动端不多下载。
+
+做法：
+
+1. **同一来源的入口 URL。** `config/chart.ts` 增加纯函数 `createChartLibraryScriptUrl(commit)`（`/charting_library/charting_library.js?v=<commit>`），`load-tradingview.ts` 的 `TRADINGVIEW_SCRIPT_SRC` 改用它；`createBuildMeta()` 增加 `chartLibraryScript` 字段写进 `build-meta.json`，vitest 断言字段与运行时常量相同。注入脚本是 node，不能直接引用带别名的 TS，所以通过 `build-meta.json` 消费。
+2. **壳内 preload 入口，prefetch iframe 大文件。** `inject-shell-preloads.mjs` 读取 `build-meta.json` 的 `chartLibraryScript`，注入 `<link rel="preload" as="script" href="…" media="(min-width: 1001px)">`；对 `public/charting_library/bundles/` 里的 `runtime.<hash>.js` 与 `library.<hash>.js`（构建时 glob，各必须恰好一个，否则构建失败）以及 `sameorigin.html`、`tradingview-theme-dark.css` 注入 `<link rel="prefetch" media="(min-width: 1001px)">`。用 prefetch 而不是 preload，是因为这些文件由 iframe 文档请求，父文档的 preload 缓存不跨文档，只有 HTTP 缓存能复用，且 prefetch 优先级最低，不与启动 JS 争抢。断点数字来自 `config/layout.ts` 的 `MOBILE_BREAKPOINT_PX`，vitest 校验脚本常量与配置一致。
+3. **入口 immutable。** `objectCacheControl` 与 Nitro 路由规则把 `charting_library/charting_library.js` 改为 immutable：版本由 `?v=<commit>` 决定，浏览器按完整 URL 缓存；CloudFront 的 CachingOptimized 不把查询串纳入缓存键，但发布流程的 `/*` 失效已经刷新边缘。`sameorigin.html` 与主题样式保持重新验证，prefetch 之后 iframe 的条件请求得到 304，代价一个往返。
+4. **移动端不参与。** `mobile-trade-layout.tsx` 只在 `topView === "chart"` 时激活图表，`media` 条件让 1000 px 及以下不下载这些文件。
+5. **不做的事。** 官方站式头部同步脚本（阻塞解析、FCP 退化）；在面板挂载前创建 widget；预取 72 个文件全集（文件名随语言与主题变化，大部分是小 CSS，收益集中在 `library.js`）。
+
+验证：注入脚本测试覆盖字段缺失与 glob 不唯一即失败、media 条件、去重；`deploy.test.mjs` 断言入口 immutable；`verify` 新增"壳含图表入口 preload 且线上返回 200 与 immutable"；Playwright 同机冷缓存前后对比 `chartEntryEnd`（目标 ≤ 1.0 s）、iframe `frameStart` 与资源完成（目标 ≤ `frameStart` + 0.2 s）、控制台无 "preloaded but not used" 警告；DevTools Slow 4G 对比 FCP 与启动 JS 到齐时间不退化。
+
+预期收益：入口到达 1.76 s → 约 0.9 s；iframe 阶段 0.7 s → 约 0.15 s；图表可见约提前 1 s；FCP 与 load 不变。
+
+风险与边界：`library.js` 约 700 KB gzip 的 prefetch 在慢网上仍占用带宽，靠最低优先级缓解，需要实测；TradingView 升级后文件名变化由构建时 glob 覆盖；入口 immutable 依赖发布失效，若绕过 `deploy.mjs` 手动替换 TradingView 文件而不失效，边缘会继续提供旧入口。
+
+提交与发布：一个提交（`config/chart.ts`、`config/build-meta.ts`、`lib/chart/load-tradingview.ts`、`scripts/inject-shell-preloads.mjs` 与测试、`deploy/cloudfront/deploy.mjs` 与测试、`vite.config.ts` 路由规则、CloudFront 手册、`CHANGELOG.md`、ADR 0006 补一条决策）；构建 → `reupload --only charting_library/charting_library.js`（元数据变化）→ `sync` → 两条 `invalidate` → `verify` → Playwright 前后对比写入任务记录。
+
 ## 执行顺序与检查点
 
 | 阶段 | 内容 | 是否改应用代码 | 完成标准 |
@@ -102,6 +122,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 | 2 | P1、P4.1、P4.2 → 构建 → 发布 → 测量 | 是 | 壳 `modulepreload` 覆盖静态闭包；`client-root` 与首批同批到达；`geoEnd` ≤ 2 s（热） |
 | 3 | P5、P6 → 干净构建 → 重新基线 → 发布 → 测量 | 是 | 文件数 ≤ 60；无循环块；预算按规则更新并记录 |
 | 4 | P7、P8，以及需要用户决策的 P4.3 | 部分 | 告警可触发；文档与 ADR 合并；DNS 切换后退役 EC2 |
+| 5 | P9 图表入口提前 → 构建 → 发布 → 测量 | 是 | 入口 ≤ 1.0 s 到达；iframe 资源在 `frameStart` + 0.2 s 内完成；FCP 不退化 |
 
 每个阶段一个 Conventional Commit，只暂存本阶段路径；每次发布后把同环境冷缓存测量（`timing`、`resources`、`shellChunks`、`clientRootEnd`、`chartEnd`、`geoEnd`）追加到任务记录，不覆盖旧数据。
 
