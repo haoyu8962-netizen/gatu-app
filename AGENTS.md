@@ -21,6 +21,7 @@ This file contains durable project instructions for coding agents. Read `agent.m
 ## Documentation contract
 
 - Treat documentation as a first-class deliverable. Follow `docs/documentation-system.md` and use `docs/README.md` as the navigation entry point.
+- For Across-related work, follow the shared [Across reference workflow](docs/across-reference.md) before reviewing or changing integration behavior.
 - Before changing a system boundary, document its goal, constraints, design, alternatives and verification criteria. Keep current reference docs and user-facing `CHANGELOG.md` aligned with the implementation in the same change; record significant tradeoffs in `docs/adr/`.
 - `notes/index.md` catalogs retained legacy reviews and documentation audit records. Append corrections and link superseding decisions instead of rewriting history. Never reconstruct missing conversations or claim unperformed checks.
 - Distinguish implemented behavior, historical proposals, required verification and actual verification results. A code review, automated test or documentation update is not evidence of a release or real-device acceptance. Keep secrets and personal account data out of records.

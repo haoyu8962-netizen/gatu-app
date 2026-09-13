@@ -32,6 +32,7 @@
 | 被动加载与语言切换 | [数据展示契约](mobile-data-presentation.md)、[加载审查与证据](terminal-loading-audit.md)、[运行时翻译](i18n-presentation.md) |
 | 视觉与启动性能 | [UI 入口及优先级](ui-ux-guidelines.md)、[启动性能基线](terminal-performance-baseline.md)、[OG 资产](../designs/og-cards/README.md) |
 | Hyperliquid API 核对 | [核对工作流](hyperliquid-sdk-reference.md)、[方法目录](hyperliquid-sdk-directory.md)、[独立 API Skill 资料](../packages/hyperliquid-api/README.md) |
+| Across API 核对 | [共享阅读入口](across-reference.md)：官方索引、按需读取与接口 schema 核验；供 Codex、Claude 共用 |
 
 ## 拟实施方案
 
