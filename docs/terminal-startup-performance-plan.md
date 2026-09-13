@@ -28,7 +28,7 @@
 
 ## 设计
 
-### P1 · 壳内预加载交易页静态闭包（最大收益）— 已实施
+### P1 · 壳内预加载交易页静态闭包（最大收益）— 已实施；第十一检查点起按表面拆分：共有闭包仍是 HTML `modulepreload`，仅桌面或仅移动需要的块写进 `<meta name="gatu-preload-desktop|mobile">` 由引导块追加，手机不再下载桌面面板块
 
 问题：壳只写 6 个 `modulepreload`，其余 92 个块靠嵌套 `import()` 逐层发现，形成 `client-root` → 主块 → 页面块 → 面板块的四层瀑布；官方站把 45 个块一次写进 HTML。
 
@@ -94,7 +94,7 @@ CloudWatch 告警：Lambda `Errors`、`Throttles`、`Duration p95`；CloudFront 
 - 壳 head：`lib/seo.ts` 为所有路由输出 `canonical`，壳里因此固定指向 `/trade`；改为只有文档路由输出 `canonical`，应用壳不带。
 - 文档：`agent.md` 第 44 行与 `apps/terminal/README.md` 第 50、52、117 行的 SSR 表述改为"预渲染壳"；`deploy/README.md` 开头改为指向 CloudFront 手册并把 EC2/Caddy 部分标为过渡期；`docs/README.md` 部署入口指向 CloudFront 手册；新增 ADR 0006 记录壳预加载、边缘缓存策略、图表 immutable 与地区预取的取舍；按规则重新基线 `terminal-performance-baseline.md`。
 
-### P9 · 图表入口提前 — 已实施（第十检查点：入口 0.36–0.45 s 到达，iframe 内 `library.js` 缓存命中，样本 2 中 iframe 0.94 s 创建、约 1.8 s 完成核心资源）
+### P9 · 图表入口提前 — 已实施（第十检查点：入口 0.36–0.45 s 到达，iframe 内 `library.js` 缓存命中，样本 2 中 iframe 0.94 s 创建、约 1.8 s 完成核心资源）；第十一检查点修正：Chromium 忽略 `prefetch` 上的 `media`，iframe 文件改由引导块在桌面宽度下追加
 
 问题：`charting_library.js` 由 `lib/chart/load-tradingview.ts` 在图表面板挂载后才以 `<script>` 注入，同机冷缓存 1.76 s 到达；随后 widget 在同源 iframe（`charting_library/sameorigin.html`）里再请求 72 个文件，其中 `bundles/library.<hash>.js` 原始 2.8 MB，iframe 阶段约 0.7 s。官方站在 HTML 头部同步 `<script>` 加载入口（0.54 s 到达），代价是阻塞解析，FCP 1.15 s。目标是让入口与 iframe 的大文件随首波并发下载、widget 创建时全部命中缓存，同时不阻塞解析、不提前创建 widget（[Runtime guardrails §4](runtime-guardrails.md#4-tradingview-lifecycle)）、移动端不多下载。
 

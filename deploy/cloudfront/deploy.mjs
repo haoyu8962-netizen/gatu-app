@@ -24,6 +24,8 @@ const MAX_KEYS_PER_COMMAND = 500;
 const CHART_ENTRY_KEY = "charting_library/charting_library.js";
 /** The build injects the trade startup closure into the shell; a shell with fewer links skipped that step. */
 const MIN_SHELL_PRELOADS = 20;
+/** Surface-specific preload lists the bootstrap entry reads; written by scripts/inject-shell-preloads.mjs. */
+const SURFACE_PRELOAD_META_NAMES = ["gatu-preload-desktop", "gatu-preload-mobile", "gatu-chart-prefetch"];
 
 /** Cache policy for one object in the public directory; `null` means the file is not uploaded. */
 export function objectCacheControl(relativePath) {
@@ -268,6 +270,9 @@ export async function verifyDeployment({ origin, publicDir, network, fetchImpl =
 		const response = await fetchImpl(`${base}${hrefs.at(-1)}`);
 		expect(response.status === 200, `status ${response.status} for ${hrefs.at(-1)}`);
 		expect(response.headers.get("cache-control") === IMMUTABLE_CACHE_CONTROL, `cache-control ${response.headers.get("cache-control")}`);
+		for (const name of SURFACE_PRELOAD_META_NAMES) {
+			expect(shell.toString("utf8").includes(`<meta name="${name}" content="`), `the local shell has no ${name} metadata`);
+		}
 		return `${hrefs.length} links`;
 	});
 	await check("health probe answers 204", async () => {

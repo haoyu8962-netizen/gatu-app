@@ -20,10 +20,32 @@ const CHART_BUNDLE_PATTERNS = { runtime: /^runtime\.[0-9a-f]{20}\.js$/, library:
 /** Requested by the chart iframe, so only the HTTP cache can hand them over; prefetch keeps them off the critical path. */
 const CHART_STATIC_PREFETCHES = ["/charting_library/sameorigin.html", "/tradingview-theme-dark.css"];
 
+/** Names of the `<meta>` tags the bootstrap entry reads (`src/lib/preload/surface-preloads.ts`). */
+export const SURFACE_PRELOAD_META = { desktop: "gatu-preload-desktop", mobile: "gatu-preload-mobile", chart: "gatu-chart-prefetch" };
+
+/**
+ * Splits the startup assets into what every surface needs (static closure plus files both runtime
+ * profiles share) and what only one surface needs. The shared part becomes HTML preloads; the
+ * surface-specific parts are handed to the bootstrap entry, which cannot be done with `media`
+ * because Chromium ignores it on `modulepreload` and `prefetch` links.
+ */
 export function collectShellPreloadFiles({ tradeStartupFiles, runtimeProfileSizes }) {
-	const files = new Set(tradeStartupFiles);
-	for (const profile of runtimeProfileSizes) for (const file of profile.files) files.add(file);
-	return [...files];
+	const profiles = new Map(runtimeProfileSizes.map((profile) => [profile.name, new Set(profile.files)]));
+	const desktop = profiles.get("desktop") ?? new Set();
+	const mobile = profiles.get("mobile") ?? new Set();
+	const common = new Set(tradeStartupFiles);
+	for (const file of desktop) if (mobile.has(file)) common.add(file);
+	const only = (own, other) => [...own].filter((file) => !other.has(file) && !common.has(file));
+	return { common: [...common], desktopOnly: only(desktop, mobile), mobileOnly: only(mobile, desktop) };
+}
+
+export function renderSurfacePreloadMeta({ desktopOnly, mobileOnly, chartPrefetches }) {
+	const meta = (name, hrefs) => `<meta name="${name}" content="${hrefs.join(" ")}"/>`;
+	return [
+		meta(SURFACE_PRELOAD_META.desktop, desktopOnly.map((file) => `/assets/${file}`)),
+		meta(SURFACE_PRELOAD_META.mobile, mobileOnly.map((file) => `/assets/${file}`)),
+		meta(SURFACE_PRELOAD_META.chart, chartPrefetches),
+	];
 }
 
 export function readShellAssetHrefs(html) {
@@ -52,16 +74,17 @@ export function findChartBundles(bundlesDirectory) {
 	return bundles;
 }
 
-/** Desktop only: the mobile layout mounts the chart on demand, so phones do not pay for it up front. */
-export function renderChartPreloadLinks({ chartLibraryScript, bundles, mediaQuery = DESKTOP_MEDIA_QUERY }) {
+/** The loader itself is a classic script, and `media` is honoured on `preload`, so it stays in the HTML. */
+export function renderChartPreloadLink({ chartLibraryScript, mediaQuery = DESKTOP_MEDIA_QUERY }) {
 	if (typeof chartLibraryScript !== "string" || !chartLibraryScript.startsWith("/charting_library/")) {
 		throw new Error("build-meta.json has no chartLibraryScript for the shell to preload");
 	}
-	const prefetches = [bundles.runtime, bundles.library, ...CHART_STATIC_PREFETCHES];
-	return [
-		`<link rel="preload" href="${chartLibraryScript}" as="script" media="${mediaQuery}"/>`,
-		...prefetches.map((href) => `<link rel="prefetch" href="${href}" media="${mediaQuery}"/>`),
-	];
+	return `<link rel="preload" href="${chartLibraryScript}" as="script" media="${mediaQuery}"/>`;
+}
+
+/** Requested by the chart iframe on desktop; the bootstrap entry turns these into prefetch links. */
+export function collectChartPrefetches(bundles) {
+	return [bundles.runtime, bundles.library, ...CHART_STATIC_PREFETCHES];
 }
 
 export function injectShellPreloads(html, links) {
@@ -80,22 +103,27 @@ export async function injectShellPreloadsIntoBuild(publicDirectoryArgument) {
 	if (!existsSync(shellFile)) throw new Error(`No ${SHELL_FILE} in ${publicDirectory}; run the production build first`);
 	const analysis = await analyzeClientBundle(join(publicDirectory, "assets"));
 	if (analysis.violations.length > 0) throw new Error(`client bundle analysis failed: ${analysis.violations.join("; ")}`);
-	const files = collectShellPreloadFiles(analysis);
+	const surfaces = collectShellPreloadFiles(analysis);
+	const files = [...surfaces.common, ...surfaces.desktopOnly, ...surfaces.mobileOnly];
 	for (const file of files) {
 		if (!existsSync(join(publicDirectory, "assets", file))) throw new Error(`startup asset ${file} is missing from the build`);
 	}
 	const html = readFileSync(shellFile, "utf8");
 	const buildMeta = JSON.parse(readFileSync(join(publicDirectory, BUILD_META_FILE), "utf8"));
 	const links = [
-		...renderShellPreloadLinks({ files, existingHrefs: readShellAssetHrefs(html) }),
-		...renderChartPreloadLinks({
-			chartLibraryScript: buildMeta.chartLibraryScript,
-			bundles: findChartBundles(join(publicDirectory, "charting_library", "bundles")),
+		...renderShellPreloadLinks({ files: surfaces.common, existingHrefs: readShellAssetHrefs(html) }),
+		renderChartPreloadLink({ chartLibraryScript: buildMeta.chartLibraryScript }),
+		...renderSurfacePreloadMeta({
+			desktopOnly: surfaces.desktopOnly,
+			mobileOnly: surfaces.mobileOnly,
+			chartPrefetches: collectChartPrefetches(findChartBundles(join(publicDirectory, "charting_library", "bundles"))),
 		}),
 	];
 	writeFileSync(shellFile, injectShellPreloads(html, links));
-	console.log(`Shell preloads: ${links.length} links added for ${files.length} startup assets and the chart in ${SHELL_FILE}.`);
-	return { files, links };
+	console.log(
+		`Shell preloads: ${surfaces.common.length} shared startup assets in ${SHELL_FILE}; ${surfaces.desktopOnly.length} desktop-only and ${surfaces.mobileOnly.length} mobile-only assets plus the chart handed to the bootstrap entry.`,
+	);
+	return { files, links, surfaces };
 }
 
 const isMainModule = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;

@@ -164,6 +164,18 @@
 
 解读：入口现在随首波到达（0.36–0.45 s），iframe 内最大的文件命中 HTTP 缓存；样本 2 里 iframe 在 0.94 s 创建、约 1.8 s 完成核心资源，比阶段 2 后的 1.77 s 创建、约 2.5 s 完成提前约 0.8 s；样本 1 的 iframe 仍在 1.73 s 创建，说明创建时机还受面板挂载与数据就绪影响，不只取决于入口。prefetch 在 DCL 之后才发起（Chrome 的最低优先级），没有推迟启动 JS。移动端未测（`media` 条件下不下载）。限制同前：单机直连、样本少、未做 iPad WebKit 热缓存回归。
 
+## 第十一检查点：双端复核与组件树审查（2026-09-14，基于 `3c0127a9`）
+
+用户问"双端的缺陷修复了吗，组件树的情况请审查"。方法：Playwright 全新上下文分别以 1440×900 与 iPhone 13 视口（390×664，桌面 UA）加载 CloudFront 主网分发；同一移动视口再加载 EC2 上的旧版（`43ce177c`）作对照；本地 dev 服务器在应用内浏览器里遍历 React fiber 树读取真实组件名（生产包名字已压缩，只能看结构数量）。
+
+组件树（dev，桌面）：主干 `StartClient → RouterProvider → QueryClientProvider → InnerWrap → RootProvider → QueryClientProvider → I18nProvider → BaseUiDirectionProvider → ClientRuntimeProvider → … → ClientRuntimeGate → ClientRootProvider → PwaInstallProvider → PrivyProvider → SmartWalletsProvider → PersistQueryClientProvider → WagmiProvider → I18nProvider → BaseUiDirectionProvider → HyperliquidBridge → HyperliquidExchangePolicyProvider → HyperliquidProvider（Transport/Session）→ OwnerSignerBridge → AgentApprovalBridge → LegalLifecycle → MarketsProvider → 对账组件 → ClientRuntimeProvider → I18nReadyGate → ExchangeScopeProvider → MarketsInfoProvider → Outlet`，与终端 README 的 Provider 图一致。重复出现的 Provider：`QueryClientProvider` ×3（路由集成、`RootProvider`、`PersistQueryClientProvider`，同一个 client）、`I18nProvider` ×2、`BaseUiDirectionProvider` ×2、`ClientRuntimeProvider` ×2（外层 `ready=false`、内层 `ready=true`，设计如此）。1,191 个 fiber、410 个宿主元素、7 个网格面板、15 个 Suspense 边界、1 个应用错误边界；`Asset` ×35、`OrderbookPlaceholderRow` ×22（面板隐藏时订阅暂停，属环境伪影）。生产桌面：2,470 个 fiber、1,378 个 DOM 节点、`ArrowSquareOutIcon` ×82（`market-overview.tsx` 与资产信息里的外链图标，数量偏多但非缺陷）、错误上报 0。这些重复 Provider 是既有设计，不在本轮改动。
+
+双端缺陷：桌面无新问题；移动端发现两处由本轮预加载引入或遗留的浪费——(1) 阶段 5 写在 HTML 里的 `prefetch` 链接带 `media="(min-width: 1001px)"`，但 Chromium 忽略 `prefetch` 上的 `media`，390 px 视口仍下载了 `library.js`（772 KB）等 4 个文件（`preload` 上的 `media` 被遵守，入口未下载）；(2) 阶段 2 起壳的 `modulepreload` 含桌面 profile 的面板块，手机下载了 6 个只在桌面挂载的块。移动端图表在"Trade"面（订单表单 + 订单簿）默认不挂载，`MarketsDataView` 的 Chart 页才创建 widget，EC2 旧版行为相同，不是缺陷。移动端布局：底部导航 Markets/Trade/Account，无横向溢出，无控制台错误，错误上报 0。Playwright 环境下 `wss://api.hyperliquid.xyz/ws` 偶发 `ERR_CONNECTION_CLOSED` 一次后重连成功，EC2 对照未出现，判定为本机代理环境伪影。
+
+修复（本检查点提交）：`inject-shell-preloads.mjs` 把启动闭包拆成"静态闭包 + 两个 profile 共有的文件"（仍是 HTML `modulepreload`）与"仅桌面 / 仅移动"两份写进 `<meta name="gatu-preload-desktop|mobile">`，图表 iframe 文件写进 `<meta name="gatu-chart-prefetch">`，HTML 不再有 `prefetch` 链接；入口 `preload` 保留 `media`。新增 `src/lib/preload/surface-preloads.ts`，引导块 `client.ts` 在预取 geo 的同时按 `matchMedia(DESKTOP_MEDIA_QUERY)` 追加当前面的 `modulepreload` 与桌面的图表 `prefetch`（jsdom 4 用例：桌面/移动/去重/无元数据）；`config/layout.ts` 新增 `DESKTOP_MEDIA_QUERY`；`verify` 要求壳含三个 meta。本次构建：83 个共有块进壳，14 个仅桌面块与 4 个图表文件交给引导块，移动 profile 全部包含在桌面闭包里（0 个仅移动块）。发布 `cloudfront-2026-09-14-p6`，verify 主网 12/12、测试网 13/13。
+
+复测（Playwright，同机）：iPhone 13 视口冷缓存：93 个资源 1.35 MB（修复前 110 个、约 1.77 MB），仅桌面块 0/14、图表预取 0/4、图表入口与 bundle 均未下载，FCP 192 ms，`/api/geo` 1.35 s，底部导航正常，无控制台错误、无错误上报。1440×900（同一上下文，缓存已热，本次 TTFB 2.1 s 属代理抖动，时序不作对比）：引导块追加 14 个 `modulepreload` 与 4 个 `prefetch`，14/14 与 4/4 均已下载，7 个面板，图表 iframe 内 `library.js` 缓存命中并绘制 11 个 canvas，无控制台错误。
+
 ## 后续与替代关系
 
 - 按 [deploy/cloudfront/README.md](../../../deploy/cloudfront/README.md) 执行资源创建前，先用 root 建受限 IAM 身份；创建后用 `deploy.mjs verify` 与 `--resolve` 在 DNS 切换前验证；切换稳定一个发布周期后退役 EC2，并把 `deploy/deploy.sh` 与 Caddy/systemd 文件转为历史资料。

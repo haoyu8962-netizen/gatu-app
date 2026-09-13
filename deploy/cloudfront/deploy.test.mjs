@@ -99,7 +99,7 @@ test("invalidation and lambda commands are explicit and bounded", () => {
 
 const SHELL_PRELOADS = Array.from({ length: 24 }, (_, index) => `/assets/chunk-${index}.js`);
 const CHART_ENTRY = "/charting_library/charting_library.js?v=abc";
-const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/></head></html>`;
+const SHELL_HTML = `<html><head>${SHELL_PRELOADS.map((href) => `<link rel="modulepreload" href="${href}"/>`).join("")}<link rel="preload" href="${CHART_ENTRY}" as="script" media="(min-width: 1001px)"/><meta name="gatu-preload-desktop" content="/assets/chunk-1.js"/><meta name="gatu-preload-mobile" content=""/><meta name="gatu-chart-prefetch" content="/charting_library/sameorigin.html"/></head></html>`;
 
 function createPublicDir() {
 	const dir = mkdtempSync(join(tmpdir(), "gatu-cf-verify-"));

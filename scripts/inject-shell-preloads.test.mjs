@@ -4,29 +4,40 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
+	collectChartPrefetches,
 	collectShellPreloadFiles,
 	DESKTOP_MEDIA_QUERY,
 	findChartBundles,
 	injectShellPreloads,
 	readShellAssetHrefs,
-	renderChartPreloadLinks,
+	renderChartPreloadLink,
 	renderShellPreloadLinks,
+	renderSurfacePreloadMeta,
 	SHELL_PRELOAD_END,
 	SHELL_PRELOAD_START,
+	SURFACE_PRELOAD_META,
 } from "./inject-shell-preloads.mjs";
 
 const SHELL =
 	'<html><head><link rel="modulepreload" href="/assets/index-A.js"/><link rel="stylesheet" href="/assets/styles-B.css" data-precedence="default"/></head><body></body></html>';
 
-test("startup files come from the static closure plus every runtime profile, without duplicates", () => {
-	const files = collectShellPreloadFiles({
+test("startup files split into the shared closure and surface-only lists", () => {
+	const surfaces = collectShellPreloadFiles({
 		tradeStartupFiles: new Set(["index-A.js", "client-root-C.js", "styles-B.css"]),
 		runtimeProfileSizes: [
-			{ name: "mobile", files: new Set(["mobile-D.js", "client-root-C.js"]) },
-			{ name: "desktop", files: new Set(["chart-E.js", "panel-F.css"]) },
+			{ name: "mobile", files: new Set(["mobile-D.js", "client-root-C.js", "shared-G.js"]) },
+			{ name: "desktop", files: new Set(["chart-E.js", "panel-F.css", "shared-G.js"]) },
 		],
 	});
-	assert.deepEqual(files, ["index-A.js", "client-root-C.js", "styles-B.css", "mobile-D.js", "chart-E.js", "panel-F.css"]);
+	assert.deepEqual(surfaces.common, ["index-A.js", "client-root-C.js", "styles-B.css", "shared-G.js"]);
+	assert.deepEqual(surfaces.desktopOnly, ["chart-E.js", "panel-F.css"]);
+	assert.deepEqual(surfaces.mobileOnly, ["mobile-D.js"]);
+	const meta = renderSurfacePreloadMeta({ ...surfaces, chartPrefetches: ["/charting_library/sameorigin.html"] });
+	assert.deepEqual(meta, [
+		`<meta name="${SURFACE_PRELOAD_META.desktop}" content="/assets/chart-E.js /assets/panel-F.css"/>`,
+		`<meta name="${SURFACE_PRELOAD_META.mobile}" content="/assets/mobile-D.js"/>`,
+		`<meta name="${SURFACE_PRELOAD_META.chart}" content="/charting_library/sameorigin.html"/>`,
+	]);
 });
 
 test("links skip what the shell already references and preload stylesheets as styles", () => {
@@ -49,16 +60,14 @@ test("injection goes before </head> once and replaces its own block on a second 
 	assert.throws(() => injectShellPreloads("<html></html>", []), /<\/head>/);
 });
 
-test("the chart entry is preloaded and its iframe bundles prefetched, desktop only", () => {
+test("the chart entry is preloaded on desktop widths and its iframe files are listed for the entry", () => {
 	const bundles = { runtime: "/charting_library/bundles/runtime.4d986d07cb97d8edacba.js", library: "/charting_library/bundles/library.f5eaeb6901219f861981.js" };
-	const links = renderChartPreloadLinks({ chartLibraryScript: "/charting_library/charting_library.js?v=abc", bundles });
-	assert.equal(links[0], `<link rel="preload" href="/charting_library/charting_library.js?v=abc" as="script" media="${DESKTOP_MEDIA_QUERY}"/>`);
-	assert.deepEqual(
-		links.slice(1).map((link) => /href="([^"]+)"/.exec(link)[1]),
-		[bundles.runtime, bundles.library, "/charting_library/sameorigin.html", "/tradingview-theme-dark.css"],
+	assert.equal(
+		renderChartPreloadLink({ chartLibraryScript: "/charting_library/charting_library.js?v=abc" }),
+		`<link rel="preload" href="/charting_library/charting_library.js?v=abc" as="script" media="${DESKTOP_MEDIA_QUERY}"/>`,
 	);
-	assert.ok(links.slice(1).every((link) => link.startsWith('<link rel="prefetch"') && link.includes(`media="${DESKTOP_MEDIA_QUERY}"`)));
-	assert.throws(() => renderChartPreloadLinks({ chartLibraryScript: undefined, bundles }), /chartLibraryScript/);
+	assert.deepEqual(collectChartPrefetches(bundles), [bundles.runtime, bundles.library, "/charting_library/sameorigin.html", "/tradingview-theme-dark.css"]);
+	assert.throws(() => renderChartPreloadLink({ chartLibraryScript: undefined }), /chartLibraryScript/);
 });
 
 test("exactly one runtime and one library bundle must exist in the TradingView package", () => {
