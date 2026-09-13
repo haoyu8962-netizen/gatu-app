@@ -15,6 +15,13 @@ changes, not evidence that a build has been deployed or accepted on real devices
   feedback across desktop and mobile. System reduced-motion settings take
   precedence. See [animation behavior](docs/orderbook-new-level-animation.md).
 
+- The production build now also prerenders a client-rendered application shell
+  (`_shell.html`) and static HTML for the document routes, and
+  `pnpm --filter @gatu/terminal serve:spa` serves the client output like a CDN.
+  The Nitro server remains the deployed shape; static hosting still requires
+  migrating the geo, error-report, leaderboard and build-meta endpoints. See
+  [ADR 0005](docs/adr/0005-spa-static-shell.md).
+
 ### Changed
 
 - Desktop panels retain aligned chart, market-data, order-entry and account

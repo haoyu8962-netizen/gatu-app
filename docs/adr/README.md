@@ -8,5 +8,6 @@ ADR 记录采用某个方案的理由、备选方案和后果，完整实现契�
 | [0002](0002-exact-owner-trading-signers.md) | 已实现决策的回溯记录 | 精确 owner 签名身份与邮箱/外部钱包/Agent-only 的 signer 分工 |
 | [0003](0003-orderbook-transport-isolation.md) | 已实现决策的回溯记录 | 通过有界共享 transport 池隔离公共 l2Book 流身份 |
 | [0004](0004-across-deposit-addresses.md) | 拟议，尚未实施 | 邮箱充值新增 Across 持久地址，保留 CCTP 与恢复；服务端身份、两张地址表及按需转账查询 |
+| [0005](0005-spa-static-shell.md) | 拟议；分支已构建并本地静态托管验证，未部署 | 以预渲染 SPA 壳与静态文档页交付客户端产物，Nitro 退为可选；服务端点迁移与 CDN 头另立任务 |
 
 新 ADR 至少包含：状态与日期、上下文、目标/约束、决策、备选方案及利弊、后果与边界、代码/测试/Reference 证据。验证命令与本次执行结果分别标明。文档维护要求见[文档体系](../documentation-system.md)。

@@ -15,8 +15,40 @@ import {
   resolveClientChunkGraphCacheFile,
   writeClientChunkGraphFile,
 } from '../../scripts/client-chunk-graph.mjs'
+import { DOCUMENT_ROUTE_PATHS } from './src/config/document-routes'
 import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
 import { hashCatalogMessageIds } from './src/lib/i18n-catalog'
+
+// SPA mode: the build prerenders one static shell for every client-rendered application route
+// and real HTML for the document routes, so the client output can be hosted without the Nitro
+// server. The mask path must match an application surface whose routes are all `ssr: false`;
+// `/` cannot be used because its server-side `beforeLoad` redirects.
+export const SPA_SHELL_MASK_PATH = '/trade'
+export const SPA_SHELL_OUTPUT_PATH = '/_shell'
+
+export function createStartPrerenderPages() {
+  return DOCUMENT_ROUTE_PATHS.map((path) => ({
+    path,
+    prerender: { enabled: true, crawlLinks: false },
+  }))
+}
+
+export function createTanstackStartOptions() {
+  return {
+    spa: {
+      enabled: true,
+      maskPath: SPA_SHELL_MASK_PATH,
+      prerender: { outputPath: SPA_SHELL_OUTPUT_PATH, crawlLinks: false },
+    },
+    pages: createStartPrerenderPages(),
+    prerender: {
+      enabled: true,
+      crawlLinks: false,
+      failOnError: true,
+      autoStaticPathsDiscovery: false,
+    },
+  }
+}
 
 const isAnalyze = process.env.ANALYZE === 'true'
 const repositoryRoot = fileURLToPath(new URL('../..', import.meta.url))
@@ -291,7 +323,7 @@ const config = defineConfig({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(createTanstackStartOptions()),
     viteReact({
       babel: {
         plugins: ['@lingui/babel-plugin-lingui-macro', 'babel-plugin-react-compiler'],

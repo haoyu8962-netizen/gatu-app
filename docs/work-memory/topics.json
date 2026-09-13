@@ -39,6 +39,11 @@
 		"documents": ["docs/work-memory/README.md"]
 	},
 	{
+		"id": "static-hosting",
+		"title": "静态托管与 SPA 壳",
+		"documents": ["docs/adr/0005-spa-static-shell.md", "deploy/README.md"]
+	},
+	{
 		"id": "docs-governance",
 		"title": "Agent 规则与文档治理",
 		"documents": ["AGENTS.md", "docs/documentation-system.md", "docs/README.md"]

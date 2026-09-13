@@ -64,6 +64,12 @@
 
 - [建立可追溯工作记录与定期索引](sessions/2026-09-12-work-memory.md) — 2026-09-12；已验证，范围见正文。三份本地可见记录快照、六个历史议题、生成与校验脚本，以及每周维护任务。
 
+### 静态托管与 SPA 壳
+
+当前规范：[docs/adr/0005-spa-static-shell.md](../../docs/adr/0005-spa-static-shell.md) · [deploy/README.md](../../deploy/README.md)
+
+- [SPA 壳：在分支上跑通静态托管构建](sessions/2026-09-13-spa-shell-spike.md) — 2026-09-13；已整理，验证见正文。TanStack Start SPA 模式在 claude/spa-mode 分支构建通过并本地静态托管验证；服务端点、CDN 头与部署脚本未迁移，静态托管下 geo fail closed。
+
 ### Agent 规则与文档治理
 
 当前规范：[AGENTS.md](../../AGENTS.md) · [docs/documentation-system.md](../../docs/documentation-system.md) · [docs/README.md](../../docs/README.md)
@@ -82,6 +88,7 @@
 | 2026-09-13 | [Across 地址方案：Claude 审查逐项复核与首期收缩](sessions/2026-09-13-across-plan-review-followup.md) | 未取得任务标识，见正文 | `8153b7b74cd3bf02d91f9a0eb79a2688b123de9d` | 已整理，验证见正文 |
 | 2026-09-13 | [Across 二轮复审：N1–N8 验收与恢复边界](sessions/2026-09-13-across-rereview-resolution.md) | 未取得任务标识，见正文 | `965e05900e4f4252d592beaf158967fb2fe74a6e` | 已整理，验证见正文 |
 | 2026-09-13 | [AGENTS.md 指针化重构与 HypeTerminal 品牌残留清理](sessions/2026-09-13-agents-brand-cleanup.md) | 未取得任务标识，见正文 | `32b73f6892fc6882692c8a0964471a26ab63f272` | 已验证，范围见正文 |
+| 2026-09-13 | [SPA 壳：在分支上跑通静态托管构建](sessions/2026-09-13-spa-shell-spike.md) | 未取得任务标识，见正文 | `2c44be20` | 已整理，验证见正文 |
 | 2026-09-12 | [账户与资金：模式语义、共享概览与精确转账](sessions/2026-09-12-account-funding.md) | 启动3006端口开发服务器（`01a08f6b-26ae-7642-a9a5-a074d906c899`） | `422ea8a6` | 已整理，验证见正文 |
 | 2026-09-12 | [部署第 2 步：已安装 Caddy 配置与仓库不一致](sessions/2026-09-12-caddy-config-mismatch.md) | 未取得任务标识，见正文 | `42349cb1` | 已整理，验证见正文 |
 | 2026-09-12 | [部署包预算：订单队列去重与固定参数复验](sessions/2026-09-12-deploy-bundle-margin.md) | 未取得任务标识，见正文 | `23966794` | 已验证，范围见正文 |

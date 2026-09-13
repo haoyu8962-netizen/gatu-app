@@ -1,7 +1,8 @@
 import { createContext, type ReactNode, use } from "react";
+import { DOCUMENT_ROUTE_PATHS as DOCUMENT_ROUTE_PATH_LIST } from "@/config/document-routes";
 
 const ClientRuntimeContext = createContext(false);
-const DOCUMENT_ROUTE_PATHS = new Set(["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"]);
+const DOCUMENT_ROUTE_PATHS = new Set<string>(DOCUMENT_ROUTE_PATH_LIST);
 const TERMINAL_ROUTE_PREFIXES = ["/trade", "/perp", "/spot", "/builders-perp"] as const;
 
 export type AppRouteSurface = "document" | "terminal" | "dashboard";

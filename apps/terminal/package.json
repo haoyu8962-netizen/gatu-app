@@ -9,6 +9,7 @@
 		"build": "lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets",
 		"build:analyze": "ANALYZE=true lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets && node ../../scripts/check-client-bundle-budget.mjs .output/public/assets",
 		"serve": "node ../../scripts/serve-nitro.mjs .output/server/index.mjs",
+		"serve:spa": "node ../../scripts/serve-spa-static.mjs .output/public",
 		"serve:vite": "vite preview",
 		"test": "vitest run",
 		"test:browser:orderbook-cls": "playwright test tests/browser/mobile-orderbook-cls.pw.ts --config tests/browser/playwright.config.ts",
