@@ -479,8 +479,7 @@ function selectHistory(
 }
 
 function formatLatestValue(latestValue: string | null, metric: ChartMetric): string {
-	if (latestValue === null) return "—";
-	return formatUSD(latestValue, {
+	return formatUSD(latestValue ?? "0", {
 		compact: false,
 		signDisplay: metric === "accountValue" ? "auto" : "exceptZero",
 	});

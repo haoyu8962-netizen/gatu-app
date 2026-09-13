@@ -179,12 +179,12 @@ describe("PortfolioOverview", () => {
 		vi.useRealTimers();
 	});
 
-	it("does not present unavailable portfolio history as real zero values", () => {
+	it("shows zero placeholders for unavailable history while preserving retry", () => {
 		renderOverview(root);
 
-		expect(summaryValue(container, "PNL")).toBe("—");
-		expect(summaryValue(container, "Volume")).toBe("—");
-		expect(summaryValue(container, "Max Drawdown")).toBe("—");
+		expect(summaryValue(container, "PNL")).toBe("$0.00");
+		expect(summaryValue(container, "Volume")).toBe("$0.00");
+		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Something went wrong");
 
 		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
@@ -193,11 +193,11 @@ describe("PortfolioOverview", () => {
 		expect(mocks.refetchFees).toHaveBeenCalledOnce();
 	});
 
-	it("does not present unavailable fee rates as real zero values", () => {
+	it("shows formatted zero placeholders for unavailable fee rates", () => {
 		mocks.feesData = undefined;
 		renderOverview(root);
 
-		expect(metricValue(container, "Fees (Taker / Maker)")).toBe("—");
+		expect(metricValue(container, "Fees (Taker / Maker)")).toBe("0.0000% / 0.0000%");
 	});
 
 	it("gives each portfolio selector a purpose-specific accessible name", () => {
@@ -210,7 +210,7 @@ describe("PortfolioOverview", () => {
 		expect(container.querySelector('[role="combobox"][aria-label="Portfolio performance period"]')).not.toBeNull();
 	});
 
-	it("does not present unavailable account balances as real zero values", () => {
+	it("shows zero placeholders until complete account snapshots arrive", () => {
 		mocks.balances = {
 			spotStateStatus: "success",
 			perpStateStatus: "success",
@@ -223,19 +223,19 @@ describe("PortfolioOverview", () => {
 		mocks.auxiliaryDataAvailable = false;
 		renderOverview(root);
 
-		expect(summaryValue(container, "Total Equity")).toBe("—");
-		expect(summaryValue(container, "Perps Account Equity")).toBe("—");
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Perps Account Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("$0.00");
 	});
 
 	it("does not retain account values after the wallet disconnects", () => {
 		mocks.isConnected = false;
 		renderOverview(root);
 
-		expect(summaryValue(container, "Total Equity")).toBe("—");
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("$0.00");
 	});
 
 	it("includes every separately collateralized DEX in standard account equity", () => {
@@ -274,7 +274,7 @@ describe("PortfolioOverview", () => {
 		mocks.balances.hasSpotStateSnapshot = true;
 		renderOverview(root);
 
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
 	});
 
 	it("keeps valid zero values visible after a successful refresh", () => {
@@ -284,7 +284,7 @@ describe("PortfolioOverview", () => {
 
 		expect(summaryValue(container, "PNL")).toMatch(/0\.00/);
 		expect(summaryValue(container, "Volume")).toMatch(/0\.00/);
-		expect(summaryValue(container, "Max Drawdown")).toBe("—");
+		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
 		expect(container.querySelector('[role="alert"]')).toBeNull();
 	});
 
@@ -311,7 +311,7 @@ describe("PortfolioOverview", () => {
 				[2, "500"],
 			];
 		renderOverview(root);
-		expect(summaryValue(container, "Max Drawdown")).toBe("—");
+		expect(summaryValue(container, "Max Drawdown")).toBe("0.00%");
 		expect(container.textContent).toContain("cash-flow-adjusted history");
 		expect(container.textContent).not.toContain("-50.00%");
 	});
@@ -321,12 +321,12 @@ describe("PortfolioOverview", () => {
 		mocks.portfolioData = createPortfolio("5");
 		mocks.portfolioError = false;
 		renderOverview(root);
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 		expect(summaryValue(container, "PNL")).toContain("5.00");
 		mocks.balances.spotBalances[0].entryNtl = "0";
 		renderOverview(root);
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
 	});
 
 	it("does not require market prices for USDC-only or empty balances", () => {
@@ -341,17 +341,17 @@ describe("PortfolioOverview", () => {
 	it.each(["error", "stale"])("rejects %s balance snapshots even when cached data exists", (status) => {
 		mocks.balances.spotStateStatus = status;
 		renderOverview(root);
-		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
-		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 	});
 
 	it("rejects failed cached history and lending without substituting historical equity", () => {
 		mocks.portfolioData = createPortfolio("5");
 		mocks.auxiliaryError = true;
 		renderOverview(root);
-		expect(summaryValue(container, "PNL")).toBe("—");
-		expect(summaryValue(container, "Total Equity")).toBe("—");
-		expect(summaryValue(container, "Lending Net Balance")).toBe("—");
+		expect(summaryValue(container, "PNL")).toBe("$0.00");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
+		expect(summaryValue(container, "Lending Net Balance")).toBe("$0.00");
 		expect(summaryValue(container, "Spot Account Equity")).toBe("$42.00");
 	});
 
@@ -360,8 +360,8 @@ describe("PortfolioOverview", () => {
 		mocks.portfolioError = false;
 		mocks.portfolioData = createPortfolio("5");
 		renderOverview(root);
-		expect(summaryValue(container, "PNL")).toBe("—");
-		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "PNL")).toBe("$0.00");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 	});
 
 	it.each(["unifiedAccount", "portfolioMargin"])("does not add unverified lending to %s spot equity", (mode) => {
@@ -371,7 +371,7 @@ describe("PortfolioOverview", () => {
 		];
 		mocks.reserveData = [[0, { oraclePx: "1" }]] as InfoResponse<"allBorrowLendReserveStates">;
 		renderOverview(root);
-		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 		expect(summaryValue(container, "Lending Net Balance")).toBe("$100.00");
 		expect(container.textContent).toContain("may overlap");
 	});
@@ -382,7 +382,7 @@ describe("PortfolioOverview", () => {
 		renderOverview(root);
 		expect(summaryValue(container, "Total Equity")).toBe("$42.00");
 		act(() => vi.advanceTimersByTime(120_000));
-		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Total Equity")).toBe("$0.00");
 	});
 });
 
